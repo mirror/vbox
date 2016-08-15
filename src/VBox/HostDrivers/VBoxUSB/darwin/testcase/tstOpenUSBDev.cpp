@@ -79,7 +79,7 @@ static bool tstDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef KeyStrRef,
 }
 
 
-static int tstDoWork(io_object_t USBDevice, mach_port_t MasterPort, const char *argv0)
+static int tstDoWork(io_object_t USBDevice, const char *argv0)
 {
     /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
@@ -189,7 +189,6 @@ int main(int argc, char **argv)
     uint32_t u32LocationId = 0;
 
     int ch;
-    int i = 1;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
@@ -217,7 +216,7 @@ int main(int argc, char **argv)
     /*
      * Open the master port.
      */
-    mach_port_t MasterPort = NULL;
+    mach_port_t MasterPort = MACH_PORT_NULL;
     krc = IOMasterPort(MACH_PORT_NULL, &MasterPort);
     if (krc != KERN_SUCCESS)
     {
@@ -235,7 +234,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    io_iterator_t USBDevices = NULL;
+    io_iterator_t USBDevices = IO_OBJECT_NULL;
     IOReturn irc = IOServiceGetMatchingServices(MasterPort, RefMatchingDict, &USBDevices);
     if (irc != kIOReturnSuccess)
     {
@@ -266,7 +265,7 @@ int main(int argc, char **argv)
             {
                 cMatches++;
                 CFRelease(PropsRef);
-                tstDoWork(USBDevice, MasterPort, argv[0]);
+                tstDoWork(USBDevice, argv[0]);
             }
             else
                 CFRelease(PropsRef);

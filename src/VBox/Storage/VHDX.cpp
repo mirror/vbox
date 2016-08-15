@@ -707,6 +707,8 @@ DECLINLINE(void) vhdxConvRegionTblEntryEndianess(VHDXECONV enmConv, PVhdxRegionT
     pRegTblEntConv->u32Flags      = SET_ENDIAN_U32(pRegTblEnt->u32Flags);
 }
 
+#if 0 /* unused */
+
 /**
  * Converts a VHDX log entry header between file and host endianness.
  *
@@ -751,6 +753,7 @@ DECLINLINE(void) vhdxConvLogZeroDescEndianess(VHDXECONV enmConv, PVhdxLogZeroDes
     pLogZeroDescConv->u64SequenceNumber = SET_ENDIAN_U64(pLogZeroDesc->u64SequenceNumber);
 }
 
+
 /**
  * Converts a VHDX log data descriptor between file and host endianness.
  *
@@ -771,6 +774,7 @@ DECLINLINE(void) vhdxConvLogDataDescEndianess(VHDXECONV enmConv, PVhdxLogDataDes
     pLogDataDescConv->u64SequenceNumber = SET_ENDIAN_U64(pLogDataDesc->u64SequenceNumber);
 }
 
+
 /**
  * Converts a VHDX log data sector between file and host endianness.
  *
@@ -788,6 +792,8 @@ DECLINLINE(void) vhdxConvLogDataSectorEndianess(VHDXECONV enmConv, PVhdxLogDataS
     pLogDataSectorConv->u32SequenceHigh  = SET_ENDIAN_U32(pLogDataSector->u32SequenceHigh);
     pLogDataSectorConv->u32SequenceLow   = SET_ENDIAN_U32(pLogDataSector->u32SequenceLow);
 }
+
+#endif /* unused */
 
 /**
  * Converts a BAT between file and host endianess.
@@ -879,6 +885,8 @@ DECLINLINE(void) vhdxConvVDiskSizeEndianess(VHDXECONV enmConv, PVhdxVDiskSize pV
     pVDiskSizeConv->u64VDiskSize  = SET_ENDIAN_U64(pVDiskSize->u64VDiskSize);
 }
 
+#if 0 /* unused */
+
 /**
  * Converts a VHDX page 83 data item between file and host endianness.
  *
@@ -894,6 +902,7 @@ DECLINLINE(void) vhdxConvPage83DataEndianess(VHDXECONV enmConv, PVhdxPage83Data 
 {
     vhdxConvUuidEndianess(enmConv, &pPage83DataConv->UuidPage83Data, &pPage83Data->UuidPage83Data);
 }
+#endif /* unused */
 
 /**
  * Converts a VHDX logical sector size item between file and host endianness.
@@ -911,6 +920,8 @@ DECLINLINE(void) vhdxConvVDiskLogSectSizeEndianess(VHDXECONV enmConv, PVhdxVDisk
     pVDiskLogSectSizeConv->u32LogicalSectorSize = SET_ENDIAN_U32(pVDiskLogSectSize->u32LogicalSectorSize);
 }
 
+#if 0 /* unused */
+
 /**
  * Converts a VHDX physical sector size item between file and host endianness.
  *
@@ -926,6 +937,7 @@ DECLINLINE(void) vhdxConvVDiskPhysSectSizeEndianess(VHDXECONV enmConv, PVhdxVDis
 {
     pVDiskPhysSectSizeConv->u64PhysicalSectorSize = SET_ENDIAN_U64(pVDiskPhysSectSize->u64PhysicalSectorSize);
 }
+
 
 /**
  * Converts a VHDX parent locator header item between file and host endianness.
@@ -945,6 +957,7 @@ DECLINLINE(void) vhdxConvParentLocatorHeaderEndianness(VHDXECONV enmConv, PVhdxP
     pParentLocatorHdrConv->u16KeyValueCount = SET_ENDIAN_U16(pParentLocatorHdr->u16KeyValueCount);
 }
 
+
 /**
  * Converts a VHDX parent locator entry between file and host endianness.
  *
@@ -963,6 +976,8 @@ DECLINLINE(void) vhdxConvParentLocatorEntryEndianess(VHDXECONV enmConv, PVhdxPar
     pParentLocatorEntryConv->u16KeyLength   = SET_ENDIAN_U16(pParentLocatorEntry->u16KeyLength);
     pParentLocatorEntryConv->u16ValueLength = SET_ENDIAN_U16(pParentLocatorEntry->u16ValueLength);
 }
+
+#endif /* unused */
 
 /**
  * Internal. Free all allocated space for representing an image except pImage,

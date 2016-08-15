@@ -658,8 +658,10 @@ static PCVDCACHEBACKEND aStaticCacheBackends[] =
 static unsigned g_cFilterBackends = 0;
 /** Array of pointers to the filters backends. */
 static PCVDFILTERBACKEND *g_apFilterBackends = NULL;
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /** Array of handles to the corresponding plugin. */
-static RTLDRMOD *g_ahFilterBackendPlugins = NULL;
+static PRTLDRMOD g_pahFilterBackendPlugins = NULL;
+#endif
 
 /** Forward declaration of the async discard helper. */
 static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx);
@@ -691,6 +693,7 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigne
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /**
  * internal: add single backend.
  */
@@ -698,6 +701,7 @@ DECLINLINE(int) vdAddBackend(RTLDRMOD hPlugin, PCVBOXHDDBACKEND pBackend)
 {
     return vdAddBackends(hPlugin, &pBackend, 1);
 }
+#endif
 
 /**
  * internal: add several cache backends.
@@ -722,6 +726,8 @@ static int vdAddCacheBackends(RTLDRMOD hPlugin, PCVDCACHEBACKEND *ppBackends, un
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
+
 /**
  * internal: add single cache backend.
  */
@@ -729,6 +735,7 @@ DECLINLINE(int) vdAddCacheBackend(RTLDRMOD hPlugin, PCVDCACHEBACKEND pBackend)
 {
     return vdAddCacheBackends(hPlugin, &pBackend, 1);
 }
+
 
 /**
  * Add several filter backends.
@@ -746,18 +753,19 @@ static int vdAddFilterBackends(RTLDRMOD hPlugin, PCVDFILTERBACKEND *ppBackends, 
         return VERR_NO_MEMORY;
     g_apFilterBackends = pTmp;
 
-    RTLDRMOD *pTmpPlugins = (RTLDRMOD*)RTMemRealloc(g_ahFilterBackendPlugins,
-           (g_cFilterBackends + cBackends) * sizeof(RTLDRMOD));
+    PRTLDRMOD pTmpPlugins = (PRTLDRMOD)RTMemRealloc(g_pahFilterBackendPlugins,
+                                                    (g_cFilterBackends + cBackends) * sizeof(RTLDRMOD));
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
 
-    g_ahFilterBackendPlugins = pTmpPlugins;
+    g_pahFilterBackendPlugins = pTmpPlugins;
     memcpy(&g_apFilterBackends[g_cFilterBackends], ppBackends, cBackends * sizeof(PCVDFILTERBACKEND));
     for (unsigned i = g_cFilterBackends; i < g_cFilterBackends + cBackends; i++)
-        g_ahFilterBackendPlugins[i] = hPlugin;
+        g_pahFilterBackendPlugins[i] = hPlugin;
     g_cFilterBackends += cBackends;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Add a single filter backend to the list of supported filters.
@@ -770,6 +778,8 @@ DECLINLINE(int) vdAddFilterBackend(RTLDRMOD hPlugin, PCVDFILTERBACKEND pBackend)
 {
     return vdAddFilterBackends(hPlugin, &pBackend, 1);
 }
+
+#endif /* VBOX_HDD_NO_DYNAMIC_BACKENDS*/
 
 /**
  * internal: issue error message.
@@ -3646,10 +3656,10 @@ static int vdRemovePlugin(const char *pszFilename)
     }
     for (unsigned i = 0; i < g_cFilterBackends; i++)
     {
-        while (i < g_cFilterBackends && g_ahFilterBackendPlugins[i] == pIt->hPlugin)
+        while (i < g_cFilterBackends && g_pahFilterBackendPlugins[i] == pIt->hPlugin)
         {
             memcpy(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
-            memcpy(&g_ahFilterBackendPlugins[i], &g_ahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
+            memcpy(&g_pahFilterBackendPlugins[i], &g_pahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cFilterBackends--;
         }

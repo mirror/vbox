@@ -74,8 +74,10 @@ static RTSEMEVENTMULTI  g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
 /** The array holding the R3 pointers of the balloon. */
 static void **g_pavBalloon = NULL;
 
+#ifdef RT_OS_LINUX
 /** True = madvise(MADV_DONTFORK) works, false otherwise. */
 static bool g_fSysMadviseWorks;
+#endif
 
 
 /**

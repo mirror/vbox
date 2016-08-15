@@ -331,7 +331,7 @@ VBGLR3DECL(void) VbglR3Term(void)
     g_uConnection = 0;
     g_File        = NIL_RTFILE;
     kern_return_t kr = IOServiceClose(uConnection);
-    AssertMsg(kr == kIOReturnSuccess, ("%#x (%d)\n", kr, kr));
+    AssertMsg(kr == kIOReturnSuccess, ("%#x (%d)\n", kr, kr)); NOREF(kr);
     int rc = RTFileClose(hFile);
     AssertRC(rc);
 
