@@ -74,7 +74,7 @@ typedef struct DRVHOSTDEBUGAUDIO
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostDebugAudio)
+int drvHostDebugAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
@@ -96,7 +96,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostDebugAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostDebugAudio)
+int drvHostDebugAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
 
@@ -108,7 +108,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostDebugAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostDebugAudio)
+void drvHostDebugAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
     NOREF(pInterface);
 }
@@ -117,7 +117,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostDebugAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostDebugAudio)
+PDMAUDIOBACKENDSTS drvHostDebugAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -192,7 +192,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostDebugAudio)
+int drvHostDebugAudioStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -212,7 +212,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostDebugAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostDebugAudio)
+int drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     PDRVHOSTDEBUGAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTDEBUGAUDIO, IHostAudio);
     PDEBUGAUDIOSTREAM  pDbgStream = (PDEBUGAUDIOSTREAM)pStream;
@@ -281,7 +281,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostDebugAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostDebugAudio)
+int drvHostDebugAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF(pInterface, pStream);
 

@@ -922,63 +922,6 @@ typedef struct PDMIAUDIOCONNECTOR
         pThis->IHostAudio.pfnStreamCapture   = RT_CONCAT(a_Prefix,StreamCapture); \
     } while (0)
 
-
-/** @todo r=bird: This stuff is UGLY even if I can see the refactoring flexibility
- * it buys you.  However, it makes the code TOTALLY UNREADABLE for the uninitated!
- *                                                                               !
- * Please revert ASAP, that is after fixing the core audio related problems!  If
- * you don't, I will then next time I'm in the vicinity.
- */
-
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_INIT    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_INIT (PPDMIHOSTAUDIO pInterface)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_SHUTDOWN    void
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_SHUTDOWN (PPDMIHOSTAUDIO pInterface)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_GETCONFIG    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_GETCONFIG (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_GETSTATUS    PDMAUDIOBACKENDSTS
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_GETSTATUS (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCREATE    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCREATE (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMDESTROY    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMDESTROY (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCONTROL    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCONTROL (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMGETSTATUS    PDMAUDIOSTRMSTS
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMGETSTATUS (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMITERATE    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMITERATE (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMPLAY    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMPLAY (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
-
-#define PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCAPTURE    int
-#define PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCAPTURE (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
-
-#define PDMAUDIO_IHOSTAUDIO_DEF_FN(a_Prefix, a_Func) \
-    static DECLCALLBACK(PDMAUDIO_IHOSTAUDIO_FN_RET_##a_Func) a_Prefix PDMAUDIO_IHOSTAUDIO_FN_PARAMS_##a_Func
-
-#define PDMAUDIO_IHOSTAUDIO_EMIT_INIT(a_Prefix)            PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, Init),            INIT)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(a_Prefix)        PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, Shutdown),        SHUTDOWN)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(a_Prefix)       PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, GetConfig),       GETCONFIG)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(a_Prefix)       PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, GetStatus),       GETSTATUS)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(a_Prefix)    PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamCreate),    STREAMCREATE)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(a_Prefix)   PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamDestroy),   STREAMDESTROY)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(a_Prefix)   PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamControl),   STREAMCONTROL)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(a_Prefix) PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamGetStatus), STREAMGETSTATUS)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(a_Prefix)   PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamIterate),   STREAMITERATE)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(a_Prefix)      PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamPlay),      STREAMPLAY)
-#define PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(a_Prefix)   PDMAUDIO_IHOSTAUDIO_DEF_FN(RT_CONCAT(a_Prefix, StreamCapture),   STREAMCAPTURE)
-
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
 /**
@@ -992,7 +935,7 @@ typedef struct PDMIHOSTAUDIO
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_INIT, pfnInit, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_INIT);
+    DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
 
     /**
      * Shuts down the host-specific audio device.
@@ -1000,7 +943,7 @@ typedef struct PDMIHOSTAUDIO
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_SHUTDOWN, pfnShutdown, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_SHUTDOWN);
+    DECLR3CALLBACKMEMBER(void, pfnShutdown, (PPDMIHOSTAUDIO pInterface));
 
     /**
      * Returns the configuration from the host audio (backend) driver.
@@ -1009,7 +952,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pBackendCfg         Pointer where to store the backend audio configuration to.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_GETCONFIG, pfnGetConfig, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_GETCONFIG);
+    DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg));
 
     /**
      * Returns the current status from the host audio (backend) driver.
@@ -1018,7 +961,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   enmDir              Audio direction to get status for. Pass PDMAUDIODIR_ANY for overall status.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_GETSTATUS, pfnGetStatus, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_GETSTATUS);
+    DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir));
 
     /**
      * Creates an audio stream using the requested stream configuration.
@@ -1031,7 +974,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pCfgReq             Pointer to requested stream configuration.
      * @param   pCfgAcq             Pointer to acquired stream configuration.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCREATE, pfnStreamCreate, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCREATE);
+    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfg, uint32_t *pcSamples));
 
     /**
      * Destroys an audio stream.
@@ -1040,7 +983,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMDESTROY, pfnStreamDestroy, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMDESTROY);
+    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Controls an audio stream.
@@ -1050,7 +993,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pStream             Pointer to audio stream.
      * @param   enmStreamCmd        The stream command to issue.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCONTROL, pfnStreamControl, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCONTROL);
+    DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
      * Returns whether the specified audio direction in the backend is enabled or not.
@@ -1059,7 +1002,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   enmDir              Audio direction to check status for.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMGETSTATUS, pfnStreamGetStatus, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMGETSTATUS);
+    DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Gives the host backend the chance to do some (necessary) iteration work.
@@ -1068,7 +1011,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMITERATE, pfnStreamIterate, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMITERATE);
+    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
 
     /**
      * Plays (writes to) an audio (output) stream.
@@ -1080,7 +1023,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of audio data buffer.
      * @param   pcbWritten          Returns number of bytes written. Optional.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMPLAY, pfnStreamPlay, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMPLAY);
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed));
 
     /**
      * Captures (reads from) an audio (input) stream.
@@ -1092,7 +1035,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of buffer.
      * @param   pcbRead             Returns number of bytes read. Optional.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIO_IHOSTAUDIO_FN_RET_STREAMCAPTURE, pfnStreamCapture, PDMAUDIO_IHOSTAUDIO_FN_PARAMS_STREAMCAPTURE);
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured));
 
 } PDMIHOSTAUDIO;
 

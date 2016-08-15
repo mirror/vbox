@@ -1528,7 +1528,7 @@ static int dsoundControlStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostDSound)
+int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     RT_NOREF2(pvBuf, cbBuf);
 
@@ -1781,7 +1781,7 @@ static int dsoundControlStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream, 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostDSound)
+int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF2(pvBuf, cbBuf);
 
@@ -1921,7 +1921,7 @@ static int dsoundDestroyStreamIn(PPDMAUDIOSTREAM pStream)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostDSound)
+int drvHostDSoundGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     AssertPtrReturn(pInterface,  VERR_INVALID_POINTER);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
@@ -2048,7 +2048,7 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostDSound)
+void drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
 
@@ -2080,7 +2080,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostDSound)
+int drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
 {
     PDRVHOSTDSOUND pThis = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     LogFlowFuncEnter();
@@ -2175,7 +2175,7 @@ static void dsoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostDSound)
+PDMAUDIOBACKENDSTS drvHostDSoundGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -2187,7 +2187,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostDSound)
+int drvHostDSoundStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -2209,7 +2209,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostDSound)
+int drvHostDSoundStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -2229,7 +2229,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostDSound)
+int drvHostDSoundStreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -2251,7 +2251,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostDSound)
+PDMAUDIOSTRMSTS drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, PDMAUDIOSTRMSTS_FLAG_NONE);
     AssertPtrReturn(pStream,    PDMAUDIOSTRMSTS_FLAG_NONE);
@@ -2290,7 +2290,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostDSound)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostDSound)
+int drvHostDSoundStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);

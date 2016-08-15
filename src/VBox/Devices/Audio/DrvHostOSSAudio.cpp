@@ -402,7 +402,7 @@ static int ossControlStreamOut(PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStr
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostOSSAudio)
+int drvHostOSSAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
 
@@ -415,7 +415,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvHostOSSAudio)
+int drvHostOSSAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF(pInterface, cbBuf, pvBuf);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -577,7 +577,7 @@ static int ossDestroyStreamOut(PPDMAUDIOSTREAM pStream)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvHostOSSAudio)
+int drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     RT_NOREF(pInterface);
 
@@ -848,7 +848,7 @@ static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostOSSAudio)
+int drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     RT_NOREF(pInterface, cbBuf, pvBuf);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -977,7 +977,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostOSSAudio)
+void drvHostOSSAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
 }
@@ -986,7 +986,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostOSSAudio)
+PDMAUDIOBACKENDSTS drvHostOSSAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
     RT_NOREF(enmDir);
@@ -998,7 +998,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostOSSAudio)
+int drvHostOSSAudioStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1018,7 +1018,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostOSSAudio)
+int drvHostOSSAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1036,7 +1036,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostOSSAudio)
+int drvHostOSSAudioStreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1056,7 +1056,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostOSSAudio)
+int drvHostOSSAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1071,7 +1071,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvHostOSSAudio)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvHostOSSAudio)
+PDMAUDIOSTRMSTS drvHostOSSAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     RT_NOREF(pInterface);
     RT_NOREF(pStream);

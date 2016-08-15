@@ -179,7 +179,7 @@ static int vrdeControlStreamIn(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvAudioVRDE)
+int drvAudioVRDEInit(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
     LogFlowFuncEnter();
@@ -191,7 +191,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_INIT(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvAudioVRDE)
+int drvAudioVRDEStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF2(pvBuf, cbBuf);
 
@@ -231,7 +231,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCAPTURE(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMPLAY(drvAudioVRDE)
+int drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     RT_NOREF2(pvBuf, cbBuf);
 
@@ -336,7 +336,7 @@ static int vrdeDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStre
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvAudioVRDE)
+int drvAudioVRDEGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
     NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
@@ -355,7 +355,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETCONFIG(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvAudioVRDE)
+void drvAudioVRDEShutdown(PPDMIHOSTAUDIO pInterface)
 {
     PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturnVoid(pDrv);
@@ -368,7 +368,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_SHUTDOWN(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvAudioVRDE)
+PDMAUDIOBACKENDSTS drvAudioVRDEGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
     RT_NOREF(enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
@@ -380,7 +380,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_GETSTATUS(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvAudioVRDE)
+int drvAudioVRDEStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -400,7 +400,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCREATE(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvAudioVRDE)
+int drvAudioVRDEStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -418,7 +418,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMDESTROY(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvAudioVRDE)
+int drvAudioVRDEStreamControl(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -438,7 +438,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMCONTROL(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvAudioVRDE)
+PDMAUDIOSTRMSTS drvAudioVRDEStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     NOREF(pInterface);
     NOREF(pStream);
@@ -451,7 +451,7 @@ PDMAUDIO_IHOSTAUDIO_EMIT_STREAMGETSTATUS(drvAudioVRDE)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-PDMAUDIO_IHOSTAUDIO_EMIT_STREAMITERATE(drvAudioVRDE)
+int drvAudioVRDEStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
