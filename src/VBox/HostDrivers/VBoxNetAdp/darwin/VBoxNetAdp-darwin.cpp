@@ -123,8 +123,8 @@ static struct cdevsw    g_ChDev =
     /*.d_select   = */eno_select,
     /*.d_mmap     = */eno_mmap,
     /*.d_strategy = */eno_strat,
-    /*.d_getc     = */eno_getc,
-    /*.d_putc     = */eno_putc,
+    /*.d_getc     = */(void *)(uintptr_t)&enodev, //eno_getc,
+    /*.d_putc     = */(void *)(uintptr_t)&enodev, //eno_putc,
     /*.d_type     = */0
 };
 
@@ -303,7 +303,6 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 
 void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
 {
-    u_int32_t i;
     /* Bring down the interface */
     int rc = VINF_SUCCESS;
     errno_t err;
@@ -343,10 +342,13 @@ void vboxNetAdpOsDestroy(PVBOXNETADP pThis)
  */
 static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags, fDevType, pProcess);
+#ifdef LOG_ENABLED
     char szName[128];
     szName[0] = '\0';
     proc_name(proc_pid(pProcess), szName, sizeof(szName));
     Log(("VBoxNetAdpDarwinOpen: pid=%d '%s'\n", proc_pid(pProcess), szName));
+#endif
     return 0;
 }
 
@@ -355,6 +357,7 @@ static int VBoxNetAdpDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc
  */
 static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags, fDevType, pProcess);
     Log(("VBoxNetAdpDarwinClose: pid=%d\n", proc_pid(pProcess)));
     return 0;
 }
@@ -371,6 +374,7 @@ static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct pro
  */
 static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags, pProcess);
     uint32_t cbReq = IOCPARM_LEN(iCmd);
     PVBOXNETADPREQ pReq = (PVBOXNETADPREQ)pData;
     int rc;
@@ -439,6 +443,7 @@ int  vboxNetAdpOsInit(PVBOXNETADP pThis)
  */
 static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     int rc;
 
     /*
@@ -491,6 +496,7 @@ static kern_return_t    VBoxNetAdpDarwinStart(struct kmod_info *pKModInfo, void 
  */
 static kern_return_t VBoxNetAdpDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     Log(("VBoxNetAdpDarwinStop\n"));
 
     vboxNetAdpShutdown();
