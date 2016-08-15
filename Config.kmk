@@ -2715,7 +2715,7 @@ VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 if $(VBOX_GCC_VERSION_CXX) >= 40200 || defined(VBOX_WITH_MASOCHISTIC_WARNINGS) # gcc 4.2.x+ (4.1.2 is causing trouble with the extpack & add builds)
  VBOX_GCC_WARN_MASOCHISTIC ?= -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
 endif
-if $(KBUILD_TARGET) == "linux" || defined(VBOX_GCC_WARN_MASOCHISTIC)
+if $(KBUILD_TARGET) == "linux" || defined(VBOX_WITH_MASOCHISTIC_WARNINGS)
  VBOX_GCC_WARN_PEDANTIC += $(VBOX_GCC_WARN_MASOCHISTIC)
 endif
 
