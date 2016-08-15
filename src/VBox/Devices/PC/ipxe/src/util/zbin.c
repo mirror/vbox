@@ -73,7 +73,7 @@ static unsigned long align ( unsigned long value, unsigned long algn ) {
 
 static int read_file ( const char *filename, void **buf, size_t *len ) {
 	FILE *file;
-	struct stat stat;
+	struct stat sstat;
 
 	file = fopen ( filename, "r" );
 	if ( ! file ) {
@@ -82,13 +82,13 @@ static int read_file ( const char *filename, void **buf, size_t *len ) {
 		goto err;
 	}
 
-	if ( fstat ( fileno ( file ), &stat ) < 0 ) {
+	if ( fstat ( fileno ( file ), &sstat ) < 0 ) {
 		fprintf ( stderr, "Could not stat %s: %s\n", filename,
 			  strerror ( errno ) );
 		goto err;
 	}
 
-	*len = stat.st_size;
+	*len = sstat.st_size;
 	*buf = malloc ( *len );
 	if ( ! *buf ) {
 		fprintf ( stderr, "Could not malloc() %zd bytes for %s: %s\n",
