@@ -65,7 +65,7 @@ static void dotest(void)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
     RTTEST hTest;
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTDarwinMachKernel", &hTest);

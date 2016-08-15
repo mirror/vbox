@@ -37,6 +37,7 @@
 
 RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char *pszLogMsg)
 {
+    RT_NOREF(cMsDelay, pszLogMsg);
     AssertPtrReturn(pszLogMsg, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTSYSTEM_SHUTDOWN_VALID_MASK), VERR_INVALID_PARAMETER);
     return VERR_NOT_SUPPORTED;

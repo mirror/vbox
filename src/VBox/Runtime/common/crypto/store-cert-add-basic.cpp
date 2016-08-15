@@ -81,6 +81,7 @@ static RTCRPEMMARKER const g_aX509CertificateMarkers[3] =
 
 
 
+#ifdef RT_STRICT
 /**
  * Checks if we've found all the certificates already.
  *
@@ -95,6 +96,7 @@ DECLINLINE(bool) rtCrStoreAllDone(bool const *afFound, size_t cWanted)
             return false;
     return true;
 }
+#endif /* RT_STRICT */
 
 
 /**

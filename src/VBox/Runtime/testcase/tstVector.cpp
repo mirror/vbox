@@ -56,6 +56,9 @@ static void deletePVoidValue(void *pv)
 }
 
 /* Start by instantiating each function once for syntax checking */
+#ifdef __clang__
+# pragma GCC diagnostic ignored "-Wunused-function" /* https://llvm.org/bugs/show_bug.cgi?id=22712 */
+#endif
 RTVEC_DECL_STRUCT(tstInstance, void *)
 RTVEC_DECL_STRUCT(tstInstance2, void *)
 
@@ -68,11 +71,9 @@ RTVEC_DECLFN_BEGIN(tstInstance, void *)
 RTVEC_DECLFN_END(tstInstance, void *)
 RTVEC_DECLFN_PUSHBACK(tstInstance, void *)
 RTVEC_DECLFN_POPBACK(tstInstance)
-RTVEC_DECLFN_POPBACK_DELETE(tstInstance2, void *, deletePVoid,
-                            tstInstanceDeleteAdapterId)
+RTVEC_DECLFN_POPBACK_DELETE(tstInstance2, void *, deletePVoid, tstInstanceDeleteAdapterId)
 RTVEC_DECLFN_CLEAR(tstInstance)
-RTVEC_DECLFN_CLEAR_DELETE(tstInstance2, deletePVoid,
-                          tstInstanceDeleteAdapterId)
+RTVEC_DECLFN_CLEAR_DELETE(tstInstance2, deletePVoid, tstInstanceDeleteAdapterId)
 RTVEC_DECLFN_DETACH(tstInstance, void *)
 
 RTVEC_DECL(tstSimple, void *)

@@ -93,11 +93,10 @@ DECLEXPORT(int) TSTR0DbgKrnlInfoSrvReqHandler(PSUPDRVSESSION pSession, uint32_t 
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, "TestModule", "Test", &pvSymbol), VERR_MODULE_NOT_FOUND);
             RTR0TESTR0_CHECK_RC_BREAK(RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, NULL, &pvSymbol), VERR_INVALID_PARAMETER);
 
-            RTDBGKRNLINFO hTmp = hKrnlInfo;
-            hKrnlInfo = NIL_RTDBGKRNLINFO;
             RTR0DbgKrnlInfoRelease(hKrnlInfo);
+            hKrnlInfo = NIL_RTDBGKRNLINFO;
             uint32_t cRefs;
-            RTR0TESTR0_CHECK_MSG((cRefs = RTR0DbgKrnlInfoRelease(hKrnlInfo)) == 0, ("cRefs=%#x", cRefs));
+            RTR0TESTR0_CHECK_MSG((cRefs = RTR0DbgKrnlInfoRelease(NIL_RTDBGKRNLINFO)) == 0, ("cRefs=%#x", cRefs));
             break;
         }
 

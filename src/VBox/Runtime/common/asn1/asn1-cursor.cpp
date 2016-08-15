@@ -57,12 +57,6 @@
 #endif
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-static char const g_achDigits[11] = "0123456789";
-
-
 
 RTDECL(PRTASN1CURSOR) RTAsn1CursorInitPrimary(PRTASN1CURSORPRIMARY pPrimaryCursor, void const *pvFirst, uint32_t cb,
                                               PRTERRINFO pErrInfo, PCRTASN1ALLOCATORVTABLE pAllocator, uint32_t fFlags,

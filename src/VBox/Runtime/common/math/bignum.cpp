@@ -176,6 +176,7 @@ DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementAddWithCarry(RTBIGNUMELEMENT uAugend,
 }
 
 
+#if !defined(IPRT_BIGINT_WITH_ASM) || defined(RT_STRICT)
 /**
  * Does addition with borrow.
  *
@@ -196,6 +197,7 @@ DECLINLINE(RTBIGNUMELEMENT) rtBigNumElementSubWithBorrow(RTBIGNUMELEMENT uMinuen
     *pfBorrow = !*pfBorrow ? uMinuend < uSubtrahend : uMinuend <= uSubtrahend;
     return uRet;
 }
+#endif
 
 /** @} */
 
@@ -281,6 +283,7 @@ DECLINLINE(void) rtBigNumElement2xDec(RTBIGNUMELEMENT2X *puValue)
 #endif
 }
 
+#if 0 /* unused */
 DECLINLINE(void) rtBigNumElement2xAdd1x(RTBIGNUMELEMENT2X *puValue, RTBIGNUMELEMENT uAdd)
 {
 #if RTBIGNUM_ELEMENT_BITS == 64
@@ -289,6 +292,7 @@ DECLINLINE(void) rtBigNumElement2xAdd1x(RTBIGNUMELEMENT2X *puValue, RTBIGNUMELEM
     puValue->u += uAdd;
 #endif
 }
+#endif /* unused */
 
 /** @} */
 
@@ -1614,6 +1618,7 @@ RTDECL(int) RTBigNumMultiply(PRTBIGNUM pResult, PCRTBIGNUM pMultiplicand, PCRTBI
 }
 
 
+#if 0 /* unused */
 /**
  * Clears a bit in the magnitude of @a pBigNum.
  *
@@ -1633,6 +1638,7 @@ DECLINLINE(void) rtBigNumMagnitudeClearBit(PRTBIGNUM pBigNum, uint32_t iBit)
             rtBigNumStripTrailingZeros(pBigNum);
     }
 }
+#endif /* unused */
 
 
 /**
@@ -1658,6 +1664,7 @@ DECLINLINE(int) rtBigNumMagnitudeSetBit(PRTBIGNUM pBigNum, uint32_t iBit)
 }
 
 
+#if 0 /* unused */
 /**
  * Writes a bit in the magnitude of @a pBigNum.
  *
@@ -1675,6 +1682,7 @@ DECLINLINE(int) rtBigNumMagnitudeWriteBit(PRTBIGNUM pBigNum, uint32_t iBit, bool
     rtBigNumMagnitudeClearBit(pBigNum, iBit);
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**

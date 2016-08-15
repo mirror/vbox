@@ -206,6 +206,7 @@ static const RTISO2022MAP g_IsoIr102Map =
 };
 
 
+#if 0 /* unused */
 /** GL mappings for ISO-IR-87 (Japanese),  with space and delete. */
 static const RTISO2022MAP g_IsoIr87Map =
 {
@@ -216,6 +217,7 @@ static const RTISO2022MAP g_IsoIr87Map =
     { 0x24, 0x2a, 0x42, 0xff, 0xff, 0xff } /* Esc into G2 */,
     { 0x24, 0x2b, 0x42, 0xff, 0xff, 0xff } /* Esc into G3 */,
 };
+#endif
 
 
 /**

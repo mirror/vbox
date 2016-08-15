@@ -77,6 +77,8 @@ static RTCPUID rtMpDarwinMaxPhysicalCpus(void)
     return 1;
 }
 
+
+#if 0 /* unused */
 /**
  * Internal worker that determines the current number of logical CPUs (hyperthreads).
  *
@@ -92,6 +94,8 @@ static RTCPUID rtMpDarwinOnlineLogicalCpus(void)
     AssertFailed();
     return 1;
 }
+#endif /* unused */
+
 
 /**
  * Internal worker that determines the current number of physical CPUs.

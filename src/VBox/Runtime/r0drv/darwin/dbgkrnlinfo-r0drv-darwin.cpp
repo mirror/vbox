@@ -770,7 +770,6 @@ static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
 
                 /* Validate the sections. */
                 uint32_t            uAlignment = 0;
-                uintptr_t           uAddr      = pSeg->vmaddr;
                 MY_SECTION const   *paSects    = (MY_SECTION const *)(pSeg + 1);
                 for (uint32_t i = 0; i < pSeg->nsects; i++)
                 {
@@ -1166,9 +1165,10 @@ RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *ps
     RTDBGKRNLINFOINT *pThis = hKrnlInfo;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
-    AssertPtrReturn(pszMember, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszStructure, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(poffMember, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszMember, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszModule, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszStructure, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffMember, VERR_INVALID_POINTER);
     return VERR_NOT_FOUND;
 }
 

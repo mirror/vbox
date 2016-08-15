@@ -266,7 +266,8 @@ RuntimeR3_DEFS          = \
 	RT_WITH_VBOX \
  	RT_NO_GIP \
 	RT_WITHOUT_NOCRT_WRAPPERS \
-       IPRT_WITH_OPENSSL
+       IPRT_WITH_OPENSSL \
+       NOFILEID
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
 ifdef IPRT_WITH_KSTUFF
  RuntimeR3_DEFS        += LDR_WITH_KLDR
@@ -1828,7 +1829,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 # RuntimeR0 - Ring-0 library for VMMR0.
 #
 RuntimeR0_TEMPLATE      = VBoxR0
-RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
+RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX NOFILEID
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR0_DEFS        += RT_NO_GIP
 endif
@@ -1975,7 +1976,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 #
 RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
 RuntimeR0Drv_SDKS.win   = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS VBOX_OPENSSL
-RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
+RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL NOFILEID
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0 LDR_ONLY_PE
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
 
@@ -2543,7 +2544,7 @@ ifdef VBOX_WITH_RAW_MODE
  # RuntimeRC - Raw-mode context library.
  #
  RuntimeRC_TEMPLATE      = VBoxRc
- RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC
+ RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC NOFILEID
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
 	common/asm/ASMMemFirstMismatchingU8.asm \

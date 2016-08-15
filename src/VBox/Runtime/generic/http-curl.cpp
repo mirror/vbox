@@ -979,11 +979,10 @@ static void rtHttpDarwinPacCallback(void *pvUser, CFArrayRef hArrayProxies, CFEr
  * Executes a PAC script and returning the proxies it suggests.
  *
  * @returns Array of proxy configs (CFProxySupport.h style).
- * @param   pThis           The HTTP client instance.
  * @param   hUrlTarget      The URL we're about to use.
  * @param   hUrlScript      The PAC script URL.
  */
-static CFArrayRef rtHttpDarwinExecuteProxyAutoConfigurationUrl(PRTHTTPINTERNAL pThis, CFURLRef hUrlTarget, CFURLRef hUrlScript)
+static CFArrayRef rtHttpDarwinExecuteProxyAutoConfigurationUrl(CFURLRef hUrlTarget, CFURLRef hUrlScript)
 {
     char szTmp[256];
     if (LogIsFlowEnabled())
@@ -1069,7 +1068,7 @@ static int rtHttpDarwinTryConfigProxy(PRTHTTPINTERNAL pThis, CFDictionaryRef hDi
         AssertReturn(hUrlScript, VINF_NOT_SUPPORTED);
 
         int rcRet = VINF_NOT_SUPPORTED;
-        CFArrayRef hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(pThis, hUrlTarget, hUrlScript);
+        CFArrayRef hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(hUrlTarget, hUrlScript);
         if (hArray)
         {
             rcRet = rtHttpDarwinTryConfigProxies(pThis, hArray, hUrlTarget, true /*fIgnorePacType*/);
@@ -1179,7 +1178,7 @@ static int rtHttpDarwinTryConfigProxies(PRTHTTPINTERNAL pThis, CFArrayRef hArray
  * @param   pszUrl      The URL.
  */
 static int rtHttpDarwinConfigureProxyForUrlWorker(PRTHTTPINTERNAL pThis, CFDictionaryRef hDictProxies,
-                                                  const char *pszUrl, PRTURIPARSED pParsed, const char *pszHost)
+                                                  const char *pszUrl, const char *pszHost)
 {
     CFArrayRef  hArray;
 
@@ -1258,7 +1257,7 @@ static int rtHttpDarwinConfigureProxyForUrlWorker(PRTHTTPINTERNAL pThis, CFDicti
                         if (hArray)
                             CFRelease(hArray);
 
-                        hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(pThis, hUrlTarget, hUrlScript);
+                        hArray = rtHttpDarwinExecuteProxyAutoConfigurationUrl(hUrlTarget, hUrlScript);
                         if (hArray)
                         {
                             rcRet = rtHttpDarwinTryConfigProxies(pThis, hArray, hUrlTarget, true /*fIgnorePacType*/);
@@ -1333,7 +1332,7 @@ static int rtHttpDarwinConfigureProxyForUrl(PRTHTTPINTERNAL pThis, const char *p
      */
     CFDictionaryRef hDictProxies = CFNetworkCopySystemProxySettings(); /* Alt for 10.5: SCDynamicStoreCopyProxies(NULL); */
     if (hDictProxies)
-        rc = rtHttpDarwinConfigureProxyForUrlWorker(pThis, hDictProxies, pszUrl, &Parsed, pszHost);
+        rc = rtHttpDarwinConfigureProxyForUrlWorker(pThis, hDictProxies, pszUrl, pszHost);
     else
         rc = VINF_NOT_SUPPORTED;
     CFRelease(hDictProxies);
