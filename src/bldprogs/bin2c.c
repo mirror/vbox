@@ -63,8 +63,7 @@ static int usage(const char *argv0)
             "  --export     emit DECLEXPORT\n"
             "  --append     append to the output file (default: truncate)\n"
             "  --no-size    Skip the size.\n"
-            "  --static     Static data scope.\n"
-            , argv0);
+            "  --static     Static data scope.\n");
 
     return 1;
 }
