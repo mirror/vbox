@@ -42,11 +42,13 @@
 #include <QKeyEvent>
 #include <QMacCocoaViewContainer>
 
+#if 0 /* This is a built-in according to clang. Not sure how it relates to QT_VERSION... */
 /* Interface Builder Constant,
  * hmm, where is it declared with Qt4? */
 #if QT_VERSION >= 0x050000
 # define IBAction void
 #endif /* QT_VERSION >= 0x050000 */
+#endif
 
 /*
  * Private interfaces
@@ -106,6 +108,7 @@
 
 -(IBAction)clicked:(id)sender
 {
+    RT_NOREF(sender);
     mRealTarget->onClicked();
 }
 @end
@@ -224,6 +227,7 @@
 @implementation UISearchFieldDelegatePrivate
 -(BOOL)control:(NSControl*)control textView:(NSTextView*)textView doCommandBySelector:(SEL)commandSelector
 {
+    RT_NOREF(control, textView);
 //    NSLog(NSStringFromSelector(commandSelector));
     /* Don't execute the selector for Enter & Escape. */
     if (   commandSelector == @selector(insertNewline:)

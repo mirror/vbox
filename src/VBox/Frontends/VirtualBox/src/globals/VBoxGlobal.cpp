@@ -4686,7 +4686,14 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
     ProcessSerialNumber psn;
     psn.highLongOfPSN = id >> 32;
     psn.lowLongOfPSN = (UInt32)id;
+# ifdef __clang__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     OSErr rc = ::SetFrontProcess(&psn);
+#  pragma GCC diagnostic pop
+# else
+    OSErr rc = ::SetFrontProcess(&psn);
+# endif
     if (!rc)
         Log(("GUI: %#RX64 couldn't do SetFrontProcess on itself, the selector (we) had to do it...\n", id));
     else

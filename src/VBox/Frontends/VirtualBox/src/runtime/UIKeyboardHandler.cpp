@@ -1730,7 +1730,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                     {
                         /* Disable mouse and keyboard event compression/delaying
                          * to make sure we *really* get all of the events: */
-                        ::CGSetLocalEventsSuppressionInterval(0.0);
+                        ::CGSetLocalEventsSuppressionInterval(0.0); /** @todo replace with CGEventSourceSetLocalEventsSuppressionInterval ? */
                         ::darwinSetMouseCoalescingEnabled(false);
 
                         /* Bring the caps lock state up to date,

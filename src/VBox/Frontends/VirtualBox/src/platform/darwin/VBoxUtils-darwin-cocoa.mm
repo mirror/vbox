@@ -214,6 +214,7 @@ void darwinSetWindowHasShadow(NativeNSWindowRef pWindow, bool fEnabled)
 
 void darwinMinaturizeWindow(NativeNSWindowRef pWindow)
 {
+    RT_NOREF(pWindow);
 //    [[NSApplication sharedApplication] miniaturizeAll];
 //    printf("bla\n");
 //    [pWindow miniaturize:pWindow];
@@ -312,6 +313,8 @@ void darwinSetMouseCoalescingEnabled(bool fEnabled)
 
 void darwinWindowAnimateResizeImpl(NativeNSWindowRef pWindow, int x, int y, int width, int height)
 {
+    RT_NOREF(x, y, width);
+
     /* It seems that Qt doesn't return the height of the window with the
      * toolbar height included. So add this size manually. Could easily be that
      * the Trolls fix this in the final release. */
@@ -513,6 +516,8 @@ bool darwinMouseGrabEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, 
    toolbar or the title area. */
 bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
+    RT_NOREF(pvCarbonEvent);
+
     NSEvent *pEvent = (NSEvent*)pvCocoaEvent;
     NSEventType EvtType = [pEvent type];
     NSWindow *pWin = ::darwinToNativeWindow((QWidget*)pvUser);
@@ -662,6 +667,7 @@ static UIResizeProxy *gSharedResizeProxy = nil;
 }
 - (NSSize)qtWindowWillResize:(NSWindow *)pWindow toSize:(NSSize)newFrameSize
 {
+    RT_NOREF(pWindow);
     /* This is a fake implementation. It will be replaced by the original Qt
        method. */
     return newFrameSize;

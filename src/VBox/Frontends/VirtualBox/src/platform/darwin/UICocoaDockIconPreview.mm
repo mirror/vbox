@@ -211,6 +211,7 @@ void UICocoaDockIconPreview::setOriginalSize(int width, int height)
 
 - (void)drawRect:(NSRect)aRect
 {
+    RT_NOREF(aRect);
     NSGraphicsContext *nsContext = [NSGraphicsContext currentContext];
     CGContextRef pCGContext = (CGContextRef)[nsContext graphicsPort];
     p->drawOverlayIcons (pCGContext);

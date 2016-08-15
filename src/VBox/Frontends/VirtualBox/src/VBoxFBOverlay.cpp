@@ -475,7 +475,7 @@ public:
         mRcName(aRcName),
         mType(aType),
         mInitialized(false)
-    {}
+    { NOREF(mType); }
 
 
     int init();

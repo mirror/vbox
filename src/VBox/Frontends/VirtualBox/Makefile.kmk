@@ -244,6 +244,11 @@ ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
+## @todo we're using a number of deprecated APIs, please fix and remove these!
+VirtualBox_CXXFLAGS.darwin    += -Wno-deprecated-declarations
+VirtualBox_OBJCFLAGS.darwin   += -Wno-deprecated-declarations
+VirtualBox_OBJCXXFLAGS.darwin += -Wno-deprecated-declarations
+
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:windows
 else
@@ -1123,7 +1128,7 @@ VirtualBox.app_SOURCES = \
  	$(VirtualBox.app_0_OUTDIR)/qt.conf=>Resources/qt.conf
  endif # VBOX_WITH_QTGUI_V5
 
-$$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+ $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -1136,22 +1141,22 @@ $$(VirtualBox.app_0_OUTDIR)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		$< > $@
 
-$$(VirtualBox.app_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
+ $$(VirtualBox.app_0_OUTDIR)/qt.conf: $(PATH_SUB_CURRENT)/Makefile.kmk $(VBOX_VERSION_MK) | $$(@D)/
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(APPEND) $@ "[Paths]"
 	$(QUIET)$(APPEND) $@ "Prefix =" $(PATH_OUT)/$(VirtualBox.app_INST)
 
-INSTALLS += VirtualBoxVM.app
-VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
-VirtualBoxVM.app_MODE = 644
-VirtualBoxVM.app_SOURCES = \
-	src/platform/darwin/VM-PkgInfo=>PkgInfo \
-	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
-       $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
-VirtualBoxVM.app_SYMLINKS = \
-	MacOS=>../../../MacOS/
+ INSTALLS += VirtualBoxVM.app
+ VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
+ VirtualBoxVM.app_MODE = 644
+ VirtualBoxVM.app_SOURCES = \
+ 	src/platform/darwin/VM-PkgInfo=>PkgInfo \
+ 	$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist=>Info.plist \
+        $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
+ VirtualBoxVM.app_SYMLINKS = \
+ 	MacOS=>../../../MacOS/
 
-$$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+ $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -1164,23 +1169,24 @@ $$(VirtualBoxVM.app_0_OUTDIR)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/da
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ $<
 
-PROGRAMS += vmstarter
-vmstarter_TEMPLATE = VBOXR3EXE
-vmstarter_SOURCES = src/platform/darwin/vmstarter.mm
-vmstarter_LDFLAGS += -framework AppKit
-vmstarter_INST = $(INST_BIN)vmstarter
+ PROGRAMS += vmstarter
+ vmstarter_TEMPLATE = VBOXR3EXE
+ vmstarter_OBJCXXFLAGS += -Wno-deprecated-declarations ## @todo fix deprecate API use!
+ vmstarter_LDFLAGS += -framework AppKit
+ vmstarter_SOURCES = src/platform/darwin/vmstarter.mm
+ vmstarter_INST = $(INST_BIN)vmstarter
 
-INSTALLS += vmstarter.app
-vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents/
-vmstarter.app_MODE = 644
-vmstarter.app_SOURCES = \
-	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
-	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist \
-       $(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
-vmstarter.app_SYMLINKS = \
-	MacOS=>../../../MacOS \
+ INSTALLS += vmstarter.app
+ vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents/
+ vmstarter.app_MODE = 644
+ vmstarter.app_SOURCES = \
+ 	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
+ 	$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist=>Info.plist \
+ 	$(foreach mysrc,$(VirtualBox.app_SOURCES),$(if-expr $(pos =>Resources/,$(mysrc)) > 0,$(mysrc),))
+ vmstarter.app_SYMLINKS = \
+ 	MacOS=>../../../MacOS \
 
-$$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+ $$(vmstarter.app_0_OUTDIR)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,vmstarter.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \

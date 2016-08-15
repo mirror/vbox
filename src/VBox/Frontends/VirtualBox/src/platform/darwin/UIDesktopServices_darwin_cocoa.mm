@@ -25,6 +25,7 @@
 /* Create desktop alias using a bookmark stuff. */
 bool darwinCreateMachineShortcut(NativeNSStringRef pstrSrcFile, NativeNSStringRef pstrDstPath, NativeNSStringRef pstrName, NativeNSStringRef /* pstrUuid */)
 {
+    RT_NOREF(pstrName);
     if (!pstrSrcFile || !pstrDstPath)
         return false;
 

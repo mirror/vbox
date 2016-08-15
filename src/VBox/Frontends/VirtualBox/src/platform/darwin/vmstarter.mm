@@ -16,6 +16,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#include <iprt/cdefs.h>
 
 @interface AppDelegate: NSObject
 {
@@ -46,6 +47,8 @@ NSString *m_strVBoxPath;
 
 - (void)application:(NSApplication *)sender openFiles:(NSArray *)filenames
 {
+    RT_NOREF(sender);
+
     BOOL fResult = FALSE;
     NSWorkspace *pWS = [NSWorkspace sharedWorkspace];
     /* We need to check if vbox is running already. If so we sent an open
@@ -72,6 +75,10 @@ NSString *m_strVBoxPath;
         /* Fire up a new instance of VBox. We prefer LSOpenApplication over
            NSTask, cause it makes sure that VBox will become the front most
            process after starting up. */
+/** @todo should replace all this with -[NSWorkspace
+ *  launchApplicationAtURL:options:configuration:error:] because LSOpenApplication is deprecated in
+ * 10.10 while, FSPathMakeRef is deprecated since 10.8. */
+        /* The state horror show starts right here: */
         OSStatus err = noErr;
         Boolean fDir;
         void *asyncLaunchRefCon = NULL;
@@ -84,16 +91,19 @@ NSString *m_strVBoxPath;
         do
         {
             NSString *strVBoxExe = [m_strVBoxPath stringByAppendingPathComponent:@"Contents/MacOS/VirtualBox"];
-            if ((err = FSPathMakeRef((const UInt8*)[strVBoxExe UTF8String], &fileRef, &fDir)) != noErr)
+            err = FSPathMakeRef((const UInt8*)[strVBoxExe UTF8String], &fileRef, &fDir);
+            if (err != noErr)
                 break;
-            if ((args = CFArrayCreate(NULL, (const void**)list, [filenames count], &kCFTypeArrayCallBacks)) == NULL)
+            args = CFArrayCreate(NULL, (const void **)list, [filenames count], &kCFTypeArrayCallBacks);
+            if (args == NULL)
                 break;
             LSApplicationParameters par = { 0, 0, &fileRef, asyncLaunchRefCon, 0, args, 0 };
-            if ((err = LSOpenApplication(&par, NULL)) != noErr)
+            err = LSOpenApplication(&par, NULL);
+            if (err != noErr)
                 break;
             fResult = TRUE;
         }while(0);
-        if (list)
+        if (list)  /* Why bother checking, because you've crashed already if it's NULL! */
             free(list);
         if (file)
             CFRelease(file);
@@ -103,12 +113,14 @@ NSString *m_strVBoxPath;
 }
 @end
 
-int main(int argc, char *argv[])
+int main()
 {
     /* Global auto release pool. */
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     /* Create our own delegate for the application. */
-    [[NSApplication sharedApplication] setDelegate: [[AppDelegate alloc] init]];
+    AppDelegate *pAppDelegate = [[AppDelegate alloc] init];
+    [[NSApplication sharedApplication] setDelegate: (id<NSApplicationDelegate>)pAppDelegate]; /** @todo check out ugly cast */
+    pAppDelegate = nil;
     /* Start the event loop. */
     [NSApp run];
     /* Cleanup */
