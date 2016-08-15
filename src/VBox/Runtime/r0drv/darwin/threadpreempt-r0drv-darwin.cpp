@@ -103,6 +103,7 @@ void rtThreadPreemptDarwinTerm(void)
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
+    RT_NOREF(hThread);
     Assert(hThread == NIL_RTTHREAD);
     return preemption_enabled();
 }

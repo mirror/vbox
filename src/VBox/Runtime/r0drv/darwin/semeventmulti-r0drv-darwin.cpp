@@ -139,6 +139,7 @@ DECLINLINE(void) rtR0SemEventMultiDarwinRetain(PRTSEMEVENTMULTIINTERNAL pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs && cRefs < 100000);
+    RT_NOREF_PV(cRefs);
 }
 
 

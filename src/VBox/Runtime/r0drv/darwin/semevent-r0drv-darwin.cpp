@@ -136,7 +136,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
 DECLINLINE(void) rtR0SemEventDarwinRetain(PRTSEMEVENTINTERNAL pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
-    Assert(cRefs && cRefs < 100000);
+    Assert(cRefs && cRefs < 100000); RT_NOREF_PV(cRefs);
 }
 
 
