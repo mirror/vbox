@@ -197,7 +197,7 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE_FAST_(Function)       (0x56420000 | (Function))
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           (Code)
 
-#elif defined(RT_OS_FREEBSD) /** @todo r=bird: Please do it like SUPDRVIOC to keep it as similar as possible. */
+#elif defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) /** @todo r=bird: Please do it like SUPDRVIOC to keep it as similar as possible. */
 # include <sys/ioccom.h>
 
 # define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOWR('V', (Function), VBGLBIGREQ)
