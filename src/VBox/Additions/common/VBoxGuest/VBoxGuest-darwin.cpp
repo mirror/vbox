@@ -188,8 +188,8 @@ static struct cdevsw    g_DevCW =
     /*.d_select   = */ eno_select,
     /*.d_mmap     = */ eno_mmap,
     /*.d_strategy = */ eno_strat,
-    /*.d_getc     = */ eno_getc,
-    /*.d_putc     = */ eno_putc,
+    /*.d_getc     = */ (void *)(uintptr_t)&enodev, //eno_getc,
+    /*.d_putc     = */ (void *)(uintptr_t)&enodev, //eno_putc,
     /*.d_type     = */ 0
 };
 
@@ -227,6 +227,8 @@ static uint8_t volatile     g_fWorkLoopCreated  = VBOXGUEST_OBJECT_UNINITIALIZED
  */
 static kern_return_t    vgdrvDarwinStart(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
+
     /*
      * Initialize IPRT.
      */
@@ -281,6 +283,7 @@ static int vgdrvDarwinCharDevInit(void)
  */
 static kern_return_t vgdrvDarwinStop(struct kmod_info *pKModInfo, void *pvData)
 {
+    RT_NOREF(pKModInfo, pvData);
     RTR0TermForced();
 
     printf("VBoxGuest: driver unloaded\n");
@@ -314,7 +317,7 @@ static int vgdrvDarwinCharDevRemove(void)
     if (g_iMajorDeviceNo != -1)
     {
         int rc2 = cdevsw_remove(g_iMajorDeviceNo, &g_DevCW);
-        Assert(rc2 == g_iMajorDeviceNo);
+        Assert(rc2 == g_iMajorDeviceNo); NOREF(rc2);
         g_iMajorDeviceNo = -1;
     }
 
@@ -338,6 +341,8 @@ static int vgdrvDarwinCharDevRemove(void)
  */
 static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(fFlags,  fDevType);
+
     /*
      * Only two minor devices numbers are allowed.
      */
@@ -397,6 +402,7 @@ static int vgdrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pPr
  */
 static int vgdrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags, fDevType, pProcess);
     Log(("vgdrvDarwinClose: pid=%d\n", (int)RTProcSelf()));
     Assert(proc_pid(pProcess) == (int)RTProcSelf());
 
@@ -420,6 +426,7 @@ static int vgdrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pP
  */
 static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
+    RT_NOREF(Dev, fFlags);
     //const bool          fUnrestricted = minor(Dev) == 0;
     const RTPROCESS     Process = proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
@@ -459,6 +466,7 @@ static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, s
  */
 static int vgdrvDarwinIOCtlSlow(PVBOXGUESTSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess)
 {
+    RT_NOREF(pProcess);
     LogFlow(("vgdrvDarwinIOCtlSlow: pSession=%p iCmd=%p pData=%p pProcess=%p\n", pSession, iCmd, pData, pProcess));
 
 
@@ -604,6 +612,7 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 static IOReturn vgdrvDarwinSleepHandler(void *pvTarget, void *pvRefCon, UInt32 uMessageType,
                                         IOService *pProvider, void *pvMsgArg, vm_size_t cbMsgArg)
 {
+    RT_NOREF(pvTarget, pProvider, pvMsgArg, cbMsgArg);
     LogFlow(("VBoxGuest: Got sleep/wake notice. Message type was %x\n", uMessageType));
 
     if (uMessageType == kIOMessageSystemWillSleep)
@@ -716,6 +725,7 @@ static void vgdrvDarwinDeferredIrqHandler(OSObject *pOwner, IOInterruptEventSour
  */
 static bool vgdrvDarwinDirectIrqHandler(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
 {
+    RT_NOREF(pOwner);
     if (!pSrc)
         return false;
 
