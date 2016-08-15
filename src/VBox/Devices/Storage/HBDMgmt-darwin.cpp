@@ -200,14 +200,18 @@ static int hbdMgrDAReturn2VBoxStatus(DAReturn hReturn)
 }
 
 /**
- * Callback notifying us that the async DADiskClaim()/DADiskUnmount call has completed.
+ * Implements the OS X callback DADiskClaimCallback.
+ *
+ * This notifies us that the async DADiskClaim()/DADiskUnmount call has
+ * completed.
  *
  * @param   hDiskRef         The disk that was attempted claimed / unmounted.
  * @param   hDissenterRef    NULL on success, contains details on failure.
  * @param   pvContext        Pointer to the return code variable.
  */
-static DECLCALLBACK(void) hbdMgrDACallbackComplete(DADiskRef hDiskRef, DADissenterRef hDissenterRef, void *pvContext)
+static void hbdMgrDACallbackComplete(DADiskRef hDiskRef, DADissenterRef hDissenterRef, void *pvContext)
 {
+    RT_NOREF(hDiskRef);
     PHBDMGRDACLBKARGS pArgs = (PHBDMGRDACLBKARGS)pvContext;
     pArgs->pszErrDetail = NULL;
 
@@ -230,14 +234,16 @@ static DECLCALLBACK(void) hbdMgrDACallbackComplete(DADiskRef hDiskRef, DADissent
 }
 
 /**
- * Callback notifying us about any attempt to mount a volume. If we claimed the volume
- * or the complete disk containing the volume we will deny the attempt.
+ * Implements the OS X callback DADiskMountApprovalCallback.
+ *
+ * This notifies us about any attempt to mount a volume.  If we claimed the
+ * volume or the complete disk containing the volume we will deny the attempt.
  *
  * @returns Reference to a DADissenter object which contains the result.
  * @param   hDiskRef         The disk that is about to be mounted.
  * @param   pvCOntext        Pointer to the block device manager.
  */
-static DECLCALLBACK(DADissenterRef) hbdMgrDAMountApprovalCallback(DADiskRef hDiskRef, void *pvContext)
+static DADissenterRef hbdMgrDAMountApprovalCallback(DADiskRef hDiskRef, void *pvContext)
 {
     PHBDMGRINT pThis = (PHBDMGRINT)pvContext;
     DADiskRef hDiskParentRef = DADiskCopyWholeDisk(hDiskRef);
@@ -274,14 +280,16 @@ static DECLCALLBACK(DADissenterRef) hbdMgrDAMountApprovalCallback(DADiskRef hDis
 
 
 /**
+ * Implements OS X callback CFRunLoopSourceContext::perform.
+ *
  * Dummy handler for the wakeup source to kick the worker thread.
  *
  * @returns nothing.
  * @param   pInfo            Opaque user data given during source creation, unused.
  */
-static DECLCALLBACK(void) hbdMgrDAPerformWakeup(void *pInfo)
+static void hbdMgrDAPerformWakeup(void *pInfo)
 {
-    return;
+    RT_NOREF(pInfo);
 }
 
 
