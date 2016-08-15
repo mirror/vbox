@@ -357,8 +357,6 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         return hr;
 
     RecvDataTask *pTask = NULL;
-    RTTHREAD hThreadRcv;
-    int rc = S_OK;
 
     try
     {
@@ -380,40 +378,30 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
         /* This function delete pTask in case of exceptions,
          * so there is no need in the call of delete operator. */
-/** @todo r=bird: The code using hThreadRcv is racing the thread termination. Since the thread isn't
- * created waitable, the handle goes away if we it terminates before our RTThreadUserWait call returns. */
-        hr = pTask->createThreadWithRaceCondition(&hThreadRcv);
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_WORKER);
 
     }
     catch (std::bad_alloc &)
     {
         hr = setError(E_OUTOFMEMORY);
-        hThreadRcv = NIL_RTTHREAD;
     }
     catch (...)
     {
-        LogRel2(("DnD: Could not create thread for RecvDataTask \n"));
+        LogRel2(("DnD: Could not create thread for data receiving task\n"));
         hr = E_FAIL;
-        hThreadRcv = NIL_RTTHREAD;
     }
 
     if (SUCCEEDED(hr))
     {
-        rc = RTThreadUserWait(hThreadRcv, 30 * 1000 /* 30s timeout */);
-        if (RT_SUCCESS(rc))
-        {
-            mDataBase.m_cTransfersPending++;
+        mDataBase.m_cTransfersPending++;
 
-            hr = pResp->queryProgressTo(aProgress.asOutParam());
-            ComAssertComRC(hr);
+        hr = pResp->queryProgressTo(aProgress.asOutParam());
+        ComAssertComRC(hr);
 
-            /* Note: pTask is now owned by the worker thread. */
-        }
-        else
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for receiving thread failed (%Rrc)"), rc);
+        /* Note: pTask is now owned by the worker thread. */
     }
     else
-        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDSource::i_receiveDataThread failed (%Rrc)"), rc);
+        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDSource::i_receiveDataThread failed (%Rhrc)"), hr);
     /* Note: mDataBase.mfTransferIsPending will be set to false again by i_receiveDataThread. */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
@@ -1078,10 +1066,7 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
     if (FAILED(autoCaller.rc()))
         return;
 
-    int vrc = RTThreadUserSignal(RTThreadSelf());
-    AssertRC(vrc);
-
-    vrc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+    int vrc = pThis->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
 /** @todo
  *
  *  r=bird: What happens with @a vrc?
@@ -1091,7 +1076,8 @@ void GuestDnDSource::i_receiveDataThreadTask(RecvDataTask *pTask)
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     Assert(pThis->mDataBase.m_cTransfersPending);
-    pThis->mDataBase.m_cTransfersPending--;
+    if (pThis->mDataBase.m_cTransfersPending)
+        pThis->mDataBase.m_cTransfersPending--;
 
     LogFlowFunc(("pSource=%p vrc=%Rrc (ignored)\n", (GuestDnDSource *)pThis, vrc));
 }

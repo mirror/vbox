@@ -583,7 +583,8 @@ void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
     AutoWriteLock alock(pThis COMMA_LOCKVAL_SRC_POS);
 
     Assert(pThis->mDataBase.m_cTransfersPending);
-    pThis->mDataBase.m_cTransfersPending--;
+    if (pThis->mDataBase.m_cTransfersPending)
+        pThis->mDataBase.m_cTransfersPending--;
 
     LogFlowFunc(("pTarget=%p vrc=%Rrc (ignored)\n", (GuestDnDTarget *)pThis, vrc));
 }
@@ -630,8 +631,6 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
 
     SendDataTask *pTask = NULL;
     PSENDDATACTX pSendCtx = NULL;
-    RTTHREAD rcThreadSend;
-    int rc = S_OK;
 
     try
     {
@@ -654,42 +653,32 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
             throw hr = E_FAIL;
         }
 
-        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
-        //pSendCtx is deleted in the pTask destructor
-/** @todo r=bird: The code using hThreadSend is racing the thread termination. Since the thread isn't
- * created waitable, the handle goes away if we it terminates before our RTThreadUserWait call returns. */
-        hr = pTask->createThreadWithRaceCondition(&rcThreadSend);
+        /* This function delete pTask in case of exceptions,
+         * so there is no need in the call of delete operator. */
+        hr = pTask->createThreadWithType(RTTHREADTYPE_MAIN_WORKER);
 
     }
     catch (std::bad_alloc &)
     {
         hr = setError(E_OUTOFMEMORY);
-        rcThreadSend = NIL_RTTHREAD;
     }
     catch (...)
     {
-        LogRel2(("DnD: Could not create thread for SendDataTask \n"));
+        LogRel2(("DnD: Could not create thread for data sending task\n"));
         hr = E_FAIL;
-        rcThreadSend = NIL_RTTHREAD;
     }
 
     if (SUCCEEDED(hr))
     {
-        rc = RTThreadUserWait(rcThreadSend, 30 * 1000 /* 30s timeout */);
-        if (RT_SUCCESS(rc))
-        {
-            mDataBase.m_cTransfersPending++;
+        mDataBase.m_cTransfersPending++;
 
-            hr = pResp->queryProgressTo(aProgress.asOutParam());
-            ComAssertComRC(hr);
+        hr = pResp->queryProgressTo(aProgress.asOutParam());
+        ComAssertComRC(hr);
 
-            /* Note: pTask is now owned by the worker thread. */
-        }
-        else
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Waiting for sending thread failed (%Rrc)"), rc);
+        /* Note: pTask is now owned by the worker thread. */
     }
     else
-        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDTarget::i_sendDataThread (%Rrc)"), rc);
+        hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread for GuestDnDTarget::i_sendDataThread (%Rhrc)"), hr);
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
