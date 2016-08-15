@@ -75,7 +75,7 @@ DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
     RT_ZERO(data);
     data.result   = VINF_SUCCESS;
     data.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    memcpy(data.Loc.u.host.achName, RT_STR_TUPLE("VBoxSharedFolders"));
+    memcpy(data.Loc.u.host.achName, RT_STR_TUPLE("VBoxSharedFolders") + 1);
 
     rc = VbglHGCMConnect(&pClient->handle, &data);
 /*    Log(("VBOXSF: VbglR0SfConnect: VbglHGCMConnect rc = %#x, result = %#x\n", rc, data.result)); */
