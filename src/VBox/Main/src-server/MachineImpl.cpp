@@ -12707,7 +12707,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      *  unexpected uninit, just log a warning.
      */
 
-    if ((aReason == Uninit::Unexpected))
+    if (aReason == Uninit::Unexpected)
         Log1WarningThisFunc(("Unexpected SessionMachine uninitialization!\n"));
 
     if (aReason != Uninit::Normal)
