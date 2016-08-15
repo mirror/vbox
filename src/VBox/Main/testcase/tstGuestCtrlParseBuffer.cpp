@@ -31,6 +31,9 @@ using namespace com;
 # define BYTE uint8_t
 #endif
 
+#define STR_SIZE(a_sz) a_sz, sizeof(a_sz)
+
+
 typedef struct VBOXGUESTCTRL_BUFFER_VALUE
 {
     char *pszValue;
@@ -59,38 +62,39 @@ static struct
      * that we need to collect more data to do a successful parsing.
      */
     /* Invalid stuff. */
-    { NULL,                             0,                                                 0,  0,                                         0, VERR_INVALID_POINTER },
-    { NULL,                             512,                                               0,  0,                                         0, VERR_INVALID_POINTER },
-    { "",                               0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
-    { "",                               0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
-    { "foo=bar1",                       0,                                                 0,  0,                                         0, VERR_INVALID_PARAMETER },
-    { "foo=bar2",                       0,                                                 50, 50,                                        0, VERR_INVALID_PARAMETER },
+    { NULL,                             0,          0,  0,                                         0, VERR_INVALID_POINTER },
+    { NULL,                             512,        0,  0,                                         0, VERR_INVALID_POINTER },
+    { "",                               0,          0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "",                               0,          0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "foo=bar1",                       0,          0,  0,                                         0, VERR_INVALID_PARAMETER },
+    { "foo=bar2",                       0,          50, 50,                                        0, VERR_INVALID_PARAMETER },
     /* Empty buffers. */
-    { "",                               1,                                                 0,  1,                                         0, VINF_SUCCESS },
-    { "\0",                             1,                                                 0,  1,                                         0, VINF_SUCCESS },
+    { "",                               1,          0,  1,                                         0, VINF_SUCCESS },
+    { "\0",                             1,          0,  1,                                         0, VINF_SUCCESS },
     /* Unterminated values (missing "\0"). */
-    { "test1",                          sizeof("test1"),                                   0,  0,                                         0, VERR_MORE_DATA },
-    { "test2=",                         sizeof("test2="),                                  0,  0,                                         0, VERR_MORE_DATA },
-    { "test3=test3",                    sizeof("test3=test3"),                             0,  0,                                         0, VERR_MORE_DATA },
-    { "test4=test4\0t41",               sizeof("test4=test4\0t41"),                        0,  sizeof("test4=test4\0") - 1,               1, VERR_MORE_DATA },
-    { "test5=test5\0t51=t51",           sizeof("test5=test5\0t51=t51"),                    0,  sizeof("test5=test5\0") - 1,               1, VERR_MORE_DATA },
+    { STR_SIZE("test1"),                            0,  0,                                         0, VERR_MORE_DATA },
+    { STR_SIZE("test2="),                           0,  0,                                         0, VERR_MORE_DATA },
+    { STR_SIZE("test3=test3"),                      0,  0,                                         0, VERR_MORE_DATA },
+    { STR_SIZE("test4=test4\0t41"),                 0,  sizeof("test4=test4\0") - 1,               1, VERR_MORE_DATA },
+    { STR_SIZE("test5=test5\0t51=t51"),             0,  sizeof("test5=test5\0") - 1,               1, VERR_MORE_DATA },
     /* Next block unterminated. */
-    { "t51=t51\0t52=t52\0\0t53=t53",    sizeof("t51=t51\0t52=t52\0\0t53=t53"),             0,  sizeof("t51=t51\0t52=t52\0") - 1,          2, VINF_SUCCESS },
-    { "test6=test6\0\0t61=t61",         sizeof("test6=test6\0\0t61=t61"),                  0,  sizeof("test6=test6\0") - 1,               1, VINF_SUCCESS },
+    { STR_SIZE("t51=t51\0t52=t52\0\0t53=t53"),      0,  sizeof("t51=t51\0t52=t52\0") - 1,          2, VINF_SUCCESS },
+    { STR_SIZE("test6=test6\0\0t61=t61"),           0,  sizeof("test6=test6\0") - 1,               1, VINF_SUCCESS },
     /* Good stuff. */
-    { "test61=\0test611=test611\0",     sizeof("test61=\0test611=test611\0"),              0,  sizeof("test61=\0test611=test611\0") - 1,  2, VINF_SUCCESS },
-    { "test7=test7\0\0",                sizeof("test7=test7\0\0"),                         0,  sizeof("test7=test7\0") - 1,               1, VINF_SUCCESS },
-    { "test8=test8\0t81=t81\0\0",       sizeof("test8=test8\0t81=t81\0\0"),                0,  sizeof("test8=test8\0t81=t81\0") - 1,      2, VINF_SUCCESS },
+    { STR_SIZE("test61=\0test611=test611\0"),       0,  sizeof("test61=\0test611=test611\0") - 1,  2, VINF_SUCCESS },
+    { STR_SIZE("test7=test7\0\0"),                  0,  sizeof("test7=test7\0") - 1,               1, VINF_SUCCESS },
+    { STR_SIZE("test8=test8\0t81=t81\0\0"),         0,  sizeof("test8=test8\0t81=t81\0") - 1,      2, VINF_SUCCESS },
     /* Good stuff, but with a second block -- should be *not* taken into account since
      * we're only interested in parsing/handling the first object. */
-    { "t9=t9\0t91=t91\0\0t92=t92\0\0",  sizeof("t9=t9\0t91=t91\0\0t92=t92\0\0"),           0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS },
+    { STR_SIZE("t9=t9\0t91=t91\0\0t92=t92\0\0"),    0,  sizeof("t9=t9\0t91=t91\0") - 1,            2, VINF_SUCCESS },
     /* Nasty stuff. */
-    { "הצü=fהצ\0\0",                    sizeof("הצü=fהצ\0\0"),                             0,  sizeof("הצü=fהצ\0") - 1,                   1, VINF_SUCCESS },
-    { "הצü=fהצ\0צצצ=ההה",               sizeof("הצü=fהצ\0צצצ=ההה"),                        0,  sizeof("הצü=fהצ\0") - 1,                   1, VERR_MORE_DATA },
+        /* iso 8859-1 encoding (?) of 'aou' all with diaeresis '=f' and 'ao' with diaeresis. */
+    { STR_SIZE("\xe4\xf6\xfc=\x66\xe4\xf6\0\0"),    0,  sizeof("\xe4\xf6\xfc=\x66\xe4\xf6\0") - 1, 1, VINF_SUCCESS },
+        /* Like above, but after the first '\0' it adds 'ooo=aaa' all letters with diaeresis. */
+    { STR_SIZE("\xe4\xf6\xfc=\x66\xe4\xf6\0\xf6\xf6\xf6=\xe4\xe4\xe4"),
+                                                    0,  sizeof("\xe4\xf6\xfc=\x66\xe4\xf6\0") - 1, 1, VERR_MORE_DATA },
     /* Some "real world" examples. */
-    { "hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0",
-                                        sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0"),
-                                                                                           0,  sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0") - 1,
+    { STR_SIZE("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0\0"), 0, sizeof("hdr_id=vbt_stat\0hdr_ver=1\0name=foo.txt\0") - 1,
                                                                                                                                           3, VINF_SUCCESS }
 };
 
@@ -135,7 +139,7 @@ int manualTest(void)
         RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
 
         GuestProcessStream stream;
-        rc = stream.AddData((BYTE*)s_aTest[iTest].pbData, s_aTest[iTest].cbData);
+        rc = stream.AddData((BYTE *)s_aTest[iTest].pbData, s_aTest[iTest].cbData);
 
         for (;;)
         {
