@@ -75,7 +75,7 @@
 typedef struct VBoxGuestDeviceState
 {
     device_t sc_dev;
-    struct pci_attach_args *pa;
+    pci_chipset_tag_t pc;
     bus_space_tag_t io_tag;
     bus_space_handle_t io_handle;
     bus_addr_t uIOPortBase;
@@ -123,7 +123,7 @@ static int VBoxGuestNetBSDDetach(device_t pDevice, int flags);
  * IRQ related functions.
  */
 static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *sc);
-static int  VBoxGuestNetBSDAddIRQ(vboxguest_softc *pvState);
+static int  VBoxGuestNetBSDAddIRQ(vboxguest_softc *pvState, struct pci_attach_args *pa);
 static int  VBoxGuestNetBSDISR(void *pvState);
 
 
@@ -419,12 +419,12 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
  *
  * @returns NetBSD error code.
  * @param   vboxguest  Pointer to the state info structure.
+ * @param   pa  Pointer to the PCI attach arguments.
  */
-static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
+static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest, struct pci_attach_args *pa)
 {
     int iResId = 0;
     int rc = 0;
-    struct pci_attach_args *pa = vboxguest->pa;
     const char *intrstr;
 #if __NetBSD_Prereq__(6, 99, 39)
     char intstrbuf[100];
@@ -436,13 +436,13 @@ static int VBoxGuestNetBSDAddIRQ(vboxguest_softc *vboxguest)
         aprint_error_dev(vboxguest->sc_dev, "couldn't map interrupt.\n");
         return VERR_DEV_IO_ERROR;
     }
-    intrstr = pci_intr_string(vboxguest->pa->pa_pc, vboxguest->ih
+    intrstr = pci_intr_string(vboxguest->pc, vboxguest->ih
 #if __NetBSD_Prereq__(6, 99, 39)
                               , intstrbuf, sizeof(intstrbuf)
 #endif
                               );
     aprint_normal_dev(vboxguest->sc_dev, "interrupting at %s\n", intrstr);
-    vboxguest->pfnIrqHandler = pci_intr_establish(vboxguest->pa->pa_pc, vboxguest->ih, IPL_BIO, VBoxGuestNetBSDISR, vboxguest);
+    vboxguest->pfnIrqHandler = pci_intr_establish(vboxguest->pc, vboxguest->ih, IPL_BIO, VBoxGuestNetBSDISR, vboxguest);
     if (vboxguest->pfnIrqHandler == NULL) {
         aprint_error_dev(vboxguest->sc_dev, "couldn't establish interrupt\n");
         return VERR_DEV_IO_ERROR;
@@ -462,7 +462,7 @@ static void VBoxGuestNetBSDRemoveIRQ(vboxguest_softc *vboxguest)
 
     if (vboxguest->pfnIrqHandler)
     {
-        pci_intr_disestablish(vboxguest->pa->pa_pc, vboxguest->pfnIrqHandler);
+        pci_intr_disestablish(vboxguest->pc, vboxguest->pfnIrqHandler);
     }
 }
 
@@ -495,7 +495,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
         return ;
     }
 
-    vboxguest->pa = pa;
+    vboxguest->pc = pa->pa_pc;
 
     /*
      * Allocate I/O port resource.
@@ -529,7 +529,7 @@ static void VBoxGuestNetBSDAttach(device_t parent, device_t self, void *aux)
                 /*
                  * Add IRQ of VMMDev.
                  */
-                rc = VBoxGuestNetBSDAddIRQ(vboxguest);
+                rc = VBoxGuestNetBSDAddIRQ(vboxguest, pa);
                 if (RT_SUCCESS(rc))
                 {
                     vboxguest->vboxguest_state |= VBOXGUEST_STATE_INITOK;
