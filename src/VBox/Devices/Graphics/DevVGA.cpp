@@ -339,6 +339,7 @@ DECLINLINE(bool) vga_is_dirty(PVGASTATE pThis, RTGCPHYS offVRAM)
     return ASMBitTest(&pThis->au32DirtyBitmap[0], offVRAM >> PAGE_SHIFT);
 }
 
+#ifdef IN_RING3
 /**
  * Reset dirty flags in a give range.
  *
@@ -353,6 +354,7 @@ DECLINLINE(void) vga_reset_dirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHY
     Assert(offVRAMStart < offVRAMEnd);
     ASMBitClearRange(&pThis->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
+#endif /* IN_RING3 */
 
 #ifdef _MSC_VER
 # pragma warning(push)
@@ -446,6 +448,8 @@ static const uint32_t mask16[16] = {
 #define PAT(x) cbswap_32(x)
 #endif
 
+#ifdef IN_RING3
+
 static const uint32_t dmask16[16] = {
     PAT(0x00000000),
     PAT(0x000000ff),
@@ -472,10 +476,10 @@ static const uint32_t dmask4[4] = {
     PAT(0xffffffff),
 };
 
-#if defined(IN_RING3)
 static uint32_t expand4[256];
 static uint16_t expand2[256];
 static uint8_t expand4to8[16];
+
 #endif /* IN_RING3 */
 
 /* Update the values needed for calculating Vertical Retrace and
@@ -1517,7 +1521,8 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
     return VINF_SUCCESS;
 }
 
-#if defined(IN_RING3)
+#ifdef IN_RING3
+
 typedef void vga_draw_glyph8_func(uint8_t *d, int linesize,
                                   const uint8_t *font_ptr, int h,
                                   uint32_t fgcol, uint32_t bgcol,
@@ -2151,7 +2156,8 @@ static int vga_resize_graphic(PVGASTATE pThis, int cx, int cy,
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_VMSVGA
+# ifdef VBOX_WITH_VMSVGA
+
 int vgaR3UpdateDisplay(VGAState *s, unsigned xStart, unsigned yStart, unsigned cx, unsigned cy)
 {
     uint32_t v;
@@ -2331,7 +2337,8 @@ static int vmsvga_draw_graphic(PVGASTATE pThis, bool full_update, bool fFailOnRe
     memset(pThis->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
     return VINF_SUCCESS;
 }
-#endif /* VBOX_WITH_VMSVGA */
+
+# endif /* VBOX_WITH_VMSVGA */
 
 /*
  * graphic modes

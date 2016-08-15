@@ -495,6 +495,8 @@ DECLINLINE(void) lsilogicClearInterrupt(PLSILOGICSCSI pThis, uint32_t uStatus)
     lsilogicUpdateInterrupt(pThis);
 }
 
+
+#ifdef IN_RING3
 /**
  * Sets the I/O controller into fault state and sets the fault code.
  *
@@ -513,6 +515,8 @@ DECLINLINE(void) lsilogicSetIOCFaultCode(PLSILOGICSCSI pThis, uint16_t uIOCFault
     else
         LogFunc(("We are already in FAULT state\n"));
 }
+#endif /* IN_RING3 */
+
 
 /**
  * Returns the number of frames in the reply free queue.
@@ -532,6 +536,8 @@ DECLINLINE(uint32_t) lsilogicReplyFreeQueueGetFrameCount(PLSILOGICSCSI pThis)
     return cReplyFrames;
 }
 
+#ifdef IN_RING3
+
 /**
  * Returns the number of free entries in the reply post queue.
  *
@@ -550,7 +556,6 @@ DECLINLINE(uint32_t) lsilogicReplyPostQueueGetFrameCount(PLSILOGICSCSI pThis)
     return cReplyFrames;
 }
 
-#ifdef IN_RING3
 
 /**
  * Performs a hard reset on the controller.

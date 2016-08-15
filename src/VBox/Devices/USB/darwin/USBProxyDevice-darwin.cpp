@@ -263,7 +263,7 @@ static RTONCE       g_usbProxyDarwinOnce = RTONCE_INITIALIZER;
 static CFStringRef g_pRunLoopMode = NULL;
 /** The IO Master Port.
  * Not worth cleaning up.  */
-static mach_port_t  g_MasterPort = NULL;
+static mach_port_t  g_MasterPort = MACH_PORT_NULL;
 
 
 /**
@@ -272,10 +272,11 @@ static mach_port_t  g_MasterPort = NULL;
  * @returns IPRT status code.
  *
  * @param   pvUser1     NULL, ignored.
- * @param   pvUser2     NULL, ignored.
  */
 static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
 {
+    RT_NOREF(pvUser1);
+
     int rc;
     kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &g_MasterPort);
     if (krc == KERN_SUCCESS)
@@ -817,7 +818,7 @@ static int usbProxyDarwinSeizeAllInterfaces(PUSBPROXYDEVOSX pDevOsX, bool fMakeT
     /*
      * Create a interface enumerator for all the interface (current config).
      */
-    io_iterator_t Interfaces = NULL;
+    io_iterator_t Interfaces = IO_OBJECT_NULL;
     IOUSBFindInterfaceRequest Req;
     Req.bInterfaceClass    = kIOUSBFindInterfaceDontCare;
     Req.bInterfaceSubClass = kIOUSBFindInterfaceDontCare;
@@ -843,7 +844,7 @@ static int usbProxyDarwinSeizeAllInterfaces(PUSBPROXYDEVOSX pDevOsX, bool fMakeT
             krc = IOCreatePlugInInterfaceForService(Interface, kIOUSBInterfaceUserClientTypeID,
                                                     kIOCFPlugInInterfaceID, &ppPlugInInterface, &Score);
             IOObjectRelease(Interface);
-            Interface = NULL;
+            Interface = IO_OBJECT_NULL;
             if (krc == KERN_SUCCESS)
             {
                 IOUSBInterfaceInterface245 **ppIfI;
@@ -1079,6 +1080,7 @@ static bool usbProxyDarwinDictGetU64(CFMutableDictionaryRef DictRef, CFStringRef
 
 static DECLCALLBACK(void) usbProxyDarwinPerformWakeup(void *pInfo)
 {
+    RT_NOREF(pInfo);
     return;
 }
 
@@ -1098,13 +1100,13 @@ static DECLCALLBACK(void) usbProxyDarwinPerformWakeup(void *pInfo)
  */
 static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
 {
-    int vrc;
+    RT_NOREF(pvBackend);
     LogFlow(("usbProxyDarwinOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
 
     /*
      * Init globals once.
      */
-    vrc = RTOnce(&g_usbProxyDarwinOnce, usbProxyDarwinInitOnce, NULL);
+    int vrc = RTOnce(&g_usbProxyDarwinOnce, usbProxyDarwinInitOnce, NULL);
     AssertRCReturn(vrc, vrc);
 
     PUSBPROXYDEVOSX pDevOsX = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVOSX);
@@ -1121,7 +1123,7 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
      * this subject further right now. Maybe check this later.
      */
     CFMutableDictionaryRef RefMatchingDict = IOServiceMatching(kIOUSBDeviceClassName);
-    AssertReturn(RefMatchingDict, NULL);
+    AssertReturn(RefMatchingDict != IO_OBJECT_NULL, VERR_OPEN_FAILED);
 
     uint64_t u64SessionId = 0;
     uint32_t u32LocationId = 0;
@@ -1161,9 +1163,9 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
             psz++;
     } while (*psz);
 
-    io_iterator_t USBDevices = NULL;
+    io_iterator_t USBDevices = IO_OBJECT_NULL;
     IOReturn irc = IOServiceGetMatchingServices(g_MasterPort, RefMatchingDict, &USBDevices);
-    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%#x\n", irc), NULL);
+    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%#x\n", irc), RTErrConvertFromDarwinIO(irc));
     RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
 
     unsigned cMatches = 0;
@@ -1193,7 +1195,7 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
         IOObjectRelease(USBDevice);
     }
     IOObjectRelease(USBDevices);
-    USBDevices = NULL;
+    USBDevices = IO_OBJECT_NULL;
     if (!USBDevice)
     {
         LogRel(("USB: Device '%s' not found (%d pid+vid matches)\n", pszAddress, cMatches));
@@ -1403,7 +1405,7 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
     (*pDevOsX->ppDevI)->Release(pDevOsX->ppDevI);
     pDevOsX->ppDevI = NULL;
     kern_return_t krc = IOObjectRelease(pDevOsX->USBDevice); Assert(krc == KERN_SUCCESS); NOREF(krc);
-    pDevOsX->USBDevice = NULL;
+    pDevOsX->USBDevice = IO_OBJECT_NULL;
     pDevOsX->pProxyDev = NULL;
 
     /*
@@ -1431,6 +1433,7 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
  */
 static DECLCALLBACK(int) usbProxyDarwinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
+    RT_NOREF(fResetOnLinux);
     PUSBPROXYDEVOSX pDevOsX = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVOSX);
     LogFlow(("usbProxyDarwinReset: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
 
@@ -1496,6 +1499,7 @@ static DECLCALLBACK(int) usbProxyDarwinSetConfig(PUSBPROXYDEV pProxyDev, int iCf
  */
 static DECLCALLBACK(int) usbProxyDarwinClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
+    RT_NOREF(pProxyDev, iIf);
     return VINF_SUCCESS;
 }
 
@@ -1510,6 +1514,7 @@ static DECLCALLBACK(int) usbProxyDarwinClaimInterface(PUSBPROXYDEV pProxyDev, in
  */
 static DECLCALLBACK(int) usbProxyDarwinReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
+    RT_NOREF(pProxyDev, iIf);
     return VINF_SUCCESS;
 }
 

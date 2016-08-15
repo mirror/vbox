@@ -279,6 +279,7 @@
 #ifdef USE_NSOPENGLVIEW
     self = [super initWithFrame:frame pixelFormat:pFmt];
 #else
+    RT_NOREF(pFmt);
     m_cSetViewAttempts = 0;
     m_pCtx = NULL;
     self = [super initWithFrame:frame];
@@ -476,6 +477,7 @@
  */
 - (void)vboxBoundsDidChange:(NSNotification *)pNotification
 {
+    RT_NOREF(pNotification);
     LogFlow(("OvlView(%p) vboxBoundsDidChange:\n", (void *)self));
     self->m_fUpdateCtx = true;
 }
@@ -487,6 +489,7 @@
  */
 - (void)vboxFrameDidChange:(NSNotification *)pNotification
 {
+    RT_NOREF(pNotification);
     LogFlow(("OvlView(%p) vboxFrameDidChange:\n", (void *)self));
     self->m_fUpdateCtx = true;
 }
@@ -499,6 +502,7 @@
  */
 - (void)vboxFrameDidChangeGlobal:(NSNotification *)pNotification
 {
+    RT_NOREF(pNotification);
     LogFlow(("OvlView(%p) vboxFrameDidChangeGlobal:\n", (void *)self));
     self->m_fUpdateCtx = true;
 }
@@ -663,6 +667,7 @@
 
 - (void)drawRect:(NSRect)rect
 {
+    RT_NOREF(rect);
 //    if (m_fClear)
 //    {
 //        m_fClear = false;
