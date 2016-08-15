@@ -313,7 +313,11 @@ if (yypcb->pcb_token != 0) {
 				errno = 0;
 				yylval.l_int = strtoull(v, &p, 0);
 #else
-				rc = RTStrToUInt64Ex(v, &p, 0, &yylval.l_int);
+ 				{
+                                   uint64_t uTmp = 0;
+				    rc = RTStrToUInt64Ex(v, &p, 0, &uTmp);
+				    yylval.l_int = uTmp;
+ 				}
 #endif
 				(void) strncpy(yyintsuffix, p,
 				    sizeof (yyintsuffix));
@@ -402,7 +406,9 @@ if (yypcb->pcb_token != 0) {
 			errno = 0;
 			yylval.l_int = strtoull(yytext, &p, 0);
 #else
-			int rc = RTStrToUInt64Ex(yytext, &p, 0, &yylval.l_int);
+			uint64_t uTmp = 0;
+			int rc = RTStrToUInt64Ex(yytext, &p, 0, &uTmp);
+			yylval.l_int = uTmp;
 #endif
 			yyintprefix = 0;
 			(void) strncpy(yyintsuffix, p, sizeof (yyintsuffix));
