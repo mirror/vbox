@@ -238,6 +238,19 @@ typedef _Bool bool;
       * provided by <sys/types.h> included above.
       */
 #    include <stdbool.h>
+
+     /*
+      * ... but the story doesn't end here.  The C standard says that
+      * <stdbool.h> defines preprocessor macro "bool" that expands to
+      * "_Bool", but adds that a program may undefine/redefine it
+      * (this is 7.16 in C99 and 7.18 in C11).  We have to play this
+      * game here because X11 code uses "bool" as a struct member name
+      * - so undefine "bool" and provide it as a typedef instead.  We
+      * still keep #include <stdbool.h> so that any code that might
+      * include it later doesn't mess things up.
+      */
+#    undef bool
+     typedef _Bool bool; 
 #   endif
 #  else
 #   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))
