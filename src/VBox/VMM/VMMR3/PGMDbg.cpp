@@ -331,7 +331,7 @@ VMMR3_INT_DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, si
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* @todo SMP support! */
+    /** @todo SMP support! */
     PVMCPU pVCpu = &pVM->aCpus[0];
 
 /** @todo deal with HMA */
@@ -387,7 +387,7 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pv
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* @todo SMP support! */
+    /** @todo SMP support! */
     PVMCPU pVCpu = &pVM->aCpus[0];
 
 /** @todo deal with HMA */

@@ -456,7 +456,7 @@ static int dbgfR3BpInt3Arm(PUVM pUVM, PDBGFBP pBp)
  */
 static int dbgfR3BpInt3Disarm(PUVM pUVM, PDBGFBP pBp)
 {
-    /* @todo SMP support! */
+    /** @todo SMP support! */
     VMCPUID idCpu = 0;
 
     /*

@@ -856,7 +856,7 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
                     /*
                      * Disable patch; this is not a good solution
                      */
-                     /* @todo hopefully it was completely overwritten (if the read was successful)!!!! */
+                     /** @todo hopefully it was completely overwritten (if the read was successful)!!!! */
                     pPatch->patch.uState = PATCH_DISABLED;
                 }
                 else
@@ -938,7 +938,7 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
                     /*
                      * Disable patch; this is not a good solution
                      */
-                     /* @todo hopefully it was completely overwritten (if the read was successful)!!!! */
+                     /** @todo hopefully it was completely overwritten (if the read was successful)!!!! */
                     pPatch->patch.uState = PATCH_DISABLED;
                 }
                 else
@@ -1653,7 +1653,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
         }
 
     #if 0
-        ///@todo we can handle certain in/out and privileged instructions in the guest context
+        /// @todo we can handle certain in/out and privileged instructions in the guest context
         if (pCpu->pCurInstr->fOpType & DISOPTYPE_PRIVILEGED && pCpu->pCurInstr->uOpcode != OP_STI)
         {
             Log(("Illegal instructions for function patch!!\n"));
@@ -1991,7 +1991,7 @@ static DECLCALLBACK(int) patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTR
         break;
 
     case OP_STR:
-#ifdef VBOX_WITH_SAFE_STR   /* @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table and move OP_STR into #ifndef */
+#ifdef VBOX_WITH_SAFE_STR   /** @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table and move OP_STR into #ifndef */
         /* Now safe because our shadow TR entry is identical to the guest's. */
         goto duplicate_instr;
 #endif

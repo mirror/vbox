@@ -62,7 +62,7 @@ DECLASM(bool)   vmmRCSafeMsrWrite(uint32_t uMsr, uint64_t u64Value);
  */
 VMMRCDECL(int) VMMRCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
 {
-    /* todo */
+    /** @todo */
     switch (uOperation)
     {
         /*

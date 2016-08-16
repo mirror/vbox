@@ -59,7 +59,7 @@ typedef struct PATCHINFOSSM
 
     /* GC pointer of privileged instruction */
     RCPTRTYPE(uint8_t *)  pPrivInstrGC;
-    R3PTRTYPE(uint8_t *)  unusedHC;                             /* todo Can't remove due to structure size dependencies in saved states. */
+    R3PTRTYPE(uint8_t *)  unusedHC;                             /** @todo Can't remove due to structure size dependencies in saved states. */
     uint8_t               aPrivInstr[MAX_INSTR_SIZE];
     uint32_t              cbPrivInstr;
     uint32_t              opcode;      //opcode for priv instr (OP_*)
@@ -1512,7 +1512,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
                 /*
                  * Disable patch; this is not a good solution
                  */
-                /* @todo hopefully it was completely overwritten (if the read was successful)!!!! */
+                /** @todo hopefully it was completely overwritten (if the read was successful)!!!! */
                 pPatch->uState = PATCH_DISABLED;
             }
             else

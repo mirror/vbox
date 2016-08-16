@@ -117,7 +117,7 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
     pRec = (PRELOCREC)MMR3HeapAllocZ(pVM, MM_TAG_PATM_PATCH, sizeof(*pRec));
     Assert(pRec);
     pRec->Core.Key  = (AVLPVKEY)pRelocHC;
-    pRec->pRelocPos = pRelocHC; /* @todo redundant. */
+    pRec->pRelocPos = pRelocHC; /** @todo redundant. */
     pRec->pSource   = pSource;
     pRec->pDest     = pDest;
     pRec->uType     = uType;
@@ -137,7 +137,7 @@ int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offs
     Assert(pRec);
 
     pRec->Core.Key  = (AVLPVKEY)pJumpHC;
-    pRec->pJumpHC   = pJumpHC; /* @todo redundant. */
+    pRec->pJumpHC   = pJumpHC; /** @todo redundant. */
     pRec->offDispl  = offset;
     pRec->pTargetGC = pTargetGC;
     pRec->opcode    = opcode;
@@ -1276,7 +1276,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
 
     pPB[1] = MAKE_MODRM(mod, reg, rm);
 
-    /// @todo: make this an array in the context structure
+    /// @todo make this an array in the context structure
     switch (ctrlreg)
     {
     case DISCREG_CR0:
@@ -1464,7 +1464,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     uint32_t offset = 0, offset_base, offset_limit;
     uint32_t i;
 
-    /* @todo segment prefix (untested) */
+    /** @todo segment prefix (untested) */
     Assert(pCpu->fPrefix == DISPREFIX_NONE);
 
     // sgdt %Ms

@@ -1757,7 +1757,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
-            /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
+            /** @todo check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
 
             CSAMR3CheckCodeEx(pVM, pCtx, pCtx->eip);

@@ -774,7 +774,7 @@ static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD hThread, void *pvUser)
                     rc = ftmR3TcpReadACK(pVM, "password", "Invalid password");
                     if (RT_SUCCESS(rc))
                     {
-                        /** todo: verify VM config. */
+                        /** @todo verify VM config. */
                         break;
                     }
                 }
@@ -961,7 +961,7 @@ static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD hThread, void *pvUser)
                 LogRel(("FTSync: TIMEOUT (%RX64 vs %RX64 ms): activate standby VM!\n", u64TimeNow, pVM->ftm.s.standby.u64LastHeartbeat + pVM->ftm.s.uInterval * 2));
 
                 pVM->ftm.s.fActivateStandby = true;
-                /** todo: prevent split-brain. */
+                /** @todo prevent split-brain. */
                 break;
             }
         }

@@ -760,7 +760,7 @@ static int dbgfR3TypeParseBufferByType(PUVM pUVM, PDBGFTYPE pType, uint8_t *pbBu
             *ppVal     = pVal;
         }
         else
-            MMR3HeapFree(pVal); /** @todo: Leak for embedded structs. */
+            MMR3HeapFree(pVal); /** @todo Leak for embedded structs. */
     }
     else
         rc = VERR_NO_MEMORY;

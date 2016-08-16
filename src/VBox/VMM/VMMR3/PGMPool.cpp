@@ -174,7 +174,7 @@ int pgmR3PoolInit(PVM pVM)
         cMaxPages = PGMPOOL_IDX_LAST;
     LogRel(("PGM: PGMPool: cMaxPages=%u (u64MaxPages=%llu)\n", cMaxPages, u64MaxPages));
 
-    /** todo:
+    /** @todo
      * We need to be much more careful with our allocation strategy here.
      * For nested paging we don't need pool user info nor extents at all, but
      * we can't check for nested paging here (too early during init to get a
@@ -845,7 +845,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         PPGMPOOLPAGE    pPage     = &pPool->aPages[i];
         bool            fFirstMsg = true;
 
-        /* Todo: cover other paging modes too. */
+        /** @todo cover other paging modes too. */
         if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
         {
             PPGMSHWPTPAE pShwPT = (PPGMSHWPTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);

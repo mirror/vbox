@@ -748,7 +748,7 @@ VMMR3_INT_DECL(int) DBGFR3EventBreakpoint(PVM pVM, DBGFEVENTTYPE enmEvent)
 #if 0   /** @todo get flat PC api! */
         uint32_t eip = CPUMGetGuestEIP(pVM);
 #else
-        /* @todo SMP support!! */
+        /** @todo SMP support!! */
         PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
         RTGCPTR  eip = pCtx->rip + pCtx->cs.u64Base;
 #endif

@@ -558,7 +558,7 @@ VMMR3_INT_DECL(int) CSAMR3Term(PVM pVM)
     rc = CSAMR3Reset(pVM);
     AssertRC(rc);
 
-    /* @todo triggers assertion in MMHyperFree */
+    /** @todo triggers assertion in MMHyperFree */
 #if 0
     for(int i=0;i<CSAM_PAGEBMP_CHUNKS;i++)
     {
@@ -2304,7 +2304,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
 #ifdef CSAM_MONITOR_CODE_PAGES
         if (pPageRec->page.fMonitorActive)
         {
-            /* @todo -> this is expensive (cr3 reload)!!!
+            /** @todo -> this is expensive (cr3 reload)!!!
              * if this happens often, then reuse it instead!!!
              */
             Assert(!g_fInCsamR3CodePageInvalidate);

@@ -396,7 +396,7 @@ static DECLCALLBACK(void) tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvU
 
     if (pTestTask->fWrite)
     {
-        /* @todo Do something sensible here. */
+        /** @todo Do something sensible here. */
     }
     else
     {

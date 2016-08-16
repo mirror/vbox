@@ -1141,7 +1141,7 @@ static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
         uint32_t    cpl, rpl;
 
         /* We only execute 32-bits protected mode code in raw mode, so no need to bother to check for 16-bits code here. */
-        /* @todo: we don't verify all the edge cases that generate #GP faults */
+        /** @todo we don't verify all the edge cases that generate #GP faults */
 
         Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
         Assert(!CPUMIsGuestIn64BitCode(pVCpu));

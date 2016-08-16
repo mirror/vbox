@@ -1929,7 +1929,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
                 if (!RTThreadYield())
                     RTThreadSleep(1);
 #else
-/**@todo call host and yield cpu after a while. */
+/** @todo call host and yield cpu after a while. */
 #endif
                 break;
 

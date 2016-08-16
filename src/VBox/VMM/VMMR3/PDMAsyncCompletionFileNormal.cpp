@@ -897,7 +897,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
                       pTask->Off, offStart));
             pTask->offBounceBuffer = pTask->Off - offStart;
 
-            /** @todo: I think we need something like a RTMemAllocAligned method here.
+            /** @todo I think we need something like a RTMemAllocAligned method here.
              * Current assumption is that the maximum alignment is 4096byte
              * (GPT disk on Windows)
              * so we can use RTMemPageAlloc here.
