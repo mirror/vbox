@@ -720,7 +720,7 @@ static DECLCALLBACK(int) parallelsWrite(void *pBackendData, uint64_t uOffset, si
             if (RT_SUCCESS(rc) || (rc == VERR_VD_ASYNC_IO_IN_PROGRESS))
             {
                 /* Write the changed allocation bitmap entry. */
-                /** @todo: Error handling. */
+                /** @todo Error handling. */
                 rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
                                             sizeof(ParallelsHeader) + iIndexInAllocationTable * sizeof(uint32_t),
                                             &pImage->pAllocationBitmap[iIndexInAllocationTable],

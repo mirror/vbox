@@ -812,7 +812,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             break;
 
                         case VirtualSystemDescriptionType_NetworkAdapter:
-                            RTPrintf("%2u: Network adapter: orig %ls, config %ls, extra %ls\n",   // @todo implement once we have a plan for the back-end
+                            RTPrintf("%2u: Network adapter: orig %ls, config %ls, extra %ls\n",   /// @todo implement once we have a plan for the back-end
                                      a,
                                      aOvfValues[a],
                                      aVBoxValues[a],

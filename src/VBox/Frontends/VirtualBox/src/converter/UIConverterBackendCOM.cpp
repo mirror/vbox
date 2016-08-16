@@ -123,7 +123,7 @@ template<> QIcon toIcon(const KMachineState &state)
         case KMachineState_DeletingSnapshotPaused: return UIIconPool::iconSet(":/state_discarding_16px.png");
         case KMachineState_RestoringSnapshot:      return UIIconPool::iconSet(":/state_discarding_16px.png");
         case KMachineState_DeletingSnapshot:       return UIIconPool::iconSet(":/state_discarding_16px.png");
-        case KMachineState_SettingUp:              return UIIconPool::iconSet(":/vm_settings_16px.png"); // TODO: Change icon!
+        case KMachineState_SettingUp:              return UIIconPool::iconSet(":/vm_settings_16px.png"); /// @todo Change icon!
         // case KMachineState_FirstOnline:
         // case KMachineState_LastOnline:
         // case KMachineState_FirstTransient:

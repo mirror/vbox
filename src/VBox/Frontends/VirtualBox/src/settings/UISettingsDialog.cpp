@@ -705,7 +705,7 @@ void UISettingsDialog::assignValidator(UISettingsPage *pPage)
     pPage->setValidator(pValidator);
     m_pWarningPane->registerValidator(pValidator);
 
-    // TODO: Why here?
+    /// @todo Why here?
     /* Configure navigation (tab-order): */
     pPage->setOrderAfter(m_pSelector->widget());
 }

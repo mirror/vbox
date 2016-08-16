@@ -520,7 +520,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
         g_uAPIMonIslnLastBeatMS = 0;
     }
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better rc! */
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better rc! */
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)

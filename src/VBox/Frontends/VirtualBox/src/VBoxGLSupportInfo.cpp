@@ -466,9 +466,9 @@ void VBoxGLInfo::initExtSupport(const QGLContext & context)
             VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, rc);
             VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, DeleteObjectARB, rc);
 
-        //TODO:    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_SHADER, IsShader, rc);
+        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_SHADER, IsShader, rc);
             VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, GetObjectParameterivARB, rc);
-        //TODO:    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
+        /// @todo    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
             VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, GetObjectParameterivARB, rc);
             VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders, GetAttachedObjectsARB, rc);
             VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, GetInfoLogARB, rc);
@@ -665,7 +665,7 @@ bool VBoxVHWAInfo::checkVHWASupport()
 
     return false;
 #else
-    /* @todo: test & enable external app approach*/
+    /** @todo test & enable external app approach*/
     VBoxGLTmpContext ctx;
     const QGLContext *pContext = ctx.makeCurrent();
     Assert(pContext);

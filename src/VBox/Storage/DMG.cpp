@@ -1329,7 +1329,7 @@ static int dmgExtentCreateFromBlkxDesc(PDMGIMAGE pThis, uint64_t uSectorPart, PD
         return VERR_NOT_SUPPORTED;
     }
 
-    /** @todo: Merge raw extents if possible to save memory. */
+    /** @todo Merge raw extents if possible to save memory. */
 #if 0
     pExtentNew = pThis->pExtentLast;
     if (   pExtentNew

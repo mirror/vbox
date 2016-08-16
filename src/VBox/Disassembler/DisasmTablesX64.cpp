@@ -25,8 +25,8 @@
 
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//TODO: Verify tables for correctness
-//TODO: opcode type (harmless, potentially dangerous, dangerous)
+/// @todo Verify tables for correctness
+/// @todo opcode type (harmless, potentially dangerous, dangerous)
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifndef DIS_CORE_ONLY
@@ -286,7 +286,7 @@ const DISOPCODE g_aOneByteMapX64[256] =
     OP("retn",               0,                  0,                 0,          OP_RETN,        OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW | DISOPTYPE_FORCED_64_OP_SIZE),
     OP("VEX 3-byte",         IDX_ParseVex3b,     0,                 0,          OP_VEX3B,       OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("VEX 2-byte",         IDX_ParseVex2b,     0,                 0,          OP_VEX2B,       OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    /* @todo these two are actually group11 */
+    /** @todo these two are actually group11 */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,  0,          OP_MOV,         OP_PARM_Eb,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mov %Ev,%Iz",        IDX_ParseModRM,     IDX_ParseImmZ,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("enter %Iw,%Ib",      IDX_ParseImmUshort, IDX_ParseImmByte,  0,          OP_ENTER,       OP_PARM_Iw,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),

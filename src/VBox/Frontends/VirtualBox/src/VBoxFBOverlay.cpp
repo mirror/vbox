@@ -322,7 +322,7 @@ uint32_t VBoxVHWAHandleTable::put(void * data)
 
     if(mcUsage == mcSize)
     {
-        /* @todo: resize */
+        /** @todo resize */
         AssertFailed();
     }
 
@@ -2532,7 +2532,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct VBOXVHWACMD_SURF_CREATE *pCmd)
         Assert(bSuccess);
         if(!bSuccess)
         {
-            /* @todo: this is very bad, should not be here */
+            /** @todo this is very bad, should not be here */
             return VERR_GENERAL_FAILURE;
         }
     }
@@ -3013,16 +3013,16 @@ int VBoxVHWAImage::vhwaQueryInfo1(struct VBOXVHWACMD_QUERYINFO1 *pCmd)
                                  // | VBOXVHWA_CAPS_OVERLAYFOURCC set below if shader support is available
                                  ;
 
-        /* @todo: check if we could use DDSCAPS_ALPHA instead of colorkeying */
+        /** @todo check if we could use DDSCAPS_ALPHA instead of colorkeying */
 
         pCmd->u.out.caps2 = VBOXVHWA_CAPS2_CANRENDERWINDOWED
                                     | VBOXVHWA_CAPS2_WIDESURFACES;
 
-        //TODO: setup stretchCaps
+        /// @todo setup stretchCaps
         pCmd->u.out.stretchCaps = 0;
 
         pCmd->u.out.numOverlays = 1;
-        /* TODO: set curOverlays properly */
+        /** @todo set curOverlays properly */
         pCmd->u.out.curOverlays = 0;
 
         pCmd->u.out.surfaceCaps =
@@ -3589,7 +3589,7 @@ int VBoxVHWAImage::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * p
 int VBoxVHWAImage::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 {
 //    PVM pVM = (PVM)pCmd->pVM;
-//    uint32_t intsId = 0; /* @todo: set the proper id */
+//    uint32_t intsId = 0; /** @todo set the proper id */
 //
 //    char nameFuf[sizeof(VBOXQGL_STATE_NAMEBASE) + 8];
 //
@@ -3620,7 +3620,7 @@ int VBoxVHWAImage::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 
 uchar * VBoxVHWAImage::vboxVRAMAddressFromOffset(uint64_t offset)
 {
-    /* @todo: check vramSize() */
+    /** @todo check vramSize() */
     return (offset != VBOXVHWA_OFFSET64_VOID) ? ((uint8_t*)vramBase()) + offset : NULL;
 }
 
@@ -5059,7 +5059,7 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
         RTCritSectLeave(&mCritSect);
         return;
 #else
-    //TODO:
+    /// @todo
 #endif
     }
     pCmd->setData(aType, pvData);

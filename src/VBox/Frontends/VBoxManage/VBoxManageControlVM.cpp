@@ -1120,7 +1120,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                                                      Bstr(domain).raw(),
                                                      fAllowLocalLogon));
         }
-#if 0 /* TODO: review & remove */
+#if 0 /** @todo review & remove */
         else if (!strcmp(a->argv[1], "dvdattach"))
         {
             Bstr uuid;

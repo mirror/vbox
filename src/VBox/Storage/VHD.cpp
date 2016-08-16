@@ -1390,7 +1390,7 @@ static DECLCALLBACK(int) vhdCreate(const char *pszFilename, uint64_t cbSize,
         return rc;
     }
 
-    /* @todo Check the values of other params */
+    /** @todo Check the values of other params */
 
     pImage = (PVHDIMAGE)RTMemAllocZ(sizeof(VHDIMAGE));
     if (!pImage)

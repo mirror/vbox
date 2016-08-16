@@ -314,7 +314,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          * use the Qt method to grab the keyboard,
          * disable global hot keys and
          * enable watching modifiers (for right/left separation). */
-        // TODO: Is that really needed?
+        /// @todo Is that really needed?
         ::DarwinDisableGlobalHotKeys(true);
         m_views[uScreenId]->grabKeyboard();
 
@@ -442,7 +442,7 @@ void UIKeyboardHandler::releaseKeyboard()
          * use the Qt method to release the keyboard,
          * enable global hot keys and
          * disable watching modifiers (for right/left separation). */
-        // TODO: Is that really needed?
+        /// @todo Is that really needed?
         ::DarwinDisableGlobalHotKeys(false);
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
 

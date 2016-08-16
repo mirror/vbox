@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DBGF ///@todo add new log group.
+#define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugIns.h"
 #include "DBGPlugInCommonELF.h"
 #include <VBox/vmm/dbgf.h>
@@ -701,7 +701,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
         return VERR_NOT_FOUND;
     }
 
-    /** @todo: Try to parse where the single messages start to make use of cMessages. */
+    /** @todo Try to parse where the single messages start to make use of cMessages. */
     size_t cchLength = RTStrNLen((const char *)pbLogBuf, cbLogBuf);
     memcpy(&pszBuf[0], pbLogBuf, RT_MIN(cbBuf, cchLength));
 

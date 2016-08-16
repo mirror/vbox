@@ -19,7 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DBGF ///@todo add new log group.
+#define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugInCommonELF.h"
 
 #include <VBox/vmm/dbgf.h>

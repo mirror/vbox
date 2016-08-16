@@ -1052,7 +1052,7 @@ static DECLCALLBACK(int) vdScriptHandlerMerge(PVDSCRIPTARG paScriptArgs, void *p
         rc = VERR_NOT_FOUND;
     else
     {
-        /** @todo: Provide progress interface to test that cancelation
+        /** @todo Provide progress interface to test that cancelation
          * doesn't corrupt the data.
          */
         rc = VDMerge(pDisk->pVD, nImageFrom, nImageTo, NULL);
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) vdScriptHandlerCompact(PVDSCRIPTARG paScriptArgs, void 
         rc = VERR_NOT_FOUND;
     else
     {
-        /** @todo: Provide progress interface to test that cancelation
+        /** @todo Provide progress interface to test that cancelation
          * doesn't corrupt the data.
          */
         rc = VDCompact(pDisk->pVD, nImage, NULL);
@@ -1318,7 +1318,7 @@ static DECLCALLBACK(int) vdScriptHandlerCopy(PVDSCRIPTARG paScriptArgs, void *pv
         rc = VERR_NOT_FOUND;
     else
     {
-        /** @todo: Provide progress interface to test that cancelation
+        /** @todo Provide progress interface to test that cancelation
          * works as intended.
          */
         rc = VDCopyEx(pDiskFrom->pVD, nImageFrom, pDiskTo->pVD, pcszBackend, pcszFilename,
@@ -2213,7 +2213,7 @@ static DECLCALLBACK(int) tstVDIoFileGetFreeSpace(void *pvUser, const char *pcszF
     RT_NOREF2(pvUser, pcszFilename);
     AssertPtrReturn(pcbFreeSpace, VERR_INVALID_POINTER);
 
-    *pcbFreeSpace = ~0ULL; /** @todo: Implement */
+    *pcbFreeSpace = ~0ULL; /** @todo Implement */
     return VINF_SUCCESS;
 }
 
@@ -2222,7 +2222,7 @@ static DECLCALLBACK(int) tstVDIoFileGetModificationTime(void *pvUser, const char
     RT_NOREF2(pvUser, pcszFilename);
     AssertPtrReturn(pModificationTime, VERR_INVALID_POINTER);
 
-    /** @todo: Implement */
+    /** @todo Implement */
     return VINF_SUCCESS;
 }
 

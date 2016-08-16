@@ -1689,7 +1689,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     MessageType type;
     QString severity;
 
-    // TODO: Move to Runtime UI!
+    /// @todo Move to Runtime UI!
     /* Preprocessing: */
     if (fFatal)
     {
@@ -1761,7 +1761,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
               formatted, autoConfimId.data());
     }
 
-    // TODO: Move to Runtime UI!
+    /// @todo Move to Runtime UI!
     /* Postprocessing: */
     if (fFatal)
     {

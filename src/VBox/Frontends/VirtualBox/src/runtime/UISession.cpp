@@ -1922,7 +1922,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 # ifdef VBOX_WS_MAC
 #  ifdef VBOX_GUI_WITH_HIDPI
     /* Adjust backing-scale-factor: */
-    // TODO: In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
+    /// @todo In case of multi-monitor setup check whether backing-scale factor and cursor are screen specific.
     /* Get screen-id of main-window: */
     const ulong uScreenID = machineLogic()->activeMachineWindow()->screenId();
     /* Get backing-scale-factor: */

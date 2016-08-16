@@ -1372,7 +1372,7 @@ static void utsSetDefaults(void)
     /*
      * Config file location.
      */
-    /** @todo: Improve */
+    /** @todo Improve */
 #if !defined(RT_OS_WINDOWS)
     strcpy(g_szCfgPath, "/etc/uts.conf");
 #else

@@ -445,7 +445,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
                           bool fPredictDiff /* = false */,
                           bool fUseHTML /* = false */) const
 {
-    // @todo the below check is rough; if m_medium becomes uninitialized, any
+    /// @todo the below check is rough; if m_medium becomes uninitialized, any
     // of getters called afterwards will also fail. The same relates to the
     // root hard drive object (that will be the hard drive itself in case of
     // non-differencing disks). However, this check was added to fix a
@@ -497,7 +497,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
             strDetails += QString("%1, ").arg(VBoxGlobal::tr("Encrypted", "medium"));
     }
 
-    // @todo prepend the details with the warning/error icon when not accessible
+    /// @todo prepend the details with the warning/error icon when not accessible
 
     switch (eState)
     {

@@ -121,7 +121,7 @@ void UIMediumTypeChangeDialog::sltValidate()
 void UIMediumTypeChangeDialog::prepare()
 {
 #ifdef VBOX_WS_MAC
-    // TODO: Is that necessary?
+    /// @todo Is that necessary?
     setWindowFlags(Qt::Sheet);
 #else /* !VBOX_WS_MAC */
     /* Enable size-grip: */

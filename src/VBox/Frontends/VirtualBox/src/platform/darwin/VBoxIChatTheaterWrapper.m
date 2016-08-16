@@ -139,7 +139,7 @@
         [avManager setVideoDataSource:self];
         /* Possible values: IMVideoOptimizationDefault, IMVideoOptimizationStills, IMVideoOptimizationReplacement */
         [avManager setVideoOptimizationOptions:IMVideoOptimizationDefault];
-        /* ToDo: Audio support */
+        /** @todo Audio support */
         [avManager setNumberOfAudioChannels:0];
         /* Start the streaming of the video */
         [avManager start];

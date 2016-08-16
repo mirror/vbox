@@ -21,7 +21,7 @@
 # pragma warning(push)
 # pragma warning(disable:4121)
 #endif
-#if defined(RT_OS_WINDOWS) ///@todo someone please explain why we don't follow the book!
+#if defined(RT_OS_WINDOWS) /// @todo someone please explain why we don't follow the book!
 # define _SDL_main_h
 #endif
 #include <SDL.h>

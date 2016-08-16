@@ -595,7 +595,7 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
             rc = vdScriptInterpreterScopeCreate(pThis);
             if (RT_SUCCESS(rc))
             {
-                /** @todo: Declarations */
+                /** @todo Declarations */
                 rc = vdScriptInterpreterPushCompoundCtrlEntry(pThis, pStmt);
             }
             break;
@@ -1028,7 +1028,7 @@ DECLHIDDEN(int) vdScriptCtxInterprete(PVDSCRIPTCTXINT pThis, const char *pszFn,
         if (cArgs == pFn->cArgs)
         {
             /* Push the arguments onto the stack. */
-            /** @todo: Check expected and given argument types. */
+            /** @todo Check expected and given argument types. */
             for (unsigned i = 0; i < cArgs; i++)
             {
                 PVDSCRIPTARG pArg = (PVDSCRIPTARG)vdScriptStackGetUnused(&InterpCtx.StackValues);

@@ -332,7 +332,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
 void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
 {
     /* Make sure any pending D&D events are consumed. */
-    // TODO: What? So dangerous method for so cheap purpose?
+    /// @todo What? So dangerous method for so cheap purpose?
     qApp->processEvents();
 
     if (list.isEmpty())
@@ -822,7 +822,7 @@ void UISelectorWindow::sltPerformDetachMachineUI()
         if (!isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Detach, QList<UIVMItem*>() << pItem))
             continue;
 
-        // TODO: Detach separate UI process..
+        /// @todo Detach separate UI process..
         AssertFailed();
     }
 }

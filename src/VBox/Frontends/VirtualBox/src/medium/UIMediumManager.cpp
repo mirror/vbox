@@ -1732,7 +1732,7 @@ void UIMediumManager::cleanup()
 
 void UIMediumManager::retranslateUi()
 {
-    // TODO: Rename translation context in .nls files!
+    /// @todo Rename translation context in .nls files!
     /* Most of these translations were moved from VBoxMediaManagerDlg.ui file
      * to keep old translation context.. */
 

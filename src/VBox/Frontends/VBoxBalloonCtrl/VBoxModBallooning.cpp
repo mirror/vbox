@@ -397,7 +397,7 @@ int balloonMachineSetup(const Bstr& strUuid)
                                              ComSafeArrayAsOutParam(metricAffected)));
 #endif
         if (FAILED(rc))
-            vrc = VERR_COM_IPRT_ERROR; /* @todo Find better rc! */
+            vrc = VERR_COM_IPRT_ERROR; /** @todo Find better rc! */
 
     } while (0);
 

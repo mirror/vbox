@@ -863,7 +863,7 @@ private:
                     .arg(VBoxGlobal::tr("Unrestricted Execution"), strUnrestrictExec)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
-        // TODO: We had to use that large NLS above for now.
+        /// @todo We had to use that large NLS above for now.
         //       Later it should be reworked to be well-maintainable..
         /* Separately add information about paravirtualization interface feature: */
         tip += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")

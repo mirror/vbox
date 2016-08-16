@@ -1126,7 +1126,7 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                N_("QCow: Image '%s' uses version %u which is not supported"),
                                pImage->pszFilename, Header.u32Version);
 
-            /** @todo: Check that there are no compressed clusters in the image
+            /** @todo Check that there are no compressed clusters in the image
              *  (by traversing the L2 tables and checking each offset).
              *  Refuse to open such images.
              */

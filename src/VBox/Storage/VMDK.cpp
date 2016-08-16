@@ -3207,7 +3207,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             goto out;
         }
 
-#if 0 /** @todo: Revisit */
+#if 0 /** @todo Revisit */
         cbRead += sizeof(u32Magic);
         if (cbRead == pImage->cbDescAlloc)
         {

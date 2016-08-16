@@ -4323,7 +4323,7 @@ void VBoxGlobal::prepare()
 
 void VBoxGlobal::cleanup()
 {
-    // TODO: Shouldn't that be protected with a mutex or something?
+    /// @todo Shouldn't that be protected with a mutex or something?
     /* Remember that the cleanup is in progress preventing any unwanted
      * stuff which could be called from the other threads: */
     m_sfCleanupInProgress = true;

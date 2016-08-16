@@ -97,7 +97,7 @@ static struct _CLIPFORMATTABLE
     { "image/x-MS-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP }
 
 
-    /* TODO: Inkscape exports image/png but not bmp... */
+    /** @todo Inkscape exports image/png but not bmp... */
 };
 
 typedef unsigned CLIPX11FORMAT;

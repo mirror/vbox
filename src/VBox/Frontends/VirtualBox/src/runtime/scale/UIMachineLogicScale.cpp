@@ -136,7 +136,7 @@ void UIMachineLogicScale::prepareMachineWindows()
     if (isMachineWindowsCreated())
         return;
 
-#ifdef VBOX_WS_MAC // TODO: Is that really need here?
+#ifdef VBOX_WS_MAC /// @todo Is that really need here?
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
     ::darwinSetFrontMostProcess();

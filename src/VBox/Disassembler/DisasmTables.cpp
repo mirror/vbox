@@ -26,8 +26,8 @@
 
 
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//TODO: Verify tables for correctness
-//TODO: opcode type (harmless, potentially dangerous, dangerous)
+/// @todo Verify tables for correctness
+/// @todo opcode type (harmless, potentially dangerous, dangerous)
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifndef DIS_CORE_ONLY
@@ -312,7 +312,7 @@ const DISOPCODE g_aOneByteMapX86[256] =
     OP("retn",               0,                  0,                 0,          OP_RETN,        OP_PARM_NONE,    OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_UNCOND_CONTROLFLOW | DISOPTYPE_FORCED_64_OP_SIZE),
     OP("les %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LES,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64),
     OP("lds %Gv,%Mp",        IDX_ParseModRM,     IDX_UseModRM,      0,          OP_LDS,         OP_PARM_Gv,      OP_PARM_Mp,     OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_RRM_DANGEROUS | DISOPTYPE_INVALID_64),
-    /* @todo these two are actually group11 */
+    /** @todo these two are actually group11 */
     OP("mov %Eb,%Ib",        IDX_ParseModRM,     IDX_ParseImmByte,  0,          OP_MOV,         OP_PARM_Eb,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mov %Ev,%Iz",        IDX_ParseModRM,     IDX_ParseImmZ,     0,          OP_MOV,         OP_PARM_Ev,      OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("enter %Iw,%Ib",      IDX_ParseImmUshort, IDX_ParseImmByte,  0,          OP_ENTER,       OP_PARM_Iw,      OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -2216,10 +2216,10 @@ const DISOPCODE g_aMapX86_EscF1_Low[8] =
     INVALID_OPCODE,
     OP("fst %Md",            IDX_ParseModRM,     0,          0,          OP_FST,     OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("fstp %Md",           IDX_ParseModRM,     0,          0,          OP_FSTP,    OP_PARM_Md,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    //TODO:??
+    /// @todo ??
     OP("fldenv %M",          IDX_ParseModRM,     0,          0,          OP_FLDENV,  OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("fldcw %Ew",          IDX_ParseModRM,     0,          0,          OP_FSUBR,   OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    //TODO:??
+    /// @todo ??
     OP("fstenv %M",          IDX_ParseModRM,     0,          0,          OP_FSTENV,  OP_PARM_M,          OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("fstcw %Ew",          IDX_ParseModRM,     0,          0,          OP_FSTCW,   OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 };

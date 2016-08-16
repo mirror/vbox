@@ -109,7 +109,7 @@ static int usbGadgetHostUsbIpBindUnbind(PUTSGADGETHOSTTYPEINT pThis, UTSGADGET h
             /* Evaluate the process status. */
             if (   ProcSts.enmReason != RTPROCEXITREASON_NORMAL
                 || ProcSts.iStatus != 0)
-                rc = VERR_UNRESOLVED_ERROR; /** @todo: Log and give finer grained status code. */
+                rc = VERR_UNRESOLVED_ERROR; /** @todo Log and give finer grained status code. */
         }
     }
 

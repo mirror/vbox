@@ -816,7 +816,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEUpdate(HVRDESERVER hServer, unsigned uScre
                         solidrect->x + solidrect->w, solidrect->y + solidrect->h, RGB2BGR(solidrect->rgb));
                     return;
                 }
-            ///@todo: more orders
+            /// @todo more orders
             }
         }
 
@@ -929,7 +929,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEHidePointer(HVRDESERVER hServer)
     VNCServerImpl *pInstance = (VNCServerImpl *)hServer;
     RT_NOREF(pInstance);
 
-    ///@todo: what's behavior for this. hide doesn't seems right
+    /// @todo what's behavior for this. hide doesn't seems right
     //rfbSetCursor(pInstance->mVNCServer, NULL);
 }
 
@@ -1049,7 +1049,7 @@ DECLCALLBACK(void) VNCServerImpl::VRDEQueryInfo(HVRDESERVER hServer,
             }
             break;
         }
-        ///@todo lots more queries to implement
+        /// @todo lots more queries to implement
         default:
             break;
     }
@@ -1127,7 +1127,7 @@ int VNCServerImpl::Init(const VRDEINTERFACEHDR *pCallbacks,
     }
     else if (pCallbacks->u64Version == VRDE_INTERFACE_VERSION_1)
     {
-        ///@todo: this is incorrect and it will cause crash if client call unsupport func.
+        /// @todo this is incorrect and it will cause crash if client call unsupport func.
         mCallbacks = (VRDECALLBACKS_4 *)pCallbacks;
         mCallback = pvCallback;
 
@@ -1298,7 +1298,7 @@ enum rfbNewClientAction VNCServerImpl::rfbNewClientEvent(rfbClientPtr cl)
 {
     VNCServerImpl *instance = static_cast<VNCServerImpl *>(cl->screen->screenData);
 
-    ///@todo: we need auth user here
+    /// @todo we need auth user here
 
     instance->mCallbacks->VRDECallbackClientConnect(instance->mCallback, (int)cl->sock);
     instance->uClients++;

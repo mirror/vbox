@@ -736,7 +736,7 @@ VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs
         VirtualSystemItem *vi = new VirtualSystemItem(a, vs, m_pRootItem);
         m_pRootItem->appendChild(vi);
 
-        /* @todo: ask Dmitry about include/COMDefs.h:232 */
+        /** @todo ask Dmitry about include/COMDefs.h:232 */
         QVector<KVirtualSystemDescriptionType> types;
         QVector<QString> refs;
         QVector<QString> origValues;

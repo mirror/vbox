@@ -623,7 +623,7 @@ void UIMachineSettingsSystem::prepareTabMotherboard()
 #endif /* VBOX_WS_MAC */
     /* Install global event filter
      * to handle boot-table focus in/out events: */
-    // TODO: Get rid of that *crap*!
+    /// @todo Get rid of that *crap*!
     qApp->installEventFilter(this);
 
     /* Populate possible boot items list.

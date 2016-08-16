@@ -61,7 +61,7 @@
 #define VD_IO_TASK_SEGMENTS_MAX 64
 
 /** Threshold after not recently used blocks are removed from the list. */
-#define VD_DISCARD_REMOVE_THRESHOLD (10 * _1M) /** @todo: experiment */
+#define VD_DISCARD_REMOVE_THRESHOLD (10 * _1M) /** @todo experiment */
 
 /**
  * VD async I/O interface storage descriptor.
@@ -4738,7 +4738,7 @@ static DECLCALLBACK(int) vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pIoCtx=%#p cbRead=%u\n",
                  pvUser, pIoStorage, uOffset, pIoCtx, cbRead));
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 
@@ -4836,7 +4836,7 @@ static DECLCALLBACK(int) vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage,
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p uOffset=%llu pIoCtx=%#p cbWrite=%u\n",
                  pvUser, pIoStorage, uOffset, pIoCtx, cbWrite));
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 
@@ -4946,7 +4946,7 @@ static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, 
                     ("A synchronous metadata read is requested but the parameters are wrong\n"),
                     VERR_INVALID_POINTER);
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (   pIoCtx
         && !(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
@@ -4955,7 +4955,7 @@ static DECLCALLBACK(int) vdIOIntReadMeta(void *pvUser, PVDIOSTORAGE pIoStorage, 
         || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
     {
         /* Handle synchronous metadata I/O. */
-        /** @todo: Integrate with metadata transfers below. */
+        /** @todo Integrate with metadata transfers below. */
         rc = pVDIo->pInterfaceIo->pfnReadSync(pVDIo->pInterfaceIo->Core.pvUser,
                                                pIoStorage->pStorage, uOffset,
                                                pvBuf, cbRead, NULL);
@@ -5068,7 +5068,7 @@ static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage,
                     ("A synchronous metadata write is requested but the parameters are wrong\n"),
                     VERR_INVALID_POINTER);
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (   pIoCtx
         && !(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
@@ -5077,7 +5077,7 @@ static DECLCALLBACK(int) vdIOIntWriteMeta(void *pvUser, PVDIOSTORAGE pIoStorage,
         || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
     {
         /* Handle synchronous metadata I/O. */
-        /** @todo: Integrate with metadata transfers below. */
+        /** @todo Integrate with metadata transfers below. */
         rc = pVDIo->pInterfaceIo->pfnWriteSync(pVDIo->pInterfaceIo->Core.pvUser,
                                                pIoStorage->pStorage, uOffset,
                                                pvBuf, cbWrite, NULL);
@@ -5258,7 +5258,7 @@ static DECLCALLBACK(int) vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVD
                     ("A synchronous metadata write is requested but the parameters are wrong\n"),
                     VERR_INVALID_POINTER);
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (   pIoCtx
         && !(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
@@ -5270,7 +5270,7 @@ static DECLCALLBACK(int) vdIOIntFlush(void *pvUser, PVDIOSTORAGE pIoStorage, PVD
         || pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC)
     {
         /* Handle synchronous flushes. */
-        /** @todo: Integrate with metadata transfers below. */
+        /** @todo Integrate with metadata transfers below. */
         rc = pVDIo->pInterfaceIo->pfnFlushSync(pVDIo->pInterfaceIo->Core.pvUser,
                                                pIoStorage->pStorage);
     }
@@ -5324,7 +5324,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
     PVBOXHDD pDisk = pVDIo->pDisk;
     size_t cbCopied = 0;
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 
@@ -5344,7 +5344,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
     PVBOXHDD pDisk = pVDIo->pDisk;
     size_t cbCopied = 0;
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 
@@ -5363,7 +5363,7 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int c
     PVBOXHDD pDisk = pVDIo->pDisk;
     size_t cbSet = 0;
 
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 
@@ -5384,10 +5384,10 @@ static DECLCALLBACK(size_t) vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pI
     PVBOXHDD pDisk = pVDIo->pDisk;
     size_t cbCreated = 0;
 
-    /** @todo: It is possible that this gets called from a filter plugin
+    /** @todo It is possible that this gets called from a filter plugin
      * outside of the disk lock. Refine assertion or remove completely. */
 #if 0
-    /** @todo: Enable check for sync I/O later. */
+    /** @todo Enable check for sync I/O later. */
     if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC))
         VD_IS_LOCKED(pDisk);
 #else

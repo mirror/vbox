@@ -291,7 +291,7 @@ VBoxDbgConsoleInput::returnPressed()
     Assert(m_hGUIThread == RTThreadNativeSelf());
 
     QString strCommand = currentText();
-    /* TODO: trim whitespace? */
+    /** @todo trim whitespace? */
     if (strCommand.isEmpty())
         return;
 

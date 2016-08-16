@@ -1292,7 +1292,7 @@ static int vhdxLoadFileParametersMetadata(PVHDXIMAGE pImage, uint64_t offItem, s
             vhdxConvFileParamsEndianess(VHDXECONV_F2H, &FileParameters, &FileParameters);
             pImage->cbBlock = FileParameters.u32BlockSize;
 
-            /* @todo: No support for differencing images yet. */
+            /** @todo No support for differencing images yet. */
             if (FileParameters.u32Flags & VHDX_FILE_PARAMETERS_FLAGS_HAS_PARENT)
                 rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
                                "VHDX: Image \'%s\' is a differencing image which is not supported yet",

@@ -420,7 +420,7 @@ static int machineAdd(const Bstr &strUuid)
 
     /** @todo Add std exception handling! */
 
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better error! */
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /** @todo Find a better error! */
 }
 
 static int machineDestroy(const Bstr &strUuid)

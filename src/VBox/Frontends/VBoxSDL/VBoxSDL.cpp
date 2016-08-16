@@ -398,7 +398,7 @@ public:
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
         // likely all this double copy is now excessive, and we can just use existing event object
-        // @todo: eliminate it
+        /// @todo eliminate it
         switch (aType)
         {
             case VBoxEventType_OnMousePointerShapeChanged:

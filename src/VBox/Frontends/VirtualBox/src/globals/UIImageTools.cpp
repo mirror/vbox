@@ -31,7 +31,7 @@
 #include <math.h>
 
 
-/* Todo: Think about the naming convention and if the images should be
+/** @todo Think about the naming convention and if the images should be
  * processed in place or return changed copies. Make it more uniform. Add
  * asserts if the bit depth of the given image could not processed. */
 
@@ -52,7 +52,7 @@ QImage toGray(const QImage& image)
 
 void dimImage(QImage& image)
 {
-    /* Todo: factor out the < 32bit case, cause this can be done a lot faster
+    /** @todo factor out the < 32bit case, cause this can be done a lot faster
      * by just processing every second line. */
     for (int y = 0; y < image.height(); ++y)
     {

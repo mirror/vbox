@@ -250,7 +250,7 @@ class SOURCEFILEENTRY
                 }
             }
 
-            return VINF_SUCCESS; /* @todo */
+            return VINF_SUCCESS; /** @todo */
         }
 
     private:
@@ -1926,7 +1926,7 @@ static int tstTranslatePath()
         }
     }
 
-    return VINF_SUCCESS; /* @todo */
+    return VINF_SUCCESS; /** @todo */
 }
 #endif
 
@@ -3553,7 +3553,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
                     break;
             }
 
-            /** @todo: Show more information about this element. */
+            /** @todo Show more information about this element. */
         }
 
         ++it;

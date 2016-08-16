@@ -1969,7 +1969,7 @@ static size_t ParseVexDest(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDI
                 pParam->fUse |= DISUSE_REG_GEN64;
             else
                 pParam->fUse |= DISUSE_REG_GEN32;
-            // TODO: Check if the register number is correct
+            /// @todo Check if the register number is correct
             pParam->Base.idxGenReg = (pDis->bVexDestReg >> 1) ^ 0xf;
         break;
     }

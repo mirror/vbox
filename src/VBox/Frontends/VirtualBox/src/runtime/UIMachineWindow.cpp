@@ -264,7 +264,7 @@ void UIMachineWindow::retranslateUi()
 # if QT_VERSION < 0x050000
 bool UIMachineWindow::x11Event(XEvent *pEvent)
 {
-    // TODO: Is that really needed?
+    /// @todo Is that really needed?
     /* Qt bug: when the machine-view grabs the keyboard,
      * FocusIn, FocusOut, WindowActivate and WindowDeactivate Qt events are
      * not properly sent on top level window deactivation.

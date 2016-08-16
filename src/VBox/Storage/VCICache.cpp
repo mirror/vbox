@@ -770,7 +770,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
         }
     }
     else
-        rc = VERR_INTERNAL_ERROR; /* @todo Better error code. */
+        rc = VERR_INTERNAL_ERROR; /** @todo Better error code. */
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
@@ -1708,7 +1708,7 @@ static DECLCALLBACK(int) vciWrite(void *pBackendData, uint64_t uOffset, size_t c
 
     }
 
-    *pcbWriteProcess = cbToWrite; /** @todo: Implement. */
+    *pcbWriteProcess = cbToWrite; /** @todo Implement. */
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

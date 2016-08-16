@@ -523,7 +523,7 @@ static void vdScriptTokenizerGetNumberConst(PVDTOKENIZER pTokenizer, PVDSCRIPTTO
     pToken->enmClass = VDTOKENCLASS_NUMCONST;
     int rc = RTStrToUInt64Ex(pTokenizer->pszInput, &pszNext, 0, &pToken->Class.NumConst.u64);
     Assert(RT_SUCCESS(rc) || rc == VWRN_TRAILING_CHARS || rc == VWRN_TRAILING_SPACES); NOREF(rc);
-    /** @todo: Handle number to big, throw a warning */
+    /** @todo Handle number to big, throw a warning */
 
     unsigned cchNumber = pszNext - pTokenizer->pszInput;
     for (unsigned i = 0; i < cchNumber; i++)
@@ -629,7 +629,7 @@ static void vdScriptTokenizerGetOperatorOrPunctuator(PVDTOKENIZER pTokenizer, PV
             pToken->enmClass = VDTOKENCLASS_OPERATORS;
             pToken->Pos.iChEnd += (unsigned)g_aScriptOps[i].cchOp;
 
-            /** @todo: Make this prettier. */
+            /** @todo Make this prettier. */
             for (unsigned j = 0; j < g_aScriptOps[i].cchOp; j++)
                 vdScriptTokenizerSkipCh(pTokenizer);
             fOpFound = true;
@@ -1207,7 +1207,7 @@ static int vdScriptParseUnaryExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR 
 
     LogFlowFunc(("pThis=%p ppAstNodeExpr=%p\n", pThis, ppAstNodeExpr));
 
-    /** @todo: Think about a more beautiful way of parsing this. */
+    /** @todo Think about a more beautiful way of parsing this. */
     while (true)
     {
         bool fQuit = false;
@@ -1449,7 +1449,7 @@ static int vdScriptParseCastExpression(PVDSCRIPTCTXINT pThis, PVDSCRIPTASTEXPR *
             if (pExpr)
             {
                 pExpr->enmType = VDSCRIPTEXPRTYPE_CAST;
-                rc = vdScriptParseCastExpression(pThis, &pExpr->Cast.pExpr); /** @todo: Kill recursion. */
+                rc = vdScriptParseCastExpression(pThis, &pExpr->Cast.pExpr); /** @todo Kill recursion. */
                 if (RT_SUCCESS(rc))
                     pExpr->Cast.pTypeName = pTypeName;
                 else
@@ -2816,7 +2816,7 @@ static int vdScriptParseAddFnDef(PVDSCRIPTCTXINT pThis)
                                 pFn->Core.cchString = strlen(pFn->Core.pszString);
                                 pFn->fExternal      = false;
                                 pFn->Type.Internal.pAstFn = pAstNodeFn;
-                                /** @todo: Parameters. */
+                                /** @todo Parameters. */
                                 RTStrSpaceInsert(&pThis->hStrSpaceFn, &pFn->Core);
                             }
                             else
@@ -2938,7 +2938,7 @@ DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PCVDSCRIPTC
     AssertPtrReturn(paCallbacks, VERR_INVALID_POINTER);
     AssertReturn(cCallbacks > 0, VERR_INVALID_PARAMETER);
 
-    /** @todo: Unregister already registered callbacks in case of an error. */
+    /** @todo Unregister already registered callbacks in case of an error. */
     do
     {
         PVDSCRIPTFN pFn = NULL;
@@ -2956,7 +2956,7 @@ DECLHIDDEN(int) VDScriptCtxCallbacksRegister(VDSCRIPTCTX hScriptCtx, PCVDSCRIPTC
             break;
         }
 
-        /** @todo: Validate argument and returns types. */
+        /** @todo Validate argument and returns types. */
         pFn->Core.pszString            = paCallbacks->pszFnName;
         pFn->Core.cchString            = strlen(pFn->Core.pszString);
         pFn->fExternal                 = true;

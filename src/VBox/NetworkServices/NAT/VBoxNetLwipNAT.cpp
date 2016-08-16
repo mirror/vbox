@@ -140,7 +140,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
   public:
     VBoxNetLwipNAT(SOCKET icmpsock4, SOCKET icmpsock6);
     virtual ~VBoxNetLwipNAT();
-    void usage(){                /* @todo: should be implemented */ };
+    void usage(){                /** @todo should be implemented */ };
     int run();
     virtual int init(void);
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);

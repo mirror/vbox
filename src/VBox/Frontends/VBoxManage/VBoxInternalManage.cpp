@@ -1990,7 +1990,7 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
                              NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(vrc);
 
-    /** @todo: Support convert to raw for floppy and DVD images too. */
+    /** @todo Support convert to raw for floppy and DVD images too. */
     vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
     if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot create the virtual disk container: %Rrc", vrc);
