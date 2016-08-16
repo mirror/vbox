@@ -538,6 +538,7 @@ VBox-xpcom-nspr_DEFS.openbsd = \
 VBox-xpcom-nspr_DEFS.os2 =
 VBox-xpcom-nspr_DEFS.solaris = \
 	HAVE_FCNTL_FILE_LOCKING=1 \
+	HAVE_SOCKLEN_T=1 \
 	_PR_PTHREADS
 VBox-xpcom-nspr_INCS = \
 	nsprpub/pr/include/private \
