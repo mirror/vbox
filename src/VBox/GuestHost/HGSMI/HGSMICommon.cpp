@@ -367,7 +367,7 @@ int HGSMIBufferProcess(const HGSMIAREA *pArea,
     AssertPtrReturn(pChannelInfo, VERR_INVALID_PARAMETER);
 
     /* Guest has prepared a command description at 'offBuffer'. */
-    HGSMIBUFFERCONTEXT bufferContext;
+    HGSMIBUFFERCONTEXT bufferContext = { NULL, NULL, 0 }; /* Makes old GCC happier. */
     int rc = hgsmiVerifyBuffer(pArea, offBuffer, &bufferContext);
     if (RT_SUCCESS(rc))
     {
