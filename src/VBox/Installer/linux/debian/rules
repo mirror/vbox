@@ -278,7 +278,7 @@ else
 endif
 	mv $(archdir) $(prefix)/usr/lib/$(package)
 	if [ -f $(prefix)/usr/lib/$(package)/libQt5CoreVBox.so.5 ]; then \
-	    ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname)chrpath \
+	    ../../../../tools/linux.$(chrarch)/bin/chrpath \
 	        --keepgoing --replace /usr/lib/$(package) \
 	        $(prefix)/usr/lib/$(package)/*.so.5 \
 	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \

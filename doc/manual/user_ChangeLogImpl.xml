@@ -3,7 +3,7 @@
 <chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
-    <title>Version 5.1.4 (2016-xx-xx)</title>
+    <title>Version 5.1.4 (2016-08-16)</title>
 
     <para>This is a maintenance release. The following items were fixed and/or
       added:</para>
@@ -66,11 +66,6 @@
         <para>OVF: when importing appliances, make sure that the version of the
           embedded VirtualBox specific settings is processed, to get the
           default settings handling right</para>
-      </listitem>
-
-      <listitem>
-        <para>API: when creating new VMs, do not enable VRDE by default (5.1.0
-          regression)</para>
       </listitem>
 
       <listitem>
