@@ -96,12 +96,7 @@ ifneq ($(MAKECMDGOALS),clean)
  endif
 endif
 
-# Location of custom built Qt libraries (see below)
-qtstdc6  := /home/vbox/Qt-4.8.6-stdc++6-$(arch)
-
 cfg_flags := $(if $(NOQT),--disable-qt,) \
-	     $(if $(filter _Debian_squeeze,$(debrel)),--with-qt-dir=$(qtstdc6)) \
-	     $(if $(filter _Debian_squeeze,$(debrel)),--build-libvpx,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
@@ -115,7 +110,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
-	     $(if $(filter _Debian_squeeze _Ubuntu_lucid,$(debrel)),,VBOX_WITH_VMSVGA3D=1) \
+	     VBOX_WITH_VMSVGA3D=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
@@ -286,7 +281,7 @@ endif
 	    ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname)chrpath \
 	        --keepgoing --replace /usr/lib/$(package) \
 	        $(prefix)/usr/lib/$(package)/*.so.5 \
-	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so \
+	        $(prefix)/usr/lib/$(package)/plugins/platforms/*.so; \
 	    echo "[Paths]" > $(prefix)/usr/lib/$(package)/qt.conf; \
 	    echo "Plugins = /usr/lib/$(package)/plugins" >> $(prefix)/usr/lib/$(package)/qt.conf; \
 	fi
