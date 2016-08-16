@@ -542,7 +542,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     pDeviceExtension->pfnRDBSSDeviceControl = DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL];
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = VBoxMRXDeviceControl;
 
-    /* @todo start the redirector here RxStartMiniRdr. */
+    /** @todo start the redirector here RxStartMiniRdr. */
 
     Log(("VBOXSF: DriverEntry: Init successful!\n"));
     return STATUS_SUCCESS;
@@ -1106,7 +1106,7 @@ static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
                pwc += 2;
                cRemainingName -= 2;
 
-               /* @todo should also check that the drive letter corresponds to the name. */
+               /** @todo should also check that the drive letter corresponds to the name. */
                if (vboxIsPrefixOK(pwc, cRemainingName * sizeof (WCHAR)))
                    Status = STATUS_SUCCESS;
            }

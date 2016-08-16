@@ -21,19 +21,19 @@
 
 D3DFORMAT vboxDDI2D3DFormat(D3DDDIFORMAT format)
 {
-    /* @todo: check they are all equal */
+    /** @todo check they are all equal */
     return (D3DFORMAT)format;
 }
 
 D3DMULTISAMPLE_TYPE vboxDDI2D3DMultiSampleType(D3DDDIMULTISAMPLE_TYPE enmType)
 {
-    /* @todo: check they are all equal */
+    /** @todo check they are all equal */
     return (D3DMULTISAMPLE_TYPE)enmType;
 }
 
 D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
 {
-    /* @todo: check they are all equal */
+    /** @todo check they are all equal */
     switch (enmPool)
     {
     case D3DDDIPOOL_SYSTEMMEM:
@@ -41,7 +41,7 @@ D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
     case D3DDDIPOOL_VIDEOMEMORY:
     case D3DDDIPOOL_LOCALVIDMEM:
     case D3DDDIPOOL_NONLOCALVIDMEM:
-        /* @todo: what would be proper here? */
+        /** @todo what would be proper here? */
         return D3DPOOL_DEFAULT;
     default:
         Assert(0);
@@ -51,7 +51,7 @@ D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
 
 D3DRENDERSTATETYPE vboxDDI2D3DRenderStateType(D3DDDIRENDERSTATETYPE enmType)
 {
-    /* @todo: @fixme: not entirely correct, need to check */
+    /** @todo @fixme: not entirely correct, need to check */
     return (D3DRENDERSTATETYPE)enmType;
 }
 
@@ -676,7 +676,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                     vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
                     vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType),
                     pRc->RcDesc.MultisampleQuality,
-                    TRUE /* @todo: BOOL Discard */,
+                    TRUE /** @todo BOOL Discard */,
                     &pD3D9Surf,
                     NULL /*HANDLE* pSharedHandle*/);
             Assert(hr == S_OK);

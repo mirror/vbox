@@ -100,9 +100,9 @@ vboxvfs_vnode_getattr(struct vnop_getattr_args *args)
         /* Not present on 10.6 */
         //VATTR_CLEAR_ACTIVE(vnode_args, va_addedtime);
 
-        /* todo: take care about va_encoding (file name encoding) */
+        /** @todo take care about va_encoding (file name encoding) */
         VATTR_CLEAR_ACTIVE(vnode_args, va_encoding);
-        /* todo: take care about: va_acl */
+        /** @todo take care about: va_acl */
         VATTR_CLEAR_ACTIVE(vnode_args, va_acl);
 
         VATTR_CLEAR_ACTIVE(vnode_args, va_name);
@@ -311,7 +311,7 @@ vboxvfs_vnode_lookup(struct vnop_lookup_args *args)
         {
             /* If vnode exist in guets VFS cache, but not exist on a host -- just forget it. */
             cache_purge(vnode);
-            /* todo: free vnode data here */
+            /** @todo free vnode data here */
             rc = ENOENT;
         }
     }

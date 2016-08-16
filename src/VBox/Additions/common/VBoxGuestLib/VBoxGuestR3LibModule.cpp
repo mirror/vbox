@@ -68,7 +68,7 @@ VBGLR3DECL(int) VbglR3RegisterSharedModule(char *pszModuleName, char *pszVersion
     pReq->enmGuestOS    = VBOXOSFAMILY_Windows64;
 # endif
 #else
-    /** todo */
+    /** @todo */
     pReq->enmGuestOS    = VBOXOSFAMILY_Unknown;
 #endif
     for (unsigned i = 0; i < cRegions; i++)

@@ -438,7 +438,7 @@ vboxvfs_root(struct mount *mp, struct vnode **ppVnode, vfs_context_t pContext)
         while (fRootVnodeState != VBOXVFS_OBJECT_INITIALIZED
             && fRootVnodeState != VBOXVFS_OBJECT_INVALID)
         {
-            /* @todo: Currently, we are burning CPU cycles while waiting. This is for a short
+            /** @todo Currently, we are burning CPU cycles while waiting. This is for a short
              * time but we should relax here! */
             fRootVnodeState = ASMAtomicReadU8(&pMount->fRootVnodeState);
 
@@ -528,12 +528,12 @@ vboxvfs_getattr(struct mount *mp, struct vfs_attr *pAttr, vfs_context_t pContext
     VFSATTR_CLEAR_ACTIVE(pAttr, f_ffree);
     VFSATTR_CLEAR_ACTIVE(pAttr, f_fssubtype);
 
-    /* todo: take care about f_capabilities and f_attributes, f_fsid */
+    /** @todo take care about f_capabilities and f_attributes, f_fsid */
     VFSATTR_CLEAR_ACTIVE(pAttr, f_capabilities);
     VFSATTR_CLEAR_ACTIVE(pAttr, f_attributes);
     VFSATTR_CLEAR_ACTIVE(pAttr, f_fsid);
 
-    /* todo: take care about f_create_time, f_modify_time, f_access_time, f_backup_time */
+    /** @todo take care about f_create_time, f_modify_time, f_access_time, f_backup_time */
     VFSATTR_CLEAR_ACTIVE(pAttr, f_create_time);
     VFSATTR_CLEAR_ACTIVE(pAttr, f_modify_time);
     VFSATTR_CLEAR_ACTIVE(pAttr, f_access_time);

@@ -140,7 +140,7 @@ VBOXVHWACMD* VBoxDispVHWACommandCreate(PVBOXDISPDEV pDev, VBOXVHWACMD_TYPE enmCm
         pHdr->cRefs = 1;
     }
 
-    /* @todo: temporary hack */
+    /** @todo temporary hack */
     VBoxDispVHWACommandCheckHostCmds(pDev);
 
     return pHdr;
@@ -659,7 +659,7 @@ void VBoxDispVHWAFromDDCOLORKEY(VBOXVHWA_COLORKEY *pVHWACKey, DDCOLORKEY  *pDdCK
 
 void VBoxDispVHWAFromDDOVERLAYFX(VBOXVHWA_OVERLAYFX *pVHWAOverlay, DDOVERLAYFX *pDdOverlay)
 {
-    //TODO: fxFlags
+    /// @todo fxFlags
     VBoxDispVHWAFromDDCOLORKEY(&pVHWAOverlay->DstCK, &pDdOverlay->dckDestColorkey);
     VBoxDispVHWAFromDDCOLORKEY(&pVHWAOverlay->SrcCK, &pDdOverlay->dckSrcColorkey);
 }

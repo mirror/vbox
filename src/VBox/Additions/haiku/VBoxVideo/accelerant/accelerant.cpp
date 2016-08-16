@@ -281,7 +281,7 @@ uint32 vboxvideo_accelerant_mode_count(void)
 
 status_t vboxvideo_get_mode_list(display_mode *dm)
 {
-    // TODO return some standard modes here
+    /// @todo return some standard modes here
     TRACE("%s\n", __FUNCTION__);
     return vboxvideo_get_display_mode(dm);
 }

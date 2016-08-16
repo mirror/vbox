@@ -123,7 +123,7 @@ static status_t vgdrvHaikuClose(void *cookie)
     /** @todo r=ramshankar: should we really be using the session spinlock here? */
     RTSpinlockAcquire(g_DevExt.SessionSpinlock);
 
-    /* @todo we don't know if it belongs to this session!! */
+    /** @todo we don't know if it belongs to this session!! */
     if (sState.selectSync)
     {
         //dprintf(DRIVER_NAME "close: unblocking select %p %x\n", sState.selectSync, sState.selectEvent);

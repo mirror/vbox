@@ -1385,7 +1385,7 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
 
         if (ROP3_NEED_SRC(rop4))
         {
-            /* @todo Three way blt. RDP_ORDER_TRIBLT. */
+            /** @todo Three way blt. RDP_ORDER_TRIBLT. */
             LOG(("TRIBLT pbo->iSolidColor = 0x%08X.", pbo->iSolidColor));
             vrdpReportDirtyRects(pDev, &clipRects);
         }
@@ -1431,7 +1431,7 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                     }
                     else
                     {
-                        /* @todo BITMAPCACHE followed by MEMBLT? */
+                        /** @todo BITMAPCACHE followed by MEMBLT? */
                         vrdpReportDirtyRects(pDev, &clipRects);
                     }
                 }

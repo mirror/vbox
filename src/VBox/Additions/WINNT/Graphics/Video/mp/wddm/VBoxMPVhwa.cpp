@@ -386,13 +386,13 @@ static void vboxVhwaInitSrc(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
                     if (pInfo1->u.out.colorKeyCaps & VBOXVHWA_CKEYCAPS_SRCOVERLAY)
                     {
                         pSettings->fFlags |= VBOXVHWA_F_CKEY_SRC;
-                        /* todo: VBOXVHWA_CKEYCAPS_SRCOVERLAYONEACTIVE ? */
+                        /** @todo VBOXVHWA_CKEYCAPS_SRCOVERLAYONEACTIVE ? */
                     }
 
                     if (pInfo1->u.out.colorKeyCaps & VBOXVHWA_CKEYCAPS_DESTOVERLAY)
                     {
                         pSettings->fFlags |= VBOXVHWA_F_CKEY_DST;
-                        /* todo: VBOXVHWA_CKEYCAPS_DESTOVERLAYONEACTIVE ? */
+                        /** @todo VBOXVHWA_CKEYCAPS_DESTOVERLAYONEACTIVE ? */
                     }
                 }
 
@@ -576,7 +576,7 @@ int vboxVhwaHlpPopulateSurInfo(VBOXVHWA_SURFACEDESC *pInfo, PVBOXWDDM_ALLOCATION
     else
         pInfo->cBackBuffers = 0;
     pInfo->Reserved = 0;
-        /* @todo: color keys */
+        /** @todo color keys */
 //                        pInfo->DstOverlayCK;
 //                        pInfo->DstBltCK;
 //                        pInfo->SrcOverlayCK;
@@ -606,7 +606,7 @@ int vboxVhwaHlpCheckApplySurfInfo(PVBOXWDDM_ALLOCATION pSurf, VBOXVHWA_SURFACEDE
         Assert(pSurf->AllocData.SurfDesc.cbSize);
         pSurf->AllocData.SurfDesc.pitch = pInfo->pitch;
         Assert(pSurf->AllocData.SurfDesc.pitch);
-        /* @todo: make this properly */
+        /** @todo make this properly */
         pSurf->AllocData.SurfDesc.bpp = pSurf->AllocData.SurfDesc.pitch * 8 / pSurf->AllocData.SurfDesc.width;
         Assert(pSurf->AllocData.SurfDesc.bpp);
     }
@@ -756,7 +756,7 @@ int vboxVhwaHlpCheckInit(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID 
         return VERR_NOT_SUPPORTED;
 
     int rc = VINF_SUCCESS;
-    /* @todo: need a better sync */
+    /** @todo need a better sync */
     uint32_t cNew = ASMAtomicIncU32(&pSource->Vhwa.cOverlaysCreated);
     if (cNew == 1)
     {
@@ -799,7 +799,7 @@ int vboxVhwaHlpCheckTerm(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID 
 
     Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
 
-    /* @todo: need a better sync */
+    /** @todo need a better sync */
     uint32_t cNew = ASMAtomicDecU32(&pSource->Vhwa.cOverlaysCreated);
     int rc = VINF_SUCCESS;
     if (!cNew)

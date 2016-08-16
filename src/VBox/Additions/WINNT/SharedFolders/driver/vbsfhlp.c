@@ -228,7 +228,7 @@ NTSTATUS VBoxErrorToNTStatus(int vboxRC)
         break;
 
     default:
-        /* @todo error handling */
+        /** @todo error handling */
         Status = STATUS_INVALID_PARAMETER;
         Log(("Unexpected vbox error %Rrc\n",
              vboxRC));

@@ -153,7 +153,7 @@ static int vboxvfs_mount(struct mount *mp, struct thread *td)
 
     mp->mnt_data = pShFlGlobalInfo;
 
-    /* @todo root vnode. */
+    /** @todo root vnode. */
 
     vfs_getnewfsid(mp);
     vfs_mountedfrom(mp, pszShare);

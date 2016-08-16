@@ -339,7 +339,7 @@ NTSTATUS vboxWddmGhDisplaySetMode(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
     Assert(yOffset <= 0xffff);
 
     VBoxVideoSetModeRegisters(width, height, width, bpp, 0, (uint16_t)xOffset, (uint16_t)yOffset);
-    /*@todo read back from port to check if mode switch was successful */
+    /** @todo read back from port to check if mode switch was successful */
 
     return STATUS_SUCCESS;
 }
@@ -722,7 +722,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
        if (VBoxHGSMIIsSupported ())
        {
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
-           /* @todo: verify resources */
+           /** @todo verify resources */
            for (ULONG i = 0; i < pRcList->Count; ++i)
            {
                PCM_FULL_RESOURCE_DESCRIPTOR pFRc = &pRcList->List[i];
@@ -758,7 +758,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDevice
        else
        {
            LOGREL(("HGSMI unsupported, returning err"));
-           /* @todo: report a better status */
+           /** @todo report a better status */
            Status = STATUS_UNSUCCESSFUL;
        }
     }
@@ -859,7 +859,7 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
             }
             else
             {
-                /* todo: ?? */
+                /** @todo ?? */
             }
 
             ulSize &= ~0xFFF;
@@ -878,7 +878,7 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
                     AssertRC(rc);
                     if (RT_FAILURE(rc))
                     {
-                        /* @todo: de-initialize */
+                        /** @todo de-initialize */
                     }
                 }
             }
@@ -994,7 +994,7 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
                 AssertRC(rc);
                 if (RT_FAILURE(rc))
                 {
-                    /* @todo: */
+                    /** @todo */
                 }
             }
         }
@@ -1283,7 +1283,7 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     LOGREL(("HGSMI failed to initialize, returning err"));
 
-                    /* @todo: report a better status */
+                    /** @todo report a better status */
                     Status = STATUS_UNSUCCESSFUL;
                 }
             }
@@ -1539,7 +1539,7 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
         else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
         {
             AssertBreakpoint();
-            /* @todo: FIXME: implement !!! */
+            /** @todo FIXME: implement !!! */
         }
         else
             break;
@@ -1700,7 +1700,7 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
             else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
             {
                 AssertBreakpoint();
-                /* @todo: FIXME: implement !!! */
+                /** @todo FIXME: implement !!! */
             }
             else
                 break;
@@ -2203,9 +2203,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
              */
             pCaps->SchedulingCaps.MultiEngineAware = 1;
             pCaps->MemoryManagementCaps.Value = 0;
-            /* @todo: this correlates with pCaps->SchedulingCaps.MultiEngineAware */
+            /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->MemoryManagementCaps.PagingNode = 0;
-            /* @todo: this correlates with pCaps->SchedulingCaps.MultiEngineAware */
+            /** @todo this correlates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = VBOXWDDM_NUM_NODES;
 #ifdef VBOX_WDDM_WIN8
             pCaps->WDDMVersion = DXGKDDI_WDDMv1;
@@ -2246,7 +2246,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->BaseAddress.QuadPart = 0;
                 pDr->CpuTranslatedAddress = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
                 /* make sure the size is page aligned */
-                /* @todo: need to setup VBVA buffers and adjust the mem size here */
+                /** @todo need to setup VBVA buffers and adjust the mem size here */
                 pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pDevExt);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
@@ -2259,7 +2259,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->BaseAddress.QuadPart = 0;
                 pDr->CpuTranslatedAddress.QuadPart = 0;
                 /* make sure the size is page aligned */
-                /* @todo: need to setup VBVA buffers and adjust the mem size here */
+                /** @todo need to setup VBVA buffers and adjust the mem size here */
                 pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pDevExt);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
@@ -2432,7 +2432,7 @@ VOID vboxWddmAllocationCleanupAssignment(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOC
         {
             if (pAllocation->bAssigned)
             {
-                /* @todo: do we need to notify host? */
+                /** @todo do we need to notify host? */
                 vboxWddmAssignPrimary(&pDevExt->aSources[pAllocation->AllocData.SurfDesc.VidPnSourceId], NULL, pAllocation->AllocData.SurfDesc.VidPnSourceId);
             }
             break;
@@ -2908,7 +2908,7 @@ DxgkDdiGetStandardAllocationDriverData(
                 UINT Pitch = vboxWddmCalcPitch(pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Width, pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Format);
                 pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Pitch = Pitch;
 
-                /* @todo: need [d/q]word align?? */
+                /** @todo need [d/q]word align?? */
 
                 if (pGetStandardAllocationDriverData->pAllocationPrivateDriverData)
                 {
@@ -3546,7 +3546,7 @@ DxgkDdiSubmitCommandLegacy(
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, 0);
             if (!pDr)
             {
-                /* @todo: try flushing.. */
+                /** @todo try flushing.. */
                 LOGREL(("vboxVdmaCBufDrCreate returned NULL"));
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
@@ -3602,7 +3602,7 @@ DxgkDdiPreemptCommandLegacy(
     LOGF(("ENTER, hAdapter(0x%x)", hAdapter));
 
     AssertFailed();
-    /* @todo: fixme: implement */
+    /** @todo fixme: implement */
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
@@ -3685,7 +3685,7 @@ DxgkDdiBuildPagingBufferNew(
             if (pBuildPagingBuffer->DmaSize < sizeof (VBOXCMDVBVA_PAGING_TRANSFER))
             {
                 WARN(("pBuildPagingBuffer->DmaSize(%d) < sizeof VBOXCMDVBVA_PAGING_TRANSFER (%d)", pBuildPagingBuffer->DmaSize , sizeof (VBOXCMDVBVA_PAGING_TRANSFER)));
-                /* @todo: can this actually happen? what status to return? */
+                /** @todo can this actually happen? what status to return? */
                 return STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
             }
 
@@ -3861,7 +3861,7 @@ DxgkDdiBuildPagingBufferLegacy(
 
     uint32_t cbCmdDma = 0;
 
-    /* @todo: */
+    /** @todo */
     switch (pBuildPagingBuffer->Operation)
     {
         case DXGK_OPERATION_TRANSFER:
@@ -4007,7 +4007,7 @@ DxgkDdiBuildPagingBufferLegacy(
             }
             else
             {
-                /* @todo: try flushing.. */
+                /** @todo try flushing.. */
                 LOGREL(("vboxVdmaCBufDrCreate returned NULL"));
                 Status = STATUS_INSUFFICIENT_RESOURCES;
             }
@@ -4057,7 +4057,7 @@ DxgkDdiSetPalette(
     LOGF(("ENTER, hAdapter(0x%x)", hAdapter));
 
     AssertBreakpoint();
-    /* @todo: fixme: implement */
+    /** @todo fixme: implement */
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
@@ -4309,7 +4309,7 @@ DxgkDdiSetPointerShape(
         /* mouse integration is ON */
         PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
         PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerShape->VidPnSourceId].PointerInfo;
-        /* @todo: to avoid extra data copy and extra heap allocation,
+        /** @todo to avoid extra data copy and extra heap allocation,
          *  need to maintain the pre-allocated HGSMI buffer and convert the data directly to it */
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
@@ -4338,7 +4338,7 @@ DxgkDdiResetFromTimeout(
     LOGF(("ENTER, hAdapter(0x%x)", hAdapter));
 
     AssertBreakpoint();
-    /* @todo: fixme: implement */
+    /** @todo fixme: implement */
 
     LOGF(("LEAVE, hAdapter(0x%x)", hAdapter));
 
@@ -4593,7 +4593,7 @@ DxgkDdiEscape(
                 break;
             }
             case VBOXESC_ISVRDPACTIVE:
-                /* @todo: implement */
+                /** @todo implement */
                 Status = STATUS_SUCCESS;
                 break;
 #ifdef VBOX_WITH_CROGL
@@ -5768,7 +5768,7 @@ DxgkDdiRenderNew(
     {
         WARN(("pRender->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_HDR (%d)",
                 pRender->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_HDR)));
-        /* @todo: can this actually happen? what status to return? */
+        /** @todo can this actually happen? what status to return? */
         return STATUS_INVALID_PARAMETER;
     }
     if (pRender->CommandLength < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
@@ -6193,7 +6193,7 @@ DxgkDdiPresentNew(
     if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_HDR))
     {
         WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_HDR (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_HDR)));
-        /* @todo: can this actually happen? what status to return? */
+        /** @todo can this actually happen? what status to return? */
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -6208,7 +6208,7 @@ DxgkDdiPresentNew(
     if (pPresent->DmaSize < VBOXWDDM_DUMMY_DMABUFFER_SIZE)
     {
         WARN(("Present->DmaSize(%d) < VBOXWDDM_DUMMY_DMABUFFER_SIZE (%d)", pPresent->DmaSize , VBOXWDDM_DUMMY_DMABUFFER_SIZE));
-        /* @todo: can this actually happen? what status to return? */
+        /** @todo can this actually happen? what status to return? */
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -6263,7 +6263,7 @@ DxgkDdiPresentNew(
         if (pPresent->DmaBufferPrivateDataSize < VBOXCMDVBVA_SIZEOF_BLTSTRUCT_MAX)
         {
             WARN(("Present->DmaBufferPrivateDataSize(%d) < (%d)", pPresent->DmaBufferPrivateDataSize , VBOXCMDVBVA_SIZEOF_BLTSTRUCT_MAX));
-            /* @todo: can this actually happen? what status to return? */
+            /** @todo can this actually happen? what status to return? */
             return STATUS_INVALID_PARAMETER;
         }
 
@@ -6322,7 +6322,7 @@ DxgkDdiPresentNew(
         if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXCMDVBVA_FLIP))
         {
             WARN(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXCMDVBVA_FLIP (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXCMDVBVA_FLIP)));
-            /* @todo: can this actually happen? what status to return? */
+            /** @todo can this actually happen? what status to return? */
             return STATUS_INVALID_PARAMETER;
         }
 
@@ -6400,7 +6400,7 @@ DxgkDdiPresentNew(
             if (pPresent->DmaBufferPrivateDataSize < VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX)
             {
                 WARN(("Present->DmaBufferPrivateDataSize(%d) < VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX (%d)", pPresent->DmaBufferPrivateDataSize , VBOXCMDVBVA_SIZEOF_CLRFILLSTRUCT_MAX));
-                /* @todo: can this actually happen? what status to return? */
+                /** @todo can this actually happen? what status to return? */
                 return STATUS_INVALID_PARAMETER;
             }
 
@@ -6515,7 +6515,7 @@ DxgkDdiPresentLegacy(
     if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR))
     {
         LOGREL(("Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR (%d)", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATEDATA_PRESENTHDR)));
-        /* @todo: can this actually happen? what status tu return? */
+        /** @todo can this actually happen? what status tu return? */
         return STATUS_INVALID_PARAMETER;
     }
 

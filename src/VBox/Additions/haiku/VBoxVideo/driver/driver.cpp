@@ -277,7 +277,7 @@ status_t device_open(const char *name, uint32 flags, void **cookie)
     if (!gCanHasDevice || strcmp(name, gDeviceInfo.name) != 0)
         return B_BAD_VALUE;
 
-    /* @todo init device! */
+    /** @todo init device! */
 
     *cookie = (void *)&gDeviceInfo;
     return B_OK;
@@ -300,7 +300,7 @@ status_t device_free(void *dev)
 
     if (di.openCount <= 1)
     {
-        // TODO deinit device!
+        /// @todo deinit device!
         delete_area(di.sharedArea);
         di.sharedArea = -1;
         di.sharedInfo = NULL;

@@ -72,7 +72,7 @@
 # include <pwd.h> /* getpwuid */
 # include <unistd.h>
 # if !defined(RT_OS_OS2) && !defined(RT_OS_FREEBSD) && !defined(RT_OS_HAIKU)
-#  include <utmpx.h> /* @todo FreeBSD 9 should have this. */
+#  include <utmpx.h> /** @todo FreeBSD 9 should have this. */
 # endif
 # ifdef RT_OS_OS2
 #  include <net/if_dl.h>
@@ -1106,7 +1106,7 @@ static int vgsvcVMInfoWriteNetwork(void)
         /*
          * Only AF_INET and no loopback interfaces
          */
-        /** @todo: IPv6 interfaces */
+        /** @todo IPv6 interfaces */
         if (   pIfCurr->ifa_addr->sa_family == AF_INET
             && !(pIfCurr->ifa_flags & IFF_LOOPBACK))
         {

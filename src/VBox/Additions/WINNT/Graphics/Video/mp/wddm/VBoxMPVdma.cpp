@@ -1893,7 +1893,7 @@ static VOID vboxVdmaDdiCmdNotifyCompletedIrq(PVBOXMP_DEVEXT pDevExt, UINT u32Nod
             Assert(0);
             notify.InterruptType = DXGK_INTERRUPT_DMA_FAULTED;
             notify.DmaFaulted.FaultedFenceId = u32FenceId;
-            notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL; /* @todo: better status ? */
+            notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL; /** @todo better status ? */
             notify.DmaFaulted.NodeOrdinal = u32NodeOrdinal;
             break;
 

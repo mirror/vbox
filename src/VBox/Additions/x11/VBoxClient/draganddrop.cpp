@@ -359,7 +359,7 @@ RTCString xHelpers::xErrorToString(int xRc) const
     return RTCStringFmt("%d (unknown)", xRc);
 }
 
-/** todo Make this iterative. */
+/** @todo Make this iterative. */
 Window xHelpers::applicationWindowBelowCursor(Window wndParent) const
 {
     /* No parent, nothing to do. */

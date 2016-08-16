@@ -621,7 +621,7 @@ NTSTATUS VBoxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, uint32_t i
     }
     else
     {
-        /* @todo: try flushing.. */
+        /** @todo try flushing.. */
         WARN(("vboxVdmaCBufDrCreate returned NULL"));
         Status = STATUS_INSUFFICIENT_RESOURCES;
     }

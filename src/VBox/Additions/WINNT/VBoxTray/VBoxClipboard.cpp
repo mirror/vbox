@@ -378,7 +378,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
             }
             else
             {
-                const uint32_t cbPrealloc = 4096; /* @todo r=andy Make it dynamic for supporting larger text buffers! */
+                const uint32_t cbPrealloc = 4096; /** @todo r=andy Make it dynamic for supporting larger text buffers! */
                 uint32_t cb = 0;
 
                 /* Preallocate a buffer, most of small text transfers will fit into it. */

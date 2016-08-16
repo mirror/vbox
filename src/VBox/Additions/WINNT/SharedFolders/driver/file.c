@@ -250,7 +250,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: vbsfReadInternal: ByteCount 0x%X, ByteOffset 0x%RX64, FileSize 0x%RX64\n",
          ByteCount, ByteOffset, FileSize));
 
-    /* @todo check if this is necessary. */
+    /** @todo check if this is necessary. */
 #ifdef FCB_STATE_READCACHING_ENABLED    /* Correct spelling for Vista 6001 SDK. */
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHING_ENABLED))
 #else
@@ -267,7 +267,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
             ByteCount = (ULONG)(FileSize - ByteOffset);
     }
 
-    /* @todo read 0 bytes == always success? */
+    /** @todo read 0 bytes == always success? */
     if (   !BufferMdl
         || ByteCount == 0)
     {
@@ -372,7 +372,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: vbsfWriteInternal: ByteCount is 0x%X, ByteOffset is 0x%RX64, FileSize 0x%RX64\n",
          ByteCount, ByteOffset, FileSize));
 
-    /* @todo allow to write 0 bytes. */
+    /** @todo allow to write 0 bytes. */
     if (   !BufferMdl
         || ByteCount == 0)
     {
@@ -468,7 +468,7 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
             return STATUS_NOT_IMPLEMENTED;
 
         case LOWIO_OP_UNLOCK_MULTIPLE:
-            /* @todo Remove multiple locks listed in LowIoContext.ParamsFor.Locks.LockList. */
+            /** @todo Remove multiple locks listed in LowIoContext.ParamsFor.Locks.LockList. */
             Log(("VBOXSF: MRxLocks: Unsupported LOWIO_OP_UNLOCK_MULTIPLE!\n",
                  LowIoContext->Operation));
             return STATUS_NOT_IMPLEMENTED;

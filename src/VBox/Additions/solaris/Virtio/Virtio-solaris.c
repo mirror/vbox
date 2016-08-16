@@ -190,7 +190,7 @@ PVIRTIOQUEUE VirtioGetQueue(PVIRTIODEVICE pDevice, uint16_t Index)
     AssertReturn(pQueue->pQueue, NULL);
     AssertReturn(pQueue->Ring.cDesc > 0, NULL);
 
-    /* @todo enable interrupt. */
+    /** @todo enable interrupt. */
 
     return pQueue;
 }

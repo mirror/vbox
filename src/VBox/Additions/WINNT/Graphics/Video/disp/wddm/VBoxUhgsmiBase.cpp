@@ -57,7 +57,7 @@ static int vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_BUFFER_TYPE_FLAGS fUhgsmiType
         if (!*phSynch)
         {
             /*DWORD winEr = GetLastError(); - unused */
-            /* todo: translate winer */
+            /** @todo translate winer */
             return VERR_GENERAL_FAILURE;
         }
     }

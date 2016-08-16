@@ -349,7 +349,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
                     pInfo->AllocationSize.QuadPart = pDirEntry->Info.cbAllocated;
                     pInfo->EndOfFile.QuadPart      = pDirEntry->Info.cbObject;
                     pInfo->EaSize                  = 0;
-                    pInfo->ShortNameLength         = 0; /* @todo ? */
+                    pInfo->ShortNameLength         = 0; /** @todo ? */
                     pInfo->FileIndex               = index;
                     pInfo->FileAttributes          = VBoxToNTFileAttributes(pDirEntry->Info.Attr.fMode);
 
@@ -397,7 +397,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
                     pInfo->AllocationSize.QuadPart = pDirEntry->Info.cbAllocated;
                     pInfo->EndOfFile.QuadPart      = pDirEntry->Info.cbObject;
                     pInfo->EaSize                  = 0;
-                    pInfo->ShortNameLength         = 0; /* @todo ? */
+                    pInfo->ShortNameLength         = 0; /** @todo ? */
                     pInfo->EaSize                  = 0;
                     pInfo->FileId.QuadPart         = 0;
                     pInfo->FileAttributes          = VBoxToNTFileAttributes(pDirEntry->Info.Attr.fMode);
@@ -1145,7 +1145,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 {
                     pInfo->AllocationSize.QuadPart = pFileEntry->cbAllocated;
                     pInfo->EndOfFile.QuadPart      = pFileEntry->cbObject;
-                    pInfo->NumberOfLinks           = 1; /* @todo 0? */
+                    pInfo->NumberOfLinks           = 1; /** @todo 0? */
                     pInfo->DeletePending           = FALSE;
 
                     if (pFileEntry->Attr.fMode & RTFS_DOS_DIRECTORY)

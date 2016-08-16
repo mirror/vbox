@@ -1002,7 +1002,7 @@ PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice
             }
             /* bad, @todo: correct the swapchain by either removing the Rt and adding it to another swapchain
              * or by removing the pBbAlloc out of it */
-//@todo:            Assert(0);
+/// @todo            Assert(0);
 
             PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainRtForAlloc(pSwapchain, pBbAlloc);
             Assert(pRt);
@@ -1139,7 +1139,7 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
                 {
                     /* the swapchain has changed, copy data to the new surface */
 #ifdef DEBUG_misha
-                    /* @todo: we can not generally update the render target directly, implement */
+                    /** @todo we can not generally update the render target directly, implement */
                     Assert(iBb != (~0));
 #endif
                     VBOXVDBG_CHECK_SWAPCHAIN_SYNC(hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL,
@@ -1486,7 +1486,7 @@ HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP
             DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
 
             Params.Base.hDeviceWindow = NULL;
-                        /* @todo: it seems there should be a way to detect this correctly since
+                        /** @todo it seems there should be a way to detect this correctly since
                          * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
             Params.Base.Windowed = TRUE;
             //            params.EnableAutoDepthStencil = FALSE;
@@ -1756,7 +1756,7 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
             }
         }
 
-//@todo:        Assert(!pSwapchain->fFlags.bChanged);
+/// @todo        Assert(!pSwapchain->fFlags.bChanged);
         Assert(pSwapchain->pSwapChainIf);
         hr = vboxWddmSwapchainChkCreateIf(pDevice, pSwapchain);
         if (FAILED(hr))
@@ -1766,7 +1766,7 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
         }
     }
 
-//@todo:    Assert(vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc || iRt != 0);
+/// @todo    Assert(vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc || iRt != 0);
     IDirect3DSurface9 *pSurf;
     hr = vboxWddmSwapchainSurfGet(pDevice, pSwapchain, pAlloc, &pSurf);
     if (FAILED(hr))
@@ -1956,7 +1956,7 @@ static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, P
     }
     else
     {
-        /* @todo This is workaround for wine 1 render target. */
+        /** @todo This is workaround for wine 1 render target. */
         if (!pAlloc)
         {
             pDevice->apRTs[iRt] = NULL;
@@ -2362,7 +2362,7 @@ static HRESULT APIENTRY vboxWddmDDevValidateDevice(HANDLE hDevice, D3DDDIARG_VAL
 //    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 #ifdef DEBUG_misha
-    /* @todo: check if it's ok to always return success */
+    /** @todo check if it's ok to always return success */
     vboxVDbgPrint((__FUNCTION__": @todo: check if it's ok to always return success\n"));
     Assert(0);
 #endif
@@ -2670,7 +2670,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
         }
         else
         {
-            /* todo: impl */
+            /** @todo impl */
             WARN(("multiple user stream sources (%d) not implemented!!", pDevice->cStreamSourcesUm));
         }
     }
@@ -3229,7 +3229,7 @@ static HRESULT APIENTRY vboxWddmDDevBufBlt(HANDLE hDevice, CONST D3DDDIARG_BUFFE
     Assert(pDevice); NOREF(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-//    @todo: vboxWddmDalCheckAdd(pDevice);
+/// @todo vboxWddmDalCheckAdd(pDevice);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -5336,7 +5336,7 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
 
     if (hr != S_OK)
     {
-        /* todo: fallback to memcpy or whatever ? */
+        /** @todo fallback to memcpy or whatever ? */
         Assert(0);
     }
 
@@ -5367,7 +5367,7 @@ static HRESULT APIENTRY vboxWddmDDevColorFill(HANDLE hDevice, CONST D3DDDIARG_CO
         Assert(pSurfIf);
         hr = pDevice9If->ColorFill(pSurfIf, &pData->DstRect, pData->Color);
         Assert(hr == S_OK);
-        /* @todo: check what need to do when PresentToDwm flag is set */
+        /** @todo check what need to do when PresentToDwm flag is set */
         Assert(pData->Flags.Value == 0);
 
         pSurfIf->Release();
@@ -5387,7 +5387,7 @@ static HRESULT APIENTRY vboxWddmDDevDepthFill(HANDLE hDevice, CONST D3DDDIARG_DE
     Assert(pDevice); NOREF(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(0);
-//@todo:    vboxWddmDalCheckAdd(pDevice, pDAlloc, TRUE);
+/// @todo    vboxWddmDalCheckAdd(pDevice, pDAlloc, TRUE);
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return E_FAIL;
 }
@@ -6087,7 +6087,7 @@ static HRESULT APIENTRY vboxWddmDDevQueryResourceResidency(HANDLE hDevice, CONST
 #endif
 
     HRESULT hr = S_OK;
-    /* @todo check residency for the "real" allocations */
+    /** @todo check residency for the "real" allocations */
 #if 0
     for (UINT i = 0; i < pData->NumResources; ++i)
     {
@@ -6453,7 +6453,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                             params.MultiSampleType = D3DMULTISAMPLE_NONE;
                             params.SwapEffect = D3DSWAPEFFECT_DISCARD;
         //                    params.hDeviceWindow = hWnd;
-                                        /* @todo: it seems there should be a way to detect this correctly since
+                                        /** @todo it seems there should be a way to detect this correctly since
                                          * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
                             params.Windowed = TRUE;
                             //            params.EnableAutoDepthStencil = FALSE;

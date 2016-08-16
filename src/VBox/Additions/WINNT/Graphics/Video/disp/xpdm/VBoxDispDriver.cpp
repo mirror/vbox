@@ -287,7 +287,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
 
     pGdiInfo->ulNumPalReg = (pDev->mode.ulBitsPerPel==8) ? (1<<pDev->mode.ulBitsPerPel) : 0;
 
-    /* @todo: might want to implement IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES in miniport driver
+    /** @todo might want to implement IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES in miniport driver
      *        and query host for this info there
      */
     VBOXDISPSETCIEC(pGdiInfo->ciDevice.Red, 6700, 3300, 0);
@@ -392,7 +392,7 @@ static int VBoxDispInitDevice(PVBOXDISPDEV pDev, DEVMODEW *pdm, GDIINFO *pGdiInf
  */
 BOOL DrvEnableDriver(ULONG iEngineVersion, ULONG cj, PDRVENABLEDATA pded)
 {
-    /*@todo: can't link with hal.lib
+    /** @todo can't link with hal.lib
     int irc = RTR0Init(0);
     if (RT_FAILURE(irc))
     {
@@ -606,7 +606,7 @@ HSURF APIENTRY VBoxDispDrvEnableSurface(DHPDEV dhpdev)
     VBOX_WARNRC_RETV(rc, NULL);
 
     /* Clear mapped memory, to avoid garbage while video mode is switching */
-    /* @todo: VIDEO_MODE_NO_ZERO_MEMORY does nothing in miniport's IOCTL_VIDEO_SET_CURRENT_MODE*/
+    /** @todo VIDEO_MODE_NO_ZERO_MEMORY does nothing in miniport's IOCTL_VIDEO_SET_CURRENT_MODE*/
     memset(pDev->memInfo.FrameBufferBase, 0, pDev->mode.ulHeight * abs(pDev->mode.lScanlineStride));
 
     /* Allocate memory for pointer attrs */

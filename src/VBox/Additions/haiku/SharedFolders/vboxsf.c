@@ -56,7 +56,7 @@ static fs_vnode_ops vboxsf_vnode_ops;
 status_t init_module(void)
 {
 #if 0
-    /* @todo enable this soon */
+    /** @todo enable this soon */
     int rc = get_module(VBOXGUEST_MODULE_NAME, (module_info **)&g_VBoxGuest);
     if (RT_LIKELY(rc == B_OK)
     {
@@ -765,7 +765,7 @@ status_t vboxsf_read(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t 
         *length = 0xFFFFFFFF;
 
     uint32_t l = *length;
-    void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
+    void* other_buffer = malloc(l);  /** @todo map the user memory into kernel space here for efficiency */
     int rc = VbglR0SfRead(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false /*fLocked*/);
     memcpy(buffer, other_buffer, l);
     free(other_buffer);
@@ -786,7 +786,7 @@ status_t vboxsf_write(fs_volume* _volume, fs_vnode* _vnode, void* _cookie, off_t
         *length = 0xFFFFFFFF;
 
     uint32_t l = *length;
-    void* other_buffer = malloc(l);  /* @todo map the user memory into kernel space here for efficiency */
+    void* other_buffer = malloc(l);  /** @todo map the user memory into kernel space here for efficiency */
     memcpy(other_buffer, buffer, l);
     int rc = VbglR0SfWrite(&g_clientHandle, &volume->map, cookie->handle, pos, &l, other_buffer, false /*fLocked*/);
     free(other_buffer);
@@ -898,7 +898,7 @@ status_t vboxsf_read_symlink(fs_volume* _volume, fs_vnode* link, char* buffer, s
 }
 
 
-/* @todo move this into the runtime */
+/** @todo move this into the runtime */
 status_t vbox_err_to_haiku_err(int rc)
 {
     switch (rc)

@@ -509,7 +509,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
         /* do not zero up the view rect since it may still be valid */
 //        memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
-        /* @todo: do we really need to zero this up here ? */
+        /** @todo do we really need to zero this up here ? */
         VBoxVrListClear(&pSwapchain->VisibleRegions);
 
         vboxWddmSwapchainAllocRemoveAll(pDevExt, pSwapchain);
@@ -1462,7 +1462,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
     else
     {
         Assert(0);
-        /* @todo: try flushing.. */
+        /** @todo try flushing.. */
         LOGREL(("vboxVdmaCBufDrCreate returned NULL"));
         Status = STATUS_INSUFFICIENT_RESOURCES;
     }

@@ -613,7 +613,7 @@ static void vgsvcVMStatsReport(void)
     }
 
 #else
-    /* todo: implement for other platforms. */
+    /** @todo implement for other platforms. */
 
 #endif
 }

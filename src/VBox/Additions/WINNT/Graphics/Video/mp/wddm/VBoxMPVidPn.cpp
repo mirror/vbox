@@ -1252,7 +1252,7 @@ static NTSTATUS vboxVidPnPathAdd(D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFA
     pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy = 0;
     pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx = 0;
     pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy = 0;
-    pNewVidPnPresentPathInfo->VidPnTargetColorBasis = D3DKMDT_CB_SRGB; /* @todo: how does it matters? */
+    pNewVidPnPresentPathInfo->VidPnTargetColorBasis = D3DKMDT_CB_SRGB; /** @todo how does it matters? */
     pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FirstChannel =  8;
     pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.SecondChannel =  8;
     pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.ThirdChannel =  8;

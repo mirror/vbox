@@ -194,7 +194,7 @@ DWORD APIENTRY VBoxDispDDCreateSurface(PDD_CREATESURFACEDATA lpCreateSurface)
                     lpCreateSurface->lpDDSurfaceDesc->dwFlags |= DDSD_PITCH;
 
 
-                    /*@todo: it's probably a memory leak, because DDDestroySurface wouldn't be called for
+                    /** @todo it's probably a memory leak, because DDDestroySurface wouldn't be called for
                      *       primary surfaces.
                      */
                     pSurf->lpGbl->dwReserved1 = (ULONG_PTR)pDesc;
