@@ -4303,20 +4303,23 @@ endif # FreeBSD
 
 ifeq ($(KBUILD_TARGET),netbsd)
 
-## The location of the NetBSD kernel headers.
-VBOX_NETBSD_SRC ?= /usr/src/sys
+# The location of the NetBSD sources.
+VBOX_NETBSD_SRC ?= /usr/src
 
+# NetBSD uses "i386" for 32-bit, "x86" for common 32- and 64-bit code.
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
-VBOX_NETBSD_MACHINE_SRC=$(VBOX_NETBSD_SRC)/arch/amd64
+VBOX_NETBSD_TARGET_ARCH=amd64
 else
-VBOX_NETBSD_MACHINE_SRC=$(VBOX_NETBSD_SRC)/arch/i386
+VBOX_NETBSD_TARGET_ARCH=i386
 endif
+
+VBOX_NETBSD_TARGET_SRC=$(VBOX_NETBSD_SRC)/sys/arch/$(VBOX_NETBSD_TARGET_ARCH)
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL _MODULE
 TEMPLATE_VBOXR0DRV_INCS                = \
-	$(VBOX_NETBSD_SRC) \
-	$(VBOX_NETBSD_SRC)/../common/include \
+	$(VBOX_NETBSD_SRC)/sys \
+	$(VBOX_NETBSD_SRC)/common/include \
 	$(PATH_OBJ)/netbsd/include
 
 TEMPLATE_VBOXR0DRV_CFLAGS              =  \
@@ -4346,23 +4349,23 @@ TEMPLATE_VBOXR0DRV_LDFLAGS             = -d --warn-common
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64
 
-TEMPLATE_VBOXR0DRV_ORDERDEPS = \
-	$(PATH_OBJ)/netbsd/include/machine/cdefs.h \
-	$(PATH_OBJ)/netbsd/include/i386/cpu.h \
-	$(PATH_OBJ)/netbsd/include/x86/cpu.h
+# symlink kernel includes
+TEMPLATE_VBOXR0DRV_ORDERDEPS += \
+	$(PATH_OBJ)/netbsd/include/$(VBOX_NETBSD_TARGET_ARCH) \
+	$(PATH_OBJ)/netbsd/include/x86 \
+	$(PATH_OBJ)/netbsd/include/machine
 
-$$(PATH_OBJ)/netbsd/include/machine/cdefs.h: $(VBOX_NETBSD_MACHINE_SRC)/include/cdefs.h
+$$(PATH_OBJ)/netbsd/include/$(VBOX_NETBSD_TARGET_ARCH):
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)cp $(VBOX_NETBSD_MACHINE_SRC)/include/*.h $(@D)/
+	$(QUIET)$(LN_SYMLINK) $(VBOX_NETBSD_TARGET_SRC)/include $@
 
-# XXX: uwe: the "machine" above should be a symlink to "i386" here
-$$(PATH_OBJ)/netbsd/include/i386/cpu.h: $(VBOX_NETBSD_SRC)/arch/i386/include/cpu.h
+$$(PATH_OBJ)/netbsd/include/x86:
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)cp $(VBOX_NETBSD_MACHINE_SRC)/include/*.h $(@D)/
+	$(QUIET)$(LN_SYMLINK) $(VBOX_NETBSD_SRC)/sys/arch/x86/include $@
 
-$$(PATH_OBJ)/netbsd/include/x86/cpu.h: $(VBOX_NETBSD_SRC)/arch/x86/include/cpu.h
+$$(PATH_OBJ)/netbsd/include/machine:
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)cp $(VBOX_NETBSD_SRC)/arch/x86/include/*.h $(@D)/
+	$(QUIET)$(LN_SYMLINK) $(VBOX_NETBSD_TARGET_ARCH) $@
 
 endif # NetBSD
 
