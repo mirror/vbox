@@ -683,7 +683,7 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
                 pStrm->cbPCMBuf = cbBuf;
                 pStrm->pDrv     = pThis;
 
-                pCfgAcq->cSamples = cbBuf >> Props.cShift;
+                pCfgAcq->cSampleBufferSize = cbBuf >> Props.cShift;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -732,9 +732,9 @@ static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
         pPAStrm->pDrv       = pThis;
         pPAStrm->pu8PeekBuf = NULL;
 
-        pCfgAcq->uHz       = pPAStrm->SampleSpec.rate;
-        pCfgAcq->cChannels = pPAStrm->SampleSpec.channels;
-        pCfgAcq->cSamples  = RT_MIN(pPAStrm->BufAttr.fragsize * 10, pPAStrm->BufAttr.maxlength) >> Props.cShift;
+        pCfgAcq->uHz               = pPAStrm->SampleSpec.rate;
+        pCfgAcq->cChannels         = pPAStrm->SampleSpec.channels;
+        pCfgAcq->cSampleBufferSize = RT_MIN(pPAStrm->BufAttr.fragsize * 10, pPAStrm->BufAttr.maxlength) >> Props.cShift;
     }
 
     LogFlowFuncLeaveRC(rc);

@@ -710,7 +710,7 @@ static int ossCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq
                 pStrm->pvBuf = pvBuf;
                 pStrm->cbBuf = cbBuf;
 
-                pCfgAcq->cSamples = cSamples;
+                pCfgAcq->cSampleBufferSize = cSamples;
             }
         }
 
@@ -832,7 +832,7 @@ static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
 #ifndef RT_OS_L4
             }
 #endif
-            pCfgAcq->cSamples = cSamples;
+            pCfgAcq->cSampleBufferSize = cSamples;
         }
 
     } while (0);

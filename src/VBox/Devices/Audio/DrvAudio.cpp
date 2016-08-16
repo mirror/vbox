@@ -544,11 +544,11 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pHstStream->MixBuf);
 
-    if (CfgHostAcq.cSamples)
+    if (CfgHostAcq.cSampleBufferSize)
     {
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, CfgHostAcq.cSamples * 4));
+        LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, CfgHostAcq.cSampleBufferSize * 4));
 
-        rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &PCMProps, CfgHostAcq.cSamples * 4);
+        rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 4);
         AssertRC(rc2);
     }
 
@@ -566,11 +566,11 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pGstStream->MixBuf);
 
-    if (CfgHostAcq.cSamples)
+    if (CfgHostAcq.cSampleBufferSize)
     {
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, CfgHostAcq.cSamples * 2));
+        LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, CfgHostAcq.cSampleBufferSize * 2));
 
-        rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &PCMProps, CfgHostAcq.cSamples * 2);
+        rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 2);
         AssertRC(rc2);
     }
 
@@ -578,7 +578,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     char szStatName[255];
 #endif
 
-    if (CfgHostAcq.cSamples)
+    if (CfgHostAcq.cSampleBufferSize)
     {
         if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
         {

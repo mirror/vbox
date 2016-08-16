@@ -220,7 +220,7 @@ static int nullCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSamples = _1K;
+            pCfgAcq->cSampleBufferSize = _1K;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -243,7 +243,7 @@ static int nullCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgR
         if (pNullStream->pbPlayBuffer)
         {
             if (pCfgAcq)
-                pCfgAcq->cSamples = pNullStream->cMaxSamplesInPlayBuffer;
+                pCfgAcq->cSampleBufferSize = pNullStream->cMaxSamplesInPlayBuffer;
         }
         else
             rc = VERR_NO_MEMORY;

@@ -137,7 +137,7 @@ static int debugCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSamples = _1K;
+            pCfgAcq->cSampleBufferSize = _1K;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -182,7 +182,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSamples = pDbgStream->Out.cMaxSamplesInPlayBuffer;
+            pCfgAcq->cSampleBufferSize = pDbgStream->Out.cMaxSamplesInPlayBuffer;
     }
 
     LogFlowFuncLeaveRC(rc);

@@ -1358,11 +1358,11 @@ static int alsaCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgR
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->uHz           = obt.freq;
-        pCfgAcq->cChannels     = obt.nchannels;
-        pCfgAcq->enmFormat     = enmFormat;
-        pCfgAcq->enmEndianness = enmEnd;
-        pCfgAcq->cSamples      = obt.samples * 4;
+        pCfgAcq->uHz               = obt.freq;
+        pCfgAcq->cChannels         = obt.nchannels;
+        pCfgAcq->enmFormat         = enmFormat;
+        pCfgAcq->enmEndianness     = enmEnd;
+        pCfgAcq->cSampleBufferSize = obt.samples * 4;
 
         PDMAUDIOPCMPROPS Props;
         rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
@@ -1421,11 +1421,11 @@ static int alsaCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
         if (RT_FAILURE(rc))
             break;
 
-        pCfgAcq->uHz           = obt.freq;
-        pCfgAcq->cChannels     = obt.nchannels;
-        pCfgAcq->enmFormat     = enmFormat;
-        pCfgAcq->enmEndianness = enmEnd;
-        pCfgAcq->cSamples      = obt.samples;
+        pCfgAcq->uHz               = obt.freq;
+        pCfgAcq->cChannels         = obt.nchannels;
+        pCfgAcq->enmFormat         = enmFormat;
+        pCfgAcq->enmEndianness     = enmEnd;
+        pCfgAcq->cSampleBufferSize = obt.samples;
 
         PDMAUDIOPCMPROPS Props;
         rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);

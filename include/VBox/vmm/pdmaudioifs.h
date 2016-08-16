@@ -261,8 +261,9 @@ typedef struct PDMAUDIOSTREAMCFG
     PDMAUDIOFMT              enmFormat;
     /** @todo Use RT_LE2H_*? */
     PDMAUDIOENDIANNESS       enmEndianness;
-    /** Size of audio sample buffer. */
-    uint32_t                 cSamples;
+    /** Hint about the optimal sample buffer size (in audio samples).
+     *  0 if no hint is given. */
+    uint32_t                 cSampleBufferSize;
 } PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
 
 #if defined(RT_LITTLE_ENDIAN)

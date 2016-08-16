@@ -101,7 +101,7 @@ static int vrdeCreateStreamIn(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSamples = _4K; /** @todo Make this configurable. */
+            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);
@@ -124,7 +124,7 @@ static int vrdeCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSamples = _4K; /** @todo Make this configurable. */
+            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
     }
 
     LogFlowFuncLeaveRC(VINF_SUCCESS);

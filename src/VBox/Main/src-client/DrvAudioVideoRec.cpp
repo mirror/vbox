@@ -211,9 +211,9 @@ static int audio_pcm_hw_get_live_out2 (PPDMAUDIOHSTSTRMOUT hw, int *nb_live)
     {
         int live = smin;
 
-        if (live < 0 || live > hw->cSamples)
+        if (live < 0 || live > hw->cSampleBufferSize)
         {
-            LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSamples));
+            LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSampleBufferSize));
             return 0;
         }
         return live;
@@ -227,9 +227,9 @@ static int audio_pcm_hw_get_live_out (PPDMAUDIOHSTSTRMOUT hw)
     int live;
 
     live = audio_pcm_hw_get_live_out2 (hw, &nb_live);
-    if (live < 0 || live > hw->cSamples)
+    if (live < 0 || live > hw->cSampleBufferSize)
     {
-        LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSamples));
+        LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSampleBufferSize));
         return 0;
     }
     return live;
@@ -256,9 +256,9 @@ static int audio_pcm_hw_find_min_in (PPDMAUDIOHSTSTRMIN hw)
 int audio_pcm_hw_get_live_in (PPDMAUDIOHSTSTRMIN hw)
 {
     int live = hw->cTotalSamplesCaptured - audio_pcm_hw_find_min_in (hw);
-    if (live < 0 || live > hw->cSamples)
+    if (live < 0 || live > hw->cSampleBufferSize)
     {
-        LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSamples));
+        LogFlowFunc(("Error: live=%d hw->samples=%d\n", live, hw->cSampleBufferSize));
         return 0;
     }
     return live;
@@ -382,7 +382,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInitOut(PPDMIHOSTAUDIO pInterface, PPDM
     PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
 
     PVIDEORECAUDIOOUT pVRDEVoiceOut = (PVIDEORECAUDIOOUT)pHostVoiceOut;
-    pHostVoiceOut->cSamples = _4K; /* 4096 samples * 4 = 16K bytes total. */
+    pHostVoiceOut->cSampleBufferSize = _4K; /* 4096 samples * 4 = 16K bytes total. */
 
     return drvAudioVideoRecPcmInitInfo(&pVRDEVoiceOut->pHostVoiceOut.Props, pCfg);
 }
@@ -393,7 +393,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInitIn(PPDMIHOSTAUDIO pInterface, PPDMA
     PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
 
     PVIDEORECAUDIOIN pVRDEVoice = (PVIDEORECAUDIOIN)pHostVoiceIn;
-    pHostVoiceIn->cSamples = _4K; /* 4096 samples * 4 = 16K bytes total. */
+    pHostVoiceIn->cSampleBufferSize = _4K; /* 4096 samples * 4 = 16K bytes total. */
 
     return drvAudioVideoRecPcmInitInfo(&pVRDEVoice->pHostVoiceIn.Props, pCfg);
 }
@@ -417,7 +417,7 @@ static DECLCALLBACK(int) drvAudioVideoRecCaptureIn(PPDMIHOSTAUDIO pInterface, PP
     size_t cSamplesRingBuffer = RTCircBufUsed(pVRDEVoice->pRecordedVoiceBuf) / sizeof(PDMAUDIOSAMPLE);
 
     /* How much space is available in the mix buffer. Use the smaller size of the too. */
-    cSamplesRingBuffer = RT_MIN(cSamplesRingBuffer, (uint32_t)(pVRDEVoice->pHostVoiceIn.cSamples -
+    cSamplesRingBuffer = RT_MIN(cSamplesRingBuffer, (uint32_t)(pVRDEVoice->pHostVoiceIn.cSampleBufferSize -
                                 audio_pcm_hw_get_live_in (&pVRDEVoice->pHostVoiceIn)));
 
     LogFlowFunc(("Start reading buffer with %d samples (%d bytes)\n", cSamplesRingBuffer,
@@ -429,7 +429,7 @@ static DECLCALLBACK(int) drvAudioVideoRecCaptureIn(PPDMIHOSTAUDIO pInterface, PP
     {
         /* How much is left? Split request at the end of our samples buffer. */
         size_t cSamplesToRead = RT_MIN(cSamplesRingBuffer - cSamplesRead,
-                                       (uint32_t)(pVRDEVoice->pHostVoiceIn.cSamples - pVRDEVoice->pHostVoiceIn.offSamplesWritten));
+                                       (uint32_t)(pVRDEVoice->pHostVoiceIn.cSampleBufferSize - pVRDEVoice->pHostVoiceIn.offSamplesWritten));
         size_t cbToRead = cSamplesToRead * sizeof(PDMAUDIOSAMPLE);
         LogFlowFunc(("Try reading %zu samples (%zu bytes)\n", cSamplesToRead, cbToRead));
 
@@ -461,7 +461,7 @@ static DECLCALLBACK(int) drvAudioVideoRecCaptureIn(PPDMIHOSTAUDIO pInterface, PP
             break;
 
         pVRDEVoice->pHostVoiceIn.offSamplesWritten = (pVRDEVoice->pHostVoiceIn.offSamplesWritten + cSamplesToRead)
-                                              % pVRDEVoice->pHostVoiceIn.cSamples;
+                                              % pVRDEVoice->pHostVoiceIn.cSampleBufferSize;
 
         /* How much have we reads so far. */
         cSamplesRead += cSamplesToRead;
@@ -501,22 +501,22 @@ static DECLCALLBACK(int) drvAudioVideoRecPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     LogFlowFunc(("freq=%d, chan=%d, cBits = %d, fsigned = %d, cSamples=%d format=%d\n",
                  pHostVoiceOut->Props.uHz, pHostVoiceOut->Props.cChannels,
                  pHostVoiceOut->Props.cBits, pHostVoiceOut->Props.fSigned,
-                 pHostVoiceOut->cSamples, format));
+                 pHostVoiceOut->cSampleBufferSize, format));
 
     pVRDEVoiceOut->old_ticks = now;
     int cSamplesToSend = RT_MIN(live, cSamplesPlayed);
 
-    if (pHostVoiceOut->cOffSamplesRead + cSamplesToSend > pHostVoiceOut->cSamples)
+    if (pHostVoiceOut->cOffSamplesRead + cSamplesToSend > pHostVoiceOut->cSampleBufferSize)
     {
         /* send the samples till the end of pHostStereoSampleBuf */
         pDrv->pConsoleVRDPServer->SendAudioSamples(&pHostVoiceOut->paSamples[pHostVoiceOut->cOffSamplesRead],
-                                                   (pHostVoiceOut->cSamples - pHostVoiceOut->cOffSamplesRead), format);
+                                                   (pHostVoiceOut->cSampleBufferSize - pHostVoiceOut->cOffSamplesRead), format);
         /*pHostStereoSampleBuff already has the samples which exceeded its space. They have overwriten the old
          * played sampled starting from offset 0. So based on the number of samples that we had to play,
          * read the number of samples from offset 0 .
          */
         pDrv->pConsoleVRDPServer->SendAudioSamples(&pHostVoiceOut->paSamples[0],
-                                                   (cSamplesToSend - (pHostVoiceOut->cSamples -
+                                                   (cSamplesToSend - (pHostVoiceOut->cSampleBufferSize -
                                                                       pHostVoiceOut->cOffSamplesRead)),
                                                    format);
     }
@@ -526,7 +526,7 @@ static DECLCALLBACK(int) drvAudioVideoRecPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
                                                    cSamplesToSend, format);
     }
 
-    pHostVoiceOut->cOffSamplesRead = (pHostVoiceOut->cOffSamplesRead + cSamplesToSend) % pHostVoiceOut->cSamples;
+    pHostVoiceOut->cOffSamplesRead = (pHostVoiceOut->cOffSamplesRead + cSamplesToSend) % pHostVoiceOut->cSampleBufferSize;
 
     *pcSamplesPlayed = cSamplesToSend;
     return VINF_SUCCESS;
@@ -583,14 +583,14 @@ static DECLCALLBACK(int) drvAudioVideoRecControlIn(PPDMIHOSTAUDIO pInterface, PP
         pVRDEVoice->pvRateBuffer = NULL;
         pVRDEVoice->cbRateBufferAllocated = 0;
 
-        pVRDEVoice->pHostVoiceIn.cSamples = 2048;
+        pVRDEVoice->pHostVoiceIn.cSampleBufferSize = 2048;
         /* Initialize the hardware info section with the audio settings */
 
         ASMAtomicWriteU32(&pVRDEVoice->status, CA_STATUS_IN_INIT);
 
         /* Create the internal ring buffer. */
         RTCircBufCreate(&pVRDEVoice->pRecordedVoiceBuf,
-                        pVRDEVoice->pHostVoiceIn.cSamples * sizeof(PDMAUDIOSAMPLE));
+                        pVRDEVoice->pHostVoiceIn.cSampleBufferSize * sizeof(PDMAUDIOSAMPLE));
 
         if (!RT_VALID_PTR(pVRDEVoice->pRecordedVoiceBuf))
         {
@@ -599,7 +599,7 @@ static DECLCALLBACK(int) drvAudioVideoRecControlIn(PPDMIHOSTAUDIO pInterface, PP
         }
 
         ASMAtomicWriteU32(&pVRDEVoice->status, CA_STATUS_INIT);
-        return pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEVoice, pHostVoiceIn->cSamples,
+        return pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEVoice, pHostVoiceIn->cSampleBufferSize,
                                                              pHostVoiceIn->Props.uHz,
                                                              pHostVoiceIn->Props.cChannels, pHostVoiceIn->Props.cBits);
     }

@@ -1561,7 +1561,7 @@ static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
         LogFunc(("cSamples=%RU32\n", cSamples));
 
         if (pCfgAcq)
-            pCfgAcq->cSamples = cSamples;
+            pCfgAcq->cSampleBufferSize = cSamples;
     }
     else
     {
@@ -1881,7 +1881,7 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
         LogFunc(("cSamples=%RU32\n", cSamples));
 
         if (pCfgAcq)
-            pCfgAcq->cSamples = cSamples;
+            pCfgAcq->cSampleBufferSize = cSamples;
     }
     else
     {
