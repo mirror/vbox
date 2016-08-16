@@ -106,9 +106,10 @@ typedef struct DSOUNDHOSTCFG
 
 typedef struct DSOUNDSTREAMOUT
 {
-    /** Associated host output stream.
-     *  Note: Always must come first! */
+    /** Note: Always must come first! */
     PDMAUDIOSTREAM       Stream;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS     Props;
     LPDIRECTSOUND8       pDS;     /** @todo Move this out of this structure! Not required per-stream (e.g. for multi-channel). */
     LPDIRECTSOUNDBUFFER8 pDSB;
     DWORD                offPlayWritePos;
@@ -120,9 +121,10 @@ typedef struct DSOUNDSTREAMOUT
 
 typedef struct DSOUNDSTREAMIN
 {
-    /** Associated host input stream.
-     *  Note: Always must come first! */
+    /** Associated host input stream. */
     PDMAUDIOSTREAM              Stream;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS            Props;
     LPDIRECTSOUNDCAPTURE8       pDSC;
     LPDIRECTSOUNDCAPTUREBUFFER8 pDSCB;
     DWORD                       idxSampleCaptureReadPos;
@@ -556,16 +558,16 @@ static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSou
 
 static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStream)
 {
-    AssertPtrReturn(pThis, E_POINTER);
+    AssertPtrReturn(pThis,         E_POINTER);
     AssertPtrReturn(pDSoundStream, E_POINTER);
 
     DSLOG(("DSound: pDSoundStream=%p, cbBufferOut=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
            pDSoundStream,
            pThis->cfg.cbBufferOut,
-           pDSoundStream->Stream.Props.uHz,
-           pDSoundStream->Stream.Props.cChannels,
-           pDSoundStream->Stream.Props.cBits,
-           pDSoundStream->Stream.Props.fSigned));
+           pDSoundStream->Props.uHz,
+           pDSoundStream->Props.cChannels,
+           pDSoundStream->Props.cBits,
+           pDSoundStream->Props.fSigned));
 
     if (pDSoundStream->pDSB != NULL)
     {
@@ -665,9 +667,9 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
                wfx.wBitsPerSample,
                wfx.cbSize));
 
-        if (bc.dwBufferBytes & pDSoundStream->Stream.Props.uAlign)
+        if (bc.dwBufferBytes & pDSoundStream->Props.uAlign)
             DSLOGREL(("DSound: Playback capabilities returned misaligned buffer: size %RU32, alignment %RU32\n",
-                      bc.dwBufferBytes, pDSoundStream->Stream.Props.uAlign + 1));
+                      bc.dwBufferBytes, pDSoundStream->Props.uAlign + 1));
 
         if (bc.dwBufferBytes != pThis->cfg.cbBufferOut)
             DSLOGREL(("DSound: Playback buffer size mismatched: DirectSound %RU32, requested %RU32 bytes\n",
@@ -678,7 +680,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
          * dsoundPlayStart initializes part of it to make sure that Stop/Start continues with a correct
          * playback buffer position.
          */
-        pDSoundStream->cMaxSamplesInBuffer = bc.dwBufferBytes >> pDSoundStream->Stream.Props.cShift;
+        pDSoundStream->cMaxSamplesInBuffer = bc.dwBufferBytes >> pDSoundStream->Props.cShift;
         DSLOG(("DSound: cMaxSamplesInBuffer=%RU32\n", pDSoundStream->cMaxSamplesInBuffer));
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
@@ -1037,10 +1039,10 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
     DSLOG(("DSound: pDSoundStream=%p, cbBufferIn=%RU32, uHz=%RU32, cChannels=%RU8, cBits=%RU8, fSigned=%RTbool\n",
            pDSoundStream,
            pThis->cfg.cbBufferIn,
-           pDSoundStream->Stream.Props.uHz,
-           pDSoundStream->Stream.Props.cChannels,
-           pDSoundStream->Stream.Props.cBits,
-           pDSoundStream->Stream.Props.fSigned));
+           pDSoundStream->Props.uHz,
+           pDSoundStream->Props.cChannels,
+           pDSoundStream->Props.cBits,
+           pDSoundStream->Props.fSigned));
 
     if (pDSoundStream->pDSCB != NULL)
     {
@@ -1136,18 +1138,18 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSo
                wfx.wBitsPerSample,
                wfx.cbSize));
 
-        if (bc.dwBufferBytes & pDSoundStream->Stream.Props.uAlign)
+        if (bc.dwBufferBytes & pDSoundStream->Props.uAlign)
             DSLOGREL(("DSound: Capture GetCaps returned misaligned buffer: size %RU32, alignment %RU32\n",
-                      bc.dwBufferBytes, pDSoundStream->Stream.Props.uAlign + 1));
+                      bc.dwBufferBytes, pDSoundStream->Props.uAlign + 1));
 
         if (bc.dwBufferBytes != pThis->cfg.cbBufferIn)
             DSLOGREL(("DSound: Capture buffer size mismatched: DirectSound %RU32, requested %RU32 bytes\n",
                       bc.dwBufferBytes, pThis->cfg.cbBufferIn));
 
         /* Initial state: reading at the initial capture position, no error. */
-        pDSoundStream->idxSampleCaptureReadPos    = offByteReadPos >> pDSoundStream->Stream.Props.cShift;
-        pDSoundStream->cMaxSamplesInBuffer = bc.dwBufferBytes >> pDSoundStream->Stream.Props.cShift;
-        pDSoundStream->hrLastCapture       = S_OK;
+        pDSoundStream->idxSampleCaptureReadPos = offByteReadPos >> pDSoundStream->Props.cShift;
+        pDSoundStream->cMaxSamplesInBuffer     = bc.dwBufferBytes >> pDSoundStream->Props.cShift;
+        pDSoundStream->hrLastCapture           = S_OK;
 
         DSLOG(("DSound: idxSampleCaptureReadPos=%RU32, cMaxSamplesInBuffer=%RU32\n",
                      pDSoundStream->idxSampleCaptureReadPos, pDSoundStream->cMaxSamplesInBuffer));
@@ -1449,7 +1451,7 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
     pDSoundStream->streamCfg = *pCfgReq;
     pDSoundStream->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Stream.Props);
+    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Props);
     if (RT_SUCCESS(rc))
     {
         pDSoundStream->pDS = NULL;
@@ -1459,7 +1461,7 @@ static int dsoundCreateStreamOut(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
         pDSoundStream->cMaxSamplesInBuffer = 0;
 
         if (pCfgAcq)
-            pCfgAcq->cSamples = pThis->cfg.cbBufferOut >> pStream->Props.cShift; /** @todo Get rid of using Props! */
+            pCfgAcq->cSamples = pThis->cfg.cbBufferOut >> pDSoundStream->Props.cShift;
 
         /* Try to open playback in case the device is already there. */
         directSoundPlayOpen(pThis, pDSoundStream);
@@ -1566,7 +1568,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, 
 
         /* Do not write more than available space in the DirectSound playback buffer. */
         cbLive = RT_MIN(cbFree, cbLive);
-        cbLive &= ~pStream->Props.uAlign;
+        cbLive &= ~pDSoundStream->Props.uAlign;
         if (cbLive == 0 || cbLive > cbBuffer)
         {
             DSLOG(("DSound: cbLive=%RU32, cbBuffer=%ld, offPlayWritePos=%ld, cbPlayPos=%ld\n",
@@ -1579,7 +1581,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, 
 
         PVOID pv1, pv2;
         DWORD cb1, cb2;
-        HRESULT hr = directSoundPlayLock(pThis, pDSB, &pStream->Props, pDSoundStream->offPlayWritePos, cbLive,
+        HRESULT hr = directSoundPlayLock(pThis, pDSB, &pDSoundStream->Props, pDSoundStream->offPlayWritePos, cbLive,
                                          &pv1, &pv2, &cb1, &cb2, 0 /* dwFlags */);
         if (FAILED(hr))
         {
@@ -1699,7 +1701,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
     memcpy(&pDSoundStream->streamCfg, pCfgReq, sizeof(PDMAUDIOSTREAMCFG));
 
     /** @todo caller should already init Props? */
-    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pStream->Props); /** @todo Get rid of using Props! */
+    int rc = DrvAudioHlpStreamCfgToProps(&pDSoundStream->streamCfg, &pDSoundStream->Props);
     if (RT_SUCCESS(rc))
     {
         /* Init the stream structure and save relevant information to it. */
@@ -1711,7 +1713,7 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
         pDSoundStream->hrLastCapture       = S_OK;
 
         if (pCfgAcq)
-            pCfgAcq->cSamples = pThis->cfg.cbBufferIn >> pStream->Props.cShift; /** @todo Get rid of using Props! */
+            pCfgAcq->cSamples = pThis->cfg.cbBufferIn >> pDSoundStream->Props.cShift;
 
         /* Try to open capture in case the device is already there. */
         directSoundCaptureOpen(pThis, pDSoundStream); /** @todo r=andy Why not checking the result here?? */
@@ -1818,11 +1820,11 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStrea
 
         pDSoundStream->hrLastCapture = hr;
 
-        if (offByteReadPos & pStream->Props.uAlign)
-            DSLOGF(("DSound: Misaligned capture read position %ld (alignment: %RU32)\n", offByteReadPos, pStream->Props.uAlign));
+        if (offByteReadPos & pDSoundStream->Props.uAlign)
+            DSLOGF(("DSound: Misaligned capture read position %ld (alignment: %RU32)\n", offByteReadPos, pDSoundStream->Props.uAlign));
 
         /* Capture position in samples. */
-        DWORD idxSampleReadPos = offByteReadPos >> pStream->Props.cShift;
+        DWORD idxSampleReadPos = offByteReadPos >> pDSoundStream->Props.cShift;
 
         /* Number of samples available in the DirectSound capture buffer. */
         DWORD cSamplesToCapture = dsoundRingDistance(idxSampleReadPos, pDSoundStream->idxSampleCaptureReadPos,
@@ -1847,7 +1849,7 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStrea
         /* Lock relevant range in the DirectSound capture buffer. */
         PVOID pv1, pv2;
         DWORD cb1, cb2;
-        hr = directSoundCaptureLock(pDSCB, &pStream->Props,
+        hr = directSoundCaptureLock(pDSCB, &pDSoundStream->Props,
                                     AUDIOMIXBUF_S2B(&pStream->MixBuf, pDSoundStream->idxSampleCaptureReadPos), /* dwOffset */
                                     AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesToCapture),                      /* dwBytes */
                                     &pv1, &pv2, &cb1, &cb2,

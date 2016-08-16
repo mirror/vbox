@@ -669,7 +669,8 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     pCfgAcq->uHz       = pStrm->SampleSpec.rate;
     pCfgAcq->cChannels = pStrm->SampleSpec.channels;
 
-    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStream->Props);
+    PDMAUDIOPCMPROPS Props;
+    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbBuf  = RT_MIN(pStrm->BufAttr.tlength * 2,
@@ -680,11 +681,9 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
             if (pStrm->pvPCMBuf)
             {
                 pStrm->cbPCMBuf = cbBuf;
+                pStrm->pDrv     = pThis;
 
-                pCfgAcq->cSamples = cbBuf >> pStream->Props.cShift; /** @todo Get rid of using Props! */
-
-                /* Save pointer to driver instance. */
-                pStrm->pDrv = pThis;
+                pCfgAcq->cSamples = cbBuf >> Props.cShift;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -701,44 +700,41 @@ static int paCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 static int paCreateStreamIn(PPDMIHOSTAUDIO pInterface,
                             PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
-    PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
+    PDRVHOSTPULSEAUDIO pThis   = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
+    PPULSEAUDIOSTREAM  pPAStrm = (PPULSEAUDIOSTREAM)pStream;
 
-    pStrm->SampleSpec.format   = paFmtToPulse(pCfgReq->enmFormat);
-    pStrm->SampleSpec.rate     = pCfgReq->uHz;
-    pStrm->SampleSpec.channels = pCfgReq->cChannels;
+    pPAStrm->SampleSpec.format   = paFmtToPulse(pCfgReq->enmFormat);
+    pPAStrm->SampleSpec.rate     = pCfgReq->uHz;
+    pPAStrm->SampleSpec.channels = pCfgReq->cChannels;
 
-    /* XXX check these values */
-    pStrm->BufAttr.fragsize    = (pa_bytes_per_second(&pStrm->SampleSpec)
-                                   * s_pulseCfg.buffer_msecs_in) / 1000;
-    pStrm->BufAttr.maxlength   = (pStrm->BufAttr.fragsize * 3) / 2;
+    /** @todo Check these values! */
+    pPAStrm->BufAttr.fragsize    = (pa_bytes_per_second(&pPAStrm->SampleSpec) * s_pulseCfg.buffer_msecs_in) / 1000;
+    pPAStrm->BufAttr.maxlength   = (pPAStrm->BufAttr.fragsize * 3) / 2;
 
     /* Note: Other members of BufAttr are ignored for record streams. */
-    int rc = paStreamOpen(pThis, true /* fIn */, "PulseAudio (In)", &pStrm->SampleSpec, &pStrm->BufAttr,
-                          &pStrm->pPAStream);
+    int rc = paStreamOpen(pThis, true /* fIn */, "PulseAudio (In)", &pPAStrm->SampleSpec, &pPAStrm->BufAttr,
+                          &pPAStrm->pPAStream);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = paPulseToFmt(pStrm->SampleSpec.format, &pCfgAcq->enmFormat,
+    rc = paPulseToFmt(pPAStrm->SampleSpec.format, &pCfgAcq->enmFormat,
                       &pCfgAcq->enmEndianness);
     if (RT_FAILURE(rc))
     {
-        LogRel(("PulseAudio: Cannot find audio capture format %ld\n", pStrm->SampleSpec.format));
+        LogRel(("PulseAudio: Cannot find audio capture format %ld\n", pPAStrm->SampleSpec.format));
         return rc;
     }
 
-    pCfgAcq->uHz       = pStrm->SampleSpec.rate;
-    pCfgAcq->cChannels = pStrm->SampleSpec.channels;
-
-    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStream->Props);
+    PDMAUDIOPCMPROPS Props;
+    rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
     if (RT_SUCCESS(rc))
     {
-        pCfgAcq->cSamples = RT_MIN(pStrm->BufAttr.fragsize * 10, pStrm->BufAttr.maxlength)
-                            >> pStream->Props.cShift; /** @todo Get rid of using Props! */
+        pPAStrm->pDrv       = pThis;
+        pPAStrm->pu8PeekBuf = NULL;
 
-        /* Save pointer to driver instance. */
-        pStrm->pDrv       = pThis;
-        pStrm->pu8PeekBuf = NULL;
+        pCfgAcq->uHz       = pPAStrm->SampleSpec.rate;
+        pCfgAcq->cChannels = pPAStrm->SampleSpec.channels;
+        pCfgAcq->cSamples  = RT_MIN(pPAStrm->BufAttr.fragsize * 10, pPAStrm->BufAttr.maxlength) >> Props.cShift;
     }
 
     LogFlowFuncLeaveRC(rc);

@@ -662,9 +662,6 @@ typedef struct PDMAUDIOSTREAM
     /** Number of references to this stream. Only can be
      *  destroyed if the reference count is reaching 0. */
     uint32_t               cRefs;
-    /** PCM properties. */
-    /** @todo Deprecated; remove. Use member Cfg instead. */
-    PDMAUDIOPCMPROPS       Props;
     /** The stream's audio configuration. */
     PDMAUDIOSTREAMCFG      Cfg;
     /** Stream status flag. */

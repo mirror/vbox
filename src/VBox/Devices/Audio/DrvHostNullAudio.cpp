@@ -61,7 +61,10 @@
 *********************************************************************************************************************************/
 typedef struct NULLAUDIOSTREAMOUT
 {
+    /** @note Always must come first! */
     PDMAUDIOSTREAM      Stream;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS    Props;
     uint64_t            u64TicksLast;
     uint64_t            cMaxSamplesInPlayBuffer;
     uint8_t            *pbPlayBuffer;
@@ -72,6 +75,8 @@ typedef struct NULLAUDIOSTREAMIN
 {
     /** @note Always must come first! */
     PDMAUDIOSTREAM      Stream;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS    Props;
 } NULLAUDIOSTREAMIN;
 typedef NULLAUDIOSTREAMIN *PNULLAUDIOSTREAMIN;
 
@@ -149,6 +154,9 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostNullAudioGetStatus(PPDMIHOSTAUDIO
  */
 static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
+    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
     RT_NOREF2(pvBuf, cbBuf);
 
     PDRVHOSTNULLAUDIO   pDrv        = RT_FROM_MEMBER(pInterface, DRVHOSTNULLAUDIO, IHostAudio);
@@ -168,7 +176,7 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
      * Minimize the rounding error by adding 0.5: samples = int((u64TicksElapsed * samplesFreq) / u64TicksFreq + 0.5).
      * If rounding is not taken into account then the playback rate will be consistently lower that expected.
      */
-    uint64_t cSamplesPlayed = (2 * u64TicksElapsed * pStream->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
+    uint64_t cSamplesPlayed = (2 * u64TicksElapsed * pNullStream->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
 
     /* Don't play more than available. */
     if (cSamplesPlayed > cLive)
@@ -205,8 +213,10 @@ static DECLCALLBACK(int) drvHostNullAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
 static int nullCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
+    PNULLAUDIOSTREAMIN pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMIN, Stream);
+
     /* Just adopt the wanted stream configuration. */
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pNullStream->Props);
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
@@ -220,16 +230,16 @@ static int nullCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
 
 static int nullCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
+    PNULLAUDIOSTREAMOUT pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMOUT, Stream);
+
     /* Just adopt the wanted stream configuration. */
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStream->Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pNullStream->Props);
     if (RT_SUCCESS(rc))
     {
-        PNULLAUDIOSTREAMOUT pNullStream = RT_FROM_MEMBER(pStream, NULLAUDIOSTREAMOUT, Stream);
-
         pNullStream->u64TicksLast  = 0;
         pNullStream->cMaxSamplesInPlayBuffer = _1K;
 
-        pNullStream->pbPlayBuffer = (uint8_t *)RTMemAlloc(_1K << pStream->Props.cShift);
+        pNullStream->pbPlayBuffer = (uint8_t *)RTMemAlloc(_1K << pNullStream->Props.cShift);
         if (pNullStream->pbPlayBuffer)
         {
             if (pCfgAcq)

@@ -520,13 +520,13 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
      * Init host stream.
      */
 
-    /* Make the acquired host configuration the requested host configuration by default. */
-    PDMAUDIOSTREAMCFG CfgAcq;
-    memcpy(&CfgAcq, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
+    /* Make the acquired host configuration the requested host configuration initially,
+     * in case the backend does not report back an acquired configuration. */
+    PDMAUDIOSTREAMCFG CfgHostAcq;
+    memcpy(&CfgHostAcq, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
 
-    uint32_t cSamples = 0;
     int rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream,
-                                                   pCfgHost /* pCfgReq */, &CfgAcq /* pCfgAcq */);
+                                                   pCfgHost /* pCfgReq */, &CfgHostAcq /* pCfgAcq */);
     if (RT_SUCCESS(rc))
     {
         /* Only set the host's stream to initialized if we were able create the stream
@@ -537,19 +537,18 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     else
         LogFlowFunc(("[%s] Initializing stream in host backend failed with rc=%Rrc\n", pStream->szName, rc));
 
-    int rc2 = DrvAudioHlpStreamCfgToProps(pCfgHost, &pHstStream->Props);
+    PDMAUDIOPCMPROPS PCMProps;
+    int rc2 = DrvAudioHlpStreamCfgToProps(&CfgHostAcq, &PCMProps);
     AssertRC(rc2);
 
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pHstStream->MixBuf);
 
-    if (cSamples)
+    if (CfgHostAcq.cSamples)
     {
-        cSamples = cSamples * 4;
+        LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, CfgHostAcq.cSamples * 4));
 
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, cSamples));
-
-        rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &pHstStream->Props, cSamples);
+        rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &PCMProps, CfgHostAcq.cSamples * 4);
         AssertRC(rc2);
     }
 
@@ -560,19 +559,18 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
      * Init guest stream.
      */
 
-    rc2 = DrvAudioHlpStreamCfgToProps(pCfgGuest, &pGstStream->Props);
+    RT_ZERO(PCMProps);
+    rc2 = DrvAudioHlpStreamCfgToProps(pCfgGuest, &PCMProps);
     AssertRC(rc2);
 
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pGstStream->MixBuf);
 
-    if (cSamples)
+    if (CfgHostAcq.cSamples)
     {
-        cSamples = cSamples * 2;
+        LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, CfgHostAcq.cSamples * 2));
 
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, cSamples));
-
-        rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &pGstStream->Props, cSamples);
+        rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &PCMProps, CfgHostAcq.cSamples * 2);
         AssertRC(rc2);
     }
 
@@ -580,7 +578,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     char szStatName[255];
 #endif
 
-    if (cSamples)
+    if (CfgHostAcq.cSamples)
     {
         if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
         {

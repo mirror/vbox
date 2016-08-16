@@ -83,6 +83,8 @@ typedef struct OSSAUDIOSTREAMIN
 {
     /** Note: Always must come first! */
     PDMAUDIOSTREAM     pStreamIn;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS   Props;
     int                hFile;
     int                cFragments;
     int                cbFragmentSize;
@@ -97,6 +99,8 @@ typedef struct OSSAUDIOSTREAMOUT
 {
     /** Note: Always must come first! */
     PDMAUDIOSTREAM      pStreamOut;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS    Props;
     int                 hFile;
     int                 cFragments;
     int                 cbFragmentSize;
@@ -362,7 +366,7 @@ static int ossControlStreamOut(PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStr
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
-            DrvAudioHlpClearBuf(&pStream->Props, /** @todo Get rid of using Props! */
+            DrvAudioHlpClearBuf(&pStreamOut->Props,
                                 pStreamOut->pvBuf, pStreamOut->cbBuf, AudioMixBufSize(&pStream->MixBuf));
 
             mask = PCM_ENABLE_OUTPUT;
@@ -674,24 +678,23 @@ static int ossCreateStreamIn(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq
             pCfgAcq->cChannels     = pCfgReq->cChannels; /** @todo r=andy Why not using obtStream? */
             pCfgAcq->enmEndianness = obtStream.enmENDIANNESS;
 
-            PDMAUDIOPCMPROPS Props;
-            rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &Props);
+            rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStrm->Props);
             if (RT_SUCCESS(rc))
             {
-                if (obtStream.cFragments * obtStream.cbFragmentSize & Props.uAlign)
+                if (obtStream.cFragments * obtStream.cbFragmentSize & pStrm->Props.uAlign)
                 {
                     LogRel(("OSS: Warning: Misaligned capturing buffer: Size = %zu, Alignment = %u\n",
-                            obtStream.cFragments * obtStream.cbFragmentSize, Props.uAlign + 1));
+                            obtStream.cFragments * obtStream.cbFragmentSize, pStrm->Props.uAlign + 1));
                 }
 
-                cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) >> Props.cShift;
+                cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) >> pStrm->Props.cShift;
                 if (!cSamples)
                     rc = VERR_INVALID_PARAMETER;
             }
 
             if (RT_SUCCESS(rc))
             {
-                size_t cbSample = (1 << Props.cShift);
+                size_t cbSample = (1 << pStrm->Props.cShift);
 
                 size_t cbBuf = cSamples * cbSample;
                 void  *pvBuf = RTMemAlloc(cbBuf);
@@ -739,9 +742,6 @@ static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
         reqStream.cFragments     = s_OSSConf.nfrags;
         reqStream.cbFragmentSize = s_OSSConf.fragsize;
 
-        PDMAUDIOPCMPROPS Props;
-        RT_ZERO(Props);
-
         rc = ossStreamOpen(s_OSSConf.devpath_out, O_WRONLY | O_NONBLOCK, &reqStream, &obtStream, &hFile);
         if (RT_SUCCESS(rc))
         {
@@ -750,15 +750,15 @@ static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
             pCfgAcq->cChannels     = pCfgReq->cChannels; /** @todo r=andy Why not using obtStream? */
             pCfgAcq->enmEndianness = obtStream.enmENDIANNESS;
 
-            rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &Props);
+            rc = DrvAudioHlpStreamCfgToProps(pCfgAcq, &pStrm->Props);
             if (RT_SUCCESS(rc))
             {
-                cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) >> Props.cShift;
+                cSamples = (obtStream.cFragments * obtStream.cbFragmentSize) >> pStrm->Props.cShift;
 
-                if (obtStream.cFragments * obtStream.cbFragmentSize & Props.uAlign)
+                if (obtStream.cFragments * obtStream.cbFragmentSize & pStrm->Props.uAlign)
                 {
                     LogRel(("OSS: Warning: Misaligned playback buffer: Size = %zu, Alignment = %u\n",
-                            obtStream.cFragments * obtStream.cbFragmentSize, Props.uAlign + 1));
+                            obtStream.cFragments * obtStream.cbFragmentSize, pStrm->Props.uAlign + 1));
                 }
             }
         }
@@ -767,7 +767,7 @@ static int ossCreateStreamOut(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgRe
         {
             pStrm->fMemMapped = false;
 
-            size_t cbSamples =  cSamples << Props.cShift;
+            size_t cbSamples =  cSamples << pStrm->Props.cShift;
             Assert(cbSamples);
 
 #ifndef RT_OS_L4
