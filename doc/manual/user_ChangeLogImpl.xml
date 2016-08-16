@@ -99,10 +99,20 @@
       </listitem>
 
       <listitem>
+        <para>Linux Additions: made the video driver work on kernel 4.7 and
+           later (bug #15769)</para>
+      </listitem>
+
+      <listitem>
         <para>Linux Additions: converted a failure message to an informational
            one when drivers could not be stopped during upgrade (bug
            #15692)</para>
        </listitem>
+
+      <listitem>
+        <para>Linux Additions: made the video driver work around an X server
+           bug which cause screen refresh to stop (bug #15511)</para>
+      </listitem>
 
        <listitem>
         <para>Windows Additions: auto-resizing fixes for Windows 10 guests
