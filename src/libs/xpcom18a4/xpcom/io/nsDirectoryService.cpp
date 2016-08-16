@@ -331,9 +331,7 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
     // we only do this if it is not already set.
 #ifdef MOZ_DEFAULT_VBOX_XPCOM_HOME
     if (PR_GetEnv("VBOX_XPCOM_HOME") == nsnull)
-    {
-        putenv("VBOX_XPCOM_HOME=" MOZ_DEFAULT_VBOX_XPCOM_HOME);
-    }
+        PR_SetEnv("VBOX_XPCOM_HOME=" MOZ_DEFAULT_VBOX_XPCOM_HOME);
 #endif
 
     char *moz5 = PR_GetEnv("VBOX_XPCOM_HOME");
