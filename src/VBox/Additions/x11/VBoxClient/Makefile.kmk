@@ -48,6 +48,10 @@ VBoxClient_LIBS = \
 	Xrandr \
 	Xt
 
+# XXX: -L comes from the template, but not rpath
+VBoxClient_LDFLAGS.netbsd = \
+	-Wl,-rpath /usr/X11R7/lib
+
 ifdef VBOX_WITH_DRAG_AND_DROP
  ifdef VBOX_DND_WITH_XTEST
  VBoxClient_DEFS += VBOX_DND_WITH_XTEST
