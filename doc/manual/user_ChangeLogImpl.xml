@@ -20,6 +20,10 @@
       </listitem>
 
       <listitem>
+        <para>Audio: fixed crashes under certain conditions</para>
+      </listitem>
+
+      <listitem>
         <para>USB: fixed a hang under certain conditions</para>
       </listitem>
 
@@ -76,7 +80,12 @@
 
       <listitem>
         <para>Linux installer: fixed some scripting issues (bugs #15701
-           and #15702)</para>
+          and #15702)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux installer: fixed a path issue on certain Linux
+          distributions (bug #15717)</para>
       </listitem>
 
       <listitem>
