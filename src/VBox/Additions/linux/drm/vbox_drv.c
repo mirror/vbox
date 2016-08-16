@@ -194,12 +194,33 @@ static struct pci_driver vbox_pci_driver =
     .driver.pm = &vbox_pm_ops,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+/* This works around a bug in X servers prior to 1.18.4, which sometimes
+ * submit more dirty rectangles than the kernel is willing to handle and
+ * then disable dirty rectangle handling altogether when they see the
+ * EINVAL error.  I do not want the code to hang around forever, which is
+ * why I am limiting it to certain kernel versions.  We can increase the
+ * limit if some distributions uses old X servers with new kernels. */
+long vbox_ioctl(struct file *filp,
+                unsigned int cmd, unsigned long arg)
+{
+    long rc = drm_ioctl(filp, cmd, arg);
+    if (cmd == DRM_IOCTL_MODE_DIRTYFB && rc == -EINVAL)
+        return -EOVERFLOW;
+    return rc;
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0) */
+
 static const struct file_operations vbox_fops =
 {
     .owner = THIS_MODULE,
     .open = drm_open,
     .release = drm_release,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+    .unlocked_ioctl = vbox_ioctl,
+#else
     .unlocked_ioctl = drm_ioctl,
+#endif
     .mmap = vbox_mmap,
     .poll = drm_poll,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
