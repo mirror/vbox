@@ -1017,9 +1017,9 @@ typedef struct PDMIHOSTAUDIO
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
-     * @param   pvBuf               Pointer to audio data buffer to play.
-     * @param   cbBuf               Size (in bytes) of audio data buffer.
-     * @param   pcbWritten          Returns number of bytes written. Optional.
+     * @param   pvBuf               Pointer to audio data buffer to play.  Currently not used and must be NULL.
+     * @param   cbBuf               Size (in bytes) of audio data buffer.  Currently not used and must be 0.
+     * @param   pcbWritten          Returns number of bytes written.  Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
@@ -1029,9 +1029,9 @@ typedef struct PDMIHOSTAUDIO
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
-     * @param   pvBuf               Buffer where to store read audio data.
-     * @param   cbBuf               Size (in bytes) of buffer.
-     * @param   pcbRead             Returns number of bytes read. Optional.
+     * @param   pvBuf               Buffer where to store read audio data.  Currently not used and must be NULL.
+     * @param   cbBuf               Size (in bytes) of buffer.  Currently not used and must be 0.
+     * @param   pcbRead             Returns number of bytes read.  Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 
