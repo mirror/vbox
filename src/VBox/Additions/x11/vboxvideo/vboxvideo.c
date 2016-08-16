@@ -93,11 +93,8 @@
 #ifdef XORG_7X
 # include <stdlib.h>
 # include <string.h>
-# include <sys/stat.h>
-# define xf86stat stat
-# define xf86stat_s stat
-#else
-# include <xf86_ansic.h>
+# include <fcntl.h>
+# include <unistd.h>
 #endif
 
 /* Mandatory functions */
@@ -738,13 +735,15 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
              intptr_t match_data)
 {
     ScrnInfoPtr pScrn;
-    struct xf86stat_s sstat;
+    int drmFd;
 
     TRACE_ENTRY();
 
-    if (xf86stat("/dev/dri/card0", &sstat) == 0)
+    drmFd = open("/dev/dri/card0", O_RDWR, 0);
+    if (drmFd >= 0)
     {
         xf86Msg(X_INFO, "vboxvideo: kernel driver found, not loading.\n");
+        close(drmFd);
         return FALSE;
     }
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
