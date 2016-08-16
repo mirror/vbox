@@ -514,8 +514,6 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
     AssertPtr(pGstStream);
 
-    LogFlowFunc(("[%s]\n", pStream->szName));
-
     /*
      * Init host stream.
      */
@@ -526,38 +524,41 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     memcpy(&CfgHostAcq, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
 
 #ifdef DEBUG
-        LogFunc(("[%s] Requested host format:\n", pStream->szName));
-        DrvAudioHlpStreamCfgPrint(pCfgHost);
+    LogFunc(("[%s] Requested host format:\n", pStream->szName));
+    DrvAudioHlpStreamCfgPrint(pCfgHost);
 #else
-        LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
-                 pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-                 pCfgHost->uHz, DrvAudioHlpAudFmtToStr(pCfgHost->enmFormat),
-                 pCfgHost->cChannels, pCfgHost->cChannels == 0 ? "Channel" : "Channels"));
+    LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+             pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+             pCfgHost->uHz, DrvAudioHlpAudFmtToStr(pCfgHost->enmFormat),
+             pCfgHost->cChannels, pCfgHost->cChannels == 0 ? "Channel" : "Channels"));
 #endif
 
     int rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream,
                                                    pCfgHost /* pCfgReq */, &CfgHostAcq /* pCfgAcq */);
-    if (RT_SUCCESS(rc))
-    {
-        /* Only set the host's stream to initialized if we were able create the stream
-         * in the host backend. This is necessary for trying to re-initialize the stream
-         * at some later point in time. */
-        pHstStream->fStatus |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
-    }
-    else
+    if (RT_FAILURE(rc))
     {
         LogFlowFunc(("[%s] Initializing stream in host backend failed with rc=%Rrc\n", pStream->szName, rc));
+        return rc;
     }
 
+    /* Only set the host's stream to initialized if we were able create the stream
+     * in the host backend. This is necessary for trying to re-initialize the stream
+     * at some later point in time. */
+    pHstStream->fStatus |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
+
 #ifdef DEBUG
-        LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
-        DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
+    LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
+    DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
 #else
-        LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
-                 pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-                 CfgHostAcq.uHz, DrvAudioHlpAudFmtToStr(CfgHostAcq.enmFormat),
-                 CfgHostAcq.cChannels, CfgHostAcq.cChannels == 0 ? "Channel" : "Channels"));
+    LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+             pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+             CfgHostAcq.uHz, DrvAudioHlpAudFmtToStr(CfgHostAcq.enmFormat),
+             CfgHostAcq.cChannels, CfgHostAcq.cChannels == 0 ? "Channel" : "Channels"));
 #endif
+
+    /* No sample buffer size hint given by the backend? Default to some sane value. */
+    if (!CfgHostAcq.cSampleBufferSize)
+        CfgHostAcq.cSampleBufferSize = _1K; /** @todo Make this configurable? */
 
     PDMAUDIOPCMPROPS PCMProps;
     int rc2 = DrvAudioHlpStreamCfgToProps(&CfgHostAcq, &PCMProps);
@@ -566,13 +567,10 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pHstStream->MixBuf);
 
-    if (CfgHostAcq.cSampleBufferSize)
-    {
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, CfgHostAcq.cSampleBufferSize * 4));
+    LogFlowFunc(("[%s] cSamples=%RU32\n", pHstStream->szName, CfgHostAcq.cSampleBufferSize * 4));
 
-        rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 4);
-        AssertRC(rc2);
-    }
+    rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 4);
+    AssertRC(rc2);
 
     /* Make a copy of the host stream configuration. */
     memcpy(&pHstStream->Cfg, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
@@ -588,60 +586,54 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pGstStream->MixBuf);
 
-    if (CfgHostAcq.cSampleBufferSize)
-    {
-        LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, CfgHostAcq.cSampleBufferSize * 2));
+    LogFlowFunc(("[%s] cSamples=%RU32\n", pGstStream->szName, CfgHostAcq.cSampleBufferSize * 2));
 
-        rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 2);
-        AssertRC(rc2);
-    }
+    rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &PCMProps, CfgHostAcq.cSampleBufferSize * 2);
+    AssertRC(rc2);
 
 #ifdef VBOX_WITH_STATISTICS
     char szStatName[255];
 #endif
 
-    if (CfgHostAcq.cSampleBufferSize)
+    if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
     {
-        if (pCfgGuest->enmDir == PDMAUDIODIR_IN)
-        {
-            /* Host (Parent) -> Guest (Child). */
-            rc2 = AudioMixBufLinkTo(&pHstStream->MixBuf, &pGstStream->MixBuf);
-            AssertRC(rc2);
+        /* Host (Parent) -> Guest (Child). */
+        rc2 = AudioMixBufLinkTo(&pHstStream->MixBuf, &pGstStream->MixBuf);
+        AssertRC(rc2);
 
 #ifdef VBOX_WITH_STATISTICS
-            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesElapsed", pGstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->In.StatBytesElapsed,
-                                      szStatName, STAMUNIT_BYTES, "Elapsed bytes read.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesElapsed", pGstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->In.StatBytesElapsed,
+                                  szStatName, STAMUNIT_BYTES, "Elapsed bytes read.");
 
-            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesRead", pGstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->In.StatBytesTotalRead,
-                                      szStatName, STAMUNIT_BYTES, "Total bytes read.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesRead", pGstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->In.StatBytesTotalRead,
+                                  szStatName, STAMUNIT_BYTES, "Total bytes read.");
 
-            RTStrPrintf(szStatName, sizeof(szStatName), "Host/%s/SamplesCaptured", pHstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pHstStream->In.StatSamplesCaptured,
-                                      szStatName, STAMUNIT_COUNT, "Total samples captured.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Host/%s/SamplesCaptured", pHstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pHstStream->In.StatSamplesCaptured,
+                                  szStatName, STAMUNIT_COUNT, "Total samples captured.");
 #endif
-        }
-        else
-        {
-            /* Guest (Parent) -> Host (Child). */
-            rc2 = AudioMixBufLinkTo(&pGstStream->MixBuf, &pHstStream->MixBuf);
-            AssertRC(rc2);
+    }
+    else
+    {
+        /* Guest (Parent) -> Host (Child). */
+        rc2 = AudioMixBufLinkTo(&pGstStream->MixBuf, &pHstStream->MixBuf);
+        AssertRC(rc2);
 
 #ifdef VBOX_WITH_STATISTICS
-            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesElapsed", pGstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->Out.StatBytesElapsed,
-                                      szStatName, STAMUNIT_BYTES, "Elapsed bytes written.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesElapsed", pGstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->Out.StatBytesElapsed,
+                                  szStatName, STAMUNIT_BYTES, "Elapsed bytes written.");
 
-            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesRead", pGstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->Out.StatBytesTotalWritten,
-                                      szStatName, STAMUNIT_BYTES, "Total bytes written.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesRead", pGstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStream->Out.StatBytesTotalWritten,
+                                  szStatName, STAMUNIT_BYTES, "Total bytes written.");
 
-            RTStrPrintf(szStatName, sizeof(szStatName), "Host/%s/SamplesPlayed", pHstStream->szName);
-            PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pHstStream->Out.StatSamplesPlayed,
-                                      szStatName, STAMUNIT_COUNT, "Total samples played.");
+        RTStrPrintf(szStatName, sizeof(szStatName), "Host/%s/SamplesPlayed", pHstStream->szName);
+        PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pHstStream->Out.StatSamplesPlayed,
+                                  szStatName, STAMUNIT_COUNT, "Total samples played.");
 #endif
-        }
     }
 
     /* Make a copy of the host stream configuration. */
