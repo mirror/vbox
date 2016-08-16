@@ -274,11 +274,6 @@ static AudioDeviceID coreAudioDeviceUIDtoID(const char* pszUID)
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @todo r=bird: The three API calls we use for finding, opening and closing
- * the default audio component are deprecated since 10.8.  This define switches
- * over to using the replacement/renamed APIs introduced in 10.6+ */
-#define USE_NON_DEPRECATED_APIS 1
-
 /** @name Initialization status indicator used for the recreation of the AudioUnits.
  * @{ */
 #define CA_STATUS_UNINIT    UINT32_C(0) /**< The device is uninitialized */
@@ -1259,20 +1254,14 @@ static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
         LogFlowFunc(("cFrames=%RU32\n", cFrames));
 
         /* Try to find the default HAL output component. */
-#ifdef USE_NON_DEPRECATED_APIS
         AudioComponentDescription cd;
-#else
-        ComponentDescription cd;
-#endif
+
         RT_ZERO(cd);
         cd.componentType         = kAudioUnitType_Output;
         cd.componentSubType      = kAudioUnitSubType_HALOutput;
         cd.componentManufacturer = kAudioUnitManufacturer_Apple;
-#ifdef USE_NON_DEPRECATED_APIS
+
         AudioComponent cp = AudioComponentFindNext(NULL, &cd);
-#else
-        Component cp = FindNextComponent(NULL, &cd);
-#endif
         if (cp == 0)
         {
             LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
@@ -1280,11 +1269,7 @@ static int coreAudioInitIn(PDRVHOSTCOREAUDIO pThis, PPDMAUDIOSTREAM pStream,
         }
 
         /* Open the default HAL output component. */
-#ifdef USE_NON_DEPRECATED_APIS
         err = AudioComponentInstanceNew(cp, &pStreamIn->audioUnit);
-#else
-        err = OpenAComponent(cp, &pStreamIn->audioUnit);
-#endif
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
@@ -1684,20 +1669,14 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
         }
 
         /* Try to find the default HAL output component. */
-#ifdef USE_NON_DEPRECATED_APIS
         AudioComponentDescription cd;
-#else
-        ComponentDescription cd;
-#endif
         RT_ZERO(cd);
+
         cd.componentType         = kAudioUnitType_Output;
         cd.componentSubType      = kAudioUnitSubType_HALOutput;
         cd.componentManufacturer = kAudioUnitManufacturer_Apple;
-#ifdef USE_NON_DEPRECATED_APIS
+
         AudioComponent cp = AudioComponentFindNext(NULL, &cd);
-#else
-        Component cp = FindNextComponent(NULL, &cd);
-#endif
         if (cp == 0)
         {
             LogRel(("CoreAudio: Failed to find HAL output component\n")); /** @todo Return error value? */
@@ -1705,11 +1684,7 @@ static int coreAudioInitOut(PDRVHOSTCOREAUDIO pThis,
         }
 
         /* Open the default HAL output component. */
-#ifdef USE_NON_DEPRECATED_APIS
         err = AudioComponentInstanceNew(cp, &pStreamOut->audioUnit);
-#else
-        err = OpenAComponent(cp, &pStreamOut->audioUnit);
-#endif
         if (err != noErr)
         {
             LogRel(("CoreAudio: Failed to open output component (%RI32)\n", err));
@@ -2434,11 +2409,7 @@ static int coreAudioDestroyStreamIn(PPDMAUDIOSTREAM pStream)
 
         err = AudioUnitUninitialize(pStreamIn->audioUnit);
         if (err == noErr)
-#ifdef USE_NON_DEPRECATED_APIS
             err = AudioComponentInstanceDispose(pStreamIn->audioUnit);
-#else
-            err = CloseComponent(pStreamIn->audioUnit);
-#endif
 
         if (   err != noErr
             && err != kAudioHardwareBadObjectError)
@@ -2549,11 +2520,7 @@ static int coreAudioDestroyStreamOut(PPDMAUDIOSTREAM pStream)
 
         err = AudioUnitUninitialize(pStreamOut->audioUnit);
         if (err == noErr)
-#ifdef USE_NON_DEPRECATED_APIS
             err = AudioComponentInstanceDispose(pStreamOut->audioUnit);
-#else
-            err = CloseComponent(pStreamOut->audioUnit);
-#endif
 
         if (   err != noErr
             && err != kAudioHardwareBadObjectError)
