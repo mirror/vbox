@@ -335,7 +335,7 @@ static void rtHeapOffsetFreeBlock(PRTHEAPOFFSETINTERNAL pHeapInt, PRTHEAPOFFSETB
 #ifdef RTHEAPOFFSET_STRICT
 
 /** Checked version of RTHEAPOFF_TO_PTR and RTHEAPOFF_TO_PTR_N. */
-DECLINLINE(void *) rtHeapOffCheckedOffToPtr(PRTHEAPOFFSETINTERNAL pHeapInt, uint32_t off, bool fNull)
+static void *rtHeapOffCheckedOffToPtr(PRTHEAPOFFSETINTERNAL pHeapInt, uint32_t off, bool fNull)
 {
     Assert(off || fNull);
     if (!off)
@@ -346,7 +346,7 @@ DECLINLINE(void *) rtHeapOffCheckedOffToPtr(PRTHEAPOFFSETINTERNAL pHeapInt, uint
 }
 
 /** Checked version of RTHEAPOFF_TO_OFF. */
-DECLINLINE(uint32_t) rtHeapOffCheckedPtrToOff(PRTHEAPOFFSETINTERNAL pHeapInt, void *pv)
+static uint32_t rtHeapOffCheckedPtrToOff(PRTHEAPOFFSETINTERNAL pHeapInt, void *pv)
 {
     if (!pv)
         return 0;
