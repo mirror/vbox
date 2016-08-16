@@ -38,8 +38,10 @@ if  !defined(VBOX_ONLY_DOCS) \
  if1of ($(KBUILD_TARGET), darwin solaris win linux freebsd)
   ifdef VBOX_WITH_NETADP
    include $(PATH_SUB_CURRENT)/VBoxNetAdp/Makefile.kmk
-  else
   endif
+ endif
+ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris)
+  include $(PATH_SUB_CURRENT)/adpctl/Makefile.kmk
  endif
  if1of ($(KBUILD_TARGET), darwin freebsd linux)
   include $(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/Makefile.kmk

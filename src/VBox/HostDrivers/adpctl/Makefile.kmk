@@ -17,7 +17,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../..
+SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 PROGRAMS              += VBoxNetAdpCtl

@@ -28,11 +28,6 @@ ifeq ($(KBUILD_TARGET),linux)
   include $(PATH_SUB_CURRENT)/tunctl/Makefile.kmk
  endif
 endif
-if1of ($(KBUILD_TARGET),darwin solaris linux freebsd)
- ifneq ($(wildcard $(PATH_SUB_CURRENT)/adpctl),)
-  include $(PATH_SUB_CURRENT)/adpctl/Makefile.kmk
- endif
-endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
