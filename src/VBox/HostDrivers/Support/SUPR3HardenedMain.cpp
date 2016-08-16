@@ -1401,7 +1401,9 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                     g_hStartupLog = NULL;
             }
 #else
-            RT_NOREF(g_hStartupLog, g_cbStartupLog);
+            /* Just some mumbo jumbo to shut up the compiler. */
+            g_hStartupLog  -= 1;
+            g_cbStartupLog += 1;
             //g_hStartupLog = open()
 #endif
         }
