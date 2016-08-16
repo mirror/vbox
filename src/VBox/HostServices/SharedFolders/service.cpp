@@ -686,7 +686,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 }
                 else if (flags & SHFL_LOCK_WAIT)
                 {
-                    /* @todo This should be properly implemented by the shared folders service.
+                    /** @todo This should be properly implemented by the shared folders service.
                      *       The service thread must never block. If an operation requires
                      *       blocking, it must be processed by another thread and when it is
                      *       completed, the another thread must call

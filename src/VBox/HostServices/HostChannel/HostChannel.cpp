@@ -142,7 +142,7 @@ static int vhcProviderRegister(VBOXHOSTCHCTX *pCtx, VBOXHOSTCHPROVIDER *pProvide
 
     if (RT_SUCCESS(rc))
     {
-        /* @todo check a duplicate. */
+        /** @todo check a duplicate. */
 
         RTListAppend(&pCtx->listProviders, &pProvider->nodeContext);
 
@@ -163,8 +163,8 @@ static int vhcProviderUnregister(VBOXHOSTCHPROVIDER *pProvider)
 
     if (RT_SUCCESS(rc))
     {
-        /* @todo check that the provider is in the list. */
-        /* @todo mark the provider as invalid in each instance. also detach channels? */
+        /** @todo check that the provider is in the list. */
+        /** @todo mark the provider as invalid in each instance. also detach channels? */
 
         RTListNodeRemove(&pProvider->nodeContext);
 

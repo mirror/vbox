@@ -261,7 +261,7 @@ static DECLCALLBACK(void) svcCall(void *pvService,
                     {
                         uint32_t u32Handle = 0;
 
-                        /* @todo make sure that pvName is a nul terminated */
+                        /** @todo make sure that pvName is a nul terminated */
                         rc = vboxHostChannelAttach(pClient, &u32Handle, (const char *)pvName, u32Flags);
 
                         if (RT_SUCCESS(rc))
@@ -532,7 +532,7 @@ static DECLCALLBACK(void) svcCall(void *pvService,
                             {
                                 uint32_t u32SizeDataReturned = 0;
 
-                                /* @todo make sure that pvName is a nul terminated */
+                                /** @todo make sure that pvName is a nul terminated */
                                 rc = vboxHostChannelQuery(pClient, (const char *)pvName, u32Code,
                                                           pvParm, cbParm,
                                                           pvData, cbData, &u32SizeDataReturned);

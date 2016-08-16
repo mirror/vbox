@@ -475,7 +475,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
                 == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
         {
             /* For now, we do not treat a failure here as fatal. */
-            /* @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if
+            /** @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if
                      SHFL_CF_ACT_FAIL_IF_EXISTS is set. */
             RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
             pParms->Result = SHFL_FILE_REPLACED;
@@ -488,7 +488,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
             pParms->Result = SHFL_FILE_CREATED;
         }
 #if 0
-        /* @todo */
+        /** @todo */
         /* Set new attributes. */
         if (   (   SHFL_CF_ACT_REPLACE_IF_EXISTS
                 == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
@@ -969,7 +969,7 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
         return VERR_ACCESS_DENIED;
 
     if (*pcbBuffer == 0)
-        return VINF_SUCCESS; /* @todo correct? */
+        return VINF_SUCCESS; /** @todo correct? */
 
 
     rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
@@ -1360,7 +1360,7 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
         return VERR_INVALID_PARAMETER;
     }
 
-    /* @todo other options */
+    /** @todo other options */
     Assert(flags == (SHFL_INFO_GET|SHFL_INFO_FILE));
 
     *pcbBuffer  = 0;
@@ -1468,7 +1468,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
             }
         }
     }
-    /* TODO: mode for directories */
+    /** @todo mode for directories */
 
     if (rc == VINF_SUCCESS)
     {
@@ -1548,7 +1548,7 @@ int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, 
         return VERR_INVALID_PARAMETER;
     }
 
-    /* @todo other options */
+    /** @todo other options */
     Assert(flags == (SHFL_INFO_GET|SHFL_INFO_VOLUME));
 
     *pcbBuffer  = 0;
