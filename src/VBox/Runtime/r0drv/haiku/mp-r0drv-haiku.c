@@ -103,7 +103,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
     return idCpu < smp_get_num_cpus();
-    /** @todo: FixMe && !CPU_ABSENT(idCpu) */
+    /** @todo FixMe && !CPU_ABSENT(idCpu) */
 }
 
 

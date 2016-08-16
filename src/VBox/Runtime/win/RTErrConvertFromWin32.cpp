@@ -185,8 +185,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_INVALID_EXE_SIGNATURE:   return VERR_INVALID_EXE_SIGNATURE;
         case ERROR_BAD_EXE_FORMAT:          return VERR_BAD_EXE_FORMAT;
         case ERROR_FILE_CORRUPT:            return VERR_BAD_EXE_FORMAT;
-        case ERROR_RESOURCE_DATA_NOT_FOUND: return VERR_NO_DATA; ///@todo fix ERROR_RESOURCE_DATA_NOT_FOUND translation
-        case ERROR_INVALID_ADDRESS:         return VERR_INVALID_POINTER; ///@todo fix ERROR_INVALID_ADDRESS translation - dbghelp returns it on some line number queries.
+        case ERROR_RESOURCE_DATA_NOT_FOUND: return VERR_NO_DATA; /// @todo fix ERROR_RESOURCE_DATA_NOT_FOUND translation
+        case ERROR_INVALID_ADDRESS:         return VERR_INVALID_POINTER; /// @todo fix ERROR_INVALID_ADDRESS translation - dbghelp returns it on some line number queries.
 
         case ERROR_CANCELLED:               return VERR_CANCELLED;
         case ERROR_USER_MAPPED_FILE:        return VERR_SHARING_VIOLATION;

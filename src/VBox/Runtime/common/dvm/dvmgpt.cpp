@@ -271,7 +271,7 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
             pThis->HdrRev1.u64LbaBackup           = RT_LE2H_U64(pThis->HdrRev1.u64LbaBackup);
             pThis->HdrRev1.u64LbaFirstPartition   = RT_LE2H_U64(pThis->HdrRev1.u64LbaFirstPartition);
             pThis->HdrRev1.u64LbaLastPartition    = RT_LE2H_U64(pThis->HdrRev1.u64LbaLastPartition);
-            /** @todo: Disk UUID */
+            /** @todo Disk UUID */
             pThis->HdrRev1.u64LbaPartitionEntries = RT_LE2H_U64(pThis->HdrRev1.u64LbaPartitionEntries);
             pThis->HdrRev1.cPartitionEntries      = RT_LE2H_U32(pThis->HdrRev1.cPartitionEntries);
             pThis->HdrRev1.cbPartitionEntry       = RT_LE2H_U32(pThis->HdrRev1.cbPartitionEntry);
@@ -291,7 +291,7 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
                             if (!RTUuidIsNull(&pThis->paGptEntries[i].UuidType))
                             {
                                 /* Convert to host endianess. */
-                                /** @todo: Uuids */
+                                /** @todo Uuids */
                                 pThis->paGptEntries[i].u64LbaFirst = RT_LE2H_U64(pThis->paGptEntries[i].u64LbaFirst);
                                 pThis->paGptEntries[i].u64LbaLast  = RT_LE2H_U64(pThis->paGptEntries[i].u64LbaLast);
                                 pThis->paGptEntries[i].u64Flags    = RT_LE2H_U64(pThis->paGptEntries[i].u64Flags);

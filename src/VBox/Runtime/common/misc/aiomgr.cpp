@@ -509,7 +509,7 @@ static int rtAioMgrReqPrepareNonBuffered(PRTAIOMGRFILEINT pFile, PRTAIOMGRREQ pR
      * need to be on a 512 boundary.
      */
     if (   !fAlignedReq
-        /** @todo: || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf) */)
+        /** @todo || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf) */)
     {
         /* Create bounce buffer. */
         pReq->cbBounceBuffer = cbToTransfer;
@@ -518,7 +518,7 @@ static int rtAioMgrReqPrepareNonBuffered(PRTAIOMGRFILEINT pFile, PRTAIOMGRREQ pR
                   pReq->off, offStart));
         pReq->offBounceBuffer = pReq->off - offStart;
 
-        /** @todo: I think we need something like a RTMemAllocAligned method here.
+        /** @todo I think we need something like a RTMemAllocAligned method here.
          * Current assumption is that the maximum alignment is 4096byte
          * (GPT disk on Windows)
          * so we can use RTMemPageAlloc here.
@@ -866,7 +866,7 @@ static DECLCALLBACK(int) rtAioMgrWorker(RTTHREAD hThreadSelf, void *pvUser)
         else if (RT_FAILURE(rc))
         {
             /* Something bad happened. */
-            /** @todo: */
+            /** @todo */
         }
         else
         {
@@ -1075,7 +1075,7 @@ static int rtAioMgrFileIoReqCreate(RTAIOMGRFILE hAioMgrFile, RTFOFF off, PRTSGBU
         }
         else
         {
-            /** @todo: Real S/G buffer support. */
+            /** @todo Real S/G buffer support. */
             rtAioMgrReqFree(pAioMgr, pReq);
             rc = VERR_NOT_SUPPORTED;
         }

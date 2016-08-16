@@ -127,7 +127,7 @@ RTR3DECL(int)  RTFileUnlock(RTFILE hFile, int64_t offLock, uint64_t cbLock)
     if (fcntl(RTFileToNative(hFile), F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
-    /* @todo check error codes for non existing lock. */
+    /** @todo check error codes for non existing lock. */
     int iErr = errno;
     if (    iErr == EAGAIN
         ||  iErr == EACCES)

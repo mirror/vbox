@@ -655,7 +655,7 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
             }
 
             /* Create a header record for the file */
-            /* Todo: mode, gid, uid, mtime should be setable (or detected myself) */
+            /** @todo mode, gid, uid, mtime should be setable (or detected myself) */
             RTTIMESPEC time;
             RTTimeNow(&time);
             rc = rtTarCreateHeaderRecord(&record, pFileInt->pszFilename, pFileInt->cbSize,

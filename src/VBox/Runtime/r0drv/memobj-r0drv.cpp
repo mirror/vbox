@@ -28,7 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP RTLOGGROUP_DEFAULT ///@todo RTLOGGROUP_MEM
+#define LOG_GROUP RTLOGGROUP_DEFAULT /// @todo RTLOGGROUP_MEM
 #define RTMEM_NO_WRAP_TO_EF_APIS /* circular dependency otherwise. */
 #include <iprt/memobj.h>
 #include "internal/iprt.h"

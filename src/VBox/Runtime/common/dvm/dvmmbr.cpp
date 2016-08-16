@@ -233,7 +233,7 @@ static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetValidVolumes(RTDVMFMT hVolMgrFmt)
 static DECLCALLBACK(uint32_t) rtDvmFmtMbrGetMaxVolumes(RTDVMFMT hVolMgrFmt)
 {
     NOREF(hVolMgrFmt);
-    return 4; /** @todo: Add support for EBR? */
+    return 4; /** @todo Add support for EBR? */
 }
 
 /**

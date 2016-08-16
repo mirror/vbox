@@ -3376,7 +3376,7 @@ static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections,
 #endif
         }
 
-        ///@todo only if SizeOfRawData > 0 ?
+        /// @todo only if SizeOfRawData > 0 ?
         if (    pSH->PointerToRawData > cbRawImage /// @todo pSH->PointerToRawData >= cbRawImage ?
             ||  pSH->SizeOfRawData > cbRawImage
             ||  pSH->PointerToRawData + pSH->SizeOfRawData > cbRawImage)

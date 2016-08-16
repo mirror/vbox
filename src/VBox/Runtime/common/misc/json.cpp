@@ -354,7 +354,7 @@ DECLINLINE(char) rtJsonTokenizerPeekCh(PRTJSONTOKENIZER pTokenizer)
 {
     return   rtJsonTokenizerIsEos(pTokenizer)
            ? '\0'
-           : pTokenizer->achBuf[pTokenizer->offBuf + 1]; /** @todo: Read out of bounds */
+           : pTokenizer->achBuf[pTokenizer->offBuf + 1]; /** @todo Read out of bounds */
 }
 
 /**
@@ -1058,7 +1058,7 @@ static int rtJsonParseValue(PRTJSONTOKENIZER pTokenizer, PRTJSONTOKEN pToken,
         case RTJSONTOKENCLASS_VALUE_SEPARATOR:
         case RTJSONTOKENCLASS_EOS:
         default:
-            /** @todo: Error info */
+            /** @todo Error info */
             rc = VERR_JSON_MALFORMED;
             break;
     }

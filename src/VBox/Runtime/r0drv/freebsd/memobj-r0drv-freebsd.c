@@ -749,7 +749,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     vm_offset_t AddrR3;
     if (R3PtrFixed == (RTR3PTR)-1)
     {
-        /** @todo: is this needed?. */
+        /** @todo is this needed?. */
         PROC_LOCK(pProc);
         AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
         PROC_UNLOCK(pProc);

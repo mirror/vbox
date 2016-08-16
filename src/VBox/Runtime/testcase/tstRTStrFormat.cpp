@@ -646,7 +646,7 @@ int main()
 #if 0
     static RTUNICP s_usz2[] = { 0xc5, 0xc6, 0xf8, 0 };
     static RTUTF16 s_wsz2[] = { 0xc5, 0xc6, 0xf8, 0 };
-    static char    s_sz2[]  = { 0xc5, 0xc6, 0xf8, 0 };///@todo multibyte tests.
+    static char    s_sz2[]  = { 0xc5, 0xc6, 0xf8, 0 };/// @todo multibyte tests.
 
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%ls", s_wsz2);
     CHECKSTR(s_sz2);
