@@ -24,6 +24,10 @@
       </listitem>
 
       <listitem>
+        <para>USB: fixed a hanging guest under certain conditions (bug #15747)</para>
+      </listitem>
+
+      <listitem>
         <para>PIIX4: implemented dummy SMBus controller to prevent annoying
           Linux kernel warnings about uninitialized SMBus base address
           (bug #9517)</para>
