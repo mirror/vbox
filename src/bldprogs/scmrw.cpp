@@ -651,6 +651,197 @@ bool rewrite_FixFlowerBoxMarkers(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
     return cChanges != 0;
 }
 
+
+/**
+ * Looks for the start of a todo comment.
+ *
+ * @returns Offset into the line of the comment start sequence.
+ * @param   pchLine             The line to search.
+ * @param   cchLineBeforeTodo   The length of the line before the todo.
+ * @param   pfSameLine          Indicates whether it's refering to a statemtn on
+ *                              the same line comment (true), or the next
+ *                              statement (false).
+ */
+static size_t findTodoCommentStart(char const *pchLine, size_t cchLineBeforeTodo, bool *pfSameLine)
+{
+    *pfSameLine = false;
+
+    /* Skip one '@' or  '\\'. */
+    char ch;
+    if (   cchLineBeforeTodo > 2
+        && (   (ch = pchLine[cchLineBeforeTodo - 1] == '@')
+            || ch == '\\' ) )
+        cchLineBeforeTodo--;
+
+    /* Skip blanks. */
+    while (   cchLineBeforeTodo > 2
+           && RT_C_IS_BLANK(pchLine[cchLineBeforeTodo - 1]))
+        cchLineBeforeTodo--;
+
+    /* Look for same line indicator. */
+    if (   cchLineBeforeTodo > 0
+        && pchLine[cchLineBeforeTodo - 1] == '<')
+    {
+        *pfSameLine = true;
+        cchLineBeforeTodo--;
+    }
+
+    /* Skip *s */
+    while (   cchLineBeforeTodo > 1
+           && pchLine[cchLineBeforeTodo - 1] == '*')
+        cchLineBeforeTodo--;
+
+    /* Do we have a comment opening sequence. */
+    if (   cchLineBeforeTodo > 0
+        && pchLine[cchLineBeforeTodo - 1] == '/'
+        && (   (   cchLineBeforeTodo >= 2
+                && pchLine[cchLineBeforeTodo - 2] == '/')
+            || pchLine[cchLineBeforeTodo] == '*'))
+    {
+        /* Skip slashes at the start. */
+        while (   cchLineBeforeTodo > 0
+               && pchLine[cchLineBeforeTodo - 1] == '/')
+            cchLineBeforeTodo--;
+
+        return cchLineBeforeTodo;
+    }
+
+    return ~(size_t)0;
+}
+
+
+/**
+ * Looks for a TODO or todo in the given line.
+ *
+ * @returns Offset into the line of found, ~(size_t)0 if not.
+ * @param   pchLine             The line to search.
+ * @param   cchLine             The length of the line.
+ */
+static size_t findTodo(char const *pchLine, size_t cchLine)
+{
+    if (cchLine >= 4 + 2)
+    {
+        /* We don't search the first to chars because we need the start of a comment.
+           Also, skip the last three chars since we need at least four for a match. */
+        size_t const cchLineT = cchLine - 3;
+        if (   memchr(pchLine + 2, 't', cchLineT - 2) != NULL
+            || memchr(pchLine + 2, 'T', cchLineT - 2) != NULL)
+        {
+            for (size_t off = 2; off < cchLineT; off++)
+            {
+                char ch = pchLine[off];
+                if (   (   ch != 't'
+                        && ch != 'T')
+                    || (   (ch = pchLine[off + 1]) != 'o'
+                        && ch != 'O')
+                    || (   (ch = pchLine[off + 2]) != 'd'
+                        && ch != 'D')
+                    || (   (ch = pchLine[off + 3]) != 'o'
+                        && ch != 'O')
+                    || (   off + 4 != cchLine
+                        && (ch = pchLine[off + 4]) != ' '
+                        && ch != '\t'
+                        && ch != ':'                /* todo: */
+                        && (ch != '*' || off + 5 > cchLine || pchLine[off + 5] != '/')  /*todo*/
+                        ) )
+                { /* not a hit - likely */ }
+                else
+                    return off;
+            }
+        }
+    }
+    return ~(size_t)0;
+}
+
+
+/**
+ * Flower box marker comments in C and C++ code.
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_Fix_C_and_CPP_Todos(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (!pSettings->fFixTodos)
+        return false;
+
+    /*
+     * Work thru the file line by line looking for the start of todo comments.
+     */
+    size_t      cChanges = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        /*
+         * Look for the word 'todo' in the line.  We're currently only trying
+         * to catch comments starting with the word todo and adjust the start of
+         * the doxygen statement.
+         */
+        size_t offTodo = findTodo(pchLine, cchLine);
+        if (   offTodo != ~(size_t)0
+            && offTodo >= 2)
+        {
+            /* Work backwards to find the start of the comment. */
+            bool fSameLine = false;
+            size_t offCommentStart = findTodoCommentStart(pchLine, offTodo, &fSameLine);
+            if (offCommentStart != ~(size_t)0)
+            {
+                char    szNew[64];
+                size_t  cchNew = 0;
+                szNew[cchNew++] = '/';
+                szNew[cchNew++] = pchLine[offCommentStart + 1];
+                szNew[cchNew++] = pchLine[offCommentStart + 1];
+                if (fSameLine)
+                    szNew[cchNew++] = '<';
+                szNew[cchNew++] = ' ';
+                szNew[cchNew++] = '@';
+                szNew[cchNew++] = 't';
+                szNew[cchNew++] = 'o';
+                szNew[cchNew++] = 'd';
+                szNew[cchNew++] = 'o';
+
+                /* Figure out wheter to continue after the @todo statement opening, we'll strip ':'
+                   but need to take into account that we might be at the end of the line before
+                   adding the space. */
+                size_t offTodoAfter = offTodo + 4;
+                if (   offTodoAfter < cchLine
+                    && pchLine[offTodoAfter] == ':')
+                    offTodoAfter++;
+                if (   offTodoAfter < cchLine
+                    && RT_C_IS_BLANK(pchLine[offTodoAfter]))
+                    offTodoAfter++;
+                if (offTodoAfter < cchLine)
+                    szNew[cchNew++] = ' ';
+
+                /* Write it out. */
+                ScmStreamWrite(pOut, pchLine, offCommentStart);
+                ScmStreamWrite(pOut, szNew, cchNew);
+                if (offTodoAfter < cchLine)
+                    ScmStreamWrite(pOut, &pchLine[offTodoAfter], cchLine - offTodoAfter);
+                ScmStreamPutEol(pOut, enmEol);
+
+                /* Check whether we actually made any changes. */
+                if (   cchNew != offTodoAfter - offCommentStart
+                    || memcmp(szNew, &pchLine[offCommentStart], cchNew))
+                    cChanges++;
+                continue;
+            }
+        }
+
+        int rc = ScmStreamPutLine(pOut, pchLine, cchLine, enmEol);
+        if (RT_FAILURE(rc))
+            return false;
+    }
+    if (cChanges > 0)
+        ScmVerbose(pState, 2, " * Converted %zu todo statements.\n", cChanges);
+    return cChanges != 0;
+}
+
+
 /**
  * Rewrite a C/C++ source or header file.
  *

@@ -74,6 +74,8 @@ typedef enum SCMOPT
     SCMOPT_NO_STRIP_TRAILING_LINES,
     SCMOPT_FIX_FLOWER_BOX_MARKERS,
     SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,
+    SCMOPT_FIX_TODOS,
+    SCMOPT_NO_FIX_TODOS,
     SCMOPT_MIN_BLANK_LINES_BEFORE_FLOWER_BOX_MARKERS,
     SCMOPT_ONLY_SVN_DIRS,
     SCMOPT_NOT_ONLY_SVN_DIRS,
@@ -138,6 +140,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fStripTrailingLines = */                    true,
     /* .fFixFlowerBoxMarkers = */                   true,
     /* .cMinBlankLinesBeforeFlowerBoxMakers = */    2,
+    /* .fFixTodos = */                              true,
     /* .fOnlySvnFiles = */                          false,
     /* .fOnlySvnDirs = */                           false,
     /* .fSetSvnEol = */                             false,
@@ -168,6 +171,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--min-blank-lines-before-flower-box-makers", SCMOPT_FIX_FLOWER_BOX_MARKERS,  RTGETOPT_REQ_UINT8 },
     { "--fix-flower-box-markers",           SCMOPT_FIX_FLOWER_BOX_MARKERS,          RTGETOPT_REQ_NOTHING },
     { "--no-fix-flower-box-markers",        SCMOPT_NO_FIX_FLOWER_BOX_MARKERS,       RTGETOPT_REQ_NOTHING },
+    { "--fix-todos",                        SCMOPT_FIX_TODOS,                       RTGETOPT_REQ_NOTHING },
+    { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
     { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
     { "--only-svn-files",                   SCMOPT_ONLY_SVN_FILES,                  RTGETOPT_REQ_NOTHING },
@@ -213,6 +218,7 @@ static PFNSCMREWRITER const g_aRewritersFor_C_and_CPP[] =
     rewrite_SvnNoExecutable,
     rewrite_SvnKeywords,
     rewrite_FixFlowerBoxMarkers,
+    rewrite_Fix_C_and_CPP_Todos,
     rewrite_C_and_CPP
 };
 
