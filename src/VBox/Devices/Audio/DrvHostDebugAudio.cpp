@@ -129,7 +129,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostDebugAudioGetStatus(PPDMIHOSTAUDI
 static int debugCreateStreamIn(PPDMIHOSTAUDIO pInterface,
                                PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    NOREF(pInterface);
+    RT_NOREF(pInterface, pStream);
 
     /* Just adopt the wanted stream configuration. */
     PDMAUDIOPCMPROPS Props;

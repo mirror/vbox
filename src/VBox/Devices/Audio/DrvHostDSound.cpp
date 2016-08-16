@@ -748,7 +748,7 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
 
     PVOID pv1, pv2;
     DWORD cb1, cb2;
-    HRESULT hr = directSoundPlayLock(pThis, pDSoundStream->pDSB, &pDSoundStream->Stream.Props,
+    HRESULT hr = directSoundPlayLock(pThis, pDSoundStream->pDSB, &pDSoundStream->Props,
                                      0 /* dwOffset */, AUDIOMIXBUF_S2B(&pStream->MixBuf, pDSoundStream->cMaxSamplesInBuffer),
                                      &pv1, &pv2, &cb1, &cb2, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
@@ -757,10 +757,10 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         DWORD len2 = AUDIOMIXBUF_B2S(&pStream->MixBuf, cb2);
 
         if (pv1 && len1)
-            DrvAudioHlpClearBuf(&pDSoundStream->Stream.Props, pv1, cb1, len1);
+            DrvAudioHlpClearBuf(&pDSoundStream->Props, pv1, cb1, len1);
 
         if (pv2 && len2)
-            DrvAudioHlpClearBuf(&pDSoundStream->Stream.Props, pv2, cb2, len2);
+            DrvAudioHlpClearBuf(&pDSoundStream->Props, pv2, cb2, len2);
 
         directSoundPlayUnlock(pThis, pDSoundStream->pDSB, pv1, pv2, cb1, cb2);
     }
