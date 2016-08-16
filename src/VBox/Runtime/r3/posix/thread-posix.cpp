@@ -293,7 +293,8 @@ static void *rtThreadNativeMain(void *pvArgs)
 {
     PRTTHREADINT  pThread = (PRTTHREADINT)pvArgs;
     pthread_t     Self    = pthread_self();
-    Assert((uintptr_t)Self == (RTNATIVETHREAD)Self && (uintptr_t)Self != NIL_RTNATIVETHREAD);
+    Assert((uintptr_t)Self != NIL_RTNATIVETHREAD);
+    Assert(Self == (pthread_t)(RTNATIVETHREAD)Self);
 
 #if defined(RT_OS_LINUX)
     /*
