@@ -250,7 +250,7 @@ typedef _Bool bool;
       * include it later doesn't mess things up.
       */
 #    undef bool
-     typedef _Bool bool; 
+     typedef _Bool bool;
 #   endif
 #  else
 #   if (defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)) && (defined(_STDBOOL_H) || defined(__STDBOOL_H))

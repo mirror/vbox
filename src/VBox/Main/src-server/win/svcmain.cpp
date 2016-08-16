@@ -173,7 +173,7 @@ BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
 {
     BOOL result = FALSE;
     typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONDESTROY)(HWND hWnd);
-    
+
     PFNSHUTDOWNBLOCKREASONDESTROY pfn = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(
         GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
     _ASSERTE(pfn);
@@ -247,7 +247,7 @@ int CreateMainWindow()
     wc.hInstance = g_hInstance;
     wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
     wc.lpszClassName = MAIN_WND_CLASS;
-    
+
 
     ATOM atomWindowClass = RegisterClass(&wc);
 

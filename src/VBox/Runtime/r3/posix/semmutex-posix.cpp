@@ -98,7 +98,7 @@ int rtSemFallbackPthreadMutexTimedlock(pthread_mutex_t *mutex, RTMSINTERVAL cMil
             delta.tv_nsec = ts.tv_nsec;
             ts.tv_nsec = 0;
         }
-        
+
         nanosleep(&delta, &remaining);
 
         rc = pthread_mutex_trylock(mutex);
