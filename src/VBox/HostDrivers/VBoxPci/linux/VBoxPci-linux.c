@@ -220,7 +220,7 @@ static int vboxPciLinuxDevRegisterWithIommu(PVBOXRAWPCIINS pIns)
     {
         if (RT_LIKELY(pData->pIommuDomain))
         {
-            /** @todo: KVM checks IOMMU_CAP_CACHE_COHERENCY and sets
+            /** @todo KVM checks IOMMU_CAP_CACHE_COHERENCY and sets
              *  flag IOMMU_CACHE later used when mapping physical
              *  addresses, which could improve performance.
              */
@@ -412,7 +412,7 @@ static int vboxPciLinuxDevDetachHostDriver(PVBOXRAWPCIINS pIns)
             printk(KERN_DEBUG "vboxpci: ERROR: %s contains invalid symbols\n", currentDriver);
             return VERR_ACCESS_DENIED;
         }
-        /** @todo: RTStrCopy not exported. */
+        /** @todo RTStrCopy not exported. */
         strncpy(pIns->szPrevDriver, currentDriver, sizeof(pIns->szPrevDriver));
     }
 
@@ -1023,12 +1023,12 @@ DECLHIDDEN(int) vboxPciOsDevPowerStateChange(PVBOXRAWPCIINS pIns, PCIRAWPOWERSTA
         case PCIRAW_POWER_SUSPEND:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_SUSPEND\n");
             rc = VINF_SUCCESS;
-            /// @todo: what do we do here?
+            /// @todo what do we do here?
             break;
         case PCIRAW_POWER_RESUME:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "PCIRAW_POWER_RESUME\n");
             rc = VINF_SUCCESS;
-            /// @todo: what do we do here?
+            /// @todo what do we do here?
             break;
         default:
             vbpci_printk(KERN_DEBUG, pIns->pPciDev, "unknown power state %u\n", aState);
@@ -1060,7 +1060,7 @@ static DECLCALLBACK(int) vboxPciOsContigMemInfo(PRAWPCIPERVM pVmCtx, RTHCPHYS Ho
                 break;
 
             flags = IOMMU_READ | IOMMU_WRITE;
-            /* @todo: flags |= IOMMU_CACHE; */
+            /** @todo flags |= IOMMU_CACHE; */
 
             r = iommu_map(domain, GuestStart, HostStart, get_order(cMemSize), flags);
             if (r)

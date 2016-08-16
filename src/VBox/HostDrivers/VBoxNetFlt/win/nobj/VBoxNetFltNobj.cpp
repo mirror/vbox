@@ -271,7 +271,7 @@ static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, O
                 }
                 else
                 {
-                    /* TODO: we should check the default medium in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002bE10318}\<driver_id>\Ndi\Params\Medium, REG_SZ "Default" value */
+                    /** @todo we should check the default medium in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002bE10318}\<driver_id>\Ndi\Params\Medium, REG_SZ "Default" value */
                     NonStandardAssertBreakpoint();
                     *pbShouldBind = true;
                 }

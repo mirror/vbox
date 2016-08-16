@@ -806,7 +806,7 @@ static VOID vboxNetFltWinQuPacketQueueWorkerThreadProc(PVBOXNETFLTINS pNetFltIf)
             PNDIS_PACKET pTmpPacket = NULL;
 #endif
 
-            /*TODO: FIXME: !!! the better approach for performance would be to dequeue all packets at once
+            /** @todo FIXME: !!! the better approach for performance would be to dequeue all packets at once
              * and then go through all dequeued packets
              * the same should be done for enqueue !!! */
             pInfo = vboxNetFltWinQuInterlockedDequeueHead(&pWorker->PacketQueue);
@@ -973,7 +973,7 @@ static NTSTATUS vboxNetFltWinQuCreateSystemThread(PKTHREAD *ppThread, PKSTART_RO
             return STATUS_SUCCESS;
         }
 
-        /* @todo: how would we fail in this case ?*/
+        /** @todo how would we fail in this case ?*/
     }
     return Status;
 }
@@ -1193,7 +1193,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinQuEnqueuePacket(PVBOXNETFLTINS pInstance, P
             if (!pInfo)
             {
                 AssertFailed();
-                /* TODO: what status to set? */
+                /** @todo what status to set? */
                 fStatus = NDIS_STATUS_FAILURE;
                 vboxNetFltWinMemFree(pSG);
                 break;
@@ -1223,7 +1223,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinQuEnqueuePacket(PVBOXNETFLTINS pInstance, P
             if (!pInfo)
             {
                 AssertFailed();
-                /* TODO: what status to set? */
+                /** @todo what status to set? */
                 fStatus = NDIS_STATUS_FAILURE;
                 break;
             }
@@ -1296,7 +1296,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinGetMacAddress(PVBOXNETFLTINS pNetFlt, PRTMA
     status = vboxNetFltWinSynchNdisRequest(pNetFlt, &request);
     if (status != NDIS_STATUS_SUCCESS)
     {
-        /* TODO */
+        /** @todo */
         AssertFailed();
     }
 
@@ -1344,7 +1344,7 @@ DECLHIDDEN(bool) vboxNetFltWinIsPromiscuous(PVBOXNETFLTINS pNetFlt)
     status = vboxNetFltWinSynchNdisRequest(pNetFlt, &request);
     if (status != NDIS_STATUS_SUCCESS)
     {
-        /* TODO */
+        /** @todo */
         AssertFailed();
         return false;
     }
@@ -1371,7 +1371,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinSetPromiscuous(PVBOXNETFLTINS pNetFlt, bool
         fStatus = vboxNetFltWinSynchNdisRequest(pNetFlt, &Request);
         if (fStatus != NDIS_STATUS_SUCCESS)
         {
-            /* TODO: */
+            /** @todo */
             AssertFailed();
             return fStatus;
         }
@@ -1404,7 +1404,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinSetPromiscuous(PVBOXNETFLTINS pNetFlt, bool
             fStatus = vboxNetFltWinSynchNdisRequest(pNetFlt, &Request);
             if (fStatus != NDIS_STATUS_SUCCESS)
             {
-                /* TODO */
+                /** @todo */
                 AssertFailed();
                 return fStatus;
             }
@@ -1527,7 +1527,7 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PVBOXNETFLTINS pNetFlt, P
         PNDIS_BUFFER pBuffer;
         PVOID pvMemBuf;
 
-        /* @todo: generally we do not always need to zero-initialize the complete OOB data here, reinitialize only when/what we need,
+        /** @todo generally we do not always need to zero-initialize the complete OOB data here, reinitialize only when/what we need,
          * however we DO need to reset the status for the packets we indicate via NdisMIndicateReceivePacket to avoid packet loss
          * in case the status contains NDIS_STATUS_RESOURCES */
         VBOXNETFLT_OOB_INIT(pPacket);
@@ -1585,7 +1585,7 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PVBOXNETFLTINS pNetFlt, P
                      * but keeps the packet flags, clean them here */
                     NdisGetPacketFlags(pPacket) = 0;
                 }
-                /* TODO: set out of bound data */
+                /** @todo set out of bound data */
             }
             else
             {
@@ -1673,7 +1673,7 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
     rc = vboxNetFltWinFiniIdc();
     if (RT_FAILURE(rc))
     {
-        /* TODO: we can not prevent driver unload here */
+        /** @todo we can not prevent driver unload here */
         AssertFailed();
 
         LogFlowFunc(("vboxNetFltWinFiniIdc - failed, busy.\n"));

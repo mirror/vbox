@@ -181,7 +181,7 @@ static NTSTATUS vboxUsbPnPMnQueryCapabilities(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp
     if (pDevCaps->Version < 1 || pDevCaps->Size < sizeof (*pDevCaps))
     {
         AssertFailed();
-        /* todo: return more appropriate status ?? */
+        /** @todo return more appropriate status ?? */
         return STATUS_UNSUCCESSFUL;
     }
 

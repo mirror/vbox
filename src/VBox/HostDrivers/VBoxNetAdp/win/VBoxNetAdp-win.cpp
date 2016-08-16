@@ -196,7 +196,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
         NdisZeroMemory(pAdapter, sizeof(VBOXNETADP_ADAPTER));
         pAdapter->hAdapter = hAdapter;
         pAdapter->pGlobals = &g_VBoxNetAdpGlobals;
-        // TODO: Use netadp structure instead!
+        /// @todo Use netadp structure instead!
     /* Use a locally administered version of the OUI we use for the guest NICs. */
     pAdapter->MacAddr.au8[0] = 0x08 | 2;
     pAdapter->MacAddr.au8[1] = 0x00;
@@ -206,7 +206,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinAllocAdapter(NDIS_HANDLE hAdapter, PVBOXNET
     pAdapter->MacAddr.au8[4] = (uIfIndex >> 8) & 0xFF;
     pAdapter->MacAddr.au8[5] = uIfIndex & 0xFF;
 
-        //TODO: Statistics?
+        /// @todo Statistics?
 
         *ppAdapter = pAdapter;
     }
@@ -264,11 +264,11 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
             break;
         }
 
-        // TODO: Registry?
+        /// @todo Registry?
 
-        // TODO: WDM stack?
+        /// @todo WDM stack?
 
-        // TODO: DPC?
+        /// @todo DPC?
 
         GAttrs.Header.Type = NDIS_OBJECT_TYPE_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES;
         GAttrs.Header.Size = NDIS_SIZEOF_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES_REVISION_1;
@@ -276,17 +276,17 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
 
         GAttrs.MediaType = NdisMedium802_3;
         GAttrs.PhysicalMediumType = NdisPhysicalMediumUnspecified;
-        GAttrs.MtuSize = 1500; //TODO
+        GAttrs.MtuSize = 1500; /// @todo
         GAttrs.MaxXmitLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
         GAttrs.XmitLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
         GAttrs.MaxRcvLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
         GAttrs.RcvLinkSpeed = VBOXNETADPWIN_LINK_SPEED;
         GAttrs.MediaConnectState = vboxNetAdpWinGetConnectState(pAdapter);
         GAttrs.MediaDuplexState = MediaDuplexStateFull;
-        GAttrs.LookaheadSize = 1500; //TODO
+        GAttrs.LookaheadSize = 1500; /// @todo
         GAttrs.MacOptions = VBOXNETADP_MAC_OPTIONS;
         GAttrs.SupportedPacketFilters = VBOXNETADP_SUPPORTED_FILTERS;
-        GAttrs.MaxMulticastListSize = 32; //TODO
+        GAttrs.MaxMulticastListSize = 32; /// @todo
 
         GAttrs.MacAddressLength = ETH_LENGTH_OF_ADDRESS;
         Assert(GAttrs.MacAddressLength == sizeof(pAdapter->MacAddr));
@@ -333,7 +333,7 @@ DECLHIDDEN(VOID) vboxNetAdpWinHaltEx(IN NDIS_HANDLE MiniportAdapterContext,
     RT_NOREF1(HaltAction);
     PVBOXNETADP_ADAPTER pAdapter = (PVBOXNETADP_ADAPTER)MiniportAdapterContext;
     LogFlow(("==>vboxNetAdpWinHaltEx\n"));
-    // TODO: Stop something?
+    /// @todo Stop something?
     if (pAdapter)
         vboxNetAdpWinFreeAdapter(pAdapter);
     LogFlow(("<==vboxNetAdpWinHaltEx\n"));
@@ -402,7 +402,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
             break;
         case OID_GEN_RECEIVE_BUFFER_SPACE:
         case OID_GEN_TRANSMIT_BUFFER_SPACE:
-            // TODO: Make configurable
+            /// @todo Make configurable
             ulTmp = VBOXNETADP_MAX_FRAME_SIZE * 40;
             break;
         case OID_GEN_STATISTICS:
@@ -417,7 +417,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqQuery(PVBOXNETADP_ADAPTER pAdapter,
             pStats->Header.Type = NDIS_OBJECT_TYPE_DEFAULT;
             pStats->Header.Revision = NDIS_STATISTICS_INFO_REVISION_1;
             pStats->Header.Size = NDIS_SIZEOF_STATISTICS_INFO_REVISION_1;
-            // TODO: We need some stats, don't we?
+            /// @todo We need some stats, don't we?
             break;
         }
         case OID_GEN_VENDOR_DESCRIPTION:
@@ -489,7 +489,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqSet(PVBOXNETADP_ADAPTER pAdapter,
                 Status = NDIS_STATUS_INVALID_LENGTH;
                 break;
             }
-            // TODO: For the time being we simply ignore lookahead settings.
+            /// @todo For the time being we simply ignore lookahead settings.
             pSet->BytesRead = sizeof(ULONG);
             Status = NDIS_STATUS_SUCCESS;
             break;
@@ -501,7 +501,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinOidRqSet(PVBOXNETADP_ADAPTER pAdapter,
                 Status = NDIS_STATUS_INVALID_LENGTH;
                 break;
             }
-            // TODO: For the time being we simply ignore packet filter settings.
+            /// @todo For the time being we simply ignore packet filter settings.
             pSet->BytesRead = pSet->InformationBufferLength;
             Status = NDIS_STATUS_SUCCESS;
             break;
