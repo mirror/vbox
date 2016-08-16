@@ -1991,7 +1991,7 @@ static DECLCALLBACK(int) patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTR
         break;
 
     case OP_STR:
-#ifdef VBOX_WITH_SAFE_STR   /** @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table and move OP_STR into #ifndef */
+#ifdef VBOX_WITH_SAFE_STR   /** @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table and move OP_STR into ifndef */
         /* Now safe because our shadow TR entry is identical to the guest's. */
         goto duplicate_instr;
 #endif

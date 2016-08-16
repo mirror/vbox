@@ -51,7 +51,7 @@ D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
 
 D3DRENDERSTATETYPE vboxDDI2D3DRenderStateType(D3DDDIRENDERSTATETYPE enmType)
 {
-    /** @todo @fixme: not entirely correct, need to check */
+    /** @todo not entirely correct, need to check */
     return (D3DRENDERSTATETYPE)enmType;
 }
 
