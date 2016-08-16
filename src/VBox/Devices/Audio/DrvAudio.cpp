@@ -525,6 +525,16 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     PDMAUDIOSTREAMCFG CfgHostAcq;
     memcpy(&CfgHostAcq, pCfgHost, sizeof(PDMAUDIOSTREAMCFG));
 
+#ifdef DEBUG
+        LogFunc(("[%s] Requested host format:\n", pStream->szName));
+        DrvAudioHlpStreamCfgPrint(pCfgHost);
+#else
+        LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+                 pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+                 pCfgHost->uHz, DrvAudioHlpAudFmtToStr(pCfgHost->enmFormat),
+                 pCfgHost->cChannels, pCfgHost->cChannels == 0 ? "Channel" : "Channels"));
+#endif
+
     int rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream,
                                                    pCfgHost /* pCfgReq */, &CfgHostAcq /* pCfgAcq */);
     if (RT_SUCCESS(rc))
@@ -535,7 +545,19 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
         pHstStream->fStatus |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
     }
     else
+    {
         LogFlowFunc(("[%s] Initializing stream in host backend failed with rc=%Rrc\n", pStream->szName, rc));
+    }
+
+#ifdef DEBUG
+        LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
+        DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
+#else
+        LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+                 pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+                 CfgHostAcq.uHz, DrvAudioHlpAudFmtToStr(CfgHostAcq.enmFormat),
+                 CfgHostAcq.cChannels, CfgHostAcq.cChannels == 0 ? "Channel" : "Channels"));
+#endif
 
     PDMAUDIOPCMPROPS PCMProps;
     int rc2 = DrvAudioHlpStreamCfgToProps(&CfgHostAcq, &PCMProps);
