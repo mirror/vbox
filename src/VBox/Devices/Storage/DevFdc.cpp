@@ -1270,7 +1270,7 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
         return;
     case 5:
         /* No disk in drive */
-        ///@todo: This is wrong! Command should not complete.
+        /// @todo This is wrong! Command should not complete.
         fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | 0x08, /*FD_SR1_MA |*/ FD_SR1_ND, 0x00);
         fdctrl->fifo[3] = kt;
         fdctrl->fifo[4] = kh;
@@ -2367,7 +2367,7 @@ static void fdctrl_result_timer(void *opaque)
 #ifdef VBOX
     if (!cur_drv->max_track) {
         FLOPPY_DPRINTF("read id when no disk in drive\n");
-        ///@todo: This is wrong! Command should not complete.
+        /// @todo This is wrong! Command should not complete.
         fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     } else if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",

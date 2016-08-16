@@ -378,7 +378,7 @@ void BIOSCALL ata_detect(void)
     bios_dsk->channels[1].iobase2 = 0x370;
     bios_dsk->channels[1].irq     = 15;
 #endif
-#if 0   //@todo - temporarily removed to avoid conflict with AHCI
+#if 0   /// @todo - temporarily removed to avoid conflict with AHCI
 #if BX_MAX_ATA_INTERFACES > 2
     bios_dsk->channels[2].iface   = ATA_IFACE_ISA;
     bios_dsk->channels[2].iobase1 = 0x1e8;
@@ -936,7 +936,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     cmdlen >>= 1;
 
     // Reset count of transferred data
-    // @todo: clear in calling code?
+    /// @todo clear in calling code?
     bios_dsk->drqp.trsfsectors = 0;
     bios_dsk->drqp.trsfbytes   = 0;
 

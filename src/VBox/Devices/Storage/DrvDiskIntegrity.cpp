@@ -737,7 +737,7 @@ static int drvdiskintReadAfterWriteVerify(PDRVDISKINTEGRITY pThis, PDRVDISKAIORE
 
     if (pThis->fCheckConsistency)
         rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
-    else /** @todo: Implement read after write verification without a memory based image of the disk. */
+    else /** @todo Implement read after write verification without a memory based image of the disk. */
         AssertMsgFailed(("TODO\n"));
 
     return rc;

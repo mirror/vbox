@@ -770,7 +770,7 @@ static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChann
 
     if (IS_MODE_DEC(ch->u8Mode))
     {
-        //@todo: This would need a temporary buffer.
+        /// @todo This would need a temporary buffer.
         Assert(0);
 #if 0
         if (dc->is16bit)

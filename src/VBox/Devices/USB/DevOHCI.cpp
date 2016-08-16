@@ -2883,7 +2883,7 @@ static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint3
                 case 0:             enmDir = VUSBDIRECTION_SETUP; break;
                 default:
                     Log(("ohciServiceTd: Invalid direction!!!! Td.hwinfo=%#x Ed.hwdinfo=%#x\n", Td.hwinfo, pEd->hwinfo));
-                    /* TODO: Do the correct thing here */
+                    /** @todo Do the correct thing here */
                     return false;
             }
             break;
@@ -3049,7 +3049,7 @@ static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pE
                 case TD_HWINFO_IN:  enmDir = VUSBDIRECTION_IN; break;
                 default:
                     Log(("ohciServiceTdMultiple: Invalid direction!!!! Head.Td.hwinfo=%#x Ed.hwdinfo=%#x\n", Head.Td.hwinfo, pEd->hwinfo));
-                    /* TODO: Do the correct thing here */
+                    /** @todo Do the correct thing here */
                     return false;
             }
             break;
@@ -5430,7 +5430,7 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * If the bus was started set the timer. This is ugly but avoids changing the
      * saved state version for now so we can backport the changes to other branches.
      */
-    /** @todo: Do it properly for 4.4 by changing the saved state. */
+    /** @todo Do it properly for 4.4 by changing the saved state. */
     if (VUSBIRhGetPeriodicFrameRate(pRh->pIRhConn) != 0)
     {
         /* Calculate a new timer expiration so this saved state works with older releases. */

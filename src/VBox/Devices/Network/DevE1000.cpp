@@ -3465,7 +3465,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     }
     else
     {
-        pGso->cbHdrsSeg = pCtx->dw3.u8HDRLEN; /* @todo IPv6 UFO */
+        pGso->cbHdrsSeg = pCtx->dw3.u8HDRLEN; /** @todo IPv6 UFO */
         if (pCtx->dw2.fTCP)
             pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_TCP;
         else
@@ -5122,8 +5122,8 @@ static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread)
             STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
         }
 
-        /// @todo: uncomment: pThis->uStatIntTXQE++;
-        /// @todo: uncomment: e1kRaiseInterrupt(pThis, ICR_TXQE);
+        /// @todo uncomment: pThis->uStatIntTXQE++;
+        /// @todo uncomment: e1kRaiseInterrupt(pThis, ICR_TXQE);
         /*
          * Release the lock.
          */
@@ -5286,8 +5286,8 @@ static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread)
 out:
         STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
 
-        /// @todo: uncomment: pThis->uStatIntTXQE++;
-        /// @todo: uncomment: e1kRaiseInterrupt(pThis, ICR_TXQE);
+        /// @todo uncomment: pThis->uStatIntTXQE++;
+        /// @todo uncomment: e1kRaiseInterrupt(pThis, ICR_TXQE);
 
         e1kCsTxLeave(pThis);
     }
@@ -6687,7 +6687,7 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM, 0);
 #endif
 #endif /* E1K_WITH_TXD_CACHE */
-/**@todo GSO requires some more state here. */
+/** @todo GSO requires some more state here. */
     E1kLog(("%s State has been saved\n", pThis->szPrf));
     return VINF_SUCCESS;
 }
@@ -6769,7 +6769,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         /* the state */
         SSMR3GetMem(pSSM, &pThis->auRegs, sizeof(pThis->auRegs));
         SSMR3GetBool(pSSM, &pThis->fIntRaised);
-        /** @todo: PHY could be made a separate device with its own versioning */
+        /** @todo PHY could be made a separate device with its own versioning */
         Phy::loadState(pSSM, &pThis->phy);
         SSMR3GetU32(pSSM, &pThis->uSelectedReg);
         SSMR3GetMem(pSSM, &pThis->auMTA, sizeof(pThis->auMTA));
@@ -7180,7 +7180,7 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 
     PDMCritSectEnter(&pThis->cs, VERR_SEM_BUSY);
 
-    /** @todo: r=pritesh still need to check if i missed
+    /** @todo r=pritesh still need to check if i missed
      * to clean something in this function
      */
 
@@ -7517,7 +7517,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
-    /** @todo: LineSpeed unused! */
+    /** @todo LineSpeed unused! */
 
     pThis->fR0Enabled    = true;
     pThis->fRCEnabled    = true;

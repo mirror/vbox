@@ -1578,7 +1578,7 @@ getout:
 int
 LibAliasRefreshModules(void)
 {
-    /* @todo (r - vasily) here should be module loading */
+    /** @todo (r - vasily) here should be module loading */
 #ifndef VBOX
     char buf[256], conf[] = "/etc/libalias.conf";
     FILE *fd;

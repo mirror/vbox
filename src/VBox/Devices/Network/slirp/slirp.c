@@ -372,7 +372,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->special_addr.s_addr = u32NetAddr;
     pData->slirp_ethaddr = &special_ethaddr[0];
     alias_addr.s_addr = pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS);
-    /* @todo: add ability to configure this staff */
+    /** @todo add ability to configure this staff */
 
     /*
      * Some guests won't reacquire DHCP lease on link flap when VM is
@@ -417,7 +417,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         nbt_alias_load(pData);
     }
 #ifdef VBOX_WITH_NAT_SEND2HOME
-    /* @todo: we should know all interfaces available on host. */
+    /** @todo we should know all interfaces available on host. */
     pData->pInSockAddrHomeAddress = RTMemAllocZ(sizeof(struct sockaddr));
     pData->cInHomeAddressSize = 1;
     inet_aton("192.168.1.25", &pData->pInSockAddrHomeAddress[0].sin_addr);
@@ -733,7 +733,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
          * Set for reading (and urgent data) if we are connected, can
          * receive more, and we have room for it XXX /2 ?
          */
-        /* @todo: vvl - check which predicat here will be more useful here in rerm of new sbufs. */
+        /** @todo vvl - check which predicat here will be more useful here in rerm of new sbufs. */
         if (   CONN_CANFRCV(so)
             && (SBUF_LEN(&so->so_snd) < (SBUF_SIZE(&so->so_snd)/2))
 #ifdef RT_OS_WINDOWS

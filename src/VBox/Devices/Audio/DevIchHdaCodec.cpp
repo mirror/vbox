@@ -1626,7 +1626,7 @@ static DECLCALLBACK(int) vrbProcGetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
     *pResp = 0;
 
     /* HDA spec 7.3.3.7 Note A */
-    /** @todo: If index out of range response should be 0. */
+    /** @todo If index out of range response should be 0. */
     uint8_t u8Index = CODEC_GET_AMP_DIRECTION(cmd) == AMPLIFIER_OUT ? 0 : CODEC_GET_AMP_INDEX(cmd);
 
     PCODECNODE pNode = &pThis->paNodes[CODEC_NID(cmd)];

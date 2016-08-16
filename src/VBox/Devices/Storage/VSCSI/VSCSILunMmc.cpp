@@ -295,7 +295,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         }
         case SCSI_MODE_SELECT_6:
         {
-            /* @todo: implement!! */
+            /** @todo implement!! */
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }

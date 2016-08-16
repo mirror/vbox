@@ -283,7 +283,7 @@ static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINT
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"IP\" value"));
-        /* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that
+        /** @todo perhaps we should panic if IPv4 address isn't specify, with assumtion that
          * ISCSI target specified in IPv6 form.
          */
         return rc;

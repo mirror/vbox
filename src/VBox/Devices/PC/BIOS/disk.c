@@ -79,7 +79,7 @@ dsk_acc_t   dskacc[DSKTYP_CNT] = {
 };
 
 
-//@todo: put in a header
+/// @todo put in a header
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -202,7 +202,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             goto int13_success;
 
         /* If required, translate LCHS to LBA and execute command. */
-        //@todo: The IS_SCSI_DEVICE check should be redundant...
+        /// @todo The IS_SCSI_DEVICE check should be redundant...
         if (( (bios_dsk->devices[device].pchs.heads != nlh) || (bios_dsk->devices[device].pchs.spt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
             lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
             sector = 0; // this forces the command to be lba
@@ -219,7 +219,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         bios_dsk->drqp.lba      = lba;
         bios_dsk->drqp.buffer   = MK_FP(ES, BX);
         bios_dsk->drqp.nsect    = count;
-        bios_dsk->drqp.sect_sz  = 512;  //@todo: device specific?
+        bios_dsk->drqp.sect_sz  = 512;  /// @todo device specific?
         bios_dsk->drqp.cylinder = cylinder;
         bios_dsk->drqp.head     = head;
         bios_dsk->drqp.sector   = sector;
@@ -261,7 +261,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         SET_DL(count); /* FIXME returns 0, 1, or n hard drives */
 
         // FIXME should set ES & DI
-        // @todo: Actually, the above comment is nonsense.
+        /// @todo Actually, the above comment is nonsense.
 
         goto int13_success;
         break;
@@ -410,7 +410,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         bios_dsk->drqp.lba     = lba;
         bios_dsk->drqp.buffer  = MK_FP(segment, offset);
         bios_dsk->drqp.nsect   = count;
-        bios_dsk->drqp.sect_sz = 512;   //@todo: device specific?
+        bios_dsk->drqp.sect_sz = 512;   /// @todo device specific?
         bios_dsk->drqp.sector  = 0;     /* Indicate LBA. */
         bios_dsk->drqp.dev_id  = device;
 

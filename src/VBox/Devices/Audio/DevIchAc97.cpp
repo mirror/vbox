@@ -974,7 +974,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
      *
      * Linux ALSA depends on this behavior.
      */
-    //@todo: Does this apply to anything other than the master volume control?
+    /// @todo Does this apply to anything other than the master volume control?
     if (uVal & RT_BIT(5))
         uVal |= RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1) | RT_BIT(0);
     if (uVal & RT_BIT(13))

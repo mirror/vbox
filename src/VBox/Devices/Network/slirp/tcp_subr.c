@@ -561,7 +561,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     }
     if (cVerbose > 0)
         LogRel(("NAT: Old socket recv size: %dKB\n", opt / 1024));
-    /* @todo (r-vvl) make it configurable (via extra data) */
+    /** @todo (r-vvl) make it configurable (via extra data) */
     opt = pData->socket_rcv;
     status = setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&opt, sizeof(int));
     if (status < 0)

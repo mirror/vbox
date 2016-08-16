@@ -591,7 +591,7 @@ static int lsilogicR3HardReset(PLSILOGICSCSI pThis)
     /* Set default values. */
     pThis->cMaxDevices    = pThis->cDeviceStates;
     pThis->cMaxBuses      = 1;
-    pThis->cbReplyFrame   = 128; /* @todo Figure out where it is needed. */
+    pThis->cbReplyFrame   = 128; /** @todo Figure out where it is needed. */
     pThis->u16NextHandle  = 1;
     pThis->u32DiagMemAddr = 0;
 
@@ -1095,7 +1095,7 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
             pReply->IOCFacts.u8BlockSize          = 12;     /* Block size in 32bit dwords. This is the largest request we can get (SCSI I/O). */
             pReply->IOCFacts.u8Flags              = 0;      /* Bit 0 is set if the guest must upload the FW prior to using the controller. Obviously not needed here. */
             pReply->IOCFacts.u16ReplyQueueDepth   = pThis->cReplyQueueEntries - 1; /* One entry is always free. */
-            pReply->IOCFacts.u16RequestFrameSize  = 128;    /* @todo Figure out where it is needed. */
+            pReply->IOCFacts.u16RequestFrameSize  = 128;    /** @todo Figure out where it is needed. */
             pReply->IOCFacts.u32CurrentHostMFAHighAddr = pThis->u32HostMFAHighAddr;
             pReply->IOCFacts.u16GlobalCredits     = pThis->cRequestQueueEntries - 1; /* One entry is always free. */
 
@@ -1114,7 +1114,7 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
                 PFwImageHdr pFwImgHdr = (PFwImageHdr)&pRegion->au32Data[offImgHdr];
 
                 /* Check for the signature. */
-                /** @todo: Checksum validation. */
+                /** @todo Checksum validation. */
                 if (   pFwImgHdr->u32Signature1 == LSILOGIC_FWIMGHDR_SIGNATURE1
                     && pFwImgHdr->u32Signature2 == LSILOGIC_FWIMGHDR_SIGNATURE2
                     && pFwImgHdr->u32Signature3 == LSILOGIC_FWIMGHDR_SIGNATURE3)
@@ -2202,7 +2202,7 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICREQ pLsi
 
                 rc = lsilogicIoBufAllocate(pThis->CTX_SUFF(pDevIns), pLsiReq,
                                                            pLsiReq->GuestRequest.SCSIIO.u32DataLength);
-                AssertRC(rc); /** @todo: Insufficient resources error. */
+                AssertRC(rc); /** @todo Insufficient resources error. */
             }
 
             /* Setup the SCSI request. */

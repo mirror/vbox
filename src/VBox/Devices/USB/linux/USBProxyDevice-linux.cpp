@@ -1378,7 +1378,7 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
         case VUSBXFERTYPE_ISOC:
             AssertMsgFailed(("We can't split isochronous URBs!\n"));
             usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
-            return VERR_INVALID_PARAMETER; /** @todo: Better status code. */
+            return VERR_INVALID_PARAMETER; /** @todo Better status code. */
     }
     pUrbLnx->KUrb.endpoint          = pUrb->EndPt;
     if (pUrb->enmDir == VUSBDIRECTION_IN)
@@ -1519,7 +1519,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbQueue(PUSBPROXYDEV pProxyDev, PVUSBURB 
             pUrbLnx->KUrb.type = USBDEVFS_URB_TYPE_INTERRUPT;
             break;
         default:
-            rc = VERR_INVALID_PARAMETER; /** @todo: better status code. */
+            rc = VERR_INVALID_PARAMETER; /** @todo better status code. */
     }
 
     /*
@@ -1888,7 +1888,7 @@ static DECLCALLBACK(int) usbProxyLinuxUrbCancel(PUSBPROXYDEV pProxyDev, PVUSBURB
                 continue;
             if (errno == ENODEV)
                 break;
-            /** @todo: Think about how to handle errors wrt. to the status code. */
+            /** @todo Think about how to handle errors wrt. to the status code. */
             Log(("usb-linux: Discard URB %p failed, errno=%d. pProxyDev=%s!!! (split)\n",
                  pUrb, errno, usbProxyGetName(pProxyDev)));
         }

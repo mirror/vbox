@@ -616,7 +616,7 @@ static int vbvaEnable(unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx
 
         if (!fRestored)
         {
-            /* @todo Actually this function must not touch the partialRecord structure at all,
+            /** @todo Actually this function must not touch the partialRecord structure at all,
              * because initially it is a zero and when VBVA is disabled this should be set to zero.
              * But I'm not sure that no code depends on zeroing partialRecord here.
              * So for now (a quick fix for 4.1) just do not do this if the VM was restored,
@@ -1200,7 +1200,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
                 if(rc == VERR_NOT_IMPLEMENTED)
                 {
-                    /* @todo: set some flag in pVGAState indicating VHWA is not supported */
+                    /** @todo set some flag in pVGAState indicating VHWA is not supported */
                     /* VERR_NOT_IMPLEMENTED is not a failure, we just do not support it */
                     rc = VINF_SUCCESS;
                 }
@@ -1315,7 +1315,7 @@ int vbvaVHWAHHPost(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, PFNVBOXVHWAHHCMDPRECB
     return rc;
 }
 
-/* @todo call this also on reset? */
+/** @todo call this also on reset? */
 int vbvaVHWAEnable (PVGASTATE pVGAState, bool bEnable)
 {
     const VBOXVHWACMD_TYPE enmType = bEnable ? VBOXVHWACMD_TYPE_HH_ENABLE : VBOXVHWACMD_TYPE_HH_DISABLE;
@@ -2122,7 +2122,7 @@ static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 *pConf32)
     }
     else if (u32Index == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
     {
-        /* @todo a value calculated from the vram size */
+        /** @todo a value calculated from the vram size */
         pConf32->u32Value = 64*_1K;
     }
     else if (   u32Index == VBOX_VBVA_CONF32_MODE_HINT_REPORTING

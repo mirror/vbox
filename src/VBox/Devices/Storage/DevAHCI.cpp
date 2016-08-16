@@ -3180,7 +3180,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
 
     if (   pAhciPort->pDrvMedia->pfnDiscard
         || (   pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
 
     /* The following are SATA specific */
@@ -4206,7 +4206,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
     return VINF_SUCCESS;
 }
 
-/** @todo: Revise ASAP. */
+/** @todo Revise ASAP. */
 /* Keep in sync with DevATA.cpp! */
 static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbData, size_t *pcbData)
 {
@@ -4333,7 +4333,7 @@ static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
                         /* data written + 4 byte header */
                         uASC = (16 + 4);
                         break;
-                    default: /* TODO: formats beyond DVD-ROM requires */
+                    default: /** @todo formats beyond DVD-ROM requires */
                         uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
                 }
 
@@ -4344,15 +4344,15 @@ static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
                 }
                 break;
             }
-            /* TODO: BD support, fall through for now */
+            /** @todo BD support, fall through for now */
 
         /* Generic disk structures */
-        case 0x80: /* TODO: AACS volume identifier */
-        case 0x81: /* TODO: AACS media serial number */
-        case 0x82: /* TODO: AACS media identifier */
-        case 0x83: /* TODO: AACS media key block */
-        case 0x90: /* TODO: List of recognized format layers */
-        case 0xc0: /* TODO: Write protection status */
+        case 0x80: /** @todo AACS volume identifier */
+        case 0x81: /** @todo AACS media serial number */
+        case 0x82: /** @todo AACS media identifier */
+        case 0x83: /** @todo AACS media key block */
+        case 0x90: /** @todo List of recognized format layers */
+        case 0xc0: /** @todo Write protection status */
         default:
             atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST,
                                 SCSI_ASC_INV_FIELD_IN_CMD_PACKET);

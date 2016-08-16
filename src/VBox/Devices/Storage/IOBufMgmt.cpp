@@ -166,7 +166,7 @@ DECLHIDDEN(int) IOBUFMgrCreate(PIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFla
                             pbMem += cbBin;
                             pBin->iFree++;
 
-                            if (cbMax < cbBin) /** @todo: Populate smaller bins and don't waste memory. */
+                            if (cbMax < cbBin) /** @todo Populate smaller bins and don't waste memory. */
                                 break;
                         }
 

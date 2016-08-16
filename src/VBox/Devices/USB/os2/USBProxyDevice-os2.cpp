@@ -728,7 +728,7 @@ static int usbProxyOs2UrbQueue(PVUSBURB pUrb)
             break;
         case VUSBXFERTYPE_BULK:
             break;
-///@todo        case VUSBXFERTYPE_INTR:
+/// @todo        case VUSBXFERTYPE_INTR:
 //            break;
 //        case VUSBXFERTYPE_ISOC:
 //            break;

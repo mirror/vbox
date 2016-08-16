@@ -294,7 +294,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
 }
 
 
-//@todo: move
+/// @todo move
 #define ATA_DATA_NO      0x00
 #define ATA_DATA_IN      0x01
 #define ATA_DATA_OUT     0x02

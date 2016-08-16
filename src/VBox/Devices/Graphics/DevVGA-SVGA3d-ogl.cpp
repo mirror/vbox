@@ -1562,7 +1562,7 @@ void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat fo
         pSurface->typeGL = GL_UNSIGNED_INT;
         break;
     case SVGA3D_Z_D15S1:                /* D3DFMT_D15S1 - WINED3DFMT_S1_UINT_D15_UNORM */
-        pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;  /* @todo ??? */
+        pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;  /** @todo ??? */
         pSurface->formatGL = GL_DEPTH_STENCIL;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
         /** @todo Wine sources hints at no hw support for this, so test this one! */

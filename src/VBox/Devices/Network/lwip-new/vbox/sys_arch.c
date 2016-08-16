@@ -63,7 +63,7 @@ typedef struct
 } THREADLOCALSTORAGE;
 
 /** Actual declaration of the mbox type. */
-/* @todo: magic - ??? */
+/** @todo magic - ??? */
 struct sys_mbox
 {
     LWIPMUTEXTYPE mutex;

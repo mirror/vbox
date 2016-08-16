@@ -815,7 +815,7 @@ static const char *vpciCounter(const char *pszDevFmt,
 }
 #endif
 
-// TODO: header
+/// @todo header
 int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
                   int iInstance, const char *pcszNameFmt,
                   uint16_t uDeviceId, uint16_t uClass,

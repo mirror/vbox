@@ -210,7 +210,7 @@ static DECLCALLBACK(int) vusbSnifferFmtUsbMonRecordEvent(PVUSBSNIFFERFMTINT pThi
             rc = pThis->pStrm->pfnWrite(pThis->pStrm, &aszLineBuf[0], cch);
         }
 
-        /** @todo: Dump the data */
+        /** @todo Dump the data */
     }
 
     return rc;

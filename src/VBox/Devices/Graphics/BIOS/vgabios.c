@@ -143,7 +143,7 @@ void init_vga_card(void)
     /* Switch to color mode and enable CPU access 480 lines. */
     outb(0x3C2, 0xC3);
     /* More than 64k 3C4/04. */
-    //@todo: 16-bit write
+    /// @todo 16-bit write
     outb(0x3C4, 0x04);
     outb(0x3C5, 0x02);
 
@@ -363,7 +363,7 @@ static void vga_read_char_attr(uint8_t page, uint16_t STACK_BASED *chr_atr)
         address  = SCREEN_MEM_START(nbcols, nbrows, page) + (xcurs + ycurs * nbcols) * 2;
         *chr_atr = read_word(vga_modes[line].sstart, address);
     } else {
-        //@todo: graphics modes (not so easy - or useful!)
+        /// @todo graphics modes (not so easy - or useful!)
 #ifdef VGA_DEBUG
         unimplemented();
 #endif
@@ -628,7 +628,7 @@ static void biosfn_set_active_page(uint8_t page)
  biosfn_set_cursor_pos(page,cursor);
 }
 
-//@todo: Evaluate whether executing INT 10h is the right thing here
+/// @todo Evaluate whether executing INT 10h is the right thing here
 extern void vga_font_set(uint8_t function, uint8_t data);
 #pragma aux vga_font_set =  \
     "mov    ah, 11h"        \
@@ -1784,7 +1784,7 @@ uint16_t biosfn_read_video_state_size2(uint16_t state)
     if (state & 4)
         size += 3 + 256 * 3 + 1;
 
-    //@todo: Is this supposed to be in 1-byte or 64-byte units?
+    /// @todo Is this supposed to be in 1-byte or 64-byte units?
     return size;
 }
 
@@ -2094,7 +2094,7 @@ void __cdecl printf(char *s, ...)
 }
 #endif
 
-//@todo: rearrange, call only from VBE module?
+/// @todo rearrange, call only from VBE module?
 extern void vbe_biosfn_return_controller_information(uint16_t STACK_BASED *AX, uint16_t ES, uint16_t DI);
 extern void vbe_biosfn_return_mode_information(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t ES, uint16_t DI);
 extern void vbe_biosfn_set_mode(uint16_t STACK_BASED *AX, uint16_t BX, uint16_t ES, uint16_t DI);

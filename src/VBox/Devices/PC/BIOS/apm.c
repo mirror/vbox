@@ -78,7 +78,7 @@ enum apm_power_state {
 
 #define APM_PORT        0x8900      /* Bochs power control port. */
 
-// @todo: merge with system.c
+/// @todo merge with system.c
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -159,14 +159,14 @@ void BIOSCALL apm_function(sys_regs_t r)
         CX = 3;         /* Bits 0/1: 16-bit/32-bit PM interface */
         break;
     case APM_RM_CONN:
-        // @todo: validate device ID
-        // @todo: validate current connection state
-        // @todo: change connection state
+        /// @todo validate device ID
+        /// @todo validate current connection state
+        /// @todo change connection state
         break;
     case APM_PM_CONN:
-        // @todo: validate device ID
-        // @todo: validate current connection state
-        // @todo: change connection state
+        /// @todo validate device ID
+        /// @todo validate current connection state
+        /// @todo change connection state
         AX = APM_BIOS_SEG;              /* 16-bit PM code segment (RM segment base). */
         BX = (uint16_t)apm_pm16_entry;  /* 16-bit PM entry point offset. */
         CX = APM_BIOS_SEG;              /* 16-bit data segment. */
@@ -174,9 +174,9 @@ void BIOSCALL apm_function(sys_regs_t r)
         DI = APM_BIOS_SEG_LEN;          /* Data segment length. */
         break;
     case APM_32_CONN:
-        // @todo: validate device ID
-        // @todo: validate current connection state
-        // @todo: change connection state
+        /// @todo validate device ID
+        /// @todo validate current connection state
+        /// @todo change connection state
         AX = APM_BIOS_SEG;              /* 32-bit PM code segment (RM segment base). */
         BX = (uint16_t)apm_pm32_entry;  /* 32-bit entry point offset. */
         CX = APM_BIOS_SEG;              /* 16-bit code segment. */
@@ -191,8 +191,8 @@ void BIOSCALL apm_function(sys_regs_t r)
         halt();
         break;
     case APM_SET_PWR:
-        // @todo: validate device ID
-        // @todo: validate current connection state
+        /// @todo validate device ID
+        /// @todo validate current connection state
         switch (CX) {
         case APM_PS_STANDBY:
             apm_out_str("Standby", APM_PORT);
@@ -209,14 +209,14 @@ void BIOSCALL apm_function(sys_regs_t r)
         }
         break;
     case APM_DRV_VER:
-        AX = 0x0102;    // @todo: Not right - must take driver version into account!
+        AX = 0x0102;    /// @todo Not right - must take driver version into account!
         break;
     case APM_DISCONN:
-        // @todo: actually perform a disconnect...
+        /// @todo actually perform a disconnect...
     case APM_BUSY:      /* Nothing to do as APM Idle doesn't slow CPU clock. */
         break;
     case APM_GET_EVT:
-        // @todo: error should be different if interface not connected + engaged
+        /// @todo error should be different if interface not connected + engaged
         SET_AH(APM_ERR_NO_EVENTS);  /* PM events don't happen. */
         SET_CF();
         break;

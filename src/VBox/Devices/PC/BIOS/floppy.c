@@ -344,7 +344,7 @@ bx_bool floppy_media_sense(uint16_t drive)
     //    110 reserved
     //    111 all other formats/drives
 
-    // @todo: break out drive type determination
+    /// @todo break out drive type determination
     drive_type = inb_cmos(0x10);
     if (drive == 0)
         drive_type >>= 4;
@@ -430,7 +430,7 @@ bx_bool floppy_drive_exists(uint16_t drive)
     uint8_t     drive_type;
 
     // check CMOS to see if drive exists
-    // @todo: break out drive type determination
+    /// @todo break out drive type determination
     drive_type = inb_cmos(0x10);
     if (drive == 0)
         drive_type >>= 4;
@@ -439,7 +439,7 @@ bx_bool floppy_drive_exists(uint16_t drive)
     return drive_type != 0;
 }
 
-//@todo: put in a header
+/// @todo put in a header
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -476,7 +476,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             SET_CF();
             return;
         }
-        // @todo: break out drive type determination
+        /// @todo break out drive type determination
         drive_type = inb_cmos(0x10);
         if (drive == 0)
             drive_type >>= 4;
@@ -558,7 +558,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             // es:bx = pointer to where to place information from diskette
             // port 04: DMA-1 base and current address, channel 2
             // port 05: DMA-1 base and current count, channel 2
-            // @todo: merge/factor out pointer normalization
+            /// @todo merge/factor out pointer normalization
             page = (ES >> 12);              // upper 4 bits
             base_es = (ES << 4);            // lower 16bits contributed by ES
             base_address = base_es + BX;    // lower 16 bits of address
@@ -705,7 +705,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             // es:bx = pointer to where to place information from diskette
             // port 04: DMA-1 base and current address, channel 2
             // port 05: DMA-1 base and current count, channel 2
-            // @todo: merge/factor out pointer normalization
+            /// @todo merge/factor out pointer normalization
             page = (ES >> 12);              // upper 4 bits
             base_es = (ES << 4);            // lower 16bits contributed by ES
             base_address = base_es + BX;    // lower 16 bits of address
@@ -881,7 +881,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         }
 
         // set up DMA controller for transfer
-        // @todo: merge/factor out pointer normalization
+        /// @todo merge/factor out pointer normalization
         page = (ES >> 12);              // upper 4 bits
         base_es = (ES << 4);            // lower 16bits contributed by ES
         base_address = base_es + BX;    // lower 16 bits of address
@@ -1015,7 +1015,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             return;
         }
 
-        // @todo: break out drive type determination
+        /// @todo break out drive type determination
         drive_type = inb_cmos(0x10);
         num_floppies = 0;
         if (drive_type & 0xf0)
@@ -1075,7 +1075,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         }
 
         /* set es & di to point to 11 byte diskette param table in ROM */
-        ES = 0xF000;    // @todo: any way to make this relocatable?
+        ES = 0xF000;    /// @todo any way to make this relocatable?
         DI = get_floppy_dpt(drive_type);
         CLEAR_CF(); // success
         /* disk status not changed upon success */
@@ -1090,7 +1090,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             SET_CF();
             return;
         }
-        // @todo: break out drive type determination
+        /// @todo break out drive type determination
         drive_type = inb_cmos(0x10);
         if (drive == 0)
             drive_type >>= 4;
@@ -1234,7 +1234,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             }
         }
 
-        // @todo: break out drive type determination
+        /// @todo break out drive type determination
         drive_type = inb_cmos(0x10);
         if (drive == 0)
             drive_type >>= 4;
@@ -1304,7 +1304,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         write_byte(0x0040, base_address, media_state);
 
         // set es & di to point to 11 byte diskette param table in ROM
-        ES = 0xF000;    // @todo: any way to make this relocatable?
+        ES = 0xF000;    /// @todo any way to make this relocatable?
         DI = get_floppy_dpt(drive_type);
 
         // return success!

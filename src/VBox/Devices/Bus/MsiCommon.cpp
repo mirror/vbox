@@ -308,7 +308,7 @@ void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVe
     /* We only trigger MSI on level up */
     if ((iLevel & PDM_IRQ_LEVEL_HIGH) == 0)
     {
-        /* @todo: maybe clear pending interrupts on level down? */
+        /** @todo maybe clear pending interrupts on level down? */
 #if 0
         if (puPending)
         {

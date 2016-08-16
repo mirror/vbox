@@ -2545,7 +2545,7 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
                     LogRel(("100000 calls took %i ms, %i cps\n", (int)ems, (int)(100000.f*1000.f/ems) ));
                 }
 # endif
-                /* todo: post the buffer to chromium */
+                /** @todo post the buffer to chromium */
                 return VINF_SUCCESS;
             }
             case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
@@ -2679,7 +2679,7 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, u
             Assert(offset + pCmd->cbBuf <= 0x1000);
             if (offset + pCmd->cbBuf > 0x1000)
             {
-                /* @todo: more advanced mechanism of command buffer proc is actually needed */
+                /** @todo more advanced mechanism of command buffer proc is actually needed */
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
@@ -2689,7 +2689,7 @@ static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd, u
             AssertRC(rc);
             if (!RT_SUCCESS(rc))
             {
-                /* @todo: if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
+                /** @todo if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
                 break;
             }
 

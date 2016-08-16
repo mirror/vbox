@@ -114,7 +114,7 @@ DECLINLINE(bool) slirpSend2Home(PNATState pData, struct socket *pSo, const void 
         struct socket *pNewSocket = soCloneUDPSocketWithForegnAddr(pData, pSo, pData->pInSockAddrHomeAddress[idxAddr].sin_addr);
         AssertReturn((pNewSocket, false));
         pData->pInSockAddrHomeAddress[idxAddr].sin_port = pSo->so_fport;
-        /* @todo: more verbose on errors,
+        /** @todo more verbose on errors,
          * @note: we shouldn't care if this send fail or not (we're in broadcast).
          */
         LogFunc(("send %d bytes to %RTnaipv4 from %R[natsock]\n", cbBuf, pData->pInSockAddrHomeAddress[idxAddr].sin_addr.s_addr, pNewSocket));

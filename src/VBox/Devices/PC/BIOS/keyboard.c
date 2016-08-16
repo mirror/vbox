@@ -353,7 +353,7 @@ unsigned int enqueue_key(uint8_t scan_code, uint8_t ascii_code)
 
 
 /* Keyboard hardware interrupt handler. */
-//@todo: should this be declared as taking arguments at all?
+/// @todo should this be declared as taking arguments at all?
 void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP,
                              uint16_t BX, uint16_t DX, uint16_t CX, uint16_t AX)
 {
@@ -473,7 +473,7 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
             while (read_byte(0x0040, 0x18) & 0x08)
                 ;   /* Hold on and wait... */
 
-            //@todo: We will send EOI again (and enable keyboard) on the way out; we shouldn't
+            /// @todo We will send EOI again (and enable keyboard) on the way out; we shouldn't
         }
         break;
     case 0xc5: /* Num Lock/Pause release */
@@ -511,14 +511,14 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         if (!(mf2_flags & 0x04)) {  /* If not already down */
             mf2_flags |= 0x04;
             write_byte(0x0040, 0x18, mf2_flags);
-            //@todo: EOI/enable kbd/enable interrupts/call INT 15h/8500h
+            /// @todo EOI/enable kbd/enable interrupts/call INT 15h/8500h
         }
         break;
 
     case 0xd4: /* SysRq release */
         mf2_flags &= ~0x04;
         write_byte(0x0040, 0x18, mf2_flags);
-        //@todo: EOI/enable kbd/enable interrupts/call INT 15h/8501h
+        /// @todo EOI/enable kbd/enable interrupts/call INT 15h/8501h
         break;
 
     case 0x53: /* Del press */
@@ -634,7 +634,7 @@ unsigned int dequeue_key(uint8_t __far *scan_code, uint8_t __far *ascii_code, un
 }
 
 
-//@todo: move somewhere else?
+/// @todo move somewhere else?
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -657,7 +657,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
     shift_flags = read_byte(0x0040, 0x17);
     led_flags   = read_byte(0x0040, 0x97);
     if ((((shift_flags >> 4) & 0x07) ^ (led_flags & 0x07)) != 0) {
-        int_disable();    //@todo: interrupts should be disabled already??
+        int_disable();    /// @todo interrupts should be disabled already??
         outb(0x60, 0xed);
         while ((inb(0x64) & 0x01) == 0) outb(0x80, 0x21);
         if ((inb(0x60) == 0xfa)) {
@@ -729,7 +729,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
     case 0x0A: /* GET KEYBOARD ID */
         count = 2;
         kbd_code = 0x0;
-        //@todo: Might be better to just mask the KB interrupt
+        /// @todo Might be better to just mask the KB interrupt
         int_disable();
         outb(0x60, 0xf2);
         /* Wait for data */
@@ -790,7 +790,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         // don't change AH : function int16 ah=0x20-0x22 NOT supported
         break;
 
-    //@todo: what's the point of handling this??
+    /// @todo what's the point of handling this??
 #if 0
     case 0x6F:
         if (GET_AL() == 0x08)

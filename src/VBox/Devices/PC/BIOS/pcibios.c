@@ -52,7 +52,7 @@ enum pci_error {
     BUFFER_TOO_SMALL    = 0x89      /* Routing table buffer insufficient. */
 };
 
-// @todo: merge with system.c
+/// @todo merge with system.c
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -133,7 +133,7 @@ extern unsigned outpd(unsigned port, unsigned value);
 
 #else
 
-//@todo: merge with AHCI code
+/// @todo merge with AHCI code
 
 /* Warning: Destroys high bits of EAX. */
 uint32_t inpd(uint16_t port);
@@ -322,7 +322,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
     case PCI_BIOS_PRESENT:
         AX  = 0x0001;   /* Configuration mechanism #1 supported. */
         BX  = 0x0210;   /* Version 2.1. */
-        //@todo: return true max bus # in CL
+        /// @todo return true max bus # in CL
         CX  = 0;        /* Maximum bus number. */
         EDX = 'P' | ('C' << 8) | ((uint32_t)'I' << 16) | ((uint32_t)' ' << 24);
         break;

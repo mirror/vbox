@@ -209,7 +209,7 @@ typedef struct PS2K
     /** Typematic timer - R0 Ptr. */
     PTMTIMERR0          pKbdTypematicTimerR0;
 
-    scan_state_t        XlatState;      ///@todo: temporary
+    scan_state_t        XlatState;      /// @todo temporary
     uint32_t            Alignment1;
 
     /**
@@ -684,7 +684,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
         case KCMD_ALL_MK_BRK:
         case KCMD_ALL_MAKE:
         case KCMD_ALL_TMB:
-            ///@todo Set the key types here.
+            /// @todo Set the key types here.
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
@@ -694,7 +694,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
         case KCMD_RESET:
             pThis->u8ScanSet = 2;
             ps2kSetDefaults(pThis);
-            ///@todo reset more?
+            /// @todo reset more?
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = cmd;
             /* Delay BAT completion; the test may take hundreds of ms. */
@@ -886,7 +886,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                 }
             }
             /* Feed the bytes to the queue if there is room. */
-            ///@todo check empty space!
+            /// @todo check empty space!
             while (abCodes[i])
                 ps2kInsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
             Assert(i < sizeof(abCodes));
@@ -954,7 +954,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             }
 
             /* Feed any additional bytes to the queue if there is room. */
-            ///@todo check empty space!
+            /// @todo check empty space!
             while (abCodes[i])
                 ps2kInsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
             Assert(i < sizeof(abCodes));
@@ -971,7 +971,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
         else
         {
             /* Send a key release code unless it's a make only key. */
-            ///@todo Look up the current typematic setting, not the default!
+            /// @todo Look up the current typematic setting, not the default!
             if (pKeyDef->keyMatic != T_M)
             {
                 ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
@@ -995,8 +995,8 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     {
         pThis->u8TypematicKey    = 0;
         pThis->enmTypematicState = KBD_TMS_IDLE;
-        ///@todo Cancel timer right away?
-        ///@todo Cancel timer before pushing key up code!?
+        /// @todo Cancel timer right away?
+        /// @todo Cancel timer before pushing key up code!?
     }
 
     /* Poke the KBC to update its state. */
@@ -1045,7 +1045,7 @@ static DECLCALLBACK(void) ps2kDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     pThis->fScanning = true;    /* BAT completion enables scanning! */
     pThis->u8CurrCmd = 0;
 
-    ///@todo Might want a PS2KCompleteCommand() to push last response, clear command, and kick the KBC...
+    /// @todo Might want a PS2KCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
     KBCUpdateInterrupts(pThis->pParent);
 }
@@ -1442,7 +1442,7 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
 
 #endif
 
-///@todo The following should live with the KBC implementation.
+/// @todo The following should live with the KBC implementation.
 
 /* Table used by the keyboard controller to optionally translate the incoming
  * keyboard data. Note that the translation is designed for essentially taking

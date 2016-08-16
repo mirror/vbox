@@ -50,7 +50,7 @@
 # endif
 #endif
 
-/* TODO:
+/** @todo
  * - Maybe make sure the threads are immediately stopped if playing/recording stops.
  */
 

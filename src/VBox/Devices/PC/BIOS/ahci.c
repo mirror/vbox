@@ -129,7 +129,7 @@ ct_assert(sizeof(ahci_t) <= 1024);
 /** Global register set. */
 #define AHCI_HBA_SIZE 0x100
 
-//@todo: what are the casts good for?
+/// @todo what are the casts good for?
 #define AHCI_REG_CAP ((uint32_t)0x00)
 #define AHCI_REG_GHC ((uint32_t)0x04)
 # define AHCI_GHC_AE RT_BIT_32(31)
@@ -442,7 +442,7 @@ static void ahci_port_deinit_current(ahci_t __far *ahci)
          * Port idles, set up memory for commands and received FIS and program the
          * address registers.
          */
-        //@todo: merge memsets?
+        /// @todo merge memsets?
         _fmemset(&ahci->aCmdHdr[0], 0, sizeof(ahci->aCmdHdr));
         _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
         _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
@@ -483,7 +483,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
      * Port idles, set up memory for commands and received FIS and program the
      * address registers.
      */
-    //@todo: just one memset?
+    /// @todo just one memset?
     _fmemset(&ahci->aCmdHdr[0], 0, sizeof(ahci->aCmdHdr));
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
     _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
@@ -568,7 +568,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
     return rc;
 }
 
-//@todo: move
+/// @todo move
 #define ATA_DATA_NO      0x00
 #define ATA_DATA_IN      0x01
 #define ATA_DATA_OUT     0x02
@@ -600,7 +600,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     DBG_AHCI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
-    bios_dsk->drqp.lba     = length << 8;     //@todo: xfer length limit
+    bios_dsk->drqp.lba     = length << 8;     /// @todo xfer length limit
     bios_dsk->drqp.buffer  = buffer;
     bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
 //    bios_dsk->drqp.sect_sz = 2048;
@@ -614,7 +614,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     _fmemcpy(ahci->abAcmd, cmdbuf, cmdlen);
 
     /* Reset transferred counts. */
-    // @todo: clear in calling code?
+    /// @todo clear in calling code?
     bios_dsk->drqp.trsfsectors = 0;
     bios_dsk->drqp.trsfbytes   = 0;
 
@@ -677,7 +677,7 @@ void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 
         DBG_AHCI("AHCI: Device detected on port %d\n", u8Port);
 
-        //@todo: Merge common HD/CDROM detection code
+        /// @todo Merge common HD/CDROM detection code
         if (devcount_ahci < BX_MAX_AHCI_DEVICES)
         {
             /* Device detected, enable FIS receive. */
@@ -876,7 +876,7 @@ static int ahci_hba_init(uint16_t io_base)
     /* Physical address of memory used for throwing away ATAPI data when reading 512-byte
      * blocks from 2048-byte CD sectors.
      */
-    ahci->sink_buf_phys = 0xCC000;  //@todo: find some better place!
+    ahci->sink_buf_phys = 0xCC000;  /// @todo find some better place!
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(io_base, AHCI_REG_GHC, AHCI_GHC_HR);

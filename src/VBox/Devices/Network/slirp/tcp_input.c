@@ -480,7 +480,7 @@ findso:
         || so->so_faddr.s_addr != ti->ti_dst.s_addr)
     {
         QSOCKET_UNLOCK(tcb);
-        /* @todo fix SOLOOKUP macrodefinition to be usable here */
+        /** @todo fix SOLOOKUP macrodefinition to be usable here */
         so = solookup(&tcb, ti->ti_src, ti->ti_sport,
                       ti->ti_dst, ti->ti_dport);
         if (so)

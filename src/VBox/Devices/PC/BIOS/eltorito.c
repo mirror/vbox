@@ -65,7 +65,7 @@
 #endif
 
 
-//@todo: put in a header
+/// @todo put in a header
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -141,7 +141,7 @@ extern  int     diskette_param_table;
 
 void BIOSCALL cdemu_init(void)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
 
     // the only important data is this one for now
@@ -150,7 +150,7 @@ void BIOSCALL cdemu_init(void)
 
 uint8_t BIOSCALL cdemu_isactive(void)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
 
     return read_byte(ebda_seg,(uint16_t)&EbdaData->cdemu.active);
@@ -158,7 +158,7 @@ uint8_t BIOSCALL cdemu_isactive(void)
 
 uint8_t BIOSCALL cdemu_emulated_drive(void)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
 
     return read_byte(ebda_seg,(uint16_t)&EbdaData->cdemu.emulated_drive);
@@ -170,7 +170,7 @@ uint8_t BIOSCALL cdemu_emulated_drive(void)
 
 void BIOSCALL int13_eltorito(disk_regs_t r)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t        ebda_seg=read_word(0x0040,0x000E);
     cdemu_t __far   *cdemu;
 
@@ -192,7 +192,7 @@ void BIOSCALL int13_eltorito(disk_regs_t r)
 
     case 0x4b: // ElTorito - Terminate disk emu
         // FIXME ElTorito Hardcoded
-        //@todo: maybe our cdemu struct should match El Torito to allow memcpy()?
+        /// @todo maybe our cdemu struct should match El Torito to allow memcpy()?
         write_byte(DS,SI+0x00,0x13);
         write_byte(DS,SI+0x01,cdemu->media);
         write_byte(DS,SI+0x02,cdemu->emulated_drive);
@@ -239,7 +239,7 @@ int13_success:
 // ---------------------------------------------------------------------------
 
 /* Utility routine to check if a device is a CD-ROM. */
-//@todo: this function is kinda useless as the ATAPI type check is obsolete.
+/// @todo this function is kinda useless as the ATAPI type check is obsolete.
 static uint16_t device_is_cdrom(uint8_t device)
 {
     bio_dsk_t __far *bios_dsk;
@@ -268,7 +268,7 @@ static const char eltorito[]="EL TORITO SPECIFICATION";
 //
 uint16_t cdrom_boot(void)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t            ebda_seg=read_word(0x0040,0x000E);
     uint8_t             buffer[2048];
     cdb_atapi           atapicmd;
@@ -313,7 +313,7 @@ uint16_t cdrom_boot(void)
     /* Check for a valid BRVD. */
     if (buffer[0] != 0)
         return 4;
-    //@todo: what's wrong with memcmp()?
+    /// @todo what's wrong with memcmp()?
     for (i = 0; i < 5; ++i) {
         if (buffer[1+i] != isotag[i])
             return 5;
@@ -340,7 +340,7 @@ uint16_t cdrom_boot(void)
     if (error != 0)
         return 7;
 
-    //@todo: Define a struct for the Boot Catalog, the hardcoded offsets are so dumb...
+    /// @todo Define a struct for the Boot Catalog, the hardcoded offsets are so dumb...
 
     /* Check if the Boot Catalog looks valid. */
     if (buffer[0x00] != 0x01)
@@ -463,7 +463,7 @@ uint16_t cdrom_boot(void)
 
 void BIOSCALL int13_cdemu(disk_regs_t r)
 {
-    // @TODO: a macro or a function for getting the EBDA segment
+    /// @todo a macro or a function for getting the EBDA segment
     uint16_t            ebda_seg=read_word(0x0040,0x000E);
     uint8_t             device, status;
     uint16_t            vheads, vspt, vcylinders;
@@ -627,8 +627,8 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
 
         /* Only set the DPT pointer for emulated floppies. */
         if (cdemu->media < 4) {
-            DI = (uint16_t)&diskette_param_table;   // @todo: should this depend on emulated medium?
-            ES = 0xF000;                            // @todo: how to make this relocatable?
+            DI = (uint16_t)&diskette_param_table;   /// @todo should this depend on emulated medium?
+            ES = 0xF000;                            /// @todo how to make this relocatable?
         }
         goto int13_success;
         break;
@@ -851,7 +851,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         // FIXME should handle 0x31 no media in device
         // FIXME should handle 0xb5 valid request failed
 
-#if 0 //@todo: implement!
+#if 0 /// @todo implement!
         // Call removable media eject
         ASM_START
         push bp
@@ -875,7 +875,7 @@ int13_cdrom_rme_end:
         goto int13_success;
         break;
 
-    //@todo: Part of this should be merged with analogous code in disk.c
+    /// @todo Part of this should be merged with analogous code in disk.c
     case 0x48: // IBM/MS get drive parameters
         dpt = DS :> (dpt_t *)SI;
         size = dpt->size;

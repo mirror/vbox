@@ -611,7 +611,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         {
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
-                            /* @todo unable to easily fetch depth surface data in d3d 9 */
+                            /** @todo unable to easily fetch depth surface data in d3d 9 */
                             fSkipSave = true;
                             break;
                         case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
@@ -634,7 +634,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                                     {
                                         IDirect3DSurface9 *pSrc, *pDest;
 
-                                        /* @todo stricter checks for associated context */
+                                        /** @todo stricter checks for associated context */
                                         uint32_t cid = pSurface->idAssociatedContext;
                                         if (    cid >= pState->cContexts
                                             ||  pState->papContexts[cid]->id != cid)
@@ -758,7 +758,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             /* no break */
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
                         case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
-                            /* @todo fetch data from the renderbuffer */
+                            /** @todo fetch data from the renderbuffer */
                             /* No data follows */
                             rc = SSMR3PutBool(pSSM, false);
                             AssertRCReturn(rc, rc);

@@ -6227,7 +6227,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             int rc;
             if (   enmTrunkType == kIntNetTrunkType_WhateverNone
 #ifdef VBOX_WITH_NAT_SERVICE
-                || enmTrunkType == kIntNetTrunkType_SrvNat /* @todo: what does it mean */
+                || enmTrunkType == kIntNetTrunkType_SrvNat /** @todo what does it mean */
 #endif
                 || (   pCur->enmTrunkType == enmTrunkType
                     && !strcmp(pCur->szTrunk, pszTrunk)))

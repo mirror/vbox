@@ -306,7 +306,7 @@ static int vusbBufferedPipeSetParamsFromDescriptor(PVUSBBUFFEREDPIPEINT pThis, P
     }
     else
     {
-        /** @todo: Implement for super speed and up if it turns out to be required, at the moment it looks
+        /** @todo Implement for super speed and up if it turns out to be required, at the moment it looks
          * like we don't need it. */
         return VERR_NOT_SUPPORTED;
     }

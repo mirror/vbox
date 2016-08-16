@@ -881,7 +881,7 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
             rc = RTSemEventWaitNoResume(pDev->hIrqEvent, iTimeout);
             if (RT_SUCCESS(rc))
             {
-                /** @todo: racy */
+                /** @todo racy */
                 if (!ASMAtomicReadBool(&pDev->fTerminate))
                 {
                     RTSpinlockAcquire(pDev->hSpinlock);

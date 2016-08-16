@@ -171,7 +171,7 @@
 
 DEF_PS2Q_TYPE(AuxEvtQ, AUX_EVT_QUEUE_SIZE);
 DEF_PS2Q_TYPE(AuxCmdQ, AUX_CMD_QUEUE_SIZE);
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE //@todo: hack
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE /// @todo hack
 DEF_PS2Q_TYPE(GeneriQ, 1);
 #endif
 
@@ -413,7 +413,7 @@ static void ps2mReset(PPS2M pThis)
     pThis->enmMode   = AUX_MODE_STD;
     pThis->u8CurrCmd = 0;
 
-    //@todo: move to its proper home!
+    /// @todo move to its proper home!
     ps2mSetDriverState(pThis, true);
 }
 
@@ -696,7 +696,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
         case ACMD_RESET:
             ps2mSetDefaults(pThis);
-            ///@todo reset more?
+            /// @todo reset more?
             pThis->u8CurrCmd = cmd;
             pThis->enmMode   = AUX_MODE_RESET;
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
@@ -813,11 +813,11 @@ int PS2MByteFromAux(PPS2M pThis, uint8_t *pb)
     AssertPtr(pb);
 
     /* Anything in the command queue has priority over data
-     * in the event queue. Additionally, keystrokes are //@todo: true?
+     * in the event queue. Additionally, keystrokes are /// @todo true?
      * blocked if a command is currently in progress, even if
      * the command queue is empty.
      */
-    //@todo: Probably should flush/not fill queue if stream mode reporting disabled?!
+    /// @todo Probably should flush/not fill queue if stream mode reporting disabled?!
     rc = ps2kRemoveQueue((GeneriQ *)&pThis->cmdQ, pb);
     if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && (pThis->u8State & AUX_STATE_ENABLED))
         rc = ps2kRemoveQueue((GeneriQ *)&pThis->evtQ, pb);
@@ -876,7 +876,7 @@ static DECLCALLBACK(void) ps2mDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     Assert(pThis->u8CurrCmd == ACMD_RESET);
     ps2mReset(pThis);
 
-    ///@todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
+    /// @todo Might want a PS2MCompleteCommand() to push last response, clear command, and kick the KBC...
     /* Give the KBC a kick. */
     KBCUpdateInterrupts(pThis->pParent);
 }
@@ -950,7 +950,7 @@ static int ps2mPutEventWorker(PPS2M pThis, int32_t dx, int32_t dy,
     pThis->iAccumX += dx;
     pThis->iAccumY += dy;
     pThis->iAccumZ += dz;
-    pThis->fAccumB |= fButtons;     //@todo: accumulate based on current protocol?
+    pThis->fAccumB |= fButtons;     /// @todo accumulate based on current protocol?
     pThis->fCurrB   = fButtons;
 
 #if 1
@@ -1230,7 +1230,7 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "ps2m", "Display PS/2 mouse state.", ps2mInfoState);
 
-    //@todo: Where should we do this?
+    /// @todo Where should we do this?
     ps2mSetDriverState(pThis, true);
     pThis->u8State = 0;
     pThis->enmMode = AUX_MODE_STD;

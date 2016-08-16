@@ -1059,11 +1059,11 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
             pSocketInt->hSock = iSock;
             return VINF_SUCCESS;
         }
-        rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
+        rc = VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
         lwip_close(iSock);
     }
     else
-        rc = VERR_NET_CONNECTION_REFUSED; /* @todo real solution needed */
+        rc = VERR_NET_CONNECTION_REFUSED; /** @todo real solution needed */
     return rc;
 }
 
@@ -2839,7 +2839,7 @@ DECLINLINE(int) drvvdMediaExIoReqBufSync(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
  */
 DECLINLINE(unsigned) drvvdMediaExIoReqIdHash(PDMMEDIAEXIOREQID uIoReqId)
 {
-    return uIoReqId % DRVVD_VDIOREQ_ALLOC_BINS; /** @todo: Find something better? */
+    return uIoReqId % DRVVD_VDIOREQ_ALLOC_BINS; /** @todo Find something better? */
 }
 
 /**

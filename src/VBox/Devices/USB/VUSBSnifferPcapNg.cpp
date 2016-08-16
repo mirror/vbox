@@ -505,7 +505,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgInit(PVUSBSNIFFERFMTINT pThis, PVUS
 
     if (RT_SUCCESS(rc))
     {
-        /** @todo: Add product info. */
+        /** @todo Add product info. */
     }
 
     if (RT_SUCCESS(rc))
@@ -573,7 +573,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThi
     Epb.u32TimestampHigh        = (u64TimestampEvent >> 32) & UINT32_C(0xffffffff);
     Epb.u32TimestampLow         = u64TimestampEvent & UINT32_C(0xffffffff);
 
-    UsbHdr.u64Id = (uintptr_t)pUrb; /** @todo: check whether the pointer is a good ID. */
+    UsbHdr.u64Id = (uintptr_t)pUrb; /** @todo check whether the pointer is a good ID. */
     uint32_t cbUrbLength;
     switch (enmEvent)
     {

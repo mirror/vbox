@@ -1336,7 +1336,7 @@ static bool ataR3IdentifySS(ATADevState *s)
         p[118] = RT_H2LE_U16(cSectorSizeInWords >> 16);
     }
 
-    if (s->pDrvMedia->pfnDiscard) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+    if (s->pDrvMedia->pfnDiscard) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
     if (s->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
@@ -2402,7 +2402,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                         /* data written + 4 byte header */
                         uASC = (16 + 4);
                         break;
-                    default: /* TODO: formats beyond DVD-ROM requires */
+                    default: /** @todo formats beyond DVD-ROM requires */
                         uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
                 }
 
@@ -2414,15 +2414,15 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                 }
                 break;
             }
-            /* TODO: BD support, fall through for now */
+            /** @todo BD support, fall through for now */
 
         /* Generic disk structures */
-        case 0x80: /* TODO: AACS volume identifier */
-        case 0x81: /* TODO: AACS media serial number */
-        case 0x82: /* TODO: AACS media identifier */
-        case 0x83: /* TODO: AACS media key block */
-        case 0x90: /* TODO: List of recognized format layers */
-        case 0xc0: /* TODO: Write protection status */
+        case 0x80: /** @todo AACS volume identifier */
+        case 0x81: /** @todo AACS media serial number */
+        case 0x82: /** @todo AACS media identifier */
+        case 0x83: /** @todo AACS media key block */
+        case 0x90: /** @todo List of recognized format layers */
+        case 0xc0: /** @todo Write protection status */
         default:
             s->iSourceSink = ATAFN_SS_NULL;
             atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST,
@@ -7424,7 +7424,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         case CHIPSET_ICH6:
             PCIDevSetDeviceId(&pThis->dev, 0x269e); /* ICH6 IDE */
-            /** @todo: do we need it? Do we need anything else? */
+            /** @todo do we need it? Do we need anything else? */
             pThis->dev.config[0x48] = 0x00; /* UDMACTL */
             pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
             pThis->dev.config[0x4B] = 0x00;

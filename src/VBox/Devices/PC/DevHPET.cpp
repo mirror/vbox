@@ -414,7 +414,7 @@ static void hpetProgramTimer(HPETTIMER *pHpetTimer)
     /*
      * HACK ALERT! Avoid killing VM with interrupts.
      */
-#if 1 /** @todo: HACK, rethink, may have negative impact on the guest */
+#if 1 /** @todo HACK, rethink, may have negative impact on the guest */
     if (u64Diff == 0)
         u64Diff = 100000; /* 1 millisecond */
 #endif
@@ -993,7 +993,7 @@ static uint32_t hpetR3TimerGetIrq(struct HPETTIMER const *pHpetTimer)
  */
 static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
 {
-    /** @todo: is it correct? */
+    /** @todo is it correct? */
     if (   !!(pHpetTimer->u64Config & HPET_TN_ENABLE)
         && !!(pThis->u64HpetConfig & HPET_CFG_ENABLE))
     {
@@ -1010,7 +1010,7 @@ static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
             pThis->pHpetHlpR3->pfnSetIrq(pThis->CTX_SUFF(pDevIns), irq, PDM_IRQ_LEVEL_FLIP_FLOP);
         else
             AssertFailed();
-        /** @todo: implement IRQs in level-triggered mode */
+        /** @todo implement IRQs in level-triggered mode */
     }
 }
 

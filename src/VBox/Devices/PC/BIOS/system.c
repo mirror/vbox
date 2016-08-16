@@ -52,9 +52,9 @@
 
 #define UNSUPPORTED_FUNCTION    0x86    /* Specific to INT 15h. */
 
-#define BIOS_CONFIG_TABLE       0xe6f5  /* TODO: configurable? put elsewhere? */
+#define BIOS_CONFIG_TABLE       0xe6f5  /** @todo configurable? put elsewhere? */
 
-#define ACPI_DATA_SIZE    0x00010000L   /* TODO: configurable? put elsewhere? */
+#define ACPI_DATA_SIZE    0x00010000L   /** @todo configurable? put elsewhere? */
 
 #define BX_CPU                  3
 
@@ -265,7 +265,7 @@ void pm_unwind(uint16_t args);
     "retf"                  \
     parm [ax] modify nomemory aborts;
 
-// @todo: This method is silly. The RTC should be programmed to fire an interrupt
+/// @todo This method is silly. The RTC should be programmed to fire an interrupt
 // instead of hogging the CPU with inaccurate code.
 void timer_wait(uint32_t usec_wait)
 {
@@ -327,7 +327,7 @@ void set_e820_range(uint16_t ES, uint16_t DI, uint32_t start, uint32_t end,
     range->type   = type;
 }
 
-// @todo: move elsewhere?
+/// @todo move elsewhere?
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
 #define CX      r.gr.u.r16.cx
@@ -399,7 +399,7 @@ void BIOSCALL int15_function(sys_regs_t r)
         SET_AH(UNSUPPORTED_FUNCTION);
         break;
 
-    //@todo: Why does this need special handling? All we need is to set CF
+    /// @todo Why does this need special handling? All we need is to set CF
     //       but not handle this as an unknown function (regardless of CPU type).
     case 0x4f:
         /* keyboard intercept */
@@ -477,7 +477,7 @@ void BIOSCALL int15_function(sys_regs_t r)
         // This subfunction does not return!
 
         // turn off interrupts
-        int_disable();  //@todo: aren't they off already?
+        int_disable();  /// @todo aren't they off already?
 
         set_enable_a20(1); // enable A20 line; we're supposed to fail if that fails
 
@@ -833,7 +833,7 @@ void BIOSCALL int15_blkmove(disk_regs_t r)
     // +++ should have exception handlers
 
     // turn off interrupts
-    int_disable();    //@todo: aren't they disabled already?
+    int_disable();    /// @todo aren't they disabled already?
 
     prev_a20_enable = set_enable_a20(1); // enable A20 line
 

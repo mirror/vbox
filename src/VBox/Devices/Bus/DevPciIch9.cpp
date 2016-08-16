@@ -2613,7 +2613,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Fill in PCI configs and add them to the bus.
      */
-    /** @todo: Disabled for now because this causes error messages with Linux guests.
+    /** @todo Disabled for now because this causes error messages with Linux guests.
      *         The guest loads the x38_edac device which tries to map a memory region
      *         using an address given at place 0x48 - 0x4f in the PCi config space.
      *         This fails. because we don't register such a region.
@@ -2694,7 +2694,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
 
-    /** @todo: other chipset devices shall be registered too */
+    /** @todo other chipset devices shall be registered too */
 
     PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. Recognizes 'basic' or 'verbose' "
                                               "as arguments, defaults to 'basic'.", ich9pciInfo);
@@ -2717,7 +2717,7 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
     if (pciDevIsPassthrough(pDev))
     {
         // no reset handler - we can do what we need in PDM reset handler
-        // @todo: is it correct?
+        /// @todo is it correct?
     }
     else
     {

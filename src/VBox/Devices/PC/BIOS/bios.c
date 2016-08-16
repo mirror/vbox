@@ -154,7 +154,7 @@ void set_mode(uint8_t mode);
     "int    10h"            \
     parm [al] modify [ax];
 
-//@todo: restore
+/// @todo restore
 //#undef VBOX
 
 #define BX_PCIBIOS  1

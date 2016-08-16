@@ -470,7 +470,7 @@ static DECLCALLBACK(int) vnetIoCb_Reset(void *pvState)
     vpciReset(&pThis->VPCI);
     vnetCsRxLeave(pThis);
 
-    // TODO: Implement reset
+    /// @todo Implement reset
     if (pThis->fCableConnected)
         STATUS = VNET_S_LINK_UP;
     else

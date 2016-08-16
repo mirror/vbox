@@ -884,7 +884,7 @@ static int usbProxyUsbIpCtrlUrbExchangeSync(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PV
         if (RT_SUCCESS(rc))
         {
             /* Wait for the response. */
-            /** @todo: Don't wait indefinitely long. */
+            /** @todo Don't wait indefinitely long. */
             UsbIpRetSubmit RetSubmit;
             rc = RTTcpRead(pProxyDevUsbIp->hSocket, &RetSubmit, sizeof(RetSubmit), NULL);
             if (RT_SUCCESS(rc))
@@ -1028,7 +1028,7 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
                 }
                 case USBPROXYUSBIPRECVSTATE_HDR_RESIDUAL:
                 {
-                    /** @todo: Verify that the directions match, verify that the length doesn't exceed the buffer. */
+                    /** @todo Verify that the directions match, verify that the length doesn't exceed the buffer. */
 
                     switch (RT_N2H_U32(pProxyDevUsbIp->BufRet.Hdr.u32ReqRet))
                     {
@@ -1127,7 +1127,7 @@ static int usbProxyUsbIpRecvPdu(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPROXYURBUS
     }
     else
     {
-        /** @todo: Complete all URBs with DNR error and mark device as unplugged. */
+        /** @todo Complete all URBs with DNR error and mark device as unplugged. */
 #if 0
         pUrbUsbIp = pProxyDevUsbIp->pUrbUsbIp;
         pUrbUsbIp->pVUsbUrb->enmStatus = VUSBSTATUS_DNR;
@@ -1231,7 +1231,7 @@ static int usbProxyUsbIpUrbQueueWorker(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PUSBPRO
             break;
         default:
             usbProxyUsbIpUrbFree(pProxyDevUsbIp, pUrbUsbIp);
-            return VERR_INVALID_PARAMETER; /** @todo: better status code. */
+            return VERR_INVALID_PARAMETER; /** @todo better status code. */
     }
 
     usbProxyUsbIpReqSubmitH2N(&ReqSubmit);
@@ -1276,7 +1276,7 @@ static int usbProxyUsbIpUrbsQueuePending(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
         rc = usbProxyUsbIpUrbQueueWorker(pProxyDevUsbIp, pIter);
         if (RT_FAILURE(rc))
         {
-            /** @todo:  Complete the URB with an error. */
+            /** @todo  Complete the URB with an error. */
             usbProxyUsbIpUrbFree(pProxyDevUsbIp, pIter);
         }
     }

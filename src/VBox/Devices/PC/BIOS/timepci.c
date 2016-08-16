@@ -142,7 +142,7 @@ void BIOSCALL int70_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
     eoi_both_pics();
 }
 
-// @todo: the coding style WRT register access is totally inconsistent
+/// @todo the coding style WRT register access is totally inconsistent
 // in the following routines
 
 void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_addr_t iret_addr)

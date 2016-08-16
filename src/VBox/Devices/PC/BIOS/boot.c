@@ -91,7 +91,7 @@ int read_boot_sec(uint8_t bootdrv, uint16_t segment);
 
 static const char drivetypes[][10]={"Floppy","Hard Disk","CD-ROM","LAN"};
 
-//@todo: pass inputs as bit flags rather than bytes?
+/// @todo pass inputs as bit flags rather than bytes?
 void print_boot_device(uint8_t cdboot, uint8_t lanboot, uint8_t drive)
 {
     int     i;
@@ -113,7 +113,7 @@ void print_boot_device(uint8_t cdboot, uint8_t lanboot, uint8_t drive)
 // print_boot_failure
 //   displays the reason why boot failed
 //--------------------------------------------------------------------------
-//@todo: pass inputs as bit flags rather than bytes?
+/// @todo pass inputs as bit flags rather than bytes?
 void print_boot_failure(uint8_t cdboot, uint8_t lanboot, uint8_t drive,
                         uint8_t reason, uint8_t lastdrive)
 {
@@ -155,7 +155,7 @@ void print_cdromboot_failure(uint16_t code)
 // returns bootsegment in ax, drive in bl
 uint32_t BIOSCALL int19_function(uint8_t bseqnr)
 {
-    //@todo: common code for getting the EBDA segment
+    /// @todo common code for getting the EBDA segment
     uint16_t    ebda_seg=read_word(0x0040,0x000E);
     uint16_t    bootseq;
     uint8_t     bootdrv;
