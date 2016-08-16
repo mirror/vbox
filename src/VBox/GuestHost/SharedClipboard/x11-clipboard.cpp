@@ -749,6 +749,8 @@ static int clipLoadXFixes(Display *pDisplay, CLIPBACKEND *pCtx)
         hFixesLib = dlopen("libXfixes.so.2", RTLD_LAZY);
     if (!hFixesLib)
         hFixesLib = dlopen("libXfixes.so.3", RTLD_LAZY);
+    if (!hFixesLib)
+        hFixesLib = dlopen("libXfixes.so.4", RTLD_LAZY);
     if (hFixesLib)
         pCtx->fixesSelectInput =
             (void (*)(Display *, Window, Atom, long unsigned int))
