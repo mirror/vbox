@@ -204,23 +204,25 @@ static bool removeAddresses(char *pszAdapterName)
     return true;
 }
 
-static int doIOCtl(unsigned long uCmd, VBOXNETADPREQ *pReq)
+
+#ifndef RT_OS_SOLARIS
+static int doIOCtl(unsigned long iCmd, VBOXNETADPREQ *pReq)
 {
     int fd = open(VBOXNETADP_CTL_DEV_NAME, O_RDWR);
     if (fd == -1)
     {
         fprintf(stderr, "VBoxNetAdpCtl: Error while %s %s: ",
-                uCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding",
+                iCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding",
                 pReq->szName[0] ? pReq->szName : "new interface");
         perror("failed to open " VBOXNETADP_CTL_DEV_NAME);
         return ADPCTLERR_NO_CTL_DEV;
     }
 
-    int rc = ioctl(fd, uCmd, pReq);
+    int rc = ioctl(fd, iCmd, pReq);
     if (rc == -1)
     {
         fprintf(stderr, "VBoxNetAdpCtl: Error while %s %s: ",
-                uCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding",
+                iCmd == VBOXNETADP_CTL_REMOVE ? "removing" : "adding",
                 pReq->szName[0] ? pReq->szName : "new interface");
         perror("VBoxNetAdpCtl: ioctl failed for " VBOXNETADP_CTL_DEV_NAME);
         rc = ADPCTLERR_IOCTL_FAILED;
@@ -230,6 +232,8 @@ static int doIOCtl(unsigned long uCmd, VBOXNETADPREQ *pReq)
 
     return rc;
 }
+#endif /* !RT_OS_SOLARIS */
+
 
 static int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
 {
