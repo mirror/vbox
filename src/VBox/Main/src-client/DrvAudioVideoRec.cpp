@@ -42,7 +42,7 @@
 #define CA_STATUS_INIT      UINT32_C(2) /* The device is initialized */
 #define CA_STATUS_IN_UNINIT UINT32_C(3) /* The device is currently uninitializing */
 
-//@todo move t_sample as a PDM interface
+/// @todo move t_sample as a PDM interface
 //typedef struct { int mute;  uint32_t r; uint32_t l; } volume_t;
 
 #define INT_MAX         0x7fffffff
@@ -436,7 +436,7 @@ static DECLCALLBACK(int) drvAudioVideoRecCaptureIn(PPDMIHOSTAUDIO pInterface, PP
         /* Try to acquire the necessary block from the ring buffer. Remeber in fltRecrodCallback we
          * we are filling this buffer with the audio data available from VRDP. Here we are reading it
          */
-        /*todo do I need to introduce a thread to fill the buffer in fltRecordcallback. So that
+        /** @todo do I need to introduce a thread to fill the buffer in fltRecordcallback. So that
          * filling is in separate thread and the reading of that buffer is in separate thread
          */
         void *pvSrc;
@@ -572,7 +572,7 @@ static DECLCALLBACK(int) drvAudioVideoRecControlIn(PPDMIHOSTAUDIO pInterface, PP
     /* initialize only if not already done */
     if (enmStreamCmd == PDMAUDIOSTREAMCMD_ENABLE)
     {
-        //@todo if (!pVRDEVoice->fIsInit)
+        /// @todo if (!pVRDEVoice->fIsInit)
         //    RTCircBufReset(pVRDEVoice->pRecordedVoiceBuf);
         pVRDEVoice->fIsInit = 1;
         pVRDEVoice->pHostVoiceIn = *pHostVoiceIn;
@@ -703,7 +703,7 @@ int AudioVideoRec::handleVideoRecSvrCmdAudioInputEventBegin(void *pvContext, int
     LogFlowFunc(("Required freq as requested by VRDP Server = %d\n", iSampleHz));
     //if (iSampleHz && iSampleHz != pVRDEVoice->pHostVoiceIn.Props.uFrequency)
     {
-        /* @todo if the above condition is false then pVRDEVoice->uFrequency will remain 0 */
+        /** @todo if the above condition is false then pVRDEVoice->uFrequency will remain 0 */
         /*mpDrv->pUpPort->pfnPrepareAudioConversion(mpDrv->pUpPort, iSampleHz,
                                                   pVRDEVoice->pHostVoiceIn.Props.uFrequency,
                                                   &pVRDEVoice->rate);*/
@@ -736,7 +736,7 @@ int AudioVideoRec::handleVideoRecSvrCmdAudioInputEventData(void *pvContext, cons
     pVRDEVoice->convAudioDevFmtToStSampl(pHostStereoSampleBuf, pvData, cSamples, &videorec_nominal_volume);
 
     /* count of rate adjusted samples */
-    pVRDEVoice->uFrequency = 22100; /* @todo handle this. How pVRDEVoice will get proper value */
+    pVRDEVoice->uFrequency = 22100; /** @todo handle this. How pVRDEVoice will get proper value */
     cConvertedSamples = (cSamples * pVRDEVoice->pHostVoiceIn.Props.uHz) / pVRDEVoice->uFrequency;
     vrdeReallocRateAdjSampleBuf(pVRDEVoice, cConvertedSamples);
 

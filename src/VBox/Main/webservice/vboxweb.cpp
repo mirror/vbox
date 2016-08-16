@@ -1595,7 +1595,7 @@ void RaiseSoapInvalidObjectFault(struct soap *soap,
 std::string ConvertComString(const com::Bstr &bstr)
 {
     com::Utf8Str ustr(bstr);
-    return ustr.c_str();        // @todo r=dj since the length is known, we can probably use a better std::string allocator
+    return ustr.c_str();        /// @todo r=dj since the length is known, we can probably use a better std::string allocator
 }
 
 /**
@@ -1607,7 +1607,7 @@ std::string ConvertComString(const com::Bstr &bstr)
 std::string ConvertComString(const com::Guid &uuid)
 {
     com::Utf8Str ustr(uuid.toString());
-    return ustr.c_str();        // @todo r=dj since the length is known, we can probably use a better std::string allocator
+    return ustr.c_str();        /// @todo r=dj since the length is known, we can probably use a better std::string allocator
 }
 
 /** Code to handle string <-> byte arrays base64 conversion. */

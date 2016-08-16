@@ -1005,7 +1005,7 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
         LONG64 cbCapacity = 0;     // size reported to guest
         rc = pSourceDisk->COMGETTER(LogicalSize)(&cbCapacity);
         if (FAILED(rc)) throw rc;
-        // Todo r=poetzsch: wrong it is reported in bytes ...
+        /// @todo r=poetzsch: wrong it is reported in bytes ...
         // capacity is reported in megabytes, so...
         //cbCapacity *= _1M;
 
@@ -1018,7 +1018,7 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
         xml::ElementNode *pelmFile = pelmReferences->createChild("File");
         pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
         pelmFile->setAttribute("ovf:id", strFileRef);
-        // Todo: the actual size is not available at this point of time,
+        /// @todo the actual size is not available at this point of time,
         // cause the disk will be compressed. The 1.0 standard says this is
         // optional! 1.1 isn't fully clear if the "gzip" format is used.
         // Need to be checked. */
@@ -2318,7 +2318,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
             catch (HRESULT rc3)
             {
                 writeLock.acquire();
-                // Todo: file deletion on error? If not, we can remove that whole try/catch block.
+                /// @todo file deletion on error? If not, we can remove that whole try/catch block.
                 throw rc3;
             }
             // Finished, lock again (so nobody mess around with the medium tree

@@ -133,7 +133,7 @@ static void releaseDevice(REMOTEUSBDEVICE *pDevice)
 
 static REMOTEUSBQURB *qurbAlloc(PREMOTEUSBDEVICE pDevice)
 {
-    /* @todo reuse URBs. */
+    /** @todo reuse URBs. */
     REMOTEUSBQURB *pQURB = (REMOTEUSBQURB *)RTMemAllocZ (sizeof (REMOTEUSBQURB));
 
     if (pQURB)
@@ -562,7 +562,7 @@ static DECLCALLBACK(int) iface_QueueURB(PREMOTEUSBDEVICE pDevice, uint8_t u8Type
             if (u8Type == VUSBXFERTYPE_MSG)
             {
                 u32DataLen = 8; /* 8 byte header. */
-                // u32DataLen = u32Len; // @todo do messages need all information?
+                // u32DataLen = u32Len; /// @todo do messages need all information?
             }
         } break;
 

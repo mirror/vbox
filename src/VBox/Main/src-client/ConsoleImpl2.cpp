@@ -611,7 +611,7 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
          * Currently, using IOMMU needed for PCI passthrough
          * requires RAM preallocation.
          */
-        /** @todo: check if we can lift this requirement */
+        /** @todo check if we can lift this requirement */
         CFGMR3RemoveValue(pRoot, "RamPreAlloc");
         InsertConfigInteger(pRoot, "RamPreAlloc", 1);
     }
@@ -1534,7 +1534,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * Low Pin Count (LPC) bus
          */
         BOOL fLpcEnabled;
-        /** @todo: implement appropriate getter */
+        /** @todo implement appropriate getter */
         fLpcEnabled = fOsXGuest || (chipsetType == ChipsetType_ICH9);
         if (fLpcEnabled)
         {
@@ -3631,7 +3631,7 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
             if (SUCCEEDED(hrc) && pFramebuffer)
             {
                 LONG64 winId = 0;
-                /* @todo deal with multimonitor setup */
+                /** @todo deal with multimonitor setup */
                 Assert(cMonitorCount == 1);
                 hrc = pFramebuffer->COMGETTER(WinId)(&winId);
                 InsertConfigInteger(pCfg, "HostWindowId", winId);
@@ -3848,7 +3848,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 InsertConfigString(pCtlInst, "UUID", aszUuid);
                 mUSBStorageDevices.push_back(UsbMsd);
 
-                /** @todo: No LED after hotplugging. */
+                /** @todo No LED after hotplugging. */
                 /* Attach the status driver */
                 Assert(cLedUsb >= 8);
                 i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedUsb], 0, 7,

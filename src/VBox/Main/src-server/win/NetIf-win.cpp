@@ -349,7 +349,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL;//TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL;/// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -403,7 +403,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -457,7 +457,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -515,7 +515,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -573,7 +573,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -627,7 +627,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
                     default:
                     {
                         endLoop = true;
-                        rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+                        rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
                             //"Invalid message code %d (%08lX)\n",
                             //reply, reply),
                             //rc = E_FAIL);
@@ -638,7 +638,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
             break;
         }
         default:
-            rc = E_FAIL; // TODO: ComAssertMsgFailedBreak((
+            rc = E_FAIL; /// @todo ComAssertMsgFailedBreak((
 //                "Invalid message code %d (%08lX)\n",
 //                d->msgCode, d->msgCode),
 //                rc = E_FAIL);
@@ -1555,7 +1555,7 @@ static HRESULT netIfGetBoundAdapters(std::list<BoundAdapter> &boundAdapters)
                     INetCfgBindingInterface     *pBi;
                     if (pBp->IsEnabled() != S_OK)
                     {
-                        /* @todo some id of disabled path could be useful. */
+                        /** @todo some id of disabled path could be useful. */
                         netIfLog(("netIfGetBoundAdapters: INetCfgBindingPath is disabled (0x%x)\n", hr));
                         pBp->Release();
                         continue;

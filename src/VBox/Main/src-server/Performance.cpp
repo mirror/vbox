@@ -247,7 +247,7 @@ int CollectorGuest::enableVMMStats(bool mCollectVMMStats)
 
     if (mGuest)
     {
-        /* @todo: replace this with a direct call to mGuest in trunk! */
+        /** @todo replace this with a direct call to mGuest in trunk! */
         AutoCaller autoCaller(mMachine);
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

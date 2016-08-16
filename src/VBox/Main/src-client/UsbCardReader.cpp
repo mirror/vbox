@@ -373,7 +373,7 @@ static DECLCALLBACK(int) drvCardReaderDownReleaseContext(PPDMICARDREADERDOWN pIn
     LogFlowFunc(("ENTER: pvUser:%p\n",
                  pvUser));
     PUSBCARDREADER pThis = RT_FROM_MEMBER(pInterface, USBCARDREADER, ICardReaderDown);
-    /* @todo Device calls this when the driver already destroyed. */
+    /** @todo Device calls this when the driver already destroyed. */
     if (pThis->hReqQCardReaderCmd == NIL_RTREQQUEUE)
     {
         LogFlowFunc(("LEAVE: device already deleted.\n"));
@@ -750,7 +750,7 @@ int UsbCardReader::VRDENotify(uint32_t u32Id, void *pvData, uint32_t cbData)
             VRDESCARDNOTIFYDETACH *p = (VRDESCARDNOTIFYDETACH *)pvData; NOREF(p);
             Assert(cbData == sizeof(VRDESCARDNOTIFYDETACH));
 
-            /* @todo Just free. There should be no pending requests, because VRDP cancels them. */
+            /** @todo Just free. There should be no pending requests, because VRDP cancels them. */
             RTMemFree(m_pRemote);
             m_pRemote = NULL;
         } break;
@@ -818,7 +818,7 @@ int UsbCardReader::VRDEResponse(int rcRequest, void *pvUser, uint32_t u32Functio
                     LogFlowFunc(("LISTREADERS: [%d] [%s]\n",
                                  i, pRsp->apszNames[i]));
 
-                    /* @todo only the first reader is supported. */
+                    /** @todo only the first reader is supported. */
                     if (i != 0)
                     {
                         continue;
@@ -872,7 +872,7 @@ int UsbCardReader::VRDEResponse(int rcRequest, void *pvUser, uint32_t u32Functio
                         LogFlowFunc(("GETSTATUSCHANGE: [%d] %RX32\n",
                                      i, pRsp->aReaderStates[i].u32EventState));
 
-                        /* @todo only the first reader is supported. */
+                        /** @todo only the first reader is supported. */
                         if (i != 0)
                         {
                             continue;
@@ -1106,7 +1106,7 @@ int UsbCardReader::VRDEResponse(int rcRequest, void *pvUser, uint32_t u32Functio
                 {
                     pu8RecvBuffer = pRsp->pu8RecvBuffer;
                     cbRecvBuffer = pRsp->u32RecvLength;
-                    /* @todo pioRecvPci */
+                    /** @todo pioRecvPci */
                 }
             }
 

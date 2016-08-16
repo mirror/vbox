@@ -901,7 +901,7 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
     IMachine *machine = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
-    /** @todo: Maybe too cost-intensive; try to find a lighter way */
+    /** @todo Maybe too cost-intensive; try to find a lighter way */
     while (mVirtualBox->FindMachine(Bstr(tmpName).raw(), &machine) != VBOX_E_OBJECT_NOT_FOUND)
     {
         RTStrFree(tmpName);
@@ -921,7 +921,7 @@ HRESULT Appliance::i_searchUniqueDiskImageFilePath(Utf8Str& aName) const
     int i = 1;
     /* Check if the file exists or if a file with this path is registered
      * already */
-    /** @todo: Maybe too cost-intensive; try to find a lighter way */
+    /** @todo Maybe too cost-intensive; try to find a lighter way */
     while (    RTPathExists(tmpName)
             || mVirtualBox->OpenMedium(Bstr(tmpName).raw(), DeviceType_HardDisk, AccessMode_ReadWrite,
                                        FALSE /* fForceNewUuid */,  &harddisk) != VBOX_E_OBJECT_NOT_FOUND)

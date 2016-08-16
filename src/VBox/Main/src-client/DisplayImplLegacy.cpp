@@ -162,7 +162,7 @@ static void vbvaRgnDirtyRect(VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMDH
 
     if (pFBInfo->fDefaultFormat)
     {
-        //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
+        /// @todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect(prgn->pPort, phdr->x, phdr->y, phdr->w, phdr->h);
         prgn->pDisplay->i_handleDisplayUpdate(uScreenId, phdr->x, phdr->y, phdr->w, phdr->h);
     }
@@ -180,7 +180,7 @@ static void vbvaRgnUpdateFramebuffer(VBVADIRTYREGION *prgn, unsigned uScreenId)
 
     if (!pFBInfo->fDefaultFormat && w != 0 && h != 0)
     {
-        //@todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
+        /// @todo pfnUpdateDisplayRect must take the vram offset parameter for the framebuffer
         prgn->pPort->pfnUpdateDisplayRect(prgn->pPort, pDirtyRect->xLeft, pDirtyRect->yTop, w, h);
         prgn->pDisplay->i_handleDisplayUpdate(uScreenId, pDirtyRect->xLeft, pDirtyRect->yTop, w, h);
     }
@@ -803,7 +803,7 @@ void Display::processAdapterData(void *pvVRAM, uint32_t u32VRAMSize)
          uint8_t *pu8 = (uint8_t *)pvVRAM;
          pu8 += u32VRAMSize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
 
-         // @todo
+         /// @todo
          uint8_t *pu8End = pu8 + VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
 
          VBOXVIDEOINFOHDR *pHdr;
@@ -863,7 +863,7 @@ void Display::processAdapterData(void *pvVRAM, uint32_t u32VRAMSize)
 
                      case VBOX_VIDEO_QCI32_OFFSCREEN_HEAP_SIZE:
                      {
-                         /* @todo make configurable. */
+                         /** @todo make configurable. */
                          pConf32->u32Value = _1M;
                      } break;
 
@@ -907,7 +907,7 @@ void Display::processDisplayData(void *pvVRAM, unsigned uScreenId)
     uint8_t *pu8 = (uint8_t *)pvVRAM;
     pu8 += pFBInfo->u32Offset + pFBInfo->u32MaxFramebufferSize;
 
-    // @todo
+    /// @todo
     uint8_t *pu8End = pu8 + pFBInfo->u32InformationSize;
 
     VBOXVIDEOINFOHDR *pHdr;

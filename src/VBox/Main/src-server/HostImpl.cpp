@@ -702,7 +702,7 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
 #     ifndef VBOX_WITH_HARDENING
         if (hr != S_OK)
         {
-            /* TODO: try to install the netflt from here */
+            /** @todo try to install the netflt from here */
         }
 #     endif
 

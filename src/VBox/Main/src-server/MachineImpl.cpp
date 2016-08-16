@@ -756,7 +756,7 @@ HRESULT Machine::i_registeredInit()
         mData->mAccessible = TRUE;
 
         /* commit all changes made during loading the settings file */
-        i_commit(); // @todo r=dj why do we need a commit during init?!? this is very expensive
+        i_commit(); /// @todo r=dj why do we need a commit during init?!? this is very expensive
         /// @todo r=klaus for some reason the settings loading logic backs up
         // the settings, and therefore a commit is needed. Should probably be changed.
     }
@@ -2605,7 +2605,7 @@ HRESULT Machine::getSnapshotFolder(com::Utf8Str &aSnapshotFolder)
 
 HRESULT Machine::setSnapshotFolder(const com::Utf8Str &aSnapshotFolder)
 {
-    /* @todo (r=dmik):
+    /** @todo (r=dmik):
      *  1. Allow to change the name of the snapshot folder containing snapshots
      *  2. Rename the folder on disk instead of just changing the property
      *     value (to be smart and not to leave garbage). Note that it cannot be
@@ -3077,7 +3077,7 @@ HRESULT Machine::setFaultToleranceState(FaultToleranceState_T aFaultToleranceSta
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* @todo deal with running state change. */
+    /** @todo deal with running state change. */
     HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
@@ -3099,7 +3099,7 @@ HRESULT Machine::setFaultToleranceAddress(const com::Utf8Str &aFaultToleranceAdd
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* @todo deal with running state change. */
+    /** @todo deal with running state change. */
     HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
@@ -3121,7 +3121,7 @@ HRESULT Machine::setFaultTolerancePort(ULONG aFaultTolerancePort)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* @todo deal with running state change. */
+    /** @todo deal with running state change. */
     HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
@@ -3144,7 +3144,7 @@ HRESULT Machine::setFaultTolerancePassword(const com::Utf8Str &aFaultTolerancePa
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* @todo deal with running state change. */
+    /** @todo deal with running state change. */
     HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
@@ -3167,7 +3167,7 @@ HRESULT Machine::setFaultToleranceSyncInterval(ULONG aFaultToleranceSyncInterval
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* @todo deal with running state change. */
+    /** @todo deal with running state change. */
     HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
@@ -10600,7 +10600,7 @@ HRESULT Machine::i_saveStateSettings(int aFlags)
             mData->pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
             mData->pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
-//@todo live migration             mData->pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
+/// @todo live migration             mData->pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
         }
 
         mData->pMachineConfigFile->write(mData->m_strConfigFileFull);

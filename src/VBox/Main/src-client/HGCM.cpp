@@ -1144,7 +1144,7 @@ void HGCMService::ReleaseService(void)
         }
 
 #ifdef VBOX_WITH_CRHGSMI
-        /* @todo: could this actually happen that the service is destroyed on ReleaseService? */
+        /** @todo could this actually happen that the service is destroyed on ReleaseService? */
         HGCMService *pNextSvc = pSvc->m_pSvcNext;
         while (pSvc->m_cHandleAcquires)
         {

@@ -941,7 +941,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
 
     if (!maFramebuffers[uScreenId].pFramebuffer.isNull())
     {
-        HRESULT hr = maFramebuffers[uScreenId].pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /* @todo origin */
+        HRESULT hr = maFramebuffers[uScreenId].pFramebuffer->NotifyChange(uScreenId, 0, 0, w, h); /** @todo origin */
         LogFunc(("NotifyChange hr %08X\n", hr));
         NOREF(hr);
     }
@@ -2585,7 +2585,7 @@ HRESULT Display::drawToScreen(ULONG aScreenId, BYTE *aAddress, ULONG aX, ULONG a
     else if (RT_FAILURE(rcVBox))
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not draw to the screen (%Rrc)"), rcVBox);
-//@todo
+/// @todo
 //    else
 //    {
 //        /* All ok. Redraw the screen. */
@@ -3950,7 +3950,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
     pHdrUnconst->x -= (int16_t)pFBInfo->xOrigin;
     pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
 
-    /* @todo new SendUpdate entry which can get a separate cmd header or coords. */
+    /** @todo new SendUpdate entry which can get a separate cmd header or coords. */
     pThis->mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, pCmd, (uint32_t)cbCmd);
 
     *pHdrUnconst = hdrSaved;
@@ -3965,7 +3965,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterf
     Display *pThis = pDrv->pDisplay;
     DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
-    /* @todo handleFramebufferUpdate (uScreenId,
+    /** @todo handleFramebufferUpdate (uScreenId,
      *                                x - pThis->maFramebuffers[uScreenId].xOrigin,
      *                                y - pThis->maFramebuffers[uScreenId].yOrigin,
      *                                cx, cy);

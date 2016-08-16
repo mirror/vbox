@@ -788,7 +788,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback,
                 || RTStrICmp(pFeature->achInfo, "Client/DisableClipboard") == 0
                )
             {
-                /* @todo these features should be per client. */
+                /** @todo these features should be per client. */
                 NOREF(pFeature->u32ClientId);
 
                 /* These features are mapped to "VRDE/Feature/NAME" extra data. */
@@ -1841,7 +1841,7 @@ typedef struct H3DORInstance
     Assert(p);
     Assert(p->pThis);
 
-    /* @todo find out what to do if size changes to 0x0 from non zero */
+    /** @todo find out what to do if size changes to 0x0 from non zero */
     if (w == 0 || h == 0)
     {
         /* Do nothing. */
@@ -1891,7 +1891,7 @@ typedef struct H3DORInstance
     if (!p->hImageBitmap)
     {
         /* Create a new bitmap handle. */
-        uint32_t u32ScreenId = 0; /* @todo clip to corresponding screens.
+        uint32_t u32ScreenId = 0; /** @todo clip to corresponding screens.
                                    * Clipping can be done here or in VRDP server.
                                    * If VRDP does clipping, then uScreenId parameter
                                    * is not necessary and coords must be global.
@@ -2170,7 +2170,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 
         if (u32StreamId != 0)
         {
-            p->fCreated = true; // @todo not needed?
+            p->fCreated = true; /// @todo not needed?
         }
         else
         {
@@ -2330,7 +2330,7 @@ void ConsoleVRDPServer::tsmfUnlock(void)
 
     if (RT_SUCCESS(rc))
     {
-        /* @todo contexts should be in a list for accounting. */
+        /** @todo contexts should be in a list for accounting. */
         *ppvChannel = pHostChCtx;
     }
     else
@@ -2535,7 +2535,7 @@ void ConsoleVRDPServer::setupTSMF(void)
     return;
 }
 
-/* @todo these defines must be in a header, which is used by guest component as well. */
+/** @todo these defines must be in a header, which is used by guest component as well. */
 #define VBOX_TSMF_HCH_CREATE_ACCEPTED (VBOX_HOST_CHANNEL_EVENT_USER + 0)
 #define VBOX_TSMF_HCH_CREATE_DECLINED (VBOX_HOST_CHANNEL_EVENT_USER + 1)
 #define VBOX_TSMF_HCH_DISCONNECTED    (VBOX_HOST_CHANNEL_EVENT_USER + 2)
@@ -2874,7 +2874,7 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
             }
             else if (pHeader->u16EventId == VRDEINPUT_EVENTID_DISMISS_HOVERING_CONTACT)
             {
-                /* @todo */
+                /** @todo */
             }
             else
             {
@@ -3938,7 +3938,7 @@ void VRDEServerInfo::uninit()
 #define IMPL_GETTER_BOOL(_aType, _aName, _aIndex)                         \
     HRESULT VRDEServerInfo::get##_aName(_aType *a##_aName)                \
     {                                                                     \
-        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        /** @todo Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         uint32_t value;                                                   \
@@ -3956,7 +3956,7 @@ void VRDEServerInfo::uninit()
 #define IMPL_GETTER_SCALAR(_aType, _aName, _aIndex, _aValueMask)          \
     HRESULT VRDEServerInfo::get##_aName(_aType *a##_aName)                \
     {                                                                     \
-        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        /** @todo Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         _aType value;                                                     \
@@ -3975,7 +3975,7 @@ void VRDEServerInfo::uninit()
 #define IMPL_GETTER_UTF8STR(_aType, _aName, _aIndex)                      \
     HRESULT VRDEServerInfo::get##_aName(_aType &a##_aName)                \
     {                                                                     \
-        /* todo: Not sure if a AutoReadLock would be sufficient. */       \
+        /** @todo Not sure if a AutoReadLock would be sufficient. */       \
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);                  \
                                                                           \
         uint32_t cbOut = 0;                                               \

@@ -24,7 +24,7 @@
 #include "Global.h"
 #include "ProgressImpl.h"
 
-// @todo these three includes are required for about one or two lines, try
+/// @todo these three includes are required for about one or two lines, try
 // to remove them and put that code in shared code in MachineImplcpp
 #include "SharedFolderImpl.h"
 #include "USBControllerImpl.h"
@@ -1561,7 +1561,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
     try
     {
-        // @todo: at this point we have to be in the right state!!!!
+        /// @todo at this point we have to be in the right state!!!!
         AssertStmt(   mData->mMachineState == MachineState_Snapshotting
                    || mData->mMachineState == MachineState_OnlineSnapshotting
                    || mData->mMachineState == MachineState_LiveSnapshotting, throw E_FAIL);
@@ -1709,7 +1709,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         rc = rcThrown;
         LogThisFunc(("Caught %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(mData->mMachineState)));
 
-        // @todo r=klaus check that the implicit diffs created above are cleaned up im the relevant error cases
+        /// @todo r=klaus check that the implicit diffs created above are cleaned up im the relevant error cases
 
         /* preserve existing error info */
         ErrorInfoKeeper eik;

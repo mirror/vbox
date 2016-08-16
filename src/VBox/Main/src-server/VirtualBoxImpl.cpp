@@ -1299,7 +1299,7 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
             break;
         }
 
-        /** @todo: account for version in the URL */
+        /** @todo account for version in the URL */
         aUrl = firmwareDesc[i].url;
         *aResult = FALSE;
 

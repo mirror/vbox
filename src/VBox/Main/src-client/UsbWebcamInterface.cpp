@@ -219,7 +219,7 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
 
             LogFlowFunc(("DETACH[%d,%d]\n", p->deviceHandle.u32ClientId, p->deviceHandle.u32DeviceId));
 
-            /* @todo */
+            /** @todo */
             if (mpRemote)
             {
                 if (mpDrv && mpDrv->pIWebcamUp)

@@ -153,7 +153,7 @@ void OVFReader::LoopThruSections(const xml::ElementNode *pReferencesElem,
         }
         else if (    !strcmp(pcszElemName, "DeploymentOptionSection"))
         {
-            // TODO
+            /// @todo
         }
         else if (    !strcmp(pcszElemName, "Info"))
         {
@@ -181,7 +181,7 @@ void OVFReader::LoopThruSections(const xml::ElementNode *pReferencesElem,
                      )
                 )
         {
-            // TODO ResourceAllocationSection
+            /// @todo ResourceAllocationSection
 
             // recurse for this, since it has VirtualSystem elements as children
             LoopThruSections(pReferencesElem, pElem);

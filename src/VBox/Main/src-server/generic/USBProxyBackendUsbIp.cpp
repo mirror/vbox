@@ -49,7 +49,7 @@
 /** Command/Reply code for OP_REQ/RET_DEVLIST. */
 #define USBIP_REQ_RET_DEVLIST UINT16_C(5)
 
-/** @todo: Duplicate code in USBProxyDevice-usbip.cpp */
+/** @todo Duplicate code in USBProxyDevice-usbip.cpp */
 /**
  * Exported device entry in the OP_RET_DEVLIST reply.
  */
@@ -954,7 +954,7 @@ int USBProxyBackendUsbIp::addDeviceToList(PUsbIpExportedDevice pDev)
         pNew->bNumConfigurations = pDev->bNumConfigurations;
         pNew->enmState           = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
         pNew->u64SerialHash      = 0;
-        /** @todo: The following is not correct but is required to to get USB testing working
+        /** @todo The following is not correct but is required to to get USB testing working
          * because only the port can be part of a filter (adding the required attributes for the bus
          * breaks API and ABI compatibility).
          * Filtering by port number is required for USB testing to connect to the correct device

@@ -113,7 +113,7 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
  */
 HRESULT Appliance::interpret()
 {
-    // @todo:
+    /// @todo
     //  - don't use COM methods but the methods directly (faster, but needs appropriate
     // locking of that objects itself (s. HardDisk))
     //  - Appropriate handle errors like not supported file formats
@@ -520,7 +520,7 @@ HRESULT Appliance::interpret()
                         /* Check for the constrains */
                         if (cIDEused < 4)
                         {
-                            // @todo: figure out the IDE types
+                            /// @todo figure out the IDE types
                             /* Use PIIX4 as default */
                             Utf8Str strType = "PIIX4";
                             if (!hdc.strControllerType.compare("PIIX3", Utf8Str::CaseInsensitive))
@@ -546,7 +546,7 @@ HRESULT Appliance::interpret()
                         /* Check for the constrains */
                         if (cSATAused < 1)
                         {
-                            // @todo: figure out the SATA types
+                            /// @todo figure out the SATA types
                             /* We only support a plain AHCI controller, so use them always */
                             pNewDesc->i_addEntry(VirtualSystemDescriptionType_HardDiskControllerSATA,
                                                  strControllerID,
@@ -636,7 +636,7 @@ HRESULT Appliance::interpret()
                         throw rc;
                     Utf8Str vdf = Utf8Str(bstrFormatName);
 
-                    // @todo:
+                    /// @todo
                     //  - figure out all possible vmdk formats we also support
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
@@ -4070,7 +4070,7 @@ void Appliance::i_importMachines(ImportStack &stack)
         // audio adapter
         std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter =
             vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
-        /* @todo: we support one audio adapter only */
+        /** @todo we support one audio adapter only */
         if (!vsdeAudioAdapter.empty())
             stack.strAudioAdapter = vsdeAudioAdapter.front()->strVBoxCurrent;
 

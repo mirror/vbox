@@ -47,7 +47,7 @@ int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
     int CpuMHz = 0;
     size_t cbParameter = sizeof(CpuMHz);
 
-    /** @todo: Howto support more than one CPU? */
+    /** @todo Howto support more than one CPU? */
     if (sysctlbyname("dev.cpu.0.freq", &CpuMHz, &cbParameter, NULL, 0))
         return VERR_NOT_SUPPORTED;
 

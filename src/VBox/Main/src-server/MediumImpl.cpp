@@ -3949,7 +3949,7 @@ bool Medium::i_removeRegistry(const Guid &id)
 
     bool fRemove = false;
 
-    // @todo r=klaus eliminate this code, replace it by using find.
+    /// @todo r=klaus eliminate this code, replace it by using find.
     for (GuidList::iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)
@@ -4005,7 +4005,7 @@ bool Medium::i_removeRegistryRecursive(const Guid &id)
  */
 bool Medium::i_isInRegistry(const Guid &id)
 {
-    // @todo r=klaus eliminate this code, replace it by using find.
+    /// @todo r=klaus eliminate this code, replace it by using find.
     for (GuidList::const_iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)

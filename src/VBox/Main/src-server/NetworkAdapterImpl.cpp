@@ -1295,7 +1295,7 @@ HRESULT NetworkAdapter::setBandwidthGroup(const ComPtr<IBandwidthGroup> &aBandwi
         mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        /* TODO: changeAdapter=???. */
+        /** @todo changeAdapter=???. */
         mParent->i_onNetworkAdapterChange(this, FALSE);
     }
 
