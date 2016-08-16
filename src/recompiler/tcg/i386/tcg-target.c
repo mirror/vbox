@@ -1258,7 +1258,7 @@ static void tcg_out_vbox_phys_read(TCGContext *s, int index,
 {
     int useReg2 = ((index & 3) == 3);
 
-    /** @todo:  should we make phys address accessors fastcalls - probably not a big deal */
+    /** @todo  should we make phys address accessors fastcalls - probably not a big deal */
     /* out parameter (address), note that phys address is always 64-bit */
     AssertMsg(sizeof(RTGCPHYS) == 8, ("Physical address must be 64-bits, update caller\n"));
 

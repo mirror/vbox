@@ -1107,7 +1107,7 @@ do_initialize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
   SVN_ERR(copy_revprops(from_session, to_session, 0, FALSE, pool));
 #endif /* !VBOX */
 
-  /* TODO: It would be nice if we could set the dest repos UUID to be
+  /** @todo It would be nice if we could set the dest repos UUID to be
      equal to the UUID of the source repos, at least optionally.  That
      way people could check out/log/diff using a local fast mirror,
      but switch --relocate to the actual final repository in order to
@@ -1793,7 +1793,7 @@ open_directory(const char *path,
         /* Suppress change_dir_prop for this directory. Done already. */
         db->ignore_everything = TRUE;
 
-        /* TODO: copy over files in this directory which were already exported
+        /** @todo copy over files in this directory which were already exported
          * due to inconsistent export settings (e.g. directory is not exported,
          * but file in it is exported). */
       }
@@ -2576,7 +2576,7 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
           if (copying > last_merged)
             {
 #ifdef VBOX
-/* TODO fix use of from/to revision numbers. */
+/** @todo fix use of from/to revision numbers. */
               SVN_ERR(copy_revprops(from_session, to_session,
                                     to_latest, to_latest, TRUE, pool));
 #else /* !VBOX */

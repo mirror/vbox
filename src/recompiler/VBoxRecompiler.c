@@ -853,7 +853,7 @@ REMR3DECL(int) REMR3Step(PVM pVM, PVMCPU pVCpu)
                 break;
             case EXCP_EXECUTE_RAW:
             case EXCP_EXECUTE_HM:
-                /** @todo: is it correct? No! */
+                /** @todo is it correct? No! */
                 rc = VINF_SUCCESS;
                 break;
             default:

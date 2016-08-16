@@ -741,7 +741,7 @@ static inline void gen_op_st_T1_A0(int idx)
 static void gen_check_external_event(void)
 {
 # if 1
-    /** @todo: once TCG codegen improves, we may want to use version
+    /** @todo once TCG codegen improves, we may want to use version
         from else version */
     gen_helper_check_external_event();
 # else
@@ -759,7 +759,7 @@ static void gen_check_external_event(void)
                     | CPU_INTERRUPT_EXTERNAL_TIMER
                     | CPU_INTERRUPT_EXTERNAL_DMA
                     | CPU_INTERRUPT_EXTERNAL_HARD);
-    /** @todo: predict branch as taken */
+    /** @todo predict branch as taken */
     tcg_gen_brcondi_i32(TCG_COND_EQ, t0, 0, skip_label);
     tcg_temp_free(t0);
 
