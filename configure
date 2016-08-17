@@ -2946,7 +2946,7 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
     if [ $WITH_PULSE -eq 1 ]; then
       check_pulse
     elif [ $WITH_PULSE -eq 0 ]; then
-      cnf_append "VBOX_WITH_PULSE" ""
+      cnf_append "VBOX_WITH_AUDIO_PULSE" ""
     fi
  fi
 fi
@@ -2967,7 +2967,7 @@ if [ "$OS" = "linux" ]; then
     if [ $WITH_ALSA -eq 1 ]; then
       check_alsa
     else
-      cnf_append "VBOX_WITH_ALSA" ""
+      cnf_append "VBOX_WITH_AUDIO_ALSA" ""
     fi
     if [ $WITH_DBUS -eq 0 ]; then
       cnf_append "VBOX_WITH_DBUS" ""
