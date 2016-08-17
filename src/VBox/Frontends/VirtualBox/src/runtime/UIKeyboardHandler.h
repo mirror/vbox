@@ -51,9 +51,6 @@ class WinAltGrMonitor;
 typedef union _XEvent XEvent;
 # endif /* QT_VERSION < 0x050000 */
 #endif /* VBOX_WS_X11 */
-#if QT_VERSION >= 0x050000
-class KeyboardHandlerEventFilter;
-#endif /* QT_VERSION >= 0x050000 */
 
 
 /* Delegate to control VM keyboard functionality: */
@@ -110,21 +107,19 @@ public:
 
 #if QT_VERSION < 0x050000
 # if defined(VBOX_WS_MAC)
-    /** Qt4: Mac: Performs final pre-processing of all the native events. */
+    /** Qt4: Mac: Performs pre-processing of all the native events. */
     bool macEventFilter(const void *pvCocoaEvent, EventRef event, ulong uScreenId);
 # elif defined(VBOX_WS_WIN)
-    /** Qt4: Win: Performs final pre-processing of all the native events. */
+    /** Qt4: Win: Performs pre-processing of all the native events. */
     bool winEventFilter(MSG *pMsg, ulong uScreenId);
 # elif defined(VBOX_WS_X11)
-    /** Qt4: X11: Performs final pre-processing of all the native events. */
+    /** Qt4: X11: Performs pre-processing of all the native events. */
     bool x11EventFilter(XEvent *pEvent, ulong uScreenId);
 # endif /* VBOX_WS_X11 */
-#else /* QT_VERSION >= 0x050000 */
+#else
     /** Qt5: Performs pre-processing of all the native events. */
-    bool nativeEventPreprocessor(const QByteArray &eventType, void *pMessage);
-    /** Qt5: Performs post-processing of all the native events. */
-    bool nativeEventPostprocessor(void *pMessage, ulong uScreenId);
-#endif /* QT_VERSION >= 0x050000 */
+    bool nativeEventFilter(void *pMessage, ulong uScreenId);
+#endif
 
 protected slots:
 
@@ -238,14 +233,6 @@ protected:
     /** Win: Holds the keyboard handler reference to be accessible from the keyboard hook. */
     static UIKeyboardHandler *m_spKeyboardHandler;
 #endif /* VBOX_WS_WIN */
-
-#if QT_VERSION >= 0x050000
-    /** Win: Holds the native event filter instance. */
-    KeyboardHandlerEventFilter *m_pPrivateEventFilter;
-    /** Win: Allows the native event filter to
-      * redirect events directly to nativeEventPreprocessor handler. */
-    friend class KeyboardHandlerEventFilter;
-#endif /* QT_VERSION >= 0x050000 */
 
     ULONG m_cMonitors;
 };

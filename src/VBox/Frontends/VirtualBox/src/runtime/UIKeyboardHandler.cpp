@@ -58,11 +58,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Qt includes: */
-#if QT_VERSION >= 0x050000
-# include <QAbstractNativeEventFilter>
-#endif /* QT_VERSION >= 0x050000 */
-
 /* GUI includes: */
 #ifdef VBOX_WS_MAC
 # include "DarwinKeyboard.h"
@@ -99,34 +94,6 @@ const int XKeyRelease = KeyRelease;
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
 enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
-
-
-#if QT_VERSION >= 0x050000
-/** QAbstractNativeEventFilter extension
-  * allowing to pre-process native platform events. */
-class KeyboardHandlerEventFilter : public QAbstractNativeEventFilter
-{
-public:
-
-    /** Constructor which takes the passed @a pParent to redirect events to. */
-    KeyboardHandlerEventFilter(UIKeyboardHandler *pParent)
-        : m_pParent(pParent)
-    {}
-
-    /** Handles all native events. */
-    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult)
-    {
-        /* Redirect event to parent: */
-        Q_UNUSED(pResult);
-        return m_pParent->nativeEventPreprocessor(eventType, pMessage);
-    }
-
-private:
-
-    /** Holds the passed parent reference. */
-    UIKeyboardHandler *m_pParent;
-};
-#endif /* QT_VERSION >= 0x050000 */
 
 
 #ifdef VBOX_WS_WIN
@@ -1059,14 +1026,12 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
 # endif /* VBOX_WS_X11 */
 #else /* QT_VERSION >= 0x050000 */
 
-bool UIKeyboardHandler::nativeEventPreprocessor(const QByteArray &eventType, void *pMessage)
+bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 {
-    /* Redirect event to machine-view: */
-    return m_views.contains(m_iKeyboardHookViewIndex) ? m_views.value(m_iKeyboardHookViewIndex)->nativeEventPreprocessor(eventType, pMessage) : false;
-}
+    /* Make sure view with passed index exists: */
+    if (!m_views.contains(uScreenId))
+        return false;
 
-bool UIKeyboardHandler::nativeEventPostprocessor(void *pMessage, ulong uScreenId)
-{
     /* Check if some system event should be filtered out.
      * Returning @c true means filtering-out,
      * Returning @c false means passing event to Qt. */
@@ -1585,9 +1550,6 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_keyboardHook(NULL)
     , m_pAltGrMonitor(0)
 #endif /* VBOX_WS_WIN */
-#if QT_VERSION >= 0x050000
-    , m_pPrivateEventFilter(0)
-#endif /* QT_VERSION >= 0x050000 */
     , m_cMonitors(1)
 {
     /* Prepare: */
@@ -1666,17 +1628,6 @@ void UIKeyboardHandler::cleanupCommon()
     }
 
 #endif /* VBOX_WS_WIN */
-
-#if QT_VERSION >= 0x050000
-    /* If private event-filter is installed: */
-    if (m_pPrivateEventFilter)
-    {
-        /* Uninstall existing private event-filter: */
-        qApp->removeNativeEventFilter(m_pPrivateEventFilter);
-        delete m_pPrivateEventFilter;
-        m_pPrivateEventFilter = 0;
-    }
-#endif /* QT_VERSION >= 0x050000 */
 
     /* Update keyboard hook view index: */
     m_iKeyboardHookViewIndex = -1;
@@ -1765,27 +1716,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 
 #endif /* VBOX_WS_WIN */
 
-#if QT_VERSION >= 0x050000
-# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-                /* If private event-filter is NOT installed;
-                 * Or installed but NOT for that view: */
-                if (!m_pPrivateEventFilter || (int)uScreenId != m_iKeyboardHookViewIndex)
-                {
-                    /* If private event-filter is installed: */
-                    if (m_pPrivateEventFilter)
-                    {
-                        /* Uninstall existing private event-filter: */
-                        qApp->removeNativeEventFilter(m_pPrivateEventFilter);
-                        delete m_pPrivateEventFilter;
-                        m_pPrivateEventFilter = 0;
-                    }
-                    /* Install new private event-filter: */
-                    m_pPrivateEventFilter = new KeyboardHandlerEventFilter(this);
-                    qApp->installNativeEventFilter(m_pPrivateEventFilter);
-                }
-# endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-#endif /* QT_VERSION >= 0x050000 */
-
                 /* Update keyboard hook view index: */
                 m_iKeyboardHookViewIndex = uScreenId;
 
@@ -1834,19 +1764,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 }
 
 #endif /* VBOX_WS_WIN */
-
-#if QT_VERSION >= 0x050000
-# if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
-                /* If private event-filter is installed: */
-                if (m_pPrivateEventFilter)
-                {
-                    /* Uninstall existing private event-filter: */
-                    qApp->removeNativeEventFilter(m_pPrivateEventFilter);
-                    delete m_pPrivateEventFilter;
-                    m_pPrivateEventFilter = 0;
-                }
-# endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-#endif /* QT_VERSION >= 0x050000 */
 
                 /* Update keyboard hook view index: */
                 m_iKeyboardHookViewIndex = -1;
@@ -1944,8 +1861,7 @@ bool UIKeyboardHandler::macKeyboardEvent(const void *pvCocoaEvent, EventRef even
     return m_views[m_iKeyboardHookViewIndex]->macEvent(pvCocoaEvent, event);
 #else /* QT_VERSION >= 0x050000 */
     Q_UNUSED(event);
-    QByteArray eventType("mac_generic_NSEvent");
-    return m_views[m_iKeyboardHookViewIndex]->nativeEventPreprocessor(eventType, unconst(pvCocoaEvent));
+    return nativeEventFilter(unconst(pvCocoaEvent), m_iKeyboardHookViewIndex);
 #endif /* QT_VERSION >= 0x050000 */
 }
 
@@ -2010,8 +1926,7 @@ bool UIKeyboardHandler::winKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
     long dummyResult;
     return m_views[m_iKeyboardHookViewIndex]->winEvent(&message, &dummyResult);
 #else /* QT_VERSION >= 0x050000 */
-    QByteArray eventType("windows_generic_MSG");
-    return m_views[m_iKeyboardHookViewIndex]->nativeEventPreprocessor(eventType, &message);
+    return nativeEventFilter(&message, m_iKeyboardHookViewIndex);
 #endif /* QT_VERSION >= 0x050000 */
 }
 
