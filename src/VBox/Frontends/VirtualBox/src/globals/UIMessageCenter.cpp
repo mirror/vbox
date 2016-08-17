@@ -2248,6 +2248,15 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
                           0 /* auto-confirm id */,
                           tr("Install", "extension pack"));
 }
+
+bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
+{
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+                          tr("Do you want to delete the downloaded file <nobr><b>%1</b>.</nobr></p>")
+                             .arg(strTo),
+                          0 /* auto-confirm id */,
+                          tr("Delete", "extension pack"));
+}
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,

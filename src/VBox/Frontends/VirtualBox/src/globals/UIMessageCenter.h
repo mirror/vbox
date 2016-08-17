@@ -337,6 +337,7 @@ public:
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
     void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+    bool proposeDeleteExtentionPack(const QString &strTo) const;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
     /* API: Extension-pack warnings: */
