@@ -2849,6 +2849,9 @@ if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
   echo "export PATH_OUT_BASE" >> $ENV
 fi
 
+# don't bother people with -Werror
+cnf_append "VBOX_GCC_WERR" "\$(NO_SUCH_VARIABLE)"
+
 # some things are not available in for OSE
 if [ $OSE -ge 1 ]; then
   cnf_append "VBOX_OSE" "1"
