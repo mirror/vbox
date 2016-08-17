@@ -2238,7 +2238,7 @@ static bool convertCoffSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCIMAGE_SEC
      */
     /** @todo do we need to consider missing segments and ordering? */
     uint16_t cGrpNms = 0;
-    uint16_t aiGrpNms[2];
+    uint16_t aiGrpNms[2] = { 0, 0 }; /* Shut up, GCC. */
     if (fHaveData)
         aiGrpNms[cGrpNms++] = idxGrpData;
     for (uint32_t iGrpNm = 0; iGrpNm < cGrpNms; iGrpNm++)
@@ -3215,7 +3215,7 @@ static bool convertMachoSectionsToSegDefsAndGrpDefs(POMFWRITER pThis, PCMACHODET
      */
     /** @todo do we need to consider missing segments and ordering? */
     uint16_t cGrpNms = 0;
-    uint16_t aiGrpNms[2];
+    uint16_t aiGrpNms[2] = { 0, 0 }; /* Shut up, GCC. */
     if (fHaveData)
         aiGrpNms[cGrpNms++] = idxGrpData;
     for (uint32_t iGrpNm = 0; iGrpNm < cGrpNms; iGrpNm++)
