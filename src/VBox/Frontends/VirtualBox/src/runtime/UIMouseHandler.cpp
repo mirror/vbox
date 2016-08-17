@@ -352,10 +352,12 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 # elif defined(VBOX_WS_WIN)
 
     /* Nothing for now. */
+    RT_NOREF(pMessage, uScreenId);
 
 # elif defined(VBOX_WS_X11)
 
     /* Nothing for now. */
+    RT_NOREF(pMessage, uScreenId);
 
 # else
 
