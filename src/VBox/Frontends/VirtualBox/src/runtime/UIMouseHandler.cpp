@@ -54,6 +54,11 @@
 /* Qt includes: */
 #include <QTouchEvent>
 
+/* GUI includes: */
+#if defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
+# include "CocoaEventHelper.h"
+#endif
+
 /* COM includes: */
 #include "CMouse.h"
 
@@ -263,8 +268,9 @@ int UIMouseHandler::state() const
            (uisession()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
 
-#ifdef VBOX_WS_X11
-# if QT_VERSION < 0x050000
+#if QT_VERSION < 0x050000
+# ifdef VBOX_WS_X11
+
 bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
 {
     /* Check if some system event should be filtered-out.
@@ -292,8 +298,76 @@ bool UIMouseHandler::x11EventFilter(XEvent *pEvent, ulong /* uScreenId */)
     /* Return result: */
     return fResult;
 }
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_X11 */
+
+# endif /* VBOX_WS_X11 */
+#else /* QT_VERSION >= 0x050000 */
+
+bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
+{
+    /* Make sure view with passed index exists: */
+    if (!m_views.contains(uScreenId))
+        return false;
+
+    /* Check if some system event should be filtered out.
+     * Returning @c true means filtering-out,
+     * Returning @c false means passing event to Qt. */
+    bool fResult = false; /* Pass to Qt by default. */
+
+# if defined(VBOX_WS_MAC)
+
+    /* Acquire carbon event reference from the cocoa one: */
+    EventRef event = static_cast<EventRef>(darwinCocoaToCarbonEvent(pMessage));
+
+    /* Depending on event kind: */
+    const UInt32 uEventKind = ::GetEventKind(event);
+    switch (uEventKind)
+    {
+        /* Watch for button-events: */
+        case kEventMouseDown:
+        case kEventMouseUp:
+        {
+            /* Acquire button number: */
+            EventMouseButton enmButton = 0;
+            ::GetEventParameter(event, kEventParamMouseButton, typeMouseButton,
+                                NULL, sizeof(enmButton), NULL, &enmButton);
+            /* If the event comes for primary mouse button: */
+            if (enmButton == kEventMouseButtonPrimary)
+            {
+                /* Acquire modifiers: */
+                UInt32 uKeyModifiers = ~0U;
+                ::GetEventParameter(event, kEventParamKeyModifiers, typeUInt32,
+                                    NULL, sizeof(uKeyModifiers), NULL, &uKeyModifiers);
+                /* If the event comes with Control modifier: */
+                if (uKeyModifiers == controlKey)
+                {
+                    /* Replacing it with the stripped one: */
+                    darwinPostStrippedMouseEvent(pMessage);
+                    /* And filter out initial one: */
+                    return true;
+                }
+            }
+        }
+    }
+
+# elif defined(VBOX_WS_WIN)
+
+    /* Nothing for now. */
+
+# elif defined(VBOX_WS_X11)
+
+    /* Nothing for now. */
+
+# else
+
+#  warning "port me!"
+
+# endif
+
+    /* Return result: */
+    return fResult;
+}
+
+#endif /* QT_VERSION >= 0x050000 */
 
 /* Machine state-change handler: */
 void UIMouseHandler::sltMachineStateChanged()

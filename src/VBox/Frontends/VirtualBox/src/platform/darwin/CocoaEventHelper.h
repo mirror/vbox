@@ -35,6 +35,7 @@ unsigned long darwinEventModifierFlags(ConstNativeNSEventRef pEvent);
 uint32_t darwinEventModifierFlagsXlated(ConstNativeNSEventRef pEvent);
 const char *darwinEventTypeName(unsigned long eEvtType);
 void darwinPrintEvent(const char *pszPrefix, ConstNativeNSEventRef pEvent);
+void darwinPostStrippedMouseEvent(ConstNativeNSEventRef pEvent);
 
 RT_C_DECLS_END
 

@@ -1785,12 +1785,12 @@ bool UIMachineView::macEvent(const void *pvCocoaEvent, EventRef event)
      * Returning @c true means filtering-out,
      * Returning @c false means passing event to Qt. */
     bool fResult = false; /* Pass to Qt by default. */
-    switch(::GetEventClass(event))
+    switch (::GetEventClass(event))
     {
         /* Watch for keyboard-events: */
         case kEventClassKeyboard:
         {
-            switch(::GetEventKind(event))
+            switch (::GetEventKind(event))
             {
                 /* Watch for key-events: */
                 case kEventRawKeyDown:
@@ -1914,12 +1914,12 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
         return false;
     EventRef event = static_cast<EventRef>(darwinCocoaToCarbonEvent(pMessage));
 
-    switch(::GetEventClass(event))
+    switch (::GetEventClass(event))
     {
         /* Watch for keyboard-events: */
         case kEventClassKeyboard:
         {
-            switch(::GetEventKind(event))
+            switch (::GetEventKind(event))
             {
                 /* Watch for key-events: */
                 case kEventRawKeyDown:
@@ -1929,6 +1929,23 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
                 {
                     /* Delegate key-event handling to the keyboard-handler: */
                     return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        /* Watch for mouse-events: */
+        case kEventClassMouse:
+        {
+            switch (::GetEventKind(event))
+            {
+                /* Watch for button-events: */
+                case kEventMouseDown:
+                case kEventMouseUp:
+                {
+                    /* Delegate button-event handling to the mouse-handler: */
+                    return machineLogic()->mouseHandler()->nativeEventFilter(pMessage, screenId());
                 }
                 default:
                     break;
