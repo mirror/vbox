@@ -55,9 +55,9 @@ NSString *m_strVBoxPath;
        event. If not we start a new process with the file as parameter. */
     NSArray *pApps = [pWS runningApplications];
     bool fVBoxRuns = false;
-    for (NSDictionary *pDict in pApps)
+    for (NSRunningApplication *pApp in pApps)
     {
-        if ([[pDict valueForKey:@"NSApplicationBundleIdentifier"] isEqualToString:@"org.virtualbox.app.VirtualBox"])
+        if ([pApp.bundleIdentifier isEqualToString:@"org.virtualbox.app.VirtualBox"])
         {
             fVBoxRuns = true;
             break;
