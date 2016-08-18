@@ -113,11 +113,9 @@ typedef struct DRVHOSTSERIAL
     RTPIPE                      hWakeupPipeR;
     /** The write end of the control pipe */
     RTPIPE                      hWakeupPipeW;
-# ifndef RT_OS_LINUX
     /** The current line status.
      * Used by the polling version of drvHostSerialMonitorThread.  */
     int                         fStatusLines;
-# endif
 #elif defined(RT_OS_WINDOWS)
     /** the device handle */
     HANDLE                      hDeviceFile;
@@ -894,8 +892,10 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
 static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-    int rc = VINF_SUCCESS;
     unsigned long const uStatusLinesToCheck = TIOCM_CAR | TIOCM_RNG | TIOCM_DSR | TIOCM_CTS;
+#ifdef RT_OS_LINUX
+    bool fPoll = false;
+#endif
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
@@ -907,8 +907,8 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
         /*
          * Get the status line state.
          */
-        rc = ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &statusLines);
-        if (rc < 0)
+        int rcPsx = ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &statusLines);
+        if (rcPsx < 0)
         {
             PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
                                        N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
@@ -939,16 +939,37 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
          * waiting in ioctl for a modem status change then 8250.c wrongly disables
          * modem irqs and so the monitor thread never gets released. The workaround
          * is to send a signal after each tcsetattr.
+         *
+         * TIOCMIWAIT doesn't work for the DSR line with TIOCM_DSR set
+         * (see http://lxr.linux.no/#linux+v4.7/drivers/usb/class/cdc-acm.c#L949)
+         * However as it is possible to query the line state we will not just clear
+         * the TIOCM_DSR bit from the lines to check but resort to the polling
+         * approach just like on other hosts.
          */
-        ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMIWAIT, uStatusLinesToCheck);
+        if (!fPoll)
+        {
+            rcPsx = ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMIWAIT, uStatusLinesToCheck);
+            if (rcPsx < 0)
+            {
+                LogRel(("Serial#%u: Failed to wait for status line change, switch to polling\n", pDrvIns->iInstance));
+                fPoll = true;
+                pThis->fStatusLines = statusLines;
+            }
+        }
+        else
+        {
+            /* Poll for status line change. */
+            if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
+                PDMR3ThreadSleep(pThread, 500); /* 0.5 sec */
+            pThis->fStatusLines = statusLines;
+        }
 # else
         /* Poll for status line change. */
         if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
             PDMR3ThreadSleep(pThread, 500); /* 0.5 sec */
         pThis->fStatusLines = statusLines;
 # endif
-    }
-    while (PDMTHREADSTATE_RUNNING == pThread->enmState);
+    } while (PDMTHREADSTATE_RUNNING == pThread->enmState);
 
     return VINF_SUCCESS;
 }
