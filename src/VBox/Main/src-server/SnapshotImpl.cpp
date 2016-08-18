@@ -1299,9 +1299,10 @@ HRESULT SnapshotMachine::i_onSnapshotChange(Snapshot *aSnapshot)
  * Still abstract base class for SessionMachine::TakeSnapshotTask,
  * SessionMachine::RestoreSnapshotTask and SessionMachine::DeleteSnapshotTask.
  */
-struct SessionMachine::SnapshotTask
+class SessionMachine::SnapshotTask
     : public SessionMachine::Task
 {
+public:
     SnapshotTask(SessionMachine *m,
                  Progress *p,
                  const Utf8Str &t,
@@ -1314,9 +1315,10 @@ struct SessionMachine::SnapshotTask
 };
 
 /** Take snapshot task */
-struct SessionMachine::TakeSnapshotTask
+class SessionMachine::TakeSnapshotTask
     : public SessionMachine::SnapshotTask
 {
+public:
     TakeSnapshotTask(SessionMachine *m,
                      Progress *p,
                      const Utf8Str &t,
@@ -1343,9 +1345,17 @@ struct SessionMachine::TakeSnapshotTask
             m_fPause = false;
     }
 
+private:
     void handler()
     {
-        ((SessionMachine *)(Machine *)m_pMachine)->i_takeSnapshotHandler(*this);
+        try
+        {
+            ((SessionMachine *)(Machine *)m_pMachine)->i_takeSnapshotHandler(*this);
+        }
+        catch(...)
+        {
+            LogRel(("Some exception in the function i_takeSnapshotHandler()\n"));
+        }
     }
 
     Utf8Str m_strName;
@@ -1356,12 +1366,17 @@ struct SessionMachine::TakeSnapshotTask
     bool m_fPause;
     uint32_t m_uMemSize;
     bool m_fTakingSnapshotOnline;
+
+    friend HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWriteLock &alock, bool aSuccess);
+    friend void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task);
+    friend void SessionMachine::i_takeSnapshotProgressCancelCallback(void *pvUser);
 };
 
 /** Restore snapshot task */
-struct SessionMachine::RestoreSnapshotTask
+class SessionMachine::RestoreSnapshotTask
     : public SessionMachine::SnapshotTask
 {
+public:
     RestoreSnapshotTask(SessionMachine *m,
                         Progress *p,
                         const Utf8Str &t,
@@ -1369,16 +1384,25 @@ struct SessionMachine::RestoreSnapshotTask
         : SnapshotTask(m, p, t, s)
     {}
 
+private:
     void handler()
     {
-        ((SessionMachine *)(Machine *)m_pMachine)->i_restoreSnapshotHandler(*this);
+        try
+        {
+            ((SessionMachine *)(Machine *)m_pMachine)->i_restoreSnapshotHandler(*this);
+        }
+        catch(...)
+        {
+            LogRel(("Some exception in the function i_restoreSnapshotHandler()\n"));
+        }
     }
 };
 
 /** Delete snapshot task */
-struct SessionMachine::DeleteSnapshotTask
+class SessionMachine::DeleteSnapshotTask
     : public SessionMachine::SnapshotTask
 {
+public:
     DeleteSnapshotTask(SessionMachine *m,
                        Progress *p,
                        const Utf8Str &t,
@@ -1388,12 +1412,21 @@ struct SessionMachine::DeleteSnapshotTask
           m_fDeleteOnline(fDeleteOnline)
     {}
 
+private:
     void handler()
     {
-        ((SessionMachine *)(Machine *)m_pMachine)->i_deleteSnapshotHandler(*this);
+        try
+        {
+            ((SessionMachine *)(Machine *)m_pMachine)->i_deleteSnapshotHandler(*this);
+        }
+        catch(...)
+        {
+            LogRel(("Some exception in the function i_deleteSnapshotHandler()\n"));
+        }
     }
 
     bool m_fDeleteOnline;
+    friend void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task);
 };
 
 

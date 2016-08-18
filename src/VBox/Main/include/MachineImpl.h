@@ -38,6 +38,7 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "Performance.h"
 #include "PerformanceImpl.h"
+#include "ThreadTask.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 // generated header
@@ -789,53 +790,31 @@ protected:
      * the static Machine::taskHandler, which then calls the handler() method
      * in here (implemented by the subclasses).
      */
-    struct Task
+    class Task : public ThreadTask
     {
+    public:
         Task(Machine *m, Progress *p, const Utf8Str &t)
-            : m_pMachine(m),
+            : ThreadTask(t),
+              m_pMachine(m),
               m_machineCaller(m),
               m_pProgress(p),
-              m_strTaskName(t),
               m_machineStateBackup(m->mData->mMachineState) // save the current machine state
         {}
         virtual ~Task(){}
-
-        HRESULT createThread()
-        {
-            int vrc = RTThreadCreate(NULL,
-                                     taskHandler,
-                                     (void *)this,
-                                     0,
-                                     RTTHREADTYPE_MAIN_WORKER,
-                                     0,
-                                     m_strTaskName.c_str());
-            if (RT_FAILURE(vrc))
-            {
-                HRESULT rc = Machine::i_setErrorStatic(E_FAIL, Machine::tr("Could not create thread \"%s\" (%Rrc)"), m_strTaskName.c_str(), vrc);
-                delete this;
-                return rc;
-            }
-            return S_OK;
-        }
 
         void modifyBackedUpState(MachineState_T s)
         {
             *const_cast<MachineState_T *>(&m_machineStateBackup) = s;
         }
 
-        virtual void handler() = 0;
-
-        ComObjPtr<Machine>       m_pMachine;
+        ComObjPtr<Machine>              m_pMachine;
         AutoCaller                      m_machineCaller;
         ComObjPtr<Progress>             m_pProgress;
-        Utf8Str                         m_strTaskName;
         const MachineState_T            m_machineStateBackup;
     };
 
-    struct DeleteConfigTask;
+    class DeleteConfigTask;
     void i_deleteConfigHandler(DeleteConfigTask &task);
-
-    static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 
     friend class SessionMachine;
     friend class SnapshotMachine;
@@ -1436,15 +1415,11 @@ private:
         void *mDeleteSnapshotInfo;
     };
 
-    struct SaveStateTask;
-    struct SnapshotTask;
-    struct TakeSnapshotTask;
-    struct DeleteSnapshotTask;
-    struct RestoreSnapshotTask;
-
-    friend struct TakeSnapshotTask;
-    friend struct DeleteSnapshotTask;
-    friend struct RestoreSnapshotTask;
+    class SaveStateTask;
+    class SnapshotTask;
+    class TakeSnapshotTask;
+    class DeleteSnapshotTask;
+    class RestoreSnapshotTask;
 
     void i_saveStateHandler(SaveStateTask &aTask);
 

@@ -80,9 +80,9 @@
 
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
-# include "ThreadTask.h"
-# include "tchar.h"
 #endif
+
+#include "ThreadTask.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -3964,13 +3964,41 @@ void VirtualBox::i_rememberMachineNameChangeForMedia(const Utf8Str &strOldConfig
     m->llPendingMachineRenames.push_back(pmr);
 }
 
-struct SaveMediaRegistriesDesc
+static DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser);
+
+class SaveMediaRegistriesDesc : public ThreadTask
 {
+
+public:
+    SaveMediaRegistriesDesc()
+    {
+        m_strTaskName = "SaveMediaReg";
+    }
+    virtual ~SaveMediaRegistriesDesc(void) { }
+
+private:
+    void handler()
+    {
+        try
+        {
+            fntSaveMediaRegistries(m_hThread, this);
+        }
+        catch(...)
+        {
+            LogRel(("Exception in the function fntSaveMediaRegistries()\n"));
+        }
+    }
+
     MediaList llMedia;
     ComObjPtr<VirtualBox> pVirtualBox;
+
+    friend DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser);
+    friend void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
+                                                const Guid &uuidRegistry,
+                                                const Utf8Str &strMachineFolder);
 };
 
-static DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
 {
     NOREF(ThreadSelf);
     SaveMediaRegistriesDesc *pDesc = (SaveMediaRegistriesDesc *)pvUser;
@@ -3992,7 +4020,6 @@ static DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUse
 
     pDesc->llMedia.clear();
     pDesc->pVirtualBox.setNull();
-    delete pDesc;
 
     return VINF_SUCCESS;
 }
@@ -4082,20 +4109,24 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
             // levels up to whoever triggered saveSettings, as there are
             // lots of places which would need to handle saving more settings.
             pDesc->pVirtualBox = this;
-            int vrc = RTThreadCreate(NULL,
-                                     fntSaveMediaRegistries,
-                                     (void *)pDesc,
-                                     0,     // cbStack (default)
-                                     RTTHREADTYPE_MAIN_WORKER,
-                                     0,     // flags
-                                     "SaveMediaReg");
-            ComAssertRC(vrc);
-            // failure means that settings aren't saved, but there isn't
-            // much we can do besides avoiding memory leaks
-            if (RT_FAILURE(vrc))
+            HRESULT hr = S_OK;
+            try
             {
-                LogRelFunc(("Failed to create thread for saving media registries (%Rrc)\n", vrc));
-                delete pDesc;
+                //the function createThread() takes ownership of pDesc
+                //so there is no need to use delete operator for pDesc
+                //after calling this function
+                hr = pDesc->createThread();
+            }
+            catch(...)
+            {
+                hr = E_FAIL;
+            }
+
+            if (FAILED(hr))
+            {
+                // failure means that settings aren't saved, but there isn't
+                // much we can do besides avoiding memory leaks
+                LogRelFunc(("Failed to create thread for saving media registries (%Rhr)\n", hr));
             }
         }
         else

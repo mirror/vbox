@@ -5255,9 +5255,10 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
 /**
  * Task record for deleting a machine config.
  */
-struct Machine::DeleteConfigTask
+class Machine::DeleteConfigTask
     : public Machine::Task
 {
+public:
     DeleteConfigTask(Machine *m,
                      Progress *p,
                      const Utf8Str &t,
@@ -5268,13 +5269,23 @@ struct Machine::DeleteConfigTask
           m_llFilesToDelete(llFilesToDelete)
     {}
 
+private:
     void handler()
     {
-        m_pMachine->i_deleteConfigHandler(*this);
+        try
+        {
+            m_pMachine->i_deleteConfigHandler(*this);
+        }
+        catch(...)
+        {
+            LogRel(("Some exception in the function Machine::i_deleteConfigHandler()\n"));
+        }
     }
 
     RTCList<ComPtr<IMedium> >   m_llMediums;
     StringsList                 m_llFilesToDelete;
+
+    friend void Machine::i_deleteConfigHandler(DeleteConfigTask &task);
 };
 
 /**
@@ -12845,9 +12856,10 @@ HRESULT SessionMachine::reportVmStatistics(ULONG aValidStats, ULONG aCpuUser,
 /**
  * Task record for saving the machine state.
  */
-struct SessionMachine::SaveStateTask
+class SessionMachine::SaveStateTask
     : public Machine::Task
 {
+public:
     SaveStateTask(SessionMachine *m,
                   Progress *p,
                   const Utf8Str &t,
@@ -12858,6 +12870,7 @@ struct SessionMachine::SaveStateTask
           m_strStateFilePath(strStateFilePath)
     {}
 
+private:
     void handler()
     {
         ((SessionMachine *)(Machine *)m_pMachine)->i_saveStateHandler(*this);
@@ -12865,6 +12878,8 @@ struct SessionMachine::SaveStateTask
 
     Reason_T m_enmReason;
     Utf8Str m_strStateFilePath;
+
+    friend class SessionMachine;
 };
 
 /**
@@ -14777,24 +14792,6 @@ HRESULT SessionMachine::i_updateMachineStateOnClient()
     return directControl->UpdateMachineState(mData->mMachineState);
 }
 
-
-/**
- * Static Machine method that can get passed to RTThreadCreate to
- * have a thread started for a Task. See Machine::Task.
- */
-/* static */ DECLCALLBACK(int) Machine::taskHandler(RTTHREAD /* thread */, void *pvUser)
-{
-    AssertReturn(pvUser, VERR_INVALID_POINTER);
-
-    Task *pTask = static_cast<Task *>(pvUser);
-    pTask->handler();
-    /** @todo r=klaus it would be safer to update the progress object here,
-     * as it avoids possible races due to scoping issues/tricks in the handler */
-    // it's our responsibility to delete the task
-    delete pTask;
-
-    return 0;
-}
 
 /*static*/
 HRESULT Machine::i_setErrorStatic(HRESULT aResultCode, const char *pcszMsg, ...)
