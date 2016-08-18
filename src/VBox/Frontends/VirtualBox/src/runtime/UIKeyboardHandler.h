@@ -79,8 +79,14 @@ public:
     bool checkForX11FocusEvents(unsigned long hWindow);
 # endif /* QT_VERSION < 0x050000 */
 #endif /* VBOX_WS_X11 */
+
+    /** Captures the keyboard for @a uScreenId. */
     void captureKeyboard(ulong uScreenId);
+    /** Finalises keyboard capturing. */
+    void finaliseCaptureKeyboard();
+    /** Releases the keyboard. */
     void releaseKeyboard();
+
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
 
     /* Current keyboard state: */
@@ -195,10 +201,6 @@ protected:
 
     /* Other keyboard variables: */
     int m_iKeyboardCaptureViewIndex;
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-    /* Holds the index of the screen to capture keyboard when ready. */
-    int m_idxDelayedKeyboardCaptureView;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
     const VBoxGlobalSettings &m_globalSettings;
 
     uint8_t m_pressedKeys[128];
