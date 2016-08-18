@@ -1705,13 +1705,68 @@ HRESULT Medium::getDescription(com::Utf8Str &aDescription)
 
 HRESULT Medium::setDescription(const com::Utf8Str &aDescription)
 {
-//     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /// @todo update m->description and save the global registry (and local
+    /// @todo update m->strDescription and save the global registry (and local
     /// registries of portable VMs referring to this medium), this will also
     /// require to add the mRegistered flag to data
-    NOREF(aDescription);
-    ReturnComNotImplemented();
+
+    HRESULT rc = S_OK;
+
+    MediumLockList *pMediumLockList(new MediumLockList());
+
+    try
+    {
+        // locking: we need the tree lock first because we access parent pointers
+        // and we need to write-lock the media involved
+        uint32_t    cHandles    = 2;
+        LockHandle* pHandles[2] = { &m->pVirtualBox->i_getMediaTreeLockHandle(),
+                                    this->lockHandle() };
+
+        AutoWriteLock alock(cHandles,
+                            pHandles
+                            COMMA_LOCKVAL_SRC_POS);
+
+        /* Build the lock list. */
+        alock.release();
+        rc = i_createMediumLockList(true /* fFailIfInaccessible */,
+                                    this /* pToLockWrite */,
+                                    true /* fMediumLockWriteAll */,
+                                    NULL,
+                                    *pMediumLockList);
+        alock.acquire();
+
+        if (FAILED(rc))
+        {
+            throw setError(rc,
+                           tr("Failed to create medium lock list for '%s'"),
+                           i_getLocationFull().c_str());
+        }
+
+        alock.release();
+        rc = pMediumLockList->Lock();
+        alock.acquire();
+
+        if (FAILED(rc))
+        {
+            throw setError(rc,
+                           tr("Failed to lock media '%s'"),
+                           i_getLocationFull().c_str());
+        }
+
+        /* Set a new description */
+        if (SUCCEEDED(rc))
+        {
+            m->strDescription = aDescription;
+        }
+
+        // save the settings
+        i_markRegistriesModified();
+        m->pVirtualBox->i_saveModifiedRegistries();
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    delete pMediumLockList;
+
+    return rc;
 }
 
 HRESULT Medium::getState(MediumState_T *aState)
