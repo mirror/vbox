@@ -479,7 +479,8 @@ static const RTGETOPTDEF g_aModifyMediumOptions[] =
     { "compact",        'c', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--resize",       'r', RTGETOPT_REQ_UINT64 },
     { "--resizebyte",   'R', RTGETOPT_REQ_UINT64 },
-    { "--move",         'm', RTGETOPT_REQ_STRING }
+    { "--move",         'm', RTGETOPT_REQ_STRING },
+    { "--description",  'd', RTGETOPT_REQ_STRING }
 };
 
 RTEXITCODE handleModifyMedium(HandlerArg *a)
@@ -503,6 +504,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     bool fModifyCompact = false;
     bool fModifyResize = false;
     bool fModifyLocation = false;
+    bool fModifyDescription = false;
     uint64_t cbResize = 0;
     const char *pszFilenameOrUuid = NULL;
     const char *pszNewLocation = NULL;
@@ -601,6 +603,12 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                 fModifyLocation = true;
                 break;
 
+            case 'd':   // --description
+                /* Get a new description  */
+                pszNewLocation = RTStrDup(ValueUnion.psz);
+                fModifyDescription = true;
+                break;
+
             case VINF_GETOPT_NOT_OPTION:
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
@@ -631,7 +639,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     if (!pszFilenameOrUuid)
         return errorSyntax(USAGE_MODIFYMEDIUM, "Medium name or UUID required");
 
-    if (!fModifyMediumType && !fModifyAutoReset && !fModifyProperties && !fModifyCompact && !fModifyResize && !fModifyLocation)
+    if (!fModifyMediumType 
+        && !fModifyAutoReset 
+        && !fModifyProperties 
+        && !fModifyCompact 
+        && !fModifyResize 
+        && !fModifyLocation
+        && !fModifyDescription)
         return errorSyntax(USAGE_MODIFYMEDIUM, "No operation specified");
 
     /* Always open the medium if necessary, there is no other way. */
@@ -734,6 +748,13 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
             RTPrintf("Move medium with UUID %s finished \n", Utf8Str(uuid).c_str());
         }
         while (0);
+    }
+
+    if (fModifyDescription)
+    {
+        CHECK_ERROR(pMedium, COMSETTER(Description)(Bstr(pszNewLocation).raw()));
+
+        RTPrintf("Medium description has been changed. \n");
     }
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
