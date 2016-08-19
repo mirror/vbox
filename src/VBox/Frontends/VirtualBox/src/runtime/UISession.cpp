@@ -285,6 +285,8 @@ bool UISession::powerUp()
         LogRel(("GUI: Aborting startup due to power up issue detected...\n"));
         return false;
     }
+    
+    LogRel(("Qt version: %s\n", VBoxGlobal::qtRTVersionString().toUtf8().constData()));
 
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing
