@@ -533,7 +533,9 @@ typedef enum PDMAUDIOFILETYPE
     /** Unknown type, do not use. */
     PDMAUDIOFILETYPE_UNKNOWN = 0,
     /** Wave (.WAV) file. */
-    PDMAUDIOFILETYPE_WAV
+    PDMAUDIOFILETYPE_WAV,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOFILETYPE_32BIT_HACK = 0x7fffffff
 } PDMAUDIOFILETYPE;
 
 /**
@@ -699,7 +701,9 @@ typedef enum PDMAUDIOCALLBACKTYPE
 {
     PDMAUDIOCALLBACKTYPE_GENERIC = 0,
     PDMAUDIOCALLBACKTYPE_INPUT,
-    PDMAUDIOCALLBACKTYPE_OUTPUT
+    PDMAUDIOCALLBACKTYPE_OUTPUT,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOCALLBACKTYPE_32BIT_HACK = 0x7fffffff
 } PDMAUDIOCALLBACKTYPE;
 
 /**
