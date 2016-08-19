@@ -570,6 +570,7 @@ static void clipConvertX11Targets(Widget widget, XtPointer pClientData,
         pFormats = (CLIPX11FORMAT *)RTMemAllocZ(*pcLen * sizeof(CLIPX11FORMAT));
 #if defined(DEBUG) && !defined(TESTCASE)
     if (pValue)
+    {
         for (i = 0; i < *pcLen; ++i)
             if (pAtoms[i])
             {
@@ -580,6 +581,7 @@ static void clipConvertX11Targets(Widget widget, XtPointer pClientData,
             }
             else
                 LogRel2(("%s: found empty target.\n", __FUNCTION__));
+    }
 #endif
     if (pFormats)
     {
