@@ -452,10 +452,7 @@ void vbe_biosfn_return_mode_information(uint16_t STACK_BASED *AX, uint16_t CX, u
         }
         // Update the LFB physical address which may change at runtime
         out_w(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_FB_BASE_HI);
-        if (using_lfb)
-            write_word(ES, DI + offsetof(ModeInfoBlock, PhysBasePtr) + 2, in_w(VBE_DISPI_IOPORT_DATA));
-        else
-            write_word(ES, DI + offsetof(ModeInfoBlock, PhysBasePtr) + 2, 0);
+        write_word(ES, DI + offsetof(ModeInfoBlock, PhysBasePtr) + 2, in_w(VBE_DISPI_IOPORT_DATA));
 
         result = 0x4f;
     } else {
