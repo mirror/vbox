@@ -15227,7 +15227,7 @@ Verze %1</translation>
     <message>
         <source>Running</source>
         <comment>MachineState</comment>
-        <translation>Beží</translation>
+        <translation>Běží</translation>
     </message>
     <message>
         <source>Paused</source>
