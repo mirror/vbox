@@ -1319,12 +1319,21 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     /* Linux & darwin needs a separate thread which monitors the status lines. */
-# ifndef RT_OS_LINUX
-    ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &pThis->fStatusLines);
-# endif
-    rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
-    if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
+    int rcPsx = ioctl(RTFileToNative(pThis->hDeviceFile), TIOCMGET, &pThis->fStatusLines);
+    if (!rcPsx)
+    {
+        rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pMonitorThread, pThis, drvHostSerialMonitorThread, drvHostSerialWakeupMonitorThread, 0, RTTHREADTYPE_IO, "SerMon");
+        if (RT_FAILURE(rc))
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostSerial#%d cannot create monitor thread"), pDrvIns->iInstance);
+    }
+    else
+    {
+        /* TIOCMGET is not supported for pseudo terminals so just silently skip it. */
+        if (errno != ENOTTY)
+            PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
+                                       N_("Trying to get the status lines state failed for serial host device '%s' (%Rrc). The device will not work properly"),
+                                       pThis->pszDevicePath, RTErrConvertFromErrno(errno));
+    }
 #endif
 
     /*
