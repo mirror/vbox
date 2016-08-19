@@ -82,8 +82,8 @@ public:
 
     /** Captures the keyboard for @a uScreenId. */
     void captureKeyboard(ulong uScreenId);
-    /** Finalises keyboard capturing. */
-    void finaliseCaptureKeyboard();
+    /** Finalises keyboard capture. */
+    bool finaliseCaptureKeyboard();
     /** Releases the keyboard. */
     void releaseKeyboard();
 
@@ -131,6 +131,11 @@ protected slots:
 
     /* Machine state-change handler: */
     virtual void sltMachineStateChanged();
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    /** Finalises keyboard capture. */
+    void sltFinaliseCaptureKeyboard();
+#endif
 
 protected:
 

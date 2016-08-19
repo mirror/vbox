@@ -38,7 +38,10 @@
 # include <QKeyEvent>
 # ifdef VBOX_WS_X11
 #  include <QX11Info>
-# endif /* VBOX_WS_X11 */
+#  if QT_VERSION >= 0x050000
+#   include <QTimer>
+#  endif
+# endif
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -254,7 +257,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         return;
     }
 
-    /* If such view exists: */
+    /* If the view exists: */
     if (m_views.contains(uScreenId))
     {
 #if defined(VBOX_WS_MAC)
@@ -325,7 +328,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 # else /* QT_VERSION >= 0x050000 */
 
         /* On X11, we do not grab the keyboard as soon as it is captured, but delay it
-         * until the first keypress after the capture. We do this for several reasons:
+         * for 300 milliseconds after the formal capture. We do this for several reasons:
          * - First, when several windows are created they all try to capture the keyboard when
          *   they get the focus. Due to the asynchronous nature of X11 the first window may only
          *   gets notified after the last is created, and there is a dance if they respond to
@@ -333,6 +336,9 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          * - Second, grabbing the keyboard immediately on focus change upsets some window managers,
          *   they give us the focus then try to grab the keyboard themselves, and sulk if they fail
          *   by refusing to e.g. drag a window using its title bar. */
+
+        /* Delay finalising capture for 300 milliseconds: */
+        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
 
 # endif /* QT_VERSION >= 0x050000 */
 #else
@@ -342,27 +348,27 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 
 #endif
 
-        /* Remember which screen wish to capture the keyboard: */
+        /* Remember which screen wishes to capture the keyboard: */
         m_iKeyboardCaptureViewIndex = uScreenId;
 
 #if !defined(VBOX_WS_X11) || QT_VERSION < 0x050000
-        /* Finalising keyboard capture: */
+        /* Finalise keyboard capture: */
         finaliseCaptureKeyboard();
 #endif
     }
 }
 
-void UIKeyboardHandler::finaliseCaptureKeyboard()
+bool UIKeyboardHandler::finaliseCaptureKeyboard()
 {
     /* Do NOT capture the keyboard if it is already captured: */
     if (m_fIsKeyboardCaptured)
-        return;
+        return true;
 
     /* Make sure capture was really requested: */
     if (m_iKeyboardCaptureViewIndex == -1)
-        return;
+        return true;
 
-    /* If such view exists: */
+    /* If the view exists: */
     if (m_views.contains(m_iKeyboardCaptureViewIndex))
     {
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
@@ -385,7 +391,7 @@ void UIKeyboardHandler::finaliseCaptureKeyboard()
         {
             /* Try again later: */
             free(pGrabReply);
-            return;
+            return false;
         }
         free(pGrabReply);
 
@@ -396,7 +402,11 @@ void UIKeyboardHandler::finaliseCaptureKeyboard()
 
         /* Notify all the listeners: */
         emit sigStateChange(state());
+
+        return true;
     }
+
+    return false;
 }
 
 void UIKeyboardHandler::releaseKeyboard()
@@ -409,7 +419,7 @@ void UIKeyboardHandler::releaseKeyboard()
         return;
     }
 
-    /* If such view exists: */
+    /* If the view exists: */
     if (m_views.contains(m_iKeyboardCaptureViewIndex))
     {
 #if defined(VBOX_WS_MAC)
@@ -1355,10 +1365,6 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
         case XCB_KEY_PRESS:
         case XCB_KEY_RELEASE:
         {
-            /* If we were asked to grab the keyboard previously but had to delay it
-             * then try again on every key press and release event until we manage: */
-            finaliseCaptureKeyboard();
-
             /* Cast to XCB key-event: */
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
 
@@ -1538,6 +1544,18 @@ void UIKeyboardHandler::sltMachineStateChanged()
         state != KMachineState_TeleportingPausedVM)
         popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
 }
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+void UIKeyboardHandler::sltFinaliseCaptureKeyboard()
+{
+    /* Try to finalise keyboard capture: */
+    if (!finaliseCaptureKeyboard())
+    {
+        /* Try again in another 300 milliseconds in case of failure: */
+        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
+    }
+}
+#endif
 
 /* Keyboard-handler constructor: */
 UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
@@ -2101,7 +2119,6 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                     else
                     {
                         captureKeyboard(uScreenId);
-                        finaliseCaptureKeyboard();
 #ifdef VBOX_WS_X11
                         /* Make sure that pending FocusOut events from the
                          * previous message box are handled, otherwise the
@@ -2109,6 +2126,7 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                         /// @todo Is that really needed?
                         qApp->processEvents();
 #endif /* VBOX_WS_X11 */
+                        finaliseCaptureKeyboard();
                         if (fCaptureMouse)
                         {
                             const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
