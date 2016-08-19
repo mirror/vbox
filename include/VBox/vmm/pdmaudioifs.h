@@ -599,7 +599,9 @@ typedef enum PDMAUDIOBACKENDSTS
     PDMAUDIOBACKENDSTS_RUNNING,
     /** The backend ran into an error and is unable to recover.
      *  A manual re-initialization might help. */
-    PDMAUDIOBACKENDSTS_ERROR
+    PDMAUDIOBACKENDSTS_ERROR,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOBACKENDSTS_32BIT_HACK = 0x7fffffff
 } PDMAUDIOBACKENDSTS;
 
 /**
@@ -612,7 +614,9 @@ typedef enum PDMAUDIOSTREAMCTX
     /** Host stream, connected to a backend. */
     PDMAUDIOSTREAMCTX_HOST,
     /** Guest stream, connected to the device emulation. */
-    PDMAUDIOSTREAMCTX_GUEST
+    PDMAUDIOSTREAMCTX_GUEST,
+    /** Hack to blow the type up to 32-bit. */
+    PDMAUDIOSTREAMCTX_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCTX;
 
 /**
