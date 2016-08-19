@@ -43,7 +43,7 @@ public:
     HRESULT createThreadWithType(RTTHREADTYPE enmType);
     HRESULT createThreadWithRaceCondition(PRTTHREAD pThread);
 
-    virtual void handler() = 0;
+
     inline Utf8Str getTaskName() const { return m_strTaskName; }
 
 protected:
@@ -56,6 +56,9 @@ protected:
     /** The worker thread handle (may be invalid if the thread has shut down). */
     RTTHREAD m_hThread;
     Utf8Str m_strTaskName;
+
+private:
+    virtual void handler() = 0;
 };
 
 #endif
