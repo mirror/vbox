@@ -571,7 +571,7 @@ GLOBALNAME IDEnterTarget
 
     ; 2. Deactivate long mode by turning off paging.
     mov     ebx, cr0
-    and     ebx, ~X86_CR0_PG
+    and     ebx, (~X86_CR0_PG) & 0xffffffff ; prevent yasm warning
     mov     cr0, ebx
     DEBUG_CHAR('4')
 
@@ -924,7 +924,7 @@ GLOBALNAME IDExitTarget
 
     ; 1. Disable paging.
     mov     ebx, cr0
-    and     ebx, ~X86_CR0_PG
+    and     ebx, (~X86_CR0_PG) & 0xffffffff ; prevent yasm warning
     mov     cr0, ebx
     DEBUG_CHAR('2')
 
