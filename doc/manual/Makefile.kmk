@@ -993,4 +993,3 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h.ts \
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
-
