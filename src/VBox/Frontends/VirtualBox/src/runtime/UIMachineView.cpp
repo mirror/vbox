@@ -2011,10 +2011,16 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
         /* Watch for key-events: */
         case XCB_KEY_PRESS:
         case XCB_KEY_RELEASE:
-        case XCB_BUTTON_PRESS: // TODO: Move to mouse-filter case!
         {
             /* Delegate key-event handling to the keyboard-handler: */
             return machineLogic()->keyboardHandler()->nativeEventFilter(pMessage, screenId());
+        }
+        /* Watch for button-events: */
+        case XCB_BUTTON_PRESS:
+        case XCB_BUTTON_RELEASE:
+        {
+            /* Delegate button-event handling to the mouse-handler: */
+            return machineLogic()->mouseHandler()->nativeEventFilter(pMessage, screenId());
         }
         default:
             break;

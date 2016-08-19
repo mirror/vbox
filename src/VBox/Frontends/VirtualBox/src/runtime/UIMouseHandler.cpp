@@ -22,6 +22,9 @@
 /* Qt includes: */
 # include <QMouseEvent>
 # include <QTimer>
+# if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#  include <QX11Info>
+# endif
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -70,8 +73,10 @@
 const int XFocusOut = FocusOut;
 #   undef FocusOut
 #  endif /* FocusOut */
-# endif /* QT_VERSION < 0x050000 */
-#endif /* VBOX_WS_X11 */
+# else
+#  include <xcb/xcb.h>
+# endif
+#endif
 
 
 /* Factory function to create mouse-handler: */
@@ -356,8 +361,52 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
 
 # elif defined(VBOX_WS_X11)
 
-    /* Nothing for now. */
-    RT_NOREF(pMessage, uScreenId);
+    /* Cast to XCB event: */
+    xcb_generic_event_t *pEvent = static_cast<xcb_generic_event_t*>(pMessage);
+
+    /* Depending on event type: */
+    switch (pEvent->response_type & ~0x80)
+    {
+        /* Watch for button-events: */
+        case XCB_BUTTON_PRESS:
+        {
+            /* Do nothing if mouse is actively grabbed: */
+            if (uisession()->isMouseCaptured())
+                break;
+
+            /* If we see a mouse press outside of our views while the mouse is not
+             * captured, release the keyboard before letting the event owner see it.
+             * This is because some owners cannot deal with failures to grab the
+             * keyboard themselves (e.g. window managers dragging windows).
+             * Only works if we have passively grabbed the mouse button. */
+
+            /* Cast to XCB button-event: */
+            xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
+
+            /* Detect the widget which should receive the event actually: */
+            const QWidget *pWidget = qApp->widgetAt(pButtonEvent->root_x, pButtonEvent->root_y);
+            if (pWidget)
+            {
+                /* Redirect the event to corresponding widget: */
+                const QPoint pos = pWidget->mapFromGlobal(QPoint(pButtonEvent->root_x, pButtonEvent->root_y));
+                pButtonEvent->event = pWidget->effectiveWinId();
+                pButtonEvent->event_x = pos.x();
+                pButtonEvent->event_y = pos.y();
+                xcb_ungrab_pointer_checked(QX11Info::connection(), pButtonEvent->time);
+                break;
+            }
+            /* Else if the event happened outside of our view areas then release the keyboard,
+             * but capture it again (delayed) immediately. If the event causes us to loose the
+             * focus then the delayed capture will not happen: */
+            machineLogic()->keyboardHandler()->releaseKeyboard();
+            machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
+            /* And re-send the event so that the window which it was meant for actually gets it: */
+            xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
+            break;
+        }
+        default:
+            break;
+    }
 
 # else
 
