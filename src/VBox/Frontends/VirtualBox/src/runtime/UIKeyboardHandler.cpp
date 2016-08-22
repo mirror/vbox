@@ -38,9 +38,9 @@
 # include <QKeyEvent>
 # ifdef VBOX_WS_X11
 #  include <QX11Info>
-#  if QT_VERSION >= 0x050000
+# endif
+# if !defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
 #   include <QTimer>
-#  endif
 # endif
 
 /* GUI includes: */
@@ -280,7 +280,15 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* On Win, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
-         * S.a. UIKeyboardHandler::eventFilter for more information. */
+         * S.a. UIKeyboardHandler::eventFilter for more information.
+         *
+         * Besides that, we do not grab the keyboard as soon as it is captured,
+         * but delay it for 300 milliseconds after the formal capture.
+         * We do it mainly to have the common behavior under all
+         * hosts and X11 is forced to behave that way. */
+
+        /* Delay finalising capture for 300 milliseconds: */
+        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
 
 #elif defined(VBOX_WS_X11)
 # if QT_VERSION < 0x050000
@@ -351,7 +359,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* Remember which screen wishes to capture the keyboard: */
         m_iKeyboardCaptureViewIndex = uScreenId;
 
-#if !defined(VBOX_WS_X11) || QT_VERSION < 0x050000
+#if defined(VBOX_WS_MAC) || QT_VERSION < 0x050000
         /* Finalise keyboard capture: */
         finaliseCaptureKeyboard();
 #endif
@@ -1508,7 +1516,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
         popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
 }
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#if !defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
 void UIKeyboardHandler::sltFinaliseCaptureKeyboard()
 {
     /* Try to finalise keyboard capture: */
