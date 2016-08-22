@@ -260,43 +260,13 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
     /* If the view exists: */
     if (m_views.contains(uScreenId))
     {
-#if defined(VBOX_WS_MAC)
+        /* Remember which screen wishes to capture the keyboard: */
+        m_iKeyboardCaptureViewIndex = uScreenId;
 
-        /* On Mac, keyboard grabbing is ineffective,
-         * a low-level keyboard-hook is used instead.
-         * It is being installed on focus-in event and uninstalled on focus-out.
-         * S.a. UIKeyboardHandler::eventFilter for more information.
-         *
-         * Besides that, we do not grab the keyboard as soon as it is captured,
-         * but delay it for 300 milliseconds after the formal capture.
-         * We do it mainly to have the common behavior under all
-         * hosts and X11 is forced to behave that way. */
-
-        /* Delay finalising capture for 300 milliseconds: */
-        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
-
-#elif defined(VBOX_WS_WIN)
-
-        /* On Win, keyboard grabbing is ineffective,
-         * a low-level keyboard-hook is used instead.
-         * It is being installed on focus-in event and uninstalled on focus-out.
-         * S.a. UIKeyboardHandler::eventFilter for more information.
-         *
-         * Besides that, we do not grab the keyboard as soon as it is captured,
-         * but delay it for 300 milliseconds after the formal capture.
-         * We do it mainly to have the common behavior under all
-         * hosts and X11 is forced to behave that way. */
-
-        /* Delay finalising capture for 300 milliseconds: */
-        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
-
-#elif defined(VBOX_WS_X11)
-# if QT_VERSION < 0x050000
-
-        /* Nothing for now. */
-
-# else /* QT_VERSION >= 0x050000 */
-
+#if QT_VERSION < 0x050000
+        /* Finalise keyboard capture: */
+        finaliseCaptureKeyboard();
+#else
         /* On X11, we do not grab the keyboard as soon as it is captured, but delay it
          * for 300 milliseconds after the formal capture. We do this for several reasons:
          * - First, when several windows are created they all try to capture the keyboard when
@@ -305,24 +275,11 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
          *   the notifications by grabbing the keyboard and trigger new focus changes in the process.
          * - Second, grabbing the keyboard immediately on focus change upsets some window managers,
          *   they give us the focus then try to grab the keyboard themselves, and sulk if they fail
-         *   by refusing to e.g. drag a window using its title bar. */
-
-        /* Delay finalising capture for 300 milliseconds: */
+         *   by refusing to e.g. drag a window using its title bar.
+         *
+         * IMPORTANT! We do the same under all other hosts as well mainly to have the
+         *            common behavior everywhere while X11 is forced to behave that way. */
         QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
-
-# endif /* QT_VERSION >= 0x050000 */
-#else
-
-        /* Nothing for now. */
-
-#endif
-
-        /* Remember which screen wishes to capture the keyboard: */
-        m_iKeyboardCaptureViewIndex = uScreenId;
-
-#if QT_VERSION < 0x050000
-        /* Finalise keyboard capture: */
-        finaliseCaptureKeyboard();
 #endif
     }
 }
@@ -342,25 +299,30 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
     {
 #if defined(VBOX_WS_MAC)
 
-        /* On Mac, we are not just using the Qt stuff to grab the keyboard,
+        /* On Mac, keyboard grabbing is ineffective, a low-level keyboard-hook is used instead.
+         * It is being installed on focus-in event and uninstalled on focus-out.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
+
+        /* Besides that, we are not just using the Qt stuff to grab the keyboard,
          * we also disable global hot keys and enable watching
          * modifiers (for right/left separation). */
-
         /// @todo Is that really needed?
         ::DarwinDisableGlobalHotKeys(true);
         m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
 
 #elif defined(VBOX_WS_WIN)
 
-        /* Nothing for now. */
+        /* On Win, keyboard grabbing is ineffective, a low-level keyboard-hook is used instead.
+         * It is being installed on focus-in event and uninstalled on focus-out.
+         * S.a. UIKeyboardHandler::eventFilter for more information. */
 
 #elif defined(VBOX_WS_X11)
 # if QT_VERSION < 0x050000
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard()) because
-         * XGrabKeyboard causes a problem under metacity - a window cannot be
-         * moved using the mouse if it is currently actively grabbing the keyboard;
+         * XGrabKeyboard causes a problem under metacity - a window cannot be moved
+         * using the mouse if it is currently actively grabbing the keyboard;
          * For static modes we are using usual (active) keyboard grabbing. */
 
         switch (machineLogic()->visualStateType())
@@ -457,23 +419,20 @@ void UIKeyboardHandler::releaseKeyboard()
     {
 #if defined(VBOX_WS_MAC)
 
-        /* On Mac, keyboard grabbing is ineffective,
-         * a low-level keyboard-hook is used instead.
+        /* On Mac, keyboard grabbing is ineffective, a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
-        /* On Mac, we also
-         * use the Qt method to release the keyboard,
-         * enable global hot keys and
-         * disable watching modifiers (for right/left separation). */
+        /* Besides that, we are not just using the Qt stuff to ungrab the keyboard,
+         * we also enable global hot keys and disable watching
+         * modifiers (for right/left separation). */
         /// @todo Is that really needed?
         ::DarwinDisableGlobalHotKeys(false);
         m_views[m_iKeyboardCaptureViewIndex]->releaseKeyboard();
 
 #elif defined(VBOX_WS_WIN)
 
-        /* On Win, keyboard grabbing is ineffective,
-         * a low-level keyboard-hook is used instead.
+        /* On Win, keyboard grabbing is ineffective, a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
          * S.a. UIKeyboardHandler::eventFilter for more information. */
 
@@ -481,10 +440,11 @@ void UIKeyboardHandler::releaseKeyboard()
 # if QT_VERSION < 0x050000
 
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
-         * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
-         * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
+         * instead of XGrabKeyboard (called by QWidget::grabKeyboard()) because
+         * XGrabKeyboard causes a problem under metacity - a window cannot be moved
          * using the mouse if it is currently actively grabbing the keyboard;
          * For static modes we are using usual (active) keyboard grabbing. */
+
         switch (machineLogic()->visualStateType())
         {
             /* If window is moveable we are making passive keyboard ungrab: */
