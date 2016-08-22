@@ -21,6 +21,8 @@
 #define AUDIO_MIXER_H
 
 #include <iprt/cdefs.h>
+#include <iprt/critsect.h>
+
 #include <VBox/vmm/pdmaudioifs.h>
 
 /**
@@ -28,12 +30,10 @@
  */
 typedef struct AUDIOMIXER
 {
-    /** Mixer name. */
+    /** The mixer's name. */
     char                   *pszName;
-    /** Format the mixer should convert/output
-     *  data to so that the underlying device emulation
-     *  can work with it. */
-    PDMAUDIOSTREAMCFG       devFmt;
+    /** The mixer's critical section. */
+    RTCRITSECT              CritSect;
     /** The master volume of this mixer. */
     PDMAUDIOVOLUME          VolMaster;
     /** List of audio mixer sinks. */
@@ -57,6 +57,8 @@ typedef struct AUDMIXSTREAM
     RTLISTNODE              Node;
     /** Name of this stream. */
     char                   *pszName;
+    /** The streams's critical section. */
+    RTCRITSECT              CritSect;
     /** Sink this stream is attached to. */
     PAUDMIXSINK             pSink;
     /** Stream flags of type AUDMIXSTREAM_FLAG_. */
@@ -163,6 +165,8 @@ typedef struct AUDMIXSINK
     /** The sink direction, that is,
      *  if this sink handles input or output. */
     AUDMIXSINKDIR           enmDir;
+    /** The sink's critical section. */
+    RTCRITSECT              CritSect;
     /** Union for input/output specifics. */
     union
     {
@@ -213,7 +217,9 @@ void AudioMixerDestroy(PAUDIOMIXER pMixer);
 void AudioMixerInvalidate(PAUDIOMIXER pMixer);
 void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
+#ifdef DEBUG
 void AudioMixerDebug(PAUDIOMIXER pMixer, PCDBGFINFOHLP pHlp, const char *pszArgs);
+#endif
 
 int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
 int AudioMixerSinkCreateStream(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream);
