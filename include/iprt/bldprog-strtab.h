@@ -76,7 +76,8 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
         /*
          * Could be compressed, decompress it.
          */
-        const char *pchSrc = &pStrTab->pchStrTab[offString];
+        char * const pchDstStart = pszDst;
+        const char  *pchSrc = &pStrTab->pchStrTab[offString];
         while (cchString-- > 0)
         {
             unsigned char uch = *pchSrc++;
@@ -123,7 +124,7 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
         }
         AssertReturn(cbDst > 0, VERR_BUFFER_OVERFLOW);
         *pszDst = '\0';
-        return VINF_SUCCESS;
+        return pszDst - pchDstStart;
     }
 
     /*
@@ -132,7 +133,7 @@ DECLINLINE(ssize_t) RTBldProgStrTabQueryString(PCRTBLDPROGSTRTAB pStrTab, uint32
     AssertReturn(cbDst > cchString, VERR_BUFFER_OVERFLOW);
     memcpy(pszDst, &pStrTab->pchStrTab[offString], cchString);
     pszDst[cchString] = '\0';
-    return VINF_SUCCESS;
+    return (ssize_t)cchString;
 }
 
 
