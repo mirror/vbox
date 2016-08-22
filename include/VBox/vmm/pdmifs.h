@@ -713,10 +713,20 @@ typedef struct PDMIDISPLAYPORT
 #endif
 
 
-typedef struct VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: A line what it is to make doxygen happy. */
+/** Pointer to a 2D graphics acceleration command. */
+typedef struct VBOXVHWACMD *PVBOXVHWACMD;
+/** Pointer to a VBVA command header. */
 typedef struct VBVACMDHDR *PVBVACMDHDR;
+/** Pointer to a const VBVA command header. */
+typedef const struct VBVACMDHDR *PCVBVACMDHDR;
+/** Pointer to a VBVA screen information. */
 typedef struct VBVAINFOSCREEN *PVBVAINFOSCREEN;
+/** Pointer to a const VBVA screen information. */
+typedef const struct VBVAINFOSCREEN *PCVBVAINFOSCREEN;
+/** Pointer to a VBVA guest VRAM area information. */
 typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
+/** Pointer to a const VBVA guest VRAM area information. */
+typedef const struct VBVAINFOVIEW *PCVBVAINFOVIEW;
 typedef struct VBVAHOSTFLAGS *PVBVAHOSTFLAGS;
 struct VBOXVDMACMD_CHROMIUM_CMD; /* <- chromium [hgsmi] command */
 struct VBOXVDMACMD_CHROMIUM_CTL; /* <- chromium [hgsmi] command */
@@ -917,7 +927,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      *          otherwise - the emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateProcess,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                     const PVBVACMDHDR pCmd, size_t cbCmd));
+                                                     PCVBVACMDHDR pCmd, size_t cbCmd));
 
     /**
      * A sequence of pfnVBVAUpdateProcess calls ends.
@@ -955,7 +965,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  if render thread mode is on (fRenderThreadMode that was passed to pfnVBVAEnable is TRUE) - the render thread pfnVBVAEnable was called in,
      *          otherwise - the emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping));
+    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping));
 
     /**
      * Update the pointer shape.

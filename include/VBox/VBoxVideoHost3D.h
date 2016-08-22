@@ -39,7 +39,7 @@ typedef struct VBOXCMDVBVA_HDR *PVBOXCMDVBVA_HDR;
 
 typedef DECLCALLBACKPTR(void, PFNVBOXCRCMD_CLTSCR_UPDATE_BEGIN)(HVBOXCRCMDCLTSCR hClt, unsigned u32Screen);
 typedef DECLCALLBACKPTR(void, PFNVBOXCRCMD_CLTSCR_UPDATE_END)(HVBOXCRCMDCLTSCR hClt, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy);
-typedef DECLCALLBACKPTR(void, PFNVBOXCRCMD_CLTSCR_UPDATE_PROCESS)(HVBOXCRCMDCLTSCR hClt, unsigned u32Screen, struct VBVACMDHDR *pCmd, size_t cbCmd);
+typedef DECLCALLBACKPTR(void, PFNVBOXCRCMD_CLTSCR_UPDATE_PROCESS)(HVBOXCRCMDCLTSCR hClt, unsigned u32Screen, const struct VBVACMDHDR *pCmd, size_t cbCmd);
 
 /*client callbacks to be used by the server
  * when working in the CrCmd mode */

@@ -838,7 +838,7 @@ int Display::i_crOglWindowsShow(bool fShow)
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-int Display::i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
+int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, void *pvVRAM)
 {
     RT_NOREF(pView);
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -3875,7 +3875,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInte
 }
 
 DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                                       const PVBVACMDHDR pCmd, size_t cbCmd)
+                                                       PCVBVACMDHDR pCmd, size_t cbCmd)
 {
     LogFlowFunc(("uScreenId %d pCmd %p cbCmd %d, @%d,%d %dx%d\n", uScreenId, pCmd, cbCmd, pCmd->x, pCmd->y, pCmd->w, pCmd->h));
 
@@ -3951,7 +3951,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
     pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
 
     /** @todo new SendUpdate entry which can get a separate cmd header or coords. */
-    pThis->mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, pCmd, (uint32_t)cbCmd);
+    pThis->mParent->i_consoleVRDPServer()->SendUpdate(uScreenId, pHdrUnconst, (uint32_t)cbCmd);
 
     *pHdrUnconst = hdrSaved;
 }
@@ -3974,7 +3974,7 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterf
 }
 
 #ifdef DEBUG_sunlover
-static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, const DISPLAYFBINFO *pFBInfo)
+static void logVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, const DISPLAYFBINFO *pFBInfo)
 {
     LogRel(("displayVBVAResize: [%d] %s\n"
             "    pView->u32ViewIndex     %d\n"
@@ -4039,8 +4039,8 @@ static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScre
 }
 #endif /* DEBUG_sunlover */
 
-DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView,
-                                               const PVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping)
+DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, PCVBVAINFOVIEW pView,
+                                               PCVBVAINFOSCREEN pScreen, void *pvVRAM, bool fResetInputMapping)
 {
     LogRelFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
 
