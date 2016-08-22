@@ -27,7 +27,6 @@
 #define ___VBox_vmm_pdmaudioifs_h
 
 #include <iprt/circbuf.h>
-#include <iprt/critsect.h>
 #include <iprt/list.h>
 
 #include <VBox/types.h>
