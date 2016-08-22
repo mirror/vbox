@@ -293,45 +293,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 #elif defined(VBOX_WS_X11)
 # if QT_VERSION < 0x050000
 
-        /* On X11, we are using passive XGrabKey for normal (windowed) mode
-         * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
-         * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
-         * using the mouse if it is currently actively grabbing the keyboard;
-         * For static modes we are using usual (active) keyboard grabbing. */
-        switch (machineLogic()->visualStateType())
-        {
-            /* If window is moveable we are making passive keyboard grab: */
-            case UIVisualStateType_Normal:
-            case UIVisualStateType_Scale:
-            {
-                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[uScreenId]->winId(), False, GrabModeAsync, GrabModeAsync);
-                break;
-            }
-            /* If window is NOT moveable we are making active keyboard grab: */
-            case UIVisualStateType_Fullscreen:
-            case UIVisualStateType_Seamless:
-            {
-                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
-                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
-                 * and after we will just ignore that issue: */
-                int cTriesLeft = 50;
-                Window hWindow;
-
-                /* Only do our keyboard grab if there are no other focus events
-                 * for this window on the queue.  This can prevent problems
-                 * including two windows fighting to grab the keyboard. */
-                hWindow = m_windows[uScreenId]->winId();
-                if (!checkForX11FocusEvents(hWindow))
-                    while (cTriesLeft && XGrabKeyboard(QX11Info::display(),
-                           hWindow, False, GrabModeAsync, GrabModeAsync,
-                           CurrentTime))
-                        --cTriesLeft;
-                break;
-            }
-            /* Should we try to grab keyboard in default case? I think - NO. */
-            default:
-                break;
-        }
+        /* Nothing for now. */
 
 # else /* QT_VERSION >= 0x050000 */
 
@@ -351,8 +313,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
 # endif /* QT_VERSION >= 0x050000 */
 #else
 
-        /* On other platforms we are just praying Qt method to work: */
-        m_views[uScreenId]->grabKeyboard();
+        /* Nothing for now. */
 
 #endif
 
@@ -389,7 +350,55 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
         ::DarwinDisableGlobalHotKeys(true);
         m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
 
-#elif defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#elif defined(VBOX_WS_WIN)
+
+        /* Nothing for now. */
+
+#elif defined(VBOX_WS_X11)
+# if QT_VERSION < 0x050000
+
+        /* On X11, we are using passive XGrabKey for normal (windowed) mode
+         * instead of XGrabKeyboard (called by QWidget::grabKeyboard()) because
+         * XGrabKeyboard causes a problem under metacity - a window cannot be
+         * moved using the mouse if it is currently actively grabbing the keyboard;
+         * For static modes we are using usual (active) keyboard grabbing. */
+
+        switch (machineLogic()->visualStateType())
+        {
+            /* If window is moveable we are making passive keyboard grab: */
+            case UIVisualStateType_Normal:
+            case UIVisualStateType_Scale:
+            {
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, m_windows[m_iKeyboardCaptureViewIndex]->winId(), False, GrabModeAsync, GrabModeAsync);
+                break;
+            }
+            /* If window is NOT moveable we are making active keyboard grab: */
+            case UIVisualStateType_Fullscreen:
+            case UIVisualStateType_Seamless:
+            {
+                /* Keyboard grabbing can fail because of some keyboard shortcut is still grabbed by window manager.
+                 * We can't be sure this shortcut will be released at all, so we will retry to grab keyboard for 50 times,
+                 * and after we will just ignore that issue: */
+                int cTriesLeft = 50;
+                Window hWindow;
+
+                /* Only do our keyboard grab if there are no other focus events
+                 * for this window on the queue.  This can prevent problems
+                 * including two windows fighting to grab the keyboard. */
+                hWindow = m_windows[m_iKeyboardCaptureViewIndex]->winId();
+                if (!checkForX11FocusEvents(hWindow))
+                    while (cTriesLeft && XGrabKeyboard(QX11Info::display(),
+                           hWindow, False, GrabModeAsync, GrabModeAsync,
+                           CurrentTime))
+                        --cTriesLeft;
+                break;
+            }
+            /* Should we try to grab keyboard in default case? I think - NO. */
+            default:
+                break;
+        }
+
+# else /* QT_VERSION >= 0x050000 */
 
         /* On X11, we are using XCB stuff to grab the keyboard.
          * This stuff is a part of the active keyboard grabbing functionality.
@@ -413,7 +422,13 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
         }
         free(pGrabReply);
 
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+# endif /* QT_VERSION >= 0x050000 */
+#else
+
+        /* On other platforms we are just praying Qt method to work: */
+        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+
+#endif
 
         /* Store new keyboard-captured state value: */
         m_fIsKeyboardCaptured = true;
