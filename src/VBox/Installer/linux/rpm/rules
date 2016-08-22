@@ -240,7 +240,7 @@ binary: rpm/build-stamp
 	    -e "s|%WEBSVC%|$(if $(NOWEBSVC),false,true)|g" \
 	    rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
-	cp ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname)
+	cp ../../../../tools/linux.$(chrarch)/bin/chrpath rpm/$(rpmname) || true
 	tar -cf rpm/VirtualBox.tar -C rpm $(rpmname)
 	rm -f rpmbuild/RPMS/*/VirtualBox*rpm
 	rm -f rpmbuild/SPECS/*
