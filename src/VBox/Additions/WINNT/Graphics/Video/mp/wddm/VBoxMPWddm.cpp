@@ -394,12 +394,25 @@ NTSTATUS vboxWddmGhDisplaySetInfoLegacy(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_A
     return Status;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfoNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint8_t u8CurCyncState)
+NTSTATUS vboxWddmGhDisplaySetInfoNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint8_t u8CurCyncState, BOOLEAN bPowerOff = false)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    bool fEnabled = !!pAllocData->SurfDesc.width;
-    uint16_t fu16Flags = fEnabled ? VBVA_SCREEN_F_ACTIVE : VBVA_SCREEN_F_DISABLED;
-    if (fEnabled)
+    bool bValidAlloc = pAllocData->SurfDesc.width > 0 && pAllocData->SurfDesc.height > 0;
+    uint16_t fu16Flags;
+
+    PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pDevExt);
+    uint16_t fu16SupportedFlags = VBoxHGSMIGetScreenFlags(&pCommon->guestCtx);
+    if (   bPowerOff
+        && RT_BOOL(fu16SupportedFlags & VBVA_SCREEN_F_BLANK2))
+    {
+        fu16Flags = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_BLANK2;
+    }
+    else
+    {
+        fu16Flags = bValidAlloc ? VBVA_SCREEN_F_ACTIVE : VBVA_SCREEN_F_DISABLED;
+    }
+
+    if (bValidAlloc)
     {
 #ifdef VBOX_WITH_CROGL
         if ((u8CurCyncState & VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY) == VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY
@@ -422,7 +435,7 @@ NTSTATUS vboxWddmGhDisplaySetInfoNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLO
         if (NT_SUCCESS(Status))
         {
 #ifdef VBOX_WITH_CROGL
-            if (fEnabled && pDevExt->f3DEnabled)
+            if (bValidAlloc && pDevExt->f3DEnabled)
             {
                 Status = vboxVdmaTexPresentSetAlloc(pDevExt, pAllocData);
                 if (NT_SUCCESS(Status))
@@ -466,7 +479,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSourceNew(PVBOXMP_DEVEXT pDevExt, PVBOXWDD
         pTargetMap = aTargetMap;
     }
 
-    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &pSource->AllocData, pTargetMap, &pSource->VScreenPos, pSource->u8SyncState);
+    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &pSource->AllocData, pTargetMap, &pSource->VScreenPos, pSource->u8SyncState, pSource->bPowerOff);
     if (NT_SUCCESS(Status))
     {
         if (fReportTargets && (pSource->u8SyncState & VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY) != VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY)
@@ -1031,7 +1044,7 @@ NTSTATUS DxgkDdiAddDevice(
     vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXMP_DEVEXT pDevExt;
+    PVBOXMP_DEVEXT pDevExt = NULL;
 
     WCHAR RegKeyBuf[512];
     ULONG cbRegKeyBuf = sizeof (RegKeyBuf);
@@ -5358,7 +5371,7 @@ DxgkDdiCommitVidPn(
                     pDevExt,
                     pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface,
                     (PVBOXWDDM_ALLOCATION)pCommitVidPnArg->hPrimaryAllocation,
-                    pCommitVidPnArg->AffectedVidPnSourceId, paSources, paTargets);
+                    pCommitVidPnArg->AffectedVidPnSourceId, paSources, paTargets, (BOOLEAN)pCommitVidPnArg->Flags.PathPowerTransition);
             if (!NT_SUCCESS(Status))
             {
                 WARN(("VBoxVidPnCommitSourceModeForSrcId for current VidPn failed Status 0x%x", Status));
