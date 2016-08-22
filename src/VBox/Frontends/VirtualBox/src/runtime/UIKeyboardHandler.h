@@ -19,6 +19,7 @@
 #define ___UIKeyboardHandler_h___
 
 /* Qt includes: */
+#include <QtGlobal>
 #include <QMap>
 #include <QObject>
 
@@ -132,7 +133,7 @@ protected slots:
     /* Machine state-change handler: */
     virtual void sltMachineStateChanged();
 
-#if !defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
+#if QT_VERSION >= 0x050000
     /** Finalises keyboard capture. */
     void sltFinaliseCaptureKeyboard();
 #endif

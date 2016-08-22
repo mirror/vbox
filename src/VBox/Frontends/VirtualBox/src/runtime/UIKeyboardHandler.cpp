@@ -39,7 +39,7 @@
 # ifdef VBOX_WS_X11
 #  include <QX11Info>
 # endif
-# if !defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
+# if QT_VERSION >= 0x050000
 #   include <QTimer>
 # endif
 
@@ -265,15 +265,15 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* On Mac, keyboard grabbing is ineffective,
          * a low-level keyboard-hook is used instead.
          * It is being installed on focus-in event and uninstalled on focus-out.
-         * S.a. UIKeyboardHandler::eventFilter for more information. */
+         * S.a. UIKeyboardHandler::eventFilter for more information.
+         *
+         * Besides that, we do not grab the keyboard as soon as it is captured,
+         * but delay it for 300 milliseconds after the formal capture.
+         * We do it mainly to have the common behavior under all
+         * hosts and X11 is forced to behave that way. */
 
-        /* On Mac, we also
-         * use the Qt method to grab the keyboard,
-         * disable global hot keys and
-         * enable watching modifiers (for right/left separation). */
-        /// @todo Is that really needed?
-        ::DarwinDisableGlobalHotKeys(true);
-        m_views[uScreenId]->grabKeyboard();
+        /* Delay finalising capture for 300 milliseconds: */
+        QTimer::singleShot(300, this, SLOT(sltFinaliseCaptureKeyboard()));
 
 #elif defined(VBOX_WS_WIN)
 
@@ -359,7 +359,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* Remember which screen wishes to capture the keyboard: */
         m_iKeyboardCaptureViewIndex = uScreenId;
 
-#if defined(VBOX_WS_MAC) || QT_VERSION < 0x050000
+#if QT_VERSION < 0x050000
         /* Finalise keyboard capture: */
         finaliseCaptureKeyboard();
 #endif
@@ -379,7 +379,17 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
     /* If the view exists: */
     if (m_views.contains(m_iKeyboardCaptureViewIndex))
     {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#if defined(VBOX_WS_MAC)
+
+        /* On Mac, we are not just using the Qt stuff to grab the keyboard,
+         * we also disable global hot keys and enable watching
+         * modifiers (for right/left separation). */
+
+        /// @todo Is that really needed?
+        ::DarwinDisableGlobalHotKeys(true);
+        m_views[m_iKeyboardCaptureViewIndex]->grabKeyboard();
+
+#elif defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 
         /* On X11, we are using XCB stuff to grab the keyboard.
          * This stuff is a part of the active keyboard grabbing functionality.
@@ -1516,7 +1526,7 @@ void UIKeyboardHandler::sltMachineStateChanged()
         popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
 }
 
-#if !defined(VBOX_WS_MAC) && QT_VERSION >= 0x050000
+#if QT_VERSION >= 0x050000
 void UIKeyboardHandler::sltFinaliseCaptureKeyboard()
 {
     /* Try to finalise keyboard capture: */
