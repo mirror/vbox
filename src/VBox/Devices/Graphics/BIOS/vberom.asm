@@ -605,6 +605,7 @@ set_logical_scan_line_bytes:
   xor  bh, bh
   mov  bl, ah
   or   bl, bl
+  pop  ax
   jnz  no_4bpp_1
 if VBOX_BIOS_CPU gt 8086
   shl  ax, 3
@@ -616,7 +617,6 @@ endif
   mov  bl, 1
 no_4bpp_1:
   xor  dx, dx
-  pop  ax
   div  bx
 set_logical_scan_line_pixels:
   call dispi_set_virt_width
