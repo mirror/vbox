@@ -1869,9 +1869,6 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
             }
         }
 
-#ifndef DEBUG_dmik
-        AssertRC(rc);
-#endif
         /* free the path string */
         vbsfFreeFullPath(pszFullPathDest);
     }
