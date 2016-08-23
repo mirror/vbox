@@ -145,6 +145,8 @@ Controller" */
                                                  | IOAPIC_RTE_DEST_MODE  | IOAPIC_RTE_DELIVERY_MODE | IOAPIC_RTE_VECTOR)
 #elif IOAPIC_HARDWARE_VERSION == IOAPIC_HARDWARE_VERSION_ICH9
 /** Redirection table entry - Valid write mask (incl. remote IRR). */
+/** @note The remote IRR bit has been reverted to read-only as it turns out the
+ *        ICH9 spec. is wrong, see @bugref{8386#c46}. */
 #define IOAPIC_RTE_VALID_WRITE_MASK             (  IOAPIC_RTE_DEST       | IOAPIC_RTE_MASK      | IOAPIC_RTE_TRIGGER_MODE \
                                                  /*| IOAPIC_RTE_REMOTE_IRR */| IOAPIC_RTE_POLARITY  | IOAPIC_RTE_DEST_MODE \
                                                  | IOAPIC_RTE_DELIVERY_MODE | IOAPIC_RTE_VECTOR)
