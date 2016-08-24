@@ -160,20 +160,21 @@ void UIConsoleEventHandlerProxy::prepareListener()
     /* Make sure session is passed: */
     AssertPtrReturnVoid(m_pSession);
 
-    /* Create Main event listener instance: */
+    /* Create event listener instance: */
     m_pQtListener.createObject();
     m_pQtListener->init(new UIMainEventListener, this);
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get console: */
-    const CConsole console = m_pSession->session().GetConsole();
-    AssertReturnVoid(!console.isNull() && console.isOk());
-    /* Get event-source: */
-    CEventSource eventSource = console.GetEventSource();
-    AssertReturnVoid(!eventSource.isNull() && eventSource.isOk());
-    /* Register listener for expected event-types: */
-    QVector<KVBoxEventType> events;
-    events
+    const CConsole comConsole = m_pSession->session().GetConsole();
+    AssertReturnVoid(!comConsole.isNull() && comConsole.isOk());
+    /* Get console event source: */
+    CEventSource comEventSourceConsole = comConsole.GetEventSource();
+    AssertReturnVoid(!comEventSourceConsole.isNull() && comEventSourceConsole.isOk());
+
+    /* Enumerate all the required event-types: */
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes
         << KVBoxEventType_OnMousePointerShapeChanged
         << KVBoxEventType_OnMouseCapabilityChanged
         << KVBoxEventType_OnKeyboardLedsChanged
@@ -193,15 +194,17 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow;
-    eventSource.RegisterListener(m_comEventListener, events,
+
+    /* Register event listener for console event source: */
+    comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes,
         gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(eventSource);
+    AssertWrapperOk(comEventSourceConsole);
 
     /* If event listener registered as passive one: */
     if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
     {
         /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(eventSource, m_comEventListener);
+        m_pQtListener->getWrapped()->registerSource(comEventSourceConsole, m_comEventListener);
     }
 }
 
@@ -282,14 +285,15 @@ void UIConsoleEventHandlerProxy::cleanupListener()
     }
 
     /* Get console: */
-    const CConsole console = m_pSession->session().GetConsole();
-    if (console.isNull() || !console.isOk())
+    const CConsole comConsole = m_pSession->session().GetConsole();
+    if (comConsole.isNull() || !comConsole.isOk())
         return;
-    /* Get event-source: */
-    CEventSource eventSource = console.GetEventSource();
-    AssertWrapperOk(eventSource);
-    /* Unregister listener: */
-    eventSource.UnregisterListener(m_comEventListener);
+    /* Get console event source: */
+    CEventSource comEventSourceConsole = comConsole.GetEventSource();
+    AssertWrapperOk(comEventSourceConsole);
+
+    /* Unregister event listener for console event source: */
+    comEventSourceConsole.UnregisterListener(m_comEventListener);
 }
 
 void UIConsoleEventHandlerProxy::cleanup()

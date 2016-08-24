@@ -90,6 +90,9 @@ protected:
 
 private:
 
+    /** Holds the COM event source instance. */
+    CEventSource m_comEventSource;
+
     /** Holds the Qt event listener instance. */
     ComObjPtr<UIMainEventListenerImpl> m_pQtListener;
     /** Holds the COM event listener instance. */
@@ -129,28 +132,30 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
     m_comEventListener = CEventListener(m_pQtListener);
 
     /* Get VirtualBoxClient: */
-    const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
-    AssertWrapperOk(vboxClient);
-    /* Get event-source: */
-    CEventSource eventSourceVirtualBoxClient = vboxClient.GetEventSource();
-    AssertWrapperOk(eventSourceVirtualBoxClient);
-    /* Register listener for expected event-types: */
-    QVector<KVBoxEventType> vboxClientEvents;
-    vboxClientEvents
-        << KVBoxEventType_OnVBoxSVCAvailabilityChanged;
-    eventSourceVirtualBoxClient.RegisterListener(m_comEventListener, vboxClientEvents,
-        gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(eventSourceVirtualBoxClient);
+    const CVirtualBoxClient comVBoxClient = vboxGlobal().virtualBoxClient();
+    AssertWrapperOk(comVBoxClient);
+    /* Get VirtualBoxClient event source: */
+    CEventSource comEventSourceVBoxClient = comVBoxClient.GetEventSource();
+    AssertWrapperOk(comEventSourceVBoxClient);
 
     /* Get VirtualBox: */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
-    AssertWrapperOk(vbox);
-    /* Get event-source: */
-    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
-    AssertWrapperOk(eventSourceVirtualBox);
-    /* Register listener for expected event-types: */
-    QVector<KVBoxEventType> vboxEvents;
-    vboxEvents
+    const CVirtualBox comVBox = vboxGlobal().virtualBox();
+    AssertWrapperOk(comVBox);
+    /* Get VirtualBox event source: */
+    CEventSource comEventSourceVBox = comVBox.GetEventSource();
+    AssertWrapperOk(comEventSourceVBox);
+
+    /* Create event source aggregator: */
+    m_comEventSource = comEventSourceVBoxClient.CreateAggregator(QVector<CEventSource>()
+                                                                 << comEventSourceVBoxClient
+                                                                 << comEventSourceVBox);
+
+    /* Enumerate all the required event-types: */
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes
+        /* For VirtualBoxClient: */
+        << KVBoxEventType_OnVBoxSVCAvailabilityChanged
+        /* For VirtualBox: */
         << KVBoxEventType_OnMachineStateChanged
         << KVBoxEventType_OnMachineDataChanged
         << KVBoxEventType_OnMachineRegistered
@@ -159,16 +164,17 @@ void UIVirtualBoxEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnSnapshotDeleted
         << KVBoxEventType_OnSnapshotChanged
         << KVBoxEventType_OnSnapshotRestored;
-    eventSourceVirtualBox.RegisterListener(m_comEventListener, vboxEvents,
+
+    /* Register event listener for event source aggregator: */
+    m_comEventSource.RegisterListener(m_comEventListener, eventTypes,
         gEDataManager->eventHandlingType() == EventHandlingType_Active ? TRUE : FALSE);
-    AssertWrapperOk(eventSourceVirtualBox);
+    AssertWrapperOk(m_comEventSource);
 
     /* If event listener registered as passive one: */
     if (gEDataManager->eventHandlingType() == EventHandlingType_Passive)
     {
         /* Register event sources in their listeners as well: */
-        m_pQtListener->getWrapped()->registerSource(eventSourceVirtualBoxClient, m_comEventListener);
-        m_pQtListener->getWrapped()->registerSource(eventSourceVirtualBox, m_comEventListener);
+        m_pQtListener->getWrapped()->registerSource(m_comEventSource, m_comEventListener);
     }
 }
 
@@ -218,23 +224,9 @@ void UIVirtualBoxEventHandlerProxy::cleanupListener()
         m_pQtListener->getWrapped()->unregisterSources();
     }
 
-    /* Get VirtualBox: */
-    const CVirtualBox vbox = vboxGlobal().virtualBox();
-    AssertWrapperOk(vbox);
-    /* Get event-source: */
-    CEventSource eventSourceVirtualBox = vbox.GetEventSource();
-    AssertWrapperOk(eventSourceVirtualBox);
-    /* Unregister listener: */
-    eventSourceVirtualBox.UnregisterListener(m_comEventListener);
-
-    /* Get VirtualBoxClient: */
-    const CVirtualBoxClient vboxClient = vboxGlobal().virtualBoxClient();
-    AssertWrapperOk(vboxClient);
-    /* Get event-source: */
-    CEventSource eventSourceVirtualBoxClient = vboxClient.GetEventSource();
-    AssertWrapperOk(eventSourceVirtualBoxClient);
-    /* Unregister listener: */
-    eventSourceVirtualBoxClient.UnregisterListener(m_comEventListener);
+    /* Unregister event listener for event source aggregator: */
+    m_comEventSource.UnregisterListener(m_comEventListener);
+    m_comEventSource.detach();
 }
 
 void UIVirtualBoxEventHandlerProxy::cleanup()
