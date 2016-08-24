@@ -760,7 +760,7 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
     cbReadable = pSink->In.cbReadable;
 #endif
 
-    Log3Func(("[%s]: cbReadable=%RU32\n", pSink->pszName, cbReadable));
+    Log3Func(("[%s] cbReadable=%RU32\n", pSink->pszName, cbReadable));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -793,7 +793,7 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
     cbWritable = pSink->Out.cbWritable;
 #endif
 
-    Log3Func(("[%s]: cbWritable=%RU32\n", pSink->pszName, cbWritable));
+    Log3Func(("[%s] cbWritable=%RU32\n", pSink->pszName, cbWritable));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -956,22 +956,29 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     {
         if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
         {
-            LogFlowFunc(("%s: Stream '%s' Disabled, skipping ...\n", pMixStream->pszName, pMixStream->pStream->szName));
+            Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
             continue;
         }
 
         uint32_t cbTotalRead = 0;
         uint32_t cbToRead    = cbBuf;
 
+        int rc2 = VINF_SUCCESS;
+
         while (cbToRead)
         {
             uint32_t cbReadStrm;
             AssertPtr(pMixStream->pConn);
-#ifndef VBOX_AUDIO_MIXER_WITH_MIXBUF
-            rc = pMixStream->pConn->pfnStreamRead(pMixStream->pConn, pMixStream->pStream,
-                                                  (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbReadStrm);
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
+            rc2 = pMixStream->pConn->pfnStreamRead(pMixStream->pConn, pMixStream->pStream,
+                                                   (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbReadStrm);
 #endif
-            if (   RT_FAILURE(rc)
+            if (RT_FAILURE(rc2))
+                Log3Func(("[%s] Failed reading from stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
+
+            if (   RT_FAILURE(rc2)
                 || !cbReadStrm)
                 break;
 
@@ -982,7 +989,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
             cbTotalRead += cbReadStrm;
         }
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc2))
             continue;
 
         cbRead = RT_MAX(cbRead, cbTotalRead);
@@ -996,7 +1003,9 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
         if (fClean)
             pSink->fStatus &= ~AUDMIXSINK_STS_DIRTY;
 
-#ifndef VBOX_AUDIO_MIXER_WITH_MIXBUF
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
         if (cbRead)
             memcpy(pvBuf, pvMixBuf, cbRead);
 #endif
@@ -1008,7 +1017,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     RTMemFree(pvMixBuf);
 #endif
 
-    Log3Func(("[%s]: cbRead=%RU32, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, cbRead, pSink->fStatus, rc));
+    Log3Func(("[%s] cbRead=%RU32, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, cbRead, pSink->fStatus, rc));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
