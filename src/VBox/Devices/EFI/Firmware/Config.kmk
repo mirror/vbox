@@ -89,7 +89,7 @@ TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4701 # warning C4701: potentially unini
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4702 # warning C4702: unreachable code
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4101 # warning C4101: 'LineBuf' : unreferenced local variable
-TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4102 # warning C4102: 'fail' : unreferenced labe
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4102 # warning C4102: 'fail' : unreferenced label
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4189 # warning C4189: 'zzpf' : local variable is initialized but not referenced
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4267 # warning C4267: '=' : conversion from 'size_t' to 'UINT32', possible loss of data
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4370 # warning C4370: 'ANTLRParser' : layout of class has changed from a previous version of the compiler due to better packing
@@ -115,9 +115,11 @@ TEMPLATE_VBoxEfiBldProg_LIBS = \
 ifn1of ($(KBUILD_HOST),win) # This stuff isn't up to our standard at all! :/
  TEMPLATE_VBoxEfiBldProg_CFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBoxBldProg_CFLAGS)) \
  	-Wno-sign-compare -Wno-missing-prototypes -Wno-strict-prototypes \
-	-Wno-implicit-function-declaration -Wno-missing-declarations -Wno-shadow -Wno-format -Wno-empty-body
+	-Wno-implicit-function-declaration -Wno-missing-declarations -Wno-shadow -Wno-format \
+	-Wno-empty-body -Wno-unused-parameter -Wno-unused-variable -Wno-unused-label
  TEMPLATE_VBoxEfiBldProg_CXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBoxBldProg_CXXFLAGS)) \
- 	-Wno-all -Wno-shadow -Wno-empty-body
+ 	-Wno-all -Wno-shadow -Wno-empty-body -Wno-unused-parameter -Wno-unused-variable \
+	-Wno-unused-label
 endif
 
 
