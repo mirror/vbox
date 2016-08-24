@@ -1502,7 +1502,7 @@ static DECLCALLBACK(int) drvAudioStreamRead(PPDMIAUDIOCONNECTOR pInterface, PPDM
         }
 
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
-        if (pHstStream)
+        if (!pHstStream)
         {
             rc = VERR_NOT_AVAILABLE;
             break;
