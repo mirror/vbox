@@ -166,17 +166,26 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        char szFile[RTPATH_MAX];
-        rc = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), "/tmp/", NULL, PDMAUDIOFILETYPE_WAV);
+        char szTemp[RTPATH_MAX];
+        rc = RTPathTemp(szTemp, sizeof(szTemp));
         if (RT_SUCCESS(rc))
         {
-            LogRel(("DebugAudio: Creating output file '%s'\n", szFile));
-            rc = DrvAudioHlpWAVFileOpen(&pDbgStream->File, szFile,
-                                        RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                        &Props, PDMAUDIOFILEFLAG_NONE);
-            if (RT_FAILURE(rc))
-                LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+            char szFile[RTPATH_MAX];
+            rc = DrvAudioHlpGetFileName(szFile, RT_ELEMENTS(szFile), szTemp, NULL, PDMAUDIOFILETYPE_WAV);
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("%s\n", szFile));
+                rc = DrvAudioHlpWAVFileOpen(&pDbgStream->File, szFile,
+                                            RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
+                                            &Props, PDMAUDIOFILEFLAG_NONE);
+                if (RT_FAILURE(rc))
+                    LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+            }
+            else
+                LogRel(("DebugAudio: Unable to build file name for temp dir '%s': %Rrc\n", szTemp, rc));
         }
+        else
+            LogRel(("DebugAudio: Unable to retrieve temp dir: %Rrc\n", rc));
     }
 
     if (RT_SUCCESS(rc))
@@ -326,8 +335,15 @@ static int debugDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
     if (RT_SUCCESS(rc))
     {
         /* Delete the file again if nothing but the header was written to it. */
-        if (!cbDataSize)
-            rc = RTFileDelete(pDbgStream->File.szName); /** @todo Make deletion configurable? */
+        bool fDeleteEmptyFiles = true; /** @todo Make deletion configurable? */
+
+        if (   !cbDataSize
+            && fDeleteEmptyFiles)
+        {
+            rc = RTFileDelete(pDbgStream->File.szName);
+        }
+        else
+            LogRel(("DebugAudio: Created output file '%s' (%zu bytes)\n", pDbgStream->File.szName, cbDataSize));
     }
 
     LogFlowFuncLeaveRC(rc);
