@@ -2900,8 +2900,6 @@ static int e1kRegReadICR(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
     rc = e1kRegReadDefault(pThis, offset, index, &value);
     if (RT_SUCCESS(rc))
     {
-        /* Do not return masked bits. */
-        value &= IMS;
         if (value)
         {
             /*
