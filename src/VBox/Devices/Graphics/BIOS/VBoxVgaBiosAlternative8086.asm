@@ -1404,14 +1404,14 @@ vbe_biosfn_set_get_logical_scan_line_length: ; 0xc0898 LB 0x53
     ; mov bl, ah                                ; 8a dc
     db  00ah, 0dbh
     ; or bl, bl                                 ; 0a db
-    jne short 008beh                          ; 75 08
+    pop ax                                    ; 58
+    jne short 008bfh                          ; 75 08
     sal ax, 1                                 ; d1 e0
     sal ax, 1                                 ; d1 e0
     sal ax, 1                                 ; d1 e0
     mov BL, strict byte 001h                  ; b3 01
     db  033h, 0d2h
     ; xor dx, dx                                ; 33 d2
-    pop ax                                    ; 58
     div bx                                    ; f7 f3
     call 00708h                               ; e8 42 fe
     call 005c6h                               ; e8 fd fc
@@ -1594,7 +1594,7 @@ vbe_biosfn_return_protected_mode_interface: ; 0xc09c9 LB 0x17
   ; Padding 0x20 bytes at 0xc09e0
   times 32 db 0
 
-section _TEXT progbits vstart=0xa00 align=1 ; size=0x3186 class=CODE group=AUTO
+section _TEXT progbits vstart=0xa00 align=1 ; size=0x3196 class=CODE group=AUTO
 set_int_vector_:                             ; 0xc0a00 LB 0x1c
     push bx                                   ; 53
     push bp                                   ; 55
@@ -1741,7 +1741,7 @@ vga_read_char_attr_:                         ; 0xc0ad2 LB 0xaf
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 00b68h                          ; 75 2e
     mul word [bp-00ch]                        ; f7 66 f4
     sal ax, 1                                 ; d1 e0
@@ -1760,7 +1760,7 @@ vga_read_char_attr_:                         ; 0xc0ad2 LB 0xaf
     add dx, ax                                ; 01 c2
     sal dx, 1                                 ; d1 e2
     add dx, cx                                ; 01 ca
-    mov ax, word [bx+04632h]                  ; 8b 87 32 46
+    mov ax, word [bx+04633h]                  ; 8b 87 33 46
     call 031b7h                               ; e8 52 26
     mov word [ss:si], ax                      ; 36 89 04
     lea sp, [bp-008h]                         ; 8d 66 f8
@@ -1827,18 +1827,18 @@ vga_get_font_info_:                          ; 0xc0b81 LB 0x7b
     retn 00002h                               ; c2 02 00
     mov dx, 0010ch                            ; ba 0c 01
     jmp short 00b99h                          ; eb c0
-    mov ax, 05bech                            ; b8 ec 5b
+    mov ax, 05bedh                            ; b8 ed 5b
     mov dx, 0c000h                            ; ba 00 c0
     jmp short 00b9eh                          ; eb bd
-    mov ax, 053ech                            ; b8 ec 53
+    mov ax, 053edh                            ; b8 ed 53
     jmp short 00bdch                          ; eb f6
-    mov ax, 057ech                            ; b8 ec 57
+    mov ax, 057edh                            ; b8 ed 57
     jmp short 00bdch                          ; eb f1
-    mov ax, 079ech                            ; b8 ec 79
+    mov ax, 079edh                            ; b8 ed 79
     jmp short 00bdch                          ; eb ec
-    mov ax, 069ech                            ; b8 ec 69
+    mov ax, 069edh                            ; b8 ed 69
     jmp short 00bdch                          ; eb e7
-    mov ax, 07b19h                            ; b8 19 7b
+    mov ax, 07b1ah                            ; b8 1a 7b
     jmp short 00bdch                          ; eb e2
     jmp short 00bcbh                          ; eb cf
 vga_read_pixel_:                             ; 0xc0bfc LB 0x143
@@ -1862,10 +1862,10 @@ vga_read_pixel_:                             ; 0xc0bfc LB 0x143
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 00c31h                          ; 75 03
     jmp near 00d38h                           ; e9 07 01
-    mov bl, byte [bx+04630h]                  ; 8a 9f 30 46
+    mov bl, byte [bx+04631h]                  ; 8a 9f 31 46
     cmp bl, cl                                ; 38 cb
     jc short 00c48h                           ; 72 0f
     jbe short 00c50h                          ; 76 15
@@ -1933,7 +1933,7 @@ vga_read_pixel_:                             ; 0xc0bfc LB 0x143
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+04631h], 002h                ; 80 bf 31 46 02
+    cmp byte [bx+04632h], 002h                ; 80 bf 32 46 02
     jne short 00cfah                          ; 75 1b
     mov cx, si                                ; 89 f1
     xor ch, ch                                ; 30 ed
@@ -2267,7 +2267,7 @@ biosfn_set_active_page_:                     ; 0xc0f34 LB 0xe5
     mov CL, strict byte 003h                  ; b1 03
     mov si, bx                                ; 89 de
     sal si, CL                                ; d3 e6
-    cmp byte [si+0462fh], 000h                ; 80 bc 2f 46 00
+    cmp byte [si+04630h], 000h                ; 80 bc 30 46 00
     jne short 00fc0h                          ; 75 47
     mov dx, strict word 0004ah                ; ba 4a 00
     mov ax, strict word 00040h                ; b8 40 00
@@ -2299,12 +2299,12 @@ biosfn_set_active_page_:                     ; 0xc0f34 LB 0xe5
     lea ax, [si+001h]                         ; 8d 44 01
     mul di                                    ; f7 e7
     jmp short 00fd0h                          ; eb 10
-    mov bl, byte [bx+046aeh]                  ; 8a 9f ae 46
+    mov bl, byte [bx+046afh]                  ; 8a 9f af 46
     mov CL, strict byte 006h                  ; b1 06
     sal bx, CL                                ; d3 e3
     mov al, ch                                ; 88 e8
     xor ah, ah                                ; 30 e4
-    mul word [bx+046c5h]                      ; f7 a7 c5 46
+    mul word [bx+046c6h]                      ; f7 a7 c6 46
     mov bx, ax                                ; 89 c3
     mov dx, strict word 00063h                ; ba 63 00
     mov ax, strict word 00040h                ; b8 40 00
@@ -2377,18 +2377,18 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov byte [bp-014h], al                    ; 88 46 ec
     mov byte [bp-013h], 000h                  ; c6 46 ed 00
     mov bx, word [bp-014h]                    ; 8b 5e ec
-    mov al, byte [bx+046aeh]                  ; 8a 87 ae 46
+    mov al, byte [bx+046afh]                  ; 8a 87 af 46
     mov byte [bp-00eh], al                    ; 88 46 f2
     mov bl, al                                ; 88 c3
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 006h                  ; b1 06
     sal bx, CL                                ; d3 e3
-    mov al, byte [bx+046c2h]                  ; 8a 87 c2 46
+    mov al, byte [bx+046c3h]                  ; 8a 87 c3 46
     xor ah, ah                                ; 30 e4
     mov word [bp-016h], ax                    ; 89 46 ea
-    mov al, byte [bx+046c3h]                  ; 8a 87 c3 46
-    mov word [bp-018h], ax                    ; 89 46 e8
     mov al, byte [bx+046c4h]                  ; 8a 87 c4 46
+    mov word [bp-018h], ax                    ; 89 46 e8
+    mov al, byte [bx+046c5h]                  ; 8a 87 c5 46
     mov word [bp-01ah], ax                    ; 89 46 e6
     mov dx, 00087h                            ; ba 87 00
     mov ax, strict word 00040h                ; b8 40 00
@@ -2405,13 +2405,13 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov CL, strict byte 003h                  ; b1 03
     mov bx, word [bp-014h]                    ; 8b 5e ec
     sal bx, CL                                ; d3 e3
-    mov al, byte [bx+04634h]                  ; 8a 87 34 46
+    mov al, byte [bx+04635h]                  ; 8a 87 35 46
     mov dx, 003c6h                            ; ba c6 03
     out DX, AL                                ; ee
     xor al, al                                ; 30 c0
     mov dx, 003c8h                            ; ba c8 03
     out DX, AL                                ; ee
-    mov bl, byte [bx+04635h]                  ; 8a 9f 35 46
+    mov bl, byte [bx+04636h]                  ; 8a 9f 36 46
     cmp bl, 001h                              ; 80 fb 01
     jc short 010dbh                           ; 72 0d
     jbe short 010e4h                          ; 76 14
@@ -2422,13 +2422,13 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     jmp short 010f1h                          ; eb 16
     test bl, bl                               ; 84 db
     jne short 010f1h                          ; 75 12
-    mov di, 04e42h                            ; bf 42 4e
+    mov di, 04e43h                            ; bf 43 4e
     jmp short 010f1h                          ; eb 0d
-    mov di, 04f02h                            ; bf 02 4f
+    mov di, 04f03h                            ; bf 03 4f
     jmp short 010f1h                          ; eb 08
-    mov di, 04fc2h                            ; bf c2 4f
+    mov di, 04fc3h                            ; bf c3 4f
     jmp short 010f1h                          ; eb 03
-    mov di, 05082h                            ; bf 82 50
+    mov di, 05083h                            ; bf 83 50
     xor bx, bx                                ; 31 db
     jmp short 010fdh                          ; eb 08
     jmp short 01149h                          ; eb 52
@@ -2439,9 +2439,9 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov al, byte [si+04635h]                  ; 8a 84 35 46
+    mov al, byte [si+04636h]                  ; 8a 84 36 46
     mov si, ax                                ; 89 c6
-    mov al, byte [si+046beh]                  ; 8a 84 be 46
+    mov al, byte [si+046bfh]                  ; 8a 84 bf 46
     cmp bx, ax                                ; 39 c3
     jnbe short 01131h                         ; 77 1b
     mov ax, bx                                ; 89 d8
@@ -2486,7 +2486,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
     add si, bx                                ; 01 de
-    mov al, byte [si+046e5h]                  ; 8a 84 e5 46
+    mov al, byte [si+046e6h]                  ; 8a 84 e6 46
     out DX, AL                                ; ee
     inc bx                                    ; 43
     jmp short 01153h                          ; eb e0
@@ -2513,7 +2513,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
     add si, bx                                ; 01 de
-    mov al, byte [si+046c6h]                  ; 8a 84 c6 46
+    mov al, byte [si+046c7h]                  ; 8a 84 c7 46
     mov dx, 003c5h                            ; ba c5 03
     out DX, AL                                ; ee
     inc bx                                    ; 43
@@ -2531,7 +2531,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
     add si, bx                                ; 01 de
-    mov al, byte [si+046f9h]                  ; 8a 84 f9 46
+    mov al, byte [si+046fah]                  ; 8a 84 fa 46
     mov dx, 003cfh                            ; ba cf 03
     out DX, AL                                ; ee
     inc bx                                    ; 43
@@ -2540,7 +2540,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+04630h], 001h                ; 80 bf 30 46 01
+    cmp byte [bx+04631h], 001h                ; 80 bf 31 46 01
     jne short 011eah                          ; 75 05
     mov dx, 003b4h                            ; ba b4 03
     jmp short 011edh                          ; eb 03
@@ -2563,12 +2563,12 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov di, ax                                ; 89 c7
     add di, bx                                ; 01 df
     lea dx, [si+001h]                         ; 8d 54 01
-    mov al, byte [di+046cch]                  ; 8a 85 cc 46
+    mov al, byte [di+046cdh]                  ; 8a 85 cd 46
     out DX, AL                                ; ee
     inc bx                                    ; 43
     jmp short 011f7h                          ; eb dc
     mov bx, cx                                ; 89 cb
-    mov al, byte [bx+046cbh]                  ; 8a 87 cb 46
+    mov al, byte [bx+046cch]                  ; 8a 87 cc 46
     mov dx, 003c2h                            ; ba c2 03
     out DX, AL                                ; ee
     mov AL, strict byte 020h                  ; b0 20
@@ -2584,9 +2584,9 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     xor bh, ch                                ; 30 ef
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 0125ah                          ; 75 13
-    mov es, [bx+04632h]                       ; 8e 87 32 46
+    mov es, [bx+04633h]                       ; 8e 87 33 46
     mov cx, 04000h                            ; b9 00 40
     mov ax, 00720h                            ; b8 20 07
     xor di, di                                ; 31 ff
@@ -2596,7 +2596,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     jmp short 01298h                          ; eb 3e
     cmp byte [bp-00ch], 00dh                  ; 80 7e f4 0d
     jnc short 01272h                          ; 73 12
-    mov es, [bx+04632h]                       ; 8e 87 32 46
+    mov es, [bx+04633h]                       ; 8e 87 33 46
     mov cx, 04000h                            ; b9 00 40
     xor ax, ax                                ; 31 c0
     xor di, di                                ; 31 ff
@@ -2614,7 +2614,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov word [bp-01ch], ax                    ; 89 46 e4
     mov AL, strict byte 00fh                  ; b0 0f
     out DX, AL                                ; ee
-    mov es, [bx+04632h]                       ; 8e 87 32 46
+    mov es, [bx+04633h]                       ; 8e 87 33 46
     mov cx, 08000h                            ; b9 00 80
     xor ax, ax                                ; 31 c0
     xor di, di                                ; 31 ff
@@ -2636,7 +2636,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 006h                  ; b1 06
     sal bx, CL                                ; d3 e3
-    mov bx, word [bx+046c5h]                  ; 8b 9f c5 46
+    mov bx, word [bx+046c6h]                  ; 8b 9f c6 46
     mov dx, strict word 0004ch                ; ba 4c 00
     mov ax, strict word 00040h                ; b8 40 00
     call 031c5h                               ; e8 fd 1e
@@ -2677,7 +2677,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov ax, strict word 00040h                ; b8 40 00
     call 031a9h                               ; e8 7a 1e
     mov cx, ds                                ; 8c d9
-    mov bx, 053d0h                            ; bb d0 53
+    mov bx, 053d1h                            ; bb d1 53
     mov dx, 000a8h                            ; ba a8 00
     mov ax, strict word 00040h                ; b8 40 00
     call 031e5h                               ; e8 a8 1e
@@ -2693,7 +2693,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 0136ch                          ; 75 09
     mov dx, strict word 00007h                ; ba 07 00
     mov ax, strict word 00006h                ; b8 06 00
@@ -2714,7 +2714,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 013a6h                          ; 75 10
     xor bl, bl                                ; 30 db
     mov AL, strict byte 004h                  ; b0 04
@@ -2724,7 +2724,7 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     mov al, cl                                ; 88 c8
     mov AH, strict byte 011h                  ; b4 11
     int 010h                                  ; cd 10
-    mov dx, 057ech                            ; ba ec 57
+    mov dx, 057edh                            ; ba ed 57
     mov ax, strict word 0001fh                ; b8 1f 00
     call 00a00h                               ; e8 51 f6
     mov ax, word [bp-01ah]                    ; 8b 46 e6
@@ -2734,13 +2734,13 @@ biosfn_set_video_mode_:                      ; 0xc1019 LB 0x3c7
     je short 013cch                           ; 74 10
     cmp ax, strict word 00008h                ; 3d 08 00
     jne short 013d6h                          ; 75 15
-    mov dx, 053ech                            ; ba ec 53
+    mov dx, 053edh                            ; ba ed 53
     mov ax, strict word 00043h                ; b8 43 00
     call 00a00h                               ; e8 36 f6
     jmp short 013d6h                          ; eb 0a
-    mov dx, 05bech                            ; ba ec 5b
+    mov dx, 05bedh                            ; ba ed 5b
     jmp short 013c4h                          ; eb f3
-    mov dx, 069ech                            ; ba ec 69
+    mov dx, 069edh                            ; ba ed 69
     jmp short 013c4h                          ; eb ee
     lea sp, [bp-00ah]                         ; 8d 66 f6
     pop di                                    ; 5f
@@ -3129,7 +3129,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov ax, word [bp-018h]                    ; 8b 46 e8
     mul bx                                    ; f7 e3
     mov word [bp-01ah], ax                    ; 89 46 e6
-    cmp byte [di+0462fh], 000h                ; 80 bd 2f 46 00
+    cmp byte [di+04630h], 000h                ; 80 bd 30 46 00
     jne short 01766h                          ; 75 50
     sal ax, 1                                 ; d1 e0
     or AL, strict byte 0ffh                   ; 0c ff
@@ -3156,7 +3156,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov ah, byte [bp-008h]                    ; 8a 66 f8
     xor al, ch                                ; 30 e8
     add ax, strict word 00020h                ; 05 20 00
-    mov es, [di+04632h]                       ; 8e 85 32 46
+    mov es, [di+04633h]                       ; 8e 85 33 46
     mov cx, word [bp-01ah]                    ; 8b 4e e6
     mov di, bx                                ; 89 df
     cld                                       ; fc
@@ -3201,7 +3201,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov es, [si+04632h]                       ; 8e 84 32 46
+    mov es, [si+04633h]                       ; 8e 84 33 46
     mov cx, word [bp-022h]                    ; 8b 4e de
     mov ax, di                                ; 89 f8
     mov di, dx                                ; 89 d7
@@ -3225,7 +3225,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov ax, word [si+04632h]                  ; 8b 84 32 46
+    mov ax, word [si+04633h]                  ; 8b 84 33 46
     mov word [bp-022h], ax                    ; 89 46 de
     mov ax, word [bp-016h]                    ; 8b 46 ea
     mul word [bp-018h]                        ; f7 66 e8
@@ -3277,7 +3277,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov si, word [si+04632h]                  ; 8b b4 32 46
+    mov si, word [si+04633h]                  ; 8b b4 33 46
     mov cx, di                                ; 89 f9
     mov ax, word [bp-022h]                    ; 8b 46 de
     mov di, dx                                ; 89 d7
@@ -3305,7 +3305,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov ax, word [si+04632h]                  ; 8b 84 32 46
+    mov ax, word [si+04633h]                  ; 8b 84 33 46
     mov word [bp-014h], ax                    ; 89 46 ec
     mov ax, word [bp-016h]                    ; 8b 46 ea
     mul word [bp-018h]                        ; f7 66 e8
@@ -3329,14 +3329,14 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     jc short 0191ah                           ; 72 29
     dec word [bp-016h]                        ; ff 4e ea
     jmp near 01835h                           ; e9 3e ff
-    mov al, byte [si+046aeh]                  ; 8a 84 ae 46
+    mov al, byte [si+046afh]                  ; 8a 84 af 46
     xor ah, ah                                ; 30 e4
     mov CL, strict byte 006h                  ; b1 06
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    mov al, byte [si+046c4h]                  ; 8a 84 c4 46
+    mov al, byte [si+046c5h]                  ; 8a 84 c5 46
     mov byte [bp-012h], al                    ; 88 46 ee
-    mov al, byte [di+04630h]                  ; 8a 85 30 46
+    mov al, byte [di+04631h]                  ; 8a 85 31 46
     cmp AL, strict byte 004h                  ; 3c 04
     je short 0191dh                           ; 74 0b
     cmp AL, strict byte 003h                  ; 3c 03
@@ -3378,7 +3378,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    mov bx, word [bx+04632h]                  ; 8b 9f 32 46
+    mov bx, word [bx+04633h]                  ; 8b 9f 33 46
     mov cx, ax                                ; 89 c1
     mov ax, dx                                ; 89 d0
     xor di, di                                ; 31 ff
@@ -3492,7 +3492,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     jc short 01acch                           ; 72 4c
     dec word [bp-016h]                        ; ff 4e ea
     jmp short 01a10h                          ; eb 8b
-    mov bl, byte [di+04631h]                  ; 8a 9d 31 46
+    mov bl, byte [di+04632h]                  ; 8a 9d 32 46
     cmp byte [bp-00ah], 000h                  ; 80 7e f6 00
     jne short 01acfh                          ; 75 40
     cmp byte [bp-00eh], 000h                  ; 80 7e f2 00
@@ -3513,7 +3513,7 @@ biosfn_scroll_:                              ; 0xc1655 LB 0x576
     mul bx                                    ; f7 e3
     mov dl, byte [bp-008h]                    ; 8a 56 f8
     xor dh, dh                                ; 30 f6
-    mov es, [di+04632h]                       ; 8e 85 32 46
+    mov es, [di+04633h]                       ; 8e 85 33 46
     mov cx, ax                                ; 89 c1
     mov ax, dx                                ; 89 d0
     xor di, di                                ; 31 ff
@@ -3638,11 +3638,11 @@ write_gfx_char_pl4_:                         ; 0xc1bcb LB 0xf8
     je short 01befh                           ; 74 0b
     cmp byte [bp+006h], 00eh                  ; 80 7e 06 0e
     jne short 01bf4h                          ; 75 0a
-    mov di, 05bech                            ; bf ec 5b
+    mov di, 05bedh                            ; bf ed 5b
     jmp short 01bf7h                          ; eb 08
-    mov di, 069ech                            ; bf ec 69
+    mov di, 069edh                            ; bf ed 69
     jmp short 01bf7h                          ; eb 03
-    mov di, 053ech                            ; bf ec 53
+    mov di, 053edh                            ; bf ed 53
     xor ah, ah                                ; 30 e4
     mov bx, ax                                ; 89 c3
     mov al, byte [bp+006h]                    ; 8a 46 06
@@ -3740,7 +3740,7 @@ write_gfx_char_cga_:                         ; 0xc1cc3 LB 0x13a
     sub sp, strict byte 0000ah                ; 83 ec 0a
     mov byte [bp-008h], al                    ; 88 46 f8
     mov byte [bp-00ah], dl                    ; 88 56 f6
-    mov si, 053ech                            ; be ec 53
+    mov si, 053edh                            ; be ed 53
     xor bh, bh                                ; 30 ff
     mov al, byte [bp+006h]                    ; 8a 46 06
     xor ah, ah                                ; 30 e4
@@ -3878,7 +3878,7 @@ write_gfx_char_lin_:                         ; 0xc1dfd LB 0xac
     mov byte [bp-00ch], dl                    ; 88 56 f4
     mov byte [bp-006h], bl                    ; 88 5e fa
     mov al, cl                                ; 88 c8
-    mov si, 053ech                            ; be ec 53
+    mov si, 053edh                            ; be ed 53
     xor ah, ah                                ; 30 e4
     mov bl, byte [bp+004h]                    ; 8a 5e 04
     xor bh, bh                                ; 30 ff
@@ -3993,7 +3993,7 @@ biosfn_write_char_attr_:                     ; 0xc1ea9 LB 0x192
     mov CL, strict byte 003h                  ; b1 03
     mov di, ax                                ; 89 c7
     sal di, CL                                ; d3 e7
-    cmp byte [di+0462fh], 000h                ; 80 bd 2f 46 00
+    cmp byte [di+04630h], 000h                ; 80 bd 30 46 00
     jne short 01f67h                          ; 75 49
     mov ax, bx                                ; 89 d8
     mul word [bp-01ah]                        ; f7 66 e6
@@ -4020,7 +4020,7 @@ biosfn_write_char_attr_:                     ; 0xc1ea9 LB 0x192
     mov bl, byte [bp-008h]                    ; 8a 5e f8
     mov word [bp-01ch], bx                    ; 89 5e e4
     mov ax, word [bp-01ch]                    ; 8b 46 e4
-    mov es, [di+04632h]                       ; 8e 85 32 46
+    mov es, [di+04633h]                       ; 8e 85 33 46
     mov cx, si                                ; 89 f1
     mov di, dx                                ; 89 d7
     cld                                       ; fc
@@ -4028,13 +4028,13 @@ biosfn_write_char_attr_:                     ; 0xc1ea9 LB 0x192
     rep stosw                                 ; f3 ab
     jmp near 02034h                           ; e9 cd 00
     mov bx, ax                                ; 89 c3
-    mov al, byte [bx+046aeh]                  ; 8a 87 ae 46
+    mov al, byte [bx+046afh]                  ; 8a 87 af 46
     mov CL, strict byte 006h                  ; b1 06
     mov bx, ax                                ; 89 c3
     sal bx, CL                                ; d3 e3
-    mov al, byte [bx+046c4h]                  ; 8a 87 c4 46
+    mov al, byte [bx+046c5h]                  ; 8a 87 c5 46
     mov byte [bp-010h], al                    ; 88 46 f0
-    mov al, byte [di+04631h]                  ; 8a 85 31 46
+    mov al, byte [di+04632h]                  ; 8a 85 32 46
     mov byte [bp-00ah], al                    ; 88 46 f6
     dec si                                    ; 4e
     cmp si, strict byte 0ffffh                ; 83 fe ff
@@ -4048,7 +4048,7 @@ biosfn_write_char_attr_:                     ; 0xc1ea9 LB 0x192
     mov CL, strict byte 003h                  ; b1 03
     mov bx, ax                                ; 89 c3
     sal bx, CL                                ; d3 e3
-    mov al, byte [bx+04630h]                  ; 8a 87 30 46
+    mov al, byte [bx+04631h]                  ; 8a 87 31 46
     cmp al, cl                                ; 38 c8
     jc short 01fb2h                           ; 72 0d
     jbe short 01fb8h                          ; 76 11
@@ -4164,7 +4164,7 @@ biosfn_write_char_only_:                     ; 0xc203b LB 0x193
     mov ax, bx                                ; 89 d8
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     jne short 02102h                          ; 75 4e
     mov ax, di                                ; 89 f8
     mul word [bp-018h]                        ; f7 66 e8
@@ -4194,7 +4194,7 @@ biosfn_write_char_only_:                     ; 0xc203b LB 0x193
     mov CL, strict byte 003h                  ; b1 03
     mov bx, dx                                ; 89 d3
     sal bx, CL                                ; d3 e3
-    mov cx, word [bx+04632h]                  ; 8b 8f 32 46
+    mov cx, word [bx+04633h]                  ; 8b 8f 33 46
     mov bx, ax                                ; 89 c3
     mov dx, di                                ; 89 fa
     mov ax, cx                                ; 89 c8
@@ -4203,14 +4203,14 @@ biosfn_write_char_only_:                     ; 0xc203b LB 0x193
     inc di                                    ; 47
     jmp short 020dbh                          ; eb d9
     mov di, ax                                ; 89 c7
-    mov dl, byte [di+046aeh]                  ; 8a 95 ae 46
+    mov dl, byte [di+046afh]                  ; 8a 95 af 46
     xor dh, dh                                ; 30 f6
     mov CL, strict byte 006h                  ; b1 06
     mov di, dx                                ; 89 d7
     sal di, CL                                ; d3 e7
-    mov al, byte [di+046c4h]                  ; 8a 85 c4 46
+    mov al, byte [di+046c5h]                  ; 8a 85 c5 46
     mov byte [bp-012h], al                    ; 88 46 ee
-    mov al, byte [bx+04631h]                  ; 8a 87 31 46
+    mov al, byte [bx+04632h]                  ; 8a 87 32 46
     mov byte [bp-010h], al                    ; 88 46 f0
     dec si                                    ; 4e
     cmp si, strict byte 0ffffh                ; 83 fe ff
@@ -4223,7 +4223,7 @@ biosfn_write_char_only_:                     ; 0xc203b LB 0x193
     mov CL, strict byte 003h                  ; b1 03
     mov bx, dx                                ; 89 d3
     sal bx, CL                                ; d3 e3
-    mov bl, byte [bx+04630h]                  ; 8a 9f 30 46
+    mov bl, byte [bx+04631h]                  ; 8a 9f 31 46
     cmp bl, cl                                ; 38 cb
     jc short 0214dh                           ; 72 0e
     jbe short 02154h                          ; 76 13
@@ -4309,9 +4309,9 @@ biosfn_write_pixel_:                         ; 0xc21ce LB 0x17f
     mov CL, strict byte 003h                  ; b1 03
     mov bx, ax                                ; 89 c3
     sal bx, CL                                ; d3 e3
-    cmp byte [bx+0462fh], 000h                ; 80 bf 2f 46 00
+    cmp byte [bx+04630h], 000h                ; 80 bf 30 46 00
     je short 02219h                           ; 74 18
-    mov al, byte [bx+04630h]                  ; 8a 87 30 46
+    mov al, byte [bx+04631h]                  ; 8a 87 31 46
     cmp al, cl                                ; 38 c8
     jc short 02215h                           ; 72 0c
     jbe short 0221fh                          ; 76 14
@@ -4372,7 +4372,7 @@ biosfn_write_pixel_:                         ; 0xc21ce LB 0x17f
     shr ax, 1                                 ; d1 e8
     mov si, strict word 00050h                ; be 50 00
     mul si                                    ; f7 e6
-    cmp byte [bx+04631h], 002h                ; 80 bf 31 46 02
+    cmp byte [bx+04632h], 002h                ; 80 bf 32 46 02
     jne short 022a4h                          ; 75 09
     mov bx, word [bp-008h]                    ; 8b 5e f8
     shr bx, 1                                 ; d1 eb
@@ -4394,7 +4394,7 @@ biosfn_write_pixel_:                         ; 0xc21ce LB 0x17f
     mov CL, strict byte 003h                  ; b1 03
     mov si, ax                                ; 89 c6
     sal si, CL                                ; d3 e6
-    cmp byte [si+04631h], 002h                ; 80 bc 31 46 02
+    cmp byte [si+04632h], 002h                ; 80 bc 32 46 02
     jne short 022eeh                          ; 75 1a
     mov al, byte [bp-008h]                    ; 8a 46 f8
     and al, cl                                ; 20 c8
@@ -4519,7 +4519,7 @@ biosfn_write_teletype_:                      ; 0xc234d LB 0x25f
     mov CL, strict byte 003h                  ; b1 03
     mov si, bx                                ; 89 de
     sal si, CL                                ; d3 e6
-    cmp byte [si+0462fh], 000h                ; 80 bc 2f 46 00
+    cmp byte [si+04630h], 000h                ; 80 bc 30 46 00
     jne short 0244ch                          ; 75 46
     mov ax, word [bp-01ah]                    ; 8b 46 e6
     mul word [bp-018h]                        ; f7 66 e8
@@ -4537,7 +4537,7 @@ biosfn_write_teletype_:                      ; 0xc234d LB 0x25f
     sal ax, 1                                 ; d1 e0
     add cx, ax                                ; 01 c1
     mov bl, byte [bp-016h]                    ; 8a 5e ea
-    mov ax, word [si+04632h]                  ; 8b 84 32 46
+    mov ax, word [si+04633h]                  ; 8b 84 33 46
     mov dx, cx                                ; 89 ca
     call 031a9h                               ; e8 74 0d
     cmp byte [bp-00ch], 003h                  ; 80 7e f4 03
@@ -4546,15 +4546,15 @@ biosfn_write_teletype_:                      ; 0xc234d LB 0x25f
     xor bh, bh                                ; 30 ff
     mov dx, cx                                ; 89 ca
     inc dx                                    ; 42
-    mov ax, word [si+04632h]                  ; 8b 84 32 46
+    mov ax, word [si+04633h]                  ; 8b 84 33 46
     call 031a9h                               ; e8 5f 0d
     jmp short 02492h                          ; eb 46
-    mov bl, byte [bx+046aeh]                  ; 8a 9f ae 46
+    mov bl, byte [bx+046afh]                  ; 8a 9f af 46
     mov CL, strict byte 006h                  ; b1 06
     sal bx, CL                                ; d3 e3
-    mov bl, byte [bx+046c4h]                  ; 8a 9f c4 46
-    mov ah, byte [si+04631h]                  ; 8a a4 31 46
-    mov al, byte [si+04630h]                  ; 8a 84 30 46
+    mov bl, byte [bx+046c5h]                  ; 8a 9f c5 46
+    mov ah, byte [si+04632h]                  ; 8a a4 32 46
+    mov al, byte [si+04631h]                  ; 8a 84 31 46
     cmp AL, strict byte 003h                  ; 3c 03
     jc short 02470h                           ; 72 0c
     jbe short 02476h                          ; 76 10
@@ -4633,7 +4633,7 @@ biosfn_write_teletype_:                      ; 0xc234d LB 0x25f
     db  0feh, 0c8h
     ; dec al                                    ; fe c8
     mov byte [bp-012h], al                    ; 88 46 ee
-    cmp byte [si+0462fh], 000h                ; 80 bc 2f 46 00
+    cmp byte [si+04630h], 000h                ; 80 bc 30 46 00
     jne short 02569h                          ; 75 51
     mov ax, word [bp-01ah]                    ; 8b 46 e6
     mul word [bp-018h]                        ; f7 66 e8
@@ -4655,7 +4655,7 @@ biosfn_write_teletype_:                      ; 0xc234d LB 0x25f
     mov dx, cx                                ; 89 ca
     add dx, ax                                ; 01 c2
     inc dx                                    ; 42
-    mov ax, word [si+04632h]                  ; 8b 84 32 46
+    mov ax, word [si+04633h]                  ; 8b 84 33 46
     call 0319bh                               ; e8 51 0c
     mov dx, strict word 00001h                ; ba 01 00
     push dx                                   ; 52
@@ -4957,7 +4957,7 @@ biosfn_load_text_8_14_pat_:                  ; 0xc2764 LB 0x76
     mov di, bx                                ; 89 df
     sal di, CL                                ; d3 e7
     add di, word [bp-00ch]                    ; 03 7e f4
-    mov si, 05bech                            ; be ec 5b
+    mov si, 05bedh                            ; be ed 5b
     add si, ax                                ; 01 c6
     mov cx, strict word 0000eh                ; b9 0e 00
     mov dx, 0c000h                            ; ba 00 c0
@@ -5017,7 +5017,7 @@ biosfn_load_text_8_8_pat_:                   ; 0xc27da LB 0x74
     mov di, bx                                ; 89 df
     sal di, CL                                ; d3 e7
     add di, word [bp-00ch]                    ; 03 7e f4
-    add si, 053ech                            ; 81 c6 ec 53
+    add si, 053edh                            ; 81 c6 ed 53
     mov cx, strict word 00008h                ; b9 08 00
     mov dx, 0c000h                            ; ba 00 c0
     mov ax, 0a000h                            ; b8 00 a0
@@ -5076,7 +5076,7 @@ biosfn_load_text_8_16_pat_:                  ; 0xc284e LB 0x74
     mov di, bx                                ; 89 df
     sal di, CL                                ; d3 e7
     add di, word [bp-00ch]                    ; 03 7e f4
-    add si, 069ech                            ; 81 c6 ec 69
+    add si, 069edh                            ; 81 c6 ed 69
     mov cx, strict word 00010h                ; b9 10 00
     mov dx, 0c000h                            ; ba 00 c0
     mov ax, 0a000h                            ; b8 00 a0
@@ -5212,7 +5212,7 @@ biosfn_read_state_info_:                     ; 0xc2982 LB 0x102
     push dx                                   ; 52
     push bx                                   ; 53
     mov cx, ds                                ; 8c d9
-    mov bx, 05382h                            ; bb 82 53
+    mov bx, 05383h                            ; bb 83 53
     mov dx, word [bp-00ah]                    ; 8b 56 f6
     mov ax, word [bp-008h]                    ; 8b 46 f8
     call 031e5h                               ; e8 4d 08
@@ -6151,7 +6151,7 @@ find_vga_entry_:                             ; 0xc3170 LB 0x2b
     xor bh, bh                                ; 30 ff
     mov CL, strict byte 003h                  ; b1 03
     sal bx, CL                                ; d3 e3
-    cmp dl, byte [bx+0462eh]                  ; 3a 97 2e 46
+    cmp dl, byte [bx+0462fh]                  ; 3a 97 2f 46
     jne short 0317eh                          ; 75 ec
     mov ah, al                                ; 88 c4
     mov al, ah                                ; 88 e0
@@ -6628,7 +6628,7 @@ _int10_func:                                 ; 0xc3264 LB 0x38e
     mov bx, word [bp+016h]                    ; 8b 5e 16
     mov dx, word [bp+00ch]                    ; 8b 56 0c
     lea ax, [bp+012h]                         ; 8d 46 12
-    call 03910h                               ; e8 4a 03
+    call 03920h                               ; e8 5a 03
     jmp short 035ebh                          ; eb 23
     jmp short 035e6h                          ; eb 1c
     lea ax, [bp+00ch]                         ; 8d 46 0c
@@ -6637,7 +6637,7 @@ _int10_func:                                 ; 0xc3264 LB 0x38e
     mov bx, word [bp+00eh]                    ; 8b 5e 0e
     mov dx, word [bp+010h]                    ; 8b 56 10
     lea ax, [bp+012h]                         ; 8d 46 12
-    call 03af9h                               ; e8 1c 05
+    call 03b09h                               ; e8 2c 05
     jmp short 035ebh                          ; eb 0c
     mov word [bp+012h], 00100h                ; c7 46 12 00 01
     jmp short 035ebh                          ; eb 05
@@ -6918,93 +6918,98 @@ vbe_biosfn_return_controller_information_: ; 0xc3724 LB 0x12f
     pop cx                                    ; 59
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_return_mode_information_:         ; 0xc3853 LB 0xbd
+vbe_biosfn_return_mode_information_:         ; 0xc3853 LB 0xcd
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     push si                                   ; 56
     push di                                   ; 57
-    push ax                                   ; 50
-    push ax                                   ; 50
+    sub sp, strict byte 00006h                ; 83 ec 06
     push ax                                   ; 50
     mov ax, dx                                ; 89 d0
     mov si, bx                                ; 89 de
     mov word [bp-006h], cx                    ; 89 4e fa
     test dh, 040h                             ; f6 c6 40
-    je short 0386ch                           ; 74 05
+    je short 0386dh                           ; 74 05
     mov dx, strict word 00001h                ; ba 01 00
-    jmp short 0386eh                          ; eb 02
+    jmp short 0386fh                          ; eb 02
     xor dx, dx                                ; 31 d2
+    mov word [bp-00ah], dx                    ; 89 56 f6
     and ah, 001h                              ; 80 e4 01
-    call 036cfh                               ; e8 5b fe
+    call 036cfh                               ; e8 57 fe
     mov word [bp-008h], ax                    ; 89 46 f8
     test ax, ax                               ; 85 c0
-    je short 038b1h                           ; 74 36
+    je short 038b5h                           ; 74 36
     mov cx, 00100h                            ; b9 00 01
     xor ax, ax                                ; 31 c0
     mov di, word [bp-006h]                    ; 8b 7e fa
     mov es, si                                ; 8e c6
     cld                                       ; fc
-    jcxz 0388ah                               ; e3 02
+    jcxz 0388eh                               ; e3 02
     rep stosb                                 ; f3 aa
     xor cx, cx                                ; 31 c9
-    jmp short 03893h                          ; eb 05
+    jmp short 03897h                          ; eb 05
     cmp cx, strict byte 00042h                ; 83 f9 42
-    jnc short 038b3h                          ; 73 20
+    jnc short 038b7h                          ; 73 20
     mov dx, word [bp-008h]                    ; 8b 56 f8
     inc dx                                    ; 42
     inc dx                                    ; 42
     add dx, cx                                ; 01 ca
     mov ax, 003b6h                            ; b8 b6 03
-    call 03661h                               ; e8 c1 fd
+    call 03661h                               ; e8 bd fd
     mov bl, al                                ; 88 c3
     xor bh, bh                                ; 30 ff
     mov dx, word [bp-006h]                    ; 8b 56 fa
     add dx, cx                                ; 01 ca
     mov ax, si                                ; 89 f0
-    call 031a9h                               ; e8 fb f8
+    call 031a9h                               ; e8 f7 f8
     inc cx                                    ; 41
-    jmp short 0388eh                          ; eb dd
-    jmp short 038feh                          ; eb 4b
+    jmp short 03892h                          ; eb dd
+    jmp short 0390eh                          ; eb 57
     mov dx, word [bp-006h]                    ; 8b 56 fa
     inc dx                                    ; 42
     inc dx                                    ; 42
     mov ax, si                                ; 89 f0
-    call 0319bh                               ; e8 de f8
+    call 0319bh                               ; e8 da f8
     test AL, strict byte 001h                 ; a8 01
-    je short 038ddh                           ; 74 1c
+    je short 038e1h                           ; 74 1c
     mov dx, word [bp-006h]                    ; 8b 56 fa
     add dx, strict byte 0000ch                ; 83 c2 0c
     mov bx, 0065ch                            ; bb 5c 06
     mov ax, si                                ; 89 f0
-    call 031c5h                               ; e8 f6 f8
+    call 031c5h                               ; e8 f2 f8
     mov dx, word [bp-006h]                    ; 8b 56 fa
     add dx, strict byte 0000eh                ; 83 c2 0e
     mov bx, 0c000h                            ; bb 00 c0
     mov ax, si                                ; 89 f0
-    call 031c5h                               ; e8 e8 f8
+    call 031c5h                               ; e8 e4 f8
     mov ax, strict word 0000bh                ; b8 0b 00
     mov dx, 001ceh                            ; ba ce 01
-    call 005a0h                               ; e8 ba cc
+    call 005a0h                               ; e8 b6 cc
+    mov cx, word [bp-006h]                    ; 8b 4e fa
+    add cx, strict byte 0002ah                ; 83 c1 2a
+    cmp word [bp-00ah], strict byte 00000h    ; 83 7e f6 00
+    je short 03900h                           ; 74 0a
     mov dx, 001cfh                            ; ba cf 01
-    call 005a7h                               ; e8 bb cc
-    mov dx, word [bp-006h]                    ; 8b 56 fa
-    add dx, strict byte 0002ah                ; 83 c2 2a
+    call 005a7h                               ; e8 ab cc
     mov bx, ax                                ; 89 c3
+    jmp short 03902h                          ; eb 02
+    xor bx, bx                                ; 31 db
+    mov dx, cx                                ; 89 ca
     mov ax, si                                ; 89 f0
-    call 031c5h                               ; e8 cc f8
+    call 031c5h                               ; e8 bc f8
     mov ax, strict word 0004fh                ; b8 4f 00
-    jmp short 03901h                          ; eb 03
+    jmp short 03911h                          ; eb 03
     mov ax, 00100h                            ; b8 00 01
     push SS                                   ; 16
     pop ES                                    ; 07
-    mov bx, word [bp-00ah]                    ; 8b 5e f6
+    mov bx, word [bp-00ch]                    ; 8b 5e f4
     mov word [es:bx], ax                      ; 26 89 07
     lea sp, [bp-004h]                         ; 8d 66 fc
     pop di                                    ; 5f
     pop si                                    ; 5e
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_set_mode_:                        ; 0xc3910 LB 0xeb
+vbe_biosfn_set_mode_:                        ; 0xc3920 LB 0xeb
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     push si                                   ; 56
@@ -7013,83 +7018,83 @@ vbe_biosfn_set_mode_:                        ; 0xc3910 LB 0xeb
     mov si, ax                                ; 89 c6
     mov word [bp-00ah], dx                    ; 89 56 f6
     test byte [bp-009h], 040h                 ; f6 46 f7 40
-    je short 03928h                           ; 74 05
+    je short 03938h                           ; 74 05
     mov ax, strict word 00001h                ; b8 01 00
-    jmp short 0392ah                          ; eb 02
+    jmp short 0393ah                          ; eb 02
     xor ax, ax                                ; 31 c0
     mov dx, ax                                ; 89 c2
     test ax, ax                               ; 85 c0
-    je short 03933h                           ; 74 03
+    je short 03943h                           ; 74 03
     mov ax, strict word 00040h                ; b8 40 00
     mov byte [bp-006h], al                    ; 88 46 fa
     test byte [bp-009h], 080h                 ; f6 46 f7 80
-    je short 03941h                           ; 74 05
+    je short 03951h                           ; 74 05
     mov ax, 00080h                            ; b8 80 00
-    jmp short 03943h                          ; eb 02
+    jmp short 03953h                          ; eb 02
     xor ax, ax                                ; 31 c0
     mov byte [bp-008h], al                    ; 88 46 f8
     and byte [bp-009h], 001h                  ; 80 66 f7 01
     cmp word [bp-00ah], 00100h                ; 81 7e f6 00 01
-    jnc short 03964h                          ; 73 13
+    jnc short 03974h                          ; 73 13
     xor ax, ax                                ; 31 c0
-    call 00610h                               ; e8 ba cc
+    call 00610h                               ; e8 aa cc
     mov al, byte [bp-00ah]                    ; 8a 46 f6
     xor ah, ah                                ; 30 e4
-    call 01019h                               ; e8 bb d6
+    call 01019h                               ; e8 ab d6
     mov ax, strict word 0004fh                ; b8 4f 00
-    jmp near 039f1h                           ; e9 8d 00
+    jmp near 03a01h                           ; e9 8d 00
     mov ax, word [bp-00ah]                    ; 8b 46 f6
-    call 036cfh                               ; e8 65 fd
+    call 036cfh                               ; e8 55 fd
     mov bx, ax                                ; 89 c3
     test ax, ax                               ; 85 c0
-    jne short 03973h                          ; 75 03
-    jmp near 039eeh                           ; e9 7b 00
+    jne short 03983h                          ; 75 03
+    jmp near 039feh                           ; e9 7b 00
     lea dx, [bx+014h]                         ; 8d 57 14
     mov ax, 003b6h                            ; b8 b6 03
-    call 0364fh                               ; e8 d3 fc
+    call 0364fh                               ; e8 c3 fc
     mov cx, ax                                ; 89 c1
     lea dx, [bx+016h]                         ; 8d 57 16
     mov ax, 003b6h                            ; b8 b6 03
-    call 0364fh                               ; e8 c8 fc
+    call 0364fh                               ; e8 b8 fc
     mov di, ax                                ; 89 c7
     lea dx, [bx+01bh]                         ; 8d 57 1b
     mov ax, 003b6h                            ; b8 b6 03
-    call 03661h                               ; e8 cf fc
+    call 03661h                               ; e8 bf fc
     mov bl, al                                ; 88 c3
     mov dl, al                                ; 88 c2
     xor ax, ax                                ; 31 c0
-    call 00610h                               ; e8 75 cc
+    call 00610h                               ; e8 65 cc
     cmp bl, 004h                              ; 80 fb 04
-    jne short 039a6h                          ; 75 06
+    jne short 039b6h                          ; 75 06
     mov ax, strict word 0006ah                ; b8 6a 00
-    call 01019h                               ; e8 73 d6
+    call 01019h                               ; e8 63 d6
     mov al, dl                                ; 88 d0
     xor ah, ah                                ; 30 e4
-    call 03630h                               ; e8 83 fc
+    call 03630h                               ; e8 73 fc
     mov ax, cx                                ; 89 c8
-    call 035f2h                               ; e8 40 fc
+    call 035f2h                               ; e8 30 fc
     mov ax, di                                ; 89 f8
-    call 03611h                               ; e8 5a fc
+    call 03611h                               ; e8 4a fc
     xor ax, ax                                ; 31 c0
-    call 00636h                               ; e8 7a cc
+    call 00636h                               ; e8 6a cc
     mov al, byte [bp-008h]                    ; 8a 46 f8
     or AL, strict byte 001h                   ; 0c 01
     xor ah, ah                                ; 30 e4
     mov dl, byte [bp-006h]                    ; 8a 56 fa
     or al, dl                                 ; 08 d0
-    call 00610h                               ; e8 45 cc
-    call 00743h                               ; e8 75 cd
+    call 00610h                               ; e8 35 cc
+    call 00743h                               ; e8 65 cd
     mov bx, word [bp-00ah]                    ; 8b 5e f6
     mov dx, 000bah                            ; ba ba 00
     mov ax, strict word 00040h                ; b8 40 00
-    call 031c5h                               ; e8 eb f7
+    call 031c5h                               ; e8 db f7
     mov bl, byte [bp-008h]                    ; 8a 5e f8
     or bl, 060h                               ; 80 cb 60
     xor bh, bh                                ; 30 ff
     mov dx, 00087h                            ; ba 87 00
     mov ax, strict word 00040h                ; b8 40 00
-    call 031a9h                               ; e8 be f7
-    jmp near 0395eh                           ; e9 70 ff
+    call 031a9h                               ; e8 ae f7
+    jmp near 0396eh                           ; e9 70 ff
     mov ax, 00100h                            ; b8 00 01
     mov word [ss:si], ax                      ; 36 89 04
     lea sp, [bp-004h]                         ; 8d 66 fc
@@ -7097,13 +7102,13 @@ vbe_biosfn_set_mode_:                        ; 0xc3910 LB 0xeb
     pop si                                    ; 5e
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_read_video_state_size_:           ; 0xc39fb LB 0x8
+vbe_biosfn_read_video_state_size_:           ; 0xc3a0b LB 0x8
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     mov ax, strict word 00012h                ; b8 12 00
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_save_video_state_:                ; 0xc3a03 LB 0x5b
+vbe_biosfn_save_video_state_:                ; 0xc3a13 LB 0x5b
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     push bx                                   ; 53
@@ -7122,17 +7127,17 @@ vbe_biosfn_save_video_state_:                ; 0xc3a03 LB 0x5b
     mov bx, ax                                ; 89 c3
     mov dx, cx                                ; 89 ca
     mov ax, di                                ; 89 f8
-    call 031c5h                               ; e8 9f f7
+    call 031c5h                               ; e8 8f f7
     inc cx                                    ; 41
     inc cx                                    ; 41
     test byte [bp-00ah], 001h                 ; f6 46 f6 01
-    je short 03a55h                           ; 74 27
+    je short 03a65h                           ; 74 27
     mov si, strict word 00001h                ; be 01 00
-    jmp short 03a38h                          ; eb 05
+    jmp short 03a48h                          ; eb 05
     cmp si, strict byte 00009h                ; 83 fe 09
-    jnbe short 03a55h                         ; 77 1d
+    jnbe short 03a65h                         ; 77 1d
     cmp si, strict byte 00004h                ; 83 fe 04
-    je short 03a52h                           ; 74 15
+    je short 03a62h                           ; 74 15
     mov ax, si                                ; 89 f0
     mov dx, 001ceh                            ; ba ce 01
     out DX, ax                                ; ef
@@ -7141,11 +7146,11 @@ vbe_biosfn_save_video_state_:                ; 0xc3a03 LB 0x5b
     mov bx, ax                                ; 89 c3
     mov dx, cx                                ; 89 ca
     mov ax, di                                ; 89 f8
-    call 031c5h                               ; e8 75 f7
+    call 031c5h                               ; e8 65 f7
     inc cx                                    ; 41
     inc cx                                    ; 41
     inc si                                    ; 46
-    jmp short 03a33h                          ; eb de
+    jmp short 03a43h                          ; eb de
     lea sp, [bp-008h]                         ; 8d 66 f8
     pop di                                    ; 5f
     pop si                                    ; 5e
@@ -7153,7 +7158,7 @@ vbe_biosfn_save_video_state_:                ; 0xc3a03 LB 0x5b
     pop bx                                    ; 5b
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_restore_video_state_:             ; 0xc3a5e LB 0x9b
+vbe_biosfn_restore_video_state_:             ; 0xc3a6e LB 0x9b
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     push bx                                   ; 53
@@ -7162,25 +7167,25 @@ vbe_biosfn_restore_video_state_:             ; 0xc3a5e LB 0x9b
     push ax                                   ; 50
     mov cx, ax                                ; 89 c1
     mov bx, dx                                ; 89 d3
-    call 031b7h                               ; e8 4b f7
+    call 031b7h                               ; e8 3b f7
     mov word [bp-008h], ax                    ; 89 46 f8
     inc bx                                    ; 43
     inc bx                                    ; 43
     test byte [bp-008h], 001h                 ; f6 46 f8 01
-    jne short 03a87h                          ; 75 10
+    jne short 03a97h                          ; 75 10
     mov ax, strict word 00004h                ; b8 04 00
     mov dx, 001ceh                            ; ba ce 01
     out DX, ax                                ; ef
     mov ax, word [bp-008h]                    ; 8b 46 f8
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
-    jmp short 03af1h                          ; eb 6a
+    jmp short 03b01h                          ; eb 6a
     mov ax, strict word 00001h                ; b8 01 00
     mov dx, 001ceh                            ; ba ce 01
     out DX, ax                                ; ef
     mov dx, bx                                ; 89 da
     mov ax, cx                                ; 89 c8
-    call 031b7h                               ; e8 22 f7
+    call 031b7h                               ; e8 12 f7
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
     inc bx                                    ; 43
@@ -7190,7 +7195,7 @@ vbe_biosfn_restore_video_state_:             ; 0xc3a5e LB 0x9b
     out DX, ax                                ; ef
     mov dx, bx                                ; 89 da
     mov ax, cx                                ; 89 c8
-    call 031b7h                               ; e8 0e f7
+    call 031b7h                               ; e8 fe f6
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
     inc bx                                    ; 43
@@ -7200,7 +7205,7 @@ vbe_biosfn_restore_video_state_:             ; 0xc3a5e LB 0x9b
     out DX, ax                                ; ef
     mov dx, bx                                ; 89 da
     mov ax, cx                                ; 89 c8
-    call 031b7h                               ; e8 fa f6
+    call 031b7h                               ; e8 ea f6
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
     inc bx                                    ; 43
@@ -7212,28 +7217,28 @@ vbe_biosfn_restore_video_state_:             ; 0xc3a5e LB 0x9b
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
     mov si, strict word 00005h                ; be 05 00
-    jmp short 03adbh                          ; eb 05
+    jmp short 03aebh                          ; eb 05
     cmp si, strict byte 00009h                ; 83 fe 09
-    jnbe short 03af1h                         ; 77 16
+    jnbe short 03b01h                         ; 77 16
     mov ax, si                                ; 89 f0
     mov dx, 001ceh                            ; ba ce 01
     out DX, ax                                ; ef
     mov dx, bx                                ; 89 da
     mov ax, cx                                ; 89 c8
-    call 031b7h                               ; e8 cf f6
+    call 031b7h                               ; e8 bf f6
     mov dx, 001cfh                            ; ba cf 01
     out DX, ax                                ; ef
     inc bx                                    ; 43
     inc bx                                    ; 43
     inc si                                    ; 46
-    jmp short 03ad6h                          ; eb e5
+    jmp short 03ae6h                          ; eb e5
     lea sp, [bp-006h]                         ; 8d 66 fa
     pop si                                    ; 5e
     pop cx                                    ; 59
     pop bx                                    ; 5b
     pop bp                                    ; 5d
     retn                                      ; c3
-vbe_biosfn_save_restore_state_:              ; 0xc3af9 LB 0x8d
+vbe_biosfn_save_restore_state_:              ; 0xc3b09 LB 0x8d
     push bp                                   ; 55
     mov bp, sp                                ; 89 e5
     push si                                   ; 56
@@ -7246,17 +7251,17 @@ vbe_biosfn_save_restore_state_:              ; 0xc3af9 LB 0x8d
     mov di, strict word 0004fh                ; bf 4f 00
     xor ah, ah                                ; 30 e4
     cmp ax, strict word 00002h                ; 3d 02 00
-    je short 03b59h                           ; 74 46
+    je short 03b69h                           ; 74 46
     cmp ax, strict word 00001h                ; 3d 01 00
-    je short 03b3dh                           ; 74 25
+    je short 03b4dh                           ; 74 25
     test ax, ax                               ; 85 c0
-    jne short 03b75h                          ; 75 59
+    jne short 03b85h                          ; 75 59
     mov ax, word [bp-006h]                    ; 8b 46 fa
-    call 02a84h                               ; e8 62 ef
+    call 02a84h                               ; e8 52 ef
     mov cx, ax                                ; 89 c1
     test byte [bp-006h], 008h                 ; f6 46 fa 08
-    je short 03b2fh                           ; 74 05
-    call 039fbh                               ; e8 ce fe
+    je short 03b3fh                           ; 74 05
+    call 03a0bh                               ; e8 ce fe
     add ax, cx                                ; 01 c8
     add ax, strict word 0003fh                ; 05 3f 00
     mov CL, strict byte 006h                  ; b1 06
@@ -7264,31 +7269,31 @@ vbe_biosfn_save_restore_state_:              ; 0xc3af9 LB 0x8d
     push SS                                   ; 16
     pop ES                                    ; 07
     mov word [es:bx], ax                      ; 26 89 07
-    jmp short 03b78h                          ; eb 3b
+    jmp short 03b88h                          ; eb 3b
     push SS                                   ; 16
     pop ES                                    ; 07
     mov bx, word [es:bx]                      ; 26 8b 1f
     mov dx, cx                                ; 89 ca
     mov ax, word [bp-006h]                    ; 8b 46 fa
-    call 02ab9h                               ; e8 6f ef
+    call 02ab9h                               ; e8 5f ef
     test byte [bp-006h], 008h                 ; f6 46 fa 08
-    je short 03b78h                           ; 74 28
+    je short 03b88h                           ; 74 28
     mov dx, ax                                ; 89 c2
     mov ax, cx                                ; 89 c8
-    call 03a03h                               ; e8 ac fe
-    jmp short 03b78h                          ; eb 1f
+    call 03a13h                               ; e8 ac fe
+    jmp short 03b88h                          ; eb 1f
     push SS                                   ; 16
     pop ES                                    ; 07
     mov bx, word [es:bx]                      ; 26 8b 1f
     mov dx, cx                                ; 89 ca
     mov ax, word [bp-006h]                    ; 8b 46 fa
-    call 02e3ah                               ; e8 d4 f2
+    call 02e3ah                               ; e8 c4 f2
     test byte [bp-006h], 008h                 ; f6 46 fa 08
-    je short 03b78h                           ; 74 0c
+    je short 03b88h                           ; 74 0c
     mov dx, ax                                ; 89 c2
     mov ax, cx                                ; 89 c8
-    call 03a5eh                               ; e8 eb fe
-    jmp short 03b78h                          ; eb 03
+    call 03a6eh                               ; e8 eb fe
+    jmp short 03b88h                          ; eb 03
     mov di, 00100h                            ; bf 00 01
     push SS                                   ; 16
     pop ES                                    ; 07
@@ -7299,8 +7304,8 @@ vbe_biosfn_save_restore_state_:              ; 0xc3af9 LB 0x8d
     pop bp                                    ; 5d
     retn 00002h                               ; c2 02 00
 
-  ; Padding 0x87a bytes at 0xc3b86
-  times 2170 db 0
+  ; Padding 0x86a bytes at 0xc3b96
+  times 2154 db 0
 
 section VBE32 progbits vstart=0x4400 align=1 ; size=0x115 class=CODE group=AUTO
 vesa_pm_start:                               ; 0xc4400 LB 0x114
@@ -7432,10 +7437,10 @@ vesa_pm_end:                                 ; 0xc4514 LB 0x1
   ; Padding 0xeb bytes at 0xc4515
   times 235 db 0
 
-section _DATA progbits vstart=0x4600 align=1 ; size=0x371e class=DATA group=DGROUP
-_msg_vga_init:                               ; 0xc4600 LB 0x2e
-    db  'Oracle VM VirtualBox Version 5.1.4 VGA BIOS', 00dh, 00ah, 000h
-_vga_modes:                                  ; 0xc462e LB 0x80
+section _DATA progbits vstart=0x4600 align=1 ; size=0x371f class=DATA group=DGROUP
+_msg_vga_init:                               ; 0xc4600 LB 0x2f
+    db  'Oracle VM VirtualBox Version 5.1.51 VGA BIOS', 00dh, 00ah, 000h
+_vga_modes:                                  ; 0xc462f LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
     db  002h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 003h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
     db  004h, 001h, 002h, 002h, 000h, 0b8h, 0ffh, 001h, 005h, 001h, 002h, 002h, 000h, 0b8h, 0ffh, 001h
@@ -7444,11 +7449,11 @@ _vga_modes:                                  ; 0xc462e LB 0x80
     db  00fh, 001h, 003h, 001h, 000h, 0a0h, 0ffh, 000h, 010h, 001h, 004h, 004h, 000h, 0a0h, 0ffh, 002h
     db  011h, 001h, 003h, 001h, 000h, 0a0h, 0ffh, 002h, 012h, 001h, 004h, 004h, 000h, 0a0h, 0ffh, 002h
     db  013h, 001h, 005h, 008h, 000h, 0a0h, 0ffh, 003h, 06ah, 001h, 004h, 004h, 000h, 0a0h, 0ffh, 002h
-_line_to_vpti:                               ; 0xc46ae LB 0x10
+_line_to_vpti:                               ; 0xc46af LB 0x10
     db  017h, 017h, 018h, 018h, 004h, 005h, 006h, 007h, 00dh, 00eh, 011h, 012h, 01ah, 01bh, 01ch, 01dh
-_dac_regs:                                   ; 0xc46be LB 0x4
+_dac_regs:                                   ; 0xc46bf LB 0x4
     dd  0ff3f3f3fh
-_video_param_table:                          ; 0xc46c2 LB 0x780
+_video_param_table:                          ; 0xc46c3 LB 0x780
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
@@ -7569,7 +7574,7 @@ _video_param_table:                          ; 0xc46c2 LB 0x780
     db  072h, 0f0h, 000h, 060h, 000h, 000h, 000h, 000h, 000h, 000h, 059h, 08dh, 057h, 032h, 000h, 057h
     db  073h, 0e3h, 0ffh, 000h, 001h, 002h, 003h, 004h, 005h, 014h, 007h, 038h, 039h, 03ah, 03bh, 03ch
     db  03dh, 03eh, 03fh, 001h, 000h, 00fh, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 005h, 00fh, 0ffh
-_palette0:                                   ; 0xc4e42 LB 0xc0
+_palette0:                                   ; 0xc4e43 LB 0xc0
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah
     db  02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah
@@ -7582,7 +7587,7 @@ _palette0:                                   ; 0xc4e42 LB 0xc0
     db  02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah
     db  02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 02ah, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh
     db  03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh, 03fh
-_palette1:                                   ; 0xc4f02 LB 0xc0
+_palette1:                                   ; 0xc4f03 LB 0xc0
     db  000h, 000h, 000h, 000h, 000h, 02ah, 000h, 02ah, 000h, 000h, 02ah, 02ah, 02ah, 000h, 000h, 02ah
     db  000h, 02ah, 02ah, 015h, 000h, 02ah, 02ah, 02ah, 000h, 000h, 000h, 000h, 000h, 02ah, 000h, 02ah
     db  000h, 000h, 02ah, 02ah, 02ah, 000h, 000h, 02ah, 000h, 02ah, 02ah, 015h, 000h, 02ah, 02ah, 02ah
@@ -7595,7 +7600,7 @@ _palette1:                                   ; 0xc4f02 LB 0xc0
     db  015h, 015h, 015h, 015h, 015h, 03fh, 015h, 03fh, 015h, 015h, 03fh, 03fh, 03fh, 015h, 015h, 03fh
     db  015h, 03fh, 03fh, 03fh, 015h, 03fh, 03fh, 03fh, 015h, 015h, 015h, 015h, 015h, 03fh, 015h, 03fh
     db  015h, 015h, 03fh, 03fh, 03fh, 015h, 015h, 03fh, 015h, 03fh, 03fh, 03fh, 015h, 03fh, 03fh, 03fh
-_palette2:                                   ; 0xc4fc2 LB 0xc0
+_palette2:                                   ; 0xc4fc3 LB 0xc0
     db  000h, 000h, 000h, 000h, 000h, 02ah, 000h, 02ah, 000h, 000h, 02ah, 02ah, 02ah, 000h, 000h, 02ah
     db  000h, 02ah, 02ah, 02ah, 000h, 02ah, 02ah, 02ah, 000h, 000h, 015h, 000h, 000h, 03fh, 000h, 02ah
     db  015h, 000h, 02ah, 03fh, 02ah, 000h, 015h, 02ah, 000h, 03fh, 02ah, 02ah, 015h, 02ah, 02ah, 03fh
@@ -7608,7 +7613,7 @@ _palette2:                                   ; 0xc4fc2 LB 0xc0
     db  015h, 015h, 000h, 015h, 015h, 02ah, 015h, 03fh, 000h, 015h, 03fh, 02ah, 03fh, 015h, 000h, 03fh
     db  015h, 02ah, 03fh, 03fh, 000h, 03fh, 03fh, 02ah, 015h, 015h, 015h, 015h, 015h, 03fh, 015h, 03fh
     db  015h, 015h, 03fh, 03fh, 03fh, 015h, 015h, 03fh, 015h, 03fh, 03fh, 03fh, 015h, 03fh, 03fh, 03fh
-_palette3:                                   ; 0xc5082 LB 0x300
+_palette3:                                   ; 0xc5083 LB 0x300
     db  000h, 000h, 000h, 000h, 000h, 02ah, 000h, 02ah, 000h, 000h, 02ah, 02ah, 02ah, 000h, 000h, 02ah
     db  000h, 02ah, 02ah, 015h, 000h, 02ah, 02ah, 02ah, 015h, 015h, 015h, 015h, 015h, 03fh, 015h, 03fh
     db  015h, 015h, 03fh, 03fh, 03fh, 015h, 015h, 03fh, 015h, 03fh, 03fh, 03fh, 015h, 03fh, 03fh, 03fh
@@ -7657,19 +7662,19 @@ _palette3:                                   ; 0xc5082 LB 0x300
     db  00bh, 010h, 00bh, 00bh, 010h, 00ch, 00bh, 010h, 00dh, 00bh, 010h, 00fh, 00bh, 010h, 010h, 00bh
     db  00fh, 010h, 00bh, 00dh, 010h, 00bh, 00ch, 010h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_static_functionality:                       ; 0xc5382 LB 0x10
+_static_functionality:                       ; 0xc5383 LB 0x10
     db  0ffh, 0e0h, 00fh, 000h, 000h, 000h, 000h, 007h, 002h, 008h, 0e7h, 00ch, 000h, 000h, 000h, 000h
-_dcc_table:                                  ; 0xc5392 LB 0x24
+_dcc_table:                                  ; 0xc5393 LB 0x24
     db  010h, 001h, 007h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h
-_secondary_save_area:                        ; 0xc53b6 LB 0x1a
-    db  01ah, 000h, 092h, 053h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
+_secondary_save_area:                        ; 0xc53b7 LB 0x1a
+    db  01ah, 000h, 093h, 053h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_video_save_pointer_table:                   ; 0xc53d0 LB 0x1c
-    db  0c2h, 046h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  0b6h, 053h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_vgafont8:                                   ; 0xc53ec LB 0x800
+_video_save_pointer_table:                   ; 0xc53d1 LB 0x1c
+    db  0c3h, 046h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
+    db  0b7h, 053h, 000h, 0c0h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
+_vgafont8:                                   ; 0xc53ed LB 0x800
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 07eh, 081h, 0a5h, 081h, 0bdh, 099h, 081h, 07eh
     db  07eh, 0ffh, 0dbh, 0ffh, 0c3h, 0e7h, 0ffh, 07eh, 06ch, 0feh, 0feh, 0feh, 07ch, 038h, 010h, 000h
     db  010h, 038h, 07ch, 0feh, 07ch, 038h, 010h, 000h, 038h, 07ch, 038h, 0feh, 0feh, 07ch, 038h, 07ch
@@ -7798,7 +7803,7 @@ _vgafont8:                                   ; 0xc53ec LB 0x800
     db  000h, 000h, 000h, 000h, 018h, 000h, 000h, 000h, 00fh, 00ch, 00ch, 00ch, 0ech, 06ch, 03ch, 01ch
     db  078h, 06ch, 06ch, 06ch, 06ch, 000h, 000h, 000h, 070h, 018h, 030h, 060h, 078h, 000h, 000h, 000h
     db  000h, 000h, 03ch, 03ch, 03ch, 03ch, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_vgafont14:                                  ; 0xc5bec LB 0xe00
+_vgafont14:                                  ; 0xc5bed LB 0xe00
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  07eh, 081h, 0a5h, 081h, 081h, 0bdh, 099h, 081h, 07eh, 000h, 000h, 000h, 000h, 000h, 07eh, 0ffh
     db  0dbh, 0ffh, 0ffh, 0c3h, 0e7h, 0ffh, 07eh, 000h, 000h, 000h, 000h, 000h, 000h, 06ch, 0feh, 0feh
@@ -8023,7 +8028,7 @@ _vgafont14:                                  ; 0xc5bec LB 0xe00
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 070h, 0d8h, 030h, 060h, 0c8h, 0f8h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 07ch, 07ch, 07ch, 07ch, 07ch, 07ch, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_vgafont16:                                  ; 0xc69ec LB 0x1000
+_vgafont16:                                  ; 0xc69ed LB 0x1000
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 07eh, 081h, 0a5h, 081h, 081h, 0bdh, 099h, 081h, 081h, 07eh, 000h, 000h, 000h, 000h
     db  000h, 000h, 07eh, 0ffh, 0dbh, 0ffh, 0ffh, 0c3h, 0e7h, 0ffh, 0ffh, 07eh, 000h, 000h, 000h, 000h
@@ -8280,7 +8285,7 @@ _vgafont16:                                  ; 0xc69ec LB 0x1000
     db  000h, 070h, 0d8h, 030h, 060h, 0c8h, 0f8h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 07ch, 07ch, 07ch, 07ch, 07ch, 07ch, 07ch, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-_vgafont14alt:                               ; 0xc79ec LB 0x12d
+_vgafont14alt:                               ; 0xc79ed LB 0x12d
     db  01dh, 000h, 000h, 000h, 000h, 024h, 066h, 0ffh, 066h, 024h, 000h, 000h, 000h, 000h, 000h, 022h
     db  000h, 063h, 063h, 063h, 022h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 02bh, 000h
     db  000h, 000h, 018h, 018h, 018h, 0ffh, 018h, 018h, 018h, 000h, 000h, 000h, 000h, 02dh, 000h, 000h
@@ -8300,7 +8305,7 @@ _vgafont14alt:                               ; 0xc79ec LB 0x12d
     db  000h, 0fch, 066h, 066h, 07ch, 062h, 066h, 06fh, 066h, 066h, 0f3h, 000h, 000h, 000h, 0f1h, 000h
     db  000h, 018h, 018h, 018h, 0ffh, 018h, 018h, 018h, 000h, 0ffh, 000h, 000h, 000h, 0f6h, 000h, 000h
     db  018h, 018h, 000h, 000h, 0ffh, 000h, 000h, 018h, 018h, 000h, 000h, 000h, 000h
-_vgafont16alt:                               ; 0xc7b19 LB 0x145
+_vgafont16alt:                               ; 0xc7b1a LB 0x144
     db  01dh, 000h, 000h, 000h, 000h, 000h, 024h, 066h, 0ffh, 066h, 024h, 000h, 000h, 000h, 000h, 000h
     db  000h, 030h, 000h, 000h, 03ch, 066h, 0c3h, 0c3h, 0dbh, 0dbh, 0c3h, 0c3h, 066h, 03ch, 000h, 000h
     db  000h, 000h, 04dh, 000h, 000h, 0c3h, 0e7h, 0ffh, 0ffh, 0dbh, 0c3h, 0c3h, 0c3h, 0c3h, 0c3h, 000h
@@ -8321,31 +8326,34 @@ _vgafont16alt:                               ; 0xc7b19 LB 0x145
     db  09eh, 000h, 0fch, 066h, 066h, 07ch, 062h, 066h, 06fh, 066h, 066h, 066h, 0f3h, 000h, 000h, 000h
     db  000h, 0abh, 000h, 0c0h, 0c0h, 0c2h, 0c6h, 0cch, 018h, 030h, 060h, 0ceh, 09bh, 006h, 00ch, 01fh
     db  000h, 000h, 0ach, 000h, 0c0h, 0c0h, 0c2h, 0c6h, 0cch, 018h, 030h, 066h, 0ceh, 096h, 03eh, 006h
-    db  006h, 000h, 000h, 000h, 000h
+    db  006h, 000h, 000h, 000h
 _vbebios_copyright:                          ; 0xc7c5e LB 0x15
     db  'VirtualBox VESA BIOS', 000h
 _vbebios_vendor_name:                        ; 0xc7c73 LB 0x13
     db  'Oracle Corporation', 000h
 _vbebios_product_name:                       ; 0xc7c86 LB 0x21
     db  'Oracle VM VirtualBox VBE Adapter', 000h
-_vbebios_product_revision:                   ; 0xc7ca7 LB 0x23
-    db  'Oracle VM VirtualBox Version 5.1.4', 000h
-_vbebios_info_string:                        ; 0xc7cca LB 0x2b
+_vbebios_product_revision:                   ; 0xc7ca7 LB 0x24
+    db  'Oracle VM VirtualBox Version 5.1.51', 000h
+_vbebios_info_string:                        ; 0xc7ccb LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
-_no_vbebios_info_string:                     ; 0xc7cf5 LB 0x29
+_no_vbebios_info_string:                     ; 0xc7cf6 LB 0x29
     db  'No VirtualBox VBE support available!', 00dh, 00ah, 00dh, 00ah, 000h
 
-section CONST progbits vstart=0x7d1e align=1 ; size=0x0 class=DATA group=DGROUP
+  ; Padding 0x1 bytes at 0xc7d1f
+    db  001h
 
-section CONST2 progbits vstart=0x7d1e align=1 ; size=0x0 class=DATA group=DGROUP
+section CONST progbits vstart=0x7d20 align=1 ; size=0x0 class=DATA group=DGROUP
 
-  ; Padding 0x2e2 bytes at 0xc7d1e
-    db  001h, 000h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 000h, 02fh, 068h, 06fh, 06dh
-    db  065h, 02fh, 066h, 06dh, 033h, 02fh, 073h, 072h, 063h, 02fh, 076h, 062h, 06fh, 078h, 02fh, 06fh
-    db  075h, 074h, 02fh, 06ch, 069h, 06eh, 075h, 078h, 02eh, 061h, 06dh, 064h, 036h, 034h, 02fh, 072h
-    db  065h, 06ch, 065h, 061h, 073h, 065h, 02fh, 06fh, 062h, 06ah, 02fh, 056h, 042h, 06fh, 078h, 056h
-    db  067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02fh, 056h, 042h, 06fh, 078h, 056h
-    db  067h, 061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02eh, 073h, 079h, 06dh, 000h, 000h
+section CONST2 progbits vstart=0x7d20 align=1 ; size=0x0 class=DATA group=DGROUP
+
+  ; Padding 0x2e0 bytes at 0xc7d20
+    db  000h, 000h, 000h, 000h, 001h, 000h, 000h, 000h, 000h, 000h, 000h, 02fh, 068h, 06fh, 06dh, 065h
+    db  02fh, 066h, 06dh, 033h, 02fh, 073h, 072h, 063h, 02fh, 076h, 062h, 06fh, 078h, 02fh, 06fh, 075h
+    db  074h, 02fh, 06ch, 069h, 06eh, 075h, 078h, 02eh, 061h, 06dh, 064h, 036h, 034h, 02fh, 072h, 065h
+    db  06ch, 065h, 061h, 073h, 065h, 02fh, 06fh, 062h, 06ah, 02fh, 056h, 042h, 06fh, 078h, 056h, 067h
+    db  061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02fh, 056h, 042h, 06fh, 078h, 056h, 067h
+    db  061h, 042h, 069h, 06fh, 073h, 038h, 030h, 038h, 036h, 02eh, 073h, 079h, 06dh, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
@@ -8385,5 +8393,4 @@ section CONST2 progbits vstart=0x7d1e align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 0c8h
+    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 057h
