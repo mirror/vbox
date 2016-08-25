@@ -67,6 +67,11 @@ typedef std::list<Utf8Str> StringsList;
 #undef DECLARE_CLASSFACTORY_SINGLETON
 #define DECLARE_CLASSFACTORY_SINGLETON(obj) DECLARE_CLASSFACTORY_EX(CMyComClassFactorySingleton<obj>)
 
+/**
+ * @todo r=bird: This CMyComClassFactorySingleton stuff is probably obsoleted by
+ *                microatl.h? Right?
+ */
+
 template <class T>
 class CMyComClassFactorySingleton : public ATL::CComClassFactory
 {

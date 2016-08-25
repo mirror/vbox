@@ -116,3 +116,52 @@ STDAPI DllUnregisterServer(void)
 #endif
 }
 
+
+#ifdef RT_OS_WINDOWS
+/*
+ * HACK ALERT! Really ugly trick to make the VirtualBoxClient object go away
+ *             when nobody uses it anymore.  This is to prevent its uninit()
+ *             method from accessing IVirtualBox and similar proxy stubs after
+ *             COM has been officially shut down.
+ *
+ *             It is simply TOO LATE to destroy the client object from DllMain/detach!
+ *
+ *             This hack ASSUMES ObjectMap order.
+ *             This hack is subject to a re-instantiation race.
+ */
+ULONG VirtualBoxClient::InternalRelease()
+{
+    ULONG cRefs = VirtualBoxClientWrap::InternalRelease();
+# ifdef DEBUG_bird
+    char szMsg[64];
+    RTStrPrintf(szMsg, sizeof(szMsg), "VirtualBoxClient: cRefs=%d\n", cRefs);
+    OutputDebugStringA(szMsg);
+# endif
+# if 1 /* enable ugly hack */
+    if (cRefs == 1)
+    {
+        /* Make the factory to drop its reference. */
+        if (ObjectMap[1].pCF)
+        {
+            InternalAddRef();
+
+            CMyComClassFactorySingleton<VirtualBoxClient> *pFactory;
+            pFactory = dynamic_cast<CMyComClassFactorySingleton<VirtualBoxClient> *>(ObjectMap[1].pCF);
+            Assert(pFactory);
+            if (pFactory)
+            {
+                IUnknown *pUnknown = pFactory->m_spObj;
+                pFactory->m_spObj = NULL;
+                if (pUnknown)
+                    pUnknown->Release();
+            }
+
+            cRefs = VirtualBoxClientWrap::InternalRelease();
+        }
+    }
+# endif
+    return cRefs;
+}
+#endif
+
+

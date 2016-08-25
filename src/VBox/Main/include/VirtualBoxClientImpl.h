@@ -47,6 +47,11 @@ public:
     HRESULT init();
     void uninit();
 
+#ifdef RT_OS_WINDOWS
+    /* HACK ALERT! Implemented in dllmain.cpp. */
+    ULONG InternalRelease();
+#endif
+
 private:
     // wrapped IVirtualBoxClient properties
     virtual HRESULT getVirtualBox(ComPtr<IVirtualBox> &aVirtualBox);
