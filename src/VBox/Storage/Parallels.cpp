@@ -197,7 +197,11 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
     rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &pImage->cbFileCurrent);
     if (RT_FAILURE(rc))
         goto out;
-    AssertMsg(pImage->cbFileCurrent % 512 == 0, ("File size is not a multiple of 512\n"));
+    if (pImage->cbFileCurrent % 512 != 0)
+    {
+        rc = VERR_VD_PARALLELS_INVALID_HEADER;
+        goto out;
+    }
 
     rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
                                &parallelsHeader, sizeof(parallelsHeader));

@@ -1028,6 +1028,63 @@ static int qcowFreeImage(PQCOWIMAGE pImage, bool fDelete)
 }
 
 /**
+ * Validates the header.
+ *
+ * @returns VBox status code.
+ * @param   pImage    Image backend instance data.
+ * @param   pHdr      The header to validate.
+ * @param   cbFile    The image file size in bytes.
+ */
+static int qcowHdrValidate(PQCOWIMAGE pImage, PQCowHeader pHdr, uint64_t cbFile)
+{
+    if (pHdr->u32Version == 1)
+    {
+        /* Check that the backing filename is contained in the file. */
+        if (pHdr->Version.v1.u64BackingFileOffset + pHdr->Version.v1.u32BackingFileSize > cbFile)
+            return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                             N_("QCOW: Backing file offset and size exceed size of image '%s' (%u vs %u)"),
+                             pImage->pszFilename, pHdr->Version.v1.u64BackingFileOffset + pHdr->Version.v1.u32BackingFileSize,
+                             cbFile);
+
+        /* Check that the cluster bits indicate at least a 512byte sector size. */
+        if (RT_BIT_32(pHdr->Version.v1.u8ClusterBits) < 512)
+            return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                             N_("QCOW: Cluster size is too small for image  '%s' (%u vs %u)"),
+                             pImage->pszFilename, RT_BIT_32(pHdr->Version.v1.u8ClusterBits), 512);
+
+        /*
+         * Check for possible overflow when multiplying cluster size and L2 entry count because it is used
+         * to calculate the number of L1 table entries later on.
+         */
+        if (RT_BIT_32(pHdr->Version.v1.u8L2Bits) * RT_BIT_32(pHdr->Version.v1.u8ClusterBits) == 0)
+            return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                             N_("QCOW: Overflow during L1 table size calculation for image '%s'"),
+                             pImage->pszFilename);
+    }
+    else if (pHdr->u32Version == 2)
+    {
+        /* Check that the backing filename is contained in the file. */
+        if (pHdr->Version.v2.u64BackingFileOffset + pHdr->Version.v2.u32BackingFileSize > cbFile)
+            return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                             N_("QCOW: Backing file offset and size exceed size of image '%s' (%u vs %u)"),
+                             pImage->pszFilename, pHdr->Version.v2.u64BackingFileOffset + pHdr->Version.v2.u32BackingFileSize,
+                             cbFile);
+
+        /* Check that the cluster bits indicate at least a 512byte sector size. */
+        if (RT_BIT_32(pHdr->Version.v2.u32ClusterBits) < 512)
+            return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                             N_("QCOW: Cluster size is too small for image  '%s' (%u vs %u)"),
+                             pImage->pszFilename, RT_BIT_32(pHdr->Version.v2.u32ClusterBits), 512);
+    }
+    else
+        return vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                         N_("QCOW: Version %u in image '%s' is not supported"),
+                         pHdr->u32Version, pImage->pszFilename);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Internal: Open an image, constructing all necessary data structures.
  */
 static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
@@ -1071,60 +1128,68 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
             pImage->offNextCluster = RT_ALIGN_64(cbFile, 512); /* Align image to sector boundary. */
             Assert(pImage->offNextCluster >= cbFile);
 
-            if (Header.u32Version == 1)
+            rc = qcowHdrValidate(pImage, &Header, cbFile);
+            if (RT_SUCCESS(rc))
             {
-                if (!Header.Version.v1.u32CryptMethod)
+                if (Header.u32Version == 1)
                 {
-                    pImage->uVersion           = 1;
-                    pImage->offBackingFilename = Header.Version.v1.u64BackingFileOffset;
-                    pImage->cbBackingFilename  = Header.Version.v1.u32BackingFileSize;
-                    pImage->MTime              = Header.Version.v1.u32MTime;
-                    pImage->cbSize             = Header.Version.v1.u64Size;
-                    pImage->cbCluster          = RT_BIT_32(Header.Version.v1.u8ClusterBits);
-                    pImage->cL2TableEntries    = RT_BIT_32(Header.Version.v1.u8L2Bits);
-                    pImage->cbL2Table          = RT_ALIGN_64(pImage->cL2TableEntries * sizeof(uint64_t), pImage->cbCluster);
-                    pImage->offL1Table         = Header.Version.v1.u64L1TableOffset;
-                    pImage->cL1TableEntries    = pImage->cbSize / (pImage->cbCluster * pImage->cL2TableEntries);
-                    if (pImage->cbSize % (pImage->cbCluster * pImage->cL2TableEntries))
-                        pImage->cL1TableEntries++;
-                    pImage->cbL1Table          = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
+                    if (!Header.Version.v1.u32CryptMethod)
+                    {
+                        pImage->uVersion           = 1;
+                        pImage->offBackingFilename = Header.Version.v1.u64BackingFileOffset;
+                        pImage->cbBackingFilename  = Header.Version.v1.u32BackingFileSize;
+                        pImage->MTime              = Header.Version.v1.u32MTime;
+                        pImage->cbSize             = Header.Version.v1.u64Size;
+                        pImage->cbCluster          = RT_BIT_32(Header.Version.v1.u8ClusterBits);
+                        pImage->cL2TableEntries    = RT_BIT_32(Header.Version.v1.u8L2Bits);
+                        pImage->cbL2Table          = RT_ALIGN_64(pImage->cL2TableEntries * sizeof(uint64_t), pImage->cbCluster);
+                        pImage->offL1Table         = Header.Version.v1.u64L1TableOffset;
+                        pImage->cL1TableEntries    = pImage->cbSize / (pImage->cbCluster * pImage->cL2TableEntries);
+                        if (pImage->cbSize % (pImage->cbCluster * pImage->cL2TableEntries))
+                            pImage->cL1TableEntries++;
+                    }
+                    else
+                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       N_("QCow: Encrypted image '%s' is not supported"),
+                                       pImage->pszFilename);
+                }
+                else if (Header.u32Version == 2)
+                {
+                    if (Header.Version.v2.u32CryptMethod)
+                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       N_("QCow: Encrypted image '%s' is not supported"),
+                                       pImage->pszFilename);
+                    else if (Header.Version.v2.u32NbSnapshots)
+                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                       N_("QCow: Image '%s' contains snapshots which is not supported"),
+                                       pImage->pszFilename);
+                    else
+                    {
+                        pImage->uVersion              = 2;
+                        pImage->offBackingFilename    = Header.Version.v2.u64BackingFileOffset;
+                        pImage->cbBackingFilename     = Header.Version.v2.u32BackingFileSize;
+                        pImage->cbSize                = Header.Version.v2.u64Size;
+                        pImage->cbCluster             = RT_BIT_32(Header.Version.v2.u32ClusterBits);
+                        pImage->cL2TableEntries       = pImage->cbCluster / sizeof(uint64_t);
+                        pImage->cbL2Table             = pImage->cbCluster;
+                        pImage->offL1Table            = Header.Version.v2.u64L1TableOffset;
+                        pImage->cL1TableEntries       = Header.Version.v2.u32L1Size;
+                        pImage->offRefcountTable      = Header.Version.v2.u64RefcountTableOffset;
+                        pImage->cbRefcountTable       = qcowCluster2Byte(pImage, Header.Version.v2.u32RefcountTableClusters);
+                        pImage->cRefcountTableEntries = pImage->cbRefcountTable / sizeof(uint64_t);
+                    }
                 }
                 else
                     rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                                   N_("QCow: Encrypted image '%s' is not supported"),
+                                   N_("QCow: Image '%s' uses version %u which is not supported"),
+                                   pImage->pszFilename, Header.u32Version);
+
+                pImage->cbL1Table = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
+                if ((uint64_t)pImage->cbL1Table != RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster))
+                    rc = vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                                   N_("QCOW: L1 table size overflow in image '%s'"),
                                    pImage->pszFilename);
             }
-            else if (Header.u32Version == 2)
-            {
-                if (Header.Version.v2.u32CryptMethod)
-                    rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                                   N_("QCow: Encrypted image '%s' is not supported"),
-                                   pImage->pszFilename);
-                else if (Header.Version.v2.u32NbSnapshots)
-                    rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                                   N_("QCow: Image '%s' contains snapshots which is not supported"),
-                                   pImage->pszFilename);
-                else
-                {
-                    pImage->uVersion              = 2;
-                    pImage->offBackingFilename    = Header.Version.v2.u64BackingFileOffset;
-                    pImage->cbBackingFilename     = Header.Version.v2.u32BackingFileSize;
-                    pImage->cbSize                = Header.Version.v2.u64Size;
-                    pImage->cbCluster             = RT_BIT_32(Header.Version.v2.u32ClusterBits);
-                    pImage->cL2TableEntries       = pImage->cbCluster / sizeof(uint64_t);
-                    pImage->cbL2Table             = pImage->cbCluster;
-                    pImage->offL1Table            = Header.Version.v2.u64L1TableOffset;
-                    pImage->cL1TableEntries       = Header.Version.v2.u32L1Size;
-                    pImage->cbL1Table             = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
-                    pImage->offRefcountTable      = Header.Version.v2.u64RefcountTableOffset;
-                    pImage->cbRefcountTable       = qcowCluster2Byte(pImage, Header.Version.v2.u32RefcountTableClusters);
-                    pImage->cRefcountTableEntries = pImage->cbRefcountTable / sizeof(uint64_t);
-                }
-            }
-            else
-                rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
-                               N_("QCow: Image '%s' uses version %u which is not supported"),
-                               pImage->pszFilename, Header.u32Version);
 
             /** @todo Check that there are no compressed clusters in the image
              *  (by traversing the L2 tables and checking each offset).
