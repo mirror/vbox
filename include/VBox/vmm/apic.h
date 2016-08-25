@@ -140,10 +140,6 @@
 /** Offset of LVT extended range end (inclusive). */
 #define XAPIC_OFF_LVT_EXT_END                XAPIC_OFF_LVT_CMCI
 
-/** @name xAPIC Interrupt Command Register bits.
- * See Intel spec. 10.6.1 "Interrupt Command Register (ICR)".
- * See Intel spec. 10.5.1 "Local Vector Table".
- * @{ */
 /**
  * xAPIC trigger mode.
  */

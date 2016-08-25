@@ -1066,6 +1066,10 @@ typedef enum XAPICTIMERMODE
 } XAPICTIMERMODE;
 /** @} */
 
+/** @name xAPIC Interrupt Command Register bits.
+ * See Intel spec. 10.6.1 "Interrupt Command Register (ICR)".
+ * See Intel spec. 10.5.1 "Local Vector Table".
+ * @{ */
 /**
  * xAPIC destination shorthand.
  */
