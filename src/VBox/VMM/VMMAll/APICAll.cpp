@@ -1054,6 +1054,7 @@ static VBOXSTRICTRC apicSetIcrHi(PVMCPU pVCpu, uint32_t uIcrHi)
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
     pXApicPage->icr_hi.all.u32IcrHi = uIcrHi & XAPIC_ICR_HI_DEST;
+    STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrHiWrite);
     Log2(("APIC%u: apicSetIcrHi: uIcrHi=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_hi.all.u32IcrHi));
 
     return VINF_SUCCESS;
@@ -1090,11 +1091,15 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
  * @param   u64Icr          The ICR (High and Low combined).
  * @param   rcRZ            The return code if the operation cannot be performed
  *                          in the current context.
+ *
+ * @remarks This function is used by both x2APIC interface and the Hyper-V
+ *          interface, see APICHvSetIcr(). The Hyper-V spec isn't clear what
+ *          happens when invalid bits are set. For the time being, it will #GP
+ *          like a regular x2APIC access.
  */
 static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    Assert(XAPIC_IN_X2APIC_MODE(pVCpu));
 
     /* Validate. */
     uint32_t const uLo = RT_LO_U32(u64Icr);
@@ -1103,7 +1108,9 @@ static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
         /* Update high dword first, then update the low dword which sends the IPI. */
         PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
         pX2ApicPage->icr_hi.u32IcrHi = RT_HI_U32(u64Icr);
-        return apicSetIcrLo(pVCpu, uLo,  rcRZ);
+        STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrHiWrite);
+        STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrFullWrite);
+        return apicSetIcrLo(pVCpu, uLo, rcRZ);
     }
     return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_ICR, APICMSRACCESS_WRITE_RSVD_BITS);
 }
@@ -1188,17 +1195,20 @@ static uint8_t apicGetPpr(PVMCPU pVCpu)
  * Sets the Task Priority Register (TPR).
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uTpr            The TPR value.
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   uTpr                    The TPR value.
+ * @param   fForceX2ApicBehaviour   Pretend the APIC is in x2APIC mode during
+ *                                  this write.
  */
-static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
+static VBOXSTRICTRC apicSetTprEx(PVMCPU pVCpu, uint32_t uTpr, bool fForceX2ApicBehaviour)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    Log2(("APIC%u: apicSetTpr: uTpr=%#RX32\n", pVCpu->idCpu, uTpr));
+    Log2(("APIC%u: apicSetTprEx: uTpr=%#RX32\n", pVCpu->idCpu, uTpr));
     STAM_COUNTER_INC(&pVCpu->apic.s.StatTprWrite);
 
-    if (   XAPIC_IN_X2APIC_MODE(pVCpu)
+    bool const fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu) || fForceX2ApicBehaviour;
+    if (   fX2ApicMode
         && (uTpr & ~XAPIC_TPR_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_TPR, APICMSRACCESS_WRITE_RSVD_BITS);
 
@@ -1214,17 +1224,20 @@ static VBOXSTRICTRC apicSetTpr(PVMCPU pVCpu, uint32_t uTpr)
  * Sets the End-Of-Interrupt (EOI) register.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uEoi            The EOI value.
+ * @param   pVCpu                   The cross context virtual CPU structure.
+ * @param   uEoi                    The EOI value.
+ * @param   fForceX2ApicBehaviour   Pretend the APIC is in x2APIC mode during
+ *                                  this write.
  */
-static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
+static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi, bool fForceX2ApicBehaviour)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
     Log2(("APIC%u: apicSetEoi: uEoi=%#RX32\n", pVCpu->idCpu, uEoi));
     STAM_COUNTER_INC(&pVCpu->apic.s.StatEoiWrite);
 
-    if (   XAPIC_IN_X2APIC_MODE(pVCpu)
+    bool const fX2ApicMode = XAPIC_IN_X2APIC_MODE(pVCpu) || fForceX2ApicBehaviour;
+    if (   fX2ApicMode
         && (uEoi & ~XAPIC_EOI_WO_VALID))
         return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_EOI, APICMSRACCESS_WRITE_RSVD_BITS);
 
@@ -1248,7 +1261,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else
-                return XAPIC_IN_X2APIC_MODE(pVCpu) ? VINF_CPUM_R3_MSR_WRITE : VINF_IOM_R3_MMIO_WRITE;
+                return fX2ApicMode ? VINF_CPUM_R3_MSR_WRITE : VINF_IOM_R3_MMIO_WRITE;
 
             /*
              * Clear the vector from the TMR.
@@ -1310,7 +1323,8 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi)
 static VBOXSTRICTRC apicSetLdr(PVMCPU pVCpu, uint32_t uLdr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    Assert(!XAPIC_IN_X2APIC_MODE(pVCpu));
+    PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    Assert(!XAPIC_IN_X2APIC_MODE(pVCpu) || pApic->fHyperVCompatMode); RT_NOREF_PV(pApic);
 
     Log2(("APIC%u: apicSetLdr: uLdr=%#RX32\n", pVCpu->idCpu, uLdr));
 
@@ -1604,6 +1618,23 @@ void apicHintTimerFreq(PAPICCPU pApicCpu, uint32_t uInitialCount, uint8_t uTimer
 
 
 /**
+ * Gets the Interrupt Command Register (ICR), without performing any interface
+ * checks.
+ *
+ * @returns The ICR value.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+DECLINLINE(uint64_t) apicGetIcrNoCheck(PVMCPU pVCpu)
+{
+    PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
+    uint64_t const uHi  = pX2ApicPage->icr_hi.u32IcrHi;
+    uint64_t const uLo  = pX2ApicPage->icr_lo.all.u32IcrLo;
+    uint64_t const uIcr = RT_MAKE_U64(uLo, uHi);
+    return uIcr;
+}
+
+
+/**
  * Reads an APIC register.
  *
  * @returns VBox status code.
@@ -1718,7 +1749,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
     {
         case XAPIC_OFF_TPR:
         {
-            rcStrict = apicSetTpr(pVCpu, uValue);
+            rcStrict = apicSetTprEx(pVCpu, uValue, false /* fForceX2ApicBehaviour */);
             break;
         }
 
@@ -1743,7 +1774,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 
         case XAPIC_OFF_EOI:
         {
-            rcStrict = apicSetEoi(pVCpu, uValue);
+            rcStrict = apicSetEoi(pVCpu, uValue, false /* fForceX2ApicBehaviour */);
             break;
         }
 
@@ -1842,8 +1873,8 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
     Assert(pu64Value);
     RT_NOREF_PV(pDevIns);
 
-#ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+#ifndef IN_RING3
     if (pApic->fRZEnabled)
     { /* likely */}
     else
@@ -1853,17 +1884,15 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
     STAM_COUNTER_INC(&pVCpu->apic.s.CTX_SUFF_Z(StatMsrRead));
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    if (RT_LIKELY(XAPIC_IN_X2APIC_MODE(pVCpu)))
+    if (RT_LIKELY(   XAPIC_IN_X2APIC_MODE(pVCpu)
+                  || pApic->fHyperVCompatMode))
     {
         switch (u32Reg)
         {
             /* Special handling for x2APIC: */
             case MSR_IA32_X2APIC_ICR:
             {
-                PCX2APICPAGE pX2ApicPage = VMCPU_TO_CX2APICPAGE(pVCpu);
-                uint64_t const uHi = pX2ApicPage->icr_hi.u32IcrHi;
-                uint64_t const uLo = pX2ApicPage->icr_lo.all.u32IcrLo;
-                *pu64Value = RT_MAKE_U64(uLo, uHi);
+                *pu64Value = apicGetIcrNoCheck(pVCpu);
                 break;
             }
 
@@ -1947,8 +1976,8 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
     Assert(u32Reg >= MSR_IA32_X2APIC_ID && u32Reg <= MSR_IA32_X2APIC_SELF_IPI);
     RT_NOREF_PV(pDevIns);
 
-#ifndef IN_RING3
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+#ifndef IN_RING3
     if (pApic->fRZEnabled)
     { /* likely */ }
     else
@@ -1972,13 +2001,14 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
 
     uint32_t     u32Value = RT_LO_U32(u64Value);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    if (RT_LIKELY(XAPIC_IN_X2APIC_MODE(pVCpu)))
+    if (RT_LIKELY(   XAPIC_IN_X2APIC_MODE(pVCpu)
+                  || pApic->fHyperVCompatMode))
     {
         switch (u32Reg)
         {
             case MSR_IA32_X2APIC_TPR:
             {
-                rcStrict = apicSetTpr(pVCpu, u32Value);
+                rcStrict = apicSetTprEx(pVCpu, u32Value, false /* fForceX2ApicBehaviour */);
                 break;
             }
 
@@ -2034,15 +2064,39 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
 
             case MSR_IA32_X2APIC_EOI:
             {
-                rcStrict = apicSetEoi(pVCpu, u32Value);
+                rcStrict = apicSetEoi(pVCpu, u32Value, false /* fForceX2ApicBehaviour */);
                 break;
             }
 
+            /*
+             * Windows guest using Hyper-V x2APIC MSR compatibility mode tries to write the "high"
+             * LDR bits, which is quite absurd (as it's a 32-bit register) using this invalid MSR
+             * index (0x80E). The write value was 0xffffffff on a Windows 8.1 64-bit guest. We can
+             * safely ignore this nonsense, See @bugref{8382#c7}.
+             */
+            case MSR_IA32_X2APIC_LDR + 1:
+            {
+                if (pApic->fHyperVCompatMode)
+                    rcStrict = VINF_SUCCESS;
+                else
+                    rcStrict = apicMsrAccessError(pVCpu, u32Reg, APICMSRACCESS_WRITE_RSVD_OR_UNKNOWN);
+                break;
+            }
+
+            /* Special-treament (read-only normally, but not with Hyper-V) */
+            case MSR_IA32_X2APIC_LDR:
+            {
+                if (pApic->fHyperVCompatMode)
+                {
+                    rcStrict = apicSetLdr(pVCpu, u32Value);
+                    break;
+                }
+                /* fallthru */
+            }
             /* Read-only MSRs: */
             case MSR_IA32_X2APIC_ID:
             case MSR_IA32_X2APIC_VERSION:
             case MSR_IA32_X2APIC_PPR:
-            case MSR_IA32_X2APIC_LDR:
             case MSR_IA32_X2APIC_ISR0:  case MSR_IA32_X2APIC_ISR1:  case MSR_IA32_X2APIC_ISR2:  case MSR_IA32_X2APIC_ISR3:
             case MSR_IA32_X2APIC_ISR4:  case MSR_IA32_X2APIC_ISR5:  case MSR_IA32_X2APIC_ISR6:  case MSR_IA32_X2APIC_ISR7:
             case MSR_IA32_X2APIC_TMR0:  case MSR_IA32_X2APIC_TMR1:  case MSR_IA32_X2APIC_TMR2:  case MSR_IA32_X2APIC_TMR3:
@@ -2231,7 +2285,7 @@ APICBOTHCBDECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
 APICBOTHCBDECL(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
 {
     RT_NOREF_PV(pDevIns);
-    apicSetTpr(pVCpu, u8Tpr);
+    apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */);
 }
 
 
@@ -2878,10 +2932,10 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
         if (!fAlreadySet)
             break;
 
-        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->aVectorBitmap));
-        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->aVectorBitmap); idxPib++, idxReg += 2)
+        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->au64VectorBitmap));
+        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->au64VectorBitmap); idxPib++, idxReg += 2)
         {
-            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->aVectorBitmap[idxPib], 0);
+            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->au64VectorBitmap[idxPib], 0);
             if (u64Fragment)
             {
                 uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
@@ -2905,10 +2959,10 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
         if (!fAlreadySet)
             break;
 
-        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->aVectorBitmap));
-        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->aVectorBitmap); idxPib++, idxReg += 2)
+        AssertCompile(RT_ELEMENTS(pXApicPage->irr.u) == 2 * RT_ELEMENTS(pPib->au64VectorBitmap));
+        for (size_t idxPib = 0, idxReg = 0; idxPib < RT_ELEMENTS(pPib->au64VectorBitmap); idxPib++, idxReg += 2)
         {
-            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->aVectorBitmap[idxPib], 0);
+            uint64_t const u64Fragment = ASMAtomicXchgU64(&pPib->au64VectorBitmap[idxPib], 0);
             if (u64Fragment)
             {
                 uint32_t const u32FragmentLo = RT_LO_U32(u64Fragment);
@@ -2945,5 +2999,108 @@ VMMDECL(bool) APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIn
 {
     VMCPU_ASSERT_EMT(pVCpu);
     return apicGetHighestPendingInterrupt(pVCpu, pu8PendingIntr);
+}
+
+
+/**
+ * Posts an interrupt to a target APIC, Hyper-V interface.
+ *
+ * @returns true if the interrupt was accepted, false otherwise.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   uVector             The vector of the interrupt to be posted.
+ * @param   fAutoEoi            Whether this interrupt has automatic EOI
+ *                              treatment.
+ * @param   enmTriggerMode      The trigger mode of the interrupt.
+ *
+ * @thread  Any.
+ */
+VMM_INT_DECL(void) APICHvSendInterrupt(PVMCPU pVCpu, uint8_t uVector, bool fAutoEoi, XAPICTRIGGERMODE enmTriggerMode)
+{
+    Assert(pVCpu);
+    Assert(!fAutoEoi);    /** @todo AutoEOI.  */
+    apicPostInterrupt(pVCpu, uVector, enmTriggerMode);
+}
+
+
+/**
+ * Sets the Task Priority Register (TPR), Hyper-V interface.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uTpr        The TPR value to set.
+ *
+ * @remarks Validates like in x2APIC mode.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) APICHvSetTpr(PVMCPU pVCpu, uint8_t uTpr)
+{
+    Assert(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+    return apicSetTprEx(pVCpu, uTpr, true /* fForceX2ApicBehaviour */);
+}
+
+
+/**
+ * Gets the Task Priority Register (TPR), Hyper-V interface.
+ *
+ * @returns The TPR value.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(uint8_t) APICHvGetTpr(PVMCPU pVCpu)
+{
+    Assert(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    /*
+     * The APIC could be operating in xAPIC mode and thus we should not use the apicReadMsr()
+     * interface which validates the APIC mode and will throw a #GP(0) if not in x2APIC mode.
+     * We could use the apicReadRegister() MMIO interface, but why bother getting the PDMDEVINS
+     * pointer, so just directly read the APIC page.
+     */
+    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+    return apicReadRaw32(pXApicPage, XAPIC_OFF_TPR);
+}
+
+
+/**
+ * Sets the Interrupt Command Register (ICR), Hyper-V interface.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uIcr        The ICR value to set.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) APICHvSetIcr(PVMCPU pVCpu, uint64_t uIcr)
+{
+    Assert(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+    return apicSetIcr(pVCpu, uIcr, VINF_CPUM_R3_MSR_WRITE);
+}
+
+
+/**
+ * Gets the Interrupt Command Register (ICR), Hyper-V interface.
+ *
+ * @returns The ICR value.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(uint64_t) APICHvGetIcr(PVMCPU pVCpu)
+{
+    Assert(pVCpu);
+    VMCPU_ASSERT_EMT(pVCpu);
+    return apicGetIcrNoCheck(pVCpu);
+}
+
+
+/**
+ * Sets the End-Of-Interrupt (EOI) register, Hyper-V interface.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uEoi            The EOI value.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi)
+{
+    Assert(pVCpu);
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    return apicSetEoi(pVCpu, uEoi, true /* fForceX2ApicBehaviour */);
 }
 

@@ -140,6 +140,19 @@
 /** Offset of LVT extended range end (inclusive). */
 #define XAPIC_OFF_LVT_EXT_END                XAPIC_OFF_LVT_CMCI
 
+/** @name xAPIC Interrupt Command Register bits.
+ * See Intel spec. 10.6.1 "Interrupt Command Register (ICR)".
+ * See Intel spec. 10.5.1 "Local Vector Table".
+ * @{ */
+/**
+ * xAPIC trigger mode.
+ */
+typedef enum XAPICTRIGGERMODE
+{
+    XAPICTRIGGERMODE_EDGE = 0,
+    XAPICTRIGGERMODE_LEVEL
+} XAPICTRIGGERMODE;
+
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
@@ -147,6 +160,7 @@ RT_C_DECLS_BEGIN
  * @{
  */
 VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
+VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 
@@ -163,6 +177,19 @@ VMMDECL(bool)               APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8
 VMMDECL(void)               APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr);
 VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPU pVCpu);
 VMMDECL(bool)               APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr);
+
+/** @name Hyper-V interface (Ring-3 and all-context API).
+ * @{ */
+#ifdef IN_RING3
+VMMR3_INT_DECL(void)        APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode);
+#endif
+VMM_INT_DECL(void)          APICHvSendInterrupt(PVMCPU pVCpu, uint8_t uVector, bool fAutoEoi, XAPICTRIGGERMODE enmTriggerMode);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetTpr(PVMCPU pVCpu, uint8_t uTpr);
+VMM_INT_DECL(uint8_t)       APICHvGetTpr(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetIcr(PVMCPU pVCpu, uint64_t uIcr);
+VMM_INT_DECL(uint64_t)      APICHvGetIcr(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi);
+/** @} */
 
 RT_C_DECLS_END
 

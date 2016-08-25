@@ -354,6 +354,20 @@ VMMR3_INT_DECL(void) APICR3InitIpi(PVMCPU pVCpu)
 
 
 /**
+ * Sets whether Hyper-V compatibile x2APIC mode is enabled or not.
+ *
+ * @param   pVM                 The cross context VM structure.
+ * @param   fHyperVCompatMode   Whether the compatibility mode is enabled.
+ */
+VMMR3_INT_DECL(void) APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
+{
+    Assert(pVM);
+    PAPIC pApic = VM_TO_APIC(pVM);
+    pApic->fHyperVCompatMode = fHyperVCompatMode;
+}
+
+
+/**
  * Helper for dumping an APIC 256-bit sparse register.
  *
  * @param   pApicReg        The APIC 256-bit spare register.
@@ -412,11 +426,11 @@ static void apicR3DbgInfoPib(PCAPICPIB pApicPib, PCDBGFINFOHLP pHlp)
     XAPIC256BITREG ApicReg;
     RT_ZERO(ApicReg);
     ssize_t const cFragmentsDst = RT_ELEMENTS(ApicReg.u);
-    ssize_t const cFragmentsSrc = RT_ELEMENTS(pApicPib->aVectorBitmap);
-    AssertCompile(RT_ELEMENTS(ApicReg.u) == 2 * RT_ELEMENTS(pApicPib->aVectorBitmap));
+    ssize_t const cFragmentsSrc = RT_ELEMENTS(pApicPib->au64VectorBitmap);
+    AssertCompile(RT_ELEMENTS(ApicReg.u) == 2 * RT_ELEMENTS(pApicPib->au64VectorBitmap));
     for (ssize_t idxPib = cFragmentsSrc - 1, idxReg = cFragmentsDst - 1; idxPib >= 0; idxPib--, idxReg -= 2)
     {
-        uint64_t const uFragment   = pApicPib->aVectorBitmap[idxPib];
+        uint64_t const uFragment   = pApicPib->au64VectorBitmap[idxPib];
         uint32_t const uFragmentLo = RT_LO_U32(uFragment);
         uint32_t const uFragmentHi = RT_HI_U32(uFragment);
         ApicReg.u[idxReg].u32Reg     = uFragmentHi;
@@ -1831,6 +1845,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                          "/Devices/APIC/%u/TimerIcrWrite");
         APIC_REG_COUNTER(&pApicCpu->StatIcrLoWrite,    "Number of times the ICR Lo (send IPI) is written.",
                          "/Devices/APIC/%u/IcrLoWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrHiWrite,    "Number of times the ICR Hi is written.",
+                         "/Devices/APIC/%u/IcrHiWrite");
+        APIC_REG_COUNTER(&pApicCpu->StatIcrFullWrite,  "Number of times the ICR full (send IPI, x2APIC) is written.",
+                         "/Devices/APIC/%u/IcrFullWrite");
     }
 # undef APIC_PROF_COUNTER
 # undef APIC_REG_ACCESS_COUNTER

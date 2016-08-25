@@ -62,6 +62,7 @@
 #define XAPIC_IN_X2APIC_MODE(a_pVCpu)        (   (  ((a_pVCpu)->apic.s.uApicBaseMsr) \
                                                   & (MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD)) \
                                               ==    (MSR_IA32_APICBASE_EN | MSR_IA32_APICBASE_EXTD) )
+
 /** Get an xAPIC page offset for an x2APIC MSR value. */
 #define X2APIC_GET_XAPIC_OFF(a_uMsr)         ((((a_uMsr) - MSR_IA32_X2APIC_START) << 4) & UINT32_C(0xff0))
 /** Get an x2APIC MSR for an xAPIC page offset. */
@@ -1065,19 +1066,6 @@ typedef enum XAPICTIMERMODE
 } XAPICTIMERMODE;
 /** @} */
 
-/** @name xAPIC Interrupt Command Register bits.
- * See Intel spec. 10.6.1 "Interrupt Command Register (ICR)".
- * See Intel spec. 10.5.1 "Local Vector Table".
- * @{ */
-/**
- * xAPIC trigger mode.
- */
-typedef enum XAPICTRIGGERMODE
-{
-    XAPICTRIGGERMODE_EDGE = 0,
-    XAPICTRIGGERMODE_LEVEL
-} XAPICTRIGGERMODE;
-
 /**
  * xAPIC destination shorthand.
  */
@@ -1122,17 +1110,30 @@ typedef enum XAPICDELIVERYMODE
 } XAPICDELIVERYMODE;
 /** @} */
 
+/** @def APIC_CACHE_LINE_SIZE
+ * Padding (in bytes) for aligning data in different cache lines. Present
+ * generation x86 CPUs use 64-byte cache lines[1]. However, Intel NetBurst
+ * architecture supposedly uses 128-byte cache lines[2]. Since 128 is a
+ * multiple of 64, we use the larger one here.
+ *
+ * [1] - Intel spec "Table 11-1. Characteristics of the Caches, TLBs, Store
+ *       Buffer, and Write Combining Buffer in Intel 64 and IA-32 Processors"
+ * [2] - Intel spec. 8.10.6.7 "Place Locks and Semaphores in Aligned, 128-Byte
+ *       Blocks of Memory".
+ */
+#define APIC_CACHE_LINE_SIZE              128
+
 /**
  * APIC Pending-Interrupt Bitmap (PIB).
  */
 typedef struct APICPIB
 {
-    uint64_t volatile aVectorBitmap[4];
+    uint64_t volatile au64VectorBitmap[4];
     uint32_t volatile fOutstandingNotification;
-    uint8_t           au8Reserved[28];
+    uint8_t           au8Reserved[APIC_CACHE_LINE_SIZE - sizeof(uint32_t) - (sizeof(uint64_t) * 4)];
 } APICPIB;
 AssertCompileMemberOffset(APICPIB, fOutstandingNotification, 256 / 8);
-AssertCompileSize(APICPIB, 64);
+AssertCompileSize(APICPIB, APIC_CACHE_LINE_SIZE);
 /** Pointer to a pending-interrupt bitmap. */
 typedef APICPIB *PAPICPIB;
 /** Pointer to a const pending-interrupt bitmap. */
@@ -1166,7 +1167,7 @@ typedef struct APICDEV
     /** The APIC helpers - RC Ptr. */
     PCPDMAPICHLPRC              pApicHlpRC;
     /** The PDM critical section - RC Ptr. */
-    RCPTRTYPE(PPDMCRITSECT) pCritSectRC;
+    RCPTRTYPE(PPDMCRITSECT)     pCritSectRC;
     /** Alignment padding. */
     RCPTRTYPE(void *)           pvAlignment2;
 } APICDEV;
@@ -1226,16 +1227,24 @@ typedef struct APIC
     bool                        fIoApicPresent;
     /** Whether RZ is enabled or not (applies to MSR handling as well). */
     bool                        fRZEnabled;
+    /** Whether Hyper-V x2APIC compatibility mode is enabled. */
+    bool                        fHyperVCompatMode;
     /** Alignment padding. */
-    bool                        afAlignment0[7];
+    bool                        afAlignment[2];
     /** The max supported APIC mode from CFGM.  */
     PDMAPICMODE                 enmMaxMode;
+    /** Alignment padding. */
+    uint32_t                    u32Alignment1;
     /** @} */
 } APIC;
 /** Pointer to APIC VM instance data. */
 typedef APIC *PAPIC;
 /** Pointer to const APIC VM instance data. */
 typedef APIC const *PCAPIC;
+AssertCompileMemberAlignment(APIC, cbApicPib, 8);
+AssertCompileMemberAlignment(APIC, fVirtApicRegsEnabled, 8);
+AssertCompileMemberAlignment(APIC, enmMaxMode, 8);
+AssertCompileSizeAlignment(APIC, 8);
 
 /**
  * APIC VMCPU Instance data.
@@ -1284,6 +1293,10 @@ typedef struct APICCPU
     RTRCPTR                     RCPtrAlignment1;
     /** The APIC PIB for level-sensitive interrupts. */
     APICPIB                     ApicPibLevel;
+    /** @} */
+
+    /** @name Other miscellaneous data.
+     * @{ */
     /** Whether the LINT0 interrupt line is active. */
     bool volatile               fActiveLint0;
     /** Whether the LINT1 interrupt line is active. */
@@ -1360,6 +1373,10 @@ typedef struct APICCPU
     STAMCOUNTER                 StatTimerIcrWrite;
     /** Number of times the ICR Lo (send IPI) is written. */
     STAMCOUNTER                 StatIcrLoWrite;
+    /** Number of times the ICR Hi is written. */
+    STAMCOUNTER                 StatIcrHiWrite;
+    /** Number of times the full ICR (x2APIC send IPI) is written. */
+    STAMCOUNTER                 StatIcrFullWrite;
     /** @} */
 #endif
 } APICCPU;

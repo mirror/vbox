@@ -772,6 +772,8 @@ int main()
     GEN_CHECK_OFF(APICCPU, StatMaskedByPpr);
     GEN_CHECK_OFF(APICCPU, StatTimerIcrWrite);
     GEN_CHECK_OFF(APICCPU, StatIcrLoWrite);
+    GEN_CHECK_OFF(APICCPU, StatIcrHiWrite);
+    GEN_CHECK_OFF(APICCPU, StatIcrFullWrite);
 # endif /* VBOX_WITH_STATISTICS */
 #else
     /* PC/DevAPIC.cpp */
