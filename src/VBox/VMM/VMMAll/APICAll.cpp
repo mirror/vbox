@@ -3018,6 +3018,7 @@ VMM_INT_DECL(void) APICHvSendInterrupt(PVMCPU pVCpu, uint8_t uVector, bool fAuto
 {
     Assert(pVCpu);
     Assert(!fAutoEoi);    /** @todo AutoEOI.  */
+    RT_NOREF(fAutoEoi);
     apicPostInterrupt(pVCpu, uVector, enmTriggerMode);
 }
 
