@@ -1093,9 +1093,9 @@ static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
  *                          in the current context.
  *
  * @remarks This function is used by both x2APIC interface and the Hyper-V
- *          interface, see APICHvSetIcr(). The Hyper-V spec isn't clear what
- *          happens when invalid bits are set. For the time being, it will #GP
- *          like a regular x2APIC access.
+ *          interface, see APICHvSetIcr. The Hyper-V spec isn't clear what
+ *          happens when invalid bits are set. For the time being, it will
+ *          \#GP like a regular x2APIC access.
  */
 static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
 {
