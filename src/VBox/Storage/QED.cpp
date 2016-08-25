@@ -302,6 +302,10 @@ static bool qedHdrConvertToHostEndianess(PQedHeader pHeader)
         return false;
     if (RT_UNLIKELY(pHeader->u64Size % 512 != 0))
         return false;
+    if (RT_UNLIKELY(   pHeader->u64FeatureFlags & QED_FEATURE_BACKING_FILE
+                    && (   pHeader->u32BackingFilenameSize == 0
+                        || pHeader->u32BackingFilenameSize == UINT32_MAX)))
+        return false;
 
     return true;
 }
