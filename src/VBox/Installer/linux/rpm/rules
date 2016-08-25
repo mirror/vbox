@@ -141,13 +141,7 @@ ifneq ($(STAGEDISO),)
 endif
 
 ifeq ($(wildcard /usr/share/doc/packages/bash),)
- ifeq ($(wildcard /usr/share/doc/bash),)
-  # Mandriva 2007.1, Redhat
-  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(rpmname)\""
- else
-  # Mandriva 2008.0
-  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
- endif
+ doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
 else
  # Novell (OpenSUSE, SLES)
  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/packages/$(verpkg)\""

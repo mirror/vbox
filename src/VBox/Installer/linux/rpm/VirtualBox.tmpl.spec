@@ -16,7 +16,7 @@
 
 %define %SPEC% 1
 %define %OSE% 1
-%define VBOXDOCDIR %{_defaultdocdir}/%NAME%-%VER%
+%define VBOXDOCDIR %{_defaultdocdir}/%NAME%
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Summary:   Oracle VM VirtualBox
