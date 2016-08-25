@@ -84,7 +84,6 @@ STDAPI DllCanUnloadNow(void)
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
-    HRESULT hrc;
     AssertReturn(g_pAtlComModule, E_UNEXPECTED);
     return g_pAtlComModule->GetClassObject(rclsid, riid, ppv);
 }
