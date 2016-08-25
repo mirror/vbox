@@ -36,6 +36,7 @@
 /** Initialize instance counter class variable */
 uint32_t VirtualBoxClient::g_cInstances = 0;
 
+LONG VirtualBoxClient::s_cUnnecessaryAtlModuleLocks = 0;
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -103,6 +104,10 @@ HRESULT VirtualBoxClient::init()
         rc = mData.m_pEventSource->init();
         AssertComRCThrow(rc, setError(rc,
                                       tr("Could not initialize EventSource for VirtualBoxClient")));
+
+        /* HACK ALERT! This is for DllCanUnloadNow(). */
+        s_cUnnecessaryAtlModuleLocks++;
+        AssertMsg(s_cUnnecessaryAtlModuleLocks == 1, ("%d\n", s_cUnnecessaryAtlModuleLocks));
 
         /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
          * is not considered important enough to cause any sort of visible

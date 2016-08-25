@@ -74,7 +74,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
 STDAPI DllCanUnloadNow(void)
 {
     AssertReturn(g_pAtlComModule, S_OK);
-    return g_pAtlComModule->GetLockCount() == 0 ? S_OK : S_FALSE;
+    LONG const cLocks = g_pAtlComModule->GetLockCount();
+    Assert(cLocks >= VirtualBoxClient::s_cUnnecessaryAtlModuleLocks);
+    return cLocks <= VirtualBoxClient::s_cUnnecessaryAtlModuleLocks ? S_OK : S_FALSE;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -82,6 +84,7 @@ STDAPI DllCanUnloadNow(void)
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
+    HRESULT hrc;
     AssertReturn(g_pAtlComModule, E_UNEXPECTED);
     return g_pAtlComModule->GetClassObject(rclsid, riid, ppv);
 }
