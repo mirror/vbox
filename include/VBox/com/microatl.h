@@ -26,6 +26,7 @@
 #ifndef ___VBox_com_microatl_h
 #define ___VBox_com_microatl_h
 
+#include <VBox/cdefs.h> /* VBOX_STRICT */
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/err.h>
@@ -900,12 +901,10 @@ public:
     }
     ULONG InternalRelease()
     {
-#ifdef DEBUG
+#ifdef VBOX_STRICT
         LONG c = ThreadModel::Decrement(&m_iRef);
-        if (c < -(LONG_MAX / 2))
-        {
-            AssertMsgFailed(("Release called on object which has been already released\n"));
-        }
+        AssertMsg(c >= -(LONG_MAX / 2), /* See  ~CComObjectNoLock, ~CComObject & ~CComAggObject. */
+                  ("Release called on object which has been already destroyed!\n"));
         return c;
 #else
         return ThreadModel::Decrement(&m_iRef);
