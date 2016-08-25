@@ -1294,11 +1294,11 @@ public:
             // relying on atomic checks. Remember the inherent race!
             if (SUCCEEDED(m_hrc) && !m_pObj)
             {
-                    Lock();
-                    // Make sure that the module is in use, otherwise the
-                    // module can terminate while we're creating a new
-                    // instance, which leads to strange errors.
-                    LockServer(true);
+                Lock();
+                // Make sure that the module is in use, otherwise the
+                // module can terminate while we're creating a new
+                // instance, which leads to strange errors.
+                LockServer(true);
                 __try
                 {
                     // Repeat above test to avoid races when multiple threads
