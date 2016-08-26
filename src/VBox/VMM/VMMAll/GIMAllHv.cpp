@@ -492,6 +492,7 @@ VMM_INT_DECL(void) gimHvStartStimer(PVMCPU pVCpu, PCGIMHVSTIMER pHvStimer)
 static void gimHvStopStimer(PVMCPU pVCpu, PGIMHVSTIMER pHvStimer)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+    RT_NOREF(pVCpu);
 
     PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
     Assert(TMTimerIsLockOwner(pTimer));
