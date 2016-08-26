@@ -170,7 +170,7 @@ DECLINLINE(VBOXVIDEOOFFSET) vboxWddmAddrFramOffset(const VBOXWDDM_ADDR *pAddr)
 DECLINLINE(int) vboxWddmScreenInfoInit(VBVAINFOSCREEN *pScreen, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint16_t fFlags)
 {
     VBOXVIDEOOFFSET offVram = vboxWddmAddrFramOffset(&pAllocData->Addr);
-    if (offVram == VBOXVIDEOOFFSET_VOID && !(fFlags & (VBVA_SCREEN_F_DISABLED | VBVA_SCREEN_F_BLANK2)))
+    if (offVram == VBOXVIDEOOFFSET_VOID && !(fFlags & VBVA_SCREEN_F_DISABLED))
     {
         WARN(("offVram == VBOXVIDEOOFFSET_VOID"));
         return VERR_INVALID_PARAMETER;

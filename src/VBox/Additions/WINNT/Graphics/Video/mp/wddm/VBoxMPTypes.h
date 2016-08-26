@@ -128,7 +128,6 @@ typedef struct VBOXWDDM_SOURCE
     uint8_t u8SyncState;
     BOOLEAN fTargetsReported;
     BOOLEAN bVisible;
-    BOOLEAN bPowerOff;
 #ifdef VBOX_WITH_CROGL
     /* specifies whether the source has 3D overlay data visible */
     BOOLEAN fHas3DVrs;
