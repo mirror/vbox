@@ -33,11 +33,14 @@ endif
 #
 # Globals and targets.
 #
+VBOX_LNX_APP_PRIVATE    := $(if $(VBOX_PATH_APP_PRIVATE),$(VBOX_PATH_APP_PRIVATE),/opt/VirtualBox)
+VBOX_LNX_APP_DOCS       := $(if $(VBOX_PATH_PACKAGE_DOCS),$(VBOX_PATH_PACKAGE_DOCS),\
+			     $(if $(VBOX_PATH_APP_DOCS),$(VBOX_PATH_APP_DOCS),/opt/VirtualBox))
 VBOX_PATH_LNX_INST_SRC  := $(PATH_SUB_CURRENT)
 VBOX_LNX_INST_OUT_DIR   := $(PATH_TARGET)/Installer/linux
 VBOX_LNX_INST_STAGE_DIR := $(PATH_TARGET)/Installer/linux/install
 VBOX_LNX_INST_STAGE_DIR_REL := obj/Installer/linux/install
-VBOX_LNX_DBG_PATH       := usr/lib/debug/opt/VirtualBox
+VBOX_LNX_DBG_PATH       := usr/lib/debug/$(VBOX_LNX_APP_PRIVATE)
 VBOX_LNX_PACKAGE_NAME    = VirtualBox-$(VBOX_VERSION_STRING)-r$(VBOX_SVN_REV).run
 
 # Unset this to speed up things during makefile hacking.
@@ -116,15 +119,9 @@ $$(linux-misc_0_OUTDIR)/generated.sh: $(VBOX_VERSION_STAMP) $(VBOX_LNX_INST_DEP_
 
 $$(linux-misc_0_OUTDIR)/virtualbox.desktop: $(VBOX_PATH_INST_COMMON_SRC)/virtualbox.desktop.in $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
-ifdef VBOX_PATH_PACKAGE_DOCS
-	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_PATH_PACKAGE_DOCS)+" \
+	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+$(VBOX_LNX_APP_DOCS)+" \
 		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
 		--output $@ $<
-else
-	$(QUIET)$(SED) -e "s+@VBOX_DOC_PATH@+/opt/VirtualBox+" \
-		-e "s+@VBOX_PRODUCT@+$(VBOX_PRODUCT)+" \
-		--output $@ $<
-endif
 
 INSTALLS += linux-icons
 linux-icons_INST = bin/icons/
@@ -411,6 +408,7 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 		-e "s;_HARDENED_;$(VBOX_WITH_HARDENING);g" \
 		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		-e "s;_USERNAME_;$(USERNAME);g" \
+		-e "s;_INSTALLATION_DIR_;$(VBOX_LNX_APP_PRIVATE);g" \
 		-e "s;_PYTHON_;$(VBOX_WITH_PYTHON);g" \
 		--output $@ \
 		$<

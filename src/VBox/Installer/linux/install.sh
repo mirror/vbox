@@ -35,7 +35,7 @@ CONFIG="vbox.cfg"
 CONFIG_FILES="filelist"
 DEFAULT_FILES=`pwd`/deffiles
 GROUPNAME="vboxusers"
-INSTALLATION_DIR="/opt/VirtualBox"
+INSTALLATION_DIR="_INSTALLATION_DIR_"
 LICENSE_ACCEPTED=""
 PREV_INSTALLATION=""
 PYTHON="_PYTHON_"
@@ -180,7 +180,7 @@ do
                 info "Unknown command '$1'."
                 usage
             fi
-            info "Specifying an installation path is not allowed -- using /opt/VirtualBox!"
+            info "Specifying an installation path is not allowed -- using _INSTALLATION_DIR_!"
             ;;
     esac
 done
