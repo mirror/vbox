@@ -647,8 +647,11 @@ void vboxWddmGhDisplayCheckSetInfoEx(PVBOXMP_DEVEXT pDevExt, bool fReportTargets
         vboxWddmGhDisplayCheckSetInfoFromSourceEx(pDevExt, pSource, fReportTargets);
     }
 
+    /* Skip the second VBOXCMDVBVA_RESIZE which hides disabled Virtual Displays
     if (fReportTargets)
+    {
         vboxWddmGhDisplayCheckSetInfoForDisabledTargets(pDevExt);
+    }*/
 }
 
 void vboxWddmGhDisplayCheckSetInfo(PVBOXMP_DEVEXT pDevExt)
@@ -1031,7 +1034,7 @@ NTSTATUS DxgkDdiAddDevice(
     vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXMP_DEVEXT pDevExt;
+    PVBOXMP_DEVEXT pDevExt = NULL;
 
     WCHAR RegKeyBuf[512];
     ULONG cbRegKeyBuf = sizeof (RegKeyBuf);
