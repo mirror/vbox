@@ -1066,7 +1066,7 @@ static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *p
 {
     PGIMHVSTIMER pHvStimer = (PGIMHVSTIMER)pvUser;
     Assert(pHvStimer);
-    Assert(TMTimerIsLockOwner(pTimer));
+    Assert(TMTimerIsLockOwner(pTimer)); RT_NOREF(pTimer);
     Assert(pHvStimer->idCpu < pVM->cCpus);
 
     PVMCPU    pVCpu  = &pVM->aCpus[pHvStimer->idCpu];
