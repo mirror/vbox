@@ -477,6 +477,44 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 #define MSR_GIM_HV_SIEF_PAGE_IS_ENABLED(a)        RT_BOOL((a) & MSR_GIM_HV_SIEF_PAGE_ENABLE)
 /** @} */
 
+/** @name Hyper-V MSR - Synthetic Interrupt Control (MSR_GIM_HV_CONTROL).
+ * @{
+ */
+/** The SControl enable mask. */
+#define MSR_GIM_HV_SCONTROL_ENABLE                RT_BIT_64(0)
+/** Whether SControl is enabled or not. */
+#define MSR_GIM_HV_SCONTROL_IS_ENABLED(a)         RT_BOOL((a) & MSR_GIM_HV_SCONTROL_ENABLE)
+/** @} */
+
+/** @name Hyper-V MSR - Synthetic Timer Config (MSR_GIM_HV_STIMER_CONFIG).
+ * @{
+ */
+/** The Stimer enable mask. */
+#define MSR_GIM_HV_STIMER_ENABLE                  RT_BIT_64(0)
+/** Whether Stimer is enabled or not. */
+#define MSR_GIM_HV_STIMER_IS_ENABLED(a)           RT_BOOL((a) & MSR_GIM_HV_STIMER_ENABLE)
+/** The Stimer periodic mask. */
+#define MSR_GIM_HV_STIMER_PERIODIC                RT_BIT_64(1)
+/** Whether Stimer is enabled or not. */
+#define MSR_GIM_HV_STIMER_IS_PERIODIC(a)          RT_BOOL((a) & MSR_GIM_HV_STIMER_PERIODIC)
+/** The Stimer lazy mask. */
+#define MSR_GIM_HV_STIMER_LAZY                    RT_BIT_64(2)
+/** Whether Stimer is enabled or not. */
+#define MSR_GIM_HV_STIMER_IS_LAZY(a)              RT_BOOL((a) & MSR_GIM_HV_STIMER_LAZY)
+/** The Stimer auto-enable mask. */
+#define MSR_GIM_HV_STIMER_AUTO_ENABLE             RT_BIT_64(3)
+/** Whether Stimer is enabled or not. */
+#define MSR_GIM_HV_STIMER_IS_AUTO_ENABLED(a)      RT_BOOL((a) & MSR_GIM_HV_STIMER_AUTO_ENABLE)
+/** The Stimer SINTx mask (bits 16:19). */
+#define MSR_GIM_HV_STIMER_SINTX                   UINT64_C(0xf0000)
+/** Gets the Stimer synthetic interrupt source. */
+#define MSR_GIM_HV_STIMER_GET_SINTX(a)            (((a) >> 16) & 0xf)
+/** The Stimer valid read/write mask. */
+#define MSR_GIM_HV_STIMER_RW_VALID                (  MSR_GIM_HV_STIMER_ENABLE | MSR_GIM_HV_STIMER_PERIODIC    \
+                                                   | MSR_GIM_HV_STIMER_LAZY   | MSR_GIM_HV_STIMER_AUTO_ENABLE \
+                                                   | MSR_GIM_HV_STIMER_SINTX)
+/** @} */
+
 /**
  * Hyper-V APIC-assist (HV_REFERENCE_TSC_PAGE) structure placed in the TSC
  * reference page.
@@ -725,8 +763,12 @@ typedef enum GIMHVHYPERCALLPARAM
 #define MSR_GIM_HV_SINT_MASKED                         RT_BIT_64(16)
 /** Whether the interrupt source is masked. */
 #define MSR_GIM_HV_SINT_IS_MASKED(a)                   RT_BOOL((a) & MSR_GIM_HV_SINT_MASKED)
-/** Interrupt vector. */
-#define MSR_GIM_HV_SINT_VECTOR(a)                      ((a) & UINT64_C(0xff))
+/** Gets the interrupt vector. */
+#define MSR_GIM_HV_SINT_GET_VECTOR(a)                  ((a) & UINT64_C(0xff))
+/** The AutoEoi mask. */
+#define MSR_GIM_HV_SINT_AUTOEOI                        RT_BIT_64(17)
+/** Gets whether AutoEoi is enabled for the synthetic interrupt. */
+#define MSR_GIM_HV_SINT_IS_AUTOEOI(a)                  RT_BOOL((a) & MSR_GIM_HV_SINT_AUTOEOI)
 /** @} */
 
 
@@ -786,15 +828,18 @@ typedef enum GIMHVHYPERCALLPARAM
  */
 /** SynIC version register. */
 #define GIM_HV_SVERSION                           1
-/** Number of synthetic interrupt sources. */
+/** Number of synthetic interrupt sources (warning, fixed in saved-states!). */
 #define GIM_HV_SINT_COUNT                         16
 /** Lowest valid vector for synthetic interrupt. */
 #define GIM_HV_SINT_VECTOR_VALID_MIN              16
 /** Highest valid vector for synthetic interrupt. */
 #define GIM_HV_SINT_VECTOR_VALID_MAX              255
+/** Number of synthetic timers. */
+#define GIM_HV_STIMER_COUNT                       4
 /** @} */
 
 /** @name Hyper-V synthetic interrupt message type.
+ * See 14.8.2 "SynIC Message Types"
  * @{
  */
 typedef enum GIMHVMSGTYPE
@@ -1135,7 +1180,38 @@ AssertCompileMemberAlignment(GIMHV, aMmio2Regions, 8);
 AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
 
 /**
- * GIM Hyper-V VCPU instance data.
+ * Hyper-V per-VCPU synthetic timer.
+ */
+typedef struct GIMHVSTIMER
+{
+    /** Synthetic timer object - R0 ptr. */
+    PTMTIMERR0                  pTimerR0;
+    /** Synthetic timer object - R3 ptr. */
+    PTMTIMERR3                  pTimerR3;
+    /** Synthetic timer object - RC ptr. */
+    PTMTIMERRC                  pTimerRC;
+    /** RC alignment padding. */
+    RTRCPTR                     uAlignment0;
+    /** Virtual CPU ID this timer belongs to (for reverse mapping). */
+    VMCPUID                     idCpu;
+    /** The index of this timer in the auStimers array (for reverse mapping). */
+    uint32_t                    idxStimer;
+    /** Synthetic timer config MSR. */
+    uint64_t                    uStimerConfigMsr;
+    /** Synthetic timer count MSR. */
+    uint64_t                    uStimerCountMsr;
+    /** Timer description. */
+    char                        szTimerDesc[24];
+
+} GIMHVSTIMER;
+/** Pointer to per-VCPU Hyper-V synthetic timer. */
+typedef GIMHVSTIMER *PGIMHVSTIMER;
+/** Pointer to a const per-VCPU Hyper-V synthetic timer. */
+typedef GIMHVSTIMER const *PCGIMHVSTIMER;
+AssertCompileSizeAlignment(GIMHVSTIMER, 8);
+
+/**
+ * Hyper-V VCPU instance data.
  * Changes to this must checked against the padding of the gim union in VMCPU!
  */
 typedef struct GIMHVCPU
@@ -1145,11 +1221,20 @@ typedef struct GIMHVCPU
     /** Synthetic interrupt message page MSR. */
     uint64_t                    uSimpMsr;
     /** Interrupt source MSRs. */
-    uint64_t                    auSintXMsr[GIM_HV_SINT_COUNT];
+    uint64_t                    auSintMsrs[GIM_HV_SINT_COUNT];
     /** Synethtic interrupt events flag page MSR. */
     uint64_t                    uSiefpMsr;
     /** APIC-assist page MSR. */
     uint64_t                    uApicAssistPageMsr;
+    /** Synthetic interrupt control MSR. */
+    uint64_t                    uSControlMsr;
+    /** Synthetic timers. */
+    GIMHVSTIMER                 aStimers[GIM_HV_STIMER_COUNT];
+    /** @} */
+
+    /** @name Statistics.
+     * @{ */
+    STAMCOUNTER                 aStatStimerFired[GIM_HV_STIMER_COUNT];
     /** @} */
 } GIMHVCPU;
 /** Pointer to per-VCPU GIM Hyper-V instance data. */
@@ -1203,6 +1288,8 @@ VMM_INT_DECL(VBOXSTRICTRC)      gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvExecHypercallInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+
+VMM_INT_DECL(void)              gimHvStartStimer(PVMCPU pVCpu, PCGIMHVSTIMER pHvStimer);
 
 RT_C_DECLS_END
 

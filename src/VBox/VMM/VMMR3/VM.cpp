@@ -1263,6 +1263,7 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     IEMR3Relocate(pVM);
     DBGFR3Relocate(pVM, offDelta);
     PDMR3Relocate(pVM, offDelta);
+    GIMR3Relocate(pVM, offDelta);
 }
 
 

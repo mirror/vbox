@@ -350,6 +350,28 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
 
 
 /**
+ * Applies relocations to data and code managed by this
+ * component. This function will be called at init and
+ * whenever the VMM need to relocate it self inside the GC.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   offDelta    Relocation delta relative to old location.
+ */
+VMMR3_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+{
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_HYPERV:
+            gimR3HvRelocate(pVM, offDelta);
+            break;
+
+        default:
+            break;
+    }
+}
+
+
+/**
  * The VM is being reset.
  *
  * For the GIM component this means unmapping and unregistering MMIO2 regions

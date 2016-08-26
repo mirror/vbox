@@ -174,6 +174,7 @@ VMMR0_INT_DECL(int)         GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
  */
 VMMR3_INT_DECL(int)         GIMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)         GIMR3InitCompleted(PVM pVM);
+VMMR3_INT_DECL(void)        GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)         GIMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)        GIMR3Reset(PVM pVM);
 VMMR3DECL(void)             GIMR3GimDeviceRegister(PVM pVM, PPDMDEVINS pDevInsR3, PGIMDEBUG pDbg);

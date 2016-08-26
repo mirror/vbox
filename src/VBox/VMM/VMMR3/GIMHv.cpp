@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_GIM
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/mm.h>
@@ -48,7 +49,9 @@
 /**
  * GIM Hyper-V saved-state version.
  */
-#define GIM_HV_SAVED_STATE_VERSION                UINT32_C(2)
+#define GIM_HV_SAVED_STATE_VERSION                UINT32_C(3)
+/** Saved states, prior to any synthetic interrupt controller support. */
+#define GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC      UINT32_C(2)
 /** Vanilla saved states, prior to any debug support. */
 #define GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG      UINT32_C(1)
 
@@ -179,10 +182,8 @@ static const uint8_t g_abArpReply[] =
 static int    gimR3HvInitHypercallSupport(PVM pVM);
 static void   gimR3HvTermHypercallSupport(PVM pVM);
 static int    gimR3HvInitDebugSupport(PVM pVM);
-#if 0 /** @todo currently unused, which is probably very wrong */
 static void   gimR3HvTermDebugSupport(PVM pVM);
-#endif
-
+static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser);
 
 /**
  * Initializes the Hyper-V GIM provider.
@@ -196,7 +197,6 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_HYPERV, VERR_INTERNAL_ERROR_5);
 
-    int rc;
     PGIMHV pHv = &pVM->gim.s.u.Hv;
 
     /*
@@ -208,19 +208,19 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         /*
          * Validate the Hyper-V settings.
          */
-        rc = CFGMR3ValidateConfig(pCfgHv, "/HyperV/",
+        int rc2 = CFGMR3ValidateConfig(pCfgHv, "/HyperV/",
                                   "VendorID"
                                   "|VSInterface"
                                   "|HypercallDebugInterface",
                                   "" /* pszValidNodes */, "GIM/HyperV" /* pszWho */, 0 /* uInstance */);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (RT_FAILURE(rc2))
+            return rc2;
     }
 
     /** @cfgm{/GIM/HyperV/VendorID, string, 'VBoxVBoxVBox'}
      * The Hyper-V vendor signature, must be 12 characters. */
     char szVendor[13];
-    rc = CFGMR3QueryStringDef(pCfgHv, "VendorID", szVendor, sizeof(szVendor), "VBoxVBoxVBox");
+    int rc = CFGMR3QueryStringDef(pCfgHv, "VendorID", szVendor, sizeof(szVendor), "VBoxVBoxVBox");
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelMsgReturn(strlen(szVendor) == 12,
                           ("The VendorID config value must be exactly 12 chars, '%s' isn't!\n", szVendor),
@@ -254,8 +254,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         pHv->uBaseFeat = 0
                        //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
                        | GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR
-                       //| GIM_HV_BASE_FEAT_BASIC_SYNTH_IC
-                       //| GIM_HV_BASE_FEAT_SYNTH_TIMER_MSRS
+                       //| GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS
+                       //| GIM_HV_BASE_FEAT_STIMER_MSRS
                        | GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
                        | GIM_HV_BASE_FEAT_HYPERCALL_MSRS
                        | GIM_HV_BASE_FEAT_VP_ID_MSR
@@ -278,7 +278,9 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
 
         /* Hypervisor recommendations to the guest. */
         pHv->uHyperHints = GIM_HV_HINT_MSR_FOR_SYS_RESET
-                         | GIM_HV_HINT_RELAX_TIME_CHECKS;
+                         | GIM_HV_HINT_RELAX_TIME_CHECKS
+                         //| GIM_HV_HINT_X2APIC_MSRS
+                         ;
 
         /* Expose more if we're posing as Microsoft. We can, if needed, force MSR-based Hv
            debugging by not exposing these bits while exposing the VS interface. The better
@@ -346,7 +348,11 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     CPUMCPUIDLEAF HyperLeaf;
     RT_ZERO(HyperLeaf);
     HyperLeaf.uLeaf        = UINT32_C(0x40000000);
-    HyperLeaf.uEax         = UINT32_C(0x40000006); /* Minimum value for Hyper-V is 0x40000005. */
+    if (   pHv->fIsVendorMsHv
+        && pHv->fIsInterfaceVs)
+        HyperLeaf.uEax     = UINT32_C(0x40000082); /* Since we expose 0x40000082 below for the Hyper-V PV-debugging case. */
+    else
+        HyperLeaf.uEax     = UINT32_C(0x40000006); /* Minimum value for Hyper-V default is 0x40000005. */
     /*
      * Don't report vendor as 'Microsoft Hv'[1] by default, see @bugref{7270#c152}.
      * [1]: ebx=0x7263694d ('rciM') ecx=0x666f736f ('foso') edx=0x76482074 ('vH t')
@@ -403,6 +409,13 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
     AssertLogRelRCReturn(rc, rc);
 
+    RT_ZERO(HyperLeaf);
+    HyperLeaf.uLeaf        = UINT32_C(0x40000005);
+    rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Leaf 0x40000006 is inserted in gimR3HvInitCompleted(). */
+
     if (   pHv->fIsVendorMsHv
         && pHv->fIsInterfaceVs)
     {
@@ -436,8 +449,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      */
     for (unsigned i = 0; i < RT_ELEMENTS(g_aMsrRanges_HyperV); i++)
     {
-        rc = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_HyperV[i]);
-        AssertLogRelRCReturn(rc, rc);
+        int rc2 = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_HyperV[i]);
+        AssertLogRelRCReturn(rc2, rc2);
     }
 
     /*
@@ -448,8 +461,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
-        for (size_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintXMsr); idxSintMsr++)
-            pHvCpu->auSintXMsr[idxSintMsr] = MSR_GIM_HV_SINT_MASKED;
+        for (uint8_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSintMsr++)
+            pHvCpu->auSintMsrs[idxSintMsr] = MSR_GIM_HV_SINT_MASKED;
     }
 
     /*
@@ -463,6 +476,56 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
      */
     rc = gimR3HvInitDebugSupport(pVM);
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Setup up the per-VCPU synthetic timers.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
+        PGIMHVCPU    pHvCpu    = &pVCpu->gim.s.u.HvCpu;
+
+        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        {
+            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+
+            /* Associate the synthetic timer with its corresponding VCPU. */
+            pHvStimer->idCpu     = pVCpu->idCpu;
+            pHvStimer->idxStimer = idxStimer;
+
+            /* Create the timer and associate the context pointers. */
+            RTStrPrintf(&pHvStimer->szTimerDesc[0], sizeof(pHvStimer->szTimerDesc), "Hyper-V[%u] Timer%u", pVCpu->idCpu,
+                        idxStimer);
+            rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
+                                         pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
+            AssertLogRelRCReturn(rc, rc);
+            pHvStimer->pTimerR0 = TMTimerR0Ptr(pHvStimer->pTimerR3);
+            pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+        }
+    }
+
+    /*
+     * Inform APIC whether Hyper-V compatibility mode is enabled or not.
+     */
+    if (pHv->uHyperHints & GIM_HV_HINT_X2APIC_MSRS)
+        APICR3HvSetCompatMode(pVM, true);
+
+    /*
+     * Register statistics.
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU    pVCpu  = &pVM->aCpus[idCpu];
+        PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+
+        for (size_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStatStimerFired); idxStimer++)
+        {
+            int rc2 = STAMR3RegisterF(pVM, &pHvCpu->aStatStimerFired[idxStimer], STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                     STAMUNIT_OCCURENCES, "Number of times the synthetic timer fired.",
+                                     "/GIM/HyperV/%u/Stimer%u_Fired", idCpu, idxStimer);
+            AssertLogRelRCReturn(rc2, rc2);
+        }
+    }
 
     return VINF_SUCCESS;
 }
@@ -515,7 +578,42 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 {
     gimR3HvReset(pVM);
     gimR3HvTermHypercallSupport(pVM);
+    gimR3HvTermDebugSupport(pVM);
+
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
+        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        {
+            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+            TMR3TimerDestroy(pHvStimer->pTimerR3);
+        }
+    }
+
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Applies relocations to data and code managed by this
+ * component. This function will be called at init and
+ * whenever the VMM need to relocate it self inside the GC.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   offDelta    Relocation delta relative to old location.
+ */
+VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
+{
+    RT_NOREF1(offDelta);
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
+        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        {
+            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+            pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+        }
+    }
 }
 
 
@@ -567,11 +665,20 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
+        pHvCpu->uSControlMsr = 0;
         pHvCpu->uSimpMsr  = 0;
         pHvCpu->uSiefpMsr = 0;
         pHvCpu->uApicAssistPageMsr = 0;
-        for (size_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintXMsr); idxSintMsr++)
-            pHvCpu->auSintXMsr[idxSintMsr] = MSR_GIM_HV_SINT_MASKED;
+
+        for (uint8_t idxSint = 0; idxSint < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSint++)
+            pHvCpu->auSintMsrs[idxSint] = MSR_GIM_HV_SINT_MASKED;
+
+        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        {
+            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+            pHvStimer->uStimerConfigMsr = 0;
+            pHvStimer->uStimerCountMsr  = 0;
+        }
     }
 }
 
@@ -740,7 +847,8 @@ VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
     {
         PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
         SSMR3PutU64(pSSM, pHvCpu->uSimpMsr);
-        SSMR3PutU64(pSSM, pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT]);
+        for (size_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSintMsr++)
+            SSMR3PutU64(pSSM, pHvCpu->auSintMsrs[idxSintMsr]);
     }
 
     return SSMR3PutU8(pSSM, UINT8_MAX);
@@ -759,14 +867,15 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Load the Hyper-V SSM version first.
      */
-    uint32_t uHvSavedStatVersion;
-    int rc = SSMR3GetU32(pSSM, &uHvSavedStatVersion);
+    uint32_t uHvSavedStateVersion;
+    int rc = SSMR3GetU32(pSSM, &uHvSavedStateVersion);
     AssertRCReturn(rc, rc);
-    if (   uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION
-        && uHvSavedStatVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
+    if (   uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION
+        && uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC
+        && uHvSavedStateVersion != GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
         return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
                                  N_("Unsupported Hyper-V saved-state version %u (current %u)!"),
-                                 uHvSavedStatVersion, GIM_HV_SAVED_STATE_VERSION);
+                                 uHvSavedStateVersion, GIM_HV_SAVED_STATE_VERSION);
 
     /*
      * Update the TSC frequency from TM.
@@ -854,7 +963,7 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Load the debug support data.
      */
-    if (uHvSavedStatVersion > GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
+    if (uHvSavedStateVersion > GIM_HV_SAVED_STATE_VERSION_PRE_DEBUG)
     {
         SSMR3GetU64(pSSM, &pHv->uDbgPendingBufferMsr);
         SSMR3GetU64(pSSM, &pHv->uDbgSendBufferMsr);
@@ -869,7 +978,13 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
         {
             PGIMHVCPU pHvCpu = &pVM->aCpus[i].gim.s.u.HvCpu;
             SSMR3GetU64(pSSM, &pHvCpu->uSimpMsr);
-            SSMR3GetU64(pSSM, &pHvCpu->auSintXMsr[GIM_HV_VMBUS_MSG_SINT]);
+            if (uHvSavedStateVersion <= GIM_HV_SAVED_STATE_VERSION_PRE_SYNIC)
+                SSMR3GetU64(pSSM, &pHvCpu->auSintMsrs[GIM_HV_VMBUS_MSG_SINT]);
+            else
+            {
+                for (uint8_t idxSintMsr = 0; idxSintMsr < RT_ELEMENTS(pHvCpu->auSintMsrs); idxSintMsr++)
+                    SSMR3GetU64(pSSM, &pHvCpu->auSintMsrs[idxSintMsr]);
+            }
         }
 
         uint8_t bDelim;
@@ -909,11 +1024,11 @@ VMMR3_INT_DECL(int) gimR3HvEnableApicAssistPage(PVMCPU pVCpu, RTGCPHYS GCPhysApi
         if (RT_SUCCESS(rc))
         {
             /** @todo Inform APIC. */
-            LogRel(("GIM: HyperV%u: Enabled APIC-assist page at %#RGp\n", pVCpu->idCpu, GCPhysApicAssistPage));
+            LogRel(("GIM%u: HyperV: Enabled APIC-assist page at %#RGp\n", pVCpu->idCpu, GCPhysApicAssistPage));
         }
         else
         {
-            LogRelFunc(("GIM: HyperV%u: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
+            LogRelFunc(("GIM%u: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
             rc = VERR_GIM_OPERATION_FAILED;
         }
 
@@ -921,7 +1036,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableApicAssistPage(PVMCPU pVCpu, RTGCPHYS GCPhysApi
         return rc;
     }
 
-    LogRelFunc(("GIM: HyperV%u: Failed to alloc %u bytes\n", pVCpu->idCpu, cbApicAssistPage));
+    LogRelFunc(("GIM%u: HyperV: Failed to alloc %u bytes\n", pVCpu->idCpu, cbApicAssistPage));
     return VERR_NO_MEMORY;
 }
 
@@ -934,9 +1049,48 @@ VMMR3_INT_DECL(int) gimR3HvEnableApicAssistPage(PVMCPU pVCpu, RTGCPHYS GCPhysApi
  */
 VMMR3_INT_DECL(int) gimR3HvDisableApicAssistPage(PVMCPU pVCpu)
 {
-    LogRel(("GIM: HyperV%u: Disabled APIC-assist page\n", pVCpu->idCpu));
+    LogRel(("GIM%u: HyperV: Disabled APIC-assist page\n", pVCpu->idCpu));
     /** @todo inform APIC */
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Hyper-V synthetic timer callback.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pTimer      Pointer to timer.
+ * @param   pvUser      Pointer to the synthetic timer.
+ */
+static DECLCALLBACK(void) gimR3HvTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+{
+    PGIMHVSTIMER pHvStimer = (PGIMHVSTIMER)pvUser;
+    Assert(pHvStimer);
+    Assert(TMTimerIsLockOwner(pTimer));
+    Assert(pHvStimer->idCpu < pVM->cCpus);
+
+    PVMCPU    pVCpu  = &pVM->aCpus[pHvStimer->idCpu];
+    PGIMHVCPU pHvCpu = &pVCpu->gim.s.u.HvCpu;
+    Assert(pHvStimer->idxStimer < RT_ELEMENTS(pHvCpu->aStatStimerFired));
+
+    STAM_COUNTER_INC(&pHvCpu->aStatStimerFired[pHvStimer->idxStimer]);
+
+    uint64_t const uStimerConfig = pHvStimer->uStimerConfigMsr;
+    uint16_t const idxSint       = MSR_GIM_HV_STIMER_GET_SINTX(uStimerConfig);
+    if (RT_LIKELY(idxSint < RT_ELEMENTS(pHvCpu->auSintMsrs)))
+    {
+        uint64_t const uSint = pHvCpu->auSintMsrs[idxSint];
+        if (!MSR_GIM_HV_SINT_IS_MASKED(uSint))
+        {
+            uint8_t const uVector  = MSR_GIM_HV_SINT_GET_VECTOR(uSint);
+            bool const    fAutoEoi = MSR_GIM_HV_SINT_IS_AUTOEOI(uSint);
+            APICHvSendInterrupt(pVCpu, uVector, fAutoEoi, XAPICTRIGGERMODE_EDGE);
+        }
+    }
+
+    /* Re-arm the timer if it's periodic. */
+    if (MSR_GIM_HV_STIMER_IS_PERIODIC(uStimerConfig))
+        gimHvStartStimer(pVCpu, pHvStimer);
 }
 
 
@@ -967,11 +1121,11 @@ VMMR3_INT_DECL(int) gimR3HvEnableSiefPage(PVMCPU pVCpu, RTGCPHYS GCPhysSiefPage)
         if (RT_SUCCESS(rc))
         {
             /** @todo SIEF setup. */
-            LogRel(("GIM: HyperV%u: Enabled SIEF page at %#RGp\n", pVCpu->idCpu, GCPhysSiefPage));
+            LogRel(("GIM%u: HyperV: Enabled SIEF page at %#RGp\n", pVCpu->idCpu, GCPhysSiefPage));
         }
         else
         {
-            LogRelFunc(("GIM: HyperV%u: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
+            LogRelFunc(("GIM%u: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
             rc = VERR_GIM_OPERATION_FAILED;
         }
 
@@ -979,7 +1133,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableSiefPage(PVMCPU pVCpu, RTGCPHYS GCPhysSiefPage)
         return rc;
     }
 
-    LogRelFunc(("GIM: HyperV%u: Failed to alloc %u bytes\n", pVCpu->idCpu, cbSiefPage));
+    LogRelFunc(("GIM%u: HyperV: Failed to alloc %u bytes\n", pVCpu->idCpu, cbSiefPage));
     return VERR_NO_MEMORY;
 }
 
@@ -992,7 +1146,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableSiefPage(PVMCPU pVCpu, RTGCPHYS GCPhysSiefPage)
  */
 VMMR3_INT_DECL(int) gimR3HvDisableSiefPage(PVMCPU pVCpu)
 {
-    LogRel(("GIM: HyperV%u: Disabled APIC-assist page\n", pVCpu->idCpu));
+    LogRel(("GIM%u: HyperV: Disabled APIC-assist page\n", pVCpu->idCpu));
     /** @todo SIEF teardown. */
     return VINF_SUCCESS;
 }
@@ -1141,11 +1295,11 @@ VMMR3_INT_DECL(int) gimR3HvEnableSimPage(PVMCPU pVCpu, RTGCPHYS GCPhysSimPage)
         if (RT_SUCCESS(rc))
         {
             /** @todo SIM setup. */
-            LogRel(("GIM: HyperV%u: Enabled SIM page at %#RGp\n", pVCpu->idCpu, GCPhysSimPage));
+            LogRel(("GIM%u: HyperV: Enabled SIM page at %#RGp\n", pVCpu->idCpu, GCPhysSimPage));
         }
         else
         {
-            LogRelFunc(("GIM: HyperV%u: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
+            LogRelFunc(("GIM%u: HyperV: PGMPhysSimpleWriteGCPhys failed. rc=%Rrc\n", pVCpu->idCpu, rc));
             rc = VERR_GIM_OPERATION_FAILED;
         }
 
@@ -1153,7 +1307,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableSimPage(PVMCPU pVCpu, RTGCPHYS GCPhysSimPage)
         return rc;
     }
 
-    LogRelFunc(("GIM: HyperV%u: Failed to alloc %u bytes\n", pVCpu->idCpu, cbSimPage));
+    LogRelFunc(("GIM%u: HyperV: Failed to alloc %u bytes\n", pVCpu->idCpu, cbSimPage));
     return VERR_NO_MEMORY;
 }
 
@@ -1166,7 +1320,7 @@ VMMR3_INT_DECL(int) gimR3HvEnableSimPage(PVMCPU pVCpu, RTGCPHYS GCPhysSimPage)
  */
 VMMR3_INT_DECL(int) gimR3HvDisableSimPage(PVMCPU pVCpu)
 {
-    LogRel(("GIM: HyperV%u: Disabled SIM page\n", pVCpu->idCpu));
+    LogRel(("GIM%u: HyperV: Disabled SIM page\n", pVCpu->idCpu));
     /** @todo SIM teardown. */
     return VINF_SUCCESS;
 }
@@ -1399,7 +1553,6 @@ static int gimR3HvInitDebugSupport(PVM pVM)
 }
 
 
-#if 0 /** @todo currently unused, which is probably very wrong */
 /**
  * Terminates Hyper-V guest debug support.
  *
@@ -1414,7 +1567,6 @@ static void gimR3HvTermDebugSupport(PVM pVM)
         pHv->pvDbgBuffer = NULL;
     }
 }
-#endif
 
 
 /**
