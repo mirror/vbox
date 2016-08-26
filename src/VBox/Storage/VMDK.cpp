@@ -1159,7 +1159,10 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             {
                 /* If no grain table is allocated skip the entry. */
                 if (*pGDTmp == 0 && *pRGDTmp == 0)
+                {
+                    i++;
                     continue;
+                }
 
                 if (*pGDTmp == 0 || *pRGDTmp == 0 || *pGDTmp == *pRGDTmp)
                 {
