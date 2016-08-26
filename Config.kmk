@@ -1273,7 +1273,7 @@ ifdef VBOX_OSE
 # of VirtualBox binaries.  We request though that you always use something that
 # clearly identifies your build and makes it clear that it is not one done by
 # the VirtualBox team.
- VBOX_BUILD_PUBLISHER = _OSE
+ VBOX_BUILD_PUBLISHER ?= _OSE
 endif
 
 # Keep in sync with G_virtualBoxPackage in glue-jaxws.xsl and glue-java.xsl
