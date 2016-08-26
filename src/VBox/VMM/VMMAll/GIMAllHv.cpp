@@ -493,8 +493,9 @@ static void gimHvStopStimer(PVMCPU pVCpu, PGIMHVSTIMER pHvStimer)
 {
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
 
-    PTMTIMER  pTimer = pHvStimer->CTX_SUFF(pTimer);
+    PTMTIMER pTimer = pHvStimer->CTX_SUFF(pTimer);
     Assert(TMTimerIsLockOwner(pTimer));
+    RT_NOREF(pTimer);
 
     if (TMTimerIsActive(pHvStimer->CTX_SUFF(pTimer)))
         TMTimerStop(pHvStimer->CTX_SUFF(pTimer));
