@@ -1686,6 +1686,9 @@ bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
  */
 bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)
 {
+    if (!pMixStream)
+        return false;
+
     int rc2 = RTCritSectEnter(&pMixStream->CritSect);
     if (RT_FAILURE(rc2))
         return false;
