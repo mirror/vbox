@@ -4938,7 +4938,7 @@ MediumVariant_T Medium::i_getPreferredDiffVariant()
 
     /* m->variant is const, no need to lock */
     ULONG mediumVariantFlags = (ULONG)m->variant;
-    mediumVariantFlags &= ~MediumVariant_Fixed;
+    mediumVariantFlags &= ~(MediumVariant_Fixed | MediumVariant_VmdkStreamOptimized);
     mediumVariantFlags |= MediumVariant_Diff;
     return (MediumVariant_T)mediumVariantFlags;
 }
