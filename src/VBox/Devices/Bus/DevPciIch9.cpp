@@ -108,10 +108,10 @@ typedef struct
     uint32_t            uPciBiosIo;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            uPciBiosMmio;
-    /** The next 64-bit MMIO address which the PCI BIOS will use. */
-    uint64_t            uPciBiosMmio64;
     /** Actual bus number. */
     uint8_t             uBus;
+    /** The next 64-bit MMIO address which the PCI BIOS will use. */
+    uint64_t            uPciBiosMmio64;
     uint8_t             Alignment0[7];
 #endif
     /** Physical address of PCI config space MMIO region. */
@@ -1730,10 +1730,11 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
             break;
         case 0x0300:
             /* VGA controller */
-            if (uVendor != 0x80ee)
-                goto default_map;
-            /* VGA: map frame buffer to default Bochs VBE address */
-            ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, 0, 0xE0000000);
+
+            /* NB: Default Bochs VGA LFB address is 0xE0000000. Old guest
+             * software may break if the framebuffer isn't mapped there.
+             */
+
             /*
              * Legacy VGA I/O ports are implicitly decoded by a VGA class device. But
              * only the framebuffer (i.e., a memory region) is explicitly registered via
@@ -1741,8 +1742,9 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
              */
             uCmd = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_COMMAND, 1);
             ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_COMMAND,
-                               uCmd | PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS,
+                               uCmd | PCI_COMMAND_IOACCESS,
                                1);
+            goto default_map;
             break;
         case 0x0604:
             /* PCI-to-PCI bridge. */
@@ -1963,15 +1965,22 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     PVM             pVM        = PDMDevHlpGetVM(pDevIns);
     uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
     uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
-    RT_NOREF(cbBelow4GB, cbAbove4GB);
 
     /*
      * Set the start addresses.
      */
-    pGlobals->uPciBiosIo  = 0xd000;
-    pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
-    pGlobals->uPciBiosMmio64 = 128 * 0x100000000;   ///@todo: Make dynamic!
+    pGlobals->uPciBiosIo     = 0xd000;
+    pGlobals->uPciBiosMmio   = cbBelow4GB;
+    pGlobals->uPciBiosMmio64 = cbAbove4GB + 0x100000000;
     pGlobals->uBus = 0;
+
+    /* NB: Assume that if MMIO range is enabled, it is at the bottom of the memory hole. */
+    if (pGlobals->u64PciConfigMMioAddress)
+    {
+        AssertRelease(pGlobals->u64PciConfigMMioAddress == cbBelow4GB);
+        pGlobals->uPciBiosMmio = pGlobals->u64PciConfigMMioAddress + pGlobals->u64PciConfigMMioLength;
+    }
+    Log(("cbBelow4GB: %lX, uPciBiosMmio: %lX, cbAbove4GB: %llX\n", cbBelow4GB, pGlobals->uPciBiosMmio, cbAbove4GB));
 
     /*
      * Assign bridge topology, for further routing to work.
