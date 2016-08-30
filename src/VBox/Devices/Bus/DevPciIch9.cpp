@@ -108,10 +108,10 @@ typedef struct
     uint32_t            uPciBiosIo;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            uPciBiosMmio;
-    /** Actual bus number. */
-    uint8_t             uBus;
     /** The next 64-bit MMIO address which the PCI BIOS will use. */
     uint64_t            uPciBiosMmio64;
+    /** Actual bus number. */
+    uint8_t             uBus;
     uint8_t             Alignment0[7];
 #endif
     /** Physical address of PCI config space MMIO region. */
