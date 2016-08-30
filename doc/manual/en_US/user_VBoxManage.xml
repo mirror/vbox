@@ -3842,7 +3842,7 @@ Value: 2006.01.01</screen>
 
     <para>You could retrieve the information for all keys as follows:</para>
 
-    <screen>VBoxManage getextradata Fedora5 enum</screen>
+    <screen>VBoxManage getextradata Fedora5 enumerate</screen>
 
     <para>To remove a key, the <computeroutput>setextradata</computeroutput>
     command must be run without specifying data (only the key), for example:
