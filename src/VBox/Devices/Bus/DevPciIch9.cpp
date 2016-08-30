@@ -96,10 +96,6 @@ typedef struct
     /** RC pointer to the device instance. */
     PPDMDEVINSRC        pDevInsRC;
 
-#if HC_ARCH_BITS == 64
-    uint32_t            Alignment0;
-#endif
-
     /** Value latched in Configuration Address Port (0CF8h) */
     uint32_t            uConfigReg;
 
@@ -115,6 +111,7 @@ typedef struct
     uint64_t            uPciBiosMmio64;
     /** Actual bus number. */
     uint8_t             uBus;
+    uint8_t             Alignment0[7];
 #endif
     /** Physical address of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioAddress;
