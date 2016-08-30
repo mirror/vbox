@@ -1830,7 +1830,7 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                         {
                             /* Map a 64-bit region above 4GB. */
                             Assert(!fIsPio);
-                            uint64_t  uNew = pGlobals->uPciBiosMmio64;
+                            uNew = pGlobals->uPciBiosMmio64;
                             /* Align starting address to region size. */
                             uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
                             LogFunc(("Start address of 64-bit MMIO region %u/%u is %#llx\n", iRegion, iRegion + 1, uNew));
