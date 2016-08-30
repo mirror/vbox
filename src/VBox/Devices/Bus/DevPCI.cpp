@@ -49,6 +49,7 @@
 #define PCI_INCLUDE_PRIVATE
 #include <VBox/pci.h>
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/mm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -1867,11 +1868,14 @@ pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONF
  */
 static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 {
-    unsigned    i;
-    uint8_t     elcr[2]  = {0, 0};
-    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    PVM         pVM      = PDMDevHlpGetVM(pDevIns); Assert(pVM);
-    PVMCPU      pVCpu    = PDMDevHlpGetVMCPU(pDevIns); Assert(pVM);
+    unsigned        i;
+    uint8_t         elcr[2]    = {0, 0};
+    PPCIGLOBALS     pGlobals   = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PVM             pVM        = PDMDevHlpGetVM(pDevIns); Assert(pVM);
+    PVMCPU          pVCpu      = PDMDevHlpGetVMCPU(pDevIns); Assert(pVM);
+    uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
+    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+    RT_NOREF(cbBelow4GB, cbAbove4GB);
 
     /*
      * Set the start addresses.

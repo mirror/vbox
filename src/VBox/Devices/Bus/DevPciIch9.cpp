@@ -29,6 +29,7 @@
 #include <VBox/pci.h>
 #include <VBox/msi.h>
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/mm.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -1958,7 +1959,11 @@ static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus
 
 static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
-    PICH9PCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
+    PICH9PCIGLOBALS pGlobals   = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
+    PVM             pVM        = PDMDevHlpGetVM(pDevIns);
+    uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
+    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+    RT_NOREF(cbBelow4GB, cbAbove4GB);
 
     /*
      * Set the start addresses.
