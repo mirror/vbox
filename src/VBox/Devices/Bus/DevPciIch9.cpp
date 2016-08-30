@@ -111,6 +111,8 @@ typedef struct
     uint32_t            uPciBiosIo;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            uPciBiosMmio;
+    /** The next 64-bit MMIO address which the PCI BIOS will use. */
+    uint64_t            uPciBiosMmio64;
     /** Actual bus number. */
     uint8_t             uBus;
 #endif
@@ -1814,33 +1816,47 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
 
                 if (cbRegSize64)
                 {
-                    /** @todo r=klaus make this code actually handle 64-bit BARs, especially MMIO which can't possibly fit into the memory hole. */
-                    uint32_t  cbRegSize32 = (uint32_t)cbRegSize64;
+                    /* Try 32-bit base first. */
                     uint32_t* paddr = fIsPio ? &pGlobals->uPciBiosIo : &pGlobals->uPciBiosMmio;
-                    uint32_t uNew = *paddr;
-                    uNew = (uNew + cbRegSize32 - 1) & ~(cbRegSize32 - 1);
+                    uint64_t  uNew = *paddr;
+                    /* Align starting address to region size. */
+                    uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
                     if (fIsPio)
                         uNew &= UINT32_C(0xffff);
                     /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                    if (!uNew || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize32 - 1 >= UINT32_C(0xfec00000)))
+                    if (!uNew || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000)))
                     {
-                        LogRel(("PCI: no space left for BAR%u of device %u/%u/%u (vendor=%#06x device=%#06x)\n",
-                                iRegion, uBus, uDevFn >> 3, uDevFn & 7, uVendor, uDevice)); /** @todo make this a VM start failure later. */
-                        /* Undo the mapping mess caused by the size probing. */
-                        ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0), 4);
                         if (f64bit)
-                            ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address+4, UINT32_C(0), 4);
+                        {
+                            /* Map a 64-bit region above 4GB. */
+                            Assert(!fIsPio);
+                            uint64_t  uNew = pGlobals->uPciBiosMmio64;
+                            /* Align starting address to region size. */
+                            uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
+                            LogFunc(("Start address of 64-bit MMIO region %u/%u is %#llx\n", iRegion, iRegion + 1, uNew));
+                            ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, iRegion, uNew);
+                            fActiveMemRegion = true;
+                            pGlobals->uPciBiosMmio64 = uNew + cbRegSize64;
+                            Log2Func(("New 64-bit address is %#llx\n", pGlobals->uPciBiosMmio64));
+                        }
+                        else
+                        {
+                            LogRel(("PCI: no space left for BAR%u of device %u/%u/%u (vendor=%#06x device=%#06x)\n",
+                                    iRegion, uBus, uDevFn >> 3, uDevFn & 7, uVendor, uDevice)); /** @todo make this a VM start failure later. */
+                            /* Undo the mapping mess caused by the size probing. */
+                            ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0), 4);
+                        }
                     }
                     else
                     {
-                        Log(("%s: Start address of %s region %u is %#x\n", __FUNCTION__, (fIsPio ? "I/O" : "MMIO"), iRegion, uNew));
+                        LogFunc(("Start address of %s region %u is %#x\n", (fIsPio ? "I/O" : "MMIO"), iRegion, uNew));
                         ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, iRegion, uNew);
                         if (fIsPio)
                             fActiveIORegion = true;
                         else
                             fActiveMemRegion = true;
-                        *paddr = uNew + cbRegSize32;
-                        Log2(("%s: New address is %#x\n", __FUNCTION__, *paddr));
+                        *paddr = uNew + cbRegSize64;
+                        Log2Func(("New 32-bit address is %#x\n", *paddr));
                     }
 
                     if (f64bit)
@@ -1952,6 +1968,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      */
     pGlobals->uPciBiosIo  = 0xd000;
     pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
+    pGlobals->uPciBiosMmio64 = 128 * 0x100000000;   ///@todo: Make dynamic!
     pGlobals->uBus = 0;
 
     /*
