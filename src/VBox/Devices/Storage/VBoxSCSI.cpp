@@ -28,6 +28,7 @@
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/version.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 #include <iprt/thread.h>
@@ -469,7 +470,24 @@ DECLHIDDEN(int) vboxscsiR3LoadExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
     SSMR3GetU8  (pSSM, &pVBoxSCSI->uTargetDevice);
     SSMR3GetU8  (pSSM, &pVBoxSCSI->uTxDir);
     SSMR3GetU8  (pSSM, &pVBoxSCSI->cbCDB);
-    SSMR3GetMem (pSSM, &pVBoxSCSI->abCDB[0], sizeof(pVBoxSCSI->abCDB));
+
+    /*
+     * The CDB buffer was increased with r104155 in trunk (backported to 5.0
+     * in r104311) without bumping the SSM state versions which leaves us
+     * with broken saved state restoring for older VirtualBox releases
+     * (up to 5.0.10).
+     */
+    if (   (   SSMR3HandleRevision(pSSM) < 104311
+            && SSMR3HandleVersion(pSSM)  < VBOX_FULL_VERSION_MAKE(5, 0, 12))
+        || (   SSMR3HandleRevision(pSSM) < 104155
+            && SSMR3HandleVersion(pSSM)  >= VBOX_FULL_VERSION_MAKE(5, 0, 51)))
+    {
+        memset(&pVBoxSCSI->abCDB[0], 0, sizeof(pVBoxSCSI->abCDB));
+        SSMR3GetMem (pSSM, &pVBoxSCSI->abCDB[0], 12);
+    }
+    else
+        SSMR3GetMem (pSSM, &pVBoxSCSI->abCDB[0], sizeof(pVBoxSCSI->abCDB));
+
     SSMR3GetU8  (pSSM, &pVBoxSCSI->iCDB);
     SSMR3GetU32 (pSSM, &pVBoxSCSI->cbBufLeft);
     SSMR3GetU32 (pSSM, &pVBoxSCSI->iBuf);
