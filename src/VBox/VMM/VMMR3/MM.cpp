@@ -417,14 +417,23 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Setup the base ram (PGM).
      */
+    pVM->mm.s.cbRamHole = cbRamHole;
     if (cbRam > offRamHole)
     {
+        pVM->mm.s.cbRamBelow4GB = offRamHole;
         rc = PGMR3PhysRegisterRam(pVM, 0, offRamHole, "Base RAM");
         if (RT_SUCCESS(rc))
+        {
+            pVM->mm.s.cbRamAbove4GB = cbRam - offRamHole;
             rc = PGMR3PhysRegisterRam(pVM, _4G, cbRam - offRamHole, "Above 4GB Base RAM");
+        }
     }
     else
-        rc = PGMR3PhysRegisterRam(pVM, 0, RT_MIN(cbRam, offRamHole), "Base RAM");
+    {
+        pVM->mm.s.cbRamBelow4GB = cbRam;
+        pVM->mm.s.cbRamAbove4GB = 0;
+        rc = PGMR3PhysRegisterRam(pVM, 0, cbRam, "Base RAM");
+    }
 
     /*
      * Enabled mmR3UpdateReservation here since we don't want the
@@ -802,4 +811,47 @@ VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM)
 {
     return pVM->mm.s.cbRamBase;
 }
+
+
+/**
+ * Get the size of RAM below 4GB (starts at address 0x00000000).
+ *
+ * @returns The amount of RAM below 4GB in bytes.
+ * @param   pVM         The cross context VM structure.
+ * @thread  Any.
+ */
+VMMR3DECL(uint32_t) MMR3PhysGetRamSizeBelow4GB(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->mm.s.cbRamBelow4GB;
+}
+
+
+/**
+ * Get the size of RAM above 4GB (starts at address 0x000100000000).
+ *
+ * @returns The amount of RAM above 4GB in bytes.
+ * @param   pVM         The cross context VM structure.
+ * @thread  Any.
+ */
+VMMR3DECL(uint64_t) MMR3PhysGetRamSizeAbove4GB(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
+    return pVM->mm.s.cbRamBelow4GB;
+}
+
+
+/**
+ * Get the size of the RAM hole below 4GB.
+ *
+ * @returns Size in bytes.
+ * @param   pVM         The cross context VM structure.
+ * @thread  Any.
+ */
+VMMR3DECL(uint32_t) MMR3PhysGet4GBRamHoleSize(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, UINT32_MAX);
+    return pVM->mm.s.cbRamHole;
+}
+
 

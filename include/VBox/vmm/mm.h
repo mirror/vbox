@@ -293,6 +293,9 @@ VMMR3DECL(int)      MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, siz
  * @todo retire this group, elimintating or moving MMR3PhysGetRamSize to PGMPhys.
  * @{ */
 VMMR3DECL(uint64_t) MMR3PhysGetRamSize(PVM pVM);
+VMMR3DECL(uint32_t) MMR3PhysGetRamSizeBelow4GB(PVM pVM);
+VMMR3DECL(uint64_t) MMR3PhysGetRamSizeAbove4GB(PVM pVM);
+VMMR3DECL(uint32_t) MMR3PhysGet4GBRamHoleSize(PVM pVM);
 /** @} */
 
 

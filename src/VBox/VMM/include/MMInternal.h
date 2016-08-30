@@ -760,6 +760,12 @@ typedef struct MM
 
     /** Size of the base RAM in bytes. (The CFGM RamSize value.) */
     uint64_t                    cbRamBase;
+    /** Number of bytes of RAM above 4GB, starting at address 4GB.  */
+    uint64_t                    cbRamAbove4GB;
+    /** Size of the below 4GB RAM hole. */
+    uint32_t                    cbRamHole;
+    /** Number of bytes of RAM below 4GB, starting at address 0.  */
+    uint32_t                    cbRamBelow4GB;
     /** The number of base RAM pages that PGM has reserved (GMM).
      * @remarks Shadow ROMs will be counted twice (RAM+ROM), so it won't be 1:1 with
      *          what the guest sees. */
