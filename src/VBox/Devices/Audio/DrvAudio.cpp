@@ -43,8 +43,8 @@
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
-static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream);
-static int drvAudioStreamDestroyInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
+static int drvAudioStreamDestroyInBackendInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream);
+static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest);
 static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream);
@@ -149,10 +149,16 @@ DECLINLINE(PPDMAUDIOSTREAM) drvAudioGetHostStream(PPDMAUDIOSTREAM pStream)
                                : pStream->pPair;
     if (pHstStream)
     {
-        Assert(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+        AssertReleaseMsg(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST,
+                         ("Stream '%s' resolved as host part is not marked as such (enmCtx=%RU32)\n",
+                          pHstStream->szName, pHstStream->enmCtx));
+
+        AssertReleaseMsg(pHstStream->pPair != NULL,
+                         ("Stream '%s' resolved as host part has no guest part (anymore)\n", pHstStream->szName));
     }
     else
-        LogFlowFunc(("%s: Warning: Does not have a host stream (anymore)\n", pStream->szName));
+        AssertReleaseMsgFailed(("Stream '%s' does not have a host pair (anymore)\n",
+                                pStream->szName));
 
     return pHstStream;
 }
@@ -527,8 +533,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     LogFunc(("[%s] Requested host format:\n", pStream->szName));
     DrvAudioHlpStreamCfgPrint(pCfgHost);
 #else
+    LogRel2(("Audio: Creating stream '%s'\n", pStream->szName));
     LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
-             pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+             pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
              pCfgHost->uHz, DrvAudioHlpAudFmtToStr(pCfgHost->enmFormat),
              pCfgHost->cChannels, pCfgHost->cChannels == 0 ? "Channel" : "Channels"));
 #endif
@@ -537,7 +544,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
                                                    pCfgHost /* pCfgReq */, &CfgHostAcq /* pCfgAcq */);
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("[%s] Initializing stream in host backend failed with rc=%Rrc\n", pStream->szName, rc));
+        LogRel2(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pStream->szName, rc));
         return rc;
     }
 
@@ -638,6 +645,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
     /* Make a copy of the host stream configuration. */
     memcpy(&pGstStream->Cfg, pCfgGuest, sizeof(PDMAUDIOSTREAMCFG));
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Audio: Creating stream '%s' failed with %Rrc\n", pStream->szName, rc));
 
     LogFlowFunc(("[%s] Returning %Rrc\n", pStream->szName, rc));
     return rc;
@@ -1444,6 +1454,8 @@ static int drvAudioInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
     AssertPtrReturn(pCfgHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pDrvIns,    VERR_INVALID_POINTER);
 
+    LogRel2(("Audio: Verbose logging enabled\n"));
+
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     LogFlowFunc(("pThis=%p, pDrvIns=%p\n", pThis, pDrvIns));
 
@@ -1686,14 +1698,22 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
     {
         if (pGstStrm)
         {
-            drvAudioStreamDestroyInternal(pThis, pGstStrm);
-            pGstStrm = NULL;
+            int rc2 = drvAudioStreamUninitInternal(pThis, pGstStrm);
+            if (RT_SUCCESS(rc2))
+            {
+                RTMemFree(pGstStrm);
+                pGstStrm = NULL;
+            }
         }
 
         if (pHstStrm)
         {
-            drvAudioStreamDestroyInternal(pThis, pHstStrm);
-            pHstStrm = NULL;
+            int rc2 = drvAudioStreamUninitInternal(pThis, pHstStrm);
+            if (RT_SUCCESS(rc2))
+            {
+                RTMemFree(pHstStrm);
+                pHstStrm = NULL;
+            }
         }
     }
     else
@@ -1945,38 +1965,40 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
         PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
 
-        LogFlowFunc(("\tHost : %s\n", pHstStream ? pHstStream->szName : "<None>"));
-        LogFlowFunc(("\tGuest: %s\n", pGstStream ? pGstStream->szName : "<None>"));
+        LogRel2(("Audio: Destroying host stream '%s' (guest stream '%s')\n",
+                 pHstStream ? pHstStream->szName : "<None>",
+                 pGstStream ? pGstStream->szName : "<None>"));
 
         /* Should prevent double frees. */
         Assert(pHstStream != pGstStream);
 
         if (pHstStream)
         {
-            pHstStream->pPair = NULL;
-            RTListNodeRemove(&pHstStream->Node);
+            rc = drvAudioStreamUninitInternal(pThis, pHstStream);
+            if (RT_SUCCESS(rc))
+            {
+                RTListNodeRemove(&pHstStream->Node);
+
+                RTMemFree(pHstStream);
+                pHstStream = NULL;
+            }
+            else
+                LogRel2(("Audio: Uninitializing host stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
         }
 
-        if (pGstStream)
+        if (   RT_SUCCESS(rc)
+            && pGstStream)
         {
-            pGstStream->pPair = NULL;
-            RTListNodeRemove(&pGstStream->Node);
-        }
+            rc = drvAudioStreamUninitInternal(pThis, pGstStream);
+            if (RT_SUCCESS(rc))
+            {
+                RTListNodeRemove(&pGstStream->Node);
 
-        if (pHstStream)
-        {
-            rc = drvAudioStreamDestroyInternal(pThis, pHstStream);
-            AssertRC(rc);
-
-            pHstStream = NULL;
-        }
-
-        if (pGstStream)
-        {
-            rc = drvAudioStreamDestroyInternal(pThis, pGstStream);
-            AssertRC(rc);
-
-            pGstStream = NULL;
+                RTMemFree(pGstStream);
+                pGstStream = NULL;
+            }
+            else
+                LogRel2(("Audio: Uninitializing guest stream '%s' failed with %Rrc\n", pGstStream->szName, rc));
         }
     }
 
@@ -2007,7 +2029,7 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
  * @param   pThis               Pointer to driver instance.
  * @param   pHstStream          Host audio stream to call the backend destruction for.
  */
-static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream)
+static int drvAudioStreamDestroyInBackendInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream)
 {
     AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
     AssertPtrReturn(pHstStream, VERR_INVALID_POINTER);
@@ -2034,14 +2056,13 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 }
 
 /**
- * Destroys an audio stream.
+ * Uninitializes an audio stream.
  *
  * @returns IPRT status code.
  * @param   pThis               Pointer to driver instance.
- * @param   pStream             Pointer to audio stream to destroy.
- *                              That pointer will be invalid after successful destruction.
+ * @param   pStream             Pointer to audio stream to uninitialize.
  */
-static int drvAudioStreamDestroyInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
+static int drvAudioStreamUninitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
@@ -2079,7 +2100,7 @@ static int drvAudioStreamDestroyInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     }
     else if (pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST)
     {
-        rc = drvAudioStreamDestroyInternalBackend(pThis, pStream);
+        rc = drvAudioStreamDestroyInBackendInternal(pThis, pStream);
 
         if (pStream->enmDir == PDMAUDIODIR_IN)
         {
@@ -2099,14 +2120,18 @@ static int drvAudioStreamDestroyInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
     if (RT_SUCCESS(rc))
     {
+        /* Make sure that the pair (if any) knows that we're not valid anymore. */
+        if (pStream->pPair)
+            pStream->pPair->pPair = NULL;
+
+        /* Reset status. */
+        pStream->fStatus = PDMAUDIOSTRMSTS_FLAG_NONE;
+
+        /* Clear name. */
+        pStream->szName[0] = '\0';
+
         /* Destroy mixing buffer. */
         AudioMixBufDestroy(&pStream->MixBuf);
-
-        if (pStream)
-        {
-            RTMemFree(pStream);
-            pStream = NULL;
-        }
     }
 
     LogFlowFunc(("Returning %Rrc\n", rc));
@@ -2147,7 +2172,7 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
      * in drvAudioDestruct(). */
     PPDMAUDIOSTREAM pStream;
     RTListForEach(&pThis->lstHstStreams, pStream, PDMAUDIOSTREAM, Node)
-        drvAudioStreamDestroyInternalBackend(pThis, pStream);
+        drvAudioStreamDestroyInBackendInternal(pThis, pStream);
 
     /*
      * Last call for the driver below us.
@@ -2282,10 +2307,34 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 
     PPDMAUDIOSTREAM pStream, pStreamNext;
     RTListForEachSafe(&pThis->lstHstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
-        drvAudioStreamDestroyInternal(pThis, pStream);
+    {
+        rc2 = drvAudioStreamUninitInternal(pThis, pStream);
+        if (RT_SUCCESS(rc2))
+        {
+            RTListNodeRemove(&pStream->Node);
+
+            RTMemFree(pStream);
+            pStream = NULL;
+        }
+    }
+
+    /* Sanity. */
+    Assert(RTListIsEmpty(&pThis->lstHstStreams));
 
     RTListForEachSafe(&pThis->lstGstStreams, pStream, pStreamNext, PDMAUDIOSTREAM, Node)
-        drvAudioStreamDestroyInternal(pThis, pStream);
+    {
+        rc2 = drvAudioStreamUninitInternal(pThis, pStream);
+        if (RT_SUCCESS(rc2))
+        {
+            RTListNodeRemove(&pStream->Node);
+
+            RTMemFree(pStream);
+            pStream = NULL;
+        }
+    }
+
+    /* Sanity. */
+    Assert(RTListIsEmpty(&pThis->lstGstStreams));
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
