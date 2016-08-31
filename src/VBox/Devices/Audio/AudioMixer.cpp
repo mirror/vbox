@@ -1634,11 +1634,11 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream)
     else
         rc2 = VINF_SUCCESS;
 
+    int rc3 = RTCritSectLeave(&pMixStream->CritSect);
+    AssertRC(rc3);
+
     if (RT_SUCCESS(rc2))
     {
-        rc2 = RTCritSectLeave(&pMixStream->CritSect);
-        AssertRC(rc2);
-
         audioMixerStreamDestroyInternal(pMixStream);
         pMixStream = NULL;
     }
