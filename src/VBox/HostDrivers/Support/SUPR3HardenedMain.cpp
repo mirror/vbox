@@ -511,6 +511,7 @@ static uid_t            g_uid;
 static gid_t            g_gid;
 # ifdef RT_OS_LINUX
 static uint32_t         g_uCaps;
+static uint32_t         g_uCapsVersion;
 # endif
 #endif
 
@@ -1807,10 +1808,15 @@ static void supR3HardenedMainGrabCapabilites(void)
         prctl(PR_SET_DUMPABLE, 1 /*dump*/, 0, 0, 0);
 #  else
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
-        cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
+        cap_user_data_t   cap = (cap_user_data_t)alloca(2 /*_LINUX_CAPABILITY_U32S_3*/ * sizeof(*cap));
         memset(hdr, 0, sizeof(*hdr));
-        hdr->version = _LINUX_CAPABILITY_VERSION;
-        memset(cap, 0, sizeof(*cap));
+        capget(&hdr, NULL);
+        if (   hdr->version != 0x19980330 /* _LINUX_CAPABILITY_VERSION_1, _LINUX_CAPABILITY_U32S_1 = 1 */
+            && hdr->version != 0x20071026 /* _LINUX_CAPABILITY_VERSION_2, _LINUX_CAPABILITY_U32S_2 = 2 */
+            && hdr->version != 0x20080522 /* _LINUX_CAPABILITY_VERSION_3, _LINUX_CAPABILITY_U32S_3 = 2 */)
+            hdr->version = _LINUX_CAPABILITY_VERSION;
+        g_uCapsVersion = hdr->version;
+        memset(cap, 0, 2 /* _LINUX_CAPABILITY_U32S_3 */ * sizeof(*cap));
         cap->effective = g_uCaps;
         cap->permitted = g_uCaps;
         if (!capset(hdr, cap))
@@ -1981,10 +1987,10 @@ static void supR3HardenedMainDropPrivileges(void)
         cap_set_proc(cap_from_text("cap_net_raw+ep"));
 #  else
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
-        cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
+        cap_user_data_t   cap = (cap_user_data_t)alloca(2 /* _LINUX_CAPABILITY_U32S_3 */ * sizeof(*cap));
         memset(hdr, 0, sizeof(*hdr));
-        hdr->version = _LINUX_CAPABILITY_VERSION;
-        memset(cap, 0, sizeof(*cap));
+        hdr->version = g_uCapsVersion;
+        memset(cap, 0, 2 /* _LINUX_CAPABILITY_U32S_3 */ * sizeof(*cap));
         cap->effective = g_uCaps;
         cap->permitted = g_uCaps;
         /** @todo Warn if that does not work? */
