@@ -326,24 +326,28 @@ soread(PNATState pData, struct socket *so)
     Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
     if (nn <= 0)
     {
-        /*
-         * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
-         * _could_ mean that the connection is closed. But we will receive an
-         * FD_CLOSE event later if the connection was _really_ closed. With
-         * www.youtube.com I see this very often. Closing the socket too early
-         * would be dangerous.
-         */
-        int status;
-        unsigned long pending = 0;
-        status = ioctlsocket(so->s, FIONREAD, &pending);
-        if (status < 0)
-            Log(("NAT:%s: error in WSAIoctl: %d\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, errno));
-        if (nn == 0 && (pending != 0))
+        if (nn == 0) /* XXX: should this be inside #if defined(RT_OS_WINDOWS)? */
         {
-            SOCKET_UNLOCK(so);
-            STAM_PROFILE_STOP(&pData->StatIOread, a);
-            return 0;
+            /*
+             * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
+             * _could_ mean that the connection is closed. But we will receive an
+             * FD_CLOSE event later if the connection was _really_ closed. With
+             * www.youtube.com I see this very often. Closing the socket too early
+             * would be dangerous.
+             */
+            int status;
+            unsigned long pending = 0;
+            status = ioctlsocket(so->s, FIONREAD, &pending);
+            if (status < 0)
+                Log(("NAT:%s: error in WSAIoctl: %d\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, errno));
+            if (pending != 0)
+            {
+                SOCKET_UNLOCK(so);
+                STAM_PROFILE_STOP(&pData->StatIOread, a);
+                return 0;
+            }
         }
+
         if (   nn < 0
             && soIgnorableErrorCode(sockerr))
         {
