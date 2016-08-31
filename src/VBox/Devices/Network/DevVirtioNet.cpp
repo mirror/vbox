@@ -33,6 +33,7 @@
 # include <iprt/mem.h>
 # include <iprt/uuid.h>
 #endif /* IN_RING3 */
+#include <VBox/VBoxPktDmp.h>
 #include "VBoxDD.h"
 #include "../VirtIO/Virtio.h"
 
@@ -322,9 +323,13 @@ DECLINLINE(void) vnetCsRxLeave(PVNETSTATE pThis)
 DECLINLINE(void) vnetPacketDump(PVNETSTATE pThis, const uint8_t *pbPacket, size_t cb, const char *pszText)
 {
 # ifdef DEBUG
+#  if 0
     Log(("%s %s packet #%d (%d bytes):\n",
          INSTANCE(pThis), pszText, ++pThis->u32PktNo, cb));
     Log3(("%.*Rhxd\n", cb, pbPacket));
+#  else
+    vboxEthPacketDump(INSTANCE(pThis), pszText, pbPacket, (uint32_t)cb);
+#  endif
 # else
     RT_NOREF4(pThis, pbPacket, cb, pszText);
 # endif
