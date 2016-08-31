@@ -321,7 +321,11 @@ soread(PNATState pData, struct socket *so)
 #else
     nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
-    sockerr = errno;  /* save it, as it may be clobbered by logging */
+    if (nn < 0)
+        sockerr = errno; /* save it, as it may be clobbered by logging */
+    else
+        sockerr = 0;
+
     Log2(("%s: read(1) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
     Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
     if (nn <= 0)
