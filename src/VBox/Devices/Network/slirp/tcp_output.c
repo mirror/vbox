@@ -443,7 +443,7 @@ send:
     }
     else
     {
-        bool fUninitiolizedTemplate = false;
+        bool fUninitializedTemplate = false;
         if (tp->t_flags & TF_ACKNOW)
             tcpstat.tcps_sndacks++;
         else if (flags & (TH_SYN|TH_FIN|TH_RST))
@@ -487,10 +487,10 @@ send:
          * Uninitialized TCP template looks very suspicious at this processing state, thus why we have
          * to workaround the problem till right fix. Warning appears once at release log.
          */
-        fUninitiolizedTemplate = RT_BOOL((   tp->t_template.ti_src.s_addr == INADDR_ANY
+        fUninitializedTemplate = RT_BOOL((   tp->t_template.ti_src.s_addr == INADDR_ANY
                                           || tp->t_template.ti_dst.s_addr == INADDR_ANY));
 #ifndef DEBUG_vvl
-        if (fUninitiolizedTemplate)
+        if (fUninitializedTemplate)
         {
             static bool fWarn;
             tcp_template(tp);
@@ -501,7 +501,7 @@ send:
             }
         }
 #else
-        Assert((!fUninitiolizedTemplate));
+        Assert((!fUninitializedTemplate));
 #endif
     }
 
