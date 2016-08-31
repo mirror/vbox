@@ -1810,7 +1810,7 @@ static void supR3HardenedMainGrabCapabilites(void)
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
         cap_user_data_t   cap = (cap_user_data_t)alloca(2 /*_LINUX_CAPABILITY_U32S_3*/ * sizeof(*cap));
         memset(hdr, 0, sizeof(*hdr));
-        capget(&hdr, NULL);
+        capget(hdr, NULL);
         if (   hdr->version != 0x19980330 /* _LINUX_CAPABILITY_VERSION_1, _LINUX_CAPABILITY_U32S_1 = 1 */
             && hdr->version != 0x20071026 /* _LINUX_CAPABILITY_VERSION_2, _LINUX_CAPABILITY_U32S_2 = 2 */
             && hdr->version != 0x20080522 /* _LINUX_CAPABILITY_VERSION_3, _LINUX_CAPABILITY_U32S_3 = 2 */)
