@@ -583,7 +583,7 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
         case RTLOCKVALRECEXCL_MAGIC:
 #ifdef RTLOCKVAL_WITH_VERBOSE_DUMPS
             RTAssertMsg2AddWeak("%s%p %s xrec=%p own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [x%s]%s", pszPrefix,
-                                pRec->Excl.hLock, pRec->Excl.pszName, pRec,
+                                pRec->Excl.hLock, pRec->Excl.szName, pRec,
                                 rtLockValidatorNameThreadHandle(&pRec->Excl.hThread), cRecursion,
                                 rtLockValComplainGetClassName(pRec->Excl.hClass),
                                 rtLockValComplainGetSubClassName(pRec->Excl.uSubClass, szBuf),
@@ -615,12 +615,12 @@ DECL_FORCE_INLINE(void) rtLockValComplainAboutLockHlp(const char *pszPrefix, PRT
                 &&  pShared->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC)
 #ifdef RTLOCKVAL_WITH_VERBOSE_DUMPS
                 RTAssertMsg2AddWeak("%s%p %s srec=%p trec=%p own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [o%s]%s", pszPrefix,
-                                    pShared->hLock, pShared->pszName, pShared,
+                                    pShared->hLock, pShared->szName, pShared,
                                     pRec, rtLockValidatorNameThreadHandle(&pRec->ShrdOwner.hThread), cRecursion,
                                     rtLockValComplainGetClassName(pShared->hClass),
                                     rtLockValComplainGetSubClassName(pShared->uSubClass, szBuf),
                                     pSrcPos->pszFile, pSrcPos->uLine, pSrcPos->pszFunction, pSrcPos->uId,
-                                    pszSuffix2, pszSuffix);
+                                    pszSuffix, pszSuffix);
 #else
                 RTAssertMsg2AddWeak("%s%p %s own=%s r=%u cls=%s/%s pos={%Rbn(%u) %Rfn %p} [o%s]%s", pszPrefix,
                                     pShared->hLock, pShared->szName,
