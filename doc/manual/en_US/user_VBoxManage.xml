@@ -1259,7 +1259,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
           the Parallel Port feature will be using. Use this
           <emphasis>before</emphasis> <computeroutput>--lpt</computeroutput>.
           This feature is host operating system specific. For Windows hosts, use
-          a device name like <emphasis>\\.\pipe\lpt1</emphasis> while on Linux
+          a device name like <emphasis>lpt1</emphasis> while on Linux
           hosts you have to use a device name like <emphasis>/dev/lp0</emphasis></para>
         </listitem>
 
