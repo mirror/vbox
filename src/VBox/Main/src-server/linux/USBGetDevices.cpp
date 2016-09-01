@@ -1000,8 +1000,15 @@ static int usbsysfsReadFilePathsFromDir(const char *pszPath, DIR *pDir, VECTOR_P
     struct dirent entry, *pResult;
     int err, rc;
 
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
     for (err = readdir_r(pDir, &entry, &pResult); pResult;
          err = readdir_r(pDir, &entry, &pResult))
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
     {
         char szPath[RTPATH_MAX + 1];
         char szRealPath[RTPATH_MAX + 1];

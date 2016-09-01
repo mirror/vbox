@@ -830,8 +830,15 @@ static int readFilePathsFromDir(const char *pcszPath, DIR *pDir,
     struct dirent entry, *pResult;
     int err;
 
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
     for (err = readdir_r(pDir, &entry, &pResult); pResult;
          err = readdir_r(pDir, &entry, &pResult))
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
     {
         /* We (implicitly) require that PATH_MAX be defined */
         char szPath[PATH_MAX + 1], szRealPath[PATH_MAX + 1], *pszPath;

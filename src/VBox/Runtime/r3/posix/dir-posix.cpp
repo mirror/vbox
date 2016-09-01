@@ -299,7 +299,14 @@ static int rtDirReadMore(PRTDIR pDir)
         if (!pDir->fDataUnread)
         {
             struct dirent *pResult = NULL;
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
             int rc = readdir_r(pDir->pDir, &pDir->Data, &pResult);
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
             if (rc)
             {
                 rc = RTErrConvertFromErrno(rc);
