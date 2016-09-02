@@ -28,6 +28,7 @@
 #include <devguid.h>
 #include <usbiodef.h>
 #include <usbioctl.h>
+#include <psapi.h>
 
 #define ReleaseAndReset(obj) \
     if (obj) \
@@ -560,6 +561,138 @@ void BugReportUsbTreeWin::enumerate()
     }
 }
 
+class BugReportDriversWin : public BugReportStream
+{
+public:
+    BugReportDriversWin();
+    virtual ~BugReportDriversWin();
+    virtual PRTSTREAM getStream(void) { enumerateDrivers(); return BugReportStream::getStream(); }
+private:
+    void enumerateDrivers(void);
+
+    WCHAR  *m_pwszSystemRoot;
+    UINT    m_cSystemRoot;
+    LPVOID *m_pDrivers;
+    DWORD   m_cDrivers;
+    LPVOID  m_pVerInfo;
+    DWORD   m_cbVerInfo;
+};
+
+BugReportDriversWin::BugReportDriversWin() : BugReportStream("DriverVersions")
+{
+    m_cSystemRoot = MAX_PATH;
+    m_pwszSystemRoot = new WCHAR[MAX_PATH];
+    m_cDrivers = 1024;
+    m_pDrivers = new LPVOID[m_cDrivers];
+    m_pVerInfo = NULL;
+    m_cbVerInfo = 0;
+}
+
+BugReportDriversWin::~BugReportDriversWin()
+{
+    if (m_pVerInfo)
+        RTMemTmpFree(m_pVerInfo);
+    delete[] m_pDrivers;
+    delete[] m_pwszSystemRoot;
+}
+
+void BugReportDriversWin::enumerateDrivers()
+{
+    UINT cNeeded = GetWindowsDirectory(m_pwszSystemRoot, m_cSystemRoot);
+    if (cNeeded > m_cSystemRoot)
+    {
+        /* Re-allocate and try again */
+        m_cSystemRoot = cNeeded;
+        delete[] m_pwszSystemRoot;
+        m_pwszSystemRoot = new WCHAR[m_cSystemRoot];
+        cNeeded = GetWindowsDirectory(m_pwszSystemRoot, m_cSystemRoot);
+    }
+    if (cNeeded == 0)
+        handleWinError(GetLastError(), "GetWindowsDirectory failed");
+
+    DWORD cbNeeded = 0;
+    if (    !EnumDeviceDrivers(m_pDrivers, m_cDrivers * sizeof(m_pDrivers[0]), &cbNeeded)
+         || cbNeeded > m_cDrivers * sizeof(m_pDrivers[0]))
+    {
+        /* Re-allocate and try again */
+        m_cDrivers = cbNeeded / sizeof(m_pDrivers[0]);
+        delete[] m_pDrivers;
+        m_pDrivers = new LPVOID[m_cDrivers];
+        if (!EnumDeviceDrivers(m_pDrivers, cbNeeded, &cbNeeded))
+            handleWinError(GetLastError(), "EnumDeviceDrivers failed (%p, %u)", m_pDrivers, cbNeeded);
+    }
+
+    WCHAR wszDriver[1024];
+    for (unsigned i = 0; i < m_cDrivers; i++)
+    {
+        if (GetDeviceDriverBaseName(m_pDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+        {
+            if (_wcsnicmp(L"vbox", wszDriver, 4))
+                continue;
+        }
+        else
+            continue;
+        if (GetDeviceDriverFileName(m_pDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+        {
+            WCHAR wszTmpDrv[1024];
+            WCHAR *pwszDrv = wszDriver;
+            if (!wcsncmp(L"\\SystemRoot", wszDriver, 11))
+            {
+                wcsncpy_s(wszTmpDrv, m_pwszSystemRoot, m_cSystemRoot);
+                wcsncat_s(wszTmpDrv, wszDriver + 11, RT_ELEMENTS(wszTmpDrv) - m_cSystemRoot);
+                pwszDrv = wszTmpDrv;
+            }
+            else if (!wcsncmp(L"\\??\\", wszDriver, 4))
+                pwszDrv = wszDriver + 4;
+
+
+            /* Allocate a buffer for version info. Reuse if large enough. */
+            DWORD cbNewVerInfo = GetFileVersionInfoSize(pwszDrv, NULL);
+            if (cbNewVerInfo > m_cbVerInfo)
+            {
+                if (m_pVerInfo)
+                    RTMemTmpFree(m_pVerInfo);
+                m_cbVerInfo = cbNewVerInfo;
+                m_pVerInfo = RTMemTmpAlloc(m_cbVerInfo);
+                if (!m_pVerInfo)
+                    throw RTCError(RTCStringFmt("Failed to allocate %u bytes", m_cbVerInfo).c_str());
+            }
+
+            if (GetFileVersionInfo(pwszDrv, NULL, m_cbVerInfo, m_pVerInfo))
+            {
+                UINT   cbSize = 0;
+                LPBYTE lpBuffer = NULL;
+                if (VerQueryValue(m_pVerInfo, L"\\", (VOID FAR* FAR*)&lpBuffer, &cbSize))
+                {
+                    if (cbSize)
+                    {
+                        VS_FIXEDFILEINFO *pFileInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+                        if (pFileInfo->dwSignature == 0xfeef04bd)
+                        {
+                            printf("%ls (Version: %d.%d.%d.%d)\n", pwszDrv,
+                                   (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
+                                   (pFileInfo->dwFileVersionMS >> 0) & 0xffff,
+                                   (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
+                                   (pFileInfo->dwFileVersionLS >> 0) & 0xffff);
+                        }
+                        else
+                            printf("%ls - invalid signature\n", pwszDrv);
+                    }
+                    else
+                        printf("%ls - version info size is 0\n", pwszDrv);
+                }
+                else
+                    printf("%ls - failed to query version info size\n", pwszDrv);
+            }
+            else
+                printf("%ls - failed to get version info with 0x%x\n", pwszDrv, GetLastError());
+        }
+        else
+            printf("%ls - GetDeviceDriverFileName failed with 0x%x\n", wszDriver, GetLastError());
+    }
+}
+
+
 
 void createBugReportOsSpecific(BugReport* report, const char *pszHome)
 {
@@ -586,4 +719,5 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
     report->addItem(new BugReportCommand("DriverServices", PathJoin(WinSysDir.c_str(), "sc.exe"),
                                          "query", "type=", "driver", "state=", "all", NULL));
     report->addItem(new BugReportUsbTreeWin);
+    report->addItem(new BugReportDriversWin);
 }

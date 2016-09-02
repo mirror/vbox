@@ -116,6 +116,36 @@ MachineInfo::~MachineInfo()
 typedef std::list<MachineInfo*> MachineInfoList;
 
 
+class VBRDir
+{
+public:
+    VBRDir(const char *pcszPath)
+        {
+            int rc = RTDirOpenFiltered(&m_pDir, pcszPath, RTDIRFILTER_WINNT, 0);
+            if (RT_FAILURE(rc))
+                throw RTCError(com::Utf8StrFmt("Failed to open directory '%s'\n", pcszPath));
+        };
+    ~VBRDir()
+        {
+            int rc = RTDirClose(m_pDir);
+            if (RT_FAILURE(rc))
+                throw RTCError("Failed to close directory\n");
+        };
+    const char *next(void)
+        {
+            int rc = RTDirRead(m_pDir, &m_DirEntry, NULL);
+            if (RT_SUCCESS(rc))
+                return m_DirEntry.szName;
+            else if (rc == VERR_NO_MORE_FILES)
+                return NULL;
+            throw RTCError("Failed to read directory element\n");
+        };
+
+private:
+    PRTDIR m_pDir;
+    RTDIRENTRY m_DirEntry;
+};
+
 /*
  * An abstract class serving as the root of the bug report item tree.
  */
@@ -460,15 +490,28 @@ void BugReportTarGzip::complete(void)
 
 void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& machines)
 {
-    report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log"), "VBoxSVC.log"));
-    report->addItem(new BugReportFile(PathJoin(pszHome, "VBoxSVC.log.1"), "VBoxSVC.log.1"));
+    /* Collect all log files from VBoxSVC */
+    VBRDir HomeDir(PathJoin(pszHome, "VBoxSVC.log*"));
+    const char *pcszSvcLogFile = HomeDir.next();
+    while (pcszSvcLogFile)
+    {
+        report->addItem(new BugReportFile(PathJoin(pszHome, pcszSvcLogFile), pcszSvcLogFile));
+        pcszSvcLogFile = HomeDir.next();
+    }
+
     report->addItem(new BugReportFile(PathJoin(pszHome, "VirtualBox.xml"), "VirtualBox.xml"));
     report->addItem(new BugReportCommand("HostUsbDevices", g_pszVBoxManage, "list", "usbhost", NULL));
     report->addItem(new BugReportCommand("HostUsbFilters", g_pszVBoxManage, "list", "usbfilters", NULL));
     for (MachineInfoList::iterator it = machines.begin(); it != machines.end(); ++it)
     {
-        report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), "VBox.log"),
-                                         PathJoin((*it)->getName(),    "VBox.log")));
+        VBRDir VmDir(PathJoin((*it)->getLogPath(), "VBox.log*"));
+        const char *pcszVmLogFile = HomeDir.next();
+        while (pcszVmLogFile)
+        {
+            report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), pcszVmLogFile),
+                                              PathJoin((*it)->getName(), pcszVmLogFile)));
+            pcszVmLogFile = HomeDir.next();
+        }
         report->addItem(new BugReportFile((*it)->getSettingsFile(),
                                          PathJoin((*it)->getName(), RTPathFilename((*it)->getSettingsFile()))));
         report->addItem(new BugReportCommand(PathJoin((*it)->getName(), "GuestProperties"),
