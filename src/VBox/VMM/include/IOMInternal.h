@@ -51,9 +51,11 @@ typedef struct IOMMMIORANGE
     /** Start physical address. */
     RTGCPHYS                    GCPhys;
     /** Size of the range. */
-    uint32_t                    cb;
+    RTGCPHYS                    cb;
     /** The reference counter. */
     uint32_t volatile           cRefs;
+    /** Flags, see IOMMMIO_FLAGS_XXX. */
+    uint32_t                    fFlags;
 
     /** Pointer to user argument - R0. */
     RTR0PTR                     pvUserR0;
@@ -65,20 +67,6 @@ typedef struct IOMMMIORANGE
     R0PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR0;
     /** Pointer to fill (memset) callback function - R0. */
     R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
-
-    /** Flags, see IOMMMIO_FLAGS_XXX. */ /* (Placed here for alignment reasons.) */
-    uint32_t                    fFlags;
-
-    /** Pointer to user argument - RC. */
-    RTRCPTR                     pvUserRC;
-    /** Pointer to device instance - RC. */
-    PPDMDEVINSRC                pDevInsRC;
-    /** Pointer to write callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackRC;
-    /** Pointer to read callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackRC;
-    /** Pointer to fill (memset) callback function - RC. */
-    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackRC;
 
     /** Pointer to user argument - R3. */
     RTR3PTR                     pvUserR3;
@@ -93,6 +81,21 @@ typedef struct IOMMMIORANGE
 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;
+
+    /** Pointer to user argument - RC. */
+    RTRCPTR                     pvUserRC;
+    /** Pointer to device instance - RC. */
+    PPDMDEVINSRC                pDevInsRC;
+    /** Pointer to write callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackRC;
+    /** Pointer to read callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackRC;
+    /** Pointer to fill (memset) callback function - RC. */
+    RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackRC;
+#if HC_ARCH_BITS == 64
+    /** Padding structure length to multiple of 8 bytes. */
+    RTRCPTR                     RCPtrPadding;
+#endif
 } IOMMMIORANGE;
 /** Pointer to a MMIO range descriptor, R3 version. */
 typedef struct IOMMMIORANGE *PIOMMMIORANGE;

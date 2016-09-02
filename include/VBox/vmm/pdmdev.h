@@ -2439,7 +2439,7 @@ typedef struct PDMDEVHLPR3
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
                                                PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                uint32_t fFlags, const char *pszDesc));
 
@@ -2461,7 +2461,7 @@ typedef struct PDMDEVHLPR3
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTRCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTRCPTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
@@ -2482,7 +2482,7 @@ typedef struct PDMDEVHLPR3
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
@@ -2495,7 +2495,7 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange));
+    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange));
 
     /**
      * Allocate and register a MMIO2 region.
@@ -2518,7 +2518,8 @@ typedef struct PDMDEVHLPR3
      *                              freed.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags,
+                                                void **ppv, const char *pszDesc));
 
     /**
      * Deregisters and frees a MMIO2 region.
@@ -3813,7 +3814,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 16, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 0)
 
 
 /**

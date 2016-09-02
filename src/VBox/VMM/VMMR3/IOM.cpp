@@ -1359,18 +1359,18 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
+IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                     R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, uint32_t fFlags, const char *pszDesc)
 {
-    LogFlow(("IOMR3MmioRegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x fFlags=%#x pszDesc=%s\n",
+    LogFlow(("IOMR3MmioRegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%RGp pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x fFlags=%#x pszDesc=%s\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, fFlags, pszDesc));
     int rc;
 
     /*
      * Validate input.
      */
-    AssertMsgReturn(GCPhysStart + (cbRange - 1) >= GCPhysStart,("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange),
+    AssertMsgReturn(GCPhysStart + (cbRange - 1) >= GCPhysStart,("Wrapped! %RGp LB %RGp\n", GCPhysStart, cbRange),
                     VERR_IOM_INVALID_MMIO_RANGE);
     AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
                     && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
@@ -1462,11 +1462,11 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  * @thread  EMT
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
+IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTGCPTR pvUser,
                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                     RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MmioRegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MmioRegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%RGp pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
     AssertReturn(!HMIsEnabled(pVM), VERR_IOM_HM_IPE);
 
@@ -1475,7 +1475,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %RGp LB%#x\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB %RGp\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
     PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
@@ -1521,12 +1521,12 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  * @thread  EMT
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
+IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
                     R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                     R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                     R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
-    LogFlow(("IOMR3MmioRegisterR0: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
+    LogFlow(("IOMR3MmioRegisterR0: pDevIns=%p GCPhysStart=%RGp cbRange=%RGp pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
 
     /*
@@ -1534,7 +1534,7 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
      */
     if (!pfnWriteCallback && !pfnReadCallback)
     {
-        AssertMsgFailed(("No callbacks! %RGp LB%#x\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("No callbacks! %RGp LB %RGp\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
     PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
@@ -1575,9 +1575,9 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  * @remark  This function mainly for PCI PnP Config and will not do
  *          all the checks you might expect it to do.
  */
-VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange)
+VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange)
 {
-    LogFlow(("IOMR3MmioDeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
+    LogFlow(("IOMR3MmioDeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%RGp\n", pDevIns, GCPhysStart, cbRange));
 
     /*
      * Validate input.
@@ -1585,7 +1585,7 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
     RTGCPHYS GCPhysLast = GCPhysStart + (cbRange - 1);
     if (GCPhysLast < GCPhysStart)
     {
-        AssertMsgFailed(("Wrapped! %#x LB%#x\n", GCPhysStart, cbRange));
+        AssertMsgFailed(("Wrapped! %#x LB %RGp\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
     PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
@@ -1605,11 +1605,11 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
             return VERR_IOM_MMIO_RANGE_NOT_FOUND;
         }
         AssertMsgReturnStmt(pRange->pDevInsR3 == pDevIns,
-                            ("Not owner! GCPhys=%RGp %RGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                            ("Not owner! GCPhys=%RGp %RGp LB %RGp %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                             IOM_UNLOCK_EXCL(pVM),
                             VERR_IOM_NOT_MMIO_RANGE_OWNER);
         AssertMsgReturnStmt(pRange->Core.KeyLast <= GCPhysLast,
-                            ("Incomplete R3 range! GCPhys=%RGp %RGp LB%#x %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
+                            ("Incomplete R3 range! GCPhys=%RGp %RGp LB %RGp %s\n", GCPhys, GCPhysStart, cbRange, pRange->pszDesc),
                             IOM_UNLOCK_EXCL(pVM),
                             VERR_IOM_INCOMPLETE_MMIO_RANGE);
 

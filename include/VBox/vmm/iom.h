@@ -335,20 +335,20 @@ VMMR3_INT_DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT
                                            const char *pszDesc);
 VMMR3_INT_DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
 
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
                                          R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback,
                                          uint32_t fFlags, const char *pszDesc);
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTR0PTR pvUser,
                                          R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTGCPTR pvUser,
                                          RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange);
+VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange);
 VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rcStrict);
 
 VMMR3_INT_DECL(void) IOMR3NotifyBreakpointCountChange(PVM pVM, bool fPortIo, bool fMmio);
