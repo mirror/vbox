@@ -3817,6 +3817,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
+/* 5.0 is (18, 0) so the next version for trunk has to be (19, 0)! */
 #define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 0)
 
 
