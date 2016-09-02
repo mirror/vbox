@@ -600,15 +600,14 @@ int main(int argc, char *argv[])
 
     try
     {
-        /* Figure out full path to VBoxManage */
-        char *pszVBoxBin = RTStrDup(argv[0]);
-        if (!pszVBoxBin)
-            throw RTCError("Out of memory\n");
-        RTPathStripFilename(pszVBoxBin);
-        g_pszVBoxManage = RTPathJoinA(pszVBoxBin, VBOXMANAGE);
+        /* Figure out the full path to VBoxManage */
+        char szVBoxBin[RTPATH_MAX];
+        if (!RTProcGetExecutablePath(szVBoxBin, sizeof(szVBoxBin)))
+            throw RTCError("RTProcGetExecutablePath failed\n");
+        RTPathStripFilename(szVBoxBin);
+        g_pszVBoxManage = RTPathJoinA(szVBoxBin, VBOXMANAGE);
         if (!g_pszVBoxManage)
             throw RTCError("Out of memory\n");
-        RTStrFree(pszVBoxBin);
 
         handleComError(com::Initialize(), "Failed to initialize COM");
 
@@ -623,6 +622,8 @@ int main(int argc, char *argv[])
             hr = virtualBoxClient.createLocalObject(CLSID_VirtualBoxClient);
             if (SUCCEEDED(hr))
                 hr = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
+            else if (hr == REGDB_E_CLASSNOTREG)
+                hr = virtualBox.createLocalObject(CLSID_VirtualBox);
             if (FAILED(hr))
                 RTStrmPrintf(g_pStdErr, "WARNING: Failed to create the VirtualBox object (hr=0x%x)\n", hr);
             else
