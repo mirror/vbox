@@ -31,7 +31,7 @@
 
 
 UIGChooserView::UIGChooserView(UIGChooser *pParent)
-    : QIGraphicsView(pParent)
+    : QIWithRetranslateUI<QIGraphicsView>(pParent)
     , m_pChooser(pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
@@ -46,6 +46,9 @@ UIGChooserView::UIGChooserView(UIGChooser *pParent)
 
     /* Update scene-rect: */
     updateSceneRect();
+
+    /* Translate finally: */
+    retranslateUi();
 }
 
 void UIGChooserView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
@@ -89,10 +92,16 @@ void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
     ensureVisible(geo, 0, 0);
 }
 
+void UIGChooserView::retranslateUi()
+{
+    /* Translate this: */
+    setToolTip(tr("Contains a tree of Virtual Machines and their groups"));
+}
+
 void UIGChooserView::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIGraphicsView::resizeEvent(pEvent);
+    QIWithRetranslateUI<QIGraphicsView>::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 }
