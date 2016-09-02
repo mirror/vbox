@@ -151,6 +151,7 @@ extern const PDMDRVREG g_DrvHostParallel;
 extern const PDMDRVREG g_DrvHostSerial;
 #ifdef VBOX_WITH_DRV_DISK_INTEGRITY
 extern const PDMDRVREG g_DrvDiskIntegrity;
+extern const PDMDRVREG g_DrvRamDisk;
 #endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
 extern const PDMDRVREG g_DrvPciRaw;

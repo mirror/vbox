@@ -688,9 +688,11 @@ static void drvdiskintIoReqRemove(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq
  * @param   pThread    Thread handle.
  * @param   pvUser     Opaque user data.
  */
-static int drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvUser)
+static DECLCALLBACK(int) drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvUser)
 {
     PDRVDISKINTEGRITY pThis = (PDRVDISKINTEGRITY)pvUser;
+
+    RT_NOREF(pThread);
 
     while (pThis->fRunning)
     {
@@ -1303,9 +1305,11 @@ static DECLCALLBACK(void *)  drvdiskintQueryInterface(PPDMIBASE pInterface, cons
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
-static int drvdiskintTreeDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) drvdiskintTreeDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 {
     PDRVDISKSEGMENT pSeg = (PDRVDISKSEGMENT)pNode;
+
+    RT_NOREF(pvUser);
 
     RTMemFree(pSeg->pbSeg);
     RTMemFree(pSeg);

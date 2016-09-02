@@ -362,6 +362,10 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvDiskIntegrity);
     if (RT_FAILURE(rc))
         return rc;
+
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvRamDisk);
+    if (RT_FAILURE(rc))
+        return rc;
 #endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvPciRaw);
