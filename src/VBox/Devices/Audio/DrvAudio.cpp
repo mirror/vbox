@@ -1845,11 +1845,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetReadable(PPDMIAUDIOCONNECTOR pInt
     Log3Func(("[%s] cbReadable=%RU32 (%zu bytes)\n", pHstStream->szName, cReadable,
               AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadable)));
 
+    uint32_t cbReadable = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadable);
+
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
     /* Return bytes instead of audio samples. */
-    return AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cReadable);
+    return cbReadable;
 }
 
 /**
@@ -1885,11 +1887,13 @@ static DECLCALLBACK(uint32_t) drvAudioStreamGetWritable(PPDMIAUDIOCONNECTOR pInt
     Log3Func(("[%s] cWritable=%RU32 (%zu bytes)\n", pHstStream->szName, cWritable,
               AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable)));
 
+    uint32_t cbWritable = AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable);
+
     rc2 = RTCritSectLeave(&pThis->CritSect);
     AssertRC(rc2);
 
     /* Return bytes instead of audio samples. */
-    return AUDIOMIXBUF_S2B(&pGstStream->MixBuf, cWritable);
+    return cbWritable;
 }
 
 /**
