@@ -4388,6 +4388,7 @@ void VBoxGlobal::cleanup()
         /* First, make sure we don't use COM any more: */
         m_host.detach();
         m_vbox.detach();
+__debugbreak();
         m_client.detach();
 
         /* There may be UIMedium(s)EnumeratedEvent instances still in the message
