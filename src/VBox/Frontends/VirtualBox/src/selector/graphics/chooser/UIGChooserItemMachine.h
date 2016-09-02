@@ -58,6 +58,7 @@ public:
 
     /* API: Basic stuff: */
     QString name() const;
+    QString description() const;
     QString fullName() const;
     QString definition() const;
     bool isLockedMachine() const;
@@ -173,6 +174,7 @@ private:
     QPixmap m_pixmap;
     QPixmap m_statePixmap;
     QString m_strName;
+    QString m_strDescription;
     QString m_strVisibleName;
     QString m_strSnapshotName;
     QString m_strVisibleSnapshotName;

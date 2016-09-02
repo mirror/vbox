@@ -191,6 +191,11 @@ QString UIGChooserItemGroup::name() const
     return m_strName;
 }
 
+QString UIGChooserItemGroup::description() const
+{
+    return m_strDescription;
+}
+
 QString UIGChooserItemGroup::fullName() const
 {
     /* Return "/" for main root-item: */
@@ -717,6 +722,9 @@ void UIGChooserItemGroup::updateToggleButtonToolTip()
 
 void UIGChooserItemGroup::retranslateUi()
 {
+    /* Update description: */
+    m_strDescription = tr("Virtual Machine group");
+
     /* Update group tool-tip: */
     updateToolTip();
 

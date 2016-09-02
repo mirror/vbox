@@ -68,6 +68,7 @@ public:
 
     /* API: Basic stuff: */
     QString name() const;
+    QString description() const;
     QString fullName() const;
     QString definition() const;
     void setName(const QString &strName);
@@ -201,6 +202,7 @@ private:
     int m_iBlackoutDarkness;
     /* Cached values: */
     QString m_strName;
+    QString m_strDescription;
     QString m_strVisibleName;
     QString m_strInfoGroups;
     QString m_strInfoMachines;

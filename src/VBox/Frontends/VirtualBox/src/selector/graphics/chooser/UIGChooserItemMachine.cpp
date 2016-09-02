@@ -122,6 +122,11 @@ QString UIGChooserItemMachine::name() const
     return UIVMItem::name();
 }
 
+QString UIGChooserItemMachine::description() const
+{
+    return m_strDescription;
+}
+
 QString UIGChooserItemMachine::fullName() const
 {
     /* Get full parent name, append with '/' if not yet appended: */
@@ -470,6 +475,9 @@ void UIGChooserItemMachine::updateStateText()
 
 void UIGChooserItemMachine::retranslateUi()
 {
+    /* Update description: */
+    m_strDescription = tr("Virtual Machine");
+
     /* Update state text: */
     updateStateText();
 
