@@ -5211,10 +5211,10 @@ DECLINLINE(unsigned) ASMBitFirstSetU64(uint64_t u64)
     uint64_t iBit;
     __asm__ __volatile__("bsfq %1, %0\n\t"
                          "jnz  1f\n\t"
-                         "xorl %0, %0\n\t"
+                         "xorl %k0, %k0\n\t"
                          "jmp  2f\n"
                          "1:\n\t"
-                         "incl %0\n"
+                         "incl %k0\n"
                          "2:\n\t"
                          : "=r" (iBit)
                          : "rm" (u64));
@@ -5350,7 +5350,7 @@ DECLINLINE(unsigned) ASMBitLastSetU64(uint64_t u64)
 # elif RT_INLINE_ASM_GNU_STYLE && ARCH_BITS == 64
     uint64_t iBit;
     __asm__ __volatile__("bsrq %1, %0\n\t"
-                         "jnz   1f\n\t"
+                         "jnz  1f\n\t"
                          "xorl %k0, %k0\n\t"
                          "jmp  2f\n"
                          "1:\n\t"
