@@ -1012,7 +1012,8 @@ static DECLCALLBACK(int) ich9pcibridgeRegister(PPDMDEVINS pDevIns, PPCIDEVICE pP
     return ich9pciRegisterInternal(pBus, iDev, pPciDev, pszName);
 }
 
-static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, RTGCPHYS cbRegion,
+                                                 PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     NOREF(pDevIns);
 
@@ -1030,13 +1031,13 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     AssertMsgReturn((unsigned)iRegion < PCI_NUM_REGIONS,
                     ("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS),
                     VERR_INVALID_PARAMETER);
-    int iLastSet = ASMBitLastSetU32(cbRegion);
+    int iLastSet = ASMBitLastSetU64(cbRegion);
     AssertMsgReturn(    iLastSet != 0
-                    &&  RT_BIT_32(iLastSet - 1) == cbRegion,
-                    ("Invalid cbRegion=%#x iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
+                    &&  RT_BIT_64(iLastSet - 1) == cbRegion,
+                    ("Invalid cbRegion=%RGp iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
                     VERR_INVALID_PARAMETER);
 
-    Log(("ich9pciIORegionRegister: %s region %d size %d type %x\n",
+    Log(("ich9pciIORegionRegister: %s region %d size %RGp type %x\n",
          pPciDev->name, iRegion, cbRegion, enmType));
 
     /* Make sure that we haven't marked this region as continuation of 64-bit region. */
@@ -1054,15 +1055,15 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
     if ((enmType & PCI_ADDRESS_SPACE_BAR64) != 0)
     {
         /* VBOX_PCI_BASE_ADDRESS_5 and VBOX_PCI_ROM_ADDRESS are excluded. */
-        AssertMsgReturn(iRegion < (PCI_NUM_REGIONS-2),
+        AssertMsgReturn(iRegion < PCI_NUM_REGIONS - 2,
                         ("Region %d cannot be 64-bit\n", iRegion),
                         VERR_INVALID_PARAMETER);
         /* Mark next region as continuation of this one. */
-        pPciDev->Int.s.aIORegions[iRegion+1].type = 0xff;
+        pPciDev->Int.s.aIORegions[iRegion + 1].type = 0xff;
     }
 
     /* Set type in the PCI config space. */
-    uint32_t u32Value   = ((uint32_t)enmType) & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH);
+    uint32_t u32Value   = (uint32_t)enmType & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH);
     PCIDevSetDWord(pPciDev, ich9pciGetRegionReg(iRegion), u32Value);
 
     return VINF_SUCCESS;
