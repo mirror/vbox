@@ -6122,7 +6122,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  */
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                              RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+                                              RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
     PCIATAState *pThis = PCIDEV_2_PCIATASTATE(pPciDev);

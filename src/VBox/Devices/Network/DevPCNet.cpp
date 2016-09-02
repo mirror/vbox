@@ -3867,7 +3867,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-NET I/O Ports.}
  */
 static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                        RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
     int         rc;
@@ -3919,7 +3919,7 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRe
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-Net MMIO region.}
  */
 static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                      RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
     PPCNETSTATE pThis = PCIDEV_2_PCNETSTATE(pPciDev);

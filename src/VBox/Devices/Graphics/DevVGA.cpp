@@ -5407,14 +5407,14 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
  *                          This address is *NOT* relative to pci_mem_base like earlier!
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  */
-static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb,
-                                          PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
+                                          RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF1(cb);
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 #ifdef VBOX_WITH_VMSVGA
     AssertReturn(   (iRegion == ((pThis->fVMSVGAEnabled) ? 1 : 0))
                  && (enmType == ((pThis->fVMSVGAEnabled) ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH)),
@@ -6549,18 +6549,23 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_FAILURE (rc))
             return rc;
         /* VMware's MetalKit doesn't like PCI_ADDRESS_SPACE_MEM_PREFETCH */
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1 /* iRegion */, pThis->vram_size, PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1 /* iRegion */, pThis->vram_size,
+                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, VMSVGA_FIFO_SIZE, PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, VMSVGA_FIFO_SIZE,
+                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
     }
     else
 #endif /* VBOX_WITH_VMSVGA */
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, iPCIRegionVRAM, pThis->vram_size, PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    {
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, iPCIRegionVRAM, pThis->vram_size,
+                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /*
      * Create the refresh timer.

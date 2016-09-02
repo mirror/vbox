@@ -2548,15 +2548,17 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 
 #ifdef IN_RING3
 
-static DECLCALLBACK(int)
-ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
+static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
+                                       RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
-    int   rc = VINF_SUCCESS;
 
-    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     Assert(cb >= 4352);
@@ -2564,9 +2566,9 @@ ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddre
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
     /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
      * handling 2nd DWORD failures on split accesses correctly. */
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
-                               ahciMMIOWrite, ahciMMIORead, "AHCI");
+    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
+                                   ahciMMIOWrite, ahciMMIORead, "AHCI");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2588,18 +2590,21 @@ ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddre
     return rc;
 }
 
+
 /**
- * Map the legacy I/O port ranges to make Solaris work with the controller.
+ * @callback_method_impl{FNPCIIOREGIONMAP,
+ *      Map the legacy I/O port ranges to make Solaris work with the
+ *      controller.}
  */
-static DECLCALLBACK(int)
-ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
+                                                    RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     int   rc = VINF_SUCCESS;
 
-    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
 
@@ -2629,17 +2634,18 @@ ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHY
 }
 
 /**
- * Map the BMDMA I/O port range (used for the Index/Data pair register access)
+ * @callback_method_impl{FNPCIIOREGIONMAP,
+ *      Map the BMDMA I/O port range (used for the Index/Data pair register access)}
  */
-static DECLCALLBACK(int)
-ahciR3IdxDataIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
+                                                 RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     int   rc = VINF_SUCCESS;
 
-    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+    Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
 

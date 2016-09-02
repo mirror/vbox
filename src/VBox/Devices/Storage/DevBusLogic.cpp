@@ -2767,15 +2767,18 @@ static void buslogicR3RedoSetWarning(PBUSLOGIC pThis, int rc)
 }
 
 
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
 static DECLCALLBACK(int) buslogicR3MmioMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                           RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion);
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     int   rc = VINF_SUCCESS;
 
-    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(cb >= 32);
 

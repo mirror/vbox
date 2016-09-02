@@ -148,9 +148,10 @@ PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) msixMap (PPCIDEVICE pPciDev, int iRegion,
-                                  RTGCPHYS GCPhysAddress, uint32_t cb,
-                                  PCIADDRESSSPACE enmType)
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
+static DECLCALLBACK(int) msixMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     NOREF(iRegion); NOREF(enmType);
@@ -197,7 +198,7 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     /* If device is passthrough, BAR is registered using common mechanism. */
     if (!pciDevIsPassthrough(pDev))
     {
-        rc = PDMDevHlpPCIIORegionRegister (pDev->pDevIns, iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDev->pDevIns, iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
         if (RT_FAILURE (rc))
             return rc;
     }

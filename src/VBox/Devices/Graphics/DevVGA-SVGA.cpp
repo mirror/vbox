@@ -3772,13 +3772,14 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
  *                          to pci_mem_base like earlier!
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  */
-DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb,
+                                      PCIADDRESSSPACE enmType)
 {
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%#x enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+    Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     if (enmType == PCI_ADDRESS_SPACE_IO)
     {
         AssertReturn(iRegion == 0, VERR_INTERNAL_ERROR);

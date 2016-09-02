@@ -1051,7 +1051,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
 static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress,
-                                               uint32_t cb, PCIADDRESSSPACE enmType)
+                                               RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pPciDev, DEVSERIAL, PciDev);
     int rc = VINF_SUCCESS;

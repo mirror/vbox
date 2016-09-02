@@ -2099,7 +2099,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
 static DECLCALLBACK(int)
-ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(cb, enmType);
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;

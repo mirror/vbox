@@ -3939,7 +3939,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pv
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
 static DECLCALLBACK(int) lsilogicR3Map(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
-                                       RTGCPHYS GCPhysAddress, uint32_t cb,
+                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb,
                                        PCIADDRESSSPACE enmType)
 {
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
@@ -3952,7 +3952,7 @@ static DECLCALLBACK(int) lsilogicR3Map(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
                            ? "LsiLogicDiag"
                            : "LsiLogicSasDiag";
 
-    Log2(("%s: registering area at GCPhysAddr=%RGp cb=%u\n", __FUNCTION__, GCPhysAddress, cb));
+    Log2(("%s: registering area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     AssertMsg(   (enmType == PCI_ADDRESS_SPACE_MEM && cb >= LSILOGIC_PCI_SPACE_MEM_SIZE)
               || (enmType == PCI_ADDRESS_SPACE_IO  && cb >= LSILOGIC_PCI_SPACE_IO_SIZE),
