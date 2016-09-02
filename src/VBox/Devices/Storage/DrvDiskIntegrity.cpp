@@ -161,6 +161,16 @@ typedef struct DRVDISKINTEGRITY
     /** Our media async port interface */
     PDMIMEDIAASYNCPORT      IMediaAsyncPort;
 
+    /** The extended media port interface above. */
+    PPDMIMEDIAEXPORT        pDrvMediaExPort;
+    /** Our extended media port interface */
+    PDMIMEDIAEXPORT         IMediaExPort;
+
+    /** The extended media interface below. */
+    PPDMIMEDIAEX            pDrvMediaEx;
+    /** Our extended media interface */
+    PDMIMEDIAEX             IMediaEx;
+
     /** Flag whether consistency checks are enabled. */
     bool                    fCheckConsistency;
     /** Flag whether the RAM disk was prepopulated. */
@@ -1284,6 +1294,182 @@ static DECLCALLBACK(int) drvdiskintQueryDeviceLocation(PPDMIMEDIAPORT pInterface
                                                         piInstance, piLUN);
 }
 
+/* -=-=-=-=- IMediaExPort -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCompleteNotify}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                       void *pvIoReqAlloc, int rcReq)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
+    return pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, rcReq);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
+                                                    size_t cbCopy)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
+    return pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, offDst,
+                                                       pSgBuf, cbCopy);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                  void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
+                                                  size_t cbCopy)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
+    return pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, offSrc,
+                                                     pSgBuf, cbCopy);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqStateChanged}
+ */
+static DECLCALLBACK(void) drvdiskintIoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                     void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
+    pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, enmState);
+}
+
+/* -=-=-=-=- IMediaEx -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, cbIoReqAlloc);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAlloc}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc,
+                                              PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, phIoReq, ppvIoReqAlloc, uIoReqId, fFlags);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqFree}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqFree(pThis->pDrvMediaEx, hIoReq);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancel}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqCancel(pThis->pDrvMediaEx, uIoReqId);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqRead}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, off, cbRead);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqWrite}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqWrite(pThis->pDrvMediaEx, hIoReq, off, cbWrite);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqFlush}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqFlush(pThis->pDrvMediaEx, hIoReq);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, paRanges, cRanges);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetActiveCount}
+ */
+static DECLCALLBACK(uint32_t) drvdiskintIoReqGetActiveCount(PPDMIMEDIAEX pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqGetActiveCount(pThis->pDrvMediaEx);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetSuspendedCount}
+ */
+static DECLCALLBACK(uint32_t) drvdiskintIoReqGetSuspendedCount(PPDMIMEDIAEX pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqGetSuspendedCount(pThis->pDrvMediaEx);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedStart}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqQuerySuspendedStart(pThis->pDrvMediaEx, phIoReq, ppvIoReqAlloc);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedNext}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                           PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqQuerySuspendedNext(pThis->pDrvMediaEx, hIoReq, phIoReqNext, ppvIoReqAllocNext);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedSave}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqSuspendedSave(pThis->pDrvMediaEx, pSSM, hIoReq);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedLoad}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqSuspendedLoad(pThis->pDrvMediaEx, pSSM, hIoReq);
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -1299,6 +1485,8 @@ static DECLCALLBACK(void *)  drvdiskintQueryInterface(PPDMIBASE pInterface, cons
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNC, pThis->pDrvMediaAsync ? &pThis->IMediaAsync : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pThis->IMediaAsyncPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IMediaPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pThis->IMediaExPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDrvMediaEx ? &pThis->IMediaEx : NULL);
     return NULL;
 }
 
@@ -1430,11 +1618,33 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMediaAsync.pfnStartWrite     = drvdiskintStartWrite;
     pThis->IMediaAsync.pfnStartFlush     = drvdiskintStartFlush;
 
+    /* IMediaEx. */
+    pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvdiskintIoReqAllocSizeSet;
+    pThis->IMediaEx.pfnIoReqAlloc               = drvdiskintIoReqAlloc;
+    pThis->IMediaEx.pfnIoReqFree                = drvdiskintIoReqFree;
+    pThis->IMediaEx.pfnIoReqCancel              = drvdiskintIoReqCancel;
+    pThis->IMediaEx.pfnIoReqRead                = drvdiskintIoReqRead;
+    pThis->IMediaEx.pfnIoReqWrite               = drvdiskintIoReqWrite;
+    pThis->IMediaEx.pfnIoReqFlush               = drvdiskintIoReqFlush;
+    pThis->IMediaEx.pfnIoReqDiscard             = drvdiskintIoReqDiscard;
+    pThis->IMediaEx.pfnIoReqGetActiveCount      = drvdiskintIoReqGetActiveCount;
+    pThis->IMediaEx.pfnIoReqGetSuspendedCount   = drvdiskintIoReqGetSuspendedCount;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedStart = drvdiskintIoReqQuerySuspendedStart;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvdiskintIoReqQuerySuspendedNext;
+    pThis->IMediaEx.pfnIoReqSuspendedSave       = drvdiskintIoReqSuspendedSave;
+    pThis->IMediaEx.pfnIoReqSuspendedLoad       = drvdiskintIoReqSuspendedLoad;
+
     /* IMediaAsyncPort. */
     pThis->IMediaAsyncPort.pfnTransferCompleteNotify  = drvdiskintAsyncTransferCompleteNotify;
 
     /* IMediaPort. */
     pThis->IMediaPort.pfnQueryDeviceLocation = drvdiskintQueryDeviceLocation;
+
+    /* IMediaExPort. */
+    pThis->IMediaExPort.pfnIoReqCompleteNotify = drvdiskintIoReqCompleteNotify;
+    pThis->IMediaExPort.pfnIoReqCopyFromBuf    = drvdiskintIoReqCopyFromBuf;
+    pThis->IMediaExPort.pfnIoReqCopyToBuf      = drvdiskintIoReqCopyToBuf;
+    pThis->IMediaExPort.pfnIoReqStateChanged   = drvdiskintIoReqStateChanged;
 
     /* Query the media port interface above us. */
     pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
@@ -1444,6 +1654,9 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
 
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
+
+    /* Try to attach extended media port interface above.*/
+    pThis->pDrvMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
 
     /*
      * Try attach driver below and query it's media interface.
@@ -1460,6 +1673,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                 N_("No media or async media interface below"));
 
     pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);
+    pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAEX);
 
     if (pThis->pDrvMedia->pfnDiscard)
         pThis->IMedia.pfnDiscard = drvdiskintDiscard;
