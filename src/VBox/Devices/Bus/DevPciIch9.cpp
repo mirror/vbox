@@ -1972,7 +1972,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      */
     pGlobals->uPciBiosIo     = 0xd000;
     pGlobals->uPciBiosMmio   = cbBelow4GB;
-    pGlobals->uPciBiosMmio64 = cbAbove4GB + 0x100000000;
+    pGlobals->uPciBiosMmio64 = cbAbove4GB + _4G;
     pGlobals->uBus = 0;
 
     /* NB: Assume that if MMIO range is enabled, it is at the bottom of the memory hole. */
