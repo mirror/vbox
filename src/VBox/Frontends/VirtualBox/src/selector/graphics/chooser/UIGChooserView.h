@@ -22,6 +22,7 @@
 #include "QIGraphicsView.h"
 
 /* Forward declarations: */
+class UIGChooser;
 class UIGChooserItem;
 
 /* Graphics chooser-view: */
@@ -36,8 +37,12 @@ signals:
 
 public:
 
-    /* Constructor: */
-    UIGChooserView(QWidget *pParent);
+    /** Constructs a chooser-view passing @a pParent to the base-class.
+      * @param  pParent  Brings the chooser container to embed into. */
+    UIGChooserView(UIGChooser *pParent);
+
+    /** Returns the chooser reference. */
+    UIGChooser *chooser() const { return m_pChooser; }
 
 private slots:
 
@@ -55,6 +60,9 @@ private:
 
     /* Helper: Update stuff: */
     void updateSceneRect();
+
+    /** Holds the chooser reference. */
+    UIGChooser *m_pChooser;
 
     /* Variables: */
     int m_iMinimumWidthHint;

@@ -64,6 +64,11 @@ public:
     /** Returns the action-pool reference. */
     UIActionPool* actionPool() const;
 
+    /** Return the Chooser-model reference. */
+    UIGChooserModel* model() const { return m_pChooserModel; }
+    /** Return the Chooser-view reference. */
+    UIGChooserView* view() const { return m_pChooserView; }
+
     /* API: Current-item stuff: */
     UIVMItem* currentItem() const;
     QList<UIVMItem*> currentItems() const;

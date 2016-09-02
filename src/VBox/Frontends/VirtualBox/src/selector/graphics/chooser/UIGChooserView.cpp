@@ -23,14 +23,16 @@
 # include <QScrollBar>
 
 /* GUI includes: */
+# include "UIGChooser.h"
 # include "UIGChooserView.h"
 # include "UIGChooserItem.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGChooserView::UIGChooserView(QWidget *pParent)
+UIGChooserView::UIGChooserView(UIGChooser *pParent)
     : QIGraphicsView(pParent)
+    , m_pChooser(pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
 {
