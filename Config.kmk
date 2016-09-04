@@ -1302,6 +1302,18 @@ endif
 VBOX_WITH_DTRACE := $(if-expr defined(VBOX_WITH_DTRACE_R0) || defined(VBOX_WITH_DTRACE_R0DRV) \
 	       	            || defined(VBOX_WITH_DTRACE_R3) || defined(VBOX_WITH_DTRACE_RC),1,)
 
+# kSubmit / kWorker is only available on windows.
+ifdef VBOX_USE_KSUBMIT
+ ifeq ($(KBUILD_HOST),win)
+  TOOL_VCC100AMD64_USE_KSUBMIT := 1
+  TOOL_VCC100X86_USE_KSUBMIT   := 1
+  #TOOL_YASM_USE_KSUBMIT        := 1  - alloc issue here on amd64 atm.
+  TOOL_NASM_USE_KSUBMIT        := 1
+  TOOL_VBoxNasm_USE_KSUBMIT    := 1
+ else
+  VBOX_USE_KSUBMIT :=
+ endif
+endif
 
 #
 # Image and object format config.
