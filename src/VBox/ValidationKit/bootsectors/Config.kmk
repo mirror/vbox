@@ -228,6 +228,20 @@ TOOL_VBoxNasm_COMPILE_AS_OUTPUT = $(outbase).lst
 TOOL_VBoxNasm_COMPILE_AS_DEPEND = $(VBoxBs3ObjConverter_1_TARGET)
 TOOL_VBoxNasm_COMPILE_AS_DEPORD =
 define TOOL_VBoxNasm_COMPILE_AS_CMDS
+ifdef TOOL_VBoxNasm_USE_KSUBMIT
+	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
+		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		-l $(outbase).lst\
+		-o $(obj)\
+		$(abspath $(source))
+	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
+	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
+		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
+		-l $(outbase).lst\
+		-o $(obj)\
+		$(abspath $(source)) \
+		-MF "$(dep)" -MP
+else
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
@@ -239,7 +253,8 @@ define TOOL_VBoxNasm_COMPILE_AS_CMDS
 		-l $(outbase).lst\
 		-o $(obj)\
 		$(abspath $(source)) \
-		-M -MP
+		-MF "$(dep)" -MP
+endif
 endef
 
 # Dropped by the time 2.12 rc7 got out. Just struggling rebuilding nasm.
