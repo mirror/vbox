@@ -409,6 +409,8 @@ typedef struct VBOXDISK
 
 static DECLCALLBACK(void) drvvdMediaExIoReqComplete(void *pvUser1, void *pvUser2, int rcReq);
 static void drvvdPowerOffOrDestructOrUnmount(PPDMDRVINS pDrvIns);
+DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq);
+static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, bool fUpNotify);
 
 /**
  * Internal: allocate new image descriptor and put it in the list
@@ -2919,6 +2921,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
     }
 
     ASMAtomicXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_COMPLETED);
+    drvvdMediaExIoReqBufFree(pThis, pIoReq);
 
     /*
      * Leave a release log entry if the request was active for more than 25 seconds
