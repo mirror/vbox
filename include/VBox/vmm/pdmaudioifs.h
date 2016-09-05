@@ -867,7 +867,12 @@ typedef struct PDMIAUDIOCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnGetConfig, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOBACKENDCFG pCfg));
 
     /**
-     *  @todo Docs!
+     * Retrieves the current status of the host audio backend.
+     *
+     * @returns Status of the host audio backend.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   enmDir          Audio direction to check host audio backend for. Specify PDMAUDIODIR_ANY for the overall
+     *                          backend status.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOBACKENDSTS, pfnGetStatus, (PPDMIAUDIOCONNECTOR pInterface, PDMAUDIODIR enmDir));
 
@@ -1044,7 +1049,7 @@ typedef struct PDMIAUDIOCONNECTOR
 typedef struct PDMIHOSTAUDIO
 {
     /**
-     * Initialize the host-specific audio device.
+     * Initializes the host backend (driver).
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
@@ -1052,7 +1057,7 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
 
     /**
-     * Shuts down the host-specific audio device.
+     * Shuts down the host backend (driver).
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
