@@ -1466,10 +1466,13 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
         }
         else
         {
-            LogRel2(("Audio: Device enumeration failed with %Rrc\n", rc2));
+            if (fLog)
+                LogRel(("Audio: Device enumeration failed with %Rrc\n", rc2));
             /* Not fatal. */
         }
     }
+    else if (fLog)
+        LogRel2(("Audio: Selected host audio backend does not support audio device enumeration\n"));
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
