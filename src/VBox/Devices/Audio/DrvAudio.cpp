@@ -651,7 +651,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     /*
      * Gather current stream status.
      */
-    bool fIsEnabled = pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED; /* Stream is enabled? */
+    bool fIsEnabled = RT_BOOL(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED); /* Stream is enabled? */
 
     /*
      * Destroy and re-create stream on backend side.

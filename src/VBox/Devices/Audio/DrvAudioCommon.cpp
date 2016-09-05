@@ -422,7 +422,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
     }                                           \
 
     char *pszFlags = NULL;
-    int rc2;
+    int rc2 = VINF_SUCCESS;
 
     do
     {
