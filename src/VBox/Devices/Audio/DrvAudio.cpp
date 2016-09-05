@@ -647,8 +647,6 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     LogFlowFunc(("[%s]\n", pStream->szName));
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
-    PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
-    AssertPtr(pGstStream);
 
     /*
      * Gather current stream status.
