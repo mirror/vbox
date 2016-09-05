@@ -41,7 +41,7 @@ class UIAccessibilityInterfaceForUIGChooserView : public QAccessibleWidget
 public:
 
     /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
-    static QAccessibleInterface* pFactory(const QString &strClassname, QObject *pObject)
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
     {
         /* Creating Chooser-view accessibility interface: */
         if (pObject && strClassname == QLatin1String("UIGChooserView"))
@@ -92,7 +92,7 @@ public:
 private:
 
     /** Returns corresponding Chooser-view. */
-    UIGChooserView* view() const { return qobject_cast<UIGChooserView*>(widget()); }
+    UIGChooserView *view() const { return qobject_cast<UIGChooserView*>(widget()); }
 };
 
 
