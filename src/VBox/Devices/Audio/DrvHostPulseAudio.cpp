@@ -1105,9 +1105,6 @@ static int paEnumerate(PDRVHOSTPULSEAUDIO pThis, PPDMAUDIOBACKENDCFG pCfg, uint3
 
         if (RT_SUCCESS(rc))
         {
-            Cfg.cSinks   = cbCtx.cDevOut;
-            Cfg.cSources = cbCtx.cDevIn;
-
             if (fLog)
             {
                 LogRel2(("PulseAudio: Found %RU8 host playback device(s)\n",  cbCtx.cDevOut));

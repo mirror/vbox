@@ -181,7 +181,7 @@ typedef struct SB16STATE
     RTLISTANCHOR                   lstDrv;
     /** Number of active (running) SDn streams. */
     uint8_t                        cStreamsActive;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                     pTimerIO;
     /** Flag indicating whether the timer is active or not. */
@@ -204,7 +204,7 @@ typedef struct SB16STATE
 
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
 static void sb16CloseOut(PSB16STATE pThis);
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
 static void sb16TimerMaybeStart(PSB16STATE pThis);
 static void sb16TimerMaybeStop(PSB16STATE pThis);
 #endif
@@ -447,13 +447,13 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     if (hold)
     {
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
         pThis->cStreamsActive++;
         sb16TimerMaybeStart(pThis);
 #endif
         PDMDevHlpDMASchedule(pThis->pDevInsR3);
     }
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     else
     {
         if (pThis->cStreamsActive)
@@ -1755,8 +1755,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     return dma_pos;
 }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
 static void sb16TimerMaybeStart(PSB16STATE pThis)
 {
     LogFlowFunc(("cStreamsActive=%RU8\n", pThis->cStreamsActive));
@@ -1890,8 +1889,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
         TMTimerSet(pThis->pTimerIO, cTicksNow + cTicks);
     }
 }
-
-#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* !VBOX_WITH_AUDIO_SB16_CALLBACKS */
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
@@ -2333,7 +2331,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("SB16 configuration error: Failed to get the \"Version\" value"));
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     uint16_t uTimerHz;
     rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 25 /* Hz */);
     if (RT_FAILURE(rc))
@@ -2449,7 +2447,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_SB16_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, sb16TimerIO, pThis,
@@ -2465,7 +2463,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         else
             AssertMsgFailedReturn(("Error creating I/O timer, rc=%Rrc\n", rc), rc);
     }
-#else
+#else /* !VBOX_WITH_AUDIO_SB16_CALLBACKS */
     if (RT_SUCCESS(rc))
     {
         /** @todo Merge this callback registration with the validation block above once
@@ -2497,7 +2495,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                 break;
         }
     }
-#endif
+#endif /* VBOX_WITH_AUDIO_SB16_CALLBACKS */
 
     return VINF_SUCCESS;
 }

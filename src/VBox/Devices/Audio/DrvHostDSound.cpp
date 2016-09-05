@@ -1423,8 +1423,6 @@ static void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDC
         pThis->fEnabledIn  = RT_BOOL(cbCtx.cDevIn);
 #endif
 
-        Cfg.cSources       = cbCtx.cDevIn;
-        Cfg.cSinks         = cbCtx.cDevOut;
         Cfg.cMaxStreamsIn  = UINT32_MAX;
         Cfg.cMaxStreamsOut = UINT32_MAX;
 
@@ -2011,7 +2009,7 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
                     if (   RT_SUCCESS(rc)
                         && cbFree)
                     {
-                        PDMAUDIOCALLBACKDATAOUT Out;
+                        PDMAUDIOCBDATA_DATA_OUTPUT Out;
                         Out.cbInFree     = cbFree;
                         Out.cbOutWritten = 0;
 

@@ -362,8 +362,6 @@ static DECLCALLBACK(int) drvAudioVRDEGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAU
     pBackendCfg->cbStreamIn     = sizeof(VRDESTREAMIN);
     pBackendCfg->cMaxStreamsIn  = UINT32_MAX;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
-    pBackendCfg->cSources       = 1;
-    pBackendCfg->cSinks         = 1;
 
     return VINF_SUCCESS;
 }
@@ -628,7 +626,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Get the ConsoleVRDPServer object pointer.
      */
     void *pvUser;
-    int rc = CFGMR3QueryPtr(pCfg, "ObjectVRDPServer", &pvUser);
+    int rc = CFGMR3QueryPtr(pCfg, "ObjectVRDPServer", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc), rc);
 
     /* CFGM tree saves the pointer to ConsoleVRDPServer in the Object node of AudioVRDE. */
@@ -638,7 +636,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Get the AudioVRDE object pointer.
      */
     pvUser = NULL;
-    rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser);
+    rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
 
     pThis->pAudioVRDE = (AudioVRDE *)pvUser;

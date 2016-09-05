@@ -119,7 +119,7 @@ typedef struct DRVAUDIO
     uint32_t                cStreamsFreeOut;
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /** @todo Use a map with primary key set to the callback type? */
     RTLISTANCHOR            lstCBIn;
     RTLISTANCHOR            lstCBOut;
@@ -152,6 +152,18 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
 
 int DrvAudioHlpSanitizeFileName(char *pszPath, size_t cbPath);
 int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, const char *pszName, PDMAUDIOFILETYPE enmType);
+
+PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData);
+void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev);
+
+int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm);
+void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm);
+int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev);
+PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmDir);
+void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm);
+
+const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir);
+char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags);
 
 int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMAUDIOPCMPROPS pProps, PDMAUDIOFILEFLAGS fFlags);
 int DrvAudioHlpWAVFileClose(PPDMAUDIOFILE pFile);

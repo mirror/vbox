@@ -374,7 +374,7 @@ typedef struct AC97STATE
     AC97STREAM              StreamOut;
     /** Number of active (running) SDn streams. */
     uint8_t                 cStreamsActive;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3              pTimer;
 # if HC_ARCH_BITS == 32
@@ -423,12 +423,14 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
+#if 0 /* unused */
 static void ichac97DestroyIn(PAC97STATE pThis, PDMAUDIORECSOURCE enmRecSource);
 static void ichac97DestroyOut(PAC97STATE pThis);
+#endif
 DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID);
 static int ichac97StreamInit(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 static void ichac97TimerMaybeStart(PAC97STATE pThis);
 static void ichac97TimerMaybeStop(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
@@ -559,14 +561,14 @@ static int ichac97StreamSetActive(PAC97STATE pThis, PAC97STREAM pStream, bool fA
         if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
             pThis->cStreamsActive--;
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
         ichac97TimerMaybeStop(pThis);
 #endif
     }
     else
     {
         pThis->cStreamsActive++;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
         ichac97TimerMaybeStart(pThis);
 #endif
     }
@@ -620,6 +622,7 @@ static void ichac97StreamDestroy(PAC97STREAM pStream)
     pStream->State.offFIFOW = 0;
 }
 
+#if 0 /* unused */
 static void ichac97StreamsDestroy(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
@@ -632,6 +635,7 @@ static void ichac97StreamsDestroy(PAC97STATE pThis)
     ichac97StreamDestroy(&pThis->StreamMicIn);
     ichac97StreamDestroy(&pThis->StreamOut);
 }
+#endif
 
 static int ichac97StreamsInit(PAC97STATE pThis)
 {
@@ -671,6 +675,7 @@ static uint16_t ichac97MixerGet(PAC97STATE pThis, uint32_t uMixerIdx)
     return uVal;
 }
 
+#if 0 /* unused */
 static void ichac97DestroyIn(PAC97STATE pThis, PDMAUDIORECSOURCE enmRecSource)
 {
     AssertPtrReturnVoid(pThis);
@@ -727,6 +732,7 @@ static void ichac97DestroyOut(PAC97STATE pThis)
         }
     }
 }
+#endif
 
 static int ichac97CreateIn(PAC97STATE pThis,
                            const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg)
@@ -1343,8 +1349,7 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbTo
     return rc;
 }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
 {
     if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
@@ -1448,8 +1453,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
-
-#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbToProcess, uint32_t *pcbProcessed)
 {
@@ -2580,7 +2584,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     uint16_t uTimerHz;
     rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, AC97_TIMER_HZ /* Default value, if not set. */);
     if (RT_FAILURE(rc))
@@ -2713,111 +2717,9 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     ichac97Reset(pDevIns);
 
     if (RT_SUCCESS(rc))
-    {
         ichac97StreamsInit(pThis);
 
-        PAC97DRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-        {
-            /*
-             * Only primary drivers are critical for the VM to run. Everything else
-             * might not worth showing an own error message box in the GUI.
-             */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
-                continue;
-
-            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-            AssertPtr(pCon);
-
-            bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
-            bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
-            bool fValidOut    = AudioMixerStreamIsValid(pDrv->Out.pMixStrm);
-
-            if (    !fValidLineIn
-                 && !fValidMicIn
-                 && !fValidOut)
-            {
-                LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
-
-                /* Destroy the streams before re-attaching the NULL driver. */
-                ichac97StreamsDestroy(pThis);
-
-                ichac97Reset(pDevIns);
-                ichac97Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
-                ichac97StreamsInit(pThis);
-
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("No audio devices could be opened. Selecting the NULL audio backend "
-                       "with the consequence that no sound is audible"));
-            }
-            else
-            {
-                bool fWarn = false;
-
-                PDMAUDIOBACKENDCFG backendCfg;
-                int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
-                if (RT_SUCCESS(rc2))
-                {
-                    if (backendCfg.cSources)
-                    {
-                        /* If the audio backend supports two or more input streams at once,
-                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxStreamsIn >= 2)
-                            fWarn = !fValidLineIn || !fValidMicIn;
-                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
-                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
-                         * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxStreamsIn == 1)
-                            fWarn = !fValidLineIn && !fValidMicIn;
-                        /* Don't warn if our backend is not able of supporting any input streams at all. */
-                    }
-
-                    if (   !fWarn
-                        && backendCfg.cSinks)
-                    {
-                        fWarn = !fValidOut;
-                    }
-                }
-                else
-                {
-                    LogRel(("AC97: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-                    fWarn = true;
-                }
-
-                if (fWarn)
-                {
-                    char   szMissingStreams[255] = "";
-                    size_t len = 0;
-                    if (!fValidLineIn)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
-                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-                    }
-                    if (!fValidMicIn)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                    }
-                    if (!fValidOut)
-                    {
-                        LogRel(("AC97: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                    }
-
-                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                               N_("Some AC'97 audio streams (%s) could not be opened. Guest applications generating audio "
-                                                  "output or depending on audio input may hang. Make sure your host audio device "
-                                                  "is working properly. Check the logfile for error messages of the audio "
-                                                  "subsystem"), szMissingStreams);
-                }
-            }
-        }
-    }
-
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         /* Start the emulation timer. */
@@ -2834,7 +2736,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             ichac97TimerMaybeStart(pThis);
         }
     }
-# else
+# else /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
     if (RT_SUCCESS(rc))
     {
         PAC97DRIVER pDrv;
@@ -2864,7 +2766,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 break;
         }
     }
-# endif
+# endif /* VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 # ifdef VBOX_WITH_STATISTICS
     if (RT_SUCCESS(rc))

@@ -588,9 +588,6 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
     pBackendCfg->cbStreamIn  = sizeof(OSSAUDIOSTREAMIN);
     pBackendCfg->cbStreamOut = sizeof(OSSAUDIOSTREAMOUT);
 
-    pBackendCfg->cSources    = 0;
-    pBackendCfg->cSinks      = 0;
-
     int hFile = open("/dev/dsp", O_WRONLY | O_NONBLOCK, 0);
     if (hFile == -1)
     {
@@ -622,9 +619,6 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
                 if (!cDev)
                     cDev = ossInfo.numaudios;
 
-                pBackendCfg->cSources        = cDev;
-                pBackendCfg->cSinks          = cDev;
-
                 pBackendCfg->cMaxStreamsIn   = UINT32_MAX;
                 pBackendCfg->cMaxStreamsOut  = UINT32_MAX;
             }
@@ -633,8 +627,6 @@ static DECLCALLBACK(int) drvHostOSSAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPD
 #endif
                 /* Since we cannot query anything, assume that we have at least
                  * one input and one output if we found "/dev/dsp" or "/dev/mixer". */
-                pBackendCfg->cSources        = 1;
-                pBackendCfg->cSinks          = 1;
 
                 pBackendCfg->cMaxStreamsIn   = UINT32_MAX;
                 pBackendCfg->cMaxStreamsOut  = UINT32_MAX;

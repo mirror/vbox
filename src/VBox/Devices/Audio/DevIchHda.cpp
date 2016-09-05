@@ -819,7 +819,7 @@ typedef struct HDASTATE
     bool                               fRCEnabled;
     /** Number of active (running) SDn streams. */
     uint8_t                            cStreamsActive;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     /** The timer for pumping data thru the attached LUN drivers. */
     PTMTIMERR3                         pTimer;
     /** Flag indicating whether the timer is active or not. */
@@ -832,7 +832,7 @@ typedef struct HDASTATE
     uint64_t                           uTimerTS;
 #endif
 #ifdef VBOX_WITH_STATISTICS
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     STAMPROFILE                        StatTimer;
 # endif
     STAMCOUNTER                        StatBytesRead;
@@ -867,7 +867,7 @@ typedef struct HDASTATE
 /** Pointer to the ICH Intel HD Audio Controller state. */
 typedef HDASTATE *PHDASTATE;
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_HDA_CALLBACKS
 typedef struct HDACALLBACKCTX
 {
     PHDASTATE  pThis;
@@ -975,7 +975,7 @@ static int           hdaProcessInterrupt(PHDASTATE pThis);
 /*
  * Timer routines.
  */
-#if !defined(VBOX_WITH_AUDIO_CALLBACKS) && defined(IN_RING3)
+#if !defined(VBOX_WITH_AUDIO_HDA_CALLBACKS) && defined(IN_RING3)
 static void hdaTimerMaybeStart(PHDASTATE pThis);
 static void hdaTimerMaybeStop(PHDASTATE pThis);
 #endif
@@ -1827,14 +1827,14 @@ static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
         if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
             pThis->cStreamsActive--;
 
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStop(pThis);
 # endif
     }
     else
     {
         pThis->cStreamsActive++;
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStart(pThis);
 # endif
     }
@@ -4132,8 +4132,7 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
     return rc;
 }
 
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
-
+#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
 static void hdaTimerMaybeStart(PHDASTATE pThis)
 {
     if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
@@ -4269,9 +4268,9 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 
-#else /* VBOX_WITH_AUDIO_CALLBACKS */
+#else /* VBOX_WITH_AUDIO_HDA_CALLBACKS */
 
-static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCALLBACKTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
+static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
 {
     Assert(enmType == PDMAUDIOCALLBACKTYPE_INPUT);
     AssertPtrReturn(pvCtx,  VERR_INVALID_POINTER);
@@ -4282,13 +4281,13 @@ static DECLCALLBACK(int) hdaCallbackInput(PDMAUDIOCALLBACKTYPE enmType, void *pv
     PHDACALLBACKCTX pCtx = (PHDACALLBACKCTX)pvCtx;
     AssertReturn(cbCtx == sizeof(HDACALLBACKCTX), VERR_INVALID_PARAMETER);
 
-    PPDMAUDIOCALLBACKDATAIN pData = (PPDMAUDIOCALLBACKDATAIN)pvUser;
-    AssertReturn(cbUser == sizeof(PDMAUDIOCALLBACKDATAIN), VERR_INVALID_PARAMETER);
+    PPDMAUDIOCBDATA_DATA_INPUT pData = (PPDMAUDIOCBDATA_DATA_INPUT)pvUser;
+    AssertReturn(cbUser == sizeof(PDMAUDIOCBDATA_DATA_INPUT), VERR_INVALID_PARAMETER);
 
     return hdaTransfer(pCtx->pThis, PI_INDEX, UINT32_MAX, &pData->cbOutRead);
 }
 
-static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
+static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, size_t cbCtx, void *pvUser, size_t cbUser)
 {
     Assert(enmType == PDMAUDIOCALLBACKTYPE_OUTPUT);
     AssertPtrReturn(pvCtx,  VERR_INVALID_POINTER);
@@ -4299,8 +4298,8 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *p
     PHDACALLBACKCTX pCtx = (PHDACALLBACKCTX)pvCtx;
     AssertReturn(cbCtx == sizeof(HDACALLBACKCTX), VERR_INVALID_PARAMETER);
 
-    PPDMAUDIOCALLBACKDATAOUT pData = (PPDMAUDIOCALLBACKDATAOUT)pvUser;
-    AssertReturn(cbUser == sizeof(PDMAUDIOCALLBACKDATAOUT), VERR_INVALID_PARAMETER);
+    PPDMAUDIOCBDATA_DATA_OUTPUT pData = (PPDMAUDIOCBDATA_DATA_OUTPUT)pvUser;
+    AssertReturn(cbUser == sizeof(PDMAUDIOCBDATA_DATA_OUTPUT), VERR_INVALID_PARAMETER);
 
     PHDASTATE pThis = pCtx->pThis;
 
@@ -4317,7 +4316,7 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCALLBACKTYPE enmType, void *p
         }
     }
 }
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* VBOX_WITH_AUDIO_HDA_CALLBACKS */
 
 static int hdaTransfer(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToProcess, uint32_t *pcbProcessed)
 {
@@ -5488,7 +5487,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 
     LogFlowFuncEnter();
 
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     /*
      * Stop the timer, if any.
      */
@@ -5571,7 +5570,7 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
     HDA_REG(pThis, STATESTS) = 0x1;
 
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     hdaTimerMaybeStart(pThis);
 # endif
 
@@ -5829,7 +5828,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("HDA configuration error: failed to read R0Enabled as boolean"));
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     uint16_t uTimerHz;
     rc = CFGMR3QueryU16Def(pCfg, "TimerHz", &uTimerHz, 200 /* Hz */);
     if (RT_FAILURE(rc))
@@ -6058,118 +6057,6 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             rc = hdaStreamCreate(&pThis->aStreams[i], i /* uSD */);
             AssertRC(rc);
         }
-
-        /*
-         * Initialize the driver chain.
-         */
-        PHDADRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-        {
-            /*
-             * Only primary drivers are critical for the VM to run. Everything else
-             * might not worth showing an own error message box in the GUI.
-             */
-            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
-                continue;
-
-            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-            AssertPtr(pCon);
-
-            bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
-#ifdef VBOX_WITH_HDA_MIC_IN
-            bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
-#endif
-            bool fValidOut    = AudioMixerStreamIsValid(pDrv->Front.pMixStrm);
-#ifdef VBOX_WITH_HDA_51_SURROUND
-            /** @todo Anything to do here? */
-#endif
-
-            if (    !fValidLineIn
-#ifdef VBOX_WITH_HDA_MIC_IN
-                 && !fValidMicIn
-#endif
-                 && !fValidOut)
-            {
-                LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
-
-                hdaReset(pDevIns);
-                hdaReattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("No audio devices could be opened. Selecting the NULL audio backend "
-                       "with the consequence that no sound is audible"));
-            }
-            else
-            {
-                bool fWarn = false;
-
-                PDMAUDIOBACKENDCFG backendCfg;
-                int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
-                if (RT_SUCCESS(rc2))
-                {
-                    if (backendCfg.cSources)
-                    {
-#ifdef VBOX_WITH_HDA_MIC_IN
-                        /* If the audio backend supports two or more input streams at once,
-                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxStreamsIn >= 2)
-                            fWarn = !fValidLineIn || !fValidMicIn;
-                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
-                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
-                         * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxStreamsIn == 1)
-                            fWarn = !fValidLineIn && !fValidMicIn;
-                        /* Don't warn if our backend is not able of supporting any input streams at all. */
-#else
-                        /* We only have line-in as input source. */
-                        fWarn = !fValidLineIn;
-#endif
-                    }
-
-                    if (   !fWarn
-                        && backendCfg.cSinks)
-                    {
-                        fWarn = !fValidOut;
-                    }
-                }
-                else
-                {
-                    LogRel(("HDA: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-                    fWarn = true;
-                }
-
-                if (fWarn)
-                {
-                    char   szMissingStreams[255];
-                    size_t len = 0;
-                    if (!fValidLineIn)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
-                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-                    }
-#ifdef VBOX_WITH_HDA_MIC_IN
-                    if (!fValidMicIn)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                    }
-#endif
-                    if (!fValidOut)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                    }
-
-                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                               N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
-                                                  "output or depending on audio input may hang. Make sure your host audio device "
-                                                  "is working properly. Check the logfile for error messages of the audio "
-                                                  "subsystem"), szMissingStreams);
-                }
-            }
-        }
     }
 
     if (RT_SUCCESS(rc))
@@ -6253,7 +6140,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         }
     }
 
-# ifndef VBOX_WITH_AUDIO_CALLBACKS
+# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     if (RT_SUCCESS(rc))
     {
         /* Start the emulation timer. */
@@ -6308,7 +6195,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         /*
          * Register statistics.
          */
-#  ifndef VBOX_WITH_AUDIO_CALLBACKS
+#  ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/HDA/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaTimer.");
 #  endif
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "/Devices/HDA/BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");

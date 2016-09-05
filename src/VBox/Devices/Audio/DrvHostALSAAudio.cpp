@@ -1532,9 +1532,6 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
     pBackendCfg->cbStreamIn  = sizeof(ALSAAUDIOSTREAMIN);
     pBackendCfg->cbStreamOut = sizeof(ALSAAUDIOSTREAMOUT);
 
-    pBackendCfg->cSources    = 0;
-    pBackendCfg->cSinks      = 0;
-
     /* Enumerate sound devices. */
     char **pszHints;
     int err = snd_device_name_hint(-1 /* All cards */, "pcm", (void***)&pszHints);
@@ -1557,15 +1554,14 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
             char *pszIOID = snd_device_name_get_hint(*pszHintCur, "IOID");
             if (pszIOID)
             {
+#if 0
                 if (!RTStrICmp("input", pszIOID))
-                    pBackendCfg->cSources++;
+
                 else if (!RTStrICmp("output", pszIOID))
-                    pBackendCfg->cSinks++;
+#endif
             }
             else /* NULL means bidirectional, input + output. */
             {
-                pBackendCfg->cSources++;
-                pBackendCfg->cSinks++;
             }
 
             LogRel2(("ALSA: Found %s device: %s\n", pszIOID ?  RTStrToLower(pszIOID) : "bidirectional", pszDev));
@@ -1583,9 +1579,6 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
 
             pszHintCur++;
         }
-
-        LogRel2(("ALSA: Found %RU8 host playback devices\n",  pBackendCfg->cSinks));
-        LogRel2(("ALSA: Found %RU8 host capturing devices\n", pBackendCfg->cSources));
 
         snd_device_name_free_hint((void **)pszHints);
         pszHints = NULL;

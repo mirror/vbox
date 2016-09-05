@@ -82,10 +82,6 @@ static DECLCALLBACK(int) drvHostDebugAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
     pBackendCfg->cbStreamOut    = sizeof(DEBUGAUDIOSTREAM);
     pBackendCfg->cbStreamIn     = sizeof(DEBUGAUDIOSTREAM);
 
-    /* The NULL backend has exactly one input source and one output sink. */
-    pBackendCfg->cSources       = 1;
-    pBackendCfg->cSinks         = 1;
-
     pBackendCfg->cMaxStreamsOut = 1; /* Output */
     pBackendCfg->cMaxStreamsIn  = 2; /* Line input + microphone input. */
 

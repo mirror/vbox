@@ -535,6 +535,18 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS += VBOX_WITH_HDA_51_SURROUND
  endif
 
+ # Enable generic callback support.
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
+
+ # Not yet enabled: Callbacks for the device emulation to let the backends
+ #                  tell the emulation when and how to process data.
+ if 0
+  VBOX_DEFS   += VBOX_WITH_AUDIO_DEVICE_CALLBACKS
+  VBOX_DEFS   += VBOX_WITH_AUDIO_SB16_CALLBACKS
+  VBOX_DEFS   += VBOX_WITH_AUDIO_AC97_CALLBACKS
+  VBOX_DEFS   += VBOX_WITH_AUDIO_HDA_CALLBACKS
+ endif
+ 
  VBoxDD_SOURCES         += \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \

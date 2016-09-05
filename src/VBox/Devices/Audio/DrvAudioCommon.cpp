@@ -49,9 +49,12 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
+#define LOG_GROUP LOG_GROUP_DRV_AUDIO
+#include <VBox/log.h>
+
+#include <VBox/err.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdm.h>
-#include <VBox/err.h>
 #include <VBox/vmm/mm.h>
 
 #include <ctype.h>
@@ -202,6 +205,247 @@ void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf,
 }
 
 /**
+ * Allocates an audio device.
+ *
+ * @returns Newly allocated audio device, or NULL if failed.
+ * @param   cbData              How much additional data (in bytes) should be allocated to provide
+ *                              a (backend) specific area to store additional data.
+ *                              Optional, can be 0.
+ */
+PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData)
+{
+    PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)RTMemAllocZ(sizeof(PDMAUDIODEVICE));
+    if (!pDev)
+        return NULL;
+
+    if (cbData)
+    {
+        pDev->pvData = RTMemAlloc(cbData);
+        if (!pDev->pvData)
+        {
+            RTMemFree(pDev);
+            return NULL;
+        }
+    }
+
+    pDev->cbData = cbData;
+
+    pDev->cMaxInputChannels  = 0;
+    pDev->cMaxOutputChannels = 0;
+
+    return pDev;
+}
+
+/**
+ * Frees an audio device.
+ *
+ * @param pDev                  Device to free.
+ */
+void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev)
+{
+    if (!pDev)
+        return;
+
+    Assert(pDev->cRefCount == 0);
+
+    if (pDev->pvData)
+    {
+        Assert(pDev->cbData);
+
+        RTMemFree(pDev->pvData);
+    }
+
+    RTMemFree(pDev);
+}
+
+/**
+ * Initializes an audio device enumeration structure.
+ *
+ * @returns IPRT status code.
+ * @param   pDevEnm             Device enumeration to initialize.
+ */
+int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm)
+{
+    AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
+
+    RTListInit(&pDevEnm->lstDevices);
+    pDevEnm->cDevices = 0;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Frees audio device enumeration data.
+ *
+ * @param pDevEnm               Device enumeration to destroy.
+ */
+void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm)
+{
+    if (!pDevEnm)
+        return;
+
+    PPDMAUDIODEVICE pDev, pDevNext;
+    RTListForEachSafe(&pDevEnm->lstDevices, pDev, pDevNext, PDMAUDIODEVICE, Node)
+    {
+        RTListNodeRemove(&pDev->Node);
+
+        DrvAudioHlpDeviceFree(pDev);
+
+        pDevEnm->cDevices--;
+    }
+
+    /* Sanity. */
+    Assert(RTListIsEmpty(&pDevEnm->lstDevices));
+    Assert(pDevEnm->cDevices == 0);
+}
+
+/**
+ * Adds an audio device to a device enumeration.
+ *
+ * @return IPRT status code.
+ * @param  pDevEnm              Device enumeration to add device to.
+ * @param  pDev                 Device to add.
+ */
+int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
+{
+    AssertPtrReturn(pDevEnm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pDev,    VERR_INVALID_POINTER);
+
+    RTListAppend(&pDevEnm->lstDevices, &pDev->Node);
+    pDevEnm->cDevices++;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Returns the default device of a given device enumeration.
+ * This assumes that only one default device per usage is set.
+ *
+ * @returns Default device if found, or NULL if none found.
+ * @param   pDevEnm             Device enumeration to get default device for.
+ * @param   enmUsage            Usage to get default device for.
+ */
+PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
+{
+    AssertPtrReturn(pDevEnm, NULL);
+
+    PPDMAUDIODEVICE pDev;
+    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    {
+        if (enmUsage != PDMAUDIODIR_ANY)
+        {
+            if (enmUsage != pDev->enmUsage) /* Wrong usage? Skip. */
+                continue;
+        }
+
+        if (pDev->fFlags & PDMAUDIODEV_FLAGS_DEFAULT)
+            return pDev;
+    }
+
+    return NULL;
+}
+
+/**
+ * Logs an audio device enumeration.
+ *
+ * @param  pszDesc              Logging description.
+ * @param  pDevEnm              Device enumeration to log.
+ */
+void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm)
+{
+    AssertPtrReturnVoid(pszDesc);
+    AssertPtrReturnVoid(pDevEnm);
+
+    LogFunc(("%s: %RU16 devices\n", pszDesc, pDevEnm->cDevices));
+
+    PPDMAUDIODEVICE pDev;
+    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    {
+        char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
+
+        LogFunc(("Device '%s':\n", pDev->szName));
+        LogFunc(("\tUsage           = %s\n",             DrvAudioHlpAudDirToStr(pDev->enmUsage)));
+        LogFunc(("\tFlags           = %s\n",             pszFlags ? pszFlags : "<NONE>"));
+        LogFunc(("\tInput channels  = %RU8\n",           pDev->cMaxInputChannels));
+        LogFunc(("\tOutput channels = %RU8\n",           pDev->cMaxOutputChannels));
+        LogFunc(("\tData            = %p (%zu bytes)\n", pDev->pvData, pDev->cbData));
+
+        if (pszFlags)
+            RTStrFree(pszFlags);
+    }
+}
+
+/**
+ * Converts an audio direction to a string.
+ *
+ * @returns Stringified audio direction, or "Unknown", if not found.
+ * @param   enmDir              Audio direction to convert.
+ */
+const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir)
+{
+    switch (enmDir)
+    {
+        case PDMAUDIODIR_UNKNOWN: return "Unknown";
+        case PDMAUDIODIR_IN:      return "Input";
+        case PDMAUDIODIR_OUT:     return "Output";
+        case PDMAUDIODIR_ANY:     return "Duplex";
+        default:                  break;
+    }
+
+    AssertMsgFailed(("Invalid audio direction %ld\n", enmDir));
+    return "Unknown";
+}
+
+/**
+ * Converts an audio device flags to a string.
+ *
+ * @returns Stringified audio flags. Must be free'd with RTStrFree().
+ *          NULL if no flags set.
+ * @param   fFlags              Audio flags to convert.
+ */
+char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
+{
+
+#define APPEND_FLAG_TO_STR(_aFlag)              \
+    if (fFlags & PDMAUDIODEV_FLAGS_##_aFlag)    \
+    {                                           \
+        if (pszFlags)                           \
+        {                                       \
+            rc2 = RTStrAAppend(&pszFlags, " "); \
+            if (RT_FAILURE(rc2))                \
+                break;                          \
+        }                                       \
+                                                \
+        rc2 = RTStrAAppend(&pszFlags, #_aFlag); \
+        if (RT_FAILURE(rc2))                    \
+            break;                              \
+    }                                           \
+
+    char *pszFlags = NULL;
+    int rc2;
+
+    do
+    {
+        APPEND_FLAG_TO_STR(DEFAULT);
+        APPEND_FLAG_TO_STR(HOTPLUG);
+        APPEND_FLAG_TO_STR(BUGGY);
+        APPEND_FLAG_TO_STR(IGNORE);
+
+    } while (0);
+
+    if (   RT_FAILURE(rc2)
+        && pszFlags)
+    {
+        RTStrFree(pszFlags);
+        pszFlags = NULL;
+    }
+
+#undef APPEND_FLAG_TO_STR
+
+    return pszFlags;
+}
+
+/**
  * Converts a recording source enumeration to a string.
  *
  * @returns Stringified recording source, or "Unknown", if not found.
@@ -345,7 +589,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
     else if (!RTStrICmp(pszFmt, "s32"))
         return PDMAUDIOFMT_S32;
 
-    AssertMsgFailed(("Invalid audio format \"%s\"\n", pszFmt));
+    AssertMsgFailed(("Invalid audio format '%s'\n", pszFmt));
     return PDMAUDIOFMT_INVALID;
 }
 
