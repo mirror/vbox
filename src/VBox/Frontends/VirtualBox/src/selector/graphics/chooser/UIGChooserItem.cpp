@@ -93,13 +93,11 @@ public:
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
-
         /* Make sure index is valid: */
-        if (iIndex < childCount())
-            return QAccessible::queryAccessibleInterface(item()->items().at(iIndex));
+        AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
 
-        /* Null by default: */
-        return 0;
+        /* Return the child with the passed iIndex: */
+        return QAccessible::queryAccessibleInterface(item()->items().at(iIndex));
     }
 
     /** Returns the index of the passed @a pChild. */
@@ -149,7 +147,7 @@ public:
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QAccessible::NoRole);
 
-        /* Return the number of group children: */
+        /* Return the role of group: */
         if (item()->type() == UIGChooserItemType_Group)
             return QAccessible::List;
 
