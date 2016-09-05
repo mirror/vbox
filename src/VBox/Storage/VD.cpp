@@ -7079,6 +7079,15 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                          N_("VD: backend '%s' cannot create base images"), pszBackend);
             break;
         }
+        if (   (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_SPLIT_2G)
+                && !(pImage->Backend->uBackendCaps & VD_CAP_CREATE_SPLIT_2G))
+            || (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                && RTStrICmp(pszBackend, "VMDK")))
+        {
+            rc =  vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                          N_("VD: backend '%s' does not support the selected image variant"), pszBackend);
+            break;
+        }
 
         /* Create UUID if the caller didn't specify one. */
         if (!pUuid)
