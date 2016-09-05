@@ -5966,9 +5966,9 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             {
                 hdaReattach(pThis, NULL /* pDrv */, uLUN, "NullAudio");
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("No audio devices could be opened. Selecting the NULL audio backend "
+                    N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
                        "with the consequence that no sound is audible"));
-                /* attaching to the NULL audio backend will never fail */
+                /* Attaching to the NULL audio backend will never fail. */
                 rc = VINF_SUCCESS;
             }
             break;
