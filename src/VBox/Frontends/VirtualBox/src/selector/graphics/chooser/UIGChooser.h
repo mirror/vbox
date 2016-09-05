@@ -64,9 +64,9 @@ public:
     /** Returns the action-pool reference. */
     UIActionPool* actionPool() const;
 
-    /** Return the Chooser-model reference. */
+    /** Return the Chooser-model instance. */
     UIGChooserModel* model() const { return m_pChooserModel; }
-    /** Return the Chooser-view reference. */
+    /** Return the Chooser-view instance. */
     UIGChooserView* view() const { return m_pChooserView; }
 
     /* API: Current-item stuff: */
