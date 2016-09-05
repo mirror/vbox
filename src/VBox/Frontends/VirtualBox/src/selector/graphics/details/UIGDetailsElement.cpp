@@ -192,6 +192,16 @@ void UIGDetailsElement::resizeEvent(QGraphicsSceneResizeEvent*)
     updateLayout();
 }
 
+QString UIGDetailsElement::name() const
+{
+    return m_strName;
+}
+
+QString UIGDetailsElement::description() const
+{
+    return tr("Details");
+}
+
 QVariant UIGDetailsElement::data(int iKey) const
 {
     /* Provide other members with required data: */

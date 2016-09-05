@@ -220,6 +220,16 @@ void UIGDetailsSet::sltUpdateAppearance()
     rebuildSet();
 }
 
+QString UIGDetailsSet::name() const
+{
+    return QString();
+}
+
+QString UIGDetailsSet::description() const
+{
+    return tr("Contains details set of Virtual Machine '%1'").arg(m_pMachineItem->name());
+}
+
 QVariant UIGDetailsSet::data(int iKey) const
 {
     /* Provide other members with required data: */
