@@ -44,6 +44,9 @@ VBoxVMMPreloadHardened_NAME     = VBoxVMMPreload
 #
 VBoxVMMPreload_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBoxR3Dll,VBOXR3EXE)
 VBoxVMMPreload_SOURCES    = VBoxVMMPreload.cpp
+VBoxVMMPreload_DEFS       = \
+	$(if $(VBOX_WITH_NEW_APIC),VBOX_WITH_NEW_APIC,) \
+	$(if $(VBOX_WITH_NEW_IOAPIC),VBOX_WITH_NEW_IOAPIC,)
 VBoxVMMPreload_LIBS = $(LIB_RUNTIME)
 ifdef VBOX_WITH_HARDENING
  VBoxVMMPreload_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMMPreload.dylib
