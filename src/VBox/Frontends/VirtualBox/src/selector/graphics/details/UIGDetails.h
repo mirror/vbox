@@ -49,6 +49,11 @@ public:
     /* Constructor: */
     UIGDetails(QWidget *pParent);
 
+    /** Return the Details-model instance. */
+    UIGDetailsModel *model() const { return m_pDetailsModel; }
+    /** Return the Details-view instance. */
+    UIGDetailsView *view() const { return m_pDetailsView; }
+
     /* API: Current item(s) stuff: */
     void setItems(const QList<UIVMItem*> &items);
 

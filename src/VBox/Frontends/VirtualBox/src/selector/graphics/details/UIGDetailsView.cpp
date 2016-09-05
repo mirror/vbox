@@ -24,13 +24,15 @@
 # include <QScrollBar>
 
 /* GUI includes: */
+# include "UIGDetails.h"
 # include "UIGDetailsView.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGDetailsView::UIGDetailsView(QWidget *pParent)
+UIGDetailsView::UIGDetailsView(UIGDetails *pParent)
     : QIGraphicsView(pParent)
+    , m_pDetails(pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
 {

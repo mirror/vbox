@@ -35,10 +35,11 @@ class QGraphicsItem;
 class QGraphicsScene;
 class QGraphicsSceneContextMenuEvent;
 class QGraphicsView;
-class UIGDetailsGroup;
 class UIVMItem;
 class UIGDetailsElementAnimationCallback;
+class UIGDetailsGroup;
 class UIGDetailsItem;
+class UIGDetails;
 
 /* Graphics details-model: */
 class UIGDetailsModel : public QObject
@@ -56,14 +57,22 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
-    UIGDetailsModel(QObject *pParent);
+    /** Constructs a details-model passing @a pParent to the base-class.
+      * @param  pParent  Brings the details container to embed into. */
+    UIGDetailsModel(UIGDetails *pParent);
+    /** Destructs a details-model. */
     ~UIGDetailsModel();
 
     /* API: Scene stuff: */
     QGraphicsScene* scene() const;
     QGraphicsView* paintDevice() const;
     QGraphicsItem* itemAt(const QPointF &position) const;
+
+    /** Returns the details reference. */
+    UIGDetails *details() const { return m_pDetails; }
+
+    /** Returns the root item instance. */
+    UIGDetailsItem *root() const;
 
     /* API: Layout stuff: */
     void updateLayout();
@@ -116,6 +125,9 @@ private:
 
     /* Handler: Context-menu stuff: */
     bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
+
+    /** Holds the details reference. */
+    UIGDetails *m_pDetails;
 
     /* Variables: */
     QGraphicsScene *m_pScene;
