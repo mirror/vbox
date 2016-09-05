@@ -46,8 +46,10 @@
  */
 typedef enum DRVDISKAIOTXDIR
 {
+    /** Invalid. */
+    DRVDISKAIOTXDIR_INVALID = 0,
     /** Read */
-    DRVDISKAIOTXDIR_READ = 0,
+    DRVDISKAIOTXDIR_READ,
     /** Write */
     DRVDISKAIOTXDIR_WRITE,
     /** Flush */
@@ -87,6 +89,9 @@ typedef struct DRVDISKAIOREQ
     PCRTRANGE       paRanges;
     /** Number of ranges. */
     unsigned        cRanges;
+    /** I/O segment for the extended media interface
+     * to hold the data. */
+    RTSGSEG         IoSeg;
 } DRVDISKAIOREQ, *PDRVDISKAIOREQ;
 
 /**
@@ -209,9 +214,13 @@ typedef struct DRVDISKINTEGRITY
     /** Flag whether to record the data to write before the write completed successfully.
      * Useful in case the data is modified in place later on (encryption for instance). */
     bool                    fRecordWriteBeforeCompletion;
+    /** Flag whether to validate memory buffers when the extended media interface is used. */
+    bool                    fValidateMemBufs;
 
     /** I/O logger to use if enabled. */
     VDIOLOGGER              hIoLogger;
+    /** Size of the opaque handle until our tracking structure starts in bytes. */
+    size_t                  cbIoReqOpaque;
 } DRVDISKINTEGRITY, *PDRVDISKINTEGRITY;
 
 
@@ -248,6 +257,35 @@ static PDRVDISKAIOREQ drvdiskintIoReqAlloc(DRVDISKAIOTXDIR enmTxDir, uint64_t of
     return pIoReq;
 }
 
+static void drvdiskintIoReqCheckForDoubleCompletion(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq,
+                                                    bool fMediaEx)
+{
+    /* Search if the I/O request completed already. */
+    for (unsigned i = 0; i < pThis->cEntries; i++)
+    {
+        if (RT_UNLIKELY(pThis->papIoReq[i] == pIoReq))
+        {
+            RTMsgError("Request %#p completed already!\n", pIoReq);
+            if (!fMediaEx)
+                RTMsgError("Start timestamp %llu Completion timestamp %llu (completed after %llu ms)\n",
+                           pIoReq->tsStart, pIoReq->tsComplete, pIoReq->tsComplete - pIoReq->tsStart);
+            RTAssertDebugBreak();
+        }
+    }
+
+    pIoReq->tsComplete = RTTimeSystemMilliTS();
+    Assert(!pThis->papIoReq[pThis->iEntry]);
+    pThis->papIoReq[pThis->iEntry] = pIoReq;
+
+    pThis->iEntry = (pThis->iEntry+1) % pThis->cEntries;
+    if (pThis->papIoReq[pThis->iEntry])
+    {
+        if (!fMediaEx)
+            RTMemFree(pThis->papIoReq[pThis->iEntry]);
+        pThis->papIoReq[pThis->iEntry] = NULL;
+    }
+}
+
 /**
  * Free a async I/O request.
  *
@@ -255,33 +293,10 @@ static PDRVDISKAIOREQ drvdiskintIoReqAlloc(DRVDISKAIOTXDIR enmTxDir, uint64_t of
  * @param   pThis     Disk driver.
  * @param   pIoReq    The I/O request to free.
  */
-static void drvdiskintIoReqFree(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
+static void drvdiskintReqFree(PDRVDISKINTEGRITY pThis, PDRVDISKAIOREQ pIoReq)
 {
     if (pThis->fCheckDoubleCompletion)
-    {
-        /* Search if the I/O request completed already. */
-        for (unsigned i = 0; i < pThis->cEntries; i++)
-        {
-            if (RT_UNLIKELY(pThis->papIoReq[i] == pIoReq))
-            {
-                RTMsgError("Request %#p completed already!\n", pIoReq);
-                RTMsgError("Start timestamp %llu Completion timestamp %llu (completed after %llu ms)\n",
-                           pIoReq->tsStart, pIoReq->tsComplete, pIoReq->tsComplete - pIoReq->tsStart);
-                RTAssertDebugBreak();
-            }
-        }
-
-        pIoReq->tsComplete = RTTimeSystemMilliTS();
-        Assert(!pThis->papIoReq[pThis->iEntry]);
-        pThis->papIoReq[pThis->iEntry] = pIoReq;
-
-        pThis->iEntry = (pThis->iEntry+1) % pThis->cEntries;
-        if (pThis->papIoReq[pThis->iEntry])
-        {
-            RTMemFree(pThis->papIoReq[pThis->iEntry]);
-            pThis->papIoReq[pThis->iEntry] = NULL;
-        }
-    }
+        drvdiskintIoReqCheckForDoubleCompletion(pThis, pIoReq, false /* fMediaEx */);
     else
         RTMemFree(pIoReq);
 }
@@ -358,7 +373,7 @@ static int drvdiskintWriteRecord(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsig
                 else
                 {
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
-                    AssertMsg(fInserted, ("Bug!\n"));
+                    AssertMsg(fInserted, ("Bug!\n")); RT_NOREF(fInserted);
                     fSet = true;
                 }
             }
@@ -374,7 +389,7 @@ static int drvdiskintWriteRecord(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsig
         {
             AssertPtr(pSeg);
             size_t cbCopied = RTSgBufCopyToBuf(&SgBuf, pSeg->pbSeg + offSeg, cbRange);
-            Assert(cbCopied == cbRange);
+            Assert(cbCopied == cbRange); RT_NOREF(cbCopied);
 
             /* Update the I/O log pointers */
             Assert(offSeg % 512 == 0);
@@ -588,7 +603,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                     pSeg->cbSeg = cbPreLeft;
                     pSeg->cIoLogEntries = cbPreLeft / 512;
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
-                    Assert(fInserted);
+                    Assert(fInserted); RT_NOREF(fInserted);
                 }
                 else if (!cbPreLeft && cbPostLeft)
                 {
@@ -605,7 +620,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                     pSeg->cbSeg = cbPostLeft;
                     pSeg->cIoLogEntries = cbPostLeft / 512;
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
-                    Assert(fInserted);
+                    Assert(fInserted); RT_NOREF(fInserted);
                 }
                 else
                 {
@@ -628,7 +643,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                                 pSegPost->apIoLog[idx] = pSeg->apIoLog[((cbPreLeft + cbRange) / 512) + idx];
 
                             bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSegPost->Core);
-                            Assert(fInserted);
+                            Assert(fInserted); RT_NOREF(fInserted);
                         }
                     }
 
@@ -641,7 +656,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                     pSeg->cbSeg = cbPreLeft;
                     pSeg->cIoLogEntries = cbPreLeft / 512;
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
-                    Assert(fInserted);
+                    Assert(fInserted); RT_NOREF(fInserted);
                 } /* if (cbPreLeft && cbPostLeft) */
             }
 
@@ -711,7 +726,7 @@ static DECLCALLBACK(int) drvdiskIntIoReqExpiredCheck(RTTHREAD pThread, void *pvU
         if (!pThis->fRunning)
             break;
 
-        Assert(rc == VERR_TIMEOUT);
+        Assert(rc == VERR_TIMEOUT); RT_NOREF(rc);
 
         /* Get current timestamp for comparison. */
         uint64_t tsCurr = RTTimeSystemMilliTS();
@@ -1094,6 +1109,20 @@ static DECLCALLBACK(bool) drvdiskintIsReadOnly(PPDMIMEDIA pInterface)
     return pThis->pDrvMedia->pfnIsReadOnly(pThis->pDrvMedia);
 }
 
+/** @interface_method_impl{PDMIMEDIA,pfnBiosIsVisible} */
+static DECLCALLBACK(bool) drvdiskintBiosIsVisible(PPDMIMEDIA pInterface)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnBiosIsVisible(pInterface);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnGetType} */
+static DECLCALLBACK(PDMMEDIATYPE) drvdiskintGetType(PPDMIMEDIA pInterface)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnGetType(pThis->pDrvMedia);
+}
+
 /** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvdiskintBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
                                                        PPDMMEDIAGEOMETRY pPCHSGeometry)
@@ -1247,7 +1276,7 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
     {
         pIoReq->enmTxDir = DRVDISKAIOTXDIR_READ_AFTER_WRITE;
 
-        /* Readd because it was rmeoved above. */
+        /* Add again because it was removed above. */
         if (pThis->fTraceRequests)
             drvdiskintIoReqAdd(pThis, pIoReq);
 
@@ -1269,7 +1298,7 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
     else
     {
         void *pvUserComplete = pIoReq->pvUser;
-        drvdiskintIoReqFree(pThis, pIoReq);
+        drvdiskintReqFree(pThis, pIoReq);
 
         rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvUserComplete, rcReq);
     }
@@ -1303,7 +1332,106 @@ static DECLCALLBACK(int) drvdiskintIoReqCompleteNotify(PPDMIMEDIAEXPORT pInterfa
                                                        void *pvIoReqAlloc, int rcReq)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
-    return pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, rcReq);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvIoReqAlloc;
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pIoReq=%#p\n", pIoReq));
+
+    /* Remove from the active list. */
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqRemove(pThis, pIoReq);
+
+    if (RT_SUCCESS(rcReq) && pThis->fCheckConsistency)
+    {
+        if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
+            rc = drvdiskintReadVerify(pThis, &pIoReq->IoSeg, 1, pIoReq->off, pIoReq->cbTransfer);
+        else if (   pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE
+                 && !pThis->fRecordWriteBeforeCompletion)
+            rc = drvdiskintWriteRecord(pThis, &pIoReq->IoSeg, 1, pIoReq->off, pIoReq->cbTransfer);
+        else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_DISCARD)
+            rc = drvdiskintDiscardRecords(pThis, pIoReq->paRanges, pIoReq->cRanges);
+        else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ_AFTER_WRITE)
+            rc = drvdiskintReadAfterWriteVerify(pThis, pIoReq);
+        else
+            AssertMsg(   pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH
+                      || (   pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE
+                          && pThis->fRecordWriteBeforeCompletion), ("Huh?\n"));
+
+        AssertRC(rc);
+    }
+
+    if (   RT_SUCCESS(rcReq)
+        && pThis->fValidateMemBufs
+        && pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
+    {
+        /* Check that the guest memory buffer matches what was written. */
+        RTSGSEG SegCmp;
+        SegCmp.pvSeg = RTMemAlloc(pIoReq->cbTransfer);
+        SegCmp.cbSeg = pIoReq->cbTransfer;
+
+        RTSGBUF SgBufCmp;
+        RTSgBufInit(&SgBufCmp, &SegCmp, 1);
+        rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1,
+                                                       0, &SgBufCmp, pIoReq->cbTransfer);
+        AssertRC(rc);
+
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, &pIoReq->IoSeg, 1);
+        if (RTSgBufCmp(&SgBuf, &SgBufCmp, pIoReq->cbTransfer))
+        {
+            RTMsgError("Corrupted memory buffer at offset %llu!\n", 0);
+            RTAssertDebugBreak();
+        }
+
+        RTMemFree(SegCmp.pvSeg);
+    }
+
+    if (pThis->hIoLogger)
+    {
+        RTSGBUF SgBuf;
+
+        if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
+            RTSgBufInit(&SgBuf, &pIoReq->IoSeg, 1);
+
+        int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, pIoReq->hIoLogEntry, rc, &SgBuf);
+        AssertRC(rc2);
+    }
+
+    if (   pThis->fReadAfterWrite
+        && pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE)
+    {
+#if 0 /** @todo */
+        pIoReq->enmTxDir = DRVDISKAIOTXDIR_READ_AFTER_WRITE;
+
+        /* Add again because it was removed above. */
+        if (pThis->fTraceRequests)
+            drvdiskintIoReqAdd(pThis, pIoReq);
+
+        rc = pThis->pDrvMediaAsync->pfnStartRead(pThis->pDrvMediaAsync, pIoReq->off, pIoReq->paSeg, pIoReq->cSeg,
+                                                 pIoReq->cbTransfer, pIoReq);
+        if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        {
+            rc = drvdiskintReadAfterWriteVerify(pThis, pIoReq);
+
+            if (pThis->fTraceRequests)
+                drvdiskintIoReqRemove(pThis, pIoReq);
+            RTMemFree(pIoReq);
+        }
+        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            rc = VINF_SUCCESS;
+        else if (RT_FAILURE(rc))
+            RTMemFree(pIoReq);
+#endif
+    }
+    else
+    {
+        rc = pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, rcReq);
+        /* Put on the watch list. */
+        if (pThis->fCheckDoubleCompletion)
+            drvdiskintIoReqCheckForDoubleCompletion(pThis, pIoReq, true /* fMediaEx */);
+    }
+
+    return rc;
 }
 
 /**
@@ -1314,8 +1442,21 @@ static DECLCALLBACK(int) drvdiskintIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
                                                     size_t cbCopy)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
-    return pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, offDst,
-                                                       pSgBuf, cbCopy);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvIoReqAlloc;
+    RTSGBUF SgBuf;
+
+    RTSgBufClone(&SgBuf, pSgBuf);
+
+    int rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, offDst,
+                                                         pSgBuf, cbCopy);
+    if (   RT_SUCCESS(rc)
+        && pIoReq->IoSeg.pvSeg)
+    {
+        /* Update our copy. */
+        RTSgBufCopyToBuf(&SgBuf, (uint8_t *)pIoReq->IoSeg.pvSeg + offDst, cbCopy);
+    }
+
+    return rc;
 }
 
 /**
@@ -1326,8 +1467,37 @@ static DECLCALLBACK(int) drvdiskintIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
                                                   size_t cbCopy)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
-    return pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, offSrc,
-                                                     pSgBuf, cbCopy);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvIoReqAlloc;
+    RTSGBUF SgBuf;
+
+    RTSgBufClone(&SgBuf, pSgBuf);
+
+    int rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, offSrc,
+                                                       pSgBuf, cbCopy);
+    if (   RT_SUCCESS(rc)
+        && pIoReq->IoSeg.pvSeg)
+    {
+        if (pThis->fValidateMemBufs)
+        {
+            /* Make sure what the caller requested matches what we got earlier. */
+            RTSGBUF SgBufCmp;
+            RTSgBufInit(&SgBufCmp, &pIoReq->IoSeg, 1);
+            RTSgBufAdvance(&SgBufCmp, offSrc);
+
+            if (RTSgBufCmp(&SgBuf, &SgBufCmp, cbCopy))
+            {
+                RTMsgError("Corrupted memory buffer at offset %llu!\n", offSrc);
+                RTAssertDebugBreak();
+            }
+        }
+        else
+        {
+            /* Update our copy. */
+            RTSgBufCopyToBuf(&SgBuf, (uint8_t *)pIoReq->IoSeg.pvSeg + offSrc, cbCopy);
+        }
+    }
+
+    return rc;
 }
 
 /**
@@ -1337,7 +1507,9 @@ static DECLCALLBACK(void) drvdiskintIoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
                                                      void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
-    pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, hIoReq, pvIoReqAlloc, enmState);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvIoReqAlloc;
+
+    pThis->pDrvMediaExPort->pfnIoReqStateChanged(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, enmState);
 }
 
 /* -=-=-=-=- IMediaEx -=-=-=-=- */
@@ -1348,6 +1520,12 @@ static DECLCALLBACK(void) drvdiskintIoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
 static DECLCALLBACK(int) drvdiskintIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+
+    /* Increase the amount by our private tracking structure. */
+    cbIoReqAlloc += sizeof(DRVDISKAIOREQ);
+
+    pThis->fCheckDoubleCompletion = false;
+
     return pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, cbIoReqAlloc);
 }
 
@@ -1358,7 +1536,39 @@ static DECLCALLBACK(int) drvdiskintIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIA
                                               PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
-    return pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, phIoReq, ppvIoReqAlloc, uIoReqId, fFlags);
+    PDRVDISKAIOREQ pIoReq = NULL;
+
+    int rc = pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, phIoReq, (void **)&pIoReq, uIoReqId, fFlags);
+    if RT_SUCCESS(rc)
+    {
+        pIoReq->enmTxDir    = DRVDISKAIOTXDIR_INVALID;
+        pIoReq->off         = 0;
+        pIoReq->cbTransfer  = 0;
+        pIoReq->paSeg       = NULL;
+        pIoReq->cSeg        = 0;
+        pIoReq->pvUser      = NULL;
+        pIoReq->iSlot       = 0;
+        pIoReq->tsStart     = 0;
+        pIoReq->tsComplete  = 0;
+        pIoReq->hIoLogEntry = NULL;
+        pIoReq->IoSeg.pvSeg = NULL;
+        pIoReq->IoSeg.cbSeg = 0;
+
+        /*
+         * Store the size off the start of our tracking structure because it is
+         * required to access it for the read/write callbacks.
+         *
+         * ASSUMPTION that the offset is constant.
+         */
+        if (!pThis->cbIoReqOpaque)
+            pThis->cbIoReqOpaque = (uintptr_t)pIoReq - (uintptr_t)*phIoReq;
+        else
+            Assert(pThis->cbIoReqOpaque == (uintptr_t)pIoReq - (uintptr_t)*phIoReq);
+
+        *ppvIoReqAlloc = pIoReq + 1;
+    }
+
+    return rc;
 }
 
 /**
@@ -1367,6 +1577,11 @@ static DECLCALLBACK(int) drvdiskintIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIA
 static DECLCALLBACK(int) drvdiskintIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)((uintptr_t)hIoReq + pThis->cbIoReqOpaque);
+
+    if (pIoReq->IoSeg.pvSeg)
+        RTMemFree(pIoReq->IoSeg.pvSeg);
+
     return pThis->pDrvMediaEx->pfnIoReqFree(pThis->pDrvMediaEx, hIoReq);
 }
 
@@ -1385,7 +1600,55 @@ static DECLCALLBACK(int) drvdiskintIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIA
 static DECLCALLBACK(int) drvdiskintIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
-    return pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, off, cbRead);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)((uintptr_t)hIoReq + pThis->cbIoReqOpaque);
+
+    pIoReq->enmTxDir    = DRVDISKAIOTXDIR_READ;
+    pIoReq->off         = off;
+    pIoReq->cbTransfer  = cbRead;
+
+    /* Allocate a I/O buffer if the I/O is verified.*/
+    if (pThis->fCheckConsistency)
+    {
+        pIoReq->IoSeg.pvSeg = RTMemAlloc(cbRead);
+        pIoReq->IoSeg.cbSeg = cbRead;
+    }
+
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
+    if (pThis->hIoLogger)
+    {
+        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_READ, off,
+                                  cbRead, NULL, &pIoReq->hIoLogEntry);
+        AssertRC(rc2);
+    }
+
+    int rc = pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, off, cbRead);
+    if (rc == VINF_SUCCESS)
+    {
+        /* Verify the read now. */
+        if (pThis->fCheckConsistency)
+        {
+            int rc2 = drvdiskintReadVerify(pThis, &pIoReq->IoSeg, 1, off, cbRead);
+            AssertRC(rc2);
+        }
+
+        if (pThis->hIoLogger)
+        {
+            RTSGBUF SgBuf;
+
+            RTSgBufInit(&SgBuf, &pIoReq->IoSeg, 1);
+
+            int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, pIoReq->hIoLogEntry, VINF_SUCCESS, &SgBuf);
+            AssertRC(rc2);
+        }
+
+        if (pThis->fTraceRequests)
+            drvdiskintIoReqRemove(pThis, pIoReq);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -1394,7 +1657,78 @@ static DECLCALLBACK(int) drvdiskintIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEX
 static DECLCALLBACK(int) drvdiskintIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
-    return pThis->pDrvMediaEx->pfnIoReqWrite(pThis->pDrvMediaEx, hIoReq, off, cbWrite);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)((uintptr_t)hIoReq + pThis->cbIoReqOpaque);
+
+    pIoReq->enmTxDir    = DRVDISKAIOTXDIR_WRITE;
+    pIoReq->off         = off;
+    pIoReq->cbTransfer  = cbWrite;
+
+    /* Allocate a I/O buffer if the I/O is verified.*/
+    if (   pThis->fCheckConsistency
+        || pThis->fValidateMemBufs
+        || pThis->hIoLogger
+        || pThis->fRecordWriteBeforeCompletion)
+    {
+        pIoReq->IoSeg.pvSeg = RTMemAlloc(cbWrite);
+        pIoReq->IoSeg.cbSeg = cbWrite;
+
+        /* Sync the memory buffer over if we should validate it. */
+        if (   pThis->fValidateMemBufs
+            || pThis->hIoLogger
+            || pThis->fRecordWriteBeforeCompletion)
+        {
+            RTSGBUF SgBuf;
+
+            RTSgBufInit(&SgBuf, &pIoReq->IoSeg, 1);
+            int rc2 = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, 0,
+                                                               &SgBuf, cbWrite);
+            AssertRC(rc2);
+        }
+    }
+
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
+    if (pThis->hIoLogger)
+    {
+        RTSGBUF SgBuf;
+
+        RTSgBufInit(&SgBuf, &pIoReq->IoSeg, 1);
+        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_WRITE, off,
+                                  cbWrite, &SgBuf, &pIoReq->hIoLogEntry);
+        AssertRC(rc2);
+    }
+
+    if (pThis->fRecordWriteBeforeCompletion)
+    {
+
+        int rc2 = drvdiskintWriteRecord(pThis, &pIoReq->IoSeg, 1, off, cbWrite);
+        AssertRC(rc2);
+    }
+
+    int rc = pThis->pDrvMediaEx->pfnIoReqWrite(pThis->pDrvMediaEx, hIoReq, off, cbWrite);
+    if (rc == VINF_SUCCESS)
+    {
+        /* Record the write. */
+        if  (   pThis->fCheckConsistency
+             && !pThis->fRecordWriteBeforeCompletion)
+        {
+            int rc2 = drvdiskintWriteRecord(pThis, &pIoReq->IoSeg, 1, off, cbWrite);
+            AssertRC(rc2);
+        }
+
+        if (pThis->hIoLogger)
+        {
+            int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, pIoReq->hIoLogEntry, VINF_SUCCESS, NULL);
+            AssertRC(rc2);
+        }
+
+        if (pThis->fTraceRequests)
+            drvdiskintIoReqRemove(pThis, pIoReq);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -1403,7 +1737,34 @@ static DECLCALLBACK(int) drvdiskintIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAE
 static DECLCALLBACK(int) drvdiskintIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
-    return pThis->pDrvMediaEx->pfnIoReqFlush(pThis->pDrvMediaEx, hIoReq);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)((uintptr_t)hIoReq + pThis->cbIoReqOpaque);
+
+    pIoReq->enmTxDir    = DRVDISKAIOTXDIR_FLUSH;
+    pIoReq->off         = 0;
+    pIoReq->cbTransfer  = 0;
+
+    if (pThis->fTraceRequests)
+        drvdiskintIoReqAdd(pThis, pIoReq);
+
+    if (pThis->hIoLogger)
+    {
+        int rc2 = VDDbgIoLogStart(pThis->hIoLogger, true, VDDBGIOLOGREQ_FLUSH, 0,
+                             0, NULL, &pIoReq->hIoLogEntry);
+        AssertRC(rc2);
+    }
+
+    int rc = pThis->pDrvMediaEx->pfnIoReqFlush(pThis->pDrvMediaEx, hIoReq);
+    if (rc == VINF_SUCCESS)
+    {
+        if (pThis->hIoLogger)
+        {
+            int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, pIoReq->hIoLogEntry, VINF_SUCCESS, NULL);
+            AssertRC(rc2);
+        }
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
@@ -1563,7 +1924,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                     "IoLog\0"
                                     "PrepopulateRamDisk\0"
                                     "ReadAfterWrite\0"
-                                    "RecordWriteBeforeCompletion\0"))
+                                    "RecordWriteBeforeCompletion\0"
+                                    "ValidateMemoryBuffers\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfg, "CheckConsistency", &pThis->fCheckConsistency, false);
@@ -1584,6 +1946,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     AssertRC(rc);
     rc = CFGMR3QueryBoolDef(pCfg, "RecordWriteBeforeCompletion", &pThis->fRecordWriteBeforeCompletion, false);
     AssertRC(rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "ValidateMemoryBuffers", &pThis->fValidateMemBufs, true);
+    AssertRC(rc);
 
     char *pszIoLogFilename = NULL;
     rc = CFGMR3QueryStringAlloc(pCfg, "IoLog", &pszIoLogFilename);
@@ -1603,12 +1967,14 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnFlush               = drvdiskintFlush;
     pThis->IMedia.pfnGetSize             = drvdiskintGetSize;
     pThis->IMedia.pfnIsReadOnly          = drvdiskintIsReadOnly;
+    pThis->IMedia.pfnBiosIsVisible       = drvdiskintBiosIsVisible;
     pThis->IMedia.pfnBiosGetPCHSGeometry = drvdiskintBiosGetPCHSGeometry;
     pThis->IMedia.pfnBiosSetPCHSGeometry = drvdiskintBiosSetPCHSGeometry;
     pThis->IMedia.pfnBiosGetLCHSGeometry = drvdiskintBiosGetLCHSGeometry;
     pThis->IMedia.pfnBiosSetLCHSGeometry = drvdiskintBiosSetLCHSGeometry;
     pThis->IMedia.pfnGetUuid             = drvdiskintGetUuid;
     pThis->IMedia.pfnGetSectorSize       = drvdiskintGetSectorSize;
+    pThis->IMedia.pfnGetType             = drvdiskintGetType;
     pThis->IMedia.pfnIoBufAlloc          = drvdiskintIoBufAlloc;
     pThis->IMedia.pfnIoBufFree           = drvdiskintIoBufFree;
     pThis->IMedia.pfnReadPcBios          = drvdiskintReadPcBios;
