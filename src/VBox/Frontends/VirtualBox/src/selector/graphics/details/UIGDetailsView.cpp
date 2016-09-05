@@ -31,7 +31,7 @@
 
 
 UIGDetailsView::UIGDetailsView(UIGDetails *pParent)
-    : QIGraphicsView(pParent)
+    : QIWithRetranslateUI<QIGraphicsView>(pParent)
     , m_pDetails(pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
@@ -49,6 +49,9 @@ UIGDetailsView::UIGDetailsView(UIGDetails *pParent)
 
     /* Update scene-rect: */
     updateSceneRect();
+
+    /* Translate finally: */
+    retranslateUi();
 }
 
 void UIGDetailsView::sltMinimumWidthHintChanged(int iMinimumWidthHint)
@@ -84,6 +87,12 @@ void UIGDetailsView::sltMinimumHeightHintChanged(int iMinimumHeightHint)
     updateSceneRect();
 }
 
+void UIGDetailsView::retranslateUi()
+{
+    /* Translate this: */
+    setToolTip(tr("Contains a list of Virtual Machine details"));
+}
+
 void UIGDetailsView::preparePalette()
 {
     /* Setup palette: */
@@ -95,7 +104,7 @@ void UIGDetailsView::preparePalette()
 void UIGDetailsView::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QIGraphicsView::resizeEvent(pEvent);
+    QIWithRetranslateUI<QIGraphicsView>::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 }
