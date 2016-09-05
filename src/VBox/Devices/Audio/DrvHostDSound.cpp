@@ -83,7 +83,7 @@ typedef FNDIRECTSOUNDENUMERATEW *PFNDIRECTSOUNDENUMERATEW;
 typedef HRESULT WINAPI FNDIRECTSOUNDCAPTUREENUMERATEW(LPDSENUMCALLBACKW pDSEnumCallback, PVOID pContext);
 typedef FNDIRECTSOUNDCAPTUREENUMERATEW *PFNDIRECTSOUNDCAPTUREENUMERATEW;
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
 # define VBOX_DSOUND_MAX_EVENTS 3
 
 typedef enum DSOUNDEVENT
@@ -92,7 +92,7 @@ typedef enum DSOUNDEVENT
     DSOUNDEVENT_INPUT,
     DSOUNDEVENT_OUTPUT,
  } DSOUNDEVENT;
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
 
 typedef struct DSOUNDHOSTCFG
 {
@@ -151,7 +151,7 @@ typedef struct DRVHOSTDSOUND
     bool                fEnabledIn;
     /** Whether this backend supports any audio output. */
     bool                fEnabledOut;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /** Pointer to the audio connector interface of the driver/device above us. */
     PPDMIAUDIOCONNECTOR pUpIAudioConnector;
     /** Stopped indicator. */
@@ -206,7 +206,7 @@ typedef struct DSOUNDDEV
 static HRESULT  directSoundPlayRestore(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB);
 static void     dsoundDeviceRemove(PDSOUNDDEV pDev);
 static int      dsoundDevicesEnumerate(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDCFG pCfg);
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
 static int      dsoundNotifyThread(PDRVHOSTDSOUND pThis, bool fShutdown);
 #endif
 
@@ -527,7 +527,7 @@ static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSou
         hr = IDirectSoundBuffer8_Stop(pDSoundStream->pDSB);
         if (SUCCEEDED(hr))
         {
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
             if (pThis->aEvents[DSOUNDEVENT_OUTPUT] != NULL)
             {
                 CloseHandle(pThis->aEvents[DSOUNDEVENT_OUTPUT]);
@@ -606,7 +606,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
          * of copying own buffer data (from AudioMixBuf) to our secondary's Direct Sound buffer.
          */
         bd.dwFlags     = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_LOCSOFTWARE;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
         bd.dwFlags    |= DSBCAPS_CTRLPOSITIONNOTIFY;
 #endif
         bd.dwBufferBytes = pThis->cfg.cbBufferOut;
@@ -683,7 +683,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         pDSoundStream->cMaxSamplesInBuffer = bc.dwBufferBytes >> pDSoundStream->Props.cShift;
         DSLOG(("DSound: cMaxSamplesInBuffer=%RU32\n", pDSoundStream->cMaxSamplesInBuffer));
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
         /*
          * Install notification.
          */
@@ -729,7 +729,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
         /* Trigger the just installed output notification. */
         hr = IDirectSoundBuffer8_Play(pDSoundStream->pDSB, 0, 0, 0);
 
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
 
     } while (0);
 
@@ -1215,7 +1215,7 @@ static HRESULT directSoundCaptureStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDS
             else
             {
                 DWORD fFlags = 0;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
                 fFlags |= DSCBSTART_LOOPING;
 #endif
                 DSLOG(("DSound: Starting to capture\n"));
@@ -1411,7 +1411,7 @@ static void dsoundUpdateStatusInternalEx(PDRVHOSTDSOUND pThis, PPDMAUDIOBACKENDC
     int rc = dsoundDevicesEnumerate(pThis, &cbCtx, fEnum);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
         if (   pThis->fEnabledOut != RT_BOOL(cbCtx.cDevOut)
             || pThis->fEnabledIn  != RT_BOOL(cbCtx.cDevIn))
         {
@@ -1638,7 +1638,7 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, 
             pDSoundStream->fRestartPlayback = false;
 
             DWORD fFlags = 0;
-#ifndef VBOX_WITH_AUDIO_CALLBACKS
+#ifndef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
             fFlags |= DSCBSTART_LOOPING;
 #endif
             for (unsigned i = 0; i < DRV_DSOUND_RESTORE_ATTEMPTS_MAX; i++)
@@ -1932,7 +1932,7 @@ int drvHostDSoundGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBacke
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
 
 static int dsoundNotifyThread(PDRVHOSTDSOUND pThis, bool fShutdown)
 {
@@ -2041,7 +2041,7 @@ static DECLCALLBACK(int) dsoundNotificationThread(RTTHREAD hThreadSelf, void *pv
     return rc;
 }
 
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
 
 
 /**
@@ -2053,7 +2053,7 @@ void drvHostDSoundShutdown(PPDMIHOSTAUDIO pInterface)
 
     LogFlowFuncEnter();
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     int rc = dsoundNotifyThread(pThis, true /* fShutdown */);
     AssertRC(rc);
 
@@ -2093,7 +2093,7 @@ static DECLCALLBACK(int) drvHostDSoundInit(PPDMIHOSTAUDIO pInterface)
     {
         IDirectSound_Release(pDirectSound);
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
         /* Create notification event. */
         pThis->aEvents[DSOUNDEVENT_NOTIFY] = CreateEvent(NULL /* Security attribute */,
                                                          FALSE /* bManualReset */, FALSE /* bInitialState */,
@@ -2368,7 +2368,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IHostAudio */
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostDSound);
 
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     /*
      * Get the IAudioConnector interface of the above driver/device.
      */
@@ -2388,7 +2388,7 @@ static DECLCALLBACK(int) drvHostDSoundConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     pThis->fEnabledIn  = false;
     pThis->fEnabledOut = false;
-#ifdef VBOX_WITH_AUDIO_CALLBACKS
+#ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
     pThis->fStopped    = false;
     pThis->fShutdown   = false;
 
