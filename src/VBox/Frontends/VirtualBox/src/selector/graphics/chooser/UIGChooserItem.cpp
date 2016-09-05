@@ -49,7 +49,7 @@ class UIAccessibilityInterfaceForUIGChooserItem : public QAccessibleObject
 public:
 
     /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
-    static QAccessibleInterface* pFactory(const QString &strClassname, QObject *pObject)
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
     {
         /* Creating Chooser-view accessibility interface: */
         if (pObject && strClassname == QLatin1String("UIGChooserItem"))
@@ -65,7 +65,7 @@ public:
     {}
 
     /** Returns the parent. */
-    virtual QAccessibleInterface* parent() const /* override */
+    virtual QAccessibleInterface *parent() const /* override */
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
@@ -177,7 +177,7 @@ public:
 private:
 
     /** Returns corresponding Chooser-view item. */
-    UIGChooserItem* item() const { return qobject_cast<UIGChooserItem*>(object()); }
+    UIGChooserItem *item() const { return qobject_cast<UIGChooserItem*>(object()); }
 };
 
 
