@@ -1023,12 +1023,13 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
         /* Is the stream scheduled for re-initialization? Do so now. */
         if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
         {
+            /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
+             * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
+            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
+
             rc = drvAudioStreamReInitInternal(pThis, pStream);
             if (RT_FAILURE(rc))
                 break;
-
-            /* On success, remove pending re-init flag. */
-            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
         }
 
         AssertPtr(pThis->pHostDrvAudio->pfnStreamGetStatus);
@@ -1133,12 +1134,13 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         /* Is the stream scheduled for re-initialization? Do so now. */
         if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
         {
+            /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
+             * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
+            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
+
             rc = drvAudioStreamReInitInternal(pThis, pStream);
             if (RT_FAILURE(rc))
                 break;
-
-            /* On success, remove pending re-init flag. */
-            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
         }
 
         AssertPtr(pThis->pHostDrvAudio->pfnStreamGetStatus);
