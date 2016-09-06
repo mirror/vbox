@@ -289,6 +289,7 @@ cleanup_modules()
     for i in /lib/modules/*/misc; do
         test -d "${i}" && rmdir -p "${i}" 2>/dev/null
     done
+    rm -f /etc/depmod.d/vboxvideo-upstream.conf
     succ_msg
 }
 
@@ -327,6 +328,7 @@ setup_modules()
         show_error "Look at $LOG to find out what went wrong"
     fi
     succ_msg
+    echo "override vboxvideo * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     depmod
     return 0
 }
