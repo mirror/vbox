@@ -3045,17 +3045,39 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
         size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
 
         if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
-            rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
-                             drvvdMediaExIoReqComplete, pThis, pIoReq);
+        {
+            if (pThis->fAsyncIOSupported)
+                rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                 drvvdMediaExIoReqComplete, pThis, pIoReq);
+            else
+            {
+                void *pvBuf = RTSgBufGetNextSegment(&pIoReq->ReadWrite.IoBuf.SgBuf, &cbReqIo);
+
+                Assert(cbReqIo > 0 && VALID_PTR(pvBuf));
+                rc = VDRead(pThis->pDisk, pIoReq->ReadWrite.offStart, pvBuf, cbReqIo);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_VD_ASYNC_IO_FINISHED;
+            }
+        }
         else
         {
             /* Sync memory buffer from the request initiator. */
             rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, true /* fToIoBuf */);
             if (RT_SUCCESS(rc))
             {
-                rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo,
-                                  &pIoReq->ReadWrite.IoBuf.SgBuf,
-                                  drvvdMediaExIoReqComplete, pThis, pIoReq);
+                if (pThis->fAsyncIOSupported)
+                    rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo,
+                                      &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                      drvvdMediaExIoReqComplete, pThis, pIoReq);
+                else
+                {
+                    void *pvBuf = RTSgBufGetNextSegment(&pIoReq->ReadWrite.IoBuf.SgBuf, &cbReqIo);
+
+                    Assert(cbReqIo > 0 && VALID_PTR(pvBuf));
+                    rc = VDWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, pvBuf, cbReqIo);
+                    if (RT_SUCCESS(rc))
+                        rc = VINF_VD_ASYNC_IO_FINISHED;
+                }
             }
         }
 
@@ -3452,7 +3474,12 @@ static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
     }
 
     ASMAtomicIncU32(&pThis->cIoReqsActive);
-    int rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
+    int rc = VINF_SUCCESS;
+    if (pThis->fAsyncIOSupported)
+        rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
+    else
+        rc = VDFlush(pThis->pDisk);
+
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
     else if (rc == VINF_VD_ASYNC_IO_FINISHED)
