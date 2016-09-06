@@ -126,15 +126,9 @@ public:
                 throw RTCError(com::Utf8StrFmt("Failed to open directory '%s'\n", pcszPath));
         };
     ~VBRDir()
-#if defined(__GNUC__)
-# if __cplusplus >= 201103L
-        noexcept(false)
-# endif
-#endif
         {
             int rc = RTDirClose(m_pDir);
-            if (RT_FAILURE(rc))
-                throw RTCError("Failed to close directory\n");
+            AssertRC(rc);
         };
     const char *next(void)
         {
