@@ -2929,6 +2929,7 @@ VMMR3DECL(uint64_t) TMR3TimeVirtGet(PUVM pUVM)
     return TMVirtualGetNoCheck(pVM);
 }
 
+
 /**
  * Gets the current TMCLOCK_VIRTUAL time in milliseconds without checking
  * timers or anything.
@@ -2946,6 +2947,7 @@ VMMR3DECL(uint64_t) TMR3TimeVirtGetMilli(PUVM pUVM)
     return TMVirtualToMilli(pVM, TMVirtualGetNoCheck(pVM));
 }
 
+
 /**
  * Gets the current TMCLOCK_VIRTUAL time in microseconds without checking
  * timers or anything.
@@ -2962,6 +2964,7 @@ VMMR3DECL(uint64_t) TMR3TimeVirtGetMicro(PUVM pUVM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, UINT64_MAX);
     return TMVirtualToMicro(pVM, TMVirtualGetNoCheck(pVM));
 }
+
 
 /**
  * Gets the current TMCLOCK_VIRTUAL time in nanoseconds without checking
