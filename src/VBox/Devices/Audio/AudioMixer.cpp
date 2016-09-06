@@ -1433,9 +1433,9 @@ static int audioMixerSinkUpdateVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME p
     AssertPtrReturn(pSink,      VERR_INVALID_POINTER);
     AssertPtrReturn(pVolMaster, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("[%s]: Master fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+    LogFlowFunc(("[%s] Master fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
                   pSink->pszName, pVolMaster->fMuted, pVolMaster->uLeft, pVolMaster->uRight));
-    LogFlowFunc(("[%s]: fMuted=%RTbool, lVol=%RU32, rVol=%RU32 ",
+    LogFlowFunc(("[%s] fMuted=%RTbool, lVol=%RU32, rVol=%RU32 ",
                   pSink->pszName, pSink->Volume.fMuted, pSink->Volume.uLeft, pSink->Volume.uRight));
 
     /** @todo Very crude implementation for now -- needs more work! */
@@ -1492,7 +1492,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
               ("Can't write to a sink which is not an output sink\n"));
 
-    LogFlowFunc(("%s: enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
+    Log3Func(("[%s] enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
     uint32_t cbProcessed;
 
@@ -1501,18 +1501,18 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     {
         if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
         {
-            LogFlowFunc(("%s: Stream '%s' Disabled, skipping ...\n", pMixStream->pszName, pMixStream->pStream->szName));
+            Log3Func(("\t%s: Stream '%s' Disabled, skipping ...\n", pMixStream->pszName, pMixStream->pStream->szName));
             continue;
         }
 
         int rc2 = pMixStream->pConn->pfnStreamWrite(pMixStream->pConn, pMixStream->pStream, pvBuf, cbBuf, &cbProcessed);
         if (RT_FAILURE(rc2))
-            LogFlowFunc(("%s: Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
+            LogFlowFunc(("[%s] Failed writing to stream '%s': %Rrc\n", pSink->pszName, pMixStream->pStream->szName, rc2));
 
         if (cbProcessed < cbBuf)
         {
-            LogFlowFunc(("%s: Only written %RU32/%RU32 bytes for stream '%s'\n",
-                         pSink->pszName, cbProcessed, cbBuf, pMixStream->pStream->szName));
+            Log3Func(("[%s] Only written %RU32/%RU32 bytes for stream '%s'\n",
+                      pSink->pszName, cbProcessed, cbBuf, pMixStream->pStream->szName));
         }
     }
 
