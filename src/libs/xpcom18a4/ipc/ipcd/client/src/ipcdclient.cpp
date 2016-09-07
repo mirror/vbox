@@ -1308,7 +1308,7 @@ IPC_SpawnDaemon(const char *path)
   PR_Close(writable);
   writable = nsnull;
 
-  if ((PR_Read(readable, &c, 1) != 1) && (c != IPC_STARTUP_PIPE_MAGIC))
+  if ((PR_Read(readable, &c, 1) != 1) || (c != IPC_STARTUP_PIPE_MAGIC))
     goto end;
 
   rv = NS_OK;
