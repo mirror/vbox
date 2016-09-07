@@ -221,7 +221,11 @@ static int vbox_bo_move(struct ttm_buffer_object *bo,
                struct ttm_mem_reg *new_mem)
 {
     int r;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
     r = ttm_bo_move_memcpy(bo, evict, no_wait_gpu, new_mem);
+#else
+    r = ttm_bo_move_memcpy(bo, evict, interruptible, no_wait_gpu, new_mem);
+#endif
     return r;
 }
 
