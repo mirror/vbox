@@ -423,15 +423,22 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         'hwvirt-np' : 'NestedPaging'
     };
 
+    kdHostIoCacheDescs = {
+        'default'        : 'HostCacheDef',
+        'hostiocache'    : 'HostCacheOn',
+        'no-hostiocache' : 'HostCacheOff'
+    };
+
     # Array indexes for the test configs.
     kiVmName      = 0;
     kiStorageCtrl = 1;
-    kiDiskFmt     = 2;
-    kiDiskVar     = 3;
-    kiCpuCount    = 4;
-    kiVirtMode    = 5;
-    kiIoTest      = 6;
-    kiTestSet     = 7;
+    kiHostIoCache = 2
+    kiDiskFmt     = 3;
+    kiDiskVar     = 4;
+    kiCpuCount    = 5;
+    kiVirtMode    = 6;
+    kiIoTest      = 7;
+    kiTestSet     = 8;
 
     def __init__(self):
         vbox.TestDriver.__init__(self);
@@ -445,6 +452,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.acCpus                  = self.acCpusDef;
         self.asStorageCtrlsDef       = ['AHCI', 'IDE', 'LsiLogicSAS', 'LsiLogic', 'BusLogic', 'NVMe'];
         self.asStorageCtrls          = self.asStorageCtrlsDef;
+        self.asHostIoCacheDef        = ['default', 'hostiocache', 'no-hostiocache'];
+        self.asHostIoCache           = self.asHostIoCacheDef;
         self.asDiskFormatsDef        = ['VDI', 'VMDK', 'VHD', 'QED', 'Parallels', 'QCOW', 'iSCSI'];
         self.asDiskFormats           = self.asDiskFormatsDef;
         self.asDiskVariantsDef       = ['Dynamic', 'Fixed', 'DynamicSplit2G', 'FixedSplit2G', 'Network'];
@@ -474,16 +483,18 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Default: %s' % (':'.join(str(c) for c in self.acCpusDef)));
         reporter.log('  --storage-ctrls <type1[:type2[:...]]>');
         reporter.log('      Default: %s' % (':'.join(self.asStorageCtrlsDef)));
+        reporter.log('  --host-io-cache <setting1[:setting2[:...]]>');
+        reporter.log('      Default: %s' % (':'.join(self.asHostIoCacheDef)));
         reporter.log('  --disk-formats  <type1[:type2[:...]]>');
         reporter.log('      Default: %s' % (':'.join(self.asDiskFormatsDef)));
         reporter.log('  --disk-variants <variant1[:variant2[:...]]>');
         reporter.log('      Default: %s' % (':'.join(self.asDiskVariantsDef)));
         reporter.log('  --iscsi-targets     <target1[:target2[:...]]>');
-        reporter.log('      Default: %s' % (':'.join(self.asIscsiTargets)));
+        reporter.log('      Default: %s' % (':'.join(self.asIscsiTargetsDef)));
         reporter.log('  --tests         <test1[:test2[:...]]>');
-        reporter.log('      Default: %s' % (':'.join(self.asTests)));
+        reporter.log('      Default: %s' % (':'.join(self.asTestsDef)));
         reporter.log('  --test-sets     <set1[:set2[:...]]>');
-        reporter.log('      Default: %s' % (':'.join(self.asTestSets)));
+        reporter.log('      Default: %s' % (':'.join(self.asTestSetsDef)));
         reporter.log('  --test-vms      <vm1[:vm2[:...]]>');
         reporter.log('      Test the specified VMs in the given order. Use this to change');
         reporter.log('      the execution order or limit the choice of VMs');
@@ -529,6 +540,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             if iArg >= len(asArgs):
                 raise base.InvalidOption('The "--storage-ctrls" takes a colon separated list of Storage controller types');
             self.asStorageCtrls = asArgs[iArg].split(':');
+        elif asArgs[iArg] == '--host-io-cache':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('The "--host-io-cache" takes a colon separated list of I/O cache settings');
+            self.asHostIoCache = asArgs[iArg].split(':');
         elif asArgs[iArg] == '--disk-formats':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--disk-formats" takes a colon separated list of disk formats');
@@ -779,6 +795,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
            and (asTestCfg[self.kiCpuCount] > 1 or asTestCfg[self.kiVmName] == 'tst-storage'):
             return False;
 
+        # IDE does not support the no host I/O cache setting
+        if     asTestCfg[self.kiHostIoCache] == 'no-hostiocache' \
+           and asTestCfg[self.kiStorageCtrl] == 'IDE':
+            return False;
+
         return True;
 
     def fnFormatCpuString(self, cCpus):
@@ -796,6 +817,13 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         descriptions.
         """
         return self.kdVirtModeDescs[sVirtMode];
+
+    def fnFormatHostIoCache(self, sHostIoCache):
+        """
+        Formats the host I/O cache mode to be a little less cryptic for use in test
+        descriptions.
+        """
+        return self.kdHostIoCacheDescs[sHostIoCache];
 
     def testBenchmark(self, sTargetOs, sBenchmark, sMountpoint, oExecutor, dTestSet):
         """
@@ -827,8 +855,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return fRc;
 
-    def testOneCfg(self, sVmName, eStorageController, sDiskFormat, sDiskVariant, # pylint: disable=R0913
-                   sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
+    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0915
+                   sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
         """
         Runs the specified VM thru test #1.
 
@@ -869,6 +897,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             # Attach HD
             fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
             fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
+
+            if sHostIoCache == 'hostiocache':
+                fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), True);
+            elif sHostIoCache == 'no-hostiocache':
+                fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), False);
 
             iDevice = 0;
             if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
@@ -986,6 +1019,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         aasTestCfgs = [];
         aasTestCfgs.insert(self.kiVmName,      self.asTestVMs);
         aasTestCfgs.insert(self.kiStorageCtrl, self.asStorageCtrls);
+        aasTestCfgs.insert(self.kiHostIoCache, (self.asHostIoCache, self.fnFormatHostIoCache));
         aasTestCfgs.insert(self.kiDiskFmt,     self.asDiskFormats);
         aasTestCfgs.insert(self.kiDiskVar,     self.asDiskVariants);
         aasTestCfgs.insert(self.kiCpuCount,    (self.acCpus, self.fnFormatCpuString));
@@ -1002,9 +1036,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         asTestCfg = oTstCfgMgr.getCurrentTestCfg();
         while len(asTestCfg) > 0:
             fRc = self.testOneCfg(asTestCfg[self.kiVmName], self.getStorageCtrlFromName(asTestCfg[self.kiStorageCtrl]), \
-                                  asTestCfg[self.kiDiskFmt], asTestCfg[self.kiDiskVar], sDiskPath, \
-                                  asTestCfg[self.kiCpuCount], asTestCfg[self.kiIoTest], asTestCfg[self.kiVirtMode], \
-                                  asTestCfg[self.kiTestSet]) and fRc and True; # pychecker hack.
+                                  asTestCfg[self.kiHostIoCache], asTestCfg[self.kiDiskFmt], asTestCfg[self.kiDiskVar],
+                                  sDiskPath, asTestCfg[self.kiCpuCount], asTestCfg[self.kiIoTest], \
+                                  asTestCfg[self.kiVirtMode], asTestCfg[self.kiTestSet]) and fRc and True; # pychecker hack.
 
             asTestCfg = oTstCfgMgr.getNextTestCfg();
 

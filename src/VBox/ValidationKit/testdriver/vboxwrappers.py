@@ -1635,6 +1635,21 @@ class SessionWrapper(TdTaskBase):
 
         return False
 
+    def setStorageControllerHostIoCache(self, sController, fUseHostIoCache):
+        """
+        Set maximum ports count for storage controller
+        """
+        try:
+            oCtl = self.o.machine.getStorageControllerByName(sController);
+            oCtl.useHostIOCache = fUseHostIoCache;
+            self.oTstDrv.processPendingEvents();
+            reporter.log('set controller "%s" host I/O cache setting to %r' % (sController, fUseHostIoCache));
+            return True;
+        except:
+            reporter.log('unable to set storage controller "%s" host I/O cache setting to %r' % (sController, fUseHostIoCache));
+
+        return False;
+
     def setBootOrder(self, iPosition, eType):
         """
         Set guest boot order type
