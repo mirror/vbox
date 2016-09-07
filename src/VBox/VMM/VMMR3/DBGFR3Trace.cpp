@@ -122,7 +122,8 @@ static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
 
     rc = RTTraceBufCarve(&hTraceBuf, cEntries, cbEntry, 0 /*fFlags*/, pvBlock, &cbBlock);
     AssertRCReturn(rc, rc);
-    AssertRelease(hTraceBuf == (RTTRACEBUF)pvBlock && (void *)hTraceBuf == pvBlock);
+    AssertRelease(hTraceBuf == (RTTRACEBUF)pvBlock);
+    AssertRelease((void *)hTraceBuf == pvBlock);
 
     pVM->hTraceBufR3 = hTraceBuf;
     pVM->hTraceBufR0 = MMHyperCCToR0(pVM, hTraceBuf);

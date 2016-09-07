@@ -133,7 +133,11 @@ RT_C_DECLS_END
  */
 PGM_SHW_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR0)
 {
+#if PGM_SHW_TYPE != PGM_TYPE_NESTED
     Assert(pModeData->uShwType == PGM_SHW_TYPE || pModeData->uShwType == PGM_TYPE_NESTED);
+#else
+    Assert(pModeData->uShwType == PGM_SHW_TYPE);
+#endif
 
     /* Ring-3 */
     pModeData->pfnR3ShwRelocate          = PGM_SHW_NAME(Relocate);
