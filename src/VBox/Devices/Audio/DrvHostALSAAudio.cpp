@@ -1685,21 +1685,36 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostALSAAudioStreamGetStatus(PPDMIHOSTAU
     PDMAUDIOSTRMSTS strmSts =   PDMAUDIOSTRMSTS_FLAG_INITIALIZED
                               | PDMAUDIOSTRMSTS_FLAG_ENABLED;
 
+    snd_pcm_t         *phPCM       = NULL;
+    snd_pcm_sframes_t  cSamplesMin;
+
+    /** @todo Get rid of this once we have a unified ALSA stream. */
     if (pStream->enmDir == PDMAUDIODIR_IN)
     {
-
+        PALSAAUDIOSTREAMIN pStreamIn = (PALSAAUDIOSTREAMIN)pStream;
+        phPCM       = pStreamIn->phPCM;
+        cSamplesMin = 0;
     }
-    else
+    else if (pStream->enmDir == PDMAUDIODIR_OUT)
     {
         PALSAAUDIOSTREAMOUT pStreamOut = (PALSAAUDIOSTREAMOUT)pStream;
+        phPCM       = pStreamOut->phPCM;
+        cSamplesMin = pStreamOut->cSamplesMin;
+    }
+    else
+        AssertFailed();
 
-        snd_pcm_sframes_t cAvail;
-        int rc2 = alsaStreamGetAvail(pStreamOut->phPCM, &cAvail);
+    if (phPCM)
+    {
+        snd_pcm_sframes_t cSamplesAvail;
+        int rc2 = alsaStreamGetAvail(phPCM, &cSamplesAvail);
         if (RT_SUCCESS(rc2))
         {
-            LogFlowFunc(("cAvail=%ld\n", cAvail));
-            if (cAvail >= (snd_pcm_sframes_t)pStreamOut->cSamplesMin)
-                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
+            Log3Func(("cAvail=%ld \n", cSamplesAvail));
+            if (cSamplesAvail >= cSamplesMin)
+                strmSts |= pStream->enmDir == PDMAUDIODIR_IN
+                         ? PDMAUDIOSTRMSTS_FLAG_DATA_READABLE
+                         : PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
         }
     }
 
