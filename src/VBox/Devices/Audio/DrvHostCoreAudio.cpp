@@ -1723,9 +1723,10 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
     AssertPtr(pDev->pvData);
     Assert(pDev->cbData == sizeof(COREAUDIODEVICEDATA));
 
+#ifdef DEBUG
     PCOREAUDIODEVICEDATA pData = (PCOREAUDIODEVICEDATA)pDev->pvData;
-
     LogFunc(("pCAStream=%p, pDev=%p ('%s', ID=%RU32)\n", pCAStream, pDev, pDev->szName, pData->deviceID));
+#endif
 
     pCAStream->Unit.pDevice = pDev;
     pCAStream->pDrv = pThis;
@@ -2536,10 +2537,12 @@ static DECLCALLBACK(OSStatus) coreAudioDevPropChgCb(AudioObjectID               
 {
     RT_NOREF(cAddresses, properties);
 
+#ifdef DEBUG
     PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)pvUser;
     AssertPtr(pDev);
 
     LogFlowFunc(("propertyID=%u, nAddresses=%u, pDev=%p\n", propertyID, cAddresses, pDev));
+#endif
 
     switch (propertyID)
     {
