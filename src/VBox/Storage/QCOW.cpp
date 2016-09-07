@@ -887,6 +887,45 @@ static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
     return rc;
 }
 
+/**
+ * Write the given table to image converting to the image endianess if required.
+ *
+ * @returns VBox status code.
+ * @param   pImage        The image instance data.
+ * @param   pIoCtx        The I/O context.
+ * @param   offTbl        The offset the table should be written to.
+ * @param   paTbl         The table to write.
+ * @param   pfnComplete   Callback called when the write completes.
+ * @param   pvUser        Opaque user data to pass in the completion callback.
+ */
+static int qcowTblWrite(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, uint64_t offTbl, uint64_t *paTbl,
+                        size_t cbTbl, unsigned cTblEntries,
+                        PFNVDXFERCOMPLETED pfnComplete, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+
+#if defined(RT_LITTLE_ENDIAN)
+    uint64_t *paTblImg = (uint64_t *)RTMemAllocZ(cbTbl);
+    if (paTblImg)
+    {
+        qcowTableConvertFromHostEndianess(paTblImg, paTbl, cTblEntries);
+        rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                    offTbl, paTblImg, cbTbl,
+                                    pIoCtx, pfnComplete, pvUser);
+        RTMemFree(paTblImg);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+#else
+    /* Write table directly. */
+    RT_NOREF(cTblEntries);
+    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                offTbl, paTbl, cbTbl, pIoCtx,
+                                pfnComplete, pvUser);
+#endif
+
+    return rc;
+}
 
 /**
  * Internal. Flush image data to disk.
@@ -950,25 +989,8 @@ static int qcowFlushImageAsync(PQCOWIMAGE pImage, PVDIOCTX pIoCtx)
     {
         QCowHeader Header;
 
-#if defined(RT_LITTLE_ENDIAN)
-        uint64_t *paL1TblImg = (uint64_t *)RTMemAllocZ(pImage->cbL1Table);
-        if (paL1TblImg)
-        {
-            qcowTableConvertFromHostEndianess(paL1TblImg, pImage->paL1Table,
-                                             pImage->cL1TableEntries);
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->offL1Table, paL1TblImg,
-                                        pImage->cbL1Table, pIoCtx, NULL, NULL);
-            RTMemFree(paL1TblImg);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-#else
-        /* Write L1 table directly. */
-        rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                    pImage->offL1Table, pImage->paL1Table,
-                                    pImage->cbL1Table, pIoCtx, NULL, NULL);
-#endif
+        rc = qcowTblWrite(pImage, pIoCtx, pImage->offL1Table, pImage->paL1Table,
+                          pImage->cbL1Table, pImage->cL1TableEntries, NULL, NULL);
         if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             /* Write header. */
@@ -1380,7 +1402,10 @@ static int qcowAsyncClusterAllocRollback(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, PQC
         case QCOWCLUSTERASYNCALLOCSTATE_L2_ALLOC:
         case QCOWCLUSTERASYNCALLOCSTATE_L2_LINK:
         {
-            /* Assumption right now is that the L1 table is not modified if the link fails. */
+            /* Revert the L1 table entry */
+            pImage->paL1Table[pClusterAlloc->idxL1] = 0;
+
+            /* Assumption right now is that the L1 table is not modified on storage if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->offNextClusterOld);
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             qcowL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
@@ -1390,6 +1415,7 @@ static int qcowAsyncClusterAllocRollback(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, PQC
         case QCOWCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Assumption right now is that the L2 table is not modified if the link fails. */
+            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = 0;
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->offNextClusterOld);
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             break;
@@ -1427,14 +1453,14 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
     {
         case QCOWCLUSTERASYNCALLOCSTATE_L2_ALLOC:
         {
-            uint64_t offUpdateLe = RT_H2BE_U64(pClusterAlloc->pL2Entry->offL2Tbl);
+            /* Update the link in the in memory L1 table now. */
+            pImage->paL1Table[pClusterAlloc->idxL1] = pClusterAlloc->pL2Entry->offL2Tbl;
 
             /* Update the link in the on disk L1 table now. */
             pClusterAlloc->enmAllocState = QCOWCLUSTERASYNCALLOCSTATE_L2_LINK;
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
-                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                        qcowAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = qcowTblWrite(pImage, pIoCtx, pImage->offL1Table, pImage->paL1Table,
+                              pImage->cbL1Table, pImage->cL1TableEntries,
+                              qcowAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1450,8 +1476,6 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
             /* L2 link updated in L1 , save L2 entry in cache and allocate new user data cluster. */
             uint64_t offData = qcowClusterAllocate(pImage, 1);
 
-            /* Update the link in the in memory L1 table now. */
-            pImage->paL1Table[pClusterAlloc->idxL1] = pClusterAlloc->pL2Entry->offL2Tbl;
             qcowL2TblCacheEntryInsert(pImage, pClusterAlloc->pL2Entry);
 
             pClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC;
@@ -1473,15 +1497,14 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
         }
         case QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC:
         {
-            uint64_t offUpdateLe = RT_H2BE_U64(pClusterAlloc->offClusterNew);
-
             pClusterAlloc->enmAllocState = QCOWCLUSTERASYNCALLOCSTATE_USER_LINK;
+            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = pClusterAlloc->offClusterNew;
 
             /* Link L2 table and update it. */
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
-                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                        qcowAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = qcowTblWrite(pImage, pIoCtx, pImage->paL1Table[pClusterAlloc->idxL1],
+                              pClusterAlloc->pL2Entry->paL2Tbl,
+                              pImage->cbL2Table, pImage->cL2TableEntries,
+                              qcowAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1494,7 +1517,6 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
         case QCOWCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Everything done without errors, signal completion. */
-            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = pClusterAlloc->offClusterNew;
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry);
             RTMemFree(pClusterAlloc);
             rc = VINF_SUCCESS;

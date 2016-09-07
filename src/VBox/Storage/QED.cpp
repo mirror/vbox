@@ -565,60 +565,6 @@ static void qedL2TblCacheEntryInsert(PQEDIMAGE pImage, PQEDL2CACHEENTRY pL2Entry
     }
 }
 
-#if 0 /* unused */
-/**
- * Fetches the L2 from the given offset trying the LRU cache first and
- * reading it from the image after a cache miss.
- *
- * @returns VBox status code.
- * @param   pImage    Image instance data.
- * @param   offL2Tbl  The offset of the L2 table in the image.
- * @param   ppL2Entry Where to store the L2 table on success.
- */
-static int qedL2TblCacheFetch(PQEDIMAGE pImage, uint64_t offL2Tbl, PQEDL2CACHEENTRY *ppL2Entry)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pImage=%#p offL2Tbl=%llu ppL2Entry=%#p\n", pImage, offL2Tbl, ppL2Entry));
-
-    /* Try to fetch the L2 table from the cache first. */
-    PQEDL2CACHEENTRY pL2Entry = qedL2TblCacheRetain(pImage, offL2Tbl);
-    if (!pL2Entry)
-    {
-        LogFlowFunc(("Reading L2 table from image\n"));
-        pL2Entry = qedL2TblCacheEntryAlloc(pImage);
-
-        if (pL2Entry)
-        {
-            /* Read from the image. */
-            pL2Entry->offL2Tbl = offL2Tbl;
-            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, offL2Tbl,
-                                       pL2Entry->paL2Tbl, pImage->cbTable);
-            if (RT_SUCCESS(rc))
-            {
-#if defined(RT_BIG_ENDIAN)
-                qedTableConvertToHostEndianess(pL2Entry->paL2Tbl, pImage->cTableEntries);
-#endif
-                qedL2TblCacheEntryInsert(pImage, pL2Entry);
-            }
-            else
-            {
-                qedL2TblCacheEntryRelease(pL2Entry);
-                qedL2TblCacheEntryFree(pImage, pL2Entry);
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-        *ppL2Entry = pL2Entry;
-
-    LogFlowFunc(("returns rc=%Rrc\n", rc));
-    return rc;
-}
-#endif
-
 /**
  * Fetches the L2 from the given offset trying the LRU cache first and
  * reading it from the image after a cache miss - version for async I/O.
@@ -821,6 +767,44 @@ static int qedConvertToImageOffset(PQEDIMAGE pImage, PVDIOCTX pIoCtx,
     return rc;
 }
 
+/**
+ * Write the given table to image converting to the image endianess if required.
+ *
+ * @returns VBox status code.
+ * @param   pImage        The image instance data.
+ * @param   pIoCtx        The I/O context.
+ * @param   offTbl        The offset the table should be written to.
+ * @param   paTbl         The table to write.
+ * @param   pfnComplete   Callback called when the write completes.
+ * @param   pvUser        Opaque user data to pass in the completion callback.
+ */
+static int qedTblWrite(PQEDIMAGE pImage, PVDIOCTX pIoCtx, uint64_t offTbl, uint64_t *paTbl,
+                       PFNVDXFERCOMPLETED pfnComplete, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+
+#if defined(RT_BIG_ENDIAN)
+    uint64_t *paTblImg = (uint64_t *)RTMemAllocZ(pImage->cbTable);
+    if (paTblImg)
+    {
+        qedTableConvertFromHostEndianess(paTblImg, paTbl,
+                                         pImage->cTableEntries);
+        rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                    offTbl, paTblImg, pImage->cbTable,
+                                    pIoCtx, pfnComplete, pvUser);
+        RTMemFree(paTblImg);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+#else
+    /* Write table directly. */
+    rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
+                                offTbl, paTbl, pImage->cbTable, pIoCtx,
+                                pfnComplete, pvUser);
+#endif
+
+    return rc;
+}
 
 /**
  * Internal. Flush image data to disk.
@@ -884,25 +868,8 @@ static int qedFlushImageAsync(PQEDIMAGE pImage, PVDIOCTX pIoCtx)
         QedHeader Header;
 
         Assert(!(pImage->cbTable % pImage->cbCluster));
-#if defined(RT_BIG_ENDIAN)
-        uint64_t *paL1TblImg = (uint64_t *)RTMemAllocZ(pImage->cbTable);
-        if (paL1TblImg)
-        {
-            qedTableConvertFromHostEndianess(paL1TblImg, pImage->paL1Table,
-                                             pImage->cTableEntries);
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->offL1Table, paL1TblImg,
-                                        pImage->cbTable, pIoCtx, NULL, NULL);
-            RTMemFree(paL1TblImg);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-#else
-        /* Write L1 table directly. */
-        rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                    pImage->offL1Table, pImage->paL1Table,
-                                    pImage->cbTable, pIoCtx, NULL, NULL);
-#endif
+        rc = qedTblWrite(pImage, pIoCtx, pImage->offL1Table, pImage->paL1Table,
+                         NULL, NULL);
         if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         {
             /* Write header. */
@@ -1413,7 +1380,10 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
         case QEDCLUSTERASYNCALLOCSTATE_L2_ALLOC:
         case QEDCLUSTERASYNCALLOCSTATE_L2_LINK:
         {
-            /* Assumption right now is that the L1 table is not modified if the link fails. */
+            /* Revert the L1 table entry */
+            pImage->paL1Table[pClusterAlloc->idxL1] = 0;
+
+            /* Assumption right now is that the L1 table is not modified on storage if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             qedL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
@@ -1423,6 +1393,7 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
         case QEDCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Assumption right now is that the L2 table is not modified if the link fails. */
+            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = 0;
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
             break;
@@ -1460,14 +1431,13 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
     {
         case QEDCLUSTERASYNCALLOCSTATE_L2_ALLOC:
         {
-            uint64_t offUpdateLe = RT_H2LE_U64(pClusterAlloc->pL2Entry->offL2Tbl);
+            /* Update the link in the in memory L1 table now. */
+            pImage->paL1Table[pClusterAlloc->idxL1] = pClusterAlloc->pL2Entry->offL2Tbl;
 
             /* Update the link in the on disk L1 table now. */
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_L2_LINK;
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->offL1Table + pClusterAlloc->idxL1*sizeof(uint64_t),
-                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                        qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = qedTblWrite(pImage, pIoCtx, pImage->offL1Table, pImage->paL1Table,
+                             qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1483,8 +1453,6 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             /* L2 link updated in L1 , save L2 entry in cache and allocate new user data cluster. */
             uint64_t offData = qedClusterAllocate(pImage, 1);
 
-            /* Update the link in the in memory L1 table now. */
-            pImage->paL1Table[pClusterAlloc->idxL1] = pClusterAlloc->pL2Entry->offL2Tbl;
             qedL2TblCacheEntryInsert(pImage, pClusterAlloc->pL2Entry);
 
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC;
@@ -1506,15 +1474,13 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
         }
         case QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC:
         {
-            uint64_t offUpdateLe = RT_H2LE_U64(pClusterAlloc->offClusterNew);
-
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_LINK;
+            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = pClusterAlloc->offClusterNew;
 
             /* Link L2 table and update it. */
-            rc = vdIfIoIntFileWriteMeta(pImage->pIfIo, pImage->pStorage,
-                                        pImage->paL1Table[pClusterAlloc->idxL1] + pClusterAlloc->idxL2*sizeof(uint64_t),
-                                        &offUpdateLe, sizeof(uint64_t), pIoCtx,
-                                        qedAsyncClusterAllocUpdate, pClusterAlloc);
+            rc = qedTblWrite(pImage, pIoCtx, pImage->paL1Table[pClusterAlloc->idxL1],
+                             pClusterAlloc->pL2Entry->paL2Tbl,
+                             qedAsyncClusterAllocUpdate, pClusterAlloc);
             if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
             else if (RT_FAILURE(rc))
@@ -1527,7 +1493,6 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
         case QEDCLUSTERASYNCALLOCSTATE_USER_LINK:
         {
             /* Everything done without errors, signal completion. */
-            pClusterAlloc->pL2Entry->paL2Tbl[pClusterAlloc->idxL2] = pClusterAlloc->offClusterNew;
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry);
             RTMemFree(pClusterAlloc);
             rc = VINF_SUCCESS;
