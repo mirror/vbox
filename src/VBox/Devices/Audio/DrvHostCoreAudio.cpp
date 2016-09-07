@@ -2535,7 +2535,7 @@ static DECLCALLBACK(OSStatus) coreAudioDevPropChgCb(AudioObjectID               
                                                     const AudioObjectPropertyAddress  properties[],
                                                     void                             *pvUser)
 {
-    RT_NOREF(cAddresses, properties);
+    RT_NOREF(cAddresses, properties, pvUser);
 
 #ifdef DEBUG
     PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)pvUser;
