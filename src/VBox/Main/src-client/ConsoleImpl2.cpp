@@ -2339,6 +2339,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "NamespacesMax", cPorts);
 
+                    /* For ICH9 we need to create a new PCI bridge if there is more than one NVMe instance. */
+                    if (   ulInstance > 0
+                        && chipsetType == ChipsetType_ICH9
+                        && !pBusMgr->hasPCIDevice("ich9pcibridge", 2))
+                    {
+                        PCFGMNODE pBridges = CFGMR3GetChild(pDevices, "ich9pcibridge");
+                        Assert(pBridges);
+
+                        InsertConfigNode(pBridges, "2", &pInst);
+                        InsertConfigInteger(pInst, "Trusted",              1);
+                        hrc = pBusMgr->assignPCIDevice("ich9pcibridge", pInst);
+                    }
+
                     /* Attach the status driver */
                     AssertRelease(cPorts <= cLedSata);
                     i_attachStatusDriver(pCtlInst, &mapStorageLeds[iLedNvme], 0, cPorts - 1,

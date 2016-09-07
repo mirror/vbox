@@ -166,13 +166,6 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"lsilogicsas",   1, 29, 0,   0},
     {"lsilogicsas",   1, 30, 0,   0},
     {"lsilogicsas",   1, 31, 0,   0},
-    {"nvme",          1, 32, 0,   0},
-    {"nvme",          1, 33, 0,   0},
-    {"nvme",          1, 34, 0,   0},
-    {"nvme",          1, 35, 0,   0},
-    {"nvme",          1, 36, 0,   0},
-    {"nvme",          1, 37, 0,   0},
-    {"nvme",          1, 38, 0,   0},
 
     /* NICs */
     {"nic",           2,  0, 0,   0},
@@ -203,6 +196,15 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"nic",           2, 29, 0,   0},
     {"nic",           2, 30, 0,   0},
     {"nic",           2, 31, 0,   0},
+
+    /* Storage controller #2 (NVMe) */
+    {"nvme",          3,  0, 0,   0},
+    {"nvme",          3,  1, 0,   0},
+    {"nvme",          3,  2, 0,   0},
+    {"nvme",          3,  3, 0,   0},
+    {"nvme",          3,  4, 0,   0},
+    {"nvme",          3,  5, 0,   0},
+    {"nvme",          3,  6, 0,   0},
 
     { NULL,          -1, -1, -1,  0}
 };
