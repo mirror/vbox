@@ -189,6 +189,12 @@ endef
 # Tools Tools Tools
 #
 
+ifdef VBOX_USE_KSUBMIT
+ VBOX_BS3KIT_KSUBMIT_OBJ_CONV := kmk_builtin_kSubmit --
+else
+ VBOX_BS3KIT_KSUBMIT_OBJ_CONV :=
+endif
+
 # Dummy CP "linker" tool.
 TOOL_VBoxBsCpLd = Dummy copy linker.
 TOOL_VBoxBsCpLd_LINK_MISCBIN_OUTPUT =
@@ -233,28 +239,17 @@ ifdef TOOL_VBoxNasm_USE_KSUBMIT
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
+               -MD "$(dep)" -MP\
 		$(abspath $(source))
-	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)kmk_builtin_kSubmit -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
-		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
-		-l $(outbase).lst\
-		-o $(obj)\
-		$(abspath $(source)) \
-		-MF "$(dep)" -MP
 else
 	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -- $(TOOL_VBoxNasm_AS)\
 		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
 		-l $(outbase).lst\
 		-o $(obj)\
+               -MD "$(dep)" -MP\
 		$(abspath $(source))
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)$(REDIRECT) -C $(PATH_OUT_BASE) -wo $(dep) -- $(TOOL_VBoxNasm_AS)\
-		$(flags) $(addsuffix /,$(addprefix -i, $(incs))) $(addprefix -D, $(defs))\
-		-l $(outbase).lst\
-		-o $(obj)\
-		$(abspath $(source)) \
-		-MF "$(dep)" -MP
 endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
 # Dropped by the time 2.12 rc7 got out. Just struggling rebuilding nasm.
@@ -296,11 +291,7 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
@@ -336,11 +327,7 @@ define TOOL_Bs3Gcc64Elf64_COMPILE_CXX_CMDS
 		-Wp,-MD,$(dep) -Wp,-MT,$(obj) -Wp,-MP\
 		-o $(obj)\
 		$(abspath $(source))
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(APPEND) -n "$(dep)" "" "$(source):" ""
 endef
 
@@ -364,11 +351,7 @@ TOOL_Bs3Vcc64_COMPILE_C_OUTPUT         = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_OUTPUT_MAYBE) $(obj).orignal
 define TOOL_Bs3Vcc64_COMPILE_C_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_C_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
 TOOL_Bs3Vcc64_C64OBJSUFF               = $(TOOL_Bs3Vcc64_COBJSUFF)
@@ -401,11 +384,7 @@ TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT       = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPI
 TOOL_Bs3Vcc64_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_OUTPUT_MAYBE) $(obj).orignal
 define TOOL_Bs3Vcc64_COMPILE_CXX_CMDS
 $(TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_COMPILE_CXX_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
 #
@@ -434,11 +413,7 @@ TOOL_Bs3Ow32_COMPILE_C_OUTPUT         = $(TOOL_OPENWATCOM_COMPILE_C_OUTPUT)
 TOOL_Bs3Ow32_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_OPENWATCOM_COMPILE_C_OUTPUT_MAYBE) $(obj).orignal
 define TOOL_Bs3Ow32_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM_COMPILE_C_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
@@ -472,11 +447,7 @@ TOOL_Bs3Ow32_COMPILE_CXX_OUTPUT       = $(TOOL_OPENWATCOM_COMPILE_CXX_OUTPUT)
 TOOL_Bs3Ow32_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_OPENWATCOM_COMPILE_CXX_OUTPUT_MAYBE) $(obj).orignal
 define TOOL_Bs3Ow32_COMPILE_CXX_CMDS
 $(TOOL_OPENWATCOM_COMPILE_CXX_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
@@ -502,11 +473,7 @@ TOOL_Bs3Ow16_COMPILE_C_OUTPUT         = $(TOOL_OPENWATCOM-16_COMPILE_C_OUTPUT)
 TOOL_Bs3Ow16_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_OPENWATCOM-16_COMPILE_C_OUTPUT_MAYBE)
 define TOOL_Bs3Ow16_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM-16_COMPILE_C_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
@@ -540,11 +507,7 @@ TOOL_Bs3Ow16_COMPILE_CXX_OUTPUT       = $(TOOL_OPENWATCOM-16_COMPILE_CXX_OUTPUT)
 TOOL_Bs3Ow16_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_OPENWATCOM-16_COMPILE_CXX_OUTPUT_MAYBE)
 define TOOL_Bs3Ow16_COMPILE_CXX_CMDS
 $(TOOL_OPENWATCOM-16_COMPILE_CXX_CMDS)
-ifdef VBOX_USE_KSUBMIT
-	$(QUIET)kmk_builtin_kSubmit -- $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-else
-	$(QUIET)$(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-endif
+	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
