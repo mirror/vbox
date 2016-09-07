@@ -185,7 +185,7 @@ udev_rule_file=/etc/udev/rules.d/60-vboxdrv.rules
 sysfs_usb_devices="/sys/bus/usb/devices/*"
 
 ## Install udev rules and create device nodes for usb access
-install_device_node_setup() {
+setup_usb() {
     VBOXDRV_GRP="$1"      # The group that should own /dev/vboxdrv
     VBOXDRV_MODE="$2"     # The mode to be used for /dev/vboxdrv
     INSTALLATION_DIR="$3" # The directory VirtualBox is installed in
@@ -212,16 +212,19 @@ install_device_node_setup() {
     done
 }
 
+cleanup_usb()
+{
+    # Remove udev description file
+    rm -f /etc/udev/rules.d/60-vboxdrv.rules
+    rm -f /etc/udev/rules.d/10-vboxdrv.rules
+
+    # Remove our USB device tree
+    rm -rf /dev/vboxusb
+}
+
 start()
 {
     begin_msg "Starting VirtualBox services" console
-    # Create udev rule and USB device nodes.
-    ## todo Wouldn't it make more sense to install the rule to /lib/udev?  This
-    ## is not a user-created configuration file after all.
-    ## todo Do we need a udev rule to create /dev/vboxdrv[u] at all?  We have
-    ## working fall-back code here anyway, and the "right" code is more complex
-    ## than the fall-back.  Unnecessary duplication?
-    install_device_node_setup "$GROUP" "$DEVICE_MODE" "$INSTALL_DIR"
     if [ -d /proc/xen ]; then
         failure "Running VirtualBox in a Xen environment is not supported"
     fi
@@ -285,18 +288,7 @@ start()
 
 stop()
 {
-    if test ${#} -eq 0 || ! test "${1}" = "--keep-udev"; then
-        begin_msg "Stopping VirtualBox services" console
-
-        # Remove udev description file
-        rm -f /etc/udev/rules.d/60-vboxdrv.rules
-        rm -f /etc/udev/rules.d/10-vboxdrv.rules
-
-        # Remove our USB device tree
-        rm -rf /dev/vboxusb
-    else
-        begin_msg "Stopping VirtualBox services (keeping udev + usb)" console
-    fi
+    begin_msg "Stopping VirtualBox services" console
 
     if running vboxpci; then
         if ! rmmod vboxpci 2>/dev/null; then
@@ -470,19 +462,22 @@ stop)
 stop_vms)
     stop_vms
     ;;
-stop_keep_udev)
-    # This is used by src/VBox/HostDrivers/linux/load.sh.
-    stop_vms
-    stop --keep-udev
-    ;;
 restart)
     stop && start
     ;;
 setup)
+    # Create udev rule and USB device nodes.
+    ## todo Wouldn't it make more sense to install the rule to /lib/udev?  This
+    ## is not a user-created configuration file after all.
+    ## todo Do we need a udev rule to create /dev/vboxdrv[u] at all?  We have
+    ## working fall-back code here anyway, and the "right" code is more complex
+    ## than the fall-back.  Unnecessary duplication?
+    setup_usb "$GROUP" "$DEVICE_MODE" "$INSTALL_DIR"
     setup && start
     ;;
 cleanup)
     stop && cleanup
+    cleanup_usb
     ;;
 force-reload)
     stop

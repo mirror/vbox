@@ -32,7 +32,7 @@ if [ ${#} -ge 1 -a '(' "${1}" = "-h"  -o  "${1}" = "--help" ')' ]; then
 fi
 
 # Unload, but keep the udev rules.
-sudo "${MY_DIR}/vboxdrv.sh" stop_keep_udev
+sudo "${MY_DIR}/vboxdrv.sh" stop
 
 if [ -z "${OPT_UNLOAD_ONLY}" ]; then
     # Build and load.
