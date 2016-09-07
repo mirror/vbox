@@ -117,6 +117,8 @@ typedef struct DRVAUDIO
     /** Max. number of free output streams.
      *  UINT32_MAX for unlimited streams. */
     uint32_t                cStreamsFreeOut;
+    /** Flag indicating to perform an (re-)enumeration of the host audio devices. */
+    bool                    fEnumerateDevices;
     /** Audio configuration settings retrieved from the backend. */
     PDMAUDIOBACKENDCFG      BackendCfg;
 #ifdef VBOX_WITH_AUDIO_DEVICE_CALLBACKS
@@ -155,10 +157,15 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
 
 PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData);
 void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev);
+PPDMAUDIODEVICE DrvAudioHlpDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData);
 
 int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm);
 void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm);
 int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev);
+int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm, PDMAUDIODIR enmUsage);
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm);
+PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(PPDMAUDIODEVICEENUM pDevEnm);
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm);
 PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmDir);
 void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm);
 

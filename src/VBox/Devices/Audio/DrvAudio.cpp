@@ -40,6 +40,8 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
+static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum);
+
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
 static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
@@ -617,15 +619,19 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
  * @returns IPRT status code.
  * @param   pThis               Pointer to driver instance.
  */
-static int drvAudioScheduleReInit(PDRVAUDIO pThis)
+static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
     LogFunc(("\n"));
 
+    /* Mark all host streams to re-initialize. */
     PPDMAUDIOSTREAM pHstStream;
     RTListForEach(&pThis->lstHstStreams, pHstStream, PDMAUDIOSTREAM, Node)
         pHstStream->fStatus |= PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
+
+    /* Re-enumerate all host devices as soon as possible. */
+    pThis->fEnumerateDevices = true;
 
     return VINF_SUCCESS;
 }
@@ -647,6 +653,7 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
     LogFlowFunc(("[%s]\n", pStream->szName));
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
+    AssertPtr(pHstStream);
 
     /*
      * Gather current stream status.
@@ -672,8 +679,61 @@ static int drvAudioStreamReInitInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream
      */
     if (RT_SUCCESS(rc))
     {
+        PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
+
         if (fIsEnabled)
+        {
             rc = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_ENABLE);
+            if (RT_SUCCESS(rc))
+            {
+                if (pGstStream)
+                {
+                    /* Also reset the guest stream mixing buffer. */
+                    AudioMixBufReset(&pGstStream->MixBuf);
+                }
+            }
+        }
+
+#ifdef VBOX_WITH_STATISTICS
+        /*
+         * Reset statistics.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            if (pHstStream->enmDir == PDMAUDIODIR_IN)
+            {
+                STAM_COUNTER_RESET(&pHstStream->In.StatBytesElapsed);
+                STAM_COUNTER_RESET(&pHstStream->In.StatBytesTotalRead);
+                STAM_COUNTER_RESET(&pHstStream->In.StatSamplesCaptured);
+
+                if (pGstStream)
+                {
+                    Assert(pGstStream->enmDir == pHstStream->enmDir);
+
+                    STAM_COUNTER_RESET(&pGstStream->In.StatBytesElapsed);
+                    STAM_COUNTER_RESET(&pGstStream->In.StatBytesTotalRead);
+                    STAM_COUNTER_RESET(&pGstStream->In.StatSamplesCaptured);
+                }
+            }
+            else if (pHstStream->enmDir == PDMAUDIODIR_OUT)
+            {
+                STAM_COUNTER_RESET(&pHstStream->Out.StatBytesElapsed);
+                STAM_COUNTER_RESET(&pHstStream->Out.StatBytesTotalWritten);
+                STAM_COUNTER_RESET(&pHstStream->Out.StatSamplesPlayed);
+
+                if (pGstStream)
+                {
+                    Assert(pGstStream->enmDir == pHstStream->enmDir);
+
+                    STAM_COUNTER_RESET(&pGstStream->Out.StatBytesElapsed);
+                    STAM_COUNTER_RESET(&pGstStream->Out.StatBytesTotalWritten);
+                    STAM_COUNTER_RESET(&pGstStream->Out.StatSamplesPlayed);
+                }
+            }
+            else
+                AssertFailed();
+        }
+#endif
     }
 
     if (RT_FAILURE(rc))
@@ -857,6 +917,26 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
     int rc;
 
+    /* Is the stream scheduled for re-initialization? Do so now. */
+    if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
+    {
+        if (pThis->fEnumerateDevices)
+        {
+            /* Re-enumerate all host devices. */
+            drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+
+            pThis->fEnumerateDevices = false;
+        }
+
+        /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
+         * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
+        pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
+
+        rc = drvAudioStreamReInitInternal(pThis, pStream);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     /* Whether to try closing a pending to close stream. */
     bool fTryClosePending = false;
 
@@ -1020,18 +1100,6 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                                    pStream->szName, pStream->cRefs, pStream->fStatus, pStream->enmCtx),
                                   rc = VERR_NOT_AVAILABLE);
 
-        /* Is the stream scheduled for re-initialization? Do so now. */
-        if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
-        {
-            /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
-             * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
-            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
-
-            rc = drvAudioStreamReInitInternal(pThis, pStream);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
         AssertPtr(pThis->pHostDrvAudio->pfnStreamGetStatus);
         PDMAUDIOSTRMSTS strmSts = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pHstStream);
 
@@ -1130,18 +1198,6 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
                                   ("%s: Guest stream is NULL (cRefs=%RU32, fStatus=%x, enmCtx=%ld)\n",
                                    pStream->szName, pStream->cRefs, pStream->fStatus, pStream->enmCtx),
                                   rc = VERR_NOT_AVAILABLE);
-
-        /* Is the stream scheduled for re-initialization? Do so now. */
-        if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
-        {
-            /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
-             * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
-            pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
-
-            rc = drvAudioStreamReInitInternal(pThis, pStream);
-            if (RT_FAILURE(rc))
-                break;
-        }
 
         AssertPtr(pThis->pHostDrvAudio->pfnStreamGetStatus);
         PDMAUDIOSTRMSTS strmSts = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pHstStream);
@@ -1339,7 +1395,7 @@ static DECLCALLBACK(int) drvAudioCallback(PPDMIAUDIOCONNECTOR pInterface, PDMAUD
  *
  * Important: No calls back to the backend within this function, as the backend
  *            might hold any locks / critical sections while executing this callback.
- *            Will result in some ugly deadlocks then.
+ *            Will result in some ugly deadlocks (or at least locking order violations) then.
  *
  * @copydoc FNPDMHOSTAUDIOCALLBACK
  */
@@ -1365,7 +1421,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
     {
         case PDMAUDIOCBTYPE_DEVICES_CHANGED:
             LogRel(("Audio: Host audio device configuration has changed\n"));
-            rc = drvAudioScheduleReInit(pThis);
+            rc = drvAudioScheduleReInitInternal(pThis);
             break;
 
         default:
@@ -1381,6 +1437,74 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
     return rc;
 }
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
+
+/**
+ * Enumerates all host audio devices.
+ * This functionality might not be implemented by all backends and will return VERR_NOT_SUPPORTED
+ * if not being supported.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance to be called.
+ * @param   fLog                Whether to print the enumerated device to the release log or not.
+ * @param   pDevEnum            Where to store the device enumeration.
+ */
+static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum)
+{
+    int rc;
+
+    /*
+     * If the backend supports it, do a device enumeration.
+     */
+    if (pThis->pHostDrvAudio->pfnGetDevices)
+    {
+        PDMAUDIODEVICEENUM DevEnum;
+        rc = pThis->pHostDrvAudio->pfnGetDevices(pThis->pHostDrvAudio, &DevEnum);
+        if (RT_SUCCESS(rc))
+        {
+            if (fLog)
+                LogRel(("Audio: Found %RU16 devices\n", DevEnum.cDevices));
+
+            PPDMAUDIODEVICE pDev;
+            RTListForEach(&DevEnum.lstDevices, pDev, PDMAUDIODEVICE, Node)
+            {
+                if (fLog)
+                {
+                    char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
+
+                    LogRel(("Audio: Device '%s':\n", pDev->szName));
+                    LogRel(("Audio: \tUsage           = %s\n",   DrvAudioHlpAudDirToStr(pDev->enmUsage)));
+                    LogRel(("Audio: \tFlags           = %s\n",   pszFlags ? pszFlags : "<NONE>"));
+                    LogRel(("Audio: \tInput channels  = %RU8\n", pDev->cMaxInputChannels));
+                    LogRel(("Audio: \tOutput channels = %RU8\n", pDev->cMaxOutputChannels));
+
+                    if (pszFlags)
+                        RTStrFree(pszFlags);
+                }
+            }
+
+            if (pDevEnum)
+                rc = DrvAudioHlpDeviceEnumCopy(pDevEnum, &DevEnum);
+
+            DrvAudioHlpDeviceEnumFree(&DevEnum);
+        }
+        else
+        {
+            if (fLog)
+                LogRel(("Audio: Device enumeration failed with %Rrc\n", rc));
+            /* Not fatal. */
+        }
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+
+        if (fLog)
+            LogRel3(("Audio: Host audio backend does not support audio device enumeration, skipping\n"));
+    }
+
+    LogFunc(("Returning %Rrc\n", rc));
+    return rc;
+}
 
 /**
  * Initializes the host backend and queries its initial configuration.
@@ -1430,49 +1554,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
              /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
              RT_MIN(64, pThis->cStreamsFreeIn), RT_MIN(64, pThis->cStreamsFreeOut)));
 
-    /*
-     * If the backend supports it, do a device enumeration.
-     */
-    bool fLog = true;
-
-    if (pThis->pHostDrvAudio->pfnGetDevices)
-    {
-        PDMAUDIODEVICEENUM DevEnum;
-        int rc2 = pThis->pHostDrvAudio->pfnGetDevices(pThis->pHostDrvAudio, &DevEnum);
-        if (RT_SUCCESS(rc2))
-        {
-            if (fLog)
-                LogRel(("Audio: Found %RU16 devices\n", DevEnum.cDevices));
-
-            PPDMAUDIODEVICE pDev;
-            RTListForEach(&DevEnum.lstDevices, pDev, PDMAUDIODEVICE, Node)
-            {
-                if (fLog)
-                {
-                    char *pszFlags = DrvAudioHlpAudDevFlagsToStrA(pDev->fFlags);
-
-                    LogRel(("Audio: Device '%s':\n", pDev->szName));
-                    LogRel(("Audio: \tUsage           = %s\n",   DrvAudioHlpAudDirToStr(pDev->enmUsage)));
-                    LogRel(("Audio: \tFlags           = %s\n",   pszFlags ? pszFlags : "<NONE>"));
-                    LogRel(("Audio: \tInput channels  = %RU8\n", pDev->cMaxInputChannels));
-                    LogRel(("Audio: \tOutput channels = %RU8\n", pDev->cMaxOutputChannels));
-
-                    if (pszFlags)
-                        RTStrFree(pszFlags);
-                }
-            }
-
-            DrvAudioHlpDeviceEnumFree(&DevEnum);
-        }
-        else
-        {
-            if (fLog)
-                LogRel(("Audio: Device enumeration failed with %Rrc\n", rc2));
-            /* Not fatal. */
-        }
-    }
-    else if (fLog)
-        LogRel2(("Audio: Selected host audio backend does not support audio device enumeration\n"));
+    int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+    /* Ignore rc. */
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
@@ -1480,7 +1563,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
      */
     if (pThis->pHostDrvAudio->pfnSetCallback)
     {
-        int rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
+        rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
         if (RT_FAILURE(rc2))
              LogRel(("Audio: Error registering backend callback, rc=%Rrc\n", rc2));
         /* Not fatal. */

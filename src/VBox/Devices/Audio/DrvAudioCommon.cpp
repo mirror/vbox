@@ -220,7 +220,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData)
 
     if (cbData)
     {
-        pDev->pvData = RTMemAlloc(cbData);
+        pDev->pvData = RTMemAllocZ(cbData);
         if (!pDev->pvData)
         {
             RTMemFree(pDev);
@@ -253,9 +253,42 @@ void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev)
         Assert(pDev->cbData);
 
         RTMemFree(pDev->pvData);
+        pDev->pvData = NULL;
     }
 
     RTMemFree(pDev);
+    pDev = NULL;
+}
+
+/**
+ * Duplicates an audio device entry.
+ *
+ * @returns Duplicated audio device entry on success, or NULL on failure.
+ * @param   pDev                Audio device entry to duplicate.
+ * @param   fCopyUserData       Whether to also copy the user data portion or not.
+ */
+PPDMAUDIODEVICE DrvAudioHlpDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
+{
+    AssertPtrReturn(pDev, NULL);
+
+    PPDMAUDIODEVICE pDevDup = DrvAudioHlpDeviceAlloc(fCopyUserData ? pDev->cbData : 0);
+    if (pDevDup)
+    {
+        memcpy(pDevDup, pDev, sizeof(PDMAUDIODEVICE));
+
+        if (   fCopyUserData
+            && pDevDup->cbData)
+        {
+            memcpy(pDevDup->pvData, pDev->pvData, pDevDup->cbData);
+        }
+        else
+        {
+            pDevDup->cbData = 0;
+            pDevDup->pvData = NULL;
+        }
+    }
+
+    return pDevDup;
 }
 
 /**
@@ -304,7 +337,7 @@ void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm)
  *
  * @return IPRT status code.
  * @param  pDevEnm              Device enumeration to add device to.
- * @param  pDev                 Device to add.
+ * @param  pDev                 Device to add. The pointer will be owned by the device enumeration  then.
  */
 int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
 {
@@ -315,6 +348,107 @@ int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
     pDevEnm->cDevices++;
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Duplicates a device enumeration.
+ *
+ * @returns Duplicated device enumeration, or NULL on failure.
+ *          Must be free'd with DrvAudioHlpDeviceEnumFree().
+ * @param   pDevEnm             Device enumeration to duplicate.
+ */
+PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(PPDMAUDIODEVICEENUM pDevEnm)
+{
+    AssertPtrReturn(pDevEnm, NULL);
+
+    PPDMAUDIODEVICEENUM pDevEnmDup = (PPDMAUDIODEVICEENUM)RTMemAlloc(sizeof(PDMAUDIODEVICEENUM));
+    if (!pDevEnmDup)
+        return NULL;
+
+    int rc2 = DrvAudioHlpDeviceEnumInit(pDevEnmDup);
+    AssertRC(rc2);
+
+    PPDMAUDIODEVICE pDev;
+    RTListForEach(&pDevEnm->lstDevices, pDev, PDMAUDIODEVICE, Node)
+    {
+        PPDMAUDIODEVICE pDevDup = DrvAudioHlpDeviceDup(pDev, true /* fCopyUserData */);
+        if (!pDevDup)
+        {
+            rc2 = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc2 = DrvAudioHlpDeviceEnumAdd(pDevEnmDup, pDevDup);
+        if (RT_FAILURE(rc2))
+        {
+            DrvAudioHlpDeviceFree(pDevDup);
+            break;
+        }
+    }
+
+    if (RT_FAILURE(rc2))
+    {
+        DrvAudioHlpDeviceEnumFree(pDevEnmDup);
+        pDevEnmDup = NULL;
+    }
+
+    return pDevEnmDup;
+}
+
+/**
+ * Copies device enumeration entries from the source to the destination enumeration.
+ *
+ * @returns IPRT status code.
+ * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
+ * @param   pSrcDevEnm          Source enumeration to use.
+ * @param   enmUsage            Which entries to copy. Specify PDMAUDIODIR_ANY to copy all entries.
+ * @param   fCopyUserData       Whether to also copy the user data portion or not.
+ */
+int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm,
+                                PDMAUDIODIR enmUsage, bool fCopyUserData)
+{
+    AssertPtrReturn(pDstDevEnm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrcDevEnm, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    PPDMAUDIODEVICE pSrcDev;
+    RTListForEach(&pSrcDevEnm->lstDevices, pSrcDev, PDMAUDIODEVICE, Node)
+    {
+        if (   enmUsage != PDMAUDIODIR_ANY
+            && enmUsage != pSrcDev->enmUsage)
+        {
+            continue;
+        }
+
+        PPDMAUDIODEVICE pDstDev = DrvAudioHlpDeviceDup(pSrcDev, fCopyUserData);
+        if (!pDstDev)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = DrvAudioHlpDeviceEnumAdd(pDstDevEnm, pDstDev);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    return rc;
+}
+
+/**
+ * Copies all device enumeration entries from the source to the destination enumeration.
+ *
+ * Note: Does *not* copy the user-specific data assigned to a device enumeration entry.
+ *       To do so, use DrvAudioHlpDeviceEnumCopyEx().
+ *
+ * @returns IPRT status code.
+ * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
+ * @param   pSrcDevEnm          Source enumeration to use.
+ */
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm)
+{
+    return DrvAudioHlpDeviceEnumCopyEx(pDstDevEnm, pSrcDevEnm, PDMAUDIODIR_ANY, false /* fCopyUserData */);
 }
 
 /**
