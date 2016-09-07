@@ -105,7 +105,8 @@ static void bufferFromPath(void *pvDest, size_t cb, const char *pcszSrc)
 
 #define ARRAY_FROM_PATH(a, b) \
     do { \
-        Assert((a) == (a)); /* Constant parameter */ \
+        void *p=(a); \
+        Assert((a) == p); /* Constant parameter */ \
         Assert(sizeof((a)) > 0); \
         bufferFromPath(a, sizeof(a), b); \
     } while (0)
