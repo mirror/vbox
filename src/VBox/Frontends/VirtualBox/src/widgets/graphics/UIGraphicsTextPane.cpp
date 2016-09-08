@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleObject>
 # include <QPainter>
 # include <QTextLayout>
 # include <QApplication>
@@ -30,7 +31,86 @@
 # include "UIGraphicsTextPane.h"
 # include "UIRichTextString.h"
 
+/* Other VBox includes: */
+# include <iprt/assert.h>
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** QAccessibleObject extension used as an accessibility interface for UITextTableLine. */
+class UIAccessibilityInterfaceForUITextTableLine : public QAccessibleObject
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating Details-view accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UITextTableLine"))
+            return new UIAccessibilityInterfaceForUITextTableLine(pObject);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pObject to the base-class. */
+    UIAccessibilityInterfaceForUITextTableLine(QObject *pObject)
+        : QAccessibleObject(pObject)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */
+    {
+        /* Make sure line still alive: */
+        AssertPtrReturn(line(), 0);
+
+        /* Return the parent: */
+        return QAccessible::queryAccessibleInterface(line()->parent());
+    }
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */ { return 0; }
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int /* iIndex */) const /* override */ { return 0; }
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const /* override */ { return -1; }
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */
+    {
+        /* Make sure parent still alive: */
+        AssertPtrReturn(parent(), QRect());
+
+        /* Return the parent's rect for now: */
+        // TODO: Return sub-rect.
+        return parent()->rect();
+    }
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */
+    {
+        /* Make sure line still alive: */
+        AssertPtrReturn(line(), QString());
+
+        /* Return the description: */
+        if (enmTextRole == QAccessible::Description)
+            return UIGraphicsTextPane::tr("%1: %2", "'key: value', like 'Name: MyVM'").arg(line()->string1(), line()->string2());
+
+        /* Null-string by default: */
+        return QString();
+    }
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */ { return QAccessible::StaticText; }
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */ { return QAccessible::State(); }
+
+private:
+
+    /** Returns corresponding text-table line. */
+    UITextTableLine *line() const { return qobject_cast<UITextTableLine*>(object()); }
+};
+
 
 UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *pPaintDevice)
     : QIGraphicsWidget(pParent)
@@ -43,6 +123,9 @@ UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *
     , m_iMinimumTextHeight(0)
     , m_fAnchorCanBeHovered(true)
 {
+    /* Install text-table line accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUITextTableLine::pFactory);
+
     /* We do support hover-events: */
     setAcceptHoverEvents(true);
 }
@@ -70,7 +153,7 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
         if (!strRightLine.isEmpty())
         {
             /* Take both lines 'as is': */
-            m_text << UITextTableLine(strLeftLine, strRightLine, parent());
+            m_text << UITextTableLine(strLeftLine, strRightLine, parentWidget());
         }
         /* If 2nd line is empty: */
         else
@@ -78,7 +161,7 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
             /* Parse the 1st one to sub-lines: */
             QStringList subLines = strLeftLine.split(QRegExp("\\n"));
             foreach (const QString &strSubLine, subLines)
-                m_text << UITextTableLine(strSubLine, QString(), parent());
+                m_text << UITextTableLine(strSubLine, QString(), parentWidget());
         }
     }
 
