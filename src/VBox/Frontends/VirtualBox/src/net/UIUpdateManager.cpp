@@ -419,7 +419,25 @@ private slots:
             UIGlobalSettingsExtension::doInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
         /* Propose to delete the downloaded extension pack: */
         if (msgCenter().proposeDeleteExtentionPack(QDir::toNativeSeparators(strTarget)))
+        {
+            /* Delete the downloaded extension pack: */
             QFile::remove(QDir::toNativeSeparators(strTarget));
+            /* Get the list of old extension pack files in VirtualBox homefolder: */
+            const QStringList strOldExtPackFiles = QDir(vboxGlobal().homeFolder()).entryList(QStringList("*.vbox-extpack"),
+                                                                                             QDir::Files);
+            /* Propose to delete old extension pack files if there are any: */
+            if (strOldExtPackFiles.count())
+            {
+                if (msgCenter().proposeDeleteOldExtentionPacks(strOldExtPackFiles))
+                {
+                    foreach (const QString strExtPackFile, strOldExtPackFiles)
+                    {
+                        /* Delete the old extension pack file: */
+                        QFile::remove(QDir::toNativeSeparators(QDir(vboxGlobal().homeFolder()).filePath(strExtPackFile)));
+                    }
+                }
+            }
+        }
     }
 };
 

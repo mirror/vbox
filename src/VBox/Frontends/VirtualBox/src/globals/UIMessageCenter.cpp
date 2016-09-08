@@ -2257,6 +2257,15 @@ bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
                           0 /* auto-confirm id */,
                           tr("Delete", "extension pack"));
 }
+
+bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles) const
+{
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
+                          tr("Do you want to delete following list of files. <nobr><b>%1</b>.</nobr></p>")
+                             .arg(strFiles.join(",")),
+                          0 /* auto-confirm id */,
+                          tr("Delete", "extension pack"));
+}
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,
