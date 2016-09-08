@@ -123,7 +123,7 @@ g_kcMaxTestValuesPerTR  = 256;
 ## The max number of test result message per test result.
 g_kcMaxTestMsgsPerTR    = 4;
 ## The max test result nesting depth.
-g_kcMaxTestResultDepth  = 8;
+g_kcMaxTestResultDepth  = 10;
 
 ## The max length of a test result name.
 g_kcchMaxTestResultName = 64;
