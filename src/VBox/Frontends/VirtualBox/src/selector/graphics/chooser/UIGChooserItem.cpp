@@ -161,16 +161,28 @@ public:
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QAccessible::State());
 
-        /* Compose/return the state: */
+        /* Compose the state: */
         QAccessible::State state;
         state.focusable = true;
         state.selectable = true;
+
+        /* Compose the state of current item: */
         if (item() && item() == item()->model()->currentItem())
         {
             state.active = true;
             state.focused = true;
             state.selected = true;
         }
+
+        /* Compose the state of group: */
+        if (item()->type() == UIGChooserItemType_Group)
+        {
+            state.expandable = true;
+            if (!item()->toGroupItem()->isClosed())
+                state.expanded = true;
+        }
+
+        /* Return the state: */
         return state;
     }
 
