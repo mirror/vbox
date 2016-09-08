@@ -423,14 +423,14 @@ private slots:
             /* Delete the downloaded extension pack: */
             QFile::remove(QDir::toNativeSeparators(strTarget));
             /* Get the list of old extension pack files in VirtualBox homefolder: */
-            const QStringList strOldExtPackFiles = QDir(vboxGlobal().homeFolder()).entryList(QStringList("*.vbox-extpack"),
-                                                                                             QDir::Files);
+            const QStringList oldExtPackFiles = QDir(vboxGlobal().homeFolder()).entryList(QStringList("*.vbox-extpack"),
+                                                                                          QDir::Files);
             /* Propose to delete old extension pack files if there are any: */
-            if (strOldExtPackFiles.count())
+            if (oldExtPackFiles.size())
             {
-                if (msgCenter().proposeDeleteOldExtentionPacks(strOldExtPackFiles))
+                if (msgCenter().proposeDeleteOldExtentionPacks(oldExtPackFiles))
                 {
-                    foreach (const QString strExtPackFile, strOldExtPackFiles)
+                    foreach (const QString &strExtPackFile, oldExtPackFiles)
                     {
                         /* Delete the old extension pack file: */
                         QFile::remove(QDir::toNativeSeparators(QDir(vboxGlobal().homeFolder()).filePath(strExtPackFile)));

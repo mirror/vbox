@@ -2252,7 +2252,7 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
 bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
-                          tr("Do you want to delete the downloaded file <nobr><b>%1</b>.</nobr></p>")
+                          tr("Do you want to delete the downloaded file <nobr><b>%1</b>.</nobr>")
                              .arg(strTo),
                           0 /* auto-confirm id */,
                           tr("Delete", "extension pack"));
@@ -2261,7 +2261,7 @@ bool UIMessageCenter::proposeDeleteExtentionPack(const QString &strTo) const
 bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles) const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
-                          tr("Do you want to delete following list of files. <nobr><b>%1</b>.</nobr></p>")
+                          tr("Do you want to delete following list of files. <nobr><b>%1</b>.</nobr>")
                              .arg(strFiles.join(",")),
                           0 /* auto-confirm id */,
                           tr("Delete", "extension pack"));
