@@ -258,10 +258,6 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
     LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_crtc_mode_set_base(crtc, x, y, old_fb);
     mutex_lock(&vbox->hw_mutex);
-    /* Disable VBVA when someone sets a new mode until they send us dirty
-     * rectangles, which proves that they can.  A single screen can work
-     * without VBVA. */
-    vbox_disable_accel(vbox);
     rc = vbox_set_view(crtc);
     if (!rc)
         vbox_do_modeset(crtc, mode);
