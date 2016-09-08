@@ -311,10 +311,13 @@ static int ossStreamOpen(const char *pszDev, int fOpen, POSSAUDIOSTREAMCFG pReq,
             break;
         }
 
+        /* Check access mode (input or output). */
+        bool fIn = ((fOpen & O_ACCMODE) == O_RDONLY);
+
         audio_buf_info abinfo;
-        if (ioctl(hFile, (fOpen & O_RDONLY) ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
+        if (ioctl(hFile, fIn ? SNDCTL_DSP_GETISPACE : SNDCTL_DSP_GETOSPACE, &abinfo))
         {
-            LogRel(("OSS: Failed to retrieve buffer length: %s (%d)\n", strerror(errno), errno));
+            LogRel(("OSS: Failed to retrieve %s buffer length: %s (%d)\n", fIn ? "input" : "output", strerror(errno), errno));
             rc = RTErrConvertFromErrno(errno);
             break;
         }
