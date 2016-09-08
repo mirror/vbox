@@ -432,7 +432,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
     # Array indexes for the test configs.
     kiVmName      = 0;
     kiStorageCtrl = 1;
-    kiHostIoCache = 2
+    kiHostIoCache = 2;
     kiDiskFmt     = 3;
     kiDiskVar     = 4;
     kiCpuCount    = 5;
@@ -464,6 +464,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.asTestSets              = self.asTestSetsDef;
         self.asIscsiTargetsDef       = [ ]; # @todo: Configure one target for basic iSCSI testing
         self.asIscsiTargets          = self.asIscsiTargetsDef;
+        self.cDiffLvlsDef            = 0;
+        self.cDiffLvls               = self.cDiffLvlsDef;
         self.fTestHost               = False;
         self.fUseScratch             = False;
         self.fRecreateStorCfg        = True;
@@ -495,6 +497,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Default: %s' % (':'.join(self.asTestsDef)));
         reporter.log('  --test-sets     <set1[:set2[:...]]>');
         reporter.log('      Default: %s' % (':'.join(self.asTestSetsDef)));
+        reporter.log('  --diff-levels   <number of diffs>');
+        reporter.log('      Default: %s' % (self.cDiffLvlsDef));
         reporter.log('  --test-vms      <vm1[:vm2[:...]]>');
         reporter.log('      Test the specified VMs in the given order. Use this to change');
         reporter.log('      the execution order or limit the choice of VMs');
@@ -567,6 +571,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-sets" takes a colon separated list of test sets');
             self.asTestSets = asArgs[iArg].split(':');
+        elif asArgs[iArg] == '--diff-levels':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--diff-levels" takes an integer');
+            try: self.cDiffLvls = int(asArgs[iArg]);
+            except: raise base.InvalidOption('The "--diff-levels" value "%s" is not an integer' % (asArgs[iArg],));
         elif asArgs[iArg] == '--test-vms':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-vms" takes colon separated list');
@@ -855,6 +864,40 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return fRc;
 
+    def createHd(self, oSession, sDiskFormat, sDiskVariant, iDiffLvl, oHdParent, \
+                 sDiskPath, cbDisk):
+        """
+        Creates a new disk with the given parameters returning the medium object
+        on success.
+        """
+
+        oHd = None;
+        if sDiskFormat == "iSCSI" and iDiffLvl == 0:
+            listNames = [];
+            listValues = [];
+            listValues = self.asIscsiTargets[0].split('|');
+            listNames.append('TargetAddress');
+            listNames.append('TargetName');
+            listNames.append('LUN');
+
+            if self.fpApiVer >= 5.0:
+                oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, \
+                                                  vboxcon.DeviceType_HardDisk);
+            else:
+                oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
+            oHd.type = vboxcon.MediumType_Normal;
+            oHd.setProperties(listNames, listValues);
+        else:
+            if iDiffLvl == 0:
+                tMediumVariant = self.convDiskToMediumVariant(sDiskVariant);
+                oHd = oSession.createBaseHd(sDiskPath + '/base.disk', sDiskFormat, cbDisk, \
+                                            cMsTimeout = 3600 * 1000, tMediumVariant = tMediumVariant);
+            else:
+                sDiskPath = sDiskPath + '/diff_%u.disk' % (iDiffLvl);
+                oHd = oSession.createDiffHd(oHdParent, sDiskPath, None);
+
+        return oHd;
+
     def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0915
                    sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
         """
@@ -891,41 +934,38 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if not fRc:
             return fRc;
 
-        # Reconfigure the VM
-        oSession = self.openSession(oVM);
-        if oSession is not None:
-            # Attach HD
-            fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
-            fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
+        lstDisks = []; # List of disks we have to delete afterwards.
 
-            if sHostIoCache == 'hostiocache':
-                fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), True);
-            elif sHostIoCache == 'no-hostiocache':
-                fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), False);
+        for iDiffLvl in range(self.cDiffLvls + 1):
 
-            iDevice = 0;
-            if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
-               eStorageController == vboxcon.StorageControllerType_PIIX4:
-                iDevice = 1; # Master is for the OS.
+            if iDiffLvl == 0:
+                reporter.testStart('Base');
+            else:
+                reporter.testStart('Diff %u' % (iDiffLvl));
 
-            if sDiskFormat == "iSCSI":
-                listNames = [];
-                listValues = [];
-                listValues = self.asIscsiTargets[0].split('|');
-                listNames.append('TargetAddress');
-                listNames.append('TargetName');
-                listNames.append('LUN');
+            # Reconfigure the VM
+            oSession = self.openSession(oVM);
+            if oSession is not None:
+                # Attach HD
+                fRc = oSession.ensureControllerAttached(_ControllerTypeToName(eStorageController));
+                fRc = fRc and oSession.setStorageControllerType(eStorageController, _ControllerTypeToName(eStorageController));
 
-                if self.fpApiVer >= 5.0:
-                    oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, \
-                                                      vboxcon.DeviceType_HardDisk);
-                else:
-                    oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
-                oHd.type = vboxcon.MediumType_Normal;
-                oHd.setProperties(listNames, listValues);
+                if sHostIoCache == 'hostiocache':
+                    fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), True);
+                elif sHostIoCache == 'no-hostiocache':
+                    fRc = fRc and oSession.setStorageControllerHostIoCache(_ControllerTypeToName(eStorageController), False);
 
-                # Attach it.
-                if fRc is True:
+                iDevice = 0;
+                if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
+                   eStorageController == vboxcon.StorageControllerType_PIIX4:
+                    iDevice = 1; # Master is for the OS.
+
+                oHdParent = None;
+                if iDiffLvl > 0:
+                    oHdParent = lstDisks[0];
+                oHd = self.createHd(oSession, sDiskFormat, sDiskVariant, iDiffLvl, oHdParent, sDiskPath, cbDisk);
+                if oHd is not None:
+                    lstDisks.insert(0, oHd);
                     try:
                         if oSession.fpApiVer >= 4.0:
                             oSession.o.machine.attachDevice(_ControllerTypeToName(eStorageController), \
@@ -939,75 +979,75 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         fRc = False;
                     else:
                         reporter.log('attached "%s" to %s' % (sDiskPath, oSession.sName));
-            else:
-                tMediumVariant = self.convDiskToMediumVariant(sDiskVariant);
-                fRc = fRc and oSession.createAndAttachHd(sDiskPath + '/test.disk', sDiskFormat, \
-                                                         _ControllerTypeToName(eStorageController), \
-                                                         cb = cbDisk, iPort = 0, iDevice = iDevice, \
-                                                         fImmutable = False, cMsTimeout = 3600 * 1000, \
-                                                         tMediumVariant = tMediumVariant);
-            fRc = fRc and oSession.enableVirtEx(fHwVirt);
-            fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
-            fRc = fRc and oSession.setCpuCount(cCpus);
-            fRc = fRc and oSession.saveSettings();
-            fRc = oSession.close() and fRc and True; # pychecker hack.
-            oSession = None;
-        else:
-            fRc = False;
-
-        # Start up.
-        if fRc is True:
-            self.logVmInfo(oVM);
-            oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(sVmName, fCdWait = False, fNatForwardingForTxs = True);
-            if oSession is not None:
-                self.addTask(oSession);
-
-                # Fudge factor - Allow the guest to finish starting up.
-                self.sleep(5);
-
-                # Prepare the storage on the guest
-                lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
-                oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
-                oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', self.getGuestDisk(oSession, oTxsSession, \
-                                                                                       eStorageController));
-
-                sMountPoint = self.prepareStorage(oStorCfgVm);
-                if sMountPoint is not None:
-                    self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet);
-                    self.cleanupStorage(oStorCfgVm);
                 else:
-                    reporter.testFailure('Failed to prepare storage for the guest benchmark');
-
-                # cleanup.
-                self.removeTask(oTxsSession);
-                self.terminateVmBySession(oSession)
+                    fRc = False;
+                fRc = fRc and oSession.enableVirtEx(fHwVirt);
+                fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
+                fRc = fRc and oSession.setCpuCount(cCpus);
+                fRc = fRc and oSession.saveSettings();
+                fRc = oSession.close() and fRc and True; # pychecker hack.
+                oSession = None;
             else:
                 fRc = False;
 
-            # Remove disk
-            oSession = self.openSession(oVM);
-            if oSession is not None:
-                try:
-                    oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 0, iDevice);
+            # Start up.
+            if fRc is True:
+                self.logVmInfo(oVM);
+                oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(sVmName, fCdWait = False, fNatForwardingForTxs = True);
+                if oSession is not None:
+                    self.addTask(oSession);
 
-                    # Remove storage controller if it is not an IDE controller.
-                    if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
-                       and eStorageController is not vboxcon.StorageControllerType_PIIX4:
-                        oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
+                    # Fudge factor - Allow the guest to finish starting up.
+                    self.sleep(5);
 
-                    oSession.saveSettings();
-                    self.oVBox.deleteHdByLocation(sDiskPath + '/test.disk');
-                    oSession.saveSettings();
-                    oSession.close();
-                    oSession = None;
-                except:
-                    reporter.errorXcpt('failed to detach/delete disk %s from storage controller' % (sDiskPath));
-            else:
-                fRc = False;
+                    # Prepare the storage on the guest
+                    lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin' ];
+                    oExecVm = remoteexecutor.RemoteExecutor(oTxsSession, lstBinaryPaths, '${SCRATCH}');
+                    oStorCfgVm = storagecfg.StorageCfg(oExecVm, 'linux', self.getGuestDisk(oSession, oTxsSession, \
+                                                                                           eStorageController));
 
-            # Cleanup storage area
-            if sDiskFormat != 'iSCSI' and not self.fUseScratch and self.fRecreateStorCfg:
-                self.cleanupStorage(self.oStorCfg);
+                    sMountPoint = self.prepareStorage(oStorCfgVm);
+                    if sMountPoint is not None:
+                        self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet);
+                        self.cleanupStorage(oStorCfgVm);
+                    else:
+                        reporter.testFailure('Failed to prepare storage for the guest benchmark');
+
+                    # cleanup.
+                    self.removeTask(oTxsSession);
+                    self.terminateVmBySession(oSession)
+                else:
+                    fRc = False;
+
+                # Remove disk
+                oSession = self.openSession(oVM);
+                if oSession is not None:
+                    try:
+                        oSession.o.machine.detachDevice(_ControllerTypeToName(eStorageController), 0, iDevice);
+
+                        # Remove storage controller if it is not an IDE controller.
+                        if     eStorageController is not vboxcon.StorageControllerType_PIIX3 \
+                           and eStorageController is not vboxcon.StorageControllerType_PIIX4:
+                            oSession.o.machine.removeStorageController(_ControllerTypeToName(eStorageController));
+
+                        oSession.saveSettings();
+                        oSession.saveSettings();
+                        oSession.close();
+                        oSession = None;
+                    except:
+                        reporter.errorXcpt('failed to detach/delete disk %s from storage controller' % (sDiskPath));
+                else:
+                    fRc = False;
+
+            reporter.testDone();
+
+        # Delete all disks
+        for oHd in lstDisks:
+            self.oVBox.deleteHdByMedium(oHd);
+
+        # Cleanup storage area
+        if sDiskFormat != 'iSCSI' and not self.fUseScratch and self.fRecreateStorCfg:
+            self.cleanupStorage(self.oStorCfg);
 
         return fRc;
 
@@ -1053,16 +1093,17 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         oDiskCfg = self.kdStorageCfgs.get(socket.gethostname().lower());
 
         # Test the host first if requested
-        if oDiskCfg is not None:
+        if oDiskCfg is not None or self.fUseScratch:
             lstBinaryPaths = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', \
                               '/opt/csw/bin', '/usr/ccs/bin', '/usr/sfw/bin'];
             oExecutor = remoteexecutor.RemoteExecutor(None, lstBinaryPaths, self.sScratchPath);
-            self.oStorCfg = storagecfg.StorageCfg(oExecutor, utils.getHostOs(), oDiskCfg);
+            if not self.fUseScratch:
+                self.oStorCfg = storagecfg.StorageCfg(oExecutor, utils.getHostOs(), oDiskCfg);
 
-            # Try to cleanup any leftovers from a previous run first.
-            fRc = self.oStorCfg.cleanupLeftovers();
-            if not fRc:
-                reporter.error('Failed to cleanup any leftovers from a previous run');
+                # Try to cleanup any leftovers from a previous run first.
+                fRc = self.oStorCfg.cleanupLeftovers();
+                if not fRc:
+                    reporter.error('Failed to cleanup any leftovers from a previous run');
 
             if self.fTestHost:
                 reporter.testStart('Host');
@@ -1087,7 +1128,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             else:
                 # Create the storage space first if it is not done before every test.
                 sMountPoint = None;
-                if not self.fRecreateStorCfg:
+                if self.fUseScratch:
+                    sMountPoint = self.sScratchPath;
+                elif not self.fRecreateStorCfg:
                     reporter.testStart('Create host storage');
                     sMountPoint = self.prepareStorage(self.oStorCfg);
                     if sMountPoint is None:

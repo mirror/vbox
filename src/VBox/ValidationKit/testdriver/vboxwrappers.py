@@ -1837,6 +1837,18 @@ class SessionWrapper(TdTaskBase):
         Creates a differencing HD.
         Returns Medium object on success and None on failure.  Error information is logged.
         """
+        # Detect the proper format if requested
+        if sFmt is None:
+            try:
+                oHdFmt = oParentHd.mediumFormat;
+                lstCaps = self.oVBoxMgr.getArray(oHdFmt, 'capabilities');
+                if vboxcon.MediumFormatCapabilities_Differencing in lstCaps:
+                    sFmt = oHdFmt.id;
+                else:
+                    sFmt = 'VDI';
+            except:
+                reporter.errorXcpt('failed to get preferred diff format for "%s"' % (sHd));
+                return None;
         try:
             if self.fpApiVer >= 5.0:
                 oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);

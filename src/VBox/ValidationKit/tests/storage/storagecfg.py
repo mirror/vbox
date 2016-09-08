@@ -323,7 +323,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         if self.dSimplePools.has_key(sPool):
             # Wipe partition table
             sDiskPath = self.dSimplePools.get(sPool);
-            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath));
+            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', '--delete', sDiskPath));
         else:
             fRc = oExec.execBinaryNoStdOut('lvremove', (sPool + '/' + sVol,));
         return fRc;
