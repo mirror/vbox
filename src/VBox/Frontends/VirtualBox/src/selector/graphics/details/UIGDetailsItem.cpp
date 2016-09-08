@@ -27,6 +27,7 @@
 # include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
+# include "UIGraphicsTextPane.h"
 # include "UIGDetailsGroup.h"
 # include "UIGDetailsSet.h"
 # include "UIGDetailsElement.h"
@@ -100,9 +101,13 @@ public:
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
 
-        /* Return the number of set children: */
-        if (item()->type() == UIGDetailsItemType_Set)
-            return item()->items().size();
+        /* Return the number of children: */
+        switch (item()->type())
+        {
+            case UIGDetailsItemType_Set:     return item()->items().size();
+            case UIGDetailsItemType_Element: return item()->toElement()->text().size();
+            default: break;
+        }
 
         /* Zero by default: */
         return 0;
@@ -116,8 +121,16 @@ public:
         /* Make sure index is valid: */
         AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
 
-        /* Return the child with the passed iIndex: */
-        return QAccessible::queryAccessibleInterface(item()->items().at(iIndex));
+        /* Return the child with the iIndex: */
+        switch (item()->type())
+        {
+            case UIGDetailsItemType_Set:     return QAccessible::queryAccessibleInterface(item()->items().at(iIndex));
+            case UIGDetailsItemType_Element: return QAccessible::queryAccessibleInterface(&item()->toElement()->text()[iIndex]);
+            default: break;
+        }
+
+        /* Null be default: */
+        return 0;
     }
 
     /** Returns the index of the passed @a pChild. */
@@ -161,23 +174,15 @@ public:
     /** Returns the role. */
     virtual QAccessible::Role role() const /* override */
     {
-        /* Make sure item still alive: */
-        AssertPtrReturn(item(), QAccessible::NoRole);
-
-        /* Return the role of set: */
-        if (item()->type() == UIGDetailsItemType_Set)
-            return QAccessible::List;
-
-        /* ListItem by default: */
-        return QAccessible::ListItem;
+        /* Return the role: */
+        return QAccessible::List;
     }
 
     /** Returns the state. */
     virtual QAccessible::State state() const /* override */
     {
-        /* Return the default state: */
-        QAccessible::State state;
-        return state;
+        /* Return the state: */
+        return QAccessible::State();
     }
 
 private:
