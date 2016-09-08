@@ -63,14 +63,14 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
     foreach (const UITextTableLine &line, text)
     {
         /* Lines: */
-        QString strLeftLine = line.first;
-        QString strRightLine = line.second;
+        QString strLeftLine = line.string1();
+        QString strRightLine = line.string2();
 
         /* If 2nd line is NOT empty: */
         if (!strRightLine.isEmpty())
         {
             /* Take both lines 'as is': */
-            m_text << UITextTableLine(strLeftLine, strRightLine);
+            m_text << UITextTableLine(strLeftLine, strRightLine, parent());
         }
         /* If 2nd line is empty: */
         else
@@ -78,7 +78,7 @@ void UIGraphicsTextPane::setText(const UITextTable &text)
             /* Parse the 1st one to sub-lines: */
             QStringList subLines = strLeftLine.split(QRegExp("\\n"));
             foreach (const QString &strSubLine, subLines)
-                m_text << UITextTableLine(strSubLine, QString());
+                m_text << UITextTableLine(strSubLine, QString(), parent());
         }
     }
 
@@ -119,11 +119,11 @@ void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
     bool fSingleColumnText = true;
     foreach (const UITextTableLine &line, m_text)
     {
-        bool fRightColumnPresent = !line.second.isEmpty();
+        bool fRightColumnPresent = !line.string2().isEmpty();
         if (fRightColumnPresent)
             fSingleColumnText = false;
-        QString strLeftLine = fRightColumnPresent ? line.first + ":" : line.first;
-        QString strRightLine = line.second;
+        QString strLeftLine = fRightColumnPresent ? line.string1() + ":" : line.string1();
+        QString strRightLine = line.string2();
         iMaximumLeftColumnWidth = qMax(iMaximumLeftColumnWidth, fm.width(strLeftLine));
         iMaximumRightColumnWidth = qMax(iMaximumRightColumnWidth, fm.width(strRightLine));
     }
@@ -181,11 +181,11 @@ void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
     {
         /* Left layout: */
         int iLeftColumnHeight = 0;
-        if (!line.first.isEmpty())
+        if (!line.string1().isEmpty())
         {
-            bool fRightColumnPresent = !line.second.isEmpty();
+            bool fRightColumnPresent = !line.string2().isEmpty();
             m_leftList << buildTextLayout(font(), m_pPaintDevice,
-                                          fRightColumnPresent ? line.first + ":" : line.first,
+                                          fRightColumnPresent ? line.string1() + ":" : line.string1(),
                                           iLeftColumnWidth, iLeftColumnHeight,
                                           m_strHoveredAnchor);
             m_leftList.last()->setPosition(QPointF(iTextX, iTextY));
@@ -193,10 +193,10 @@ void UIGraphicsTextPane::updateTextLayout(bool fFull /* = false */)
 
         /* Right layout: */
         int iRightColumnHeight = 0;
-        if (!line.second.isEmpty())
+        if (!line.string2().isEmpty())
         {
             m_rightList << buildTextLayout(font(), m_pPaintDevice,
-                                           line.second,
+                                           line.string2(),
                                            iRightColumnWidth, iRightColumnHeight,
                                            m_strHoveredAnchor);
             m_rightList.last()->setPosition(QPointF(iTextX + iLeftColumnWidth + m_iSpacing, iTextY));

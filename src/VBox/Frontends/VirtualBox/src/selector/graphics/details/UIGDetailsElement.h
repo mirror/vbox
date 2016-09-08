@@ -33,10 +33,11 @@ class UIGraphicsTextPane;
 class QTextLayout;
 class QStateMachine;
 class QPropertyAnimation;
+class UITextTableLine;
 
 /* Typedefs: */
-typedef QPair<QString, QString> UITextTableLine;
 typedef QList<UITextTableLine> UITextTable;
+
 
 /* Details element
  * for graphics details model/view architecture: */
@@ -84,6 +85,11 @@ public:
     /* API: Animation stuff: */
     void markAnimationFinished();
 
+    /** Returns the reference to the text table. */
+    UITextTable &text() const;
+    /** Defines the @a text table as the passed one. */
+    void setText(const UITextTable &text);
+
 protected slots:
 
     /* Handlers: Toggle stuff: */
@@ -129,10 +135,6 @@ protected:
 
     /* API: Name stuff: */
     void setName(const QString &strName);
-
-    /* API: Text stuff: */
-    const UITextTable& text() const;
-    void setText(const UITextTable &text);
 
     /* API: Machine stuff: */
     const CMachine& machine();
