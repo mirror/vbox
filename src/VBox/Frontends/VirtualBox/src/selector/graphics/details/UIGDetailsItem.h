@@ -68,8 +68,6 @@ public:
     /* API: Parent stuff: */
     UIGDetailsItem* parentItem() const;
 
-    /** Returns the name of the item. */
-    virtual QString name() const = 0;
     /** Returns the description of the item. */
     virtual QString description() const = 0;
 

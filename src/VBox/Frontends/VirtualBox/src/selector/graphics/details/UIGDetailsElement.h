@@ -114,8 +114,6 @@ protected:
     /** This event handler is delivered after the widget has been resized. */
     void resizeEvent(QGraphicsSceneResizeEvent *pEvent);
 
-    /** Returns the name of the item. */
-    virtual QString name() const /* override */;
     /** Returns the description of the item. */
     virtual QString description() const /* override */;
 

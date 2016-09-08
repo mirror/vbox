@@ -150,12 +150,9 @@ public:
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QString());
 
-        switch (enmTextRole)
-        {
-            case QAccessible::Name:        return item()->name();
-            case QAccessible::Description: return item()->description();
-            default: break;
-        }
+        /* Return the description: */
+        if (enmTextRole == QAccessible::Description)
+            return item()->description();
 
         /* Null-string by default: */
         return QString();

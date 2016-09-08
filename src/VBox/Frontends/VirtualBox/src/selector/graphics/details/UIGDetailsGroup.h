@@ -67,8 +67,6 @@ private:
         GroupData_Spacing
     };
 
-    /** Returns the name of the item. */
-    virtual QString name() const /* override */ { return QString(); }
     /** Returns the description of the item. */
     virtual QString description() const /* override */ { return QString(); }
 

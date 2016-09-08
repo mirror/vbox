@@ -81,8 +81,6 @@ private:
         SetData_Spacing
     };
 
-    /** Returns the name of the item. */
-    virtual QString name() const /* override */;
     /** Returns the description of the item. */
     virtual QString description() const /* override */;
 
