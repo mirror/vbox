@@ -340,7 +340,7 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
+/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
 static DECLCALLBACK(int) parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                                PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
@@ -401,7 +401,7 @@ static DECLCALLBACK(int) parallelsCheckIfValid(const char *pszFilename, PVDINTER
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnOpen */
+/** @copydoc VDIMAGEBACKEND::pfnOpen */
 static DECLCALLBACK(int) parallelsOpen(const char *pszFilename, unsigned uOpenFlags,
                                        PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                        VDTYPE enmType, void **ppBackendData)
@@ -438,7 +438,7 @@ static DECLCALLBACK(int) parallelsOpen(const char *pszFilename, unsigned uOpenFl
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnCreate */
+/** @copydoc VDIMAGEBACKEND::pfnCreate */
 static DECLCALLBACK(int) parallelsCreate(const char *pszFilename, uint64_t cbSize,
                                          unsigned uImageFlags, const char *pszComment,
                                          PCVDGEOMETRY pPCHSGeometry,
@@ -510,7 +510,7 @@ static DECLCALLBACK(int) parallelsCreate(const char *pszFilename, uint64_t cbSiz
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRename */
+/** @copydoc VDIMAGEBACKEND::pfnRename */
 static DECLCALLBACK(int) parallelsRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
@@ -547,7 +547,7 @@ static DECLCALLBACK(int) parallelsRename(void *pBackendData, const char *pszFile
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnClose */
+/** @copydoc VDIMAGEBACKEND::pfnClose */
 static DECLCALLBACK(int) parallelsClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
@@ -559,7 +559,7 @@ static DECLCALLBACK(int) parallelsClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
+/** @copydoc VDIMAGEBACKEND::pfnRead */
 static DECLCALLBACK(int) parallelsRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -604,7 +604,7 @@ static DECLCALLBACK(int) parallelsRead(void *pBackendData, uint64_t uOffset, siz
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
+/** @copydoc VDIMAGEBACKEND::pfnWrite */
 static DECLCALLBACK(int) parallelsWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                         PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                         size_t *pcbPostRead, unsigned fWrite)
@@ -688,7 +688,7 @@ static DECLCALLBACK(int) parallelsWrite(void *pBackendData, uint64_t uOffset, si
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
+/** @copydoc VDIMAGEBACKEND::pfnFlush */
 static DECLCALLBACK(int) parallelsFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
@@ -703,7 +703,7 @@ static DECLCALLBACK(int) parallelsFlush(void *pBackendData, PVDIOCTX pIoCtx)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetVersion */
+/** @copydoc VDIMAGEBACKEND::pfnGetVersion */
 static DECLCALLBACK(unsigned) parallelsGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -714,7 +714,7 @@ static DECLCALLBACK(unsigned) parallelsGetVersion(void *pBackendData)
     return PARALLELS_DISK_VERSION;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
 static DECLCALLBACK(uint32_t) parallelsGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -730,7 +730,7 @@ static DECLCALLBACK(uint32_t) parallelsGetSectorSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetSize */
 static DECLCALLBACK(uint64_t) parallelsGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -746,7 +746,7 @@ static DECLCALLBACK(uint64_t) parallelsGetSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) parallelsGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -762,7 +762,7 @@ static DECLCALLBACK(uint64_t) parallelsGetFileSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnGetPCHSGeometry */
 static DECLCALLBACK(int) parallelsGetPCHSGeometry(void *pBackendData,
                                                   PVDGEOMETRY pPCHSGeometry)
 {
@@ -781,7 +781,7 @@ static DECLCALLBACK(int) parallelsGetPCHSGeometry(void *pBackendData,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnSetPCHSGeometry */
 static DECLCALLBACK(int) parallelsSetPCHSGeometry(void *pBackendData,
                                                   PCVDGEOMETRY pPCHSGeometry)
 {
@@ -801,7 +801,7 @@ static DECLCALLBACK(int) parallelsSetPCHSGeometry(void *pBackendData,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnGetLCHSGeometry */
 static DECLCALLBACK(int) parallelsGetLCHSGeometry(void *pBackendData,
                                                   PVDGEOMETRY pLCHSGeometry)
 {
@@ -820,7 +820,7 @@ static DECLCALLBACK(int) parallelsGetLCHSGeometry(void *pBackendData,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnSetLCHSGeometry */
 static DECLCALLBACK(int) parallelsSetLCHSGeometry(void *pBackendData,
                                                   PCVDGEOMETRY pLCHSGeometry)
 {
@@ -839,7 +839,7 @@ static DECLCALLBACK(int) parallelsSetLCHSGeometry(void *pBackendData,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetImageFlags */
+/** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
 static DECLCALLBACK(unsigned) parallelsGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -851,7 +851,7 @@ static DECLCALLBACK(unsigned) parallelsGetImageFlags(void *pBackendData)
     return pImage->uImageFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
+/** @copydoc VDIMAGEBACKEND::pfnGetOpenFlags */
 static DECLCALLBACK(unsigned) parallelsGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -863,7 +863,7 @@ static DECLCALLBACK(unsigned) parallelsGetOpenFlags(void *pBackendData)
     return pImage->uOpenFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
+/** @copydoc VDIMAGEBACKEND::pfnSetOpenFlags */
 static DECLCALLBACK(int) parallelsSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
@@ -886,7 +886,7 @@ static DECLCALLBACK(int) parallelsSetOpenFlags(void *pBackendData, unsigned uOpe
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetComment */
+/** @copydoc VDIMAGEBACKEND::pfnGetComment */
 static DECLCALLBACK(int) parallelsGetComment(void *pBackendData, char *pszComment,
                                              size_t cbComment)
 {
@@ -900,7 +900,7 @@ static DECLCALLBACK(int) parallelsGetComment(void *pBackendData, char *pszCommen
     return VERR_NOT_SUPPORTED;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetComment */
+/** @copydoc VDIMAGEBACKEND::pfnSetComment */
 static DECLCALLBACK(int) parallelsSetComment(void *pBackendData, const char *pszComment)
 {
     RT_NOREF1(pszComment);
@@ -919,7 +919,7 @@ static DECLCALLBACK(int) parallelsSetComment(void *pBackendData, const char *psz
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetUuid */
 static DECLCALLBACK(int) parallelsGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -932,7 +932,7 @@ static DECLCALLBACK(int) parallelsGetUuid(void *pBackendData, PRTUUID pUuid)
     return VERR_NOT_SUPPORTED;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetUuid */
 static DECLCALLBACK(int) parallelsSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -951,7 +951,7 @@ static DECLCALLBACK(int) parallelsSetUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
 static DECLCALLBACK(int) parallelsGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -964,7 +964,7 @@ static DECLCALLBACK(int) parallelsGetModificationUuid(void *pBackendData, PRTUUI
     return VERR_NOT_SUPPORTED;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
 static DECLCALLBACK(int) parallelsSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -983,7 +983,7 @@ static DECLCALLBACK(int) parallelsSetModificationUuid(void *pBackendData, PCRTUU
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
 static DECLCALLBACK(int) parallelsGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -996,7 +996,7 @@ static DECLCALLBACK(int) parallelsGetParentUuid(void *pBackendData, PRTUUID pUui
     return VERR_NOT_SUPPORTED;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
 static DECLCALLBACK(int) parallelsSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -1015,7 +1015,7 @@ static DECLCALLBACK(int) parallelsSetParentUuid(void *pBackendData, PCRTUUID pUu
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
 static DECLCALLBACK(int) parallelsGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -1034,7 +1034,7 @@ static DECLCALLBACK(int) parallelsGetParentModificationUuid(void *pBackendData, 
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
 static DECLCALLBACK(int) parallelsSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -1053,7 +1053,7 @@ static DECLCALLBACK(int) parallelsSetParentModificationUuid(void *pBackendData, 
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnDump */
+/** @copydoc VDIMAGEBACKEND::pfnDump */
 static DECLCALLBACK(void) parallelsDump(void *pBackendData)
 {
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
