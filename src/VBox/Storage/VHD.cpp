@@ -3216,12 +3216,12 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 }
 
 
-const VBOXHDDBACKEND g_VhdBackend =
+const VDIMAGEBACKEND g_VhdBackend =
 {
     /* pszBackendName */
     "VHD",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_UUID | VD_CAP_DIFF | VD_CAP_FILE |
     VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC |

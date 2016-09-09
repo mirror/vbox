@@ -2578,12 +2578,12 @@ static DECLCALLBACK(int) qcowSetParentFilename(void *pBackendData, const char *p
 
 
 
-const VBOXHDDBACKEND g_QCowBackend =
+const VDIMAGEBACKEND g_QCowBackend =
 {
     /* pszBackendName */
     "QCOW",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS | VD_CAP_CREATE_DYNAMIC | VD_CAP_DIFF | VD_CAP_ASYNC,
     /* paFileExtensions */

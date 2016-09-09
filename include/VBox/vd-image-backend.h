@@ -60,7 +60,7 @@
 /**
  * Image format backend interface used by VBox HDD Container implementation.
  */
-typedef struct VBOXHDDBACKEND
+typedef struct VDIMAGEBACKEND
 {
     /**
      * The name of the backend (constant string).
@@ -584,12 +584,12 @@ typedef struct VBOXHDDBACKEND
                                                     PVDINTERFACE pVDIfsImage,
                                                     PVDINTERFACE pVDIfsOperation));
 
-} VBOXHDDBACKEND;
+} VDIMAGEBACKEND;
 
 /** Pointer to VD backend. */
-typedef VBOXHDDBACKEND *PVBOXHDDBACKEND;
+typedef VDIMAGEBACKEND *PVDIMAGEBACKEND;
 /** Constant pointer to VD backend. */
-typedef const VBOXHDDBACKEND *PCVBOXHDDBACKEND;
+typedef const VDIMAGEBACKEND *PCVDIMAGEBACKEND;
 
 /** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);

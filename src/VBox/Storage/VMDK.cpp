@@ -6578,12 +6578,12 @@ static DECLCALLBACK(void) vmdkDump(void *pBackendData)
 
 
 
-const VBOXHDDBACKEND g_VmdkBackend =
+const VDIMAGEBACKEND g_VmdkBackend =
 {
     /* pszBackendName */
     "VMDK",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC

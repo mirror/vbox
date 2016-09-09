@@ -1142,12 +1142,12 @@ static DECLCALLBACK(void) rawDump(void *pBackendData)
 
 
 
-const VBOXHDDBACKEND g_RawBackend =
+const VDIMAGEBACKEND g_RawBackend =
 {
     /* pszBackendName */
     "RAW",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_CREATE_FIXED | VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
     /* paFileExtensions */

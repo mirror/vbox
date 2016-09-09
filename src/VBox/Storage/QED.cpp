@@ -2605,12 +2605,12 @@ static DECLCALLBACK(int) qedResize(void *pBackendData, uint64_t cbSize,
 }
 
 
-const VBOXHDDBACKEND g_QedBackend =
+const VDIMAGEBACKEND g_QedBackend =
 {
     /* pszBackendName */
     "QED",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS | VD_CAP_CREATE_DYNAMIC | VD_CAP_DIFF | VD_CAP_ASYNC,
     /* paFileExtensions */

@@ -122,7 +122,7 @@ typedef struct VDIMAGE
     unsigned            uOpenFlags;
 
     /** Function pointers for the various backend methods. */
-    PCVBOXHDDBACKEND    Backend;
+    PCVDIMAGEBACKEND    Backend;
     /** Pointer to list of VD interfaces, per-image. */
     PVDINTERFACE        pVDIfsImage;
     /** I/O related things. */
@@ -624,11 +624,11 @@ static RTLISTANCHOR g_ListPluginsLoaded;
 /** Number of image backends supported. */
 static unsigned g_cBackends = 0;
 /** Array of pointers to the image backends. */
-static PCVBOXHDDBACKEND *g_apBackends = NULL;
+static PCVDIMAGEBACKEND *g_apBackends = NULL;
 /** Array of handles to the corresponding plugin. */
 static RTLDRMOD *g_ahBackendPlugins = NULL;
 /** Builtin image backends. */
-static PCVBOXHDDBACKEND aStaticBackends[] =
+static PCVDIMAGEBACKEND aStaticBackends[] =
 {
     &g_VmdkBackend,
     &g_VDIBackend,
@@ -673,10 +673,10 @@ static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int 
 /**
  * internal: add several backends.
  */
-static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigned cBackends)
+static int vdAddBackends(RTLDRMOD hPlugin, PCVDIMAGEBACKEND *ppBackends, unsigned cBackends)
 {
-    PCVBOXHDDBACKEND *pTmp = (PCVBOXHDDBACKEND*)RTMemRealloc(g_apBackends,
-           (g_cBackends + cBackends) * sizeof(PCVBOXHDDBACKEND));
+    PCVDIMAGEBACKEND *pTmp = (PCVDIMAGEBACKEND *)RTMemRealloc(g_apBackends,
+           (g_cBackends + cBackends) * sizeof(PCVDIMAGEBACKEND));
     if (RT_UNLIKELY(!pTmp))
         return VERR_NO_MEMORY;
     g_apBackends = pTmp;
@@ -686,7 +686,7 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigne
     if (RT_UNLIKELY(!pTmpPlugins))
         return VERR_NO_MEMORY;
     g_ahBackendPlugins = pTmpPlugins;
-    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVBOXHDDBACKEND));
+    memcpy(&g_apBackends[g_cBackends], ppBackends, cBackends * sizeof(PCVDIMAGEBACKEND));
     for (unsigned i = g_cBackends; i < g_cBackends + cBackends; i++)
         g_ahBackendPlugins[i] = hPlugin;
     g_cBackends += cBackends;
@@ -697,7 +697,7 @@ static int vdAddBackends(RTLDRMOD hPlugin, PCVBOXHDDBACKEND *ppBackends, unsigne
 /**
  * internal: add single backend.
  */
-DECLINLINE(int) vdAddBackend(RTLDRMOD hPlugin, PCVBOXHDDBACKEND pBackend)
+DECLINLINE(int) vdAddBackend(RTLDRMOD hPlugin, PCVDIMAGEBACKEND pBackend)
 {
     return vdAddBackends(hPlugin, &pBackend, 1);
 }
@@ -842,10 +842,10 @@ DECLINLINE(int) vdThreadFinishWrite(PVBOXHDD pDisk)
 /**
  * internal: find image format backend.
  */
-static int vdFindBackend(const char *pszBackend, PCVBOXHDDBACKEND *ppBackend)
+static int vdFindBackend(const char *pszBackend, PCVDIMAGEBACKEND *ppBackend)
 {
     int rc = VINF_SUCCESS;
-    PCVBOXHDDBACKEND pBackend = NULL;
+    PCVDIMAGEBACKEND pBackend = NULL;
 
     if (!g_apBackends)
         VDInit();
@@ -3519,11 +3519,11 @@ static DECLCALLBACK(int) vdDiscardHelperAsync(PVDIOCTX pIoCtx)
 /**
  * @interface_method_impl{VDBACKENDREGISTER,pfnRegisterImage}
  */
-static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVBOXHDDBACKEND pBackend)
+static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVDIMAGEBACKEND pBackend)
 {
     int rc = VINF_SUCCESS;
 
-    if (pBackend->cbSize == sizeof(VBOXHDDBACKEND))
+    if (pBackend->cbSize == sizeof(VDIMAGEBACKEND))
         vdAddBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
@@ -3638,7 +3638,7 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cBackends && g_ahBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apBackends[i], &g_apBackends[i + 1], (g_cBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_apBackends[i], &g_apBackends[i + 1], (g_cBackends - i - 1) * sizeof(PCVDIMAGEBACKEND));
             memcpy(&g_ahBackendPlugins[i], &g_ahBackendPlugins[i + 1], (g_cBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cBackends--;
@@ -3648,7 +3648,7 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cCacheBackends && g_ahCacheBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apCacheBackends[i], &g_apCacheBackends[i + 1], (g_cCacheBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_apCacheBackends[i], &g_apCacheBackends[i + 1], (g_cCacheBackends - i - 1) * sizeof(PCVDCACHEBACKEND));
             memcpy(&g_ahCacheBackendPlugins[i], &g_ahCacheBackendPlugins[i + 1], (g_cCacheBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cCacheBackends--;
@@ -3658,7 +3658,7 @@ static int vdRemovePlugin(const char *pszFilename)
     {
         while (i < g_cFilterBackends && g_pahFilterBackendPlugins[i] == pIt->hPlugin)
         {
-            memcpy(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVBOXHDDBACKEND));
+            memcpy(&g_apFilterBackends[i], &g_apFilterBackends[i + 1], (g_cFilterBackends - i - 1) * sizeof(PCVDFILTERBACKEND));
             memcpy(&g_pahFilterBackendPlugins[i], &g_pahFilterBackendPlugins[i + 1], (g_cFilterBackends - i - 1) * sizeof(RTLDRMOD));
             /** @todo for now skip reallocating, doesn't save much */
             g_cFilterBackends--;
@@ -11109,7 +11109,7 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                            uint32_t fFlags)
 {
     int rc = VERR_NOT_SUPPORTED;
-    PCVBOXHDDBACKEND pBackend = NULL;
+    PCVDIMAGEBACKEND pBackend = NULL;
     VDINTERFACEIOINT VDIfIoInt;
     VDINTERFACEIO    VDIfIoFallback;
     PVDINTERFACEIO   pInterfaceIo;
@@ -11175,7 +11175,7 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
  */
 
 /**
- * @interface_method_impl{VBOXHDDBACKEND,pfnComposeLocation}
+ * @interface_method_impl{VDIMAGEBACKEND,pfnComposeLocation}
  */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation)
 {
@@ -11185,7 +11185,7 @@ DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLoc
 }
 
 /**
- * @interface_method_impl{VBOXHDDBACKEND,pfnComposeName}
+ * @interface_method_impl{VDIMAGEBACKEND,pfnComposeName}
  */
 DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName)
 {

@@ -43,7 +43,7 @@ typedef struct VDBACKENDREGISTER
      * @param   pvUser    Opaque user data given in the plugin load callback.
      * @param   pBackend  The image backend to register.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterImage, (void *pvUser, PCVBOXHDDBACKEND pBackend));
+    DECLR3CALLBACKMEMBER(int, pfnRegisterImage, (void *pvUser, PCVDIMAGEBACKEND pBackend));
 
     /**
      * Registers a new cache backend.

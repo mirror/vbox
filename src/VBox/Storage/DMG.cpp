@@ -2508,12 +2508,12 @@ static DECLCALLBACK(void) dmgDump(void *pBackendData)
 }
 
 
-const VBOXHDDBACKEND g_DmgBackend =
+const VDIMAGEBACKEND g_DmgBackend =
 {
     /* pszBackendName */
     "DMG",
     /* cbSize */
-    sizeof(VBOXHDDBACKEND),
+    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS,
     /* paFileExtensions */
