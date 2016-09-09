@@ -368,16 +368,22 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * be moved using the mouse. So we additionally grabbing the mouse as well to detect that
          * user is trying to click outside of internal window geometry. */
 
-        /* Grab the mouse button. We do not check for failure as we do not currently implement a back-up plan. */
-        xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(),
-                                XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
-                                XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
+         /* Grab the mouse button if the cursor is outside of our views.
+          * We do not check for failure as we do not currently implement a back-up plan. */
+         if (!isItListenedView(QApplication::widgetAt(QCursor::pos())))
+             xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(),
+                                     XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
+                                     XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
         /* And grab the keyboard, using XCB directly, as Qt does not report failure. */
         xcb_grab_keyboard_cookie_t xcbGrabCookie = xcb_grab_keyboard(QX11Info::connection(), false, m_views[m_iKeyboardCaptureViewIndex]->winId(),
                                                                      XCB_TIME_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
         xcb_grab_keyboard_reply_t *pGrabReply = xcb_grab_keyboard_reply(QX11Info::connection(), xcbGrabCookie, NULL);
         if (pGrabReply == NULL || pGrabReply->status != XCB_GRAB_STATUS_SUCCESS)
         {
+            /* Release the mouse button grab.
+             * We do not check for failure as we do not currently implement a back-up plan. */
+            xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1,
+                                      QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
             /* Try again later: */
             free(pGrabReply);
             return false;
@@ -476,9 +482,10 @@ void UIKeyboardHandler::releaseKeyboard()
 
         /* Ungrab using XCB: */
         xcb_ungrab_keyboard(QX11Info::connection(), XCB_TIME_CURRENT_TIME);
-        /* And release the mouse button,
+        /* Release the mouse button grab.
          * We do not check for failure as we do not currently implement a back-up plan. */
-        xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1, QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
+        xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1,
+                                  QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
 
 # endif /* QT_VERSION >= 0x050000 */
 #else
@@ -1756,6 +1763,28 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
 
                 break;
             }
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+            case QEvent::Enter:
+            {
+                /* Release the mouse button grab.
+                 * We do not check for failure as we do not currently implement a back-up plan. */
+                xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_1,
+                                          QX11Info::appRootWindow(), XCB_MOD_MASK_ANY);
+
+                break;
+            }
+            case QEvent::Leave:
+            {
+                /* Grab the mouse button if the keyboard is captured.
+                 * We do not check for failure as we do not currently implement a back-up plan. */
+                if (m_fIsKeyboardCaptured)
+                    xcb_grab_button_checked(QX11Info::connection(), 0, QX11Info::appRootWindow(),
+                                            XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
+                                            XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_1, XCB_MOD_MASK_ANY);
+
+                break;
+            }
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
             case QEvent::KeyPress:
             case QEvent::KeyRelease:
             {
