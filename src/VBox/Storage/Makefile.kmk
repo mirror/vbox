@@ -24,10 +24,6 @@ if !defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Debug/Makefile.kmk
 
- ifndef VBOX_OSE
-  include $(PATH_SUB_CURRENT)/VDFormats/Makefile.kmk
- endif
-
  #
  # StorageLib - The storage Library.
  #
