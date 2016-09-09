@@ -15,39 +15,49 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 import os,sys
 from distutils.version import StrictVersion
 
-versions = ["2.6", "2.7", "3.1", "3.2", "3.3", "3.4", "3.5"]
+versions = ["2.6", "2.7", "3.1", "3.2", "3.2m", "3.3", "3.3m", "3.4", "3.4m", "3.5", "3.5m"]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
-def checkPair(p, v,dllpre,dllsuff, bitness_magic):
-    file =  os.path.join(p, "include", "python"+v, "Python.h")
-    if not os.path.isfile(file):
+def checkPair(p, v, dllpre, dllsuff, bitness_magic):
+    incdir = os.path.join(p, "include", "python"+v)
+    incfile = os.path.join(incdir, "Python.h")
+    if not os.path.isfile(incfile):
         return None
 
     lib = os.path.join(p, "lib/i386-linux-gnu", dllpre+"python"+v+dllsuff)
     if not os.path.isfile(lib):
         lib = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
+        if not os.path.isfile(lib):
+            lib = None
 
     if bitness_magic == 1:
         lib64 = os.path.join(p, "lib", "64", dllpre+"python"+v+dllsuff)
+        if not os.path.isfile(lib64):
+            lib64 = None
     elif bitness_magic == 2:
         lib64 = os.path.join(p, "lib/x86_64-linux-gnu", dllpre+"python"+v+dllsuff)
         if not os.path.isfile(lib64):
             lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
             if not os.path.isfile(lib64):
-                lib64 = lib
+                lib64 = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
                 if not os.path.isfile(lib64):
-                    return None
-
+                    lib64 = None
     else:
         lib64 = None
-    return [os.path.join(p, "include", "python"+v), lib, lib64]
+
+    if lib is None and lib64 is None:
+        return None
+    else:
+        return [incdir, lib, lib64]
 
 def print_vars(vers, known, sep, bitness_magic):
     print("VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep))
     if bitness_magic > 0:
-        print("VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep))
-        print("VBOX_PYTHON%s_LIB_X86=%s%s" %(vers, known[1], sep))
+        if known[2]:
+            print("VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep))
+        if known[1]:
+            print("VBOX_PYTHON%s_LIB_X86=%s%s" %(vers, known[1], sep))
     else:
         print("VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep))
 
@@ -94,7 +104,11 @@ def main(argv):
         bitness_magic = 2
 
     for v in versions:
-        if StrictVersion(v) < StrictVersion('2.6'):
+        if v.endswith("m"):
+            realversion = v[:-1]
+        else:
+            realversion = v
+        if StrictVersion(realversion) < StrictVersion('2.6'):
             continue
         for p in prefixes:
             c = checkPair(p, v, dllpre, dllsuff, bitness_magic)
@@ -110,7 +124,7 @@ def main(argv):
     for k in keys:
         if d is None:
             d = k
-        vers = k.replace('.', '')
+        vers = k.replace('.', '').upper()
         print_vars(vers, known[k], sep, bitness_magic)
     if d is not None:
         print_vars("DEF", known[d], sep, bitness_magic)
