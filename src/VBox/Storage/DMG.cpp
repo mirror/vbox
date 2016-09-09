@@ -2046,12 +2046,9 @@ static DECLCALLBACK(unsigned) dmgGetVersion(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, 0);
 
-    if (pThis)
-        return 1;
-    else
-        return 0;
+    return 1;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetSectorSize} */
@@ -2059,11 +2056,11 @@ static DECLCALLBACK(uint32_t) dmgGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, 0);
+
     uint32_t cb = 0;
-
-    AssertPtr(pThis);
-
-    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
+    if (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
         cb = 2048;
 
     LogFlowFunc(("returns %u\n", cb));
@@ -2075,11 +2072,11 @@ static DECLCALLBACK(uint64_t) dmgGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, 0);
+
     uint64_t cb = 0;
-
-    AssertPtr(pThis);
-
-    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
+    if (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
         cb = pThis->cbSize;
 
     LogFlowFunc(("returns %llu\n", cb));
@@ -2091,20 +2088,19 @@ static DECLCALLBACK(uint64_t) dmgGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    uint64_t cb = 0;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, 0);
 
-    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
+    uint64_t cbFile = 0;
+    if (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
     {
-        uint64_t cbFile;
         int rc = dmgWrapFileGetSize(pThis, &cbFile);
-        if (RT_SUCCESS(rc))
-            cb = cbFile;
+        if (RT_FAILURE(rc))
+            cbFile = 0; /* Make sure it is 0 */
     }
 
-    LogFlowFunc(("returns %lld\n", cb));
-    return cb;
+    LogFlowFunc(("returns %lld\n", cbFile));
+    return cbFile;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetPCHSGeometry} */
@@ -2112,22 +2108,14 @@ static DECLCALLBACK(int) dmgGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCH
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-    {
-        if (pThis->PCHSGeometry.cCylinders)
-        {
-            *pPCHSGeometry = pThis->PCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pThis->PCHSGeometry.cCylinders)
+        *pPCHSGeometry = pThis->PCHSGeometry;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
     LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
@@ -2139,22 +2127,14 @@ static DECLCALLBACK(int) dmgSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPC
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        {
-            pThis->PCHSGeometry = *pPCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        pThis->PCHSGeometry = *pPCHSGeometry;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2163,24 +2143,16 @@ static DECLCALLBACK(int) dmgSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPC
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetLCHSGeometry} */
 static DECLCALLBACK(int) dmgGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
-     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
+    LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-    {
-        if (pThis->LCHSGeometry.cCylinders)
-        {
-            *pLCHSGeometry = pThis->LCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pThis->LCHSGeometry.cCylinders)
+        *pLCHSGeometry = pThis->LCHSGeometry;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
     LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
@@ -2192,22 +2164,14 @@ static DECLCALLBACK(int) dmgSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLC
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
                  pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        {
-            pThis->LCHSGeometry = *pLCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        pThis->LCHSGeometry = *pLCHSGeometry;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2218,17 +2182,10 @@ static DECLCALLBACK(unsigned) dmgGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    unsigned uImageFlags;
+    AssertPtrReturn(pThis, 0);
 
-    AssertPtr(pThis);
-
-    if (pThis)
-        uImageFlags = pThis->uImageFlags;
-    else
-        uImageFlags = 0;
-
-    LogFlowFunc(("returns %#x\n", uImageFlags));
-    return uImageFlags;
+    LogFlowFunc(("returns %#x\n", pThis->uImageFlags));
+    return pThis->uImageFlags;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnGetOpenFlags} */
@@ -2236,17 +2193,11 @@ static DECLCALLBACK(unsigned) dmgGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    unsigned uOpenFlags;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, 0);
 
-    if (pThis)
-        uOpenFlags = pThis->uOpenFlags;
-    else
-        uOpenFlags = 0;
-
-    LogFlowFunc(("returns %#x\n", uOpenFlags));
-    return uOpenFlags;
+    LogFlowFunc(("returns %#x\n", pThis->uOpenFlags));
+    return pThis->uOpenFlags;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnSetOpenFlags} */
@@ -2254,24 +2205,21 @@ static DECLCALLBACK(int) dmgSetOpenFlags(void *pBackendData, unsigned uOpenFlags
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* Image must be opened and the new flags must be valid. */
     if (!pThis || (uOpenFlags & ~(  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO
                                   | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL
                                   | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)))
-    {
         rc = VERR_INVALID_PARAMETER;
-        goto out;
+    else
+    {
+        /* Implement this operation via reopening the image. */
+        rc = dmgFreeImage(pThis, false);
+        if (RT_SUCCESS(rc))
+            rc = dmgOpenImage(pThis, uOpenFlags);
     }
 
-    /* Implement this operation via reopening the image. */
-    rc = dmgFreeImage(pThis, false);
-    if (RT_FAILURE(rc))
-        goto out;
-    rc = dmgOpenImage(pThis, uOpenFlags);
-
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2282,17 +2230,11 @@ static DECLCALLBACK(int) dmgGetComment(void *pBackendData, char *pszComment, siz
     RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
-    return rc;
+    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnSetComment} */
@@ -2300,20 +2242,15 @@ static DECLCALLBACK(int) dmgSetComment(void *pBackendData, const char *pszCommen
 {
     RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            rc = VERR_VD_IMAGE_READ_ONLY;
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2325,17 +2262,11 @@ static DECLCALLBACK(int) dmgGetUuid(void *pBackendData, PRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnSetUuid} */
@@ -2344,20 +2275,14 @@ static DECLCALLBACK(int) dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    LogFlowFunc(("%RTuuid\n", pUuid));
-    AssertPtr(pThis);
-
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2369,17 +2294,11 @@ static DECLCALLBACK(int) dmgGetModificationUuid(void *pBackendData, PRTUUID pUui
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnSetModificationUuid} */
@@ -2388,19 +2307,14 @@ static DECLCALLBACK(int) dmgSetModificationUuid(void *pBackendData, PCRTUUID pUu
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pThis);
-
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2412,17 +2326,11 @@ static DECLCALLBACK(int) dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
 
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentUuid} */
@@ -2431,19 +2339,14 @@ static DECLCALLBACK(int) dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pThis);
-
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2455,14 +2358,14 @@ static DECLCALLBACK(int) dmgGetParentModificationUuid(void *pBackendData, PRTUUI
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pThis);
-
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -2474,19 +2377,14 @@ static DECLCALLBACK(int) dmgSetParentModificationUuid(void *pBackendData, PCRTUU
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+
+    AssertPtrReturn(pThis, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pThis);
-
-    if (pThis)
-    {
-        if (!(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2497,14 +2395,11 @@ static DECLCALLBACK(void) dmgDump(void *pBackendData)
 {
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
 
-    AssertPtr(pThis);
-    if (pThis)
-    {
-        vdIfErrorMessage(pThis->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cSectors=%llu\n",
-                         pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
-                         pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
-                         pThis->cbSize / DMG_SECTOR_SIZE);
-    }
+    AssertPtrReturnVoid(pThis);
+    vdIfErrorMessage(pThis->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cSectors=%llu\n",
+                     pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
+                     pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
+                     pThis->cbSize / DMG_SECTOR_SIZE);
 }
 
 
