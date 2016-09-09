@@ -1427,6 +1427,7 @@
   <xsd:attribute name="lastStateChange" type="TPresentDateTimeUTC"/>
   <xsd:attribute name="aborted" type="xsd:boolean" default="false"/>
   <xsd:attribute name="currentStateModified" type="xsd:boolean" default="true"/>
+  <xsd:attribute name="version" type="xsd:string" default="1.15"/> <!-- Used for OVF files only, must not be present in normal settings files. The default corresponds to settings created by 5.0, which covers many older versions but not newer ones. -->
 </xsd:complexType>
 
 <xsd:complexType name="TSnapshot">
@@ -1463,7 +1464,7 @@
       </xsd:keyref>
     </xsd:element>
   </xsd:choice>
-  <xsd:attribute name="version" type="xsd:string"/>
+  <xsd:attribute name="version" type="xsd:string" use="required"/>
 </xsd:complexType>
 
 <!-- Root element for all VirtualBox config files -->

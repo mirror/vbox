@@ -3198,8 +3198,13 @@ bool MachineConfigFile::canHaveOwnMediaRegistry() const
  */
 void MachineConfigFile::importMachineXML(const xml::ElementNode &elmMachine)
 {
+    // Ideally the version should be mandatory, but since VirtualBox didn't
+    // care about it until 5.1 came with different defaults, there are OVF
+    // files created by magicians (not using VirtualBox, which always wrote it)
+    // which lack this information. Let's hope that they learn to add the
+    // version when they switch to the newer settings style/defaults of 5.1.
     if (!(elmMachine.getAttributeValue("version", m->strSettingsVersionFull)))
-        throw ConfigFileError(this, &elmMachine, N_("Required Machine/@version attribute is missing"));
+        m->strSettingsVersionFull = "1.15";
 
     LogRel(("Import settings with version \"%s\"\n", m->strSettingsVersionFull.c_str()));
 
