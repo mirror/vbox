@@ -161,8 +161,7 @@ DECLINLINE(PPDMAUDIOSTREAM) drvAudioGetHostStream(PPDMAUDIOSTREAM pStream)
                          ("Stream '%s' resolved as host part has no guest part (anymore)\n", pHstStream->szName));
     }
     else
-        AssertReleaseMsgFailed(("Stream '%s' does not have a host pair (anymore)\n",
-                                pStream->szName));
+        LogRel(("Audio: Warning: Stream '%s' does not have a host stream (anymore)\n", pStream->szName));
 
     return pHstStream;
 }
@@ -1088,7 +1087,7 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
         AssertPtr(pHstStream);
-        PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
+        PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : NULL;
         AssertPtr(pGstStream);
 
         AssertReleaseMsgBreakStmt(pHstStream != NULL,
@@ -1187,7 +1186,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
     {
         PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
         AssertPtr(pHstStream);
-        PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
+        PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : NULL;
         AssertPtr(pGstStream);
 
         AssertReleaseMsgBreakStmt(pHstStream != NULL,
