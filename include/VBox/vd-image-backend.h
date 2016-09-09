@@ -591,9 +591,9 @@ typedef VDIMAGEBACKEND *PVDIMAGEBACKEND;
 /** Constant pointer to VD backend. */
 typedef const VDIMAGEBACKEND *PCVDIMAGEBACKEND;
 
-/** @copydoc VBOXHDDBACKEND::pfnComposeLocation */
+/** @copydoc VDIMAGEBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);
-/** @copydoc VBOXHDDBACKEND::pfnComposeName */
+/** @copydoc VDIMAGEBACKEND::pfnComposeName */
 DECLCALLBACK(int) genericFileComposeName(PVDINTERFACE pConfig, char **pszName);
 
 #endif
