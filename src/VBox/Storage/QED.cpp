@@ -1150,7 +1150,10 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
  */
 static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
 {
+    int rc;
+
     pImage->uOpenFlags = uOpenFlags;
+
     pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
     pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
     AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
@@ -1159,7 +1162,7 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
      * Create the L2 cache before opening the image so we can call qedFreeImage()
      * even if opening the image file fails.
      */
-    int rc = qedL2TblCacheCreate(pImage);
+    rc = qedL2TblCacheCreate(pImage);
     if (RT_FAILURE(rc))
     {
         rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
@@ -1184,13 +1187,12 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
     }
 
     uint64_t cbFile;
+    QedHeader Header;
     rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbFile);
     if (RT_FAILURE(rc))
         goto out;
-    if (cbFile > sizeof(QedHeader))
+    if (cbFile > sizeof(Header))
     {
-        QedHeader Header;
-
         rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0, &Header, sizeof(Header));
         if (   RT_SUCCESS(rc)
             && qedHdrConvertToHostEndianess(&Header))
