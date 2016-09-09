@@ -743,6 +743,19 @@ DECLINLINE(PVDINTERFACEPROGRESS) VDIfProgressGet(PVDINTERFACE pVDIfs)
     return (PVDINTERFACEPROGRESS)pIf;
 }
 
+/**
+ * Signal new progress information to the frontend.
+ *
+ * @returns VBox status code.
+ * @param   pIfProgress        The progress interface.
+ * @param   uPercent           Completion percentage.
+ */
+DECLINLINE(int) vdIfProgress(PVDINTERFACEPROGRESS pIfProgress, unsigned uPercentage)
+{
+    if (pIfProgress)
+        return pIfProgress->pfnProgress(pIfProgress->Core.pvUser, uPercentage);
+    return VINF_SUCCESS;
+}
 
 /**
  * Configuration information interface
