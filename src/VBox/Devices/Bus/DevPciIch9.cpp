@@ -1627,11 +1627,11 @@ static void ich9pciSetRegionAddress(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint
 
     /* Read memory type first. */
     uint8_t uResourceType = ich9pciConfigRead(pGlobals, uBus, uDevFn, uReg, 1);
+    bool    f64Bit = (uResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                     == PCI_ADDRESS_SPACE_BAR64;
 
-    Log(("Set region address: %02x:%02x.%d region %d address=%lld\n",
-         uBus, uDevFn >> 3, uDevFn & 7, iRegion, addr));
-
-    bool f64Bit = (uResourceType & PCI_ADDRESS_SPACE_BAR64) != 0;
+    Log(("Set region address: %02x:%02x.%d region %d address=%RX64%s\n",
+         uBus, uDevFn >> 3, uDevFn & 7, iRegion, addr, f64Bit ? " (64-bit)" : ""));
 
     /* Write address of the device. */
     ich9pciConfigWrite(pGlobals, uBus, uDevFn, uReg, (uint32_t)addr, 4);
@@ -1769,11 +1769,11 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                    are cleared. */
                 uint8_t u8ResourceType = ich9pciConfigRead(pGlobals, uBus, uDevFn, u32Address, 1);
 
-                bool f64bit = (u8ResourceType & PCI_ADDRESS_SPACE_BAR64) != 0;
+                bool f64Bit = (u8ResourceType & PCI_ADDRESS_SPACE_BAR64) != 0;
                 bool fIsPio = ((u8ResourceType & PCI_COMMAND_IOACCESS) == PCI_COMMAND_IOACCESS);
                 uint64_t cbRegSize64 = 0;
 
-                if (f64bit)
+                if (f64Bit)
                 {
                     ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address,   UINT32_C(0xffffffff), 4);
                     ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address+4, UINT32_C(0xffffffff), 4);
@@ -1810,8 +1810,10 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
 
                     cbRegSize64 = cbRegSize32;
                 }
+#if 0 /* bogus for 64-bit regions */
 #ifndef DEBUG_bird /* EFI triggers this for DevAHCI. */
                 Assert(cbRegSize64 == (uint32_t)cbRegSize64);
+#endif
 #endif
                 Log2(("%s: Size of region %u for device %d on bus %d is %lld\n", __FUNCTION__, iRegion, uDevFn, uBus, cbRegSize64));
 
@@ -1825,9 +1827,11 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                     if (fIsPio)
                         uNew &= UINT32_C(0xffff);
                     /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                    if (!uNew || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000)))
+                    if (   f64Bit
+                        || !uNew
+                        || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000)))
                     {
-                        if (f64bit)
+                        if (f64Bit)
                         {
                             /* Map a 64-bit region above 4GB. */
                             Assert(!fIsPio);
@@ -1860,7 +1864,7 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                         Log2Func(("New 32-bit address is %#x\n", *paddr));
                     }
 
-                    if (f64bit)
+                    if (f64Bit)
                         iRegion++; /* skip next region */
                 }
             }
@@ -2472,10 +2476,16 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
                     }
 
                     printIndent(pHlp, iIndent + 2);
-                    pHlp->pfnPrintf(pHlp, "%s region #%d: %x..%x\n",
-                                    pszDesc, iRegion, u32Addr, u32Addr+iRegionSize);
+                    pHlp->pfnPrintf(pHlp, "%s region #%d: ",pszDesc, iRegion);
                     if (f64Bit)
+                    {
+                        uint32_t u32High = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion+1));
+                        uint64_t u64Addr = RT_MAKE_U64(u32Addr, u32High);
+                        pHlp->pfnPrintf(pHlp, "%RX64..%RX64\n", u64Addr, u64Addr+iRegionSize);
                         iRegion++;
+                    }
+                    else
+                        pHlp->pfnPrintf(pHlp, "%x..%x\n", u32Addr, u32Addr+iRegionSize);
                 }
             }
 
