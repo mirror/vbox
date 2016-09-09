@@ -5217,7 +5217,7 @@ static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
+/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
 static DECLCALLBACK(int) vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
@@ -5262,7 +5262,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnOpen */
+/** @copydoc VDIMAGEBACKEND::pfnOpen */
 static DECLCALLBACK(int) vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
                                   PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                   VDTYPE enmType, void **ppBackendData)
@@ -5315,7 +5315,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnCreate */
+/** @copydoc VDIMAGEBACKEND::pfnCreate */
 static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
                                     unsigned uImageFlags, const char *pszComment,
                                     PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
@@ -5441,7 +5441,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRename */
+/** @copydoc VDIMAGEBACKEND::pfnRename */
 static DECLCALLBACK(int) vmdkRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
@@ -5696,7 +5696,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnClose */
+/** @copydoc VDIMAGEBACKEND::pfnClose */
 static DECLCALLBACK(int) vmdkClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
@@ -5710,7 +5710,7 @@ static DECLCALLBACK(int) vmdkClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
+/** @copydoc VDIMAGEBACKEND::pfnRead */
 static DECLCALLBACK(int) vmdkRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                   PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -5833,7 +5833,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
+/** @copydoc VDIMAGEBACKEND::pfnWrite */
 static DECLCALLBACK(int) vmdkWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                    PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                    size_t *pcbPostRead, unsigned fWrite)
@@ -5979,7 +5979,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
+/** @copydoc VDIMAGEBACKEND::pfnFlush */
 static DECLCALLBACK(int) vmdkFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
@@ -5987,7 +5987,7 @@ static DECLCALLBACK(int) vmdkFlush(void *pBackendData, PVDIOCTX pIoCtx)
     return vmdkFlushImage(pImage, pIoCtx);
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetVersion */
+/** @copydoc VDIMAGEBACKEND::pfnGetVersion */
 static DECLCALLBACK(unsigned) vmdkGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6001,7 +6001,7 @@ static DECLCALLBACK(unsigned) vmdkGetVersion(void *pBackendData)
         return 0;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetSectorSize */
 static DECLCALLBACK(uint32_t) vmdkGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6015,7 +6015,7 @@ static DECLCALLBACK(uint32_t) vmdkGetSectorSize(void *pBackendData)
         return 0;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetSize */
 static DECLCALLBACK(uint64_t) vmdkGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6029,7 +6029,7 @@ static DECLCALLBACK(uint64_t) vmdkGetSize(void *pBackendData)
         return 0;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
+/** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
 static DECLCALLBACK(uint64_t) vmdkGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6062,7 +6062,7 @@ static DECLCALLBACK(uint64_t) vmdkGetFileSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnGetPCHSGeometry */
 static DECLCALLBACK(int) vmdkGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
@@ -6088,7 +6088,7 @@ static DECLCALLBACK(int) vmdkGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPC
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnSetPCHSGeometry */
 static DECLCALLBACK(int) vmdkSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
@@ -6124,7 +6124,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnGetLCHSGeometry */
 static DECLCALLBACK(int) vmdkGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
      LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
@@ -6150,7 +6150,7 @@ static DECLCALLBACK(int) vmdkGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLC
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
+/** @copydoc VDIMAGEBACKEND::pfnSetLCHSGeometry */
 static DECLCALLBACK(int) vmdkSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
@@ -6186,7 +6186,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetImageFlags */
+/** @copydoc VDIMAGEBACKEND::pfnGetImageFlags */
 static DECLCALLBACK(unsigned) vmdkGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6204,7 +6204,7 @@ static DECLCALLBACK(unsigned) vmdkGetImageFlags(void *pBackendData)
     return uImageFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
+/** @copydoc VDIMAGEBACKEND::pfnGetOpenFlags */
 static DECLCALLBACK(unsigned) vmdkGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -6222,7 +6222,7 @@ static DECLCALLBACK(unsigned) vmdkGetOpenFlags(void *pBackendData)
     return uOpenFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
+/** @copydoc VDIMAGEBACKEND::pfnSetOpenFlags */
 static DECLCALLBACK(int) vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p uOpenFlags=%#x\n", pBackendData, uOpenFlags));
@@ -6258,7 +6258,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetComment */
+/** @copydoc VDIMAGEBACKEND::pfnGetComment */
 static DECLCALLBACK(int) vmdkGetComment(void *pBackendData, char *pszComment,
                           size_t cbComment)
 {
@@ -6296,7 +6296,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetComment */
+/** @copydoc VDIMAGEBACKEND::pfnSetComment */
 static DECLCALLBACK(int) vmdkSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
@@ -6328,7 +6328,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetUuid */
 static DECLCALLBACK(int) vmdkGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -6349,7 +6349,7 @@ static DECLCALLBACK(int) vmdkGetUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetUuid */
 static DECLCALLBACK(int) vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -6385,7 +6385,7 @@ static DECLCALLBACK(int) vmdkSetUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetModificationUuid */
 static DECLCALLBACK(int) vmdkGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -6406,7 +6406,7 @@ static DECLCALLBACK(int) vmdkGetModificationUuid(void *pBackendData, PRTUUID pUu
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
 static DECLCALLBACK(int) vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -6445,7 +6445,7 @@ static DECLCALLBACK(int) vmdkSetModificationUuid(void *pBackendData, PCRTUUID pU
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetParentUuid */
 static DECLCALLBACK(int) vmdkGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -6466,7 +6466,7 @@ static DECLCALLBACK(int) vmdkGetParentUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
 static DECLCALLBACK(int) vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -6501,7 +6501,7 @@ static DECLCALLBACK(int) vmdkSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnGetParentModificationUuid */
 static DECLCALLBACK(int) vmdkGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -6522,7 +6522,7 @@ static DECLCALLBACK(int) vmdkGetParentModificationUuid(void *pBackendData, PRTUU
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
+/** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
 static DECLCALLBACK(int) vmdkSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -6557,7 +6557,7 @@ static DECLCALLBACK(int) vmdkSetParentModificationUuid(void *pBackendData, PCRTU
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnDump */
+/** @copydoc VDIMAGEBACKEND::pfnDump */
 static DECLCALLBACK(void) vmdkDump(void *pBackendData)
 {
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;

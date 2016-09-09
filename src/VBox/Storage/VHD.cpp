@@ -1245,7 +1245,7 @@ out:
 }
 
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnCheckIfValid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnCheckIfValid} */
 static DECLCALLBACK(int) vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                          PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
@@ -1303,7 +1303,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnOpen} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnOpen} */
 static DECLCALLBACK(int) vhdOpen(const char *pszFilename, unsigned uOpenFlags,
                                  PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                                  VDTYPE enmType, void **ppBackendData)
@@ -1352,7 +1352,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnCreate} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnCreate} */
 static DECLCALLBACK(int) vhdCreate(const char *pszFilename, uint64_t cbSize,
                                    unsigned uImageFlags, const char *pszComment,
                                    PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
@@ -1439,7 +1439,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnRename} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnRename} */
 static DECLCALLBACK(int) vhdRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
@@ -1485,7 +1485,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnClose} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnClose} */
 static DECLCALLBACK(int) vhdClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
@@ -1499,7 +1499,7 @@ static DECLCALLBACK(int) vhdClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnRead} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnRead} */
 static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
                                  PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -1615,7 +1615,7 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnWrite} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnWrite} */
 static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
                          PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                          size_t *pcbPostRead, unsigned fWrite)
@@ -1849,7 +1849,7 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnFlush} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnFlush} */
 static DECLCALLBACK(int) vhdFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
@@ -1858,7 +1858,7 @@ static DECLCALLBACK(int) vhdFlush(void *pBackendData, PVDIOCTX pIoCtx)
     return vdIfIoIntFileFlush(pImage->pIfIo, pImage->pStorage, pIoCtx, NULL, NULL);
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetVersion} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetVersion} */
 static DECLCALLBACK(unsigned) vhdGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1874,7 +1874,7 @@ static DECLCALLBACK(unsigned) vhdGetVersion(void *pBackendData)
     return ver;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetSectorSize} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSectorSize} */
 static DECLCALLBACK(uint32_t) vhdGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1890,7 +1890,7 @@ static DECLCALLBACK(uint32_t) vhdGetSectorSize(void *pBackendData)
     return cb;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetSize} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetSize} */
 static DECLCALLBACK(uint64_t) vhdGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1906,7 +1906,7 @@ static DECLCALLBACK(uint64_t) vhdGetSize(void *pBackendData)
     return cb;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetFileSize} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetFileSize} */
 static DECLCALLBACK(uint64_t) vhdGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1922,7 +1922,7 @@ static DECLCALLBACK(uint64_t) vhdGetFileSize(void *pBackendData)
     return cb;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetPCHSGeometry} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetPCHSGeometry} */
 static DECLCALLBACK(int) vhdGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
@@ -1948,7 +1948,7 @@ static DECLCALLBACK(int) vhdGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCH
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetPCHSGeometry} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetPCHSGeometry} */
 static DECLCALLBACK(int) vhdSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
@@ -1976,7 +1976,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetLCHSGeometry} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetLCHSGeometry} */
 static DECLCALLBACK(int) vhdGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
 LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
@@ -2002,7 +2002,7 @@ LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetLCHSGeometry} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetLCHSGeometry} */
 static DECLCALLBACK(int) vhdSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
@@ -2029,7 +2029,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetImageFlags} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetImageFlags} */
 static DECLCALLBACK(unsigned) vhdGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -2047,7 +2047,7 @@ static DECLCALLBACK(unsigned) vhdGetImageFlags(void *pBackendData)
     return uImageFlags;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetOpenFlags} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetOpenFlags} */
 static DECLCALLBACK(unsigned) vhdGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -2065,7 +2065,7 @@ static DECLCALLBACK(unsigned) vhdGetOpenFlags(void *pBackendData)
     return uOpenFlags;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetOpenFlags} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetOpenFlags} */
 static DECLCALLBACK(int) vhdSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
@@ -2092,7 +2092,7 @@ out:
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetComment} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetComment} */
 static DECLCALLBACK(int) vhdGetComment(void *pBackendData, char *pszComment,
                                        size_t cbComment)
 {
@@ -2112,7 +2112,7 @@ static DECLCALLBACK(int) vhdGetComment(void *pBackendData, char *pszComment,
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetComment} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetComment} */
 static DECLCALLBACK(int) vhdSetComment(void *pBackendData, const char *pszComment)
 {
     RT_NOREF1(pszComment);
@@ -2136,7 +2136,7 @@ static DECLCALLBACK(int) vhdSetComment(void *pBackendData, const char *pszCommen
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetUuid} */
 static DECLCALLBACK(int) vhdGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2157,7 +2157,7 @@ static DECLCALLBACK(int) vhdGetUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetUuid} */
 static DECLCALLBACK(int) vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2192,7 +2192,7 @@ static DECLCALLBACK(int) vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetModificationUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetModificationUuid} */
 static DECLCALLBACK(int) vhdGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -2211,7 +2211,7 @@ static DECLCALLBACK(int) vhdGetModificationUuid(void *pBackendData, PRTUUID pUui
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetModificationUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetModificationUuid} */
 static DECLCALLBACK(int) vhdSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -2235,7 +2235,7 @@ static DECLCALLBACK(int) vhdSetModificationUuid(void *pBackendData, PCRTUUID pUu
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentUuid} */
 static DECLCALLBACK(int) vhdGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2256,7 +2256,7 @@ static DECLCALLBACK(int) vhdGetParentUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentUuid} */
 static DECLCALLBACK(int) vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2282,7 +2282,7 @@ static DECLCALLBACK(int) vhdSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentModificationUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentModificationUuid} */
 static DECLCALLBACK(int) vhdGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -2301,7 +2301,7 @@ static DECLCALLBACK(int) vhdGetParentModificationUuid(void *pBackendData, PRTUUI
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentModificationUuid} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentModificationUuid} */
 static DECLCALLBACK(int) vhdSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     RT_NOREF1(pUuid);
@@ -2325,7 +2325,7 @@ static DECLCALLBACK(int) vhdSetParentModificationUuid(void *pBackendData, PCRTUU
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnDump} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnDump} */
 static DECLCALLBACK(void) vhdDump(void *pBackendData)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
@@ -2342,7 +2342,7 @@ static DECLCALLBACK(void) vhdDump(void *pBackendData)
     }
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetTimestamp} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetTimestamp} */
 static DECLCALLBACK(int) vhdGetTimestamp(void *pBackendData, PRTTIMESPEC pTimestamp)
 {
     int rc = VINF_SUCCESS;
@@ -2359,7 +2359,7 @@ static DECLCALLBACK(int) vhdGetTimestamp(void *pBackendData, PRTTIMESPEC pTimest
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentTimestamp} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentTimestamp} */
 static DECLCALLBACK(int) vhdGetParentTimestamp(void *pBackendData, PRTTIMESPEC pTimestamp)
 {
     int rc = VINF_SUCCESS;
@@ -2376,7 +2376,7 @@ static DECLCALLBACK(int) vhdGetParentTimestamp(void *pBackendData, PRTTIMESPEC p
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentTimestamp} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentTimestamp} */
 static DECLCALLBACK(int) vhdSetParentTimestamp(void *pBackendData, PCRTTIMESPEC pTimestamp)
 {
     int rc = VINF_SUCCESS;
@@ -2400,7 +2400,7 @@ static DECLCALLBACK(int) vhdSetParentTimestamp(void *pBackendData, PCRTTIMESPEC 
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentFilename} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnGetParentFilename} */
 static DECLCALLBACK(int) vhdGetParentFilename(void *pBackendData, char **ppszParentFilename)
 {
     int rc = VINF_SUCCESS;
@@ -2416,7 +2416,7 @@ static DECLCALLBACK(int) vhdGetParentFilename(void *pBackendData, char **ppszPar
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentFilename} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnSetParentFilename} */
 static DECLCALLBACK(int) vhdSetParentFilename(void *pBackendData, const char *pszParentFilename)
 {
     int rc = VINF_SUCCESS;
@@ -2445,7 +2445,7 @@ static DECLCALLBACK(int) vhdSetParentFilename(void *pBackendData, const char *ps
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnCompact} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnCompact} */
 static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
                                     unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
                                     PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation)
@@ -2685,7 +2685,7 @@ static DECLCALLBACK(int) vhdCompact(void *pBackendData, unsigned uPercentStart,
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnResize} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnResize} */
 static DECLCALLBACK(int) vhdResize(void *pBackendData, uint64_t cbSize,
                                    PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
                                    unsigned uPercentStart, unsigned uPercentSpan,
@@ -2870,7 +2870,7 @@ static DECLCALLBACK(int) vhdResize(void *pBackendData, uint64_t cbSize,
     return rc;
 }
 
-/** @interface_method_impl{VBOXHDDBACKEND,pfnRepair} */
+/** @interface_method_impl{VDIMAGEBACKEND,pfnRepair} */
 static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                                    PVDINTERFACE pVDIfsImage, uint32_t fFlags)
 {
