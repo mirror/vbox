@@ -1827,9 +1827,9 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                     if (fIsPio)
                         uNew &= UINT32_C(0xffff);
                     /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                    if (   f64Bit
-                        || !uNew
-                        || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000)))
+                    if (   !uNew
+                        || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000))
+                        || uNew >= _4G)
                     {
                         if (f64Bit)
                         {
