@@ -1810,11 +1810,6 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
 
                     cbRegSize64 = cbRegSize32;
                 }
-#if 0 /* bogus for 64-bit regions */
-#ifndef DEBUG_bird /* EFI triggers this for DevAHCI. */
-                Assert(cbRegSize64 == (uint32_t)cbRegSize64);
-#endif
-#endif
                 Log2(("%s: Size of region %u for device %d on bus %d is %lld\n", __FUNCTION__, iRegion, uDevFn, uBus, cbRegSize64));
 
                 if (cbRegSize64)
