@@ -179,91 +179,74 @@ static int parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
 
 static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
 {
-    int rc = VINF_SUCCESS;
-    ParallelsHeader parallelsHeader;
-
     pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
     pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
     pImage->uOpenFlags = uOpenFlags;
     AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
 
-    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
-                           VDOpenFlagsToFileOpenFlags(uOpenFlags,
-                                                      false /* fCreate */),
-                           &pImage->pStorage);
-    if (RT_FAILURE(rc))
-        goto out;
-
-    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &pImage->cbFileCurrent);
-    if (RT_FAILURE(rc))
-        goto out;
-    if (pImage->cbFileCurrent % 512 != 0)
+    int rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename,
+                               VDOpenFlagsToFileOpenFlags(uOpenFlags,
+                                                          false /* fCreate */),
+                               &pImage->pStorage);
+    if (RT_SUCCESS(rc))
     {
-        rc = VERR_VD_PARALLELS_INVALID_HEADER;
-        goto out;
-    }
-
-    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
-                               &parallelsHeader, sizeof(parallelsHeader));
-    if (RT_FAILURE(rc))
-        goto out;
-
-    if (memcmp(parallelsHeader.HeaderIdentifier, PARALLELS_HEADER_MAGIC, 16))
-    {
-        /* Check if the file has hdd as extension. It is a fixed size raw image then. */
-        char *pszSuffix = RTPathSuffix(pImage->pszFilename);
-        if (strcmp(pszSuffix, ".hdd"))
+        rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &pImage->cbFileCurrent);
+        if (RT_SUCCESS(rc)
+            && !(pImage->cbFileCurrent % 512))
         {
+            ParallelsHeader parallelsHeader;
+
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, 0,
+                                       &parallelsHeader, sizeof(parallelsHeader));
+            if (RT_SUCCESS(rc))
+            {
+                if (memcmp(parallelsHeader.HeaderIdentifier, PARALLELS_HEADER_MAGIC, 16))
+                {
+                    /* Check if the file has hdd as extension. It is a fixed size raw image then. */
+                    char *pszSuffix = RTPathSuffix(pImage->pszFilename);
+                    if (!strcmp(pszSuffix, ".hdd"))
+                    {
+                        /* This is a fixed size image. */
+                        pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
+                        pImage->cbSize = pImage->cbFileCurrent;
+
+                        pImage->PCHSGeometry.cHeads     = 16;
+                        pImage->PCHSGeometry.cSectors   = 63;
+                        uint64_t cCylinders = pImage->cbSize / (512 * pImage->PCHSGeometry.cSectors * pImage->PCHSGeometry.cHeads);
+                        pImage->PCHSGeometry.cCylinders = (uint32_t)cCylinders;
+                    }
+                    else
+                        rc = VERR_VD_PARALLELS_INVALID_HEADER;
+                }
+                else
+                {
+                    if (   parallelsHeader.uVersion == PARALLELS_DISK_VERSION
+                        && parallelsHeader.cEntriesInAllocationBitmap <= (1 << 30))
+                    {
+                        Log(("cSectors=%u\n", parallelsHeader.cSectors));
+                        pImage->cbSize = ((uint64_t)parallelsHeader.cSectors) * 512;
+                        pImage->uImageFlags = VD_IMAGE_FLAGS_NONE;
+                        pImage->PCHSGeometry.cCylinders = parallelsHeader.cCylinders;
+                        pImage->PCHSGeometry.cHeads     = parallelsHeader.cHeads;
+                        pImage->PCHSGeometry.cSectors   = parallelsHeader.cSectorsPerTrack;
+                        pImage->cAllocationBitmapEntries = parallelsHeader.cEntriesInAllocationBitmap;
+                        pImage->pAllocationBitmap = (uint32_t *)RTMemAllocZ((uint32_t)pImage->cAllocationBitmapEntries * sizeof(uint32_t));
+                        if (RT_LIKELY(pImage->pAllocationBitmap))
+                            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                                       sizeof(ParallelsHeader), pImage->pAllocationBitmap,
+                                                       pImage->cAllocationBitmapEntries * sizeof(uint32_t));
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+                    else
+                        rc = VERR_NOT_SUPPORTED;
+                }
+            }
+        }
+        else if (RT_SUCCESS(rc))
             rc = VERR_VD_PARALLELS_INVALID_HEADER;
-            goto out;
-        }
-
-        /* This is a fixed size image. */
-        pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
-        pImage->cbSize = pImage->cbFileCurrent;
-
-        pImage->PCHSGeometry.cHeads     = 16;
-        pImage->PCHSGeometry.cSectors   = 63;
-        uint64_t cCylinders = pImage->cbSize / (512 * pImage->PCHSGeometry.cSectors * pImage->PCHSGeometry.cHeads);
-        pImage->PCHSGeometry.cCylinders = (uint32_t)cCylinders;
-    }
-    else
-    {
-        if (parallelsHeader.uVersion != PARALLELS_DISK_VERSION)
-        {
-            rc = VERR_NOT_SUPPORTED;
-            goto out;
-        }
-
-        if (parallelsHeader.cEntriesInAllocationBitmap > (1 << 30))
-        {
-            rc = VERR_NOT_SUPPORTED;
-            goto out;
-        }
-
-        Log(("cSectors=%u\n", parallelsHeader.cSectors));
-        pImage->cbSize = ((uint64_t)parallelsHeader.cSectors) * 512;
-        pImage->uImageFlags = VD_IMAGE_FLAGS_NONE;
-        pImage->cAllocationBitmapEntries = parallelsHeader.cEntriesInAllocationBitmap;
-        pImage->pAllocationBitmap = (uint32_t *)RTMemAllocZ((uint32_t)pImage->cAllocationBitmapEntries * sizeof(uint32_t));
-        if (!pImage->pAllocationBitmap)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
-                                   sizeof(ParallelsHeader), pImage->pAllocationBitmap,
-                                   pImage->cAllocationBitmapEntries * sizeof(uint32_t));
-        if (RT_FAILURE(rc))
-            goto out;
-
-        pImage->PCHSGeometry.cCylinders = parallelsHeader.cCylinders;
-        pImage->PCHSGeometry.cHeads     = parallelsHeader.cHeads;
-        pImage->PCHSGeometry.cSectors   = parallelsHeader.cSectorsPerTrack;
     }
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -282,78 +265,73 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
     int rc = VINF_SUCCESS;
     int32_t fOpen;
 
-    if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
+    if (!(uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
+        pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
+        pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
+        AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
+
+        pImage->uOpenFlags   = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
+        pImage->uImageFlags  = uImageFlags;
+        pImage->PCHSGeometry = *pPCHSGeometry;
+        pImage->LCHSGeometry = *pLCHSGeometry;
+        if (!pImage->PCHSGeometry.cCylinders)
+        {
+            /* Set defaults. */
+            pImage->PCHSGeometry.cSectors   = 63;
+            pImage->PCHSGeometry.cHeads     = 16;
+            pImage->PCHSGeometry.cCylinders = pImage->cbSize / (512 * pImage->PCHSGeometry.cSectors * pImage->PCHSGeometry.cHeads);
+        }
+
+        /* Create image file. */
+        fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
+        rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename, fOpen, &pImage->pStorage);
+        if (RT_SUCCESS(rc))
+        {
+            if (pfnProgress)
+                pfnProgress(pvUser, uPercentStart + uPercentSpan * 98 / 100);
+
+            /* Setup image state. */
+            pImage->cbSize                   = cbSize;
+            pImage->cAllocationBitmapEntries = cbSize / 512 / pImage->PCHSGeometry.cSectors;
+            if (pImage->cAllocationBitmapEntries * pImage->PCHSGeometry.cSectors * 512 < cbSize)
+                pImage->cAllocationBitmapEntries++;
+            pImage->fAllocationBitmapChanged = true;
+            pImage->cbFileCurrent            = sizeof(ParallelsHeader) + pImage->cAllocationBitmapEntries * sizeof(uint32_t);
+            /* Round to next sector boundary. */
+            pImage->cbFileCurrent           += 512 - pImage->cbFileCurrent % 512;
+            Assert(!(pImage->cbFileCurrent % 512));
+            pImage->pAllocationBitmap        = (uint32_t *)RTMemAllocZ(pImage->cAllocationBitmapEntries * sizeof(uint32_t));
+            if (pImage->pAllocationBitmap)
+            {
+                ParallelsHeader Header;
+
+                memcpy(Header.HeaderIdentifier, PARALLELS_HEADER_MAGIC, sizeof(Header.HeaderIdentifier));
+                Header.uVersion                   = RT_H2LE_U32(PARALLELS_DISK_VERSION);
+                Header.cHeads                     = RT_H2LE_U32(pImage->PCHSGeometry.cHeads);
+                Header.cCylinders                 = RT_H2LE_U32(pImage->PCHSGeometry.cCylinders);
+                Header.cSectorsPerTrack           = RT_H2LE_U32(pImage->PCHSGeometry.cSectors);
+                Header.cEntriesInAllocationBitmap = RT_H2LE_U32(pImage->cAllocationBitmapEntries);
+                Header.cSectors                   = RT_H2LE_U32(pImage->cbSize / 512);
+                memset(Header.Padding, 0, sizeof(Header.Padding));
+
+                /* Write header and allocation bitmap. */
+                rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->cbFileCurrent);
+                if (RT_SUCCESS(rc))
+                    rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0,
+                                                &Header, sizeof(Header));
+                if (RT_SUCCESS(rc))
+                    rc = parallelsFlushImage(pImage); /* Writes the allocation bitmap. */
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Parallels: cannot create image '%s'"), pImage->pszFilename);
+    }
+    else
         rc = vdIfError(pImage->pIfError, VERR_VD_INVALID_TYPE, RT_SRC_POS, N_("Parallels: cannot create fixed image '%s'. Create a raw image"), pImage->pszFilename);
-        goto out;
-    }
 
-    pImage->uOpenFlags   = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
-    pImage->uImageFlags  = uImageFlags;
-    pImage->PCHSGeometry = *pPCHSGeometry;
-    pImage->LCHSGeometry = *pLCHSGeometry;
-
-    if (!pImage->PCHSGeometry.cCylinders)
-    {
-        /* Set defaults. */
-        pImage->PCHSGeometry.cSectors   = 63;
-        pImage->PCHSGeometry.cHeads     = 16;
-        pImage->PCHSGeometry.cCylinders = pImage->cbSize / (512 * pImage->PCHSGeometry.cSectors * pImage->PCHSGeometry.cHeads);
-    }
-
-    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
-    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
-    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
-
-    /* Create image file. */
-    fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
-    rc = vdIfIoIntFileOpen(pImage->pIfIo, pImage->pszFilename, fOpen, &pImage->pStorage);
-    if (RT_FAILURE(rc))
-    {
-        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Parallels: cannot create image '%s'"), pImage->pszFilename);
-        goto out;
-    }
-
-    if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(pvUser, uPercentStart + uPercentSpan * 98 / 100);
-
-    /* Setup image state. */
-    pImage->cbSize                   = cbSize;
-    pImage->cAllocationBitmapEntries = cbSize / 512 / pImage->PCHSGeometry.cSectors;
-    if (pImage->cAllocationBitmapEntries * pImage->PCHSGeometry.cSectors * 512 < cbSize)
-        pImage->cAllocationBitmapEntries++;
-    pImage->fAllocationBitmapChanged = true;
-    pImage->cbFileCurrent            = sizeof(ParallelsHeader) + pImage->cAllocationBitmapEntries * sizeof(uint32_t);
-    /* Round to next sector boundary. */
-    pImage->cbFileCurrent           += 512 - pImage->cbFileCurrent % 512;
-    Assert(!(pImage->cbFileCurrent % 512));
-    pImage->pAllocationBitmap        = (uint32_t *)RTMemAllocZ(pImage->cAllocationBitmapEntries * sizeof(uint32_t));
-    if (!pImage->pAllocationBitmap)
-        rc = VERR_NO_MEMORY;
-
-    if (RT_SUCCESS(rc))
-    {
-        ParallelsHeader Header;
-
-        memcpy(Header.HeaderIdentifier, PARALLELS_HEADER_MAGIC, sizeof(Header.HeaderIdentifier));
-        Header.uVersion                   = RT_H2LE_U32(PARALLELS_DISK_VERSION);
-        Header.cHeads                     = RT_H2LE_U32(pImage->PCHSGeometry.cHeads);
-        Header.cCylinders                 = RT_H2LE_U32(pImage->PCHSGeometry.cCylinders);
-        Header.cSectorsPerTrack           = RT_H2LE_U32(pImage->PCHSGeometry.cSectors);
-        Header.cEntriesInAllocationBitmap = RT_H2LE_U32(pImage->cAllocationBitmapEntries);
-        Header.cSectors                   = RT_H2LE_U32(pImage->cbSize / 512);
-        memset(Header.Padding, 0, sizeof(Header.Padding));
-
-        /* Write header and allocation bitmap. */
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->cbFileCurrent);
-        if (RT_SUCCESS(rc))
-            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage, 0,
-                                        &Header, sizeof(Header));
-        if (RT_SUCCESS(rc))
-            rc = parallelsFlushImage(pImage); /* Writes the allocation bitmap. */
-    }
-
-out:
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
@@ -434,41 +412,28 @@ static DECLCALLBACK(int) parallelsOpen(const char *pszFilename, unsigned uOpenFl
 
     NOREF(enmType); /**< @todo r=klaus make use of the type info. */
 
-    /* Check open flags. All valid flags are supported. */
-    if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    /* Check remaining arguments. */
-    if (   !VALID_PTR(pszFilename)
-        || !*pszFilename)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
+    /* Check parameters. */
+    AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(VALID_PTR(pszFilename) && *pszFilename, VERR_INVALID_PARAMETER);
 
     pImage = (PPARALLELSIMAGE)RTMemAllocZ(sizeof(PARALLELSIMAGE));
-    if (!pImage)
+    if (RT_LIKELY(pImage))
     {
-        rc = VERR_NO_MEMORY;
-        goto out;
+        pImage->pszFilename = pszFilename;
+        pImage->pStorage = NULL;
+        pImage->pVDIfsDisk = pVDIfsDisk;
+        pImage->pVDIfsImage = pVDIfsImage;
+        pImage->fAllocationBitmapChanged = false;
+
+        rc = parallelsOpenImage(pImage, uOpenFlags);
+        if (RT_SUCCESS(rc))
+            *ppBackendData = pImage;
+        else
+            RTMemFree(pImage);
     }
-
-    pImage->pszFilename = pszFilename;
-    pImage->pStorage = NULL;
-    pImage->pVDIfsDisk = pVDIfsDisk;
-    pImage->pVDIfsImage = pVDIfsImage;
-    pImage->fAllocationBitmapChanged = false;
-
-    rc = parallelsOpenImage(pImage, uOpenFlags);
-    if (RT_SUCCESS(rc))
-        *ppBackendData = pImage;
     else
-        RTMemFree(pImage);
+        rc = VERR_NO_MEMORY;
 
-out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
     return rc;
 }
@@ -487,9 +452,20 @@ static DECLCALLBACK(int) parallelsCreate(const char *pszFilename, uint64_t cbSiz
     RT_NOREF1(pUuid);
     LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
                  pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
+
+    /* Check the VD container type. */
+    if (enmType != VDTYPE_HDD)
+        return VERR_VD_INVALID_TYPE;
+
+    /* Check arguments. */
+    AssertReturn(!(uOpenFlags & ~VD_OPEN_FLAGS_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(   VALID_PTR(pszFilename)
+                 && *pszFilename
+                 && VALID_PTR(pPCHSGeometry)
+                 && VALID_PTR(pLCHSGeometry), VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
     PPARALLELSIMAGE pImage;
-
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
@@ -499,64 +475,37 @@ static DECLCALLBACK(int) parallelsCreate(const char *pszFilename, uint64_t cbSiz
         pvUser = pIfProgress->Core.pvUser;
     }
 
-    /* Check the VD container type. */
-    if (enmType != VDTYPE_HDD)
-    {
-        rc = VERR_VD_INVALID_TYPE;
-        goto out;
-    }
-
-    /* Check open flags. All valid flags are supported. */
-    if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
-    /* Check remaining arguments. */
-    if (   !VALID_PTR(pszFilename)
-        || !*pszFilename
-        || !VALID_PTR(pPCHSGeometry)
-        || !VALID_PTR(pLCHSGeometry))
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-
     pImage = (PPARALLELSIMAGE)RTMemAllocZ(sizeof(PARALLELSIMAGE));
-    if (!pImage)
+    if (RT_LIKELY(pImage))
     {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-    pImage->pszFilename = pszFilename;
-    pImage->pStorage = NULL;
-    pImage->pVDIfsDisk = pVDIfsDisk;
-    pImage->pVDIfsImage = pVDIfsImage;
+        pImage->pszFilename = pszFilename;
+        pImage->pStorage = NULL;
+        pImage->pVDIfsDisk = pVDIfsDisk;
+        pImage->pVDIfsImage = pVDIfsImage;
 
-    rc = parallelsCreateImage(pImage, cbSize, uImageFlags, pszComment,
-                              pPCHSGeometry, pLCHSGeometry, uOpenFlags,
-                              pfnProgress, pvUser, uPercentStart, uPercentSpan);
-    if (RT_SUCCESS(rc))
-    {
-        /* So far the image is opened in read/write mode. Make sure the
-         * image is opened in read-only mode if the caller requested that. */
-        if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = parallelsCreateImage(pImage, cbSize, uImageFlags, pszComment,
+                                  pPCHSGeometry, pLCHSGeometry, uOpenFlags,
+                                  pfnProgress, pvUser, uPercentStart, uPercentSpan);
+        if (RT_SUCCESS(rc))
         {
-            parallelsFreeImage(pImage, false);
-            rc = parallelsOpenImage(pImage, uOpenFlags);
-            if (RT_FAILURE(rc))
+            /* So far the image is opened in read/write mode. Make sure the
+             * image is opened in read-only mode if the caller requested that. */
+            if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
             {
-                RTMemFree(pImage);
-                goto out;
+                parallelsFreeImage(pImage, false);
+                rc = parallelsOpenImage(pImage, uOpenFlags);
             }
+
+            if (RT_SUCCESS(rc))
+                *ppBackendData = pImage;
         }
-        *ppBackendData = pImage;
+
+        if (RT_FAILURE(rc))
+            RTMemFree(pImage);
     }
     else
-        RTMemFree(pImage);
+        rc = VERR_NO_MEMORY;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -569,40 +518,31 @@ static DECLCALLBACK(int) parallelsRename(void *pBackendData, const char *pszFile
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
 
     /* Check arguments. */
-    if (   !pImage
-        || !pszFilename
-        || !*pszFilename)
-    {
-        rc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
+    AssertReturn((pImage && pszFilename && *pszFilename), VERR_INVALID_PARAMETER);
 
     /* Close the image. */
     rc = parallelsFreeImage(pImage, false);
-    if (RT_FAILURE(rc))
-        goto out;
-
-    /* Rename the file. */
-    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
     {
-        /* The move failed, try to reopen the original image. */
-        int rc2 = parallelsOpenImage(pImage, pImage->uOpenFlags);
-        if (RT_FAILURE(rc2))
-            rc = rc2;
+        /* Rename the file. */
+        rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
+        if (RT_SUCCESS(rc))
+        {
+            /* Update pImage with the new information. */
+            pImage->pszFilename = pszFilename;
 
-        goto out;
+            /* Open the old image with new name. */
+            rc = parallelsOpenImage(pImage, pImage->uOpenFlags);
+        }
+        else
+        {
+            /* The move failed, try to reopen the original image. */
+            int rc2 = parallelsOpenImage(pImage, pImage->uOpenFlags);
+            if (RT_FAILURE(rc2))
+                rc = rc2;
+        }
     }
 
-    /* Update pImage with the new information. */
-    pImage->pszFilename = pszFilename;
-
-    /* Open the old image with new name. */
-    rc = parallelsOpenImage(pImage, pImage->uOpenFlags);
-    if (RT_FAILURE(rc))
-        goto out;
-
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -612,9 +552,7 @@ static DECLCALLBACK(int) parallelsClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
-
-    rc = parallelsFreeImage(pImage, fDelete);
+    int rc = parallelsFreeImage(pImage, fDelete);
     RTMemFree(pImage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -771,12 +709,9 @@ static DECLCALLBACK(unsigned) parallelsGetVersion(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        return PARALLELS_DISK_VERSION;
-    else
-        return 0;
+    return PARALLELS_DISK_VERSION;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
@@ -786,9 +721,9 @@ static DECLCALLBACK(uint32_t) parallelsGetSectorSize(void *pBackendData)
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
     uint32_t cb = 0;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage && pImage->pStorage)
+    if (pImage->pStorage)
         cb = 512;
 
     LogFlowFunc(("returns %llu\n", cb));
@@ -802,9 +737,9 @@ static DECLCALLBACK(uint64_t) parallelsGetSize(void *pBackendData)
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
     uint64_t cb = 0;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage && pImage->pStorage)
+    if (pImage->pStorage)
         cb = pImage->cbSize;
 
     LogFlowFunc(("returns %llu\n", cb));
@@ -818,9 +753,9 @@ static DECLCALLBACK(uint64_t) parallelsGetFileSize(void *pBackendData)
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
     uint64_t cb = 0;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage && pImage->pStorage)
+    if (pImage->pStorage)
         cb = pImage->cbFileCurrent;
 
     LogFlowFunc(("returns %lld\n", cb));
@@ -833,22 +768,14 @@ static DECLCALLBACK(int) parallelsGetPCHSGeometry(void *pBackendData,
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-    {
-        if (pImage->PCHSGeometry.cCylinders)
-        {
-            *pPCHSGeometry = pImage->PCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pImage->PCHSGeometry.cCylinders)
+        *pPCHSGeometry = pImage->PCHSGeometry;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
     LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     return rc;
@@ -858,27 +785,18 @@ static DECLCALLBACK(int) parallelsGetPCHSGeometry(void *pBackendData,
 static DECLCALLBACK(int) parallelsSetPCHSGeometry(void *pBackendData,
                                                   PCVDGEOMETRY pPCHSGeometry)
 {
-    LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData,
+                 pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        {
-            rc = VERR_VD_IMAGE_READ_ONLY;
-            goto out;
-        }
-
-        pImage->PCHSGeometry = *pPCHSGeometry;
-        rc = VINF_SUCCESS;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        pImage->PCHSGeometry = *pPCHSGeometry;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -889,22 +807,14 @@ static DECLCALLBACK(int) parallelsGetLCHSGeometry(void *pBackendData,
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-    {
-        if (pImage->LCHSGeometry.cCylinders)
-        {
-            *pLCHSGeometry = pImage->LCHSGeometry;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pImage->LCHSGeometry.cCylinders)
+        *pLCHSGeometry = pImage->LCHSGeometry;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
     LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     return rc;
@@ -916,25 +826,15 @@ static DECLCALLBACK(int) parallelsSetLCHSGeometry(void *pBackendData,
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        {
-            rc = VERR_VD_IMAGE_READ_ONLY;
-            goto out;
-        }
-
-        pImage->LCHSGeometry = *pLCHSGeometry;
-        rc = VINF_SUCCESS;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        pImage->LCHSGeometry = *pLCHSGeometry;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -944,17 +844,11 @@ static DECLCALLBACK(unsigned) parallelsGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    unsigned uImageFlags;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        uImageFlags = pImage->uImageFlags;
-    else
-        uImageFlags = 0;
-
-    LogFlowFunc(("returns %#x\n", uImageFlags));
-    return uImageFlags;
+    LogFlowFunc(("returns %#x\n", pImage->uImageFlags));
+    return pImage->uImageFlags;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
@@ -962,17 +856,11 @@ static DECLCALLBACK(unsigned) parallelsGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    unsigned uOpenFlags;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        uOpenFlags = pImage->uOpenFlags;
-    else
-        uOpenFlags = 0;
-
-    LogFlowFunc(("returns %#x\n", uOpenFlags));
-    return uOpenFlags;
+    LogFlowFunc(("returns %#x\n", pImage->uOpenFlags));
+    return pImage->uOpenFlags;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
@@ -980,22 +868,20 @@ static DECLCALLBACK(int) parallelsSetOpenFlags(void *pBackendData, unsigned uOpe
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /* Image must be opened and the new flags must be valid. */
     if (!pImage || (uOpenFlags & ~(  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO
                                    | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE
                                    | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)))
-    {
         rc = VERR_INVALID_PARAMETER;
-        goto out;
+    else
+    {
+        /* Implement this operation via reopening the image. */
+        parallelsFreeImage(pImage, false);
+        rc = parallelsOpenImage(pImage, uOpenFlags);
     }
 
-    /* Implement this operation via reopening the image. */
-    parallelsFreeImage(pImage, false);
-    rc = parallelsOpenImage(pImage, uOpenFlags);
-
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1007,17 +893,11 @@ static DECLCALLBACK(int) parallelsGetComment(void *pBackendData, char *pszCommen
     RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
-    return rc;
+    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetComment */
@@ -1026,19 +906,14 @@ static DECLCALLBACK(int) parallelsSetComment(void *pBackendData, const char *psz
     RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            rc = VERR_VD_IMAGE_READ_ONLY;
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1050,17 +925,11 @@ static DECLCALLBACK(int) parallelsGetUuid(void *pBackendData, PRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetUuid */
@@ -1069,19 +938,14 @@ static DECLCALLBACK(int) parallelsSetUuid(void *pBackendData, PCRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1093,17 +957,11 @@ static DECLCALLBACK(int) parallelsGetModificationUuid(void *pBackendData, PRTUUI
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
@@ -1112,19 +970,14 @@ static DECLCALLBACK(int) parallelsSetModificationUuid(void *pBackendData, PCRTUU
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1136,17 +989,11 @@ static DECLCALLBACK(int) parallelsGetParentUuid(void *pBackendData, PRTUUID pUui
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
-    int rc;
 
-    AssertPtr(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
@@ -1155,19 +1002,14 @@ static DECLCALLBACK(int) parallelsSetParentUuid(void *pBackendData, PCRTUUID pUu
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1179,14 +1021,14 @@ static DECLCALLBACK(int) parallelsGetParentModificationUuid(void *pBackendData, 
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
     return rc;
@@ -1198,19 +1040,14 @@ static DECLCALLBACK(int) parallelsSetParentModificationUuid(void *pBackendData, 
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    AssertPtr(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_NOT_SUPPORTED;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1221,13 +1058,10 @@ static DECLCALLBACK(void) parallelsDump(void *pBackendData)
 {
     PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
 
-    AssertPtr(pImage);
-    if (pImage)
-    {
-        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
-                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
-                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors);
-    }
+    AssertPtrReturnVoid(pImage);
+    vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
+                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
+                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors);
 }
 
 
