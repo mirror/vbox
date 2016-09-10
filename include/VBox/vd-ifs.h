@@ -699,7 +699,7 @@ VBOXDDU_DECL(int) VDIfDestroyFromVfsStream(PVDINTERFACEIO pIoIf);
  *
  * @return  VBox status code.
  * @param   pvUser          The opaque user data associated with this interface.
- * @param   uPercent        Completion percentage.
+ * @param   uPercentage     Completion percentage.
  */
 typedef DECLCALLBACK(int) FNVDPROGRESS(void *pvUser, unsigned uPercentage);
 /** Pointer to FNVDPROGRESS() */
@@ -748,7 +748,7 @@ DECLINLINE(PVDINTERFACEPROGRESS) VDIfProgressGet(PVDINTERFACE pVDIfs)
  *
  * @returns VBox status code.
  * @param   pIfProgress        The progress interface.
- * @param   uPercent           Completion percentage.
+ * @param   uPercentage        Completion percentage.
  */
 DECLINLINE(int) vdIfProgress(PVDINTERFACEPROGRESS pIfProgress, unsigned uPercentage)
 {
