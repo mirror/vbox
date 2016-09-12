@@ -403,8 +403,24 @@ UICocoaSegmentedButton::UICocoaSegmentedButton(QWidget *pParent, int count, Coco
     [pool release];
 }
 
-UICocoaSegmentedButton::~UICocoaSegmentedButton()
+int UICocoaSegmentedButton::count() const
 {
+    return [nativeRef() segmentCount];
+}
+
+bool UICocoaSegmentedButton::isSelected(int iSegment) const
+{
+    return [nativeRef() isSelectedForSegment: iSegment];
+}
+
+QString UICocoaSegmentedButton::description(int iSegment) const
+{
+    /* Return segment description if segment index inside the bounds: */
+    if (iSegment >=0 && iSegment < count())
+        return ::darwinNSStringToQString([nativeRef() labelForSegment: iSegment]);
+
+    /* Null-string by default: */
+    return QString();
 }
 
 QSize UICocoaSegmentedButton::sizeHint() const
