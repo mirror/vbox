@@ -31,7 +31,7 @@ class CMachine;
 class UIVMDesktopPrivate;
 class UITexturedSegmentedButton;
 class UIVMItem;
-class VBoxSnapshotsWgt;
+class UISnapshotPane;
 class UIToolBar;
 class QStackedLayout;
 
@@ -77,7 +77,7 @@ private:
     QStackedLayout *m_pStackedLayout;
     UITexturedSegmentedButton *m_pHeaderBtn;
     UIVMDesktopPrivate *m_pDesktopPrivate;
-    VBoxSnapshotsWgt *m_pSnapshotsPane;
+    UISnapshotPane *m_pSnapshotsPane;
 };
 
 #endif /* !__UIVMDesktop_h__ */

@@ -28,7 +28,7 @@
 # include "VBoxUtils.h"
 # ifdef VBOX_WS_MAC
 #  include "UIMachineWindowNormal.h"
-#  include "VBoxSnapshotsWgt.h"
+#  include "UISnapshotPane.h"
 # endif /* VBOX_WS_MAC */
 
 /* COM includes: */

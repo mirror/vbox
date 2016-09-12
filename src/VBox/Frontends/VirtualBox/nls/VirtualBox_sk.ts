@@ -15859,14 +15859,14 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[snímka]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>

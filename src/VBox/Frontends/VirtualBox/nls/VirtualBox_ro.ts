@@ -16324,14 +16324,14 @@ pentru a-l accesa dintr-un SO Linux. Această funcție necesită Guest Additions
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[isntantaneu]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>

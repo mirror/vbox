@@ -16435,15 +16435,15 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[øjebliksbillede]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
+        <source>UISnapshotPane</source>
         <translatorcomment>Probably should not be translated</translatorcomment>
-        <translation>VBoxSnapshotsWgt</translation>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>Current State (changed)</source>

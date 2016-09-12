@@ -18617,14 +18617,14 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[snapshot]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>

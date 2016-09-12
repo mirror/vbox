@@ -13915,14 +13915,14 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
-        <location filename="../src/selector/VBoxSnapshotsWgt.ui" line="+26"/>
-        <source>VBoxSnapshotsWgt</source>
+        <location filename="../src/selector/UISnapshotPane.ui" line="+26"/>
+        <source>UISnapshotPane</source>
         <translation>VBoxBerehalakoWgta</translation>
     </message>
     <message>
-        <location filename="../src/selector/VBoxSnapshotsWgt.cpp" line="+179"/>
+        <location filename="../src/selector/UISnapshotPane.cpp" line="+179"/>
         <source>Current State (changed)</source>
         <comment>Current State (Modified)</comment>
         <translation>Oraingo Egoera (aldatuta)</translation>

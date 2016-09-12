@@ -15152,14 +15152,14 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[palautuspiste]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>Discard Snapshot</source>

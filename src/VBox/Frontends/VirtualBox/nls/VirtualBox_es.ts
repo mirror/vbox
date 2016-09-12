@@ -19370,14 +19370,14 @@ Esta funcionalidad requiere &quot;Guest Additions&quot; instalado.&lt;/qt&gt;</t
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[instantánea]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>snapshotActionGroup</source>

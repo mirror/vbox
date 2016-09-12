@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxSnapshotsWgt class declaration.
+ * VBox Qt GUI - UISnapshotPane class declaration.
  */
 
 /*
@@ -15,15 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxSnapshotsWgt_h__
-#define __VBoxSnapshotsWgt_h__
+#ifndef __UISnapshotPane_h__
+#define __UISnapshotPane_h__
 
 /* Qt includes: */
 #include <QTimer>
 #include <QIcon>
 
 /* GUI includes: */
-#include "VBoxSnapshotsWgt.gen.h"
+#include "UISnapshotPane.gen.h"
 #include "VBoxGlobal.h"
 #include "QIWithRetranslateUI.h"
 
@@ -43,13 +43,13 @@ enum SnapshotAgeFormat
     AgeMax
 };
 
-class VBoxSnapshotsWgt : public QIWithRetranslateUI <QWidget>, public Ui::VBoxSnapshotsWgt
+class UISnapshotPane : public QIWithRetranslateUI <QWidget>, public Ui::UISnapshotPane
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSnapshotsWgt (QWidget *aParent);
+    UISnapshotPane(QWidget *aParent);
 
     void setMachine (const CMachine &aMachine);
 
@@ -121,4 +121,4 @@ private:
     QIcon           m_onlineSnapshotIcon;
 };
 
-#endif // __VBoxSnapshotsWgt_h__
+#endif // __UISnapshotPane_h__

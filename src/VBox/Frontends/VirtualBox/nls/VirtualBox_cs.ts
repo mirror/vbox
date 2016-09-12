@@ -18366,13 +18366,13 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[snímek]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
+        <source>UISnapshotPane</source>
         <translation></translation>
     </message>
     <message>

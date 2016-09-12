@@ -16851,13 +16851,13 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>[snapshot]</source>
         <translation type="obsolete">[anlık görüntü]</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
+        <source>UISnapshotPane</source>
         <translation>VBoxAnlıkGörüntülerYpk</translation>
     </message>
     <message>

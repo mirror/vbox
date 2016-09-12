@@ -35,7 +35,7 @@
 # include "UIVMDesktop.h"
 # include "UIVMItem.h"
 # include "UIToolBar.h"
-# include "VBoxSnapshotsWgt.h"
+# include "UISnapshotPane.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -299,7 +299,7 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
     m_pDesktopPrivate = new UIVMDesktopPrivate(this, pRefreshAction);
 
     /* Create snapshot pane: */
-    m_pSnapshotsPane = new VBoxSnapshotsWgt(this);
+    m_pSnapshotsPane = new UISnapshotPane(this);
     m_pSnapshotsPane->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
 
     /* Add the pages: */

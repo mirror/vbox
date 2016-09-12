@@ -1,5 +1,5 @@
 <ui version="4.0" >
- <class>VBoxSnapshotsWgt</class>
+ <class>UISnapshotPane</class>
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
@@ -13,7 +13,7 @@
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <widget class="QWidget" name="VBoxSnapshotsWgt" >
+ <widget class="QWidget" name="UISnapshotPane" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -23,7 +23,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>VBoxSnapshotsWgt</string>
+   <string>UISnapshotPane</string>
   </property>
   <layout class="QVBoxLayout" >
    <property name="leftMargin" >

@@ -18779,7 +18779,7 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
         <source>%1 since %2</source>
         <comment>Current State (time or date + time)</comment>
@@ -18925,8 +18925,8 @@ per accedir a ella des d&apos;un sistema Linux. Esta característica requereix G
         <translation>L&apos;estat actual és idèntic a l&apos;estat emmagatzemat a la captura actual</translation>
     </message>
     <message>
-        <source>VBoxSnapshotsWgt</source>
-        <translation>VBoxSnapshotsWgt</translation>
+        <source>UISnapshotPane</source>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>Ctrl+Space</source>

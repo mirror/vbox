@@ -14746,11 +14746,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
-        <source>VBoxSnapshotsWgt</source>
+        <source>UISnapshotPane</source>
         <translatorcomment>Mistake?</translatorcomment>
-        <translation>VBoxSnapshotsWgt</translation>
+        <translation>UISnapshotPane</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot</source>

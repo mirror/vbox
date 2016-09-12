@@ -9110,9 +9110,9 @@
     </message>
 </context>
 <context>
-    <name>VBoxSnapshotsWgt</name>
+    <name>UISnapshotPane</name>
     <message>
-        <source>VBoxSnapshotsWgt</source>
+        <source>UISnapshotPane</source>
         <translation></translation>
     </message>
     <message>
