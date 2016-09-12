@@ -30,7 +30,7 @@ ifndef VBOX_ONLY_SDK
   	tstVBoxAPIPerf \
 	tstVBoxMultipleVM \
   	$(if $(VBOX_OSE),,tstOVF) \
-  	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin) \
+  	$(if $(VBOX_WITH_XPCOM),tstVBoxAPIXPCOM,tstVBoxAPIWin msiDarwinDescriptorDecoder) \
   	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
@@ -148,7 +148,7 @@ endif
 # Use very generic template to make the build environment similar
 # to the standalone case, to detect if IPRT or glue use sneaks in.
 #
-tstVBoxAPIWin_TEMPLATE = VBoxBldProg
+tstVBoxAPIWin_TEMPLATE = VBOXR3EXE
 tstVBoxAPIWin_INST = $(INST_TESTCASE)
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
@@ -157,6 +157,18 @@ tstVBoxAPIWin_INCS = \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
 tstVBoxAPIWin_INTERMEDIATES = \
 	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
+
+
+#
+# msiDarwinDescriptorDecoder
+#
+# Use very generic template to make the build environment similar
+# to the standalone case, to detect if IPRT or glue use sneaks in.
+#
+msiDarwinDescriptorDecoder_TEMPLATE = VBOXR3EXE
+msiDarwinDescriptorDecoder_INST = $(VBOX_INST_TOOLS)
+msiDarwinDescriptorDecoder_SOURCES  = \
+	msiDarwinDescriptorDecoder.cpp
 
 
 #
