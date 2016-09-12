@@ -567,7 +567,12 @@ int UICocoaSegmentedButton::count() const
 
 bool UICocoaSegmentedButton::isSelected(int iSegment) const
 {
-    return [nativeRef() isSelectedForSegment: iSegment];
+    /* Return whether the segment is selected if segment index inside the bounds: */
+    if (iSegment >=0 && iSegment < count())
+        return [nativeRef() isSelectedForSegment: iSegment];
+
+    /* False by default: */
+    return false;
 }
 
 QString UICocoaSegmentedButton::description(int iSegment) const
