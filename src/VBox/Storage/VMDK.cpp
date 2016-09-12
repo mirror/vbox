@@ -153,38 +153,6 @@ typedef struct VMDKMARKER
 #pragma pack()
 
 
-#ifdef VBOX_WITH_VMDK_ESX
-
-/** @todo the ESX code is not tested, not used, and lacks error messages. */
-
-/**
- * Magic number for images created by VMware GSX Server 3 or ESX Server 3.
- */
-#define VMDK_ESX_SPARSE_MAGICNUMBER 0x44574f43 /* 'C' 'O' 'W' 'D' */
-
-#pragma pack(1)
-typedef struct COWDisk_Header
-{
-    uint32_t    magicNumber;
-    uint32_t    version;
-    uint32_t    flags;
-    uint32_t    numSectors;
-    uint32_t    grainSize;
-    uint32_t    gdOffset;
-    uint32_t    numGDEntries;
-    uint32_t    freeSector;
-    /* The spec incompletely documents quite a few further fields, but states
-     * that they are unused by the current format. Replace them by padding. */
-    char        reserved1[1604];
-    uint32_t    savedGeneration;
-    char        reserved2[8];
-    uint32_t    uncleanShutdown;
-    char        padding[396];
-} COWDisk_Header;
-#pragma pack()
-#endif /* VBOX_WITH_VMDK_ESX */
-
-
 /** Convert sector number/size to byte offset/size. */
 #define VMDK_SECTOR2BYTE(u) ((uint64_t)(u) << 9)
 
@@ -204,11 +172,6 @@ typedef enum VMDKETYPE
     VMDKETYPE_ZERO,
     /** VMFS extent, used by ESX. */
     VMDKETYPE_VMFS
-#ifdef VBOX_WITH_VMDK_ESX
-    ,
-    /** ESX sparse extent. */
-    VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
 } VMDKETYPE, *PVMDKETYPE;
 
 /**
@@ -2169,11 +2132,6 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData, size_t cbDesc
             return vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: parse error in extent description in '%s'"), pImage->pszFilename);
 
         /* Type of the extent. */
-#ifdef VBOX_WITH_VMDK_ESX
-        /** @todo Add the ESX extent types. Not necessary for now because
-         * the ESX extent types are only used inside an ESX server. They are
-         * automatically converted if the VMDK is exported. */
-#endif /* VBOX_WITH_VMDK_ESX */
         if (!strncmp(pszLine, "SPARSE", 6))
         {
             pImage->pExtents[i].enmType = VMDKETYPE_HOSTED_SPARSE;
@@ -2832,73 +2790,6 @@ static int vmdkWriteMetaSparseExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     return rc;
 }
 
-#ifdef VBOX_WITH_VMDK_ESX
-/**
- * Internal: unused code to read the metadata of a sparse ESX extent.
- *
- * Such extents never leave ESX server, so this isn't ever used.
- */
-static int vmdkReadMetaESXSparseExtent(PVMDKEXTENT pExtent)
-{
-    COWDisk_Header Header;
-
-    int rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage, 0,
-                                   &Header, sizeof(Header));
-    if (RT_SUCCESS(rc))
-    {
-        if (    RT_LE2H_U32(Header.magicNumber) == VMDK_ESX_SPARSE_MAGICNUMBER
-            &&  RT_LE2H_U32(Header.version) == 1
-            &&  RT_LE2H_U32(Header.flags) == 3)
-        {
-            pExtent->enmType = VMDKETYPE_ESX_SPARSE;
-            pExtent->cSectors = RT_LE2H_U32(Header.numSectors);
-            pExtent->cSectorsPerGrain = RT_LE2H_U32(Header.grainSize);
-            pExtent->uDescriptorSector = 0;
-            pExtent->cDescriptorSectors = 0;
-            pExtent->uSectorGD = RT_LE2H_U32(Header.gdOffset);
-            pExtent->uSectorRGD = 0;
-            pExtent->cOverheadSectors = 0;
-            pExtent->cGTEntries = 4096;
-            pExtent->cSectorsPerGDE = cSectorsPerGDE;
-            pExtent->cGDEntries = (pExtent->cSectors + cSectorsPerGDE - 1) / cSectorsPerGDE;
-            pExtent->uFreeSector = RT_LE2H_U32(Header.freeSector);
-            pExtent->fUncleanShutdown = !!Header.uncleanShutdown;
-
-            uint64_t cSectorsPerGDE = pExtent->cGTEntries * pExtent->cSectorsPerGrain;
-
-            /*
-             * The spec says that this must be between 1 sector and 1MB. This code
-             * assumes it's a power of two, so check that requirement, too.
-             *
-             * Check that the number of computed GD entries matches the
-             * stored value. Better be safe than sorry.
-             */
-            if (    (pExtent->cSectorsPerGrain & (pExtent->cSectorsPerGrain - 1))
-                ||  pExtent->cSectorsPerGrain == 0
-                ||  pExtent->cSectorsPerGrain > 2048
-                ||  !cSectorsPerGDE
-                || cSectorsPerGDE > UINT32_MAX)
-                || pExtent->cGDEntries != RT_LE2H_U32(Header.numGDEntries))
-                rc = VERR_VD_VMDK_INVALID_HEADER;
-            else
-                rc = vmdkReadGrainDirectory(pImage, pExtent);
-        }
-        else
-            rc = VERR_VD_VMDK_INVALID_HEADER;
-    }
-    else
-    {
-        vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: error reading ESX sparse extent header in '%s'"), pExtent->pszFullname);
-        rc = VERR_VD_VMDK_INVALID_HEADER;
-    }
-
-    if (RT_FAILURE(rc))
-        vmdkFreeExtentData(pImage, pExtent, false);
-
-    return rc;
-}
-#endif /* VBOX_WITH_VMDK_ESX */
-
 /**
  * Internal: free the buffers used for streamOptimized images.
  */
@@ -2971,11 +2862,7 @@ static int vmdkAllocateGrainTableCache(PVMDKIMAGE pImage)
     for (unsigned i = 0; i < pImage->cExtents; i++)
     {
         pExtent = &pImage->pExtents[i];
-        if (    pExtent->enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-            ||  pExtent->enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-           )
+        if (pExtent->enmType == VMDKETYPE_HOSTED_SPARSE)
         {
             /* Allocate grain table cache. */
             pImage->pGTCache = (PVMDKGTCACHE)RTMemAllocZ(sizeof(VMDKGTCACHE));
@@ -3360,11 +3247,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
     for (unsigned i = 0; i < pImage->cExtents; i++)
     {
         pExtent = &pImage->pExtents[i];
-        if (    pExtent->enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-            ||  pExtent->enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-           )
+        if (pExtent->enmType == VMDKETYPE_HOSTED_SPARSE)
         {
             /* Here used to be a check whether the nominal size of an extent
              * is a multiple of the grain size. The spec says that this is
@@ -4253,11 +4136,7 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
                 /* Mark all extents as clean. */
                 for (unsigned i = 0; i < pImage->cExtents; i++)
                 {
-                    if (   (   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
-#ifdef VBOX_WITH_VMDK_ESX
-                            || pImage->pExtents[i].enmType == VMDKETYPE_ESX_SPARSE
-#endif /* VBOX_WITH_VMDK_ESX */
-                           )
+                    if (   pImage->pExtents[i].enmType == VMDKETYPE_HOSTED_SPARSE
                         && pImage->pExtents[i].fUncleanShutdown)
                     {
                         pImage->pExtents[i].fUncleanShutdown = false;
@@ -4429,11 +4308,6 @@ static int vmdkFlushImage(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
                             goto out;
                     }
                     break;
-#ifdef VBOX_WITH_VMDK_ESX
-                case VMDKETYPE_ESX_SPARSE:
-                    /** @todo update the header. */
-                    break;
-#endif /* VBOX_WITH_VMDK_ESX */
                 case VMDKETYPE_VMFS:
                 case VMDKETYPE_FLAT:
                     /* Nothing to do. */
@@ -4448,9 +4322,6 @@ static int vmdkFlushImage(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
         switch (pExtent->enmType)
         {
             case VMDKETYPE_HOSTED_SPARSE:
-#ifdef VBOX_WITH_VMDK_ESX
-            case VMDKETYPE_ESX_SPARSE:
-#endif /* VBOX_WITH_VMDK_ESX */
             case VMDKETYPE_VMFS:
             case VMDKETYPE_FLAT:
                 /** @todo implement proper path absolute check. */
@@ -4774,16 +4645,8 @@ static int vmdkAllocGrainGTUpdate(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, PVDIOC
         else if (RT_FAILURE(rc))
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: cannot write updated backup grain table in '%s'"), pExtent->pszFullname);
     }
-#ifdef VBOX_WITH_VMDK_ESX
-    if (RT_SUCCESS(rc) && pExtent->enmType == VMDKETYPE_ESX_SPARSE)
-    {
-        pExtent->uFreeSector = uGTSector + VMDK_BYTE2SECTOR(cbWrite);
-        pExtent->fMetaDirty = true;
-    }
-#endif /* VBOX_WITH_VMDK_ESX */
 
     LogFlowFunc(("leaving rc=%Rrc\n", rc));
-
     return rc;
 }
 
@@ -5388,10 +5251,6 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
         || strchr(pszFilename, '"')
         || !VALID_PTR(pPCHSGeometry)
         || !VALID_PTR(pLCHSGeometry)
-#ifndef VBOX_WITH_VMDK_ESX
-        || (    uImageFlags & VD_VMDK_IMAGE_FLAGS_ESX
-            &&  !(uImageFlags & VD_IMAGE_FLAGS_FIXED))
-#endif
         || (   (uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
             && (uImageFlags & ~(VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED | VD_IMAGE_FLAGS_DIFF))))
     {
@@ -5766,9 +5625,6 @@ static DECLCALLBACK(int) vmdkRead(void *pBackendData, uint64_t uOffset, size_t c
     switch (pExtent->enmType)
     {
         case VMDKETYPE_HOSTED_SPARSE:
-#ifdef VBOX_WITH_VMDK_ESX
-        case VMDKETYPE_ESX_SPARSE:
-#endif /* VBOX_WITH_VMDK_ESX */
             rc = vmdkGetSector(pImage, pIoCtx, pExtent, uSectorExtentRel, &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
@@ -5902,9 +5758,6 @@ static DECLCALLBACK(int) vmdkWrite(void *pBackendData, uint64_t uOffset, size_t 
     switch (pExtent->enmType)
     {
         case VMDKETYPE_HOSTED_SPARSE:
-#ifdef VBOX_WITH_VMDK_ESX
-        case VMDKETYPE_ESX_SPARSE:
-#endif /* VBOX_WITH_VMDK_ESX */
             rc = vmdkGetSector(pImage, pIoCtx, pExtent, uSectorExtentRel, &uSectorExtentAbs);
             if (RT_FAILURE(rc))
                 goto out;
