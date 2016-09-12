@@ -1067,7 +1067,7 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
                         || !pTmpGT2)
                         rc = VERR_NO_MEMORY;
 
-                    uint32_t i = 0;
+                    size_t i = 0;
                     uint32_t *pGDTmp = pExtent->pGD;
                     uint32_t *pRGDTmp = pExtent->pRGD;
 
