@@ -285,9 +285,9 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 }
 
 
-/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
-static DECLCALLBACK(int) rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                         PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+/** @copydoc VDIMAGEBACKEND::pfnProbe */
+static DECLCALLBACK(int) rawProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                  PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     RT_NOREF1(pVDIfsDisk);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
@@ -968,8 +968,8 @@ const VDIMAGEBACKEND g_RawBackend =
     s_aRawFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* pfnCheckIfValid */
-    rawCheckIfValid,
+    /* pfnProbe */
+    rawProbe,
     /* pfnOpen */
     rawOpen,
     /* pfnCreate */

@@ -1454,9 +1454,9 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
     return rc;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
-static DECLCALLBACK(int) qedCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                         PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+/** @copydoc VDIMAGEBACKEND::pfnProbe */
+static DECLCALLBACK(int) qedProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                  PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     RT_NOREF1(pVDIfsDisk);
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
@@ -2382,8 +2382,8 @@ const VDIMAGEBACKEND g_QedBackend =
     s_aQedFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* pfnCheckIfValid */
-    qedCheckIfValid,
+    /* pfnProbe */
+    qedProbe,
     /* pfnOpen */
     qedOpen,
     /* pfnCreate */

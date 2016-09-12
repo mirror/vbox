@@ -4649,9 +4649,9 @@ out:
 }
 
 
-/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
-static DECLCALLBACK(int) iscsiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+/** @copydoc VDIMAGEBACKEND::pfnProbe */
+static DECLCALLBACK(int) iscsiProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                    PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     RT_NOREF4(pszFilename, pVDIfsDisk, pVDIfsImage, penmType);
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
@@ -5589,8 +5589,8 @@ const VDIMAGEBACKEND g_ISCSIBackend =
     NULL,
     /* paConfigInfo */
     s_iscsiConfigInfo,
-    /* pfnCheckIfValid */
-    iscsiCheckIfValid,
+    /* prnProbe */
+    iscsiProbe,
     /* pfnOpen */
     iscsiOpen,
     /* pfnCreate */

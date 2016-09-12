@@ -340,9 +340,9 @@ static int parallelsCreateImage(PPARALLELSIMAGE pImage, uint64_t cbSize,
     return rc;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnCheckIfValid */
-static DECLCALLBACK(int) parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                               PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
+/** @copydoc VDIMAGEBACKEND::prnProbe */
+static DECLCALLBACK(int) parallelsProbe(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                        PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     RT_NOREF1(pVDIfsDisk);
     int rc;
@@ -1078,8 +1078,8 @@ const VDIMAGEBACKEND g_ParallelsBackend =
     s_aParallelsFileExtensions,
     /* paConfigInfo */
     NULL,
-    /* pfnCheckIfValid */
-    parallelsCheckIfValid,
+    /* pfnProbe */
+    parallelsProbe,
     /* pfnOpen */
     parallelsOpen,
     /* pfnCreate */

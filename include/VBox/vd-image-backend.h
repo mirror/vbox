@@ -93,7 +93,7 @@ typedef struct VDIMAGEBACKEND
     PCVDCONFIGINFO paConfigInfo;
 
     /**
-     * Check if a file is valid for the backend.
+     * Check whether the file is supported by the backend.
      *
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file.
@@ -101,8 +101,8 @@ typedef struct VDIMAGEBACKEND
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   penmType        Returns the supported device type on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                                PVDINTERFACE pVDIfsImage, VDTYPE *penmType));
+    DECLR3CALLBACKMEMBER(int, pfnProbe, (const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                         PVDINTERFACE pVDIfsImage, VDTYPE *penmType));
 
     /**
      * Open a disk image.
