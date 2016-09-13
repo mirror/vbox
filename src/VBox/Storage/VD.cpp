@@ -4669,9 +4669,8 @@ static DECLCALLBACK(int) vdIOIntSetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
 
 static DECLCALLBACK(int) vdIOIntSetAllocationSize(void *pvUser, PVDIOSTORAGE pIoStorage,
                                                   uint64_t cbSize, uint32_t fFlags,
-                                                  PFNVDPROGRESS pfnProgress,
-                                                  void *pvUserProgess, unsigned uPercentStart,
-                                                  unsigned uPercentSpan)
+                                                  PVDINTERFACEPROGRESS pIfProgress,
+                                                  unsigned uPercentStart, unsigned uPercentSpan)
 {
     PVDIO pVDIo = (PVDIO)pvUser;
     int rc = pVDIo->pInterfaceIo->pfnSetAllocationSize(pVDIo->pInterfaceIo->Core.pvUser,
@@ -4706,8 +4705,7 @@ static DECLCALLBACK(int) vdIOIntSetAllocationSize(void *pvUser, PVDIOSTORAGE pIo
                         {
                             uOff += cbChunk;
 
-                            if (pfnProgress)
-                                rc = pfnProgress(pvUserProgess, uPercentStart + uOff * uPercentSpan / cbFill);
+                            rc = vdIfProgress(pIfProgress, uPercentStart + uOff * uPercentSpan / cbFill);
                         }
                     }
 
@@ -4722,8 +4720,8 @@ static DECLCALLBACK(int) vdIOIntSetAllocationSize(void *pvUser, PVDIOSTORAGE pIo
         }
     }
 
-    if (RT_SUCCESS(rc) && pfnProgress)
-        rc = pfnProgress(pvUserProgess, uPercentStart + uPercentSpan);
+    if (RT_SUCCESS(rc))
+        rc = vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
 
     return rc;
 }

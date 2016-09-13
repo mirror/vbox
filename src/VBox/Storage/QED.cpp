@@ -1592,7 +1592,7 @@ static DECLCALLBACK(int) qedCreate(const char *pszFilename, uint64_t cbSize,
                 *ppBackendData = pImage;
         }
 
-        if RT_FAILURE(rc)
+        if (RT_FAILURE(rc))
             RTMemFree(pImage);
     }
     else

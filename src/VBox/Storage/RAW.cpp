@@ -255,9 +255,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
                 if (RT_FAILURE(rc) /* ignore errors */ || ((uint64_t)cbFree >= cbSize))
                 {
                     rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbSize, 0 /* fFlags */,
-                                                        pIfProgress ? pIfProgress->pfnProgress : NULL,
-                                                        pIfProgress ? pIfProgress->Core.pvUser : NULL,
-                                                        uPercentStart, uPercentSpan);
+                                                        pIfProgress, uPercentStart, uPercentSpan);
                     if (RT_SUCCESS(rc))
                     {
                         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan * 98 / 100);

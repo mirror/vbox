@@ -609,9 +609,7 @@ static int vdiImageCreateFile(PVDIIMAGEDESC pImage, unsigned uOpenFlags,
              * effective than expanding file by write operations.
              */
             rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbTotal, 0 /* fFlags */,
-                                                pIfProgress ? pIfProgress->pfnProgress : NULL,
-                                                pIfProgress ? pIfProgress->Core.pvUser : NULL,
-                                                uPercentStart, uPercentSpan);
+                                                pIfProgress, uPercentStart, uPercentSpan);
             pImage->cbImage = cbTotal;
         }
         else

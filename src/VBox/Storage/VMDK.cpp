@@ -3617,7 +3617,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
         {
             rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pExtent->pFile->pStorage, cbExtent,
-                                                0 /* fFlags */, pIfProgress->pfnProgress, pIfProgress->Core.pvUser,
+                                                0 /* fFlags */, pIfProgress,
                                                 uPercentStart + cbOffset * uPercentSpan / cbSize,
                                                 cbExtent * uPercentSpan / cbSize);
             if (RT_FAILURE(rc))
