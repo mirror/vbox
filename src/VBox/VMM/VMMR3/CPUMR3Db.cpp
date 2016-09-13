@@ -446,6 +446,11 @@ int cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrR
         ppaMsrRanges = &pVM->cpum.s.GuestInfo.paMsrRangesR3;
         pcMsrRanges  = &pVM->cpum.s.GuestInfo.cMsrRanges;
     }
+    else
+    {
+        AssertReturn(ppaMsrRanges, VERR_INVALID_POINTER);
+        AssertReturn(pcMsrRanges, VERR_INVALID_POINTER);
+    }
 
     uint32_t        cMsrRanges  = *pcMsrRanges;
     PCPUMMSRRANGE   paMsrRanges = *ppaMsrRanges;
