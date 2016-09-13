@@ -39,7 +39,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QTreeWidget" name="mTreeWidget" >
+    <widget class="QTreeWidget" name="m_pTreeWidget" >
      <property name="contextMenuPolicy" >
       <enum>Qt::CustomContextMenu</enum>
      </property>

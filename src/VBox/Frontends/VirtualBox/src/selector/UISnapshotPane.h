@@ -37,11 +37,11 @@ class SnapshotWgtItem;
 /** Snapshot age format. */
 enum SnapshotAgeFormat
 {
-    AgeInSeconds,
-    AgeInMinutes,
-    AgeInHours,
-    AgeInDays,
-    AgeMax
+    SnapshotAgeFormat_InSeconds,
+    SnapshotAgeFormat_InMinutes,
+    SnapshotAgeFormat_InHours,
+    SnapshotAgeFormat_InDays,
+    SnapshotAgeFormat_Max
 };
 
 
@@ -52,30 +52,30 @@ class UISnapshotPane : public QIWithRetranslateUI <QWidget>, public Ui::UISnapsh
 
 public:
 
-    /** Constructs snapshot pane passing @a aParent to the base-class. */
-    UISnapshotPane(QWidget *aParent);
+    /** Constructs snapshot pane passing @a pParent to the base-class. */
+    UISnapshotPane(QWidget *pParent);
 
-    /** Defines the @a aMachine to be parsed. */
-    void setMachine (const CMachine &aMachine);
+    /** Defines the @a comMachine to be parsed. */
+    void setMachine(const CMachine &comMachine);
 
     /** Returns cached snapshot-item icon depending on @a fOnline flag. */
-    const QIcon& snapshotItemIcon(bool fOnline) { return !fOnline ? m_offlineSnapshotIcon : m_onlineSnapshotIcon; }
+    const QIcon &snapshotItemIcon(bool fOnline) const { return !fOnline ? m_snapshotIconOffline : m_snapshotIconOnline; }
 
 protected:
 
     /** Handles translation event. */
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
 
 private slots:
 
     /** @name Tree-view handlers
       * @{ */
-        /** Handles cursor change to @a aItem. */
-        void onCurrentChanged (QTreeWidgetItem *aItem = 0);
-        /** Handles context menu request for @a aPoint. */
-        void onContextMenuRequested (const QPoint &aPoint);
-        /** Handles modification for @a aItem. */
-        void onItemChanged (QTreeWidgetItem *aItem);
+        /** Handles cursor change to @a pItem. */
+        void sltCurrentItemChanged(QTreeWidgetItem *pItem = 0);
+        /** Handles context menu request for @a point. */
+        void sltContextMenuRequested(const QPoint &point);
+        /** Handles modification for @a pItem. */
+        void sltItemChanged(QTreeWidgetItem *pItem);
         /** Handles double-click for @a pItem. */
         void sltItemDoubleClicked(QTreeWidgetItem *pItem);
     /** @} */
@@ -96,18 +96,18 @@ private slots:
 
     /** @name Main event handlers
       * @{ */
-        /** Handles machine data change for machine with @a strId. */
-        void machineDataChanged(QString strId);
-        /** Handles machine @a state change for machine with @a strId. */
-        void machineStateChanged(QString strId, KMachineState state);
-        /** Handles session @a state change for machine with @a strId. */
-        void sessionStateChanged(QString strId, KSessionState state);
+        /** Handles machine data change for machine with @a strMachineID. */
+        void sltMachineDataChange(QString strMachineID);
+        /** Handles machine @a enmState change for machine with @a strMachineID. */
+        void sltMachineStateChange(QString strMachineID, KMachineState enmState);
+        /** Handles session @a enmState change for machine with @a strMachineID. */
+        void sltSessionStateChange(QString strMachineID, KSessionState enmState);
     /** @} */
 
     /** @name Timer event handlers
       * @{ */
         /** Updates snapshots age. */
-        void updateSnapshotsAge();
+        void sltUpdateSnapshotsAge();
     /** @} */
 
 private:
@@ -129,54 +129,54 @@ private:
     /** Refreshes everything. */
     void refreshAll();
 
-    /** Searches for an item with corresponding @a aSnapshotId. */
-    SnapshotWgtItem* findItem (const QString &aSnapshotId);
+    /** Searches for an item with corresponding @a strSnapshotID. */
+    SnapshotWgtItem *findItem(const QString &strSnapshotID) const;
     /** Returns the "current state" item. */
-    SnapshotWgtItem* curStateItem();
+    SnapshotWgtItem *currentStateItem() const;
 
-    /** Populates snapshot items for corresponding @a aSnapshot using @a aItem as parent. */
-    void populateSnapshots (const CSnapshot &aSnapshot, QTreeWidgetItem *aItem);
+    /** Populates snapshot items for corresponding @a comSnapshot using @a pItem as parent. */
+    void populateSnapshots(const CSnapshot &comSnapshot, QTreeWidgetItem *pItem);
 
-    /** Searches for smallest snapshot age starting with @a aParentItem as parent. */
-    SnapshotAgeFormat traverseSnapshotAge (QTreeWidgetItem *aParentItem);
+    /** Searches for smallest snapshot age starting with @a pItem as parent. */
+    SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;
 
     /** Holds the machine COM wrapper. */
-    CMachine         mMachine;
+    CMachine         m_comMachine;
     /** Holds the machine ID. */
-    QString          mMachineId;
+    QString          m_strMachineID;
     /** Holds the cached session state. */
-    KSessionState    mSessionState;
+    KSessionState    m_enmSessionState;
     /** Holds the current snapshot item reference. */
-    SnapshotWgtItem *mCurSnapshotItem;
+    SnapshotWgtItem *m_pCurrentSnapshotItem;
     /** Holds the snapshot item editing protector. */
-    bool             mEditProtector;
+    bool             m_fEditProtector;
 
     /** Holds the snapshot item action group instance. */
-    QActionGroup    *mSnapshotActionGroup;
+    QActionGroup    *m_pSnapshotItemActionGroup;
     /** Holds the current item action group instance. */
-    QActionGroup    *mCurStateActionGroup;
+    QActionGroup    *m_pCurrentStateItemActionGroup;
 
     /** Holds the snapshot restore action instance. */
-    QAction         *mRestoreSnapshotAction;
+    QAction         *m_pActionRestoreSnapshot;
     /** Holds the snapshot delete action instance. */
-    QAction         *mDeleteSnapshotAction;
+    QAction         *m_pActionDeleteSnapshot;
     /** Holds the show snapshot details action instance. */
-    QAction         *mShowSnapshotDetailsAction;
+    QAction         *m_pActionShowSnapshotDetails;
     /** Holds the snapshot take action instance. */
-    QAction         *mTakeSnapshotAction;
+    QAction         *m_pActionTakeSnapshot;
     /** Holds the snapshot clone action instance. */
-    QAction         *mCloneSnapshotAction;
+    QAction         *m_pActionCloneSnapshot;
 
     /** Holds the snapshot age update timer. */
-    QTimer           mAgeUpdateTimer;
+    QTimer           m_ageUpdateTimer;
 
     /** Holds whether the snapshot operations are allowed. */
     bool             m_fShapshotOperationsAllowed;
 
     /** Holds the cached snapshot-item pixmap for 'offline' state. */
-    QIcon            m_offlineSnapshotIcon;
+    QIcon            m_snapshotIconOffline;
     /** Holds the cached snapshot-item pixmap for 'online' state. */
-    QIcon            m_onlineSnapshotIcon;
+    QIcon            m_snapshotIconOnline;
 };
 
 #endif /* !___UISnapshotPane_h___ */
