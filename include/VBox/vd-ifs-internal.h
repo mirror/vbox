@@ -226,12 +226,14 @@ typedef struct VDINTERFACEIOINT
      * @param   cbSize          The new size of the image.
      * @param   fFlags          Flags for controlling the allocation strategy.
      *                          Reserved for future use, MBZ.
+     * @param   pIfProgress     Progress interface (optional).
+     * @param   uPercentStart   Progress starting point.
+     * @param   uPercentSpan    Length of operation in percent.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, PVDIOSTORAGE pStorage,
                                                      uint64_t cbSize, uint32_t fFlags,
-                                                     PFNVDPROGRESS pfnProgress,
-                                                     void *pvProgressUser, unsigned uPercentStart,
-                                                     unsigned uPercentSpan));
+                                                     PVDINTERFACEPROGRESS pIfProgress,
+                                                     unsigned uPercentStart, unsigned uPercentSpan));
 
     /**
      * Initiate a read request for user data.
@@ -511,12 +513,11 @@ DECLINLINE(int) vdIfIoIntFileSetSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pS
 
 DECLINLINE(int) vdIfIoIntFileSetAllocationSize(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
                                                uint64_t cbSize, uint32_t fFlags,
-                                               PFNVDPROGRESS pfnProgress,
-                                               void *pvProgressUser, unsigned uPercentStart,
-                                               unsigned uPercentSpan)
+                                               PVDINTERFACEPROGRESS pIfProgress,
+                                               unsigned uPercentStart, unsigned uPercentSpan)
 {
     return pIfIoInt->pfnSetAllocationSize(pIfIoInt->Core.pvUser, pStorage, cbSize, fFlags,
-                                          pfnProgress, pvProgressUser, uPercentStart, uPercentSpan);
+                                          pIfProgress, uPercentStart, uPercentSpan);
 }
 
 DECLINLINE(int) vdIfIoIntFileWriteSync(PVDINTERFACEIOINT pIfIoInt, PVDIOSTORAGE pStorage,
