@@ -489,7 +489,7 @@ static void ichac97StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
 /**
  * Update the BM status register
  */
-static void ichac97StreamUpdateStatus(PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
+static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
 {
     PPDMDEVINS  pDevIns = ICHAC97STATE_2_DEVINS(pThis);
     PAC97BMREGS pRegs   = &pStream->Regs;
@@ -599,14 +599,14 @@ static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
     pRegs->civ      = 0;
     pRegs->lvi      = 0;
 
-    ichac97StreamUpdateStatus(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
+    ichac97StreamSetActive(pThis, pStream, false /* fActive */);
+
+    ichac97StreamUpdateSR(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
 
     pRegs->picb     = 0;
     pRegs->piv      = 0;
     pRegs->cr       = pRegs->cr & AC97_CR_DONT_CLEAR_MASK;
     pRegs->bd_valid = 0;
-
-    ichac97StreamSetActive(pThis, pStream, false /* fActive */);
 
     RT_ZERO(pThis->silence);
 }
@@ -1606,7 +1606,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t 
                 ichac97StreamFetchBDLE(pThis, pStream);
             }
 
-            ichac97StreamUpdateStatus(pThis, pStream, new_sr);
+            ichac97StreamUpdateSR(pThis, pStream, new_sr);
         }
 
         if (/* All data processed? */
@@ -1829,6 +1829,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                         if (!(pRegs->cr & AC97_CR_RPBM))
                         {
                             ichac97StreamSetActive(pThis, pStream, false /* fActive */);
+
                             pRegs->sr |= AC97_SR_DCH;
                         }
                         else
@@ -1837,9 +1838,9 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                             pRegs->piv = (pRegs->piv + 1) % 32;
 
                             ichac97StreamFetchBDLE(pThis, pStream);
+                            ichac97StreamSetActive(pThis, pStream, true /* fActive */);
 
                             pRegs->sr &= ~AC97_SR_DCH;
-                            ichac97StreamSetActive(pThis, pStream, true /* fActive */);
                         }
                     }
                     Log3Func(("CR[%d] <- %#x (cr %#x)\n", AC97_PORT2IDX(uPortIdx), u32Val, pRegs->cr));
@@ -1850,7 +1851,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case MC_SR:
                     /* Status Register */
                     pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateStatus(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
+                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
                     Log3Func(("SR[%d] <- %#x (sr %#x)\n", AC97_PORT2IDX(uPortIdx), u32Val, pRegs->sr));
                     break;
                 default:
@@ -1869,7 +1870,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case MC_SR:
                     /* Status Register */
                     pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateStatus(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
+                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
                     Log3Func(("SR[%d] <- %#x (sr %#x)\n", AC97_PORT2IDX(uPortIdx), u32Val, pRegs->sr));
                     break;
                 default:
