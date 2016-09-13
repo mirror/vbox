@@ -597,7 +597,7 @@ static DECLCALLBACK(int) rtCrDigestOsslEvp_Init(void *pvState, void *pvOpaque, b
     if (fReInit)
     {
         pEvpType = EVP_MD_CTX_md(pThis);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
         EVP_MD_CTX_reset(pThis);
 # else
         EVP_MD_CTX_cleanup(pThis);
@@ -616,7 +616,7 @@ static DECLCALLBACK(int) rtCrDigestOsslEvp_Init(void *pvState, void *pvOpaque, b
 static DECLCALLBACK(void) rtCrDigestOsslEvp_Delete(void *pvState)
 {
     EVP_MD_CTX *pThis = (EVP_MD_CTX *)pvState;
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
     EVP_MD_CTX_reset(pThis);
 # else
     EVP_MD_CTX_cleanup(pThis);
@@ -661,13 +661,13 @@ static RTCRDIGESTDESC const g_rtCrDigestOpenSslDesc =
     NULL,
     RTDIGESTTYPE_UNKNOWN,
     EVP_MAX_MD_SIZE,
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
     0,
 # else
     sizeof(EVP_MD_CTX),
 # endif
     0,
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
     rtCrDigestOsslEvp_New,
     rtCrDigestOsslEvp_Free,
 # else
