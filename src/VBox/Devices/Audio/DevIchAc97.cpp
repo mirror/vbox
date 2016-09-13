@@ -556,6 +556,15 @@ static int ichac97StreamSetActive(PAC97STATE pThis, PAC97STREAM pStream, bool fA
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
+    /* Check the stream's status register if a state change actually is required. */
+    const bool fIsActive = RT_BOOL(pStream->Regs.sr & AC97_SR_DCH);
+
+    LogFunc(("[SD%RU8] fActive=%RTbool, fIsActive=%RTbool, cStreamsActive=%RU8\n",
+             pStream->u8Strm, fActive, fIsActive, pThis->cStreamsActive));
+
+    if (fIsActive == fActive) /* Is a change required? */
+        return VINF_SUCCESS;
+
     if (!fActive)
     {
         if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
@@ -573,13 +582,8 @@ static int ichac97StreamSetActive(PAC97STATE pThis, PAC97STREAM pStream, bool fA
 #endif
     }
 
-    int rc = AudioMixerSinkCtl(ichac97IndexToSink(pThis, pStream->u8Strm),
-                               fActive ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
-
-    LogFlowFunc(("[SD%RU8] fActive=%RTbool, cStreamsActive=%RU8, rc=%Rrc\n",
-                 pStream->u8Strm, fActive, pThis->cStreamsActive, rc));
-
-    return rc;
+    return AudioMixerSinkCtl(ichac97IndexToSink(pThis, pStream->u8Strm),
+                             fActive ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
 }
 
 static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
