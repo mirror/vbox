@@ -27,6 +27,10 @@
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
 #include <iprt/cpp/utils.h>
+#ifdef RT_OS_WINDOWS
+# include <iprt/ldr.h>
+# include <msi.h>
+#endif
 
 
 /** Waiting time between probing whether VBoxSVC is alive. */
@@ -90,7 +94,11 @@ HRESULT VirtualBoxClient::init()
 
         rc = mData.m_pVirtualBox.createLocalObject(CLSID_VirtualBox);
         if (FAILED(rc))
+#ifdef RT_OS_WINDOWS
+            throw i_investigateVirtualBoxObjectCreationFailure(rc);
+#else
             throw rc;
+#endif
 
         /* VirtualBox error return is postponed to method calls, fetch it. */
         ULONG rev;
@@ -155,6 +163,174 @@ HRESULT VirtualBoxClient::init()
      * the attribute/method calls through the InitFailed object state. */
     return S_OK;
 }
+
+#ifdef RT_OS_WINDOWS
+/**
+ * Looks into why we failed to create the VirtualBox object.
+ *
+ * @returns hrcCaller thru setError.
+ * @param   hrcCaller   The failure status code.
+ */
+HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
+{
+    /*
+     * First step is to try get an IUnknown interface of the VirtualBox object.
+     *
+     * This will succeed even when oleaut32.msm (see @bugref{8016}, @ticketref{12087})
+     * is accidentally installed and messes up COM.  It may also succeed when the COM
+     * registration is partially broken (though that's unlikely to happen these days).
+     */
+    IUnknown *pUnknown = NULL;
+    HRESULT hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
+    if (FAILED(hrc))
+    {
+        if (hrc == hrcCaller)
+            return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox: %Rhrc"), hrcCaller);
+        return setError(hrcCaller, tr("Completely failed to instantiate CLSID_VirtualBox: %Rhrc & %Rhrc"), hrcCaller, hrc);
+    }
+
+    /*
+     * Try query the IVirtualBox interface (should fail), if it succeed we return
+     * straight away so we have more columns to spend on long messages below.
+     */
+    IVirtualBox *pVirtualBox;
+    hrc = pUnknown->QueryInterface(IID_IVirtualBox, (void **)&pVirtualBox);
+    if (SUCCEEDED(hrc))
+    {
+        pVirtualBox->Release();
+        pUnknown->Release();
+        return setError(hrcCaller,
+                        tr("Failed to instantiate CLSID_VirtualBox the first time, but worked when checking out why ... weird"));
+    }
+
+    /*
+     * Check for oleaut32.msm traces in the registry.
+     */
+    HKEY hKey;
+    LSTATUS lrc = RegOpenKeyExW(HKEY_CLASSES_ROOT, L"CLSID\\{00020420-0000-0000-C000-000000000046}\\InprocServer32",
+                                0 /*fFlags*/, KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS | STANDARD_RIGHTS_READ, &hKey);
+    if (lrc == ERROR_SUCCESS)
+    {
+        wchar_t wszBuf[8192];
+        DWORD   cbBuf  = sizeof(wszBuf) - sizeof(wchar_t);
+        DWORD   dwType = 0;
+        lrc = RegQueryValueExW(hKey, L"InprocServer32", NULL /*pvReserved*/, &dwType, (BYTE *)&wszBuf[0], &cbBuf);
+        if (lrc == ERROR_SUCCESS)
+        {
+            wszBuf[cbBuf / sizeof(wchar_t)] = '\0';
+            bool fSetError = false;
+
+            /*
+             * Try decode the string and improve the message.
+             */
+            typedef UINT (WINAPI *PFNMSIDECOMPOSEDESCRIPTORW)(PCWSTR pwszDescriptor,
+                                                              LPWSTR pwszProductCode /*[40]*/,
+                                                              LPWSTR pwszFeatureId /*[40]*/,
+                                                              LPWSTR pwszComponentCode /*[40]*/,
+                                                              DWORD *poffArguments);
+            PFNMSIDECOMPOSEDESCRIPTORW pfnMsiDecomposeDescriptorW;
+            pfnMsiDecomposeDescriptorW = (PFNMSIDECOMPOSEDESCRIPTORW)RTLdrGetSystemSymbol("msi.dll", "MsiDecomposeDescriptorW");
+            if (   pfnMsiDecomposeDescriptorW
+                && (   dwType == REG_SZ
+                    || dwType == REG_MULTI_SZ))
+            {
+                wchar_t wszProductCode[RTUUID_STR_LENGTH + 2 + 16]   = { 0 };
+                wchar_t wszFeatureId[RTUUID_STR_LENGTH + 2 + 16]     = { 0 };
+                wchar_t wszComponentCode[RTUUID_STR_LENGTH + 2 + 16] = { 0 };
+                DWORD   offArguments = ~(DWORD)0;
+                UINT uRc = pfnMsiDecomposeDescriptorW(wszBuf, wszProductCode, wszFeatureId, wszComponentCode, &offArguments);
+                if (uRc == 0)
+                {
+                    /*
+                     * Can we resolve the product code into a name?
+                     */
+                    typedef UINT (WINAPI *PFNMSIOPENPRODUCTW)(PCWSTR, MSIHANDLE *);
+                    PFNMSIOPENPRODUCTW pfnMsiOpenProductW;
+                    pfnMsiOpenProductW = (PFNMSIOPENPRODUCTW)RTLdrGetSystemSymbol("msi.dll", "MsiOpenProductW");
+
+                    typedef UINT (WINAPI *PFNMSICLOSEHANDLE)(MSIHANDLE);
+                    PFNMSICLOSEHANDLE pfnMsiCloseHandle;
+                    pfnMsiCloseHandle = (PFNMSICLOSEHANDLE)RTLdrGetSystemSymbol("msi.dll", "MsiCloseHandle");
+
+                    typedef UINT (WINAPI *PFNGETPRODUCTPROPERTYW)(MSIHANDLE, PCWSTR, PWSTR, PDWORD);
+                    PFNGETPRODUCTPROPERTYW pfnMsiGetProductPropertyW;
+                    pfnMsiGetProductPropertyW = (PFNGETPRODUCTPROPERTYW)RTLdrGetSystemSymbol("msi.dll", "MsiGetProductPropertyW");
+                    if (   pfnMsiGetProductPropertyW
+                        && pfnMsiCloseHandle
+                        && pfnMsiOpenProductW)
+                    {
+                        MSIHANDLE hMsi = 0;
+                        uRc = pfnMsiOpenProductW(wszProductCode, &hMsi);
+                        if (uRc == 0)
+                        {
+                            static wchar_t const * const s_apwszProps[] =
+                            {
+                                INSTALLPROPERTY_INSTALLEDPRODUCTNAME,
+                                INSTALLPROPERTY_PRODUCTNAME,
+                                INSTALLPROPERTY_PACKAGENAME,
+                            };
+
+                            wchar_t  wszProductName[1024];
+                            DWORD    cwcProductName;
+                            unsigned i = 0;
+                            do
+                            {
+                                cwcProductName = RT_ELEMENTS(wszProductName) - 1;
+                                uRc = pfnMsiGetProductPropertyW(hMsi, s_apwszProps[i], wszProductName, &cwcProductName);
+                            }
+                            while (   ++i < RT_ELEMENTS(s_apwszProps)
+                                   && (   uRc != 0
+                                       || cwcProductName < 2
+                                       || cwcProductName >= RT_ELEMENTS(wszProductName)) );
+                            uRc = pfnMsiCloseHandle(hMsi);
+                            if (uRc == 0 && cwcProductName >= 2)
+                            {
+                                wszProductName[RT_MIN(cwcProductName, RT_ELEMENTS(wszProductName) - 1)] = '\0';
+                                setError(hrcCaller,
+                                         tr("Failed to instantiate CLSID_VirtualBox w/ IVirtualBox, but CLSID_VirtualBox w/ IUnknown works.\n"
+                                            "PSDispatch looks broken by the '%ls' (%ls) program, suspecting that it features the broken oleaut32.msm module as component %ls.\n"
+                                            "\n"
+                                            "We suggest you try uninstall '%ls'.\n"
+                                            "\n"
+                                            "See also https://support.microsoft.com/en-us/kb/316911 "),
+                                         wszProductName, wszProductCode, wszComponentCode, wszProductName);
+                                fSetError = true;
+                            }
+                        }
+                    }
+
+                    /* MSI uses COM and may mess up our stuff. So, we wait with the fallback till afterwards in this case. */
+                    if (!fSetError)
+                    {
+                        setError(hrcCaller,
+                                 tr("Failed to instantiate CLSID_VirtualBox w/ IVirtualBox, CLSID_VirtualBox w/ IUnknown works.\n"
+                                    "PSDispatch looks broken by installer %ls featuring the broken oleaut32.msm module as component %ls.\n"
+                                    "\n"
+                                    "See also https://support.microsoft.com/en-us/kb/316911 "),
+                                 wszProductCode, wszComponentCode);
+                        fSetError = true;
+                    }
+                }
+            }
+            if (!fSetError)
+                setError(hrcCaller, tr("Failed to instantiate CLSID_VirtualBox w/ IVirtualBox, CLSID_VirtualBox w/ IUnknown works.\n"
+                                       "PSDispatch looks broken by some installer featuring the broken oleaut32.msm module as a component.\n"
+                                       "\n"
+                                       "See also https://support.microsoft.com/en-us/kb/316911 "));
+        }
+        else if (lrc == ERROR_FILE_NOT_FOUND)
+            setError(hrcCaller, tr("Failed to instantiate CLSID_VirtualBox w/ IVirtualBox, but CLSID_VirtualBox w/ IUnknown works.\n"
+                                   "PSDispatch looks fine. Weird"));
+        else
+            setError(hrcCaller, tr("Failed to instantiate CLSID_VirtualBox w/ IVirtualBox, but CLSID_VirtualBox w/ IUnknown works.\n"
+                                   "Checking out PSDispatch registration ended with error: %u (%#x)"), lrc, lrc);
+        RegCloseKey(hKey);
+    }
+
+    pUnknown->Release();
+    return hrcCaller;
+}
+#endif /* RT_OS_WINDOWS */
 
 /**
  *  Uninitializes the instance and sets the ready flag to FALSE.

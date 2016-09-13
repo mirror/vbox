@@ -66,6 +66,10 @@ private:
      * instances will return a failure at creation time and will not work. */
     static uint32_t g_cInstances;
 
+#ifdef RT_OS_WINDOWS
+    virtual HRESULT i_investigateVirtualBoxObjectCreationFailure(HRESULT hrc);
+#endif
+
     static DECLCALLBACK(int) SVCWatcherThread(RTTHREAD ThreadSelf, void *pvUser);
 
     struct Data
