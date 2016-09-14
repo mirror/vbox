@@ -48,8 +48,7 @@ FORMS = \
     src/settings/machine/UIMachineSettingsSF.ui \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
     src/settings/machine/UIMachineSettingsInterface.ui \
-    src/widgets/UIApplianceEditorWidget.ui \
-    src/selector/UISnapshotPane.ui
+    src/widgets/UIApplianceEditorWidget.ui
 
 TRANSLATIONS = \
 	nls/VirtualBox_bg.ts \

@@ -26,6 +26,7 @@
 # include <QMenu>
 # include <QPointer>
 # include <QScrollBar>
+# include <QTreeWidget>
 # include <QWriteLocker>
 
 /* GUI includes: */
@@ -467,32 +468,15 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     , m_pActionShowSnapshotDetails(new QAction(m_pSnapshotItemActionGroup))
     , m_pActionCloneSnapshot(new QAction(m_pCurrentStateItemActionGroup))
     , m_fShapshotOperationsAllowed(false)
+    , m_pTreeWidget(0)
 {
-    /* Apply UI decorations: */
-    Ui::UISnapshotPane::setupUi(this);
-
-    /* No header: */
-    m_pTreeWidget->header()->hide();
-
-#if QT_VERSION < 0x050000
-    // WORKAROUND:
-    // The snapshots widget is not very useful if there are a lot
-    // of snapshots in a tree and the current Qt style decides not
-    // to draw lines (branches) between the snapshot nodes; it is
-    // then often unclear which snapshot is a child of another.
-    // So on platforms whose styles do not normally draw branches,
-    // we use QWindowsStyle which is present on every platform and
-    // draws required thing like we want. */
-// #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    QWindowsStyle *pTreeWidgetStyle = new QWindowsStyle;
-    m_pTreeWidget->setStyle(pTreeWidgetStyle);
-    connect(m_pTreeWidget, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
-// #endif
-#endif /* QT_VERSION < 0x050000 */
-
     /* Cache pixmaps: */
     m_snapshotIconOffline = UIIconPool::iconSet(":/snapshot_offline_16px.png");
     m_snapshotIconOnline = UIIconPool::iconSet(":/snapshot_online_16px.png");
+
+    /* Create VBox layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    pLayout->setContentsMargins(0, 0, 0, 0);
 
     /* Determine icon metric: */
     const QStyle *pStyle = QApplication::style();
@@ -511,7 +495,7 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     pToolBar->addSeparator();
     pToolBar->addAction(m_pActionCloneSnapshot);
     /* Add tool-bar into layout: */
-    ((QVBoxLayout*)layout())->insertWidget(0, pToolBar);
+    pLayout->addWidget(pToolBar);
 
     /* Setup action icons: */
     m_pActionTakeSnapshot->setIcon(UIIconPool::iconSetFull(
@@ -535,6 +519,30 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     m_pActionDeleteSnapshot->setShortcut(QString("Ctrl+Shift+D"));
     m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
     m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
+
+    /* Create tree-widget: */
+    m_pTreeWidget = new QTreeWidget(this);
+    m_pTreeWidget->header()->hide();
+    m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_pTreeWidget->setAllColumnsShowFocus(true);
+    /* Add tree-widget into layout: */
+    pLayout->addWidget(m_pTreeWidget);
+
+#if QT_VERSION < 0x050000
+    // WORKAROUND:
+    // The snapshots widget is not very useful if there are a lot
+    // of snapshots in a tree and the current Qt style decides not
+    // to draw lines (branches) between the snapshot nodes; it is
+    // then often unclear which snapshot is a child of another.
+    // So on platforms whose styles do not normally draw branches,
+    // we use QWindowsStyle which is present on every platform and
+    // draws required thing like we want. */
+// #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    QWindowsStyle *pTreeWidgetStyle = new QWindowsStyle;
+    m_pTreeWidget->setStyle(pTreeWidgetStyle);
+    connect(m_pTreeWidget, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
+// #endif
+#endif /* QT_VERSION < 0x050000 */
 
     /* Setup timer: */
     m_ageUpdateTimer.setSingleShot(true);
@@ -593,9 +601,6 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
 
 void UISnapshotPane::retranslateUi()
 {
-    /* Translate uic generated strings: */
-    Ui::UISnapshotPane::retranslateUi(this);
-
     /* Translate actions names: */
     m_pActionTakeSnapshot->setText(tr("Take &Snapshot"));
     m_pActionRestoreSnapshot->setText(tr("&Restore Snapshot"));
