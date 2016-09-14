@@ -81,20 +81,6 @@ private slots:
         void sltItemDoubleClicked(QTreeWidgetItem *pItem);
     /** @} */
 
-    /** @name Snapshot operations
-      * @{ */
-        /** Proposes to take a snapshot. */
-        void sltTakeSnapshot() { takeSnapshot(); }
-        /** Proposes to restore the snapshot. */
-        void sltRestoreSnapshot(bool fSuppressNonCriticalWarnings = false);
-        /** Proposes to delete the snapshot. */
-        void sltDeleteSnapshot();
-        /** Displays the snapshot details dialog. */
-        void sltShowSnapshotDetails();
-        /** Proposes to clone the snapshot. */
-        void sltCloneSnapshot();
-    /** @} */
-
     /** @name Main event handlers
       * @{ */
         /** Handles machine data change for machine with @a strMachineID. */
@@ -111,6 +97,20 @@ private slots:
         void sltUpdateSnapshotsAge();
     /** @} */
 
+    /** @name Snapshot operations
+      * @{ */
+        /** Proposes to take a snapshot. */
+        void sltTakeSnapshot() { takeSnapshot(); }
+        /** Proposes to restore the snapshot. */
+        void sltRestoreSnapshot() { restoreSnapshot(); }
+        /** Proposes to delete the snapshot. */
+        void sltDeleteSnapshot() { deleteSnapshot(); }
+        /** Displays the snapshot details dialog. */
+        void sltShowSnapshotDetails() { showSnapshotDetails(); }
+        /** Proposes to clone the snapshot. */
+        void sltCloneSnapshot() { cloneSnapshot(); }
+    /** @} */
+
 private:
 
     /** @name Snapshot operations
@@ -118,13 +118,13 @@ private:
         /** Proposes to take a snapshot. */
         bool takeSnapshot();
         /** Proposes to restore the snapshot. */
-        //bool restoreSnapshot();
+        bool restoreSnapshot(bool fSuppressNonCriticalWarnings = false);
         /** Proposes to delete the snapshot. */
-        //bool deleteSnapshot();
+        bool deleteSnapshot();
         /** Displays the snapshot details dialog. */
-        //bool showSnapshotDetails();
+        void showSnapshotDetails();
         /** Proposes to clone the snapshot. */
-        //bool cloneSnapshot();
+        void cloneSnapshot();
     /** @} */
 
     /** Refreshes everything. */
@@ -162,14 +162,14 @@ private:
     /** Holds the current item action group instance. */
     QActionGroup    *m_pCurrentStateItemActionGroup;
 
+    /** Holds the snapshot take action instance. */
+    QAction         *m_pActionTakeSnapshot;
     /** Holds the snapshot restore action instance. */
     QAction         *m_pActionRestoreSnapshot;
     /** Holds the snapshot delete action instance. */
     QAction         *m_pActionDeleteSnapshot;
     /** Holds the show snapshot details action instance. */
     QAction         *m_pActionShowSnapshotDetails;
-    /** Holds the snapshot take action instance. */
-    QAction         *m_pActionTakeSnapshot;
     /** Holds the snapshot clone action instance. */
     QAction         *m_pActionCloneSnapshot;
 

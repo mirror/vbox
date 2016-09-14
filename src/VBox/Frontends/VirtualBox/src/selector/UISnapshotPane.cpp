@@ -412,10 +412,10 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     , m_pCurrentSnapshotItem(0)
     , m_pSnapshotItemActionGroup(new QActionGroup(this))
     , m_pCurrentStateItemActionGroup(new QActionGroup(this))
+    , m_pActionTakeSnapshot(new QAction(m_pCurrentStateItemActionGroup))
     , m_pActionRestoreSnapshot(new QAction(m_pSnapshotItemActionGroup))
     , m_pActionDeleteSnapshot(new QAction(m_pSnapshotItemActionGroup))
     , m_pActionShowSnapshotDetails(new QAction(m_pSnapshotItemActionGroup))
-    , m_pActionTakeSnapshot(new QAction(m_pCurrentStateItemActionGroup))
     , m_pActionCloneSnapshot(new QAction(m_pCurrentStateItemActionGroup))
     , m_fShapshotOperationsAllowed(false)
 {
@@ -465,6 +465,9 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     ((QVBoxLayout*)layout())->insertWidget(0, pToolBar);
 
     /* Setup action icons: */
+    m_pActionTakeSnapshot->setIcon(UIIconPool::iconSetFull(
+        ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
+        ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png"));
     m_pActionRestoreSnapshot->setIcon(UIIconPool::iconSetFull(
         ":/snapshot_restore_22px.png", ":/snapshot_restore_16px.png",
         ":/snapshot_restore_disabled_22px.png", ":/snapshot_restore_disabled_16px.png"));
@@ -474,17 +477,14 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     m_pActionShowSnapshotDetails->setIcon(UIIconPool::iconSetFull(
         ":/snapshot_show_details_22px.png", ":/snapshot_show_details_16px.png",
         ":/snapshot_show_details_disabled_22px.png", ":/snapshot_details_show_disabled_16px.png"));
-    m_pActionTakeSnapshot->setIcon(UIIconPool::iconSetFull(
-        ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
-        ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png"));
     m_pActionCloneSnapshot->setIcon(UIIconPool::iconSetFull(
         ":/vm_clone_22px.png", ":/vm_clone_16px.png",
         ":/vm_clone_disabled_22px.png", ":/vm_clone_disabled_16px.png"));
     /* Setup action shortcuts: */
+    m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+S"));
     m_pActionRestoreSnapshot->setShortcut(QString("Ctrl+Shift+R"));
     m_pActionDeleteSnapshot->setShortcut(QString("Ctrl+Shift+D"));
     m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
-    m_pActionTakeSnapshot->setShortcut(QString("Ctrl+Shift+S"));
     m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
 
     /* Setup timer: */
@@ -548,16 +548,16 @@ void UISnapshotPane::retranslateUi()
     Ui::UISnapshotPane::retranslateUi(this);
 
     /* Translate actions names: */
+    m_pActionTakeSnapshot->setText(tr("Take &Snapshot"));
     m_pActionRestoreSnapshot->setText(tr("&Restore Snapshot"));
     m_pActionDeleteSnapshot->setText(tr("&Delete Snapshot"));
     m_pActionShowSnapshotDetails->setText(tr("S&how Details"));
-    m_pActionTakeSnapshot->setText(tr("Take &Snapshot"));
     m_pActionCloneSnapshot->setText(tr("&Clone..."));
     /* Translate actions status-tips: */
+    m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     m_pActionRestoreSnapshot->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
     m_pActionDeleteSnapshot->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
     m_pActionShowSnapshotDetails->setStatusTip(tr("Display a window with selected snapshot details"));
-    m_pActionTakeSnapshot->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     m_pActionCloneSnapshot->setStatusTip(tr("Clone selected virtual machine"));
 }
 
@@ -591,6 +591,15 @@ void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
                                         || enmState == KMachineState_Paused;
 
     /* Enable/disable snapshot operations: */
+    m_pActionTakeSnapshot->setEnabled(
+           m_fShapshotOperationsAllowed
+        && (   (   fCanTakeDeleteSnapshot
+                && m_pCurrentSnapshotItem
+                && pSnapshotItem
+                && pSnapshotItem->isCurrentStateItem())
+            || (   pSnapshotItem
+                && !m_pCurrentSnapshotItem))
+    );
     m_pActionRestoreSnapshot->setEnabled(
            !fBusy
         && m_pCurrentSnapshotItem
@@ -608,15 +617,6 @@ void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
            m_pCurrentSnapshotItem
         && pSnapshotItem
         && !pSnapshotItem->isCurrentStateItem()
-    );
-    m_pActionTakeSnapshot->setEnabled(
-           m_fShapshotOperationsAllowed
-        && (   (   fCanTakeDeleteSnapshot
-                && m_pCurrentSnapshotItem
-                && pSnapshotItem
-                && pSnapshotItem->isCurrentStateItem())
-            || (   pSnapshotItem
-                && !m_pCurrentSnapshotItem))
     );
     m_pActionCloneSnapshot->setEnabled(
            !fBusy
@@ -687,152 +687,8 @@ void UISnapshotPane::sltItemDoubleClicked(QTreeWidgetItem *pItem)
     if (QApplication::keyboardModifiers() == Qt::ControlModifier)
     {
         /* As snapshot-restore procedure: */
-        sltRestoreSnapshot(true /* suppress non-critical warnings */);
+        restoreSnapshot(true /* suppress non-critical warnings */);
     }
-}
-
-void UISnapshotPane::sltRestoreSnapshot(bool fSuppressNonCriticalWarnings /* = false */)
-{
-    /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get desired snapshot: */
-    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-    AssertReturnVoid(!comSnapshot.isNull());
-
-    /* Ask the user if he really wants to restore the snapshot: */
-    int iResultCode = AlertButton_Ok;
-    if (!fSuppressNonCriticalWarnings || m_comMachine.GetCurrentStateModified())
-    {
-        iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
-        if (iResultCode & AlertButton_Cancel)
-            return;
-    }
-
-    /* If user also confirmed new snapshot creation: */
-    if (iResultCode & AlertOption_CheckBox)
-    {
-        /* Take snapshot of changed current state: */
-        m_pTreeWidget->setCurrentItem(currentStateItem());
-        if (!takeSnapshot())
-            return;
-    }
-
-    /* Open a direct session (this call will handle all errors): */
-    CSession comSession = vboxGlobal().openSession(m_strMachineID);
-    if (comSession.isNull())
-        return;
-
-    /* Restore chosen snapshot: */
-    CMachine comMachine = comSession.GetMachine();
-    CProgress comProgress = comMachine.RestoreSnapshot(comSnapshot);
-    if (comMachine.isOk())
-    {
-        msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_restore_90px.png");
-        if (comProgress.GetResultCode() != 0)
-            msgCenter().cannotRestoreSnapshot(comProgress, comSnapshot.GetName(), m_comMachine.GetName());
-    }
-    else
-        msgCenter().cannotRestoreSnapshot(comMachine, comSnapshot.GetName(), m_comMachine.GetName());
-
-    /* Unlock machine finally: */
-    comSession.UnlockMachine();
-}
-
-void UISnapshotPane::sltDeleteSnapshot()
-{
-    /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get desired snapshot: */
-    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-    AssertReturnVoid(!comSnapshot.isNull());
-
-    /* Confirm snapshot removal: */
-    if (!msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
-        return;
-
-    /** @todo check available space on the target filesystem etc etc. */
-#if 0
-    if (!msgCenter().warnAboutSnapshotRemovalFreeSpace(comSnapshot.GetName(),
-                                                       "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
-                                                       "59 GiB",
-                                                       "15 GiB"))
-        return;
-#endif
-
-    /* Open a session (this call will handle all errors): */
-    bool fBusy = m_enmSessionState != KSessionState_Unlocked;
-    CSession comSession;
-    if (fBusy)
-        comSession = vboxGlobal().openExistingSession(m_strMachineID);
-    else
-        comSession = vboxGlobal().openSession(m_strMachineID);
-    if (comSession.isNull())
-        return;
-
-    /* Remove chosen snapshot: */
-    CMachine comMachine = comSession.GetMachine();
-    CProgress comProgress = comMachine.DeleteSnapshot(pSnapshotItem->snapshotID());
-    if (comMachine.isOk())
-    {
-        msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_discard_90px.png");
-        if (comProgress.GetResultCode() != 0)
-            msgCenter().cannotRemoveSnapshot(comProgress,  comSnapshot.GetName(), m_comMachine.GetName());
-    }
-    else
-        msgCenter().cannotRemoveSnapshot(comMachine,  comSnapshot.GetName(), m_comMachine.GetName());
-
-    /* Unlock machine finally: */
-    comSession.UnlockMachine();
-}
-
-void UISnapshotPane::sltShowSnapshotDetails()
-{
-    /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get desired snapshot: */
-    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
-    AssertReturnVoid(!comSnapshot.isNull());
-
-    /* Show Snapshot Details dialog: */
-    QPointer<VBoxSnapshotDetailsDlg> pDlg = new VBoxSnapshotDetailsDlg(this);
-    pDlg->getFromSnapshot(comSnapshot);
-    if (pDlg->exec() == QDialog::Accepted)
-        pDlg->putBackToSnapshot();
-    if (pDlg)
-        delete pDlg;
-}
-
-void UISnapshotPane::sltCloneSnapshot()
-{
-    /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
-    AssertReturnVoid(pSnapshotItem);
-
-    /* Get desired machine/snapshot: */
-    CMachine comMachine;
-    CSnapshot comSnapshot;
-    if (pSnapshotItem->isCurrentStateItem())
-        comMachine = pSnapshotItem->machine();
-    else
-    {
-        comSnapshot = pSnapshotItem->snapshot();
-        AssertReturnVoid(!comSnapshot.isNull());
-        comMachine = comSnapshot.GetMachine();
-    }
-    AssertReturnVoid(!comMachine.isNull());
-
-    /* Show Clone VM wizard: */
-    UISafePointerWizard pWizard = new UIWizardCloneVM(this, comMachine, comSnapshot);
-    pWizard->prepare();
-    pWizard->exec();
-    if (pWizard)
-        delete pWizard;
 }
 
 void UISnapshotPane::sltMachineDataChange(QString strMachineID)
@@ -900,83 +756,289 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
 
 bool UISnapshotPane::takeSnapshot()
 {
-    /* Prepare result: */
-    bool fIsValid = true;
-
-    /* Open a session (this call will handle all errors): */
-    CSession comSession;
-    if (m_enmSessionState != KSessionState_Unlocked)
-        comSession = vboxGlobal().openExistingSession(m_strMachineID);
-    else
-        comSession = vboxGlobal().openSession(m_strMachineID);
-    fIsValid = !comSession.isNull();
-
-    if (fIsValid)
+    /* Simulate try-catch block: */
+    bool fSuccess = false;
+    do
     {
-        /* Get corresponding machine object also: */
-        CMachine comMachine = comSession.GetMachine();
+        /* Open a session (this call will handle all errors): */
+        CSession comSession;
+        if (m_enmSessionState != KSessionState_Unlocked)
+            comSession = vboxGlobal().openExistingSession(m_strMachineID);
+        else
+            comSession = vboxGlobal().openSession(m_strMachineID);
+        if (comSession.isNull())
+            break;
 
-        /* Create take-snapshot dialog: */
-        QWidget *pDlgParent = windowManager().realParentWindow(this);
-        QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, m_comMachine);
-        windowManager().registerNewParent(pDlg, pDlgParent);
-
-        // TODO: Assign corresponding icon through sub-dialog API: */
-        pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_comMachine.GetOSTypeId()));
-
-        /* Search for the max available snapshot index: */
-        int iMaxSnapShotIndex = 0;
-        QString strSnapshotName = tr("Snapshot %1");
-        QRegExp regExp(QString("^") + strSnapshotName.arg("([0-9]+)") + QString("$"));
-        QTreeWidgetItemIterator iterator(m_pTreeWidget);
-        while (*iterator)
+        /* Simulate try-catch block: */
+        do
         {
-            QString strSnapshot = static_cast<SnapshotWgtItem*>(*iterator)->text(0);
-            int iPos = regExp.indexIn(strSnapshot);
-            if (iPos != -1)
-                iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
-            ++iterator;
-        }
-        // TODO: Assign corresponding snapshot name through sub-dialog API: */
-        pDlg->mLeName->setText(strSnapshotName.arg(iMaxSnapShotIndex + 1));
+            /* Get corresponding machine object: */
+            CMachine comMachine = comSession.GetMachine();
 
-        /* Show Take Snapshot dialog: */
-        if (pDlg->exec() == QDialog::Accepted)
-        {
-            /* Acquire snapshot name/description: */
-            const QString strSnapshotName = pDlg->mLeName->text().trimmed();
-            const QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
+            /* Create take-snapshot dialog: */
+            QWidget *pDlgParent = windowManager().realParentWindow(this);
+            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, m_comMachine);
+            windowManager().registerNewParent(pDlg, pDlgParent);
+
+            // TODO: Assign corresponding icon through sub-dialog API: */
+            pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_comMachine.GetOSTypeId()));
+
+            /* Search for the max available snapshot index: */
+            int iMaxSnapShotIndex = 0;
+            QString strSnapshotName = tr("Snapshot %1");
+            QRegExp regExp(QString("^") + strSnapshotName.arg("([0-9]+)") + QString("$"));
+            QTreeWidgetItemIterator iterator(m_pTreeWidget);
+            while (*iterator)
+            {
+                QString strSnapshot = static_cast<SnapshotWgtItem*>(*iterator)->text(0);
+                int iPos = regExp.indexIn(strSnapshot);
+                if (iPos != -1)
+                    iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
+                ++iterator;
+            }
+            // TODO: Assign corresponding snapshot name through sub-dialog API: */
+            pDlg->mLeName->setText(strSnapshotName.arg(iMaxSnapShotIndex + 1));
+
+            /* Show Take Snapshot dialog: */
+            if (pDlg->exec() != QDialog::Accepted)
+            {
+                /* Cleanup dialog if it wasn't destroyed in own loop: */
+                if (pDlg)
+                    delete pDlg;
+                break;
+            }
+
+            /* Acquire real snapshot name/description: */
+            const QString strRealSnapshotName = pDlg->mLeName->text().trimmed();
+            const QString strRealSnapshotDescription = pDlg->mTeDescription->toPlainText();
+
+            /* Cleanup dialog: */
+            delete pDlg;
 
             /* Take snapshot: */
             QString strSnapshotID;
-            CProgress comProgress = comMachine.TakeSnapshot(strSnapshotName, strSnapshotDescription, true, strSnapshotID);
-            if (comMachine.isOk())
-            {
-                msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_create_90px.png");
-                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
-                {
-                    msgCenter().cannotTakeSnapshot(comProgress, m_comMachine.GetName());
-                    fIsValid = false;
-                }
-            }
-            else
+            CProgress comProgress = comMachine.TakeSnapshot(strRealSnapshotName, strRealSnapshotDescription, true, strSnapshotID);
+            if (!comMachine.isOk())
             {
                 msgCenter().cannotTakeSnapshot(comMachine, m_comMachine.GetName());
-                fIsValid = false;
+                break;
             }
+
+            /* Show snapshot taking progress: */
+            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_create_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotTakeSnapshot(comProgress, m_comMachine.GetName());
+                break;
+            }
+
+            /* Mark snapshot restoring successful: */
+            fSuccess = true;
         }
-        else
-            fIsValid = false;
-        if (pDlg)
-        {
-            delete pDlg;
-            /* Unlock machine finally: */
-            comSession.UnlockMachine();
-        }
+        while (0);
+
+        /* Cleanup try-catch block: */
+        comSession.UnlockMachine();
     }
+    while (0);
 
     /* Return result: */
-    return fIsValid;
+    return fSuccess;
+}
+
+bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = false */)
+{
+    /* Simulate try-catch block: */
+    bool fSuccess = false;
+    do
+    {
+        /* Acquire currently chosen snapshot item: */
+        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+        AssertPtr(pSnapshotItem);
+        if (!pSnapshotItem)
+            break;
+
+        /* Get corresponding snapshot: */
+        const CSnapshot comSnapshot = pSnapshotItem->snapshot();
+        Assert(!comSnapshot.isNull());
+        if (comSnapshot.isNull())
+            break;
+
+        /* If non-critical warnings are not hidden or current state is changed: */
+        if (!fSuppressNonCriticalWarnings || m_comMachine.GetCurrentStateModified())
+        {
+            /* Ask if user really wants to restore the selected snapshot: */
+            int iResultCode = msgCenter().confirmSnapshotRestoring(comSnapshot.GetName(), m_comMachine.GetCurrentStateModified());
+            if (iResultCode & AlertButton_Cancel)
+                break;
+
+            /* Ask if user also wants to create new snapshot of current state which is changed: */
+            if (iResultCode & AlertOption_CheckBox)
+            {
+                /* Take snapshot of changed current state: */
+                m_pTreeWidget->setCurrentItem(currentStateItem());
+                if (!takeSnapshot())
+                    break;
+            }
+        }
+
+        /* Open a direct session (this call will handle all errors): */
+        CSession comSession = vboxGlobal().openSession(m_strMachineID);
+        if (comSession.isNull())
+            break;
+
+        /* Simulate try-catch block: */
+        do
+        {
+            /* Restore chosen snapshot: */
+            CMachine comMachine = comSession.GetMachine();
+            CProgress comProgress = comMachine.RestoreSnapshot(comSnapshot);
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotRestoreSnapshot(comMachine, comSnapshot.GetName(), m_comMachine.GetName());
+                break;
+            }
+
+            /* Show snapshot restoring progress: */
+            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_restore_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotRestoreSnapshot(comProgress, comSnapshot.GetName(), m_comMachine.GetName());
+                break;
+            }
+
+            /* Mark snapshot restoring successful: */
+            fSuccess = true;
+        }
+        while (0);
+
+        /* Cleanup try-catch block: */
+        comSession.UnlockMachine();
+    }
+    while (0);
+
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UISnapshotPane::deleteSnapshot()
+{
+    /* Simulate try-catch block: */
+    bool fSuccess = false;
+    do
+    {
+        /* Acquire currently chosen snapshot item: */
+        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+        AssertPtr(pSnapshotItem);
+        if (!pSnapshotItem)
+            break;
+
+        /* Get corresponding snapshot: */
+        const CSnapshot comSnapshot = pSnapshotItem->snapshot();
+        Assert(!comSnapshot.isNull());
+        if (comSnapshot.isNull())
+            break;
+
+        /* Ask if user really wants to remove the selected snapshot: */
+        if (!msgCenter().confirmSnapshotRemoval(comSnapshot.GetName()))
+            break;
+
+        /** @todo check available space on the target filesystem etc etc. */
+#if 0
+        if (!msgCenter().warnAboutSnapshotRemovalFreeSpace(comSnapshot.GetName(),
+                                                           "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
+                                                           "59 GiB",
+                                                           "15 GiB"))
+            break;
+#endif
+
+        /* Open a session (this call will handle all errors): */
+        CSession comSession;
+        if (m_enmSessionState != KSessionState_Unlocked)
+            comSession = vboxGlobal().openExistingSession(m_strMachineID);
+        else
+            comSession = vboxGlobal().openSession(m_strMachineID);
+        if (comSession.isNull())
+            break;
+
+        /* Simulate try-catch block: */
+        do
+        {
+            /* Remove chosen snapshot: */
+            CMachine comMachine = comSession.GetMachine();
+            CProgress comProgress = comMachine.DeleteSnapshot(pSnapshotItem->snapshotID());
+            if (!comMachine.isOk())
+            {
+                msgCenter().cannotRemoveSnapshot(comMachine,  comSnapshot.GetName(), m_comMachine.GetName());
+                break;
+            }
+
+            /* Show snapshot removing progress: */
+            msgCenter().showModalProgressDialog(comProgress, m_comMachine.GetName(), ":/progress_snapshot_discard_90px.png");
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                msgCenter().cannotRemoveSnapshot(comProgress,  comSnapshot.GetName(), m_comMachine.GetName());
+                break;
+            }
+
+            /* Mark snapshot removing successful: */
+            fSuccess = true;
+        }
+        while (0);
+
+        /* Cleanup try-catch block: */
+        comSession.UnlockMachine();
+    }
+    while (0);
+
+    /* Return result: */
+    return fSuccess;
+}
+
+void UISnapshotPane::showSnapshotDetails()
+{
+    /* Acquire currently chosen snapshot item: */
+    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+    AssertReturnVoid(pSnapshotItem);
+
+    /* Get corresponding snapshot: */
+    const CSnapshot comSnapshot = pSnapshotItem->snapshot();
+    AssertReturnVoid(!comSnapshot.isNull());
+
+    /* Show Snapshot Details dialog: */
+    QPointer<VBoxSnapshotDetailsDlg> pDlg = new VBoxSnapshotDetailsDlg(this);
+    pDlg->getFromSnapshot(comSnapshot);
+    if (pDlg->exec() == QDialog::Accepted)
+        pDlg->putBackToSnapshot();
+    if (pDlg)
+        delete pDlg;
+}
+
+void UISnapshotPane::cloneSnapshot()
+{
+    /* Acquire currently chosen snapshot item: */
+    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+    AssertReturnVoid(pSnapshotItem);
+
+    /* Get desired machine/snapshot: */
+    CMachine comMachine;
+    CSnapshot comSnapshot;
+    if (pSnapshotItem->isCurrentStateItem())
+        comMachine = pSnapshotItem->machine();
+    else
+    {
+        comSnapshot = pSnapshotItem->snapshot();
+        AssertReturnVoid(!comSnapshot.isNull());
+        comMachine = comSnapshot.GetMachine();
+    }
+    AssertReturnVoid(!comMachine.isNull());
+
+    /* Show Clone VM wizard: */
+    UISafePointerWizard pWizard = new UIWizardCloneVM(this, comMachine, comSnapshot);
+    pWizard->prepare();
+    pWizard->exec();
+    if (pWizard)
+        delete pWizard;
 }
 
 void UISnapshotPane::refreshAll()
