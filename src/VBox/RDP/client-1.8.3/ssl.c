@@ -188,7 +188,7 @@ rdssl_cert_to_rkey(RDSSL_CERT * cert, uint32 * key_len)
 
 	   Kudos to Richard Levitte for the following (. intiutive .) 
 	   lines of code that resets the OID and let's us extract the key. */
-#if OPENSSL_VERSION_NUMBER >= 0x1010000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 	X509_PUBKEY *x509_pk = X509_get_X509_PUBKEY(cert);
 	X509_ALGOR *algor;
 	const ASN1_OBJECT *alg_obj;
