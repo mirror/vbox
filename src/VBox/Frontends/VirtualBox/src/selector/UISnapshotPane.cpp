@@ -26,6 +26,7 @@
 # include <QScrollBar>
 # include <QPointer>
 # include <QApplication>
+# include <QWriteLocker>
 
 /* GUI includes: */
 # include "UIIconPool.h"
@@ -406,29 +407,9 @@ private:
 };
 
 
-/** Simple guard block to prevent cyclic call caused by:
-  * changing tree-widget item content (rename) leads to snapshot
-  * update & snapshot update leads to changing tree-widget item content. */
-class SnapshotEditBlocker
-{
-public:
-
-    /** Constructs edit blocker. */
-    SnapshotEditBlocker(bool &fProtector) : m_fProtector(fProtector) { m_fProtector = true; }
-    /** Destructs edit blocker. */
-    virtual ~SnapshotEditBlocker() { m_fProtector = false; }
-
-private:
-
-    /** Holds the protector flag reference. */
-    bool &m_fProtector;
-};
-
-
 UISnapshotPane::UISnapshotPane(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pCurrentSnapshotItem(0)
-    , m_fEditProtector(false)
     , m_pSnapshotItemActionGroup(new QActionGroup(this))
     , m_pCurrentStateItemActionGroup(new QActionGroup(this))
     , m_pActionRestoreSnapshot(new QAction(m_pSnapshotItemActionGroup))
@@ -679,8 +660,8 @@ void UISnapshotPane::sltContextMenuRequested(const QPoint &point)
 
 void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
 {
-    /* Make sure nothing is being edited currently: */
-    if (m_fEditProtector)
+    /* Make sure nothing being edited in the meantime: */
+    if (!m_lockReadWrite.tryLockForWrite())
         return;
 
     /* Acquire corresponding snapshot item: */
@@ -691,14 +672,13 @@ void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
     CSnapshot comSnapshot = pSnapshotItem->snapshotID().isNull() ? CSnapshot() : m_comMachine.FindSnapshot(pSnapshotItem->snapshotID());
     if (!comSnapshot.isNull() && comSnapshot.isOk() && comSnapshot.GetName() != pSnapshotItem->text(0))
         comSnapshot.SetName(pSnapshotItem->text(0));
+
+    /* Allows editing again: */
+    m_lockReadWrite.unlock();
 }
 
 void UISnapshotPane::sltItemDoubleClicked(QTreeWidgetItem *pItem)
 {
-    /* Make sure nothing is being edited currently: */
-    if (m_fEditProtector)
-        return;
-
     /* Acquire corresponding snapshot item: */
     const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(pItem);
     AssertReturnVoid(pSnapshotItem);
@@ -857,12 +837,12 @@ void UISnapshotPane::sltCloneSnapshot()
 
 void UISnapshotPane::sltMachineDataChange(QString strMachineID)
 {
-    /* Prevent snapshot editing in the meantime: */
-    SnapshotEditBlocker guardBlock(m_fEditProtector);
-
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
         return;
+
+    /* Prevent snapshot editing in the meantime: */
+    QWriteLocker locker(&m_lockReadWrite);
 
     /* Recache state current item: */
     currentStateItem()->recache();
@@ -870,12 +850,12 @@ void UISnapshotPane::sltMachineDataChange(QString strMachineID)
 
 void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState enmState)
 {
-    /* Prevent snapshot editing in the meantime: */
-    SnapshotEditBlocker guardBlock(m_fEditProtector);
-
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
         return;
+
+    /* Prevent snapshot editing in the meantime: */
+    QWriteLocker locker(&m_lockReadWrite);
 
     /* Recache new machine state: */
     currentStateItem()->recache();
@@ -884,12 +864,12 @@ void UISnapshotPane::sltMachineStateChange(QString strMachineID, KMachineState e
 
 void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState enmState)
 {
-    /* Prevent snapshot editing in the meantime: */
-    SnapshotEditBlocker guardBlock(m_fEditProtector);
-
     /* Make sure it's our VM: */
     if (strMachineID != m_strMachineID)
         return;
+
+    /* Prevent snapshot editing in the meantime: */
+    QWriteLocker locker(&m_lockReadWrite);
 
     /* Recache new session state: */
     m_enmSessionState = enmState;
@@ -1002,7 +982,7 @@ bool UISnapshotPane::takeSnapshot()
 void UISnapshotPane::refreshAll()
 {
     /* Prevent snapshot editing in the meantime: */
-    SnapshotEditBlocker guardBlock(m_fEditProtector);
+    QWriteLocker locker(&m_lockReadWrite);
 
     /* If VM is null, just updated the current itm: */
     if (m_comMachine.isNull())
