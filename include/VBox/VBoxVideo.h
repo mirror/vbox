@@ -991,7 +991,7 @@ typedef struct VBVACMDVBVAFLUSH
  * by the host and ignored for purposes of pointer position calculation. */
 #define VBVA_SCREEN_F_DISABLED 0x0002
 /** The virtual monitor has been blanked by the guest and should be blacked
- * out by the host. */
+ * out by the host using width, height, etc values from the VBVAINFOSCREEN request. */
 #define VBVA_SCREEN_F_BLANK    0x0004
 /** The virtual monitor has been blanked by the guest and should be blacked
  * out by the host using the previous mode values for width. height, etc. */
