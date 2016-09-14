@@ -1475,9 +1475,9 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
 static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
 {
     const uint32_t u32ViewIndex = pScreen->u32ViewIndex;
-    const bool fDisabled = RT_BOOL(pScreen->u16Flags & VBVA_SCREEN_F_DISABLED);
+    const uint16_t u16Flags = pScreen->u16Flags;
 
-    if (fDisabled)
+    if (u16Flags & VBVA_SCREEN_F_DISABLED)
     {
         if (   u32ViewIndex < pVGAState->cMonitors
             || u32ViewIndex == UINT32_C(0xFFFFFFFF))
@@ -1490,6 +1490,16 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
     }
     else
     {
+        if (u16Flags & VBVA_SCREEN_F_BLANK2)
+        {
+            /* Special case for blanking using current video mode.
+             * Only 'u16Flags' field is relevant.
+             */
+            RT_ZERO(*pScreen);
+            pScreen->u16Flags = u16Flags;
+            return VINF_SUCCESS;
+        }
+
         if (   u32ViewIndex < pVGAState->cMonitors
             && pScreen->u16BitsPerPixel <= 32
             && pScreen->u32Width <= UINT16_MAX
@@ -1560,7 +1570,9 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
         if (!memcmp(&Screen, &CurScreen, sizeof (CurScreen)))
             continue;
 
-        if (!fDisable || !CurView.u32ViewSize)
+        /* The view does not change if _BLANK2 is set. */
+        if (   (!fDisable || !CurView.u32ViewSize)
+            && !RT_BOOL(Screen.u16Flags & VBVA_SCREEN_F_BLANK2))
         {
             View.u32ViewIndex = Screen.u32ViewIndex;
 

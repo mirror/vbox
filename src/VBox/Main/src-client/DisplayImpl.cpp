@@ -4071,6 +4071,28 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
         return VINF_SUCCESS;
     }
 
+    VBVAINFOSCREEN screenInfo;
+    RT_ZERO(screenInfo);
+
+    if (pScreen->u16Flags & VBVA_SCREEN_F_BLANK2)
+    {
+        /* Init a local VBVAINFOSCREEN structure, which will be used instead of
+         * the original pScreen. Set VBVA_SCREEN_F_BLANK, which will force
+         * the code below to choose the "blanking" branches.
+         */
+        screenInfo.u32ViewIndex    = pScreen->u32ViewIndex;
+        screenInfo.i32OriginX      = pFBInfo->xOrigin;
+        screenInfo.i32OriginY      = pFBInfo->yOrigin;
+        screenInfo.u32StartOffset  = 0; /* Irrelevant */
+        screenInfo.u32LineSize     = pFBInfo->u32LineSize;
+        screenInfo.u32Width        = pFBInfo->w;
+        screenInfo.u32Height       = pFBInfo->h;
+        screenInfo.u16BitsPerPixel = pFBInfo->u16BitsPerPixel;
+        screenInfo.u16Flags        = pScreen->u16Flags | VBVA_SCREEN_F_BLANK;
+
+        pScreen = &screenInfo;
+    }
+
     /* If display was disabled or there is no framebuffer, a resize will be required,
      * because the framebuffer was/will be changed.
      */
