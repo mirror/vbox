@@ -20,26 +20,26 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QApplication>
 # include <QDateTime>
 # include <QHeaderView>
 # include <QMenu>
-# include <QScrollBar>
 # include <QPointer>
-# include <QApplication>
+# include <QScrollBar>
 # include <QWriteLocker>
 
 /* GUI includes: */
+# include "UIConverter.h"
+# include "UIExtraDataManager.h"
 # include "UIIconPool.h"
 # include "UIMessageCenter.h"
-# include "VBoxSnapshotDetailsDlg.h"
+# include "UIModalWindowManager.h"
 # include "UISnapshotPane.h"
-# include "VBoxTakeSnapshotDlg.h"
-# include "UIWizardCloneVM.h"
 # include "UIToolBar.h"
 # include "UIVirtualBoxEventHandler.h"
-# include "UIConverter.h"
-# include "UIModalWindowManager.h"
-# include "UIExtraDataManager.h"
+# include "UIWizardCloneVM.h"
+# include "VBoxSnapshotDetailsDlg.h"
+# include "VBoxTakeSnapshotDlg.h"
 
 /* COM includes: */
 # include "CConsole.h"
@@ -61,131 +61,14 @@ public:
     enum { ItemType = QTreeWidgetItem::UserType + 1 };
 
     /** Constructs normal snapshot item (child of tree-widget). */
-    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
-        : QTreeWidgetItem(pTreeWidget, ItemType)
-        , m_pSnapshotWidget(pSnapshotWidget)
-        , m_fCurrentState(false)
-        , m_comSnapshot(comSnapshot)
-    {
-    }
-
+    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot);
     /** Constructs normal snapshot item (child of tree-widget-item). */
-    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
-        : QTreeWidgetItem(pRootItem, ItemType)
-        , m_pSnapshotWidget(pSnapshotWidget)
-        , m_fCurrentState(false)
-        , m_comSnapshot(comSnapshot)
-    {
-    }
+    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CSnapshot &comSnapshot);
 
     /** Constructs "current state" item (child of tree-widget). */
-    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CMachine &comMachine)
-        : QTreeWidgetItem(pTreeWidget, ItemType)
-        , m_pSnapshotWidget(pSnapshotWidget)
-        , m_fCurrentState(true)
-        , m_comMachine(comMachine)
-    {
-        /* Fetch current machine state: */
-        updateCurrentState(m_comMachine.GetState());
-    }
-
+    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CMachine &comMachine);
     /** Constructs "current state" item (child of tree-widget-item). */
-    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CMachine &comMachine)
-        : QTreeWidgetItem(pRootItem, ItemType)
-        , m_pSnapshotWidget(pSnapshotWidget)
-        , m_fCurrentState(true)
-        , m_comMachine(comMachine)
-    {
-        /* Fetch current machine state: */
-        updateCurrentState(m_comMachine.GetState());
-    }
-
-    /** Returns item data for corresponding @a iColumn and @a iRole. */
-    QVariant data(int iColumn, int iRole) const
-    {
-        switch (iRole)
-        {
-            case Qt::DisplayRole:
-            {
-                /* Call to base-class for "current state" item, compose ourselves otherwise: */
-                return m_fCurrentState ? QTreeWidgetItem::data(iColumn, iRole) :
-                                         QString("%1%2")
-                                             .arg(QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString())
-                                             .arg(QTreeWidgetItem::data(iColumn, Qt::UserRole).toString());
-            }
-            case Qt::SizeHintRole:
-            {
-                /* Determine the icon metric: */
-                const QStyle *pStyle = QApplication::style();
-                const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-                /* Determine the minimum size-hint for this tree-widget-item: */
-                const QSize baseSizeHint = QTreeWidgetItem::data(iColumn, iRole).toSize();
-                /* Determine the effective height-hint for this tree-widget-item: */
-                const int iEffectiveHeightHint = qMax(baseSizeHint.height(),
-                                                      iIconMetric + 2 * 2 /* margins */);
-                /* Return size-hint for this tree-widget-item: */
-                return QSize(baseSizeHint.width(), iEffectiveHeightHint);
-            }
-            default:
-                break;
-        }
-
-        /* Call to base-class: */
-        return QTreeWidgetItem::data(iColumn, iRole);
-    }
-
-    /** Returns item text for corresponding @a iColumn. */
-    QString text(int iColumn) const
-    {
-        return QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString();
-    }
-
-    /** Returns whether this is the "current state" item. */
-    bool isCurrentStateItem() const
-    {
-        return m_comSnapshot.isNull();
-    }
-
-    /** Calculates and returns the current item level. */
-    int level() const
-    {
-        const QTreeWidgetItem *pItem = this;
-        int iResult = 0;
-        while (pItem->parent())
-        {
-            ++iResult;
-            pItem = pItem->parent();
-        }
-        return iResult;
-    }
-
-    /** Returns whether the font is bold. */
-    bool bold() const { return font(0).bold(); }
-    /** Defines whether the font is @a fBold. */
-    void setBold(bool fBold)
-    {
-        /* Update font: */
-        QFont myFont = font(0);
-        myFont.setBold(fBold);
-        setFont(0, myFont);
-
-        /* Adjust text: */
-        adjustText();
-    }
-
-    /** Returns whether the font is italic. */
-    bool italic() const { return font(0).italic(); }
-    /** Defines whether the font is @a fItalic. */
-    void setItalic(bool fItalic)
-    {
-        /* Update font: */
-        QFont myFont = font(0);
-        myFont.setItalic(fItalic);
-        setFont(0, myFont);
-
-        /* Adjust text: */
-        adjustText();
-    }
+    SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CMachine &comMachine);
 
     /** Returns item machine. */
     CMachine machine() const { return m_comMachine; }
@@ -194,188 +77,47 @@ public:
     /** Returns item snapshot ID. */
     QString snapshotID() const { return m_strSnapshotID; }
 
-    /** Recaches the item's contents. */
-    void recache()
-    {
-        /* For "current state" item: */
-        if (m_fCurrentState)
-        {
-            /* Fetch machine information: */
-            AssertReturnVoid(!m_comMachine.isNull());
-            m_fCurrentStateModified = m_comMachine.GetCurrentStateModified();
-            setText(0, m_fCurrentStateModified ?
-                       UISnapshotPane::tr("Current State (changed)", "Current State (Modified)") :
-                       UISnapshotPane::tr("Current State", "Current State (Unmodified)"));
-            m_strDesc = m_fCurrentStateModified ?
-                        UISnapshotPane::tr("The current state differs from the state stored in the current snapshot") :
-                        parent() != 0 ?
-                        UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot") :
-                        QString();
-        }
-        /* For others: */
-        else
-        {
-            /* Fetch snapshot information: */
-            AssertReturnVoid(!m_comSnapshot.isNull());
-            m_strSnapshotID = m_comSnapshot.GetId();
-            setText(0, m_comSnapshot.GetName());
-            m_fOnline = m_comSnapshot.GetOnline();
-            setIcon(0, m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
-            m_strDesc = m_comSnapshot.GetDescription();
-            m_timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
-            m_fCurrentStateModified = false;
-        }
+    /** Returns item data for corresponding @a iColumn and @a iRole. */
+    QVariant data(int iColumn, int iRole) const;
 
-        /* Adjust text: */
-        adjustText();
-        /* Update tool-tip: */
-        recacheToolTip();
-    }
+    /** Returns item text for corresponding @a iColumn. */
+    QString text(int iColumn) const;
+
+    /** Returns whether this is the "current state" item. */
+    bool isCurrentStateItem() const;
+
+    /** Calculates and returns the current item level. */
+    int level() const;
+
+    /** Returns whether the font is bold. */
+    bool bold() const;
+    /** Defines whether the font is @a fBold. */
+    void setBold(bool fBold);
+
+    /** Returns whether the font is italic. */
+    bool italic() const;
+    /** Defines whether the font is @a fItalic. */
+    void setItalic(bool fItalic);
+
+    /** Recaches the item's contents. */
+    void recache();
 
     /** Returns current machine state. */
-    KMachineState getCurrentState() const
-    {
-        /* Make sure machine is valid: */
-        if (m_comMachine.isNull())
-            return KMachineState_Null;
-
-        /* Return cached state: */
-        return m_enmMachineState;
-    }
+    KMachineState getCurrentState() const;
 
     /** Recaches current machine state. */
-    void updateCurrentState(KMachineState enmState)
-    {
-        /* Make sure machine is valid: */
-        if (m_comMachine.isNull())
-            return;
-
-        /* Set corresponding icon: */
-        setIcon(0, gpConverter->toIcon(enmState));
-        /* Cache new state: */
-        m_enmMachineState = enmState;
-        /* Update timestamp: */
-        m_timestamp.setTime_t(m_comMachine.GetLastStateChange() / 1000);
-    }
+    void updateCurrentState(KMachineState enmState);
 
     /** Updates item age. */
-    SnapshotAgeFormat updateAge()
-    {
-        /* Prepare age: */
-        QString strAge;
-
-        /* Age: [date time|%1d ago|%1h ago|%1min ago|%1sec ago] */
-        SnapshotAgeFormat enmAgeFormat;
-        const QDateTime now = QDateTime::currentDateTime();
-        QDateTime then = m_timestamp;
-        if (then > now)
-            then = now; /* can happen if the host time is wrong */
-        if (then.daysTo(now) > 30)
-        {
-            strAge = UISnapshotPane::tr(" (%1)").arg(then.toString(Qt::LocalDate));
-            enmAgeFormat = SnapshotAgeFormat_Max;
-        }
-        else if (then.secsTo(now) > 60 * 60 * 24)
-        {
-            strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
-            enmAgeFormat = SnapshotAgeFormat_InDays;
-        }
-        else if (then.secsTo(now) > 60 * 60)
-        {
-            strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
-            enmAgeFormat = SnapshotAgeFormat_InHours;
-        }
-        else if (then.secsTo(now) > 60)
-        {
-            strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::minutesToString(then.secsTo(now) / 60));
-            enmAgeFormat = SnapshotAgeFormat_InMinutes;
-        }
-        else
-        {
-            strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::secondsToString(then.secsTo(now)));
-            enmAgeFormat = SnapshotAgeFormat_InSeconds;
-        }
-
-        /* Update data: */
-        setData(0, Qt::UserRole, strAge);
-
-        /* Return age: */
-        return enmAgeFormat;
-    }
+    SnapshotAgeFormat updateAge();
 
 protected:
 
     /** Adjusts item text. */
-    void adjustText()
-    {
-        /* Make sure item is initialised: */
-        if (!treeWidget())
-            return;
-
-        /* Calculate metrics: */
-        QFontMetrics metrics(font(0));
-        int iHei0 = (metrics.height() > 16 ?
-                     metrics.height() /* text */ : 16 /* icon */) +
-                    2 * 2 /* 2 pixel per margin */;
-        int iWid0 = metrics.width(text(0)) /* text */ +
-                    treeWidget()->indentation() /* indent */ +
-                    16 /* icon */;
-
-        /* Adjust size finally: */
-        setSizeHint(0, QSize(iWid0, iHei0));
-    }
+    void adjustText();
 
     /** Recaches item tool-tip. */
-    void recacheToolTip()
-    {
-        /* Is the saved date today? */
-        const bool fDateTimeToday = m_timestamp.date() == QDate::currentDate();
-
-        /* Compose date time: */
-        QString strDateTime = fDateTimeToday ?
-                              m_timestamp.time().toString(Qt::LocalDate) :
-                              m_timestamp.toString(Qt::LocalDate);
-
-        /* Prepare details: */
-        QString strDetails;
-
-        /* For snapshot item: */
-        if (!m_comSnapshot.isNull())
-        {
-            /* The current snapshot is always bold: */
-            if (bold())
-                strDetails = UISnapshotPane::tr(" (current, ", "Snapshot details");
-            else
-                strDetails = " (";
-
-            /* Add online/offline information: */
-            strDetails += m_fOnline ? UISnapshotPane::tr("online)", "Snapshot details")
-                                    : UISnapshotPane::tr("offline)", "Snapshot details");
-
-            /* Add date/time information: */
-            if (fDateTimeToday)
-                strDateTime = UISnapshotPane::tr("Taken at %1", "Snapshot (time)").arg(strDateTime);
-            else
-                strDateTime = UISnapshotPane::tr("Taken on %1", "Snapshot (date + time)").arg(strDateTime);
-        }
-        /* For "current state" item: */
-        else
-        {
-            strDateTime = UISnapshotPane::tr("%1 since %2", "Current State (time or date + time)")
-                          .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
-        }
-
-        /* Prepare tool-tip: */
-        QString strToolTip = QString("<nobr><b>%1</b>%2</nobr><br><nobr>%3</nobr>")
-                                 .arg(text(0)).arg(strDetails).arg(strDateTime);
-
-        /* Append description if any: */
-        if (!m_strDesc.isEmpty())
-            strToolTip += "<hr>" + m_strDesc;
-
-        /* Assign tool-tip finally: */
-        setToolTip(0, strToolTip);
-    }
+    void recacheToolTip();
 
 private:
 
@@ -406,6 +148,313 @@ private:
     KMachineState            m_enmMachineState;
 };
 
+
+/*********************************************************************************************************************************
+*   Class SnapshotWgtItem implementation.                                                                                        *
+*********************************************************************************************************************************/
+
+SnapshotWgtItem::SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
+    : QTreeWidgetItem(pTreeWidget, ItemType)
+    , m_pSnapshotWidget(pSnapshotWidget)
+    , m_fCurrentState(false)
+    , m_comSnapshot(comSnapshot)
+{
+}
+
+SnapshotWgtItem::SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
+    : QTreeWidgetItem(pRootItem, ItemType)
+    , m_pSnapshotWidget(pSnapshotWidget)
+    , m_fCurrentState(false)
+    , m_comSnapshot(comSnapshot)
+{
+}
+
+SnapshotWgtItem::SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CMachine &comMachine)
+    : QTreeWidgetItem(pTreeWidget, ItemType)
+    , m_pSnapshotWidget(pSnapshotWidget)
+    , m_fCurrentState(true)
+    , m_comMachine(comMachine)
+{
+    /* Fetch current machine state: */
+    updateCurrentState(m_comMachine.GetState());
+}
+
+SnapshotWgtItem::SnapshotWgtItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CMachine &comMachine)
+    : QTreeWidgetItem(pRootItem, ItemType)
+    , m_pSnapshotWidget(pSnapshotWidget)
+    , m_fCurrentState(true)
+    , m_comMachine(comMachine)
+{
+    /* Fetch current machine state: */
+    updateCurrentState(m_comMachine.GetState());
+}
+
+QVariant SnapshotWgtItem::data(int iColumn, int iRole) const
+{
+    switch (iRole)
+    {
+        case Qt::DisplayRole:
+        {
+            /* Call to base-class for "current state" item, compose ourselves otherwise: */
+            return m_fCurrentState ? QTreeWidgetItem::data(iColumn, iRole) :
+                                     QString("%1%2")
+                                         .arg(QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString())
+                                         .arg(QTreeWidgetItem::data(iColumn, Qt::UserRole).toString());
+        }
+        case Qt::SizeHintRole:
+        {
+            /* Determine the icon metric: */
+            const QStyle *pStyle = QApplication::style();
+            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+            /* Determine the minimum size-hint for this tree-widget-item: */
+            const QSize baseSizeHint = QTreeWidgetItem::data(iColumn, iRole).toSize();
+            /* Determine the effective height-hint for this tree-widget-item: */
+            const int iEffectiveHeightHint = qMax(baseSizeHint.height(),
+                                                  iIconMetric + 2 * 2 /* margins */);
+            /* Return size-hint for this tree-widget-item: */
+            return QSize(baseSizeHint.width(), iEffectiveHeightHint);
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QTreeWidgetItem::data(iColumn, iRole);
+}
+
+QString SnapshotWgtItem::text(int iColumn) const
+{
+    return QTreeWidgetItem::data(iColumn, Qt::DisplayRole).toString();
+}
+
+bool SnapshotWgtItem::isCurrentStateItem() const
+{
+    return m_comSnapshot.isNull();
+}
+
+int SnapshotWgtItem::level() const
+{
+    const QTreeWidgetItem *pItem = this;
+    int iResult = 0;
+    while (pItem->parent())
+    {
+        ++iResult;
+        pItem = pItem->parent();
+    }
+    return iResult;
+}
+
+bool SnapshotWgtItem::bold() const
+{
+    return font(0).bold();
+}
+
+void SnapshotWgtItem::setBold(bool fBold)
+{
+    /* Update font: */
+    QFont myFont = font(0);
+    myFont.setBold(fBold);
+    setFont(0, myFont);
+
+    /* Adjust text: */
+    adjustText();
+}
+
+bool SnapshotWgtItem::italic() const
+{
+    return font(0).italic();
+}
+
+void SnapshotWgtItem::setItalic(bool fItalic)
+{
+    /* Update font: */
+    QFont myFont = font(0);
+    myFont.setItalic(fItalic);
+    setFont(0, myFont);
+
+    /* Adjust text: */
+    adjustText();
+}
+
+void SnapshotWgtItem::recache()
+{
+    /* For "current state" item: */
+    if (m_fCurrentState)
+    {
+        /* Fetch machine information: */
+        AssertReturnVoid(!m_comMachine.isNull());
+        m_fCurrentStateModified = m_comMachine.GetCurrentStateModified();
+        setText(0, m_fCurrentStateModified ?
+                   UISnapshotPane::tr("Current State (changed)", "Current State (Modified)") :
+                   UISnapshotPane::tr("Current State", "Current State (Unmodified)"));
+        m_strDesc = m_fCurrentStateModified ?
+                    UISnapshotPane::tr("The current state differs from the state stored in the current snapshot") :
+                    parent() != 0 ?
+                    UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot") :
+                    QString();
+    }
+    /* For others: */
+    else
+    {
+        /* Fetch snapshot information: */
+        AssertReturnVoid(!m_comSnapshot.isNull());
+        m_strSnapshotID = m_comSnapshot.GetId();
+        setText(0, m_comSnapshot.GetName());
+        m_fOnline = m_comSnapshot.GetOnline();
+        setIcon(0, m_pSnapshotWidget->snapshotItemIcon(m_fOnline));
+        m_strDesc = m_comSnapshot.GetDescription();
+        m_timestamp.setTime_t(m_comSnapshot.GetTimeStamp() / 1000);
+        m_fCurrentStateModified = false;
+    }
+
+    /* Adjust text: */
+    adjustText();
+    /* Update tool-tip: */
+    recacheToolTip();
+}
+
+KMachineState SnapshotWgtItem::getCurrentState() const
+{
+    /* Make sure machine is valid: */
+    if (m_comMachine.isNull())
+        return KMachineState_Null;
+
+    /* Return cached state: */
+    return m_enmMachineState;
+}
+
+void SnapshotWgtItem::updateCurrentState(KMachineState enmState)
+{
+    /* Make sure machine is valid: */
+    if (m_comMachine.isNull())
+        return;
+
+    /* Set corresponding icon: */
+    setIcon(0, gpConverter->toIcon(enmState));
+    /* Cache new state: */
+    m_enmMachineState = enmState;
+    /* Update timestamp: */
+    m_timestamp.setTime_t(m_comMachine.GetLastStateChange() / 1000);
+}
+
+SnapshotAgeFormat SnapshotWgtItem::updateAge()
+{
+    /* Prepare age: */
+    QString strAge;
+
+    /* Age: [date time|%1d ago|%1h ago|%1min ago|%1sec ago] */
+    SnapshotAgeFormat enmAgeFormat;
+    const QDateTime now = QDateTime::currentDateTime();
+    QDateTime then = m_timestamp;
+    if (then > now)
+        then = now; /* can happen if the host time is wrong */
+    if (then.daysTo(now) > 30)
+    {
+        strAge = UISnapshotPane::tr(" (%1)").arg(then.toString(Qt::LocalDate));
+        enmAgeFormat = SnapshotAgeFormat_Max;
+    }
+    else if (then.secsTo(now) > 60 * 60 * 24)
+    {
+        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::daysToString(then.secsTo(now) / 60 / 60 / 24));
+        enmAgeFormat = SnapshotAgeFormat_InDays;
+    }
+    else if (then.secsTo(now) > 60 * 60)
+    {
+        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::hoursToString(then.secsTo(now) / 60 / 60));
+        enmAgeFormat = SnapshotAgeFormat_InHours;
+    }
+    else if (then.secsTo(now) > 60)
+    {
+        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::minutesToString(then.secsTo(now) / 60));
+        enmAgeFormat = SnapshotAgeFormat_InMinutes;
+    }
+    else
+    {
+        strAge = UISnapshotPane::tr(" (%1 ago)").arg(VBoxGlobal::secondsToString(then.secsTo(now)));
+        enmAgeFormat = SnapshotAgeFormat_InSeconds;
+    }
+
+    /* Update data: */
+    setData(0, Qt::UserRole, strAge);
+
+    /* Return age: */
+    return enmAgeFormat;
+}
+
+void SnapshotWgtItem::adjustText()
+{
+    /* Make sure item is initialised: */
+    if (!treeWidget())
+        return;
+
+    /* Calculate metrics: */
+    QFontMetrics metrics(font(0));
+    int iHei0 = (metrics.height() > 16 ?
+                 metrics.height() /* text */ : 16 /* icon */) +
+                2 * 2 /* 2 pixel per margin */;
+    int iWid0 = metrics.width(text(0)) /* text */ +
+                treeWidget()->indentation() /* indent */ +
+                16 /* icon */;
+
+    /* Adjust size finally: */
+    setSizeHint(0, QSize(iWid0, iHei0));
+}
+
+void SnapshotWgtItem::recacheToolTip()
+{
+    /* Is the saved date today? */
+    const bool fDateTimeToday = m_timestamp.date() == QDate::currentDate();
+
+    /* Compose date time: */
+    QString strDateTime = fDateTimeToday ?
+                          m_timestamp.time().toString(Qt::LocalDate) :
+                          m_timestamp.toString(Qt::LocalDate);
+
+    /* Prepare details: */
+    QString strDetails;
+
+    /* For snapshot item: */
+    if (!m_comSnapshot.isNull())
+    {
+        /* The current snapshot is always bold: */
+        if (bold())
+            strDetails = UISnapshotPane::tr(" (current, ", "Snapshot details");
+        else
+            strDetails = " (";
+
+        /* Add online/offline information: */
+        strDetails += m_fOnline ? UISnapshotPane::tr("online)", "Snapshot details")
+                                : UISnapshotPane::tr("offline)", "Snapshot details");
+
+        /* Add date/time information: */
+        if (fDateTimeToday)
+            strDateTime = UISnapshotPane::tr("Taken at %1", "Snapshot (time)").arg(strDateTime);
+        else
+            strDateTime = UISnapshotPane::tr("Taken on %1", "Snapshot (date + time)").arg(strDateTime);
+    }
+    /* For "current state" item: */
+    else
+    {
+        strDateTime = UISnapshotPane::tr("%1 since %2", "Current State (time or date + time)")
+                      .arg(gpConverter->toString(m_enmMachineState)).arg(strDateTime);
+    }
+
+    /* Prepare tool-tip: */
+    QString strToolTip = QString("<nobr><b>%1</b>%2</nobr><br><nobr>%3</nobr>")
+                             .arg(text(0)).arg(strDetails).arg(strDateTime);
+
+    /* Append description if any: */
+    if (!m_strDesc.isEmpty())
+        strToolTip += "<hr>" + m_strDesc;
+
+    /* Assign tool-tip finally: */
+    setToolTip(0, strToolTip);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UISnapshotPane implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UISnapshotPane::UISnapshotPane(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -1117,31 +1166,6 @@ void UISnapshotPane::refreshAll()
     m_pTreeWidget->resizeColumnToContents(0);
 }
 
-SnapshotWgtItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
-{
-    /* Search for the first item with required ID: */
-    QTreeWidgetItemIterator it(m_pTreeWidget);
-    while (*it)
-    {
-        SnapshotWgtItem *pSnapshotItem = toSnapshotItem(*it);
-        if (pSnapshotItem->snapshotID() == strSnapshotID)
-            return pSnapshotItem;
-        ++it;
-    }
-
-    /* Null by default: */
-    return 0;
-}
-
-SnapshotWgtItem *UISnapshotPane::currentStateItem() const
-{
-    /* Last child of the current snapshot item if any or first child of invisible root item otherwise: */
-    QTreeWidgetItem *pCsi = m_pCurrentSnapshotItem ?
-                            m_pCurrentSnapshotItem->child(m_pCurrentSnapshotItem->childCount() - 1) :
-                            m_pTreeWidget->invisibleRootItem()->child(0);
-    return static_cast<SnapshotWgtItem*>(pCsi);
-}
-
 void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QTreeWidgetItem *pItem)
 {
     /* Create a child of passed item: */
@@ -1166,6 +1190,31 @@ void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QTreeWidget
     pSnapshotItem->setExpanded(true);
     /* And mark it as editable: */
     pSnapshotItem->setFlags(pSnapshotItem->flags() | Qt::ItemIsEditable);
+}
+
+SnapshotWgtItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
+{
+    /* Search for the first item with required ID: */
+    QTreeWidgetItemIterator it(m_pTreeWidget);
+    while (*it)
+    {
+        SnapshotWgtItem *pSnapshotItem = toSnapshotItem(*it);
+        if (pSnapshotItem->snapshotID() == strSnapshotID)
+            return pSnapshotItem;
+        ++it;
+    }
+
+    /* Null by default: */
+    return 0;
+}
+
+SnapshotWgtItem *UISnapshotPane::currentStateItem() const
+{
+    /* Last child of the current snapshot item if any or first child of invisible root item otherwise: */
+    QTreeWidgetItem *pCsi = m_pCurrentSnapshotItem ?
+                            m_pCurrentSnapshotItem->child(m_pCurrentSnapshotItem->childCount() - 1) :
+                            m_pTreeWidget->invisibleRootItem()->child(0);
+    return static_cast<SnapshotWgtItem*>(pCsi);
 }
 
 SnapshotAgeFormat UISnapshotPane::traverseSnapshotAge(QTreeWidgetItem *pItem) const
