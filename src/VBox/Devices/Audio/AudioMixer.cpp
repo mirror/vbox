@@ -660,11 +660,11 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
     }
 
+    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
+
     /* Not running anymore? Reset. */
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
         audioMixerSinkReset(pSink);
-
-    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -995,7 +995,10 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
         cbRead = RT_MAX(cbRead, cbTotalRead);
 
         PDMAUDIOSTRMSTS strmSts = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
-        fClean &= !(strmSts & PDMAUDIOSTRMSTS_FLAG_DATA_READABLE);
+
+        /* Still some data available? Then sink is not clean (yet). */
+        if (strmSts & PDMAUDIOSTRMSTS_FLAG_DATA_READABLE)
+            fClean = false;
     }
 
     if (RT_SUCCESS(rc))
@@ -1017,7 +1020,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     RTMemFree(pvMixBuf);
 #endif
 
-    Log3Func(("[%s] cbRead=%RU32, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, cbRead, pSink->fStatus, rc));
+    Log3Func(("[%s] cbRead=%RU32, fClean=%RTbool, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, cbRead, fClean, pSink->fStatus, rc));
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1110,7 +1113,7 @@ static void audioMixerSinkReset(PAUDMIXSINK pSink)
     if (!pSink)
         return;
 
-    LogFunc(("%s\n", pSink->pszName));
+    LogFunc(("[%s]\n", pSink->pszName));
 
     if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
     {
