@@ -5080,8 +5080,8 @@ static DECLCALLBACK(unsigned) iscsiGetVersion(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
-    Assert(pImage);
-    NOREF(pImage);
+    AssertPtr(pImage);
+    RT_NOREF1(pImage);
 
     return 0;
 }
@@ -5092,12 +5092,9 @@ static DECLCALLBACK(uint32_t) iscsiGetSectorSize(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        return pImage->cbSector;
-    else
-        return 0;
+    return pImage->cbSector;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetSize */
@@ -5106,12 +5103,9 @@ static DECLCALLBACK(uint64_t) iscsiGetSize(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        return pImage->cbSize;
-    else
-        return 0;
+    return pImage->cbSize;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetFileSize */
@@ -5120,13 +5114,9 @@ static DECLCALLBACK(uint64_t) iscsiGetFileSize(void *pBackendData)
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
-    Assert(pImage);
-    NOREF(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        return pImage->cbSize;
-    else
-        return 0;
+    return pImage->cbSize;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetPCHSGeometry */
@@ -5135,17 +5125,12 @@ static DECLCALLBACK(int) iscsiGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pP
     RT_NOREF1(pPCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_VD_GEOMETRY_NOT_SET;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", rc, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
-    return rc;
+    LogFlowFunc(("returns %Rrc (PCHS=%u/%u/%u)\n", VERR_VD_GEOMETRY_NOT_SET,
+                 pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+    return VERR_VD_GEOMETRY_NOT_SET;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetPCHSGeometry */
@@ -5154,23 +5139,15 @@ static DECLCALLBACK(int) iscsiSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY p
     RT_NOREF1(pPCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n", pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        {
-            rc = VERR_VD_IMAGE_READ_ONLY;
-            goto out;
-        }
-        rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -5181,17 +5158,12 @@ static DECLCALLBACK(int) iscsiGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pL
     RT_NOREF1(pLCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_VD_GEOMETRY_NOT_SET;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", rc, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
-    return rc;
+    LogFlowFunc(("returns %Rrc (LCHS=%u/%u/%u)\n", VERR_VD_GEOMETRY_NOT_SET,
+                 pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+    return VERR_VD_GEOMETRY_NOT_SET;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetLCHSGeometry */
@@ -5200,23 +5172,15 @@ static DECLCALLBACK(int) iscsiSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY p
     RT_NOREF1(pLCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n", pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        {
-            rc = VERR_VD_IMAGE_READ_ONLY;
-            goto out;
-        }
-        rc = VERR_VD_GEOMETRY_NOT_SET;
-    }
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        rc = VERR_VD_IMAGE_READ_ONLY;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_GEOMETRY_NOT_SET;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -5226,15 +5190,11 @@ static DECLCALLBACK(unsigned) iscsiGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    unsigned uImageFlags;
 
-    Assert(pImage);
-    NOREF(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    uImageFlags = VD_IMAGE_FLAGS_FIXED;
-
-    LogFlowFunc(("returns %#x\n", uImageFlags));
-    return uImageFlags;
+    LogFlowFunc(("returns %#x\n", VD_IMAGE_FLAGS_FIXED));
+    return VD_IMAGE_FLAGS_FIXED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnGetOpenFlags */
@@ -5242,17 +5202,11 @@ static DECLCALLBACK(unsigned) iscsiGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    unsigned uOpenFlags;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, 0);
 
-    if (pImage)
-        uOpenFlags = pImage->uOpenFlags;
-    else
-        uOpenFlags = 0;
-
-    LogFlowFunc(("returns %#x\n", uOpenFlags));
-    return uOpenFlags;
+    LogFlowFunc(("returns %#x\n", pImage->uOpenFlags));
+    return pImage->uOpenFlags;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetOpenFlags */
@@ -5294,17 +5248,11 @@ static DECLCALLBACK(int) iscsiGetComment(void *pBackendData, char *pszComment,
     RT_NOREF2(pszComment, cbComment);
     LogFlowFunc(("pBackendData=%#p pszComment=%#p cbComment=%zu\n", pBackendData, pszComment, cbComment));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc comment='%s'\n", rc, pszComment));
-    return rc;
+    LogFlowFunc(("returns %Rrc comment='%s'\n", VERR_NOT_SUPPORTED, pszComment));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetComment */
@@ -5313,19 +5261,14 @@ static DECLCALLBACK(int) iscsiSetComment(void *pBackendData, const char *pszComm
     RT_NOREF1(pszComment);
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_IMAGE_READ_ONLY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5337,17 +5280,11 @@ static DECLCALLBACK(int) iscsiGetUuid(void *pBackendData, PRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetUuid */
@@ -5356,20 +5293,14 @@ static DECLCALLBACK(int) iscsiSetUuid(void *pBackendData, PCRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_IMAGE_READ_ONLY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5381,17 +5312,11 @@ static DECLCALLBACK(int) iscsiGetModificationUuid(void *pBackendData, PRTUUID pU
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetModificationUuid */
@@ -5400,20 +5325,14 @@ static DECLCALLBACK(int) iscsiSetModificationUuid(void *pBackendData, PCRTUUID p
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_IMAGE_READ_ONLY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5425,17 +5344,11 @@ static DECLCALLBACK(int) iscsiGetParentUuid(void *pBackendData, PRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentUuid */
@@ -5444,20 +5357,14 @@ static DECLCALLBACK(int) iscsiSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_IMAGE_READ_ONLY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5469,17 +5376,11 @@ static DECLCALLBACK(int) iscsiGetParentModificationUuid(void *pBackendData, PRTU
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
-    int rc;
 
-    Assert(pImage);
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
 
-    if (pImage)
-        rc = VERR_NOT_SUPPORTED;
-    else
-        rc = VERR_VD_NOT_OPENED;
-
-    LogFlowFunc(("returns %Rrc (%RTuuid)\n", rc, pUuid));
-    return rc;
+    LogFlowFunc(("returns %Rrc (%RTuuid)\n", VERR_NOT_SUPPORTED, pUuid));
+    return VERR_NOT_SUPPORTED;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnSetParentModificationUuid */
@@ -5488,20 +5389,14 @@ static DECLCALLBACK(int) iscsiSetParentModificationUuid(void *pBackendData, PCRT
     RT_NOREF1(pUuid);
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
+
+    AssertPtrReturn(pImage, VERR_VD_NOT_OPENED);
+
     int rc;
-
-    LogFlowFunc(("%RTuuid\n", pUuid));
-    Assert(pImage);
-
-    if (pImage)
-    {
-        if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-            rc = VERR_NOT_SUPPORTED;
-        else
-            rc = VERR_VD_IMAGE_READ_ONLY;
-    }
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        rc = VERR_NOT_SUPPORTED;
     else
-        rc = VERR_VD_NOT_OPENED;
+        rc = VERR_VD_IMAGE_READ_ONLY;
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5512,12 +5407,9 @@ static DECLCALLBACK(void) iscsiDump(void *pBackendData)
 {
     PISCSIIMAGE pImage = (PISCSIIMAGE)pBackendData;
 
-    Assert(pImage);
-    if (pImage)
-    {
-        /** @todo put something useful here */
-        vdIfErrorMessage(pImage->pIfError, "Header: cVolume=%u\n", pImage->cVolume);
-    }
+    AssertPtrReturnVoid(pImage);
+    /** @todo put something useful here */
+    vdIfErrorMessage(pImage->pIfError, "Header: cVolume=%u\n", pImage->cVolume);
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnComposeLocation */
