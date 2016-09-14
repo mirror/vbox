@@ -46,7 +46,7 @@ enum SnapshotAgeFormat
 
 
 /** QWidget extension providing GUI with the pane to control snapshot related functionality. */
-class UISnapshotPane : public QIWithRetranslateUI <QWidget>, public Ui::UISnapshotPane
+class UISnapshotPane : public QIWithRetranslateUI<QWidget>, public Ui::UISnapshotPane
 {
     Q_OBJECT;
 
@@ -83,7 +83,7 @@ private slots:
     /** @name Snapshot operations
       * @{ */
         /** Proposes to take a snapshot. */
-        void sltTakeSnapshot();
+        void sltTakeSnapshot() { takeSnapshot(); }
         /** Proposes to restore the snapshot. */
         void sltRestoreSnapshot(bool fSuppressNonCriticalWarnings = false);
         /** Proposes to delete the snapshot. */
