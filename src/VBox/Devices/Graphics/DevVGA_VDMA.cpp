@@ -1492,10 +1492,17 @@ static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
     {
         if (u16Flags & VBVA_SCREEN_F_BLANK2)
         {
+            if (   u32ViewIndex >= pVGAState->cMonitors
+                && u32ViewIndex != UINT32_C(0xFFFFFFFF))
+            {
+                return VERR_INVALID_PARAMETER;
+            }
+
             /* Special case for blanking using current video mode.
-             * Only 'u16Flags' field is relevant.
+             * Only 'u16Flags' and 'u32ViewIndex' field are relevant.
              */
             RT_ZERO(*pScreen);
+            pScreen->u32ViewIndex = u32ViewIndex;
             pScreen->u16Flags = u16Flags;
             return VINF_SUCCESS;
         }
