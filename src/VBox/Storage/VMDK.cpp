@@ -2913,177 +2913,138 @@ static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents)
 }
 
 /**
- * Internal: Open an image, constructing all necessary data structures.
+ * Reads and processes the descriptor embedded in sparse images.
+ *
+ * @returns VBox status code.
+ * @param   pImage         VMDK image instance.
+ * @param   pFile          The sparse file handle.
  */
-static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
+static int vmdkDescriptorReadSparse(PVMDKIMAGE pImage, PVMDKFILE pFile)
 {
-    int rc;
-    uint32_t u32Magic;
-    PVMDKFILE pFile;
-    PVMDKEXTENT pExtent;
-
-    pImage->uOpenFlags = uOpenFlags;
-
-    pImage->pIfError = VDIfErrorGet(pImage->pVDIfsDisk);
-    pImage->pIfIo = VDIfIoIntGet(pImage->pVDIfsImage);
-    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
-
-    /*
-     * Open the image.
-     * We don't have to check for asynchronous access because
-     * we only support raw access and the opened file is a description
-     * file were no data is stored.
-     */
-
-    rc = vmdkFileOpen(pImage, &pFile, pImage->pszFilename,
-                      VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */));
-    if (RT_FAILURE(rc))
+    /* It's a hosted single-extent image. */
+    int rc = vmdkCreateExtents(pImage, 1);
+    if (RT_SUCCESS(rc))
     {
-        /* Do NOT signal an appropriate error here, as the VD layer has the
-         * choice of retrying the open if it failed. */
-        goto out;
-    }
-    pImage->pFile = pFile;
-
-    /* Read magic (if present). */
-    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pFile->pStorage, 0,
-                               &u32Magic, sizeof(u32Magic));
-    if (RT_FAILURE(rc))
-    {
-        vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pImage->pszFilename);
-        rc = VERR_VD_VMDK_INVALID_HEADER;
-        goto out;
-    }
-
-    /* Handle the file according to its magic number. */
-    if (RT_LE2H_U32(u32Magic) == VMDK_SPARSE_MAGICNUMBER)
-    {
-        /* It's a hosted single-extent image. */
-        rc = vmdkCreateExtents(pImage, 1);
-        if (RT_FAILURE(rc))
-            goto out;
         /* The opened file is passed to the extent. No separate descriptor
          * file, so no need to keep anything open for the image. */
-        pExtent = &pImage->pExtents[0];
+        PVMDKEXTENT pExtent = &pImage->pExtents[0];
         pExtent->pFile = pFile;
         pImage->pFile = NULL;
         pExtent->pszFullname = RTPathAbsDup(pImage->pszFilename);
-        if (!pExtent->pszFullname)
+        if (RT_LIKELY(pExtent->pszFullname))
         {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        rc = vmdkReadBinaryMetaExtent(pImage, pExtent, true /* fMagicAlreadyRead */);
-        if (RT_FAILURE(rc))
-            goto out;
-
-        /* As we're dealing with a monolithic image here, there must
-         * be a descriptor embedded in the image file. */
-        if (!pExtent->uDescriptorSector || !pExtent->cDescriptorSectors)
-        {
-            rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in '%s'"), pImage->pszFilename);
-            goto out;
-        }
-        /* HACK: extend the descriptor if it is unusually small and it fits in
-         * the unused space after the image header. Allows opening VMDK files
-         * with extremely small descriptor in read/write mode.
-         *
-         * The previous version introduced a possible regression for VMDK stream
-         * optimized images from VMware which tend to have only a single sector sized
-         * descriptor. Increasing the descriptor size resulted in adding the various uuid
-         * entries required to make it work with VBox but for stream optimized images
-         * the updated binary header wasn't written to the disk creating a mismatch
-         * between advertised and real descriptor size.
-         *
-         * The descriptor size will be increased even if opened readonly now if there
-         * enough room but the new value will not be written back to the image.
-         */
-        if (    pExtent->cDescriptorSectors < 3
-            &&  (int64_t)pExtent->uSectorGD - pExtent->uDescriptorSector >= 4
-            &&  (!pExtent->uSectorRGD || (int64_t)pExtent->uSectorRGD - pExtent->uDescriptorSector >= 4))
-        {
-            uint64_t cDescriptorSectorsOld = pExtent->cDescriptorSectors;
-
-            pExtent->cDescriptorSectors = 4;
-            if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+            /* As we're dealing with a monolithic image here, there must
+             * be a descriptor embedded in the image file. */
+            rc = vmdkReadBinaryMetaExtent(pImage, pExtent, true /* fMagicAlreadyRead */);
+            if (   RT_SUCCESS(rc)
+                && pExtent->uDescriptorSector
+                && pExtent->cDescriptorSectors)
             {
-                /*
-                 * Update the on disk number now to make sure we don't introduce inconsistencies
-                 * in case of stream optimized images from VMware where the descriptor is just
-                 * one sector big (the binary header is not written to disk for complete
-                 * stream optimized images in vmdkFlushImage()).
+                /* HACK: extend the descriptor if it is unusually small and it fits in
+                 * the unused space after the image header. Allows opening VMDK files
+                 * with extremely small descriptor in read/write mode.
+                 *
+                 * The previous version introduced a possible regression for VMDK stream
+                 * optimized images from VMware which tend to have only a single sector sized
+                 * descriptor. Increasing the descriptor size resulted in adding the various uuid
+                 * entries required to make it work with VBox but for stream optimized images
+                 * the updated binary header wasn't written to the disk creating a mismatch
+                 * between advertised and real descriptor size.
+                 *
+                 * The descriptor size will be increased even if opened readonly now if there
+                 * enough room but the new value will not be written back to the image.
                  */
-                uint64_t u64DescSizeNew = RT_H2LE_U64(pExtent->cDescriptorSectors);
-                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pFile->pStorage, RT_OFFSETOF(SparseExtentHeader, descriptorSize),
-                                            &u64DescSizeNew, sizeof(u64DescSizeNew));
-                if (RT_FAILURE(rc))
+                if (    pExtent->cDescriptorSectors < 3
+                    &&  (int64_t)pExtent->uSectorGD - pExtent->uDescriptorSector >= 4
+                    &&  (!pExtent->uSectorRGD || (int64_t)pExtent->uSectorRGD - pExtent->uDescriptorSector >= 4))
                 {
-                    LogFlowFunc(("Increasing the descriptor size failed with %Rrc\n", rc));
-                    /* Restore the old size and carry on. */
-                    pExtent->cDescriptorSectors = cDescriptorSectorsOld;
+                    uint64_t cDescriptorSectorsOld = pExtent->cDescriptorSectors;
+
+                    pExtent->cDescriptorSectors = 4;
+                    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+                    {
+                        /*
+                         * Update the on disk number now to make sure we don't introduce inconsistencies
+                         * in case of stream optimized images from VMware where the descriptor is just
+                         * one sector big (the binary header is not written to disk for complete
+                         * stream optimized images in vmdkFlushImage()).
+                         */
+                        uint64_t u64DescSizeNew = RT_H2LE_U64(pExtent->cDescriptorSectors);
+                        rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pFile->pStorage, RT_OFFSETOF(SparseExtentHeader, descriptorSize),
+                                                    &u64DescSizeNew, sizeof(u64DescSizeNew));
+                        if (RT_FAILURE(rc))
+                        {
+                            LogFlowFunc(("Increasing the descriptor size failed with %Rrc\n", rc));
+                            /* Restore the old size and carry on. */
+                            pExtent->cDescriptorSectors = cDescriptorSectorsOld;
+                        }
+                    }
                 }
+                /* Read the descriptor from the extent. */
+                pExtent->pDescData = (char *)RTMemAllocZ(VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
+                if (RT_LIKELY(pExtent->pDescData))
+                {
+                    rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
+                                               VMDK_SECTOR2BYTE(pExtent->uDescriptorSector),
+                                               pExtent->pDescData,
+                                               VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = vmdkParseDescriptor(pImage, pExtent->pDescData,
+                                                 VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
+                        if (   RT_SUCCESS(rc)
+                            && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                            && !(pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO))
+                        {
+                            rc = vmdkReadMetaExtent(pImage, pExtent);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /* Mark the extent as unclean if opened in read-write mode. */
+                                if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                                    && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
+                                {
+                                    pExtent->fUncleanShutdown = true;
+                                    pExtent->fMetaDirty = true;
+                                }
+                            }
+                        }
+                        else if (RT_SUCCESS(rc))
+                            rc = VERR_NOT_SUPPORTED;
+                    }
+                    else
+                        rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pExtent->pszFullname);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
+            else if (RT_SUCCESS(rc))
+                rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: monolithic image without descriptor in '%s'"), pImage->pszFilename);
         }
-        /* Read the descriptor from the extent. */
-        pExtent->pDescData = (char *)RTMemAllocZ(VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
-        if (!pExtent->pDescData)
-        {
+        else
             rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pExtent->pFile->pStorage,
-                                   VMDK_SECTOR2BYTE(pExtent->uDescriptorSector),
-                                   pExtent->pDescData,
-                                   VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
-        AssertRC(rc);
-        if (RT_FAILURE(rc))
-        {
-            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pExtent->pszFullname);
-            goto out;
-        }
-
-        rc = vmdkParseDescriptor(pImage, pExtent->pDescData,
-                                 VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
-        if (RT_FAILURE(rc))
-            goto out;
-
-        if (   pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
-            && uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        {
-            rc = VERR_NOT_SUPPORTED;
-            goto out;
-        }
-
-        rc = vmdkReadMetaExtent(pImage, pExtent);
-        if (RT_FAILURE(rc))
-            goto out;
-
-        /* Mark the extent as unclean if opened in read-write mode. */
-        if (   !(uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
-        {
-            pExtent->fUncleanShutdown = true;
-            pExtent->fMetaDirty = true;
-        }
     }
-    else
+
+    return rc;
+}
+
+/**
+ * Reads the descriptor from a pure text file.
+ *
+ * @returns VBox status code.
+ * @param   pImage          VMDK image instance.
+ * @param   pFile           The descriptor file handle.
+ */
+static int vmdkDescriptorReadAscii(PVMDKIMAGE pImage, PVMDKFILE pFile)
+{
+    /* Allocate at least 10K, and make sure that there is 5K free space
+     * in case new entries need to be added to the descriptor. Never
+     * allocate more than 128K, because that's no valid descriptor file
+     * and will result in the correct "truncated read" error handling. */
+    uint64_t cbFileSize;
+    int rc = vdIfIoIntFileGetSize(pImage->pIfIo, pFile->pStorage, &cbFileSize);
+    if (   RT_SUCCESS(rc)
+        && cbFileSize >= 50)
     {
-        /* Allocate at least 10K, and make sure that there is 5K free space
-         * in case new entries need to be added to the descriptor. Never
-         * allocate more than 128K, because that's no valid descriptor file
-         * and will result in the correct "truncated read" error handling. */
-        uint64_t cbFileSize;
-        rc = vdIfIoIntFileGetSize(pImage->pIfIo, pFile->pStorage, &cbFileSize);
-        if (RT_FAILURE(rc))
-            goto out;
-
-        /* If the descriptor file is shorter than 50 bytes it can't be valid. */
-        if (cbFileSize < 50)
-        {
-            rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor in '%s' is too short"), pImage->pszFilename);
-            goto out;
-        }
-
         uint64_t cbSize = cbFileSize;
         if (cbSize % VMDK_SECTOR2BYTE(10))
             cbSize += VMDK_SECTOR2BYTE(20) - cbSize % VMDK_SECTOR2BYTE(10);
@@ -3092,188 +3053,233 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         cbSize = RT_MIN(cbSize, _128K);
         pImage->cbDescAlloc = RT_MAX(VMDK_SECTOR2BYTE(20), cbSize);
         pImage->pDescData = (char *)RTMemAllocZ(pImage->cbDescAlloc);
-        if (!pImage->pDescData)
+        if (RT_LIKELY(pImage->pDescData))
         {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-
-        /* Don't reread the place where the magic would live in a sparse
-         * image if it's a descriptor based one. */
-        memcpy(pImage->pDescData, &u32Magic, sizeof(u32Magic));
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pFile->pStorage, sizeof(u32Magic),
-                                   pImage->pDescData + sizeof(u32Magic),
-                                   RT_MIN(pImage->cbDescAlloc - sizeof(u32Magic),
-                                          cbFileSize - sizeof(u32Magic)));
-        if (RT_FAILURE(rc))
-        {
-            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pImage->pszFilename);
-            goto out;
-        }
-
-#if 0 /** @todo Revisit */
-        cbRead += sizeof(u32Magic);
-        if (cbRead == pImage->cbDescAlloc)
-        {
-            /* Likely the read is truncated. Better fail a bit too early
-             * (normally the descriptor is much smaller than our buffer). */
-            rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in '%s'"), pImage->pszFilename);
-            goto out;
-        }
-#endif
-
-        rc = vmdkParseDescriptor(pImage, pImage->pDescData,
-                                 pImage->cbDescAlloc);
-        if (RT_FAILURE(rc))
-            goto out;
-
-        for (unsigned i = 0; i < pImage->cExtents; i++)
-        {
-            pExtent = &pImage->pExtents[i];
-
-            if (pExtent->pszBasename)
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pFile->pStorage, 0, pImage->pDescData,
+                                       RT_MIN(pImage->cbDescAlloc, cbFileSize));
+            if (RT_SUCCESS(rc))
             {
-                /* Hack to figure out whether the specified name in the
-                 * extent descriptor is absolute. Doesn't always work, but
-                 * should be good enough for now. */
-                char *pszFullname;
-                /** @todo implement proper path absolute check. */
-                if (pExtent->pszBasename[0] == RTPATH_SLASH)
+#if 0 /** @todo Revisit */
+                cbRead += sizeof(u32Magic);
+                if (cbRead == pImage->cbDescAlloc)
                 {
-                    pszFullname = RTStrDup(pExtent->pszBasename);
-                    if (!pszFullname)
+                    /* Likely the read is truncated. Better fail a bit too early
+                     * (normally the descriptor is much smaller than our buffer). */
+                    rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot read descriptor in '%s'"), pImage->pszFilename);
+                    goto out;
+                }
+#endif
+                rc = vmdkParseDescriptor(pImage, pImage->pDescData,
+                                         pImage->cbDescAlloc);
+                if (RT_SUCCESS(rc))
+                {
+                    for (unsigned i = 0; i < pImage->cExtents && RT_SUCCESS(rc); i++)
                     {
-                        rc = VERR_NO_MEMORY;
-                        goto out;
+                        PVMDKEXTENT pExtent = &pImage->pExtents[i];
+                        if (pExtent->pszBasename)
+                        {
+                            /* Hack to figure out whether the specified name in the
+                             * extent descriptor is absolute. Doesn't always work, but
+                             * should be good enough for now. */
+                            char *pszFullname;
+                            /** @todo implement proper path absolute check. */
+                            if (pExtent->pszBasename[0] == RTPATH_SLASH)
+                            {
+                                pszFullname = RTStrDup(pExtent->pszBasename);
+                                if (!pszFullname)
+                                {
+                                    rc = VERR_NO_MEMORY;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                char *pszDirname = RTStrDup(pImage->pszFilename);
+                                if (!pszDirname)
+                                {
+                                    rc = VERR_NO_MEMORY;
+                                    break;
+                                }
+                                RTPathStripFilename(pszDirname);
+                                pszFullname = RTPathJoinA(pszDirname, pExtent->pszBasename);
+                                RTStrFree(pszDirname);
+                                if (!pszFullname)
+                                {
+                                    rc = VERR_NO_STR_MEMORY;
+                                    break;
+                                }
+                            }
+                            pExtent->pszFullname = pszFullname;
+                        }
+                        else
+                            pExtent->pszFullname = NULL;
+
+                        unsigned uOpenFlags = pImage->uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0);
+                        switch (pExtent->enmType)
+                        {
+                            case VMDKETYPE_HOSTED_SPARSE:
+                                rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
+                                                  VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */));
+                                if (RT_FAILURE(rc))
+                                {
+                                    /* Do NOT signal an appropriate error here, as the VD
+                                     * layer has the choice of retrying the open if it
+                                     * failed. */
+                                    break;
+                                }
+                                rc = vmdkReadBinaryMetaExtent(pImage, pExtent,
+                                                              false /* fMagicAlreadyRead */);
+                                if (RT_FAILURE(rc))
+                                    break;
+                                rc = vmdkReadMetaExtent(pImage, pExtent);
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                /* Mark extent as unclean if opened in read-write mode. */
+                                if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+                                {
+                                    pExtent->fUncleanShutdown = true;
+                                    pExtent->fMetaDirty = true;
+                                }
+                                break;
+                            case VMDKETYPE_VMFS:
+                            case VMDKETYPE_FLAT:
+                                rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
+                                                  VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */));
+                                if (RT_FAILURE(rc))
+                                {
+                                    /* Do NOT signal an appropriate error here, as the VD
+                                     * layer has the choice of retrying the open if it
+                                     * failed. */
+                                    break;
+                                }
+                                break;
+                            case VMDKETYPE_ZERO:
+                                /* Nothing to do. */
+                                break;
+                            default:
+                                AssertMsgFailed(("unknown vmdk extent type %d\n", pExtent->enmType));
+                        }
                     }
                 }
-                else
-                {
-                    char *pszDirname = RTStrDup(pImage->pszFilename);
-                    if (!pszDirname)
-                    {
-                        rc = VERR_NO_MEMORY;
-                        goto out;
-                    }
-                    RTPathStripFilename(pszDirname);
-                    pszFullname = RTPathJoinA(pszDirname, pExtent->pszBasename);
-                    RTStrFree(pszDirname);
-                    if (!pszFullname)
-                    {
-                        rc = VERR_NO_STR_MEMORY;
-                        goto out;
-                    }
-                }
-                pExtent->pszFullname = pszFullname;
             }
             else
-                pExtent->pszFullname = NULL;
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pImage->pszFilename);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (RT_SUCCESS(rc))
+        rc = vdIfError(pImage->pIfError, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor in '%s' is too short"), pImage->pszFilename);
 
-            switch (pExtent->enmType)
+    return rc;
+}
+
+/**
+ * Read and process the descriptor based on the image type.
+ *
+ * @returns VBox status code.
+ * @param   pImage    VMDK image instance.
+ * @param   pFile     VMDK file handle.
+ */
+static int vmdkDescriptorRead(PVMDKIMAGE pImage, PVMDKFILE pFile)
+{
+    uint32_t u32Magic;
+
+    /* Read magic (if present). */
+    int rc = vdIfIoIntFileReadSync(pImage->pIfIo, pFile->pStorage, 0,
+                                   &u32Magic, sizeof(u32Magic));
+    if (RT_SUCCESS(rc))
+    {
+        /* Handle the file according to its magic number. */
+        if (RT_LE2H_U32(u32Magic) == VMDK_SPARSE_MAGICNUMBER)
+            rc = vmdkDescriptorReadSparse(pImage, pFile);
+        else
+            rc = vmdkDescriptorReadAscii(pImage, pFile);
+    }
+    else
+    {
+        vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: error reading the magic number in '%s'"), pImage->pszFilename);   
+        rc = VERR_VD_VMDK_INVALID_HEADER;
+    }
+
+    return rc;
+}
+
+/**
+ * Internal: Open an image, constructing all necessary data structures.
+ */
+static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
+{
+    pImage->uOpenFlags = uOpenFlags;
+    pImage->pIfError   = VDIfErrorGet(pImage->pVDIfsDisk);
+    pImage->pIfIo      = VDIfIoIntGet(pImage->pVDIfsImage);
+    AssertPtrReturn(pImage->pIfIo, VERR_INVALID_PARAMETER);
+
+    /*
+     * Open the image.
+     * We don't have to check for asynchronous access because
+     * we only support raw access and the opened file is a description
+     * file were no data is stored.
+     */
+    PVMDKFILE pFile;
+    int rc = vmdkFileOpen(pImage, &pFile, pImage->pszFilename,
+                          VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */));
+    if (RT_SUCCESS(rc))
+    {
+        pImage->pFile = pFile;
+
+        rc = vmdkDescriptorRead(pImage, pFile);
+        if (RT_SUCCESS(rc))
+        {
+            /* Determine PCHS geometry if not set. */
+            if (pImage->PCHSGeometry.cCylinders == 0)
             {
-                case VMDKETYPE_HOSTED_SPARSE:
-                    rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
-                                                                 false /* fCreate */));
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Do NOT signal an appropriate error here, as the VD
-                         * layer has the choice of retrying the open if it
-                         * failed. */
-                        goto out;
-                    }
-                    rc = vmdkReadBinaryMetaExtent(pImage, pExtent,
-                                                  false /* fMagicAlreadyRead */);
-                    if (RT_FAILURE(rc))
-                        goto out;
-                    rc = vmdkReadMetaExtent(pImage, pExtent);
-                    if (RT_FAILURE(rc))
-                        goto out;
+                uint64_t cCylinders =   VMDK_BYTE2SECTOR(pImage->cbSize)
+                                      / pImage->PCHSGeometry.cHeads
+                                      / pImage->PCHSGeometry.cSectors;
+                pImage->PCHSGeometry.cCylinders = (unsigned)RT_MIN(cCylinders, 16383);
+                if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
+                {
+                    rc = vmdkDescSetPCHSGeometry(pImage, &pImage->PCHSGeometry);
+                    AssertRC(rc);
+                }
+            }
 
-                    /* Mark extent as unclean if opened in read-write mode. */
-                    if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
+            /* Update the image metadata now in case has changed. */
+            rc = vmdkFlushImage(pImage, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /* Figure out a few per-image constants from the extents. */
+                pImage->cbSize = 0;
+                for (unsigned i = 0; i < pImage->cExtents; i++)
+                {
+                    PVMDKEXTENT pExtent = &pImage->pExtents[i];
+                    if (pExtent->enmType == VMDKETYPE_HOSTED_SPARSE)
                     {
-                        pExtent->fUncleanShutdown = true;
-                        pExtent->fMetaDirty = true;
+                        /* Here used to be a check whether the nominal size of an extent
+                         * is a multiple of the grain size. The spec says that this is
+                         * always the case, but unfortunately some files out there in the
+                         * wild violate the spec (e.g. ReactOS 0.3.1). */
                     }
-                    break;
-                case VMDKETYPE_VMFS:
-                case VMDKETYPE_FLAT:
-                    rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                                      VDOpenFlagsToFileOpenFlags(uOpenFlags | ((pExtent->enmAccess == VMDKACCESS_READONLY) ? VD_OPEN_FLAGS_READONLY : 0),
-                                                                 false /* fCreate */));
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Do NOT signal an appropriate error here, as the VD
-                         * layer has the choice of retrying the open if it
-                         * failed. */
-                        goto out;
-                    }
-                    break;
-                case VMDKETYPE_ZERO:
-                    /* Nothing to do. */
-                    break;
-                default:
-                    AssertMsgFailed(("unknown vmdk extent type %d\n", pExtent->enmType));
+                    else if (    pExtent->enmType == VMDKETYPE_FLAT
+                             ||  pExtent->enmType == VMDKETYPE_ZERO)
+                        pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
+
+                    pImage->cbSize += VMDK_SECTOR2BYTE(pExtent->cNominalSectors);
+                }
+
+                if (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                    || !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
+                    rc = vmdkAllocateGrainTableCache(pImage);
             }
         }
     }
+    /* else: Do NOT signal an appropriate error here, as the VD layer has the
+     *       choice of retrying the open if it failed. */
 
-    /* Make sure this is not reached accidentally with an error status. */
-    AssertRC(rc);
-
-    /* Determine PCHS geometry if not set. */
-    if (pImage->PCHSGeometry.cCylinders == 0)
-    {
-        uint64_t cCylinders =   VMDK_BYTE2SECTOR(pImage->cbSize)
-                              / pImage->PCHSGeometry.cHeads
-                              / pImage->PCHSGeometry.cSectors;
-        pImage->PCHSGeometry.cCylinders = (unsigned)RT_MIN(cCylinders, 16383);
-        if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-            && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
-        {
-            rc = vmdkDescSetPCHSGeometry(pImage, &pImage->PCHSGeometry);
-            AssertRC(rc);
-        }
-    }
-
-    /* Update the image metadata now in case has changed. */
-    rc = vmdkFlushImage(pImage, NULL);
-    if (RT_FAILURE(rc))
-        goto out;
-
-    /* Figure out a few per-image constants from the extents. */
-    pImage->cbSize = 0;
-    for (unsigned i = 0; i < pImage->cExtents; i++)
-    {
-        pExtent = &pImage->pExtents[i];
-        if (pExtent->enmType == VMDKETYPE_HOSTED_SPARSE)
-        {
-            /* Here used to be a check whether the nominal size of an extent
-             * is a multiple of the grain size. The spec says that this is
-             * always the case, but unfortunately some files out there in the
-             * wild violate the spec (e.g. ReactOS 0.3.1). */
-        }
-        pImage->cbSize += VMDK_SECTOR2BYTE(pExtent->cNominalSectors);
-    }
-
-    for (unsigned i = 0; i < pImage->cExtents; i++)
-    {
-        pExtent = &pImage->pExtents[i];
-        if (    pImage->pExtents[i].enmType == VMDKETYPE_FLAT
-            ||  pImage->pExtents[i].enmType == VMDKETYPE_ZERO)
-        {
-            pImage->uImageFlags |= VD_IMAGE_FLAGS_FIXED;
-            break;
-        }
-    }
-
-    if (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
-        rc = vmdkAllocateGrainTableCache(pImage);
-
-out:
     if (RT_FAILURE(rc))
         vmdkFreeImage(pImage, false);
     return rc;
@@ -3342,7 +3348,8 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
         {
             PVBOXHDDRAWPARTDESC pPart = &pRaw->pPartDescs[i];
             if (uStart > pPart->uStart)
-                return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("VMDK: incorrect partition data area ordering set up by the caller in '%s'"), pImage->pszFilename);
+                return vdIfError(pImage->pIfError, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                                 N_("VMDK: incorrect partition data area ordering set up by the caller in '%s'"), pImage->pszFilename);
 
             if (uStart < pPart->uStart)
                 cExtents++;
@@ -5636,7 +5643,6 @@ static DECLCALLBACK(int) vmdkWrite(void *pBackendData, uint64_t uOffset, size_t 
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
     AssertReturn((VALID_PTR(pIoCtx) && cbToWrite), VERR_INVALID_PARAMETER);
-    AssertReturn(uOffset + cbToWrite <= pImage->cbSize, VERR_INVALID_PARAMETER);
 
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
