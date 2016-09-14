@@ -1634,6 +1634,48 @@ static size_t vdIoCtxSet(PVDIOCTX pIoCtx, uint8_t ch, size_t cbData)
 }
 
 /**
+ * Returns whether the given I/O context has completed.
+ *
+ * @returns Flag whether the I/O context is complete.
+ * @param   pIoCtx          The I/O context to check.
+ */
+DECLINLINE(bool) vdIoCtxIsComplete(PVDIOCTX pIoCtx)
+{
+    if (   !pIoCtx->cMetaTransfersPending
+        && !pIoCtx->cDataTransfersPending
+        && !pIoCtx->pfnIoCtxTransfer)
+        return true;
+
+    /*
+     * We complete the I/O context in case of an error
+     * if there is no I/O task pending.
+     */
+    if (   RT_FAILURE(pIoCtx->rcReq)
+        && !pIoCtx->cMetaTransfersPending
+        && !pIoCtx->cDataTransfersPending)
+        return true;
+
+    return false;
+}
+
+/**
+ * Returns whether the given I/O context is blocked due to a metadata transfer
+ * or because the backend blocked it.
+ *
+ * @returns Flag whether the I/O context is blocked.
+ * @param   pIoCtx          The I/O context to check.
+ */
+DECLINLINE(bool) vdIoCtxIsBlocked(PVDIOCTX pIoCtx)
+{
+    /* Don't change anything if there is a metadata transfer pending or we are blocked. */
+    if (   pIoCtx->cMetaTransfersPending
+        || (pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED))
+        return true;
+
+    return false;
+}
+
+/**
  * Process the I/O context, core method which assumes that the I/O context
  * acquired the lock.
  *
@@ -1648,79 +1690,60 @@ static int vdIoCtxProcessLocked(PVDIOCTX pIoCtx)
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
 
-    if (   !pIoCtx->cMetaTransfersPending
-        && !pIoCtx->cDataTransfersPending
-        && !pIoCtx->pfnIoCtxTransfer)
+    if (!vdIoCtxIsComplete(pIoCtx))
     {
-        rc = VINF_VD_ASYNC_IO_FINISHED;
-        goto out;
-    }
-
-    /*
-     * We complete the I/O context in case of an error
-     * if there is no I/O task pending.
-     */
-    if (   RT_FAILURE(pIoCtx->rcReq)
-        && !pIoCtx->cMetaTransfersPending
-        && !pIoCtx->cDataTransfersPending)
-    {
-        rc = VINF_VD_ASYNC_IO_FINISHED;
-        goto out;
-    }
-
-    /* Don't change anything if there is a metadata transfer pending or we are blocked. */
-    if (   pIoCtx->cMetaTransfersPending
-        || (pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED))
-    {
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        goto out;
-    }
-
-    if (pIoCtx->pfnIoCtxTransfer)
-    {
-        /* Call the transfer function advancing to the next while there is no error. */
-        while (   pIoCtx->pfnIoCtxTransfer
-               && !pIoCtx->cMetaTransfersPending
-               && RT_SUCCESS(rc))
+        if (!vdIoCtxIsBlocked(pIoCtx))
         {
-            LogFlowFunc(("calling transfer function %#p\n", pIoCtx->pfnIoCtxTransfer));
-            rc = pIoCtx->pfnIoCtxTransfer(pIoCtx);
-
-            /* Advance to the next part of the transfer if the current one succeeded. */
-            if (RT_SUCCESS(rc))
+            if (pIoCtx->pfnIoCtxTransfer)
             {
-                pIoCtx->pfnIoCtxTransfer = pIoCtx->pfnIoCtxTransferNext;
-                pIoCtx->pfnIoCtxTransferNext = NULL;
+                /* Call the transfer function advancing to the next while there is no error. */
+                while (   pIoCtx->pfnIoCtxTransfer
+                       && !pIoCtx->cMetaTransfersPending
+                       && RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("calling transfer function %#p\n", pIoCtx->pfnIoCtxTransfer));
+                    rc = pIoCtx->pfnIoCtxTransfer(pIoCtx);
+
+                    /* Advance to the next part of the transfer if the current one succeeded. */
+                    if (RT_SUCCESS(rc))
+                    {
+                        pIoCtx->pfnIoCtxTransfer = pIoCtx->pfnIoCtxTransferNext;
+                        pIoCtx->pfnIoCtxTransferNext = NULL;
+                    }
+                }
+            }
+
+            if (   RT_SUCCESS(rc)
+                && !pIoCtx->cMetaTransfersPending
+                && !pIoCtx->cDataTransfersPending
+                && !(pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED))
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+            else if (   RT_SUCCESS(rc)
+                     || rc == VERR_VD_NOT_ENOUGH_METADATA
+                     || rc == VERR_VD_IOCTX_HALT)
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+            else if (   RT_FAILURE(rc)
+                        && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+            {
+                ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rc, VINF_SUCCESS);
+
+                /*
+                 * The I/O context completed if we have an error and there is no data
+                 * or meta data transfer pending.
+                 */
+                if (   !pIoCtx->cMetaTransfersPending
+                    && !pIoCtx->cDataTransfersPending)
+                    rc = VINF_VD_ASYNC_IO_FINISHED;
+                else
+                    rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
             }
         }
-    }
-
-    if (   RT_SUCCESS(rc)
-        && !pIoCtx->cMetaTransfersPending
-        && !pIoCtx->cDataTransfersPending
-        && !(pIoCtx->fFlags & VDIOCTX_FLAGS_BLOCKED))
-        rc = VINF_VD_ASYNC_IO_FINISHED;
-    else if (   RT_SUCCESS(rc)
-             || rc == VERR_VD_NOT_ENOUGH_METADATA
-             || rc == VERR_VD_IOCTX_HALT)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-    else if (   RT_FAILURE(rc)
-                && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
-    {
-        ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rc, VINF_SUCCESS);
-
-        /*
-         * The I/O context completed if we have an error and there is no data
-         * or meta data transfer pending.
-         */
-        if (   !pIoCtx->cMetaTransfersPending
-            && !pIoCtx->cDataTransfersPending)
-            rc = VINF_VD_ASYNC_IO_FINISHED;
         else
             rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
+    else
+        rc = VINF_VD_ASYNC_IO_FINISHED;
 
-out:
     LogFlowFunc(("pIoCtx=%#p rc=%Rrc cDataTransfersPending=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
                  pIoCtx, rc, pIoCtx->cDataTransfersPending, pIoCtx->cMetaTransfersPending,
                  pIoCtx->fComplete));
@@ -3749,67 +3772,67 @@ static int vdPluginLoadFromPath(const char *pszPath)
     PRTDIR pPluginDir = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
     int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+        if (pPluginDirEntry)
+        {
+            while (   (rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
+                   != VERR_NO_MORE_FILES)
+            {
+                char *pszPluginPath = NULL;
+
+                if (rc == VERR_BUFFER_OVERFLOW)
+                {
+                    /* allocate new buffer. */
+                    RTMemFree(pPluginDirEntry);
+                    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
+                    if (!pPluginDirEntry)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    /* Retry. */
+                    rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                else if (RT_FAILURE(rc))
+                    break;
+
+                /* We got the new entry. */
+                if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
+                    continue;
+
+                /* Prepend the path to the libraries. */
+                pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
+                if (!pszPluginPath)
+                {
+                    rc = VERR_NO_STR_MEMORY;
+                    break;
+                }
+
+                rc = vdPluginLoadFromFilename(pszPluginPath);
+                RTStrFree(pszPluginPath);
+            }
+
+            RTMemFree(pPluginDirEntry);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTDirClose(pPluginDir);
+    }
+    else
     {
         /* On Windows the above immediately signals that there are no
          * files matching, while on other platforms enumerating the
          * files below fails. Either way: no plugins. */
-        goto out;
     }
 
-    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
-    if (!pPluginDirEntry)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-
-    while (   (rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK))
-           != VERR_NO_MORE_FILES)
-    {
-        char *pszPluginPath = NULL;
-
-        if (rc == VERR_BUFFER_OVERFLOW)
-        {
-            /* allocate new buffer. */
-            RTMemFree(pPluginDirEntry);
-            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
-            if (!pPluginDirEntry)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-            /* Retry. */
-            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-            if (RT_FAILURE(rc))
-                break;
-        }
-        else if (RT_FAILURE(rc))
-            break;
-
-        /* We got the new entry. */
-        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
-            continue;
-
-        /* Prepend the path to the libraries. */
-        pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
-        if (!pszPluginPath)
-        {
-            rc = VERR_NO_STR_MEMORY;
-            break;
-        }
-
-        rc = vdPluginLoadFromFilename(pszPluginPath);
-        RTStrFree(pszPluginPath);
-    }
-out:
     if (rc == VERR_NO_MORE_FILES)
         rc = VINF_SUCCESS;
     RTStrFree(pszPluginFilter);
-    if (pPluginDirEntry)
-        RTMemFree(pPluginDirEntry);
-    if (pPluginDir)
-        RTDirClose(pPluginDir);
     return rc;
 #else
     RT_NOREF1(pszPath);
@@ -3872,66 +3895,66 @@ static int vdPluginUnloadFromPath(const char *pszPath)
     PRTDIR pPluginDir = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
     int rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
+        if (pPluginDirEntry)
+        {
+            while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
+            {
+                char *pszPluginPath = NULL;
+
+                if (rc == VERR_BUFFER_OVERFLOW)
+                {
+                    /* allocate new buffer. */
+                    RTMemFree(pPluginDirEntry);
+                    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
+                    if (!pPluginDirEntry)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    /* Retry. */
+                    rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                else if (RT_FAILURE(rc))
+                    break;
+
+                /* We got the new entry. */
+                if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
+                    continue;
+
+                /* Prepend the path to the libraries. */
+                pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
+                if (!pszPluginPath)
+                {
+                    rc = VERR_NO_STR_MEMORY;
+                    break;
+                }
+
+                rc = vdPluginUnloadFromFilename(pszPluginPath);
+                RTStrFree(pszPluginPath);
+            }
+
+            RTMemFree(pPluginDirEntry);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTDirClose(pPluginDir);
+    }
+    else
     {
         /* On Windows the above immediately signals that there are no
          * files matching, while on other platforms enumerating the
          * files below fails. Either way: no plugins. */
-        goto out;
     }
-
-    pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(sizeof(RTDIRENTRYEX));
-    if (!pPluginDirEntry)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-
-    while ((rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK)) != VERR_NO_MORE_FILES)
-    {
-        char *pszPluginPath = NULL;
-
-        if (rc == VERR_BUFFER_OVERFLOW)
-        {
-            /* allocate new buffer. */
-            RTMemFree(pPluginDirEntry);
-            pPluginDirEntry = (PRTDIRENTRYEX)RTMemAllocZ(cbPluginDirEntry);
-            if (!pPluginDirEntry)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-            /* Retry. */
-            rc = RTDirReadEx(pPluginDir, pPluginDirEntry, &cbPluginDirEntry, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-            if (RT_FAILURE(rc))
-                break;
-        }
-        else if (RT_FAILURE(rc))
-            break;
-
-        /* We got the new entry. */
-        if (!RTFS_IS_FILE(pPluginDirEntry->Info.Attr.fMode))
-            continue;
-
-        /* Prepend the path to the libraries. */
-        pszPluginPath = RTPathJoinA(pszPath, pPluginDirEntry->szName);
-        if (!pszPluginPath)
-        {
-            rc = VERR_NO_STR_MEMORY;
-            break;
-        }
-
-        rc = vdPluginUnloadFromFilename(pszPluginPath);
-        RTStrFree(pszPluginPath);
-    }
-out:
+    
     if (rc == VERR_NO_MORE_FILES)
         rc = VINF_SUCCESS;
     RTStrFree(pszPluginFilter);
-    if (pPluginDirEntry)
-        RTMemFree(pPluginDirEntry);
-    if (pPluginDir)
-        RTDirClose(pPluginDir);
     return rc;
 #else
     RT_NOREF1(pszPath);
