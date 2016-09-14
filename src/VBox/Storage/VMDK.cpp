@@ -3030,8 +3030,8 @@ static int vmdkDescriptorReadSparse(PVMDKIMAGE pImage, PVMDKFILE pFile)
                         rc = vmdkParseDescriptor(pImage, pExtent->pDescData,
                                                  VMDK_SECTOR2BYTE(pExtent->cDescriptorSectors));
                         if (   RT_SUCCESS(rc)
-                            && !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-                            && !(pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO))
+                            && (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                                || !(pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)))
                         {
                             rc = vmdkReadMetaExtent(pImage, pExtent);
                             if (RT_SUCCESS(rc))
