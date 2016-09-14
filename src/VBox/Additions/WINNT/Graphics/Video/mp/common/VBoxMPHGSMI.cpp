@@ -126,6 +126,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uin
                                     {
                                         /* Query the configured number of displays. */
                                         pCommon->cDisplays = VBoxHGSMIGetMonitorCount(&pCommon->guestCtx);
+                                        /* Query supported VBVA_SCREEN_F_* flags. */
+                                        pCommon->u16SupportedScreenFlags = VBoxHGSMIGetScreenFlags(&pCommon->guestCtx);
                                         LOGF_LEAVE();
                                         return;
                                     }

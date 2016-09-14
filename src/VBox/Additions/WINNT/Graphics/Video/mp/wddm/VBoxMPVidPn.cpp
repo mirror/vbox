@@ -2326,12 +2326,14 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PVBOXMP_DEVEXT pDevExt, D3DK
 
 NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         PVBOXWDDM_ALLOCATION pAllocation,
-        D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId, VBOXWDDM_SOURCE *paSources, VBOXWDDM_TARGET *paTargets)
+        D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId, VBOXWDDM_SOURCE *paSources, VBOXWDDM_TARGET *paTargets, BOOLEAN bPathPowerTransition)
 {
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
     PVBOXWDDM_SOURCE pSource = &paSources[VidPnSourceId];
+    pSource->bBlankedByPowerOff = bPathPowerTransition ? pAllocation == NULL : 0;
+
     VBOXWDDM_TARGET_ITER Iter;
     VBoxVidPnStTIterInit(pSource, paTargets, (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays, &Iter);
     for (PVBOXWDDM_TARGET pTarget = VBoxVidPnStTIterNext(&Iter);
@@ -2341,6 +2343,7 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
         Assert(pTarget->VidPnSourceId == pSource->AllocData.SurfDesc.VidPnSourceId);
         pTarget->Size.cx = 0;
         pTarget->Size.cy = 0;
+        pTarget->fBlankedByPowerOff = RT_BOOL(pSource->bBlankedByPowerOff);
         pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_ALL;
     }
 
@@ -2455,7 +2458,7 @@ NTSTATUS VBoxVidPnCommitAll(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hDesire
     while ((pPath = VBoxVidPnPathIterNext(&PathIter)) != NULL)
     {
         Status = VBoxVidPnCommitSourceModeForSrcId(pDevExt, hDesiredVidPn, pVidPnInterface, pAllocation,
-                    pPath->VidPnSourceId, paSources, paTargets);
+                    pPath->VidPnSourceId, paSources, paTargets, FALSE);
         if (Status != STATUS_SUCCESS)
         {
             WARN(("VBoxVidPnCommitSourceModeForSrcId failed Status(0x%x)", Status));
