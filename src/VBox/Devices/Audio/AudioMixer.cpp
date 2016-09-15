@@ -57,6 +57,7 @@ static int audioMixerSinkRemoveStreamInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
 static void audioMixerSinkReset(PAUDMIXSINK pSink);
 static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink);
 
+int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
 
 
@@ -643,7 +644,7 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     PAUDMIXSTREAM pStream;
     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
     {
-        int rc2 = AudioMixerStreamCtl(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
+        int rc2 = audioMixerStreamCtlInternal(pStream, enmCmdStream, AUDMIXSTRMCTL_FLAG_NONE);
         if (RT_SUCCESS(rc))
             rc = rc2;
         /* Keep going. Flag? */
@@ -1539,6 +1540,28 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
  ********************************************************************************************************************************/
 
 /**
+ * Controls a mixer stream, internal version.
+ *
+ * @returns IPRT status code.
+ * @param   pMixStream          Mixer stream to control.
+ * @param   enmCmd              Mixer stream command to use.
+ * @param   fCtl                Additional control flags. Pass 0.
+ */
+int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl)
+{
+    AssertPtr(pMixStream->pConn);
+    AssertPtr(pMixStream->pStream);
+
+    RT_NOREF(fCtl);
+
+    int rc = pMixStream->pConn->pfnStreamControl(pMixStream->pConn, pMixStream->pStream, enmCmd);
+
+    LogFlowFunc(("[%s] enmCmd=%ld, rc=%Rrc\n", pMixStream->pszName, enmCmd, rc));
+
+    return rc;
+}
+
+/**
  * Controls a mixer stream.
  *
  * @returns IPRT status code.
@@ -1556,15 +1579,11 @@ int AudioMixerStreamCtl(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertPtr(pMixStream->pConn);
-    AssertPtr(pMixStream->pStream);
-
-    rc = pMixStream->pConn->pfnStreamControl(pMixStream->pConn, pMixStream->pStream, enmCmd);
-
-    LogFlowFunc(("[%s] enmCmd=%ld, rc=%Rrc\n", pMixStream->pszName, enmCmd, rc));
+    rc = audioMixerStreamCtlInternal(pMixStream, enmCmd, fCtl);
 
     int rc2 = RTCritSectLeave(&pMixStream->CritSect);
-    AssertRC(rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
