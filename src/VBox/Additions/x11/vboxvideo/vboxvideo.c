@@ -746,6 +746,13 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
         close(drmFd);
         return FALSE;
     }
+    /* It is safe to call this, as the X server enables I/O access before
+     * calling the probe call-backs. */
+    if (!xf86EnableIO())
+    {
+        xf86Msg(X_INFO, "vboxvideo: this driver requires direct hardware access.  You may wish to use the kernel driver instead.\n");
+        return FALSE;
+    }
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
                                 NULL, NULL, NULL, NULL, NULL);
     if (pScrn != NULL) {
