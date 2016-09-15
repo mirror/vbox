@@ -150,6 +150,18 @@ private:
 };
 
 
+/** QTreeWidget subclass for snapshots items. */
+class UISnapshotTree : public QTreeWidget
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs snapshot tree passing @a pParent to the base-class. */
+    UISnapshotTree(QWidget *pParent);
+};
+
+
 /*********************************************************************************************************************************
 *   Class SnapshotWgtItem implementation.                                                                                        *
 *********************************************************************************************************************************/
@@ -454,6 +466,38 @@ void SnapshotWgtItem::recacheToolTip()
 
 
 /*********************************************************************************************************************************
+*   Class UISnapshotTree implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+UISnapshotTree::UISnapshotTree(QWidget *pParent)
+    : QTreeWidget(pParent)
+{
+    /* No header: */
+    header()->hide();
+    /* All columns as one: */
+    setAllColumnsShowFocus(true);
+    /* Our own context menu: */
+    setContextMenuPolicy(Qt::CustomContextMenu);
+
+#if QT_VERSION < 0x050000
+    // WORKAROUND:
+    // The snapshots widget is not very useful if there are a lot
+    // of snapshots in a tree and the current Qt style decides not
+    // to draw lines (branches) between the snapshot nodes; it is
+    // then often unclear which snapshot is a child of another.
+    // So on platforms whose styles do not normally draw branches,
+    // we use QWindowsStyle which is present on every platform and
+    // draws required thing like we want. */
+// #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    QWindowsStyle *pTreeWidgetStyle = new QWindowsStyle;
+    setStyle(pTreeWidgetStyle);
+    connect(this, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
+// #endif
+#endif /* QT_VERSION < 0x050000 */
+}
+
+
+/*********************************************************************************************************************************
 *   Class UISnapshotPane implementation.                                                                                         *
 *********************************************************************************************************************************/
 
@@ -468,7 +512,7 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     , m_pActionShowSnapshotDetails(new QAction(m_pSnapshotItemActionGroup))
     , m_pActionCloneSnapshot(new QAction(m_pCurrentStateItemActionGroup))
     , m_fShapshotOperationsAllowed(false)
-    , m_pTreeWidget(0)
+    , m_pSnapshotTree(0)
 {
     /* Cache pixmaps: */
     m_snapshotIconOffline = UIIconPool::iconSet(":/snapshot_offline_16px.png");
@@ -520,41 +564,22 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     m_pActionShowSnapshotDetails->setShortcut(QString("Ctrl+Space"));
     m_pActionCloneSnapshot->setShortcut(QString("Ctrl+Shift+C"));
 
-    /* Create tree-widget: */
-    m_pTreeWidget = new QTreeWidget(this);
-    m_pTreeWidget->header()->hide();
-    m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_pTreeWidget->setAllColumnsShowFocus(true);
-    /* Add tree-widget into layout: */
-    pLayout->addWidget(m_pTreeWidget);
-
-#if QT_VERSION < 0x050000
-    // WORKAROUND:
-    // The snapshots widget is not very useful if there are a lot
-    // of snapshots in a tree and the current Qt style decides not
-    // to draw lines (branches) between the snapshot nodes; it is
-    // then often unclear which snapshot is a child of another.
-    // So on platforms whose styles do not normally draw branches,
-    // we use QWindowsStyle which is present on every platform and
-    // draws required thing like we want. */
-// #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    QWindowsStyle *pTreeWidgetStyle = new QWindowsStyle;
-    m_pTreeWidget->setStyle(pTreeWidgetStyle);
-    connect(m_pTreeWidget, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
-// #endif
-#endif /* QT_VERSION < 0x050000 */
+    /* Create snapshot tree: */
+    m_pSnapshotTree = new UISnapshotTree(this);
+    /* Add snapshot tree into layout: */
+    pLayout->addWidget(m_pSnapshotTree);
 
     /* Setup timer: */
     m_ageUpdateTimer.setSingleShot(true);
 
-    /* Setup tree-widget connections: */
-    connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
+    /* Setup snapshot tree connections: */
+    connect(m_pSnapshotTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
             this, SLOT(sltCurrentItemChanged(QTreeWidgetItem *)));
-    connect(m_pTreeWidget, SIGNAL(customContextMenuRequested(const QPoint &)),
+    connect(m_pSnapshotTree, SIGNAL(customContextMenuRequested(const QPoint &)),
             this, SLOT(sltContextMenuRequested(const QPoint &)));
-    connect(m_pTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
+    connect(m_pSnapshotTree, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
             this, SLOT(sltItemChanged(QTreeWidgetItem *)));
-    connect(m_pTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
+    connect(m_pSnapshotTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
             this, SLOT(sltItemDoubleClicked(QTreeWidgetItem *)));
     /* Setup snapshot operation connections: */
     connect(m_pActionTakeSnapshot, SIGNAL(triggered()), this, SLOT(sltTakeSnapshot()));
@@ -623,9 +648,9 @@ void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
     /* Make the selected item visible: */
     if (pSnapshotItem)
     {
-        m_pTreeWidget->horizontalScrollBar()->setValue(0);
-        m_pTreeWidget->scrollToItem(pSnapshotItem);
-        m_pTreeWidget->horizontalScrollBar()->setValue(m_pTreeWidget->indentation() * pSnapshotItem->level());
+        m_pSnapshotTree->horizontalScrollBar()->setValue(0);
+        m_pSnapshotTree->scrollToItem(pSnapshotItem);
+        m_pSnapshotTree->horizontalScrollBar()->setValue(m_pSnapshotTree->indentation() * pSnapshotItem->level());
     }
 
     /* Check whether another direct session is open or not: */
@@ -681,7 +706,7 @@ void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
 void UISnapshotPane::sltContextMenuRequested(const QPoint &point)
 {
     /* Search for corresponding item: */
-    const QTreeWidgetItem *pItem = m_pTreeWidget->itemAt(point);
+    const QTreeWidgetItem *pItem = m_pSnapshotTree->itemAt(point);
     if (!pItem)
         return;
 
@@ -709,7 +734,7 @@ void UISnapshotPane::sltContextMenuRequested(const QPoint &point)
     }
 
     /* Show menu: */
-    menu.exec(m_pTreeWidget->viewport()->mapToGlobal(point));
+    menu.exec(m_pSnapshotTree->viewport()->mapToGlobal(point));
 }
 
 void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
@@ -783,7 +808,7 @@ void UISnapshotPane::sltSessionStateChange(QString strMachineID, KSessionState e
 
     /* Recache new session state: */
     m_enmSessionState = enmState;
-    sltCurrentItemChanged(m_pTreeWidget->currentItem());
+    sltCurrentItemChanged(m_pSnapshotTree->currentItem());
 }
 
 void UISnapshotPane::sltUpdateSnapshotsAge()
@@ -793,7 +818,7 @@ void UISnapshotPane::sltUpdateSnapshotsAge()
         m_ageUpdateTimer.stop();
 
     /* Search for smallest snapshot age to optimize timer timeout: */
-    const SnapshotAgeFormat age = traverseSnapshotAge(m_pTreeWidget->invisibleRootItem());
+    const SnapshotAgeFormat age = traverseSnapshotAge(m_pSnapshotTree->invisibleRootItem());
     switch (age)
     {
         case SnapshotAgeFormat_InSeconds: m_ageUpdateTimer.setInterval(5 * 1000); break;
@@ -841,7 +866,7 @@ bool UISnapshotPane::takeSnapshot()
             int iMaxSnapShotIndex = 0;
             QString strSnapshotName = tr("Snapshot %1");
             QRegExp regExp(QString("^") + strSnapshotName.arg("([0-9]+)") + QString("$"));
-            QTreeWidgetItemIterator iterator(m_pTreeWidget);
+            QTreeWidgetItemIterator iterator(m_pSnapshotTree);
             while (*iterator)
             {
                 QString strSnapshot = static_cast<SnapshotWgtItem*>(*iterator)->text(0);
@@ -907,7 +932,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     do
     {
         /* Acquire currently chosen snapshot item: */
-        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
             break;
@@ -930,7 +955,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
             if (iResultCode & AlertOption_CheckBox)
             {
                 /* Take snapshot of changed current state: */
-                m_pTreeWidget->setCurrentItem(currentStateItem());
+                m_pSnapshotTree->setCurrentItem(currentStateItem());
                 if (!takeSnapshot())
                     break;
             }
@@ -982,7 +1007,7 @@ bool UISnapshotPane::deleteSnapshot()
     do
     {
         /* Acquire currently chosen snapshot item: */
-        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+        const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
             break;
@@ -1052,7 +1077,7 @@ bool UISnapshotPane::deleteSnapshot()
 void UISnapshotPane::showSnapshotDetails()
 {
     /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 
     /* Get corresponding snapshot: */
@@ -1071,7 +1096,7 @@ void UISnapshotPane::showSnapshotDetails()
 void UISnapshotPane::cloneSnapshot()
 {
     /* Acquire currently chosen snapshot item: */
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 
     /* Get desired machine/snapshot: */
@@ -1109,7 +1134,7 @@ void UISnapshotPane::refreshAll()
 
     /* Remember the selected item and it's first child: */
     QString strSelectedItem, strFirstChildOfSelectedItem;
-    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pTreeWidget->currentItem());
+    const SnapshotWgtItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
     if (pSnapshotItem)
     {
         strSelectedItem = pSnapshotItem->snapshotID();
@@ -1118,7 +1143,7 @@ void UISnapshotPane::refreshAll()
     }
 
     /* Clear the tree: */
-    m_pTreeWidget->clear();
+    m_pSnapshotTree->clear();
 
     /* If machine has snapshots: */
     if (m_comMachine.GetSnapshotCount() > 0)
@@ -1144,8 +1169,8 @@ void UISnapshotPane::refreshAll()
             pCurrentItem = currentStateItem();
 
         /* Choose current item: */
-        m_pTreeWidget->scrollToItem(pCurrentItem);
-        m_pTreeWidget->setCurrentItem(pCurrentItem);
+        m_pSnapshotTree->scrollToItem(pCurrentItem);
+        m_pSnapshotTree->setCurrentItem(pCurrentItem);
         sltCurrentItemChanged(pCurrentItem);
     }
     /* If machine has no snapshots: */
@@ -1154,28 +1179,28 @@ void UISnapshotPane::refreshAll()
         /* There is no current snapshot item: */
         m_pCurrentSnapshotItem = 0;
 
-        /* Add the "current state" item as a child of tree-widget: */
-        SnapshotWgtItem *pCsi = new SnapshotWgtItem(this, m_pTreeWidget, m_comMachine);
+        /* Add the "current state" item as a child of snapshot tree: */
+        SnapshotWgtItem *pCsi = new SnapshotWgtItem(this, m_pSnapshotTree, m_comMachine);
         pCsi->setBold(true);
         pCsi->recache();
 
         /* Choose current item: */
-        m_pTreeWidget->setCurrentItem(pCsi);
+        m_pSnapshotTree->setCurrentItem(pCsi);
         sltCurrentItemChanged(pCsi);
     }
 
     /* Update age: */
     sltUpdateSnapshotsAge();
 
-    /* Adjust tree-widget: */
-    m_pTreeWidget->resizeColumnToContents(0);
+    /* Adjust snapshot tree: */
+    m_pSnapshotTree->resizeColumnToContents(0);
 }
 
 void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QTreeWidgetItem *pItem)
 {
     /* Create a child of passed item: */
     SnapshotWgtItem *pSnapshotItem = pItem ? new SnapshotWgtItem(this, pItem, comSnapshot) :
-                                             new SnapshotWgtItem(this, m_pTreeWidget, comSnapshot);
+                                             new SnapshotWgtItem(this, m_pSnapshotTree, comSnapshot);
     /* And recache it's content: */
     pSnapshotItem->recache();
 
@@ -1200,7 +1225,7 @@ void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QTreeWidget
 SnapshotWgtItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
 {
     /* Search for the first item with required ID: */
-    QTreeWidgetItemIterator it(m_pTreeWidget);
+    QTreeWidgetItemIterator it(m_pSnapshotTree);
     while (*it)
     {
         SnapshotWgtItem *pSnapshotItem = toSnapshotItem(*it);
@@ -1218,7 +1243,7 @@ SnapshotWgtItem *UISnapshotPane::currentStateItem() const
     /* Last child of the current snapshot item if any or first child of invisible root item otherwise: */
     QTreeWidgetItem *pCsi = m_pCurrentSnapshotItem ?
                             m_pCurrentSnapshotItem->child(m_pCurrentSnapshotItem->childCount() - 1) :
-                            m_pTreeWidget->invisibleRootItem()->child(0);
+                            m_pSnapshotTree->invisibleRootItem()->child(0);
     return static_cast<SnapshotWgtItem*>(pCsi);
 }
 
@@ -1264,4 +1289,6 @@ const SnapshotWgtItem *UISnapshotPane::toSnapshotItem(const QTreeWidgetItem *pIt
     /* Return casted SnapshotWgtItem then: */
     return static_cast<const SnapshotWgtItem*>(pItem);
 }
+
+#include "UISnapshotPane.moc"
 

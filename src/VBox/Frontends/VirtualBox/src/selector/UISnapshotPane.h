@@ -31,7 +31,7 @@
 #include "CMachine.h"
 
 /* Forward declarations: */
-class QTreeWidget;
+class UISnapshotTree;
 class QTreeWidgetItem;
 class SnapshotWgtItem;
 
@@ -184,8 +184,8 @@ private:
     /** Holds the cached snapshot-item pixmap for 'online' state. */
     QIcon            m_snapshotIconOnline;
 
-    /** Holds the tree-widget instance. */
-    QTreeWidget     *m_pTreeWidget;
+    /** Holds the snapshot tree instance. */
+    UISnapshotTree  *m_pSnapshotTree;
 };
 
 #endif /* !___UISnapshotPane_h___ */
