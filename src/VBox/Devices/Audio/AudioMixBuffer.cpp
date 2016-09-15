@@ -1117,7 +1117,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 
     AUDMIXBUF_LOG(("cReadTotal=%RU32 (pcProcessed), cWrittenTotal=%RU32, cSrcMixed=%RU32, cDstUsed=%RU32, rc=%Rrc\n",
                    cReadTotal, cWrittenTotal, pSrc->cMixed, pDst->cUsed, rc));
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
