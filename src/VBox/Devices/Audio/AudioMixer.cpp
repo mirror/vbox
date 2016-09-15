@@ -475,16 +475,26 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     {
         /** @todo Check if stream already is assigned to (another) sink. */
 
-        /* Apply the sink's combined volume to the stream. */
-        AssertPtr(pStream->pConn);
-        rc = pStream->pConn->pfnStreamSetVolume(pStream->pConn, pStream->pStream, &pSink->VolumeCombined);
+        /* If the sink is running, make sure that the added stream also is enabled. */
+        if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+            rc = audioMixerStreamCtlInternal(pStream, PDMAUDIOSTREAMCMD_ENABLE, AUDMIXSTRMCTL_FLAG_NONE);
 
-        /* Save pointer to sink the stream is attached to. */
-        pStream->pSink = pSink;
+        if (RT_SUCCESS(rc))
+        {
+            /* Apply the sink's combined volume to the stream. */
+            rc = pStream->pConn->pfnStreamSetVolume(pStream->pConn, pStream->pStream, &pSink->VolumeCombined);
+            AssertRC(rc);
+        }
 
-        /* Append stream to sink's list. */
-        RTListAppend(&pSink->lstStreams, &pStream->Node);
-        pSink->cStreams++;
+        if (RT_SUCCESS(rc))
+        {
+            /* Save pointer to sink the stream is attached to. */
+            pStream->pSink = pSink;
+
+            /* Append stream to sink's list. */
+            RTListAppend(&pSink->lstStreams, &pStream->Node);
+            pSink->cStreams++;
+        }
     }
 
     LogFlowFunc(("[%s]: cStreams=%RU8, rc=%Rrc\n", pSink->pszName, pSink->cStreams, rc));
