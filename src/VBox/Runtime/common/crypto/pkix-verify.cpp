@@ -123,7 +123,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
                              "EVP_get_digestbyname failed on %s (%s)", pszAlogSn, pAlgorithm->szObjId);
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
 
     EVP_MD_CTX *pEvpMdCtx = EVP_MD_CTX_create();
     if (!pEvpMdCtx)
@@ -173,7 +173,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
         rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
     EVP_MD_CTX_destroy(pEvpMdCtx);
 
-# else /* OPENSSL_VERSION_NUMBER < 0x1010000 */
+# else /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /* Initialize the EVP message digest context. */
     EVP_MD_CTX EvpMdCtx;
@@ -218,7 +218,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
         rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", pEvpMdType->required_pkey_type[0]);
     EVP_MD_CTX_cleanup(&EvpMdCtx);
 
-# endif /* OPENSSL_VERSION_NUMBER < 0x10100000 */
+# endif /* OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /*
      * Check the result.
@@ -310,7 +310,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1D
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
                              "EVP_get_digestbyname failed on %s (%s)", pszAlogSn, pszAlgObjId);
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000
+# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
 
     /* Create an EVP public key. */
     int rcOssl;
@@ -370,7 +370,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1D
     else
         rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
 
-# else /* OPENSSL_VERSION_NUMBER < 0x1010000 */
+# else /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /* Create an EVP public key. */
     int rcOssl;
@@ -429,7 +429,7 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1D
     else
         rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", pEvpMdType->required_pkey_type[0]);
 
-# endif /* OPENSSL_VERSION_NUMBER < 0x1010000 */
+# endif /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /*
      * Check the result.
