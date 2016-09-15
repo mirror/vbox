@@ -32,8 +32,8 @@
 
 /* Forward declarations: */
 class UISnapshotTree;
+class UISnapshotItem;
 class QTreeWidgetItem;
-class SnapshotWgtItem;
 
 
 /** Snapshot age format. */
@@ -134,17 +134,17 @@ private:
     void populateSnapshots(const CSnapshot &comSnapshot, QTreeWidgetItem *pItem);
 
     /** Searches for an item with corresponding @a strSnapshotID. */
-    SnapshotWgtItem *findItem(const QString &strSnapshotID) const;
+    UISnapshotItem *findItem(const QString &strSnapshotID) const;
     /** Returns the "current state" item. */
-    SnapshotWgtItem *currentStateItem() const;
+    UISnapshotItem *currentStateItem() const;
 
     /** Searches for smallest snapshot age starting with @a pItem as parent. */
     SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;
 
-    /** Casts QTreeWidgetItem to SnapshotWgtItem if possible. */
-    static SnapshotWgtItem *toSnapshotItem(QTreeWidgetItem *pItem);
-    /** Casts const QTreeWidgetItem to const SnapshotWgtItem if possible. */
-    static const SnapshotWgtItem *toSnapshotItem(const QTreeWidgetItem *pItem);
+    /** Casts QTreeWidgetItem to UISnapshotItem if possible. */
+    static UISnapshotItem *toSnapshotItem(QTreeWidgetItem *pItem);
+    /** Casts const QTreeWidgetItem to const UISnapshotItem if possible. */
+    static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
 
     /** Holds the machine COM wrapper. */
     CMachine         m_comMachine;
@@ -153,7 +153,7 @@ private:
     /** Holds the cached session state. */
     KSessionState    m_enmSessionState;
     /** Holds the current snapshot item reference. */
-    SnapshotWgtItem *m_pCurrentSnapshotItem;
+    UISnapshotItem  *m_pCurrentSnapshotItem;
     /** Holds the snapshot item editing protector. */
     QReadWriteLock   m_lockReadWrite;
 
