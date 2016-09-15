@@ -1069,15 +1069,20 @@ static VBOXSTRICTRC apicSetIcrHi(PVMCPU pVCpu, uint32_t uIcrHi)
  * @param   uIcrLo          The ICR low dword.
  * @param   rcRZ            The return code if the operation cannot be performed
  *                          in the current context.
+ * @param   fUpdateStat     Whether to update the ICR low write statistics
+ *                          counter.
  */
-static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ)
+static VBOXSTRICTRC apicSetIcrLo(PVMCPU pVCpu, uint32_t uIcrLo, int rcRZ, bool fUpdateStat)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
     PXAPICPAGE pXApicPage  = VMCPU_TO_XAPICPAGE(pVCpu);
     pXApicPage->icr_lo.all.u32IcrLo = uIcrLo & XAPIC_ICR_LO_WR_VALID;
     Log2(("APIC%u: apicSetIcrLo: uIcrLo=%#RX32\n", pVCpu->idCpu, pXApicPage->icr_lo.all.u32IcrLo));
-    STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrLoWrite);
+
+    if (fUpdateStat)
+        STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrLoWrite);
+    RT_NOREF(fUpdateStat);
 
     return apicSendIpi(pVCpu, rcRZ);
 }
@@ -1108,9 +1113,8 @@ static VBOXSTRICTRC apicSetIcr(PVMCPU pVCpu, uint64_t u64Icr, int rcRZ)
         /* Update high dword first, then update the low dword which sends the IPI. */
         PX2APICPAGE pX2ApicPage = VMCPU_TO_X2APICPAGE(pVCpu);
         pX2ApicPage->icr_hi.u32IcrHi = RT_HI_U32(u64Icr);
-        STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrHiWrite);
         STAM_COUNTER_INC(&pVCpu->apic.s.StatIcrFullWrite);
-        return apicSetIcrLo(pVCpu, uLo, rcRZ);
+        return apicSetIcrLo(pVCpu, uLo, rcRZ, false /* fUpdateStat */);
     }
     return apicMsrAccessError(pVCpu, MSR_IA32_X2APIC_ICR, APICMSRACCESS_WRITE_RSVD_BITS);
 }
@@ -1798,7 +1802,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 
         case XAPIC_OFF_ICR_LO:
         {
-            rcStrict = apicSetIcrLo(pVCpu, uValue, VINF_IOM_R3_MMIO_WRITE);
+            rcStrict = apicSetIcrLo(pVCpu, uValue, VINF_IOM_R3_MMIO_WRITE, true /* fUpdateStat */);
             break;
         }
 
