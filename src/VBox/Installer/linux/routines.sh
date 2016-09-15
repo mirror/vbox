@@ -220,14 +220,10 @@ do_sysvinit_action()
         { echo "${self}: missing argument" >&2; return 1; }
     if systemd_service_installed "${name}"; then
         systemctl -q ${action} "${name}"
-    elif test -x "`which service 2>/dev/null`"; then
-        service "${name}" ${action}
-    elif test -x "`which invoke-rc.d 2>/dev/null`"; then
-        invoke-rc.d "${name}" ${action}
     elif test -x "/etc/rc.d/init.d/${name}"; then
-        "/etc/rc.d/init.d/${name}" "${action}"
+        "/etc/rc.d/init.d/${name}" "${action}" quiet
     elif test -x "/etc/init.d/${name}"; then
-        "/etc/init.d/${name}" "${action}"
+        "/etc/init.d/${name}" "${action}" quiet
     fi
 }
 
