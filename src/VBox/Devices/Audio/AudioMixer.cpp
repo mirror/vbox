@@ -1303,14 +1303,14 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         PPDMIAUDIOCONNECTOR pConn = pMixStream->pConn;
         AssertPtr(pConn);
 
-        uint32_t cCaptured = 0;
+        uint32_t cProc = 0;
 
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
         if (RT_SUCCESS(rc2))
         {
             if (pSink->enmDir == AUDMIXSINKDIR_INPUT)
             {
-                rc = pConn->pfnStreamCapture(pConn, pStream, &cCaptured);
+                rc = pConn->pfnStreamCapture(pConn, pStream, &cProc);
                 if (RT_FAILURE(rc2))
                 {
                     LogFlowFunc(("%s: Failed capturing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
@@ -1319,12 +1319,12 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
                     continue;
                 }
 
-                if (cCaptured)
+                if (cProc)
                     pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
             }
             else if (pSink->enmDir == AUDMIXSINKDIR_OUTPUT)
             {
-                rc2 = pConn->pfnStreamPlay(pConn, pStream, NULL /* cPlayed */);
+                rc2 = pConn->pfnStreamPlay(pConn, pStream, &cProc);
                 if (RT_FAILURE(rc2))
                 {
                     LogFlowFunc(("%s: Failed playing stream '%s', rc=%Rrc\n", pSink->pszName, pStream->szName, rc2));
@@ -1385,8 +1385,14 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
             }
         }
 
-        Log3Func(("\t%s: cCaptured=%RU32\n", pStream->szName, cCaptured));
+        Log3Func(("\t%s: cProc=%RU32, rc2=%Rrc\n", pStream->szName, cProc, rc2));
     }
+
+    Log3Func(("[%s] fPendingDisable=%RTbool, %RU8/%RU8 streams disabled\n",
+              RT_BOOL(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE), pSink->pszName, cStreamsDisabled, pSink->cStreams));
+
+    /* Update last updated timestamp. */
+    pSink->tsLastUpdatedMS = RTTimeMilliTS();
 
     /* All streams disabled and the sink is in pending disable mode? */
     if (   cStreamsDisabled == pSink->cStreams
@@ -1394,9 +1400,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     {
         audioMixerSinkReset(pSink);
     }
-
-    /* Update last updated timestamp. */
-    pSink->tsLastUpdatedMS = RTTimeMilliTS();
 
     Log3Func(("[%s] cbReadable=%RU32, cbWritable=%RU32, rc=%Rrc\n",
               pSink->pszName, pSink->In.cbReadable, pSink->Out.cbWritable, rc));
@@ -1515,7 +1518,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     {
         if (!(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream) & PDMAUDIOSTRMSTS_FLAG_ENABLED))
         {
-            Log3Func(("\t%s: Stream '%s' Disabled, skipping ...\n", pMixStream->pszName, pMixStream->pStream->szName));
+            Log3Func(("\t%s: Stream '%s' disabled, skipping ...\n", pMixStream->pszName, pMixStream->pStream->szName));
             continue;
         }
 
