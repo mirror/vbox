@@ -96,7 +96,7 @@ void
 rdssl_rsa_encrypt(uint8 * out, uint8 * in, int len, uint32 modulus_size, uint8 * modulus,
 		  uint8 * exponent)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
 	BN_CTX *ctx;
 	BIGNUM *mod, *exp, *x, *y;
 	uint8 inr[SEC_MAX_MODULUS_SIZE];
@@ -127,7 +127,7 @@ rdssl_rsa_encrypt(uint8 * out, uint8 * in, int len, uint32 modulus_size, uint8 *
 	BN_free(exp);
 	BN_free(mod);
 	BN_CTX_free(ctx);
-#else /* OPENSSL_VERSION_NUMBER < 0x10100000 */
+#else /* OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) */
 	BN_CTX *ctx;
 	BIGNUM mod, exp, x, y;
 	uint8 inr[SEC_MAX_MODULUS_SIZE];
@@ -158,7 +158,7 @@ rdssl_rsa_encrypt(uint8 * out, uint8 * in, int len, uint32 modulus_size, uint8 *
 	BN_free(&exp);
 	BN_free(&mod);
 	BN_CTX_free(ctx);
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000 */
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) */
 }
 
 /* returns newly allocated RDSSL_CERT or NULL */
@@ -188,7 +188,7 @@ rdssl_cert_to_rkey(RDSSL_CERT * cert, uint32 * key_len)
 
 	   Kudos to Richard Levitte for the following (. intiutive .) 
 	   lines of code that resets the OID and let's us extract the key. */
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
 	X509_PUBKEY *x509_pk = X509_get_X509_PUBKEY(cert);
 	X509_ALGOR *algor;
 	const ASN1_OBJECT *alg_obj;
@@ -200,7 +200,7 @@ rdssl_cert_to_rkey(RDSSL_CERT * cert, uint32 * key_len)
 		DEBUG_RDP5(("Re-setting algorithm type to RSA in server certificate\n"));
                 X509_ALGOR_set0(algor, OBJ_nid2obj(NID_rsaEncryption), 0, NULL);
 	}
-#else /* OPENSSL_VERSION_NUMBER < 0x10100000 */
+#else /* OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) */
 	nid = OBJ_obj2nid(cert->cert_info->key->algor->algorithm);
 	if ((nid == NID_md5WithRSAEncryption) || (nid == NID_shaWithRSAEncryption))
 	{
@@ -208,7 +208,7 @@ rdssl_cert_to_rkey(RDSSL_CERT * cert, uint32 * key_len)
 		ASN1_OBJECT_free(cert->cert_info->key->algor->algorithm);
 		cert->cert_info->key->algor->algorithm = OBJ_nid2obj(NID_rsaEncryption);
 	}
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000 */
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000 || && defined(LIBRESSL_VERSION_NUMBER) */
 	epk = X509_get_pubkey(cert);
 	if (NULL == epk)
 	{
@@ -257,7 +257,7 @@ rdssl_rkey_get_exp_mod(RDSSL_RKEY * rkey, uint8 * exponent, uint32 max_exp_len, 
 {
 	int len;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
 	const BIGNUM *e, *n;
 	RSA_get0_key(rkey, &n, &e, NULL);
 	if ((BN_num_bytes(e) > (int) max_exp_len) ||
@@ -299,12 +299,12 @@ void
 rdssl_hmac_md5(const void *key, int key_len, const unsigned char *msg, int msg_len,
 	       unsigned char *md)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)
 	HMAC_CTX ctx;
 	HMAC_CTX_init(&ctx);
 #endif
 	HMAC(EVP_md5(), key, key_len, msg, msg_len, md, NULL);
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)
 	HMAC_CTX_cleanup(&ctx);
 #endif
 }
