@@ -989,6 +989,8 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
 static void ichac97StreamClose(PAC97STREAM pStream)
 {
+    RT_NOREF(pStream);
+
     LogFlowFunc(("[SD%RU8]\n", pStream->u8Strm));
 }
 
