@@ -320,14 +320,14 @@ tcp_tls_connect(void)
 	if (g_ssl_ctx == NULL)
 	{
 #ifdef __GNUC__
-# if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x406
+# if (__GNUC__ << 8) + __GNUC_MINOR__ >= 0x406
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 # endif
 #endif
 		g_ssl_ctx = SSL_CTX_new(TLSv1_client_method());
 #ifdef __GNUC__
-# if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x406
+# if (__GNUC__ << 8) + __GNUC_MINOR__ >= 0x406
 #  pragma GCC diagnostic pop
 # endif
 #endif
