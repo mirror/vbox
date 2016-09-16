@@ -1916,6 +1916,10 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
 
     switch (::GetEventClass(event))
     {
+        // Keep in mind that this stuff should not be enabled while we are still using
+        // own native keyboard filter installed through cocoa API, to be reworked.
+        // S.a. registerForNativeEvents call in UIKeyboardHandler implementation.
+#if 0
         /* Watch for keyboard-events: */
         case kEventClassKeyboard:
         {
@@ -1935,6 +1939,7 @@ bool UIMachineView::nativeEventPreprocessor(const QByteArray &eventType, void *p
             }
             break;
         }
+#endif
         /* Watch for mouse-events: */
         case kEventClassMouse:
         {
