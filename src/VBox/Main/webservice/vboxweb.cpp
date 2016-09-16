@@ -893,7 +893,7 @@ static void doQueuesLoop()
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
                   g_uBacklog);      // backlog = max queue size for requests
-    if (m == SOAP_INVALID_SOCKET)
+    if (m < 0)
         WebLogSoapError(&soap);
     else
     {
