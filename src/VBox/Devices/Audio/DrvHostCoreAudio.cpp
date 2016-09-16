@@ -670,6 +670,10 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             /* Check if the device is valid. */
             AudioDeviceID curDevID = pDevData->deviceID;
 
+            /* Is the device the default device? */
+            if (curDevID == defaultDeviceID)
+                pDev->fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+
             AudioObjectPropertyAddress propAddrCfg = { kAudioDevicePropertyStreamConfiguration,
                                                          enmUsage == PDMAUDIODIR_IN
                                                        ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
@@ -746,9 +750,35 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
 
             CFRelease(pcfstrName);
 
-            /* Adjust flags. */
-            if (curDevID == defaultDeviceID) /* Is the device the default device? */
-                pDev->fFlags |= PDMAUDIODEV_FLAGS_DEFAULT;
+            /* Check if the device is alive for the intended usage. */
+            AudioObjectPropertyAddress propAddrAlive = { kAudioDevicePropertyDeviceIsAlive,
+                                                          enmUsage == PDMAUDIODIR_IN
+                                                        ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
+                                                        kAudioObjectPropertyElementMaster };
+
+            UInt32 uAlive = 0;
+            uSize = sizeof(uAlive);
+
+            err = AudioObjectGetPropertyData(curDevID, &propAddrAlive, 0, NULL, &uSize, &uAlive);
+            if (   (err == noErr)
+                && !uAlive)
+            {
+                pDev->fFlags |= PDMAUDIODEV_FLAGS_DEAD;
+            }
+
+            /* Check if the device is being hogged by someone else. */
+            AudioObjectPropertyAddress propAddrHogged = { kAudioDevicePropertyHogMode,
+                                                          kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
+
+            pid_t pid = 0;
+            uSize = sizeof(pid);
+
+            err = AudioObjectGetPropertyData(curDevID, &propAddrHogged, 0, NULL, &uSize, &pid);
+            if (   (err == noErr)
+                && (pid != -1))
+            {
+                pDev->fFlags |= PDMAUDIODEV_FLAGS_LOCKED;
+            }
 
             /* Add the device to the enumeration. */
             rc = DrvAudioHlpDeviceEnumAdd(pDevEnm, pDev);
