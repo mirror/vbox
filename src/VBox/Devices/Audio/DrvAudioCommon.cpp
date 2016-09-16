@@ -564,6 +564,8 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
         APPEND_FLAG_TO_STR(HOTPLUG);
         APPEND_FLAG_TO_STR(BUGGY);
         APPEND_FLAG_TO_STR(IGNORE);
+        APPEND_FLAG_TO_STR(LOCKED);
+        APPEND_FLAG_TO_STR(DEAD);
 
     } while (0);
 

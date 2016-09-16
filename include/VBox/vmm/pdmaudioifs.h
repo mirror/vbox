@@ -107,6 +107,10 @@ typedef uint32_t PDMAUDIODEVFLAG;
 #define PDMAUDIODEV_FLAGS_BUGGY           RT_BIT(2)
 /** Ignore the device, no matter what. */
 #define PDMAUDIODEV_FLAGS_IGNORE          RT_BIT(3)
+/** The device is present but marked as locked by some other application. */
+#define PDMAUDIODEV_FLAGS_LOCKED          RT_BIT(4)
+/** The device is present but not in an alive state (dead). */
+#define PDMAUDIODEV_FLAGS_DEAD            RT_BIT(5)
 
 /**
  * Audio device type.
