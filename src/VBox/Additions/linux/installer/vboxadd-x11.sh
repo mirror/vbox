@@ -32,7 +32,6 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 LOG="/var/log/vboxadd-install-x11.log"
 CONFIG_DIR="/var/lib/VBoxGuestAdditions"
 CONFIG="config"
-SCRIPTNAME=vboxadd-x11.sh
 MODPROBE=/sbin/modprobe
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
@@ -79,23 +78,6 @@ if [ "`which $0`" = "/sbin/rc" ]; then
     shift
 fi
 
-begin()
-{
-    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger -t "${SCRIPTNAME}" "${1}."
-}
-
-succ_msg()
-{
-    logger -t "${SCRIPTNAME}" "${1}."
-}
-
-fail_msg()
-{
-    echo "${SCRIPTNAME}: ${1}." >&2
-    logger -t "${SCRIPTNAME}" "${1}."
-}
-
 dev=/dev/vboxguest
 userdev=/dev/vboxuser
 owner=vboxadd
@@ -103,8 +85,7 @@ group=1
 
 fail()
 {
-    echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger "${SCRIPTNAME}: ${1}."
+    echo "${1}" >&2
     exit 1
 }
 
@@ -119,14 +100,10 @@ install_x11_startup_app() {
     desktop_src=$2
     service_name=$3
     alt_command=$4
-    test -r "$app_src" ||
-        { echo >> $LOG "$self: no script given"; return 1; }
-    test -r "$desktop_src" ||
-        { echo >> $LOG "$self: no desktop file given"; return 1; }
-    test -n "$service_name" ||
-        { echo >> $LOG "$self: no service given"; return 1; }
-    test -n "$alt_command" ||
-        { echo >> $LOG "$self: no service given"; return 1; }
+    test -r "$app_src" || fail "$self: no script given"
+    test -r "$desktop_src" || fail "$self: no desktop file given"
+    test -n "$service_name" || fail "$self: no service given"
+    test -n "$alt_command" || fail "$self: no service given"
     app_dest=`basename $app_src sh`
     app_dest_sh=`basename $app_src sh`.sh
     desktop_dest=`basename $desktop_src`
@@ -164,7 +141,7 @@ install_x11_startup_app() {
     if [ $found -eq 1 ]; then
         return 0
     fi
-    cat >> $LOG << EOF
+    cat >&2 << EOF
 Could not set up the $service_name desktop service.
 To start it at log-in for a given user, add the command $alt_command
 to the file .xinitrc in their home directory.
@@ -192,12 +169,10 @@ restart()
 
 setup()
 {
-    echo "VirtualBox Guest Additions installation, Window System and desktop setup" > $LOG
-    begin "Installing the Window System drivers"
     lib_dir="$LIB/VBoxGuestAdditions"
     share_dir="/usr/share/VBoxGuestAdditions"
     test -x "$lib_dir" -a -x "$share_dir" ||
-        fail "Invalid Guest Additions configuration found"
+        fail "Invalid Guest Additions configuration found."
     # By default we want to configure X
     dox11config="true"
     # By default, we want to run our xorg.conf setup script
@@ -243,12 +218,10 @@ setup()
 
     test -z "$x_version" -o -z "$modules_dir" &&
         {
-            echo
-            echo "Could not find the X.Org or XFree86 Window System, skipping."
+            echo "Could not find the X.Org or XFree86 Window System, skipping." >&2
             exit 0
         }
 
-    echo
     # openSUSE 10.3 shipped X.Org 7.2 with X.Org Server 1.3, but didn't
     # advertise the fact.
     if grep -q '10\.3' /etc/SuSE-release 2>/dev/null; then
@@ -258,8 +231,7 @@ setup()
     fi
     case $x_version in
         1.*.99.* )
-            echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
-            echo "installing the X.Org drivers."
+            echo "Warning: unsupported pre-release version of X.Org Server installed.  Not installing the X.Org drivers." >&2
             dox11config=""
             ;;
         1.11.* )
@@ -362,8 +334,7 @@ setup()
             setupxorgconf=""
             test -f "${lib_dir}/${vboxvideo_src}" ||
             {
-                echo "Warning: unknown version of the X Window System installed.  Not installing"
-                echo "X Window System drivers."
+                echo "Warning: unknown version of the X Window System installed.  Not installing X Window System drivers." >&2
                 dox11config=""
                 vboxvideo_src=""
             }
@@ -385,7 +356,7 @@ setup()
         ;;
     esac
     test -n "${dox11config}" &&
-        begin "Installing $xserver_version modules"
+        echo "Installing $xserver_version modules" >&2
     case "$vboxvideo_src" in
         ?*)
         ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" &&
@@ -400,10 +371,8 @@ setup()
         *)
         rm "$modules_dir/input/vboxmouse_drv$driver_ext" 2>/dev/null
     esac
-    succ_msg "$xserver_version modules installed"
 
     if test -n "$dox11config"; then
-        begin "Setting up the Window System to use the Guest Additions"
         # Certain Ubuntu/Debian versions use a special PCI-id file to identify
         # video drivers.  Some versions have the directory and don't use it.
         # Those versions can autoload vboxvideo though, so we don't need to
@@ -441,23 +410,21 @@ setup()
                 touch "${nobak_cfg}"
             fi
         fi
-        succ_msg "Window System set up to use the Guest Additions"
         test -n "$generated" &&
-            cat << EOF
+            cat >&2 << EOF
 The following X.Org/XFree86 configuration files were originally generated by
 the VirtualBox Guest Additions and were not modified:
 
 $generated
 
 EOF
-        cat << EOF
+        tty >/dev/null && cat << EOF
 You may need to restart the the Window System (or just restart the guest system)
 to enable the Guest Additions.
 
 EOF
     fi
 
-    begin "Installing graphics libraries and desktop services components"
     case "$redhat_release" in
         # Install selinux policy for Fedora 7 and 8 to allow the X server to
         # open device files
@@ -488,7 +455,6 @@ EOF
     install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
         fail "See the log file $LOG for more information."
     ln -s "$lib_dir/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
-    succ_msg "Window system drivers installed"
 }
 
 cleanup()
@@ -530,7 +496,7 @@ cleanup()
             fi
         done
     fi
-    test -n "$newer" && cat << EOF
+    test -n "$newer" && cat >&2 << EOF
 
 The following X.Org/XFree86 configuration files were not restored, as they may
 have been changed since they were generated by the VirtualBox Guest Additions.
@@ -540,7 +506,7 @@ original version.
 $newer
 
 EOF
-    test -n "$failed" && cat << EOF
+    test -n "$failed" && cat >&2 << EOF
 
 The following X.Org/XFree86 configuration files were restored, but still
 contain references to the Guest Additions drivers.  You may wish to check and

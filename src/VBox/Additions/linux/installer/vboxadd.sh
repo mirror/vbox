@@ -33,11 +33,19 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
-LOG="/var/log/vboxadd-install.log"
+LOG="/var/log/vboxadd-setup.log"
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
-SCRIPTNAME=vboxadd.sh
+SERVICE="VirtualBox Guest Additions"
 QUICKSETUP=
+## systemd logs information about service status, otherwise do that ourselves.
+QUIET=
+
+# Rotate log files
+mv "${LOG}.3" "${LOG}.4" 2>/dev/null
+mv "${LOG}.2" "${LOG}.3" 2>/dev/null
+mv "${LOG}.1" "${LOG}.2" 2>/dev/null
+mv "${LOG}" "${LOG}.1" 2>/dev/null
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -71,25 +79,29 @@ fi
 
 begin()
 {
-    test -n "${2}" && echo "${SCRIPTNAME}: ${1}."
-    logger -t "${SCRIPTNAME}" "${1}."
+    test -z "${QUIET}" && echo "${SERVICE}: ${1}"
 }
 
-succ_msg()
+info()
 {
-    logger -t "${SCRIPTNAME}" "${1}."
-}
-
-show_error()
-{
-    echo "${SCRIPTNAME}: failed: ${1}." >&2
-    logger -t "${SCRIPTNAME}" "${1}."
+    if test -z "${QUIET}"; then
+        echo "${SERVICE}: $1"
+    else
+        echo "$1"
+    fi
 }
 
 fail()
 {
-    show_error "$1"
+    log "${1}"
+    echo "$1" >&2
+    echo "The log file $LOG may contain further information." >&2
     exit 1
+}
+
+log()
+{
+    echo "${1}" >> "${LOG}"
 }
 
 dev=/dev/vboxguest
@@ -168,7 +180,7 @@ do_vboxguest_non_udev()
 
 start()
 {
-    begin "Starting the VirtualBox Guest Additions" console;
+    begin "Starting."
     # If we got this far assume that the slow set-up has been done.
     QUICKSETUP=yes
     if test -r $config; then
@@ -193,7 +205,7 @@ start()
         $MODPROBE vboxguest >/dev/null 2>&1 || {
             setup
             $MODPROBE vboxguest >/dev/null 2>&1 || {
-                /sbin/rcvboxadd-x11 cleanup
+                "$lib_path/$PACKAGE/vboxadd-x11" cleanup 2>> "${LOG}"
                 fail "modprobe vboxguest failed"
             }
         }
@@ -208,16 +220,15 @@ start()
     running_vboxsf || {
         $MODPROBE vboxsf > /dev/null 2>&1 || {
             if dmesg | grep "VbglR0SfConnect failed" > /dev/null 2>&1; then
-                show_error "Unable to start shared folders support.  Make sure that your VirtualBox build"
-                show_error "supports this feature."
+                info "Unable to start shared folders support.  Make sure that your VirtualBox build supports this feature."
             else
-                show_error "modprobe vboxsf failed"
+                info "modprobe vboxsf failed"
             fi
         }
     }
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
-    /sbin/rcvboxadd-x11 setup
+    "$lib_path/$PACKAGE/vboxadd-x11" setup 2>> "${LOG}"
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
     rm -f /etc/ld.so.conf.d/00vboxvideo.conf
@@ -245,13 +256,12 @@ start()
     # This isn't necessary anymore as the vboxsf module is autoloaded.
     # mount -a -t vboxsf
 
-    succ_msg
     return 0
 }
 
 stop()
 {
-    begin "Stopping VirtualBox Additions" console;
+    begin "Stopping."
     if test -r /etc/ld.so.conf.d/00vboxvideo.conf; then
         rm /etc/ld.so.conf.d/00vboxvideo.conf
         ldconfig
@@ -261,10 +271,9 @@ stop()
     fi
     modprobe -q -r -a vboxvideo vboxsf vboxguest
     egrep -q 'vboxguest|vboxsf|vboxvideo' /proc/modules &&
-        echo "You may need to restart your guest system to finish removing the guest drivers."
+        info "You may need to restart your guest system to finish removing the guest drivers."
     rm -f $userdev || fail "Cannot unlink $userdev"
     rm -f $dev || fail "Cannot unlink $dev"
-    succ_msg
     return 0
 }
 
@@ -278,7 +287,7 @@ restart()
 # from the kernel as they may still be in use
 cleanup_modules()
 {
-    begin "Removing existing VirtualBox kernel modules"
+    log "Removing existing VirtualBox kernel modules."
     for i in ${OLDMODULES}; do
         # We no longer support DKMS, remove any leftovers.
         rm -rf "/var/lib/dkms/${i}"*
@@ -290,7 +299,6 @@ cleanup_modules()
         test -d "${i}" && rmdir -p "${i}" 2>/dev/null
     done
     rm -f /etc/depmod.d/vboxvideo-upstream.conf
-    succ_msg
 }
 
 # Build and install the VirtualBox guest kernel modules
@@ -300,34 +308,31 @@ setup_modules()
     test -z "${QUICKSETUP}" && cleanup_modules
     # This does not work for 2.4 series kernels.  How sad.
     test -n "${QUICKSETUP}" && test -f "${MODULE_DIR}/vboxguest.ko" && return 0
-    begin "Building the VirtualBox Guest Additions kernel modules"
+    info "Building the VirtualBox Guest Additions kernel modules."
 
-    begin "Building the main Guest Additions module"
+    log "Building the main Guest Additions module."
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxguest \
         --no-print-directory install >> $LOG 2>&1; then
-        show_error "Look at $LOG to find out what went wrong"
+        info "Look at $LOG to find out what went wrong"
         return 1
     fi
-    succ_msg
-    begin "Building the shared folder support module"
+    log "Building the shared folder support module"
     if ! $BUILDINTMP \
         --use-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxsf \
         --no-print-directory install >> $LOG 2>&1; then
-        show_error  "Look at $LOG to find out what went wrong"
+        info  "Look at $LOG to find out what went wrong"
         return 1
     fi
-    succ_msg
-    begin "Building the graphics driver module"
+    log "Building the graphics driver module"
     if ! $BUILDINTMP \
         --use-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxvideo \
         --no-print-directory install >> $LOG 2>&1; then
-        show_error "Look at $LOG to find out what went wrong"
+        info "Look at $LOG to find out what went wrong"
     fi
-    succ_msg
     echo "override vboxvideo * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     depmod
     return 0
@@ -337,8 +342,7 @@ setup_modules()
 # creation, udev, mount helper...)
 extra_setup()
 {
-    begin "Doing non-kernel setup of the Guest Additions"
-    echo "Creating user for the Guest Additions." >> $LOG
+    log "Creating user for the Guest Additions."
     # This is the LSB version of useradd and should work on recent
     # distributions
     useradd -d /var/run/vboxadd -g 1 -r -s /bin/false vboxadd >/dev/null 2>&1
@@ -352,7 +356,7 @@ extra_setup()
 
     # Create udev description file
     if [ -d /etc/udev/rules.d ]; then
-        echo "Creating udev rule for the Guest Additions kernel module." >> $LOG
+        log "Creating udev rule for the Guest Additions kernel module."
         udev_call=""
         udev_app=`which udevadm 2> /dev/null`
         if [ $? -eq 0 ]; then
@@ -380,7 +384,6 @@ extra_setup()
     ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
     # And an rc file to re-build the kernel modules and re-set-up the X server.
     ln -sf "$lib_path/$PACKAGE/vboxadd" /sbin/rcvboxadd
-    ln -sf "$lib_path/$PACKAGE/vboxadd-x11" /sbin/rcvboxadd-x11
     # And a post-installation script for rebuilding modules when a new kernel
     # is installed.
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
@@ -407,13 +410,12 @@ EOF
             semanage fcontext -a -t mount_exec_t "/usr/lib/$PACKAGE/mount.vboxsf"
         chcon -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf"
     fi
-    succ_msg
 }
 
 # setup_script
 setup()
 {
-    begin "Building Guest Additions kernel modules" console
+    rm -f $LOG
     if test -r $config; then
       . $config
     else
@@ -424,7 +426,6 @@ setup()
     export BUILD_TYPE
     export USERNAME
 
-    rm -f $LOG
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
@@ -433,13 +434,13 @@ setup()
         mod_succ=0
     else
         mod_succ=1
-        show_error "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
+        info "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
     fi
     test -n "${QUICKSETUP}" && return "${mod_succ}"
     extra_setup
     if [ "$mod_succ" -eq "0" ]; then
         if running_vboxguest || running_vboxadd; then
-            begin "You should restart your guest to make sure the new modules are actually used" console
+            info "You should restart your guest to make sure the new modules are actually used"
         fi
     fi
     return "${mod_succ}"
@@ -466,12 +467,11 @@ cleanup()
     done
 
     # Clean-up X11-related bits
-    /sbin/rcvboxadd-x11 cleanup
+    "$lib_path/$PACKAGE/vboxadd-x11" cleanup 2>> "${LOG}"
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
     rm /sbin/rcvboxadd 2>/dev/null
-    rm /sbin/rcvboxadd-x11 2>/dev/null
     rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
     rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
@@ -486,6 +486,9 @@ dmnstatus()
     fi
 }
 
+case "$2" in quiet)
+    QUIET=yes;;
+esac
 case "$1" in
 start)
     start
@@ -510,7 +513,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup}"
+    echo "Usage: $0 {start|stop|restart|status|setup|quicksetup|cleanup} [quiet]"
     exit 1
 esac
 
