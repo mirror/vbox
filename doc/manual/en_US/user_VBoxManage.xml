@@ -4496,8 +4496,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
               <para>On Windows there are certain limitations for graphical
               applications; please see <xref linkend="KnownIssues" /> for more
               information.</para>
-            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "/bin/ls"
-          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
+            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" run --exe "/bin/ls"
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" run --exe "c:\\windows\\system32\\ipconfig.exe"
           --username foo --passwordfile bar.txt --wait-exit --wait-stdout</screen> Note that
           the double backslashes in the second example are only required on
           Unix hosts.</para>
@@ -4610,8 +4610,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
               <para>On Windows there are certain limitations for graphical
               applications; please see <xref linkend="KnownIssues" /> for more
               information.</para>
-            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "/bin/ls"
-          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" execute --image "c:\\windows\\system32\\ipconfig.exe"
+            </note> Examples: <screen>VBoxManage --nologo guestcontrol "My VM" start --exe "/bin/ls"
+          --username foo --passwordfile bar.txt --wait-exit --wait-stdout -- -l /usr</screen> <screen>VBoxManage --nologo guestcontrol "My VM" start --exe "c:\\windows\\system32\\ipconfig.exe"
           --username foo --passwordfile bar.txt --wait-exit --wait-stdout</screen> Note that
           the double backslashes in the second example are only required on
           Unix hosts.</para>
