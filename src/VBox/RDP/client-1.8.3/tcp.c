@@ -319,7 +319,18 @@ tcp_tls_connect(void)
 	/* create process context */
 	if (g_ssl_ctx == NULL)
 	{
+#ifdef __GNUC__
+# if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x406
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+# endif
+#endif
 		g_ssl_ctx = SSL_CTX_new(TLSv1_client_method());
+#ifdef __GNUC__
+# if (__GNUC__ << 16) + __GNUC_MINOR__ >= 0x406
+#  pragma GCC diagnostic pop
+# endif
+#endif
 		if (g_ssl_ctx == NULL)
 		{
 			error("tcp_tls_connect: SSL_CTX_new() failed to create TLS v1.0 context\n");
