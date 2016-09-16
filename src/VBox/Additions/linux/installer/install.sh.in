@@ -419,21 +419,13 @@ if [ -n "${INSTALLATION_MODULES_LIST}" ]; then
   done
 fi
 
+"$INSTALLATION_DIR/init/vboxadd" setup 1>&2 2>> "${LOGFILE}"
+
 # Install, set up and start init scripts
-for i in "$INSTALLATION_DIR/init/vboxadd" "$INSTALLATION_DIR/init/vboxadd-service" \
-    "$INSTALLATION_DIR/init/vboxadd-x11"; do
-  if test -r "$i"; then
+for i in "$INSTALLATION_DIR/init/vboxadd" "$INSTALLATION_DIR/init/vboxadd-service"; do
     install_init_script "$i" "`basename "$i"`" 2>> "${LOGFILE}"
     addrunlevel "`basename "$i"`" 2>> "${LOGFILE}"
-    if test -n "$DO_SETUP" && grep -q '^# *setup_script *$' "${i}"; then
-        if "${i}" setup 1>&2 2>> "${LOGFILE}"; then
-            start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
-        else
-            echo 1>&2 "Failed to set up service `basename "$i"`, please check the log file"
-            echo 1>&2 "${LOGFILE} for details."
-        fi
-    fi
-  fi
+    start_init_script "`basename "$i"`" 2>> "${LOGFILE}"
 done
 
 cp $ROUTINES $INSTALLATION_DIR
