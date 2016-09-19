@@ -604,13 +604,23 @@ static int vdiImageCreateFile(PVDIIMAGEDESC pImage, unsigned uOpenFlags,
             uint64_t cbTotal =   pImage->offStartData
                                + (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
 
-            /*
-             * Allocate & commit whole file if fixed image, it must be more
-             * effective than expanding file by write operations.
-             */
-            rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbTotal, 0 /* fFlags */,
-                                                pIfProgress, uPercentStart, uPercentSpan);
-            pImage->cbImage = cbTotal;
+            /* Check the free space on the disk and leave early if there is not
+             * sufficient space available. */
+            int64_t cbFree = 0;
+            rc = vdIfIoIntFileGetFreeSpace(pImage->pIfIo, pImage->pszFilename, &cbFree);
+            if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbTotal))
+                rc = vdIfError(pImage->pIfError, VERR_DISK_FULL, RT_SRC_POS,
+                               N_("VDI: disk would overflow creating image '%s'"), pImage->pszFilename);
+            else
+            {
+                /*
+                 * Allocate & commit whole file if fixed image, it must be more
+                 * effective than expanding file by write operations.
+                 */
+                rc = vdIfIoIntFileSetAllocationSize(pImage->pIfIo, pImage->pStorage, cbTotal, 0 /* fFlags */,
+                                                    pIfProgress, uPercentStart, uPercentSpan);
+                pImage->cbImage = cbTotal;
+            }
         }
         else
         {
@@ -699,21 +709,6 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
     {
         rc = vdiSetupImageState(pImage, uImageFlags, pszComment, cbSize, cbDataAlign,
                                 pPCHSGeometry, pLCHSGeometry);
-        if (   RT_SUCCESS(rc)
-            && (uImageFlags & VD_IMAGE_FLAGS_FIXED))
-        {
-            uint64_t cbTotal =   pImage->offStartData
-                               + (uint64_t)getImageBlocks(&pImage->Header) * pImage->cbTotalBlockData;
-
-            /* Check the free space on the disk and leave early if there is not
-             * sufficient space available. */
-            int64_t cbFree = 0;
-            rc = vdIfIoIntFileGetFreeSpace(pImage->pIfIo, pImage->pszFilename, &cbFree);
-            if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbTotal))
-                rc = vdIfError(pImage->pIfError, VERR_DISK_FULL, RT_SRC_POS,
-                               N_("VDI: disk would overflow creating image '%s'"), pImage->pszFilename);
-        }
-
         if (RT_SUCCESS(rc))
         {
             /* Use specified image uuid */
