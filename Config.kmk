@@ -2450,9 +2450,9 @@ ifeq ($(KBUILD_HOST),win)
  VBOX_GCC32_CHECK_CXX = $(2)
 else
  VBOX_GCC_CHECK_EX_CC = $(shell \
-    if $(1) $(subst -Wno-,-W,$(2)) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
+    if $(1) $(subst -Wno-,-W,$(2)) -c -o /dev/null -xc   $(PATH_OUT)/DynamicConfig.c   > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
  VBOX_GCC_CHECK_EX_CXX = $(shell \
-    if $(1) $(subst -Wno-,-W,$(2)) -S -o /dev/null -xc++ /dev/null > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
+    if $(1) $(subst -Wno-,-W,$(2)) -c -o /dev/null -xc++ $(PATH_OUT)/DynamicConfig.cpp > /dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; )
  VBOX_GCC_CHECK_EX_LD = $(shell \
     if $(1) -Wl,$(2) $(if $(eq $(KBUILD_HOST),darwin),-Wl$(COMMA)-u$(COMMA)start -Wl$(COMMA)-undefined$(COMMA)dynamic_lookup,) \
             -nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1; \
@@ -2541,6 +2541,10 @@ endif
 VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
 	| $(SED_EXT) -n -e 's|^ *pylint *\([0-9][0-9]*\).\([0-9][0-9]*\)\.\([0-9][0-9]*\).*$(DOLLAR)|$$(expr \1 * 10000 + \2 * 100 + \3)|p' )
 
+# Test C and C++ files.
+$(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp:
+	$(QUIET)$(APPEND) -tn "$@" "int foobar(void)" "{" "    return 42;" "}" ""
+
 # No $(QUIET) here as it's interesting to see what goes into the file.
 $(PATH_OUT)/DynamicConfig.kmk: \
 		$(PATH_ROOT)/Config.kmk \
@@ -2551,7 +2555,8 @@ $(PATH_OUT)/DynamicConfig.kmk: \
 		$(VBOX_GCC32_PATH_CC) \
 		$(VBOX_GCC32_PATH_CXX) \
 		$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "solaris.amd64" && $(KBUILD_HOST_VERSION_MINOR) >= 11 \
-			, /platform/i86pc/kernel/$(KBUILD_HOST_ARCH)/unix,)
+			, /platform/i86pc/kernel/$(KBUILD_HOST_ARCH)/unix,) \
+        	| $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp
 	$(call MSG_GENERATE,,$@,)
 	$(QUIET)$(RM) -f '$@'
 	$(QUIET)$(MKDIR) -p $(@D)
