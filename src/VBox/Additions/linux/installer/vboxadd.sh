@@ -381,7 +381,7 @@ extra_setup()
     fi
 
     # Put mount.vboxsf in the right place
-    ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
+    ln -sf "${INSTALL_DIR}/other/mount.vboxsf" /sbin
     # And a post-installation script for rebuilding modules when a new kernel
     # is installed.
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
@@ -405,8 +405,8 @@ EOF
         # with an error, telling you what you should have typed, if you specify
         # the real path.  The "chcon" is there as a back-up for old guests.
         command -v semanage > /dev/null &&
-            semanage fcontext -a -t mount_exec_t "/usr/lib/$PACKAGE/mount.vboxsf"
-        chcon -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf"
+            semanage fcontext -a -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf"
+        chcon -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf"
     fi
 }
 

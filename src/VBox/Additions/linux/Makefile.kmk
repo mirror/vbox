@@ -42,7 +42,6 @@ VBOX_LNX_ADD_INST_BIN_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)bin/
 VBOX_LNX_ADD_INST_SBIN_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)sbin/
 VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/
 VBOX_LNX_ADD_INST_OTHER_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)other/
-VBOX_LNX_ADD_INST_MOD_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
 VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
 VBOX_LNX_ADD_INST_KMOD_DIR_MOD    := $(VBOX_LNX_ADD_INST_OUT_DIR)src/vboxguest-$(VBOX_VERSION_STRING)/
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
@@ -52,7 +51,6 @@ VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 	$(VBOX_LNX_ADD_INST_BIN_DIR) \
 	$(VBOX_LNX_ADD_INST_SBIN_DIR) \
 	$(VBOX_LNX_ADD_INST_LIB_DIR) \
-	$(VBOX_LNX_ADD_INST_MOD_DIR) \
 	$(VBOX_LNX_ADD_INST_KMOD_DIR) \
 	$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD) \
 	$(VBOX_LNX_ADD_INST_INIT_DIR)
@@ -61,13 +59,13 @@ VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 VBOX_LNX_ADD_DBG_BIN_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)bin/
 VBOX_LNX_ADD_DBG_SBIN_DIR         := $(VBOX_LNX_ADD_INST_DBG_DIR)sbin/
 VBOX_LNX_ADD_DBG_LIB_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/
-VBOX_LNX_ADD_DBG_MOD_DIR          := $(VBOX_LNX_ADD_INST_DBG_DIR)lib/$(VBOX_LNX_ADD_PACKAGE_NAME)/
+VBOX_LNX_ADD_DBG_OTHER_DIR        := $(VBOX_LNX_ADD_INST_DBG_DIR)other/
 
 VBOX_LNX_ADD_DBG_DIRS             := \
 	$(VBOX_LNX_ADD_DBG_BIN_DIR) \
 	$(VBOX_LNX_ADD_DBG_SBIN_DIR) \
 	$(VBOX_LNX_ADD_DBG_LIB_DIR) \
-	$(VBOX_LNX_ADD_DBG_MOD_DIR)
+	$(VBOX_LNX_ADD_DBG_OTHER_DIR)
 
 # Script source directories
 VBOX_PATH_LNX_ADD_INST            := $(PATH_SUB_CURRENT)/installer/
@@ -170,9 +168,9 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_BIN_DIR),$(VBOX_LNX_ADD_BIN)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_MOD)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
+	$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT))
 
@@ -184,7 +182,7 @@ VBOX_LNX_ADD_DBG_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_DBG_BIN_DIR),$(VBOX_LNX_ADD_STRIP_BIN)) \
 	$(addprefix $(VBOX_LNX_ADD_DBG_SBIN_DIR),$(VBOX_LNX_ADD_STRIP_SBIN)) \
 	$(addprefix $(VBOX_LNX_ADD_DBG_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)) \
-	$(addprefix $(VBOX_LNX_ADD_DBG_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
+	$(addprefix $(VBOX_LNX_ADD_DBG_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD))
 
 ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
 VBOX_LNX_ADD_INST_FILES += \
@@ -210,8 +208,8 @@ $(addprefix $(VBOX_LNX_ADD_DBG_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-$(addprefix $(VBOX_LNX_ADD_DBG_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
-		$(VBOX_LNX_ADD_DBG_MOD_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_DBG_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
+		$(VBOX_LNX_ADD_DBG_OTHER_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
@@ -251,17 +249,17 @@ $(addprefix $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_STRIP_LIB)): \
 	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_LIB_DIR),$(VBOX_LNX_ADD_DBG_LIB_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_MOD files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_STAGE_BIN)/additions/% \
-		$(VBOX_LNX_ADD_DBG_MOD_DIR)% \
+$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_MOD)): \
+		$(VBOX_LNX_ADD_INST_OTHER_DIR)% : $(PATH_STAGE_BIN)/additions/% \
+		$(VBOX_LNX_ADD_DBG_OTHER_DIR)% \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
-	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_DBG_MOD_DIR),$@) $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(subst $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_DBG_OTHER_DIR),$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_OBJ files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)): \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
+$(addprefix $(VBOX_LNX_ADD_INST_OTHER_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)): \
+		$(VBOX_LNX_ADD_INST_OTHER_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 ifeq ($(VBOX_DO_STRIP),)
 	$(QUIET)$(INSTALL) -m 0644 $< $@

@@ -38,25 +38,6 @@ if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
 
-# Check architecture
-cpu=`uname -m`;
-case "$cpu" in
-  i[3456789]86|x86)
-    cpu="x86"
-    lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
-    ;;
-  x86_64|amd64)
-    cpu="amd64"
-    lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
-    ;;
-esac
-for i in $lib_candidates; do
-  if test -d "$i/VBoxGuestAdditions"; then
-    LIB=$i
-    break
-  fi
-done
-
 # Find the version of X installed
 # The last of the three is for the X.org 6.7 included in Fedora Core 2
 xver=`X -version 2>&1`
@@ -176,9 +157,8 @@ setup()
     fi
     test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
       fail "Configuration file ${CONFIG} not complete"
-    lib_dir="$LIB/VBoxGuestAdditions"
-    res_dir="${INSTALL_DIR}/other"
-    test -x "$lib_dir" -a -x "$res_dir" ||
+    lib_dir="${INSTALL_DIR}/other"
+    test -x "${lib_dir}" ||
         fail "Invalid Guest Additions configuration found."
     # By default we want to configure X
     dox11config="true"
@@ -366,14 +346,14 @@ setup()
         echo "Installing $xserver_version modules" >&2
     case "$vboxvideo_src" in
         ?*)
-        ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" &&
+        ln -s "${lib_dir}/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" &&
             mv "$modules_dir/drivers/vboxvideo_drv$driver_ext.new" "$modules_dir/drivers/vboxvideo_drv$driver_ext";;
         *)
         rm "$modules_dir/drivers/vboxvideo_drv$driver_ext" 2>/dev/null
     esac
     case "$vboxmouse_src" in
         ?*)
-        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv$driver_ext.new" &&
+        ln -s "${lib_dir}/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv$driver_ext.new" &&
             mv "$modules_dir/input/vboxmouse_drv$driver_ext.new" "$modules_dir/input/vboxmouse_drv$driver_ext";;
         *)
         rm "$modules_dir/input/vboxmouse_drv$driver_ext" 2>/dev/null
@@ -387,7 +367,7 @@ setup()
         test "$system" = "debian" -a -d /usr/share/xserver-xorg/pci &&
         {
             rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
-            ln -s "$res_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+            ln -s "${lib_dir}/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
             test -n "$automouse" && setupxorgconf=""
         }
 
@@ -400,7 +380,7 @@ setup()
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$res_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga "$i"
+                        "${lib_dir}/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga "$i"
                     fi
                     configured="true"
                 fi
@@ -413,7 +393,7 @@ setup()
             nobak_cfg="`expr "${main_cfg}" : '\([^.]*\)'`.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
-                "$res_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga --noBak "$main_cfg"
+                "${lib_dir}/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga --noBak "$main_cfg"
                 touch "${nobak_cfg}"
             fi
         fi
@@ -436,11 +416,11 @@ EOF
         # Install selinux policy for Fedora 7 and 8 to allow the X server to
         # open device files
         Fedora\ release\ 7* | Fedora\ release\ 8* )
-            semodule -i "$res_dir/vbox_x11.pp" > /dev/null 2>&1
+            semodule -i "${lib_dir}/vbox_x11.pp" > /dev/null 2>&1
             ;;
         # Similar for the accelerated graphics check on Fedora 15
         Fedora\ release\ 15* )
-            semodule -i "$res_dir/vbox_accel.pp" > /dev/null 2>&1
+            semodule -i "${lib_dir}/vbox_accel.pp" > /dev/null 2>&1
             ;;
     esac
 
@@ -448,7 +428,7 @@ EOF
     # open our drivers
     case "$redhat_release" in
         Fedora\ release\ 8* )
-            chcon -u system_u -t lib_t "$lib_dir"/*.so
+            chcon -u system_u -t lib_t "${lib_dir}"/*.so
             ;;
     esac
 
@@ -459,9 +439,9 @@ EOF
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
 
     # And set up VBoxClient to start when the X session does
-    install_x11_startup_app "$res_dir/98vboxadd-xclient" "$res_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
+    install_x11_startup_app "${lib_dir}/98vboxadd-xclient" "${lib_dir}/vboxclient.desktop" VBoxClient VBoxClient-all ||
         fail "See the log file $LOG for more information."
-    ln -s "$res_dir/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
+    ln -s "${lib_dir}/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
 }
 
 cleanup()
