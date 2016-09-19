@@ -1214,6 +1214,16 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
         case WM_SYSKEYDOWN:
         case WM_SYSKEYUP:
         {
+            // WORKAROUND:
+            // Can't do COM inter-process calls from a SendMessage handler,
+            // see http://support.microsoft.com/kb/131056.
+            if (vboxGlobal().isSeparateProcess() && InSendMessage())
+            {
+                PostMessage(pMsg->hwnd, pMsg->message, pMsg->wParam, pMsg->lParam);
+                fResult = true;
+                break;
+            }
+
             /* Check for our own special flag to ignore this event.
              * That flag could only be set later in this function
              * so having it here means this event came here
