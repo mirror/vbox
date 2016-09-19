@@ -275,7 +275,7 @@ ifdef SLKRUNS
  TOOL_Bs3Gcc64Elf64_CXX += -fmessage-length=0
 endif
 TOOL_Bs3Gcc64Elf64_COBJSUFF         = .o64
-TOOL_Bs3Gcc64Elf64_CFLAGS           = -fno-pie -x c
+TOOL_Bs3Gcc64Elf64_CFLAGS           = -fno-pie -x c $(VBOX_GCC_Wa_cma_nocompress_debug_sections)
 TOOL_Bs3Gcc64Elf64_CFLAGS.debug     = -g
 TOOL_Bs3Gcc64Elf64_CFLAGS.profile   = -O2 #-g -pg
 TOOL_Bs3Gcc64Elf64_CFLAGS.release   = -O2
@@ -311,7 +311,7 @@ $(TOOL_Bs3Gcc64Elf64_COMPILE_C_CMDS)
 endef
 
 TOOL_Bs3Gcc64Elf64_CXXOBJSUFF       ?= .o
-TOOL_Bs3Gcc64Elf64_CXXFLAGS         ?= -fno-pie
+TOOL_Bs3Gcc64Elf64_CXXFLAGS         ?= -fno-pie $(VBOX_GCC_Wa_cma_nocompress_debug_sections)
 TOOL_Bs3Gcc64Elf64_CXXFLAGS.debug   ?= -g0 # no debug info, thank you
 TOOL_Bs3Gcc64Elf64_CXXFLAGS.profile ?= -O2 #-g -pg
 TOOL_Bs3Gcc64Elf64_CXXFLAGS.release ?= -O2
