@@ -54,8 +54,10 @@
 
 
 /** QTreeWidgetItem subclass for snapshots items. */
-class UISnapshotItem : public QTreeWidgetItem
+class UISnapshotItem : public QObject, public QTreeWidgetItem
 {
+    Q_OBJECT;
+
 public:
 
     /** Item type for UISnapshotItem. */
@@ -77,6 +79,13 @@ public:
     CSnapshot snapshot() const { return m_comSnapshot; }
     /** Returns item snapshot ID. */
     QString snapshotID() const { return m_strSnapshotID; }
+
+    /** Returns the parent snapshot tree. */
+    UISnapshotTree *parentSnapshotTree() const;
+    /** Returns the parent snapshot item. */
+    UISnapshotItem *parentSnapshotItem() const;
+    /** Returns the child snapshot item with @a iIndex. */
+    UISnapshotItem *childSnapshotItem(int iIndex) const;
 
     /** Returns item data for corresponding @a iColumn and @a iRole. */
     QVariant data(int iColumn, int iRole) const;
@@ -207,6 +216,24 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem 
     updateCurrentState(m_comMachine.GetState());
 }
 
+UISnapshotTree *UISnapshotItem::parentSnapshotTree() const
+{
+    /* Return the parent snapshot tree if any: */
+    return treeWidget() ? qobject_cast<UISnapshotTree*>(treeWidget()) : 0;
+}
+
+UISnapshotItem *UISnapshotItem::parentSnapshotItem() const
+{
+    /* Return the parent snapshot item if any: */
+    return QTreeWidgetItem::parent() ? UISnapshotPane::toSnapshotItem(QTreeWidgetItem::parent()) : 0;
+}
+
+UISnapshotItem *UISnapshotItem::childSnapshotItem(int iIndex) const
+{
+    /* Return the child snapshot item with iIndex if any: */
+    return QTreeWidgetItem::child(iIndex) ? UISnapshotPane::toSnapshotItem(QTreeWidgetItem::child(iIndex)) : 0;
+}
+
 QVariant UISnapshotItem::data(int iColumn, int iRole) const
 {
     switch (iRole)
@@ -307,7 +334,7 @@ void UISnapshotItem::recache()
                    UISnapshotPane::tr("Current State", "Current State (Unmodified)"));
         m_strDesc = m_fCurrentStateModified ?
                     UISnapshotPane::tr("The current state differs from the state stored in the current snapshot") :
-                    parent() != 0 ?
+                    QTreeWidgetItem::parent() != 0 ?
                     UISnapshotPane::tr("The current state is identical to the state stored in the current snapshot") :
                     QString();
     }
