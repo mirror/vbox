@@ -205,7 +205,7 @@ start()
         $MODPROBE vboxguest >/dev/null 2>&1 || {
             setup
             $MODPROBE vboxguest >/dev/null 2>&1 || {
-                "$lib_path/$PACKAGE/vboxadd-x11" cleanup 2>> "${LOG}"
+                "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
                 fail "modprobe vboxguest failed"
             }
         }
@@ -228,7 +228,7 @@ start()
     }
 
     # Put the X.Org driver in place.  This is harmless if it is not needed.
-    "$lib_path/$PACKAGE/vboxadd-x11" setup 2>> "${LOG}"
+    "${INSTALL_DIR}/init/vboxadd-x11" setup 2>> "${LOG}"
     # Install the guest OpenGL drivers.  For now we don't support
     # multi-architecture installations
     rm -f /etc/ld.so.conf.d/00vboxvideo.conf
@@ -382,8 +382,6 @@ extra_setup()
 
     # Put mount.vboxsf in the right place
     ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
-    # And an rc file to re-build the kernel modules and re-set-up the X server.
-    ln -sf "$lib_path/$PACKAGE/vboxadd" /sbin/rcvboxadd
     # And a post-installation script for rebuilding modules when a new kernel
     # is installed.
     mkdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d
@@ -467,11 +465,10 @@ cleanup()
     done
 
     # Clean-up X11-related bits
-    "$lib_path/$PACKAGE/vboxadd-x11" cleanup 2>> "${LOG}"
+    "${INSTALL_DIR}/init/vboxadd-x11" cleanup 2>> "${LOG}"
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
-    rm /sbin/rcvboxadd 2>/dev/null
     rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
     rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
     rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null

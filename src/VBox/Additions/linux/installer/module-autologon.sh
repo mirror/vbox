@@ -104,7 +104,7 @@ mod_autologon_install_ex()
     fi
 
     # Link to required greeter files into $greeter_dir.
-    add_symlink "$INSTALLATION_DIR/share/VBoxGuestAdditions/vbox-greeter.desktop" "$greeter_dir/vbox-greeter.desktop"
+    add_symlink "$INSTALLATION_DIR/other/vbox-greeter.desktop" "$greeter_dir/vbox-greeter.desktop"
 
     # Backup and activate greeter config.
     if ! test -f "$lightdm_config.vbox-backup"; then

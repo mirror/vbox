@@ -31,7 +31,7 @@
 PATH=$PATH:/bin:/sbin:/usr/sbin
 LOG="/var/log/vboxadd-install-x11.log"
 CONFIG_DIR="/var/lib/VBoxGuestAdditions"
-CONFIG="config"
+CONFIG="${CONFIG_DIR}/config"
 MODPROBE=/sbin/modprobe
 
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
@@ -169,9 +169,16 @@ restart()
 
 setup()
 {
+    if test -r "${CONFIG}"; then
+      . "${CONFIG}"
+    else
+      fail "Configuration file ${CONFIG} not found"
+    fi
+    test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+      fail "Configuration file ${CONFIG} not complete"
     lib_dir="$LIB/VBoxGuestAdditions"
-    share_dir="/usr/share/VBoxGuestAdditions"
-    test -x "$lib_dir" -a -x "$share_dir" ||
+    res_dir="${INSTALL_DIR}/other"
+    test -x "$lib_dir" -a -x "$res_dir" ||
         fail "Invalid Guest Additions configuration found."
     # By default we want to configure X
     dox11config="true"
@@ -380,7 +387,7 @@ setup()
         test "$system" = "debian" -a -d /usr/share/xserver-xorg/pci &&
         {
             rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
-            ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
+            ln -s "$res_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
             test -n "$automouse" && setupxorgconf=""
         }
 
@@ -393,7 +400,7 @@ setup()
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga "$i"
+                        "$res_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga "$i"
                     fi
                     configured="true"
                 fi
@@ -406,7 +413,7 @@ setup()
             nobak_cfg="`expr "${main_cfg}" : '\([^.]*\)'`.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga --noBak "$main_cfg"
+                "$res_dir/x11config.sh" $autokeyboard $automouse $nopsaux $vmsvga --noBak "$main_cfg"
                 touch "${nobak_cfg}"
             fi
         fi
@@ -429,11 +436,11 @@ EOF
         # Install selinux policy for Fedora 7 and 8 to allow the X server to
         # open device files
         Fedora\ release\ 7* | Fedora\ release\ 8* )
-            semodule -i "$share_dir/vbox_x11.pp" > /dev/null 2>&1
+            semodule -i "$res_dir/vbox_x11.pp" > /dev/null 2>&1
             ;;
         # Similar for the accelerated graphics check on Fedora 15
         Fedora\ release\ 15* )
-            semodule -i "$share_dir/vbox_accel.pp" > /dev/null 2>&1
+            semodule -i "$res_dir/vbox_accel.pp" > /dev/null 2>&1
             ;;
     esac
 
@@ -452,9 +459,9 @@ EOF
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
 
     # And set up VBoxClient to start when the X session does
-    install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
+    install_x11_startup_app "$res_dir/98vboxadd-xclient" "$res_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
         fail "See the log file $LOG for more information."
-    ln -s "$lib_dir/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
+    ln -s "$res_dir/98vboxadd-xclient" /usr/bin/VBoxClient-all 2>/dev/null
 }
 
 cleanup()
