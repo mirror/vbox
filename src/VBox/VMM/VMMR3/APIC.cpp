@@ -354,7 +354,7 @@ VMMR3_INT_DECL(void) APICR3InitIpi(PVMCPU pVCpu)
 
 
 /**
- * Sets whether Hyper-V compatibile x2APIC mode is enabled or not.
+ * Sets whether Hyper-V compatibility mode (MSR interface) is enabled or not.
  *
  * @param   pVM                 The cross context VM structure.
  * @param   fHyperVCompatMode   Whether the compatibility mode is enabled.
@@ -364,6 +364,10 @@ VMMR3_INT_DECL(void) APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
     Assert(pVM);
     PAPIC pApic = VM_TO_APIC(pVM);
     pApic->fHyperVCompatMode = fHyperVCompatMode;
+
+    int rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
+    AssertRC(rc);
+    RT_NOREF(rc);
 }
 
 
