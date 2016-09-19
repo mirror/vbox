@@ -42,8 +42,8 @@ VBOX_LNX_ADD_INST_BIN_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)bin/
 VBOX_LNX_ADD_INST_SBIN_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)sbin/
 VBOX_LNX_ADD_INST_LIB_DIR         := $(VBOX_LNX_ADD_INST_OUT_DIR)lib/
 VBOX_LNX_ADD_INST_OTHER_DIR       := $(VBOX_LNX_ADD_INST_OUT_DIR)other/
-VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
-VBOX_LNX_ADD_INST_KMOD_DIR_MOD    := $(VBOX_LNX_ADD_INST_OUT_DIR)src/vboxguest-$(VBOX_VERSION_STRING)/
+VBOX_LNX_ADD_INST_KMOD_DIR_BASE   := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
+VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)vboxguest-$(VBOX_VERSION_STRING)/
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
 VBOX_LNX_ADD_ARCH_INST_DIRS       := \
@@ -51,8 +51,8 @@ VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 	$(VBOX_LNX_ADD_INST_BIN_DIR) \
 	$(VBOX_LNX_ADD_INST_SBIN_DIR) \
 	$(VBOX_LNX_ADD_INST_LIB_DIR) \
+	$(VBOX_LNX_ADD_INST_KMOD_DIR_BASE) \
 	$(VBOX_LNX_ADD_INST_KMOD_DIR) \
-	$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD) \
 	$(VBOX_LNX_ADD_INST_INIT_DIR)
 
 # Installation paths for debug symbols
@@ -152,8 +152,8 @@ VBOX_LNX_ADD_STRIP_OBJ = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_LNX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile build_in_tmp)
-VBOX_LNX_ADD_KMOD_DIRS =  $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, vboxguest/ vboxsf/ vboxvideo/)
+VBOX_LNX_ADD_KMOD_FILES = Makefile build_in_tmp
+VBOX_LNX_ADD_KMOD_DIRS =  vboxguest/ vboxsf/ vboxvideo/
 
 VBOX_LNX_ADD_INIT = \
 	vboxadd \
@@ -271,7 +271,7 @@ endif
 
 # pattern rules for copying the VBOX_LNX_ADD_KMOD files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : \
+		$(VBOX_LNX_ADD_INST_KMOD_DIR)% : \
 		$(PATH_STAGE_BIN)/additions/src/% \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*) \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*) \
@@ -281,11 +281,11 @@ $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS)): \
 		$(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_HEADER) \
 		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
 	$(call MSG_INST_DIR,$<,$@)
-	$(QUIET)$(RM) -Rf $(filter-out $(VBOX_LNX_ADD_INST_KMOD_DIR_MOD),$(wildcard $(VBOX_LNX_ADD_INST_KMOD_DIR)*/))
+	$(QUIET)$(RM) -Rf $(filter-out $(VBOX_LNX_ADD_INST_KMOD_DIR),$(wildcard $(VBOX_LNX_ADD_INST_KMOD_DIR_BASE)*/))
 	$(QUIET)$(CP) -RPf -- $< $@
 
 $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)): \
-		$(VBOX_LNX_ADD_INST_KMOD_DIR_MOD)% : \
+		$(VBOX_LNX_ADD_INST_KMOD_DIR)% : \
 		$(PATH_STAGE_BIN)/additions/src/% \
 		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
 	$(call MSG_INST_FILE,$<,$@)
