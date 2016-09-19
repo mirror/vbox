@@ -115,18 +115,16 @@ OTHER_CLEAN += \
 #
 # Files to install
 #
-VBOX_ADD_STRIP_BIN += \
-	VBoxControl
-
-VBOX_ADD_STRIP_BIN.linux += \
+VBOX_LNX_ADD_STRIP_BIN += \
+	VBoxControl \
 	VBoxClient
 
-VBOX_ADD_STRIP_SBIN += \
+VBOX_LNX_ADD_STRIP_SBIN += \
 	VBoxService \
 	$(if $(VBOX_WITH_LIGHTDM_GREETER),vbox-greeter)
 
 ifdef VBOX_WITH_CROGL
-VBOX_ADD_STRIP_LIB += \
+VBOX_LNX_ADD_STRIP_LIB += \
 	VBoxOGLarrayspu.so \
 	VBoxOGLcrutil.so \
 	VBoxOGLerrorspu.so \
@@ -137,7 +135,7 @@ VBOX_ADD_STRIP_LIB += \
 	VBoxEGL.so
 endif
 
-VBOX_ADD_STRIP_MOD.linux = \
+VBOX_LNX_ADD_STRIP_MOD = \
 	vboxmouse_drv_70.so \
 	vboxmouse_drv_71.so \
 	vboxmouse_drv_13.so \
@@ -148,32 +146,21 @@ VBOX_ADD_STRIP_MOD.linux = \
 	$(if $(VBOX_WITH_PAM),pam_vbox.so,) \
 	mount.vboxsf
 
-VBOX_ADD_MOD.linux = \
+VBOX_LNX_ADD_MOD = \
 	98vboxadd-xclient \
 	x11config.sh
 
-VBOX_ADD_STRIP_OBJ.linux = \
+VBOX_LNX_ADD_STRIP_OBJ = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile build_in_tmp)
-VBOX_ADD_KMOD_DIRS =  $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, vboxguest/ vboxsf/ vboxvideo/)
+VBOX_LNX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile build_in_tmp)
+VBOX_LNX_ADD_KMOD_DIRS =  $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, vboxguest/ vboxsf/ vboxvideo/)
 
-VBOX_ADD_INIT.linux = \
+VBOX_LNX_ADD_INIT = \
 	vboxadd \
 	vboxadd-service \
 	vboxadd-x11
-
-VBOX_LNX_ADD_STRIP_BIN = $(VBOX_ADD_STRIP_BIN) $(VBOX_ADD_STRIP_BIN.linux)
-VBOX_LNX_ADD_BIN       = $(VBOX_ADD_BIN) $(VBOX_ADD_BIN.linux)
-VBOX_LNX_ADD_STRIP_SBIN= $(VBOX_ADD_STRIP_SBIN) $(VBOX_ADD_STRIP_SBIN.linux)
-VBOX_LNX_ADD_STRIP_LIB = $(VBOX_ADD_STRIP_LIB) $(VBOX_ADD_STRIP_LIB.linux)
-VBOX_LNX_ADD_STRIP_MOD = $(VBOX_ADD_STRIP_MOD) $(VBOX_ADD_STRIP_MOD.linux)
-VBOX_LNX_ADD_MOD       = $(VBOX_ADD_MOD) $(VBOX_ADD_MOD.linux)
-VBOX_LNX_ADD_STRIP_OBJ = $(VBOX_ADD_STRIP_OBJ) $(VBOX_ADD_STRIP_OBJ.linux)
-VBOX_LNX_ADD_KMOD_FILES= $(VBOX_ADD_KMOD_FILES)
-VBOX_LNX_ADD_KMOD_DIRS = $(VBOX_ADD_KMOD_DIRS)
-VBOX_LNX_ADD_INIT      = $(VBOX_ADD_INIT) $(VBOX_ADD_INIT.linux)
 
 #
 # All the files that go into the archive
@@ -187,8 +174,7 @@ VBOX_LNX_ADD_INST_FILES := \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_MOD)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_STRIP_OBJ)) \
 	$(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)) \
-	$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT))
+	$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT))
 
 ## @todo figure how to clean these... Or maybe rewrite everything here to somehow use install targets?
 VBOX_LNX_ADD_INST_DIRS := \
@@ -316,15 +302,6 @@ $(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
 	$(QUIET)$(RM) -Rf $@
 	$(QUIET)$(CP) -RPf -- $< $@
 
-# pattern rule for copying the VBOX_LNX_ADD_INIT files to the module directory
-$(addprefix $(VBOX_LNX_ADD_INST_MOD_DIR),$(VBOX_LNX_ADD_INIT)): \
-		$(VBOX_LNX_ADD_INST_MOD_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
-	$(call MSG_INST_FILE,$<,$@)
-# Remove target directories first, otherwise the behaviour of cp will not be
-# what we want if it already exists. See the cp manual page for more details.
-	$(QUIET)$(RM) -Rf $@
-	$(QUIET)$(CP) -RPf -- $< $@
-
 INSTALLS += GuestDrivers-src
 GuestDrivers-src_INST = $(INST_ADDITIONS)src/
 GuestDrivers-src_MODE = a+r,u+w
@@ -366,10 +343,7 @@ LnxAdd-scripts_INSTTYPE = stage
 LnxAdd-scripts_SOURCES  = \
 	$(VBOX_REL_LNX_ADD_INST)deffiles
 LnxAdd-scripts_EXEC_SOURCES  = \
-	$(VBOX_REL_LNX_INST_SRC)routines.sh \
-	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
-	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \
-	$(VBOX_REL_LNX_ADD_INST)vboxadd-x11.sh=>vboxadd-x11
+	$(VBOX_REL_LNX_INST_SRC)routines.sh
 
 ifdef VBOX_WITH_LIGHTDM_GREETER_PACKING
  LnxAdd-scripts_EXEC_SOURCES += \
