@@ -370,6 +370,11 @@ int rcp_parse(struct rcp_state *state, const char *filename)
             while ((tok = getToken(NULL, &s)) && !NO_VALUE(tok))
             {
                 i = state->rcps_num_searchlist;
+                if (RT_UNLIKELY(i >= RCPS_MAX_SEARCHLIST))
+                {
+                    LogRel(("NAT: resolv.conf: too many search domains, ignoring %s\n", tok));
+                    continue;
+                }
 
                 Log2(("NAT: resolv.conf: saving search @%td,+%zu\n",
                       pszSearchBuf - state->rcps_searchlist_buffer, cbSearchBuf));
