@@ -153,8 +153,11 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
 {
     LogFlow(("VBoxSampleDevice::VBoxDevicesRegister: u32Version=%#x pCallbacks->u32Version=%#x\n", u32Version, pCallbacks->u32Version));
 
+    AssertLogRelMsgReturn(u32Version >= VBOX_VERSION,
+                          ("VirtualBox version %#x, expected %#x or higher\n", u32Version, VBOX_VERSION),
+                          VERR_VERSION_MISMATCH);
     AssertLogRelMsgReturn(pCallbacks->u32Version == PDM_DEVREG_CB_VERSION,
-                          ("%#x, expected %#x\n", pCallbacks->u32Version, PDM_DEVREG_CB_VERSION),
+                          ("callback version %#x, expected %#x\n", pCallbacks->u32Version, PDM_DEVREG_CB_VERSION),
                           VERR_VERSION_MISMATCH);
 
     /* Two devices in this module. */

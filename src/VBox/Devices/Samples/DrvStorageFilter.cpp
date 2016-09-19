@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_MISC
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
+#include <VBox/version.h>
 #include <VBox/log.h>
 
 #include <iprt/uuid.h>
@@ -413,8 +414,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PPDMDRVREGCB pCallbacks, uint32_t
     LogFlow(("VBoxSampleDriver::VBoxDriversRegister: u32Version=%#x pCallbacks->u32Version=%#x\n",
              u32Version, pCallbacks->u32Version));
 
+    AssertLogRelMsgReturn(u32Version >= VBOX_VERSION,
+                          ("VirtualBox version %#x, expected %#x or higher\n", u32Version, VBOX_VERSION),
+                          VERR_VERSION_MISMATCH);
     AssertLogRelMsgReturn(pCallbacks->u32Version == PDM_DRVREG_CB_VERSION,
-                          ("%#x, expected %#x\n", pCallbacks->u32Version, PDM_DRVREG_CB_VERSION),
+                          ("callback version %#x, expected %#x\n", pCallbacks->u32Version, PDM_DRVREG_CB_VERSION),
                           VERR_VERSION_MISMATCH);
 
     return pCallbacks->pfnRegister(pCallbacks, &g_DrvStorageFilter);
