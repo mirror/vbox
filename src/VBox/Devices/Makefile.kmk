@@ -27,6 +27,9 @@ endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Input/testcase/Makefile.kmk
+ifdef VBOX_WITH_TESTCASES
+ include $(PATH_SUB_CURRENT)/Samples/Makefile.kmk
+endif
 if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
 else if defined(VBOX_WITH_PXE_ROM)
@@ -546,7 +549,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBOX_DEFS   += VBOX_WITH_AUDIO_AC97_CALLBACKS
   VBOX_DEFS   += VBOX_WITH_AUDIO_HDA_CALLBACKS
  endif
- 
+
  VBoxDD_SOURCES         += \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \

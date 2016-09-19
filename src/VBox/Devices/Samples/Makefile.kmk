@@ -24,7 +24,6 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 DLLS += VBoxSampleDevice
 VBoxSampleDevice_TEMPLATE = VBOXR3
-VBoxSampleDevice_INSTTYPE = none
 VBoxSampleDevice_SOURCES  = \
 	VBoxSampleDevice.cpp \
 	DevPlayground.cpp
@@ -38,7 +37,6 @@ VBoxSampleDevice_LIBS     = \
 #
 DLLS += VBoxSampleDriver
 VBoxSampleDriver_TEMPLATE = VBOXR3
-VBoxSampleDriver_INSTTYPE = none
 VBoxSampleDriver_SOURCES  = \
 	DrvStorageFilter.cpp
 VBoxSampleDriver_LIBS     = \
