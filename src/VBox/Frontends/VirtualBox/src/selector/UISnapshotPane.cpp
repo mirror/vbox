@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QApplication>
 # include <QDateTime>
 # include <QHeaderView>
@@ -51,6 +52,42 @@
 #if QT_VERSION < 0x050000
 # include <QWindowsStyle>
 #endif /* QT_VERSION < 0x050000 */
+
+
+/** QAccessibleWidget extension used as an accessibility interface for Snapshot tree. */
+class UIAccessibilityInterfaceForUISnapshotTree : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating Snapshot tree accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UISnapshotTree"))
+            return new UIAccessibilityInterfaceForUISnapshotTree(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUISnapshotTree(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::List)
+    {}
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+private:
+
+    /** Returns corresponding Snapshot tree. */
+    UISnapshotTree *tree() const { return qobject_cast<UISnapshotTree*>(widget()); }
+};
 
 
 /** QTreeWidgetItem subclass for snapshots items. */
@@ -174,6 +211,47 @@ public:
     /** Returns the child snapshot item with @a iIndex. */
     UISnapshotItem *childSnapshotItem(int iIndex) const;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIAccessibilityInterfaceForUISnapshotTree implementation.                                                              *
+*********************************************************************************************************************************/
+
+int UIAccessibilityInterfaceForUISnapshotTree::childCount() const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+
+    /* Return the number of children: */
+    return tree()->childCount();
+}
+
+QAccessibleInterface *UIAccessibilityInterfaceForUISnapshotTree::child(int iIndex) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+    /* Make sure index is valid: */
+    // WORKAROUND:
+    // Usually I would assert here, but Qt5 accessibility code has
+    // a hard-coded architecture for a tree-views which we do not like
+    // but have to live with and this architecture enumerates children
+    // of all levels as children of level 0, so Qt5 can try to address
+    // our interface with index which surely out of bounds by our laws.
+    if (iIndex < 0 || iIndex >= childCount())
+        return 0;
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(tree()->childSnapshotItem(iIndex));
+}
+
+QString UIAccessibilityInterfaceForUISnapshotTree::text(QAccessible::Text /* enmTextRole */) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), QString());
+
+    /* Return tree tool-tip: */
+    return tree()->toolTip();
+}
 
 
 /*********************************************************************************************************************************
@@ -504,6 +582,9 @@ void UISnapshotItem::recacheToolTip()
 UISnapshotTree::UISnapshotTree(QWidget *pParent)
     : QTreeWidget(pParent)
 {
+    /* Install Snapshot tree accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUISnapshotTree::pFactory);
+
     /* No header: */
     header()->hide();
     /* All columns as one: */
