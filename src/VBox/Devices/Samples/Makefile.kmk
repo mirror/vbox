@@ -26,7 +26,8 @@ DLLS += VBoxSampleDevice
 VBoxSampleDevice_TEMPLATE = VBOXR3
 VBoxSampleDevice_INSTTYPE = none
 VBoxSampleDevice_SOURCES  = \
-	VBoxSampleDevice.cpp
+	VBoxSampleDevice.cpp \
+	DevPlayground.cpp
 VBoxSampleDevice_LIBS     = \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM) \
