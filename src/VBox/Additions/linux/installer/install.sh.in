@@ -28,9 +28,7 @@ PACKAGE="VBoxGuestAdditions"
 PACKAGE_NAME="VirtualBox Guest Additions"
 UNINSTALL="uninstall.sh"
 ROUTINES="routines.sh"
-ARCH="_ARCH_"
 INSTALLATION_VER="_VERSION_"
-INSTALLATION_REV="_SVNREV_"
 BUILD_TYPE="_BUILDTYPE_"
 USERNAME="_USERNAME_"
 UNINSTALL_SCRIPTS="vboxadd-x11 vboxvfs vboxadd-timesync vboxadd-service vboxadd"
@@ -40,7 +38,7 @@ CONFIG_DIR="/var/lib/$PACKAGE"
 CONFIG="config"
 CONFIG_FILES="filelist"
 SELF=$1
-LOGFILE="/var/log/$PACKAGE.log"
+LOGFILE="/var/log/vboxadd-install.log"
 
 . "./$ROUTINES"
 
@@ -403,7 +401,6 @@ INSTALL_MODULES_LIST='$INSTALLATION_MODULES_LIST'
 UNINSTALLER='$UNINSTALL'
 # Package version
 INSTALL_VER='$INSTALLATION_VER'
-INSTALL_REV='$INSTALLATION_REV'
 # Build type and user name for logging purposes
 BUILD_TYPE='$BUILD_TYPE'
 USERNAME='$USERNAME'
@@ -435,7 +432,7 @@ cat > $INSTALLATION_DIR/$UNINSTALL << EOF
 # Auto-generated uninstallation file
 
 PATH=\$PATH:/bin:/sbin:/usr/sbin
-LOGFILE="/var/log/$PACKAGE-uninstall.log"
+LOGFILE="/var/log/vboxadd-uninstall.log"
 
 # Read routines.sh
 if ! test -r "$INSTALLATION_DIR/$ROUTINES"; then
@@ -460,8 +457,7 @@ fi
 test -r "$CONFIG_DIR/$CONFIG_FILES" || abort "Required file $CONFIG_FILES not found.  Aborting..."
 
 # Stop and clean up all services
-for i in "$INSTALLATION_DIR/init/vboxadd-x11" "$INSTALLATION_DIR/init/vboxadd-service" \
-    "$INSTALLATION_DIR/init/vboxadd"; do
+for i in "$INSTALLATION_DIR/init/vboxadd-service" "$INSTALLATION_DIR/init/vboxadd"; do
     if test -r "\$i"; then
         stop_init_script "\`basename "\$i"\`" 2>> "${LOGFILE}"
         test -z "\${NO_CLEANUP}" && grep -q '^# *cleanup_script *$' "\${i}" && "\${i}" cleanup 2>> "\$LOGFILE"
@@ -532,4 +528,3 @@ chmod 0755 $INSTALLATION_DIR/$UNINSTALL
 echo $INSTALLATION_DIR/$UNINSTALL >> "$CONFIG_DIR/$CONFIG_FILES"
 test -n "$REMOVE_INSTALLATION_DIR" &&
   echo "$INSTALLATION_DIR/" >> "$CONFIG_DIR/$CONFIG_FILES"
-
