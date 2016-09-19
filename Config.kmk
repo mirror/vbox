@@ -2543,6 +2543,7 @@ VBOX_PYLINT_FIGURE_VERSION = $(shell $(1) --version 2> /dev/null \
 
 # Test C and C++ files.
 $(PATH_OUT)/DynamicConfig.c $(PATH_OUT)/DynamicConfig.cpp:
+	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(APPEND) -tn "$@" "int foobar(void)" "{" "    return 42;" "}" ""
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
