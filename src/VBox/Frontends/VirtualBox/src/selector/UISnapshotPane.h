@@ -54,6 +54,11 @@ class UISnapshotPane : public QIWithRetranslateUI<QWidget>
 
 public:
 
+    /** Casts QTreeWidgetItem to UISnapshotItem if possible. */
+    static UISnapshotItem *toSnapshotItem(QTreeWidgetItem *pItem);
+    /** Casts const QTreeWidgetItem to const UISnapshotItem if possible. */
+    static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
+
     /** Constructs snapshot pane passing @a pParent to the base-class. */
     UISnapshotPane(QWidget *pParent);
 
@@ -140,11 +145,6 @@ private:
 
     /** Searches for smallest snapshot age starting with @a pItem as parent. */
     SnapshotAgeFormat traverseSnapshotAge(QTreeWidgetItem *pItem) const;
-
-    /** Casts QTreeWidgetItem to UISnapshotItem if possible. */
-    static UISnapshotItem *toSnapshotItem(QTreeWidgetItem *pItem);
-    /** Casts const QTreeWidgetItem to const UISnapshotItem if possible. */
-    static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
 
     /** Holds the machine COM wrapper. */
     CMachine         m_comMachine;
