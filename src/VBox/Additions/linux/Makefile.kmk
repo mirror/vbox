@@ -291,15 +291,6 @@ $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_FILES)): \
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(CP) -RPf -- $< $@
 
-# pattern rule for copying the VBOX_LNX_ADD_INIT files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INST_INIT_DIR),$(VBOX_LNX_ADD_INIT)): \
-		$(VBOX_LNX_ADD_INST_INIT_DIR)% : $(PATH_STAGE_BIN)/additions/% | $$(dir $$@)
-	$(call MSG_INST_FILE,$<,$@)
-# Remove target directories first, otherwise the behaviour of cp will not be
-# what we want if it already exists. See the cp manual page for more details.
-	$(QUIET)$(RM) -Rf $@
-	$(QUIET)$(CP) -RPf -- $< $@
-
 INSTALLS += GuestDrivers-src
 GuestDrivers-src_INST = $(INST_ADDITIONS)src/
 GuestDrivers-src_MODE = a+r,u+w
@@ -353,10 +344,10 @@ endif
 # And the init scripts
 #
 INSTALLS += LnxAdd-init-scripts
-LnxAdd-init-scripts_INST = $(INST_ADDITIONS)
+LnxAdd-init-scripts_INST         = $(VBOX_LNX_ADD_INST_INIT_DIR)
+LnxAdd-init-scripts_INSTTYPE     = stage
 LnxAdd-init-scripts_EXEC_SOURCES = \
 	$(foreach i,$(VBOX_LNX_ADD_INIT), installer/$(i).sh=>$(i))
-
 
 # this file needs editing before it can be included in the generic installer.
 $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
