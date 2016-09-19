@@ -159,6 +159,11 @@ public:
 
     /** Constructs snapshot tree passing @a pParent to the base-class. */
     UISnapshotTree(QWidget *pParent);
+
+    /** Returns the number of children. */
+    int childCount() const;
+    /** Returns the child snapshot item with @a iIndex. */
+    UISnapshotItem *childSnapshotItem(int iIndex) const;
 };
 
 
@@ -494,6 +499,18 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
     connect(this, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
 // #endif
 #endif /* QT_VERSION < 0x050000 */
+}
+
+int UISnapshotTree::childCount() const
+{
+    /* Return the number of children: */
+    return invisibleRootItem()->childCount();
+}
+
+UISnapshotItem *UISnapshotTree::childSnapshotItem(int iIndex) const
+{
+    /* Return the child snapshot item with iIndex if any: */
+    return invisibleRootItem()->child(iIndex) ? UISnapshotPane::toSnapshotItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
 
