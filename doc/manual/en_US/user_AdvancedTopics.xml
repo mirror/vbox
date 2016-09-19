@@ -278,7 +278,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       as part of the Guest Additions but it is not installed and/or activated
       on the guest OS by default. In order to install it, it has to be copied
       from
-      <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/lib/VBoxGuestAdditions/</computeroutput>
+      <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/other/</computeroutput>
       to the security modules directory, usually
       <computeroutput>/lib/security/</computeroutput> on 32-bit guest Linuxes
       or <computeroutput>/lib64/security/</computeroutput> on 64-bit ones.
@@ -433,7 +433,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
         <para>For manual or postponed installation, the
         <computeroutput>vbox-greeter.desktop</computeroutput>
         file has to be copied from
-        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/shared/VBoxGuestAdditions/</computeroutput>
+        <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/other/</computeroutput>
         to the <computeroutput>xgreeters</computeroutput> directory, usually
         <computeroutput>/usr/share/xgreeters/</computeroutput>.
         Please refer to your guest OS documentation for the correct LightDM
@@ -638,7 +638,7 @@ greeter-session=vbox-greeter</screen></para>
         </itemizedlist> By default these drivers can be found in the
       directory</para>
 
-      <para><computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/lib/VBoxGuestAdditions</computeroutput></para>
+      <para><computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/other/</computeroutput></para>
 
       <para>and the correct versions for the X server are symbolically linked
       into the X.Org driver directories.</para>
