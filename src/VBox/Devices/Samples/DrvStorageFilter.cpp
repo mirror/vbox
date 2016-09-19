@@ -20,8 +20,8 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MISC
-#include <VBox/vmm/pdmifs.h>
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/log.h>
 
 #include <iprt/uuid.h>
