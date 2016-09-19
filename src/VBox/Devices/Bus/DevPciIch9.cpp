@@ -872,7 +872,8 @@ static void ich9pciUpdateMappings(PCIDevice* pDev)
         if (iRegionSize == 0)
             continue;
 
-        bool f64Bit = (pRegion->type & PCI_ADDRESS_SPACE_BAR64) != 0;
+        bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                      == PCI_ADDRESS_SPACE_BAR64;
 
         if (pRegion->type & PCI_ADDRESS_SPACE_IO)
         {
@@ -1627,7 +1628,7 @@ static void ich9pciSetRegionAddress(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint
 
     /* Read memory type first. */
     uint8_t uResourceType = ich9pciConfigRead(pGlobals, uBus, uDevFn, uReg, 1);
-    bool    f64Bit = (uResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+    bool    f64Bit =    (uResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                      == PCI_ADDRESS_SPACE_BAR64;
 
     Log(("Set region address: %02x:%02x.%d region %d address=%RX64%s\n",
@@ -1769,7 +1770,8 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                    are cleared. */
                 uint8_t u8ResourceType = ich9pciConfigRead(pGlobals, uBus, uDevFn, u32Address, 1);
 
-                bool f64Bit = (u8ResourceType & PCI_ADDRESS_SPACE_BAR64) != 0;
+                bool f64Bit =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                              == PCI_ADDRESS_SPACE_BAR64;
                 bool fIsPio = ((u8ResourceType & PCI_COMMAND_IOACCESS) == PCI_COMMAND_IOACCESS);
                 uint64_t cbRegSize64 = 0;
 
@@ -2455,7 +2457,8 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
                     const char * pszDesc;
                     char szDescBuf[128];
 
-                    bool f64Bit = !!(pRegion->type & PCI_ADDRESS_SPACE_BAR64);
+                    bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                                  == PCI_ADDRESS_SPACE_BAR64;
                     if (pRegion->type & PCI_ADDRESS_SPACE_IO)
                     {
                         pszDesc = "IO";
