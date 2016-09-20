@@ -4502,13 +4502,14 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                             atapiDoTransfer(pAhciPort, pAhciReq, cbMax, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS);
                             break;
                         default:
-                            goto error_cmd;
+                            atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                            break;
                     }
                     break;
                 case SCSI_PAGECONTROL_CHANGEABLE:
-                    goto error_cmd;
                 case SCSI_PAGECONTROL_DEFAULT:
-                    goto error_cmd;
+                    atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                    break;
                 default:
                 case SCSI_PAGECONTROL_SAVED:
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED);
@@ -4759,7 +4760,6 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                     atapiDoTransfer(pAhciPort, pAhciReq, cbMax, ATAFN_SS_ATAPI_READ_TOC_RAW);
                     break;
                 default:
-                  error_cmd:
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                     break;
             }
@@ -4839,28 +4839,34 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
     uint32_t cSectors, iATAPILBA;
     uint32_t cbTransfer = 0;
     AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    bool fSendCmd = false;
 
     pbPacket = pAhciReq->aATAPICmd;
     switch (pbPacket[0])
     {
         case SCSI_BLANK:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_CLOSE_TRACK_SESSION:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_ERASE_10:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d\n", iATAPILBA));
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_FORMAT_UNIT:
             cbTransfer = pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8); /* use ATAPI transfer length */
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_GET_CONFIGURATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             if (ASMAtomicReadU32(&pAhciPort->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
@@ -4870,40 +4876,52 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 break;
             }
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_GET_PERFORMANCE:
             cbTransfer = pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8); /* use ATAPI transfer length */
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_INQUIRY:
             cbTransfer = ataBE2H_U16(pbPacket + 3);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_LOAD_UNLOAD_MEDIUM:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_MECHANISM_STATUS:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_MODE_SELECT_10:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_MODE_SENSE_10:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_PAUSE_RESUME:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_PLAY_AUDIO_10:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_PLAY_AUDIO_12:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_PLAY_AUDIO_MSF:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL:
             /** @todo do not forget to unlock when a VM is shut down */
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_10:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U16(pbPacket + 7);
@@ -4911,7 +4929,8 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_12:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U32(pbPacket + 6);
@@ -4919,19 +4938,23 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_BUFFER:
             cbTransfer = ataBE2H_U24(pbPacket + 6);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_BUFFER_CAPACITY:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_CAPACITY:
             cbTransfer = 8;
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_CD:
         case SCSI_READ_CD_MSF:
         {
@@ -4983,38 +5006,47 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 cbTransfer = cSectors * pAhciReq->cbATAPISector;
             }
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         }
         case SCSI_READ_DISC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_DVD_STRUCTURE:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_FORMAT_CAPACITIES:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_SUBCHANNEL:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_TOC_PMA_ATIP:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_READ_TRACK_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_REPAIR_TRACK:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_REPORT_KEY:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_REQUEST_SENSE:
             cbTransfer = pbPacket[4];
             if ((pAhciPort->abATAPISense[2] & 0x0f) != SCSI_SENSE_NONE)
@@ -5025,51 +5057,68 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 break;
             }
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_RESERVE_TRACK:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SCAN:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEEK_10:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEND_CUE_SHEET:
             cbTransfer = ataBE2H_U24(pbPacket + 6);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEND_DVD_STRUCTURE:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEND_EVENT:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEND_KEY:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SEND_OPC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SET_CD_SPEED:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SET_READ_AHEAD:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SET_STREAMING:
             cbTransfer = ataBE2H_U16(pbPacket + 9);
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_START_STOP_UNIT:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_STOP_PLAY_SCAN:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_SYNCHRONIZE_CACHE:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_TEST_UNIT_READY:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_VERIFY_10:
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_WRITE_10:
         case SCSI_WRITE_AND_VERIFY_10:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
@@ -5081,7 +5130,8 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_WRITE_12:
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cSectors = ataBE2H_U32(pbPacket + 6);
@@ -5092,7 +5142,8 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
             enmTxDir = AHCITXDIR_WRITE;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_WRITE_BUFFER:
             switch (pbPacket[1] & 0x1f)
             {
@@ -5108,13 +5159,15 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 default:
                     cbTransfer = ataBE2H_U16(pbPacket + 6);
                     enmTxDir = AHCITXDIR_WRITE;
-                    goto sendcmd;
+                    fSendCmd = true;
+                    break;
             }
             break;
         case SCSI_REPORT_LUNS: /* Not part of MMC-3, but used by Windows. */
             cbTransfer = ataBE2H_U32(pbPacket + 6);
             enmTxDir = AHCITXDIR_READ;
-            goto sendcmd;
+            fSendCmd = true;
+            break;
         case SCSI_REZERO_UNIT:
             /* Obsolete command used by cdrecord. What else would one expect?
              * This command is not sent to the drive, it is handled internally,
@@ -5127,14 +5180,17 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             LogRel(("AHCI: LUN#%d: passthrough unimplemented for command %#x\n", pAhciPort->iLUN, pbPacket[0]));
             atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
-        sendcmd:
-            /* Send a command to the drive, passing data in/out as required. */
-            Log2(("ATAPI PT: max size %d\n", cbTransfer));
-            if (cbTransfer == 0)
-                enmTxDir = AHCITXDIR_NONE;
-            pAhciReq->enmTxDir = enmTxDir;
-            pAhciReq->cbTransfer = cbTransfer;
-            atapiDoTransfer(pAhciPort, pAhciReq, cbTransfer, ATAFN_SS_ATAPI_PASSTHROUGH);
+    }
+
+    if (fSendCmd)
+    {
+        /* Send a command to the drive, passing data in/out as required. */
+        Log2(("ATAPI PT: max size %d\n", cbTransfer));
+        if (cbTransfer == 0)
+            enmTxDir = AHCITXDIR_NONE;
+        pAhciReq->enmTxDir = enmTxDir;
+        pAhciReq->cbTransfer = cbTransfer;
+        atapiDoTransfer(pAhciPort, pAhciReq, cbTransfer, ATAFN_SS_ATAPI_PASSTHROUGH);
     }
 
     return AHCITXDIR_NONE;
