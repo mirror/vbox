@@ -37,6 +37,9 @@
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioConverter.h>
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
+# include <AudioToolbox/AudioToolbox.h>
+#endif
 
 #if 0
 # include <iprt/file.h>
@@ -53,6 +56,11 @@
  * performant than using our own routines later down the road. */
 /** @todo Needs more investigation and testing first before enabling. */
 //# define VBOX_WITH_AUDIO_CA_CONVERTER
+
+#ifdef DEBUG_andy
+/** Enables support for Audio Queues. */
+# define VBOX_WITH_AUDIO_CA_QUEUES
+#endif
 
 #ifdef DEBUG_andy
 # undef  DEBUG_DUMP_PCM_DATA_PATH
@@ -87,6 +95,8 @@ typedef struct COREAUDIODEVICEDATA
     PDRVHOSTCOREAUDIO pDrv;
     /** The audio device ID of the currently used device (UInt32 typedef). */
     AudioDeviceID     deviceID;
+    /** The device' UUID. */
+    CFStringRef       UUID;
     /** List of attached (native) Core Audio streams attached to this device. */
     RTLISTANCHOR      lstStreams;
 } COREAUDIODEVICEDATA, *PCOREAUDIODEVICEDATA;
@@ -479,6 +489,22 @@ typedef struct COREAUDIOSTREAM
     PDRVHOSTCOREAUDIO       pDrv;
     /** The stream's direction. */
     PDMAUDIODIR             enmDir;
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+    /** The stream's thread handle for maintaining the audio queue. */
+    RTTHREAD                hThread;
+    /** Whether the stream is in a running (active) state or not.
+     *  For playback streams this means that audio data can be (or is being) played,
+     *  for capturing streams this means that audio data is being captured (if available). */
+    bool                    fRunning;
+    /** Thread shutdown indicator. */
+    bool                    fShutdown;
+    /** Critical section for serializing access between thread + callbacks. */
+    RTCRITSECT              CritSect;
+    /** The actual audio queue being used. */
+    AudioQueueRef           audioQueue;
+    /** The audio buffers which are used with the above audio queue. */
+    AudioQueueBufferRef     audioBuffer[2];
+#endif
     /** The audio unit for this stream. */
     COREAUDIOUNIT           Unit;
     /** Initialization status tracker. Used when some of the device parameters
@@ -501,12 +527,13 @@ static int coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCAS
 
 static int coreAudioDeviceRegisterCallbacks(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICE pDev);
 static int coreAudioDeviceUnregisterCallbacks(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICE pDev);
-static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID, PDRVHOSTCOREAUDIO pDrv);
+static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID, bool fIsInput, PDRVHOSTCOREAUDIO pDrv);
 
 static OSStatus coreAudioDevPropChgCb(AudioObjectID propertyID, UInt32 nAddresses, const AudioObjectPropertyAddress properties[], void *pvUser);
 static OSStatus coreAudioPlaybackCb(void *pvUser, AudioUnitRenderActionFlags *pActionFlags, const AudioTimeStamp *pAudioTS, UInt32 uBusID, UInt32 cFrames, AudioBufferList* pBufData);
 
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
 /**
  * Returns whether an assigned audio unit to a given stream is running or not.
  *
@@ -528,7 +555,7 @@ static bool coreAudioUnitIsRunning(PCOREAUDIOSTREAM pStream)
 
     return (uFlag >= 1);
 }
-
+#endif /* VBOX_WITH_AUDIO_CA_QUEUES */
 
 #ifdef VBOX_WITH_AUDIO_CA_CONVERTER
 /**
@@ -665,7 +692,7 @@ static int coreAudioDevicesEnumerate(PDRVHOSTCOREAUDIO pThis, PDMAUDIODIR enmUsa
             /* Init backend-specific device data. */
             PCOREAUDIODEVICEDATA pDevData = (PCOREAUDIODEVICEDATA)pDev->pvData;
             AssertPtr(pDevData);
-            coreAudioDeviceDataInit(pDevData, pDevIDs[i], pThis);
+            coreAudioDeviceDataInit(pDevData, pDevIDs[i], enmUsage == PDMAUDIODIR_IN, pThis);
 
             /* Check if the device is valid. */
             AudioDeviceID curDevID = pDevData->deviceID;
@@ -882,7 +909,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
 
                     PCOREAUDIODEVICEDATA pDevDstData = (PCOREAUDIODEVICEDATA)pDevDst->pvData;
                     AssertPtr(pDevDstData);
-                    coreAudioDeviceDataInit(pDevDstData, pDevSrcInData->deviceID, pThis);
+                    coreAudioDeviceDataInit(pDevDstData, pDevSrcInData->deviceID, true /* fIsInput */, pThis);
 
                     RTStrCopy(pDevDst->szName, sizeof(pDevDst->szName), pDevSrcIn->szName);
 
@@ -949,7 +976,7 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
 
                         PCOREAUDIODEVICEDATA pDevDstData = (PCOREAUDIODEVICEDATA)pDevDst->pvData;
                         AssertPtr(pDevDstData);
-                        coreAudioDeviceDataInit(pDevDstData, pDevSrcOutData->deviceID, pThis);
+                        coreAudioDeviceDataInit(pDevDstData, pDevSrcOutData->deviceID, false /* fIsInput */, pThis);
 
                         RTStrCopy(pDevDst->szName, sizeof(pDevDst->szName), pDevSrcOut->szName);
 
@@ -1020,15 +1047,25 @@ static int coreAudioDeviceInit(PPDMAUDIODEVICE pDev, PDRVHOSTCOREAUDIO pDrv, PDM
  * @returns IPRT status code.
  * @param   pDevData            Device data structure to initialize.
  * @param   deviceID            Core Audio device ID to assign this structure to.
+ * @param   fIsInput            Whether this is an input device or not.
  * @param   pDrv                Driver instance to use.
  */
-static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID, PDRVHOSTCOREAUDIO pDrv)
+static void coreAudioDeviceDataInit(PCOREAUDIODEVICEDATA pDevData, AudioDeviceID deviceID, bool fIsInput, PDRVHOSTCOREAUDIO pDrv)
 {
     AssertPtrReturnVoid(pDevData);
     AssertPtrReturnVoid(pDrv);
 
     pDevData->deviceID = deviceID;
     pDevData->pDrv     = pDrv;
+
+    /* Get the device UUID. */
+    AudioObjectPropertyAddress propAdrDevUUID = { kAudioDevicePropertyDeviceUID,
+                                                  fIsInput ? kAudioDevicePropertyScopeInput : kAudioDevicePropertyScopeOutput,
+                                                  kAudioObjectPropertyElementMaster };
+    UInt32 uSize = sizeof(pDevData->UUID);
+    OSStatus err = AudioObjectGetPropertyData(pDevData->deviceID, &propAdrDevUUID, 0, NULL, &uSize, &pDevData->UUID);
+    if (err != noErr)
+        LogRel(("CoreAudio: Failed to retrieve device UUID for device %RU32 (%RI32)\n", deviceID, err));
 
     RTListInit(&pDevData->lstStreams);
 }
@@ -1223,11 +1260,14 @@ static int coreAudioStreamReinitEx(PDRVHOSTCOREAUDIO pThis,
         rc = coreAudioStreamInit(pCAStream, pThis, pDev);
         if (RT_SUCCESS(rc))
         {
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+            rc = coreAudioStreamInitQueue(pCAStream, pCfg /* pCfgReq */, NULL /* pCfgAcq */);
+#else
             if (pCAStream->enmDir == PDMAUDIODIR_IN)
                 rc = coreAudioStreamInitIn (pCAStream, pCfg /* pCfgReq */, NULL /* pCfgAcq */);
             else
                 rc = coreAudioStreamInitOut(pCAStream, pCfg /* pCfgReq */, NULL /* pCfgAcq */);
-
+#endif
             if (RT_SUCCESS(rc))
                 rc = coreAudioStreamControl(pCAStream->pDrv, pCAStream, PDMAUDIOSTREAMCMD_ENABLE);
 
@@ -1358,6 +1398,7 @@ static DECLCALLBACK(OSStatus) coreAudioConverterCb(AudioConverterRef            
 }
 #endif /* VBOX_WITH_AUDIO_CA_CONVERTER */
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
 /* Callback to feed audio input buffer. */
 static DECLCALLBACK(OSStatus) coreAudioCaptureCb(void                       *pvUser,
                                                  AudioUnitRenderActionFlags *pActionFlags,
@@ -1732,7 +1773,7 @@ static DECLCALLBACK(OSStatus) coreAudioCaptureCb(void                       *pvU
 
     return err;
 }
-
+#endif /* !VBOX_WITH_AUDIO_CA_QUEUES */
 
 /**
  * Initializes a Core Audio stream.
@@ -1748,8 +1789,9 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
     AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
     AssertPtrReturn(pDev,      VERR_INVALID_POINTER);
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
     Assert(pCAStream->Unit.pDevice == NULL); /* Make sure no device is assigned yet. */
-
+#endif
     AssertPtr(pDev->pvData);
     Assert(pDev->cbData == sizeof(COREAUDIODEVICEDATA));
 
@@ -1758,7 +1800,9 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
     LogFunc(("pCAStream=%p, pDev=%p ('%s', ID=%RU32)\n", pCAStream, pDev, pDev->szName, pData->deviceID));
 #endif
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
     pCAStream->Unit.pDevice = pDev;
+#endif
     pCAStream->pDrv = pThis;
 
     return VINF_SUCCESS;
@@ -1768,6 +1812,268 @@ static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pTh
     stmt; \
     break;
 
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser)
+{
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pvUser;
+    AssertPtr(pCAStream);
+
+    LogFunc(("Starting pCAStream=%p\n", pCAStream));
+
+    RTThreadUserSignal(RTThreadSelf());
+
+    const bool fIn = pCAStream->Stream.enmDir == PDMAUDIODIR_IN;
+
+    while (!ASMAtomicReadBool(&pCAStream->fShutdown))
+    {
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.10, 1);
+    }
+
+    if (fIn)
+    {
+        AudioQueueStop(pCAStream->audioQueue, 1);
+    }
+    else
+    {
+        AudioQueueStop(pCAStream->audioQueue, 0);
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, 2, 0);
+    }
+
+    LogFunc(("Ended pCAStream=%p\n", pCAStream));
+    return VINF_SUCCESS;
+}
+
+static void coreAudioInputQueueCb(void *pvUser, AudioQueueRef audioQueue, AudioQueueBufferRef audioBuffer,
+                                  const AudioTimeStamp *pAudioTS,
+                                  UInt32 cPacketDes, const AudioStreamPacketDescription *pPacketDesc)
+{
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pvUser;
+    AssertPtr(pCAStream);
+
+    int rc = RTCritSectEnter(&pCAStream->CritSect);
+    AssertRC(rc);
+
+    size_t cbWritten = 0;
+
+    if (pCAStream->fRunning)
+    {
+        PRTCIRCBUF pCircBuf = pCAStream->pCircBuf;
+        AssertPtr(pCircBuf);
+
+        UInt8 *pvSrc = (UInt8 *)audioBuffer->mAudioData;
+        UInt8 *pvDst = NULL;
+
+        size_t cbToWrite = audioBuffer->mAudioDataByteSize;
+        if (!cbToWrite)
+            return;
+
+        size_t cbLeft    = cbToWrite;
+
+        while (cbLeft)
+        {
+            /* Try to acquire the necessary block from the ring buffer. */
+            RTCircBufAcquireWriteBlock(pCircBuf, cbLeft, (void **)&pvDst, &cbToWrite);
+
+            /* Copy the data from our ring buffer to the core audio buffer. */
+            memcpy((UInt8 *)pvDst + cbWritten, pvSrc + cbWritten, cbToWrite);
+
+            /* Release the read buffer, so it could be used for new data. */
+            RTCircBufReleaseReadBlock(pCircBuf, cbToWrite);
+
+            cbWritten += cbToWrite;
+
+            Assert(cbLeft >= cbToWrite);
+            cbLeft -= cbToWrite;
+        }
+    }
+
+    OSStatus err = AudioQueueEnqueueBuffer(audioQueue, audioBuffer, 0, NULL);
+
+    Log3Func(("pCAStream=%p, cbWritten=%zu, err=%RI32\n", pCAStream, cbWritten, err));
+
+    rc = RTCritSectLeave(&pCAStream->CritSect);
+    AssertRC(rc);
+}
+
+static void coreAudioOutputQueueCb(void *pvUser, AudioQueueRef audioQueue, AudioQueueBufferRef audioBuffer)
+{
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pvUser;
+    AssertPtr(pCAStream);
+
+    int rc = RTCritSectEnter(&pCAStream->CritSect);
+    AssertRC(rc);
+
+    if (!pCAStream->fRunning)
+    {
+        RT_BZERO(audioBuffer->mAudioData, audioBuffer->mAudioDataBytesCapacity);
+        return;
+    }
+
+    PRTCIRCBUF pCircBuf = pCAStream->pCircBuf;
+    AssertPtr(pCircBuf);
+
+    size_t cbToRead = RT_MIN(RTCircBufUsed(pCircBuf), audioBuffer->mAudioDataBytesCapacity);
+    if (!cbToRead)
+        return;
+
+    UInt8 *pvSrc = NULL;
+    UInt8 *pvDst = (UInt8 *)audioBuffer->mAudioData;
+
+    size_t cbRead = 0;
+    size_t cbLeft = cbToRead;
+
+    while (cbLeft)
+    {
+        /* Try to acquire the necessary block from the ring buffer. */
+        RTCircBufAcquireReadBlock(pCircBuf, cbLeft, (void **)&pvSrc, &cbToRead);
+
+        /* Break if nothing is used anymore. */
+        if (!cbToRead)
+            break;
+
+        /* Copy the data from our ring buffer to the core audio buffer. */
+        memcpy((UInt8 *)pvDst + cbRead, pvSrc, cbToRead);
+
+        /* Release the read buffer, so it could be used for new data. */
+        RTCircBufReleaseReadBlock(pCircBuf, cbToRead);
+
+        /* Move offset. */
+        cbRead += cbToRead;
+
+        Assert(cbToRead <= cbLeft);
+        cbLeft -= cbToRead;
+    }
+
+    OSStatus err = AudioQueueEnqueueBuffer(audioQueue, audioBuffer, 0, NULL);
+
+    Log3Func(("pCAStream=%p, cbRead=%zu, err=%RI32\n", pCAStream, cbRead, err));
+
+    rc = RTCritSectLeave(&pCAStream->CritSect);
+    AssertRC(rc);
+}
+
+static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    LogFunc(("pCAStream=%p, pCfgReq=%p, pCfgAcq=%p\n", pCAStream, pCfgReq, pCfgAcq));
+
+    const bool fIn = pCAStream->Stream.enmDir == PDMAUDIODIR_IN;
+
+    /* Create the recording device's out format based on our required audio settings. */
+    AudioStreamBasicDescription reqFmt;
+    int rc = coreAudioStreamCfgToASBD(pCfgReq, &reqFmt);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("CoreAudio: Failed to convert requested %s format to native format (%Rrc)\n",
+                fIn ? "input" : "output", rc));
+        return rc;
+    }
+
+    /*
+     * Create audio queue.
+     */
+    OSStatus err;
+    if (fIn)
+        err = AudioQueueNewInput(&reqFmt, coreAudioInputQueueCb, pCAStream /* pvData */,
+                                 CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pCAStream->audioQueue);
+    else
+        err = AudioQueueNewOutput(&reqFmt, coreAudioOutputQueueCb, pCAStream /* pvData */,
+                                  CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pCAStream->audioQueue);
+
+    if (err != noErr)
+        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+
+    /*
+     * Assign device to queue.
+     */
+    AssertPtr(pCAStream->Unit.pDevice);
+    PCOREAUDIODEVICEDATA pData = (PCOREAUDIODEVICEDATA)pCAStream->Unit.pDevice->pvData;
+    AssertPtr(pData);
+
+    UInt32 uSize = sizeof(pData->UUID);
+    err = AudioQueueSetProperty(pCAStream->audioQueue, kAudioQueueProperty_CurrentDevice, &pData->UUID, uSize);
+    if (err != noErr)
+        return VERR_GENERAL_FAILURE; /** @todo Fudge! */
+
+    const size_t cbBufSize = _4K;
+
+    /*
+     * Allocate audio buffers.
+     */
+    for (size_t i = 0; i < RT_ELEMENTS(pCAStream->audioBuffer); i++)
+    {
+        AudioQueueBufferRef pBuf = pCAStream->audioBuffer[i];
+
+        err = AudioQueueAllocateBuffer(pCAStream->audioQueue, cbBufSize, &pBuf);
+        if (err != noErr)
+            break;
+
+        RT_BZERO(pBuf->mAudioData, sizeof(pBuf->mAudioDataBytesCapacity));
+        pBuf->mAudioDataByteSize = pBuf->mAudioDataBytesCapacity;
+
+        err = AudioQueueEnqueueBuffer(pCAStream->audioQueue, pBuf, 0, NULL);
+        if (err != noErr)
+            break;
+    }
+
+    /*
+     * Start the queue.
+     */
+    if (err != noErr)
+    {
+        err = AudioQueueStart(pCAStream->audioQueue, NULL);
+    }
+
+    /*
+     * Start the thread.
+     */
+    pCAStream->fShutdown = false;
+
+    if (err != noErr)
+    {
+        rc = RTThreadCreate(&pCAStream->hThread, coreAudioQueueThread,
+                            pCAStream /* pvUser */, 0 /* Default stack size */,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "CAQUEUE");
+        if (RT_SUCCESS(rc))
+            rc = RTThreadUserWait(pCAStream->hThread, 10 * 1000 /* 10s timeout */);
+    }
+
+    return rc;
+}
+
+static int coreAudioStreamUninitQueue(PCOREAUDIOSTREAM pCAStream)
+{
+    LogFunc(("pCAStream=%p\n", pCAStream));
+
+    ASMAtomicXchgBool(&pCAStream->fShutdown, true);
+
+    int rcThread;
+    int rc = RTThreadWait(pCAStream->hThread, 30 * 1000, &rcThread);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    RT_NOREF(rcThread);
+    LogFunc(("Thread stopped with %Rrc\n", rcThread));
+
+    if (pCAStream->audioQueue)
+    {
+        for (size_t i = 0; i < RT_ELEMENTS(pCAStream->audioBuffer); i++)
+        {
+            if (pCAStream->audioBuffer[i])
+                AudioQueueFreeBuffer(pCAStream->audioQueue, pCAStream->audioBuffer[i]);
+        }
+
+        AudioQueueDispose(pCAStream->audioQueue, 1);
+    }
+
+    return VINF_SUCCESS;
+}
+
+static int coreAudioStreamUninit(PCOREAUDIOSTREAM pCAStream)
+{
+   int rc = coreAudioStreamUninitQueue(pCAStream);
+   return rc;
+}
+#else /* !VBOX_WITH_AUDIO_CA_QUEUES */
 /** @todo Eventually split up this function, as this already is huge! */
 static int coreAudioStreamInitIn(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
@@ -2385,7 +2691,6 @@ static int coreAudioStreamInitOut(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMCFG
     return rc;
 }
 
-
 /**
  * Uninitializes a Core Audio stream.
  *
@@ -2446,7 +2751,7 @@ static int coreAudioStreamUninit(PCOREAUDIOSTREAM pCAStream)
 
     return err == noErr ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Fudge! */
 }
-
+#endif /* !VBOX_WITH_AUDIO_CA_QUEUES */
 
 /**
  * Registers callbacks for a specific Core Audio device.
@@ -2673,6 +2978,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
     return rc;
 }
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
 /* Callback to feed audio output buffer. */
 static DECLCALLBACK(OSStatus) coreAudioPlaybackCb(void                       *pvUser,
                                                   AudioUnitRenderActionFlags *pActionFlags,
@@ -2747,7 +3053,7 @@ static DECLCALLBACK(OSStatus) coreAudioPlaybackCb(void                       *pv
 
     return noErr;
 }
-
+#endif /* !VBOX_WITH_AUDIO_CA_QUEUES */
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamCapture}
@@ -2992,6 +3298,9 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
         case PDMAUDIOSTREAMCMD_ENABLE:
         case PDMAUDIOSTREAMCMD_RESUME:
         {
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+            ASMAtomicXchgBool(&pCAStream->fRunning, true);
+#else
             /* Only start the device if it is actually stopped */
             if (!coreAudioUnitIsRunning(pCAStream))
             {
@@ -3011,12 +3320,16 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
                     rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
                 }
             }
+#endif /* VBOX_WITH_AUDIO_CA_QUEUES */
             break;
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+            ASMAtomicXchgBool(&pCAStream->fRunning, false);
+#else
             /* Only stop the device if it is actually running */
             if (coreAudioUnitIsRunning(pCAStream))
             {
@@ -3035,6 +3348,7 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
                     rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
                 }
             }
+#endif /* VBOX_WITH_AUDIO_CA_QUEUES */
             break;
         }
 
@@ -3172,6 +3486,15 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 
     int rc;
 
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+    rc = RTCritSectInit(&pCAStream->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pCAStream->fRunning  = false;
+    pCAStream->fShutdown = false;
+#endif
+
     /* Input or output device? */
     bool fIn = pCfgReq->enmDir == PDMAUDIODIR_IN;
 
@@ -3192,11 +3515,14 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 
             if (RT_SUCCESS(rc))
             {
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+                rc = coreAudioStreamInitQueue(pCAStream, pCfgReq, pCfgAcq);
+#else
                 if (fIn)
                     rc = coreAudioStreamInitIn (pCAStream, pCfgReq, pCfgAcq);
                 else
                     rc = coreAudioStreamInitOut(pCAStream, pCfgReq, pCfgAcq);
-
+#endif
                 if (RT_FAILURE(rc))
                 {
                     int rc2 = coreAudioStreamUninit(pCAStream);
@@ -3243,11 +3569,20 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
         ASMAtomicXchgU32(&pCAStream->enmStatus, COREAUDIOSTATUS_IN_UNINIT);
 
         rc = coreAudioStreamUninit(pCAStream);
+
         if (RT_SUCCESS(rc))
             ASMAtomicXchgU32(&pCAStream->enmStatus, COREAUDIOSTATUS_UNINIT);
     }
 
-    LogFlowFunc(("%s: rc=%Rrc\n", pStream->szName, rc));
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
+    if (RT_SUCCESS(rc))
+    {
+        if (RTCritSectIsInitialized(&pCAStream->CritSect))
+            RTCritSectDelete(&pCAStream->CritSect);
+    }
+#endif
+
+    LogFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
