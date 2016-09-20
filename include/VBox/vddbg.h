@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VDDbg_h
-#define ___VBox_VDDbg_h
+#ifndef ___VBox_vddbg_h
+#define ___VBox_vddbg_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>

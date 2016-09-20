@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VD_Interfaces_Internal_h
-#define ___VBox_VD_Interfaces_Internal_h
+#ifndef ___VBox_vd_ifs_internal_h
+#define ___VBox_vd_ifs_internal_h
 
 #include <iprt/sg.h>
 #include <VBox/vd-ifs.h>

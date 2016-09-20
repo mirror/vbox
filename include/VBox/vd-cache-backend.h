@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBoxHDD_CachePlugin_h__
-#define __VBoxHDD_CachePlugin_h__
+#ifndef ___VBox_vd_cache_backend_h
+#define ___VBox_vd_cache_backend_h
 
 #include <VBox/vd.h>
 #include <VBox/vd-common.h>
