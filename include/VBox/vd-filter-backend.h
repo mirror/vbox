@@ -27,6 +27,7 @@
 #define __vd_filter_backend_h__
 
 #include <VBox/vd.h>
+#include <VBox/vd-common.h>
 #include <VBox/vd-ifs-internal.h>
 
 /**
@@ -34,15 +35,10 @@
  */
 typedef struct VDFILTERBACKEND
 {
-    /**
-     * The name of the backend (constant string).
-     */
-    const char *pszBackendName;
-
-    /**
-     * The size of the structure.
-     */
-    uint32_t cbSize;
+    /** Structure version. VD_FLTBACKEND_VERSION defines the current version. */
+    uint32_t            u32Version;
+    /** The name of the backend (constant string). */
+    const char          *pszBackendName;
 
     /**
      * Pointer to an array of structs describing each supported config key.
@@ -50,7 +46,7 @@ typedef struct VDFILTERBACKEND
      * the configuration interface, so this pointer may just contain NULL.
      * Mandatory if the backend sets VD_CAP_CONFIG.
      */
-    PCVDCONFIGINFO paConfigInfo;
+    PCVDCONFIGINFO      paConfigInfo;
 
     /**
      * Creates a new filter instance.
@@ -99,10 +95,15 @@ typedef struct VDFILTERBACKEND
     DECLR3CALLBACKMEMBER(int, pfnFilterWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                                                PVDIOCTX pIoCtx));
 
+    /** Initialization safty marker. */
+    uint32_t            u32VersionEnd;
 } VDFILTERBACKEND;
 /** Pointer to VD filter backend. */
 typedef VDFILTERBACKEND *PVDFILTERBACKEND;
 /** Constant pointer to a VD filter backend. */
 typedef const VDFILTERBACKEND *PCVDFILTERBACKEND;
+
+/** The current version of the VDFILTERBACKEND structure. */
+#define VD_FLTBACKEND_VERSION                   VD_VERSION_MAKE(0xff02, 1, 0)
 
 #endif

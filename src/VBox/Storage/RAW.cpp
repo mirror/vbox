@@ -956,10 +956,10 @@ static DECLCALLBACK(void) rawDump(void *pBackendData)
 
 const VDIMAGEBACKEND g_RawBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "RAW",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_CREATE_FIXED | VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
     /* paFileExtensions */
@@ -1049,5 +1049,7 @@ const VDIMAGEBACKEND g_RawBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

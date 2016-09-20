@@ -1982,10 +1982,10 @@ static DECLCALLBACK(void) vciDump(void *pBackendData)
 
 const VDCACHEBACKEND g_VciCacheBackend =
 {
+    /* u32Version */
+    VD_CACHEBACKEND_VERSION,
     /* pszBackendName */
     "vci",
-    /* cbSize */
-    sizeof(VDCACHEBACKEND),
     /* uBackendCaps */
     VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC | VD_CAP_FILE | VD_CAP_VFS,
     /* papszFileExtensions */
@@ -2037,6 +2037,8 @@ const VDCACHEBACKEND g_VciCacheBackend =
     /* pfnComposeLocation */
     NULL,
     /* pfnComposeName */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_CACHEBACKEND_VERSION
 };
 

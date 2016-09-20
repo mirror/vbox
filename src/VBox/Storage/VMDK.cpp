@@ -6346,10 +6346,10 @@ static DECLCALLBACK(void) vmdkDump(void *pBackendData)
 
 const VDIMAGEBACKEND g_VmdkBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "VMDK",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC
@@ -6441,5 +6441,7 @@ const VDIMAGEBACKEND g_VmdkBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

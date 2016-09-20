@@ -1068,10 +1068,10 @@ static DECLCALLBACK(void) parallelsDump(void *pBackendData)
 
 const VDIMAGEBACKEND g_ParallelsBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "Parallels",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS | VD_CAP_CREATE_DYNAMIC | VD_CAP_DIFF,
     /* paFileExtensions */
@@ -1161,5 +1161,7 @@ const VDIMAGEBACKEND g_ParallelsBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

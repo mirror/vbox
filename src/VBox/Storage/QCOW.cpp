@@ -2316,10 +2316,10 @@ static DECLCALLBACK(int) qcowSetParentFilename(void *pBackendData, const char *p
 
 const VDIMAGEBACKEND g_QCowBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "QCOW",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS | VD_CAP_CREATE_DYNAMIC | VD_CAP_DIFF | VD_CAP_ASYNC,
     /* paFileExtensions */
@@ -2409,5 +2409,7 @@ const VDIMAGEBACKEND g_QCowBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

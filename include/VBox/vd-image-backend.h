@@ -27,6 +27,7 @@
 #define __vd_image_backend_h__
 
 #include <VBox/vd.h>
+#include <VBox/vd-common.h>
 #include <VBox/vd-ifs-internal.h>
 
 
@@ -62,27 +63,19 @@
  */
 typedef struct VDIMAGEBACKEND
 {
-    /**
-     * The name of the backend (constant string).
-     */
-    const char *pszBackendName;
-
-    /**
-     * The size of the structure.
-     */
-    uint32_t cbSize;
-
-    /**
-     * The capabilities of the backend.
-     */
-    uint64_t uBackendCaps;
+    /** Structure version. VD_IMGBACKEND_VERSION defines the current version. */
+    uint32_t            u32Version;
+    /** The name of the backend (constant string). */
+    const char          *pszBackendName;
+    /** The capabilities of the backend. */
+    uint64_t            uBackendCaps;
 
     /**
      * Pointer to a NULL-terminated array, containing the supported
      * file extensions. Note that some backends do not work on files, so this
      * pointer may just contain NULL.
      */
-    PCVDFILEEXTENSION paFileExtensions;
+    PCVDFILEEXTENSION   paFileExtensions;
 
     /**
      * Pointer to an array of structs describing each supported config key.
@@ -90,7 +83,7 @@ typedef struct VDIMAGEBACKEND
      * the configuration interface, so this pointer may just contain NULL.
      * Mandatory if the backend sets VD_CAP_CONFIG.
      */
-    PCVDCONFIGINFO paConfigInfo;
+    PCVDCONFIGINFO      paConfigInfo;
 
     /**
      * Check whether the file is supported by the backend.
@@ -584,12 +577,18 @@ typedef struct VDIMAGEBACKEND
                                                     PVDINTERFACE pVDIfsImage,
                                                     PVDINTERFACE pVDIfsOperation));
 
+    /** Initialization safty marker. */
+    uint32_t            u32VersionEnd;
+
 } VDIMAGEBACKEND;
 
 /** Pointer to VD backend. */
 typedef VDIMAGEBACKEND *PVDIMAGEBACKEND;
 /** Constant pointer to VD backend. */
 typedef const VDIMAGEBACKEND *PCVDIMAGEBACKEND;
+
+/** The current version of the VDIMAGEBACKEND structure. */
+#define VD_IMGBACKEND_VERSION                   VD_VERSION_MAKE(0xff01, 1, 0)
 
 /** @copydoc VDIMAGEBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);

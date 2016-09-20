@@ -27,6 +27,7 @@
 #define __VBoxHDD_CachePlugin_h__
 
 #include <VBox/vd.h>
+#include <VBox/vd-common.h>
 #include <VBox/vd-ifs-internal.h>
 
 /**
@@ -34,20 +35,12 @@
  */
 typedef struct VDCACHEBACKEND
 {
-    /**
-     * The name of the backend (constant string).
-     */
-    const char *pszBackendName;
-
-    /**
-     * The size of the structure.
-     */
-    uint32_t cbSize;
-
-    /**
-     * The capabilities of the backend.
-     */
-    uint64_t uBackendCaps;
+    /** Structure version. VD_CACHEBACKEND_VERSION defines the current version. */
+    uint32_t            u32Version;
+    /** The name of the backend (constant string). */
+    const char          *pszBackendName;
+    /** The capabilities of the backend. */
+    uint64_t            uBackendCaps;
 
     /**
      * Pointer to a NULL-terminated array of strings, containing the supported
@@ -62,7 +55,7 @@ typedef struct VDCACHEBACKEND
      * the configuration interface, so this pointer may just contain NULL.
      * Mandatory if the backend sets VD_CAP_CONFIG.
      */
-    PCVDCONFIGINFO paConfigInfo;
+    PCVDCONFIGINFO      paConfigInfo;
 
     /**
      * Probes the given image.
@@ -311,10 +304,16 @@ typedef struct VDCACHEBACKEND
      *  VD_CAP_FILE and NULL otherwise. */
     DECLR3CALLBACKMEMBER(int, pfnComposeName, (PVDINTERFACE pConfig, char **pszName));
 
+    /** Initialization safty marker. */
+    uint32_t            u32VersionEnd;
+
 } VDCACHEBACKEND;
 /** Pointer to VD cache backend. */
 typedef VDCACHEBACKEND *PVDCACHEBACKEND;
 /** Constant pointer to VD backend. */
 typedef const VDCACHEBACKEND *PCVDCACHEBACKEND;
+
+/** The current version of the VDCACHEBACKEND structure. */
+#define VD_CACHEBACKEND_VERSION                 VD_VERSION_MAKE(0xff03, 1, 0)
 
 #endif

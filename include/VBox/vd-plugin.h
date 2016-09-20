@@ -27,6 +27,7 @@
 #define __vd_plugin_h__
 
 #include <VBox/vd.h>
+#include <VBox/vd-common.h>
 #include <VBox/vd-image-backend.h>
 #include <VBox/vd-cache-backend.h>
 #include <VBox/vd-filter-backend.h>
@@ -36,6 +37,10 @@
  */
 typedef struct VDBACKENDREGISTER
 {
+    /** Interface version.
+     * This is set to VD_BACKENDREG_CB_VERSION. */
+    uint32_t                    u32Version;
+
     /**
      * Registers a new image backend.
      *
@@ -64,6 +69,9 @@ typedef struct VDBACKENDREGISTER
 } VDBACKENDREGISTER;
 /** Pointer to a backend register callbacks structure. */
 typedef VDBACKENDREGISTER *PVDBACKENDREGISTER;
+
+/** Current version of the VDBACKENDREGISTER structure.  */
+#define VD_BACKENDREG_CB_VERSION                VD_VERSION_MAKE(0xff00, 1, 0)
 
 /**
  * Initialization entry point called by the generic VD layer when

@@ -2488,10 +2488,10 @@ static DECLCALLBACK(void) vhdxDump(void *pBackendData)
 
 const VDIMAGEBACKEND g_VhdxBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "VHDX",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS,
     /* paFileExtensions */
@@ -2581,5 +2581,7 @@ const VDIMAGEBACKEND g_VhdxBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

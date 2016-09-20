@@ -2999,10 +2999,10 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
 const VDIMAGEBACKEND g_VDIBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "VDI",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS | VD_CAP_DISCARD
@@ -3094,5 +3094,7 @@ const VDIMAGEBACKEND g_VDIBackend =
     /* pfnRepair */
     vdiRepair,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };

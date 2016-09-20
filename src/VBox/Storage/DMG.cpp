@@ -2405,10 +2405,10 @@ static DECLCALLBACK(void) dmgDump(void *pBackendData)
 
 const VDIMAGEBACKEND g_DmgBackend =
 {
+    /* u32Version */
+    VD_IMGBACKEND_VERSION,
     /* pszBackendName */
     "DMG",
-    /* cbSize */
-    sizeof(VDIMAGEBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS,
     /* paFileExtensions */
@@ -2498,6 +2498,8 @@ const VDIMAGEBACKEND g_DmgBackend =
     /* pfnRepair */
     NULL,
     /* pfnTraverseMetadata */
-    NULL
+    NULL,
+    /* u32VersionEnd */
+    VD_IMGBACKEND_VERSION
 };
 

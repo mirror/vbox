@@ -3546,11 +3546,11 @@ static DECLCALLBACK(int) vdPluginRegisterImage(void *pvUser, PCVDIMAGEBACKEND pB
 {
     int rc = VINF_SUCCESS;
 
-    if (pBackend->cbSize == sizeof(VDIMAGEBACKEND))
+    if (VD_VERSION_ARE_COMPATIBLE(VD_IMGBACKEND_VERSION, pBackend->u32Version))
         vdAddBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
+        LogFunc(("ignored plugin: pBackend->u32Version=%u rc=%Rrc\n", pBackend->u32Version, rc));
         rc = VERR_IGNORED;
     }
 
@@ -3564,11 +3564,11 @@ static DECLCALLBACK(int) vdPluginRegisterCache(void *pvUser, PCVDCACHEBACKEND pB
 {
     int rc = VINF_SUCCESS;
 
-    if (pBackend->cbSize == sizeof(VDCACHEBACKEND))
+    if (VD_VERSION_ARE_COMPATIBLE(VD_CACHEBACKEND_VERSION, pBackend->u32Version))
         vdAddCacheBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
+        LogFunc(("ignored plugin: pBackend->u32Version=%u rc=%Rrc\n", pBackend->u32Version, rc));
         rc = VERR_IGNORED;
     }
 
@@ -3582,11 +3582,11 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
 {
     int rc = VINF_SUCCESS;
 
-    if (pBackend->cbSize == sizeof(VDFILTERBACKEND))
+    if (VD_VERSION_ARE_COMPATIBLE(VD_FLTBACKEND_VERSION, pBackend->u32Version))
         vdAddFilterBackend((RTLDRMOD)pvUser, pBackend);
     else
     {
-        LogFunc(("ignored plugin: pBackend->cbSize=%d rc=%Rrc\n", pBackend->cbSize, rc));
+        LogFunc(("ignored plugin: pBackend->u32Version=%u rc=%Rrc\n", pBackend->u32Version, rc));
         rc = VERR_IGNORED;
     }
 
@@ -3719,6 +3719,7 @@ static int vdPluginLoadFromFilename(const char *pszFilename)
         VDBACKENDREGISTER BackendRegister;
         PFNVDPLUGINLOAD pfnVDPluginLoad = NULL;
 
+        BackendRegister.u32Version        = VD_BACKENDREG_CB_VERSION;
         BackendRegister.pfnRegisterImage  = vdPluginRegisterImage;
         BackendRegister.pfnRegisterCache  = vdPluginRegisterCache;
         BackendRegister.pfnRegisterFilter = vdPluginRegisterFilter;
