@@ -361,12 +361,6 @@ int rcp_parse(struct rcp_state *state, const char *filename)
          */
         if (RTStrCmp(tok, "search") == 0)
         {
-            if (cbSearchBuf == 0)
-            {
-                LogRel(("NAT: resolv.conf: no buffer space, ignoring search list %s\n", s));
-                break;
-            }
-
             while ((tok = getToken(NULL, &s)) && !NO_VALUE(tok))
             {
                 i = state->rcps_num_searchlist;
@@ -376,8 +370,8 @@ int rcp_parse(struct rcp_state *state, const char *filename)
                     continue;
                 }
 
-                Log2(("NAT: resolv.conf: saving search @%td,+%zu\n",
-                      pszSearchBuf - state->rcps_searchlist_buffer, cbSearchBuf));
+                Log2(("NAT: resolv.conf: saving search %s @%td,+%zu\n",
+                      tok, pszSearchBuf - state->rcps_searchlist_buffer, cbSearchBuf));
                 state->rcps_searchlist[i] = pszSearchBuf;
                 rc = RTStrCopyP(&pszSearchBuf, &cbSearchBuf, tok);
                 if (RT_SUCCESS(rc))
@@ -389,7 +383,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
                 }
                 else
                 {
-                    Log2(("NAT: resolv.conf: truncated: %s\n", tok));
+                    LogRel(("NAT: resolv.conf: no buffer space, ignoring search domain %s\n", tok));
                     pszSearchBuf = state->rcps_searchlist[i];
                     cbSearchBuf = sizeof(state->rcps_searchlist_buffer)
                         - (pszSearchBuf - state->rcps_searchlist_buffer);
