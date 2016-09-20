@@ -356,6 +356,12 @@ VMMR3_INT_DECL(void) APICR3InitIpi(PVMCPU pVCpu)
 /**
  * Sets whether Hyper-V compatibility mode (MSR interface) is enabled or not.
  *
+ * This mode is a hybrid of xAPIC and x2APIC modes, some caveats:
+ * 1. MSRs are used even ones that are missing (illegal) in x2APIC like DFR.
+ * 2. A single ICR is used by the guest to send IPIs rather than 2 ICR writes.
+ * 3. It is unclear what the behaviour will be when invalid bits are set,
+ *    currently we follow x2APIC behaviour of causing a \#GP.
+ *
  * @param   pVM                 The cross context VM structure.
  * @param   fHyperVCompatMode   Whether the compatibility mode is enabled.
  */
