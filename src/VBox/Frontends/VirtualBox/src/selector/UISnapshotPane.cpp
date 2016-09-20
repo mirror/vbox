@@ -399,14 +399,40 @@ QAccessibleInterface *UIAccessibilityInterfaceForUISnapshotTree::child(int iInde
     /* Make sure tree still alive: */
     AssertPtrReturn(tree(), 0);
     /* Make sure index is valid: */
-    // WORKAROUND:
-    // Usually I would assert here, but Qt5 accessibility code has
-    // a hard-coded architecture for a tree-views which we do not like
-    // but have to live with and this architecture enumerates children
-    // of all levels as children of level 0, so Qt5 can try to address
-    // our interface with index which surely out of bounds by our laws.
-    if (iIndex < 0 || iIndex >= childCount())
-        return 0;
+    AssertReturn(iIndex >= 0, 0);
+    if (iIndex >= childCount())
+    {
+        // WORKAROUND:
+        // Normally I would assert here, but Qt5 accessibility code has
+        // a hard-coded architecture for a tree-views which we do not like
+        // but have to live with and this architecture enumerates children
+        // of all levels as children of level 0, so Qt5 can try to address
+        // our interface with index which surely out of bounds by our laws.
+        // So let's assume that's exactly such case and try to enumerate
+        // visible children like they are a part of the list, not tree.
+        // printf("Invalid index: %d\n", iIndex);
+
+        // Visible children indexes starts with 1, not 0,
+        // don't ask me why, it's some stupid Qt5 idea:
+        const int iRequiredIndex = iIndex - 1;
+
+        // Do some sanity check as well, enough?
+        AssertReturn(iRequiredIndex >= 0, 0);
+
+        // Try to find a visible child with required index:
+        int iCurrentIndex = 0;
+        QTreeWidgetItem *pItem = tree()->topLevelItem(0);
+        while (pItem && iCurrentIndex < iRequiredIndex)
+        {
+            ++iCurrentIndex;
+            pItem = tree()->itemBelow(pItem);
+        }
+
+        // Return what we found:
+        // if (pItem)
+        //     printf("Item found: [%s]\n", pItem->text(0).toUtf8().constData());
+        return pItem ? QAccessible::queryAccessibleInterface(UISnapshotPane::toSnapshotItem(pItem)) : 0;
+    }
 
     /* Return the child with the passed iIndex: */
     return QAccessible::queryAccessibleInterface(tree()->childSnapshotItem(iIndex));
