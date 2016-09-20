@@ -338,7 +338,7 @@ setup()
     *)
         if test -f /etc/modprobe.d/blacklist-vboxvideo.conf; then
             rm -f /etc/modprobe.d/blacklist-vboxvideo.conf
-            ${MODPROBE} vboxvideo
+            ps -Af | grep -q '[X]org' || ${MODPROBE} vboxvideo
         fi
         ;;
     esac
