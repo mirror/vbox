@@ -372,8 +372,7 @@ VMMR3_INT_DECL(void) APICR3HvSetCompatMode(PVM pVM, bool fHyperVCompatMode)
     pApic->fHyperVCompatMode = fHyperVCompatMode;
 
     int rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
-    AssertRC(rc);
-    RT_NOREF(rc);
+    AssertLogRelRC(rc);
 }
 
 
