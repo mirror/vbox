@@ -37,6 +37,8 @@ namespace settings
 # define NATSR_EXECUTABLE_NAME "VBoxNetNAT"
 #endif
 
+#undef ADDR_ANY ///@todo ADDR_ANY collides with some windows header!
+
 enum ADDRESSLOOKUPTYPE
 {
     ADDR_GATEWAY,
