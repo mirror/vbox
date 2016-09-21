@@ -44,6 +44,13 @@ class UIVMDesktop: public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+    /** Segmented-button segment types. */
+    enum SegmentType
+    {
+        SegmentType_Details   = 0,
+        SegmentType_Snapshots
+    };
+
 signals:
 
     /* Notifier: Current widget stuff: */

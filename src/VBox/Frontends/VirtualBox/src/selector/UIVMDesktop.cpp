@@ -219,12 +219,6 @@ void UIVMDesktopPrivate::prepareErrorPane()
     retranslateUi();
 }
 
-enum
-{
-    Dtls = 0,
-    Snap
-};
-
 UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
 {
@@ -240,10 +234,10 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
             m_pHeaderBtn = new UITexturedSegmentedButton(pContainer, 2);
             {
                 /* Configure segmented-button: */
-                m_pHeaderBtn->setIcon(Dtls, UIIconPool::iconSet(":/vm_settings_16px.png",
-                                                                ":/vm_settings_disabled_16px.png"));
-                m_pHeaderBtn->setIcon(Snap, UIIconPool::iconSet(":/snapshot_take_16px.png",
-                                                                ":/snapshot_take_disabled_16px.png"));
+                m_pHeaderBtn->setIcon(SegmentType_Details, UIIconPool::iconSet(":/vm_settings_16px.png",
+                                                                               ":/vm_settings_disabled_16px.png"));
+                m_pHeaderBtn->setIcon(SegmentType_Snapshots, UIIconPool::iconSet(":/snapshot_take_16px.png",
+                                                                                 ":/snapshot_take_disabled_16px.png"));
                 /* Add segmented-buttons into layout: */
                 pLayout->addWidget(m_pHeaderBtn);
             }
@@ -332,12 +326,12 @@ void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
         if (count)
             name += QString(" (%1)").arg(count);
     }
-    m_pHeaderBtn->setTitle(Snap, name);
+    m_pHeaderBtn->setTitle(SegmentType_Snapshots, name);
 
     /* Refresh the snapshots widget: */
     if (!machine.isNull())
     {
-        m_pHeaderBtn->setEnabled(Snap, true);
+        m_pHeaderBtn->setEnabled(SegmentType_Snapshots, true);
         m_pSnapshotsPane->setMachine(machine);
     }
     else
@@ -346,8 +340,8 @@ void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
 
 void UIVMDesktop::lockSnapshots()
 {
-    m_pHeaderBtn->animateClick(Dtls);
-    m_pHeaderBtn->setEnabled(Snap, false);
+    m_pHeaderBtn->animateClick(SegmentType_Details);
+    m_pHeaderBtn->setEnabled(SegmentType_Snapshots, false);
 }
 
 void UIVMDesktop::sltInit()
@@ -357,7 +351,7 @@ void UIVMDesktop::sltInit()
 
 void UIVMDesktop::retranslateUi()
 {
-    m_pHeaderBtn->setTitle(Dtls, tr("&Details"));
+    m_pHeaderBtn->setTitle(SegmentType_Details, tr("&Details"));
 }
 
 #include "UIVMDesktop.moc"
