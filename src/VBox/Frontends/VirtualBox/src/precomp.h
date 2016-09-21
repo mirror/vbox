@@ -1,6 +1,8 @@
 /* $Id$*/
 /** @file
  * VBox Qt GUI - Header used if VBOX_WITH_PRECOMPILED_HEADERS is active.
+ *
+ * This is the remnants of an obsoleted experiment!
  */
 
 /*

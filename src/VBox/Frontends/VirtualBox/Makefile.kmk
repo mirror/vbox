@@ -1030,50 +1030,43 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 # Precompiled header - non-functional atm.
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
- VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
- VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
  if1of ($(KBUILD_TARGET),win)
-  VirtualBox_CXXFLAGS      += -Yuprecomp.h -Fp$$(VirtualBoxPch_0_OUTDIR)/src/precomp.pch
-  VirtualBox_INTERMEDIATES += $(VirtualBoxPch_0_OUTDIR)/src/precomp.pch
- else
+  VirtualBox_USES    += vccprecomp
+  VirtualBox_PCH_HDR := $(PATH_SUB_CURRENT)/src/precomp_vcc.h
+
+ else # obsolete experiment
+  VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
+  VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
   VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
   $(foreach x,$(filter-out include/COMWrappers.cpp, $(filter %.cpp, \
   	$(VirtualBox_SOURCES) \
-	$(VirtualBox_SOURCES.$(KBUILD_TARGET)) \
-	$(VirtualBox_SOURCES.$(KBUILD_TYPE)) \
-   )),$(eval $(abspath $(PATH_OBJ)/VirtualBox/$(basename $(x)).o): $$$$(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch))
-endif
+  	$(VirtualBox_SOURCES.$(KBUILD_TARGET)) \
+  	$(VirtualBox_SOURCES.$(KBUILD_TYPE)) \
+  )),$(eval $(abspath $(PATH_OBJ)/VirtualBox/$(basename $(x)).o): $$$$(VirtualBoxPch_0_OUTDIR)/src/precomp.h.gch))
 
- TOOL_VirtualBoxPchLinker = Linker for VirtualBoxPch
- define TOOL_VirtualBoxPchLinker_LINK_MISCBIN_CMDS
+  TOOL_VirtualBoxPchLinker = Linker for VirtualBoxPch
+  define TOOL_VirtualBoxPchLinker_LINK_MISCBIN_CMDS
 	$(APPEND) -t $(out)
- endef
+  endef
 
- MISCBINS += VirtualBoxPch
- VirtualBoxPch_EXTENDS = VirtualBox
- VirtualBoxPch_LDTOOL   = VirtualBoxPchLinker
- VirtualBoxPch_INSTTYPE = none
- VirtualBoxPch_NAME            = VirtualBoxPch
- if1of ($(KBUILD_TARGET),win)
-  VirtualBoxPch_INTERMEDIATES  = $(filter-out %.pch, $(VirtualBox_INTERMEDIATES))
-  VirtualBoxPch_SOURCES        = src/precomp.cpp
-  VirtualBoxPch_CXXFLAGS       = $(filter-out -Yu%, $(VirtualBox_CXXFLAGS)) -Ycprecomp.h -Yd -FR\tmp\foo.sbr
-  $$(VirtualBoxPch_0_OUTDIR)/src/precomp.pch: $$(VirtualBoxPch_0_OUTDIR)/src/precomp.obj
- else
+  MISCBINS += VirtualBoxPch
+  VirtualBoxPch_EXTENDS = VirtualBox
+  VirtualBoxPch_LDTOOL   = VirtualBoxPchLinker
+  VirtualBoxPch_INSTTYPE = none
+  VirtualBoxPch_NAME            = VirtualBoxPch
   VirtualBoxPch_INTERMEDIATES  = $(filter-out %.h.gch, $(VirtualBox_INTERMEDIATES))
   VirtualBoxPch_SOURCES        = src/precomp.h
   VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS)) -x c++-header
   VirtualBoxPch_CXXOBJSUFF     = .h.gch
   VirtualBoxPch_SRC_HANDLERS   = .h:def_src_handler_cxx
- endif
- VirtualBoxPch_SOURCES.darwin  = $(NO_SUCH_VARIABLE)
- VirtualBoxPch_SOURCES.solaris = $(NO_SUCH_VARIABLE)
- VirtualBoxPch_SOURCES.freebsd = $(NO_SUCH_VARIABLE)
- VirtualBoxPch_SOURCES.linux   = $(NO_SUCH_VARIABLE)
- VirtualBoxPch_SOURCES.win     = $(NO_SUCH_VARIABLE)
- VirtualBoxPch_QT_MODULES      = $(VirtualBox_QT_MODULES) # "bug" - not inherited.
- VirtualBoxPch_INCS            = $(VirtualBox_INCS)       # "bug" - missing qtuic and qtmoc
-
+  VirtualBoxPch_SOURCES.darwin  = $(NO_SUCH_VARIABLE)
+  VirtualBoxPch_SOURCES.solaris = $(NO_SUCH_VARIABLE)
+  VirtualBoxPch_SOURCES.freebsd = $(NO_SUCH_VARIABLE)
+  VirtualBoxPch_SOURCES.linux   = $(NO_SUCH_VARIABLE)
+  VirtualBoxPch_SOURCES.win     = $(NO_SUCH_VARIABLE)
+  VirtualBoxPch_QT_MODULES      = $(VirtualBox_QT_MODULES) # "bug" - not inherited.
+  VirtualBoxPch_INCS            = $(VirtualBox_INCS)       # "bug" - missing qtuic and qtmoc
+ endif # obsolete experiment
 endif
 
 ifeq ($(KBUILD_TARGET),win)
@@ -1311,6 +1304,7 @@ endif
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
 include $(FILE_KBUILD_SUB_FOOTER)
+
 
 #
 # Update all known NLS translation (.ts) files in the nls/ subdirectory.
