@@ -1273,9 +1273,11 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
         </listitem>
 
         <listitem>
-          <para><computeroutput>--audio none|null|oss|alsa|pulse</computeroutput>: With
-          this setting, you can specify whether the VM should have audio
-          support, and if so - which type.</para>
+          <para><computeroutput>--audio none|null|dsound|oss|alsa|pulse|coreaudio</computeroutput>:
+          With this setting, you can specify whether the VM should have audio support, and
+          &ndash; if so &ndash; which type. The list of supported audio types depends on the
+          host and can be determined with <computeroutput>VBoxManage modifyvm</computeroutput>.
+        </para>
         </listitem>
 
         <listitem>
