@@ -321,26 +321,26 @@ void UIVMDesktop::updateDetailsError(const QString &strError)
     m_pDesktopPrivate->setError(strError);
 }
 
-void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine& machine)
+void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine &comMachine)
 {
-    /* Update the snapshots header name: */
-    QString name = tr("&Snapshots");
+    /* Update snapshot segment name: */
+    QString strName = tr("&Snapshots");
     if (pVMItem)
     {
-        ULONG count = pVMItem->snapshotCount();
+        const ULONG count = pVMItem->snapshotCount();
         if (count)
-            name += QString(" (%1)").arg(count);
+            strName += QString(" (%1)").arg(count);
     }
-    m_pHeaderBtn->setTitle(SegmentType_Snapshots, name);
+    m_pHeaderBtn->setTitle(SegmentType_Snapshots, strName);
 
-    /* Refresh the snapshots widget: */
-    if (!machine.isNull())
-    {
+    /* Update segmented-button availability: */
+    if (comMachine.isNotNull())
         m_pHeaderBtn->setEnabled(SegmentType_Snapshots, true);
-        m_pSnapshotsPane->setMachine(machine);
-    }
     else
         lockSnapshots();
+
+    /* Update snapshot pane: */
+    m_pSnapshotsPane->setMachine(comMachine);
 }
 
 void UIVMDesktop::lockSnapshots()
