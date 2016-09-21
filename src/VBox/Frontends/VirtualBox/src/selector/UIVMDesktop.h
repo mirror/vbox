@@ -61,8 +61,10 @@ public:
     /* Constructor: */
     UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent);
 
-    /* API: Current pane index: */
+    /** Returns current widget index. */
     int widgetIndex() const;
+    /** Defines current widget @a iIndex. */
+    void setWidgetIndex(int iIndex);
 
     /* Helpers: Update stuff: */
     void updateDetailsText(const QString &strText);

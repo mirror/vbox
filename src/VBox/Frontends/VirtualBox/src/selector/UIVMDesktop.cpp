@@ -306,6 +306,11 @@ int UIVMDesktop::widgetIndex() const
     return m_pStackedLayout->currentIndex();
 }
 
+void UIVMDesktop::setWidgetIndex(int iIndex)
+{
+    m_pStackedLayout->setCurrentIndex(iIndex);
+}
+
 void UIVMDesktop::updateDetailsText(const QString &strText)
 {
     m_pDesktopPrivate->setText(strText);
