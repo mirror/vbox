@@ -30,8 +30,6 @@
 /* GUI includes */
 # include "UIBar.h"
 # include "UIIconPool.h"
-# include "UISpacerWidgets.h"
-# include "UISpecialControls.h"
 # include "UIVMDesktop.h"
 # include "UIVMItem.h"
 # include "UIToolBar.h"
@@ -219,67 +217,12 @@ void UIVMDesktopPrivate::prepareErrorPane()
     retranslateUi();
 }
 
-UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent)
+UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
 {
-    /* Create container: */
-    QWidget *pContainer = new QWidget;
-    {
-        /* Create layout: */
-        QHBoxLayout *pLayout = new QHBoxLayout(pContainer);
-        {
-            /* Configure layout: */
-            pLayout->setContentsMargins(0, 0, 0, 0);
-            /* Create segmented-button: */
-            m_pHeaderBtn = new UITexturedSegmentedButton(pContainer, 2);
-            {
-                /* Configure segmented-button: */
-                m_pHeaderBtn->setIcon(SegmentType_Details, UIIconPool::iconSet(":/vm_settings_16px.png",
-                                                                               ":/vm_settings_disabled_16px.png"));
-                m_pHeaderBtn->setIcon(SegmentType_Snapshots, UIIconPool::iconSet(":/snapshot_take_16px.png",
-                                                                                 ":/snapshot_take_disabled_16px.png"));
-                /* Add segmented-buttons into layout: */
-                pLayout->addWidget(m_pHeaderBtn);
-            }
-        }
-    }
-
-#ifdef VBOX_WS_MAC
-    /* Cocoa stuff should be async...
-     * Do not ask me why but otherwise
-     * it conflicts with native handlers. */
-    QTimer::singleShot(0, this, SLOT(sltInit()));
-#else /* !VBOX_WS_MAC */
-    sltInit();
-#endif /* !VBOX_WS_MAC */
-
     /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->setContentsMargins(0, 0, 0, 0);
-
-    /* The header to select the different pages.
-     * Has different styles on the different platforms. */
-    if (pToolBar)
-    {
-        pToolBar->addWidget(new UIHorizontalSpacerWidget(this));
-        pToolBar->addWidget(pContainer);
-        QWidget *pSpace = new QWidget(this);
-        /* We need a little bit more space for the beta label. */
-        if (vboxGlobal().isBeta())
-            pSpace->setFixedSize(28, 1);
-        else
-            pSpace->setFixedSize(10, 1);
-        pToolBar->addWidget(pSpace);
-#ifdef VBOX_WS_MAC
-        pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
-    }
-    else
-    {
-        UIBar *pBar = new UIBar(this);
-        pBar->setContentWidget(pContainer);
-        pMainLayout->addWidget(pBar);
-    }
 
     /* Create desktop pane: */
     m_pDesktopPrivate = new UIVMDesktopPrivate(this, pRefreshAction);
@@ -292,10 +235,6 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
     m_pStackedLayout = new QStackedLayout(pMainLayout);
     m_pStackedLayout->addWidget(m_pDesktopPrivate);
     m_pStackedLayout->addWidget(m_pSnapshotsPane);
-
-    /* Connect the header buttons with the stack layout: */
-    connect(m_pHeaderBtn, SIGNAL(clicked(int)), m_pStackedLayout, SLOT(setCurrentIndex(int)));
-    connect(m_pStackedLayout, SIGNAL(currentChanged(int)), this, SIGNAL(sigCurrentChanged(int)));
 
     /* Translate finally: */
     retranslateUi();
@@ -321,42 +260,13 @@ void UIVMDesktop::updateDetailsError(const QString &strError)
     m_pDesktopPrivate->setError(strError);
 }
 
-void UIVMDesktop::updateSnapshots(UIVMItem *pVMItem, const CMachine &comMachine)
+void UIVMDesktop::updateSnapshots(const CMachine &comMachine)
 {
-    /* Update snapshot segment name: */
-    QString strName = tr("&Snapshots");
-    if (pVMItem)
-    {
-        const ULONG count = pVMItem->snapshotCount();
-        if (count)
-            strName += QString(" (%1)").arg(count);
-    }
-    m_pHeaderBtn->setTitle(SegmentType_Snapshots, strName);
-
-    /* Update segmented-button availability: */
-    if (comMachine.isNotNull())
-        m_pHeaderBtn->setEnabled(SegmentType_Snapshots, true);
-    else
-        lockSnapshots();
-
-    /* Update snapshot pane: */
     m_pSnapshotsPane->setMachine(comMachine);
-}
-
-void UIVMDesktop::lockSnapshots()
-{
-    m_pHeaderBtn->animateClick(SegmentType_Details);
-    m_pHeaderBtn->setEnabled(SegmentType_Snapshots, false);
-}
-
-void UIVMDesktop::sltInit()
-{
-    m_pHeaderBtn->animateClick(0);
 }
 
 void UIVMDesktop::retranslateUi()
 {
-    m_pHeaderBtn->setTitle(SegmentType_Details, tr("&Details"));
 }
 
 #include "UIVMDesktop.moc"

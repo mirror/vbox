@@ -39,12 +39,20 @@ class UIVMItem;
 class QISplitter;
 class QMenu;
 class QStackedWidget;
+class UITexturedSegmentedButton;
 
 /** Singleton QIMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
 class UISelectorWindow : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
+
+    /** Segmented-button segment types. */
+    enum SegmentType
+    {
+        SegmentType_Details   = 0,
+        SegmentType_Snapshots
+    };
 
 public:
 
@@ -77,9 +85,6 @@ private slots:
 
     /** Handles selector-window context-menu call for passed @a position. */
     void sltShowSelectorWindowContextMenu(const QPoint &position);
-
-    /** Handles signal about Details-container @a iIndex change. */
-    void sltHandleDetailsContainerIndexChange(int iIndex);
 
     /** Handles signal about Chooser-pane index change.
       * @param fRefreshDetails     brings whether details should be updated.
@@ -174,6 +179,16 @@ private slots:
         void sltGroupCloseMenuAboutToShow();
         /** Handles call to show machine Close menu. */
         void sltMachineCloseMenuAboutToShow();
+    /** @} */
+
+    /** @name Segmented-button stuff.
+      * @{ */
+        /** Handles segmented-button switch. */
+        void sltHandleSegmentedButtonSwitch(int iSegment);
+        /** Performs segmented-button switch. */
+        void sltPerformSegmentedButtonSwitch(int iSegment);
+        /** Performs segmented-button switch to details pane. */
+        void sltPerformSegmentedButtonSwitchToDetails() { sltPerformSegmentedButtonSwitch(SegmentType_Details); }
     /** @} */
 
 private:
@@ -297,6 +312,9 @@ private:
 #endif /* !VBOX_WS_MAC */
     /** Holds the main toolbar instance. */
     UIToolBar *m_pToolBar;
+
+    /** Holds the segmented-button instance. */
+    UITexturedSegmentedButton *m_pSegmentedButton;
 
     /** Holds the Details-container instance. */
     QStackedWidget *m_pContainerDetails;

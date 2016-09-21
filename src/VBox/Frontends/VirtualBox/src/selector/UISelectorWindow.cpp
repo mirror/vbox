@@ -54,6 +54,8 @@
 # include "UIMessageCenter.h"
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
+# include "UISpacerWidgets.h"
+# include "UISpecialControls.h"
 # include "UIToolBar.h"
 # include "UIVMLogViewer.h"
 # include "UIDesktopServices.h"
@@ -120,6 +122,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pBar(0)
 #endif /* !VBOX_WS_MAC */
     , m_pToolBar(0)
+    , m_pSegmentedButton(0)
     , m_pContainerDetails(0)
     , m_pPaneChooser(0)
     , m_pPaneDetails(0)
@@ -201,14 +204,6 @@ void UISelectorWindow::sltShowSelectorWindowContextMenu(const QPoint &position)
         else
             statusBar()->hide();
     }
-}
-
-void UISelectorWindow::sltHandleDetailsContainerIndexChange(int iIndex)
-{
-    if (iIndex)
-        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-    else
-        m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
 }
 
 void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, bool fRefreshSnapshots, bool)
@@ -1042,6 +1037,49 @@ void UISelectorWindow::sltMachineCloseMenuAboutToShow()
     actionPool()->action(UIActionIndexST_M_Machine_M_Close_S_Shutdown)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_Close_S_Shutdown, items));
 }
 
+void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
+{
+    /* Get current item: */
+    const UIVMItem *pItem = currentItem();
+
+    /* If current item exists & accessible: */
+    if (pItem && pItem->accessible())
+    {
+        /* Raise the required widget: */
+        switch (iSegment)
+        {
+            case SegmentType_Details:
+            {
+                /* Raise the details pane: */
+                m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
+                break;
+            }
+            case SegmentType_Snapshots:
+            {
+                /* Raise the desktop pane which contains snapshot pane for now: */
+                m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+                break;
+            }
+            default:
+                break;
+        }
+        /* And pass the request to desktop pane afterwards: */
+        m_pPaneDesktop->setWidgetIndex(iSegment);
+    }
+    else
+    {
+        /* Raise the desktop pane which contains text/error details: */
+        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+        /* And pass the request to desktop pane afterwards: */
+        m_pPaneDesktop->setWidgetIndex(SegmentType_Details);
+    }
+}
+
+void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
+{
+    m_pSegmentedButton->animateClick(iSegment);
+}
+
 UIVMItem* UISelectorWindow::currentItem() const
 {
     return m_pPaneChooser->currentItem();
@@ -1054,14 +1092,36 @@ QList<UIVMItem*> UISelectorWindow::currentItems() const
 
 void UISelectorWindow::updateSnapshots(UIVMItem *pItem, const CMachine &comMachine)
 {
-    /* Redirect call to Desktop-pane: */
-    m_pPaneDesktop->updateSnapshots(pItem, comMachine);
+    /* Update segmented-button text: */
+    // TODO: Bring that NLS to "&Snapshots" / "&Snapshots (%1)" form
+    //       as translator should be able to translate whole sentence.
+    //       And move it from UIVMDesktop to UISelectorWindow context.
+    QString strName = QApplication::translate("UIVMDesktop", "&Snapshots");
+    if (pItem)
+    {
+        /* Append the snapshot count (if any): */
+        const ULONG count = pItem->snapshotCount();
+        if (count)
+            strName += QString(" (%1)").arg(count);
+    }
+    m_pSegmentedButton->setTitle(SegmentType_Snapshots, strName);
+
+    /* Update snapshot pane availability: */
+    if (comMachine.isNotNull())
+        m_pSegmentedButton->setEnabled(SegmentType_Snapshots, true);
+    else
+        lockSnapshots();
+
+    /* Redirect call to Desktop-pane finally: */
+    m_pPaneDesktop->updateSnapshots(comMachine);
 }
 
 void UISelectorWindow::lockSnapshots()
 {
-    /* Redirect call to Desktop-pane: */
-    m_pPaneDesktop->lockSnapshots();
+    /* First switch to details pane: */
+    sltPerformSegmentedButtonSwitchToDetails();
+    /* Then lock the snapshot pane: */
+    m_pSegmentedButton->setEnabled(SegmentType_Snapshots, false);
 }
 
 void UISelectorWindow::retranslateUi()
@@ -1077,6 +1137,10 @@ void UISelectorWindow::retranslateUi()
              +  QString(" - " VBOX_BLEEDING_EDGE);
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
+
+    /* Translate segmented-button: */
+    // TODO: Move that NLS from UIVMDesktop to UISelectorWindow context.
+    m_pSegmentedButton->setTitle(SegmentType_Details, QApplication::translate("UIVMDesktop", "&Details"));
 
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange();
@@ -1242,6 +1306,15 @@ void UISelectorWindow::prepare()
     /* General event filter: */
     qApp->installEventFilter(this);
 #endif /* VBOX_WS_MAC */
+
+//#ifdef VBOX_WS_MAC
+//    /* Cocoa stuff should be async..
+//     * Do not ask me why but otherwise
+//     * it conflicts with native handlers. */
+//    QMetaObject::invokeMethod(this, "sltPerformSegmentedButtonSwitchToDetails", Qt::QueuedConnection);
+//#else /* !VBOX_WS_MAC */
+    sltPerformSegmentedButtonSwitchToDetails();
+//#endif /* !VBOX_WS_MAC */
 }
 
 void UISelectorWindow::prepareIcon()
@@ -1688,6 +1761,30 @@ void UISelectorWindow::prepareWidgets()
     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Discard));
     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow));
 
+    /* Create/add horizontal spacer widget to align subsequent controls right: */
+    m_pToolBar->addWidget(new UIHorizontalSpacerWidget(this));
+
+    /* Create/add segmented-button: */
+    m_pSegmentedButton = new UITexturedSegmentedButton(this, 2);
+    m_pSegmentedButton->setIcon(SegmentType_Details, UIIconPool::iconSet(":/vm_settings_16px.png",
+                                                                         ":/vm_settings_disabled_16px.png"));
+    m_pSegmentedButton->setIcon(SegmentType_Snapshots, UIIconPool::iconSet(":/snapshot_take_16px.png",
+                                                                           ":/snapshot_take_disabled_16px.png"));
+    m_pToolBar->addWidget(m_pSegmentedButton);
+
+    /* Create/add horizontal spacer widget of fixed size for the beta label: */
+    QWidget *pSpace = new QWidget(this);
+    if (vboxGlobal().isBeta())
+        pSpace->setFixedSize(28, 1);
+    else
+        pSpace->setFixedSize(10, 1);
+    m_pToolBar->addWidget(pSpace);
+
+#ifdef VBOX_WS_MAC
+    /* Update toolbar on Mac OS X: */
+    m_pToolBar->updateLayout();
+#endif /* VBOX_WS_MAC */
+
     /* Prepare graphics VM list: */
     m_pPaneChooser = new UIGChooser(this);
 
@@ -1699,7 +1796,7 @@ void UISelectorWindow::prepareWidgets()
                                  m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
 
     /* Prepare details and snapshots tabs: */
-    m_pPaneDesktop = new UIVMDesktop(m_pToolBar, actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
+    m_pPaneDesktop = new UIVMDesktop(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
 
     /* Crate container: */
     m_pContainerDetails = new QStackedWidget(this);
@@ -1822,8 +1919,10 @@ void UISelectorWindow::prepareConnections()
     ::darwinRegisterForUnifiedToolbarContextMenuEvents(this);
 #endif /* VBOX_WS_MAC */
 
+    /* Segmented-button connections: */
+    connect(m_pSegmentedButton, SIGNAL(clicked(int)), this, SLOT(sltHandleSegmentedButtonSwitch(int)));
+
     /* VM desktop connections: */
-    connect(m_pPaneDesktop, SIGNAL(sigCurrentChanged(int)), this, SLOT(sltHandleDetailsContainerIndexChange(int)));
     connect(m_pPaneDetails, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SLOT(sltOpenMachineSettingsDialog(const QString&, const QString&, const QString&)));
 
