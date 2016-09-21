@@ -1145,10 +1145,10 @@ void UISelectorWindow::retranslateUi()
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange();
 
-#ifdef VBOX_WS_MAC
+#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
+#endif
 }
 
 bool UISelectorWindow::event(QEvent *pEvent)
@@ -1780,10 +1780,10 @@ void UISelectorWindow::prepareWidgets()
         pSpace->setFixedSize(10, 1);
     m_pToolBar->addWidget(pSpace);
 
-#ifdef VBOX_WS_MAC
-    /* Update toolbar on Mac OS X: */
+#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
+    /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
+#endif
 
     /* Prepare graphics VM list: */
     m_pPaneChooser = new UIGChooser(this);
@@ -2133,10 +2133,10 @@ void UISelectorWindow::updateActionsAppearance()
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->retranslateUi();
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->blockSignals(false);
 
-#ifdef VBOX_WS_MAC
+#if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
     /* Avoid bug in Qt Cocoa which results in showing a "more arrow" on size-hint changes: */
     m_pToolBar->updateLayout();
-#endif /* VBOX_WS_MAC */
+#endif
 }
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> &items)
