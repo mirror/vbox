@@ -156,13 +156,25 @@ int rcp_parse(struct rcp_state *state, const char *filename)
             break;
         }
 
+        /*
+         * Strip comment if present.
+         *
+         * This is not how ad-hoc parser in bind's res_init.c does it,
+         * btw, so this code will accept more input as valid compared
+         * to res_init.  (e.g. "nameserver 1.1.1.1; comment" is
+         * misparsed by res_init).
+         */
+        for (s = buf; *s != '\0'; ++s)
+        {
+            if (*s == '#' || *s == ';')
+            {
+                *s = '\0';
+                break;
+            }
+        }
 
         tok = getToken(buf, &s);
-
-        /* no more tokens or a comment */
-#       define NO_VALUE(tok)  (tok == NULL || tok[0] == '#' || tok[0] == ';')
-
-        if (NO_VALUE(tok))
+        if (tok == NULL)
             continue;
 
 
@@ -193,7 +205,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
              * parse next token as an IP address
              */
             tok = getToken(NULL, &s);
-            if (NO_VALUE(tok))
+            if (tok == NULL)
             {
                 LogRel(("NAT: resolv.conf: nameserver line without value\n"));
                 continue;
@@ -251,7 +263,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
 
 
             tok = getToken(NULL, &s);
-            if (!NO_VALUE(tok))
+            if (tok != NULL)
                 LogRel(("NAT: resolv.conf: ignoring unexpected trailer on the nameserver line\n"));
 
             if ((flags & RCPSF_IGNORE_IPV6) && NetAddr.enmType == RTNETADDRTYPE_IPV6)
@@ -303,7 +315,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
             }
 
             tok = getToken(NULL, &s);
-            if (NO_VALUE(tok))
+            if (tok == NULL)
             {
                 LogRel(("NAT: resolv.conf: port line without value\n"));
                 continue;
@@ -335,7 +347,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
             }
 
             tok = getToken(NULL, &s);
-            if (NO_VALUE(tok))
+            if (tok == NULL)
             {
                 LogRel(("NAT: resolv.conf: domain line without value\n"));
                 continue;
@@ -361,7 +373,7 @@ int rcp_parse(struct rcp_state *state, const char *filename)
          */
         if (RTStrCmp(tok, "search") == 0)
         {
-            while ((tok = getToken(NULL, &s)) && !NO_VALUE(tok))
+            while ((tok = getToken(NULL, &s)) && tok != NULL)
             {
                 i = state->rcps_num_searchlist;
                 if (RT_UNLIKELY(i >= RCPS_MAX_SEARCHLIST))
