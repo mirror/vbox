@@ -241,7 +241,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
     if (fRefreshDetails)
         m_pPaneDetails->setItems(currentItems());
 
-    /* If currently selected VM item is accessible: */
+    /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
         /* Make sure valid widget raised: */
@@ -252,14 +252,13 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
 
         if (fRefreshSnapshots)
         {
-            m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
+            updateSnapshots(pItem, pItem->machine());
             /* Always hide snapshots-view if
              * single group or more than one machine is selected: */
             if (currentItems().size() > 1 || m_pPaneChooser->isSingleGroupSelected())
-                m_pPaneDesktop->lockSnapshots();
+                lockSnapshots();
         }
     }
-    /* If currently selected VM item is NOT accessible: */
     else
     {
         /* Make sure valid widget raised: */
@@ -293,7 +292,7 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
         }
 
         /* Empty and disable other tabs: */
-        m_pPaneDesktop->updateSnapshots(0, CMachine());
+        updateSnapshots(0, CMachine());
     }
 }
 
@@ -416,7 +415,7 @@ void UISelectorWindow::sltHandleSnapshotChange(QString strID)
 
     /* If signal is for the current item: */
     if (pItem->id() == strID)
-        m_pPaneDesktop->updateSnapshots(pItem, pItem->machine());
+        updateSnapshots(pItem, pItem->machine());
 }
 
 void UISelectorWindow::sltOpenMediaManagerWindow()
@@ -1053,6 +1052,18 @@ QList<UIVMItem*> UISelectorWindow::currentItems() const
     return m_pPaneChooser->currentItems();
 }
 
+void UISelectorWindow::updateSnapshots(UIVMItem *pItem, const CMachine &comMachine)
+{
+    /* Redirect call to Desktop-pane: */
+    m_pPaneDesktop->updateSnapshots(pItem, comMachine);
+}
+
+void UISelectorWindow::lockSnapshots()
+{
+    /* Redirect call to Desktop-pane: */
+    m_pPaneDesktop->lockSnapshots();
+}
+
 void UISelectorWindow::retranslateUi()
 {
     /* Set window title: */
@@ -1067,7 +1078,7 @@ void UISelectorWindow::retranslateUi()
 #endif /* VBOX_BLEEDING_EDGE */
     setWindowTitle(strTitle);
 
-    /* Ensure the details and screenshot view are updated: */
+    /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange();
 
 #ifdef VBOX_WS_MAC

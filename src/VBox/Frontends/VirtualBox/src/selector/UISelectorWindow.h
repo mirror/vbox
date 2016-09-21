@@ -26,6 +26,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class CMachine;
 class UIAction;
 class UIActionPool;
 class UIActionPolymorphic;
@@ -181,6 +182,11 @@ private:
     UIVMItem* currentItem() const;
     /** Returns a list of current-items. */
     QList<UIVMItem*> currentItems() const;
+
+    /** Updates snapshot related controls for passed @a pItem and @a comMachine. */
+    void updateSnapshots(UIVMItem *pItem, const CMachine &comMachine);
+    /** Locks snapshot related controls. */
+    void lockSnapshots();
 
     /** @name Event handling stuff.
       * @{ */
