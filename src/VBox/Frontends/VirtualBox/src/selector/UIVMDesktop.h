@@ -23,9 +23,6 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* GUI includes: */
-#include "QIWithRetranslateUI.h"
-
 /* Forward declarations: */
 class CMachine;
 class UIVMDesktopPrivate;
@@ -39,7 +36,7 @@ class QStackedLayout;
  * 2. Inaccessible machine pane reflecting information about
  *    currently chosen inaccessible VM and allowing to operate over it,
  * 3. Snapshot pane allowing to operate over the snapshots. */
-class UIVMDesktop: public QIWithRetranslateUI<QWidget>
+class UIVMDesktop: public QWidget
 {
     Q_OBJECT;
 
@@ -59,9 +56,6 @@ public:
     void updateSnapshots(const CMachine &comMachine);
 
 private:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
     /* Variables: */
     QStackedLayout *m_pStackedLayout;

@@ -28,6 +28,7 @@
 # endif /* VBOX_WS_MAC */
 
 /* GUI includes */
+# include "QIWithRetranslateUI.h"
 # include "UIBar.h"
 # include "UIIconPool.h"
 # include "UIVMDesktop.h"
@@ -218,7 +219,7 @@ void UIVMDesktopPrivate::prepareErrorPane()
 }
 
 UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : QWidget(pParent)
 {
     /* Prepare main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -235,9 +236,6 @@ UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     m_pStackedLayout = new QStackedLayout(pMainLayout);
     m_pStackedLayout->addWidget(m_pDesktopPrivate);
     m_pStackedLayout->addWidget(m_pSnapshotsPane);
-
-    /* Translate finally: */
-    retranslateUi();
 }
 
 int UIVMDesktop::widgetIndex() const
@@ -263,10 +261,6 @@ void UIVMDesktop::updateDetailsError(const QString &strError)
 void UIVMDesktop::updateSnapshots(const CMachine &comMachine)
 {
     m_pSnapshotsPane->setMachine(comMachine);
-}
-
-void UIVMDesktop::retranslateUi()
-{
 }
 
 #include "UIVMDesktop.moc"
