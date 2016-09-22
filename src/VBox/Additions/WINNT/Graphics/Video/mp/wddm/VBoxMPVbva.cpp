@@ -1380,7 +1380,11 @@ int VBoxCmdVbvaConCmdResize(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *p
     int rc = vboxWddmScreenInfoInit(&pResize->Resize.aEntries[0].Screen, pAllocData, pVScreenPos, fFlags);
     if (RT_SUCCESS(rc))
     {
-        memcpy(&pResize->Resize.aEntries[0].aTargetMap, pTargetMap, sizeof (pResize->Resize.aEntries[0].aTargetMap));
+        VBOXCMDVBVA_RESIZE_ENTRY* pEntry = &pResize->Resize.aEntries[0];
+        memcpy(pEntry->aTargetMap, pTargetMap, sizeof (pEntry->aTargetMap));
+        LOG(("[%d] %dx%d, TargetMap0 0x%x, flags 0x%x", 
+            pEntry->Screen.u32ViewIndex, pEntry->Screen.u32Width, pEntry->Screen.u32Height, pEntry->aTargetMap[0], pEntry->Screen.u16Flags));
+
         rc = vboxCmdVbvaCtlSubmitSync(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx, &pResize->Hdr);
         if (RT_SUCCESS(rc))
         {

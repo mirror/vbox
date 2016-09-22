@@ -364,6 +364,19 @@ void VBoxVidPnTargetsCopy(VBOXWDDM_TARGET *pDst, const VBOXWDDM_TARGET *pSrc, ui
         VBoxVidPnTargetCopy(&pDst[i], &pSrc[i]);
 }
 
+void VBoxDumpSourceTargetArrays(VBOXWDDM_SOURCE *paSources, VBOXWDDM_TARGET *paTargets, uint32_t cScreens)
+{
+    RT_NOREF(paSources, paTargets, cScreens);
+
+    for (uint32_t i = 0; i < cScreens; i++)
+    {
+        LOG_EXACT(("source [%d] Sync 0x%x, cTgt %d, TgtMap0 0x%x, TgtRep %d, blanked %d\n",
+            i, paSources[i].u8SyncState, paSources[i].cTargets, paSources[i].aTargetMap[0], paSources[i].fTargetsReported, paSources[i].bBlankedByPowerOff));
+
+        LOG_EXACT(("target [%d] Sync 0x%x, VidPnSourceId %d, blanked %d\n",
+            i, paTargets[i].u8SyncState, paTargets[i].VidPnSourceId, paTargets[i].fBlankedByPowerOff));
+    }
+}
 
 static D3DKMDT_ENUMCOFUNCMODALITY_PIVOT_TYPE vboxVidPnCofuncModalityCurrentPathPivot(D3DKMDT_ENUMCOFUNCMODALITY_PIVOT_TYPE enmPivot,
                     const DXGK_ENUM_PIVOT *pPivot,
@@ -1182,7 +1195,7 @@ static NTSTATUS vboxVidPnCheckMonitorModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32T
         size.cx = pVidPnModeInfo->VideoSignalInfo.ActiveSize.cx;
         size.cy = pVidPnModeInfo->VideoSignalInfo.ActiveSize.cy;
         CrSaRemove(&DiffModes, CR_RSIZE2U64(size));
-        LOG(("mode (%d x %d) is already in monitor modeset\n", size.cx, size.cy));
+        LOGF(("mode (%d x %d) is already in monitor modeset\n", size.cx, size.cy));
     }
 
     VBoxVidPnMonitorModeIterTerm(&Iter);
@@ -1194,7 +1207,7 @@ static NTSTATUS vboxVidPnCheckMonitorModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32T
         goto done;
     }
 
-    LOG(("Adding %d additional modes to monitor modeset\n", CrSaGetSize(&DiffModes)));
+    LOGF(("Adding %d additional modes to monitor modeset\n", CrSaGetSize(&DiffModes)));
 
     Status = vboxVidPnMonitorModeSetFromArray(hVidPnModeSet, pVidPnModeSetInterface, &DiffModes);
     if (!NT_SUCCESS(Status))
@@ -2976,7 +2989,7 @@ void vboxVidPnDumpSourceModeSet(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hVi
                                 D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
     RT_NOREF(pDevExt);
-    LOGREL_EXACT(("  >>>+++SourceMode Set for Source(%d)+++\n", VidPnSourceId));
+    LOGREL_EXACT(("\n  >>>+++SourceMode Set for Source(%d)+++\n", VidPnSourceId));
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
@@ -3018,7 +3031,7 @@ void vboxVidPnDumpTargetModeSet(PVBOXMP_DEVEXT pDevExt, const D3DKMDT_HVIDPN hVi
                                 D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
 {
     RT_NOREF(pDevExt);
-    LOGREL_EXACT(("  >>>---TargetMode Set for Target(%d)---\n", VidPnTargetId));
+    LOGREL_EXACT(("\n  >>>---TargetMode Set for Target(%d)---\n", VidPnTargetId));
     D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
 

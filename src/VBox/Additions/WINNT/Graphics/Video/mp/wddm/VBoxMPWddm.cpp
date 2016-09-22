@@ -5341,7 +5341,7 @@ DxgkDdiCommitVidPn(
     CONST DXGKARG_COMMITVIDPN* CONST  pCommitVidPnArg
     )
 {
-    LOGF(("ENTER, context(0x%x)", hAdapter));
+    LOG(("ENTER AffectedVidPnSourceId(%d) hAdapter(0x%x)", pCommitVidPnArg->AffectedVidPnSourceId, hAdapter));
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     NTSTATUS Status;
@@ -5413,13 +5413,15 @@ DxgkDdiCommitVidPn(
         VBoxVidPnSourcesCopy(pDevExt->aSources, paSources, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
         VBoxVidPnTargetsCopy(pDevExt->aTargets, paTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
 
+        VBoxDumpSourceTargetArrays(paSources, paTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+
         vboxWddmGhDisplayCheckSetInfo(pDevExt);
     } while (0);
 
     RTMemFree(paSources);
     RTMemFree(paTargets);
 
-    LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
+    LOG(("LEAVE, status(0x%x), hAdapter(0x%x)", Status, hAdapter));
 
     return Status;
 }
