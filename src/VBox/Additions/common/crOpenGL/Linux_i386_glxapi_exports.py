@@ -10,6 +10,7 @@ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
 
+from __future__ import print_function
 import sys
 
 #Note, this should match the fakedri_glxfuncsList.h order
@@ -79,26 +80,26 @@ glx_functions = [
 "FreeContextEXT"
 ];
 
-print '%include "iprt/asmdefs.mac"'
-print ""
-print "%ifdef RT_ARCH_AMD64"
-print "extern glxim"
-print "%else ; X86"
-print "extern glxim"
-print "%endif"
-print ""
+print('%include "iprt/asmdefs.mac"')
+print("")
+print("%ifdef RT_ARCH_AMD64")
+print("extern glxim")
+print("%else ; X86")
+print("extern glxim")
+print("%endif")
+print("")
 
 for index in range(len(glx_functions)):
     func_name = glx_functions[index]
 
-    print "BEGINPROC_EXPORTED vbox_glX%s" % func_name
-    print "%ifdef RT_ARCH_AMD64"
-    print "\tmov \trax, qword glxim+%d" % (8*index)
-    print "\tjmp \t[rax]"
-    print "%else ; X86"
-    print "\tmov \teax, dword glxim+%d" % (4*index)
-    print "\tjmp \t[eax]"
-    print "%endif"
-    print "ENDPROC vbox_glX%s" % func_name
-    print ""
+    print("BEGINPROC_EXPORTED vbox_glX%s" % func_name)
+    print("%ifdef RT_ARCH_AMD64")
+    print("\tmov \trax, qword glxim+%d" % (8*index))
+    print("\tjmp \t[rax]")
+    print("%else ; X86")
+    print("\tmov \teax, dword glxim+%d" % (4*index))
+    print("\tjmp \t[eax]")
+    print("%endif")
+    print("ENDPROC vbox_glX%s" % func_name)
+    print("")
 

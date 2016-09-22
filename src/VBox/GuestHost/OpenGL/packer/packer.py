@@ -5,6 +5,7 @@
 
 # This script generates the packer.c file from the gl_header.parsed file.
 
+from __future__ import print_function
 import sys, string, re
 
 import apiutil
@@ -45,7 +46,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = '%s%s' % (k[:1].lower(),k[1:])
         type = m.group(3) + m.group(2)
-        print "\tpc->current.c.%s.%s = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s = data_ptr;" % (name,type))
         return
 
     m = re.search( r"^(SecondaryColor)(3)(ub|b|us|s|ui|i|f|d)EXT$", func_name )
@@ -53,7 +54,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'secondaryColor'
         type = m.group(3) + m.group(2)
-        print "\tpc->current.c.%s.%s = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s = data_ptr;" % (name,type))
         return
 
     m = re.search( r"^(TexCoord)([1234])(ub|b|us|s|ui|i|f|d)$", func_name )
@@ -61,7 +62,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'texCoord'
         type = m.group(3) + m.group(2)
-        print "\tpc->current.c.%s.%s[0] = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s[0] = data_ptr;" % (name,type))
         return
 
     m = re.search( r"^(MultiTexCoord)([1234])(ub|b|us|s|ui|i|f|d)ARB$", func_name )
@@ -69,7 +70,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'texCoord'
         type = m.group(3) + m.group(2)
-        print "\tpc->current.c.%s.%s[texture-GL_TEXTURE0_ARB] = data_ptr + 4;" % (name,type)
+        print("\tpc->current.c.%s.%s[texture-GL_TEXTURE0_ARB] = data_ptr + 4;" % (name,type))
         return
 
     m = re.match( r"^(Index)(ub|b|us|s|ui|i|f|d)$", func_name )
@@ -77,7 +78,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'index'
         type = m.group(2) + "1"
-        print "\tpc->current.c.%s.%s = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s = data_ptr;" % (name,type))
         return
 
     m = re.match( r"^(EdgeFlag)$", func_name )
@@ -85,7 +86,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'edgeFlag'
         type = "l1"
-        print "\tpc->current.c.%s.%s = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s = data_ptr;" % (name,type))
         return
 
     m = re.match( r"^(FogCoord)(f|d)EXT$", func_name )
@@ -93,7 +94,7 @@ def UpdateCurrentPointer( func_name ):
         k = m.group(1)
         name = 'fogCoord'
         type = m.group(2) + "1"
-        print "\tpc->current.c.%s.%s = data_ptr;" % (name,type)
+        print("\tpc->current.c.%s.%s = data_ptr;" % (name,type))
         return
 
 
@@ -103,10 +104,10 @@ def UpdateCurrentPointer( func_name ):
         name = 'vertexAttrib'
         type = m.group(3) + m.group(2)
         # Add 12 to skip the packet length, opcode and index fields
-        print "\tpc->current.c.%s.%s[index] = data_ptr + 4;" % (name,type)
+        print("\tpc->current.c.%s.%s[index] = data_ptr + 4;" % (name,type))
         if m.group(4) == "ARB" or m.group(4) == "NV":
-            print "\tpc->current.attribsUsedMask |= (1 << index);"
-            print "\tpc->current.changedVertexAttrib |= (1 << index);"
+            print("\tpc->current.attribsUsedMask |= (1 << index);")
+            print("\tpc->current.changedVertexAttrib |= (1 << index);")
         return
 
 
@@ -114,11 +115,11 @@ def UpdateCurrentPointer( func_name ):
 def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     """Emit a packer function."""
     if is_swapped:
-        print 'void PACK_APIENTRY crPack%sSWAP( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params))
+        print('void PACK_APIENTRY crPack%sSWAP( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
     else:
-        print 'void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params))
-    print '{'
-    print '\tCR_GET_PACKER_CONTEXT(pc);'
+        print('void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
+    print('{')
+    print('\tCR_GET_PACKER_CONTEXT(pc);')
 
     # Save original function name
     orig_func_name = func_name
@@ -137,10 +138,10 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
             bail_out = 1
     if bail_out:
         for (name, type, vecSize) in nonVecParams:
-            print '\t(void)%s;' % (name)
-        print '\tcrError ( "%s needs to be special cased %d %d!");' % (func_name, vecSize, can_have_pointers)
-        print '\t(void) pc;'
-        print '}'
+            print('\t(void)%s;' % (name))
+        print('\tcrError ( "%s needs to be special cased %d %d!");' % (func_name, vecSize, can_have_pointers))
+        print('\t(void) pc;')
+        print('}')
         # XXX we should really abort here
         return
 
@@ -150,40 +151,40 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
         is_extended = 0
 
 
-    print "\tunsigned char *data_ptr;"
-    print '\t(void) pc;'
+    print("\tunsigned char *data_ptr;")
+    print('\t(void) pc;')
     #if func_name == "Enable" or func_name == "Disable":
     #   print "\tCRASSERT(!pc->buffer.geometry_only); /* sanity check */"
 
     for index in range(0,len(params)):
         (name, type, vecSize) = params[index]
         if vecSize>0 and func_name!=orig_func_name:
-            print "    if (!%s) {" % name
+            print("    if (!%s) {" % name)
             # Know the reason for this one, so avoid the spam.
             if orig_func_name != "SecondaryColor3fvEXT":
-                print "        crDebug(\"App passed NULL as %s for %s\");" % (name, orig_func_name)
-            print "        return;"
-            print "    }"
+                print("        crDebug(\"App passed NULL as %s for %s\");" % (name, orig_func_name))
+            print("        return;")
+            print("    }")
 
     packet_length = apiutil.PacketLength(nonVecParams)
 
     if packet_length == 0 and not is_extended:
-        print "\tCR_GET_BUFFERED_POINTER_NO_ARGS( pc );"
+        print("\tCR_GET_BUFFERED_POINTER_NO_ARGS( pc );")
     elif func_name[:9] == "Translate" or func_name[:5] == "Color":
         # XXX WTF is the purpose of this?
         if is_extended:
             packet_length += 8
-        print "\tCR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, %d, GL_TRUE );" % packet_length
+        print("\tCR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, %d, GL_TRUE );" % packet_length)
     else:
         if is_extended:
             packet_length += 8
-        print "\tCR_GET_BUFFERED_POINTER( pc, %d );" % packet_length
+        print("\tCR_GET_BUFFERED_POINTER( pc, %d );" % packet_length)
     UpdateCurrentPointer( func_name )
 
     if is_extended:
         counter = 8
-        print WriteData( 0, 'GLint', packet_length, is_swapped )
-        print WriteData( 4, 'GLenum', apiutil.ExtendedOpcodeName( func_name ), is_swapped )
+        print(WriteData( 0, 'GLint', packet_length, is_swapped ))
+        print(WriteData( 4, 'GLenum', apiutil.ExtendedOpcodeName( func_name ), is_swapped ))
     else:
         counter = 0
 
@@ -194,11 +195,11 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
         if vecSize > 0 and func_name != orig_func_name:
             ptrType = apiutil.PointerType(type)
             for i in range(0, vecSize):
-                print WriteData( counter + i * apiutil.sizeof(ptrType),
-                                 ptrType, "%s[%d]" % (name, i), is_swapped )
+                print(WriteData( counter + i * apiutil.sizeof(ptrType),
+                                 ptrType, "%s[%d]" % (name, i), is_swapped ))
             # XXX increment counter here?
         else:
-            print WriteData( counter, type, name, is_swapped )
+            print(WriteData( counter, type, name, is_swapped ))
             if apiutil.IsPointer(type):
                 counter += apiutil.PointerSize()
             else:
@@ -206,15 +207,15 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
 
     # finish up
     if is_extended:
-        print "\tWRITE_OPCODE( pc, CR_EXTEND_OPCODE );"
+        print("\tWRITE_OPCODE( pc, CR_EXTEND_OPCODE );")
     else:
-        print "\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name )
+        print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name ))
 
     if "get" in apiutil.Properties(func_name):
-        print '\tCR_CMDBLOCK_CHECK_FLUSH(pc);'
+        print('\tCR_CMDBLOCK_CHECK_FLUSH(pc);')
 
-    print '\tCR_UNLOCK_PACKER_CONTEXT(pc);'
-    print '}\n'
+    print('\tCR_UNLOCK_PACKER_CONTEXT(pc);')
+    print('}\n')
 
 
 r0_funcs = [ 'ChromiumParameteriCR', 'WindowSize', 'WindowShow', 'WindowPosition' ]
@@ -222,7 +223,7 @@ r0_funcs = [ 'ChromiumParameteriCR', 'WindowSize', 'WindowShow', 'WindowPosition
 
 apiutil.CopyrightC()
 
-print """
+print("""
 /* DO NOT EDIT - THIS FILE GENERATED BY THE packer.py SCRIPT */
 
 /* For each of the OpenGL functions we have a packer function which
@@ -232,7 +233,7 @@ print """
 #include "packer.h"
 #include "cr_opcodes.h"
 
-"""
+""")
 
 
 keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
@@ -251,7 +252,7 @@ for func_name in keys:
 
     if return_type != 'void':
         # Yet another gross hack for glGetString
-        if string.find( return_type, '*' ) == -1:
+        if return_type.find('*') == -1:
             return_type = return_type + " *"
         params.append(("return_value", return_type, 0))
 
@@ -263,11 +264,11 @@ for func_name in keys:
         pointers_ok = 1
 
     if not func_name in r0_funcs:
-        print '#ifndef IN_RING0'
+        print('#ifndef IN_RING0')
         
     PrintFunc( func_name, params, 0, pointers_ok )
     PrintFunc( func_name, params, 1, pointers_ok )
     
     if not func_name in r0_funcs:
-        print '#endif'
+        print('#endif')
     

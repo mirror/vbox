@@ -3,6 +3,7 @@
 #
 # See the file LICENSE.txt for information on redistributing this software.
 
+from __future__ import print_function
 import sys
 
 import apiutil
@@ -10,7 +11,7 @@ import apiutil
 
 apiutil.CopyrightC()
 
-print """
+print("""
 #include "cr_spu.h"
 #include "chromium.h"
 #include "cr_error.h"
@@ -18,7 +19,7 @@ print """
 #include "cr_net.h"
 #include "server_dispatch.h"
 #include "server.h"
-"""
+""")
 
 max_components = {
     'GetClipPlane': 4,
@@ -117,28 +118,28 @@ for func_name in keys:
 
         params = apiutil.Parameters(func_name)
 
-        print 'void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % (func_name, apiutil.MakeDeclarationString( params ) )
-        print '{'
+        print('void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % (func_name, apiutil.MakeDeclarationString( params ) ))
+        print('{')
 
         lastParam = params[-1]
         assert apiutil.IsPointer(lastParam[1])
         local_argtype = apiutil.PointerType(lastParam[1])
         local_argname = 'local_%s' % lastParam[0]
 
-        print '\t%s %s[%d];' % ( local_argtype, local_argname, max_components[func_name] )
-        print '\t(void) %s;' % lastParam[0]
+        print('\t%s %s[%d];' % ( local_argtype, local_argname, max_components[func_name] ))
+        print('\t(void) %s;' % lastParam[0])
 
         params[-1] = (local_argname, local_argtype, 0)
 
-        print '\tcr_server.head_spu->dispatch_table.%s( %s );' % ( func_name, apiutil.MakeCallString(params) )
+        print('\tcr_server.head_spu->dispatch_table.%s( %s );' % ( func_name, apiutil.MakeCallString(params) ))
 
         if func_name in convert_bufferid:
-            print '\tif (pname==GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB){'
-            print '\t\tlocal_params[0]=(%s)crStateBufferHWIDtoID((GLint)local_params[0]);' % (local_argtype);
-            print '\t}'
+            print('\tif (pname==GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB){')
+            print('\t\tlocal_params[0]=(%s)crStateBufferHWIDtoID((GLint)local_params[0]);' % (local_argtype))
+            print('\t}')
 
         if func_name in no_pnames:
-            print '\tcrServerReturnValue( &(%s[0]), %d*sizeof(%s) );' % (local_argname, max_components[func_name], local_argtype );
+            print('\tcrServerReturnValue( &(%s[0]), %d*sizeof(%s) );' % (local_argname, max_components[func_name], local_argtype ))
         else:
-            print '\tcrServerReturnValue( &(%s[0]), crStateHlpComponentsCount(pname)*sizeof(%s) );' % (local_argname, local_argtype );
-        print '}\n'
+            print('\tcrServerReturnValue( &(%s[0]), crStateHlpComponentsCount(pname)*sizeof(%s) );' % (local_argname, local_argtype ))
+        print ('}\n')

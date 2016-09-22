@@ -3,29 +3,30 @@
 #
 # See the file LICENSE.txt for information on redistributing this software.
 
+from __future__ import print_function
 import sys
 curver = sys.version_info[0] + sys.version_info[1]/10.0
 if curver < 2.2:
-	print >>sys.stderr, "Your python is version %g.  Chromium requires at least"%(curver)
-	print >>sys.stderr, "version 2.2.  Please upgrade your python installation."
+	print("Your python is version %g.  Chromium requires at least"%(curver), file=sys.stderr)
+	print("version 2.2.  Please upgrade your python installation.", file=sys.stderr)
 	sys.exit(1)
 
 import string;
 import re;
 
 def CopyrightC( ):
-	print """/* Copyright (c) 2001, Stanford University
+	print("""/* Copyright (c) 2001, Stanford University
 	All rights reserved.
 
 	See the file LICENSE.txt for information on redistributing this software. */
-	"""
+	""")
 
 def CopyrightDef( ):
-	print """; Copyright (c) 2001, Stanford University
+	print("""; Copyright (c) 2001, Stanford University
 	; All rights reserved.
 	;
 	; See the file LICENSE.txt for information on redistributing this software.
-	"""
+	""")
 
 def DecoderName( glName ):
 	return "crUnpack" + glName
@@ -100,9 +101,7 @@ def GetAnnotations( filename, key ):
 	except KeyError:
 		return []
 
-	keys = subtable.keys()
-	keys.sort()
-	return keys
+	return sorted(subtable.keys())
 
 def FindAnnotation( filename, key, subkey ):
 	table = {}
@@ -166,9 +165,7 @@ def AllSpecials( table_file ):
 	except KeyError:
 		table = LoadSpecials( filename )
 	
-	keys = table.keys()
-	keys.sort()
-	return keys
+	return sorted(table.keys())
 
 def AllSpecials( table_file ):
 	filename = table_file + "_special"
@@ -179,9 +176,7 @@ def AllSpecials( table_file ):
 	except KeyError:
 		table = LoadSpecials(filename)
 	
-	ret = table.keys()
-	ret.sort()
-	return ret
+	return sorted(table.keys())
 	
 def NumSpecials( table_file ):
 	filename = table_file + "_special"

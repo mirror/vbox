@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 
 import apiutil
@@ -33,7 +34,7 @@ for line in input.readlines():
 
 apiutil.CopyrightC()
 
-print """#include "cr_blitter.h"
+print("""#include "cr_blitter.h"
 #include "cr_spu.h"
 #include "chromium.h"
 #include "cr_error.h"
@@ -51,7 +52,7 @@ print """#include "cr_blitter.h"
 #include <stdio.h>
 
 #ifdef VBOX_WITH_CRDUMPER
-"""
+""")
 
 from get_sizes import *;
 
@@ -68,7 +69,7 @@ enableprops = apiutil.ParamProps("Enable")
 #        except KeyError:
 #            print "//%s" % prop
 #
-print """
+print("""
 static void crRecDumpPrintVal(CR_DUMPER *pDumper, struct nv_struct *pDesc, float *pfData)
 {
     char aBuf[4096];
@@ -93,25 +94,19 @@ void crRecDumpGlGetState(CR_RECORDER *pRec, CRContext *ctx)
 void crRecDumpGlEnableState(CR_RECORDER *pRec, CRContext *ctx)
 {
     GLboolean fEnabled;
-"""
-keys = params.keys()
-keys.sort();
+""")
+for pname in sorted(params.keys()):
+    print("\tfEnabled = pRec->pDispatch->IsEnabled(%s);" % pname)
+    print("\tcrDmpStrF(pRec->pDumper, \"%s = %%d;\", fEnabled);" % pname)
 
-for pname in keys:
-    print "\tfEnabled = pRec->pDispatch->IsEnabled(%s);" % pname
-    print "\tcrDmpStrF(pRec->pDumper, \"%s = %%d;\", fEnabled);" % pname
-
-keys = extended_params.keys();
-keys.sort()
-
-for pname in keys:
+for pname in sorted(extended_params.keys()):
     (srctype,ifdef,fields) = extended_params[pname]
     ext = ifdef[3:]  # the extension name with the "GL_" prefix removed
     ext = ifdef
-    print '#ifdef CR_%s' % ext
-    print "\tfEnabled = pRec->pDispatch->IsEnabled(%s);" % pname
-    print "\tcrDmpStrF(pRec->pDumper, \"%s = %%d;\", fEnabled);" % pname
-    print '#endif /* CR_%s */' % ext
+    print('#ifdef CR_%s' % ext)
+    print("\tfEnabled = pRec->pDispatch->IsEnabled(%s);" % pname)
+    print("\tcrDmpStrF(pRec->pDumper, \"%s = %%d;\", fEnabled);" % pname)
+    print('#endif /* CR_%s */' % ext)
 
 #print "//missing enable props:"
 #for prop in enableprops:
@@ -123,10 +118,10 @@ for pname in keys:
 #        except KeyError:
 #            print "//%s" % prop
 #
-print """
+print("""
 }
 #endif
-"""
+""")
 
 texenv_mappings = {
     'GL_TEXTURE_ENV' : [
@@ -183,75 +178,72 @@ texparam_names = [
     'GL_GENERATE_MIPMAP'
 ]
 
-print """
+print("""
 void crRecDumpTexParam(CR_RECORDER *pRec, CRContext *ctx, GLenum enmTarget)
 {
     GLfloat afBuf[4];
     char acBuf[1024];
     unsigned int cComponents;
     crDmpStrF(pRec->pDumper, "==TEX_PARAM for target(0x%x)==", enmTarget);
-"""
+""")
 for pname in texparam_names:
-    print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
-    print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
-    print "\tmemset(afBuf, 0, sizeof (afBuf));"
-    print "\tpRec->pDispatch->GetTexParameterfv(enmTarget, %s, afBuf);" % pname
-    print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
-    print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
-print """
+    print("\tcComponents = crStateHlpComponentsCount(%s);" % pname)
+    print("\tAssert(cComponents <= RT_ELEMENTS(afBuf));")
+    print("\tmemset(afBuf, 0, sizeof (afBuf));")
+    print("\tpRec->pDispatch->GetTexParameterfv(enmTarget, %s, afBuf);" % pname)
+    print("\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);")
+    print("\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname)
+print("""
     crDmpStrF(pRec->pDumper, "==Done TEX_PARAM for target(0x%x)==", enmTarget);
 }
-"""
+""")
 
-print """
+print("""
 void crRecDumpTexEnv(CR_RECORDER *pRec, CRContext *ctx)
 {
     GLfloat afBuf[4];
     char acBuf[1024];
     unsigned int cComponents;
     crDmpStrF(pRec->pDumper, "==TEX_ENV==");
-"""
+""")
 
-keys = texenv_mappings.keys()
-keys.sort();
-
-for target in keys:
-    print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % target
+for target in sorted(texenv_mappings.keys()):
+    print("\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % target)
     values = texenv_mappings[target]
     for pname in values:
-        print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
-        print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
-        print "\tmemset(afBuf, 0, sizeof (afBuf));"
-        print "\tpRec->pDispatch->GetTexEnvfv(%s, %s, afBuf);" % (target, pname)
-        print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
-        print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
-    print "\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % target
-print """
+        print("\tcComponents = crStateHlpComponentsCount(%s);" % pname)
+        print("\tAssert(cComponents <= RT_ELEMENTS(afBuf));")
+        print("\tmemset(afBuf, 0, sizeof (afBuf));")
+        print("\tpRec->pDispatch->GetTexEnvfv(%s, %s, afBuf);" % (target, pname))
+        print("\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);")
+        print("\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname)
+    print("\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % target)
+print("""
     crDmpStrF(pRec->pDumper, "==Done TEX_ENV==");
 }
-"""
+""")
 
 
-print """
+print("""
 void crRecDumpTexGen(CR_RECORDER *pRec, CRContext *ctx)
 {
     GLdouble afBuf[4];
     char acBuf[1024];
     unsigned int cComponents;
     crDmpStrF(pRec->pDumper, "==TEX_GEN==");
-"""
+""")
 
 for coord in texgen_coords:
-    print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % coord
+    print("\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % coord)
     for pname in texgen_names:
-        print "\tcComponents = crStateHlpComponentsCount(%s);" % pname
-        print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
-        print "\tmemset(afBuf, 0, sizeof (afBuf));"
-        print "\tpRec->pDispatch->GetTexGendv(%s, %s, afBuf);" % (coord, pname)
-        print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
-        print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
-    print "\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % coord
-print """
+        print("\tcComponents = crStateHlpComponentsCount(%s);" % pname)
+        print("\tAssert(cComponents <= RT_ELEMENTS(afBuf));")
+        print("\tmemset(afBuf, 0, sizeof (afBuf));")
+        print("\tpRec->pDispatch->GetTexGendv(%s, %s, afBuf);" % (coord, pname))
+        print("\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);")
+        print("\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname)
+    print("\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % coord)
+print("""
     crDmpStrF(pRec->pDumper, "==Done TEX_GEN==");
 }
-"""
+""")

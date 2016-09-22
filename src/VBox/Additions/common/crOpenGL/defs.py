@@ -3,6 +3,7 @@
 #
 # See the file LICENSE.txt for information on redistributing this software.
 
+from __future__ import print_function
 import sys
 
 import apiutil
@@ -12,7 +13,7 @@ apiutil.CopyrightDef()
 # NOTE: if we need a LIBRARY statement, we would need to create a defs-x86.py to generate a .def file for VBoxOGL-x86 library
 #print "LIBRARY VBoxOGL"
 #print "DESCRIPTION \"\"" - warning LNK4017: DESCRIPTION statement not supported for the target platform; ignored
-print "EXPORTS"
+print("EXPORTS")
 
 # XXX can't these values be automatically computed by analyzing parameters?
 
@@ -423,7 +424,7 @@ for func_name in keys:
     if func_name in noexport_special:
         continue
     try:
-        print "gl%s@%d = cr_gl%s" % (func_name,stack_sizes[func_name],func_name)
+        print("gl%s@%d = cr_gl%s" % (func_name,stack_sizes[func_name],func_name))
     except KeyError:
         pass
 
@@ -455,7 +456,7 @@ for func_name in ( "wglChoosePixelFormat",
            "wglGetPixelFormatAttribivEXT",
            "wglGetPixelFormatAttribfvEXT",
            "wglGetExtensionsStringEXT"):
-    print "%s = %s_prox" % (func_name,func_name)
+    print("%s = %s_prox" % (func_name,func_name))
 
 """
 for func_name in ( "CopyContext",
@@ -474,7 +475,7 @@ for func_name in ( "CopyContext",
     print "Drv%s@%d = wgl%s_prox" % (func_name,stack_sizes[func_name],func_name)
 """
 
-print """DrvCopyContext
+print("""DrvCopyContext
 DrvCreateContext
 DrvCreateLayerContext
 DrvDeleteContext
@@ -490,9 +491,9 @@ DrvSwapLayerBuffers
 DrvReleaseContext@4 = DrvReleaseContext
 DrvSetContext@12 = DrvSetContext
 DrvValidateVersion@4 = DrvValidateVersion
-DrvSetPixelFormat@8 = DrvSetPixelFormat"""
+DrvSetPixelFormat@8 = DrvSetPixelFormat""")
 
-print """crCreateContext
+print("""crCreateContext
 crMakeCurrent
 crSwapBuffers
 crGetProcAddress
@@ -500,5 +501,5 @@ VBoxCreateContext
 VBoxCtxChromiumParameteriCR
 VBoxGetWindowId
 VBoxGetContextId
-VBoxFlushToHost"""
+VBoxFlushToHost""")
 #print "DllMain"

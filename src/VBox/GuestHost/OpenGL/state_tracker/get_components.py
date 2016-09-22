@@ -3,6 +3,8 @@
 #
 # See the file LICENSE.txt for information on redistributing this software.
 
+from __future__ import print_function
+
 num_components = {
 	'GL_AMBIENT' : 4, 
 	'GL_DIFFUSE' : 4,
@@ -113,25 +115,21 @@ num_extended_components = {
 	'GL_COORD_REPLACE_ARB': (1, 'CR_ARB_point_sprite'),
 }
 
-print """unsigned int crStateHlpComponentsCount( GLenum pname )
+print("""unsigned int crStateHlpComponentsCount( GLenum pname )
 {
 	switch( pname )
 	{
-"""
-comps = num_components.keys();
-comps.sort();
-for comp in comps:
-	print '\t\t\tcase %s: return %d;' % (comp,num_components[comp])
+""")
+for comp in sorted(num_components.keys()):
+	print('\t\t\tcase %s: return %d;' % (comp,num_components[comp]))
 
-comps = num_extended_components.keys();
-comps.sort();
-for comp in comps:
+for comp in sorted(num_extended_components.keys()):
 	(nc, ifdef) = num_extended_components[comp]
-	print '#ifdef %s' % ifdef
-	print '\t\t\tcase %s: return %d;' % (comp,nc)
-	print '#endif /* %s */' % ifdef
+	print('#ifdef %s' % ifdef)
+	print('\t\t\tcase %s: return %d;' % (comp,nc))
+	print('#endif /* %s */' % ifdef)
 
-print """
+print("""
 		default:
 			crError( "Unknown parameter name in crStateHlpComponentsCount: %d", (int) pname );
 			break;
@@ -139,6 +137,6 @@ print """
 	/* NOTREACHED */
 	return 0;
 }
-"""
+""")
 
 

@@ -3,6 +3,7 @@
 #
 # See the file LICENSE.txt for information on redistributing this software.
 
+from __future__ import print_function
 import sys
 
 import apiutil
@@ -11,7 +12,7 @@ apiutil.CopyrightDef()
 
 #print "LIBRARY VBoxOGL"
 #print "DESCRIPTION \"\"" - warning LNK4017: DESCRIPTION statement not supported for the target platform; ignored
-print "EXPORTS"
+print("EXPORTS")
 
 # XXX can't these values be automatically computed by analyzing parameters?
 
@@ -422,7 +423,7 @@ for func_name in keys:
     if func_name in noexport_special:
         continue
     if func_name in exports_special:
-        print "gl%s = cr_gl%s" % (func_name,func_name)
+        print("gl%s = cr_gl%s" % (func_name,func_name))
 
 for func_name in ( "wglChoosePixelFormat", 
            "wglCopyContext",
@@ -452,9 +453,9 @@ for func_name in ( "wglChoosePixelFormat",
            "wglGetPixelFormatAttribivEXT",
            "wglGetPixelFormatAttribfvEXT",
            "wglGetExtensionsStringEXT"):
-    print "%s = %s_prox" % (func_name,func_name)
+    print("%s = %s_prox" % (func_name,func_name))
 
-print """DrvCopyContext
+print("""DrvCopyContext
 DrvCreateContext
 DrvCreateLayerContext
 DrvDeleteContext
@@ -470,9 +471,9 @@ DrvSwapLayerBuffers
 DrvReleaseContext = DrvReleaseContext
 DrvSetContext = DrvSetContext
 DrvValidateVersion = DrvValidateVersion
-DrvSetPixelFormat = DrvSetPixelFormat"""
+DrvSetPixelFormat = DrvSetPixelFormat""")
 
-print """crCreateContext
+print("""crCreateContext
 crMakeCurrent
 crSwapBuffers
 crGetProcAddress
@@ -480,5 +481,5 @@ VBoxCreateContext
 VBoxCtxChromiumParameteriCR
 VBoxGetWindowId
 VBoxGetContextId
-VBoxFlushToHost"""
+VBoxFlushToHost""")
 #print "DllMain"

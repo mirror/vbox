@@ -10,6 +10,7 @@ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
 
+from __future__ import print_function
 import sys
 
 import apiutil
@@ -22,14 +23,14 @@ def GenerateEntrypoints():
     # Get sorted list of dispatched functions.
     # The order is very important - it must match cr_opcodes.h
     # and spu_dispatch_table.h
-    print '%include "iprt/asmdefs.mac"'
-    print ""
-    print "%ifdef RT_ARCH_AMD64"
-    print "extern glim"
-    print "%else ; X86"
-    print "extern glim"
-    print "%endif"
-    print ""
+    print('%include "iprt/asmdefs.mac"')
+    print("")
+    print("%ifdef RT_ARCH_AMD64")
+    print("extern glim")
+    print("%else ; X86")
+    print("extern glim")
+    print("%endif")
+    print("")
 
     keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 
@@ -40,19 +41,19 @@ def GenerateEntrypoints():
         if apiutil.Category(func_name) == "VBox":
             continue
 
-        print "BEGINPROC_EXPORTED cr_gl%s" % func_name
-        print "%ifdef RT_ARCH_AMD64"
-        print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index)
-        print "%else ; X86"
-        print "\tjmp \t[glim+%d wrt ..gotpc]" % (4*index)
-        print "%endif"
-        print "ENDPROC cr_gl%s" % func_name
-        print ""
+        print("BEGINPROC_EXPORTED cr_gl%s" % func_name)
+        print("%ifdef RT_ARCH_AMD64")
+        print("\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index))
+        print("%else ; X86")
+        print("\tjmp \t[glim+%d wrt ..gotpc]" % (4*index))
+        print("%endif")
+        print("ENDPROC cr_gl%s" % func_name)
+        print("")
 
 
-    print ';'
-    print '; Aliases'
-    print ';'
+    print(';')
+    print('; Aliases')
+    print(';')
 
     # Now loop over all the functions and take care of any aliases
     allkeys = apiutil.GetAllFunctions(sys.argv[1]+"/APIspec.txt")
@@ -69,28 +70,28 @@ def GenerateEntrypoints():
         if alias:
             # this dict lookup should never fail (raise an exception)!
             index = keys.index(alias)
-            print "BEGINPROC_EXPORTED cr_gl%s" % func_name
-            print "%ifdef RT_ARCH_AMD64"
-            print "\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index)
-            print "%else ; X86"
-            print "\tjmp \t[glim+%d wrt ..gotpc]" % (4*index)
-            print "%endif"
-            print "ENDPROC cr_gl%s" % func_name
-            print ""
+            print("BEGINPROC_EXPORTED cr_gl%s" % func_name)
+            print("%ifdef RT_ARCH_AMD64")
+            print("\tjmp \t[glim+%d wrt rip wrt ..gotpcrel]" % (8*index))
+            print("%else ; X86")
+            print("\tjmp \t[glim+%d wrt ..gotpc]" % (4*index))
+            print("%endif")
+            print("ENDPROC cr_gl%s" % func_name)
+            print("")
 
 
-    print ';'
-    print '; No-op stubs'
-    print ';'
+    print(';')
+    print('; No-op stubs')
+    print(';')
 
     # Now generate no-op stub functions
     for func_name in allkeys:
         if "stub" in apiutil.ChromiumProps(func_name):
-            print "BEGINPROC_EXPORTED cr_gl%s" % func_name
-            print "\tleave"
-            print "\tret"
-            print "ENDPROC cr_gl%s" % func_name
-            print ""
+            print("BEGINPROC_EXPORTED cr_gl%s" % func_name)
+            print("\tleave")
+            print("\tret")
+            print("ENDPROC cr_gl%s" % func_name)
+            print("")
 
 
 GenerateEntrypoints()
