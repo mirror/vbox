@@ -36,9 +36,7 @@ Requires:  %INITSCRIPTS% %LIBASOUND% net-tools
 %debug_package
 %endif
 
-%if %{?with_python:1}%{!?with_python:0}
 %MACROSPYTHON%
-%endif
 
 # our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
 %undefine _missing_build_ids_terminate_build
