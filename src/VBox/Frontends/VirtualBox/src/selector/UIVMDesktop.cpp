@@ -28,11 +28,7 @@
 
 /* GUI includes */
 # include "QIWithRetranslateUI.h"
-# include "UIBar.h"
-# include "UIIconPool.h"
 # include "UIVMDesktop.h"
-# include "UIVMItem.h"
-# include "UIToolBar.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -41,39 +37,56 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Container to store VM desktop panes. */
+/** QStackedWidget subclass representing container which have two panes:
+  * 1. Text pane reflecting base information about VirtualBox,
+  * 2. Error pane reflecting information about currently chosen
+  *    inaccessible VM and allowing to operate over it. */
 class UIVMDesktopPrivate : public QIWithRetranslateUI<QStackedWidget>
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructs private desktop pane passing @a pParent to the base-class.
+      * @param  pRefreshAction  Brings the refresh action reference. */
     UIVMDesktopPrivate(QWidget *pParent, QAction *pRefreshAction);
 
-    /* API: Pane text setters stuff: */
+    /** Assigns @a strText and switches to text pane. */
     void setText(const QString &strText);
+    /** Assigns @a strError and switches to error pane. */
     void setError(const QString &strError);
+
+protected:
+
+    /** Handles translation event. */
+    void retranslateUi();
+
+    /** Prepares text pane. */
+    void prepareTextPane();
+    /** Prepares error pane. */
+    void prepareErrorPane();
 
 private:
 
-    /* Helper: Translate stuff: */
-    void retranslateUi();
-
-    /* Helpers: Prepare stuff: */
-    void prepareTextPane();
-    void prepareErrorPane();
-
-    /* Text pane stuff: */
+    /** Holds the text pane instance. */
     QRichTextBrowser *m_pText;
 
-    /* Error pane stuff: */
+    /** Holds the error pane container. */
     QWidget *m_pErrBox;
+    /** Holds the error label instance. */
     QLabel *m_pErrLabel;
+    /** Holds the error text-browser instance. */
     QTextBrowser *m_pErrText;
+    /** Holds the VM refresh button instance. */
     QToolButton *m_pRefreshButton;
+    /** Holds the VM refresh action reference. */
     QAction *m_pRefreshAction;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIVMDesktopPrivate implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 UIVMDesktopPrivate::UIVMDesktopPrivate(QWidget *pParent, QAction *pRefreshAction)
     : QIWithRetranslateUI<QStackedWidget>(pParent)
@@ -174,7 +187,7 @@ void UIVMDesktopPrivate::prepareErrorPane()
     m_pErrLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     pMainLayout->addWidget(m_pErrLabel);
 
-    /* Create error text browser: */
+    /* Create error text-browser: */
     m_pErrText = new QTextBrowser(m_pErrBox);
     m_pErrText->setFocusPolicy(Qt::StrongFocus);
     m_pErrText->document()->setDefaultStyleSheet("a { text-decoration: none; }");
@@ -206,6 +219,11 @@ void UIVMDesktopPrivate::prepareErrorPane()
     retranslateUi();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIVMDesktop implementation.                                                                                            *
+*********************************************************************************************************************************/
+
 UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     : QWidget(pParent)
 {
@@ -216,7 +234,7 @@ UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     /* Create desktop pane: */
     m_pDesktopPrivate = new UIVMDesktopPrivate(this, pRefreshAction);
 
-    /* Add the pages: */
+    /* Add it to the layout: */
     pMainLayout->addWidget(m_pDesktopPrivate);
 }
 
