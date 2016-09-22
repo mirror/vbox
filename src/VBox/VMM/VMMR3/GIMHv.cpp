@@ -254,8 +254,8 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
         pHv->uBaseFeat = 0
                        //| GIM_HV_BASE_FEAT_VP_RUNTIME_MSR
                        | GIM_HV_BASE_FEAT_PART_TIME_REF_COUNT_MSR
-                       //| GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS
-                       //| GIM_HV_BASE_FEAT_STIMER_MSRS
+                       //| GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS          // Required for synethetic timers
+                       //| GIM_HV_BASE_FEAT_STIMER_MSRS               // Required for synethetic timers
                        | GIM_HV_BASE_FEAT_APIC_ACCESS_MSRS
                        | GIM_HV_BASE_FEAT_HYPERCALL_MSRS
                        | GIM_HV_BASE_FEAT_VP_ID_MSR
@@ -505,12 +505,6 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     }
 
     /*
-     * Inform APIC whether Hyper-V compatibility mode is enabled or not.
-     */
-    if (pHv->uHyperHints & GIM_HV_HINT_X2APIC_MSRS)
-        APICR3HvSetCompatMode(pVM, true);
-
-    /*
      * Register statistics.
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -563,6 +557,14 @@ VMMR3_INT_DECL(int) gimR3HvInitCompleted(PVM pVM)
     HyperLeaf.uEdx         = 0;
     int rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
     AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Inform APIC whether Hyper-V compatibility mode is enabled or not.
+     * Do this here rather than on gimR3HvInit() as it gets called after APIC
+     * has finished inserting/removing the x2APIC MSR range.
+     */
+    if (pHv->uHyperHints & GIM_HV_HINT_X2APIC_MSRS)
+        APICR3HvSetCompatMode(pVM, true);
 
     return rc;
 }
