@@ -671,9 +671,10 @@ $(VBOXWEB_WS_PYTHON) \
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
 # Change directory to the "source", as otherwise ZSI 2.0 has trouble finding
-# the 2nd WSDL file included in the main one. ZSI 2.1 is smarter.
+# the 2nd WSDL file included in the main one. ZSI 2.1 is smarter, but some
+# versions floating around (especially on Linux) lack the --file option.
 if "$(KBUILD_HOST)" != "win"
-	$(QUIET)$(REDIRECT) -C $(dir $(VBOXWEBSERVICE_WSDL)) -- $(VBOX_WSDL2PY) -b --file $(VBOXWEBSERVICE_WSDL) --output-dir $(@D)
+	$(QUIET)$(REDIRECT) -C $(dir $(VBOXWEBSERVICE_WSDL)) -- $(SHELL) -c "$(VBOX_WSDL2PY) -b --output-dir $(@D) $(VBOXWEBSERVICE_WSDL) || $(VBOX_WSDL2PY) -b --file $(VBOXWEBSERVICE_WSDL) --output-dir $(@D)"
 else
 	$(QUIET)$(REDIRECT) -C $(dir $(VBOXWEBSERVICE_WSDL)) -- $(VBOX_WSDL2PY) -b --file $(subst /,\\\\,$(VBOXWEBSERVICE_WSDL)) --output-dir $(@D)
 endif
