@@ -222,7 +222,7 @@ binary: rpm/build-stamp
 	    -e 's|%LIB%|$(rpmlib)|g' \
 	    -e 's|%OSE%|$(if $(ose),is_ose,not_ose)|g' \
 	    -e 's|%SPEC%|$(rpmspec)|g' \
-	    -e 's|%PYTHON|$(if $(filter el5,$(rpmrel)),,with_python)|g' \ 
+	    -e 's|%PYTHON%|$(if $(filter el5,$(rpmrel)),,with_python)|g' \
 	    -e 's|%MACROSPYTHON%|$(if $(wildcard /usr/lib/rpm/macros.python),%include /usr/lib/rpm/macros.python,)|g' \
 	    -e 's|%INSTMOD%|$(instmod)|g' \
 	    -e 's|%LIBASOUND%|$(if $(filter lib64,$(rpmlib)),libasound.so.2()(64bit),libasound.so.2)|g' \
