@@ -1389,8 +1389,8 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
             FILE *pSocketStrm;
 #if defined(__clang__) || RT_GNUC_PREREQ(4, 4)
 # pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
             orc = AuthorizationExecuteWithPrivileges(AuthRef, pszExecPath, kAuthorizationFlagDefaults,
                                                      (char * const *)&papszArgs[cSuArgs + 3],
                                                      &pSocketStrm);
