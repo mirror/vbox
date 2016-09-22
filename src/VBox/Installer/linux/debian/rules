@@ -152,13 +152,13 @@ debian/modules-stamp: debian/build-stamp
 	for d in $(wildcard /lib/modules/*); do \
 	    if [ -L $$d/build ]; then \
 	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
-	        make -j4 -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        make -j4 -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all; \
 	        make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetflt || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all; \
 	        make -C $(builddir)/bin/src/vboxnetadp KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetadp || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all; \
 	        make -C $(builddir)/bin/src/vboxpci KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
 	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all; \
