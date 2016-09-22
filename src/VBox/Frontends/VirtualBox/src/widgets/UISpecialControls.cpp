@@ -288,6 +288,11 @@ void UIRoundRectSegmentedButton::setEnabled(int iSegment, bool fEnabled)
     m_pButtons.at(iSegment)->setEnabled(fEnabled);
 }
 
+void UIRoundRectSegmentedButton::setSelected(int iSegment)
+{
+    m_pButtons.at(iSegment)->setChecked(true);
+}
+
 void UIRoundRectSegmentedButton::animateClick(int iSegment)
 {
     m_pButtons.at(iSegment)->animateClick();

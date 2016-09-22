@@ -88,6 +88,7 @@ public:
     void setIcon(int iSegment, const QIcon& icon);
     void setEnabled(int iSegment, bool fEnabled);
 
+    void setSelected(int iSegment);
     void animateClick(int iSegment);
     void onClicked(int iSegment);
 

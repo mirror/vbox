@@ -1063,7 +1063,10 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
 
 void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
 {
-    m_pSegmentedButton->animateClick(iSegment);
+    /* Perform silent segmented-button switch: */
+    m_pSegmentedButton->setSelected(iSegment);
+    /* Manually handle that switch as well: */
+    sltHandleSegmentedButtonSwitch(iSegment);
 }
 
 UIVMItem* UISelectorWindow::currentItem() const

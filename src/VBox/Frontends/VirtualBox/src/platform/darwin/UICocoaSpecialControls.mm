@@ -621,6 +621,11 @@ void UICocoaSegmentedButton::setEnabled(int iSegment, bool fEnabled)
     [[nativeRef() cell] setEnabled: fEnabled forSegment: iSegment];
 }
 
+void UICocoaSegmentedButton::setSelected(int iSegment)
+{
+    [nativeRef() setSelectedSegment: iSegment];
+}
+
 void UICocoaSegmentedButton::animateClick(int iSegment)
 {
     [nativeRef() setSelectedSegment: iSegment];
