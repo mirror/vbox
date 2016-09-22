@@ -31,7 +31,6 @@
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 #  PKGDIR=<path>    where to store the final package(s)
-#  BLEEDING_EDGE=xyz
 #  svn_revision=xxx do not depend on subversion being available, but use this
 #                   hard-coded revision number instead
 #
@@ -80,22 +79,22 @@ STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vbox
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(MAKECMDGOALS),clean)
- rpmrel   := $(subst ol,el,$(subst rhel,el,$(shell cat /etc/distname)))
+ rpmrel   := $(subst ol,el,$(subst rhel,el,$(subst centos,el,$(shell cat /etc/distname))))
  ifeq ($(rpmrel),)
  # look for fedora
   rpmrel  := $(shell cat /etc/fedora-release 2> /dev/null | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
  endif
  ifeq ($(rpmrel),)
  # look for OL
-  rpmrel  := $(shell cat /etc/enterprise-release 2> /dev/null | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/ol\1/p')
+  rpmrel  := $(shell cat /etc/enterprise-release 2> /dev/null | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
  ifeq ($(rpmrel),)
  # look for CentOS
-  rpmrel  := $(shell cat /etc/redhat-release 2> /dev/null | sed -ne 's/^CentOS[a-zA-Z ]*\([1-9][0-9]*\).*/centos\1/p')
+  rpmrel  := $(shell cat /etc/redhat-release 2> /dev/null | sed -ne 's/^CentOS[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
  ifeq ($(rpmrel),)
  # look for Red Hat
-  rpmrel  := $(shell cat /etc/redhat-release 2> /dev/null | sed -ne 's/^Red Hat[a-zA-Z ]*\([1-9][0-9]*\).*/centos\1/p')
+  rpmrel  := $(shell cat /etc/redhat-release 2> /dev/null | sed -ne 's/^Red Hat[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
  ifeq ($(rpmrel),)
   $(error failed to detect the release type. Add /etc/distname or hack the detection.)
@@ -106,14 +105,11 @@ ifneq ($(MAKECMDGOALS),clean)
   $(error Cannot detect package distribution (rpmrel=$(rpmrel)))
  endif
 
- ifeq ($(filter-out el5 el6 ol5 ol6 el7 centos5 centos6 fedora18 fedora19 fedora20 fedora21 fedora22 fedora24,$(rpmrel)),)
+ ifeq ($(filter-out el5 el6 el7 fedora18 fedora19 fedora20 fedora21 fedora22 fedora24,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
- ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 openSUSE131 openSUSE132 sles10.1 sles11.0,$(rpmrel)),)
+ ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 openSUSE131 openSUSE132,$(rpmrel)),)
   rpmspec := rpm_suse
- endif
- ifeq ($(filter-out mdv2009.1 mdv2010.0 mdv2011.0,$(rpmrel)),)
-  rpmspec := rpm_mdv
  endif
  ifeq ($(rpmspec),)
   $(error failed to detect the .spec file (rpmrel=$(rpmrel)))
@@ -127,7 +123,7 @@ $(verfile): rpm/configure-stamp
 endif
 
 ver      := $(VBOX_VERSION_STRING)
-rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERSUFFIX)$(if $(HEADLESS),_headless,)$(if $(DEBUG),_dbg,))$(if $(BLEEDING_EDGE),_$(BLEEDING_EDGE),)
+rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERSUFFIX)$(if $(HEADLESS),_headless,)$(if $(DEBUG),_dbg,))
 archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
 
@@ -149,11 +145,11 @@ endif
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(NOSDL),--disable-vboxsdl,) \
-	     $(if $(filter sles10.1,$(rpmrel)),--build-libxml2,) \
-	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0 mdv2011.0,$(rpmrel)),--build-libvpx,) \
-	     $(if $(filter el5 ol5 centos5 sles10.1 sles11.0,$(rpmrel)),--build-libcurl,) \
-	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
-	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),--disable-pulse,) \
+	     $(if $(filter el5 el6,$(rpmrel)),--build-libvpx,) \
+	     $(if $(filter el5,$(rpmrel)),--build-libcurl,) \
+	     $(if $(filter el5,$(rpmrel)),--disable-sdl-ttf,) \
+	     $(if $(filter el5,$(rpmrel)),--disable-pulse,) \
+	     $(if $(filter el5,$(rpmrel)),--disable-python,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
@@ -167,9 +163,9 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
-	     $(if $(filter el5 ol5 centos5 el6 ol6 centos6 sles10.1 sles11.0,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
+	     $(if $(filter el5 el6,$(rpmrel)),,VBOX_WITH_VMSVGA3D=1) \
 	     VBOX_DO_STRIP= \
-	     $(if $(filter el5,$(rpmrel)),VBOX_BLD_PYTHON=/usr/bin/python,) \
+	     $(if $(filter el5,$(rpmrel)),VBOX_BLD_PYTHON=$(strip $(firstword $(wildcard /usr/local/bin/python2.7) $(wildcard /usr/bin/python))),) \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
 	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
@@ -178,8 +174,7 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
-	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	     $(if $(filter el5 ol5 centos5 sles10.1,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
+	     $(if $(filter el5,$(rpmrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
 
 rpm/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/rpm $(cfg_flags)

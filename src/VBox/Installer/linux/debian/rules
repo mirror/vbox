@@ -38,7 +38,6 @@ export DH_COMPAT=4
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 #  PKGDIR=<path>    where to store the final package(s)
-#  BLEEDING_EDGE=xyz
 #
 # NODOCS will also be set if UserManual*.pdf and VirtualBox*.chm are placed in
 # $(vboxroot)/prebuild.  STAGEDISO will be set if VBoxGuestAdditions.iso is
@@ -74,9 +73,7 @@ svnver   := $(if $(NOSUBVER),,$(if $(svn_revision),-$(svn_revision),$(shell if \
 		svn info > /dev/null 2>&1; then \
 		svn info|sed -e "s/^Revision: \(.*\)/-\1/;t;d"; else \
 		date +"-%Y%m%d"; fi)))
-debver   :=$(subst _ALPHA,~alpha,$(subst _BETA,~beta,$(subst _RC,~rc,$(subst _OSE,~ose,$(ver)))))$(svnver)$(if \
-		$(BLEEDING_EDGE),-$(BLEEDING_EDGE),)$(VERSUFFIX)$(if \
-		$(HEADLESS),~headless,)$(if $(DEBUG),~dbg,)
+debver   :=$(subst _ALPHA,~alpha,$(subst _BETA,~beta,$(subst _RC,~rc,$(subst _OSE,~ose,$(ver)))))$(svnver)$(VERSUFFIX)$(if $(HEADLESS),~headless,)$(if $(DEBUG),~dbg,)
 archdir  := $(prefix)/opt/VirtualBox-$(ver)
 endif
 
@@ -119,8 +116,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     $(if $(svnrev),VBOX_SVN_REV=$(svnrev),) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
-	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
-	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),)
+	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,)
 
 configure: debian/configure-stamp
 debian/configure-stamp:
@@ -157,23 +153,15 @@ debian/modules-stamp: debian/build-stamp
 	    if [ -L $$d/build ]; then \
 	        make -C $(builddir)/bin/src/vboxdrv KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 	        make -j4 -C $(builddir)/bin/src/vboxdrv KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
-	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxdrv/vboxdrv.ko $(moddir)/$$(basename $$d)/vboxdrv.ko); \
 	        make -C $(builddir)/bin/src/vboxnetflt KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetflt || true) && \
 	        make -j4 -C $(builddir)/bin/src/vboxnetflt KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
-	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxnetflt/vboxnetflt.ko $(moddir)/$$(basename $$d)/vboxnetflt.ko); \
 	        make -C $(builddir)/bin/src/vboxnetadp KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxnetadp || true) && \
 	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
-	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxnetadp/vboxnetadp.ko $(moddir)/$$(basename $$d)/vboxnetadp.ko); \
 	        make -C $(builddir)/bin/src/vboxpci KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
 	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
-	        $(if $(instmod),&& install -D -m 0644 -g 0 -o 0 \
-	            $(builddir)/bin/src/vboxpci/vboxpci.ko $(moddir)/$$(basename $$d)/vboxpci.ko); \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
@@ -332,7 +320,7 @@ endif
 ifeq ($(DEBUG),)
 	mv $(prefix)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
-	$(if $(filter _Ubuntu_hardy _Ubuntu_lucid,$(debrel)),dh_pycentral,dh_python2)
+	dh_python2
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
 	dh_fixperms
 	dh_makeshlibs
@@ -345,8 +333,7 @@ endif
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0)
 	dh_md5sums
-	dh_builddeb --destdir $(pkgdir) -- \
-	  $(if $(filter _Ubuntu_lucid,$(debrel)),,-Zxz)
+	dh_builddeb --destdir $(pkgdir) -- -Zxz
 endif
 
 .PHONY: binary modules binary-arch binary-indep clean checkroot
