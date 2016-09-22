@@ -859,7 +859,7 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
 {
     /* Set contents margins: */
 #if   defined(VBOX_WS_MAC)
-    setContentsMargins(5, 5, 5, 5);
+    setContentsMargins(4, 5, 5, 5);
 #elif defined(VBOX_WS_WIN)
     setContentsMargins(3, 5, 5, 0);
 #elif defined(VBOX_WS_X11)
