@@ -52,9 +52,13 @@
 #ifdef VBOX_WITH_STATISTICS
 # define X2APIC_MSRRANGE(a_uFirst, a_uLast, a_szName) \
     { (a_uFirst), (a_uLast), kCpumMsrRdFn_Ia32X2ApicN, kCpumMsrWrFn_Ia32X2ApicN, 0, 0, 0, 0, 0, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
+# define X2APIC_MSRRANGE_INVALID(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_WriteOnly, kCpumMsrWrFn_ReadOnly, 0, 0, 0, 0, UINT64_MAX /*fWrGpMask*/, a_szName, { 0 }, { 0 }, { 0 }, { 0 } }
 #else
 # define X2APIC_MSRRANGE(a_uFirst, a_uLast, a_szName) \
     { (a_uFirst), (a_uLast), kCpumMsrRdFn_Ia32X2ApicN, kCpumMsrWrFn_Ia32X2ApicN, 0, 0, 0, 0, 0, a_szName }
+# define X2APIC_MSRRANGE_INVALID(a_uFirst, a_uLast, a_szName) \
+    { (a_uFirst), (a_uLast), kCpumMsrRdFn_WriteOnly, kCpumMsrWrFn_ReadOnly, 0, 0, 0, 0, UINT64_MAX /*fWrGpMask*/, a_szName }
 #endif
 
 
@@ -66,7 +70,9 @@
  * See Intel spec. 10.12.2 "x2APIC Register Availability".
  */
 static CPUMMSRRANGE const g_MsrRange_x2Apic = X2APIC_MSRRANGE(MSR_IA32_X2APIC_START, MSR_IA32_X2APIC_END, "x2APIC range");
+static CPUMMSRRANGE const g_MsrRange_x2Apic_Invalid = X2APIC_MSRRANGE_INVALID(MSR_IA32_X2APIC_START, MSR_IA32_X2APIC_END, "x2APIC range invalid");
 #undef X2APIC_MSRRANGE
+#undef X2APIC_MSRRANGE_GP
 
 /** Saved state field descriptors for XAPICPAGE. */
 static const SSMFIELD g_aXApicPageFields[] =
@@ -1720,11 +1726,18 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize the APIC state.
      */
-    /* First insert the MSR range of the x2APIC if enabled. */
+    /* First insert/remove the MSR range of the x2APIC. */
     if (pApic->enmMaxMode == PDMAPICMODE_X2APIC)
     {
         rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
         AssertLogRelRCReturn(rc, rc);
+    }
+    else
+    {
+        /* We currently don't have a function to remove the range, so we register an range which will cause a #GP. */
+        rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic_Invalid);
+        AssertLogRelRCReturn(rc, rc);
+        LogRel(("APIC: Removed x2APIC MSR range\n"));
     }
 
     /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
