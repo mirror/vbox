@@ -10876,7 +10876,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>&amp;Détails</translation>

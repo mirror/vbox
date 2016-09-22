@@ -13342,7 +13342,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>&amp;Dettagli</translation>

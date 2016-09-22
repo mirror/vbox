@@ -30,13 +30,13 @@ class CMachine;
 class UIAction;
 class UIActionPool;
 class UIActionPolymorphic;
+class UIDesktopPane;
 class UIGChooser;
 class UIGDetails;
 class UIMainBar;
 class UISnapshotPane;
 class UITexturedSegmentedButton;
 class UIToolBar;
-class UIVMDesktop;
 class UIVMItem;
 class QISplitter;
 class QMenu;
@@ -325,7 +325,7 @@ private:
     /** Holds the Details-pane instance. */
     UIGDetails *m_pPaneDetails;
     /** Holds the Desktop-pane instance. */
-    UIVMDesktop *m_pPaneDesktop;
+    UIDesktopPane *m_pPaneDesktop;
     /** Holds the Snapshot-pane instance. */
     UISnapshotPane *m_pPaneSnapshots;
 

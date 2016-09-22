@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMDesktop class declaration.
+ * VBox Qt GUI - UIDesktopPane class declaration.
  */
 
 /*
@@ -15,21 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___UIVMDesktop_h___
-#define ___UIVMDesktop_h___
+#ifndef ___UIDesktopPane_h___
+#define ___UIDesktopPane_h___
 
 /* Qt includes: */
 #include <QWidget>
 
 /* Forward declarations: */
-class UIVMDesktopPrivate;
+class UIDesktopPanePrivate;
 
 
 /** QWidget subclass representing container which have two panes:
   * 1. Text details pane reflecting base information about VirtualBox,
   * 2. Error details pane reflecting information about currently chosen
   *    inaccessible VM and allowing to operate over it. */
-class UIVMDesktop : public QWidget
+class UIDesktopPane : public QWidget
 {
     Q_OBJECT;
 
@@ -37,7 +37,7 @@ public:
 
     /** Constructs desktop pane passing @a pParent to the base-class.
       * @param  pRefreshAction  Brings the refresh action reference. */
-    UIVMDesktop(QAction *pRefreshAction, QWidget *pParent);
+    UIDesktopPane(QAction *pRefreshAction, QWidget *pParent);
 
     /** Updates @a strText details and switches to text details pane. */
     void updateDetailsText(const QString &strText);
@@ -47,8 +47,8 @@ public:
 private:
 
     /** Holds the private desktop pane instance. */
-    UIVMDesktopPrivate *m_pDesktopPrivate;
+    UIDesktopPanePrivate *m_pDesktopPrivate;
 };
 
-#endif /* !___UIVMDesktop_h___ */
+#endif /* !___UIDesktopPane_h___ */
 

@@ -47,7 +47,7 @@
 # include "UIWizardCloneVM.h"
 # include "UIWizardExportApp.h"
 # include "UIWizardImportApp.h"
-# include "UIVMDesktop.h"
+# include "UIDesktopPane.h"
 # include "UIVirtualBoxEventHandler.h"
 # include "UIMediumManager.h"
 # include "UIMedium.h"
@@ -1081,8 +1081,8 @@ void UISelectorWindow::updateSnapshots(UIVMItem *pItem, const CMachine &comMachi
     /* Update segmented-button text: */
     // TODO: Bring that NLS to "&Snapshots" / "&Snapshots (%1)" form
     //       as translator should be able to translate whole sentence.
-    //       And move it from UIVMDesktop to UISelectorWindow context.
-    QString strName = QApplication::translate("UIVMDesktop", "&Snapshots");
+    //       And move it from UIDesktopPane to UISelectorWindow context.
+    QString strName = QApplication::translate("UIDesktopPane", "&Snapshots");
     if (pItem)
     {
         /* Append the snapshot count (if any): */
@@ -1125,8 +1125,8 @@ void UISelectorWindow::retranslateUi()
     setWindowTitle(strTitle);
 
     /* Translate segmented-button: */
-    // TODO: Move that NLS from UIVMDesktop to UISelectorWindow context.
-    m_pSegmentedButton->setTitle(SegmentType_Details, QApplication::translate("UIVMDesktop", "&Details"));
+    // TODO: Move that NLS from UIDesktopPane to UISelectorWindow context.
+    m_pSegmentedButton->setTitle(SegmentType_Details, QApplication::translate("UIDesktopPane", "&Details"));
 
     /* Make sure details and snapshot panes are updated: */
     sltHandleChooserPaneIndexChange();
@@ -1782,7 +1782,7 @@ void UISelectorWindow::prepareWidgets()
                                  m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
 
     /* Prepare desktop pane: */
-    m_pPaneDesktop = new UIVMDesktop(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
+    m_pPaneDesktop = new UIDesktopPane(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
 
     /* Prepare snapshot pane: */
     m_pPaneSnapshots = new UISnapshotPane(this);

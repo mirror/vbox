@@ -10032,7 +10032,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation type="unfinished">&amp;Yksityiskohdat</translation>

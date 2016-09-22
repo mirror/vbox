@@ -10411,7 +10411,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>&amp;Details</translation>

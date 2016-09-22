@@ -12806,7 +12806,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>&amp;Detalles</translation>

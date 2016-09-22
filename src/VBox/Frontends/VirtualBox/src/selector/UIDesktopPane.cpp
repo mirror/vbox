@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIVMDesktop class implementation.
+ * VBox Qt GUI - UIDesktopPane class implementation.
  */
 
 /*
@@ -28,7 +28,7 @@
 
 /* GUI includes */
 # include "QIWithRetranslateUI.h"
-# include "UIVMDesktop.h"
+# include "UIDesktopPane.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -41,7 +41,7 @@
   * 1. Text pane reflecting base information about VirtualBox,
   * 2. Error pane reflecting information about currently chosen
   *    inaccessible VM and allowing to operate over it. */
-class UIVMDesktopPrivate : public QIWithRetranslateUI<QStackedWidget>
+class UIDesktopPanePrivate : public QIWithRetranslateUI<QStackedWidget>
 {
     Q_OBJECT;
 
@@ -49,7 +49,7 @@ public:
 
     /** Constructs private desktop pane passing @a pParent to the base-class.
       * @param  pRefreshAction  Brings the refresh action reference. */
-    UIVMDesktopPrivate(QWidget *pParent, QAction *pRefreshAction);
+    UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAction);
 
     /** Assigns @a strText and switches to text pane. */
     void setText(const QString &strText);
@@ -85,10 +85,10 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class UIVMDesktopPrivate implementation.                                                                                     *
+*   Class UIDesktopPanePrivate implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIVMDesktopPrivate::UIVMDesktopPrivate(QWidget *pParent, QAction *pRefreshAction)
+UIDesktopPanePrivate::UIDesktopPanePrivate(QWidget *pParent, QAction *pRefreshAction)
     : QIWithRetranslateUI<QStackedWidget>(pParent)
     , m_pText(0)
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
@@ -101,7 +101,7 @@ UIVMDesktopPrivate::UIVMDesktopPrivate(QWidget *pParent, QAction *pRefreshAction
     retranslateUi();
 }
 
-void UIVMDesktopPrivate::setText(const QString &strText)
+void UIDesktopPanePrivate::setText(const QString &strText)
 {
     /* Prepare text pane if necessary: */
     prepareTextPane();
@@ -113,7 +113,7 @@ void UIVMDesktopPrivate::setText(const QString &strText)
     setCurrentIndex(indexOf(m_pText));
 }
 
-void UIVMDesktopPrivate::setError(const QString &strError)
+void UIDesktopPanePrivate::setError(const QString &strError)
 {
     /* Prepare error pane if necessary: */
     prepareErrorPane();
@@ -125,7 +125,7 @@ void UIVMDesktopPrivate::setError(const QString &strError)
     setCurrentIndex(indexOf(m_pErrBox));
 }
 
-void UIVMDesktopPrivate::retranslateUi()
+void UIDesktopPanePrivate::retranslateUi()
 {
     /* Translate error-label text: */
     if (m_pErrLabel)
@@ -143,7 +143,7 @@ void UIVMDesktopPrivate::retranslateUi()
     }
 }
 
-void UIVMDesktopPrivate::prepareTextPane()
+void UIDesktopPanePrivate::prepareTextPane()
 {
     if (m_pText)
         return;
@@ -164,7 +164,7 @@ void UIVMDesktopPrivate::prepareTextPane()
     retranslateUi();
 }
 
-void UIVMDesktopPrivate::prepareErrorPane()
+void UIDesktopPanePrivate::prepareErrorPane()
 {
     if (m_pErrBox)
         return;
@@ -221,10 +221,10 @@ void UIVMDesktopPrivate::prepareErrorPane()
 
 
 /*********************************************************************************************************************************
-*   Class UIVMDesktop implementation.                                                                                            *
+*   Class UIDesktopPane implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
+UIDesktopPane::UIDesktopPane(QAction *pRefreshAction, QWidget *pParent)
     : QWidget(pParent)
 {
     /* Prepare main layout: */
@@ -232,21 +232,21 @@ UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     /* Create desktop pane: */
-    m_pDesktopPrivate = new UIVMDesktopPrivate(this, pRefreshAction);
+    m_pDesktopPrivate = new UIDesktopPanePrivate(this, pRefreshAction);
 
     /* Add it to the layout: */
     pMainLayout->addWidget(m_pDesktopPrivate);
 }
 
-void UIVMDesktop::updateDetailsText(const QString &strText)
+void UIDesktopPane::updateDetailsText(const QString &strText)
 {
     m_pDesktopPrivate->setText(strText);
 }
 
-void UIVMDesktop::updateDetailsError(const QString &strError)
+void UIDesktopPane::updateDetailsError(const QString &strError)
 {
     m_pDesktopPrivate->setError(strError);
 }
 
-#include "UIVMDesktop.moc"
+#include "UIDesktopPane.moc"
 

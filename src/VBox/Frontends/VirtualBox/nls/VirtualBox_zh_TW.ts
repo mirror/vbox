@@ -6440,7 +6440,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>詳細資料(&amp;D)</translation>

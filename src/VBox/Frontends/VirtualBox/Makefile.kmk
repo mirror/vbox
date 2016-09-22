@@ -386,7 +386,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineViewSeamless.h \
 	src/runtime/seamless/UIMachineWindowSeamless.h \
 	src/selector/UIActionPoolSelector.h \
-	src/selector/UIVMDesktop.h \
+	src/selector/UIDesktopPane.h \
 	src/selector/UIVMItem.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/UISelectorWindow.h \
@@ -562,8 +562,8 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
+	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
-	src/selector/UIVMDesktop.cpp \
 	src/selector/UISnapshotPane.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
@@ -690,7 +690,7 @@ VirtualBox_SOURCES = \
 	src/runtime/seamless/UIMachineViewSeamless.cpp \
 	src/runtime/seamless/UIMachineWindowSeamless.cpp \
 	src/selector/UIActionPoolSelector.cpp \
-	src/selector/UIVMDesktop.cpp \
+	src/selector/UIDesktopPane.cpp \
 	src/selector/UIVMItem.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
 	src/selector/UISelectorWindow.cpp \

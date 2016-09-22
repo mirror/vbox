@@ -10430,7 +10430,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>明细(&amp;D)</translation>

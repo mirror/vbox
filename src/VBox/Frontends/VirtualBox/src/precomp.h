@@ -593,7 +593,7 @@
 # include "UIUpdateManager.h"
 #endif
 #include "UIVMCloseDialog.h"
-#include "UIVMDesktop.h"
+#include "UIDesktopPane.h"
 #include "UIVMInfoDialog.h"
 #include "UIVMItem.h"
 #include "UIVMLogViewer.h"

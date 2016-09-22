@@ -2096,7 +2096,7 @@
 <context>
     <name>UIDetailsPagePrivate</name>
     <message>
-        <location filename="../src/selector/UIVMDesktop.cpp" line="+140"/>
+        <location filename="../src/selector/UIDesktopPane.cpp" line="+140"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
         <translation>Hautaturiko makina birtuala &lt;i&gt;eskuraezina&lt;/i&gt; da. Mesedez aztertu behean erakusten den akats mezua eta sakatu &lt;b&gt;Berritu&lt;/b&gt; botoia sarbidetasun egiaztapena berregitea nahi baduzu:</translation>
     </message>
@@ -10146,9 +10146,9 @@
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
-        <location filename="../src/selector/UIVMDesktop.cpp" line="+228"/>
+        <location filename="../src/selector/UIDesktopPane.cpp" line="+228"/>
         <source>&amp;Details</source>
         <translation>&amp;Xehetasunak</translation>
     </message>

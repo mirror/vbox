@@ -8773,7 +8773,7 @@
     </message>
 </context>
 <context>
-    <name>UIVMDesktop</name>
+    <name>UIDesktopPane</name>
     <message>
         <source>&amp;Details</source>
         <translation>جزئی&amp;ات</translation>
