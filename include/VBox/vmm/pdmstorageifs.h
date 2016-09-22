@@ -590,6 +590,25 @@ typedef enum PDMMEDIAEXIOREQTYPE
 typedef PDMMEDIAEXIOREQTYPE *PPDMMEDIAEXIOREQTYPE;
 
 /**
+ * Data direction for raw SCSI commands.
+ */
+typedef enum PDMMEDIAEXIOREQSCSITXDIR
+{
+    /** Invalid data direction. */
+    PDMMEDIAEXIOREQSCSITXDIR_INVALID     = 0,
+    /** Direction is unknown. */
+    PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN,
+    /** Direction is from device to host. */
+    PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE,
+    /** Direction is from host to device. */
+    PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE,
+    /** No data transfer associated with this request. */
+    PDMMEDIAEXIOREQSCSITXDIR_NONE,
+    /** 32bit hack. */
+    PDMMEDIAEXIOREQSCSITXDIR_32BIT_HACK  = 0x7fffffff
+} PDMMEDIAEXIOREQSCSITXDIR;
+
+/**
  * I/O request state.
  */
 typedef enum PDMMEDIAEXIOREQSTATE
@@ -861,8 +880,10 @@ typedef struct PDMIMEDIAEX
      * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
      *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pbCmd           The SCSI CDB containing the command.
      * @param   hIoReq          The I/O request to associate the command with.
+     * @param   uLun            The LUN the command is for.
+     * @param   pbCdb           The SCSI CDB containing the command.
+     * @param   cbCdb           Size of the CDB in bytes.
      * @param   enmTxDir        Direction of transfer.
      * @param   pvBuf           Pointer tp the transfer buffer.
      * @param   cbBuf           Size of the transfer buffer.
@@ -870,7 +891,8 @@ typedef struct PDMIMEDIAEX
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoReqSendScsiCmd,(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, const uint8_t *pbCmd, PDMMEDIATXDIR enmTxDir,
+    DECLR3CALLBACKMEMBER(int, pfnIoReqSendScsiCmd,(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
+                                                   const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
                                                    size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
 
     /**
@@ -947,7 +969,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "2094db35-ebe8-486d-a34b-a210f3f8beaf"
+#define PDMIMEDIAEX_IID                      "ae47c9a9-fa43-4b07-8f9a-b45bcc3fb8e4"
 
 /**
  * Data direction.
