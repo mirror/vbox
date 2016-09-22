@@ -250,6 +250,10 @@ void VBoxVidPnStSourceTargetAdd(PVBOXWDDM_SOURCE paSources, uint32_t cScreens, P
     pSource->cTargets++;
     pTarget->VidPnSourceId = pSource->AllocData.SurfDesc.VidPnSourceId;
 
+    pTarget->fBlankedByPowerOff = RT_BOOL(pSource->bBlankedByPowerOff);
+    LOG(("src %d and tgt %d are now blank %d",
+        pSource->AllocData.SurfDesc.VidPnSourceId, pTarget->u32Id, pTarget->fBlankedByPowerOff));
+
     pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
     pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
 }
