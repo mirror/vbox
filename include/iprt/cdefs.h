@@ -2830,7 +2830,7 @@
 /** @def RT_NOREF9
  * RT_NOREF_PV shorthand taking nine parameters.  */
 #define RT_NOREF9(var1, var2, var3, var4, var5, var6, var7, var8, var9) \
-    RT_NOREF_PV(var1); RT_NOREF8(var2, var3, var4, var5, var6, var7, var8)
+    RT_NOREF_PV(var1); RT_NOREF8(var2, var3, var4, var5, var6, var7, var8, var9)
 /** @def RT_NOREF10
  * RT_NOREF_PV shorthand taking ten parameters.  */
 #define RT_NOREF10(var1, var2, var3, var4, var5, var6, var7, var8, var9, var10) \
