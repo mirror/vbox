@@ -16,6 +16,7 @@
 
 %define %SPEC% 1
 %define %OSE% 1
+%define %PYTHON 1
 %define VBOXDOCDIR %{_defaultdocdir}/%NAME%
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
@@ -35,7 +36,9 @@ Requires:  %INITSCRIPTS% %LIBASOUND% net-tools
 %debug_package
 %endif
 
+%if %{?with_python:1}%{!?with_python:0}
 %MACROSPYTHON%
+%endif
 
 # our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
 %undefine _missing_build_ids_terminate_build
@@ -76,9 +79,11 @@ install -m 755 -d $RPM_BUILD_ROOT%{VBOXDOCDIR}
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
+%if %{?with_python:1}%{!?with_python:0}
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
   cd ./sdk/installer && \
   %{__python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
+%endif
 rm -rf sdk/installer
 mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
@@ -302,8 +307,10 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc %{VBOXDOCDIR}/*
+%if %{?with_python:1}%{!?with_python:0}
 %{?rpm_suse: %{py_sitedir}/*}
 %{!?rpm_suse: %{python_sitelib}/*}
+%endif
 /etc/vbox
 /usr/bin/*
 /usr/src/vbox*
