@@ -30,7 +30,7 @@ print("""
 /**
  * Reset packer bounding box to empty state.
  */
-void crPackResetBoundingBox( CRPackContext *pc )
+void crPackResetBoundingBox(CRPackContext *pc)
 {
 	pc->bounds_min.x =  FLT_MAX;
 	pc->bounds_min.y =  FLT_MAX;
@@ -45,9 +45,9 @@ void crPackResetBoundingBox( CRPackContext *pc )
  * Query current bounding box.
  * \return GL_TRUE if non-empty box, GL_FALSE if empty box.
  */
-GLboolean crPackGetBoundingBox( CRPackContext *pc,
-                                GLfloat *xmin, GLfloat *ymin, GLfloat *zmin,
-                                GLfloat *xmax, GLfloat *ymax, GLfloat *zmax)
+GLboolean crPackGetBoundingBox(CRPackContext *pc,
+                               GLfloat *xmin, GLfloat *ymin, GLfloat *zmin,
+                               GLfloat *xmax, GLfloat *ymax, GLfloat *zmax)
 {
 	if (pc->bounds_min.x != FLT_MAX) {
 		*xmin = pc->bounds_min.x;
@@ -67,24 +67,24 @@ GLboolean crPackGetBoundingBox( CRPackContext *pc,
 
 def WriteData( offset, arg_type, arg_name, is_swapped ):
 	if arg_type.find('*') != -1:
-		retval = "\tWRITE_NETWORK_POINTER( %d, (void *) %s );" % (offset, arg_name )
+		retval = "\tWRITE_NETWORK_POINTER(%d, (void *) %s);" % (offset, arg_name )
 	else:	
 		if is_swapped:
 			if arg_type == "GLfloat" or arg_type == "GLclampf":
-				retval = "\tWRITE_DATA( %d, GLuint, SWAPFLOAT(%s) );" % (offset, arg_name)
+				retval = "\tWRITE_DATA(%d, GLuint, SWAPFLOAT(%s));" % (offset, arg_name)
 			elif arg_type == "GLdouble" or arg_type == "GLclampd":
-				retval = "\tWRITE_SWAPPED_DOUBLE( %d, %s );" % (offset, arg_name)
+				retval = "\tWRITE_SWAPPED_DOUBLE(%d, %s);" % (offset, arg_name)
 			elif apiutil.sizeof(arg_type) == 1:
-				retval = "\tWRITE_DATA( %d, %s, %s );" % (offset, arg_type, arg_name)
+				retval = "\tWRITE_DATA(%d, %s, %s);" % (offset, arg_type, arg_name)
 			elif apiutil.sizeof(arg_type) == 2:
-				retval = "\tWRITE_DATA( %d, %s, SWAP16(%s) );" % (offset, arg_type, arg_name)
+				retval = "\tWRITE_DATA(%d, %s, SWAP16(%s));" % (offset, arg_type, arg_name)
 			elif apiutil.sizeof(arg_type) == 4:
-				retval = "\tWRITE_DATA( %d, %s, SWAP32(%s) );" % (offset, arg_type, arg_name)
+				retval = "\tWRITE_DATA(%d, %s, SWAP32(%s));" % (offset, arg_type, arg_name)
 		else:
 			if arg_type == "GLdouble" or arg_type == "GLclampd":
-				retval = "\tWRITE_DOUBLE( %d, %s );" % (offset, arg_name)
+				retval = "\tWRITE_DOUBLE(%d, %s);" % (offset, arg_name)
 			else:
-				retval = "\tWRITE_DATA( %d, %s, %s );" % (offset, arg_type, arg_name)
+				retval = "\tWRITE_DATA(%d, %s, %s);" % (offset, arg_type, arg_name)
 	return retval
 
 
@@ -145,7 +145,7 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 
 	params = apiutil.Parameters(func_name + extSuffix)
 
-	print('void PACK_APIENTRY crPack%sBBOX%s%s( %s )' % (func_name + extSuffix, countSuffix,
+	print('void PACK_APIENTRY crPack%sBBOX%s%s(%s)' % (func_name + extSuffix, countSuffix,
 			 swapSuffix, apiutil.MakeDeclarationString(params)))
 	print('{')
 
@@ -194,7 +194,7 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 		else:
 			print("\tCREATE_%dD_FLOATS();" % num_coords)
 
-	print("\tCR_GET_BUFFERED%s_POINTER( pc, %d );" % (countSuffix, packet_length))
+	print("\tCR_GET_BUFFERED%s_POINTER(pc, %d);" % (countSuffix, packet_length))
 
 	# Bounding box code
 	if isVertexAttrib:
@@ -229,9 +229,9 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 	if do_vector:
 		if isVertexAttrib:
 			if do_swapped:
-				print("\tWRITE_DATA( 0, GLuint, SWAP32(index) );")
+				print("\tWRITE_DATA(0, GLuint, SWAP32(index));")
 			else:
-				print("\tWRITE_DATA( 0, GLuint, index );")
+				print("\tWRITE_DATA(0, GLuint, index);")
 			counter += 4
 			argname = params[1][0]  # skip 'index' parameter
 		else:
@@ -244,11 +244,11 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 		if isVertexAttrib:
 			if do_vector == 2:
 				# this is a bit of a hack
-				print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name + "ARB" ))
+				print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name + "ARB" ))
 			else:
-				print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name[:-1] + "ARB" ))
+				print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name[:-1] + "ARB" ))
 		else:
-			print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name[:-1] ))
+			print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name[:-1] ))
 	else:
 		for index in range(0,len(params)):
 			(name, type, vecSize) = params[index]
@@ -256,9 +256,9 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 			counter += apiutil.sizeof(type)
 
 		if isVertexAttrib:
-			print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name + "ARB" ))
+			print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name + "ARB" ))
 		else:
-			print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name ))
+			print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name ))
 
 	print("\tCR_UNLOCK_PACKER_CONTEXT(pc);")
 

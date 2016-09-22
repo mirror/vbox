@@ -48,7 +48,7 @@ for line in file.readlines():
         elif args[0] == 'GLfloat' or args[0] == 'GLclampf':
             print("%sWRITE_DATA_AI(GLuint, SWAPFLOAT(%s) );" % (indentation, args[0]))
         elif apiutil.sizeof(args[0]) == 4:
-            print("%sWRITE_DATA_AI(%s, SWAP32(%s) );" % (indentation, args[0], args[1]))
+            print("%sWRITE_DATA_AI(%s, SWAP32(%s));" % (indentation, args[0], args[1]))
         else:
             print >> sys.stderr, "UNKNOWN TYPE FOR WRITE_DATA: %s" % args[1]
             sys.exit(-1)
@@ -58,13 +58,13 @@ for line in file.readlines():
         args = list(map( str.strip, line[lparen_index+1:rparen_index].split( "," ) ))
         indentation = line[:line.find( "WRITE_DATA" )]
         if apiutil.sizeof(args[1]) == 1:
-            print("%sWRITE_DATA( %s, %s, %s );" % (indentation, args[0], args[1], args[2]))
+            print("%sWRITE_DATA(%s, %s, %s);" % (indentation, args[0], args[1], args[2]))
         elif apiutil.sizeof(args[1]) == 2:
-            print("%sWRITE_DATA( %s, %s, SWAP16(%s) );" % (indentation, args[0], args[1], args[2]))
+            print("%sWRITE_DATA(%s, %s, SWAP16(%s));" % (indentation, args[0], args[1], args[2]))
         elif args[1] == 'GLfloat' or args[1] == 'GLclampf':
-            print("%sWRITE_DATA( %s, GLuint, SWAPFLOAT(%s) );" % (indentation, args[0], args[2]))
+            print("%sWRITE_DATA(%s, GLuint, SWAPFLOAT(%s));" % (indentation, args[0], args[2]))
         elif apiutil.sizeof(args[1]) == 4:
-            print("%sWRITE_DATA( %s, %s, SWAP32(%s) );" % (indentation, args[0], args[1], args[2]))
+            print("%sWRITE_DATA(%s, %s, SWAP32(%s));" % (indentation, args[0], args[1], args[2]))
         else:
             print >> sys.stderr, "UNKNOWN TYPE FOR WRITE_DATA: %s" % args[1]
             sys.exit(-1)

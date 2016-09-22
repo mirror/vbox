@@ -124,13 +124,13 @@ for func_name in keys:
     params = apiutil.Parameters(func_name)
 
     if func_name in commoncall_special:
-        print("extern %s vboxDD_gl%s( %s );" % (return_type, func_name,
+        print("extern %s vboxDD_gl%s(%s);" % (return_type, func_name,
                                                 apiutil.MakeDeclarationString( params )))
     else:
         if apiutil.MakeDeclarationString(params)=="void":
-            print("extern %s vboxDD_gl%s( GLcontext *ctx );" % (return_type, func_name))
+            print("extern %s vboxDD_gl%s(GLcontext *ctx);" % (return_type, func_name))
         else:
-            print("extern %s vboxDD_gl%s( GLcontext *ctx, %s );" % (return_type, func_name,
+            print("extern %s vboxDD_gl%s(GLcontext *ctx, %s);" % (return_type, func_name,
                                                                     apiutil.MakeDeclarationString( params )))
 
 print("#endif /* __DD_GL_H__ */")

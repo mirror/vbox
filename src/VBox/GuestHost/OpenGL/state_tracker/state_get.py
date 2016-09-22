@@ -38,55 +38,55 @@ for line in input.readlines():
 
 convert = {
 		   'GLenum' : {
-			  'Boolean' : '(GLboolean) ( %s != 0 )',
+			  'Boolean' : '(GLboolean) (%s != 0)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLboolean' : {
-			  'Boolean' : '(GLboolean) ( %s != 0 )',
+			  'Boolean' : '(GLboolean) (%s != 0)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLint'  : {
-			  'Boolean' : '(GLboolean) ( %s != 0 )',
+			  'Boolean' : '(GLboolean) (%s != 0)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLuint'  : {
-			  'Boolean' : '(GLboolean) ( %s != 0 )',
+			  'Boolean' : '(GLboolean) (%s != 0)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLfloat' : {
-			  'Boolean' : '(GLboolean) ( %s != 0.0f )',
+			  'Boolean' : '(GLboolean) (%s != 0.0f)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '%s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLdouble' : {
-			  'Boolean' : '(GLboolean) ( %s != 0.0 )',
+			  'Boolean' : '(GLboolean) (%s != 0.0)',
 			  'Double'  : '%s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLdefault' : {
-			  'Boolean' : '(GLboolean) ( %s != (GLdefault) 0.0 )',
+			  'Boolean' : '(GLboolean) (%s != (GLdefault) 0.0)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '(GLint) %s'
 			 },
 		   'GLclampd' : {
-			  'Boolean' : '(GLboolean) ( %s != 0.0 )',
+			  'Boolean' : '(GLboolean) (%s != 0.0)',
 			  'Double'  : '%s',
 			  'Float'   : '(GLfloat) %s',
 			  'Integer' : '__clampd_to_int(%s)'
 			 },
 		   'GLclampf' : {
-			  'Boolean' : '(GLboolean) ( %s != 0.0f )',
+			  'Boolean' : '(GLboolean) (%s != 0.0f)',
 			  'Double'  : '(GLdouble) %s',
 			  'Float'   : '%s',
 			  'Integer' : '__clampf_to_int(%s)'
@@ -112,24 +112,24 @@ print("""
 #include "state.h"
 #include "state/cr_statetypes.h"
 
-static GLint __clampd_to_int( GLdouble d )
+static GLint __clampd_to_int(GLdouble d)
 {
 	/* -1.0 -> MIN_INT, 1.0 -> MAX_INT */
-	if ( d > 1.0 )
+	if (d > 1.0)
 		return 0x7fffffff;
-	if ( d < -1.0 )
+	if (d < -1.0)
 		return 0x80000000;
-	return (GLint) floor( d * 2147483647.5 );
+	return (GLint) floor(d * 2147483647.5);
 }
 
-static GLint __clampf_to_int( GLfloat f )
+static GLint __clampf_to_int(GLfloat f)
 {
 	/* -1.0f -> MIN_INT, 1.0f -> MAX_INT */
-	if ( f > 1.0f )
+	if (f > 1.0f)
 		return 0x7fffffff;
-	if ( f < -1.0f )
+	if (f < -1.0f)
 		return 0x80000000;
-	return (GLint) floor( f * 2147483647.5f );
+	return (GLint) floor(f * 2147483647.5f);
 }
 
 static GLenum __getDrawBuffer(CRContext *g)
@@ -154,7 +154,7 @@ header = """
 		return;
 	}
 
-	if ( pname == GL_CURRENT_INDEX || pname == GL_CURRENT_COLOR ||
+	if (pname == GL_CURRENT_INDEX || pname == GL_CURRENT_COLOR ||
 		pname == GL_CURRENT_SECONDARY_COLOR_EXT ||
 		pname == GL_CURRENT_FOG_COORDINATE_EXT ||
 		pname == GL_CURRENT_NORMAL || pname == GL_EDGE_FLAG ||
@@ -169,7 +169,7 @@ header = """
 #endif
 	}
 
-	switch ( pname ) {
+	switch (pname) {
 """
 
 for rettype in types:

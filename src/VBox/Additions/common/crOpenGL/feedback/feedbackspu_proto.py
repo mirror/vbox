@@ -27,7 +27,7 @@ for func_name in keys:
 	if apiutil.FindSpecial( "feedback_state", func_name ):
 		return_type = apiutil.ReturnType(func_name)
 		params = apiutil.Parameters(func_name)
-		print('extern %s FEEDBACKSPU_APIENTRY feedbackspu_%s( %s );' % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+		print('extern %s FEEDBACKSPU_APIENTRY feedbackspu_%s(%s);' % (return_type, func_name, apiutil.MakeDeclarationString(params)))
 
 
 print("""

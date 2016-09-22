@@ -24,9 +24,9 @@ keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 print('SPUNamedFunctionTable _cr_passthrough_table[%d];' % ( len(keys) + 1 ))
 
 print("""
-static void __fillin( int offset, char *name, SPUGenericFunction func )
+static void __fillin(int offset, char *name, SPUGenericFunction func)
 {
-	_cr_passthrough_table[offset].name = crStrdup( name );
+	_cr_passthrough_table[offset].name = crStrdup(name);
 	_cr_passthrough_table[offset].fn = func;
 }
 
@@ -35,6 +35,6 @@ void BuildPassthroughTable( SPU *child )
 
 for index in range(len(keys)):
 	func_name = keys[index]
-	print('\t__fillin( %3d, "%s", (SPUGenericFunction) child->dispatch_table.%s );' % (index, func_name, func_name ))
-print('\t__fillin( %3d, NULL, NULL );' % len(keys))
+	print('\t__fillin(%3d, "%s", (SPUGenericFunction) child->dispatch_table.%s);' % (index, func_name, func_name ))
+print('\t__fillin(%3d, NULL, NULL);' % len(keys))
 print('}')

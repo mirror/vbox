@@ -24,7 +24,7 @@ for func_name in keys:
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
 
-	print("static %s SPULOAD_APIENTRY NULL_%s( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+	print("static %s SPULOAD_APIENTRY NULL_%s(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
 	print("{")
 	print("\t/* do nothing */")
 	print("\tcrWarning(\"YOU ARE CALLING A NULLED FUNCTION (%s)\");" % func_name)

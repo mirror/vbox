@@ -31,12 +31,12 @@ keys = apiutil.GetDispatchedFunctions(sys.argv[1]+"/APIspec.txt")
 for func_name in keys:
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
-	print('\nstatic %s ERROR_APIENTRY error%s( %s )' % (return_type, func_name, apiutil.MakeDeclarationString(params )))
+	print('\nstatic %s ERROR_APIENTRY error%s(%s)' % (return_type, func_name, apiutil.MakeDeclarationString(params )))
 	print('{')
 	# Handle the void parameter list
 	for (name, type, vecSize) in params:
 		print('\tERROR_UNUSED(%s);' % name)
-	print('\tcrError( "ERROR SPU: Unsupported function gl%s called!" );' % func_name)
+	print('\tcrError("ERROR SPU: Unsupported function gl%s called!");' % func_name)
 	if return_type != "void":
 		print('\treturn (%s)0;' % return_type)
 	print('}')

@@ -42,7 +42,7 @@ for func_name in keys:
     if func_name in pack_specials:
         return_type = apiutil.ReturnType(func_name)
         params = apiutil.Parameters(func_name)
-        print('extern %s PACKSPU_APIENTRY packspu_%s( %s );' % ( return_type, func_name, apiutil.MakeDeclarationString(params) ))
+        print('extern %s PACKSPU_APIENTRY packspu_%s(%s);' % ( return_type, func_name, apiutil.MakeDeclarationString(params) ))
 
 
 print("""

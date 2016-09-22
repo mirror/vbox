@@ -70,9 +70,9 @@ def ReadData( offset, arg_type ):
     """Emit a READ_DOUBLE or READ_DATA call for pulling a GL function
     argument out of the buffer's operand area."""
     if arg_type == "GLdouble" or arg_type == "GLclampd":
-        retval = "READ_DOUBLE( %d )" % offset
+        retval = "READ_DOUBLE(%d)" % offset
     else:
-        retval = "READ_DATA( %d, %s )" % (offset, arg_type)
+        retval = "READ_DATA(%d, %s)" % (offset, arg_type)
     return retval
 
 
@@ -81,10 +81,10 @@ def FindReturnPointer( return_type, params ):
     through a pointer parameter) emit a SET_RETURN_PTR call."""
     arg_len = apiutil.PacketLength( params )
     if (return_type != 'void'):
-        print('\tSET_RETURN_PTR( %d );' % (arg_len + 8)) # extended opcode plus packet length
+        print('\tSET_RETURN_PTR(%d);' % (arg_len + 8)) # extended opcode plus packet length
     else:
         paramList = [ ('foo', 'void *', 0) ]
-        print('\tSET_RETURN_PTR( %d );' % (arg_len + 8 - apiutil.PacketLength(paramList)))
+        print('\tSET_RETURN_PTR(%d);' % (arg_len + 8 - apiutil.PacketLength(paramList)))
 
 
 def FindWritebackPointer( return_type, params ):
@@ -94,7 +94,7 @@ def FindWritebackPointer( return_type, params ):
         paramList = [ ('foo', 'void *', 0) ]
         arg_len += apiutil.PacketLength( paramList )
 
-    print('\tSET_WRITEBACK_PTR( %d );' % (arg_len + 8)) # extended opcode plus packet length
+    print('\tSET_WRITEBACK_PTR(%d);' % (arg_len + 8)) # extended opcode plus packet length
 
 
 def MakeNormalCall( return_type, func_name, params, counter_init = 0 ):
@@ -120,7 +120,7 @@ def MakeNormalCall( return_type, func_name, params, counter_init = 0 ):
         print("\t(void)", end=" ")
     else:
         print("\t", end="")
-    print("cr_unpackDispatch.%s( %s );" % (func_name, apiutil.MakeCallString(params)))
+    print("cr_unpackDispatch.%s(%s);" % (func_name, apiutil.MakeCallString(params)))
 
 
 def MakeVectorCall( return_type, func_name, arg_type ):
@@ -135,13 +135,13 @@ def MakeVectorCall( return_type, func_name, arg_type ):
         print("\tcr_unpackDispatch.%s((%s) cr_unpackData);" % (vec_func, vecType))
         print("#else")
         for index in range(0, vecSize):
-            print("\tGLdouble v" + repr(index) + " = READ_DOUBLE(", repr(index * 8), ");")
+            print("\tGLdouble v" + repr(index) + " = READ_DOUBLE(" + repr(index * 8) + ");")
         if return_type != "void":
-            print("\t(void) cr_unpackDispatch.%s(" % func_name, end=" ")
+            print("\t(void) cr_unpackDispatch.%s(" % func_name, end="")
         else:
-            print("\tcr_unpackDispatch.%s(" % func_name, end=" ")
+            print("\tcr_unpackDispatch.%s(" % func_name, end="")
         for index in range(0, vecSize):
-            print("v" + repr(index), end=" ")
+            print("v" + repr(index), end="")
             if index != vecSize - 1:
                 print(",", end=" ")
         print(");")
@@ -177,7 +177,7 @@ for func_name in keys:
     if packet_length == 0:
         print("\tINCR_DATA_PTR_NO_ARGS( );")
     else:
-        print("\tINCR_DATA_PTR( %d );" % packet_length)
+        print("\tINCR_DATA_PTR(%d);" % packet_length)
     print("}\n")
 
 
@@ -257,7 +257,7 @@ void crUnpack( const void *data, const void *opcodes,
     crDebug("crUnpack: %d opcodes", num_opcodes);
 #endif
 
-    for (i = 0 ; i < num_opcodes ; i++)
+    for (i = 0; i < num_opcodes; i++)
     {
     
         CRDBGPTR_CHECKZ(writeback_ptr);

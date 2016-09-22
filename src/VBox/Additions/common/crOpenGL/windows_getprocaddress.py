@@ -132,18 +132,18 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
         }
     }
 
-    if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
-    if (!crStrcmp( name, "wglGetExtensionsStringARB" )) return (CR_PROC) wglGetExtensionsStringARB;
+    if (!crStrcmp(name, "wglGetExtensionsStringEXT")) return (CR_PROC) wglGetExtensionsStringEXT;
+    if (!crStrcmp(name, "wglGetExtensionsStringARB")) return (CR_PROC) wglGetExtensionsStringARB;
 
-    if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
-    if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
-    if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+    if (!crStrcmp(name, "wglChoosePixelFormatEXT")) return (CR_PROC) wglChoosePixelFormatEXT;
+    if (!crStrcmp(name, "wglGetPixelFormatAttribivEXT")) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+    if (!crStrcmp(name, "wglGetPixelFormatAttribfvEXT")) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
 
-    if (!crStrcmp( name, "wglChoosePixelFormatARB" )) return (CR_PROC) wglChoosePixelFormatEXT;
-    if (!crStrcmp( name, "wglGetPixelFormatAttribivARB" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
-    if (!crStrcmp( name, "wglGetPixelFormatAttribfvARB" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+    if (!crStrcmp(name, "wglChoosePixelFormatARB")) return (CR_PROC) wglChoosePixelFormatEXT;
+    if (!crStrcmp(name, "wglGetPixelFormatAttribivARB")) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+    if (!crStrcmp(name, "wglGetPixelFormatAttribfvARB")) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
 
-    if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
+    if (!crStrcmp(name, "wglSwapIntervalEXT")) return (CR_PROC) wglSwapIntervalEXT;
     
     crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
@@ -162,10 +162,10 @@ print_foo = """
         wglChoosePixelFormatFunc_t wglChoosePixelFormatEXT = NULL;
         wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = NULL;
         wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = NULL;
-        if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
-        if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
-        if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
-        if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+        if (!crStrcmp(name, "wglGetExtensionsStringEXT")) return (CR_PROC) wglGetExtensionsStringEXT;
+        if (!crStrcmp(name, "wglChoosePixelFormatEXT")) return (CR_PROC) wglChoosePixelFormatEXT;
+        if (!crStrcmp(name, "wglGetPixelFormatAttribivEXT")) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+        if (!crStrcmp(name, "wglGetPixelFormatAttribfvEXT")) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
     }
 #endif
 """

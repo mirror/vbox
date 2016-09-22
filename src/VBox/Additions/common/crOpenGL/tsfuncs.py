@@ -23,14 +23,14 @@ for func_name in keys:
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
 
-	print("static %s SPULOAD_APIENTRY ts_%s( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
+	print("static %s SPULOAD_APIENTRY ts_%s(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
 	print("{")
 	print("\tSPUDispatchTable *tab = (SPUDispatchTable *) crGetTSD(&stub.dispatchTSD);")
 
 	if return_type != "void":
 		print("\treturn ", end=" ")
 
-	print("\ttab->%s( %s );" % (func_name, apiutil.MakeCallString(params)))
+	print("\ttab->%s(%s);" % (func_name, apiutil.MakeCallString(params)))
 	print("}")
 	print("")
 

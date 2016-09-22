@@ -74,10 +74,10 @@ static CRDLL *aglDll = NULL;
  * Add an entry to the SPUNamedFunctionTable
  */
 static int
-fillin( SPUNamedFunctionTable *entry, const char *funcName, SPUGenericFunction funcPtr )
+fillin(SPUNamedFunctionTable *entry, const char *funcName, SPUGenericFunction funcPtr)
 {
 	if (funcPtr) {
-		entry->name = crStrdup( funcName );
+		entry->name = crStrdup(funcName);
 		entry->fn = funcPtr;
 		return 1;
 	}
@@ -462,28 +462,28 @@ possibly_useful_glx_functions = [
 print('#ifdef WINDOWS')
 
 for fun in useful_wgl_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( glDll, "%s" );' % (fun,fun,fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(glDll, "%s");' % (fun,fun,fun))
 
 print('#elif defined(DARWIN)')
 print('# ifndef VBOX_WITH_COCOA_QT')
 for fun in useful_agl_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( aglDll, "%s" );' % (fun,fun,fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(aglDll, "%s");' % (fun,fun,fun))
 print('# endif')
 
 for fun in useful_cgl_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( cglDll, "%s" );' % (fun, fun,fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(cglDll, "%s");' % (fun, fun,fun))
 
 for fun in in_gl_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( glDll, "%s" );' % (fun, fun,fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(glDll, "%s");' % (fun, fun,fun))
 
 print('#else')
 print('\t/* GLX */')
 
 # XXX merge these loops?
 for fun in useful_glx_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( glDll, "%s" );' % (fun, fun, fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(glDll, "%s");' % (fun, fun, fun))
 for fun in possibly_useful_glx_functions:
-	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError( glDll, "%s" );' % (fun, fun, fun))
+	print('\tinterface->%s = (%sFunc_t) crDLLGetNoError(glDll, "%s");' % (fun, fun, fun))
 print('#endif')
 
 print("""
@@ -592,14 +592,14 @@ int crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext 
 	crDebug( "Found it in %s.", !env_syspath ? "default path" : env_syspath );
 
 	*createContext =  (OSMesaContext (*) ( GLenum format, OSMesaContext sharelist ))
-		crDLLGetNoError( osMesaDll, "OSMesaCreateContext" );
+		crDLLGetNoError(osMesaDll, "OSMesaCreateContext");
 
 	*makeCurrent =  (GLboolean (*) ( OSMesaContext ctx, GLubyte *buffer,
 					  GLenum type, GLsizei width, GLsizei height ))
-		crDLLGetNoError( osMesaDll, "OSMesaMakeCurrent" );
+		crDLLGetNoError(osMesaDll, "OSMesaMakeCurrent");
 
 	*destroyContext =  (void (*) ( OSMesaContext ctx))
-		crDLLGetNoError( osMesaDll, "OSMesaDestroyContext" );
+		crDLLGetNoError(osMesaDll, "OSMesaDestroyContext");
 
 	return 1;
 }

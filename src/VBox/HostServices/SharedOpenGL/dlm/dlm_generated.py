@@ -196,7 +196,7 @@ def wrap_compile(functionName):
     if "useclient" in props or "pixelstore" in props:
         callstring += ", c"
         argstring += ", CRClientState *c"
-    print 'void DLM_APIENTRY crDLMCompile%s( %s )' % (functionName, argstring)
+    print 'void DLM_APIENTRY crDLMCompile%s(%s)' % (functionName, argstring)
     print '{'
     print '    CRDLMContextState *state = CURRENT_STATE();'
     print '    struct instance%s *instance;' % (functionName)

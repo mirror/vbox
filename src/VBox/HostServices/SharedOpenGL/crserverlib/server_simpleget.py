@@ -29,7 +29,7 @@ types = [ 'GLint', 'GLfloat', 'GLdouble', 'GLboolean' ]
 for index in range(len(funcs)):
     func_name = funcs[index]
     params = apiutil.Parameters(func_name)
-    print('void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % ( func_name, apiutil.MakeDeclarationString(params)))
+    print('void SERVER_DISPATCH_APIENTRY crServerDispatch%s(%s)' % ( func_name, apiutil.MakeDeclarationString(params)))
     print('{')
     print('\t%s *get_values;' % types[index])
     print('\tint tablesize;')

@@ -12,7 +12,7 @@
 
 void crStateLightingInitBits (CRLightingBits *l)
 {
-	l->light = (CRLightBits *) crCalloc (sizeof(*(l->light)) * CR_MAX_LIGHTS );
+	l->light = (CRLightBits *) crCalloc (sizeof(*(l->light)) * CR_MAX_LIGHTS);
 }
 
 void crStateLightingDestroyBits (CRLightingBits *l)
@@ -22,7 +22,7 @@ void crStateLightingDestroyBits (CRLightingBits *l)
 
 void crStateLightingDestroy (CRContext *ctx)
 {
-	crFree( ctx->lighting.light );
+	crFree(ctx->lighting.light);
 }
 
 void crStateLightingInit (CRContext *ctx)
@@ -216,28 +216,28 @@ void STATE_APIENTRY crStateLightModelfv (GLenum pname, const GLfloat *param)
 			}
 			else
 			{
-				crStateError( __LINE__, __FILE__, GL_INVALID_ENUM, "LightModel: Invalid param for LIGHT_MODEL_COLOR_CONTROL: 0x%x", param[0] );
+				crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "LightModel: Invalid param for LIGHT_MODEL_COLOR_CONTROL: 0x%x", param[0]);
 				return;
 			}
 			break;
 #else
 #if defined(CR_EXT_separate_specular_color)
 		case GL_LIGHT_MODEL_COLOR_CONTROL_EXT:
-			if( g->extensions.EXT_separate_specular_color )
+			if(g->extensions.EXT_separate_specular_color)
 			{
-				if( param[0] == GL_SEPARATE_SPECULAR_COLOR_EXT || param[0] == GL_SINGLE_COLOR_EXT )
+				if (param[0] == GL_SEPARATE_SPECULAR_COLOR_EXT || param[0] == GL_SINGLE_COLOR_EXT)
 				{
 					l->lightModelColorControlEXT = (GLenum) param[0];
 				}
 				else
 				{
-					crStateError( __LINE__, __FILE__, GL_INVALID_ENUM, "LightModel: Invalid param for LIGHT_MODEL_COLOR_CONTROL: 0x%x", param[0] );
+					crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "LightModel: Invalid param for LIGHT_MODEL_COLOR_CONTROL: 0x%x", param[0]);
 					return;
 				}
 			}
 			else
 			{
-				crStateError( __LINE__, __FILE__, GL_INVALID_ENUM, "LightModel( LIGHT_MODEL_COLOR_CONTROL, ...) - EXT_separate_specular_color is unavailable." );
+				crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "LightModel( LIGHT_MODEL_COLOR_CONTROL, ...) - EXT_separate_specular_color is unavailable.");
 				return;
 			}
 			break;
@@ -264,28 +264,28 @@ void STATE_APIENTRY crStateLightModeliv (GLenum pname, const GLint *param)
 		case GL_LIGHT_MODEL_LOCAL_VIEWER:
 		case GL_LIGHT_MODEL_TWO_SIDE:
 			f_param = (GLfloat) (*param);
-			crStateLightModelfv( pname, &f_param );
+			crStateLightModelfv(pname, &f_param);
 			break;
 		case GL_LIGHT_MODEL_AMBIENT:
 			f_color.r = ((GLfloat)param[0])/CR_MAXINT;
 			f_color.g = ((GLfloat)param[1])/CR_MAXINT;
 			f_color.b = ((GLfloat)param[2])/CR_MAXINT;
 			f_color.a = ((GLfloat)param[3])/CR_MAXINT;
-			crStateLightModelfv( pname, (GLfloat *) &f_color );
+			crStateLightModelfv(pname, (GLfloat *) &f_color);
 			break;
 #if defined(CR_OPENGL_VERSION_1_2)
 		case GL_LIGHT_MODEL_COLOR_CONTROL:
 			f_param = (GLfloat) (*param);
-			crStateLightModelfv( pname, &f_param );
+			crStateLightModelfv(pname, &f_param);
 			break;
 #else
 #ifdef CR_EXT_separate_specular_color
 		case GL_LIGHT_MODEL_COLOR_CONTROL_EXT:
-			if( g->extensions.EXT_separate_specular_color ) {
+			if (g->extensions.EXT_separate_specular_color) {
 				f_param = (GLfloat) (*param);
-				crStateLightModelfv( pname, &f_param );
+				crStateLightModelfv(pname, &f_param);
 			} else {
-				crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "LightModeliv(GL_LIGHT_MODEL_COLOR_CONTROL_EXT, ...) - EXT_separate_specular_color not enabled!" );
+				crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "LightModeliv(GL_LIGHT_MODEL_COLOR_CONTROL_EXT, ...) - EXT_separate_specular_color not enabled!");
 				return;
 			}
 			break;
@@ -299,13 +299,13 @@ void STATE_APIENTRY crStateLightModeliv (GLenum pname, const GLint *param)
 
 void STATE_APIENTRY crStateLightModelf (GLenum pname, GLfloat param)
 {
-	crStateLightModelfv( pname, &param );
+	crStateLightModelfv(pname, &param);
 }
 
 void STATE_APIENTRY crStateLightModeli (GLenum pname, GLint param)
 {
 	GLfloat f_param = (GLfloat) param;
-	crStateLightModelfv( pname, &f_param );
+	crStateLightModelfv(pname, &f_param);
 }
 
 void STATE_APIENTRY crStateLightfv (GLenum light, GLenum pname, const GLfloat *param)
@@ -469,7 +469,7 @@ void STATE_APIENTRY crStateLightiv (GLenum light, GLenum pname, const GLint *par
 			f_color.g = ((GLfloat)param[1])/CR_MAXINT;
 			f_color.b = ((GLfloat)param[2])/CR_MAXINT;
 			f_color.a = ((GLfloat)param[3])/CR_MAXINT;
-			crStateLightfv( light, pname, (GLfloat *) &f_color );
+			crStateLightfv(light, pname, (GLfloat *) &f_color);
 			break;
 		case GL_POSITION:
 		case GL_SPOT_DIRECTION:
@@ -477,7 +477,7 @@ void STATE_APIENTRY crStateLightiv (GLenum light, GLenum pname, const GLint *par
 			f_vector.y = (GLfloat) param[1];
 			f_vector.z = (GLfloat) param[2];
 			f_vector.w = (GLfloat) param[3];
-			crStateLightfv( light, pname, (GLfloat *) &f_vector );
+			crStateLightfv(light, pname, (GLfloat *) &f_vector);
 			break;
 		case GL_SPOT_EXPONENT:
 		case GL_SPOT_CUTOFF:
@@ -485,7 +485,7 @@ void STATE_APIENTRY crStateLightiv (GLenum light, GLenum pname, const GLint *par
 		case GL_LINEAR_ATTENUATION:
 		case GL_QUADRATIC_ATTENUATION:
 			f_param = (GLfloat) (*param);
-			crStateLightfv( light, pname, &f_param );
+			crStateLightfv(light, pname, &f_param);
 			break;
 		default:
 			crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glLight: invalid pname: 0x%x", pname);
@@ -495,13 +495,13 @@ void STATE_APIENTRY crStateLightiv (GLenum light, GLenum pname, const GLint *par
 
 void STATE_APIENTRY crStateLightf (GLenum light, GLenum pname, GLfloat param)
 {
-	crStateLightfv( light, pname, &param );
+	crStateLightfv(light, pname, &param);
 }
 
 void STATE_APIENTRY crStateLighti (GLenum light, GLenum pname, GLint param)
 {
 	GLfloat f_param = (GLfloat) param;
-	crStateLightfv( light, pname, &f_param );
+	crStateLightfv(light, pname, &f_param);
 }
 
 void STATE_APIENTRY crStateMaterialfv (GLenum face, GLenum pname, const GLfloat *param)
@@ -718,15 +718,15 @@ void STATE_APIENTRY crStateMaterialiv (GLenum face, GLenum pname, const GLint *p
 			f_color.g = ((GLfloat) param[1]) / ((GLfloat) CR_MAXINT);
 			f_color.b = ((GLfloat) param[2]) / ((GLfloat) CR_MAXINT);
 			f_color.a = ((GLfloat) param[3]) / ((GLfloat) CR_MAXINT);
-			crStateMaterialfv( face, pname, (GLfloat *) &f_color );
+			crStateMaterialfv(face, pname, (GLfloat *) &f_color);
 			break;
 		case GL_SHININESS:
 			f_param = (GLfloat) (*param);
-			crStateMaterialfv( face, pname, (GLfloat *) &f_param );
+			crStateMaterialfv(face, pname, (GLfloat *) &f_param);
 			break;
 		case GL_COLOR_INDEXES :
 			f_param = (GLfloat) (*param);
-			crStateMaterialfv( face, pname, (GLfloat *) &f_param );
+			crStateMaterialfv(face, pname, (GLfloat *) &f_param);
 			break;
 		default:
 			crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMaterialiv: bad pname: 0x%x", pname);
@@ -736,13 +736,13 @@ void STATE_APIENTRY crStateMaterialiv (GLenum face, GLenum pname, const GLint *p
 
 void STATE_APIENTRY crStateMaterialf (GLenum face, GLenum pname, GLfloat param)
 {
-	crStateMaterialfv( face, pname, &param );
+	crStateMaterialfv(face, pname, &param);
 }
 
 void STATE_APIENTRY crStateMateriali (GLenum face, GLenum pname, GLint param)
 {
 	GLfloat f_param = (GLfloat) param;
-	crStateMaterialfv( face, pname, &f_param );
+	crStateMaterialfv(face, pname, &f_param);
 }
 
 void STATE_APIENTRY crStateGetLightfv (GLenum light, GLenum pname, GLfloat *param)
@@ -1207,6 +1207,6 @@ void crStateColorMaterialRecover(void)
 		 */
 		crStateFlushFunc(NULL);
 
-		crStateMaterialfv( l->colorMaterialFace, l->colorMaterialMode, &(c->vertexAttrib[VERT_ATTRIB_COLOR0][0]) );
+		crStateMaterialfv(l->colorMaterialFace, l->colorMaterialMode, &(c->vertexAttrib[VERT_ATTRIB_COLOR0][0]));
 	}
 }

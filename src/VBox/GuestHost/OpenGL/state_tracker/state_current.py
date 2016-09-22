@@ -191,12 +191,12 @@ void crStateCurrentRecover( void )
 
 for k in sorted(current_fns.keys()):
 	print('\t/* %s */' % k)
-	print('\tv=NULL;')
+	print('\tv = NULL;')
 	name = '%s%s' % (k[:1].lower(),k[1:])
 
 	indent = ""
 	if 'array' in current_fns[k]:
-		print('\tfor (i = 0 ; i < %s ; i++)' % current_fns[k]['array'])
+		print('\tfor (i = 0; i < %s; i++)' % current_fns[k]['array'])
 		print('\t{')
 		indent += "\t"
 	for type in current_fns[k]['types']:
@@ -376,7 +376,7 @@ for k in sorted(current_fns_new.keys()):
 
     indent = ""
     if 'array' in current_fns_new[k]:
-        print('\t\tfor (i = 0 ; i < %s ; i++)' % current_fns_new[k]['array'])
+        print('\t\tfor (i = 0; i < %s; i++)' % current_fns_new[k]['array'])
         print('\t\t{')
         indent += "\t\t"
         print('\t\tif (!(current->changed%s & (1 << i))) continue;' % k)

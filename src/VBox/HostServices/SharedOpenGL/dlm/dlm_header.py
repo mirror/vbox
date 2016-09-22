@@ -237,7 +237,7 @@ for func_name in keys:
 			argstring = argstring + ", CRClientState *c"
 
 		if mode == 'header':
-			print 'extern void DLM_APIENTRY crDLMCompile%s( %s );' % (func_name, argstring)
+			print 'extern void DLM_APIENTRY crDLMCompile%s(%s);' % (func_name, argstring)
 		elif mode == 'defs':
 			print "crDLMCompile%s" % func_name
 
@@ -261,7 +261,7 @@ for func_name in keys:
 		params = apiutil.Parameters(func_name)
 		argstring = apiutil.MakeDeclarationString(params)
 		if mode == 'header':
-			print 'int DLM_APIENTRY crDLMCheckList%s( %s );' % (func_name, argstring)
+			print 'int DLM_APIENTRY crDLMCheckList%s(%s);' % (func_name, argstring)
 		elif mode == 'defs':
 			print "crDLMCheckList%s" % func_name
 

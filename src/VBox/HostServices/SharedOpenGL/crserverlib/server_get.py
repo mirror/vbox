@@ -118,7 +118,7 @@ for func_name in keys:
 
         params = apiutil.Parameters(func_name)
 
-        print('void SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % (func_name, apiutil.MakeDeclarationString( params ) ))
+        print('void SERVER_DISPATCH_APIENTRY crServerDispatch%s(%s)' % (func_name, apiutil.MakeDeclarationString( params ) ))
         print('{')
 
         lastParam = params[-1]
@@ -131,7 +131,7 @@ for func_name in keys:
 
         params[-1] = (local_argname, local_argtype, 0)
 
-        print('\tcr_server.head_spu->dispatch_table.%s( %s );' % ( func_name, apiutil.MakeCallString(params) ))
+        print('\tcr_server.head_spu->dispatch_table.%s(%s);' % ( func_name, apiutil.MakeCallString(params) ))
 
         if func_name in convert_bufferid:
             print('\tif (pname==GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB){')
@@ -139,7 +139,7 @@ for func_name in keys:
             print('\t}')
 
         if func_name in no_pnames:
-            print('\tcrServerReturnValue( &(%s[0]), %d*sizeof(%s) );' % (local_argname, max_components[func_name], local_argtype ))
+            print('\tcrServerReturnValue(&(%s[0]), %d*sizeof(%s));' % (local_argname, max_components[func_name], local_argtype ))
         else:
-            print('\tcrServerReturnValue( &(%s[0]), crStateHlpComponentsCount(pname)*sizeof(%s) );' % (local_argname, local_argtype ))
+            print('\tcrServerReturnValue(&(%s[0]), crStateHlpComponentsCount(pname)*sizeof(%s));' % (local_argname, local_argtype ))
         print ('}\n')

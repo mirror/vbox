@@ -87,8 +87,8 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 #undef GLXAPI_ENTRY
 
     /*CR_EXT_texture_from_pixmap*/
-    if (!crStrcmp( name, "glXBindTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXBindTexImageEXT);
-    if (!crStrcmp( name, "glXReleaseTexImageEXT" )) return (CR_PROC) VBOXGLXTAG(glXReleaseTexImageEXT);
+    if (!crStrcmp(name, "glXBindTexImageEXT")) return (CR_PROC) VBOXGLXTAG(glXBindTexImageEXT);
+    if (!crStrcmp(name, "glXReleaseTexImageEXT")) return (CR_PROC) VBOXGLXTAG(glXReleaseTexImageEXT);
 
 #if defined(Linux) && defined(CR_EXT_framebuffer_blit)
     /* Hacky way to make gnome3 happy on ubuntu 11.04, even though glBlitFramebuffer is part of OpenGL 3.0 spec,
@@ -116,10 +116,10 @@ print_foo = """
 		wglChoosePixelFormatFunc_t wglChoosePixelFormatEXT = NULL;
 		wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = NULL;
 		wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = NULL;
-		if (!crStrcmp( name, "wglGetExtensionsStringEXT" )) return (CR_PROC) wglGetExtensionsStringEXT;
-		if (!crStrcmp( name, "wglChoosePixelFormatEXT" )) return (CR_PROC) wglChoosePixelFormatEXT;
-		if (!crStrcmp( name, "wglGetPixelFormatAttribivEXT" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
-		if (!crStrcmp( name, "wglGetPixelFormatAttribfvEXT" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+		if (!crStrcmp(name, "wglGetExtensionsStringEXT")) return (CR_PROC) wglGetExtensionsStringEXT;
+		if (!crStrcmp(name, "wglChoosePixelFormatEXT")) return (CR_PROC) wglChoosePixelFormatEXT;
+		if (!crStrcmp(name, "wglGetPixelFormatAttribivEXT")) return (CR_PROC) wglGetPixelFormatAttribivEXT;
+		if (!crStrcmp(name, "wglGetPixelFormatAttribfvEXT")) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
 	}
 #endif
 """

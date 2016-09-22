@@ -53,7 +53,7 @@ GLboolean STATE_APIENTRY crStateIsEnabled( GLenum pname )
 		return 0;
 	}
 
-    switch ( pname ) {
+    switch (pname) {
 """)
 
 for pname in sorted(params.keys()):

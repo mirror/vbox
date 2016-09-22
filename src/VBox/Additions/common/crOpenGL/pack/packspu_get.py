@@ -85,7 +85,7 @@ for func_name in keys:
         continue
 
     if "get" in apiutil.Properties(func_name):
-        print('%s PACKSPU_APIENTRY packspu_%s( %s )' % ( return_type, func_name, apiutil.MakeDeclarationString( params ) ))
+        print('%s PACKSPU_APIENTRY packspu_%s(%s)' % ( return_type, func_name, apiutil.MakeDeclarationString( params ) ))
         print('{')
         print('\tGET_THREAD(thread);')
         print('\tint writeback = 1;')
@@ -194,11 +194,11 @@ for func_name in keys:
         params.append( ("&writeback", "foo", 0) )
         print('\tif (pack_spu.swap)')
         print('\t{')
-        print('\t\tcrPack%sSWAP( %s );' % (func_name, apiutil.MakeCallString( params ) ))
+        print('\t\tcrPack%sSWAP(%s);' % (func_name, apiutil.MakeCallString( params ) ))
         print('\t}')
         print('\telse')
         print('\t{')
-        print('\t\tcrPack%s( %s );' % (func_name, apiutil.MakeCallString( params ) ))
+        print('\t\tcrPack%s(%s);' % (func_name, apiutil.MakeCallString( params ) ))
         print('\t}')
         print('\tpackspuFlush( (void *) thread );')
         print('\tCRPACKSPU_WRITEBACK_WAIT(thread, writeback);')
@@ -216,7 +216,7 @@ for func_name in keys:
             limit = easy_swaps[func_name]
             print('\tif (pack_spu.swap)')
             print('\t{')
-            print('\t\tfor (i = 0 ; i < %s ; i++)' % limit)
+            print('\t\tfor (i = 0; i < %s; i++)' % limit)
             print('\t\t{')
             if params[-2][1].find( "double" ) > -1:
                 print('\t\t\t%s[i] = SWAPDOUBLE(%s[i]);' % (lastParamName, lastParamName))
@@ -228,7 +228,7 @@ for func_name in keys:
             if simple_funcs[index] == func_name:
                 print('\tif (pack_spu.swap)')
                 print('\t{')
-                print('\t\tfor (i = 0 ; i < __numValues( pname ) ; i++)')
+                print('\t\tfor (i = 0; i < __numValues(pname); i++)')
                 print('\t\t{')
                 if simple_swaps[index] == 'SWAPDOUBLE':
                     print('\t\t\t%s[i] = %s(%s[i]);' % (lastParamName, simple_swaps[index], lastParamName))
@@ -239,7 +239,7 @@ for func_name in keys:
         if func_name in hard_funcs:
             print('\tif (pack_spu.swap)')
             print('\t{')
-            print('\t\tfor (i = 0 ; i < crStateHlpComponentsCount(pname) ; i++)')
+            print('\t\tfor (i = 0; i < crStateHlpComponentsCount(pname); i++)')
             print('\t\t{')
             if hard_funcs[func_name] == 'SWAPDOUBLE':
                 print('\t\t\t%s[i] = %s(%s[i]);' % (lastParamName, hard_funcs[func_name], lastParamName))

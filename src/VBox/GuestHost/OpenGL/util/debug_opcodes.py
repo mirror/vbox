@@ -20,7 +20,7 @@ print("""
 print("""void crDebugOpcodes( FILE *fp, unsigned char *ptr, unsigned int num_opcodes )
 {
 \tunsigned int i;
-\tfor (i = 0 ; i < num_opcodes ; i++)
+\tfor (i = 0; i < num_opcodes; i++)
 \t{
 \t\tswitch(*(ptr--))
 \t\t{
@@ -32,7 +32,7 @@ keys.sort()
 for func_name in keys:
 	if "pack" in apiutil.ChromiumProps(func_name):
 		print('\t\tcase %s:' % apiutil.OpcodeName( func_name ))
-		print('\t\t\tfprintf( fp, "%s\\n" ); ' % apiutil.OpcodeName( func_name ))
+		print('\t\t\tfprintf(fp, "%s\\n"); ' % apiutil.OpcodeName( func_name ))
 		print( '\t\t\tbreak;')
 
 print("""

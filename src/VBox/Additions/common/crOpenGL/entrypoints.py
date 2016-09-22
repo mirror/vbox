@@ -95,14 +95,14 @@ def GenerateEntrypoints(hacks = []):
                 print("}")
         else:
             # the usual path
-            print("%s VBOXGLTAG(gl%s)( %s );" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+            print("%s VBOXGLTAG(gl%s)(%s);" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
             print("")
-            print("%s VBOXGLTAG(gl%s)( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+            print("%s VBOXGLTAG(gl%s)(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
             print("{")
             print("\t", end="")
             if return_type != "void":
                 print("return ", end=" ")
-            print("glim.%s( %s );" % (func_name, apiutil.MakeCallString(params)))
+            print("glim.%s(%s);" % (func_name, apiutil.MakeCallString(params)))
             print("}")
             print("")
 
@@ -148,14 +148,14 @@ def GenerateEntrypoints(hacks = []):
             else:
                 return_type = apiutil.ReturnType(func_name)
                 params = apiutil.Parameters(func_name)
-                print("%s VBOXGLTAG(gl%s)( %s );" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+                print("%s VBOXGLTAG(gl%s)(%s);" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
                 print("")
-                print("%s VBOXGLTAG(gl%s)( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+                print("%s VBOXGLTAG(gl%s)(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
                 print("{")
                 print("\t", end="")
                 if return_type != "void":
                     print("return ", end=" ")
-                print("glim.%s( %s );" % (alias, apiutil.MakeCallString(params)))
+                print("glim.%s(%s);" % (alias, apiutil.MakeCallString(params)))
                 print("}")
                 print("")
 
@@ -169,9 +169,9 @@ def GenerateEntrypoints(hacks = []):
             return_type = apiutil.ReturnType(func_name)
             params = apiutil.Parameters(func_name)
 
-            print("%s VBOXGLTAG(gl%s)( %s );" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+            print("%s VBOXGLTAG(gl%s)(%s);" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
             print("")
-            print("%s VBOXGLTAG(gl%s)( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+            print("%s VBOXGLTAG(gl%s)(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params)))
             print("{")
             if return_type != "void":
                 print("return (%s) 0" % return_type)

@@ -28,9 +28,9 @@ num_funcs = len(keys) - len(apiutil.AllSpecials('packspu_unimplemented'))
 print('SPUNamedFunctionTable _cr_pack_table[%d];' % (num_funcs+1))
 
 print("""
-static void __fillin( int offset, char *name, SPUGenericFunction func )
+static void __fillin(int offset, char *name, SPUGenericFunction func)
 {
-    _cr_pack_table[offset].name = crStrdup( name );
+    _cr_pack_table[offset].name = crStrdup(name);
     _cr_pack_table[offset].fn = func;
 }""")
 
@@ -50,8 +50,8 @@ for index in range(len(keys)):
     if apiutil.FindSpecial( "packspu_unimplemented", func_name ):
         continue
     if func_name in pack_specials:
-        print('\t__fillin( %3d, "%s", (SPUGenericFunction) packspu_%s );' % (index, func_name, func_name ))
+        print('\t__fillin(%3d, "%s", (SPUGenericFunction) packspu_%s);' % (index, func_name, func_name ))
     else:
-        print('\t__fillin( %3d, "%s", (SPUGenericFunction) (pack_spu.swap ? crPack%sSWAP : crPack%s) );' % (index, func_name, func_name, func_name ))
-print('\t__fillin( %3d, NULL, NULL );' % num_funcs)
+        print('\t__fillin(%3d, "%s", (SPUGenericFunction) (pack_spu.swap ? crPack%sSWAP : crPack%s));' % (index, func_name, func_name, func_name ))
+print('\t__fillin(%3d, NULL, NULL);' % num_funcs)
 print('}')

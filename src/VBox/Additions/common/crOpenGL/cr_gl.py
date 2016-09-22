@@ -59,7 +59,7 @@ for func_name in keys:
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
 
-	print("extern %s cr_gl%s( %s );" % (return_type, func_name,
+	print("extern %s cr_gl%s(%s);" % (return_type, func_name,
 								  apiutil.MakeDeclarationString( params )))
 
 print("#endif /* __CR_GL_H__ */")

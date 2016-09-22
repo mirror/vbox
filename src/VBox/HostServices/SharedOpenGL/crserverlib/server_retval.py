@@ -68,10 +68,10 @@ for func_name in keys:
     if "VBox" == apiutil.Category(func_name):
         continue
     if return_type != 'void':
-        print('%s SERVER_DISPATCH_APIENTRY crServerDispatch%s( %s )' % ( return_type, func_name, apiutil.MakeDeclarationString(params)))
+        print('%s SERVER_DISPATCH_APIENTRY crServerDispatch%s(%s)' % ( return_type, func_name, apiutil.MakeDeclarationString(params)))
         print('{')
         print('\t%s retval;' % return_type)
-        print('\tretval = cr_server.head_spu->dispatch_table.%s( %s );' % (func_name, apiutil.MakeCallString(params) ))
+        print('\tretval = cr_server.head_spu->dispatch_table.%s(%s);' % (func_name, apiutil.MakeCallString(params) ))
         print('\tcrServerReturnValue( &retval, sizeof(retval) );')
         print('\treturn retval; /* WILL PROBABLY BE IGNORED */')
         print('}')

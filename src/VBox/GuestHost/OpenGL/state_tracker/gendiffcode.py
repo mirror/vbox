@@ -57,7 +57,7 @@ def gendiffcode(fname, state_name, docopy, doinvalid):
 
 	print("""	unsigned int j, i;
 	CRbitvalue nbitID[CR_MAX_BITARRAY];
-	for (j=0;j<CR_MAX_BITARRAY;j++)
+	for (j = 0; j<CR_MAX_BITARRAY; j++)
 		nbitID[j] = ~bitID[j];
 	i = 0; /* silence compiler */""")
 
@@ -202,7 +202,7 @@ def gendiffcode(fname, state_name, docopy, doinvalid):
 							print("Diff",end="")
 						else:
 							print("Switch",end="")
-						print("Extensions( from, to );")
+						print("Extensions(from, to);")
 					else:
 						funcargs = re.split(",", func)
 						#print "// funcargs:",funcargs
@@ -225,7 +225,7 @@ def gendiffcode(fname, state_name, docopy, doinvalid):
 								print(tab+"varg["+str(i)+"] = "+target+"->"+elem+";")
 								i += 1
 
-						sys.stdout.write(tab+"diff_api.%(func)s ("%vars())
+						sys.stdout.write(tab+"diff_api.%(func)s("%vars())
 						for funcarg in funcargs:
 							sys.stdout.write(funcarg+", ")
 

@@ -26,9 +26,9 @@ for func_name in keys:
             continue
         return_type = apiutil.ReturnType(func_name)
         params = apiutil.Parameters(func_name)
-        print('%s FEEDBACKSPU_APIENTRY feedbackspu_%s( %s )' % (return_type, func_name, apiutil.MakeDeclarationString(params)))
+        print('%s FEEDBACKSPU_APIENTRY feedbackspu_%s(%s)' % (return_type, func_name, apiutil.MakeDeclarationString(params)))
         print('{')
-        print('\tcrState%s( %s );' % (func_name, apiutil.MakeCallString(params)))
+        print('\tcrState%s(%s);' % (func_name, apiutil.MakeCallString(params)))
         print('')
-        print('\tfeedback_spu.super.%s( %s );' % (func_name, apiutil.MakeCallString(params)))
+        print('\tfeedback_spu.super.%s(%s);' % (func_name, apiutil.MakeCallString(params)))
         print('}')

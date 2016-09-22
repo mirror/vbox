@@ -60,8 +60,8 @@ for func_name in keys:
 		if "get" in apiutil.Properties(func_name):
 			args.append(("writeback", "int *", 0))
 
-		print('void PACK_APIENTRY crPack%s( %s );' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', args)))
-		print('void PACK_APIENTRY crPack%sSWAP( %s );' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', args)))
+		print('void PACK_APIENTRY crPack%s(%s);' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', args)))
+		print('void PACK_APIENTRY crPack%sSWAP(%s);' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', args)))
 
 
 

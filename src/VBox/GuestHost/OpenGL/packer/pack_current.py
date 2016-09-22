@@ -40,7 +40,7 @@ void crPackOffsetCurrentPointers( int offset )
 for k in sorted(current_fns.keys()):
 	name = '%s%s' % (k[:1].lower(),k[1:])
 	if 'array' in current_fns[k]:
-			print('\tfor (i = 0 ; i < %s ; i++)' % current_fns[k]['array'])
+			print('\tfor (i = 0; i < %s; i++)' % current_fns[k]['array'])
 			print('\t{')
 	for type in current_fns[k]['types']:
 		for size in current_fns[k]['sizes']:
@@ -49,10 +49,8 @@ for k in sorted(current_fns.keys()):
 			if 'array' in current_fns[k]:
 				ptr += "[i]"
 				indent = "\t"
-			print("%s\tif ( %s )" % (indent, ptr))
-			print("%s\t{" % indent)
+			print("%s\tif (%s)" % (indent, ptr))
 			print("%s\t\t%s += offset;" % (indent, ptr ))
-			print("%s\t}" % indent)
 	if 'array' in current_fns[k]:
 		print('\t}')
 print("""
@@ -63,5 +61,5 @@ void crPackNullCurrentPointers( void )
 	CR_GET_PACKER_CONTEXT(pc);
 	CRCurrentStateAttr	*c		= &(pc->current.c);
 """)
-print('\tmemset ( c, 0, sizeof (CRCurrentStateAttr));')
+print('\tmemset (c, 0, sizeof(CRCurrentStateAttr));')
 print("}")

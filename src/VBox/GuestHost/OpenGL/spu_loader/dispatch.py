@@ -28,12 +28,12 @@ static SPUGenericFunction __findFunc( char *name, SPU *spu )
 
 	for (temp = spu->function_table->table ; temp->name != NULL ; temp++)
 	{
-		if (!crStrcmp( name, temp->name ) )
+		if (!crStrcmp(name, temp->name))
 		{
 			return temp->fn;
 		}
 	}
-	return __findFunc( name, spu->superSPU );
+	return __findFunc(name, spu->superSPU);
 }
 
 
@@ -64,7 +64,7 @@ SPUGenericFunction crSPUFindFunction( const SPUNamedFunctionTable *table, const 
 
 	for (temp = table ; temp->name != NULL ; temp++)
 	{
-		if (!crStrcmp( fname, temp->name ) )
+		if (!crStrcmp(fname, temp->name))
 		{
 			return temp->fn;
 		}

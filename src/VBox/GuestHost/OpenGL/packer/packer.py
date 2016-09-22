@@ -16,24 +16,24 @@ def WriteData( offset, arg_type, arg_name, is_swapped ):
     """Return a string to write a variable to the packing buffer."""
     retval = 9
     if apiutil.IsPointer(arg_type):
-        retval = "\tWRITE_NETWORK_POINTER( %d, (void *) %s );" % (offset, arg_name )
+        retval = "\tWRITE_NETWORK_POINTER(%d, (void *) %s);" % (offset, arg_name )
     else:   
         if is_swapped:
             if arg_type == "GLfloat" or arg_type == "GLclampf":
-                retval = "\tWRITE_DATA( %d, GLuint, SWAPFLOAT(%s) );" % (offset, arg_name)
+                retval = "\tWRITE_DATA(%d, GLuint, SWAPFLOAT(%s));" % (offset, arg_name)
             elif arg_type == "GLdouble" or arg_type == "GLclampd":
-                retval = "\tWRITE_SWAPPED_DOUBLE( %d, %s );" % (offset, arg_name)
+                retval = "\tWRITE_SWAPPED_DOUBLE(%d, %s);" % (offset, arg_name)
             elif apiutil.sizeof(arg_type) == 1:
-                retval = "\tWRITE_DATA( %d, %s, %s );" % (offset, arg_type, arg_name)
+                retval = "\tWRITE_DATA(%d, %s, %s);" % (offset, arg_type, arg_name)
             elif apiutil.sizeof(arg_type) == 2:
-                retval = "\tWRITE_DATA( %d, %s, SWAP16(%s) );" % (offset, arg_type, arg_name)
+                retval = "\tWRITE_DATA(%d, %s, SWAP16(%s));" % (offset, arg_type, arg_name)
             elif apiutil.sizeof(arg_type) == 4:
-                retval = "\tWRITE_DATA( %d, %s, SWAP32(%s) );" % (offset, arg_type, arg_name)
+                retval = "\tWRITE_DATA(%d, %s, SWAP32(%s));" % (offset, arg_type, arg_name)
         else:
             if arg_type == "GLdouble" or arg_type == "GLclampd":
-                retval = "\tWRITE_DOUBLE( %d, %s );" % (offset, arg_name)
+                retval = "\tWRITE_DOUBLE(%d, %s);" % (offset, arg_name)
             else:
-                retval = "\tWRITE_DATA( %d, %s, %s );" % (offset, arg_type, arg_name)
+                retval = "\tWRITE_DATA(%d, %s, %s);" % (offset, arg_type, arg_name)
     if retval == 9:
         print >>sys.stderr, "no retval for %s %s" % (arg_name, arg_type)
         assert 0
@@ -115,9 +115,9 @@ def UpdateCurrentPointer( func_name ):
 def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     """Emit a packer function."""
     if is_swapped:
-        print('void PACK_APIENTRY crPack%sSWAP( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
+        print('void PACK_APIENTRY crPack%sSWAP(%s)' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
     else:
-        print('void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
+        print('void PACK_APIENTRY crPack%s(%s)' % (func_name, apiutil.MakeDeclarationStringWithContext('CR_PACKER_CONTEXT', params)))
     print('{')
     print('\tCR_GET_PACKER_CONTEXT(pc);')
 
@@ -169,16 +169,16 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     packet_length = apiutil.PacketLength(nonVecParams)
 
     if packet_length == 0 and not is_extended:
-        print("\tCR_GET_BUFFERED_POINTER_NO_ARGS( pc );")
+        print("\tCR_GET_BUFFERED_POINTER_NO_ARGS(pc);")
     elif func_name[:9] == "Translate" or func_name[:5] == "Color":
         # XXX WTF is the purpose of this?
         if is_extended:
             packet_length += 8
-        print("\tCR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, %d, GL_TRUE );" % packet_length)
+        print("\tCR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH(pc, %d, GL_TRUE);" % packet_length)
     else:
         if is_extended:
             packet_length += 8
-        print("\tCR_GET_BUFFERED_POINTER( pc, %d );" % packet_length)
+        print("\tCR_GET_BUFFERED_POINTER(pc, %d);" % packet_length)
     UpdateCurrentPointer( func_name )
 
     if is_extended:
@@ -207,9 +207,9 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
 
     # finish up
     if is_extended:
-        print("\tWRITE_OPCODE( pc, CR_EXTEND_OPCODE );")
+        print("\tWRITE_OPCODE(pc, CR_EXTEND_OPCODE);")
     else:
-        print("\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name ))
+        print("\tWRITE_OPCODE(pc, %s);" % apiutil.OpcodeName( func_name ))
 
     if "get" in apiutil.Properties(func_name):
         print('\tCR_CMDBLOCK_CHECK_FLUSH(pc);')

@@ -122,18 +122,18 @@ for func_name in keys:
     params = apiutil.Parameters(func_name)
 
     if func_name in commoncall_special:
-        print("%s vboxDD_gl%s( %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
+        print("%s vboxDD_gl%s(%s)" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
     else:
         if apiutil.MakeDeclarationString(params)=="void":
-            print("%s vboxDD_gl%s( GLcontext *ctx )" % (return_type, func_name ))
+            print("%s vboxDD_gl%s(GLcontext *ctx)" % (return_type, func_name ))
         else:
-            print("%s vboxDD_gl%s( GLcontext *ctx, %s )" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
+            print("%s vboxDD_gl%s(GLcontext *ctx, %s)" % (return_type, func_name, apiutil.MakeDeclarationString(params) ))
     print("{")
 
     if return_type != "void":
         print("\treturn ", end=' ')
 
-    print("\tcr_gl%s( %s );" % (func_name, apiutil.MakeCallString(params)))
+    print("\tcr_gl%s(%s);" % (func_name, apiutil.MakeCallString(params)))
     print("}")
     print("")
 

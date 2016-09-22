@@ -17,7 +17,7 @@ print("""
 #include "cr_spu.h"
 #include "cr_error.h"
 
-void crSPUChangeInterface( SPUDispatchTable *table, void *orig_func, void *new_func )
+void crSPUChangeInterface(SPUDispatchTable *table, void *orig_func, void *new_func)
 {
 	struct _copy_list_node *temp;
 	if (table->mark == 1)
@@ -38,18 +38,18 @@ for func_name in keys:
 	print('\t\ttable->%s = (%sFunc_t)(uintptr_t)new_func;' % (func_name, func_name))
 	print('\t\tfor (temp = table->copyList ; temp ; temp = temp->next)')
 	print('\t\t{')
-	print('\t\t\tcrSPUChangeInterface( temp->copy, orig_func, new_func );')
+	print('\t\t\tcrSPUChangeInterface(temp->copy, orig_func, new_func);')
 	print('\t\t}')
 	print('\t}')
 
 print("""
 	if (table->copy_of != NULL)
 	{
-		crSPUChangeInterface( table->copy_of, orig_func, new_func );
+		crSPUChangeInterface(table->copy_of, orig_func, new_func);
 	}
-	for (temp = table->copyList ; temp ; temp = temp->next)
+	for (temp = table->copyList; temp; temp = temp->next)
 	{
-		crSPUChangeInterface( temp->copy, orig_func, new_func );
+		crSPUChangeInterface(temp->copy, orig_func, new_func);
 	}
 	table->mark = 0;
 """)
