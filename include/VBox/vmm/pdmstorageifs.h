@@ -606,6 +606,18 @@ typedef enum PDMMEDIAEXIOREQSTATE
 /** Pointer to a I/O request state. */
 typedef PDMMEDIAEXIOREQSTATE *PPDMMEDIAEXIOREQSTATE;
 
+/** @name Supported feature flags
+ * @{ */
+/** I/O requests will execute asynchronously by default. */
+#define PDMIMEDIAEX_FEATURE_F_ASYNC             RT_BIT_32(0)
+/** The discard request is supported. */
+#define PDMIMEDIAEX_FEATURE_F_DISCARD           RT_BIT_32(1)
+/** The send raw SCSI command request is supported. */
+#define PDMIMEDIAEX_FEATURE_F_RAWSCSICMD        RT_BIT_32(2)
+/** Mask of valid flags. */
+#define PDMIMEDIAEX_FEATURE_F_VALID             (PDMIMEDIAEX_FEATURE_F_ASYNC | PDMIMEDIAEX_FEATURE_F_DISCARD | PDMIMEDIAEX_FEATURE_F_RAWSCSICMD)
+/** @} */
+
 /** @name I/O request specific flags
  * @{ */
 /** Default behavior (async I/O).*/
@@ -708,6 +720,15 @@ typedef struct PDMIMEDIAEX *PPDMIMEDIAEX;
 typedef struct PDMIMEDIAEX
 {
     /**
+     * Queries the features supported by the entity implementing this interface.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pfFeatures      Where to store the supported feature flags on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryFeatures, (PPDMIMEDIAEX pInterface, uint32_t *pfFeatures));
+
+    /**
      * Sets the size of the allocator specific memory for a I/O request.
      *
      * @returns VBox status code.
@@ -743,6 +764,15 @@ typedef struct PDMIMEDIAEX
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoReqFree, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq));
+
+    /**
+     * Cancels all I/O active requests.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqCancelAll, (PPDMIMEDIAEX pInterface));
 
     /**
      * Cancels a I/O request identified by the ID.
@@ -823,6 +853,27 @@ typedef struct PDMIMEDIAEX
     DECLR3CALLBACKMEMBER(int, pfnIoReqDiscard, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges));
 
     /**
+     * Send a raw command to the underlying device (CDROM).
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_CANCELED if the request was canceled  by a call to
+     *          PDMIMEDIAEX::pfnIoReqCancel.
+     * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if the request was successfully submitted but is still in progress.
+     *          Completion will be notified through PDMIMEDIAEXPORT::pfnIoReqCompleteNotify with the appropriate status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pbCmd           The SCSI CDB containing the command.
+     * @param   hIoReq          The I/O request to associate the command with.
+     * @param   enmTxDir        Direction of transfer.
+     * @param   pvBuf           Pointer tp the transfer buffer.
+     * @param   cbBuf           Size of the transfer buffer.
+     * @param   pbSenseKey      Status of the command (when return value is VERR_DEV_IO_ERROR).
+     * @param   cTimeoutMillies Command timeout in milliseconds.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqSendScsiCmd,(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, const uint8_t *pbCmd, PDMMEDIATXDIR enmTxDir,
+                                                   size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
+
+    /**
      * Returns the number of active I/O requests.
      *
      * @returns Number of active I/O requests.
@@ -896,7 +947,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "8856ba6a-773b-40ce-92a2-431cd06e678e"
+#define PDMIMEDIAEX_IID                      "2094db35-ebe8-486d-a34b-a210f3f8beaf"
 
 /**
  * Data direction.
