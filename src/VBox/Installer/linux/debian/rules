@@ -17,7 +17,7 @@
 #
 
 #export DH_VERBOSE=1
-export DH_COMPAT=4
+export DH_COMPAT=5
 
 # possible overrides:
 #  OSE=1            force VBOX_OSE
@@ -161,7 +161,7 @@ debian/modules-stamp: debian/build-stamp
 	        make -j4 -C $(builddir)/bin/src/vboxnetadp KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
 	        make -C $(builddir)/bin/src/vboxpci KERN_DIR=$$d/build MODULE_DIR=$$d clean && \
 		(cp $(builddir)/bin/src/vboxdrv/Module.symvers $(builddir)/bin/src/vboxpci || true) && \
-	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all \
+	        make -j4 -C $(builddir)/bin/src/vboxpci KBUILD_VERBOSE= KERN_DIR=$$d/build MODULE_DIR=$$d all; \
 	    fi; \
 	done
 	make -C $(builddir)/bin/src/vboxdrv clean
