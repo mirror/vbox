@@ -54,6 +54,7 @@
 # include "UIMessageCenter.h"
 # include "UISelectorWindow.h"
 # include "UISettingsDialogSpecific.h"
+# include "UISnapshotPane.h"
 # include "UISpacerWidgets.h"
 # include "UISpecialControls.h"
 # include "UIToolBar.h"
@@ -127,6 +128,7 @@ UISelectorWindow::UISelectorWindow()
     , m_pPaneChooser(0)
     , m_pPaneDetails(0)
     , m_pPaneDesktop(0)
+    , m_pPaneSnapshots(0)
     , m_pGroupMenuAction(0)
     , m_pMachineMenuAction(0)
 {
@@ -239,10 +241,8 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
     /* If current item exists & accessible: */
     if (pItem && pItem->accessible())
     {
-        /* Make sure valid widget raised: */
-        if (m_pPaneDesktop->widgetIndex())
-            m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-        else
+        /* Make sure at least details pane raised: */
+        if (m_pContainerDetails->currentWidget() == m_pPaneDesktop)
             m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
 
         if (fRefreshSnapshots)
@@ -256,8 +256,9 @@ void UISelectorWindow::sltHandleChooserPaneIndexChange(bool fRefreshDetails, boo
     }
     else
     {
-        /* Make sure valid widget raised: */
-        m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
+        /* Make sure desktop pane raised: */
+        if (m_pContainerDetails->currentWidget() != m_pPaneDesktop)
+            m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
 
         /* Note that the machine becomes inaccessible (or if the last VM gets
          * deleted), we have to update all fields, ignoring input arguments. */
@@ -1048,30 +1049,15 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
         /* Raise the required widget: */
         switch (iSegment)
         {
-            case SegmentType_Details:
-            {
-                /* Raise the details pane: */
-                m_pContainerDetails->setCurrentWidget(m_pPaneDetails);
-                break;
-            }
-            case SegmentType_Snapshots:
-            {
-                /* Raise the desktop pane which contains snapshot pane for now: */
-                m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-                break;
-            }
-            default:
-                break;
+            case SegmentType_Details: m_pContainerDetails->setCurrentWidget(m_pPaneDetails); break;
+            case SegmentType_Snapshots: m_pContainerDetails->setCurrentWidget(m_pPaneSnapshots); break;
+            default: break;
         }
-        /* And pass the request to desktop pane afterwards: */
-        m_pPaneDesktop->setWidgetIndex(iSegment);
     }
     else
     {
-        /* Raise the desktop pane which contains text/error details: */
+        /* Raise the desktop pane with welcome text or error details: */
         m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
-        /* And pass the request to desktop pane afterwards: */
-        m_pPaneDesktop->setWidgetIndex(SegmentType_Details);
     }
 }
 
@@ -1112,8 +1098,8 @@ void UISelectorWindow::updateSnapshots(UIVMItem *pItem, const CMachine &comMachi
     else
         lockSnapshots();
 
-    /* Redirect call to Desktop-pane finally: */
-    m_pPaneDesktop->updateSnapshots(comMachine);
+    /* Update snapshot pane finally: */
+    m_pPaneSnapshots->setMachine(comMachine);
 }
 
 void UISelectorWindow::lockSnapshots()
@@ -1795,13 +1781,17 @@ void UISelectorWindow::prepareWidgets()
     m_pSplitter->configureColors(m_pPaneChooser->palette().color(QPalette::Active, QPalette::Window),
                                  m_pPaneDetails->palette().color(QPalette::Active, QPalette::Window));
 
-    /* Prepare details and snapshots tabs: */
+    /* Prepare desktop pane: */
     m_pPaneDesktop = new UIVMDesktop(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), this);
+
+    /* Prepare snapshot pane: */
+    m_pPaneSnapshots = new UISnapshotPane(this);
 
     /* Crate container: */
     m_pContainerDetails = new QStackedWidget(this);
     m_pContainerDetails->addWidget(m_pPaneDetails);
     m_pContainerDetails->addWidget(m_pPaneDesktop);
+    m_pContainerDetails->addWidget(m_pPaneSnapshots);
 
     /* Layout all the widgets: */
 #ifdef VBOX_WS_MAC

@@ -20,12 +20,11 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAction>
 # include <QLabel>
 # include <QStackedWidget>
 # include <QToolButton>
-# ifdef VBOX_WS_MAC
-#  include <QTimer>
-# endif /* VBOX_WS_MAC */
+# include <QVBoxLayout>
 
 /* GUI includes */
 # include "QIWithRetranslateUI.h"
@@ -34,7 +33,6 @@
 # include "UIVMDesktop.h"
 # include "UIVMItem.h"
 # include "UIToolBar.h"
-# include "UISnapshotPane.h"
 # include "VBoxUtils.h"
 
 /* Other VBox includes: */
@@ -42,20 +40,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <QStackedLayout>
-
-
-#ifdef VBOX_WS_MAC
-static const int gsLeftMargin = 5;
-static const int gsTopMargin = 5;
-static const int gsRightMargin = 5;
-static const int gsBottomMargin = 5;
-#else /* VBOX_WS_MAC */
-static const int gsLeftMargin = 0;
-static const int gsTopMargin = 5;
-static const int gsRightMargin = 5;
-static const int gsBottomMargin = 5;
-#endif /* !VBOX_WS_MAC */
 
 /* Container to store VM desktop panes. */
 class UIVMDesktopPrivate : public QIWithRetranslateUI<QStackedWidget>
@@ -177,7 +161,11 @@ void UIVMDesktopPrivate::prepareErrorPane()
 
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(m_pErrBox);
-    pMainLayout->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
+#ifdef VBOX_WS_MAC
+    pMainLayout->setContentsMargins(5, 5, 5, 5);
+#else /* VBOX_WS_MAC */
+    pMainLayout->setContentsMargins(0, 5, 5, 5);
+#endif /* !VBOX_WS_MAC */
     pMainLayout->setSpacing(10);
 
     /* Create error label: */
@@ -228,24 +216,8 @@ UIVMDesktop::UIVMDesktop(QAction *pRefreshAction, QWidget *pParent)
     /* Create desktop pane: */
     m_pDesktopPrivate = new UIVMDesktopPrivate(this, pRefreshAction);
 
-    /* Create snapshot pane: */
-    m_pSnapshotsPane = new UISnapshotPane(this);
-    m_pSnapshotsPane->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-
     /* Add the pages: */
-    m_pStackedLayout = new QStackedLayout(pMainLayout);
-    m_pStackedLayout->addWidget(m_pDesktopPrivate);
-    m_pStackedLayout->addWidget(m_pSnapshotsPane);
-}
-
-int UIVMDesktop::widgetIndex() const
-{
-    return m_pStackedLayout->currentIndex();
-}
-
-void UIVMDesktop::setWidgetIndex(int iIndex)
-{
-    m_pStackedLayout->setCurrentIndex(iIndex);
+    pMainLayout->addWidget(m_pDesktopPrivate);
 }
 
 void UIVMDesktop::updateDetailsText(const QString &strText)
@@ -256,11 +228,6 @@ void UIVMDesktop::updateDetailsText(const QString &strText)
 void UIVMDesktop::updateDetailsError(const QString &strError)
 {
     m_pDesktopPrivate->setError(strError);
-}
-
-void UIVMDesktop::updateSnapshots(const CMachine &comMachine)
-{
-    m_pSnapshotsPane->setMachine(comMachine);
 }
 
 #include "UIVMDesktop.moc"

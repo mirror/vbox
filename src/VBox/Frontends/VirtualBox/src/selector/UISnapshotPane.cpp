@@ -857,6 +857,13 @@ UISnapshotPane::UISnapshotPane(QWidget *pParent)
     , m_fShapshotOperationsAllowed(false)
     , m_pSnapshotTree(0)
 {
+    /* Set contents margins: */
+#ifdef VBOX_WS_MAC
+    setContentsMargins(5, 5, 5, 5);
+#else /* VBOX_WS_MAC */
+    setContentsMargins(0, 5, 5, 5);
+#endif /* !VBOX_WS_MAC */
+
     /* Cache pixmaps: */
     m_snapshotIconOffline = UIIconPool::iconSet(":/snapshot_offline_16px.png");
     m_snapshotIconOnline = UIIconPool::iconSet(":/snapshot_online_16px.png");

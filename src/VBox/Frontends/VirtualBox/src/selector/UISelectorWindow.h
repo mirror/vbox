@@ -33,13 +33,14 @@ class UIActionPolymorphic;
 class UIGChooser;
 class UIGDetails;
 class UIMainBar;
+class UISnapshotPane;
+class UITexturedSegmentedButton;
 class UIToolBar;
 class UIVMDesktop;
 class UIVMItem;
 class QISplitter;
 class QMenu;
 class QStackedWidget;
-class UITexturedSegmentedButton;
 
 /** Singleton QIMainWindow extension
   * used as VirtualBox Manager (selector-window) instance. */
@@ -325,6 +326,8 @@ private:
     UIGDetails *m_pPaneDetails;
     /** Holds the Desktop-pane instance. */
     UIVMDesktop *m_pPaneDesktop;
+    /** Holds the Snapshot-pane instance. */
+    UISnapshotPane *m_pPaneSnapshots;
 
     /** Holds the list of Group menu actions. */
     QList<UIAction*> m_groupActions;
