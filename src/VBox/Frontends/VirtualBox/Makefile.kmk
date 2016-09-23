@@ -411,8 +411,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
+	src/settings/UISettingsSelector.h \
 	src/settings/UISettingsSerializer.h \
-	src/settings/VBoxSettingsSelector.h \
 	src/settings/global/UIGlobalSettingsExtension.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
@@ -716,8 +716,8 @@ VirtualBox_SOURCES = \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
+	src/settings/UISettingsSelector.cpp \
 	src/settings/UISettingsSerializer.cpp \
-	src/settings/VBoxSettingsSelector.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \

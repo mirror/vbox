@@ -27,7 +27,7 @@
 # include "UIMessageCenter.h"
 # include "UIExtraDataManager.h"
 # include "QIWidgetValidator.h"
-# include "VBoxSettingsSelector.h"
+# include "UISettingsSelector.h"
 # include "UIVirtualBoxEventHandler.h"
 
 # include "UIGlobalSettingsGeneral.h"

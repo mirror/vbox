@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VBoxSettingsSelector class declaration.
+ * VBox Qt GUI - UISettingsSelector class declaration.
  */
 
 /*
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxSettingsSelector_h__
-#define __VBoxSettingsSelector_h__
+#ifndef __UISettingsSelector_h__
+#define __UISettingsSelector_h__
 
 /* Qt includes */
 #include <QObject>
@@ -35,14 +35,14 @@ class QActionGroup;
 template <class Key, class T> class QMap;
 class QTabWidget;
 
-class VBoxSettingsSelector: public QObject
+class UISettingsSelector: public QObject
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSettingsSelector (QWidget *aParent = NULL);
-    ~VBoxSettingsSelector();
+    UISettingsSelector (QWidget *aParent = NULL);
+    ~UISettingsSelector();
 
     virtual QWidget *widget() const = 0;
 
@@ -86,13 +86,13 @@ protected:
     QList<SelectorItem*> mItemList;
 };
 
-class VBoxSettingsTreeViewSelector: public VBoxSettingsSelector
+class UISettingsSelectorTreeView: public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSettingsTreeViewSelector (QWidget *aParent = NULL);
+    UISettingsSelectorTreeView (QWidget *aParent = NULL);
 
     virtual QWidget *widget() const;
 
@@ -126,14 +126,14 @@ private:
     QITreeWidget *mTwSelector;
 };
 
-class VBoxSettingsToolBarSelector: public VBoxSettingsSelector
+class UISettingsSelectorToolBar: public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
-    VBoxSettingsToolBarSelector (QWidget *aParent = NULL);
-    ~VBoxSettingsToolBarSelector();
+    UISettingsSelectorToolBar (QWidget *aParent = NULL);
+    ~UISettingsSelectorToolBar();
 
     virtual QWidget *widget() const;
 
@@ -173,5 +173,5 @@ private:
     QActionGroup *mActionGroup;
 };
 
-#endif /* __VBoxSettingsSelector_h__ */
+#endif /* __UISettingsSelector_h__ */
 

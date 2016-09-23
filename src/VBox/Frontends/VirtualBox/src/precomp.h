@@ -655,7 +655,7 @@
 #include "VBoxLicenseViewer.h"
 #include "VBoxMediaComboBox.h"
 #include "VBoxOSTypeSelectorButton.h"
-#include "VBoxSettingsSelector.h"
+#include "UISettingsSelector.h"
 #include "VBoxSnapshotDetailsDlg.h"
 #include "UISnapshotPane.h"
 #include "VBoxTakeSnapshotDlg.h"

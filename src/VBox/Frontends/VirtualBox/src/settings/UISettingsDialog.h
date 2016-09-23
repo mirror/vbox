@@ -30,7 +30,7 @@ class QProgressBar;
 class QStackedWidget;
 class QTimer;
 class UIWarningPane;
-class VBoxSettingsSelector;
+class UISettingsSelector;
 class UISettingsPage;
 class UISettingsSerializer;
 
@@ -111,7 +111,7 @@ protected:
     void revalidate();
 
     /* Protected variables: */
-    VBoxSettingsSelector *m_pSelector;
+    UISettingsSelector *m_pSelector;
     QStackedWidget *m_pStack;
 
 private slots:

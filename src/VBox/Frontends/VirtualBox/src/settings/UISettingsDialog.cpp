@@ -33,7 +33,7 @@
 # include "UIMessageCenter.h"
 # include "UIPopupCenter.h"
 # include "QIWidgetValidator.h"
-# include "VBoxSettingsSelector.h"
+# include "UISettingsSelector.h"
 # include "UIModalWindowManager.h"
 # include "UISettingsSerializer.h"
 # include "UISettingsPage.h"
@@ -90,7 +90,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* No page-title with tool-bar: */
     m_pLbTitle->hide();
     /* Create modern tool-bar selector: */
-    m_pSelector = new VBoxSettingsToolBarSelector(this);
+    m_pSelector = new UISettingsSelectorToolBar(this);
     static_cast<UIToolBar*>(m_pSelector->widget())->enableMacToolbar();
     addToolBar(qobject_cast<QToolBar*>(m_pSelector->widget()));
     /* No title in this mode, we change the title of the window: */
@@ -98,7 +98,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     pMainLayout->setHorizontalSpacing(0);
 #else
     /* Create classical tree-view selector: */
-    m_pSelector = new VBoxSettingsTreeViewSelector(this);
+    m_pSelector = new UISettingsSelectorTreeView(this);
     pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
     m_pSelector->widget()->setFocus();
     pMainLayout->setSpacing(10);
