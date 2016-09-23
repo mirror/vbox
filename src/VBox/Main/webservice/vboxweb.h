@@ -1,6 +1,9 @@
+/* $Id: $ */
+/** @file
+ * vboxweb.h - header file for "real" web server code.
+ */
+
 /*
- * vboxweb.h:
- *      header file for "real" web server code.
  *
  * Copyright (C) 2006-2016 Oracle Corporation
  *
