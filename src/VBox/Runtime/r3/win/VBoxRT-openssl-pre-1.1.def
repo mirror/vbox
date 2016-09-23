@@ -226,6 +226,14 @@
     SSL_state
     SSLv23_method
 
+    ; vboxwebsrv - 1.0.1 additions for older gsoap version.
+    ASN1_item_d2i
+    OBJ_nid2sn
+    X509_EXTENSION_get_object
+    X509_get_ext
+    X509_get_ext_count
+    X509V3_EXT_get
+
     ; tstRTBigNum.cpp
     BN_div
     BN_mul
