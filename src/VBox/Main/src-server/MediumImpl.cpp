@@ -43,7 +43,6 @@
 #include <algorithm>
 #include <list>
 
-#include <openssl/rand.h>
 
 typedef std::list<Guid> GuidList;
 
