@@ -52,7 +52,11 @@ endif
 if !defined(VBOX_ONLY_SDK) \
  && (   "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" \
      || defined(VBOX_WITH_EXTPACK_PUEL_BUILD))
- include $(PATH_SUB_CURRENT)/openssl-1.0.1t/Makefile.kmk
+ ifdef VBOX_WITH_OPENSSL_1_1_0
+  include $(PATH_SUB_CURRENT)/openssl-1.1.0/Makefile.kmk
+ else
+  include $(PATH_SUB_CURRENT)/openssl-1.0.1t/Makefile.kmk
+ endif
 endif
 
 # libjpeg for VRDP video redirection and ExtPack's DrvHostWebcam
