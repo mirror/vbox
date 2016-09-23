@@ -416,7 +416,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 endif
 	$(RM) -f -- $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst \
 		$$(@D)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
-		$$(@D)/$(lang)/common.cab \
+		$$(@D)/$(lang)/common.cab
 	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
 endef
 
