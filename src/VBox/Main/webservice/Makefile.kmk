@@ -218,7 +218,7 @@ ifdef VBOX_GSOAP_INSTALLED
   #
   LIBRARIES += vboxsoap
   vboxsoap_TEMPLATE = VBOXWEBR3EXE
-  if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
+  ifeq ($(KBUILD_TARGET),win)
    vboxsoap_USES     = vccprecomp
    vboxsoap_PCH_HDR := $(VBOXWEB_SOAP_SERVER_H)
   endif

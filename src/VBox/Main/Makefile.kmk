@@ -183,7 +183,7 @@ ifndef VBOX_ONLY_SDK
  #
  LIBRARIES += VBoxAPIWrap
  VBoxAPIWrap_TEMPLATE        = VBoxMainLib
- if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win"
+ ifeq ($(KBUILD_TARGET),win)
   VBoxAPIWrap_USES           = vccprecomp
   VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
  endif
@@ -219,7 +219,7 @@ ifndef VBOX_ONLY_SDK
   VBoxAPIWrap-x86_TEMPLATE = VBoxMainLib-x86
   VBoxAPIWrap-x86_EXTENDS  = VBoxAPIWrap
   VBoxAPIWrap-x86_DTRACE_HDR_FLAGS = -32 # ugly, should be fixed in the tool in Config.kmk
-  if defined(VBOX_WITH_PRECOMPILED_HEADERS) && "$(KBUILD_TARGET)" == "win" ## @todo fix inheritance
+  ifeq ($(KBUILD_TARGET),win) ## @todo fix inheritance
    VBoxAPIWrap-x86_USES     = vccprecomp
    VBoxAPIWrap-x86_PCH_HDR := $(PATH_SUB_CURRENT)/src-all/win/VBoxAPIWrap-precomp_vcc.h
   endif
