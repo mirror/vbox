@@ -1389,7 +1389,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
     }
 
     Log3Func(("[%s] fPendingDisable=%RTbool, %RU8/%RU8 streams disabled\n",
-              RT_BOOL(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE), pSink->pszName, cStreamsDisabled, pSink->cStreams));
+              pSink->pszName, RT_BOOL(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE), cStreamsDisabled, pSink->cStreams));
 
     /* Update last updated timestamp. */
     pSink->tsLastUpdatedMS = RTTimeMilliTS();
