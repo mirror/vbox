@@ -166,26 +166,50 @@ static int vrdeControlStreamIn(PPDMIHOSTAUDIO pInterface,
 
     AudioMixBufReset(&pStream->MixBuf);
 
-    /* Initialize only if not already done. */
     int rc;
-    if (enmStreamCmd == PDMAUDIOSTREAMCMD_ENABLE)
+
+    /* Initialize only if not already done. */
+    switch (enmStreamCmd)
     {
-        rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEStrmIn, AudioMixBufSize(&pStream->MixBuf),
-                                                           pVRDEStrmIn->Props.uHz,
-                                                           pVRDEStrmIn->Props.cChannels, pVRDEStrmIn->Props.cBits);
-        if (rc == VERR_NOT_SUPPORTED)
+        case PDMAUDIOSTREAMCMD_ENABLE:
         {
-            LogFlowFunc(("No RDP client connected, so no input recording supported\n"));
+            rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEStrmIn, AudioMixBufSize(&pStream->MixBuf),
+                                                               pVRDEStrmIn->Props.uHz,
+                                                               pVRDEStrmIn->Props.cChannels, pVRDEStrmIn->Props.cBits);
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                LogFunc(("No RDP client connected, so no input recording supported\n"));
+                rc = VINF_SUCCESS;
+            }
+        }
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
             rc = VINF_SUCCESS;
         }
+
+        case PDMAUDIOSTREAMCMD_PAUSE:
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_RESUME:
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        default:
+        {
+            rc = VERR_NOT_SUPPORTED;
+            break;
+        }
     }
-    else if (enmStreamCmd == PDMAUDIOSTREAMCMD_DISABLE)
-    {
-        pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
+
+    if (RT_FAILURE(rc))
+        LogFunc(("Failed with %Rrc\n", rc));
 
     return rc;
 }
