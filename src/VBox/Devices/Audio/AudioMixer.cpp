@@ -8,6 +8,13 @@
  * the actual device emulation, providing mechanisms for audio sources (input) and
  * audio sinks (output).
  *
+ * Think of this mixer as kind of a high(er) level interface for the audio connector
+ * interface, abstracting common tasks such as creating and managing various audio
+ * sources and sinks. This mixer class is purely optional and can be left out when
+ * implementing a new device emulation, using only the audi connector interface
+ * instead. For example, the SB16 emulation does not use this mixer and does all its
+ * stream management on its own.
+ *
  * As audio driver instances are handled as LUNs on the device level, this
  * audio mixer then can take care of e.g. mixing various inputs/outputs to/from
  * a specific source/sink.
