@@ -475,9 +475,13 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     {
         /** @todo Check if stream already is assigned to (another) sink. */
 
-        /* If the sink is running, make sure that the added stream also is enabled. */
-        if (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+        /* If the sink is running and not in pending disable mode,
+         * make sure that the added stream also is enabled. */
+        if (    (pSink->fStatus & AUDMIXSINK_STS_RUNNING)
+            && !(pSink->fStatus & AUDMIXSINK_STS_PENDING_DISABLE))
+        {
             rc = audioMixerStreamCtlInternal(pStream, PDMAUDIOSTREAMCMD_ENABLE, AUDMIXSTRMCTL_FLAG_NONE);
+        }
 
         if (RT_SUCCESS(rc))
         {
