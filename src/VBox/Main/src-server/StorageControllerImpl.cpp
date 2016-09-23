@@ -152,6 +152,7 @@ HRESULT StorageController::init(Machine *aParent,
         case StorageBus_SAS:
             m->bd->ulPortCount = 8;
             m->bd->controllerType = StorageControllerType_LsiLogicSas;
+            break;
         case StorageBus_USB:
             m->bd->ulPortCount = 8;
             m->bd->controllerType = StorageControllerType_USB;
