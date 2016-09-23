@@ -117,108 +117,82 @@ RTDECL(int) RTCrPkixPubKeyVerifySignature(PCRTASN1OBJID pAlgorithm, PCRTASN1DYNT
     if (iAlgoNid == NID_undef)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN,
                              "Unknown public key algorithm [OpenSSL]: %s", pAlgorithm->szObjId);
-    const char *pszAlogSn = OBJ_nid2sn(iAlgoNid);
-    const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlogSn);
+    const char *pszAlgoSn = OBJ_nid2sn(iAlgoNid);
+
+# if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
+    int idAlgoPkey = 0;
+    int idAlgoMd = 0;
+    if (!OBJ_find_sigid_algs(iAlgoNid, &idAlgoMd, &idAlgoPkey))
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                             "OBJ_find_sigid_algs failed on %u (%s, %s)", iAlgoNid, pszAlgoSn, pAlgorithm->szObjId);
+    const EVP_MD *pEvpMdType = EVP_get_digestbynid(idAlgoMd);
     if (!pEvpMdType)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
-                             "EVP_get_digestbyname failed on %s (%s)", pszAlogSn, pAlgorithm->szObjId);
-
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+                             "EVP_get_digestbynid failed on %d (%s, %s)", idAlgoMd, pszAlgoSn, pAlgorithm->szObjId);
+# else
+    const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlgoSn);
+    if (!pEvpMdType)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                             "EVP_get_digestbyname failed on %s (%s)", pszAlgoSn, pAlgorithm->szObjId);
+# endif
 
     EVP_MD_CTX *pEvpMdCtx = EVP_MD_CTX_create();
     if (!pEvpMdCtx)
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALOG_INIT_FAILED,
-                             "EVP_MD_CTX_create failed");
-    if (!EVP_VerifyInit_ex(pEvpMdCtx, pEvpMdType, NULL /*engine*/))
-    {
-        EVP_MD_CTX_destroy(pEvpMdCtx);
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALOG_INIT_FAILED,
-                             "EVP_VerifyInit_ex failed (algorithm type is %s / %s)", pszAlogSn, pAlgorithm->szObjId);
-    }
-
-    /* Create an EVP public key. */
+        return RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_MD_CTX_create failed");
     int rcOssl;
-    EVP_PKEY *pEvpPublicKey = EVP_PKEY_new();
-    if (pEvpPublicKey)
+    if (EVP_VerifyInit_ex(pEvpMdCtx, pEvpMdType, NULL /*engine*/))
     {
-        EVP_PKEY_set_type(pEvpPublicKey, iAlgoNid);
-        int keyType = EVP_PKEY_base_id(pEvpPublicKey);
-        if (keyType != NID_undef)
+        /* Create an EVP public key. */
+        EVP_PKEY *pEvpPublicKey = EVP_PKEY_new();
+        if (pEvpPublicKey)
         {
-            const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
-            if (d2i_PublicKey(keyType, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
+# if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
+            if (EVP_PKEY_set_type(pEvpPublicKey, idAlgoPkey))
             {
-                /* Digest the data. */
-                EVP_VerifyUpdate(pEvpMdCtx, pvData, cbData);
+                int idKeyType = EVP_PKEY_base_id(pEvpPublicKey);
+# else
+                int idKeyType = pEvpPublicKey->type = EVP_PKEY_type(pEvpMdType->required_pkey_type[0]);
+# endif
+                if (idKeyType != NID_undef)
+                {
+                    const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
+                    if (d2i_PublicKey(idKeyType, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
+                    {
+                        /* Digest the data. */
+                        EVP_VerifyUpdate(pEvpMdCtx, pvData, cbData);
 
-                /* Verify the signature. */
-                if (EVP_VerifyFinal(pEvpMdCtx,
-                                    RTASN1BITSTRING_GET_BIT0_PTR(pSignatureValue),
-                                    RTASN1BITSTRING_GET_BYTE_SIZE(pSignatureValue),
-                                    pEvpPublicKey) > 0)
-                    rcOssl = VINF_SUCCESS;
+                        /* Verify the signature. */
+                        if (EVP_VerifyFinal(pEvpMdCtx,
+                                            RTASN1BITSTRING_GET_BIT0_PTR(pSignatureValue),
+                                            RTASN1BITSTRING_GET_BYTE_SIZE(pSignatureValue),
+                                            pEvpPublicKey) > 0)
+                            rcOssl = VINF_SUCCESS;
+                        else
+                            rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED, "EVP_VerifyFinal failed");
+                    }
+                    else
+                        rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
+                }
                 else
-                    rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED, "EVP_VerifyFinal failed");
+# if OPENSSL_VERSION_NUMBER < 0x10001000 || defined(LIBRESSL_VERSION_NUMBER)
+                    rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_type() failed");
+# else
+                    rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_base_id() failed");
             }
             else
-                rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
+                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
+                                       "EVP_PKEY_set_type(%u) failed (sig algo %s)", idAlgoPkey, pszAlgoSn);
+# endif
+            /* Cleanup and return.*/
+            EVP_PKEY_free(pEvpPublicKey);
         }
         else
-            rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                   "EVP_PKEY_type(%d) failed", iAlgoNid);
-        /* Cleanup and return.*/
-        EVP_PKEY_free(pEvpPublicKey);
+            rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
     }
     else
-        rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
+        rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALOG_INIT_FAILED,
+                               "EVP_VerifyInit_ex failed (algorithm type is %s / %s)", pszAlgoSn, pAlgorithm->szObjId);
     EVP_MD_CTX_destroy(pEvpMdCtx);
-
-# else /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
-
-    /* Initialize the EVP message digest context. */
-    EVP_MD_CTX EvpMdCtx;
-    EVP_MD_CTX_init(&EvpMdCtx);
-    if (!EVP_VerifyInit_ex(&EvpMdCtx, pEvpMdType, NULL /*engine*/))
-        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALOG_INIT_FAILED,
-                             "EVP_VerifyInit_ex failed (algorithm type is %s / %s)", pszAlogSn, pAlgorithm->szObjId);
-
-    /* Create an EVP public key. */
-    int rcOssl;
-    EVP_PKEY *pEvpPublicKey = EVP_PKEY_new();
-    if (pEvpPublicKey)
-    {
-        pEvpPublicKey->type = EVP_PKEY_type(pEvpMdType->required_pkey_type[0]);
-        if (pEvpPublicKey->type != NID_undef)
-        {
-            const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
-            if (d2i_PublicKey(pEvpPublicKey->type, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
-            {
-                /* Digest the data. */
-                EVP_VerifyUpdate(&EvpMdCtx, pvData, cbData);
-
-                /* Verify the signature. */
-                if (EVP_VerifyFinal(&EvpMdCtx,
-                                    RTASN1BITSTRING_GET_BIT0_PTR(pSignatureValue),
-                                    RTASN1BITSTRING_GET_BYTE_SIZE(pSignatureValue),
-                                    pEvpPublicKey) > 0)
-                    rcOssl = VINF_SUCCESS;
-                else
-                    rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED, "EVP_VerifyFinal failed");
-            }
-            else
-                rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
-        }
-        else
-            rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                   "EVP_PKEY_type(%d) failed", pEvpMdType->required_pkey_type[0]);
-        /* Cleanup and return.*/
-        EVP_PKEY_free(pEvpPublicKey);
-    }
-    else
-        rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", pEvpMdType->required_pkey_type[0]);
-    EVP_MD_CTX_cleanup(&EvpMdCtx);
-
-# endif /* OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /*
      * Check the result.
@@ -304,132 +278,96 @@ RTDECL(int) RTCrPkixPubKeyVerifySignedDigest(PCRTASN1OBJID pAlgorithm, PCRTASN1D
     if (iAlgoNid == NID_undef)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN,
                              "Unknown public key algorithm [OpenSSL]: %s", pszAlgObjId);
-    const char *pszAlogSn = OBJ_nid2sn(iAlgoNid);
-    const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlogSn);
+    const char *pszAlgoSn = OBJ_nid2sn(iAlgoNid);
+
+# if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
+    int idAlgoPkey = 0;
+    int idAlgoMd = 0;
+    if (!OBJ_find_sigid_algs(iAlgoNid, &idAlgoMd, &idAlgoPkey))
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                             "OBJ_find_sigid_algs failed on %u (%s, %s)", iAlgoNid, pszAlgoSn, pAlgorithm->szObjId);
+    const EVP_MD *pEvpMdType = EVP_get_digestbynid(idAlgoMd);
     if (!pEvpMdType)
         return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
-                             "EVP_get_digestbyname failed on %s (%s)", pszAlogSn, pszAlgObjId);
-
-# if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+                             "EVP_get_digestbynid failed on %d (%s, %s)", idAlgoMd, pszAlgoSn, pAlgorithm->szObjId);
+# else
+    const EVP_MD *pEvpMdType = EVP_get_digestbyname(pszAlgoSn);
+    if (!pEvpMdType)
+        return RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_CIPHER_ALGO_NOT_KNOWN_EVP,
+                             "EVP_get_digestbyname failed on %s (%s)", pszAlgoSn, pszAlgObjId);
+# endif
 
     /* Create an EVP public key. */
     int rcOssl;
     EVP_PKEY *pEvpPublicKey = EVP_PKEY_new();
     if (pEvpPublicKey)
     {
-        EVP_PKEY_set_type(pEvpPublicKey, iAlgoNid);
-        int keyType = EVP_PKEY_base_id(pEvpPublicKey);
-        if (keyType != NID_undef)
+# if OPENSSL_VERSION_NUMBER >= 0x10001000 && !defined(LIBRESSL_VERSION_NUMBER)
+        if (EVP_PKEY_set_type(pEvpPublicKey, idAlgoPkey))
         {
-            const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
-            if (d2i_PublicKey(keyType, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
+            int idKeyType = EVP_PKEY_base_id(pEvpPublicKey);
+# else
+            int idKeyType = pEvpPublicKey->type = EVP_PKEY_type(pEvpMdType->required_pkey_type[0]);
+# endif
+            if (idKeyType != NID_undef)
+
             {
-                /* Create an EVP public key context we can use to validate the digest. */
-                EVP_PKEY_CTX *pEvpPKeyCtx = EVP_PKEY_CTX_new(pEvpPublicKey, NULL);
-                if (pEvpPKeyCtx)
+                const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
+                if (d2i_PublicKey(idKeyType, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
                 {
-                    rcOssl = EVP_PKEY_verify_init(pEvpPKeyCtx);
-                    if (rcOssl > 0)
+                    /* Create an EVP public key context we can use to validate the digest. */
+                    EVP_PKEY_CTX *pEvpPKeyCtx = EVP_PKEY_CTX_new(pEvpPublicKey, NULL);
+                    if (pEvpPKeyCtx)
                     {
-                        rcOssl = EVP_PKEY_CTX_set_signature_md(pEvpPKeyCtx, pEvpMdType);
+                        rcOssl = EVP_PKEY_verify_init(pEvpPKeyCtx);
                         if (rcOssl > 0)
                         {
-                            /* Get the digest from hDigest and verify it. */
-                            rcOssl = EVP_PKEY_verify(pEvpPKeyCtx,
-                                                     (uint8_t const *)pvSignedDigest,
-                                                     cbSignedDigest,
-                                                     RTCrDigestGetHash(hDigest),
-                                                     RTCrDigestGetHashSize(hDigest));
+                            rcOssl = EVP_PKEY_CTX_set_signature_md(pEvpPKeyCtx, pEvpMdType);
                             if (rcOssl > 0)
-                                rcOssl = VINF_SUCCESS;
+                            {
+                                /* Get the digest from hDigest and verify it. */
+                                rcOssl = EVP_PKEY_verify(pEvpPKeyCtx,
+                                                         (uint8_t const *)pvSignedDigest,
+                                                         cbSignedDigest,
+                                                         RTCrDigestGetHash(hDigest),
+                                                         RTCrDigestGetHashSize(hDigest));
+                                if (rcOssl > 0)
+                                    rcOssl = VINF_SUCCESS;
+                                else
+                                    rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED,
+                                                           "EVP_PKEY_verify failed (%d)", rcOssl);
+                            }
                             else
-                                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED,
-                                                       "EVP_PKEY_verify failed (%d)", rcOssl);
+                                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
+                                                       "EVP_PKEY_CTX_set_signature_md failed (%d)", rcOssl);
                         }
                         else
                             rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                                   "EVP_PKEY_CTX_set_signature_md failed (%d)", rcOssl);
+                                                   "EVP_PKEY_verify_init failed (%d)", rcOssl);
+                        EVP_PKEY_CTX_free(pEvpPKeyCtx);
                     }
                     else
-                        rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                               "EVP_PKEY_verify_init failed (%d)", rcOssl);
-                    EVP_PKEY_CTX_free(pEvpPKeyCtx);
+                        rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_CTX_new failed");
                 }
                 else
-                    rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_CTX_new failed");
+                    rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
             }
             else
-                rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
+# if OPENSSL_VERSION_NUMBER < 0x10001000 || defined(LIBRESSL_VERSION_NUMBER)
+                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_type() failed");
+# else
+                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_base_id() failed");
         }
         else
             rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                   "EVP_PKEY_type(%d) failed", iAlgoNid);
+                                   "EVP_PKEY_set_type(%u) failed (sig algo %s)", idAlgoPkey, pszAlgoSn);
+# endif
+
         /* Cleanup and return.*/
         EVP_PKEY_free(pEvpPublicKey);
     }
     else
         rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", iAlgoNid);
-
-# else /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
-
-    /* Create an EVP public key. */
-    int rcOssl;
-    EVP_PKEY *pEvpPublicKey = EVP_PKEY_new();
-    if (pEvpPublicKey)
-    {
-        pEvpPublicKey->type = EVP_PKEY_type(pEvpMdType->required_pkey_type[0]);
-        if (pEvpPublicKey->type != NID_undef)
-        {
-            const unsigned char *puchPublicKey = RTASN1BITSTRING_GET_BIT0_PTR(pPublicKey);
-            if (d2i_PublicKey(pEvpPublicKey->type, &pEvpPublicKey, &puchPublicKey, RTASN1BITSTRING_GET_BYTE_SIZE(pPublicKey)))
-            {
-                /* Create an EVP public key context we can use to validate the digest. */
-                EVP_PKEY_CTX *pEvpPKeyCtx = EVP_PKEY_CTX_new(pEvpPublicKey, NULL);
-                if (pEvpPKeyCtx)
-                {
-                    rcOssl = EVP_PKEY_verify_init(pEvpPKeyCtx);
-                    if (rcOssl > 0)
-                    {
-                        rcOssl = EVP_PKEY_CTX_set_signature_md(pEvpPKeyCtx, pEvpMdType);
-                        if (rcOssl > 0)
-                        {
-                            /* Get the digest from hDigest and verify it. */
-                            rcOssl = EVP_PKEY_verify(pEvpPKeyCtx,
-                                                     (uint8_t const *)pvSignedDigest,
-                                                     cbSignedDigest,
-                                                     RTCrDigestGetHash(hDigest),
-                                                     RTCrDigestGetHashSize(hDigest));
-                            if (rcOssl > 0)
-                                rcOssl = VINF_SUCCESS;
-                            else
-                                rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_VERIFY_FINAL_FAILED,
-                                                       "EVP_PKEY_verify failed (%d)", rcOssl);
-                        }
-                        else
-                            rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                                   "EVP_PKEY_CTX_set_signature_md failed (%d)", rcOssl);
-                    }
-                    else
-                        rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                               "EVP_PKEY_verify_init failed (%d)", rcOssl);
-                    EVP_PKEY_CTX_free(pEvpPKeyCtx);
-                }
-                else
-                    rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR, "EVP_PKEY_CTX_new failed");
-            }
-            else
-                rcOssl = RTErrInfoSet(pErrInfo, VERR_CR_PKIX_OSSL_D2I_PUBLIC_KEY_FAILED, "d2i_PublicKey failed");
-        }
-        else
-            rcOssl = RTErrInfoSetF(pErrInfo, VERR_CR_PKIX_OSSL_EVP_PKEY_TYPE_ERROR,
-                                   "EVP_PKEY_type(%d) failed", pEvpMdType->required_pkey_type[0]);
-        /* Cleanup and return.*/
-        EVP_PKEY_free(pEvpPublicKey);
-    }
-    else
-        rcOssl = RTErrInfoSetF(pErrInfo, VERR_NO_MEMORY, "EVP_PKEY_new(%d) failed", pEvpMdType->required_pkey_type[0]);
-
-# endif /* OPENSSL_VERSION_NUMBER < 0x1010000 || defined(LIBRESSL_VERSION_NUMBER) */
 
     /*
      * Check the result.
