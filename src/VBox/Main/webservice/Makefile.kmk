@@ -282,7 +282,6 @@ ifdef VBOX_GSOAP_INSTALLED
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
 
   endif
-  $(VBOXWEB_OUT_DIR)/soapC-3.cpp_CXXFLAGS.win.x86 = -Og- # VCC70 says "function too large".
 
   if "$(KBUILD_TARGET)" == "win" && "$(VBOX_GSOAP_CXX_SOURCES)" != ""
    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4668 # preprocessor / windows.h
