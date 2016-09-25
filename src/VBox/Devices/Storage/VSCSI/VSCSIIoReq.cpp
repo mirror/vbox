@@ -35,7 +35,7 @@ int vscsiIoReqFlushEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
     int rc = VINF_SUCCESS;
     PVSCSIIOREQINT pVScsiIoReq = NULL;
 
-    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    rc = vscsiLunReqAlloc(pVScsiLun, (uintptr_t)pVScsiReq, &pVScsiIoReq);
     if (RT_SUCCESS(rc))
     {
         pVScsiIoReq->pVScsiReq = pVScsiReq;
@@ -66,7 +66,7 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     LogFlowFunc(("pVScsiLun=%#p pVScsiReq=%#p enmTxDir=%u uOffset=%llu cbTransfer=%u\n",
                  pVScsiLun, pVScsiReq, enmTxDir, uOffset, cbTransfer));
 
-    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    rc = vscsiLunReqAlloc(pVScsiLun, (uintptr_t)pVScsiReq, &pVScsiIoReq);
     if (RT_SUCCESS(rc))
     {
         pVScsiIoReq->pVScsiReq       = pVScsiReq;
@@ -100,7 +100,7 @@ int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     LogFlowFunc(("pVScsiLun=%#p pVScsiReq=%#p paRanges=%#p cRanges=%u\n",
                  pVScsiLun, pVScsiReq, paRanges, cRanges));
 
-    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    rc = vscsiLunReqAlloc(pVScsiLun, (uintptr_t)pVScsiReq, &pVScsiIoReq);
     if (RT_SUCCESS(rc))
     {
         pVScsiIoReq->pVScsiReq        = pVScsiReq;
