@@ -137,10 +137,35 @@
     <Icon Id="IconVirtualBox" SourceFile="$(env.VBOX_WINDOWS_ICON_FILE)" />
 
     <!-- The media/binary IDs -->
-    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
+    <!--
+        The effects of CompressionLevel options:
+           default/mszip, high: 32.54s
+             -rw-rw-rw-  1 bird 0  53 591 221 2016-09-25 03:56 common.cab
+             -rw-rw-rw-  1 bird 0  41 560 082 2016-09-25 03:56 VirtualBox-5.1.51-r110887_en_US.msi
+           high, high: 46.76s
+             -rw-rw-rw-  1 bird 0  53 591 221 2016-09-25 03:49 common.cab
+             -rw-rw-rw-  1 bird 0  34 056 210 2016-09-25 03:49 VirtualBox-5.1.51-r110887_en_US.msi
+           medium, medium: 29.95s
+             -rw-rw-rw-  1 bird 0  56 293 089 2016-09-25 03:53 common.cab
+             -rw-rw-rw-  1 bird 0  35 498 002 2016-09-25 03:54 VirtualBox-5.1.51-r110887_en_US.msi
+           low, low: 25.41s
+             -rw-rw-rw-  1 bird 0  57 616 155 2016-09-25 03:52 common.cab
+             -rw-rw-rw-  1 bird 0  37 181 458 2016-09-25 03:52 VirtualBox-5.1.51-r110887_en_US.msi
+           mszip/default, mszip/default: 16.13s
+             -rw-rw-rw-  1 bird 0  58 751 954 2016-09-25 03:49 common.cab
+             -rw-rw-rw-  1 bird 0  41 560 082 2016-09-25 03:50 VirtualBox-5.1.51-r110887_en_US.msi
+           none, none: 2.37s
+             -rw-rw-rw-  1 bird 0  92 470 301 2016-09-25 03:47 common.cab
+             -rw-rw-rw-  1 bird 0 135 874 578 2016-09-25 03:47 VirtualBox-5.1.51-r110887_en_US.msi
+
+        We set the level in the VBOX_CAB_COMPRESSION_LEVEL and VBOX_CAB_COMPRESSION_LEVEL_COMMON
+        environment variables so we don't waste time compressing and decompressing the intermediate
+        language MSIs and the common.cab that we're not going to use (x86).
+    -->
+    <Media Id="1" Cabinet="product.cab" EmbedCab="yes" CompressionLevel="$(env.VBOX_CAB_COMPRESSION_LEVEL)" />
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
     <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="high" />
+        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="$(env.VBOX_CAB_COMPRESSION_LEVEL_COMMON)" />
     <?endif ?>
 <?endif ?>
     <Binary Id="VBoxInstallHelper" SourceFile="$(env.PATH_OUT)\bin\VBoxInstallHelper.dll" />

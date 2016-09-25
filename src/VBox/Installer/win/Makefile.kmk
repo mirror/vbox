@@ -43,6 +43,9 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
 endif
 
 include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
+ifdef VBOX_WITH_MSI_HACK
+ include $(PATH_SUB_CURRENT)/MsiHack/Makefile.kmk
+endif
 
 
 #
@@ -392,16 +395,20 @@ $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && $(lang) == "en_US", + $(VBOX_WI
 		$(PATH_STAGE_BIN)/VBoxInstallHelper.dll \
 		$(VBOX_SVN_REV_KMK) \
 		$(MAKEFILE_CURRENT) \
+		$(if-expr defined(VBOX_WITH_MSI_HACK),$(MsiHack_0_OUTDIR)/MsiHack.dll,) \
+		$(if-expr defined(VBOX_WITH_MSI_HACK),$(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
 		| $$$$(dir $$$$@)
 	$$(call MSG_L1,Linking installer $$@)
 	$(QUIET)$(RM) -f $$(wildcard $$(@D)/$(PACKAGE_BASE)-r*_$(lang).msi \
 		$$(@D)/$(PACKAGE_BASE)-r*_$(lang).wixpdb $$(@D)/$(lang)/$(PACKAGE_BASE)-r*_$(lang).wixpdb)
 	$(QUIET)$(MKDIR) -p -- $$(@D)/$(lang)/
+	kmk_time \
 	$(VBOX_PATH_WIX)/light.exe -v -nologo \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+               $(if-expr defined(VBOX_WITH_MSI_HACK),-ext $(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$(@D)/$(lang)/$$(@F) \
 		$$< \
@@ -529,6 +536,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MAJOR_INST=$(VBOX_VERSION_MAJOR)' \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(if-expr $(lang) == "en_US",high,none)' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(if-expr $(lang) == "en_US" && $(KBUILD_TARGET_ARCH) == "amd64",high,none)' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		$(if $(VBOX_WITH_MSM_INSTALL), \
@@ -620,6 +629,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MAJOR_INST=$(VBOX_VERSION_MAJOR)' \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL=high' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=high' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ICON_FILE))' \
