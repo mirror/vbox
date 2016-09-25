@@ -743,6 +743,10 @@ $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst: \
 	$(REDIRECT) -C $$(@D) -- wscript.exe $(VBOX_PATH_WISUBSTG) $$< $(lang).mst $(lang_id)
 endef
 
+# TODO, FIXME, XXX, BUGBUG
+# @todo r=bird: This should probably be $(foreach lang,$(filter-out en_US, $(VBOX_INSTALLER_LANGUAGES)),...
+#               Otherwise, was the point of building none en_US installers
+#               for languages not in VBOX_INSTALLER_ADD_LANGUAGES?!?
 $(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 	$(eval local lang_id := $(VBOX_BRAND_$(lang)_LANG_ID)) \
 	$(eval $(def_vbox_create_mst)))
