@@ -48,7 +48,7 @@ int vscsiIoReqFlushEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         if (RT_FAILURE(rc))
         {
             ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
-            RTMemFree(pVScsiIoReq);
+            vscsiLunReqFree(pVScsiLun, pVScsiIoReq);
         }
     }
 
