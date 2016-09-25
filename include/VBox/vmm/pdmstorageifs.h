@@ -785,6 +785,18 @@ typedef struct PDMIMEDIAEX
     DECLR3CALLBACKMEMBER(int, pfnIoReqFree, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq));
 
     /**
+     * Queries the residual amount of data not transfered when the request completed.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE has not completed yet.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request.
+     * @param   pcbResidual     Where to store the amount of resdiual data in bytes.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQueryResidual, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual));
+
+    /**
      * Cancels all I/O active requests.
      *
      * @returns VBox status code.
@@ -969,7 +981,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "ae47c9a9-fa43-4b07-8f9a-b45bcc3fb8e4"
+#define PDMIMEDIAEX_IID                      "c36b27b0-6570-4e9c-b1ed-d6f4b87129a4"
 
 /**
  * Data direction.
