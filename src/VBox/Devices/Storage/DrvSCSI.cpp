@@ -44,7 +44,7 @@
  * SCSI driver instance data.
  *
  * @implements  PDMISCSICONNECTOR
- * @implements  PDMIMEDIAASYNCPORT
+ * @implements  PDMIMEDIAEXPORT
  * @implements  PDMIMOUNTNOTIFY
  */
 typedef struct DRVSCSI
@@ -56,8 +56,8 @@ typedef struct DRVSCSI
     PPDMIBASE               pDrvBase;
     /** Pointer to the attached driver's block interface. */
     PPDMIMEDIA              pDrvMedia;
-    /** Pointer to the attached driver's async block interface. */
-    PPDMIMEDIAASYNC         pDrvMediaAsync;
+    /** Pointer to the attached driver's extended media interface. */
+    PPDMIMEDIAEX            pDrvMediaEx;
     /** Pointer to the attached driver's mount interface. */
     PPDMIMOUNT              pDrvMount;
     /** Pointer to the SCSI port interface of the device above. */
@@ -68,8 +68,8 @@ typedef struct DRVSCSI
     PDMISCSICONNECTOR       ISCSIConnector;
     /** The media port interface. */
     PDMIMEDIAPORT           IPort;
-    /** The optional media async port interface. */
-    PDMIMEDIAASYNCPORT      IPortAsync;
+    /** The optional extended media port interface. */
+    PDMIMEDIAEXPORT         IPortEx;
     /** The mount notify interface. */
     PDMIMOUNTNOTIFY         IMountNotify;
     /** Fallback status LED state for this drive.
@@ -85,12 +85,6 @@ typedef struct DRVSCSI
     /** I/O callbacks. */
     VSCSILUNIOCALLBACKS     VScsiIoCallbacks;
 
-    /** The dedicated I/O thread for the non async approach. */
-    PPDMTHREAD              pAsyncIOThread;
-    /** Queue for passing the requests to the thread. */
-    RTREQQUEUE              hQueueRequests;
-    /** Request that we've left pending on wakeup or reset. */
-    PRTREQ                  pPendingDummyReq;
     /** Indicates whether PDMDrvHlpAsyncNotificationCompleted should be called by
      * any of the dummy functions. */
     bool volatile           fDummySignal;
@@ -108,16 +102,19 @@ typedef struct DRVSCSI
     bool                    fReadonly;
 } DRVSCSI, *PDRVSCSI;
 
-/** Converts a pointer to DRVSCSI::ISCSIConnector to a PDRVSCSI. */
-#define PDMISCSICONNECTOR_2_DRVSCSI(pInterface)  ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, ISCSIConnector)) )
-/** Converts a pointer to DRVSCSI::IPortAsync to a PDRVSCSI. */
-#define PDMIMEDIAASYNCPORT_2_DRVSCSI(pInterface) ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IPortAsync)) )
-/** Converts a pointer to DRVSCSI::IMountNotify to PDRVSCSI. */
-#define PDMIMOUNTNOTIFY_2_DRVSCSI(pInterface)    ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IMountNotify)) )
-/** Converts a pointer to DRVSCSI::IPort to a PDRVSCSI. */
-#define PDMIMEDIAPORT_2_DRVSCSI(pInterface)      ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IPort)) )
+/** Convert a VSCSI I/O request handle to the associated PDMIMEDIAEX I/O request. */
+#define DRVSCSI_VSCSIIOREQ_2_PDMMEDIAEXIOREQ(a_hVScsiIoReq) (*(PPDMMEDIAEXIOREQ)((uint8_t *)(a_hVScsiIoReq) - sizeof(PDMMEDIAEXIOREQ)))
+/** Convert a PDMIMEDIAEX I/O additional request memory to a VSCSI I/O request. */
+#define DRVSCSI_PDMMEDIAEXIOREQ_2_VSCSIIOREQ(a_pvIoReqAlloc) ((VSCSIIOREQ)((uint8_t *)(a_pvIoReqAlloc) + sizeof(PDMMEDIAEXIOREQ)))
 
-static bool drvscsiIsRedoPossible(int rc)
+/**
+ * Returns whether the given status code indicates a non fatal error.
+ *
+ * @returns True if the error can be fixed by the user after the VM was suspended.
+ *          False if not and the error should be reported to the guest.
+ * @param   rc          The status code to check.
+ */
+DECLINLINE(bool) drvscsiIsRedoPossible(int rc)
 {
     if (   rc == VERR_DISK_FULL
         || rc == VERR_FILE_TOO_BIG
@@ -129,114 +126,58 @@ static bool drvscsiIsRedoPossible(int rc)
     return false;
 }
 
-static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
+/* -=-=-=-=- VScsiIoCallbacks -=-=-=-=- */
+
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunReqAllocSizeSet}
+ */
+static DECLCALLBACK(int) drvscsiReqAllocSizeSet(VSCSILUN hVScsiLun, void *pvScsiLunUser, size_t cbVScsiIoReqAlloc)
 {
-    int rc = VINF_SUCCESS;
-    VSCSIIOREQTXDIR enmTxDir;
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
-    enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
-
-    switch (enmTxDir)
-    {
-        case VSCSIIOREQTXDIR_FLUSH:
-        {
-            rc = pThis->pDrvMedia->pfnFlush(pThis->pDrvMedia);
-            if (   RT_FAILURE(rc)
-                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
-                        pThis->pDrvIns->iInstance, rc));
-            break;
-        }
-        case VSCSIIOREQTXDIR_READ:
-        case VSCSIIOREQTXDIR_WRITE:
-        {
-            uint64_t  uOffset    = 0;
-            size_t    cbTransfer = 0;
-            size_t    cbSeg      = 0;
-            PCRTSGSEG paSeg      = NULL;
-            unsigned  cSeg       = 0;
-
-            rc = VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer, &cSeg, &cbSeg,
-                                     &paSeg);
-            AssertRC(rc);
-
-            while (cbTransfer && cSeg)
-            {
-                size_t cbProcess = (cbTransfer < paSeg->cbSeg) ? cbTransfer : paSeg->cbSeg;
-
-                Log(("%s: uOffset=%llu cbProcess=%u\n", __FUNCTION__, uOffset, cbProcess));
-
-                if (enmTxDir == VSCSIIOREQTXDIR_READ)
-                {
-                    pThis->pLed->Asserted.s.fReading = pThis->pLed->Actual.s.fReading = 1;
-                    rc = pThis->pDrvMedia->pfnRead(pThis->pDrvMedia, uOffset,
-                                                    paSeg->pvSeg, cbProcess);
-                    pThis->pLed->Actual.s.fReading = 0;
-                    if (RT_FAILURE(rc))
-                        break;
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbProcess);
-                }
-                else
-                {
-                    pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-                    rc = pThis->pDrvMedia->pfnWrite(pThis->pDrvMedia, uOffset,
-                                                    paSeg->pvSeg, cbProcess);
-                    pThis->pLed->Actual.s.fWriting = 0;
-                    if (RT_FAILURE(rc))
-                        break;
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbProcess);
-                }
-
-                /* Go to the next entry. */
-                uOffset     += cbProcess;
-                cbTransfer -= cbProcess;
-                paSeg++;
-                cSeg--;
-            }
-
-            if (   RT_FAILURE(rc)
-                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                        pThis->pDrvIns->iInstance,
-                        enmTxDir == VSCSIIOREQTXDIR_READ
-                        ? "Read"
-                        : "Write",
-                        uOffset,
-                        cbTransfer, rc));
-
-            break;
-        }
-        case VSCSIIOREQTXDIR_UNMAP:
-        {
-            PCRTRANGE paRanges;
-            unsigned cRanges;
-
-            rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
-            AssertRC(rc);
-
-            pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-            rc = pThis->pDrvMedia->pfnDiscard(pThis->pDrvMedia, paRanges, cRanges);
-            pThis->pLed->Actual.s.fWriting = 0;
-
-            if (   RT_FAILURE(rc)
-                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                LogRel(("SCSI#%u: Unmap returned rc=%Rrc\n",
-                        pThis->pDrvIns->iInstance, rc));
-
-            break;
-        }
-        default:
-            AssertMsgFailed(("Invalid transfer direction %d\n", enmTxDir));
-    }
-
-    if (RT_SUCCESS(rc))
-        VSCSIIoReqCompleted(hVScsiIoReq, rc, false /* fRedoPossible */);
-    else
-        VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
-
-    return VINF_SUCCESS;
+    /* We need to store the I/O request handle so we can get it when VSCSI queues an I/O request. */
+    return pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, cbVScsiIoReqAlloc + sizeof(PDMMEDIAEXIOREQ));
 }
 
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunReqAlloc}
+ */
+static DECLCALLBACK(int) drvscsiReqAlloc(VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                         uint64_t u64Tag, PVSCSIIOREQ phVScsiIoReq)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    PDMMEDIAEXIOREQ hIoReq;
+    void *pvIoReqAlloc;
+    int rc = pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, &hIoReq, &pvIoReqAlloc, u64Tag,
+                                               PDMIMEDIAEX_F_DEFAULT);
+    if (RT_SUCCESS(rc))
+    {
+        PPDMMEDIAEXIOREQ phIoReq = (PPDMMEDIAEXIOREQ)pvIoReqAlloc;
+
+        *phIoReq = hIoReq;
+        *phVScsiIoReq = (VSCSIIOREQ)(phIoReq + 1);
+    }
+
+    return rc;
+}
+
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunReqFree}
+ */
+static DECLCALLBACK(int) drvscsiReqFree(VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    PDMMEDIAEXIOREQ hIoReq = DRVSCSI_VSCSIIOREQ_2_PDMMEDIAEXIOREQ(hVScsiIoReq);
+
+    return pThis->pDrvMediaEx->pfnIoReqFree(pThis->pDrvMediaEx, hIoReq);
+}
+
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumGetSize}
+ */
 static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pcbSize)
 {
     RT_NOREF(hVScsiLun);
@@ -247,7 +188,9 @@ static DECLCALLBACK(int) drvscsiGetSize(VSCSILUN hVScsiLun, void *pvScsiLunUser,
     return VINF_SUCCESS;
 }
 
-
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumGetSectorSize}
+ */
 static DECLCALLBACK(int) drvscsiGetSectorSize(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint32_t *pcbSectorSize)
 {
     RT_NOREF(hVScsiLun);
@@ -257,6 +200,10 @@ static DECLCALLBACK(int) drvscsiGetSectorSize(VSCSILUN hVScsiLun, void *pvScsiLu
 
     return VINF_SUCCESS;
 }
+
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumSetLock}
+ */
 static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser, bool fLocked)
 {
     RT_NOREF(hVScsiLun);
@@ -270,10 +217,156 @@ static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser,
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rc)
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunReqTransferEnqueue}
+ */
+static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq)
 {
-    PDRVSCSI pThis = PDMIMEDIAASYNCPORT_2_DRVSCSI(pInterface);
-    VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)pvUser;
+    RT_NOREF(hVScsiLun);
+    int rc = VINF_SUCCESS;
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    PDMMEDIAEXIOREQ hIoReq = DRVSCSI_VSCSIIOREQ_2_PDMMEDIAEXIOREQ(hVScsiIoReq);
+
+    LogFlowFunc(("Enqueuing hVScsiIoReq=%#p\n", hVScsiIoReq));
+
+    VSCSIIOREQTXDIR enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
+    switch (enmTxDir)
+    {
+        case VSCSIIOREQTXDIR_FLUSH:
+        {
+            rc = pThis->pDrvMediaEx->pfnIoReqFlush(pThis->pDrvMediaEx, hIoReq);
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
+            break;
+        }
+        case VSCSIIOREQTXDIR_UNMAP:
+        {
+            PCRTRANGE paRanges;
+            unsigned cRanges;
+
+            rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
+            AssertRC(rc);
+
+            pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
+            rc = pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, paRanges, cRanges);
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: Discard returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
+            break;
+        }
+        case VSCSIIOREQTXDIR_READ:
+        case VSCSIIOREQTXDIR_WRITE:
+        {
+            uint64_t  uOffset    = 0;
+            size_t    cbTransfer = 0;
+            size_t    cbSeg      = 0;
+            PCRTSGSEG paSeg      = NULL;
+            unsigned  cSeg       = 0;
+
+            rc = VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
+                                     &cSeg, &cbSeg, &paSeg);
+            AssertRC(rc);
+
+            if (enmTxDir == VSCSIIOREQTXDIR_READ)
+            {
+                pThis->pLed->Asserted.s.fReading = pThis->pLed->Actual.s.fReading = 1;
+                rc = pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, uOffset, cbTransfer);
+                STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbTransfer);
+            }
+            else
+            {
+                pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
+                rc = pThis->pDrvMediaEx->pfnIoReqWrite(pThis->pDrvMediaEx, hIoReq, uOffset, cbTransfer);
+                STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbTransfer);
+            }
+
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance,
+                        enmTxDir == VSCSIIOREQTXDIR_READ
+                        ? "Read"
+                        : "Write",
+                        uOffset,
+                        cbTransfer, rc));
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
+    }
+
+    if (rc == VINF_SUCCESS)
+    {
+        if (enmTxDir == VSCSIIOREQTXDIR_READ)
+            pThis->pLed->Actual.s.fReading = 0;
+        else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
+            pThis->pLed->Actual.s.fWriting = 0;
+        else
+            AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
+
+        VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS, false);
+        rc = VINF_SUCCESS;
+    }
+    else if (rc == VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
+        rc = VINF_SUCCESS;
+    else if (RT_FAILURE(rc))
+    {
+        if (enmTxDir == VSCSIIOREQTXDIR_READ)
+            pThis->pLed->Actual.s.fReading = 0;
+        else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
+            pThis->pLed->Actual.s.fWriting = 0;
+        else
+            AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
+
+        VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
+        rc = VINF_SUCCESS;
+    }
+    else
+        AssertMsgFailed(("Invalid return code rc=%Rrc\n", rc));
+
+    return rc;
+}
+
+/**
+ * @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunGetFeatureFlags}
+ */
+static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pfFeatures)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    *pfFeatures = 0;
+
+    uint32_t fFeatures = 0;
+    int rc = pThis->pDrvMediaEx->pfnQueryFeatures(pThis->pDrvMediaEx, &fFeatures);
+    if (RT_SUCCESS(rc) && (fFeatures & PDMIMEDIAEX_FEATURE_F_DISCARD))
+        *pfFeatures |= VSCSI_LUN_FEATURE_UNMAP;
+
+    if (pThis->fNonRotational)
+        *pfFeatures |= VSCSI_LUN_FEATURE_NON_ROTATIONAL;
+
+    if (pThis->fReadonly)
+        *pfFeatures |= VSCSI_LUN_FEATURE_READONLY;
+
+    return VINF_SUCCESS;
+}
+
+
+/* -=-=-=-=- IPortEx -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCompleteNotify}
+ */
+static DECLCALLBACK(int) drvscsiIoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    void *pvIoReqAlloc, int rcReq)
+{
+    RT_NOREF1(hIoReq);
+
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPortEx);
+    VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)((uint8_t *)pvIoReqAlloc + sizeof(PDMMEDIAEXIOREQ));
     VSCSIIOREQTXDIR enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
 
     LogFlowFunc(("Request hVScsiIoReq=%#p completed\n", hVScsiIoReq));
@@ -286,8 +379,8 @@ static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInte
     else
         AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
-    if (RT_SUCCESS(rc))
-        VSCSIIoReqCompleted(hVScsiIoReq, rc, false /* fRedoPossible */);
+    if (RT_SUCCESS(rcReq))
+        VSCSIIoReqCompleted(hVScsiIoReq, rcReq, false /* fRedoPossible */);
     else
     {
         pThis->cErrors++;
@@ -295,10 +388,10 @@ static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInte
         {
             if (enmTxDir == VSCSIIOREQTXDIR_FLUSH)
                 LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
-                        pThis->pDrvIns->iInstance, rc));
+                        pThis->pDrvIns->iInstance, rcReq));
             else if (enmTxDir == VSCSIIOREQTXDIR_UNMAP)
                 LogRel(("SCSI#%u: Unmap returned rc=%Rrc\n",
-                        pThis->pDrvIns->iInstance, rc));
+                        pThis->pDrvIns->iInstance, rcReq));
             else
             {
                 uint64_t  uOffset    = 0;
@@ -316,164 +409,84 @@ static DECLCALLBACK(int) drvscsiTransferCompleteNotify(PPDMIMEDIAASYNCPORT pInte
                         ? "Read"
                         : "Write",
                         uOffset,
-                        cbTransfer, rc));
+                        cbTransfer, rcReq));
             }
         }
 
-        VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
+        VSCSIIoReqCompleted(hVScsiIoReq, rcReq, drvscsiIsRedoPossible(rcReq));
     }
 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq)
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
+ */
+static DECLCALLBACK(int) drvscsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                 void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
+                                                 size_t cbCopy)
 {
-    RT_NOREF(hVScsiLun);
-    int rc = VINF_SUCCESS;
-    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    RT_NOREF2(pInterface, hIoReq);
 
-    if (pThis->pDrvMediaAsync)
+    VSCSIIOREQ hVScsiIoReq = DRVSCSI_PDMMEDIAEXIOREQ_2_VSCSIIOREQ(pvIoReqAlloc);
+    uint64_t  uOffset    = 0;
+    size_t    cbTransfer = 0;
+    size_t    cbSeg      = 0;
+    PCRTSGSEG paSeg      = NULL;
+    unsigned  cSeg       = 0;
+    size_t    cbCopied   = 0;
+
+    int rc = VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer, &cSeg, &cbSeg, &paSeg);
+    if (RT_SUCCESS(rc))
     {
-        /* async I/O path. */
-        VSCSIIOREQTXDIR enmTxDir;
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, paSeg, cSeg);
 
-        LogFlowFunc(("Enqueuing hVScsiIoReq=%#p\n", hVScsiIoReq));
-
-        enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
-
-        switch (enmTxDir)
-        {
-            case VSCSIIOREQTXDIR_FLUSH:
-            {
-                rc = pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, hVScsiIoReq);
-                if (   RT_FAILURE(rc)
-                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
-                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                    LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
-                            pThis->pDrvIns->iInstance, rc));
-                break;
-            }
-            case VSCSIIOREQTXDIR_UNMAP:
-            {
-                PCRTRANGE paRanges;
-                unsigned cRanges;
-
-                rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
-                AssertRC(rc);
-
-                pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-                rc = pThis->pDrvMediaAsync->pfnStartDiscard(pThis->pDrvMediaAsync, paRanges, cRanges, hVScsiIoReq);
-                if (   RT_FAILURE(rc)
-                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
-                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                    LogRel(("SCSI#%u: Discard returned rc=%Rrc\n",
-                            pThis->pDrvIns->iInstance, rc));
-                break;
-            }
-            case VSCSIIOREQTXDIR_READ:
-            case VSCSIIOREQTXDIR_WRITE:
-            {
-                uint64_t  uOffset    = 0;
-                size_t    cbTransfer = 0;
-                size_t    cbSeg      = 0;
-                PCRTSGSEG paSeg      = NULL;
-                unsigned  cSeg       = 0;
-
-                rc = VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
-                                         &cSeg, &cbSeg, &paSeg);
-                AssertRC(rc);
-
-                if (enmTxDir == VSCSIIOREQTXDIR_READ)
-                {
-                    pThis->pLed->Asserted.s.fReading = pThis->pLed->Actual.s.fReading = 1;
-                    rc = pThis->pDrvMediaAsync->pfnStartRead(pThis->pDrvMediaAsync, uOffset,
-                                                             paSeg, cSeg, cbTransfer,
-                                                             hVScsiIoReq);
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbTransfer);
-                }
-                else
-                {
-                    pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-                    rc = pThis->pDrvMediaAsync->pfnStartWrite(pThis->pDrvMediaAsync, uOffset,
-                                                              paSeg, cSeg, cbTransfer,
-                                                              hVScsiIoReq);
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbTransfer);
-                }
-
-                if (   RT_FAILURE(rc)
-                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
-                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
-                    LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                            pThis->pDrvIns->iInstance,
-                            enmTxDir == VSCSIIOREQTXDIR_READ
-                            ? "Read"
-                            : "Write",
-                            uOffset,
-                            cbTransfer, rc));
-                break;
-            }
-            default:
-                AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
-        }
-
-        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-        {
-            if (enmTxDir == VSCSIIOREQTXDIR_READ)
-                pThis->pLed->Actual.s.fReading = 0;
-            else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
-                pThis->pLed->Actual.s.fWriting = 0;
-            else
-                AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
-
-            VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS, false);
-            rc = VINF_SUCCESS;
-        }
-        else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-            rc = VINF_SUCCESS;
-        else if (RT_FAILURE(rc))
-        {
-            if (enmTxDir == VSCSIIOREQTXDIR_READ)
-                pThis->pLed->Actual.s.fReading = 0;
-            else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
-                pThis->pLed->Actual.s.fWriting = 0;
-            else
-                AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
-
-            VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
-            rc = VINF_SUCCESS;
-        }
-        else
-            AssertMsgFailed(("Invalid return code rc=%Rrc\n", rc));
-    }
-    else
-    {
-        /* I/O thread. */
-        rc = RTReqQueueCallEx(pThis->hQueueRequests, NULL, 0, RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvscsiProcessRequestOne, 2, pThis, hVScsiIoReq);
+        RTSgBufAdvance(&SgBuf, offDst);
+        cbCopied = RTSgBufCopy(&SgBuf, pSgBuf, cbCopy);
     }
 
-    return rc;
+    return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
 }
 
-static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsiLunUser, uint64_t *pfFeatures)
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
+ */
+static DECLCALLBACK(int) drvscsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                               void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
+                                               size_t cbCopy)
 {
-    RT_NOREF(hVScsiLun);
-    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    RT_NOREF2(pInterface, hIoReq);
 
-    *pfFeatures = 0;
+    VSCSIIOREQ hVScsiIoReq = DRVSCSI_PDMMEDIAEXIOREQ_2_VSCSIIOREQ(pvIoReqAlloc);
+    uint64_t  uOffset    = 0;
+    size_t    cbTransfer = 0;
+    size_t    cbSeg      = 0;
+    PCRTSGSEG paSeg      = NULL;
+    unsigned  cSeg       = 0;
+    size_t    cbCopied   = 0;
 
-    if (   pThis->pDrvMedia->pfnDiscard
-        || (   pThis->pDrvMediaAsync
-            && pThis->pDrvMediaAsync->pfnStartDiscard))
-        *pfFeatures |= VSCSI_LUN_FEATURE_UNMAP;
+    int rc = VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer, &cSeg, &cbSeg, &paSeg);
+    if (RT_SUCCESS(rc))
+    {
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, paSeg, cSeg);
 
-    if (pThis->fNonRotational)
-        *pfFeatures |= VSCSI_LUN_FEATURE_NON_ROTATIONAL;
+        RTSgBufAdvance(&SgBuf, offSrc);
+        cbCopied = RTSgBufCopy(pSgBuf, &SgBuf, cbCopy);
+    }
 
-    if (pThis->fReadonly)
-        *pfFeatures |= VSCSI_LUN_FEATURE_READONLY;
+    return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
+}
 
-    return VINF_SUCCESS;
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqStateChanged}
+ */
+static DECLCALLBACK(void) drvscsiIoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                   void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
+{
+    RT_NOREF4(pInterface, hIoReq, pvIoReqAlloc, enmState);
+    AssertLogRelMsgFailed(("This should not be hit because I/O requests should not be suspended\n"));
 }
 
 static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
@@ -489,106 +502,6 @@ static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, voi
 
     if (RT_UNLIKELY(pThis->fDummySignal) && !pThis->StatIoDepth)
         PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
-}
-
-/**
- * Dummy request function used by drvscsiReset to wait for all pending requests
- * to complete prior to the device reset.
- *
- * @param   pThis           Pointer to the instance data.
- * @returns VINF_SUCCESS.
- */
-static int drvscsiAsyncIOLoopSyncCallback(PDRVSCSI pThis)
-{
-    if (pThis->fDummySignal)
-        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
-    return VINF_SUCCESS;
-}
-
-/**
- * Request function to wakeup the thread.
- *
- * @param   pThis           Pointer to the instance data.
- * @returns VWRN_STATE_CHANGED.
- */
-static int drvscsiAsyncIOLoopWakeupFunc(PDRVSCSI pThis)
-{
-    if (pThis->fDummySignal)
-        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
-    return VWRN_STATE_CHANGED;
-}
-
-/**
- * The thread function which processes the requests asynchronously.
- *
- * @returns VBox status code.
- * @param   pDrvIns    Pointer to the driver instance data.
- * @param   pThread    Pointer to the thread instance data.
- */
-static DECLCALLBACK(int) drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    int rc = VINF_SUCCESS;
-    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-
-    LogFlowFunc(("Entering async IO loop.\n"));
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        rc = RTReqQueueProcess(pThis->hQueueRequests, RT_INDEFINITE_WAIT);
-        AssertMsg(rc == VWRN_STATE_CHANGED, ("Left RTReqProcess and error code is not VWRN_STATE_CHANGED rc=%Rrc\n", rc));
-    }
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Deals with any pending dummy request
- *
- * @returns true if no pending dummy request, false if still pending.
- * @param   pThis               The instance data.
- * @param   cMillies            The number of milliseconds to wait for any
- *                              pending request to finish.
- */
-static bool drvscsiAsyncIOLoopNoPendingDummy(PDRVSCSI pThis, uint32_t cMillies)
-{
-    if (!pThis->pPendingDummyReq)
-        return true;
-    int rc = RTReqWait(pThis->pPendingDummyReq, cMillies);
-    if (RT_FAILURE(rc))
-        return false;
-    RTReqRelease(pThis->pPendingDummyReq);
-    pThis->pPendingDummyReq = NULL;
-    return true;
-}
-
-static DECLCALLBACK(int) drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    RT_NOREF(pThread);
-    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    PRTREQ pReq;
-    int rc;
-
-    AssertMsgReturn(pThis->hQueueRequests != NIL_RTREQQUEUE, ("hQueueRequests is NULL\n"), VERR_INVALID_STATE);
-
-    if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 10000 /* 10 sec */))
-    {
-        LogRel(("drvscsiAsyncIOLoopWakeup#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
-        return VERR_TIMEOUT;
-    }
-
-    rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 1, pThis);
-    if (RT_SUCCESS(rc))
-        RTReqRelease(pReq);
-    else
-    {
-        pThis->pPendingDummyReq = pReq;
-        LogRel(("drvscsiAsyncIOLoopWakeup#%u: %Rrc pReq=%p\n", pDrvIns->iInstance, rc, pReq));
-    }
-
-    return rc;
 }
 
 /* -=-=-=-=- ISCSIConnector -=-=-=-=- */
@@ -622,7 +535,7 @@ static void drvscsiDumpScsiRequest(PPDMSCSIREQUEST pRequest)
 static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest)
 {
     int rc;
-    PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, ISCSIConnector);
     VSCSIREQ hVScsiReq;
 
 #ifdef DEBUG
@@ -651,11 +564,10 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
 /** @interface_method_impl{PDMISCSICONNECTOR,pfnQueryLUNType} */
 static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint32_t iLun, PPDMSCSILUNTYPE pLunType)
 {
-    int rc;
-    PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, ISCSIConnector);
     VSCSILUNTYPE enmLunType;
 
-    rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, iLun, &enmLunType);
+    int rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, iLun, &enmLunType);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -685,7 +597,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSICONNECTOR, &pThis->ISCSIConnector);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pThis->IMountNotify);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pThis->IPortAsync);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pThis->IPortEx);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, pThis->pDrvMedia);
     return NULL;
 }
@@ -693,7 +605,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
 static DECLCALLBACK(int) drvscsiQueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                     uint32_t *piInstance, uint32_t *piLUN)
 {
-    PDRVSCSI pThis = PDMIMEDIAPORT_2_DRVSCSI(pInterface);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPort);
 
     return pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, ppcszController,
                                                        piInstance, piLUN);
@@ -706,7 +618,7 @@ static DECLCALLBACK(int) drvscsiQueryDeviceLocation(PPDMIMEDIAPORT pInterface, c
  */
 static DECLCALLBACK(void) drvscsiMountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
-    PDRVSCSI pThis = PDMIMOUNTNOTIFY_2_DRVSCSI(pInterface);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMountNotify);
     LogFlowFunc(("mounting LUN#%p\n", pThis->hVScsiLun));
 
     /* Ignore the call if we're called while being attached. */
@@ -724,7 +636,7 @@ static DECLCALLBACK(void) drvscsiMountNotify(PPDMIMOUNTNOTIFY pInterface)
  */
 static DECLCALLBACK(void) drvscsiUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
-    PDRVSCSI pThis = PDMIMOUNTNOTIFY_2_DRVSCSI(pInterface);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMountNotify);
     LogFlowFunc(("unmounting LUN#%p\n", pThis->hVScsiLun));
 
     /* Let the LUN know that the medium was unmounted. */
@@ -739,44 +651,12 @@ static DECLCALLBACK(void) drvscsiUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
  */
 static void drvscsiR3ResetOrSuspendOrPowerOff(PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify)
 {
+    RT_NOREF1(pfnAsyncNotify);
+
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
 
-    if (!pThis->pDrvMediaAsync)
-    {
-        if (pThis->hQueueRequests != NIL_RTREQQUEUE)
-            return;
-
+    if (pThis->StatIoDepth > 0)
         ASMAtomicWriteBool(&pThis->fDummySignal, true);
-        if (drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
-        {
-            if (!RTReqQueueIsBusy(pThis->hQueueRequests))
-            {
-                ASMAtomicWriteBool(&pThis->fDummySignal, false);
-                return;
-            }
-
-            PRTREQ pReq;
-            int rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 0 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 1, pThis);
-            if (RT_SUCCESS(rc))
-            {
-                ASMAtomicWriteBool(&pThis->fDummySignal, false);
-                RTReqRelease(pReq);
-                return;
-            }
-
-            pThis->pPendingDummyReq = pReq;
-        }
-    }
-    else
-    {
-        if (pThis->StatIoDepth > 0)
-        {
-            ASMAtomicWriteBool(&pThis->fDummySignal, true);
-        }
-        return;
-    }
-
-    PDMDrvHlpSetAsyncNotification(pDrvIns, pfnAsyncNotify);
 }
 
 /**
@@ -789,21 +669,10 @@ static DECLCALLBACK(bool) drvscsiIsAsyncSuspendOrPowerOffDone(PPDMDRVINS pDrvIns
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
 
-    if (pThis->pDrvMediaAsync)
-    {
-        if (pThis->StatIoDepth > 0)
-            return false;
-        else
-            return true;
-    }
+    if (pThis->StatIoDepth > 0)
+        return false;
     else
-    {
-        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
-            return false;
-        ASMAtomicWriteBool(&pThis->fDummySignal, false);
-        PDMR3ThreadSuspend(pThis->pAsyncIOThread);
         return true;
-    }
 }
 
 /**
@@ -832,20 +701,10 @@ static DECLCALLBACK(bool) drvscsiIsAsyncResetDone(PPDMDRVINS pDrvIns)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
 
-    if (pThis->pDrvMediaAsync)
-    {
-        if (pThis->StatIoDepth > 0)
-            return false;
-        else
-            return true;
-    }
+    if (pThis->StatIoDepth > 0)
+        return false;
     else
-    {
-        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
-            return false;
-        ASMAtomicWriteBool(&pThis->fDummySignal, false);
         return true;
-    }
 }
 
 /**
@@ -868,16 +727,6 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
-
-    if (pThis->hQueueRequests != NIL_RTREQQUEUE)
-    {
-        if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 100 /*ms*/))
-            LogRel(("drvscsiDestruct#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
-
-        int rc = RTReqQueueDestroy(pThis->hQueueRequests);
-        AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
-        pThis->hQueueRequests = NIL_RTREQQUEUE;
-    }
 
     /* Free the VSCSI device and LUN handle. */
     if (pThis->hVScsiDevice)
@@ -925,8 +774,10 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IMountNotify.pfnMountNotify          = drvscsiMountNotify;
     pThis->IMountNotify.pfnUnmountNotify        = drvscsiUnmountNotify;
     pThis->IPort.pfnQueryDeviceLocation         = drvscsiQueryDeviceLocation;
-    pThis->IPortAsync.pfnTransferCompleteNotify = drvscsiTransferCompleteNotify;
-    pThis->hQueueRequests                       = NIL_RTREQQUEUE;
+    pThis->IPortEx.pfnIoReqCompleteNotify       = drvscsiIoReqCompleteNotify;
+    pThis->IPortEx.pfnIoReqCopyFromBuf          = drvscsiIoReqCopyFromBuf;
+    pThis->IPortEx.pfnIoReqCopyToBuf            = drvscsiIoReqCopyToBuf;
+    pThis->IPortEx.pfnIoReqStateChanged         = drvscsiIoReqStateChanged;
 
     /* Query the SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
@@ -971,16 +822,15 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Query the block and blockbios interfaces.
      */
     pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIA);
-    if (!pThis->pDrvMedia)
-    {
-        AssertMsgFailed(("Configuration error: No block interface!\n"));
-        return VERR_PDM_MISSING_INTERFACE;
-    }
+    AssertMsgReturn(VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
+                    VERR_PDM_MISSING_INTERFACE);
+
+    /* Query the extended media interface. */
+    pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIAEX);
+    AssertMsgReturn(VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
+                    VERR_PDM_MISSING_INTERFACE);
 
     pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);
-
-    /* Try to get the optional async block interface. */
-    pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIAASYNC);
 
     PDMMEDIATYPE enmType = pThis->pDrvMedia->pfnGetType(pThis->pDrvMedia);
     VSCSILUNTYPE enmLunType;
@@ -1007,6 +857,9 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     }
 
     /* Create VSCSI device and LUN. */
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqAllocSizeSet     = drvscsiReqAllocSizeSet;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqAlloc            = drvscsiReqAlloc;
+    pThis->VScsiIoCallbacks.pfnVScsiLunReqFree             = drvscsiReqFree;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSize       = drvscsiGetSize;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSectorSize = drvscsiGetSectorSize;
     pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue  = drvscsiReqTransferEnqueue;
@@ -1058,24 +911,12 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     pThis->StatIoDepth = 0;
 
-    if (!pThis->pDrvMediaAsync)
-    {
-        /* Create request queue. */
-        rc = RTReqQueueCreate(&pThis->hQueueRequests);
-        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n", rc), rc);
-        /* Create I/O thread. */
-        rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsiAsyncIOLoop,
-                                   drvscsiAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
-        AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create async I/O thread rc=%Rrc\n", rc), rc);
-
-        LogRel(("SCSI#%d: using normal I/O\n", pDrvIns->iInstance));
-    }
-    else
-        LogRel(("SCSI#%d: using async I/O\n", pDrvIns->iInstance));
-
-    if (   pThis->pDrvMedia->pfnDiscard
-        || (   pThis->pDrvMediaAsync
-            && pThis->pDrvMediaAsync->pfnStartDiscard))
+    uint32_t fFeatures = 0;
+    rc = pThis->pDrvMediaEx->pfnQueryFeatures(pThis->pDrvMediaEx, &fFeatures);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("VSCSI configuration error: Failed to query features of device"));
+    if (fFeatures & PDMIMEDIAEX_FEATURE_F_DISCARD)
         LogRel(("SCSI#%d: Enabled UNMAP support\n", pDrvIns->iInstance));
 
     return VINF_SUCCESS;

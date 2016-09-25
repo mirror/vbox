@@ -320,6 +320,14 @@ int vscsiVpdPagePoolAllocNewPage(PVSCSIVPDPOOL pVScsiVpdPool, uint8_t uPage, siz
 int vscsiVpdPagePoolQueryPage(PVSCSIVPDPOOL pVScsiVpdPool, PVSCSIREQINT pVScsiReq, uint8_t uPage);
 
 /**
+ * Inits the I/O request related state for the LUN.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun    The LUN instance.
+ */
+int vscsiIoReqInit(PVSCSILUNINT pVScsiLun);
+
+/**
  * Enqueues a new flush request
  *
  * @returns VBox status code.
@@ -361,6 +369,49 @@ int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
  * @param   pVScsiLun   The LUN to check.
  */
 uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun);
+
+/**
+ * Wrapper for the set I/O request allocation size I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun             The LUN.
+ * @param   cbVScsiIoReqAlloc     The additional size for the request to allocate.
+ */
+DECLINLINE(int) vscsiLunReqAllocSizeSet(PVSCSILUNINT pVScsiLun, size_t cbVScsiIoReqAlloc)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunReqAllocSizeSet(pVScsiLun,
+                                                                       pVScsiLun->pvVScsiLunUser,
+                                                                       cbVScsiIoReqAlloc);
+}
+
+/**
+ * Wrapper for the allocate I/O request I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun             The LUN.
+ * @param   u64Tag                A unique tag to assign to the request.
+ * @param   ppVScsiIoReq          Where to store the pointer to the request on success.
+ */
+DECLINLINE(int) vscsiLunReqAlloc(PVSCSILUNINT pVScsiLun, uint64_t u64Tag, PVSCSIIOREQINT *ppVScsiIoReq)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunReqAlloc(pVScsiLun,
+                                                                pVScsiLun->pvVScsiLunUser,
+                                                                u64Tag, ppVScsiIoReq);
+}
+
+/**
+ * Wrapper for the free I/O request I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN.
+ * @param   pVScsiIoReq The request to free.
+ */
+DECLINLINE(int) vscsiLunReqFree(PVSCSILUNINT pVScsiLun, PVSCSIIOREQINT pVScsiIoReq)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunReqFree(pVScsiLun,
+                                                               pVScsiLun->pvVScsiLunUser,
+                                                               pVScsiIoReq);
+}
 
 /**
  * Wrapper for the get medium size I/O callback.

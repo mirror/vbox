@@ -115,6 +115,43 @@ typedef VSCSILUNTYPE *PVSCSILUNTYPE;
 typedef struct VSCSILUNIOCALLBACKS
 {
     /**
+     * Sets the size of the allocator specific memory for a I/O request.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cbIoReqAlloc    The size of the allocator specific memory in bytes.
+     * @thread  EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqAllocSizeSet, (VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                           size_t cbVScsiIoReqAlloc));
+
+    /**
+     * Allocates a new I/O request.
+     *
+     * @returns VBox status code.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   u64Tag          A tag to assign to the request handle for identification later on.
+     * @param   phVScsiIoReq    Where to store the handle to the allocated I/O request on success.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqAlloc, (VSCSILUN hVScsiLun, void *pvScsiLunUser,
+                                                    uint64_t u64Tag, PVSCSIIOREQ phVScsiIoReq));
+
+    /**
+     * Frees a given I/O request.
+     *
+     * @returns VBox status code.
+     * @param   hVScsiLun       Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser   Opaque user data which may be used to identify the
+     *                          medium.
+     * @param   hVScsiIoReq     The VSCSI I/O request to free.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqFree, (VSCSILUN hVScsiLun, void *pvScsiLunUser, VSCSIIOREQ hVScsiIoReq));
+
+    /**
      * Retrieve the size of the underlying medium.
      *
      * @returns VBox status status code.

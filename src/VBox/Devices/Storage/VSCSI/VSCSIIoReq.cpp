@@ -25,26 +25,31 @@
 
 #include "VSCSIInternal.h"
 
+int vscsiIoReqInit(PVSCSILUNINT pVScsiLun)
+{
+    return vscsiLunReqAllocSizeSet(pVScsiLun, sizeof(VSCSIIOREQINT));
+}
+
 int vscsiIoReqFlushEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 {
     int rc = VINF_SUCCESS;
     PVSCSIIOREQINT pVScsiIoReq = NULL;
 
-    pVScsiIoReq = (PVSCSIIOREQINT)RTMemAllocZ(sizeof(VSCSIIOREQINT));
-    if (!pVScsiIoReq)
-        return VERR_NO_MEMORY;
-
-    pVScsiIoReq->pVScsiReq = pVScsiReq;
-    pVScsiIoReq->pVScsiLun = pVScsiLun;
-    pVScsiIoReq->enmTxDir  = VSCSIIOREQTXDIR_FLUSH;
-
-    ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
-
-    rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
-    if (RT_FAILURE(rc))
+    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    if (RT_SUCCESS(rc))
     {
-        ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
-        RTMemFree(pVScsiIoReq);
+        pVScsiIoReq->pVScsiReq = pVScsiReq;
+        pVScsiIoReq->pVScsiLun = pVScsiLun;
+        pVScsiIoReq->enmTxDir  = VSCSIIOREQTXDIR_FLUSH;
+
+        ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
+
+        rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
+        if (RT_FAILURE(rc))
+        {
+            ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
+            RTMemFree(pVScsiIoReq);
+        }
     }
 
     return rc;
@@ -61,25 +66,25 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     LogFlowFunc(("pVScsiLun=%#p pVScsiReq=%#p enmTxDir=%u uOffset=%llu cbTransfer=%u\n",
                  pVScsiLun, pVScsiReq, enmTxDir, uOffset, cbTransfer));
 
-    pVScsiIoReq = (PVSCSIIOREQINT)RTMemAllocZ(sizeof(VSCSIIOREQINT));
-    if (!pVScsiIoReq)
-        return VERR_NO_MEMORY;
-
-    pVScsiIoReq->pVScsiReq       = pVScsiReq;
-    pVScsiIoReq->pVScsiLun       = pVScsiLun;
-    pVScsiIoReq->enmTxDir        = enmTxDir;
-    pVScsiIoReq->u.Io.uOffset    = uOffset;
-    pVScsiIoReq->u.Io.cbTransfer = cbTransfer;
-    pVScsiIoReq->u.Io.paSeg      = pVScsiReq->SgBuf.paSegs;
-    pVScsiIoReq->u.Io.cSeg       = pVScsiReq->SgBuf.cSegs;
-
-    ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
-
-    rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
-    if (RT_FAILURE(rc))
+    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    if (RT_SUCCESS(rc))
     {
-        ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
-        RTMemFree(pVScsiIoReq);
+        pVScsiIoReq->pVScsiReq       = pVScsiReq;
+        pVScsiIoReq->pVScsiLun       = pVScsiLun;
+        pVScsiIoReq->enmTxDir        = enmTxDir;
+        pVScsiIoReq->u.Io.uOffset    = uOffset;
+        pVScsiIoReq->u.Io.cbTransfer = cbTransfer;
+        pVScsiIoReq->u.Io.paSeg      = pVScsiReq->SgBuf.paSegs;
+        pVScsiIoReq->u.Io.cSeg       = pVScsiReq->SgBuf.cSegs;
+
+        ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
+
+        rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
+        if (RT_FAILURE(rc))
+        {
+            ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
+            vscsiLunReqFree(pVScsiLun, pVScsiIoReq);
+        }
     }
 
     return rc;
@@ -95,23 +100,23 @@ int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
     LogFlowFunc(("pVScsiLun=%#p pVScsiReq=%#p paRanges=%#p cRanges=%u\n",
                  pVScsiLun, pVScsiReq, paRanges, cRanges));
 
-    pVScsiIoReq = (PVSCSIIOREQINT)RTMemAllocZ(sizeof(VSCSIIOREQINT));
-    if (!pVScsiIoReq)
-        return VERR_NO_MEMORY;
-
-    pVScsiIoReq->pVScsiReq        = pVScsiReq;
-    pVScsiIoReq->pVScsiLun        = pVScsiLun;
-    pVScsiIoReq->enmTxDir         = VSCSIIOREQTXDIR_UNMAP;
-    pVScsiIoReq->u.Unmap.paRanges = paRanges;
-    pVScsiIoReq->u.Unmap.cRanges  = cRanges;
-
-    ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
-
-    rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
-    if (RT_FAILURE(rc))
+    rc = vscsiLunReqAlloc(pVScsiLun, (uint64_t)pVScsiReq, &pVScsiIoReq);
+    if (RT_SUCCESS(rc))
     {
-        ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
-        RTMemFree(pVScsiIoReq);
+        pVScsiIoReq->pVScsiReq        = pVScsiReq;
+        pVScsiIoReq->pVScsiLun        = pVScsiLun;
+        pVScsiIoReq->enmTxDir         = VSCSIIOREQTXDIR_UNMAP;
+        pVScsiIoReq->u.Unmap.paRanges = paRanges;
+        pVScsiIoReq->u.Unmap.cRanges  = cRanges;
+
+        ASMAtomicIncU32(&pVScsiLun->IoReq.cReqOutstanding);
+
+        rc = vscsiLunReqTransferEnqueue(pVScsiLun, pVScsiIoReq);
+        if (RT_FAILURE(rc))
+        {
+            ASMAtomicDecU32(&pVScsiLun->IoReq.cReqOutstanding);
+            vscsiLunReqFree(pVScsiLun, pVScsiIoReq);
+        }
     }
 
     return rc;
@@ -162,7 +167,7 @@ VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool 
         RTMemFree(pVScsiIoReq->u.Unmap.paRanges);
 
     /* Free the I/O request */
-    RTMemFree(pVScsiIoReq);
+    vscsiLunReqFree(pVScsiLun, pVScsiIoReq);
 
     /* Notify completion of the SCSI request. */
     vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, fRedoPossible, rcIoReq);

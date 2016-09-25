@@ -71,14 +71,18 @@ VBOXDDU_DECL(int) VSCSILunCreate(PVSCSILUN phVScsiLun, VSCSILUNTYPE enmLunType,
     pVScsiLun->pVScsiLunIoCallbacks = pVScsiLunIoCallbacks;
     pVScsiLun->pVScsiLunDesc        = pVScsiLunDesc;
 
-    int rc = vscsiLunGetFeatureFlags(pVScsiLun, &pVScsiLun->fFeatures);
+    int rc = vscsiIoReqInit(pVScsiLun);
     if (RT_SUCCESS(rc))
     {
-        rc = pVScsiLunDesc->pfnVScsiLunInit(pVScsiLun);
+        rc = vscsiLunGetFeatureFlags(pVScsiLun, &pVScsiLun->fFeatures);
         if (RT_SUCCESS(rc))
         {
-            *phVScsiLun = pVScsiLun;
-            return VINF_SUCCESS;
+            rc = pVScsiLunDesc->pfnVScsiLunInit(pVScsiLun);
+            if (RT_SUCCESS(rc))
+            {
+                *phVScsiLun = pVScsiLun;
+                return VINF_SUCCESS;
+            }
         }
     }
 
