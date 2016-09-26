@@ -6149,7 +6149,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          * Task was canceled, do the cleanup but DO NOT access the guest memory!
          * The guest might use it for other things now because it doesn't know about that task anymore.
          */
-        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED || fPortReset,
+        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED || ASMAtomicReadBool(&pAhciPort->fPortReset),
                   ("Task is not active but wasn't canceled and no port reset is active!\n"));
 
         fCanceled = true;
