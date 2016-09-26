@@ -305,14 +305,6 @@ typedef struct AHCIREQ
              * and the callback returns a buffer with the final data. */
             PFNAHCIPOSTPROCESS pfnPostProcess;
         } Io;
-        /** Data for a trim request. */
-        struct
-        {
-            /** Pointer to the array of ranges to trim. */
-            PRTRANGE           paRanges;
-            /** Number of entries in the array. */
-            unsigned           cRanges;
-        } Trim;
     } u;
 } AHCIREQ;
 
@@ -5786,45 +5778,41 @@ bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
  * Creates the array of ranges to trim.
  *
  * @returns VBox status code.
- * @param   pAhciPort    AHCI port state.
- * @param   pAhciReq     The request handling the TRIM request.
+ * @param   pAhciPort     AHCI port state.
+ * @param   pAhciReq      The request handling the TRIM request.
+ * @param   idxRangeStart Index of the first range to start copying.
+ * @param   paRanges      Where to store the ranges.
+ * @param   cRanges       Number of ranges fitting into the array.
+ * @param   pcRanges      Where to store the amount of ranges actually copied on success.
  */
-static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
+static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint32_t idxRangeStart,
+                                PRTRANGE paRanges, uint32_t cRanges, uint32_t *pcRanges)
 {
     SGLEntry aPrdtlEntries[32];
     uint64_t aRanges[64];
-    unsigned cRangesMax;
-    unsigned cRanges = 0;
     uint32_t cPrdtlEntries = pAhciReq->cPrdtlEntries;
     RTGCPHYS GCPhysPrdtl   = pAhciReq->GCPhysPrdtl;
     PPDMDEVINS pDevIns     = pAhciPort->CTX_SUFF(pDevIns);
-    int rc = VINF_SUCCESS;
+    int rc = VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
+    uint32_t idxRange = 0;
 
     LogFlowFunc(("pAhciPort=%#p pAhciReq=%#p\n", pAhciPort, pAhciReq));
 
     AssertMsgReturn(pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD, ("This is not a trim request\n"), VERR_INVALID_PARAMETER);
 
-    /* The data buffer contains LBA range entries. Each range is 8 bytes big. */
-    if (!pAhciReq->cmdFis[AHCI_CMDFIS_SECTC] && !pAhciReq->cmdFis[AHCI_CMDFIS_SECTCEXP])
-        cRangesMax = 65536 * 512 / 8;
-    else
-        cRangesMax = pAhciReq->cmdFis[AHCI_CMDFIS_SECTC] * 512 / 8;
-
     if (!cPrdtlEntries)
-    {
         pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
-        return VINF_SUCCESS;
-    }
 
-    do
+    /* Convert the ranges from ATA to our format. */
+    while (   cPrdtlEntries
+           && idxRange < cRanges)
     {
-        uint32_t cPrdtlEntriesRead =   (cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries))
-                                     ? cPrdtlEntries
-                                     : RT_ELEMENTS(aPrdtlEntries);
+        uint32_t cPrdtlEntriesRead = RT_MIN(cPrdtlEntries, RT_ELEMENTS(aPrdtlEntries));
 
+        rc = VINF_SUCCESS;
         PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
 
-        for (uint32_t i = 0; i < cPrdtlEntriesRead; i++)
+        for (uint32_t i = 0; i < cPrdtlEntriesRead && idxRange < cRanges; i++)
         {
             RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(aPrdtlEntries[i].u32DBAUp, aPrdtlEntries[i].u32DBA);
             uint32_t cbThisCopy = (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
@@ -5834,88 +5822,34 @@ static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
             /* Copy into buffer. */
             PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, aRanges, cbThisCopy);
 
-            for (unsigned idxRange = 0; idxRange < RT_ELEMENTS(aRanges); idxRange++)
+            for (unsigned idxRangeSrc = 0; idxRangeSrc < RT_ELEMENTS(aRanges) && idxRange < cRanges; idxRangeSrc++)
             {
-                aRanges[idxRange] = RT_H2LE_U64(aRanges[idxRange]);
-                if (AHCI_RANGE_LENGTH_GET(aRanges[idxRange]) != 0)
-                    cRanges++;
-                else
-                    break;
-            }
-        }
-
-        GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
-        cPrdtlEntries -= cPrdtlEntriesRead;
-    } while (cPrdtlEntries);
-
-    if (RT_UNLIKELY(!cRanges))
-    {
-        return VERR_BUFFER_OVERFLOW;
-    }
-
-    pAhciReq->u.Trim.cRanges = cRanges;
-    pAhciReq->u.Trim.paRanges = (PRTRANGE)RTMemAllocZ(sizeof(RTRANGE) * cRanges);
-    if (pAhciReq->u.Trim.paRanges)
-    {
-        uint32_t idxRange = 0;
-
-        cPrdtlEntries = pAhciReq->cPrdtlEntries;
-        GCPhysPrdtl   = pAhciReq->GCPhysPrdtl;
-
-        /* Convert the ranges from the guest to our format. */
-        do
-        {
-            uint32_t cPrdtlEntriesRead =   (cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries))
-                                         ? cPrdtlEntries
-                                         : RT_ELEMENTS(aPrdtlEntries);
-
-            PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
-
-            for (uint32_t i = 0; i < cPrdtlEntriesRead; i++)
-            {
-                RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(aPrdtlEntries[i].u32DBAUp, aPrdtlEntries[i].u32DBA);
-                uint32_t cbThisCopy = (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
-
-                cbThisCopy = RT_MIN(cbThisCopy, sizeof(aRanges));
-
-                /* Copy into buffer. */
-                PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, aRanges, cbThisCopy);
-
-                for (unsigned idxRangeSrc = 0; idxRangeSrc < RT_ELEMENTS(aRanges); idxRangeSrc++)
+                /* Skip range if told to do so. */
+                if (!idxRangeStart)
                 {
                     aRanges[idxRangeSrc] = RT_H2LE_U64(aRanges[idxRangeSrc]);
                     if (AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) != 0)
                     {
-                        pAhciReq->u.Trim.paRanges[idxRange].offStart = (aRanges[idxRangeSrc] & AHCI_RANGE_LBA_MASK) * pAhciPort->cbSector;
-                        pAhciReq->u.Trim.paRanges[idxRange].cbRange = AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) * pAhciPort->cbSector;
+                        paRanges[idxRange].offStart = (aRanges[idxRangeSrc] & AHCI_RANGE_LBA_MASK) * pAhciPort->cbSector;
+                        paRanges[idxRange].cbRange = AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) * pAhciPort->cbSector;
                         idxRange++;
                     }
                     else
                         break;
                 }
+                else
+                    idxRangeStart--;
             }
+        }
 
-            GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
-            cPrdtlEntries -= cPrdtlEntriesRead;
-        } while (idxRange < cRanges);
+        GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
+        cPrdtlEntries -= cPrdtlEntriesRead;
     }
-    else
-        rc = VERR_NO_MEMORY;
+
+    *pcRanges = idxRange;
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
-}
-
-/**
- * Destroy the trim range list.
- *
- * @returns nothing.
- * @param   pAhciReq    The task state.
- */
-static void ahciTrimRangesDestroy(PAHCIREQ pAhciReq)
-{
-    AssertReturnVoid(pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD);
-    RTMemFree(pAhciReq->u.Trim.paRanges);
 }
 
 /**
@@ -6026,10 +5960,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             pAhciPort->Led.Actual.s.fWriting = 0;
         }
         else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
-        {
-            ahciTrimRangesDestroy(pAhciReq);
             pAhciPort->Led.Actual.s.fWriting = 0;
-        }
 
         if (RT_FAILURE(rcReq))
         {
@@ -6119,9 +6050,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          */
         fCanceled = true;
 
-        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
-            ahciTrimRangesDestroy(pAhciReq);
-        else if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_FLUSH)
+        if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_FLUSH)
             ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
 
         /* Leave a log message about the canceled request. */
@@ -6217,16 +6146,11 @@ static DECLCALLBACK(int) ahciR3IoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterfa
                                                        uint32_t cRanges, PRTRANGE paRanges,
                                                        uint32_t *pcRanges)
 {
-    RT_NOREF2(pInterface, hIoReq);
+    RT_NOREF1(hIoReq);
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
-    uint32_t cRangesCopy = RT_MIN(pIoReq->u.Trim.cRanges - idxRangeStart, cRanges);
-    Assert(   idxRangeStart < pIoReq->u.Trim.cRanges
-           && (idxRangeStart + cRanges) <= pIoReq->u.Trim.cRanges);
 
-    memcpy(paRanges, &pIoReq->u.Trim.paRanges[idxRangeStart], cRangesCopy * sizeof(RTRANGE));
-    *pcRanges = cRangesCopy;
-
-    return VINF_SUCCESS;
+    return ahciTrimRangesCreate(pAhciPort, pIoReq, idxRangeStart, paRanges, cRanges, pcRanges);
 }
 
 /**
@@ -6637,13 +6561,17 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
         rc = pAhciPort->pDrvMediaEx->pfnIoReqFlush(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
     else if (enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
     {
-        rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
-        if (RT_SUCCESS(rc))
-        {
-            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-            rc = pAhciPort->pDrvMediaEx->pfnIoReqDiscard(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
-                                                         pAhciReq->u.Trim.cRanges);
-        }
+        uint32_t cRangesMax;
+
+        /* The data buffer contains LBA range entries. Each range is 8 bytes big. */
+        if (!pAhciReq->cmdFis[AHCI_CMDFIS_SECTC] && !pAhciReq->cmdFis[AHCI_CMDFIS_SECTCEXP])
+            cRangesMax = 65536 * 512 / 8;
+        else
+            cRangesMax = pAhciReq->cmdFis[AHCI_CMDFIS_SECTC] * 512 / 8;
+
+        pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+        rc = pAhciPort->pDrvMediaEx->pfnIoReqDiscard(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
+                                                     cRangesMax);
     }
     else if (enmType == PDMMEDIAEXIOREQTYPE_READ)
     {
