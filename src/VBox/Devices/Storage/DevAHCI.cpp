@@ -233,11 +233,15 @@ typedef struct AHCIREQ *PAHCIREQ;
  *
  * @returns VBox status code.
  * @param   pAhciReq    The task state.
+ * @param   pSgBuf      Buffer holding the data to process.
+ * @param   cbBuf       Size of the buffer.
+ * @param   offBuf      Offset into the guest buffer.
  * @param   ppvProc     Where to store the pointer to the buffer holding the processed data on success.
  *                      Must be freed with RTMemFree().
  * @param   pcbProc     Where to store the size of the buffer on success.
  */
-typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIREQ pAhciReq, void **ppvProc, size_t *pcbProc);
+typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIREQ pAhciReq, PRTSGBUF pSgBuf, size_t cbBuf,
+                                              uint32_t offBuf, void **ppvProc, size_t *pcbProc);
 /** Pointer to a FNAHCIPOSTPROCESS() function. */
 typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
 
@@ -270,7 +274,7 @@ typedef struct AHCIREQ
     uint32_t                   cbATAPISector;
     /** Physical address of the command header. - GC */
     RTGCPHYS                   GCPhysCmdHdrAddr;
-    /** Physical address if the PRDT */
+    /** Physical address of the PRDT */
     RTGCPHYS                   GCPhysPrdtl;
     /** Number of entries in the PRDTL. */
     unsigned                   cPrdtlEntries;
@@ -282,26 +286,10 @@ typedef struct AHCIREQ
     uint32_t                   cbTransfer;
     /** Flags for this task. */
     uint32_t                   fFlags;
-    /** Additional memory allocation for this task. */
-    void                      *pvAlloc;
-    /** Siize of the allocation. */
-    size_t                     cbAlloc;
-    /** Number of times we had too much memory allocated for the request. */
-    unsigned                   cAllocTooMuch;
-    /** Data dependent on the transfer direction. */
-    union
-    {
-        /** Data for an I/O request. */
-        struct
-        {
-            /** Data segment. */
-            RTSGSEG            DataSeg;
-            /** Post processing callback.
-             * If this is set we will use a buffer for the data
-             * and the callback returns a buffer with the final data. */
-            PFNAHCIPOSTPROCESS pfnPostProcess;
-        } Io;
-    } u;
+    /** Post processing callback.
+     * If this is set we will use a buffer for the data
+     * and the callback returns a buffer with the final data. */
+    PFNAHCIPOSTPROCESS         pfnPostProcess;
 } AHCIREQ;
 
 /**
@@ -319,7 +307,7 @@ typedef struct DEVPORTNOTIFIERQUEUEITEM
 /**
  * @implements PDMIBASE
  * @implements PDMIMEDIAPORT
- * @implements PDMIMEDIAASYNCPORT
+ * @implements PDMIMEDIAEXPORT
  * @implements PDMIMOUNTNOTIFY
  */
 typedef struct AHCIPort
@@ -680,6 +668,27 @@ typedef struct
 } SGLEntry;
 AssertCompileSize(SGLEntry, 16);
 
+#ifdef IN_RING3
+/**
+ * Memory buffer callback.
+ *
+ * @returns nothing.
+ * @param   pThis    The NVME controller instance.
+ * @param   GCPhys   The guest physical address of the memory buffer.
+ * @param   pSgBuf   The pointer to the host R3 S/G buffer.
+ * @param   cbCopy   How many bytes to copy between the two buffers.
+ * @param   pcbSkip  Initially contains the amount of bytes to skip
+ *                   starting from the guest physical address before
+ *                   accessing the S/G buffer and start copying data.
+ *                   On return this contains the remaining amount if
+ *                   cbCopy < *pcbSkip or 0 otherwise.
+ */
+typedef DECLCALLBACK(void) AHCIR3MEMCOPYCALLBACK(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf, size_t cbCopy,
+                                                 size_t *pcbSkip);
+/** Pointer to a memory copy buffer callback. */
+typedef AHCIR3MEMCOPYCALLBACK *PAHCIR3MEMCOPYCALLBACK;
+#endif
+
 /** Defines for a scatter gather list entry. */
 #define SGLENTRY_DBA_READONLY     ~(RT_BIT(0))
 #define SGLENTRY_DESCINF_I        RT_BIT(31)
@@ -886,10 +895,10 @@ RT_C_DECLS_BEGIN
 static void ahciHBAReset(PAHCI pThis);
 static int  ahciPostFisIntoMemory(PAHCIPort pAhciPort, unsigned uFisType, uint8_t *cmdFis);
 static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort);
-static uint32_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, const void *pvBuf, size_t cbBuf);
-static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, void *pvBuf, size_t cbBuf);
+static size_t ahciR3CopyBufferToPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, const void *pvSrc,
+                                      size_t cbSrc, size_t cbSkip);
+static size_t ahciR3CopyBufferFromPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, void *pvDst, size_t cbDst);
 static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
-static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFree);
 #endif
 RT_C_DECLS_END
 
@@ -3237,7 +3246,8 @@ static int atapiIdentifySS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbData
     p[76] = RT_H2LE_U16((1 << 8) | (1 << 2)); /* Native command queuing and Serial ATA Gen2 (3.0 Gbps) speed supported */
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData =  ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&p[0], RT_MIN(cbData, sizeof(p)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&p[0],
+                                       RT_MIN(cbData, sizeof(p)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3251,7 +3261,8 @@ static int atapiReadCapacitySS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cb
     ataH2BE_U32(aBuf + 4, 2048);
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3278,7 +3289,8 @@ static int atapiReadDiscInformationSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, si
     ataH2BE_U32(aBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3308,7 +3320,8 @@ static int atapiReadTrackInformationSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, s
     aBuf[33] = 0; /* session number (MSB) */
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3489,7 +3502,8 @@ static int atapiGetConfigurationSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
     ataH2BE_U32(&aBuf[0], (uint32_t)(sizeof(aBuf) - cbBuf));
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3565,7 +3579,8 @@ static int atapiGetEventStatusNotificationSS(PAHCIREQ pAhciReq, PAHCIPort pAhciP
         }
     } while (!ASMAtomicCmpXchgU32(&pAhciPort->MediaEventStatus, NewStatus, OldStatus));
 
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&abBuf[0], RT_MIN(cbData, sizeof(abBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&abBuf[0],
+                                       RT_MIN(cbData, sizeof(abBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3589,7 +3604,8 @@ static int atapiInquirySS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbData,
     ataSCSIPadStr(aBuf + 32, pAhciPort->szInquiryRevision, 4);
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3618,7 +3634,8 @@ static int atapiModeSenseErrorRecoverySS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort,
     aBuf[15] = 0x00;
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3668,7 +3685,8 @@ static int atapiModeSenseCDStatusSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size
     ataH2BE_U16(&aBuf[38], 0); /* number of write speed performance descriptors */
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3678,8 +3696,9 @@ static int atapiModeSenseCDStatusSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size
 static int atapiRequestSenseSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbData, size_t *pcbData)
 {
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq,
-                               pAhciPort->abATAPISense, RT_MIN(cbData, sizeof(pAhciPort->abATAPISense)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
+                                       pAhciPort->abATAPISense, RT_MIN(cbData, sizeof(pAhciPort->abATAPISense)),
+                                       0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3699,7 +3718,8 @@ static int atapiMechanismStatusSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t
     ataH2BE_U16(aBuf + 6, 0);
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3761,7 +3781,8 @@ static int atapiReadTOCNormalSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t c
     ataH2BE_U16(aBuf, cbSize - 2);
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, cbSize));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, cbSize), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3794,7 +3815,8 @@ static int atapiReadTOCMultiSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cb
     }
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, sizeof(aBuf)));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, sizeof(aBuf)), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3882,7 +3904,8 @@ static int atapiReadTOCRawSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbDa
     ataH2BE_U16(aBuf, cbSize - 2);
 
     /* Copy the buffer in to the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, cbSize));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, cbSize), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return VINF_SUCCESS;
@@ -3914,7 +3937,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
 
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
-            ahciCopyFromPrdtl(pAhciPort->pDevInsR3, pAhciReq, pvBuf, cbTransfer);
+            ahciR3CopyBufferFromPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, pvBuf, cbTransfer);
             if (pAhciReq->fFlags & AHCI_REQ_OVERFLOW)
                 return VINF_SUCCESS;
         }
@@ -4103,7 +4126,8 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
                 Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, (uint8_t *)pvBuf));
 
                 /* Reply with the same amount of data as the real drive. */
-                *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, pvBuf, cbTransfer);
+                *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, pvBuf,
+                                                   cbTransfer, 0 /* cbSkip */);
             }
             else
                 *pcbData = 0;
@@ -4294,7 +4318,8 @@ static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
     }
 
     /* Copy the buffer into the scatter gather list. */
-    *pcbData = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, (void *)&aBuf[0], RT_MIN(cbData, max_len));
+    *pcbData = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq, (void *)&aBuf[0],
+                                       RT_MIN(cbData, max_len), 0 /* cbSkip */);
 
     atapiCmdOK(pAhciPort, pAhciReq);
     return false;
@@ -4318,20 +4343,22 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax,
     return rcSourceSink;
 }
 
-static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, void **ppvProc, size_t *pcbProc)
+static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, PRTSGBUF pSgBuf, size_t cbBuf,
+                                                         uint32_t offBuf, void **ppvProc, size_t *pcbProc)
 {
     uint8_t *pbBuf = NULL;
-    uint32_t cSectors  = pAhciReq->cbTransfer / 2048;
-    uint32_t iATAPILBA = pAhciReq->uOffset / 2048;
-    uint8_t *pbBufDst;
-    uint8_t *pbBufSrc  = (uint8_t *)pAhciReq->u.Io.DataSeg.pvSeg;
-    size_t cbAlloc = pAhciReq->cbTransfer + cSectors * (1 + 11 + 3 + 1 + 288); /* Per sector data like ECC. */
+    uint32_t cSectorsOff = offBuf / 2048;
+    uint32_t cSectors  = cbBuf / 2048;
+    uint32_t iATAPILBA = cSectorsOff + pAhciReq->uOffset / 2048;
+    size_t cbAlloc = cbBuf + cSectors * (1 + 11 + 3 + 1 + 288); /* Per sector data like ECC. */
+
+    AssertReturn((offBuf % 2048 == 0) && (cbBuf % 2048 == 0), VERR_INVALID_STATE);
 
     pbBuf = (uint8_t *)RTMemAlloc(cbAlloc);
     if (RT_UNLIKELY(!pbBuf))
         return VERR_NO_MEMORY;
 
-    pbBufDst = pbBuf;
+    uint8_t *pbBufDst = pbBuf;
 
     for (uint32_t i = iATAPILBA; i < iATAPILBA + cSectors; i++)
     {
@@ -4344,9 +4371,8 @@ static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, void
         pbBufDst += 3;
         *pbBufDst++ = 0x01; /* mode 1 data */
         /* data */
-        memcpy(pbBufDst, pbBufSrc, 2048);
+        RTSgBufCopyToBuf(pSgBuf, pbBufDst, 2048);
         pbBufDst += 2048;
-        pbBufSrc += 2048;
         /* ECC */
         memset(pbBufDst, 0, 288);
         pbBufDst += 288;
@@ -4354,7 +4380,6 @@ static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, void
 
     *ppvProc = pbBuf;
     *pcbProc = cbAlloc;
-
     return VINF_SUCCESS;
 }
 
@@ -4371,7 +4396,7 @@ static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint32_t iAT
             break;
         case 2352:
         {
-            pAhciReq->u.Io.pfnPostProcess = atapiReadSectors2352PostProcess;
+            pAhciReq->pfnPostProcess = atapiReadSectors2352PostProcess;
             pAhciReq->uOffset = (uint64_t)iATAPILBA * 2048;
             pAhciReq->cbTransfer = cSectors * 2048;
             break;
@@ -4614,12 +4639,6 @@ static PDMMEDIAEXIOREQTYPE atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIR
                     /* This must be done from EMT. */
                     PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
                     PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
-
-                    /*
-                     * Also make sure that the current request has no memory allocated
-                     * from the driver below us. We don't require it here anyway.
-                     */
-                    ahciReqMemFree(pAhciPort, pAhciReq, true /* fForceFree */);
 
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
@@ -5460,233 +5479,190 @@ DECLINLINE(uint32_t) ahciGetNSectorsQueued(uint8_t *pCmdFis)
 }
 
 /**
- * Allocates memory for the given request using already allocated memory if possible.
+ * Copy from guest to host memory worker.
  *
- * @returns Pointer to the memory or NULL on failure
- * @param   pAhciPort   The AHCI port.
- * @param   pAhciReq    The request to allocate memory for.
- * @param   cb          The amount of memory to allocate.
+ * @copydoc{AHCIR3MEMCOPYCALLBACK}
  */
-static void *ahciReqMemAlloc(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cb)
+static DECLCALLBACK(void) ahciR3CopyBufferFromGuestWorker(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
+                                                          size_t cbCopy, size_t *pcbSkip)
 {
-    if (pAhciReq->cbAlloc > cb)
+    size_t cbSkipped = RT_MIN(cbCopy, *pcbSkip);
+    cbCopy   -= cbSkipped;
+    GCPhys   += cbSkipped;
+    *pcbSkip -= cbSkipped;
+
+    while (cbCopy)
     {
-        pAhciReq->cAllocTooMuch++;
+        size_t cbSeg = cbCopy;
+        void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
+
+        AssertPtr(pvSeg);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pvSeg, cbSeg);
+        GCPhys += cbSeg;
+        cbCopy -= cbSeg;
     }
-    else if (pAhciReq->cbAlloc < cb)
-    {
-        if (pAhciReq->cbAlloc)
-            pAhciPort->pDrvMedia->pfnIoBufFree(pAhciPort->pDrvMedia, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
-
-        pAhciReq->pvAlloc = NULL;
-        pAhciReq->cbAlloc = RT_ALIGN_Z(cb, _4K);
-        int rc = pAhciPort->pDrvMedia->pfnIoBufAlloc(pAhciPort->pDrvMedia, pAhciReq->cbAlloc, &pAhciReq->pvAlloc);
-        if (RT_FAILURE(rc))
-            pAhciReq->pvAlloc = NULL;
-
-        pAhciReq->cAllocTooMuch = 0;
-        if (RT_UNLIKELY(!pAhciReq->pvAlloc))
-            pAhciReq->cbAlloc = 0;
-    }
-
-    return pAhciReq->pvAlloc;
 }
 
 /**
- * Frees memory allocated for the given request.
+ * Copy from host to guest memory worker.
  *
- * @returns nothing.
- * @param   pAhciPort   The AHCI port.
- * @param   pAhciReq    The request.
- * @param   fForceFree  Flag whether to force a free
+ * @copydoc{AHCIR3MEMCOPYCALLBACK}
  */
-static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFree)
+static DECLCALLBACK(void) ahciR3CopyBufferToGuestWorker(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
+                                                        size_t cbCopy, size_t *pcbSkip)
 {
-    if (   pAhciReq->cAllocTooMuch >= AHCI_MAX_ALLOC_TOO_MUCH
-        || fForceFree)
+    size_t cbSkipped = RT_MIN(cbCopy, *pcbSkip);
+    cbCopy   -= cbSkipped;
+    GCPhys   += cbSkipped;
+    *pcbSkip -= cbSkipped;
+
+    while (cbCopy)
     {
-        if (pAhciReq->cbAlloc)
-        {
-            pAhciPort->pDrvMedia->pfnIoBufFree(pAhciPort->pDrvMedia, pAhciReq->pvAlloc, pAhciReq->cbAlloc);
-            pAhciReq->cbAlloc = 0;
-            pAhciReq->cAllocTooMuch = 0;
-        }
+        size_t cbSeg = cbCopy;
+        void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
+
+        AssertPtr(pvSeg);
+        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvSeg, cbSeg);
+        GCPhys += cbSeg;
+        cbCopy -= cbSeg;
     }
+}
+
+/**
+ * Walks the PRDTL list copying data between the guest and host memory buffers.
+ *
+ * @returns Amount of bytes copied.
+ * @param   pThis          The AHCI controller device instance.
+ * @param   pAhciReq       AHCI request structure.
+ * @param   pfnCopyWorker  The copy method to apply for each guest buffer.
+ * @param   pSgBuf         The host S/G buffer.
+ * @param   cbSkip         How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy         How many bytes to copy.
+ */
+static size_t ahciR3PrdtlWalk(PAHCI pThis, PAHCIREQ pAhciReq,
+                              PAHCIR3MEMCOPYCALLBACK pfnCopyWorker,
+                              PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
+{
+    RTGCPHYS GCPhysPrdtl = pAhciReq->GCPhysPrdtl;
+    unsigned cPrdtlEntries = pAhciReq->cPrdtlEntries;
+    size_t cbCopied = 0;
+
+    /*
+     * Add the amount to skip to the host buffer size to avoid a
+     * few conditionals later on.
+     */
+    cbCopy += cbSkip;
+
+    AssertMsgReturn(cPrdtlEntries > 0, ("Copying 0 bytes is not possible\n"), 0);
+
+    do
+    {
+        SGLEntry aPrdtlEntries[32];
+        uint32_t cPrdtlEntriesRead = cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries)
+                                   ? cPrdtlEntries
+                                   : RT_ELEMENTS(aPrdtlEntries);
+
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysPrdtl, &aPrdtlEntries[0],
+                          cPrdtlEntriesRead * sizeof(SGLEntry));
+
+        for (uint32_t i = 0; (i < cPrdtlEntriesRead) && cbCopy; i++)
+        {
+            RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(aPrdtlEntries[i].u32DBAUp, aPrdtlEntries[i].u32DBA);
+            uint32_t cbThisCopy = (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
+
+            cbThisCopy = (uint32_t)RT_MIN(cbThisCopy, cbCopy);
+
+            /* Copy into SG entry. */
+            pfnCopyWorker(pThis, GCPhysAddrDataBase, pSgBuf, cbThisCopy, &cbSkip);
+
+            cbCopy   -= cbThisCopy;
+            cbCopied += cbThisCopy;
+        }
+
+        GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
+        cPrdtlEntries -= cPrdtlEntriesRead;
+    } while (cPrdtlEntries && cbCopy);
+
+    if (cbCopied < cbCopy)
+        pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
+
+    return cbCopied;
 }
 
 /**
  * Copies a data buffer into the S/G buffer set up by the guest.
  *
  * @returns Amount of bytes copied to the PRDTL.
- * @param   pDevIns        Pointer to the device instance data.
+ * @param   pThis          The AHCI controller device instance.
  * @param   pAhciReq       AHCI request structure.
- * @param   pvBuf          The buffer to copy from.
- * @param   cbBuf          The size of the buffer.
+ * @param   pSgBuf         The S/G buffer to copy from.
+ * @param   cbSkip         How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy         How many bytes to copy.
  */
-static uint32_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, void const *pvBuf, size_t cbBuf)
+static size_t ahciR3CopySgBufToPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, PRTSGBUF pSgBuf,
+                                     size_t cbSkip, size_t cbCopy)
 {
-    uint8_t const *pbBuf = (uint8_t const *)pvBuf;
-    SGLEntry aPrdtlEntries[32];
-    RTGCPHYS GCPhysPrdtl = pAhciReq->GCPhysPrdtl;
-    unsigned cPrdtlEntries = pAhciReq->cPrdtlEntries;
-    uint32_t cbCopied = 0;
-
-    AssertMsgReturn(cPrdtlEntries > 0, ("Copying 0 bytes is not possible\n"), 0);
-
-    do
-    {
-        uint32_t cPrdtlEntriesRead = cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries)
-                                   ? cPrdtlEntries
-                                   : RT_ELEMENTS(aPrdtlEntries);
-
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
-
-        for (uint32_t i = 0; (i < cPrdtlEntriesRead) && cbBuf; i++)
-        {
-            RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(aPrdtlEntries[i].u32DBAUp, aPrdtlEntries[i].u32DBA);
-            uint32_t cbThisCopy = (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
-
-            cbThisCopy = (uint32_t)RT_MIN(cbThisCopy, cbBuf);
-
-            /* Copy into SG entry. */
-            PDMDevHlpPCIPhysWrite(pDevIns, GCPhysAddrDataBase, pbBuf, cbThisCopy);
-
-            pbBuf    += cbThisCopy;
-            cbBuf    -= cbThisCopy;
-            cbCopied += cbThisCopy;
-        }
-
-        GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
-        cPrdtlEntries -= cPrdtlEntriesRead;
-    } while (cPrdtlEntries && cbBuf);
-
-    if (cbCopied < cbBuf)
-        pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
-
-    return cbCopied;
+    return ahciR3PrdtlWalk(pThis, pAhciReq, ahciR3CopyBufferToGuestWorker,
+                           pSgBuf, cbSkip, cbCopy);
 }
 
 /**
  * Copies the S/G buffer into a data buffer.
  *
- * @returns Amount of bytes copied to the PRDTL.
- * @param   pDevIns        Pointer to the device instance data.
+ * @returns Amount of bytes copied from the PRDTL.
+ * @param   pThis          The AHCI controller device instance.
  * @param   pAhciReq       AHCI request structure.
- * @param   pvBuf          The buffer to copy to.
- * @param   cbBuf          The size of the buffer.
+ * @param   pSgBuf         The S/G buffer to copy into.
+ * @param   cbSkip         How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy         How many bytes to copy.
  */
-static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
-                                void *pvBuf, size_t cbBuf)
+static size_t ahciR3CopySgBufFromPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, PRTSGBUF pSgBuf,
+                                       size_t cbSkip, size_t cbCopy)
 {
-    uint8_t *pbBuf = (uint8_t *)pvBuf;
-    SGLEntry aPrdtlEntries[32];
-    RTGCPHYS GCPhysPrdtl = pAhciReq->GCPhysPrdtl;
-    unsigned cPrdtlEntries = pAhciReq->cPrdtlEntries;
-    size_t cbCopied = 0;
-
-    AssertMsgReturn(cPrdtlEntries > 0, ("Copying 0 bytes is not possible\n"), 0);
-
-    do
-    {
-        uint32_t cPrdtlEntriesRead =   (cPrdtlEntries < RT_ELEMENTS(aPrdtlEntries))
-                                     ? cPrdtlEntries
-                                     : RT_ELEMENTS(aPrdtlEntries);
-
-        PDMDevHlpPhysRead(pDevIns, GCPhysPrdtl, &aPrdtlEntries[0], cPrdtlEntriesRead * sizeof(SGLEntry));
-
-        for (uint32_t i = 0; (i < cPrdtlEntriesRead) && cbBuf; i++)
-        {
-            RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(aPrdtlEntries[i].u32DBAUp, aPrdtlEntries[i].u32DBA);
-            uint32_t cbThisCopy = (aPrdtlEntries[i].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
-
-            cbThisCopy = (uint32_t)RT_MIN(cbThisCopy, cbBuf);
-
-            /* Copy into buffer. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysAddrDataBase, pbBuf, cbThisCopy);
-
-            pbBuf    += cbThisCopy;
-            cbBuf    -= cbThisCopy;
-            cbCopied += cbThisCopy;
-        }
-
-        GCPhysPrdtl   += cPrdtlEntriesRead * sizeof(SGLEntry);
-        cPrdtlEntries -= cPrdtlEntriesRead;
-    } while (cPrdtlEntries && cbBuf);
-
-    if (cbCopied < cbBuf)
-        pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
-
-    return cbCopied;
+    return ahciR3PrdtlWalk(pThis, pAhciReq, ahciR3CopyBufferFromGuestWorker,
+                           pSgBuf, cbSkip, cbCopy);
 }
 
 /**
- * Allocate I/O memory and copies the guest buffer for writes.
+ * Copy a simple memory buffer to the guest memory buffer.
  *
- * @returns VBox status code.
- * @param   pAhciPort   The AHCI port.
- * @param   pAhciReq    The request state.
- * @param   cbTransfer  Amount of bytes to allocate.
+ * @returns Amount of bytes copied from the PRDTL.
+ * @param   pThis          The AHCI controller device instance.
+ * @param   pAhciReq       AHCI request structure.
+ * @param   pvSrc          The buffer to copy from.
+ * @param   cbSrc          How many bytes to copy.
+ * @param   cbSkip         How many bytes to skip initially.
  */
-static int ahciIoBufAllocate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbTransfer)
+static size_t ahciR3CopyBufferToPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, const void *pvSrc,
+                                      size_t cbSrc, size_t cbSkip)
 {
-    AssertMsg(   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
-              || pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE,
-              ("Allocating I/O memory for a non I/O request is not allowed\n"));
-
-    pAhciReq->u.Io.DataSeg.pvSeg = ahciReqMemAlloc(pAhciPort, pAhciReq, cbTransfer);
-    if (!pAhciReq->u.Io.DataSeg.pvSeg)
-        return VERR_NO_MEMORY;
-
-    pAhciReq->u.Io.DataSeg.cbSeg = cbTransfer;
-    if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
-    {
-        ahciCopyFromPrdtl(pAhciPort->pDevInsR3, pAhciReq,
-                          pAhciReq->u.Io.DataSeg.pvSeg,
-                          cbTransfer);
-    }
-    return VINF_SUCCESS;
+    RTSGSEG Seg;
+    RTSGBUF SgBuf;
+    Seg.pvSeg = (void *)pvSrc;
+    Seg.cbSeg = cbSrc;
+    RTSgBufInit(&SgBuf, &Seg, 1);
+    return ahciR3CopySgBufToPrdtl(pThis, pAhciReq, &SgBuf, cbSkip, cbSrc);
 }
 
 /**
- * Frees the I/O memory of the given request and updates the guest buffer if necessary.
+ * Copy a data from the geust memory buffer into a simple memory buffer.
  *
- * @returns nothing.
- * @param   pAhciPort    The AHCI port.
- * @param   pAhciReq     The request state.
- * @param   fCopyToGuest Flag whether to update the guest buffer if necessary.
- *                       Nothing is copied if false even if the request was a read.
+ * @returns Amount of bytes copied from the PRDTL.
+ * @param   pThis          The AHCI controller device instance.
+ * @param   pAhciReq       AHCI request structure.
+ * @param   pvDst          The buffer to copy into.
+ * @param   cbDst          How many bytes to copy.
  */
-static void ahciIoBufFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq,
-                          bool fCopyToGuest)
+static size_t ahciR3CopyBufferFromPrdtl(PAHCI pThis, PAHCIREQ pAhciReq, void *pvDst,
+                                        size_t cbDst)
 {
-    AssertMsg(   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
-              || pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE,
-              ("Freeing I/O memory for a non I/O request is not allowed\n"));
-
-    if (   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
-        && fCopyToGuest)
-    {
-        if (pAhciReq->u.Io.pfnPostProcess)
-        {
-            void *pv = NULL;
-            size_t cb = 0;
-            int rc = pAhciReq->u.Io.pfnPostProcess(pAhciReq, &pv, &cb);
-
-            if (RT_SUCCESS(rc))
-            {
-                pAhciReq->cbTransfer = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, pv, cb);
-                RTMemFree(pv);
-            }
-        }
-        else
-            ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, pAhciReq->u.Io.DataSeg.pvSeg, pAhciReq->u.Io.DataSeg.cbSeg);
-    }
-
-    ahciReqMemFree(pAhciPort, pAhciReq, false /* fForceFree */);
-    pAhciReq->u.Io.DataSeg.pvSeg = NULL;
-    pAhciReq->u.Io.DataSeg.cbSeg = 0;
+    RTSGSEG Seg;
+    RTSGBUF SgBuf;
+    Seg.pvSeg = pvDst;
+    Seg.cbSeg = cbDst;
+    RTSgBufInit(&SgBuf, &Seg, 1);
+    return ahciR3CopySgBufFromPrdtl(pThis, pAhciReq, &SgBuf, 0 /* cbSkip */, cbDst);
 }
-
 
 /**
  * Cancels all active tasks on the port.
@@ -5863,7 +5839,10 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
                                                    uTag, 0 /* fFlags */);
     if (RT_SUCCESS(rc))
+    {
         pAhciReq->hIoReq = hIoReq;
+        pAhciReq->pfnPostProcess = NULL;
+    }
     else
         pAhciReq = NULL;
     return pAhciReq;
@@ -5913,13 +5892,11 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     {
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
         {
-            ahciIoBufFree(pAhciPort, pAhciReq, true /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fReading = 0;
         }
         else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
-            ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fWriting = 0;
         }
@@ -6014,9 +5991,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          */
         fCanceled = true;
 
-        if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_FLUSH)
-            ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
-
         /* Leave a log message about the canceled request. */
         if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
         {
@@ -6065,16 +6039,27 @@ static DECLCALLBACK(int) ahciR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDM
                                                 void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
                                                 size_t cbCopy)
 {
-    RT_NOREF2(pInterface, hIoReq);
+    RT_NOREF1(hIoReq);
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     int rc = VINF_SUCCESS;
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
-    if (offDst + cbCopy <= pIoReq->u.Io.DataSeg.cbSeg)
-    {
-        void *pvBuf = (uint8_t *)pIoReq->u.Io.DataSeg.pvSeg + offDst;
-        RTSgBufCopyToBuf(pSgBuf, pvBuf, cbCopy);
-    }
+    if (!pIoReq->pfnPostProcess)
+        ahciR3CopySgBufToPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pSgBuf, offDst, cbCopy);
     else
+    {
+        /* Post process data and copy afterwards. */
+        void *pv = NULL;
+        size_t cb = 0;
+        rc = pIoReq->pfnPostProcess(pIoReq, pSgBuf, cbCopy, offDst, &pv, &cb);
+        if (RT_SUCCESS(rc))
+        {
+            ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pv, cb, offDst);
+            RTMemFree(pv);
+        }
+    }
+
+    if (pIoReq->fFlags & AHCI_REQ_OVERFLOW)
         rc = VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
 
     return rc;
@@ -6087,16 +6072,13 @@ static DECLCALLBACK(int) ahciR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMME
                                               void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
                                               size_t cbCopy)
 {
-    RT_NOREF2(pInterface, hIoReq);
+    RT_NOREF1(hIoReq);
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
     int rc = VINF_SUCCESS;
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
-    if (offSrc + cbCopy <= pIoReq->u.Io.DataSeg.cbSeg)
-    {
-        void *pvBuf = (uint8_t *)pIoReq->u.Io.DataSeg.pvSeg + offSrc;
-        RTSgBufCopyFromBuf(pSgBuf, pvBuf, cbCopy);
-    }
-    else
+    ahciR3CopySgBufFromPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pSgBuf, offSrc, cbCopy);
+    if (pIoReq->fFlags & AHCI_REQ_OVERFLOW)
         rc = VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
 
     return rc;
@@ -6171,7 +6153,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 ahciIdentifySS(pAhciPort, u16Temp);
 
                 /* Copy the buffer. */
-                uint32_t cbCopied = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, &u16Temp[0], sizeof(u16Temp));
+                uint32_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
+                                                            &u16Temp[0], sizeof(u16Temp), 0 /* cbSkip */);
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
@@ -6376,7 +6359,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 }
 
                 /* Copy the buffer. */
-                uint32_t cbCopied = ahciCopyToPrdtl(pAhciPort->pDevInsR3, pAhciReq, &aBuf[offLogRead], cbLogRead);
+                uint32_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
+                                                            &aBuf[offLogRead], cbLogRead, 0 /* cbSkip */);
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
@@ -6733,26 +6717,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     pAhciReq->enmType = enmType;
 
                     if (enmType != PDMMEDIAEXIOREQTYPE_INVALID)
-                    {
-                        if (   enmType != PDMMEDIAEXIOREQTYPE_FLUSH
-                            && enmType != PDMMEDIAEXIOREQTYPE_DISCARD)
-                        {
-                            STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
-
-                            rc = ahciIoBufAllocate(pAhciPort, pAhciReq, pAhciReq->cbTransfer);
-                            if (RT_FAILURE(rc))
-                            {
-                                /* In case we can't allocate enough memory fail the request with an overflow error. */
-                                AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
-                                pAhciReq->fFlags |= AHCI_REQ_OVERFLOW;
-                            }
-                        }
-
-                        if (!(pAhciReq->fFlags & AHCI_REQ_OVERFLOW))
-                            fReqCanceled = ahciR3ReqSubmit(pAhciPort, pAhciReq, enmType);
-                        else /* Overflow is handled in completion routine. */
-                            fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
-                    }
+                        fReqCanceled = ahciR3ReqSubmit(pAhciPort, pAhciReq, enmType);
                     else
                         fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
                 } /* Command */
