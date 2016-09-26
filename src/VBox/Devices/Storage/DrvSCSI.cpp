@@ -151,7 +151,7 @@ static DECLCALLBACK(int) drvscsiReqAlloc(VSCSILUN hVScsiLun, void *pvScsiLunUser
     PDMMEDIAEXIOREQ hIoReq;
     void *pvIoReqAlloc;
     int rc = pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, &hIoReq, &pvIoReqAlloc, u64Tag,
-                                               PDMIMEDIAEX_F_SYNC);
+                                               PDMIMEDIAEX_F_DEFAULT);
     if (RT_SUCCESS(rc))
     {
         PPDMMEDIAEXIOREQ phIoReq = (PPDMMEDIAEXIOREQ)pvIoReqAlloc;
