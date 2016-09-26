@@ -52,7 +52,11 @@ endif
 #
 # Globals.
 #
+# Tip: Use VBOX_CAB_COMPRESSION_LEVEL=none on the kmk command line when working
+#      on the installer.
+#
 VBOX_WIN_INST_MAKEFILE_DEP := $(MAKEFILE_CURRENT)
+VBOX_CAB_COMPRESSION_LEVEL := high
 
 VBOX_PATH_WIN_INST_SRC := $(PATH_SUB_CURRENT)
 VBOX_WIN_INST_OUT_DIR  := $(PATH_TARGET)/Installer/win
@@ -400,17 +404,14 @@ endif
 	$(APPEND) $@ '</Include>'
 
 #
-# .MSI linking (all languages).
-#
-# Create per language MSIs.  Only the en_US one will be used in full, the others
-# will be diffed against and merged into it.
+# .MSI linking of the main installer (en_US).
 #
 # Note: This will clean up any previous .msi and .wixpdb files to prevent dep
 #       build boxes from filling up with old files.
 #
 define def_vbox_link_msi
 $(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).msi \
-$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && $(lang) == "en_US", + $(VBOX_WIN_INST_OUT_DIR)/common.cab,): \
+$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), + $(VBOX_WIN_INST_OUT_DIR)/common.cab,): \
 		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj \
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
@@ -431,19 +432,14 @@ $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && $(lang) == "en_US", + $(VBOX_WI
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$@ \
 		$$< \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
-			$(VBOX_PATH_WIX)/difxapp_x86.wixlib, \
-			$(VBOX_PATH_WIX)/difxapp_x64.wixlib)
+		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
 ifdef VBOX_WITH_COMBINED_PACKAGE
- ifeq ($(lang),en_US)
 	$(MV) -f -- $$(@D)/common.cab $$(@D)/../common.cab
- endif
 endif
-	$(RM) -f -- $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb $$(@D)/common.cab
 endef
 
-$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
-	$(eval $(def_vbox_link_msi)))
+$(foreach lang, en_US, $(eval $(def_vbox_link_msi)))
+
 
 #
 # Merge module linking (all languages).
@@ -469,9 +465,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm: \
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$@ \
 		$$< \
-		$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86", \
-			$(VBOX_PATH_WIX)/difxapp_x86.wixlib, \
-			$(VBOX_PATH_WIX)/difxapp_x64.wixlib)
+		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
 	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst
 	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
 endef
@@ -551,8 +545,8 @@ $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MAJOR_INST=$(VBOX_VERSION_MAJOR)' \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
-		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(if-expr $(lang) == "en_US",high,none)' \
-		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(if-expr $(lang) == "en_US" && $(KBUILD_TARGET_ARCH) == "amd64",high,none)' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(if-expr $(lang) == "en_US",$(VBOX_CAB_COMPRESSION_LEVEL),none)' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(if-expr $(lang) == "en_US" && $(KBUILD_TARGET_ARCH) == "amd64",$(VBOX_CAB_COMPRESSION_LEVEL),none)' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		$(if $(VBOX_WITH_MSM_INSTALL), \
@@ -644,8 +638,8 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MAJOR_INST=$(VBOX_VERSION_MAJOR)' \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
-		-E 'VBOX_CAB_COMPRESSION_LEVEL=high' \
-		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=high' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL=$(VBOX_CAB_COMPRESSION_LEVEL)' \
+		-E 'VBOX_CAB_COMPRESSION_LEVEL_COMMON=$(VBOX_CAB_COMPRESSION_LEVEL)' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ICON_FILE))' \
@@ -744,9 +738,30 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi: $(PATH_SUB_CURRENT)/VBoxKey.wxi $(VBOX_VER
 define def_vbox_create_mst
 $(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst: \
 		$(VBOX_WIN_INST_OUT_DIR)/en_US/$(PACKAGE_NAME_LANG)_en_US.msi \
-		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(PACKAGE_NAME_LANG)_$(lang).msi
-	$(call MSG_L1,Creating language diff ($(lang)))
+		$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wixobj \
+		$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
+		$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
+		$(PATH_STAGE_BIN)/VBoxInstallHelper.dll \
+		$(VBOX_SVN_REV_KMK) \
+		$(VBOX_WIN_INST_MAKEFILE_DEP) \
+		$(if-expr defined(VBOX_WITH_MSI_HACK),$(MsiHack_0_OUTDIR)/MsiHack.dll,) \
+		$(if-expr defined(VBOX_WITH_MSI_HACK),$(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
+		| $$$$(dir $$$$@)
+	$(call MSG_L1,Creating language diff for $(lang))
+	kmk_time $(VBOX_PATH_WIX)/light.exe -v -nologo \
+		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
+		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
+		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+               $(if-expr defined(VBOX_WITH_MSI_HACK),-ext $(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
+		$(VBOX_MSI_ICE_IGNORE) \
+		-out $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
+		$$(@D)/VirtualBox_$(lang).wixobj \
+		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
 	$(REDIRECT) -C $$(@D) -- $(VBOX_PATH_MSITRAN) -g $$< $(PACKAGE_NAME_LANG)_$(lang).msi $(lang).mst
+	$(RM) -f -- $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
+		$$(@D)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
+		$$(@D)/common.cab
 
 endef
 
