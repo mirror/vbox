@@ -3927,7 +3927,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
     uint32_t cbTransfer;
     void *pvBuf = NULL;
 
-    cbTransfer = pAhciReq->cbTransfer;
+    cbTransfer = (uint32_t)pAhciReq->cbTransfer;
 
     if (cbTransfer)
     {
