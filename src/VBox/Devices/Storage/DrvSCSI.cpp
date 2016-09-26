@@ -250,7 +250,7 @@ static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun, void *pvS
             AssertRC(rc);
 
             pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-            rc = pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, paRanges, cRanges);
+            rc = pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, cRanges);
             if (   RT_FAILURE(rc)
                 && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
                 LogRel(("SCSI#%u: Discard returned rc=%Rrc\n",
@@ -477,6 +477,33 @@ static DECLCALLBACK(int) drvscsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMM
     }
 
     return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqQueryDiscardRanges}
+ */
+static DECLCALLBACK(int) drvscsiIoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                        void *pvIoReqAlloc, uint32_t idxRangeStart,
+                                                        uint32_t cRanges, PRTRANGE paRanges,
+                                                        uint32_t *pcRanges)
+{
+    RT_NOREF2(pInterface, hIoReq);
+
+    VSCSIIOREQ hVScsiIoReq = DRVSCSI_PDMMEDIAEXIOREQ_2_VSCSIIOREQ(pvIoReqAlloc);
+    PCRTRANGE paRangesVScsi;
+    unsigned cRangesVScsi;
+
+    int rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRangesVScsi, &cRangesVScsi);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cRangesCopy = RT_MIN(cRangesVScsi - idxRangeStart, cRanges);
+        Assert(   idxRangeStart < cRangesVScsi
+               && (idxRangeStart + cRanges) <= cRangesVScsi);
+
+        memcpy(paRanges, &paRangesVScsi[idxRangeStart], cRangesCopy * sizeof(RTRANGE));
+        *pcRanges = cRangesCopy;
+    }
+    return rc;
 }
 
 /**
@@ -777,6 +804,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IPortEx.pfnIoReqCompleteNotify       = drvscsiIoReqCompleteNotify;
     pThis->IPortEx.pfnIoReqCopyFromBuf          = drvscsiIoReqCopyFromBuf;
     pThis->IPortEx.pfnIoReqCopyToBuf            = drvscsiIoReqCopyToBuf;
+    pThis->IPortEx.pfnIoReqQueryDiscardRanges   = drvscsiIoReqQueryDiscardRanges;
     pThis->IPortEx.pfnIoReqStateChanged         = drvscsiIoReqStateChanged;
 
     /* Query the SCSI port interface above. */

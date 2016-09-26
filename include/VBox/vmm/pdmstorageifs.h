@@ -712,6 +712,23 @@ typedef struct PDMIMEDIAEXPORT
                                                   size_t cbCopy));
 
     /**
+     * Queries the specified amount of ranges to discard from the callee for the given I/O request.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   idxRangeStart   The range index to start with.
+     * @param   cRanges         How man ranges can be stored in the provided array.
+     * @param   paRanges        Where to store the ranges on success.
+     * @param   *pcRanges       Where to store the number of ranges copied over on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQueryDiscardRanges, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                           void *pvIoReqAlloc, uint32_t idxRangeStart,
+                                                           uint32_t cRanges, PRTRANGE paRanges,
+                                                           uint32_t *pcRanges));
+
+    /**
      * Notify the request owner about a state change for the request.
      *
      * @returns nothing.
@@ -726,7 +743,7 @@ typedef struct PDMIMEDIAEXPORT
 } PDMIMEDIAEXPORT;
 
 /** PDMIMEDIAAEXPORT interface ID. */
-#define PDMIMEDIAEXPORT_IID                  "779f38d0-bcaa-4a49-af2b-6f63edd4181a"
+#define PDMIMEDIAEXPORT_IID                  "253e3741-9d79-4a8b-9a1d-81f4a16054a7"
 
 
 /** Pointer to an extended media interface. */
@@ -877,11 +894,11 @@ typedef struct PDMIMEDIAEX
      * @retval  VINF_SUCCESS if the request completed successfully.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   hIoReq          The I/O request to associate the discard with.
-     * @param   paRanges        Array of ranges to discard.
-     * @param   cRanges         Number of entries in the array.
+     * @param   cRangesMax      The maximum number of ranges this request has associated, this must not be accurate
+     *                          but can actually be bigger than the amount of ranges actually available.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoReqDiscard, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges));
+    DECLR3CALLBACKMEMBER(int, pfnIoReqDiscard, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, unsigned cRangesMax));
 
     /**
      * Send a raw command to the underlying device (CDROM).
@@ -981,7 +998,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "c36b27b0-6570-4e9c-b1ed-d6f4b87129a4"
+#define PDMIMEDIAEX_IID                      "d4c66196-13f0-433d-8e87-e4b957cb0194"
 
 /**
  * Data direction.

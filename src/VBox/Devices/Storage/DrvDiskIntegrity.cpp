@@ -1501,6 +1501,21 @@ static DECLCALLBACK(int) drvdiskintIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
 }
 
 /**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqQueryDiscardRanges}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                           void *pvIoReqAlloc, uint32_t idxRangeStart,
+                                                           uint32_t cRanges, PRTRANGE paRanges,
+                                                           uint32_t *pcRanges)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaExPort);
+    PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvIoReqAlloc;
+
+    return pThis->pDrvMediaExPort->pfnIoReqQueryDiscardRanges(pThis->pDrvMediaExPort, hIoReq, pIoReq + 1, idxRangeStart,
+                                                              cRanges, paRanges, pcRanges);
+}
+
+/**
  * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqStateChanged}
  */
 static DECLCALLBACK(void) drvdiskintIoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
@@ -1770,10 +1785,10 @@ static DECLCALLBACK(int) drvdiskintIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAE
 /**
  * @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard}
  */
-static DECLCALLBACK(int) drvdiskintIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges)
+static DECLCALLBACK(int) drvdiskintIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, unsigned cRangesMax)
 {
     PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
-    return pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, paRanges, cRanges);
+    return pThis->pDrvMediaEx->pfnIoReqDiscard(pThis->pDrvMediaEx, hIoReq, cRangesMax);
 }
 
 /**
@@ -2007,10 +2022,11 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMediaPort.pfnQueryDeviceLocation = drvdiskintQueryDeviceLocation;
 
     /* IMediaExPort. */
-    pThis->IMediaExPort.pfnIoReqCompleteNotify = drvdiskintIoReqCompleteNotify;
-    pThis->IMediaExPort.pfnIoReqCopyFromBuf    = drvdiskintIoReqCopyFromBuf;
-    pThis->IMediaExPort.pfnIoReqCopyToBuf      = drvdiskintIoReqCopyToBuf;
-    pThis->IMediaExPort.pfnIoReqStateChanged   = drvdiskintIoReqStateChanged;
+    pThis->IMediaExPort.pfnIoReqCompleteNotify     = drvdiskintIoReqCompleteNotify;
+    pThis->IMediaExPort.pfnIoReqCopyFromBuf        = drvdiskintIoReqCopyFromBuf;
+    pThis->IMediaExPort.pfnIoReqCopyToBuf          = drvdiskintIoReqCopyToBuf;
+    pThis->IMediaExPort.pfnIoReqQueryDiscardRanges = drvdiskintIoReqQueryDiscardRanges;
+    pThis->IMediaExPort.pfnIoReqStateChanged       = drvdiskintIoReqStateChanged;
 
     /* Query the media port interface above us. */
     pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);

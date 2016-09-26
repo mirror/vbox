@@ -1523,7 +1523,7 @@ static DECLCALLBACK(int) drvramdiskIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAE
 /**
  * @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard}
  */
-static DECLCALLBACK(int) drvramdiskIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, PCRTRANGE paRanges, unsigned cRanges)
+static DECLCALLBACK(int) drvramdiskIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, unsigned cRangesMax)
 {
     PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMediaEx);
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
@@ -1535,25 +1535,34 @@ static DECLCALLBACK(int) drvramdiskIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDI
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
-    pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_DISCARD;
-    pIoReq->tsSubmit = RTTimeMilliTS();
-    /* Copy the ranges over because they might not be valid anymore when this method returns. */
-    pIoReq->Discard.paRanges = (PRTRANGE)RTMemDup(paRanges, cRanges * sizeof(RTRANGE));
+    /* Copy the ranges over now, this can be optimized in the future. */
+    pIoReq->Discard.paRanges = (PRTRANGE)RTMemAllocZ(cRangesMax * sizeof(RTRANGE));
     if (RT_UNLIKELY(!pIoReq->Discard.paRanges))
         return VERR_NO_MEMORY;
 
-    bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
-    if (RT_UNLIKELY(!fXchg))
+    int rc = pThis->pDrvMediaExPort->pfnIoReqQueryDiscardRanges(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
+                                                                0, cRangesMax, pIoReq->Discard.paRanges,
+                                                                &pIoReq->Discard.cRanges);
+    if (RT_SUCCESS(rc))
     {
-        /* Must have been canceled inbetween. */
-        Assert(pIoReq->enmState == VDIOREQSTATE_CANCELED);
-        return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
+        pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_DISCARD;
+        pIoReq->tsSubmit = RTTimeMilliTS();
+
+        bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
+        if (RT_UNLIKELY(!fXchg))
+        {
+            /* Must have been canceled inbetween. */
+            Assert(pIoReq->enmState == VDIOREQSTATE_CANCELED);
+            return VERR_PDM_MEDIAEX_IOREQ_CANCELED;
+        }
+
+        ASMAtomicIncU32(&pThis->cIoReqsActive);
+
+        rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
+                              (PFNRT)drvramdiskIoReqDiscardWorker, 2, pThis, pIoReq);
     }
 
-    ASMAtomicIncU32(&pThis->cIoReqsActive);
-
-    return RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                            (PFNRT)drvramdiskIoReqDiscardWorker, 2, pThis, pIoReq);
+    return rc;
 }
 
 /**
