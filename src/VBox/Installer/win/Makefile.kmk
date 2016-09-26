@@ -797,7 +797,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi: \
 	$(call VBOX_SIGN_FILE_FN,$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
 
 # Copy multilingual installer to bin.
-$(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi
+$(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi | $$(dir $$@)
 	$(QUIET)$(RM) -f $(wildcard $(@D)/$(PACKAGE_BASE)-r*.msi)
 	$(INSTALL_STAGING) -- $< $@
 
