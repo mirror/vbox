@@ -2807,6 +2807,9 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
                 if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
                     LogRel(("VD#%u: Aborted flush returned rc=%Rrc\n",
                             pThis->pDrvIns->iInstance, rcReq));
+                else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
+                    LogRel(("VD#%u: Aborted discard returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rcReq));
                 else
                     LogRel(("VD#%u: Aborted %s (%u bytes left) returned rc=%Rrc\n",
                             pThis->pDrvIns->iInstance,
@@ -2819,6 +2822,9 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
             {
                 if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
                     LogRel(("VD#%u: Flush returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rcReq));
+                else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
+                    LogRel(("VD#%u: Discard returned rc=%Rrc\n",
                             pThis->pDrvIns->iInstance, rcReq));
                 else
                     LogRel(("VD#%u: %s (%u bytes left) returned rc=%Rrc\n",
