@@ -2374,53 +2374,6 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
     return rc;
 }
 
-/** @interface_method_impl{PDMIMEDIA,pfnIoBufAlloc} */
-static DECLCALLBACK(int) drvvdIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
-{
-    LogFlowFunc(("\n"));
-    int rc;
-    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-
-    /* Configured encryption requires locked down memory. */
-    if (pThis->pCfgCrypto)
-        rc = RTMemSaferAllocZEx(ppvNew, cb, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
-    else
-    {
-        cb = RT_ALIGN_Z(cb, _4K);
-        void *pvNew = RTMemPageAlloc(cb);
-        if (RT_LIKELY(pvNew))
-        {
-            *ppvNew = pvNew;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @interface_method_impl{PDMIMEDIA,pfnIoBufFree} */
-static DECLCALLBACK(int) drvvdIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
-{
-    LogFlowFunc(("\n"));
-    int rc = VINF_SUCCESS;
-    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-
-    if (pThis->pCfgCrypto)
-        RTMemSaferFree(pv, cb);
-    else
-    {
-        cb = RT_ALIGN_Z(cb, _4K);
-        RTMemPageFree(pv, cb);
-    }
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-
 /* -=-=-=-=- IMount -=-=-=-=- */
 
 /** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
@@ -4350,8 +4303,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMedia.pfnGetType             = drvvdGetType;
     pThis->IMedia.pfnGetUuid             = drvvdGetUuid;
     pThis->IMedia.pfnDiscard             = drvvdDiscard;
-    pThis->IMedia.pfnIoBufAlloc          = drvvdIoBufAlloc;
-    pThis->IMedia.pfnIoBufFree           = drvvdIoBufFree;
     pThis->IMedia.pfnSendCmd             = NULL;
 
     /* IMount */

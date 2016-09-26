@@ -446,30 +446,9 @@ typedef struct PDMIMEDIA
      */
     DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges));
 
-    /**
-     * Allocate buffer memory which is suitable for I/O and might have special proerties for secure
-     * environments (non-pageable memory for sensitive data which should not end up on the disk).
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cb              Amount of memory to allocate.
-     * @param   ppvNew          Where to store the pointer to the buffer on success.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIoBufAlloc, (PPDMIMEDIA pInterface, size_t cb, void **ppvNew));
-
-    /**
-     * Free memory allocated with PDMIMEDIA::pfnIoBufAlloc().
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pv              Pointer to the memory to free.
-     * @param   cb              Amount of bytes given in PDMIMEDIA::pfnIoBufAlloc().
-     */
-    DECLR3CALLBACKMEMBER(int, pfnIoBufFree, (PPDMIMEDIA pInterface, void *pv, size_t cb));
-
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "352f2fa2-52c0-4e51-ba3c-9f59b7043218"
+#define PDMIMEDIA_IID                           "855b4998-0cd2-45d8-8da3-fe9a47504abb"
 
 
 /**

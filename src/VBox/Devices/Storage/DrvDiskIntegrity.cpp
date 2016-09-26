@@ -950,24 +950,6 @@ static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRa
     return rc;
 }
 
-/** @interface_method_impl{PDMIMEDIA,pfnIoBufAlloc} */
-static DECLCALLBACK(int) drvdiskintIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
-{
-    LogFlowFunc(("\n"));
-    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
-
-    return pThis->pDrvMedia->pfnIoBufAlloc(pThis->pDrvMedia, cb, ppvNew);
-}
-
-/** @interface_method_impl{PDMIMEDIA,pfnIoBufFree} */
-static DECLCALLBACK(int) drvdiskintIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
-{
-    LogFlowFunc(("\n"));
-    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
-
-    return pThis->pDrvMedia->pfnIoBufFree(pThis->pDrvMedia, pv, cb);
-}
-
 /** @interface_method_impl{PDMIMEDIA,pfnReadPcBios} */
 static DECLCALLBACK(int) drvdiskintReadPcBios(PPDMIMEDIA pInterface,
                                               uint64_t off, void *pvBuf, size_t cbRead)
@@ -1660,8 +1642,6 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnGetUuid             = drvdiskintGetUuid;
     pThis->IMedia.pfnGetSectorSize       = drvdiskintGetSectorSize;
     pThis->IMedia.pfnGetType             = drvdiskintGetType;
-    pThis->IMedia.pfnIoBufAlloc          = drvdiskintIoBufAlloc;
-    pThis->IMedia.pfnIoBufFree           = drvdiskintIoBufFree;
     pThis->IMedia.pfnReadPcBios          = drvdiskintReadPcBios;
 
     /* IMediaEx. */

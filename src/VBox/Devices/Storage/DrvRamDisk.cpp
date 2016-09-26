@@ -623,29 +623,6 @@ static DECLCALLBACK(int) drvramdiskDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRa
     return drvramdiskDiscardRecords(pThis, paRanges, cRanges);
 }
 
-/** @copydoc PDMIMEDIA::pfnIoBufAlloc */
-static DECLCALLBACK(int) drvramdiskIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
-{
-    RT_NOREF1(pInterface);
-
-    int rc = VINF_SUCCESS;
-    void *pv = RTMemAlloc(cb);
-    if (pv)
-        *ppvNew = pv;
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
-/** @copydoc PDMIMEDIA::pfnIoBufFree */
-static DECLCALLBACK(int) drvramdiskIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
-{
-    RT_NOREF2(pInterface, cb);
-    RTMemFree(pv);
-    return VINF_SUCCESS;
-}
-
 /** @copydoc PDMIMEDIA::pfnReadPcBios */
 static DECLCALLBACK(int) drvramdiskReadPcBios(PPDMIMEDIA pInterface,
                                               uint64_t off, void *pvBuf, size_t cbRead)
@@ -1660,8 +1637,6 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnBiosSetLCHSGeometry = drvramdiskBiosSetLCHSGeometry;
     pThis->IMedia.pfnGetUuid             = drvramdiskGetUuid;
     pThis->IMedia.pfnGetSectorSize       = drvramdiskGetSectorSize;
-    pThis->IMedia.pfnIoBufAlloc          = drvramdiskIoBufAlloc;
-    pThis->IMedia.pfnIoBufFree           = drvramdiskIoBufFree;
     pThis->IMedia.pfnReadPcBios          = drvramdiskReadPcBios;
     pThis->IMedia.pfnDiscard             = drvramdiskDiscard;
 

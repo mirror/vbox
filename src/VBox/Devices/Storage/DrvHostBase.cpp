@@ -327,39 +327,6 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnIoBufAlloc} */
-static DECLCALLBACK(int) drvHostBaseIoBufAlloc(PPDMIMEDIA pInterface, size_t cb, void **ppvNew)
-{
-    RT_NOREF(pInterface);
-    LogFlowFunc(("\n"));
-
-    int rc;
-    void *pvNew = RTMemAlloc(cb);
-    if (RT_LIKELY(pvNew))
-    {
-        *ppvNew = pvNew;
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @interface_method_impl{PDMIBLOCK,pfnIoBufFree} */
-static DECLCALLBACK(int) drvHostBaseIoBufFree(PPDMIMEDIA pInterface, void *pv, size_t cb)
-{
-    RT_NOREF(pInterface, cb);
-    LogFlowFunc(("\n"));
-
-    RTMemFree(pv);
-
-    LogFlowFunc(("returns %Rrc\n", VINF_SUCCESS));
-    return VINF_SUCCESS;
-}
-
-
 /** @interface_method_impl{PDMIBLOCKBIOS,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
@@ -1909,8 +1876,6 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType
     pThis->IMedia.pfnGetSize                = drvHostBaseGetSize;
     pThis->IMedia.pfnGetType                = drvHostBaseGetType;
     pThis->IMedia.pfnGetUuid                = drvHostBaseGetUuid;
-    pThis->IMedia.pfnIoBufAlloc             = drvHostBaseIoBufAlloc;
-    pThis->IMedia.pfnIoBufFree              = drvHostBaseIoBufFree;
     pThis->IMedia.pfnBiosGetPCHSGeometry    = drvHostBaseGetPCHSGeometry;
     pThis->IMedia.pfnBiosSetPCHSGeometry    = drvHostBaseSetPCHSGeometry;
     pThis->IMedia.pfnBiosGetLCHSGeometry    = drvHostBaseGetLCHSGeometry;
