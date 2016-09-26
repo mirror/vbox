@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2015 Oracle Corporation
+ * Copyright (C) 2009-2016 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@ provider vboxdd
 
     probe ahci__req__submit(void *pvReq, int iTxDir, uint64_t offStart, uint32_t cbXfer);
     probe ahci__req__submit__timestamp(void *pvReq, uint64_t tsStart);
-    probe ahci__req__completed(void *pvReq, int rcReq, int iState, uint64_t offStart, uint32_t cbXfer);
+    probe ahci__req__completed(void *pvReq, int rcReq, uint64_t offStart, uint32_t cbXfer);
     probe ahci__req__completed__timestamp(void *pvReq, uint64_t tsEnd);
 };
 

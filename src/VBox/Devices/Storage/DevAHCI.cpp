@@ -69,7 +69,7 @@
 #else
 # define VBOXDD_AHCI_REQ_SUBMIT(a,b,c,d)           do { } while (0)
 # define VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(a,b)     do { } while (0)
-# define VBOXDD_AHCI_REQ_COMPLETED(a,b,c,d,e)      do { } while (0)
+# define VBOXDD_AHCI_REQ_COMPLETED(a,b,c,d)        do { } while (0)
 # define VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(a,b)  do { } while (0)
 #endif
 
@@ -243,24 +243,6 @@ typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIREQ pAhciReq, void **ppvProc,
 /** Pointer to a FNAHCIPOSTPROCESS() function. */
 typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
 
-/**
- * Task state.
- */
-typedef enum AHCITXSTATE
-{
-    /** Invalid. */
-    AHCITXSTATE_INVALID = 0,
-    /** Task is not active. */
-    AHCITXSTATE_FREE,
-    /** Task is active */
-    AHCITXSTATE_ACTIVE,
-    /** Task was canceled but the request didn't completed yet. */
-    AHCITXSTATE_CANCELED,
-    /** 32bit hack. */
-    AHCITXSTATE_32BIT_HACK = 0x7fffffff
-} AHCITXSTATE, *PAHCITXSTATE;
-AssertCompileSize(AHCITXSTATE, sizeof(uint32_t));
-
 /** Task encountered a buffer overflow. */
 #define AHCI_REQ_OVERFLOW    RT_BIT_32(0)
 /** Request is a PIO data command, if this flag is not set it either is
@@ -280,8 +262,6 @@ typedef struct AHCIREQ
 {
     /** The I/O request handle from the driver below associated with this request. */
     PDMMEDIAEXIOREQ            hIoReq;
-    /** Task state. */
-    volatile AHCITXSTATE       enmTxState;
     /** Start timestamp of the request. */
     uint64_t                   tsStart;
     /** Tag of the task. */
@@ -5953,10 +5933,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
                                                    uTag, 0 /* fFlags */);
     if (RT_SUCCESS(rc))
-    {
-        pAhciReq->hIoReq     = hIoReq;
-        pAhciReq->enmTxState = AHCITXSTATE_ACTIVE;
-    }
+        pAhciReq->hIoReq = hIoReq;
     else
         pAhciReq = NULL;
     return pAhciReq;
@@ -5970,9 +5947,6 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
  */
 static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    AssertMsg(pAhciReq->enmTxState != AHCITXSTATE_FREE, ("Double free!\n"));
-    pAhciReq->enmTxState = AHCITXSTATE_FREE;
-
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqFree(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
     AssertRC(rc);
 }
@@ -5992,13 +5966,11 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     bool fRedo = false;
     bool fCanceled = false;
     uint64_t tsNow = RTTimeMilliTS();
-    AHCITXSTATE enmTxState = AHCITXSTATE_INVALID;
 
     LogFlowFunc(("pAhciPort=%p pAhciReq=%p rcReq=%d\n",
                  pAhciPort, pAhciReq, rcReq));
 
-    enmTxState = (AHCITXSTATE)ASMAtomicReadU32((volatile uint32_t *)&pAhciReq->enmTxState);
-    VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, enmTxState, pAhciReq->uOffset, pAhciReq->cbTransfer);
+    VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, pAhciReq->uOffset, pAhciReq->cbTransfer);
     VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(pAhciReq, tsNow);
 
     /*
@@ -6145,9 +6117,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
          * Task was canceled, do the cleanup but DO NOT access the guest memory!
          * The guest might use it for other things now because it doesn't know about that task anymore.
          */
-        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_CANCELED || ASMAtomicReadBool(&pAhciPort->fPortReset),
-                  ("Task is not active but wasn't canceled and no port reset is active!\n"));
-
         fCanceled = true;
 
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
