@@ -304,10 +304,6 @@ typedef struct AHCIREQ
     uint64_t                   uOffset;
     /** Number of bytes to transfer. */
     uint32_t                   cbTransfer;
-    /** ATA error register */
-    uint8_t                    uATARegError;
-    /** ATA status register */
-    uint8_t                    uATARegStatus;
     /** Flags for this task. */
     uint32_t                   fFlags;
     /** Additional memory allocation for this task. */
@@ -2984,10 +2980,15 @@ DECLINLINE(uint32_t) ataMSF2LBA(const uint8_t *pbBuf)
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
 
+DECLINLINE(void) ahciReqSetStatus(PAHCIREQ pAhciReq, uint8_t u8Error, uint8_t u8Status)
+{
+    pAhciReq->cmdFis[AHCI_CMDFIS_ERR] = u8Error;
+    pAhciReq->cmdFis[AHCI_CMDFIS_STS] = u8Status;
+}
+
 static void atapiCmdOK(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    pAhciReq->uATARegError = 0;
-    pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+    ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7)
         | ((pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE) ? ATAPI_INT_REASON_IO : 0)
         | (!pAhciReq->cbTransfer ? ATAPI_INT_REASON_CD : 0);
@@ -3000,8 +3001,7 @@ static void atapiCmdError(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, const uint8_t 
 {
     Log(("%s: sense=%#x (%s) asc=%#x ascq=%#x (%s)\n", __FUNCTION__, pabATAPISense[2] & 0x0f, SCSISenseText(pabATAPISense[2] & 0x0f),
              pabATAPISense[12], pabATAPISense[13], SCSISenseExtText(pabATAPISense[12], pabATAPISense[13])));
-    pAhciReq->uATARegError = pabATAPISense[2] << 4;
-    pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+    ahciReqSetStatus(pAhciReq, pabATAPISense[2] << 4, ATA_STAT_READY | ATA_STAT_ERR);
     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7) |
                                                      ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
     memset(pAhciPort->abATAPISense, '\0', sizeof(pAhciPort->abATAPISense));
@@ -4630,7 +4630,7 @@ static PDMMEDIAEXIOREQTYPE atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIR
                 break;
             }
             atapiCmdOK(pAhciPort, pAhciReq);
-            pAhciReq->uATARegStatus |= ATA_STAT_SEEK; /* Linux expects this. */
+            pAhciReq->cmdFis[AHCI_CMDFIS_STS] |= ATA_STAT_SEEK; /* Linux expects this. */
             break;
         }
         case SCSI_START_STOP_UNIT:
@@ -5244,8 +5244,8 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         abPioSetupFis[AHCI_CMDFIS_BITS]  = (fInterrupt ? AHCI_CMDFIS_I : 0);
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
             abPioSetupFis[AHCI_CMDFIS_BITS] |= AHCI_CMDFIS_D;
-        abPioSetupFis[AHCI_CMDFIS_STS]   = pAhciReq->uATARegStatus;
-        abPioSetupFis[AHCI_CMDFIS_ERR]   = pAhciReq->uATARegError;
+        abPioSetupFis[AHCI_CMDFIS_STS]   = pCmdFis[AHCI_CMDFIS_STS];
+        abPioSetupFis[AHCI_CMDFIS_ERR]   = pCmdFis[AHCI_CMDFIS_ERR];
         abPioSetupFis[AHCI_CMDFIS_SECTN] = pCmdFis[AHCI_CMDFIS_SECTN];
         abPioSetupFis[AHCI_CMDFIS_CYLL]  = pCmdFis[AHCI_CMDFIS_CYLL];
         abPioSetupFis[AHCI_CMDFIS_CYLH]  = pCmdFis[AHCI_CMDFIS_CYLH];
@@ -5261,7 +5261,7 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         abPioSetupFis[17] = pAhciReq->cbTransfer & 0xff;
 
         /* Update registers. */
-        pAhciPort->regTFD = (pAhciReq->uATARegError << 8) | pAhciReq->uATARegStatus;
+        pAhciPort->regTFD = (pCmdFis[AHCI_CMDFIS_ERR] << 8) | pCmdFis[AHCI_CMDFIS_STS];
 
         ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_PIOSETUP, abPioSetupFis);
 
@@ -5303,8 +5303,8 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmd
         memset(&d2hFis[0], 0, sizeof(d2hFis));
         d2hFis[AHCI_CMDFIS_TYPE]  = AHCI_CMDFIS_TYPE_D2H;
         d2hFis[AHCI_CMDFIS_BITS]  = (fInterrupt ? AHCI_CMDFIS_I : 0);
-        d2hFis[AHCI_CMDFIS_STS]   = pAhciReq->uATARegStatus;
-        d2hFis[AHCI_CMDFIS_ERR]   = pAhciReq->uATARegError;
+        d2hFis[AHCI_CMDFIS_STS]   = pCmdFis[AHCI_CMDFIS_STS];
+        d2hFis[AHCI_CMDFIS_ERR]   = pCmdFis[AHCI_CMDFIS_ERR];
         d2hFis[AHCI_CMDFIS_SECTN] = pCmdFis[AHCI_CMDFIS_SECTN];
         d2hFis[AHCI_CMDFIS_CYLL]  = pCmdFis[AHCI_CMDFIS_CYLL];
         d2hFis[AHCI_CMDFIS_CYLH]  = pCmdFis[AHCI_CMDFIS_CYLH];
@@ -5316,11 +5316,11 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmd
         d2hFis[AHCI_CMDFIS_SECTCEXP] = pCmdFis[AHCI_CMDFIS_SECTCEXP];
 
         /* Update registers. */
-        pAhciPort->regTFD = (pAhciReq->uATARegError << 8) | pAhciReq->uATARegStatus;
+        pAhciPort->regTFD = (pCmdFis[AHCI_CMDFIS_ERR] << 8) | pCmdFis[AHCI_CMDFIS_STS];
 
         ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_D2H, d2hFis);
 
-        if (pAhciReq->uATARegStatus & ATA_STAT_ERR)
+        if (pCmdFis[AHCI_CMDFIS_STS] & ATA_STAT_ERR)
         {
             /* Error bit is set. */
             ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_TFES);
@@ -5374,11 +5374,11 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
         sdbFis[0] |= (fInterrupt ? (1 << 14) : 0);
         if (RT_UNLIKELY(pTaskErr))
         {
-            sdbFis[0]  = pTaskErr->uATARegError;
-            sdbFis[0] |= (pTaskErr->uATARegStatus & 0x77) << 16; /* Some bits are marked as reserved and thus are masked out. */
+            sdbFis[0]  = pTaskErr->cmdFis[AHCI_CMDFIS_ERR];
+            sdbFis[0] |= (pTaskErr->cmdFis[AHCI_CMDFIS_STS] & 0x77) << 16; /* Some bits are marked as reserved and thus are masked out. */
 
             /* Update registers. */
-            pAhciPort->regTFD = (pTaskErr->uATARegError << 8) | pTaskErr->uATARegStatus;
+            pAhciPort->regTFD = (pTaskErr->cmdFis[AHCI_CMDFIS_ERR] << 8) | pTaskErr->cmdFis[AHCI_CMDFIS_STS];
         }
         else
         {
@@ -6083,8 +6083,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             fRedo = ahciIsRedoSetWarning(pAhciPort, rcReq);
             if (!fRedo)
             {
-                pAhciReq->uATARegError    = ID_ERR;
-                pAhciReq->uATARegStatus   = ATA_STAT_READY | ATA_STAT_ERR;
+                ahciReqSetStatus(pAhciReq, ID_ERR, ATA_STAT_READY | ATA_STAT_ERR);
                 fReqErrSaved = ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
             }
             else
@@ -6094,10 +6093,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
         {
             /* Status will be set already for non I/O requests. */
             if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_INVALID)
-            {
-                pAhciReq->uATARegError = 0;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
-            }
+                ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
 
             /* Write updated command header into memory of the guest. */
             uint32_t u32PRDBC = pAhciReq->cbTransfer;
@@ -6322,12 +6318,10 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
+                ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
             }
             else
-            {
-                pAhciReq->uATARegError = ABRT_ERR;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK  | ATA_STAT_ERR;
-            }
+                ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_SEEK | ATA_STAT_ERR);
             break;
         }
         case ATA_READ_NATIVE_MAX_ADDRESS_EXT:
@@ -6342,8 +6336,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 case 0x55: /* read look-ahead disable */
                 case 0xcc: /* reverting to power-on defaults enable */
                 case 0x66: /* reverting to power-on defaults disable */
-                    pAhciReq->uATARegError = 0;
-                    pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+                    ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
                     break;
                 case 0x82: /* write cache disable */
                     enmType = PDMMEDIAEXIOREQTYPE_FLUSH;
@@ -6364,21 +6357,18 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                             pAhciPort->uATATransferMode = (pCmdFis[AHCI_CMDFIS_SECTC] & 0xf8) | RT_MIN(pCmdFis[AHCI_CMDFIS_SECTC] & 0x07, ATA_UDMA_MODE_MAX);
                             break;
                     }
+                    ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
                     break;
                 }
                 default:
-                    pAhciReq->uATARegError = ABRT_ERR;
-                    pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                    ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             }
             break;
         }
         case ATA_DEVICE_RESET:
         {
             if (!pAhciPort->fATAPI)
-            {
-                pAhciReq->uATARegError = ABRT_ERR;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
-            }
+                ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             else
             {
                 /* Reset the device. */
@@ -6392,42 +6382,31 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case ATA_PACKET:
             if (!pAhciPort->fATAPI)
-            {
-                pAhciReq->uATARegError = ABRT_ERR;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
-            }
+                ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             else
                 enmType = atapiParseCmd(pAhciPort, pAhciReq);
             break;
         case ATA_IDENTIFY_PACKET_DEVICE:
             if (!pAhciPort->fATAPI)
-            {
-                pAhciReq->uATARegError = ABRT_ERR;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
-            }
+                ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             else
             {
                 atapiDoTransfer(pAhciPort, pAhciReq, 512, ATAFN_SS_ATAPI_IDENTIFY);
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
-                pAhciReq->uATARegError = 0;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+                ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
             }
             break;
         case ATA_SET_MULTIPLE_MODE:
             if (    pCmdFis[AHCI_CMDFIS_SECTC] != 0
                 &&  (   pCmdFis[AHCI_CMDFIS_SECTC] > ATA_MAX_MULT_SECTORS
                      || (pCmdFis[AHCI_CMDFIS_SECTC] & (pCmdFis[AHCI_CMDFIS_SECTC] - 1)) != 0))
-            {
-                pAhciReq->uATARegError = ABRT_ERR;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
-            }
+                ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             else
             {
                 Log2(("%s: set multi sector count to %d\n", __FUNCTION__, pCmdFis[AHCI_CMDFIS_SECTC]));
                 pAhciPort->cMultSectors = pCmdFis[AHCI_CMDFIS_SECTC];
-                pAhciReq->uATARegError = 0;
-                pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+                ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
             }
             break;
         case ATA_STANDBY_IMMEDIATE:
@@ -6443,8 +6422,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
         case ATA_READ_VERIFY_SECTORS:
         case ATA_READ_VERIFY_SECTORS_WITHOUT_RETRIES:
         case ATA_SLEEP:
-            pAhciReq->uATARegError = 0;
-            pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+            ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
             break;
         case ATA_READ_DMA_EXT:
             fLBA48 = true;
@@ -6503,8 +6481,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                         if (pTaskErr)
                         {
                             aBuf[0] = (pTaskErr->fFlags & AHCI_REQ_IS_QUEUED) ? pTaskErr->uTag : (1 << 7);
-                            aBuf[2] = pTaskErr->uATARegStatus;
-                            aBuf[3] = pTaskErr->uATARegError;
+                            aBuf[2] = pTaskErr->cmdFis[AHCI_CMDFIS_STS];
+                            aBuf[3] = pTaskErr->cmdFis[AHCI_CMDFIS_ERR];
                             aBuf[4] = pTaskErr->cmdFis[AHCI_CMDFIS_SECTN];
                             aBuf[5] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLL];
                             aBuf[6] = pTaskErr->cmdFis[AHCI_CMDFIS_CYLH];
@@ -6556,10 +6534,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 /* Check that the trim bit is set and all other bits are 0. */
                 if (   !(pAhciReq->cmdFis[AHCI_CMDFIS_FET] & UINT16_C(0x01))
                     || (pAhciReq->cmdFis[AHCI_CMDFIS_FET] & ~UINT16_C(0x1)))
-                {
-                    pAhciReq->uATARegError = ABRT_ERR;
-                    pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
-                }
+                    ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
                 else
                     enmType = PDMMEDIAEXIOREQTYPE_DISCARD;
                 break;
@@ -6572,13 +6547,11 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
         case ATA_NV_CACHE:
         case ATA_IDLE:
         case ATA_TRUSTED_RECEIVE_DMA: /* Windows 8+ */
-            pAhciReq->uATARegError = ABRT_ERR;
-            pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+            ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
             break;
         default: /* For debugging purposes. */
             AssertMsgFailed(("Unknown command issued (%#x)\n", pCmdFis[AHCI_CMDFIS_CMD]));
-            pAhciReq->uATARegError = ABRT_ERR;
-            pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+            ahciReqSetStatus(pAhciReq, ABRT_ERR, ATA_STAT_READY | ATA_STAT_ERR);
     }
 
     return enmType;
@@ -6735,9 +6708,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
  */
 static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    pAhciReq->tsStart       = RTTimeMilliTS();
-    pAhciReq->uATARegStatus = 0;
-    pAhciReq->uATARegError  = 0;
+    pAhciReq->tsStart = RTTimeMilliTS();
 
     /* Set current command slot */
     ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
