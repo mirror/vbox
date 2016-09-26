@@ -50,6 +50,10 @@
 #include <iprt/stream.h>
 #include <iprt/asm.h>
 
+#ifdef WITH_OPENSSL
+# include <openssl/opensslv.h>
+#endif
+
 #ifndef RT_OS_WINDOWS
 # include <signal.h>
 #endif
@@ -748,10 +752,11 @@ static const char * decodeAuthResult(AuthResult result)
     }
 }
 
-#ifdef WITH_OPENSSL
+#if defined(WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER))
 /****************************************************************************
  *
- * OpenSSL convenience functions for multithread support
+ * OpenSSL convenience functions for multithread support.
+ * Not required for OpenSSL 1.1+
  *
  ****************************************************************************/
 
@@ -853,7 +858,7 @@ static void CRYPTO_thread_cleanup()
     RTMemFree(g_pSSLMutexes);
     g_pSSLMutexes = NULL;
 }
-#endif /* WITH_OPENSSL */
+#endif /* WITH_OPENSSL && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER)) */
 
 /****************************************************************************
  *
@@ -863,13 +868,13 @@ static void CRYPTO_thread_cleanup()
 
 static void doQueuesLoop()
 {
-#ifdef WITH_OPENSSL
+#if defined(WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER))
     if (g_fSSL && CRYPTO_thread_setup())
     {
         LogRel(("Failed to set up OpenSSL thread mutex!"));
         exit(RTEXITCODE_FAILURE);
     }
-#endif /* WITH_OPENSSL */
+#endif 
 
     // set up gSOAP
     struct soap soap;
@@ -964,10 +969,10 @@ static void doQueuesLoop()
     }
     soap_done(&soap); // close master socket and detach environment
 
-#ifdef WITH_OPENSSL
+#if defined(WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER))
     if (g_fSSL)
         CRYPTO_thread_cleanup();
-#endif /* WITH_OPENSSL */
+#endif
 }
 
 /**
