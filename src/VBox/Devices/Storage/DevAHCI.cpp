@@ -5880,14 +5880,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 
     VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, pAhciReq->uOffset, pAhciReq->cbTransfer);
 
-    /*
-     * Clear the request structure from the active request list first so it doesn't get cancelled
-     * while we complete it. If the request is not in the active list anymore it was already canceled
-     * and we have to make sure to not copy anything to guest memory because the guest might use it
-     * for other things already.
-     */
-    bool fReqErrSaved = false;
-
     if (rcReq != VERR_PDM_MEDIAEX_IOREQ_CANCELED)
     {
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
@@ -5928,7 +5920,14 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             if (!fRedo)
             {
                 ahciReqSetStatus(pAhciReq, ID_ERR, ATA_STAT_READY | ATA_STAT_ERR);
-                fReqErrSaved = ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
+                /*
+                 * We have to duplicate the request here as the underlying I/O
+                 * request will be freed later.
+                 */
+                PAHCIREQ pReqDup = (PAHCIREQ)RTMemDup(pAhciReq, sizeof(AHCIREQ));
+                if (   pReqDup
+                    && !ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pReqDup, NULL))
+                    RTMemFree(pReqDup);
             }
             else
                 ASMAtomicOrU32(&pAhciPort->u32TasksRedo, RT_BIT_32(pAhciReq->uTag));
@@ -6024,10 +6023,9 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
 
-    /* Don't free the request yet when it is saved for the error log page. */
+    /* Don't free the request if it is on the stack. */
     if (   pAhciReq
-        && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK)
-        && !fReqErrSaved)
+        && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK))
         ahciR3ReqFree(pAhciPort, pAhciReq);
     return fCanceled;
 }
