@@ -456,7 +456,8 @@ static int drvHostParallelGetWinHostIoPorts(PDRVHOSTPARALLEL pThis)
             if (dwErr == ERROR_INSUFFICIENT_BUFFER)
             {
                 LogFlow(("ERROR_INSUFF_BUFF = %d. dwBufSz = %d\n", dwErr, cbBuf));
-                void *pvNew = RTMemRealloc(pszBuf, RT_MAX(RT_ALIGN_Z(cbBufActual + 16, 64), 256));
+                cbBuf = RT_MAX(RT_ALIGN_Z(cbBufActual + 16, 64), 256);
+                void *pvNew = RTMemRealloc(pszBuf, cbBuf);
                 if (pvNew)
                     pszBuf = (char *)pvNew;
                 else
