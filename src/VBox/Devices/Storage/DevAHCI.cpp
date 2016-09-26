@@ -28,9 +28,9 @@
  * the preferred one.  The second implements the I/O ports used for booting from
  * the hard disk and for guests which don't have an AHCI SATA driver.
  *
- * The data is transferred in an asynchronous way using one thread per implemented
- * port or using the new async completion interface which is still under
- * development. [not quite up to date]
+ * The data is transfered using the extended media interface, asynchronously if
+ * it is supported by the driver below otherwise it weill be done synchronous.
+ * Either way a thread is used to process new requests from the guest.
  */
 
 
@@ -244,25 +244,6 @@ typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIREQ pAhciReq, void **ppvProc,
 typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
 
 /**
- * Transfer type.
- */
-typedef enum AHCITXDIR
-{
-    /** Invalid */
-    AHCITXDIR_INVALID = 0,
-    /** None */
-    AHCITXDIR_NONE,
-    /** Read */
-    AHCITXDIR_READ,
-    /** Write */
-    AHCITXDIR_WRITE,
-    /** Flush */
-    AHCITXDIR_FLUSH,
-    /** Trim */
-    AHCITXDIR_TRIM
-} AHCITXDIR;
-
-/**
  * Task state.
  */
 typedef enum AHCITXSTATE
@@ -297,16 +278,14 @@ AssertCompileSize(AHCITXSTATE, sizeof(uint32_t));
  */
 typedef struct AHCIREQ
 {
-    /** List node for the free list if the request is not in use. */
-    RTLISTNODE                 NodeList;
+    /** The I/O request handle from the driver below associated with this request. */
+    PDMMEDIAEXIOREQ            hIoReq;
     /** Task state. */
     volatile AHCITXSTATE       enmTxState;
     /** Start timestamp of the request. */
     uint64_t                   tsStart;
     /** Tag of the task. */
     uint32_t                   uTag;
-    /** The command header for this task. */
-    CmdHdr                     cmdHdr;
     /** The command Fis for this task. */
     uint8_t                    cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE];
     /** The ATAPI command data. */
@@ -320,7 +299,7 @@ typedef struct AHCIREQ
     /** Number of entries in the PRDTL. */
     unsigned                   cPrdtlEntries;
     /** Data direction. */
-    AHCITXDIR                  enmTxDir;
+    PDMMEDIAEXIOREQTYPE        enmType;
     /** Start offset. */
     uint64_t                   uOffset;
     /** Number of bytes to transfer. */
@@ -449,8 +428,8 @@ typedef struct AHCIPort
     bool                            fATAPIPassthrough;
     /** Flag whether this port is in a reset state. */
     volatile bool                   fPortReset;
-    /** If we use the new async interface. */
-    bool                            fAsyncInterface;
+    /** Flag whether TRIM is supported. */
+    bool                            fTrimEnabled;
     /** Flag if we are in a device reset. */
     bool                            fResetDevice;
     /** Flag whether this port is hot plug capable. */
@@ -506,16 +485,16 @@ typedef struct AHCIPort
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached driver's block interface. */
     R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
-    /** Pointer to the attached driver's async block interface. */
-    R3PTRTYPE(PPDMIMEDIAASYNC)      pDrvMediaAsync;
+    /** Pointer to the attached driver's extended interface. */
+    R3PTRTYPE(PPDMIMEDIAEX)         pDrvMediaEx;
     /** Pointer to the attached driver's mount interface. */
     R3PTRTYPE(PPDMIMOUNT)           pDrvMount;
     /** The base interface. */
     PDMIBASE                        IBase;
     /** The block port interface. */
     PDMIMEDIAPORT                   IPort;
-    /** The optional block async port interface. */
-    PDMIMEDIAASYNCPORT              IPortAsync;
+    /** The extended media port interface. */
+    PDMIMEDIAEXPORT                 IMediaExPort;
     /** The mount notify interface. */
     PDMIMOUNTNOTIFY                 IMountNotify;
     /** Physical geometry of this image. */
@@ -529,8 +508,6 @@ typedef struct AHCIPort
 
     /** Async IO Thread. */
     R3PTRTYPE(PPDMTHREAD)           pAsyncIOThread;
-    /** Array of active tasks indexed by the tag. */
-    R3PTRTYPE(volatile PAHCIREQ)    aActiveTasks[AHCI_NR_COMMAND_SLOTS];
     /** First task throwing an error. */
     R3PTRTYPE(volatile PAHCIREQ)    pTaskErr;
     /** The current tracklist of the loaded medium if passthrough is used. */
@@ -570,11 +547,6 @@ typedef struct AHCIPort
     uint32_t                        cErrors;
 
     uint32_t                        u32Alignment5;
-
-    /** Critical section protecting the global free list. */
-    RTCRITSECT                      CritSectReqsFree;
-    /** Head of the global free request list. */
-    R3PTRTYPE(PRTLISTANCHOR)        pListReqsFree;
 
     /** Align to a multiple of 8. */
 #if HC_ARCH_BITS == 32
@@ -705,8 +677,6 @@ typedef struct AHCI
     bool                            fGCEnabled;
     /** R0 enabled. */
     bool                            fR0Enabled;
-    /** If the new async interface is used if available. */
-    bool                            fUseAsyncInterfaceIfAvailable;
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
@@ -959,9 +929,8 @@ static int  ahciPostFisIntoMemory(PAHCIPort pAhciPort, unsigned uFisType, uint8_
 static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort);
 static uint32_t ahciCopyToPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, const void *pvBuf, size_t cbBuf);
 static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, void *pvBuf, size_t cbBuf);
-static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept);
+static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
 static void ahciReqMemFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, bool fForceFree);
-static void ahciR3PortCachedReqsFree(PAHCIPort pAhciPort);
 #endif
 RT_C_DECLS_END
 
@@ -1089,7 +1058,7 @@ static DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 static void ahciPortResetFinish(PAHCIPort pAhciPort)
 {
     /* Cancel all tasks first. */
-    bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort, NULL);
+    bool fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
     Assert(fAllTasksCanceled); NOREF(fAllTasksCanceled);
 
     /* Signature for SATA device. */
@@ -2061,7 +2030,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     bool fAllTasksCanceled;
 
     /* Cancel all tasks first. */
-    fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort, NULL);
+    fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort);
     Assert(fAllTasksCanceled);
 
     Assert(pAhciPort->cTasksActive == 0);
@@ -2716,7 +2685,7 @@ static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const
     PAHCIPort pAhciPort = PDMIBASE_2_PAHCIPORT(pInterface);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pAhciPort->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pAhciPort->IPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pAhciPort->IPortAsync);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pAhciPort->IMediaExPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);
     return NULL;
 }
@@ -3025,7 +2994,7 @@ static void atapiCmdOK(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     pAhciReq->uATARegError = 0;
     pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7)
-        | ((pAhciReq->enmTxDir != AHCITXDIR_WRITE) ? ATAPI_INT_REASON_IO : 0)
+        | ((pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE) ? ATAPI_INT_REASON_IO : 0)
         | (!pAhciReq->cbTransfer ? ATAPI_INT_REASON_CD : 0);
     memset(pAhciPort->abATAPISense, '\0', sizeof(pAhciPort->abATAPISense));
     pAhciPort->abATAPISense[0] = 0x70;
@@ -3141,9 +3110,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[66] = RT_H2LE_U16(120); /* recommended DMA multiword tx cycle time */
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
-    if (   pAhciPort->pDrvMedia->pfnDiscard
-        || ( pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)
+    if (   pAhciPort->fTrimEnabled
         || pAhciPort->cbSector != 512
         || pAhciPort->fNonRotational)
     {
@@ -3184,9 +3151,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
 
-    if (   pAhciPort->pDrvMedia->pfnDiscard
-        || (   pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvMediaAsync->pfnStartDiscard)) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+    if (pAhciPort->fTrimEnabled) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
 
     /* The following are SATA specific */
@@ -3572,7 +3537,7 @@ static int atapiGetEventStatusNotificationSS(PAHCIREQ pAhciReq, PAHCIPort pAhciP
 {
     uint8_t abBuf[8];
 
-    Assert(pAhciReq->enmTxDir == AHCITXDIR_READ);
+    Assert(pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ);
     Assert(pAhciReq->cbTransfer <= 8);
 
     if (!(pAhciReq->aATAPICmd[1] & 1))
@@ -3984,7 +3949,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
         if (!pvBuf)
             return VERR_NO_MEMORY;
 
-        if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
             ahciCopyFromPrdtl(pAhciPort->pDevInsR3, pAhciReq, pvBuf, cbTransfer);
             if (pAhciReq->fFlags & AHCI_REQ_OVERFLOW)
@@ -3996,7 +3961,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
      * to transfer, it's worth updating the LEDs. */
     if (cbTransfer >= 2048)
     {
-        if (pAhciReq->enmTxDir != AHCITXDIR_WRITE)
+        if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE)
             pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
         else
             pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
@@ -4073,7 +4038,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
             }
             rc = pAhciPort->pDrvMedia->pfnSendCmd(pAhciPort->pDrvMedia,
                                                   aATAPICmd,
-                                                  pAhciReq->enmTxDir == AHCITXDIR_READ
+                                                  pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
                                                   ? PDMMEDIATXDIR_FROM_DEVICE
                                                   : PDMMEDIATXDIR_TO_DEVICE,
                                                   pbBuf,
@@ -4091,14 +4056,14 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
     {
         PDMMEDIATXDIR enmBlockTxDir = PDMMEDIATXDIR_NONE;
 
-        if (pAhciReq->enmTxDir == AHCITXDIR_READ)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
             enmBlockTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-        else if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
+        else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
             enmBlockTxDir = PDMMEDIATXDIR_TO_DEVICE;
-        else if (pAhciReq->enmTxDir == AHCITXDIR_NONE)
+        else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_INVALID)
             enmBlockTxDir = PDMMEDIATXDIR_NONE;
         else
-            AssertMsgFailed(("Invalid transfer direction %d\n", pAhciReq->enmTxDir));
+            AssertMsgFailed(("Invalid transfer direction %d\n", pAhciReq->enmType));
 
         rc = pAhciPort->pDrvMedia->pfnSendCmd(pAhciPort->pDrvMedia,
                                               pAhciReq->aATAPICmd,
@@ -4113,7 +4078,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
     /* Update the LEDs and the read/write statistics. */
     if (cbTransfer >= 2048)
     {
-        if (pAhciReq->enmTxDir != AHCITXDIR_WRITE)
+        if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE)
         {
             pAhciPort->Led.Actual.s.fReading = 0;
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, cbTransfer);
@@ -4153,7 +4118,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
             }
         }
 
-        if (pAhciReq->enmTxDir == AHCITXDIR_READ)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
         {
            Assert(cbTransfer <= pAhciReq->cbTransfer);
 
@@ -4377,14 +4342,15 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax,
     size_t cbTransfered = 0;
     int rcSourceSink = g_apfnAtapiFuncs[iSourceSink](pAhciReq, pAhciPort, cbMax, &cbTransfered);
 
-    pAhciReq->cmdHdr.u32PRDBC = (uint32_t)cbTransfered;
     pAhciReq->cbTransfer      = (uint32_t)cbTransfered;
     Assert(pAhciReq->cbTransfer == cbTransfered);
 
     LogFlow(("cbTransfered=%d\n", cbTransfered));
 
     /* Write updated command header into memory of the guest. */
-    PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
+    uint32_t u32PRDBC = (uint32_t)cbTransfered;
+    PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr + RT_OFFSETOF(CmdHdr, u32PRDBC),
+                          &u32PRDBC, sizeof(u32PRDBC));
 
     return rcSourceSink;
 }
@@ -4455,9 +4421,9 @@ static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint32_t iAT
     return VINF_SUCCESS;
 }
 
-static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
+static PDMMEDIAEXIOREQTYPE atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    PDMMEDIAEXIOREQTYPE enmType = PDMMEDIAEXIOREQTYPE_INVALID;
     const uint8_t *pbPacket;
     uint32_t cbMax;
 
@@ -4575,7 +4541,7 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                 break;
             }
             atapiReadSectors(pAhciPort, pAhciReq, iATAPILBA, cSectors, 2048);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             break;
         }
         case SCSI_READ_CD:
@@ -4624,12 +4590,12 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                 case 0x10:
                     /* normal read */
                     atapiReadSectors(pAhciPort, pAhciReq, iATAPILBA, cSectors, 2048);
-                    enmTxDir = AHCITXDIR_READ;
+                    enmType = PDMMEDIAEXIOREQTYPE_READ;
                     break;
                 case 0xf8:
                     /* read all data */
                     atapiReadSectors(pAhciPort, pAhciReq, iATAPILBA, cSectors, 2352);
-                    enmTxDir = AHCITXDIR_READ;
+                    enmType = PDMMEDIAEXIOREQTYPE_READ;
                     break;
                 default:
                     LogRel(("AHCI ATAPI: LUN#%d: CD-ROM sector format not supported\n", pAhciPort->iLUN));
@@ -4685,13 +4651,6 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                     /* This must be done from EMT. */
                     PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
                     PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
-
-                    /*
-                     * Free the I/O memory of all cached tasks of this port
-                     * because the driver providing I/O memory allocation interface
-                     * is about to be destroyed.
-                     */
-                    ahciR3PortCachedReqsFree(pAhciPort);
 
                     /*
                      * Also make sure that the current request has no memory allocated
@@ -4827,18 +4786,18 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
             break;
     }
 
-    return enmTxDir;
+    return enmType;
 }
 
 /*
  * Parse ATAPI commands, passing them directly to the CD/DVD drive.
  */
-static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
+static PDMMEDIAEXIOREQTYPE atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
     const uint8_t *pbPacket;
     uint32_t cSectors, iATAPILBA;
     uint32_t cbTransfer = 0;
-    AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    PDMMEDIAEXIOREQTYPE enmType = PDMMEDIAEXIOREQTYPE_INVALID;
     bool fSendCmd = false;
 
     pbPacket = pAhciReq->aATAPICmd;
@@ -4854,17 +4813,17 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             iATAPILBA = ataBE2H_U32(pbPacket + 2);
             cbTransfer = ataBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d\n", iATAPILBA));
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_FORMAT_UNIT:
             cbTransfer = pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8); /* use ATAPI transfer length */
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_GET_CONFIGURATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
@@ -4875,17 +4834,17 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 atapiDoTransfer(pAhciPort, pAhciReq, pAhciReq->cbTransfer, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION);
                 break;
             }
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_GET_PERFORMANCE:
             cbTransfer = pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8); /* use ATAPI transfer length */
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_INQUIRY:
             cbTransfer = ataBE2H_U16(pbPacket + 3);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_LOAD_UNLOAD_MEDIUM:
@@ -4893,17 +4852,17 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case SCSI_MECHANISM_STATUS:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_MODE_SELECT_10:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_MODE_SENSE_10:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_PAUSE_RESUME:
@@ -4928,7 +4887,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
             pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_12:
@@ -4937,22 +4896,22 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
             pAhciReq->cbATAPISector = 2048; /**< @todo this size is not always correct */
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_BUFFER:
             cbTransfer = ataBE2H_U24(pbPacket + 6);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_BUFFER_CAPACITY:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_CAPACITY:
             cbTransfer = 8;
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_CD:
@@ -5005,38 +4964,38 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                     cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
                 cbTransfer = cSectors * pAhciReq->cbATAPISector;
             }
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         }
         case SCSI_READ_DISC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_DVD_STRUCTURE:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_FORMAT_CAPACITIES:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_SUBCHANNEL:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_TOC_PMA_ATIP:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_READ_TRACK_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_REPAIR_TRACK:
@@ -5044,7 +5003,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case SCSI_REPORT_KEY:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_REQUEST_SENSE:
@@ -5052,11 +5011,11 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             if ((pAhciPort->abATAPISense[2] & 0x0f) != SCSI_SENSE_NONE)
             {
                 pAhciReq->cbTransfer = cbTransfer;
-                pAhciReq->enmTxDir = AHCITXDIR_READ;
+                pAhciReq->enmType = PDMMEDIAEXIOREQTYPE_READ;
                 atapiDoTransfer(pAhciPort, pAhciReq, cbTransfer, ATAFN_SS_ATAPI_REQUEST_SENSE);
                 break;
             }
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_RESERVE_TRACK:
@@ -5070,27 +5029,27 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case SCSI_SEND_CUE_SHEET:
             cbTransfer = ataBE2H_U24(pbPacket + 6);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_SEND_DVD_STRUCTURE:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_SEND_EVENT:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_SEND_KEY:
             cbTransfer = ataBE2H_U16(pbPacket + 8);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_SEND_OPC_INFORMATION:
             cbTransfer = ataBE2H_U16(pbPacket + 7);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_SET_CD_SPEED:
@@ -5101,7 +5060,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case SCSI_SET_STREAMING:
             cbTransfer = ataBE2H_U16(pbPacket + 9);
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_START_STOP_UNIT:
@@ -5129,7 +5088,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             else
                 pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_WRITE_12:
@@ -5141,7 +5100,7 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             else
                 pAhciReq->cbATAPISector = 2048;
             cbTransfer = cSectors * pAhciReq->cbATAPISector;
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             fSendCmd = true;
             break;
         case SCSI_WRITE_BUFFER:
@@ -5158,14 +5117,14 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                     break;
                 default:
                     cbTransfer = ataBE2H_U16(pbPacket + 6);
-                    enmTxDir = AHCITXDIR_WRITE;
+                    enmType = PDMMEDIAEXIOREQTYPE_WRITE;
                     fSendCmd = true;
                     break;
             }
             break;
         case SCSI_REPORT_LUNS: /* Not part of MMC-3, but used by Windows. */
             cbTransfer = ataBE2H_U32(pbPacket + 6);
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             fSendCmd = true;
             break;
         case SCSI_REZERO_UNIT:
@@ -5187,18 +5146,18 @@ static AHCITXDIR atapiParseCmdPassthrough(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
         /* Send a command to the drive, passing data in/out as required. */
         Log2(("ATAPI PT: max size %d\n", cbTransfer));
         if (cbTransfer == 0)
-            enmTxDir = AHCITXDIR_NONE;
-        pAhciReq->enmTxDir = enmTxDir;
+            enmType = PDMMEDIAEXIOREQTYPE_INVALID;
+        pAhciReq->enmType = enmType;
         pAhciReq->cbTransfer = cbTransfer;
         atapiDoTransfer(pAhciPort, pAhciReq, cbTransfer, ATAFN_SS_ATAPI_PASSTHROUGH);
     }
 
-    return AHCITXDIR_NONE;
+    return PDMMEDIAEXIOREQTYPE_INVALID;
 }
 
-static AHCITXDIR atapiParseCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
+static PDMMEDIAEXIOREQTYPE atapiParseCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    PDMMEDIAEXIOREQTYPE enmType = PDMMEDIAEXIOREQTYPE_INVALID;
     const uint8_t *pbPacket;
 
     pbPacket = pAhciReq->aATAPICmd;
@@ -5206,11 +5165,11 @@ static AHCITXDIR atapiParseCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     Log2(("%s: limit=%#x packet: %.*Rhxs\n", __FUNCTION__, pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8), ATAPI_PACKET_SIZE, pbPacket));
 
     if (pAhciPort->fATAPIPassthrough)
-        enmTxDir = atapiParseCmdPassthrough(pAhciPort, pAhciReq);
+        enmType = atapiParseCmdPassthrough(pAhciPort, pAhciReq);
     else
-        enmTxDir = atapiParseCmdVirtualATAPI(pAhciPort, pAhciReq);
+        enmType = atapiParseCmdVirtualATAPI(pAhciPort, pAhciReq);
 
-    return enmTxDir;
+    return enmType;
 }
 
 /**
@@ -5288,7 +5247,7 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         memset(&abPioSetupFis[0], 0, sizeof(abPioSetupFis));
         abPioSetupFis[AHCI_CMDFIS_TYPE]  = AHCI_CMDFIS_TYPE_PIOSETUP;
         abPioSetupFis[AHCI_CMDFIS_BITS]  = (fInterrupt ? AHCI_CMDFIS_I : 0);
-        if (pAhciReq->enmTxDir == AHCITXDIR_READ)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
             abPioSetupFis[AHCI_CMDFIS_BITS] |= AHCI_CMDFIS_D;
         abPioSetupFis[AHCI_CMDFIS_STS]   = pAhciReq->uATARegStatus;
         abPioSetupFis[AHCI_CMDFIS_ERR]   = pAhciReq->uATARegError;
@@ -5537,13 +5496,6 @@ DECLINLINE(uint32_t) ahciGetNSectorsQueued(uint8_t *pCmdFis)
         return pCmdFis[AHCI_CMDFIS_FETEXP] << 8 | pCmdFis[AHCI_CMDFIS_FET];
 }
 
-#if 0 /* unused */
-DECLINLINE(uint8_t) ahciGetTagQueued(uint8_t *pCmdFis)
-{
-    return pCmdFis[AHCI_CMDFIS_SECTC] >> 3;
-}
-#endif /* unused */
-
 /**
  * Allocates memory for the given request using already allocated memory if possible.
  *
@@ -5714,8 +5666,8 @@ static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
  */
 static int ahciIoBufAllocate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbTransfer)
 {
-    AssertMsg(   pAhciReq->enmTxDir == AHCITXDIR_READ
-              || pAhciReq->enmTxDir == AHCITXDIR_WRITE,
+    AssertMsg(   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+              || pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE,
               ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
     pAhciReq->u.Io.DataSeg.pvSeg = ahciReqMemAlloc(pAhciPort, pAhciReq, cbTransfer);
@@ -5723,7 +5675,7 @@ static int ahciIoBufAllocate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbTr
         return VERR_NO_MEMORY;
 
     pAhciReq->u.Io.DataSeg.cbSeg = cbTransfer;
-    if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
+    if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
     {
         ahciCopyFromPrdtl(pAhciPort->pDevInsR3, pAhciReq,
                           pAhciReq->u.Io.DataSeg.pvSeg,
@@ -5744,11 +5696,11 @@ static int ahciIoBufAllocate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbTr
 static void ahciIoBufFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq,
                           bool fCopyToGuest)
 {
-    AssertMsg(   pAhciReq->enmTxDir == AHCITXDIR_READ
-              || pAhciReq->enmTxDir == AHCITXDIR_WRITE,
+    AssertMsg(   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+              || pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE,
               ("Freeing I/O memory for a non I/O request is not allowed\n"));
 
-    if (   pAhciReq->enmTxDir == AHCITXDIR_READ
+    if (   pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
         && fCopyToGuest)
     {
         if (pAhciReq->u.Io.pfnPostProcess)
@@ -5774,30 +5726,6 @@ static void ahciIoBufFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq,
 
 
 /**
- * Free all cached tasks on the given port.
- *
- * @returns nothing.
- * @param   pAhciPort    The AHCI port.
- */
-static void ahciR3PortCachedReqsFree(PAHCIPort pAhciPort)
-{
-    if (pAhciPort->pListReqsFree)
-    {
-        PAHCIREQ pReq = NULL;
-        PAHCIREQ pReqNext = NULL;
-
-        RTCritSectEnter(&pAhciPort->CritSectReqsFree);
-        RTListForEachSafe(pAhciPort->pListReqsFree, pReq, pReqNext, AHCIREQ, NodeList)
-        {
-            RTListNodeRemove(&pReq->NodeList);
-            ahciReqMemFree(pAhciPort, pReq, true /* fForceFree */);
-            RTMemFree(pReq);
-        }
-        RTCritSectLeave(&pAhciPort->CritSectReqsFree);
-    }
-}
-
-/**
  * Cancels all active tasks on the port.
  *
  * @returns Whether all active tasks were canceled.
@@ -5805,40 +5733,13 @@ static void ahciR3PortCachedReqsFree(PAHCIPort pAhciPort)
  * @param   pAhciReqExcept   The given request is excepted from the cancelling
  *                           (used for error page reading).
  */
-static bool ahciCancelActiveTasks(PAHCIPort pAhciPort, PAHCIREQ pAhciReqExcept)
+static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
 {
-    for (unsigned i = 0; i < RT_ELEMENTS(pAhciPort->aActiveTasks); i++)
+    if (pAhciPort->pDrvMediaEx)
     {
-        PAHCIREQ pAhciReq = ASMAtomicReadPtrT(&pAhciPort->aActiveTasks[i], PAHCIREQ);
-        if (pAhciReq != pAhciReqExcept)
-        {
-            pAhciReq = (PAHCIREQ)ASMAtomicXchgPtr((void * volatile *)&pAhciPort->aActiveTasks[i], NULL);
-
-            if (VALID_PTR(pAhciReq))
-            {
-                bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pAhciReq->enmTxState, AHCITXSTATE_CANCELED, AHCITXSTATE_ACTIVE);
-                if (fXchg)
-                {
-                    /* Task is active and was canceled. */
-                    AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
-                                     ("Task was canceled but none is active\n"));
-                    ASMAtomicDecU32(&pAhciPort->cTasksActive);
-
-                    /*
-                     * Clear the pointer in the cached array. The controller will allocate a
-                     * a new task structure for this tag.
-                     */
-                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[i]);
-                    LogRel(("AHCI#%uP%u: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
-                            pAhciPort->iLUN, pAhciReq->uTag));
-                }
-                else
-                    AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_FREE,
-                              ("Invalid task state, must be free!\n"));
-            }
-        }
+        int rc = pAhciPort->pDrvMediaEx->pfnIoReqCancelAll(pAhciPort->pDrvMediaEx);
+        AssertRC(rc);
     }
-
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
@@ -5926,7 +5827,7 @@ static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 
     LogFlowFunc(("pAhciPort=%#p pAhciReq=%#p\n", pAhciPort, pAhciReq));
 
-    AssertMsgReturn(pAhciReq->enmTxDir == AHCITXDIR_TRIM, ("This is not a trim request\n"), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD, ("This is not a trim request\n"), VERR_INVALID_PARAMETER);
 
     /* The data buffer contains LBA range entries. Each range is 8 bytes big. */
     if (!pAhciReq->cmdFis[AHCI_CMDFIS_SECTC] && !pAhciReq->cmdFis[AHCI_CMDFIS_SECTCEXP])
@@ -6038,7 +5939,7 @@ static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
  */
 static void ahciTrimRangesDestroy(PAHCIREQ pAhciReq)
 {
-    AssertReturnVoid(pAhciReq->enmTxDir == AHCITXDIR_TRIM);
+    AssertReturnVoid(pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD);
     RTMemFree(pAhciReq->u.Trim.paRanges);
 }
 
@@ -6047,25 +5948,22 @@ static void ahciTrimRangesDestroy(PAHCIREQ pAhciReq)
  *
  * @returns A new AHCI request structure or NULL if out of memory.
  * @param   pAhciPort    The AHCI port.
+ * @param   uTag         The tag to assign.
  */
-static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort)
+static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
 {
     PAHCIREQ pAhciReq = NULL;
+    PDMMEDIAEXIOREQ hIoReq = NULL;
 
-    /* Check the global free list first. */
-    RTCritSectEnter(&pAhciPort->CritSectReqsFree);
-    pAhciReq = RTListGetFirst(pAhciPort->pListReqsFree, AHCIREQ, NodeList);
-    if (pAhciReq)
+    int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
+                                                   uTag, 0 /* fFlags */);
+    if (RT_SUCCESS(rc))
     {
-        AssertMsg(pAhciReq->enmTxState == AHCITXSTATE_FREE, ("Should be free!\n"));
-        RTListNodeRemove(&pAhciReq->NodeList);
+        pAhciReq->hIoReq     = hIoReq;
+        pAhciReq->enmTxState = AHCITXSTATE_ACTIVE;
     }
-    RTCritSectLeave(&pAhciPort->CritSectReqsFree);
-
-    if (!pAhciReq)
-        pAhciReq = (PAHCIREQ)RTMemAllocZ(sizeof(AHCIREQ));
-
-    pAhciReq->enmTxState = AHCITXSTATE_ACTIVE;
+    else
+        pAhciReq = NULL;
     return pAhciReq;
 }
 
@@ -6080,9 +5978,8 @@ static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     AssertMsg(pAhciReq->enmTxState != AHCITXSTATE_FREE, ("Double free!\n"));
     pAhciReq->enmTxState = AHCITXSTATE_FREE;
 
-    RTCritSectEnter(&pAhciPort->CritSectReqsFree);
-    RTListAppend(pAhciPort->pListReqsFree, &pAhciReq->NodeList);
-    RTCritSectLeave(&pAhciPort->CritSectReqsFree);
+    int rc = pAhciPort->pDrvMediaEx->pfnIoReqFree(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
+    AssertRC(rc);
 }
 
 /**
@@ -6116,7 +6013,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
      * for other things already.
      */
     bool fPortReset = ASMAtomicReadBool(&pAhciPort->fPortReset);
-    bool fXchg = ASMAtomicCmpXchgPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], NULL, pAhciReq);
     bool fReqErrSaved = false;
 
     /*
@@ -6127,18 +6023,18 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     {
         const char *pcszReq = NULL;
 
-        switch (pAhciReq->enmTxDir)
+        switch (pAhciReq->enmType)
         {
-            case AHCITXDIR_READ:
+            case PDMMEDIAEXIOREQTYPE_READ:
                 pcszReq = "Read";
                 break;
-            case AHCITXDIR_WRITE:
+            case PDMMEDIAEXIOREQTYPE_WRITE:
                 pcszReq = "Write";
                 break;
-            case AHCITXDIR_FLUSH:
+            case PDMMEDIAEXIOREQTYPE_FLUSH:
                 pcszReq = "Flush";
                 break;
-            case AHCITXDIR_TRIM:
+            case PDMMEDIAEXIOREQTYPE_DISCARD:
                 pcszReq = "Trim";
                 break;
             default:
@@ -6149,21 +6045,21 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
     }
 
-    if (fXchg && !fPortReset)
+    if (rcReq != VERR_PDM_MEDIAEX_IOREQ_CANCELED)
     {
-        if (pAhciReq->enmTxDir == AHCITXDIR_READ)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
         {
             ahciIoBufFree(pAhciPort, pAhciReq, true /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fReading = 0;
         }
-        else if (pAhciReq->enmTxDir == AHCITXDIR_WRITE)
+        else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
         {
             ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
             STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fWriting = 0;
         }
-        else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
+        else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
         {
             ahciTrimRangesDestroy(pAhciReq);
             pAhciPort->Led.Actual.s.fWriting = 0;
@@ -6174,16 +6070,16 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             /* Log the error. */
             if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
             {
-                if (pAhciReq->enmTxDir == AHCITXDIR_FLUSH)
+                if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
                     LogRel(("AHCI#%uP%u: Flush returned rc=%Rrc\n",
                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
-                else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
+                else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
                     LogRel(("AHCI#%uP%u: Trim returned rc=%Rrc\n",
                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
                 else
                     LogRel(("AHCI#%uP%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
-                            pAhciReq->enmTxDir == AHCITXDIR_READ
+                            pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
                             ? "Read"
                             : "Write",
                             pAhciReq->uOffset,
@@ -6193,7 +6089,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             fRedo = ahciIsRedoSetWarning(pAhciPort, rcReq);
             if (!fRedo)
             {
-                pAhciReq->cmdHdr.u32PRDBC = 0;
                 pAhciReq->uATARegError    = ID_ERR;
                 pAhciReq->uATARegStatus   = ATA_STAT_READY | ATA_STAT_ERR;
                 fReqErrSaved = ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciReq, NULL);
@@ -6203,17 +6098,17 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
         }
         else
         {
-            pAhciReq->cmdHdr.u32PRDBC = pAhciReq->cbTransfer;
-
             /* Status will be set already for non I/O requests. */
-            if (pAhciReq->enmTxDir != AHCITXDIR_NONE)
+            if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_INVALID)
             {
                 pAhciReq->uATARegError = 0;
                 pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
             }
 
             /* Write updated command header into memory of the guest. */
-            PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
+            uint32_t u32PRDBC = pAhciReq->cbTransfer;
+            PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr + RT_OFFSETOF(CmdHdr, u32PRDBC),
+                                  &u32PRDBC, sizeof(u32PRDBC));
 
             if (pAhciReq->fFlags & AHCI_REQ_OVERFLOW)
             {
@@ -6265,24 +6160,24 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 
         fCanceled = true;
 
-        if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
+        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
             ahciTrimRangesDestroy(pAhciReq);
-        else if (pAhciReq->enmTxDir != AHCITXDIR_FLUSH)
+        else if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_FLUSH)
             ahciIoBufFree(pAhciPort, pAhciReq, false /* fCopyToGuest */);
 
         /* Leave a log message about the canceled request. */
         if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
         {
-            if (pAhciReq->enmTxDir == AHCITXDIR_FLUSH)
+            if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
                 LogRel(("AHCI#%uP%u: Canceled flush returned rc=%Rrc\n",
                         pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
-            else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
+            else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
                 LogRel(("AHCI#%uP%u: Canceled trim returned rc=%Rrc\n",
                         pAhciPort->CTX_SUFF(pDevIns)->iInstance,pAhciPort->iLUN, rcReq));
             else
                 LogRel(("AHCI#%uP%u: Canceled %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
                         pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
-                        pAhciReq->enmTxDir == AHCITXDIR_READ
+                        pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
                         ? "read"
                         : "write",
                         pAhciReq->uOffset,
@@ -6298,12 +6193,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
      * below us while we have to delegate copying data to EMT instead of doing it
      * on this thread.
      */
-    if (fXchg)
-    {
-        AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
-                         ("Inconsistent request counter\n"));
-        ASMAtomicDecU32(&pAhciPort->cTasksActive);
-    }
+    ASMAtomicDecU32(&pAhciPort->cTasksActive);
 
     if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
@@ -6317,25 +6207,95 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 }
 
 /**
- * Notification callback for a completed transfer.
- *
- * @returns VBox status code.
- * @param   pInterface   Pointer to the interface.
- * @param   pvUser       User data.
- * @param   rcReq        IPRT Status code of the completed request.
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
  */
-static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIMEDIAASYNCPORT pInterface, void *pvUser, int rcReq)
+static DECLCALLBACK(int) ahciR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
+                                                size_t cbCopy)
 {
-    PAHCIPort pAhciPort = PDMIMEDIAASYNCPORT_2_PAHCIPORT(pInterface);
-    PAHCIREQ pAhciReq = (PAHCIREQ)pvUser;
+    RT_NOREF2(pInterface, hIoReq);
+    int rc = VINF_SUCCESS;
+    PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
-    ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
-             __FUNCTION__, pInterface, pvUser, pAhciReq->uTag));
+    if (offDst + cbCopy <= pIoReq->u.Io.DataSeg.cbSeg)
+    {
+        void *pvBuf = (uint8_t *)pIoReq->u.Io.DataSeg.pvSeg + offDst;
+        RTSgBufCopyToBuf(pSgBuf, pvBuf, cbCopy);
+    }
+    else
+        rc = VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
 
-    ahciTransferComplete(pAhciPort, pAhciReq, rcReq);
+    return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
+ */
+static DECLCALLBACK(int) ahciR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                              void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
+                                              size_t cbCopy)
+{
+    RT_NOREF2(pInterface, hIoReq);
+    int rc = VINF_SUCCESS;
+    PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
+
+    if (offSrc + cbCopy <= pIoReq->u.Io.DataSeg.cbSeg)
+    {
+        void *pvBuf = (uint8_t *)pIoReq->u.Io.DataSeg.pvSeg + offSrc;
+        RTSgBufCopyFromBuf(pSgBuf, pvBuf, cbCopy);
+    }
+    else
+        rc = VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
+
+    return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqQueryDiscardRanges}
+ */
+static DECLCALLBACK(int) ahciR3IoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                       void *pvIoReqAlloc, uint32_t idxRangeStart,
+                                                       uint32_t cRanges, PRTRANGE paRanges,
+                                                       uint32_t *pcRanges)
+{
+    RT_NOREF2(pInterface, hIoReq);
+    PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
+    uint32_t cRangesCopy = RT_MIN(pIoReq->u.Trim.cRanges - idxRangeStart, cRanges);
+    Assert(   idxRangeStart < pIoReq->u.Trim.cRanges
+           && (idxRangeStart + cRanges) <= pIoReq->u.Trim.cRanges);
+
+    memcpy(paRanges, &pIoReq->u.Trim.paRanges[idxRangeStart], cRangesCopy * sizeof(RTRANGE));
+    *pcRanges = cRangesCopy;
 
     return VINF_SUCCESS;
 }
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCompleteNotify}
+ */
+static DECLCALLBACK(int) ahciR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                   void *pvIoReqAlloc, int rcReq)
+{
+    RT_NOREF(hIoReq);
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
+    ahciTransferComplete(pAhciPort, (PAHCIREQ)pvIoReqAlloc, rcReq);
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqStateChanged}
+ */
+static DECLCALLBACK(void) ahciR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                  void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
+{
+    RT_NOREF(hIoReq);
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
+    PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
+
+    RT_NOREF3(pAhciPort, pIoReq, enmState);
+    AssertLogRelMsgFailed(("This should not be hit because I/O requests should not be suspended\n"));
+}
+
 
 /**
  * Process an non read/write ATA command.
@@ -6343,9 +6303,9 @@ static DECLCALLBACK(int) ahciR3TransferCompleteNotify(PPDMIMEDIAASYNCPORT pInter
  * @returns The direction of the data transfer
  * @param   pCmdHdr Pointer to the command header.
  */
-static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis)
+static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis)
 {
-    AHCITXDIR enmTxDir = AHCITXDIR_NONE;
+    PDMMEDIAEXIOREQTYPE enmType = PDMMEDIAEXIOREQTYPE_INVALID;
     bool fLBA48 = false;
 
     AssertMsg(pCmdFis[AHCI_CMDFIS_TYPE] == AHCI_CMDFIS_TYPE_H2D, ("FIS is not a host to device Fis!!\n"));
@@ -6392,7 +6352,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                     pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
                     break;
                 case 0x82: /* write cache disable */
-                    enmTxDir = AHCITXDIR_FLUSH;
+                    enmType = PDMMEDIAEXIOREQTYPE_FLUSH;
                     break;
                 case 0x03:
                 {
@@ -6434,7 +6394,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         }
         case ATA_FLUSH_CACHE_EXT:
         case ATA_FLUSH_CACHE:
-            enmTxDir = AHCITXDIR_FLUSH;
+            enmType = PDMMEDIAEXIOREQTYPE_FLUSH;
             break;
         case ATA_PACKET:
             if (!pAhciPort->fATAPI)
@@ -6443,7 +6403,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                 pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             }
             else
-                enmTxDir = atapiParseCmd(pAhciPort, pAhciReq);
+                enmType = atapiParseCmd(pAhciPort, pAhciReq);
             break;
         case ATA_IDENTIFY_PACKET_DEVICE:
             if (!pAhciPort->fATAPI)
@@ -6498,7 +6458,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         {
             pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
             pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * pAhciPort->cbSector;
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             break;
         }
         case ATA_WRITE_DMA_EXT:
@@ -6507,7 +6467,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         {
             pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
             pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * pAhciPort->cbSector;
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             break;
         }
         case ATA_READ_FPDMA_QUEUED:
@@ -6515,7 +6475,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
-            enmTxDir = AHCITXDIR_READ;
+            enmType = PDMMEDIAEXIOREQTYPE_READ;
             break;
         }
         case ATA_WRITE_FPDMA_QUEUED:
@@ -6523,7 +6483,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
-            enmTxDir = AHCITXDIR_WRITE;
+            enmType = PDMMEDIAEXIOREQTYPE_WRITE;
             break;
         }
         case ATA_READ_LOG_EXT:
@@ -6568,11 +6528,6 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
 
                             aBuf[511] = (uint8_t)-(int8_t)uChkSum;
 
-                            if (pTaskErr->enmTxDir == AHCITXDIR_TRIM)
-                                ahciTrimRangesDestroy(pTaskErr);
-                            else if (pTaskErr->enmTxDir != AHCITXDIR_FLUSH)
-                                ahciReqMemFree(pAhciPort, pTaskErr, true /* fForceFree */);
-
                             /* Finally free the error task state structure because it is completely unused now. */
                             RTMemFree(pTaskErr);
                         }
@@ -6583,7 +6538,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                          *
                          * See SATA2 1.2 spec chapter 4.2.3.4
                          */
-                        bool fAbortedAll = ahciCancelActiveTasks(pAhciPort, pAhciReq);
+                        bool fAbortedAll = ahciCancelActiveTasks(pAhciPort);
                         Assert(fAbortedAll); NOREF(fAbortedAll);
                         ahciSendSDBFis(pAhciPort, 0xffffffff, true);
 
@@ -6602,10 +6557,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         }
         case ATA_DATA_SET_MANAGEMENT:
         {
-            if (   (   !pAhciPort->fAsyncInterface
-                    && pAhciPort->pDrvMedia->pfnDiscard)
-                || (   pAhciPort->fAsyncInterface
-                    && pAhciPort->pDrvMediaAsync->pfnStartDiscard))
+            if (pAhciPort->fTrimEnabled)
             {
                 /* Check that the trim bit is set and all other bits are 0. */
                 if (   !(pAhciReq->cmdFis[AHCI_CMDFIS_FET] & UINT16_C(0x01))
@@ -6615,7 +6567,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
                     pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
                 }
                 else
-                    enmTxDir = AHCITXDIR_TRIM;
+                    enmType = PDMMEDIAEXIOREQTYPE_DISCARD;
                 break;
             }
             /* else: fall through and report error to the guest. */
@@ -6635,7 +6587,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
     }
 
-    return enmTxDir;
+    return enmType;
 }
 
 /**
@@ -6646,8 +6598,6 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
  */
 static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    RTGCPHYS  GCPhysAddrCmdTbl;
-
     AssertMsgReturn(pAhciPort->GCPhysAddrClb && pAhciPort->GCPhysAddrFb,
                     ("%s: GCPhysAddrClb and/or GCPhysAddrFb are 0\n", __FUNCTION__),
                     false);
@@ -6657,19 +6607,20 @@ static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
      * From this we get the address of the command table which we are reading too.
      * We can process the Command FIS afterwards.
      */
+    CmdHdr cmdHdr;
     pAhciReq->GCPhysCmdHdrAddr = pAhciPort->GCPhysAddrClb + pAhciReq->uTag * sizeof(CmdHdr);
     LogFlow(("%s: PDMDevHlpPhysRead GCPhysAddrCmdLst=%RGp cbCmdHdr=%u\n", __FUNCTION__,
              pAhciReq->GCPhysCmdHdrAddr, sizeof(CmdHdr)));
-    PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
+    PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &cmdHdr, sizeof(CmdHdr));
 
 #ifdef LOG_ENABLED
     /* Print some infos about the command header. */
-    ahciDumpCmdHdrInfo(pAhciPort, &pAhciReq->cmdHdr);
+    ahciDumpCmdHdrInfo(pAhciPort, &cmdHdr);
 #endif
 
-    GCPhysAddrCmdTbl = AHCI_RTGCPHYS_FROM_U32(pAhciReq->cmdHdr.u32CmdTblAddrUp, pAhciReq->cmdHdr.u32CmdTblAddr);
+    RTGCPHYS GCPhysAddrCmdTbl = AHCI_RTGCPHYS_FROM_U32(cmdHdr.u32CmdTblAddrUp, cmdHdr.u32CmdTblAddr);
 
-    AssertMsgReturn((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_CFL_MASK) * sizeof(uint32_t) == AHCI_CMDFIS_TYPE_H2D_SIZE,
+    AssertMsgReturn((cmdHdr.u32DescInf & AHCI_CMDHDR_CFL_MASK) * sizeof(uint32_t) == AHCI_CMDFIS_TYPE_H2D_SIZE,
                     ("This is not a command FIS!!\n"),
                     false);
 
@@ -6682,17 +6633,17 @@ static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
                     false);
 
     /* Set transfer direction. */
-    pAhciReq->enmTxDir = (pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_W) ? AHCITXDIR_WRITE : AHCITXDIR_READ;
+    pAhciReq->enmType = (cmdHdr.u32DescInf & AHCI_CMDHDR_W) ? PDMMEDIAEXIOREQTYPE_WRITE : PDMMEDIAEXIOREQTYPE_READ;
 
     /* If this is an ATAPI command read the atapi command. */
-    if (pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_A)
+    if (cmdHdr.u32DescInf & AHCI_CMDHDR_A)
     {
         GCPhysAddrCmdTbl += AHCI_CMDHDR_ACMD_OFFSET;
         PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), GCPhysAddrCmdTbl, &pAhciReq->aATAPICmd[0], ATAPI_PACKET_SIZE);
     }
 
     /* We "received" the FIS. Clear the BSY bit in regTFD. */
-    if ((pAhciReq->cmdHdr.u32DescInf & AHCI_CMDHDR_C) && (pAhciReq->fFlags & AHCI_REQ_CLEAR_SACT))
+    if ((cmdHdr.u32DescInf & AHCI_CMDHDR_C) && (pAhciReq->fFlags & AHCI_REQ_CLEAR_SACT))
     {
         /*
          * We need to send a FIS which clears the busy bit if this is a queued command so that the guest can queue other commands.
@@ -6702,8 +6653,8 @@ static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
         pAhciPort->regTFD &= ~AHCI_PORT_TFD_BSY;
     }
 
-    pAhciReq->GCPhysPrdtl = AHCI_RTGCPHYS_FROM_U32(pAhciReq->cmdHdr.u32CmdTblAddrUp, pAhciReq->cmdHdr.u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
-    pAhciReq->cPrdtlEntries = AHCI_CMDHDR_PRDTL_ENTRIES(pAhciReq->cmdHdr.u32DescInf);
+    pAhciReq->GCPhysPrdtl = AHCI_RTGCPHYS_FROM_U32(cmdHdr.u32CmdTblAddrUp, cmdHdr.u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
+    pAhciReq->cPrdtlEntries = AHCI_CMDHDR_PRDTL_ENTRIES(cmdHdr.u32DescInf);
 
 #ifdef LOG_ENABLED
     /* Print some infos about the FIS. */
@@ -6736,86 +6687,45 @@ static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
  * @returns Flag whether the request was canceled inbetween.
  * @param   pAhciPort    The port the request is for.
  * @param   pAhciReq     The request to submit.
- * @param   enmTxDir     The request type.
+ * @param   enmType     The request type.
  */
-static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, AHCITXDIR enmTxDir)
+static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIOREQTYPE enmType)
 {
     int rc = VINF_SUCCESS;
     bool fReqCanceled = false;
 
-    if (pAhciPort->fAsyncInterface)
+    VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, pAhciReq->enmType, pAhciReq->uOffset, pAhciReq->cbTransfer);
+    VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
+
+    if (enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
+        rc = pAhciPort->pDrvMediaEx->pfnIoReqFlush(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
+    else if (enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
     {
-        VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, pAhciReq->enmTxDir, pAhciReq->uOffset, pAhciReq->cbTransfer);
-        VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
-        if (enmTxDir == AHCITXDIR_FLUSH)
-        {
-            rc = pAhciPort->pDrvMediaAsync->pfnStartFlush(pAhciPort->pDrvMediaAsync,
-                                                          pAhciReq);
-        }
-        else if (enmTxDir == AHCITXDIR_TRIM)
-        {
-            rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
-            if (RT_SUCCESS(rc))
-            {
-                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                rc = pAhciPort->pDrvMediaAsync->pfnStartDiscard(pAhciPort->pDrvMediaAsync, pAhciReq->u.Trim.paRanges,
-                                                                pAhciReq->u.Trim.cRanges, pAhciReq);
-            }
-        }
-        else if (enmTxDir == AHCITXDIR_READ)
-        {
-            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-            rc = pAhciPort->pDrvMediaAsync->pfnStartRead(pAhciPort->pDrvMediaAsync, pAhciReq->uOffset,
-                                                         &pAhciReq->u.Io.DataSeg, 1,
-                                                         pAhciReq->cbTransfer,
-                                                         pAhciReq);
-        }
-        else
+        rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
+        if (RT_SUCCESS(rc))
         {
             pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-            rc = pAhciPort->pDrvMediaAsync->pfnStartWrite(pAhciPort->pDrvMediaAsync, pAhciReq->uOffset,
-                                                          &pAhciReq->u.Io.DataSeg, 1,
-                                                          pAhciReq->cbTransfer,
-                                                          pAhciReq);
+            rc = pAhciPort->pDrvMediaEx->pfnIoReqDiscard(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
+                                                         pAhciReq->u.Trim.cRanges);
         }
-        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-            fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
-        else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-            fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc);
+    }
+    else if (enmType == PDMMEDIAEXIOREQTYPE_READ)
+    {
+        pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+        rc = pAhciPort->pDrvMediaEx->pfnIoReqRead(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
+                                                  pAhciReq->uOffset, pAhciReq->cbTransfer);
     }
     else
     {
-        if (enmTxDir == AHCITXDIR_FLUSH)
-            rc = pAhciPort->pDrvMedia->pfnFlush(pAhciPort->pDrvMedia);
-        else if (enmTxDir == AHCITXDIR_TRIM)
-        {
-            rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
-            if (RT_SUCCESS(rc))
-            {
-                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                rc = pAhciPort->pDrvMedia->pfnDiscard(pAhciPort->pDrvMedia, pAhciReq->u.Trim.paRanges,
-                                                      pAhciReq->u.Trim.cRanges);
-                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
-            }
-        }
-        else if (enmTxDir == AHCITXDIR_READ)
-        {
-            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-            rc = pAhciPort->pDrvMedia->pfnRead(pAhciPort->pDrvMedia, pAhciReq->uOffset,
-                                               pAhciReq->u.Io.DataSeg.pvSeg,
-                                               pAhciReq->cbTransfer);
-            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 0;
-        }
-        else
-        {
-            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-            rc = pAhciPort->pDrvMedia->pfnWrite(pAhciPort->pDrvMedia, pAhciReq->uOffset,
-                                                pAhciReq->u.Io.DataSeg.pvSeg,
-                                                pAhciReq->cbTransfer);
-            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
-        }
-        fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc);
+        pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+        rc = pAhciPort->pDrvMediaEx->pfnIoReqWrite(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
+                                                   pAhciReq->uOffset, pAhciReq->cbTransfer);
     }
+
+    if (rc == VINF_SUCCESS)
+        fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
+    else if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
+        fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc);
 
     return fReqCanceled;
 }
@@ -6837,7 +6747,6 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 
     /* Set current command slot */
     ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
-    ASMAtomicWritePtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], pAhciReq);
 
     bool fContinue = ahciPortTaskGetCommandFis(pAhciPort, pAhciReq);
     if (fContinue)
@@ -6983,21 +6892,12 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                && !pAhciPort->fPortReset)
         {
             bool fReqCanceled = false;
-            AHCITXDIR enmTxDir;
-            PAHCIREQ pAhciReq;
 
             /* Decrement to get the slot number. */
             idx--;
             ahciLog(("%s: Processing command at slot %d\n", __FUNCTION__, idx));
 
-            /* Check whether the request is already active and ignore. */
-            if (ASMAtomicReadPtr((void * volatile *)&pAhciPort->aActiveTasks[idx]))
-            {
-                ahciLog(("%s: Ignoring command at slot %d because it is already active\n", __FUNCTION__, idx));
-                continue;
-            }
-
-            pAhciReq = ahciR3ReqAlloc(pAhciPort);
+            PAHCIREQ pAhciReq = ahciR3ReqAlloc(pAhciPort, idx);
             if (RT_LIKELY(pAhciReq))
             {
                 pAhciReq->uTag          = idx;
@@ -7006,13 +6906,13 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 bool fContinue = ahciR3CmdPrepare(pAhciPort, pAhciReq);
                 if (fContinue)
                 {
-                    enmTxDir = ahciProcessCmd(pAhciPort, pAhciReq, pAhciReq->cmdFis);
-                    pAhciReq->enmTxDir = enmTxDir;
+                    PDMMEDIAEXIOREQTYPE enmType = ahciProcessCmd(pAhciPort, pAhciReq, pAhciReq->cmdFis);
+                    pAhciReq->enmType = enmType;
 
-                    if (enmTxDir != AHCITXDIR_NONE)
+                    if (enmType != PDMMEDIAEXIOREQTYPE_INVALID)
                     {
-                        if (   enmTxDir != AHCITXDIR_FLUSH
-                            && enmTxDir != AHCITXDIR_TRIM)
+                        if (   enmType != PDMMEDIAEXIOREQTYPE_FLUSH
+                            && enmType != PDMMEDIAEXIOREQTYPE_DISCARD)
                         {
                             STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
 
@@ -7026,7 +6926,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         }
 
                         if (!(pAhciReq->fFlags & AHCI_REQ_OVERFLOW))
-                            fReqCanceled = ahciR3ReqSubmit(pAhciPort, pAhciReq, enmTxDir);
+                            fReqCanceled = ahciR3ReqSubmit(pAhciPort, pAhciReq, enmType);
                         else /* Overflow is handled in completion routine. */
                             fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
                     }
@@ -7034,10 +6934,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS);
                 } /* Command */
                 else
-                {
-                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag]);
                     ahciR3ReqFree(pAhciPort, pAhciReq);
-                }
             }
             else /* !Request allocated, use on stack variant to signal the error. */
             {
@@ -7143,8 +7040,8 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     {
         PAHCIPort pThisPort = &pThis->ahciPort[i];
 
-        pHlp->pfnPrintf(pHlp, "Port %d: async=%RTbool device-attached=%RTbool\n",
-                        pThisPort->iLUN, pThisPort->fAsyncInterface, pThisPort->pDrvBase != NULL);
+        pHlp->pfnPrintf(pHlp, "Port %d: device-attached=%RTbool\n",
+                        pThisPort->iLUN, pThisPort->pDrvBase != NULL);
         pHlp->pfnPrintf(pHlp, "PortClb=%#x\n", pThisPort->regCLB);
         pHlp->pfnPrintf(pHlp, "PortClbU=%#x\n", pThisPort->regCLBU);
         pHlp->pfnPrintf(pHlp, "PortFb=%#x\n", pThisPort->regFB);
@@ -7706,9 +7603,6 @@ static DECLCALLBACK(void) ahciR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
     PAHCIPort pAhciPort = PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface);
     Log(("%s:\n", __FUNCTION__));
 
-    /* Free all cached I/O tasks. */
-    ahciR3PortCachedReqsFree(pAhciPort);
-
     pAhciPort->cTotalSectors = 0;
 
     if (pAhciPort->fATAPI)
@@ -7738,58 +7632,49 @@ static DECLCALLBACK(void) ahciR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
  */
 static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
 {
-    int          rc = VINF_SUCCESS;
-    PDMMEDIATYPE enmType;
-
-    /*
-     * Query the block and blockbios interfaces.
-     */
+    /* Query the media interface. */
     pAhciPort->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMEDIA);
-    if (!pAhciPort->pDrvMedia)
-    {
-        AssertMsgFailed(("Configuration error: LUN#%d hasn't a block interface!\n", pAhciPort->iLUN));
-        return VERR_PDM_MISSING_INTERFACE;
-    }
+    AssertMsgReturn(VALID_PTR(pAhciPort->pDrvMedia),
+                    ("AHCI configuration error: LUN#%d misses the basic media interface!\n", pAhciPort->iLUN),
+                    VERR_PDM_MISSING_INTERFACE);
+
+    /* Get the extended media interface. */
+    pAhciPort->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMEDIAEX);
+    AssertMsgReturn(VALID_PTR(pAhciPort->pDrvMediaEx),
+                    ("AHCI configuration error: LUN#%d misses the extended media interface!\n", pAhciPort->iLUN),
+                    VERR_PDM_MISSING_INTERFACE);
 
     pAhciPort->pDrvMount = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMOUNT);
-
-    /* Try to get the optional async block interface. */
-    pAhciPort->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMEDIAASYNC);
 
     /*
      * Validate type.
      */
-    enmType = pAhciPort->pDrvMedia->pfnGetType(pAhciPort->pDrvMedia);
+    PDMMEDIATYPE enmType = pAhciPort->pDrvMedia->pfnGetType(pAhciPort->pDrvMedia);
+    AssertMsgReturn(enmType == PDMMEDIATYPE_HARD_DISK || enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD,
+                    ("AHCI configuration error: LUN#%d isn't a disk or cd/dvd. enmType=%u\n", pAhciPort->iLUN, enmType),
+                    VERR_PDM_UNSUPPORTED_BLOCK_TYPE);
+    AssertMsgReturn(enmType == PDMMEDIATYPE_HARD_DISK || pAhciPort->pDrvMount,
+                    ("AHCI configuration error: LUN#%d is CD/DVD-ROM without a mountable interface\n", pAhciPort->iLUN),
+                    VERR_INTERNAL_ERROR);
 
-    if (   enmType != PDMMEDIATYPE_HARD_DISK
-        && enmType != PDMMEDIATYPE_CDROM
-        && enmType != PDMMEDIATYPE_DVD)
-    {
-        AssertMsgFailed(("Configuration error: LUN#%d isn't a disk or cd/dvd. enmType=%d\n", pAhciPort->iLUN, enmType));
-        return VERR_PDM_UNSUPPORTED_BLOCK_TYPE;
-    }
-
-    if (   (enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD)
-        && !pAhciPort->pDrvMount)
-    {
-        AssertMsgFailed(("Internal error: CD/DVD-ROM without a mountable interface\n"));
-        return VERR_INTERNAL_ERROR;
-    }
-    pAhciPort->fATAPI = (enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD);
-    pAhciPort->fATAPIPassthrough = pAhciPort->fATAPI ? (pAhciPort->pDrvMedia->pfnSendCmd != NULL) : false;
-
-    rc = RTCritSectInit(&pAhciPort->CritSectReqsFree);
+    int rc = pAhciPort->pDrvMediaEx->pfnIoReqAllocSizeSet(pAhciPort->pDrvMediaEx, sizeof(AHCIREQ));
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("AHCI initialisation error: Failed to create critical section for free request list"));
+                                   N_("AHCI configuration error: LUN#%u: Failed to set I/O request size!"),
+                                   pAhciPort->iLUN);
 
-    pAhciPort->pListReqsFree = (PRTLISTANCHOR)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(RTLISTANCHOR));
-    if (!pAhciPort->pListReqsFree)
-        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
-                                   N_("AHCI initialisation error: Failed to allocate memory for free request list"));
+    uint32_t fFeatures = 0;
+    rc = pAhciPort->pDrvMediaEx->pfnQueryFeatures(pAhciPort->pDrvMediaEx, &fFeatures);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("AHCI configuration error: LUN#%u: Failed to query features of device"),
+                                   pAhciPort->iLUN);
 
-    RTListInit(pAhciPort->pListReqsFree);
+    if (fFeatures & PDMIMEDIAEX_FEATURE_F_DISCARD)
+        pAhciPort->fTrimEnabled = true;
 
+    pAhciPort->fATAPI = (enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD);
+    pAhciPort->fATAPIPassthrough = pAhciPort->fATAPI ? !!(fFeatures & PDMIMEDIAEX_FEATURE_F_RAWSCSICMD) : false;
     if (pAhciPort->fATAPI)
     {
         pAhciPort->cTotalSectors = pAhciPort->pDrvMedia->pfnGetSize(pAhciPort->pDrvMedia) / 2048;
@@ -7833,7 +7718,7 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
                  pAhciPort->iLUN, pAhciPort->PCHSGeometry.cCylinders,
                  pAhciPort->PCHSGeometry.cHeads, pAhciPort->PCHSGeometry.cSectors,
                  pAhciPort->cTotalSectors));
-        if (pAhciPort->pDrvMedia->pfnDiscard)
+        if (pAhciPort->fTrimEnabled)
             LogRel(("AHCI: LUN#%d: Enabled TRIM support\n", pAhciPort->iLUN));
     }
     return rc;
@@ -7852,12 +7737,6 @@ static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
 
     PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-    /*
-     * Free all cached tasks here, not possible on destruct because the driver
-     * is destroyed before us.
-     */
-    for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
-        ahciR3PortCachedReqsFree(&pThis->ahciPort[iPort]);
     return true;
 }
 
@@ -7872,16 +7751,7 @@ static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
         PDMDevHlpSetAsyncNotification(pDevIns, ahciR3IsAsyncSuspendOrPowerOffDone);
     else
-    {
-        /*
-         * Free all cached tasks here, not possible on destruct because the driver
-         * is destroyed before us.
-         */
-        for (unsigned iPort = 0; iPort < pThis->cPortsImpl; iPort++)
-            ahciR3PortCachedReqsFree(&pThis->ahciPort[iPort]);
-
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-    }
 }
 
 /**
@@ -8089,17 +7959,6 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     if (pAhciPort->fATAPI)
         ahciMediumRemoved(pAhciPort);
 
-    /* Free all cached I/O tasks. */
-    ahciR3PortCachedReqsFree(pAhciPort);
-
-    if (RTCritSectIsInitialized(&pAhciPort->CritSectReqsFree))
-        RTCritSectDelete(&pAhciPort->CritSectReqsFree);
-
-    if (pAhciPort->pListReqsFree)
-        MMR3HeapFree(pAhciPort->pListReqsFree);
-
-    pAhciPort->pListReqsFree = NULL;
-
     if (!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG))
     {
         /*
@@ -8125,7 +7984,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
      */
     pAhciPort->pDrvBase = NULL;
     pAhciPort->pDrvMedia = NULL;
-    pAhciPort->pDrvMediaAsync = NULL;
+    pAhciPort->pDrvMediaEx = NULL;
 }
 
 /**
@@ -8151,7 +8010,7 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     AssertMsg(iLUN < pThis->cPortsImpl, ("iLUN=%u", iLUN));
     AssertRelease(!pAhciPort->pDrvBase);
     AssertRelease(!pAhciPort->pDrvMedia);
-    AssertRelease(!pAhciPort->pDrvMediaAsync);
+    AssertRelease(!pAhciPort->pDrvMediaEx);
     Assert(pAhciPort->iLUN == iLUN);
 
     AssertMsgReturn(   pAhciPort->fHotpluggable
@@ -8186,12 +8045,6 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     {
         char szName[24];
         RTStrPrintf(szName, sizeof(szName), "Port%d", iLUN);
-
-        if (   pAhciPort->pDrvMediaAsync
-            && !pAhciPort->fATAPI)
-            pAhciPort->fAsyncInterface = true;
-        else
-            pAhciPort->fAsyncInterface = false;
 
         rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
         if (RT_FAILURE(rc))
@@ -8344,14 +8197,6 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
                 SUPSemEventClose(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
                 pAhciPort->hEvtProcess = NIL_SUPSEMEVENT;
             }
-
-            if (RTCritSectIsInitialized(&pAhciPort->CritSectReqsFree))
-                RTCritSectDelete(&pAhciPort->CritSectReqsFree);
-
-#ifdef VBOX_STRICT
-            for (uint32_t i = 0; i < AHCI_NR_COMMAND_SLOTS; i++)
-                Assert(!pAhciPort->aActiveTasks[i]);
-#endif
         }
 
         PDMR3CritSectDelete(&pThis->lock);
@@ -8386,7 +8231,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                     "SecondaryMaster\0"
                                     "SecondarySlave\0"
                                     "PortCount\0"
-                                    "UseAsyncInterfaceIfAvailable\0"
                                     "Bootable\0"
                                     "CmdSlotsAvail\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
@@ -8417,11 +8261,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    N_("AHCI configuration error: PortCount=%u should be at least 1"),
                                    pThis->cPortsImpl);
-
-    rc = CFGMR3QueryBoolDef(pCfg, "UseAsyncInterfaceIfAvailable", &pThis->fUseAsyncInterfaceIfAvailable, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("AHCI configuration error: failed to read UseAsyncInterfaceIfAvailable as boolean"));
 
     rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
     if (RT_FAILURE(rc))
@@ -8640,12 +8479,16 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         /*
          * Init interfaces.
          */
-        pAhciPort->IBase.pfnQueryInterface              = ahciR3PortQueryInterface;
-        pAhciPort->IPortAsync.pfnTransferCompleteNotify = ahciR3TransferCompleteNotify;
-        pAhciPort->IPort.pfnQueryDeviceLocation         = ahciR3PortQueryDeviceLocation;
-        pAhciPort->IMountNotify.pfnMountNotify          = ahciR3MountNotify;
-        pAhciPort->IMountNotify.pfnUnmountNotify        = ahciR3UnmountNotify;
-        pAhciPort->fWrkThreadSleeping                   = true;
+        pAhciPort->IBase.pfnQueryInterface                 = ahciR3PortQueryInterface;
+        pAhciPort->IMediaExPort.pfnIoReqCompleteNotify     = ahciR3IoReqCompleteNotify;
+        pAhciPort->IMediaExPort.pfnIoReqCopyFromBuf        = ahciR3IoReqCopyFromBuf;
+        pAhciPort->IMediaExPort.pfnIoReqCopyToBuf          = ahciR3IoReqCopyToBuf;
+        pAhciPort->IMediaExPort.pfnIoReqQueryDiscardRanges = ahciR3IoReqQueryDiscardRanges;
+        pAhciPort->IMediaExPort.pfnIoReqStateChanged       = ahciR3IoReqStateChanged;
+        pAhciPort->IPort.pfnQueryDeviceLocation            = ahciR3PortQueryDeviceLocation;
+        pAhciPort->IMountNotify.pfnMountNotify             = ahciR3MountNotify;
+        pAhciPort->IMountNotify.pfnUnmountNotify           = ahciR3UnmountNotify;
+        pAhciPort->fWrkThreadSleeping                      = true;
 
         /* Query per port configuration options if available. */
         PCFGMNODE pCfgPort = CFGMR3GetChild(pDevIns->pCfg, szName);
@@ -8680,22 +8523,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             rc = ahciR3VpdInit(pDevIns, pAhciPort, szName);
             if (RT_FAILURE(rc))
                 return rc;
-
-            /*
-             * If the new async interface is available we use a PDMQueue to transmit
-             * the requests into R3.
-             * Otherwise we use a event semaphore and a async I/O thread which processes them.
-             */
-            if (pAhciPort->pDrvMediaAsync && pThis->fUseAsyncInterfaceIfAvailable)
-            {
-                LogRel(("AHCI: LUN#%d: using async I/O\n", pAhciPort->iLUN));
-                pAhciPort->fAsyncInterface = true;
-            }
-            else
-            {
-                LogRel(("AHCI: LUN#%d: using normal I/O\n", pAhciPort->iLUN));
-                pAhciPort->fAsyncInterface = false;
-            }
 
             rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
             if (RT_FAILURE(rc))
