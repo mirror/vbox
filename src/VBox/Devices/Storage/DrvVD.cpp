@@ -97,10 +97,6 @@ extern bool DevINIPConfigured(void);
 #define PDMIMEDIA_2_VBOXDISK(pInterface) \
     ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMedia)) )
 
-/** Converts a pointer to VBOXDISK::IMediaAsync to a PVBOXDISK. */
-#define PDMIMEDIAASYNC_2_VBOXDISK(pInterface) \
-    ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMediaAsync)) )
-
 /** Saved state version of an I/O request .*/
 #define DRVVD_IOREQ_SAVED_STATE_VERSION UINT32_C(1)
 /** Maximum number of request errors in the release log before muting. */
@@ -116,7 +112,7 @@ typedef struct VBOXDISK *PVBOXDISK;
 typedef struct VBOXIMAGE
 {
     /** Pointer to next image. */
-    struct VBOXIMAGE    *pNext;
+    struct VBOXIMAGE   *pNext;
     /** Pointer to list of VD interfaces. Per-image. */
     PVDINTERFACE       pVDIfsImage;
     /** Configuration information interface. */
@@ -244,7 +240,6 @@ typedef VDLSTIOREQALLOC *PVDLSTIOREQALLOC;
  * VBox disk container media main structure, private part.
  *
  * @implements  PDMIMEDIA
- * @implements  PDMIMEDIAASYNC
  * @implements  PDMIMEDIAEX
  * @implements  PDMIMOUNT
  * @implements  VDINTERFACEERROR
@@ -275,10 +270,6 @@ typedef struct VBOXDISK
 
     /** Flag whether opened disk supports async I/O operations. */
     bool                     fAsyncIOSupported;
-    /** The async media interface. */
-    PDMIMEDIAASYNC           IMediaAsync;
-    /** The async media port interface above. */
-    PPDMIMEDIAASYNCPORT      pDrvMediaAsyncPort;
     /** Pointer to the list of data we need to keep per image. */
     PVBOXIMAGE               pImages;
     /** Flag whether the media should allow concurrent open for writing. */
@@ -2499,10 +2490,6 @@ static DECLCALLBACK(bool) drvvdIsLocked(PPDMIMOUNT pInterface)
 }
 
 
-/*********************************************************************************************************************************
-*   Async Media interface methods                                                                                                *
-*********************************************************************************************************************************/
-
 static DECLCALLBACK(void) drvvdBlkCacheReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser1;
@@ -2511,176 +2498,6 @@ static DECLCALLBACK(void) drvvdBlkCacheReqComplete(void *pvUser1, void *pvUser2,
     PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);    
 }
 
-static DECLCALLBACK(void) drvvdAsyncReqComplete(void *pvUser1, void *pvUser2, int rcReq)
-{
-    PVBOXDISK pThis = (PVBOXDISK)pvUser1;
-
-    int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
-                                                                  pvUser2, rcReq);
-    AssertRC(rc);
-}
-
-static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                        PCRTSGSEG paSeg, unsigned cSeg,
-                                        size_t cbRead, void *pvUser)
-{
-    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d pvUser=%#p\n",
-                 uOffset, paSeg, cSeg, cbRead, pvUser));
-    int rc = VINF_SUCCESS;
-    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-
-    /*
-     * Check the state.
-     */
-    if (!pThis->pDisk)
-    {
-        AssertMsgFailed(("Invalid state! Not mounted!\n"));
-        return VERR_PDM_MEDIA_NOT_MOUNTED;
-    }
-
-    rc = drvvdKeyCheckPrereqs(pThis, true /* fSetError */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pThis->fBootAccelActive = false;
-
-    RTSGBUF SgBuf;
-    RTSgBufInit(&SgBuf, paSeg, cSeg);
-    if (!pThis->pBlkCache)
-        rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, &SgBuf,
-                         drvvdAsyncReqComplete, pThis, pvUser);
-    else
-    {
-        rc = PDMR3BlkCacheRead(pThis->pBlkCache, uOffset, &SgBuf, cbRead, pvUser);
-        if (rc == VINF_AIO_TASK_PENDING)
-            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        else if (rc == VINF_SUCCESS)
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-    }
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                         PCRTSGSEG paSeg, unsigned cSeg,
-                                         size_t cbWrite, void *pvUser)
-{
-    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n",
-                 uOffset, paSeg, cSeg, cbWrite, pvUser));
-    int rc = VINF_SUCCESS;
-    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-
-    /*
-     * Check the state.
-     */
-    if (!pThis->pDisk)
-    {
-        AssertMsgFailed(("Invalid state! Not mounted!\n"));
-        return VERR_PDM_MEDIA_NOT_MOUNTED;
-    }
-
-    rc = drvvdKeyCheckPrereqs(pThis, true /* fSetError */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pThis->fBootAccelActive = false;
-
-    RTSGBUF SgBuf;
-    RTSgBufInit(&SgBuf, paSeg, cSeg);
-
-    if (!pThis->pBlkCache)
-        rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, &SgBuf,
-                          drvvdAsyncReqComplete, pThis, pvUser);
-    else
-    {
-        rc = PDMR3BlkCacheWrite(pThis->pBlkCache, uOffset, &SgBuf, cbWrite, pvUser);
-        if (rc == VINF_AIO_TASK_PENDING)
-            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        else if (rc == VINF_SUCCESS)
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-    }
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
-{
-    LogFlowFunc(("pvUser=%#p\n", pvUser));
-    int rc = VINF_SUCCESS;
-    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-
-    /*
-     * Check the state.
-     */
-    if (!pThis->pDisk)
-    {
-        AssertMsgFailed(("Invalid state! Not mounted!\n"));
-        return VERR_PDM_MEDIA_NOT_MOUNTED;
-    }
-
-#ifdef VBOX_IGNORE_FLUSH
-    if (pThis->fIgnoreFlushAsync)
-        return VINF_VD_ASYNC_IO_FINISHED;
-#endif /* VBOX_IGNORE_FLUSH */
-
-    if (!pThis->pBlkCache)
-        rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, pvUser);
-    else
-    {
-        rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pvUser);
-        if (rc == VINF_AIO_TASK_PENDING)
-            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        else if (rc == VINF_SUCCESS)
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-    }
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-static DECLCALLBACK(int) drvvdStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges,
-                                           unsigned cRanges, void *pvUser)
-{
-    int rc = VINF_SUCCESS;
-    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-
-    LogFlowFunc(("paRanges=%#p cRanges=%u pvUser=%#p\n",
-                 paRanges, cRanges, pvUser));
-
-    /*
-     * Check the state.
-     */
-    if (!pThis->pDisk)
-    {
-        AssertMsgFailed(("Invalid state! Not mounted!\n"));
-        return VERR_PDM_MEDIA_NOT_MOUNTED;
-    }
-
-    if (!pThis->pBlkCache)
-        rc = VDAsyncDiscardRanges(pThis->pDisk, paRanges, cRanges, drvvdAsyncReqComplete,
-                                  pThis, pvUser);
-    else
-    {
-        rc = PDMR3BlkCacheDiscard(pThis->pBlkCache, paRanges, cRanges, pvUser);
-        if (rc == VINF_AIO_TASK_PENDING)
-            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        else if (rc == VINF_SUCCESS)
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-    }
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-/** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
-static DECLCALLBACK(void) drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
-{
-    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-
-    int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
-                                                                  pvUser, rcReq);
-    AssertRC(rc);
-}
 
 /** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
 static DECLCALLBACK(void) drvvdBlkCacheXferCompleteIoReq(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
@@ -3130,8 +2947,14 @@ static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIo
     if (pThis->fAsyncIOSupported)
     {
         if (pThis->pBlkCache)
+        {
             rc = PDMR3BlkCacheRead(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
                                    &pIoReq->ReadWrite.IoBuf.SgBuf, cbReqIo, pIoReq);
+            if (rc == VINF_SUCCESS)
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+            else if (rc == VINF_AIO_TASK_PENDING)
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        }
         else
             rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
                              drvvdMediaExIoReqComplete, pThis, pIoReq);
@@ -3167,8 +2990,14 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     if (pThis->fAsyncIOSupported)
     {
         if (pThis->pBlkCache)
+        {
             rc = PDMR3BlkCacheWrite(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
                                     &pIoReq->ReadWrite.IoBuf.SgBuf, cbReqIo, pIoReq);
+            if (rc == VINF_SUCCESS)
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+            else if (rc == VINF_AIO_TASK_PENDING)
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        }
         else
             rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
                               drvvdMediaExIoReqComplete, pThis, pIoReq);
@@ -3202,7 +3031,13 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     if (pThis->fAsyncIOSupported)
     {
         if (pThis->pBlkCache)
+        {
             rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pIoReq);
+            if (rc == VINF_SUCCESS)
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+            else if (rc == VINF_AIO_TASK_PENDING)
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        }
         else
             rc = VDAsyncFlush(pThis->pDisk, drvvdMediaExIoReqComplete, pThis, pIoReq);
     }
@@ -3230,7 +3065,13 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
     if (pThis->fAsyncIOSupported)
     {
         if (pThis->pBlkCache)
+        {
             rc = PDMR3BlkCacheDiscard(pThis->pBlkCache, pIoReq->Discard.paRanges, pIoReq->Discard.cRanges, pIoReq);
+            if (rc == VINF_SUCCESS)
+                rc = VINF_VD_ASYNC_IO_FINISHED;
+            else if (rc == VINF_AIO_TASK_PENDING)
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        }
         else
             rc = VDAsyncDiscardRanges(pThis->pDisk, pIoReq->Discard.paRanges, pIoReq->Discard.cRanges,
                                       drvvdMediaExIoReqComplete, pThis, pIoReq);
@@ -4156,7 +3997,6 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface, const char
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->fMountable ? &pThis->IMount : NULL);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNC, pThis->fAsyncIOSupported ? &pThis->IMediaAsync : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDrvMediaExPort ? &pThis->IMediaEx : NULL);
     return NULL;
 }
@@ -4515,12 +4355,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMount.pfnUnlock                 = drvvdUnlock;
     pThis->IMount.pfnIsLocked               = drvvdIsLocked;
 
-    /* IMediaAsync */
-    pThis->IMediaAsync.pfnStartRead       = drvvdStartRead;
-    pThis->IMediaAsync.pfnStartWrite      = drvvdStartWrite;
-    pThis->IMediaAsync.pfnStartFlush      = drvvdStartFlush;
-    pThis->IMediaAsync.pfnStartDiscard    = drvvdStartDiscard;
-
     /* IMediaEx */
     pThis->IMediaEx.pfnQueryFeatures            = drvvdQueryFeatures;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvvdIoReqAllocSizeSet;
@@ -4558,8 +4392,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("No media port interface above"));
 
-    /* Try to attach async media port interface above.*/
-    pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
     pThis->pDrvMountNotify    = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
 
     /*
@@ -4965,7 +4797,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             }
         }
 
-        if (pThis->pDrvMediaAsyncPort && fUseNewIo)
+        if (pThis->pDrvMediaExPort && fUseNewIo)
             pThis->fAsyncIOSupported = true;
 
         uint64_t tsStart = RTTimeNanoTS();
@@ -5210,7 +5042,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             if (!fDiscard)
             {
                 pThis->IMedia.pfnDiscard           = NULL;
-                pThis->IMediaAsync.pfnStartDiscard = NULL;
                 pThis->IMediaEx.pfnIoReqDiscard    = NULL;
             }
 
@@ -5332,10 +5163,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 
                 if (cbStr > 0)
                 {
-                    bool fMediaEx = strcmp(pcszController, "nvme") == 0 ? true : false;
                     rc = PDMDrvHlpBlkCacheRetain(pDrvIns, &pThis->pBlkCache,
-                                                 fMediaEx ? drvvdBlkCacheXferCompleteIoReq
-                                                          : drvvdBlkCacheXferComplete,
+                                                 drvvdBlkCacheXferCompleteIoReq,
                                                  drvvdBlkCacheXferEnqueue,
                                                  drvvdBlkCacheXferEnqueueDiscard,
                                                  pszId);

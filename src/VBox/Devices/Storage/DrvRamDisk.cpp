@@ -173,11 +173,6 @@ typedef struct DRVRAMDISK
     PPDMIMEDIAPORT          pDrvMediaPort;
     /** Media port interface */
     PDMIMEDIAPORT           IMediaPort;
-    /** Our media async interface */
-    PDMIMEDIAASYNC          IMediaAsync;
-
-    /** The async media port interface above. */
-    PPDMIMEDIAASYNCPORT     pDrvMediaAsyncPort;
 
     /** Flag whether the RAM disk was pre allocated. */
     bool                    fPreallocRamDisk;
@@ -537,130 +532,6 @@ static DECLCALLBACK(int) drvramdiskWrite(PPDMIMEDIA pInterface,
     Seg.pvSeg = (void *)pvBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
     return drvramdiskWriteWorker(pThis, &SgBuf, off, cbWrite);
-}
-
-/**
- * Worker for a read request.
- *
- * @returns VBox status code.
- * @param   pThis     RAM disk container instance data.
- * @param   pIoReq    The read request.
- */
-static DECLCALLBACK(int) drvramdiskAsyncReadWorker(PDRVRAMDISK pThis, uint64_t uOffset, PCRTSGSEG paSeg,
-                                                   unsigned cSeg, size_t cbRead, void *pvUser)
-{
-    RTSGBUF SgBuf;
-
-    RTSgBufInit(&SgBuf, paSeg, cSeg);
-    int rc = drvramdiskReadWorker(pThis, &SgBuf, uOffset, cbRead);
-    pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvUser, rc);
-    return VINF_SUCCESS;
-}
-
-/**
- * Worker for a write request.
- *
- * @returns VBox status code.
- * @param   pThis     RAM disk container instance data.
- * @param   pIoReq    The read request.
- */
-static DECLCALLBACK(int) drvramdiskAsyncWriteWorker(PDRVRAMDISK pThis, uint64_t uOffset, PCRTSGSEG paSeg,
-                                                    unsigned cSeg, size_t cbWrite, void *pvUser)
-{
-    RTSGBUF SgBuf;
-
-    RTSgBufInit(&SgBuf, paSeg, cSeg);
-    int rc = drvramdiskWriteWorker(pThis, &SgBuf, uOffset, cbWrite);
-    pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvUser, rc);
-    return VINF_SUCCESS;
-}
-
-/**
- * Worker for a flush request.
- *
- * @returns VBox status code.
- * @param   pThis     RAM disk container instance data.
- * @param   pIoReq    The read request.
- */
-static DECLCALLBACK(int) drvramdiskAsyncFlushWorker(PDRVRAMDISK pThis, void *pvUser)
-{
-    pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
-                                                         pvUser, VINF_SUCCESS);
-    return VINF_SUCCESS;
-}
-
-/**
- * Worker for a write request.
- *
- * @returns VBox status code.
- * @param   pThis     RAM disk container instance data.
- * @param   pIoReq    The read request.
- */
-static DECLCALLBACK(int) drvramdiskAsyncDiscardWorker(PDRVRAMDISK pThis, PCRTRANGE paRanges,
-                                                 unsigned cRanges, void *pvUser)
-{
-    int rc = drvramdiskDiscardRecords(pThis, paRanges, cRanges);
-    pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvUser, rc);
-    return VINF_SUCCESS;
-}
-
-/** @copydoc PDMIMEDIAASYNC::pfnStartRead */
-static DECLCALLBACK(int) drvramdiskStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                             PCRTSGSEG paSeg, unsigned cSeg,
-                                             size_t cbRead, void *pvUser)
-{
-    PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMediaAsync);
-
-    int rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvramdiskAsyncReadWorker, 6, pThis, uOffset,
-                              paSeg, cSeg, cbRead, pvUser);
-    if (rc == VINF_SUCCESS)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-
-    return rc;
-}
-
-/** @copydoc PDMIMEDIAASYNC::pfnStartWrite */
-static DECLCALLBACK(int) drvramdiskStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                              PCRTSGSEG paSeg, unsigned cSeg,
-                                              size_t cbWrite, void *pvUser)
-{
-    PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMediaAsync);
-
-    int rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvramdiskAsyncWriteWorker, 6, pThis, uOffset,
-                              paSeg, cSeg, cbWrite, pvUser);
-    if (rc == VINF_SUCCESS)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-
-    return rc;
-}
-
-/** @copydoc PDMIMEDIAASYNC::pfnStartFlush */
-static DECLCALLBACK(int) drvramdiskStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
-{
-    PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMediaAsync);
-
-    int rc = RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                              (PFNRT)drvramdiskAsyncFlushWorker, 2, pThis, pvUser);
-    if (rc == VINF_SUCCESS)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-
-    return rc;
-}
-
-/** @copydoc PDMIMEDIAASYNC::pfnStartDiscard */
-static DECLCALLBACK(int) drvramdiskStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser)
-{
-    PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMediaAsync);
-
-    int rc =  RTReqQueueCallEx(pThis->hReqQ, NULL, 0, RTREQFLAGS_NO_WAIT,
-                               (PFNRT)drvramdiskAsyncDiscardWorker, 4, pThis, paRanges,
-                               cRanges, pvUser);
-    if (rc == VINF_SUCCESS)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-
-    return rc;
 }
 
 /** @copydoc PDMIMEDIA::pfnFlush */
@@ -1699,7 +1570,6 @@ static DECLCALLBACK(void *)  drvramdiskQueryInterface(PPDMIBASE pInterface, cons
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, &pThis->IMediaEx);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNC, &pThis->IMediaAsync);
 
     return NULL;
 }
@@ -1795,12 +1665,6 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnReadPcBios          = drvramdiskReadPcBios;
     pThis->IMedia.pfnDiscard             = drvramdiskDiscard;
 
-    /* IMediaAsync */
-    pThis->IMediaAsync.pfnStartRead      = drvramdiskStartRead;
-    pThis->IMediaAsync.pfnStartWrite     = drvramdiskStartWrite;
-    pThis->IMediaAsync.pfnStartFlush     = drvramdiskStartFlush;
-    pThis->IMediaAsync.pfnStartDiscard   = drvramdiskStartDiscard;
-
     /* IMediaEx */
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvramdiskIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvramdiskIoReqAlloc;
@@ -1822,9 +1686,6 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (!pThis->pDrvMediaPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                 N_("No media port interface above"));
-
-    /* Try to attach async media port interface above.*/
-    pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
 
     /* Try to attach extended media port interface above.*/
     pThis->pDrvMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
@@ -1856,7 +1717,7 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (!pThis->pTreeSegments)
         rc = VERR_NO_MEMORY;
 
-    if (pThis->pDrvMediaAsyncPort || pThis->pDrvMediaExPort)
+    if (pThis->pDrvMediaExPort)
     {
         rc = RTReqQueueCreate(&pThis->hReqQ);
         if (RT_SUCCESS(rc))
