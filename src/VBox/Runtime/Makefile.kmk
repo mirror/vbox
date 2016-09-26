@@ -1497,6 +1497,9 @@ VBoxRT_SOURCES                := \
 		$(patsubst common/checksum/alt-%,common/checksum/openssl-%,$(RuntimeR3_SOURCES)) ) ) \
 	common/checksum/crc32-zlib.cpp \
 	common/misc/aiomgr.cpp
+ifneq ($(KBUILD_TARGET),win)
+VBox/VBoxRTDeps.cpp_CXXFLAGS = -Wno-deprecated-declarations
+endif
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += \
  	common/misc/s3.cpp \

@@ -268,7 +268,8 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC-20.cpp
   vboxsoap_CXXFLAGS += \
   	$(VBOX_GCC_Wno-vla) \
-	$(if-expr $(KBUILD_TARGET) == "win",,-Wno-format)
+	$(if-expr $(KBUILD_TARGET) == "win",,-Wno-format) \
+  	$(if-expr $(KBUILD_TARGET) == "win",,-Wno-deprecated-declarations)
   endif
   vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
   vboxsoap_SOURCES += \
