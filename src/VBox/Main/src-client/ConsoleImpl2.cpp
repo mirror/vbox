@@ -2381,7 +2381,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                               ulInstance,
                                               enmBus,
                                               !!fUseHostIOCache,
-                                              !!fBuiltinIOCache,
+                                              enmCtrlType == StorageControllerType_NVMe ? false : !!fBuiltinIOCache,
                                               false /* fSetupMerge */,
                                               0 /* uMergeSource */,
                                               0 /* uMergeTarget */,
