@@ -2612,6 +2612,7 @@ DECLINLINE(int) drvvdMediaExIoReqBufSync(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     int rc = VINF_SUCCESS;
 
     Assert(pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE);
+    Assert(pIoReq->ReadWrite.cbIoBuf > 0);
 
     /* Make sure the buffer is reset. */
     RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
@@ -2848,6 +2849,8 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
     else
     {
         /* Adjust the remaining amount to transfer. */
+        Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+
         size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
         pIoReq->ReadWrite.offStart  += cbReqIo;
         pIoReq->ReadWrite.cbReqLeft -= cbReqIo;
@@ -2886,6 +2889,8 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
         ASMAtomicIncU32(&pThis->cIoReqsWaiting);
         rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
     }
+    else
+        Assert(pIoReq->ReadWrite.cbIoBuf > 0);
 
     return rc;
 }
@@ -2903,7 +2908,10 @@ static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIo
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->fAsyncIOSupported)
+    Assert(cbReqIo > 0);
+
+    if (   pThis->fAsyncIOSupported
+        && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
     {
         if (pThis->pBlkCache)
         {
@@ -2946,7 +2954,10 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->fAsyncIOSupported)
+    Assert(cbReqIo > 0);
+
+    if (   pThis->fAsyncIOSupported
+        && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
     {
         if (pThis->pBlkCache)
         {
@@ -2987,7 +2998,8 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->fAsyncIOSupported)
+    if (   pThis->fAsyncIOSupported
+        && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
     {
         if (pThis->pBlkCache)
         {
@@ -3021,7 +3033,8 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->fAsyncIOSupported)
+    if (   pThis->fAsyncIOSupported
+        && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
     {
         if (pThis->pBlkCache)
         {
@@ -3064,6 +3077,8 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
     while (   pIoReq->ReadWrite.cbReqLeft
            && rc == VINF_SUCCESS)
     {
+        Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+
         size_t cbReqIo = RT_MIN(pIoReq->ReadWrite.cbReqLeft, pIoReq->ReadWrite.cbIoBuf);
 
         if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
@@ -3126,6 +3141,8 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
                                           &pIoReqCur->ReadWrite.cbIoBuf);
                 if (rc == VINF_SUCCESS)
                 {
+                    Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+
                     ASMAtomicDecU32(&pThis->cIoReqsWaiting);
                     RTListNodeRemove(&pIoReqCur->NdLstWait);
 
