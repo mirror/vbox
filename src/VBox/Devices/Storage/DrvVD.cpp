@@ -2707,7 +2707,9 @@ static int drvvdMediaExIoReqRemove(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
  */
 static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, int rcReq, bool fUpNotify)
 {
-    int rc;
+    LogFlowFunc(("pThis=%#p pIoReq=%#p rcReq=%Rrc fUpNotify=%RTbool\n",
+                 pThis, pIoReq, rcReq, fUpNotify));
+
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_COMPLETING, VDIOREQSTATE_ACTIVE);
     if (fXchg)
         ASMAtomicDecU32(&pThis->cIoReqsActive);
@@ -2718,7 +2720,7 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
     }
 
     ASMAtomicXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_COMPLETED);
-    drvvdMediaExIoReqBufFree(pThis, pIoReq);
+    //drvvdMediaExIoReqBufFree(pThis, pIoReq);
 
     /*
      * Leave a release log entry if the request was active for more than 25 seconds
@@ -2793,10 +2795,12 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
 
     if (fUpNotify)
     {
-        rc = pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort,
-                                                            pIoReq, &pIoReq->abAlloc[0], rcReq);
+        int rc = pThis->pDrvMediaExPort->pfnIoReqCompleteNotify(pThis->pDrvMediaExPort,
+                                                                pIoReq, &pIoReq->abAlloc[0], rcReq);
         AssertRC(rc);
     }
+
+    LogFlowFunc(("returns\n"));
 }
 
 /**
@@ -2810,6 +2814,9 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
  */
 static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, int rcReq, bool fUpNotify)
 {
+    LogFlowFunc(("pThis=%#p pIoReq=%#p rcReq=%Rrc fUpNotify=%RTbool\n",
+                 pThis, pIoReq, rcReq, fUpNotify));
+
     /*
      * For a read we need to sync the memory before continuing to process
      * the request further.
@@ -2864,6 +2871,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
             drvvdMediaExIoReqReadWriteProcess(pThis, pIoReq, fUpNotify);
     }
 
+    LogFlowFunc(("returns %Rrc\n", rcReq));
     return rcReq;
 }
 
@@ -2880,9 +2888,12 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
  */
 DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, size_t cb)
 {
+    LogFlowFunc(("pThis=%#p pIoReq=%#p cb=%zu\n", pThis, pIoReq, cb));
+
     int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, cb, &pIoReq->ReadWrite.cbIoBuf);
     if (rc == VERR_NO_MEMORY)
     {
+        LogFlowFunc(("Could not allocate memory for request, deferring\n"));
         RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
         RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
         RTCritSectLeave(&pThis->CritSectIoReqsIoBufWait);
@@ -2890,8 +2901,12 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
         rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
     }
     else
+    {
+        LogFlowFunc(("Allocated %zu bytes of memory\n", pIoReq->ReadWrite.cbIoBuf));
         Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+    }
 
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2907,6 +2922,8 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, size_t cbReqIo, size_t *pcbReqIo)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p pIoReq=%#p cbReqIo=%zu pcbReqIo=%#p\n", pThis, pIoReq, cbReqIo, pcbReqIo));
 
     Assert(cbReqIo > 0);
 
@@ -2938,6 +2955,7 @@ static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIo
 
     *pcbReqIo = cbReqIo;
 
+    LogFlowFunc(("returns %Rrc *pcbReqIo=%zu\n", rc, *pcbReqIo));
     return rc;
 }
 
@@ -2955,6 +2973,8 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     int rc = VINF_SUCCESS;
 
     Assert(cbReqIo > 0);
+
+    LogFlowFunc(("pThis=%#p pIoReq=%#p cbReqIo=%zu pcbReqIo=%#p\n", pThis, pIoReq, cbReqIo, pcbReqIo));
 
     if (   pThis->fAsyncIOSupported
         && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
@@ -2984,6 +3004,7 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 
     *pcbReqIo = cbReqIo;
 
+    LogFlowFunc(("returns %Rrc *pcbReqIo=%zu\n", rc, *pcbReqIo));
     return rc;
 }
 
@@ -2997,6 +3018,8 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p pIoReq=%#p\n", pThis, pIoReq));
 
     if (   pThis->fAsyncIOSupported
         && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
@@ -3019,6 +3042,7 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
             rc = VINF_VD_ASYNC_IO_FINISHED;
     }
 
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3032,6 +3056,8 @@ static int drvvdMediaExIoReqFlushWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
 static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p pIoReq=%#p\n", pThis, pIoReq));
 
     if (   pThis->fAsyncIOSupported
         && !(pIoReq->fFlags & PDMIMEDIAEX_F_SYNC))
@@ -3055,6 +3081,7 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
             rc = VINF_VD_ASYNC_IO_FINISHED;
     }
 
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc; 
 }
 
@@ -3069,6 +3096,8 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
 static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, bool fUpNotify)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p pIoReq=%#p fUpNotify=%RTbool\n", pThis, pIoReq, fUpNotify));
 
     Assert(pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE);
 
@@ -3110,6 +3139,7 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
         rc = drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rc, fUpNotify);
     }
 
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -3123,12 +3153,15 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
  */
 DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
+    LogFlowFunc(("pThis=%#p pIoReq=%#p{.cbIoBuf=%zu}\n", pThis, pIoReq, pIoReq->ReadWrite.cbIoBuf));
+
     if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
         || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
     {
         IOBUFMgrFreeBuf(&pIoReq->ReadWrite.IoBuf);
 
-        if (ASMAtomicReadU32(&pThis->cIoReqsWaiting) > 0)
+        uint32_t cIoReqsWaiting = ASMAtomicXchgU32(&pThis->cIoReqsWaiting, 0);
+        if (cIoReqsWaiting > 0)
         {
             /* Try to process as many requests as possible. */
             RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
@@ -3136,6 +3169,9 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 
             RTListForEachSafe(&pThis->LstIoReqIoBufWait, pIoReqCur, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
             {
+                LogFlowFunc(("Found I/O request %#p on waiting list, trying to allocate buffer of size %zu bytes\n",
+                             pIoReqCur, pIoReqCur->ReadWrite.cbReq));
+
                 /* Allocate a suitable I/O buffer for this request. */
                 int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReqCur->ReadWrite.IoBuf, pIoReqCur->ReadWrite.cbReq,
                                           &pIoReqCur->ReadWrite.cbIoBuf);
@@ -3143,7 +3179,7 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
                 {
                     Assert(pIoReq->ReadWrite.cbIoBuf > 0);
 
-                    ASMAtomicDecU32(&pThis->cIoReqsWaiting);
+                    cIoReqsWaiting--;
                     RTListNodeRemove(&pIoReqCur->NdLstWait);
 
                     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReqCur->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
@@ -3163,8 +3199,12 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
                 }
             }
             RTCritSectLeave(&pThis->CritSectIoReqsIoBufWait);
+
+            ASMAtomicAddU32(&pThis->cIoReqsWaiting, cIoReqsWaiting);
         }
     }
+
+    LogFlowFunc(("returns\n"));
 }
 
 
