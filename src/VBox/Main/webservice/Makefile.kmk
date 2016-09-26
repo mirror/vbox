@@ -267,7 +267,8 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC-19.cpp \
 	$(VBOXWEB_OUT_DIR)/soapC-20.cpp
   vboxsoap_CXXFLAGS += \
-  	$(VBOX_GCC_Wno-vla)
+  	$(VBOX_GCC_Wno-vla) \
+	-Wno-format
   endif
   vboxsoap_CLEAN := $(vboxsoap_SOURCES) # lazy bird
   vboxsoap_SOURCES += \
