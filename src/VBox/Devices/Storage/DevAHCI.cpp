@@ -68,9 +68,7 @@
 # include "dtrace/VBoxDD.h"
 #else
 # define VBOXDD_AHCI_REQ_SUBMIT(a,b,c,d)           do { } while (0)
-# define VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(a,b)     do { } while (0)
 # define VBOXDD_AHCI_REQ_COMPLETED(a,b,c,d)        do { } while (0)
-# define VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(a,b)  do { } while (0)
 #endif
 
 /** Maximum number of ports available.
@@ -262,8 +260,6 @@ typedef struct AHCIREQ
 {
     /** The I/O request handle from the driver below associated with this request. */
     PDMMEDIAEXIOREQ            hIoReq;
-    /** Start timestamp of the request. */
-    uint64_t                   tsStart;
     /** Tag of the task. */
     uint32_t                   uTag;
     /** The command Fis for this task. */
@@ -5899,13 +5895,11 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 {
     bool fRedo = false;
     bool fCanceled = false;
-    uint64_t tsNow = RTTimeMilliTS();
 
     LogFlowFunc(("pAhciPort=%p pAhciReq=%p rcReq=%d\n",
                  pAhciPort, pAhciReq, rcReq));
 
     VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, pAhciReq->uOffset, pAhciReq->cbTransfer);
-    VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(pAhciReq, tsNow);
 
     /*
      * Clear the request structure from the active request list first so it doesn't get cancelled
@@ -5914,36 +5908,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
      * for other things already.
      */
     bool fReqErrSaved = false;
-
-    /*
-     * Leave a release log entry if the request was active for more than 25 seconds
-     * (30 seconds is the timeout of the guest).
-     */
-    if (tsNow - pAhciReq->tsStart >= 25 * 1000)
-    {
-        const char *pcszReq = NULL;
-
-        switch (pAhciReq->enmType)
-        {
-            case PDMMEDIAEXIOREQTYPE_READ:
-                pcszReq = "Read";
-                break;
-            case PDMMEDIAEXIOREQTYPE_WRITE:
-                pcszReq = "Write";
-                break;
-            case PDMMEDIAEXIOREQTYPE_FLUSH:
-                pcszReq = "Flush";
-                break;
-            case PDMMEDIAEXIOREQTYPE_DISCARD:
-                pcszReq = "Trim";
-                break;
-            default:
-                pcszReq = "<Invalid>";
-        }
-
-        LogRel(("AHCI#%uP%u: %s request was active for %llu seconds\n",
-                pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
-    }
 
     if (rcReq != VERR_PDM_MEDIAEX_IOREQ_CANCELED)
     {
@@ -6555,7 +6519,6 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
     bool fReqCanceled = false;
 
     VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, pAhciReq->enmType, pAhciReq->uOffset, pAhciReq->cbTransfer);
-    VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
 
     if (enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
         rc = pAhciPort->pDrvMediaEx->pfnIoReqFlush(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
@@ -6605,8 +6568,6 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
  */
 static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    pAhciReq->tsStart = RTTimeMilliTS();
-
     /* Set current command slot */
     ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
 
