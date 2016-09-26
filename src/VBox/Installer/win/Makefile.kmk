@@ -798,7 +798,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi: \
 
 # Copy multilingual installer to bin.
 $(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi | $$(dir $$@)
-	$(QUIET)$(RM) -f $(wildcard $(@D)/$(PACKAGE_BASE)-r*.msi)
+	$(QUIET)$(RM) -f $(wildcard $(@D)/$(PACKAGE_BASE)-r*$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE),_$(KBUILD_TARGET_ARCH),).msi)
 	$(INSTALL_STAGING) -- $< $@
 
 
