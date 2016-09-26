@@ -5837,7 +5837,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     PDMMEDIAEXIOREQ hIoReq = NULL;
 
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
-                                                   uTag, 0 /* fFlags */);
+                                                   uTag, PDMIMEDIAEX_F_SYNC); /** @todo: REMOVE sync flag after the bug is fixed! */
     if (RT_SUCCESS(rc))
     {
         pAhciReq->hIoReq = hIoReq;
