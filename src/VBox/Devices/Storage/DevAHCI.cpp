@@ -283,7 +283,7 @@ typedef struct AHCIREQ
     /** Start offset. */
     uint64_t                   uOffset;
     /** Number of bytes to transfer. */
-    uint32_t                   cbTransfer;
+    size_t                     cbTransfer;
     /** Flags for this task. */
     uint32_t                   fFlags;
     /** Post processing callback.
@@ -4330,7 +4330,7 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax,
     size_t cbTransfered = 0;
     int rcSourceSink = g_apfnAtapiFuncs[iSourceSink](pAhciReq, pAhciPort, cbMax, &cbTransfered);
 
-    pAhciReq->cbTransfer      = (uint32_t)cbTransfered;
+    pAhciReq->cbTransfer = cbTransfered;
     Assert(pAhciReq->cbTransfer == cbTransfered);
 
     LogFlow(("cbTransfered=%d\n", cbTransfered));
@@ -4348,7 +4348,7 @@ static DECLCALLBACK(int) atapiReadSectors2352PostProcess(PAHCIREQ pAhciReq, PRTS
 {
     uint8_t *pbBuf = NULL;
     uint32_t cSectorsOff = offBuf / 2048;
-    uint32_t cSectors  = cbBuf / 2048;
+    uint32_t cSectors  = (uint32_t)cbBuf / 2048;
     uint32_t iATAPILBA = cSectorsOff + pAhciReq->uOffset / 2048;
     size_t cbAlloc = cbBuf + cSectors * (1 + 11 + 3 + 1 + 288); /* Per sector data like ECC. */
 
@@ -5907,7 +5907,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                     LogRel(("AHCI#%uP%u: Trim returned rc=%Rrc\n",
                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
                 else
-                    LogRel(("AHCI#%uP%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                    LogRel(("AHCI#%uP%u: %s at offset %llu (%zu bytes left) returned rc=%Rrc\n",
                             pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
                             pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
                             ? "Read"
@@ -5939,7 +5939,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
 
             /* Write updated command header into memory of the guest. */
-            uint32_t u32PRDBC = pAhciReq->cbTransfer;
+            uint32_t u32PRDBC = (uint32_t)pAhciReq->cbTransfer;
             PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr + RT_OFFSETOF(CmdHdr, u32PRDBC),
                                   &u32PRDBC, sizeof(u32PRDBC));
 
@@ -6000,7 +6000,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 LogRel(("AHCI#%uP%u: Canceled trim returned rc=%Rrc\n",
                         pAhciPort->CTX_SUFF(pDevIns)->iInstance,pAhciPort->iLUN, rcReq));
             else
-                LogRel(("AHCI#%uP%u: Canceled %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                LogRel(("AHCI#%uP%u: Canceled %s at offset %llu (%zu bytes left) returned rc=%Rrc\n",
                         pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
                         pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ
                         ? "read"
@@ -6151,8 +6151,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 ahciIdentifySS(pAhciPort, u16Temp);
 
                 /* Copy the buffer. */
-                uint32_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
-                                                            &u16Temp[0], sizeof(u16Temp), 0 /* cbSkip */);
+                size_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
+                                                          &u16Temp[0], sizeof(u16Temp), 0 /* cbSkip */);
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;
@@ -6357,8 +6357,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 }
 
                 /* Copy the buffer. */
-                uint32_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
-                                                            &aBuf[offLogRead], cbLogRead, 0 /* cbSkip */);
+                size_t cbCopied = ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pAhciReq,
+                                                          &aBuf[offLogRead], cbLogRead, 0 /* cbSkip */);
 
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbCopied;

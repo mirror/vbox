@@ -22,8 +22,8 @@ provider vboxdd
     probe hgcmcall__completed__emt(void *pvCmd, int rc);
     probe hgcmcall__completed__done(void *pvCmd, unsigned int idFunction, unsigned int idClient, int rc);
 
-    probe ahci__req__submit(void *pvReq, int iTxDir, uint64_t offStart, uint32_t cbXfer);
-    probe ahci__req__completed(void *pvReq, int rcReq, uint64_t offStart, uint32_t cbXfer);
+    probe ahci__req__submit(void *pvReq, int iTxDir, uint64_t offStart, uint64_t cbXfer);
+    probe ahci__req__completed(void *pvReq, int rcReq, uint64_t offStart, uint64_t cbXfer);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxdd provider
