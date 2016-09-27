@@ -793,6 +793,7 @@ EXPORTS
     RTNetUDPChecksum
     RTOnce
     RTOnceReset
+    RTOnceSlow
     RTPathAbs
     RTPathAbsDup
     RTPathAbsEx
