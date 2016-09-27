@@ -5207,12 +5207,13 @@ static void ahciDeviceReset(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
  *
  * @returns nothing.
  * @param   pAhciPort          The port of the SATA controller.
- * @param   pAhciReq           The state of the task.
+ * @param   cbTransfer         Transfer size of the request.
  * @param   pCmdFis            Pointer to the command FIS from the guest.
+ * @param   fRead              Flag whether this is a read request.
  * @param   fInterrupt         If an interrupt should be send to the guest.
  */
-static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis,
-                                bool fInterrupt)
+static void ahciSendPioSetupFis(PAHCIPort pAhciPort, size_t cbTransfer, uint8_t *pCmdFis,
+                                bool fRead, bool fInterrupt)
 {
     uint8_t abPioSetupFis[20];
     bool fAssertIntr = false;
@@ -5220,8 +5221,8 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
 
     ahciLog(("%s: building PIO setup Fis\n", __FUNCTION__));
 
-    AssertMsg(   pAhciReq->cbTransfer > 0
-              && pAhciReq->cbTransfer <= 65534,
+    AssertMsg(   cbTransfer > 0
+              && cbTransfer <= 65534,
               ("Can't send PIO setup FIS for requests with 0 bytes to transfer or greater than 65534\n"));
 
     if (pAhciPort->regCMD & AHCI_PORT_CMD_FRE)
@@ -5229,7 +5230,7 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         memset(&abPioSetupFis[0], 0, sizeof(abPioSetupFis));
         abPioSetupFis[AHCI_CMDFIS_TYPE]  = AHCI_CMDFIS_TYPE_PIOSETUP;
         abPioSetupFis[AHCI_CMDFIS_BITS]  = (fInterrupt ? AHCI_CMDFIS_I : 0);
-        if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
+        if (fRead)
             abPioSetupFis[AHCI_CMDFIS_BITS] |= AHCI_CMDFIS_D;
         abPioSetupFis[AHCI_CMDFIS_STS]   = pCmdFis[AHCI_CMDFIS_STS];
         abPioSetupFis[AHCI_CMDFIS_ERR]   = pCmdFis[AHCI_CMDFIS_ERR];
@@ -5244,8 +5245,8 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         abPioSetupFis[AHCI_CMDFIS_SECTCEXP] = pCmdFis[AHCI_CMDFIS_SECTCEXP];
 
         /* Set transfer count. */
-        abPioSetupFis[16] = (pAhciReq->cbTransfer >> 8) & 0xff;
-        abPioSetupFis[17] = pAhciReq->cbTransfer & 0xff;
+        abPioSetupFis[16] = (cbTransfer >> 8) & 0xff;
+        abPioSetupFis[17] = cbTransfer & 0xff;
 
         /* Update registers. */
         pAhciPort->regTFD = (pCmdFis[AHCI_CMDFIS_ERR] << 8) | pCmdFis[AHCI_CMDFIS_STS];
@@ -5273,11 +5274,11 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
  *
  * @returns Nothing
  * @param   pAhciPort          The port of the SATA controller.
- * @param   pAhciReq           The state of the task.
+ * @param   uTag               The tag of the request.
  * @param   pCmdFis            Pointer to the command FIS from the guest.
  * @param   fInterrupt         If an interrupt should be send to the guest.
  */
-static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis, bool fInterrupt)
+static void ahciSendD2HFis(PAHCIPort pAhciPort, uint32_t uTag, uint8_t *pCmdFis, bool fInterrupt)
 {
     uint8_t d2hFis[20];
     bool fAssertIntr = false;
@@ -5326,7 +5327,7 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmd
                 fAssertIntr = true;
 
             /* Mark command as completed. */
-            ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciReq->uTag));
+            ASMAtomicOrU32(&pAhciPort->u32TasksFinished, RT_BIT_32(uTag));
         }
 
         if (fAssertIntr)
@@ -5856,8 +5857,12 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
  */
 static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
-    int rc = pAhciPort->pDrvMediaEx->pfnIoReqFree(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
-    AssertRC(rc);
+    if (   pAhciReq
+        && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK))
+    {
+        int rc = pAhciPort->pDrvMediaEx->pfnIoReqFree(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq);
+        AssertRC(rc);
+    }
 }
 
 /**
@@ -5956,20 +5961,33 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             }
         }
 
+        /*
+         * Make a copy of the required data now and free the request. Otherwise the guest
+         * might issue a new request with the same tag and we run into a conflict when allocating
+         * a new request with the same tag later on.
+         */
+        uint32_t fFlags = pAhciReq->fFlags;
+        uint32_t uTag   = pAhciReq->uTag;
+        size_t   cbTransfer = pAhciReq->cbTransfer;
+        bool     fRead      = pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ;
+        uint8_t  cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE];
+        memcpy(&cmdFis[0], &pAhciReq->cmdFis[0], sizeof(cmdFis));
+
+        ahciR3ReqFree(pAhciPort, pAhciReq);
         if (!fRedo)
         {
 
             /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
-            if (pAhciReq->fFlags & AHCI_REQ_PIO_DATA)
-                ahciSendPioSetupFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, false /* fInterrupt */);
+            if (fFlags & AHCI_REQ_PIO_DATA)
+                ahciSendPioSetupFis(pAhciPort, cbTransfer, &cmdFis[0], fRead, false /* fInterrupt */);
 
-            if (pAhciReq->fFlags & AHCI_REQ_CLEAR_SACT)
+            if (fFlags & AHCI_REQ_CLEAR_SACT)
             {
                 if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIREQ))
-                    ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, RT_BIT_32(pAhciReq->uTag));
+                    ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, RT_BIT_32(uTag));
             }
 
-            if (pAhciReq->fFlags & AHCI_REQ_IS_QUEUED)
+            if (fFlags & AHCI_REQ_IS_QUEUED)
             {
                 /*
                  * Always raise an interrupt after task completion; delaying
@@ -5979,7 +5997,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 ahciSendSDBFis(pAhciPort, 0, true);
             }
             else
-                ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
+                ahciSendD2HFis(pAhciPort, uTag, &cmdFis[0], true);
         }
     }
     else
@@ -6008,6 +6026,8 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                         pAhciReq->uOffset,
                         pAhciReq->cbTransfer, rcReq));
          }
+
+         ahciR3ReqFree(pAhciPort, pAhciReq);
     }
 
     /*
@@ -6023,10 +6043,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
 
-    /* Don't free the request if it is on the stack. */
-    if (   pAhciReq
-        && !(pAhciReq->fFlags & AHCI_REQ_IS_ON_STACK))
-        ahciR3ReqFree(pAhciPort, pAhciReq);
     return fCanceled;
 }
 
@@ -6455,7 +6471,7 @@ static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
          * We need to send a FIS which clears the busy bit if this is a queued command so that the guest can queue other commands.
          * but this FIS does not assert an interrupt
          */
-        ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, false);
+        ahciSendD2HFis(pAhciPort, pAhciReq->uTag, pAhciReq->cmdFis, false);
         pAhciPort->regTFD &= ~AHCI_PORT_TFD_BSY;
     }
 
@@ -6585,7 +6601,7 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
             {
                 ahciLog(("%s: Setting device into reset state\n", __FUNCTION__));
                 pAhciPort->fResetDevice = true;
-                ahciSendD2HFis(pAhciPort, pAhciReq, pAhciReq->cmdFis, true);
+                ahciSendD2HFis(pAhciPort, pAhciReq->uTag, pAhciReq->cmdFis, true);
             }
             else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
                 ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
