@@ -480,27 +480,31 @@ VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM, PCFGMNODE pGimCfg)
     /*
      * Setup up the per-VCPU synthetic timers.
      */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    if (   (pHv->uBaseFeat & GIM_HV_BASE_FEAT_STIMER_MSRS)
+        || (pHv->uBaseFeat & GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS))
     {
-        PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
-        PGIMHVCPU    pHvCpu    = &pVCpu->gim.s.u.HvCpu;
-
-        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+            PVMCPU       pVCpu     = &pVM->aCpus[idCpu];
+            PGIMHVCPU    pHvCpu    = &pVCpu->gim.s.u.HvCpu;
 
-            /* Associate the synthetic timer with its corresponding VCPU. */
-            pHvStimer->idCpu     = pVCpu->idCpu;
-            pHvStimer->idxStimer = idxStimer;
+            for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+            {
+                PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
 
-            /* Create the timer and associate the context pointers. */
-            RTStrPrintf(&pHvStimer->szTimerDesc[0], sizeof(pHvStimer->szTimerDesc), "Hyper-V[%u] Timer%u", pVCpu->idCpu,
-                        idxStimer);
-            rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
-                                         pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
-            AssertLogRelRCReturn(rc, rc);
-            pHvStimer->pTimerR0 = TMTimerR0Ptr(pHvStimer->pTimerR3);
-            pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+                /* Associate the synthetic timer with its corresponding VCPU. */
+                pHvStimer->idCpu     = pVCpu->idCpu;
+                pHvStimer->idxStimer = idxStimer;
+
+                /* Create the timer and associate the context pointers. */
+                RTStrPrintf(&pHvStimer->szTimerDesc[0], sizeof(pHvStimer->szTimerDesc), "Hyper-V[%u] Timer%u", pVCpu->idCpu,
+                            idxStimer);
+                rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, gimR3HvTimerCallback, pHvStimer /* pvUser */,
+                                             pHvStimer->szTimerDesc, &pHvStimer->pTimerR3);
+                AssertLogRelRCReturn(rc, rc);
+                pHvStimer->pTimerR0 = TMTimerR0Ptr(pHvStimer->pTimerR3);
+                pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+            }
         }
     }
 
@@ -582,13 +586,18 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
     gimR3HvTermHypercallSupport(pVM);
     gimR3HvTermDebugSupport(pVM);
 
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    PCGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (   (pHv->uBaseFeat & GIM_HV_BASE_FEAT_STIMER_MSRS)
+        || (pHv->uBaseFeat & GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS))
     {
-        PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
-        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
-            TMR3TimerDestroy(pHvStimer->pTimerR3);
+            PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
+            for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+            {
+                PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+                TMR3TimerDestroy(pHvStimer->pTimerR3);
+            }
         }
     }
 
@@ -607,13 +616,19 @@ VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
     RT_NOREF1(offDelta);
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+
+    PCGIMHV pHv = &pVM->gim.s.u.Hv;
+    if (   (pHv->uBaseFeat & GIM_HV_BASE_FEAT_STIMER_MSRS)
+        || (pHv->uBaseFeat & GIM_HV_BASE_FEAT_BASIC_SYNIC_MSRS))
     {
-        PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
-        for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
-            pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+            PGIMHVCPU pHvCpu = &pVM->aCpus[idCpu].gim.s.u.HvCpu;
+            for (uint8_t idxStimer = 0; idxStimer < RT_ELEMENTS(pHvCpu->aStimers); idxStimer++)
+            {
+                PGIMHVSTIMER pHvStimer = &pHvCpu->aStimers[idxStimer];
+                pHvStimer->pTimerRC = TMTimerRCPtr(pHvStimer->pTimerR3);
+            }
         }
     }
 }
