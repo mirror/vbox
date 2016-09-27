@@ -3301,10 +3301,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
         uint32_t csMixed = 0;
 
         if (csWrittenTotal)
-        {
-            RT_BREAKPOINT();
             rc = AudioMixBufMixToParent(&pStream->MixBuf, csWrittenTotal, &csMixed);
-        }
 
         Log3Func(("csMixed=%RU32\n", csMixed));
 
