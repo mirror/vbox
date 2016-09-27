@@ -998,7 +998,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
                                                    (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbReadStrm);
 #endif
             if (RT_FAILURE(rc2))
-                Log3Func(("[%s] Failed reading from stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
+                LogFunc(("[%s] Failed reading from stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
 
             if (   RT_FAILURE(rc2)
                 || !cbReadStrm)
