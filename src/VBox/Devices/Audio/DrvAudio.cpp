@@ -1882,7 +1882,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
             PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStrm->Out.StatBytesElapsed,
                                       szStatName, STAMUNIT_BYTES, "Elapsed bytes written.");
 
-            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesRead", pGstStrm->szName);
+            RTStrPrintf(szStatName, sizeof(szStatName), "Guest/%s/BytesWritten", pGstStrm->szName);
             PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pGstStrm->Out.StatBytesTotalWritten,
                                       szStatName, STAMUNIT_BYTES, "Total bytes written.");
 
@@ -2213,11 +2213,13 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                 {
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->In.StatBytesElapsed);
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->In.StatBytesTotalRead);
+                    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->In.StatSamplesCaptured);
                 }
                 else if (pGstStream->enmDir == PDMAUDIODIR_OUT)
                 {
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->Out.StatBytesElapsed);
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->Out.StatBytesTotalWritten);
+                    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->Out.StatSamplesPlayed);
                 }
 #endif
                 RTListNodeRemove(&pGstStream->Node);
