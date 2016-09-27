@@ -2104,7 +2104,7 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
     char szInstruction[256];
     szInstruction[0] = '\0';
     DBGFR3DisasInstrCurrent(pVCpu, szInstruction, sizeof(szInstruction));
-    pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
+    pHlp->pfnPrintf(pHlp, "\nCPUM%u: %s\n\n", pVCpu->idCpu, szInstruction);
 }
 
 
