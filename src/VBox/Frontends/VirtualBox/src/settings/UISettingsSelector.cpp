@@ -19,13 +19,13 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
 # include <QHeaderView>
 # include <QTabWidget>
 # include <QLayout>
 # include <QAction>
 
-/* Local includes */
+/* GUI includes: */
 # include "UISettingsSelector.h"
 # include "UISettingsPage.h"
 # include "UIToolBar.h"
@@ -36,17 +36,20 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Tree-widget column categories. */
 enum
 {
-    /* mTwSelector column numbers */
     treeWidget_Category = 0,
     treeWidget_Id,
     treeWidget_Link
 };
 
+
+/** Simple container of all the selector item data. */
 class SelectorItem
 {
 public:
+
     SelectorItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId)
         : mIcon (aIcon)
         , mText (aText)
@@ -73,6 +76,11 @@ protected:
     UISettingsPage* mPage;
     int mParentId;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UISettingsSelector implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 UISettingsSelector::UISettingsSelector (QWidget *aParent /* = NULL */)
     :QObject (aParent)
@@ -125,7 +133,6 @@ QList<QWidget*> UISettingsSelector::rootPages() const
     return list;
 }
 
-
 SelectorItem *UISettingsSelector::findItem (int aId) const
 {
     SelectorItem *result = NULL;
@@ -162,10 +169,11 @@ SelectorItem *UISettingsSelector::findItemByPage (UISettingsPage* aPage) const
     return result;
 }
 
-/* UISettingsSelectorTreeView */
 
-/* Returns the path to the item in the form of 'grandparent > parent > item'
- * using the text of the first column of every item. */
+/*********************************************************************************************************************************
+*   Class UISettingsSelectorTreeView implementation.                                                                             *
+*********************************************************************************************************************************/
+
 static QString path (QTreeWidgetItem *aItem)
 {
     static QString sep = ": ";
@@ -274,7 +282,6 @@ int UISettingsSelectorTreeView::linkToId (const QString &aLink) const
     return id;
 }
 
-
 void UISettingsSelectorTreeView::selectById (int aId)
 {
     QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
@@ -330,10 +337,6 @@ void UISettingsSelectorTreeView::clear()
     mTwSelector->clear();
 }
 
-/**
- *  Returns a path to the given page of this settings window. See ::path() for
- *  details.
- */
 QString UISettingsSelectorTreeView::pagePath (const QString &aMatch) const
 {
     QTreeWidgetItem *li =
@@ -343,8 +346,6 @@ QString UISettingsSelectorTreeView::pagePath (const QString &aMatch) const
     return ::path (li);
 }
 
-/* Returns first item of 'aView' matching required 'aMatch' value
- * searching the 'aColumn' column. */
 QTreeWidgetItem* UISettingsSelectorTreeView::findItem (QTreeWidget *aView,
                                                          const QString &aMatch,
                                                          int aColumn) const
@@ -360,12 +361,17 @@ QString UISettingsSelectorTreeView::idToString (int aId) const
     return QString ("%1").arg (aId, 2, 10, QLatin1Char ('0'));
 }
 
-/* UISettingsSelectorToolBar */
 
+/*********************************************************************************************************************************
+*   Class UISettingsSelectorToolBar implementation.                                                                              *
+*********************************************************************************************************************************/
 
+/** SelectorItem subclass providing GUI
+  * with the tab-widget selector item. */
 class SelectorActionItem: public SelectorItem
 {
 public:
+
     SelectorActionItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId, QObject *aParent)
         : SelectorItem (aIcon, aText, aId, aLink, aPage, aParentId)
         , mAction (new QAction (aIcon, aText, aParent))
@@ -384,6 +390,7 @@ protected:
     QAction *mAction;
     QTabWidget *mTabWidget;
 };
+
 
 UISettingsSelectorToolBar::UISettingsSelectorToolBar (QWidget *aParent /* = NULL */)
     : UISettingsSelector (aParent)
@@ -555,7 +562,6 @@ void UISettingsSelectorToolBar::selectById (int aId)
             item->action()->trigger();
     }
 }
-
 
 void UISettingsSelectorToolBar::setVisibleById (int aId, bool aShow)
 {
