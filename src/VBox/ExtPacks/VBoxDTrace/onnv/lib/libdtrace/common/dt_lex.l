@@ -740,7 +740,7 @@ if (yypcb->pcb_token != 0) {
 void
 yybegin(yystate_t state)
 {
-#ifdef	YYDEBUG
+#if YYDEBUG /* VBOX: ifdef YYDEBUG => if YYDEBUG */
 	yydebug = _dtrace_debug;
 #endif
 	if (yypcb->pcb_yystate == state)
