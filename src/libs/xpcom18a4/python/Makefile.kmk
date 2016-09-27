@@ -396,6 +396,7 @@ VBoxPython_DEFS         = $(filter-out VBOX_PYXPCOM_VERSIONED,$(VBoxPythonBase_D
 VBoxPython_INCS         = $(VBoxPythonBase_INCS) $(VBOX_PYTHONDEF_INC)
 if "$(KBUILD_TARGET)" == "linux"
  VBoxPython_LIBS        = $(VBoxPythonBase_LIBS)
+ VBoxPython_LDFLAGS.linux = -Wl,--unresolved-symbols=ignore-in-object-files
 else
  VBoxPython_LIBS        = $(VBoxPythonBase_LIBS) $(VBOX_PYTHONDEF_LIB)
 endif
