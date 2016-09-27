@@ -747,6 +747,7 @@ VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 
 ## @name Misc
 ## @{
+VBOX_WITH_OPENSSL_1_1_0 = 1
 # Enable Seamless mode
 VBOX_X11_SEAMLESS_GUEST = 1
 # Enables all the doxgen bits.
