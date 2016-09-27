@@ -5680,6 +5680,8 @@ ifdef VBOX_WITH_EXTPACK
   	$(PATH_STAGE_LIB)/VBoxExtPack-libssl$(VBOX_SUFF_LIB) \
   	$(PATH_STAGE_LIB)/VBoxExtPack-libcrypto$(VBOX_SUFF_LIB) \
   	$(TEMPLATE_VBoxR3ExtPack_LIBS) # Must come after the two libraries or we'll pick up SSL from VBoxRT!
+  TEMPLATE_VBoxR3ExtPackPuelWithOpenSsl_LIBS.solaris = \
+	socket
 
   TEMPLATE_VBoxR0ExtPackPuel = For the ring-0 context modules in the PUEL extension pack.
   TEMPLATE_VBoxR0ExtPackPuel_EXTENDS = VBoxR0ExtPack
