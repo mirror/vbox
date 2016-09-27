@@ -2720,7 +2720,7 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
     }
 
     ASMAtomicXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_COMPLETED);
-    //drvvdMediaExIoReqBufFree(pThis, pIoReq);
+    drvvdMediaExIoReqBufFree(pThis, pIoReq);
 
     /*
      * Leave a release log entry if the request was active for more than 25 seconds
