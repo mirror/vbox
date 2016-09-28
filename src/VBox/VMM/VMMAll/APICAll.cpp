@@ -1230,10 +1230,12 @@ static VBOXSTRICTRC apicSetTprEx(PVMCPU pVCpu, uint32_t uTpr, bool fForceX2ApicB
  * @returns Strict VBox status code.
  * @param   pVCpu                   The cross context virtual CPU structure.
  * @param   uEoi                    The EOI value.
+ * @param   rcBusy                  The busy return code when the write cannot
+ *                                  be completed successfully in this context.
  * @param   fForceX2ApicBehaviour   Pretend the APIC is in x2APIC mode during
  *                                  this write.
  */
-static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi, bool fForceX2ApicBehaviour)
+static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi, int rcBusy, bool fForceX2ApicBehaviour)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -1265,7 +1267,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi, bool fForceX2ApicBeh
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else
-                return fX2ApicMode ? VINF_CPUM_R3_MSR_WRITE : VINF_IOM_R3_MMIO_WRITE;
+                return rcBusy;
 
             /*
              * Clear the vector from the TMR.
@@ -1778,7 +1780,7 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 
         case XAPIC_OFF_EOI:
         {
-            rcStrict = apicSetEoi(pVCpu, uValue, false /* fForceX2ApicBehaviour */);
+            rcStrict = apicSetEoi(pVCpu, uValue, VINF_IOM_R3_MMIO_WRITE, false /* fForceX2ApicBehaviour */);
             break;
         }
 
@@ -2068,7 +2070,7 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
 
             case MSR_IA32_X2APIC_EOI:
             {
-                rcStrict = apicSetEoi(pVCpu, u32Value, false /* fForceX2ApicBehaviour */);
+                rcStrict = apicSetEoi(pVCpu, u32Value, VINF_CPUM_R3_MSR_WRITE, false /* fForceX2ApicBehaviour */);
                 break;
             }
 
@@ -3106,6 +3108,6 @@ VMM_INT_DECL(VBOXSTRICTRC) APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi)
 {
     Assert(pVCpu);
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
-    return apicSetEoi(pVCpu, uEoi, true /* fForceX2ApicBehaviour */);
+    return apicSetEoi(pVCpu, uEoi, VINF_CPUM_R3_MSR_WRITE, true /* fForceX2ApicBehaviour */);
 }
 
