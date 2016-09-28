@@ -2588,6 +2588,7 @@ if $(KBUILD_TARGET) != "darwin" || !defined(VBOX_WITH_NEW_XCODE) ## @todo somthi
 else
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-literal-suffix             ?='
 endif
+	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-misleading-indentation     ?= $(call VBOX_GCC_CHECK_CC,-Wno-misleading-indentation,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-missing-field-initializers ?= $(call VBOX_GCC_CHECK_CC,-Wno-missing-field-initializers,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-pointer-to-int-cast        ?= $(call VBOX_GCC_CHECK_CC,-Wno-pointer-to-int-cast,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_Wno-variadic-macros   ?= $(call VBOX_GCC_CHECK_CXX,-Wno-variadic-macros,)'
