@@ -541,6 +541,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # Enable generic callback support.
  VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
 
+ # Enable Audio Queues implementation for macOS hosts (Core Audio backend).
+ VBoxDD_DEFS.darwin += VBOX_WITH_AUDIO_CA_QUEUES
+
  # Not yet enabled: Callbacks for the device emulation to let the backends
  #                  tell the emulation when and how to process data.
  if 0
