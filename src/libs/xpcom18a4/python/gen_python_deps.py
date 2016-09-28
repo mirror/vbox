@@ -12,6 +12,7 @@ VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
 
+from __future__ import print_function
 import os,sys
 from distutils.version import StrictVersion
 
@@ -87,7 +88,8 @@ def main(argv):
 
     if multi == 0:
         prefixes = ["/usr"]
-        versions = [str(sys.version_info[0])+'.'+str(sys.version_info[1])]
+        versions = [str(sys.version_info[0])+'.'+str(sys.version_info[1]),
+                    str(sys.version_info[0])+'.'+str(sys.version_info[1])+'m']
 
     if target == 'darwin':
         ## @todo Pick up the locations from VBOX_PATH_MACOSX_SDK_10_*.
@@ -128,6 +130,8 @@ def main(argv):
         print_vars(vers, known[k], sep, bitness_magic)
     if d is not None:
         print_vars("DEF", known[d], sep, bitness_magic)
+    else:
+        print(argv[0] + ": No Python development package found!", file=sys.stderr)
 
 if __name__ == '__main__':
     main(sys.argv)
