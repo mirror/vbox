@@ -103,7 +103,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     m_pSelector->widget()->setFocus();
     pMainLayout->setSpacing(10);
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
-    connect(m_pSelector, SIGNAL(categoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
+    connect(m_pSelector, SIGNAL(sigCategoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
 
     /* Prepare page-stack: */
     m_pStack = new QStackedWidget(m_pWtStackHandler);

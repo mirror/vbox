@@ -40,6 +40,11 @@ class UISettingsSelector : public QObject
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about selector @a iCategory changed. */
+    void sigCategoryChanged(int iCategory);
+
 public:
 
     /** Constructs settings selector passing @a pParent to the base-class. */
@@ -97,11 +102,6 @@ public:
 
     /** Returns minimum selector width. */
     virtual int minWidth() const { return 0; }
-
-signals:
-
-    /** Notifies listeners about selector @a iCategory changed. */
-    void categoryChanged(int iCategory);
 
 protected:
 
@@ -185,6 +185,9 @@ private:
     /** Performs @a iID to QString serialization. */
     QString idToString(int iID) const;
 
+    /** Forges the full path for passed @a pItem. */
+    static QString path(const QTreeWidgetItem *pItem);
+
     /** Holds the tree-widget instance. */
     QITreeWidget *m_pTreeWidget;
 };
@@ -240,11 +243,11 @@ public:
     /** Make the section with @a iID @a fVisible. */
     virtual void setVisibleById(int iID, bool fVisible) /* override */;
 
-    /** Returns minimum selector width. */
-    virtual int minWidth() const /* override */;
-
     /** Returns the list of all root pages. */
     virtual QList<QWidget*> rootPages() const /* override */;
+
+    /** Returns minimum selector width. */
+    virtual int minWidth() const /* override */;
 
 private slots:
 

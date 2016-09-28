@@ -194,21 +194,6 @@ UISelectorItem *UISettingsSelector::findItemByPage(UISettingsPage *pPage) const
 *   Class UISettingsSelectorTreeView implementation.                                                                             *
 *********************************************************************************************************************************/
 
-static QString path(const QTreeWidgetItem *pItem)
-{
-    static QString strSep = ": ";
-    QString strPath;
-    const QTreeWidgetItem *pCurrentItem = pItem;
-    while (pCurrentItem)
-    {
-        if (!strPath.isNull())
-            strPath = strSep + strPath;
-        strPath = pCurrentItem->text(TreeWidgetSection_Category).simplified() + strPath;
-        pCurrentItem = pCurrentItem->parent();
-    }
-    return strPath;
-}
-
 UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 */)
     : UISettingsSelector(pParent)
     , m_pTreeWidget(0)
@@ -356,7 +341,7 @@ void UISettingsSelectorTreeView::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
     {
         const int iID = pItem->text(TreeWidgetSection_Id).toInt();
         Assert(iID >= 0);
-        emit categoryChanged(iID);
+        emit sigCategoryChanged(iID);
     }
 }
 
@@ -371,7 +356,7 @@ QString UISettingsSelectorTreeView::pagePath(const QString &strMatch) const
         findItem(m_pTreeWidget,
                  strMatch,
                  TreeWidgetSection_Id);
-    return ::path(pTreeItem);
+    return path(pTreeItem);
 }
 
 QTreeWidgetItem *UISettingsSelectorTreeView::findItem(QTreeWidget *pView,
@@ -387,6 +372,22 @@ QTreeWidgetItem *UISettingsSelectorTreeView::findItem(QTreeWidget *pView,
 QString UISettingsSelectorTreeView::idToString(int iID) const
 {
     return QString("%1").arg(iID, 2, 10, QLatin1Char('0'));
+}
+
+/* static */
+QString UISettingsSelectorTreeView::path(const QTreeWidgetItem *pItem)
+{
+    static QString strSep = ": ";
+    QString strPath;
+    const QTreeWidgetItem *pCurrentItem = pItem;
+    while (pCurrentItem)
+    {
+        if (!strPath.isNull())
+            strPath = strSep + strPath;
+        strPath = pCurrentItem->text(TreeWidgetSection_Category).simplified() + strPath;
+        pCurrentItem = pCurrentItem->parent();
+    }
+    return strPath;
 }
 
 
@@ -640,11 +641,19 @@ void UISettingsSelectorToolBar::setVisibleById(int iID, bool fVisible)
 
 }
 
-void UISettingsSelectorToolBar::clear()
+QList<QWidget*> UISettingsSelectorToolBar::rootPages() const
 {
-    QList<QAction*> list = m_pActionGroup->actions();
-    foreach (QAction *pAction, list)
-       delete pAction;
+    QList<QWidget*> list;
+    foreach (UISelectorItem *pItem, m_list)
+    {
+        const UISelectorActionItem *pActionItem = static_cast<UISelectorActionItem*>(pItem);
+        if (pActionItem->parentID() == -1 &&
+            pActionItem->page())
+            list << pActionItem->page();
+        else if (pActionItem->tabWidget())
+            list << pActionItem->tabWidget();
+    }
+    return list;
 }
 
 int UISettingsSelectorToolBar::minWidth() const
@@ -657,10 +666,10 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(QAction *pAction)
     const UISelectorActionItem *pItem = findActionItemByAction(pAction);
     if (pItem)
     {
-        emit categoryChanged(pItem->id());
+        emit sigCategoryChanged(pItem->id());
 //        if (pItem->page() &&
 //            !pItem->tabWidget())
-//            emit categoryChanged(pItem->id());
+//            emit sigCategoryChanged(pItem->id());
 //        else
 //        {
 //
@@ -671,7 +680,7 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(QAction *pAction)
 //            UISelectorActionItem *child = static_cast<UISelectorActionItem*>(
 //                findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
 //            if (child)
-//                emit categoryChanged(child->id());
+//                emit sigCategoryChanged(child->id());
 //        }
     }
 }
@@ -683,20 +692,40 @@ void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
     {
         if (pItem->page() &&
             !pItem->tabWidget())
-            emit categoryChanged(pItem->id());
+            emit sigCategoryChanged(pItem->id());
         else
         {
             const UISelectorActionItem *pChild = static_cast<UISelectorActionItem*>(
                 findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
             if (pChild)
-                emit categoryChanged(pChild->id());
+                emit sigCategoryChanged(pChild->id());
         }
     }
+}
+
+void UISettingsSelectorToolBar::clear()
+{
+    QList<QAction*> list = m_pActionGroup->actions();
+    foreach (QAction *pAction, list)
+       delete pAction;
 }
 
 UISelectorActionItem *UISettingsSelectorToolBar::findActionItem(int iID) const
 {
     return static_cast<UISelectorActionItem*>(UISettingsSelector::findItem(iID));
+}
+
+UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByAction(QAction *pAction) const
+{
+    UISelectorActionItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (static_cast<UISelectorActionItem*>(pItem)->action() == pAction)
+        {
+            pResult = static_cast<UISelectorActionItem*>(pItem);
+            break;
+        }
+
+    return pResult;
 }
 
 UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByTabWidget(QTabWidget *pTabWidget, int iIndex) const
@@ -713,33 +742,5 @@ UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByTabWidget(QTabW
 
     return pResult;
 
-}
-
-QList<QWidget*> UISettingsSelectorToolBar::rootPages() const
-{
-    QList<QWidget*> list;
-    foreach (UISelectorItem *pItem, m_list)
-    {
-        const UISelectorActionItem *pActionItem = static_cast<UISelectorActionItem*>(pItem);
-        if (pActionItem->parentID() == -1 &&
-            pActionItem->page())
-            list << pActionItem->page();
-        else if (pActionItem->tabWidget())
-            list << pActionItem->tabWidget();
-    }
-    return list;
-}
-
-UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByAction(QAction *pAction) const
-{
-    UISelectorActionItem *pResult = 0;
-    foreach (UISelectorItem *pItem, m_list)
-        if (static_cast<UISelectorActionItem*>(pItem)->action() == pAction)
-        {
-            pResult = static_cast<UISelectorActionItem*>(pItem);
-            break;
-        }
-
-    return pResult;
 }
 
