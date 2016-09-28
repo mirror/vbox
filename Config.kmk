@@ -1744,7 +1744,8 @@ ifndef VBOX_BLD_PYTHON
   				   python-not-found.exe)
  else
   VBOX_BLD_PYTHON := $(firstword $(which python2.7$(HOSTSUFF_EXE)) $(which python2.6$(HOSTSUFF_EXE)) \
-                                 $(which python$(HOSTSUFF_EXE)) python$(HOSTSUFF_EXE))
+                                 $(which python$(HOSTSUFF_EXE)) $(which python3$(HOSTSUFF_EXE)) \
+				   python-not-found)
  endif
 endif
 
