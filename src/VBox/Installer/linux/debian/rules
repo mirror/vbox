@@ -65,6 +65,7 @@ NOWEBSVC ?= $(ose)
 NODOCS   ?= $(if $(wildcard $(vboxroot)/prebuild/UserManual*.pdf),$(if $(wildcard $(vboxroot)/prebuild/VirtualBox*.chm),1,),)
 STAGEDISO ?= $(if $(wildcard $(vboxroot)/prebuild/VBoxGuestAdditions.iso),$(vboxroot)/prebuild,)
 NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
+PYTHON   := $(firstword $(shell which python) $(shell which python3))
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
@@ -275,7 +276,7 @@ endif
 	fi
 	export VBOX_INSTALL_PATH=/usr/lib/$(package) && \
 	    cd $(builddir)/bin/sdk/installer && \
-	    python ./vboxapisetup.py install --root $(prefix)
+	    $(PYTHON) ./vboxapisetup.py install --root $(prefix)
 	rm -rf $(prefix)/usr/lib/$(package)/sdk/installer
 	ln -s ../VBoxVMM.so $(prefix)/usr/lib/$(package)/components/VBoxVMM.so
 	rmdir $(prefix)/opt
@@ -320,7 +321,7 @@ endif
 ifeq ($(DEBUG),)
 	mv $(prefix)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
-	dh_python2
+	$(firstword $(shell which dh_python2) $(shell which dh_python3))
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
 	dh_fixperms
 	dh_makeshlibs

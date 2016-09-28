@@ -241,7 +241,7 @@ endif
 ifeq ($(DEBUG),)
 	mv $(current)/debian/$(verpkg)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
-	dh_python2
+	$(firstword $(shell which dh_python2) $(shell which dh_python3))
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
 	dh_fixperms
 	dh_makeshlibs
