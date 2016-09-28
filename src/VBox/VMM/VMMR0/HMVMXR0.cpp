@@ -8610,6 +8610,10 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     else
         return rcStrict;
 
+    /** @todo r=ramshankar: Why can't we do this when the APIC base changes
+     *        in hmR0VmxLoadGuestApicState()? Also we can stop caching the
+     *        APIC base in several places just for HM usage and just take the
+     *        function call hit in load-guest state. */
 #ifndef IEM_VERIFICATION_MODE_FULL
     /* Setup the Virtualized APIC accesses. pMixedCtx->msrApicBase is always up-to-date. It's not part of the VMCS. */
     if (   pVCpu->hm.s.vmx.u64MsrApicBase != pMixedCtx->msrApicBase
