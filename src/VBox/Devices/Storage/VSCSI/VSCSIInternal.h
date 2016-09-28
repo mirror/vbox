@@ -207,6 +207,22 @@ typedef struct VSCSILUNDESC
      */
     DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqProcess, (PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq));
 
+    /**
+     * Informs about a medium being inserted - optional.
+     *
+     * @returns VBox status code.
+     * @param   pVScsiLun    The SCSI LUN instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumInserted, (PVSCSILUNINT pVScsiLun));
+
+    /**
+     * Informs about a medium being removed - optional.
+     *
+     * @returns VBox status code.
+     * @param   pVScsiLun    The SCSI LUN instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumRemoved, (PVSCSILUNINT pVScsiLun));
+
 } VSCSILUNDESC;
 
 /** Maximum number of LUNs a device can have. */

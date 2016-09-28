@@ -128,6 +128,7 @@ VBOXDDU_DECL(int) VSCSILunDestroy(VSCSILUN hVScsiLun)
  */
 VBOXDDU_DECL(int) VSCSILunMountNotify(VSCSILUN hVScsiLun)
 {
+    int rc = VINF_SUCCESS;
     PVSCSILUNINT pVScsiLun = (PVSCSILUNINT)hVScsiLun;
 
     LogFlowFunc(("hVScsiLun=%p\n", hVScsiLun));
@@ -137,8 +138,10 @@ VBOXDDU_DECL(int) VSCSILunMountNotify(VSCSILUN hVScsiLun)
     /* Mark the LUN as not ready so that LUN specific code can do its job. */
     pVScsiLun->fReady        = false;
     pVScsiLun->fMediaPresent = true;
+    if (pVScsiLun->pVScsiLunDesc->pfnVScsiLunMediumInserted)
+        rc = pVScsiLun->pVScsiLunDesc->pfnVScsiLunMediumInserted(pVScsiLun);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -150,6 +153,7 @@ VBOXDDU_DECL(int) VSCSILunMountNotify(VSCSILUN hVScsiLun)
  */
 VBOXDDU_DECL(int) VSCSILunUnmountNotify(VSCSILUN hVScsiLun)
 {
+    int rc = VINF_SUCCESS;
     PVSCSILUNINT pVScsiLun = (PVSCSILUNINT)hVScsiLun;
 
     LogFlowFunc(("hVScsiLun=%p\n", hVScsiLun));
@@ -158,6 +162,8 @@ VBOXDDU_DECL(int) VSCSILunUnmountNotify(VSCSILUN hVScsiLun)
 
     pVScsiLun->fReady        = false;
     pVScsiLun->fMediaPresent = false;
+    if (pVScsiLun->pVScsiLunDesc->pfnVScsiLunMediumRemoved)
+        rc = pVScsiLun->pVScsiLunDesc->pfnVScsiLunMediumRemoved(pVScsiLun);
 
-    return VINF_SUCCESS;
+    return rc;
 }
