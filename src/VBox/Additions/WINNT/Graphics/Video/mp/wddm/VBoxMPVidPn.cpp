@@ -2349,7 +2349,19 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
     PVBOXWDDM_SOURCE pSource = &paSources[VidPnSourceId];
-    pSource->bBlankedByPowerOff = bPathPowerTransition ? pAllocation == NULL : 0;
+    NTSTATUS Status;
+
+    if (bPathPowerTransition)
+    {
+        RTRECTSIZE PinnedModeSize;
+        bool bHasPinnedMode;
+
+        Status = vboxVidPnQueryPinnedSourceMode(hDesiredVidPn, pVidPnInterface, VidPnSourceId, &PinnedModeSize);
+        bHasPinnedMode = Status == STATUS_SUCCESS && PinnedModeSize.cx > 0 && PinnedModeSize.cy > 0;
+        pSource->bBlankedByPowerOff = !bHasPinnedMode;
+
+        LOG(("Path power transition: srcId %d goes blank %d", VidPnSourceId, pSource->bBlankedByPowerOff));
+    }
 
     VBOXWDDM_TARGET_ITER Iter;
     VBoxVidPnStTIterInit(pSource, paTargets, (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays, &Iter);
@@ -2366,7 +2378,7 @@ NTSTATUS VBoxVidPnCommitSourceModeForSrcId(PVBOXMP_DEVEXT pDevExt, const D3DKMDT
 
     VBoxVidPnStSourceCleanup(paSources, VidPnSourceId, paTargets, (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
 
-    NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
+    Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
                 VidPnSourceId,
                 &hCurVidPnSourceModeSet,
                 &pCurVidPnSourceModeSetInterface);
