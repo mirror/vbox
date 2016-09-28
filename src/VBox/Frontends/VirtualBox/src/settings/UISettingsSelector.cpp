@@ -36,7 +36,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** Tree-widget column categories. */
+/** Tree-widget column sections. */
 enum
 {
     treeWidget_Category = 0,
@@ -50,6 +50,13 @@ class SelectorItem
 {
 public:
 
+    /** Constructs selector item.
+      * @param  aIcon      Brings the item icon.
+      * @param  aText      Brings the item text.
+      * @param  aId        Brings the item ID.
+      * @param  aLink      Brings the item link.
+      * @param  aPage      Brings the item page reference.
+      * @param  aParentId  Brings the item parent ID. */
     SelectorItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId)
         : mIcon (aIcon)
         , mText (aText)
@@ -59,21 +66,34 @@ public:
         , mParentId (aParentId)
     {}
 
+    /** Returns the item icon. */
     QIcon icon() const { return mIcon; }
+    /** Returns the item text. */
     QString text() const { return mText; }
+    /** Defines the item @s strText. */
     void setText (const QString &aText) { mText = aText; }
+    /** Returns the item ID. */
     int id() const { return mId; }
+    /** Returns the item link. */
     QString link() const { return mLink; }
+    /** Returns the item page reference. */
     UISettingsPage *page() const { return mPage; }
+    /** Returns the item parent ID. */
     int parentId() const { return mParentId; }
 
 protected:
 
+    /** Holds the item icon. */
     QIcon mIcon;
+    /** Holds the item text. */
     QString mText;
+    /** Holds the item ID. */
     int mId;
+    /** Holds the item link. */
     QString mLink;
+    /** Holds the item page reference. */
     UISettingsPage* mPage;
+    /** Holds the item parent ID. */
     int mParentId;
 };
 
@@ -193,7 +213,7 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView (QWidget *aParent /* = NU
     :UISettingsSelector (aParent)
 {
     mTwSelector = new QITreeWidget (aParent);
-    /* Configure the selector */
+    /* Configure the selector: */
     QSizePolicy sizePolicy (QSizePolicy::Minimum, QSizePolicy::Expanding);
     sizePolicy.setHorizontalStretch (0);
     sizePolicy.setVerticalStretch (0);
@@ -206,15 +226,15 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView (QWidget *aParent /* = NU
     mTwSelector->setRootIsDecorated (false);
     mTwSelector->setUniformRowHeights (true);
     mTwSelector->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
-    /* Add the columns */
+    /* Add the columns: */
     mTwSelector->headerItem()->setText (treeWidget_Category, "Category");
     mTwSelector->headerItem()->setText (treeWidget_Id, "[id]");
     mTwSelector->headerItem()->setText (treeWidget_Link, "[link]");
-    /* Hide unnecessary columns and header */
+    /* Hide unnecessary columns and header: */
     mTwSelector->header()->hide();
     mTwSelector->hideColumn (treeWidget_Id);
     mTwSelector->hideColumn (treeWidget_Link);
-    /* Setup connections */
+    /* Setup connections: */
     connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
 }
@@ -372,6 +392,14 @@ class SelectorActionItem: public SelectorItem
 {
 public:
 
+    /** Constructs selector item.
+      * @param  aIcon      Brings the item icon.
+      * @param  aText      Brings the item text.
+      * @param  aId        Brings the item ID.
+      * @param  aLink      Brings the item link.
+      * @param  aPage      Brings the item page reference.
+      * @param  aParentId  Brings the item parent ID.
+      * @param  aParent    Brings the item parent. */
     SelectorActionItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId, QObject *aParent)
         : SelectorItem (aIcon, aText, aId, aLink, aPage, aParentId)
         , mAction (new QAction (aIcon, aText, aParent))
@@ -380,14 +408,19 @@ public:
         mAction->setCheckable (true);
     }
 
+    /** Returns the action instance. */
     QAction *action() const { return mAction; }
 
+    /** Defines the @a pTabWidget instance. */
     void setTabWidget (QTabWidget *aTabWidget) { mTabWidget = aTabWidget; }
+    /** Returns the tab-widget instance. */
     QTabWidget *tabWidget() const { return mTabWidget; }
 
 protected:
 
+    /** Holds the action instance. */
     QAction *mAction;
+    /** Holds the tab-widget instance. */
     QTabWidget *mTabWidget;
 };
 
@@ -395,14 +428,14 @@ protected:
 UISettingsSelectorToolBar::UISettingsSelectorToolBar (QWidget *aParent /* = NULL */)
     : UISettingsSelector (aParent)
 {
-    /* Init the toolbar */
+    /* Init the toolbar: */
     mTbSelector = new UIToolBar (aParent);
     mTbSelector->setUseTextLabels (true);
     mTbSelector->setIconSize (QSize (32, 32));
 #ifdef VBOX_WS_MAC
     mTbSelector->setShowToolBarButton (false);
 #endif /* VBOX_WS_MAC */
-    /* Init the action group for house keeping */
+    /* Init the action group for house keeping: */
     mActionGroup = new QActionGroup (this);
     mActionGroup->setExclusive (true);
     connect (mActionGroup, SIGNAL (triggered (QAction*)),

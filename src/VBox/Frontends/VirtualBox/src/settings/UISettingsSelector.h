@@ -102,8 +102,8 @@ public:
 
 signals:
 
-    /** Notifies listeners about selector section changed. */
-    void categoryChanged (int);
+    /** Notifies listeners about selector @a iCategory changed. */
+    void categoryChanged (int iCategory);
 
 protected:
 
@@ -185,7 +185,7 @@ private:
     /** Performs @a aId to QString serialization. */
     QString idToString (int aId) const;
 
-    /** Holds the tree-widget selector instance. */
+    /** Holds the tree-widget instance. */
     QITreeWidget *mTwSelector;
 };
 
