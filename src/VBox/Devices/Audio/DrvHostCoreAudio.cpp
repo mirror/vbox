@@ -37,7 +37,7 @@
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioConverter.h>
-#ifndef VBOX_WITH_AUDIO_CA_QUEUES
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
 # include <AudioToolbox/AudioToolbox.h>
 #endif
 
@@ -567,7 +567,7 @@ static bool coreAudioUnitIsRunning(PCOREAUDIOSTREAM pStream)
 
     return (uFlag >= 1);
 }
-#endif /* VBOX_WITH_AUDIO_CA_QUEUES */
+#endif /* !VBOX_WITH_AUDIO_CA_QUEUES */
 
 #ifdef VBOX_WITH_AUDIO_CA_CONVERTER
 /**
