@@ -2129,6 +2129,8 @@ static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pCAStream)
  */
 static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
+    RT_NOREF(pCfgAcq);
+
     LogFunc(("pCAStream=%p, pCfgReq=%p, pCfgAcq=%p\n", pCAStream, pCfgReq, pCfgAcq));
 
     /* No device assigned? Bail out early. */
