@@ -860,7 +860,6 @@ $$(VBoxC_0_OUTDIR)/VBoxC.def: $(MAKEFILE_CURRENT)
 endif
 
 src-client/ConsoleImpl.cpp_DEFS = \
-	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",) \
 	$(if $(VBOX_WITH_OPENSSL_FIPS), VBOX_OPENSSL_FIPS,)
 
 
@@ -977,7 +976,6 @@ else # !win
 endif # !win
 
 glue/com.cpp_DEFS = \
-	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",) \
 	KBUILD_TYPE=\"$(KBUILD_TYPE)\"
 
 # 32-bit version of VBoxCOM.

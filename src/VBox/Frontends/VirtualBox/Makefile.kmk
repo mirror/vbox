@@ -163,16 +163,6 @@ endif
 ifneq ($(KBUILD_TYPE),release)
  VirtualBox_DEFS        += VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 endif
-ifdef VBOX_BLEEDING_EDGE
-VirtualBox_src/selector/UISelectorWindow.cpp_DEFS += \
-    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
-VirtualBox_src/runtime/UIMachineWindow.cpp_DEFS += \
-    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
-VirtualBox_src/VBoxAboutDlg.cpp_DEFS += \
-    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
-VirtualBox_src/main.cpp_DEFS += \
-    VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
-endif
 
 
 
