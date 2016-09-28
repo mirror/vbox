@@ -22,30 +22,28 @@
 #include <QObject>
 
 /* Forward declarations: */
-class QITreeWidget;
-class UIToolBar;
-class UISettingsPage;
-class SelectorItem;
-class SelectorActionItem;
-class QTreeWidget;
-class QTreeWidgetItem;
-class QIcon;
 class QAction;
 class QActionGroup;
-template <class Key, class T> class QMap;
 class QTabWidget;
+class QTreeWidget;
+class QTreeWidgetItem;
+class QITreeWidget;
+class UISelectorItem;
+class UISelectorActionItem;
+class UISettingsPage;
+class UIToolBar;
 
 
 /** QObject subclass providing settings dialog
   * with the means to switch between settings pages. */
-class UISettingsSelector: public QObject
+class UISettingsSelector : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs settings selector passing @a aParent to the base-class. */
-    UISettingsSelector (QWidget *aParent = NULL);
+    /** Constructs settings selector passing @a pParent to the base-class. */
+    UISettingsSelector(QWidget *pParent = 0);
     /** Destructs settings selector. */
     ~UISettingsSelector();
 
@@ -56,38 +54,38 @@ public:
       * @param  strBigIcon     Brings the big icon reference.
       * @param  strMediumIcon  Brings the medium icon reference.
       * @param  strSmallIcon   Brings the small icon reference.
-      * @param  aId            Brings the selector section ID.
-      * @param  aLink          Brings the selector section link.
-      * @param  aPage          Brings the selector section page reference.
-      * @param  aParentId      Brings the parent section ID or -1 if there is no parent. */
-    virtual QWidget *addItem (const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
-                              int aId, const QString &aLink, UISettingsPage* aPage = NULL, int aParentId = -1) = 0;
+      * @param  iID            Brings the selector section ID.
+      * @param  strLink        Brings the selector section link.
+      * @param  pPage          Brings the selector section page reference.
+      * @param  iParentID      Brings the parent section ID or -1 if there is no parent. */
+    virtual QWidget *addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
+                             int iID, const QString &strLink, UISettingsPage *pPage = 0, int iParentID = -1) = 0;
 
-    /** Defines the @a aText for section with @a aId. */
-    virtual void setItemText (int aId, const QString &aText);
-    /** Returns the text for section with @a aId. */
-    virtual QString itemText (int aId) const = 0;
-    /** Returns the text for section with @a aPage. */
-    virtual QString itemTextByPage (UISettingsPage *aPage) const;
+    /** Defines the @a strText for section with @a iID. */
+    virtual void setItemText(int iID, const QString &strText);
+    /** Returns the text for section with @a iID. */
+    virtual QString itemText(int iID) const = 0;
+    /** Returns the text for section with @a pPage. */
+    virtual QString itemTextByPage(UISettingsPage *pPage) const;
 
     /** Returns the current selector ID. */
-    virtual int currentId () const = 0;
+    virtual int currentId() const = 0;
 
-    /** Returns the section ID for passed @a aLink. */
-    virtual int linkToId (const QString &aLink) const = 0;
+    /** Returns the section ID for passed @a strLink. */
+    virtual int linkToId(const QString &strLink) const = 0;
 
-    /** Returns the section page for passed @a aId. */
-    virtual QWidget *idToPage (int aId) const;
-    /** Returns the section root-page for passed @a aId. */
-    virtual QWidget *rootPage (int aId) const { return idToPage (aId); }
+    /** Returns the section page for passed @a iID. */
+    virtual QWidget *idToPage(int iID) const;
+    /** Returns the section root-page for passed @a iID. */
+    virtual QWidget *rootPage(int iID) const { return idToPage(iID); }
 
-    /** Make the section with @a aId current. */
-    virtual void selectById (int aId) = 0;
-    /** Make the section with @a aLink current. */
-    virtual void selectByLink (const QString &aLink) { selectById (linkToId (aLink)); }
+    /** Make the section with @a iID current. */
+    virtual void selectById(int iID) = 0;
+    /** Make the section with @a strLink current. */
+    virtual void selectByLink(const QString &strLink) { selectById(linkToId(strLink)); }
 
-    /** Make the section with @a aId @a aShow. */
-    virtual void setVisibleById (int aId, bool aShow) = 0;
+    /** Make the section with @a iID @a fVisible. */
+    virtual void setVisibleById(int iID, bool fVisible) = 0;
 
     /** Returns the list of all selector pages. */
     virtual QList<UISettingsPage*> settingPages() const;
@@ -95,179 +93,179 @@ public:
     virtual QList<QWidget*> rootPages() const;
 
     /** Performs selector polishing. */
-    virtual void polish() {};
+    virtual void polish() {}
 
     /** Returns minimum selector width. */
-    virtual int minWidth () const { return 0; }
+    virtual int minWidth() const { return 0; }
 
 signals:
 
     /** Notifies listeners about selector @a iCategory changed. */
-    void categoryChanged (int iCategory);
+    void categoryChanged(int iCategory);
 
 protected:
 
     /** Clears selector of all the items. */
     virtual void clear() = 0;
 
-    /** Searches for item with passed @a aId. */
-    SelectorItem* findItem (int aId) const;
-    /** Searches for item with passed @a aLink. */
-    SelectorItem* findItemByLink (const QString &aLink) const;
-    /** Searches for item with passed @a aPage. */
-    SelectorItem* findItemByPage (UISettingsPage* aPage) const;
+    /** Searches for item with passed @a iID. */
+    UISelectorItem *findItem(int iID) const;
+    /** Searches for item with passed @a strLink. */
+    UISelectorItem *findItemByLink(const QString &strLink) const;
+    /** Searches for item with passed @a pPage. */
+    UISelectorItem *findItemByPage(UISettingsPage *pPage) const;
 
     /** Holds the selector item instances. */
-    QList<SelectorItem*> mItemList;
+    QList<UISelectorItem*> m_list;
 };
 
 
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
   * This one represented as tree-widget. */
-class UISettingsSelectorTreeView: public UISettingsSelector
+class UISettingsSelectorTreeView : public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs settings selector passing @a aParent to the base-class. */
-    UISettingsSelectorTreeView (QWidget *aParent = NULL);
+    /** Constructs settings selector passing @a pParent to the base-class. */
+    UISettingsSelectorTreeView(QWidget *pParent = 0);
 
     /** Returns the widget selector operates on. */
-    virtual QWidget *widget() const;
+    virtual QWidget *widget() const /* override */;
 
     /** Adds a new selector item.
       * @param  strBigIcon     Brings the big icon reference.
       * @param  strMediumIcon  Brings the medium icon reference.
       * @param  strSmallIcon   Brings the small icon reference.
-      * @param  aId            Brings the selector section ID.
-      * @param  aLink          Brings the selector section link.
-      * @param  aPage          Brings the selector section page reference.
-      * @param  aParentId      Brings the parent section ID or -1 if there is no parent. */
-    virtual QWidget *addItem (const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
-                              int aId, const QString &aLink, UISettingsPage* aPage = NULL, int aParentId = -1);
+      * @param  iID            Brings the selector section ID.
+      * @param  strLink        Brings the selector section link.
+      * @param  pPage          Brings the selector section page reference.
+      * @param  iParentID      Brings the parent section ID or -1 if there is no parent. */
+    virtual QWidget *addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
+                             int iID, const QString &strLink, UISettingsPage *pPage = 0, int iParentID = -1) /* override */;
 
-    /** Defines the @a aText for section with @a aId. */
-    virtual void setItemText (int aId, const QString &aText);
-    /** Returns the text for section with @a aId. */
-    virtual QString itemText (int aId) const;
+    /** Defines the @a strText for section with @a iID. */
+    virtual void setItemText(int iID, const QString &strText) /* override */;
+    /** Returns the text for section with @a iID. */
+    virtual QString itemText(int iID) const /* override */;
 
     /** Returns the current selector ID. */
-    virtual int currentId() const;
+    virtual int currentId() const /* override */;
 
-    /** Returns the section ID for passed @a aLink. */
-    virtual int linkToId (const QString &aLink) const;
+    /** Returns the section ID for passed @a strLink. */
+    virtual int linkToId(const QString &strLink) const /* override */;
 
-    /** Make the section with @a aId current. */
-    virtual void selectById (int aId);
+    /** Make the section with @a iID current. */
+    virtual void selectById(int iID) /* override */;
 
-    /** Make the section with @a aId @a aShow. */
-    virtual void setVisibleById (int aId, bool aShow);
+    /** Make the section with @a iID @a fVisible. */
+    virtual void setVisibleById(int iID, bool fVisible) /* override */;
 
     /** Performs selector polishing. */
-    virtual void polish();
+    virtual void polish() /* override */;
 
 private slots:
 
-    /** Handles selector section change from @a aPrevItem to @a aItem. */
-    void settingsGroupChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem);
+    /** Handles selector section change from @a pPrevItem to @a pItem. */
+    void sltSettingsGroupChanged(QTreeWidgetItem *pItem, QTreeWidgetItem *pPrevItem);
 
 private:
 
     /** Clears selector of all the items. */
-    virtual void clear();
+    virtual void clear() /* override */;
 
-    /** Returns page path for passed @a aMatch. */
-    QString pagePath (const QString &aMatch) const;
-    /** Find item within the passed @a aView and @a aColumn matching @a aMatch. */
-    QTreeWidgetItem* findItem (QTreeWidget *aView, const QString &aMatch, int aColumn) const;
-    /** Performs @a aId to QString serialization. */
-    QString idToString (int aId) const;
+    /** Returns page path for passed @a strMatch. */
+    QString pagePath(const QString &strMatch) const;
+    /** Find item within the passed @a pView and @a iColumn matching @a strMatch. */
+    QTreeWidgetItem *findItem(QTreeWidget *pView, const QString &strMatch, int iColumn) const;
+    /** Performs @a iID to QString serialization. */
+    QString idToString(int iID) const;
 
     /** Holds the tree-widget instance. */
-    QITreeWidget *mTwSelector;
+    QITreeWidget *m_pTreeWidget;
 };
 
 
 /** UISettingsSelector subclass providing settings dialog
   * with the means to switch between settings pages.
   * This one represented as tab-widget. */
-class UISettingsSelectorToolBar: public UISettingsSelector
+class UISettingsSelectorToolBar : public UISettingsSelector
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs settings selector passing @a aParent to the base-class. */
-    UISettingsSelectorToolBar (QWidget *aParent = NULL);
+    /** Constructs settings selector passing @a pParent to the base-class. */
+    UISettingsSelectorToolBar(QWidget *pParent = 0);
     ~UISettingsSelectorToolBar();
 
     /** Returns the widget selector operates on. */
-    virtual QWidget *widget() const;
+    virtual QWidget *widget() const /* override */;
 
     /** Adds a new selector item.
       * @param  strBigIcon     Brings the big icon reference.
       * @param  strMediumIcon  Brings the medium icon reference.
       * @param  strSmallIcon   Brings the small icon reference.
-      * @param  aId            Brings the selector section ID.
-      * @param  aLink          Brings the selector section link.
-      * @param  aPage          Brings the selector section page reference.
-      * @param  aParentId      Brings the parent section ID or -1 if there is no parent. */
-    virtual QWidget *addItem (const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
-                              int aId, const QString &aLink, UISettingsPage* aPage = NULL, int aParentId = -1);
+      * @param  iID            Brings the selector section ID.
+      * @param  strLink        Brings the selector section link.
+      * @param  pPage          Brings the selector section page reference.
+      * @param  iParentID      Brings the parent section ID or -1 if there is no parent. */
+    virtual QWidget *addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,
+                             int iID, const QString &strLink, UISettingsPage *pPage = 0, int iParentID = -1) /* override */;
 
-    /** Defines the @a aText for section with @a aId. */
-    virtual void setItemText (int aId, const QString &aText);
-    /** Returns the text for section with @a aId. */
-    virtual QString itemText (int aId) const;
+    /** Defines the @a strText for section with @a iID. */
+    virtual void setItemText(int iID, const QString &strText) /* override */;
+    /** Returns the text for section with @a iID. */
+    virtual QString itemText(int iID) const /* override */;
 
     /** Returns the current selector ID. */
-    virtual int currentId() const;
+    virtual int currentId() const /* override */;
 
-    /** Returns the section ID for passed @a aLink. */
-    virtual int linkToId (const QString &aLink) const;
+    /** Returns the section ID for passed @a strLink. */
+    virtual int linkToId(const QString &strLink) const /* override */;
 
-    /** Returns the section page for passed @a aId. */
-    virtual QWidget *idToPage (int aId) const;
-    /** Returns the section root-page for passed @a aId. */
-    virtual QWidget *rootPage (int aId) const;
+    /** Returns the section page for passed @a iID. */
+    virtual QWidget *idToPage(int iID) const /* override */;
+    /** Returns the section root-page for passed @a iID. */
+    virtual QWidget *rootPage(int iID) const /* override */;
 
-    /** Make the section with @a aId current. */
-    virtual void selectById (int aId);
+    /** Make the section with @a iID current. */
+    virtual void selectById(int iID) /* override */;
 
-    /** Make the section with @a aId @a aShow. */
-    virtual void setVisibleById (int aId, bool aShow);
+    /** Make the section with @a iID @a fVisible. */
+    virtual void setVisibleById(int iID, bool fVisible) /* override */;
 
     /** Returns minimum selector width. */
-    virtual int minWidth() const;
+    virtual int minWidth() const /* override */;
 
     /** Returns the list of all root pages. */
-    virtual QList<QWidget*> rootPages() const;
+    virtual QList<QWidget*> rootPages() const /* override */;
 
 private slots:
 
-    /** Handles selector section change to @a aAction . */
-    void settingsGroupChanged (QAction *aAction);
-    /** Handles selector section change to @a aIndex . */
-    void settingsGroupChanged (int aIndex);
+    /** Handles selector section change to @a pAction. */
+    void sltSettingsGroupChanged(QAction *pAction);
+    /** Handles selector section change to @a iIndex. */
+    void sltSettingsGroupChanged(int iIndex);
 
 private:
 
     /** Clears selector of all the items. */
-    virtual void clear();
+    virtual void clear() /* override */;
 
-    /** Searches for action item with passed @a aId. */
-    SelectorActionItem *findActionItem (int aId) const;
-    /** Searches for action item with passed @a aAction. */
-    SelectorActionItem *findActionItemByAction (QAction *aAction) const;
-    /** Searches for action item with passed @a aTabWidget and @a aIndex. */
-    SelectorActionItem *findActionItemByTabWidget (QTabWidget* aTabWidget, int aIndex) const;
+    /** Searches for action item with passed @a iID. */
+    UISelectorActionItem *findActionItem(int iID) const;
+    /** Searches for action item with passed @a pAction. */
+    UISelectorActionItem *findActionItemByAction(QAction *pAction) const;
+    /** Searches for action item with passed @a pTabWidget and @a iIndex. */
+    UISelectorActionItem *findActionItemByTabWidget(QTabWidget *pTabWidget, int iIndex) const;
 
     /** Holds the toolbar instance. */
-    UIToolBar *mTbSelector;
+    UIToolBar *m_pToolBar;
     /** Holds the action group instance. */
-    QActionGroup *mActionGroup;
+    QActionGroup *m_pActionGroup;
 };
 
 #endif /* !___UISettingsSelector_h___ */

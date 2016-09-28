@@ -20,81 +20,81 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QHeaderView>
-# include <QTabWidget>
-# include <QLayout>
 # include <QAction>
+# include <QHeaderView>
+# include <QLayout>
+# include <QTabWidget>
 
 /* GUI includes: */
+# include "QITabWidget.h"
+# include "QITreeWidget.h"
 # include "UISettingsSelector.h"
+# include "UIIconPool.h"
 # include "UISettingsPage.h"
 # include "UIToolBar.h"
-# include "QITreeWidget.h"
-# include "QITabWidget.h"
-# include "UIIconPool.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
 /** Tree-widget column sections. */
-enum
+enum TreeWidgetSection
 {
-    treeWidget_Category = 0,
-    treeWidget_Id,
-    treeWidget_Link
+    TreeWidgetSection_Category = 0,
+    TreeWidgetSection_Id,
+    TreeWidgetSection_Link
 };
 
 
 /** Simple container of all the selector item data. */
-class SelectorItem
+class UISelectorItem
 {
 public:
 
     /** Constructs selector item.
-      * @param  aIcon      Brings the item icon.
-      * @param  aText      Brings the item text.
-      * @param  aId        Brings the item ID.
-      * @param  aLink      Brings the item link.
-      * @param  aPage      Brings the item page reference.
-      * @param  aParentId  Brings the item parent ID. */
-    SelectorItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId)
-        : mIcon (aIcon)
-        , mText (aText)
-        , mId (aId)
-        , mLink (aLink)
-        , mPage (aPage)
-        , mParentId (aParentId)
+      * @param  icon       Brings the item icon.
+      * @param  strText    Brings the item text.
+      * @param  iID        Brings the item ID.
+      * @param  strLink    Brings the item link.
+      * @param  pPage      Brings the item page reference.
+      * @param  iParentID  Brings the item parent ID. */
+    UISelectorItem(const QIcon &icon, const QString &strText, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID)
+        : m_icon(icon)
+        , m_strText(strText)
+        , m_iID(iID)
+        , m_strLink(strLink)
+        , m_pPage(pPage)
+        , m_iParentID(iParentID)
     {}
 
     /** Returns the item icon. */
-    QIcon icon() const { return mIcon; }
+    QIcon icon() const { return m_icon; }
     /** Returns the item text. */
-    QString text() const { return mText; }
+    QString text() const { return m_strText; }
     /** Defines the item @s strText. */
-    void setText (const QString &aText) { mText = aText; }
+    void setText(const QString &strText) { m_strText = strText; }
     /** Returns the item ID. */
-    int id() const { return mId; }
+    int id() const { return m_iID; }
     /** Returns the item link. */
-    QString link() const { return mLink; }
+    QString link() const { return m_strLink; }
     /** Returns the item page reference. */
-    UISettingsPage *page() const { return mPage; }
+    UISettingsPage *page() const { return m_pPage; }
     /** Returns the item parent ID. */
-    int parentId() const { return mParentId; }
+    int parentID() const { return m_iParentID; }
 
 protected:
 
     /** Holds the item icon. */
-    QIcon mIcon;
+    QIcon m_icon;
     /** Holds the item text. */
-    QString mText;
+    QString m_strText;
     /** Holds the item ID. */
-    int mId;
+    int m_iID;
     /** Holds the item link. */
-    QString mLink;
+    QString m_strLink;
     /** Holds the item page reference. */
-    UISettingsPage* mPage;
+    UISettingsPage *m_pPage;
     /** Holds the item parent ID. */
-    int mParentId;
+    int m_iParentID;
 };
 
 
@@ -102,91 +102,91 @@ protected:
 *   Class UISettingsSelector implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UISettingsSelector::UISettingsSelector (QWidget *aParent /* = NULL */)
-    :QObject (aParent)
+UISettingsSelector::UISettingsSelector(QWidget *pParent /* = 0 */)
+    : QObject(pParent)
 {
 }
 
 UISettingsSelector::~UISettingsSelector()
 {
-    qDeleteAll (mItemList);
-    mItemList.clear();
+    qDeleteAll(m_list);
+    m_list.clear();
 }
 
-void UISettingsSelector::setItemText (int aId, const QString &aText)
+void UISettingsSelector::setItemText(int iID, const QString &strText)
 {
-    if (SelectorItem *item = findItem (aId))
-        item->setText (aText);
+    if (UISelectorItem *pTtem = findItem(iID))
+        pTtem->setText(strText);
 }
 
-QString UISettingsSelector::itemTextByPage (UISettingsPage *aPage) const
+QString UISettingsSelector::itemTextByPage(UISettingsPage *pPage) const
 {
-    QString text;
-    if (SelectorItem *item = findItemByPage (aPage))
-        text = item->text();
-    return text;
+    QString strText;
+    if (UISelectorItem *pItem = findItemByPage(pPage))
+        strText = pItem->text();
+    return strText;
 }
 
-QWidget *UISettingsSelector::idToPage (int aId) const
+QWidget *UISettingsSelector::idToPage(int iID) const
 {
-    UISettingsPage *page = NULL;
-    if (SelectorItem *item = findItem (aId))
-        page = item->page();
-    return page;
+    UISettingsPage *pPage = 0;
+    if (UISelectorItem *pItem = findItem(iID))
+        pPage = pItem->page();
+    return pPage;
 }
 
 QList<UISettingsPage*> UISettingsSelector::settingPages() const
 {
     QList<UISettingsPage*> list;
-    foreach (SelectorItem *item, mItemList)
-        if (item->page())
-            list << item->page();
+    foreach (UISelectorItem *pItem, m_list)
+        if (pItem->page())
+            list << pItem->page();
     return list;
 }
 
 QList<QWidget*> UISettingsSelector::rootPages() const
 {
     QList<QWidget*> list;
-    foreach (SelectorItem *item, mItemList)
-        if (item->page())
-            list << item->page();
+    foreach (UISelectorItem *pItem, m_list)
+        if (pItem->page())
+            list << pItem->page();
     return list;
 }
 
-SelectorItem *UISettingsSelector::findItem (int aId) const
+UISelectorItem *UISettingsSelector::findItem(int iID) const
 {
-    SelectorItem *result = NULL;
-    foreach (SelectorItem *item, mItemList)
-        if (item->id() == aId)
+    UISelectorItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (pItem->id() == iID)
         {
-            result = item;
+            pResult = pItem;
             break;
         }
-    return result;
+    return pResult;
 }
 
-SelectorItem *UISettingsSelector::findItemByLink (const QString &aLink) const
+UISelectorItem *UISettingsSelector::findItemByLink(const QString &strLink) const
 {
-    SelectorItem *result = NULL;
-    foreach (SelectorItem *item, mItemList)
-        if (item->link() == aLink)
+    UISelectorItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (pItem->link() == strLink)
         {
-            result = item;
+            pResult = pItem;
             break;
         }
-    return result;
+    return pResult;
 }
 
-SelectorItem *UISettingsSelector::findItemByPage (UISettingsPage* aPage) const
+UISelectorItem *UISettingsSelector::findItemByPage(UISettingsPage *pPage) const
 {
-    SelectorItem *result = NULL;
-    foreach (SelectorItem *item, mItemList)
-        if (item->page() == aPage)
+    UISelectorItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (pItem->page() == pPage)
         {
-            result = item;
+            pResult = pItem;
             break;
         }
-    return result;
+    return pResult;
 }
 
 
@@ -194,126 +194,126 @@ SelectorItem *UISettingsSelector::findItemByPage (UISettingsPage* aPage) const
 *   Class UISettingsSelectorTreeView implementation.                                                                             *
 *********************************************************************************************************************************/
 
-static QString path (QTreeWidgetItem *aItem)
+static QString path(const QTreeWidgetItem *pItem)
 {
-    static QString sep = ": ";
-    QString p;
-    QTreeWidgetItem *cur = aItem;
-    while (cur)
+    static QString strSep = ": ";
+    QString strPath;
+    const QTreeWidgetItem *pCurrentItem = pItem;
+    while (pCurrentItem)
     {
-        if (!p.isNull())
-            p = sep + p;
-        p = cur->text (treeWidget_Category).simplified() + p;
-        cur = cur->parent();
+        if (!strPath.isNull())
+            strPath = strSep + strPath;
+        strPath = pCurrentItem->text(TreeWidgetSection_Category).simplified() + strPath;
+        pCurrentItem = pCurrentItem->parent();
     }
-    return p;
+    return strPath;
 }
 
-UISettingsSelectorTreeView::UISettingsSelectorTreeView (QWidget *aParent /* = NULL */)
-    :UISettingsSelector (aParent)
+UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 */)
+    : UISettingsSelector(pParent)
 {
-    mTwSelector = new QITreeWidget (aParent);
+    m_pTreeWidget = new QITreeWidget(pParent);
     /* Configure the selector: */
-    QSizePolicy sizePolicy (QSizePolicy::Minimum, QSizePolicy::Expanding);
-    sizePolicy.setHorizontalStretch (0);
-    sizePolicy.setVerticalStretch (0);
-    sizePolicy.setHeightForWidth (mTwSelector->sizePolicy().hasHeightForWidth());
+    QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(m_pTreeWidget->sizePolicy().hasHeightForWidth());
     const QStyle *pStyle = QApplication::style();
     const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    mTwSelector->setSizePolicy (sizePolicy);
-    mTwSelector->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-    mTwSelector->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-    mTwSelector->setRootIsDecorated (false);
-    mTwSelector->setUniformRowHeights (true);
-    mTwSelector->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
+    m_pTreeWidget->setSizePolicy(sizePolicy);
+    m_pTreeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_pTreeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_pTreeWidget->setRootIsDecorated(false);
+    m_pTreeWidget->setUniformRowHeights(true);
+    m_pTreeWidget->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
     /* Add the columns: */
-    mTwSelector->headerItem()->setText (treeWidget_Category, "Category");
-    mTwSelector->headerItem()->setText (treeWidget_Id, "[id]");
-    mTwSelector->headerItem()->setText (treeWidget_Link, "[link]");
+    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Category, "Category");
+    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Id, "[id]");
+    m_pTreeWidget->headerItem()->setText(TreeWidgetSection_Link, "[link]");
     /* Hide unnecessary columns and header: */
-    mTwSelector->header()->hide();
-    mTwSelector->hideColumn (treeWidget_Id);
-    mTwSelector->hideColumn (treeWidget_Link);
+    m_pTreeWidget->header()->hide();
+    m_pTreeWidget->hideColumn(TreeWidgetSection_Id);
+    m_pTreeWidget->hideColumn(TreeWidgetSection_Link);
     /* Setup connections: */
-    connect (mTwSelector, SIGNAL (currentItemChanged (QTreeWidgetItem*, QTreeWidgetItem*)),
-             this, SLOT (settingsGroupChanged (QTreeWidgetItem *, QTreeWidgetItem*)));
+    connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+             this, SLOT(sltSettingsGroupChanged(QTreeWidgetItem *, QTreeWidgetItem*)));
 }
 
 QWidget *UISettingsSelectorTreeView::widget() const
 {
-    return mTwSelector;
+    return m_pTreeWidget;
 }
 
-QWidget *UISettingsSelectorTreeView::addItem (const QString & /* strBigIcon */,
-                                                const QString &strMediumIcon ,
-                                                const QString & /* strSmallIcon */,
-                                                int aId,
-                                                const QString &aLink,
-                                                UISettingsPage* aPage /* = NULL */,
-                                                int aParentId /* = -1 */)
+QWidget *UISettingsSelectorTreeView::addItem(const QString & /* strBigIcon */,
+                                             const QString &strMediumIcon ,
+                                             const QString & /* strSmallIcon */,
+                                             int iID,
+                                             const QString &strLink,
+                                             UISettingsPage *pPage /* = 0 */,
+                                             int iParentID /* = -1 */)
 {
-    QWidget *result = NULL;
-    if (aPage != NULL)
+    QWidget *pResult = 0;
+    if (pPage != 0)
     {
-        QIcon icon = UIIconPool::iconSet(strMediumIcon);
+        const QIcon icon = UIIconPool::iconSet(strMediumIcon);
 
-        SelectorItem *item = new SelectorItem (icon, "", aId, aLink, aPage, aParentId);
-        mItemList.append (item);
+        UISelectorItem *pItem = new UISelectorItem(icon, "", iID, strLink, pPage, iParentID);
+        m_list.append(pItem);
 
-        QTreeWidgetItem *twitem = new QTreeWidgetItem (mTwSelector, QStringList() << QString ("")
-                                                                                  << idToString (aId)
-                                                                                  << aLink);
-        twitem->setIcon (treeWidget_Category, item->icon());
-        aPage->setContentsMargins (0, 0, 0, 0);
-        aPage->layout()->setContentsMargins(0, 0, 0, 0);
-        result = aPage;
+        QTreeWidgetItem *pTwItem = new QTreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
+                                                                                    << idToString(iID)
+                                                                                    << strLink);
+        pTwItem->setIcon(TreeWidgetSection_Category, pItem->icon());
+        pPage->setContentsMargins(0, 0, 0, 0);
+        pPage->layout()->setContentsMargins(0, 0, 0, 0);
+        pResult = pPage;
     }
-    return result;
+    return pResult;
 }
 
-void UISettingsSelectorTreeView::setItemText (int aId, const QString &aText)
+void UISettingsSelectorTreeView::setItemText(int iID, const QString &strText)
 {
-    UISettingsSelector::setItemText (aId, aText);
-    QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
-    if (item)
-        item->setText (treeWidget_Category, QString (" %1 ").arg (aText));
+    UISettingsSelector::setItemText(iID, strText);
+    QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
+    if (pItem)
+        pItem->setText(TreeWidgetSection_Category, QString(" %1 ").arg(strText));
 }
 
-QString UISettingsSelectorTreeView::itemText (int aId) const
+QString UISettingsSelectorTreeView::itemText(int iID) const
 {
-    return pagePath (idToString (aId));
+    return pagePath(idToString(iID));
 }
 
-int UISettingsSelectorTreeView::currentId () const
+int UISettingsSelectorTreeView::currentId() const
 {
-    int id = -1;
-    QTreeWidgetItem *item = mTwSelector->currentItem();
-    if (item)
-        id = item->text (treeWidget_Id).toInt();
-    return id;
+    int iID = -1;
+    const QTreeWidgetItem *pItem = m_pTreeWidget->currentItem();
+    if (pItem)
+        iID = pItem->text(TreeWidgetSection_Id).toInt();
+    return iID;
 }
 
-int UISettingsSelectorTreeView::linkToId (const QString &aLink) const
+int UISettingsSelectorTreeView::linkToId(const QString &strLink) const
 {
-    int id = -1;
-    QTreeWidgetItem *item = findItem (mTwSelector, aLink, treeWidget_Link);
-    if (item)
-        id = item->text (treeWidget_Id).toInt();
-    return id;
+    int iID = -1;
+    const QTreeWidgetItem *pItem = findItem(m_pTreeWidget, strLink, TreeWidgetSection_Link);
+    if (pItem)
+        iID = pItem->text(TreeWidgetSection_Id).toInt();
+    return iID;
 }
 
-void UISettingsSelectorTreeView::selectById (int aId)
+void UISettingsSelectorTreeView::selectById(int iID)
 {
-    QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
-    if (item)
-        mTwSelector->setCurrentItem (item);
+    QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
+    if (pItem)
+        m_pTreeWidget->setCurrentItem(pItem);
 }
 
-void UISettingsSelectorTreeView::setVisibleById (int aId, bool aShow)
+void UISettingsSelectorTreeView::setVisibleById(int iID, bool fVisible)
 {
-    QTreeWidgetItem *item = findItem (mTwSelector, idToString (aId), treeWidget_Id);
-    if (item)
-        item->setHidden (!aShow);
+    QTreeWidgetItem *pItem = findItem(m_pTreeWidget, idToString(iID), TreeWidgetSection_Id);
+    if (pItem)
+        pItem->setHidden(!fVisible);
 }
 
 void UISettingsSelectorTreeView::polish()
@@ -321,64 +321,64 @@ void UISettingsSelectorTreeView::polish()
     /* Get recommended size hint: */
     const QStyle *pStyle = QApplication::style();
     const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
-    int iItemWidth = static_cast<QAbstractItemView*>(mTwSelector)->sizeHintForColumn(treeWidget_Category);
+    int iItemWidth = static_cast<QAbstractItemView*>(m_pTreeWidget)->sizeHintForColumn(TreeWidgetSection_Category);
     int iItemHeight = qMax((int)(iIconMetric * 1.5) /* icon height */,
-                           mTwSelector->fontMetrics().height() /* text height */);
+                           m_pTreeWidget->fontMetrics().height() /* text height */);
     /* Add some margin to every item in the tree: */
     iItemHeight += 4 /* margin itself */ * 2 /* margin count */;
     /* Set final size hint for items: */
-    mTwSelector->setSizeHintForItems(QSize(iItemWidth , iItemHeight));
+    m_pTreeWidget->setSizeHintForItems(QSize(iItemWidth , iItemHeight));
 
     /* Adjust selector width/height: */
-    mTwSelector->setFixedWidth(iItemWidth + 2 * mTwSelector->frameWidth());
-    mTwSelector->setMinimumHeight(mTwSelector->topLevelItemCount() * iItemHeight +
-                                  1 /* margin itself */ * 2 /* margin count */);
+    m_pTreeWidget->setFixedWidth(iItemWidth + 2 * m_pTreeWidget->frameWidth());
+    m_pTreeWidget->setMinimumHeight(m_pTreeWidget->topLevelItemCount() * iItemHeight +
+                                    1 /* margin itself */ * 2 /* margin count */);
 
     /* Sort selector by the id column: */
-    mTwSelector->sortItems(treeWidget_Id, Qt::AscendingOrder);
+    m_pTreeWidget->sortItems(TreeWidgetSection_Id, Qt::AscendingOrder);
 
     /* Resize column(s) to content: */
-    mTwSelector->resizeColumnToContents(treeWidget_Category);
+    m_pTreeWidget->resizeColumnToContents(TreeWidgetSection_Category);
 }
 
-void UISettingsSelectorTreeView::settingsGroupChanged (QTreeWidgetItem *aItem,
-                                                     QTreeWidgetItem * /* aPrevItem */)
+void UISettingsSelectorTreeView::sltSettingsGroupChanged(QTreeWidgetItem *pItem,
+                                                         QTreeWidgetItem * /* pPrevItem */)
 {
-    if (aItem)
+    if (pItem)
     {
-        int id = aItem->text (treeWidget_Id).toInt();
-        Assert (id >= 0);
-        emit categoryChanged (id);
+        const int iID = pItem->text(TreeWidgetSection_Id).toInt();
+        Assert(iID >= 0);
+        emit categoryChanged(iID);
     }
 }
 
 void UISettingsSelectorTreeView::clear()
 {
-    mTwSelector->clear();
+    m_pTreeWidget->clear();
 }
 
-QString UISettingsSelectorTreeView::pagePath (const QString &aMatch) const
+QString UISettingsSelectorTreeView::pagePath(const QString &strMatch) const
 {
-    QTreeWidgetItem *li =
-        findItem (mTwSelector,
-                  aMatch,
-                  treeWidget_Id);
-    return ::path (li);
+    const QTreeWidgetItem *pTreeItem =
+        findItem(m_pTreeWidget,
+                 strMatch,
+                 TreeWidgetSection_Id);
+    return ::path(pTreeItem);
 }
 
-QTreeWidgetItem* UISettingsSelectorTreeView::findItem (QTreeWidget *aView,
-                                                         const QString &aMatch,
-                                                         int aColumn) const
+QTreeWidgetItem *UISettingsSelectorTreeView::findItem(QTreeWidget *pView,
+                                                      const QString &strMatch,
+                                                      int iColumn) const
 {
     QList<QTreeWidgetItem*> list =
-        aView->findItems (aMatch, Qt::MatchExactly, aColumn);
+        pView->findItems(strMatch, Qt::MatchExactly, iColumn);
 
-    return list.count() ? list [0] : 0;
+    return list.count() ? list[0] : 0;
 }
 
-QString UISettingsSelectorTreeView::idToString (int aId) const
+QString UISettingsSelectorTreeView::idToString(int iID) const
 {
-    return QString ("%1").arg (aId, 2, 10, QLatin1Char ('0'));
+    return QString("%1").arg(iID, 2, 10, QLatin1Char('0'));
 }
 
 
@@ -386,237 +386,237 @@ QString UISettingsSelectorTreeView::idToString (int aId) const
 *   Class UISettingsSelectorToolBar implementation.                                                                              *
 *********************************************************************************************************************************/
 
-/** SelectorItem subclass providing GUI
+/** UISelectorItem subclass providing GUI
   * with the tab-widget selector item. */
-class SelectorActionItem: public SelectorItem
+class UISelectorActionItem : public UISelectorItem
 {
 public:
 
     /** Constructs selector item.
-      * @param  aIcon      Brings the item icon.
-      * @param  aText      Brings the item text.
-      * @param  aId        Brings the item ID.
-      * @param  aLink      Brings the item link.
-      * @param  aPage      Brings the item page reference.
-      * @param  aParentId  Brings the item parent ID.
-      * @param  aParent    Brings the item parent. */
-    SelectorActionItem (const QIcon &aIcon, const QString &aText, int aId, const QString &aLink, UISettingsPage* aPage, int aParentId, QObject *aParent)
-        : SelectorItem (aIcon, aText, aId, aLink, aPage, aParentId)
-        , mAction (new QAction (aIcon, aText, aParent))
-        , mTabWidget (NULL)
+      * @param  icon       Brings the item icon.
+      * @param  strText    Brings the item text.
+      * @param  iID        Brings the item ID.
+      * @param  strLink    Brings the item link.
+      * @param  pPage      Brings the item page reference.
+      * @param  iParentID  Brings the item parent ID.
+      * @param  pParent    Brings the item parent. */
+    UISelectorActionItem(const QIcon &icon, const QString &strText, int iID, const QString &strLink, UISettingsPage *pPage, int iParentID, QObject *pParent)
+        : UISelectorItem(icon, strText, iID, strLink, pPage, iParentID)
+        , m_pAction(new QAction(icon, strText, pParent))
+        , m_pTabWidget(0)
     {
-        mAction->setCheckable (true);
+        m_pAction->setCheckable(true);
     }
 
     /** Returns the action instance. */
-    QAction *action() const { return mAction; }
+    QAction *action() const { return m_pAction; }
 
     /** Defines the @a pTabWidget instance. */
-    void setTabWidget (QTabWidget *aTabWidget) { mTabWidget = aTabWidget; }
+    void setTabWidget(QTabWidget *pTabWidget) { m_pTabWidget = pTabWidget; }
     /** Returns the tab-widget instance. */
-    QTabWidget *tabWidget() const { return mTabWidget; }
+    QTabWidget *tabWidget() const { return m_pTabWidget; }
 
 protected:
 
     /** Holds the action instance. */
-    QAction *mAction;
+    QAction *m_pAction;
     /** Holds the tab-widget instance. */
-    QTabWidget *mTabWidget;
+    QTabWidget *m_pTabWidget;
 };
 
 
-UISettingsSelectorToolBar::UISettingsSelectorToolBar (QWidget *aParent /* = NULL */)
-    : UISettingsSelector (aParent)
+UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
+    : UISettingsSelector(pParent)
 {
     /* Init the toolbar: */
-    mTbSelector = new UIToolBar (aParent);
-    mTbSelector->setUseTextLabels (true);
-    mTbSelector->setIconSize (QSize (32, 32));
+    m_pToolBar = new UIToolBar(pParent);
+    m_pToolBar->setUseTextLabels(true);
+    m_pToolBar->setIconSize(QSize(32, 32));
 #ifdef VBOX_WS_MAC
-    mTbSelector->setShowToolBarButton (false);
+    m_pToolBar->setShowToolBarButton(false);
 #endif /* VBOX_WS_MAC */
     /* Init the action group for house keeping: */
-    mActionGroup = new QActionGroup (this);
-    mActionGroup->setExclusive (true);
-    connect (mActionGroup, SIGNAL (triggered (QAction*)),
-             this, SLOT (settingsGroupChanged (QAction*)));
+    m_pActionGroup = new QActionGroup(this);
+    m_pActionGroup->setExclusive(true);
+    connect(m_pActionGroup, SIGNAL(triggered(QAction*)),
+            this, SLOT(sltSettingsGroupChanged(QAction*)));
 }
 
 UISettingsSelectorToolBar::~UISettingsSelectorToolBar()
 {
-    delete mTbSelector;
+    delete m_pToolBar;
 }
 
 QWidget *UISettingsSelectorToolBar::widget() const
 {
-    return mTbSelector;
+    return m_pToolBar;
 }
 
-QWidget *UISettingsSelectorToolBar::addItem (const QString &strBigIcon,
-                                               const QString & /* strMediumIcon */,
-                                               const QString &strSmallIcon,
-                                               int aId,
-                                               const QString &aLink,
-                                               UISettingsPage* aPage /* = NULL */,
-                                               int aParentId /* = -1 */)
+QWidget *UISettingsSelectorToolBar::addItem(const QString &strBigIcon,
+                                            const QString & /* strMediumIcon */,
+                                            const QString &strSmallIcon,
+                                            int iID,
+                                            const QString &strLink,
+                                            UISettingsPage *pPage /* = 0 */,
+                                            int iParentID /* = -1 */)
 {
-    QIcon icon = UIIconPool::iconSet(strBigIcon);
+    const QIcon icon = UIIconPool::iconSet(strBigIcon);
 
-    QWidget *result = NULL;
-    SelectorActionItem *item = new SelectorActionItem (icon, "", aId, aLink, aPage, aParentId, this);
-    mItemList.append (item);
+    QWidget *pResult = 0;
+    UISelectorActionItem *pItem = new UISelectorActionItem(icon, "", iID, strLink, pPage, iParentID, this);
+    m_list.append(pItem);
 
-    if (aParentId == -1 &&
-        aPage != NULL)
+    if (iParentID == -1 &&
+        pPage != 0)
     {
-        mActionGroup->addAction (item->action());
-        mTbSelector->addAction (item->action());
-        aPage->setContentsMargins (0, 0, 0, 0);
-        aPage->layout()->setContentsMargins(0, 0, 0, 0);
-        result = aPage;
+        m_pActionGroup->addAction(pItem->action());
+        m_pToolBar->addAction(pItem->action());
+        pPage->setContentsMargins(0, 0, 0, 0);
+        pPage->layout()->setContentsMargins(0, 0, 0, 0);
+        pResult = pPage;
     }
-    else if (aParentId == -1 &&
-             aPage == NULL)
+    else if (iParentID == -1 &&
+             pPage == 0)
     {
-        mActionGroup->addAction (item->action());
-        mTbSelector->addAction (item->action());
-        QITabWidget *tabWidget= new QITabWidget();
-        tabWidget->setIconSize(QSize(16, 16));
-        tabWidget->setContentsMargins (0, 0, 0, 0);
-//        connect (tabWidget, SIGNAL (currentChanged (int)),
-//                 this, SLOT (settingsGroupChanged (int)));
-        item->setTabWidget (tabWidget);
-        result = tabWidget;
+        m_pActionGroup->addAction(pItem->action());
+        m_pToolBar->addAction(pItem->action());
+        QITabWidget *pTabWidget = new QITabWidget();
+        pTabWidget->setIconSize(QSize(16, 16));
+        pTabWidget->setContentsMargins(0, 0, 0, 0);
+//        connect(pTabWidget, SIGNAL(currentChanged(int)),
+//                 this, SLOT(sltSettingsGroupChanged(int)));
+        pItem->setTabWidget(pTabWidget);
+        pResult = pTabWidget;
     }
     else
     {
-        SelectorActionItem *parent = findActionItem (aParentId);
-        if (parent)
+        UISelectorActionItem *pParent = findActionItem(iParentID);
+        if (pParent)
         {
-            QTabWidget *tabWidget = parent->tabWidget();
-            aPage->setContentsMargins (9, 5, 9, 9);
-            aPage->layout()->setContentsMargins(0, 0, 0, 0);
-            QIcon icon1 = UIIconPool::iconSet(strSmallIcon);
-            if (tabWidget)
-                tabWidget->addTab (aPage, icon1, "");
+            QTabWidget *pTabWidget = pParent->tabWidget();
+            pPage->setContentsMargins(9, 5, 9, 9);
+            pPage->layout()->setContentsMargins(0, 0, 0, 0);
+            const QIcon icon1 = UIIconPool::iconSet(strSmallIcon);
+            if (pTabWidget)
+                pTabWidget->addTab(pPage, icon1, "");
         }
     }
-    return result;
+    return pResult;
 }
 
-void UISettingsSelectorToolBar::setItemText (int aId, const QString &aText)
+void UISettingsSelectorToolBar::setItemText(int iID, const QString &strText)
 {
-    if (SelectorActionItem *item = findActionItem (aId))
+    if (UISelectorActionItem *pItem = findActionItem(iID))
     {
-        item->setText (aText);
-        if (item->action())
-            item->action()->setText (aText);
-        if (item->parentId() &&
-            item->page())
+        pItem->setText(strText);
+        if (pItem->action())
+            pItem->action()->setText(strText);
+        if (pItem->parentID() &&
+            pItem->page())
         {
-            SelectorActionItem *parent = findActionItem (item->parentId());
-            if (parent &&
-                parent->tabWidget())
-                parent->tabWidget()->setTabText (
-                    parent->tabWidget()->indexOf (item->page()), aText);
+            const UISelectorActionItem *pParent = findActionItem(pItem->parentID());
+            if (pParent &&
+                pParent->tabWidget())
+                pParent->tabWidget()->setTabText(
+                    pParent->tabWidget()->indexOf(pItem->page()), strText);
         }
     }
 }
 
-QString UISettingsSelectorToolBar::itemText (int aId) const
+QString UISettingsSelectorToolBar::itemText(int iID) const
 {
-    QString result;
-    if (SelectorItem *item = findItem (aId))
-        result = item->text();
-    return result;
+    QString strResult;
+    if (UISelectorItem *pItem = findItem(iID))
+        strResult = pItem->text();
+    return strResult;
 }
 
-int UISettingsSelectorToolBar::currentId () const
+int UISettingsSelectorToolBar::currentId() const
 {
-    SelectorActionItem *action = findActionItemByAction (mActionGroup->checkedAction());
-    int id = -1;
-    if (action)
-        id = action->id();
-    return id;
+    const UISelectorActionItem *pAction = findActionItemByAction(m_pActionGroup->checkedAction());
+    int iID = -1;
+    if (pAction)
+        iID = pAction->id();
+    return iID;
 }
 
-int UISettingsSelectorToolBar::linkToId (const QString &aLink) const
+int UISettingsSelectorToolBar::linkToId(const QString &strLink) const
 {
-    int id = -1;
-    SelectorItem *item = UISettingsSelector::findItemByLink (aLink);
-    if (item)
-        id = item->id();
-    return id;
+    int iID = -1;
+    const UISelectorItem *pItem = UISettingsSelector::findItemByLink(strLink);
+    if (pItem)
+        iID = pItem->id();
+    return iID;
 }
 
-QWidget *UISettingsSelectorToolBar::idToPage (int aId) const
+QWidget *UISettingsSelectorToolBar::idToPage(int iID) const
 {
-    QWidget *page = NULL;
-    if (SelectorActionItem *item = findActionItem (aId))
+    QWidget *pPage = 0;
+    if (const UISelectorActionItem *pItem = findActionItem(iID))
     {
-        page = item->page();
-        if (!page)
-            page = item->tabWidget();
+        pPage = pItem->page();
+        if (!pPage)
+            pPage = pItem->tabWidget();
     }
-    return page;
+    return pPage;
 }
 
-QWidget *UISettingsSelectorToolBar::rootPage (int aId) const
+QWidget *UISettingsSelectorToolBar::rootPage(int iID) const
 {
-    QWidget *page = NULL;
-    if (SelectorActionItem *item = findActionItem (aId))
+    QWidget *pPage = 0;
+    if (const UISelectorActionItem *pItem = findActionItem(iID))
     {
-        if (item->parentId() > -1)
-            page = rootPage (item->parentId());
-        else if (item->page())
-            page = item->page();
+        if (pItem->parentID() > -1)
+            pPage = rootPage(pItem->parentID());
+        else if (pItem->page())
+            pPage = pItem->page();
         else
-            page = item->tabWidget();
+            pPage = pItem->tabWidget();
     }
-    return page;
+    return pPage;
 }
 
-void UISettingsSelectorToolBar::selectById (int aId)
+void UISettingsSelectorToolBar::selectById(int iID)
 {
-    if (SelectorActionItem *item = findActionItem (aId))
+    if (const UISelectorActionItem *pItem = findActionItem(iID))
     {
-        if (item->parentId() != -1)
+        if (pItem->parentID() != -1)
         {
-            SelectorActionItem *parent = findActionItem (item->parentId());
-            if (parent &&
-                parent->tabWidget())
+            const UISelectorActionItem *pParent = findActionItem(pItem->parentID());
+            if (pParent &&
+                pParent->tabWidget())
             {
-                parent->action()->trigger();
-                parent->tabWidget()->setCurrentIndex (
-                    parent->tabWidget()->indexOf (item->page()));
+                pParent->action()->trigger();
+                pParent->tabWidget()->setCurrentIndex(
+                    pParent->tabWidget()->indexOf(pItem->page()));
             }
         }
         else
-            item->action()->trigger();
+            pItem->action()->trigger();
     }
 }
 
-void UISettingsSelectorToolBar::setVisibleById (int aId, bool aShow)
+void UISettingsSelectorToolBar::setVisibleById(int iID, bool fVisible)
 {
-    SelectorActionItem *item = findActionItem (aId);
+    const UISelectorActionItem *pItem = findActionItem(iID);
 
-    if (item)
+    if (pItem)
     {
-        item->action()->setVisible (aShow);
-        if (item->parentId() > -1 &&
-            item->page())
+        pItem->action()->setVisible(fVisible);
+        if (pItem->parentID() > -1 &&
+            pItem->page())
         {
-            SelectorActionItem *parent = findActionItem (item->parentId());
-            if (parent &&
-                parent->tabWidget())
+            const UISelectorActionItem *pParent = findActionItem(pItem->parentID());
+            if (pParent &&
+                pParent->tabWidget())
             {
-                if (aShow &&
-                    parent->tabWidget()->indexOf (item->page()) == -1)
-                    parent->tabWidget()->addTab (item->page(), item->text());
-                else if (!aShow &&
-                         parent->tabWidget()->indexOf (item->page()) > -1)
-                    parent->tabWidget()->removeTab (
-                        parent->tabWidget()->indexOf (item->page()));
+                if (fVisible &&
+                    pParent->tabWidget()->indexOf(pItem->page()) == -1)
+                    pParent->tabWidget()->addTab(pItem->page(), pItem->text());
+                else if (!fVisible &&
+                         pParent->tabWidget()->indexOf(pItem->page()) > -1)
+                    pParent->tabWidget()->removeTab(
+                        pParent->tabWidget()->indexOf(pItem->page()));
             }
         }
     }
@@ -625,104 +625,104 @@ void UISettingsSelectorToolBar::setVisibleById (int aId, bool aShow)
 
 void UISettingsSelectorToolBar::clear()
 {
-    QList<QAction*> list = mActionGroup->actions();
-    foreach (QAction *action, list)
-       delete action;
+    QList<QAction*> list = m_pActionGroup->actions();
+    foreach (QAction *pAction, list)
+       delete pAction;
 }
 
 int UISettingsSelectorToolBar::minWidth() const
 {
-    return mTbSelector->sizeHint().width() + 2 * 10;
+    return m_pToolBar->sizeHint().width() + 2 * 10;
 }
 
-void UISettingsSelectorToolBar::settingsGroupChanged (QAction *aAction)
+void UISettingsSelectorToolBar::sltSettingsGroupChanged(QAction *pAction)
 {
-    SelectorActionItem *item = findActionItemByAction (aAction);
-    if (item)
+    const UISelectorActionItem *pItem = findActionItemByAction(pAction);
+    if (pItem)
     {
-        emit categoryChanged (item->id());
-//        if (item->page() &&
-//            !item->tabWidget())
-//            emit categoryChanged (item->id());
+        emit categoryChanged(pItem->id());
+//        if (pItem->page() &&
+//            !pItem->tabWidget())
+//            emit categoryChanged(pItem->id());
 //        else
 //        {
 //
-//            item->tabWidget()->blockSignals (true);
-//            item->tabWidget()->setCurrentIndex (0);
-//            item->tabWidget()->blockSignals (false);
-//            printf ("%s\n", qPrintable(item->text()));
-//            SelectorActionItem *child = static_cast<SelectorActionItem*> (
-//                findItemByPage (static_cast<UISettingsPage*> (item->tabWidget()->currentWidget())));
+//            pItem->tabWidget()->blockSignals(true);
+//            pItem->tabWidget()->setCurrentIndex(0);
+//            pItem->tabWidget()->blockSignals(false);
+//            printf("%s\n", qPrintable(pItem->text()));
+//            UISelectorActionItem *child = static_cast<UISelectorActionItem*>(
+//                findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
 //            if (child)
-//                emit categoryChanged (child->id());
+//                emit categoryChanged(child->id());
 //        }
     }
 }
 
-void UISettingsSelectorToolBar::settingsGroupChanged (int aIndex)
+void UISettingsSelectorToolBar::sltSettingsGroupChanged(int iIndex)
 {
-    SelectorActionItem *item = findActionItemByTabWidget (qobject_cast<QTabWidget*> (sender()), aIndex);
-    if (item)
+    const UISelectorActionItem *pItem = findActionItemByTabWidget(qobject_cast<QTabWidget*>(sender()), iIndex);
+    if (pItem)
     {
-        if (item->page() &&
-            !item->tabWidget())
-            emit categoryChanged (item->id());
+        if (pItem->page() &&
+            !pItem->tabWidget())
+            emit categoryChanged(pItem->id());
         else
         {
-            SelectorActionItem *child = static_cast<SelectorActionItem*> (
-                findItemByPage (static_cast<UISettingsPage*> (item->tabWidget()->currentWidget())));
-            if (child)
-                emit categoryChanged (child->id());
+            const UISelectorActionItem *pChild = static_cast<UISelectorActionItem*>(
+                findItemByPage(static_cast<UISettingsPage*>(pItem->tabWidget()->currentWidget())));
+            if (pChild)
+                emit categoryChanged(pChild->id());
         }
     }
 }
 
-SelectorActionItem* UISettingsSelectorToolBar::findActionItem (int aId) const
+UISelectorActionItem *UISettingsSelectorToolBar::findActionItem(int iID) const
 {
-    return static_cast<SelectorActionItem*> (UISettingsSelector::findItem (aId));
+    return static_cast<UISelectorActionItem*>(UISettingsSelector::findItem(iID));
 }
 
-SelectorActionItem *UISettingsSelectorToolBar::findActionItemByTabWidget (QTabWidget* aTabWidget, int aIndex) const
+UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByTabWidget(QTabWidget *pTabWidget, int iIndex) const
 {
-    SelectorActionItem *result = NULL;
-    foreach (SelectorItem *item, mItemList)
-        if (static_cast<SelectorActionItem*> (item)->tabWidget() == aTabWidget)
+    UISelectorActionItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (static_cast<UISelectorActionItem*>(pItem)->tabWidget() == pTabWidget)
         {
-            QTabWidget *tw = static_cast<SelectorActionItem*> (item)->tabWidget();
-            result = static_cast<SelectorActionItem*> (
-                findItemByPage (static_cast<UISettingsPage*> (tw->widget (aIndex))));
+            QTabWidget *pTabWidget = static_cast<UISelectorActionItem*>(pItem)->tabWidget();
+            pResult = static_cast<UISelectorActionItem*>(
+                findItemByPage(static_cast<UISettingsPage*>(pTabWidget->widget(iIndex))));
             break;
         }
 
-    return result;
+    return pResult;
 
 }
 
 QList<QWidget*> UISettingsSelectorToolBar::rootPages() const
 {
     QList<QWidget*> list;
-    foreach (SelectorItem *item, mItemList)
+    foreach (UISelectorItem *pItem, m_list)
     {
-        SelectorActionItem *ai = static_cast<SelectorActionItem*> (item);
-        if (ai->parentId() == -1 &&
-            ai->page())
-            list << ai->page();
-        else if (ai->tabWidget())
-            list << ai->tabWidget();
+        const UISelectorActionItem *pActionItem = static_cast<UISelectorActionItem*>(pItem);
+        if (pActionItem->parentID() == -1 &&
+            pActionItem->page())
+            list << pActionItem->page();
+        else if (pActionItem->tabWidget())
+            list << pActionItem->tabWidget();
     }
     return list;
 }
 
-SelectorActionItem *UISettingsSelectorToolBar::findActionItemByAction (QAction *aAction) const
+UISelectorActionItem *UISettingsSelectorToolBar::findActionItemByAction(QAction *pAction) const
 {
-    SelectorActionItem *result = NULL;
-    foreach (SelectorItem *item, mItemList)
-        if (static_cast<SelectorActionItem*> (item)->action() == aAction)
+    UISelectorActionItem *pResult = 0;
+    foreach (UISelectorItem *pItem, m_list)
+        if (static_cast<UISelectorActionItem*>(pItem)->action() == pAction)
         {
-            result = static_cast<SelectorActionItem*> (item);
+            pResult = static_cast<UISelectorActionItem*>(pItem);
             break;
         }
 
-    return result;
+    return pResult;
 }
 
