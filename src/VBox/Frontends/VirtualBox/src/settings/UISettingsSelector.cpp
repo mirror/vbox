@@ -211,9 +211,10 @@ static QString path(const QTreeWidgetItem *pItem)
 
 UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 */)
     : UISettingsSelector(pParent)
+    , m_pTreeWidget(0)
 {
+    /* Prepare the tree-widget: */
     m_pTreeWidget = new QITreeWidget(pParent);
-    /* Configure the selector: */
     QSizePolicy sizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
     sizePolicy.setHorizontalStretch(0);
     sizePolicy.setVerticalStretch(0);
@@ -237,6 +238,13 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 *
     /* Setup connections: */
     connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
              this, SLOT(sltSettingsGroupChanged(QTreeWidgetItem *, QTreeWidgetItem*)));
+}
+
+UISettingsSelectorTreeView::~UISettingsSelectorTreeView()
+{
+    /* Cleanup the tree-widget: */
+    delete m_pTreeWidget;
+    m_pTreeWidget = 0;
 }
 
 QWidget *UISettingsSelectorTreeView::widget() const
@@ -427,15 +435,18 @@ protected:
 
 UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     : UISettingsSelector(pParent)
+    , m_pToolBar(0)
+    , m_pActionGroup(0)
 {
-    /* Init the toolbar: */
+    /* Prepare the toolbar: */
     m_pToolBar = new UIToolBar(pParent);
     m_pToolBar->setUseTextLabels(true);
     m_pToolBar->setIconSize(QSize(32, 32));
 #ifdef VBOX_WS_MAC
     m_pToolBar->setShowToolBarButton(false);
 #endif /* VBOX_WS_MAC */
-    /* Init the action group for house keeping: */
+
+    /* Prepare the action group: */
     m_pActionGroup = new QActionGroup(this);
     m_pActionGroup->setExclusive(true);
     connect(m_pActionGroup, SIGNAL(triggered(QAction*)),
@@ -444,7 +455,13 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
 
 UISettingsSelectorToolBar::~UISettingsSelectorToolBar()
 {
+    /* Cleanup the action group: */
+    delete m_pActionGroup;
+    m_pActionGroup = 0;
+
+    /* Cleanup the toolbar: */
     delete m_pToolBar;
+    m_pToolBar = 0;
 }
 
 QWidget *UISettingsSelectorToolBar::widget() const

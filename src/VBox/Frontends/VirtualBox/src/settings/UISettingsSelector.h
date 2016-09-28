@@ -131,6 +131,8 @@ public:
 
     /** Constructs settings selector passing @a pParent to the base-class. */
     UISettingsSelectorTreeView(QWidget *pParent = 0);
+    /** Destructs settings selector. */
+    ~UISettingsSelectorTreeView();
 
     /** Returns the widget selector operates on. */
     virtual QWidget *widget() const /* override */;
@@ -199,6 +201,7 @@ public:
 
     /** Constructs settings selector passing @a pParent to the base-class. */
     UISettingsSelectorToolBar(QWidget *pParent = 0);
+    /** Destructs settings selector. */
     ~UISettingsSelectorToolBar();
 
     /** Returns the widget selector operates on. */
