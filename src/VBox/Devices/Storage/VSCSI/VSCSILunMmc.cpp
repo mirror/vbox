@@ -404,7 +404,7 @@ static size_t vscsiLunMmcGetConfigurationFillFeatureTimeout(uint8_t *pbBuf, size
  * @param   pVScsiReq     The VSCSI request.
  * @param   cbMaxTransfer The maximum transfer size.
  */
-static int vscsiLunMmcGetConfiguration(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer)
+static int vscsiLunMmcGetConfiguration(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, size_t cbMaxTransfer)
 {
     uint8_t aReply[80];
     uint8_t *pbBuf = &aReply[0];
@@ -472,7 +472,7 @@ static int vscsiLunMmcGetConfiguration(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT p
  * @param   pVScsiReq     The VSCSI request.
  * @param   cbMaxTransfer The maximum transfer size.
  */
-static int vscsiLunMmcReadDvdStructure(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer)
+static int vscsiLunMmcReadDvdStructure(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, size_t cbMaxTransfer)
 {
     uint8_t aReply[25]; /* Counted a maximum of 20 bytes but better be on the safe side. */
 
@@ -629,7 +629,7 @@ static int vscsiLunMmcReadDvdStructure(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT p
  * @param   pVScsiReq     The VSCSI request.
  * @param   cbMaxTransfer The maximum transfer size.
  */
-static int vscsiLunMmcModeSense10(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, uint16_t cbMaxTransfer)
+static int vscsiLunMmcModeSense10(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq, size_t cbMaxTransfer)
 {
     int rcReq;
     uint8_t uPageControl = pVScsiReq->pbCDB[2] >> 6;
@@ -739,7 +739,7 @@ static int vscsiLunMmcModeSense10(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsi
  * @param   cbMaxTransfer The maximum transfer size.
  */
 static int vscsiLunMmcGetEventStatusNotification(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT pVScsiReq,
-                                                 uint16_t cbMaxTransfer)
+                                                 size_t cbMaxTransfer)
 {
     uint32_t OldStatus;
     uint32_t NewStatus;
