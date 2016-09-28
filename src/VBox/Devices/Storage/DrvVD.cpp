@@ -3625,9 +3625,10 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
  */
 static DECLCALLBACK(int) drvvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
                                                const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                               size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
+                                               size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
+                                               uint32_t cTimeoutMillies)
 {
-    RT_NOREF9(pInterface, uLun, pbCdb, cbCdb, enmTxDir, cbBuf, pabSense, cbSense, cTimeoutMillies);
+    RT_NOREF10(pInterface, uLun, pbCdb, cbCdb, enmTxDir, cbBuf, pabSense, cbSense, pu8ScsiSts, cTimeoutMillies);
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
     VDIOREQSTATE enmState = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 

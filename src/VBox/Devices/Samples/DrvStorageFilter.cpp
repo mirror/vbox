@@ -337,11 +337,13 @@ static DECLCALLBACK(int) drvStorageFltIMedia_IoReqDiscard(PPDMIMEDIAEX pInterfac
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSendScsiCmd} */
 static DECLCALLBACK(int) drvStorageFltIMedia_IoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
                                                               const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                                              size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
+                                                              size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
+                                                              uint32_t cTimeoutMillies)
 {
     PDRVSTORAGEFILTER pThis = RT_FROM_MEMBER(pInterface, DRVSTORAGEFILTER, IMediaEx);
     return pThis->pIMediaExBelow->pfnIoReqSendScsiCmd(pThis->pIMediaExBelow, hIoReq, uLun, pbCdb, cbCdb,
-                                                      enmTxDir, cbBuf, pabSense, cbSense, cTimeoutMillies);
+                                                      enmTxDir, cbBuf, pabSense, cbSense, pu8ScsiSts,
+                                                      cTimeoutMillies);
 }
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetActiveCount} */

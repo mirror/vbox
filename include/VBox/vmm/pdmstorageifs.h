@@ -807,15 +807,17 @@ typedef struct PDMIMEDIAEX
      * @param   pbCdb           The SCSI CDB containing the command.
      * @param   cbCdb           Size of the CDB in bytes.
      * @param   enmTxDir        Direction of transfer.
-     * @param   pvBuf           Pointer tp the transfer buffer.
      * @param   cbBuf           Size of the transfer buffer.
-     * @param   pbSenseKey      Status of the command (when return value is VERR_DEV_IO_ERROR).
+     * @param   pabSense        Where to store the optional sense key.
+     * @param   cbSense         Size of the sense key buffer.
+     * @param   pu8ScsiSts      Where to store the SCSI status on success.
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoReqSendScsiCmd,(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
                                                    const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                                   size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
+                                                   size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
+                                                   uint32_t cTimeoutMillies));
 
     /**
      * Returns the number of active I/O requests.
@@ -891,7 +893,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "d4c66196-13f0-433d-8e87-e4b957cb0194"
+#define PDMIMEDIAEX_IID                      "134a5ba9-0d6c-443f-8619-14fea6caaa8d"
 
 /**
  * Data direction.
