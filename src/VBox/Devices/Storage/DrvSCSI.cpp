@@ -41,10 +41,34 @@
 #define MAX_LOG_REL_ERRORS  1024
 
 /**
+ * SCSI driver private per request data.
+ */
+typedef struct DRVSCSIREQ
+{
+    /** Size of the guest buffer. */
+    size_t                   cbBuf;
+    /** Temporary buffer holding the data. */
+    void                     *pvBuf;
+    /** Data segment. */
+    RTSGSEG                  Seg;
+    /** Transfer direction. */
+    PDMMEDIAEXIOREQSCSITXDIR enmXferDir;
+    /** The VSCSI request handle. */
+    VSCSIREQ                 hVScsiReq;
+    /** Where to store the SCSI status code. */
+    uint8_t                  *pu8ScsiSts;
+    /** Start of the request data for the device above us. */
+    uint8_t                  abAlloc[1];
+} DRVSCSIREQ;
+/** Pointer to the driver private per request data. */
+typedef DRVSCSIREQ *PDRVSCSIREQ;
+
+/**
  * SCSI driver instance data.
  *
  * @implements  PDMISCSICONNECTOR
  * @implements  PDMIMEDIAEXPORT
+ * @implements  PDMIMEDIAEX
  * @implements  PDMIMOUNTNOTIFY
  */
 typedef struct DRVSCSI
@@ -62,10 +86,14 @@ typedef struct DRVSCSI
     PPDMIMOUNT              pDrvMount;
     /** Pointer to the SCSI port interface of the device above. */
     PPDMISCSIPORT           pDevScsiPort;
+    /** Pointer to the extended media port interface of the device above. */
+    PPDMIMEDIAEXPORT        pDevMediaExPort;
     /** pointer to the Led port interface of the dveice above. */
     PPDMILEDPORTS           pLedPort;
     /** The scsi connector interface .*/
     PDMISCSICONNECTOR       ISCSIConnector;
+    /** The extended media interface for the device above. */
+    PDMIMEDIAEX             IMediaEx;
     /** The media port interface. */
     PDMIMEDIAPORT           IPort;
     /** The optional extended media port interface. */
@@ -100,6 +128,9 @@ typedef struct DRVSCSI
     bool                    fNonRotational;
     /** Medium is readonly */
     bool                    fReadonly;
+
+    /** Size of the I/O request to allocate. */
+    size_t                  cbIoReqAlloc;
 } DRVSCSI, *PDRVSCSI;
 
 /** Convert a VSCSI I/O request handle to the associated PDMIMEDIAEX I/O request. */
@@ -609,6 +640,241 @@ static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint
     return rc;
 }
 
+/* -=-=-=-=- IMediaEx -=-=-=-=- */
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnQueryFeatures} */
+static DECLCALLBACK(int) drvscsiQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t *pfFeatures)
+{
+    RT_NOREF1(pInterface);
+
+    *pfFeatures = PDMIMEDIAEX_FEATURE_F_RAWSCSICMD;
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet} */
+static DECLCALLBACK(int) drvscsiIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMediaEx);
+
+    pThis->cbIoReqAlloc = RT_OFFSETOF(DRVSCSIREQ, abAlloc[cbIoReqAlloc]);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAlloc} */
+static DECLCALLBACK(int) drvscsiIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc,
+                                           PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
+{
+    RT_NOREF2(uIoReqId, fFlags);
+
+    int rc = VINF_SUCCESS;
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMediaEx);
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)RTMemAllocZ(pThis->cbIoReqAlloc);
+    if (RT_LIKELY(pReq))
+    {
+        *phIoReq = (PDMMEDIAEXIOREQ)pReq;
+        *ppvIoReqAlloc = &pReq->abAlloc[0];
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqFree} */
+static DECLCALLBACK(int) drvscsiIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF1(pInterface);
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
+
+    if (pReq->pvBuf)
+        RTMemFree(pReq->pvBuf);
+
+    RTMemFree(pReq);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryResidual} */
+static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual)
+{
+    RT_NOREF2(pInterface, hIoReq);
+
+    *pcbResidual = 0; /** @todo: Implement. */
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancelAll} */
+static DECLCALLBACK(int) drvscsiIoReqCancelAll(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancel} */
+static DECLCALLBACK(int) drvscsiIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId)
+{
+    RT_NOREF2(pInterface, uIoReqId);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqRead} */
+static DECLCALLBACK(int) drvscsiIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead)
+{
+    RT_NOREF4(pInterface, hIoReq, off, cbRead);
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqWrite} */
+static DECLCALLBACK(int) drvscsiIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite)
+{
+    RT_NOREF4(pInterface, hIoReq, off, cbWrite);
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqFlush} */
+static DECLCALLBACK(int) drvscsiIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF2(pInterface, hIoReq);
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard} */
+static DECLCALLBACK(int) drvscsiIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, unsigned cRangesMax)
+{
+    RT_NOREF3(pInterface, hIoReq, cRangesMax);
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSendScsiCmd} */
+static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
+                                                 const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
+                                                 size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
+                                                 uint32_t cTimeoutMillies)
+{
+    RT_NOREF1(cTimeoutMillies);
+
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMediaEx);
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
+    int rc = VINF_SUCCESS;
+
+    pReq->enmXferDir = enmTxDir;
+    pReq->cbBuf      = cbBuf;
+    pReq->pu8ScsiSts = pu8ScsiSts;
+
+    /* Allocate and sync buffers if a data transfer is indicated. */
+    if (cbBuf)
+    {
+        pReq->pvBuf = RTMemAlloc(cbBuf);
+        if (RT_UNLIKELY(!pReq->pvBuf))
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pReq->Seg.pvSeg = pReq->pvBuf;
+        pReq->Seg.cbSeg = cbBuf;
+
+        if (   enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN
+            || enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE)
+        {
+            RTSGBUF SgBuf;
+            RTSgBufInit(&SgBuf, &pReq->Seg, 1);
+            rc = pThis->pDevMediaExPort->pfnIoReqCopyToBuf(pThis->pDevMediaExPort, hIoReq, &pReq->abAlloc[0],
+                                                           0, &SgBuf, cbBuf);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            rc = VSCSIDeviceReqCreate(pThis->hVScsiDevice, &pReq->hVScsiReq,
+                                      uLun, (uint8_t *)pbCdb, cbCdb, cbBuf, 1, &pReq->Seg,
+                                      pabSense, cbSense, pReq);
+            if (RT_SUCCESS(rc))
+            {
+                ASMAtomicIncU32(&pThis->StatIoDepth);
+                rc = VSCSIDeviceReqEnqueue(pThis->hVScsiDevice, pReq->hVScsiReq);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
+            }
+        }
+    }
+
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetActiveCount} */
+static DECLCALLBACK(uint32_t) drvscsiIoReqGetActiveCount(PPDMIMEDIAEX pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMediaEx);
+    return pThis->StatIoDepth;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetSuspendedCount} */
+static DECLCALLBACK(uint32_t) drvscsiIoReqGetSuspendedCount(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return 0;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedStart} */
+static DECLCALLBACK(int) drvscsiIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc)
+{
+    RT_NOREF3(pInterface, phIoReq, ppvIoReqAlloc);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedNext} */
+static DECLCALLBACK(int) drvscsiIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                        PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext)
+{
+    RT_NOREF4(pInterface, hIoReq, phIoReqNext, ppvIoReqAllocNext);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedSave} */
+static DECLCALLBACK(int) drvscsiIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF3(pInterface, pSSM, hIoReq);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedLoad} */
+static DECLCALLBACK(int) drvscsiIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF3(pInterface, pSSM, hIoReq);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
+                                                        void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible, int rcReq)
+{
+    RT_NOREF2(hVScsiDevice, fRedoPossible);
+    PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)pVScsiReqUser;
+
+    ASMAtomicDecU32(&pThis->StatIoDepth);
+
+    /* Sync buffers. */
+    if (   pReq->cbBuf
+        && (   pReq->enmXferDir == PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN
+            || pReq->enmXferDir == PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE))
+    {
+        RTSGBUF SgBuf;
+        RTSgBufInit(&SgBuf, &pReq->Seg, 1);
+        int rcCopy = pThis->pDevMediaExPort->pfnIoReqCopyFromBuf(pThis->pDevMediaExPort, (PDMMEDIAEXIOREQ)pReq,
+                                                                 &pReq->abAlloc[0], 0, &SgBuf, pReq->cbBuf);
+        if (RT_FAILURE(rcCopy))
+            rcReq = rcCopy;
+    }
+
+    *pReq->pu8ScsiSts = (uint8_t)rcScsiCode;
+    int rc = pThis->pDevMediaExPort->pfnIoReqCompleteNotify(pThis->pDevMediaExPort, (PDMMEDIAEXIOREQ)pReq,
+                                                            &pReq->abAlloc[0], rcReq);
+    AssertRC(rc); RT_NOREF(rc);
+
+    if (RT_UNLIKELY(pThis->fDummySignal) && !pThis->StatIoDepth)
+        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -622,6 +888,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->pDrvMount);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSICONNECTOR, &pThis->ISCSIConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDevMediaExPort ? &pThis->IMediaEx : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pThis->IMountNotify);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pThis->IPortEx);
@@ -798,6 +1065,26 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     pDrvIns->IBase.pfnQueryInterface            = drvscsiQueryInterface;
 
+    /* IMediaEx */
+    pThis->IMediaEx.pfnQueryFeatures            = drvscsiQueryFeatures;
+    pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvscsiIoReqAllocSizeSet;
+    pThis->IMediaEx.pfnIoReqAlloc               = drvscsiIoReqAlloc;
+    pThis->IMediaEx.pfnIoReqFree                = drvscsiIoReqFree;
+    pThis->IMediaEx.pfnIoReqQueryResidual       = drvscsiIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqCancelAll           = drvscsiIoReqCancelAll;
+    pThis->IMediaEx.pfnIoReqCancel              = drvscsiIoReqCancel;
+    pThis->IMediaEx.pfnIoReqRead                = drvscsiIoReqRead;
+    pThis->IMediaEx.pfnIoReqWrite               = drvscsiIoReqWrite;
+    pThis->IMediaEx.pfnIoReqFlush               = drvscsiIoReqFlush;
+    pThis->IMediaEx.pfnIoReqDiscard             = drvscsiIoReqDiscard;
+    pThis->IMediaEx.pfnIoReqSendScsiCmd         = drvscsiIoReqSendScsiCmd;
+    pThis->IMediaEx.pfnIoReqGetActiveCount      = drvscsiIoReqGetActiveCount;
+    pThis->IMediaEx.pfnIoReqGetSuspendedCount   = drvscsiIoReqGetSuspendedCount;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedStart = drvscsiIoReqQuerySuspendedStart;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvscsiIoReqQuerySuspendedNext;
+    pThis->IMediaEx.pfnIoReqSuspendedSave       = drvscsiIoReqSuspendedSave;
+    pThis->IMediaEx.pfnIoReqSuspendedLoad       = drvscsiIoReqSuspendedLoad;
+
     pThis->IMountNotify.pfnMountNotify          = drvscsiMountNotify;
     pThis->IMountNotify.pfnUnmountNotify        = drvscsiUnmountNotify;
     pThis->IPort.pfnQueryDeviceLocation         = drvscsiQueryDeviceLocation;
@@ -810,6 +1097,9 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /* Query the SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
     AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
+
+    /* Query the optional extended media port interface above. */
+    pThis->pDevMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
 
     /* Query the optional LED interface above. */
     pThis->pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
@@ -894,7 +1184,11 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags     = drvscsiGetFeatureFlags;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock       = drvscsiSetLock;
 
-    rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiVScsiReqCompleted, pThis);
+    rc = VSCSIDeviceCreate(&pThis->hVScsiDevice,
+                             pThis->pDevMediaExPort
+                           ? drvscsiIoReqVScsiReqCompleted
+                           : drvscsiVScsiReqCompleted,
+                           pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n", rc), rc);
     rc = VSCSILunCreate(&pThis->hVScsiLun, enmLunType, &pThis->VScsiIoCallbacks,
                         pThis);
