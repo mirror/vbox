@@ -5715,6 +5715,14 @@ static void ahciWarningISCSI(PPDMDEVINS pDevIns)
     AssertRC(rc);
 }
 
+static void ahciWarningDekMissing(PPDMDEVINS pDevIns)
+{
+    LogRel(("AHCI#%u: DEK is missing\n", pDevIns->iInstance));
+    int rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
+                                        N_("AHCI: The DEK for this disk is missing"));
+    AssertRC(rc);
+}
+
 bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
 {
     if (rc == VERR_DISK_FULL)
@@ -5739,8 +5747,8 @@ bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
     }
     if (rc == VERR_VD_DEK_MISSING)
     {
-        /* Error message already set. */
-        ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false);
+        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
+            ahciWarningDekMissing(pAhciPort->CTX_SUFF(pDevIns));
         return true;
     }
 
