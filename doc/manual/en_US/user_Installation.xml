@@ -768,14 +768,6 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
       <screen>pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS.pkg</screen>
 
-      <note>
-        <para>If you are using Solaris Zones, to install VirtualBox only into
-        the current zone and not into any other zone, use
-        <computeroutput>pkgadd -G</computeroutput>. For more information refer
-        to the <computeroutput>pkgadd</computeroutput> manual; see also <xref
-        linkend="solaris-zones" />.</para>
-      </note>
-
       <para>The installer will then prompt you to enter the package you wish
       to install. Choose "1" or "all" and proceed. Next the installer will ask
       you if you want to allow the postinstall script to be executed. Choose
@@ -788,6 +780,11 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <computeroutput>autoresponse</computeroutput> files from your system.
       VirtualBox would be installed in
       <computeroutput>/opt/VirtualBox</computeroutput>.</para>
+
+      <note>
+        <para>If you need to use VirtualBox from non-global zones, please read
+        <xref linkend="solaris-zones" />.</para>
+      </note>
     </sect2>
 
     <sect2>
