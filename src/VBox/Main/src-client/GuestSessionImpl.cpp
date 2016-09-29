@@ -2146,39 +2146,6 @@ int GuestSession::i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc
     return vrc;
 }
 
-//int GuestSession::i_startTaskAsync(const Utf8Str &strTaskDesc,
-//                                   GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress)
-//{
-//    LogFlowThisFunc(("strTaskDesc=%s, pTask=%p\n", strTaskDesc.c_str(), pTask));
-//
-//    AssertPtrReturn(pTask, VERR_INVALID_POINTER);
-//
-//    /* Create the progress object. */
-//    HRESULT hr = pProgress.createObject();
-//    if (FAILED(hr))
-//        return VERR_COM_UNEXPECTED;
-//
-//    hr = pProgress->init(static_cast<IGuestSession*>(this),
-//                         Bstr(strTaskDesc).raw(),
-//                         TRUE /* aCancelable */);
-//    if (FAILED(hr))
-//        return VERR_COM_UNEXPECTED;
-//
-//    /* Initialize our worker task. */
-//    RT_GCC_NO_WARN_DEPRECATED_BEGIN
-//    std::auto_ptr<GuestSessionTask> task(pTask);
-//    RT_GCC_NO_WARN_DEPRECATED_END
-//    int rc = task->RunAsync(strTaskDesc, pProgress);
-//    if (RT_FAILURE(rc))
-//        return rc;
-//
-//    /* Don't destruct on success. */
-//    task.release();
-//
-//    LogFlowFuncLeaveRC(rc);
-//    return rc;
-//}
-
 /**
  * Determines the protocol version (sets mData.mProtocolVersion).
  *
