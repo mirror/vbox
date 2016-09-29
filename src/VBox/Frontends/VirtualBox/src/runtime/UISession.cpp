@@ -1252,7 +1252,8 @@ void UISession::prepareScreens()
             display().GetScreenResolution(iScreenIndex,
                                           uGuestWidth, uGuestHeight, uBpp,
                                           iGuestOriginX, iGuestOriginY, enmStatus);
-            m_monitorVisibilityVector[iScreenIndex] = (enmStatus == KGuestMonitorStatus_Enabled);
+            m_monitorVisibilityVector[iScreenIndex] = (   enmStatus == KGuestMonitorStatus_Enabled
+                                                       || enmStatus == KGuestMonitorStatus_Blank);
         }
         /* And make sure at least one of them is visible (primary if others are hidden): */
         if (countOfVisibleWindows() < 1)
