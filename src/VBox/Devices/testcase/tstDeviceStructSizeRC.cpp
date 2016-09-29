@@ -951,7 +951,6 @@ int main()
     GEN_CHECK_OFF(ATADevState, StatWrites);
     GEN_CHECK_OFF(ATADevState, StatBytesWritten);
     GEN_CHECK_OFF(ATADevState, StatFlushes);
-    GEN_CHECK_OFF(ATADevState, fNonRotational);
     GEN_CHECK_OFF(ATADevState, fATAPIPassthrough);
     GEN_CHECK_OFF(ATADevState, fOverwriteInquiry);
     GEN_CHECK_OFF(ATADevState, cErrors);
