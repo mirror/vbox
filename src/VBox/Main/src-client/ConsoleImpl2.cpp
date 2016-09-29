@@ -3781,6 +3781,7 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
     /*
      * Some sanity checks.
      */
+    RT_NOREF(pfUseHostIOCache);
     ComPtr<IMediumFormat> pMediumFormat;
     HRESULT hrc = pMedium->COMGETTER(MediumFormat)(pMediumFormat.asOutParam());             H();
     ULONG uCaps = 0;
@@ -3817,8 +3818,6 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
         LONG64 i64Size;
         hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
 #ifdef RT_OS_WINDOWS
-        RT_NOREF(pfUseHostIOCache);
-
         if (   enmFsTypeFile == RTFSTYPE_FAT
             && i64Size >= _4G)
         {
