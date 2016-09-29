@@ -20,10 +20,12 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QAction>
 # include <QHeaderView>
 # include <QLayout>
 # include <QTabWidget>
+# include <QToolButton>
 
 /* GUI includes: */
 # include "QITabWidget.h"
@@ -34,6 +36,52 @@
 # include "UIToolBar.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** QAccessibleWidget extension used as an accessibility interface for UIToolBar. */
+class UIAccessibilityInterfaceForUIToolBarButton : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating segmented-button accessibility interface: */
+        if (   pObject
+            && strClassname == QLatin1String("QToolButton")
+            && pObject->property("Belongs to") == "UISettingsSelectorToolBar")
+            return new UIAccessibilityInterfaceForUIToolBarButton(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUIToolBarButton(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::RadioButton)
+    {}
+
+    virtual QAccessible::State state() const
+    {
+        /* Prepare the button state: */
+        QAccessible::State state;
+
+        /* Make sure button still alive: */
+        AssertPtrReturn(button(), state);
+
+        /* Compose the button state: */
+        state.checkable = button()->isCheckable();
+        state.checked = button()->isChecked();
+
+        /* Return the segment state: */
+        return state;
+    }
+
+private:
+
+    /** Returns corresponding segmented-button. */
+    QToolButton *button() const { return qobject_cast<QToolButton*>(widget()); }
+};
 
 
 /** Tree-widget column sections. */
@@ -438,6 +486,9 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     , m_pToolBar(0)
     , m_pActionGroup(0)
 {
+    /* Install tool-bar button accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIToolBarButton::pFactory);
+
     /* Prepare the toolbar: */
     m_pToolBar = new UIToolBar(pParent);
     m_pToolBar->setUseTextLabels(true);
@@ -488,6 +539,8 @@ QWidget *UISettingsSelectorToolBar::addItem(const QString &strBigIcon,
     {
         m_pActionGroup->addAction(pItem->action());
         m_pToolBar->addAction(pItem->action());
+        m_pToolBar->widgetForAction(pItem->action())
+            ->setProperty("Belongs to", "UISettingsSelectorToolBar");
         pPage->setContentsMargins(0, 0, 0, 0);
         pPage->layout()->setContentsMargins(0, 0, 0, 0);
         pResult = pPage;
@@ -497,6 +550,8 @@ QWidget *UISettingsSelectorToolBar::addItem(const QString &strBigIcon,
     {
         m_pActionGroup->addAction(pItem->action());
         m_pToolBar->addAction(pItem->action());
+        m_pToolBar->widgetForAction(pItem->action())
+            ->setProperty("Belongs to", "UISettingsSelectorToolBar");
         QITabWidget *pTabWidget = new QITabWidget();
         pTabWidget->setIconSize(QSize(16, 16));
         pTabWidget->setContentsMargins(0, 0, 0, 0);
