@@ -4096,33 +4096,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                     rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, NULL, 0,
                                               fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 else
-                {
-                    /*
-                     * Don't detach the SCSI driver when unmounting the current medium
-                     * (we are not ripping out the device but only eject the medium).
-                     */
-                    char *pszDriverDetach = NULL;
-                    if (   !fHotplug
-                        && (enmBus == StorageBus_SATA || enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI))
-                    {
-                        /* Get the current attached driver we have to detach. */
-                        PCFGMNODE pDrvLun = CFGMR3GetChildF(pCtlInst, "LUN#%u/AttachedDriver/", uLUN);
-                        if (pDrvLun)
-                        {
-                            char szDriver[128];
-                            RT_ZERO(szDriver);
-                            rc  = CFGMR3QueryString(pDrvLun, "Driver", &szDriver[0], sizeof(szDriver));
-                            if (RT_SUCCESS(rc))
-                                pszDriverDetach = RTStrDup(&szDriver[0]);
-                        }
-                    }
-
-                    rc = PDMR3DriverDetach(pUVM, pcszDevice, uInstance, uLUN,
-                                           pszDriverDetach, 0 /* iOccurence */,
-                                           fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
-                    if (pszDriverDetach)
-                        RTStrFree(pszDriverDetach);
-                }
+                    rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRCReturn(rc, rc);
@@ -4140,13 +4114,8 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
-        /*
-         * Insert the SCSI driver for hotplug events the SCSI/USB based sotrage controllers
-         * or for SATA if the new device is a CD/DVD drive.
-         */
-        if (   fHotplug
-            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
-                || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
+        /* SCSI has another driver between device and block. */
+        if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
