@@ -894,6 +894,19 @@ zonecfg:vboxzone&gt;exit</screen>
       too, similar to what was shown above. This does not apply to Solaris 10
       hosts due to lack of USB support.</para>
 
+      <para>If you are not using sparse root zones, you will need to loopback
+      mount <computeroutput>/opt/VirtualBox</computeroutput> from the global zone
+      (specified below using the <computeroutput>dir</computeroutput> attribute) into
+      the non-global zone at the same path (specified using the
+      <computeroutput>special</computeroutput> attribute). For example:</para>
+
+      <screen>zonecfg:vboxzone&gt;add fs
+zonecfg:vboxzone:device&gt;set dir=/opt/VirtualBox
+zonecfg:vboxzone:device&gt;set special=/opt/VirtualBox
+zonecfg:vboxzone:device&gt;set type=lofs
+zonecfg:vboxzone:device&gt;end
+zonecfg:vboxzone&gt;exit</screen>
+
       <para>Next reboot the zone using <computeroutput>zoneadm</computeroutput>
       and you should be able to run VirtualBox from within the configured zone.</para>
     </sect2>
