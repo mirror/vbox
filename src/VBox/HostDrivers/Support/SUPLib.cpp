@@ -1111,6 +1111,13 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
         return VINF_SUCCESS;
     }
 
+    /* Check that we've got a kernel connection so rtMemSaferSupR3AllocPages
+       can do fallback without first having to hit assertions. */
+    if (g_supLibData.hDevice != SUP_HDEVICE_NIL)
+    { /* likely */ }
+    else
+        return VERR_WRONG_ORDER;
+
     /*
      * Use fallback for non-R0 mapping?
      */
