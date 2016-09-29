@@ -618,6 +618,7 @@ private:
                                    const ComPtr<IMachine> &ptrMachine,
                                    const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                    bool fHMEnabled);
+    int i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache);
     int i_configMediumAttachment(const char *pcszDevice,
                                  unsigned uInstance,
                                  StorageBus_T enmBus,

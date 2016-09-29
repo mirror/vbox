@@ -3767,6 +3767,195 @@ static uint64_t formatDiskSize(uint64_t u64Size, const char **pszUnit)
     }
 }
 
+/**
+ * Checks the location of the given medium for known bugs affecting the usage
+ * of the host I/O cache setting.
+ *
+ * @returns VBox status code.
+ * @param   pMedium             The medium to check.
+ * @param   pfUseHostIOCache    Where to store the suggested host I/O cache setting.
+ */
+int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
+{
+#define H()         AssertLogRelMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_MAIN_CONFIG_CONSTRUCTOR_COM_ERROR)
+    /*
+     * Some sanity checks.
+     */
+    ComPtr<IMediumFormat> pMediumFormat;
+    HRESULT hrc = pMedium->COMGETTER(MediumFormat)(pMediumFormat.asOutParam());             H();
+    ULONG uCaps = 0;
+    com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
+    hrc = pMediumFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));    H();
+
+    for (ULONG j = 0; j < mediumFormatCap.size(); j++)
+        uCaps |= mediumFormatCap[j];
+
+    if (uCaps & MediumFormatCapabilities_File)
+    {
+        Bstr strFile;
+        hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
+        Utf8Str utfFile = Utf8Str(strFile);
+        Bstr strSnap;
+        ComPtr<IMachine> pMachine = i_machine();
+        hrc = pMachine->COMGETTER(SnapshotFolder)(strSnap.asOutParam());            H();
+        Utf8Str utfSnap = Utf8Str(strSnap);
+        RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
+        RTFSTYPE enmFsTypeSnap = RTFSTYPE_UNKNOWN;
+        int rc2 = RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
+        AssertMsgRCReturn(rc2, ("Querying the file type of '%s' failed!\n", utfFile.c_str()), rc2);
+        /* Ignore the error code. On error, the file system type is still 'unknown' so
+         * none of the following paths are taken. This can happen for new VMs which
+         * still don't have a snapshot folder. */
+        (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
+        if (!mfSnapshotFolderDiskTypeShown)
+        {
+            LogRel(("File system of '%s' (snapshots) is %s\n",
+                    utfSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
+            mfSnapshotFolderDiskTypeShown = true;
+        }
+        LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
+        LONG64 i64Size;
+        hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
+#ifdef RT_OS_WINDOWS
+        if (   enmFsTypeFile == RTFSTYPE_FAT
+            && i64Size >= _4G)
+        {
+            const char *pszUnit;
+            uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
+            i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+                    N_("The medium '%ls' has a logical size of %RU64%s "
+                    "but the file system the medium is located on seems "
+                    "to be FAT(32) which cannot handle files bigger than 4GB.\n"
+                    "We strongly recommend to put all your virtual disk images and "
+                    "the snapshot folder onto an NTFS partition"),
+                    strFile.raw(), u64Print, pszUnit);
+        }
+#else /* !RT_OS_WINDOWS */
+        if (   enmFsTypeFile == RTFSTYPE_FAT
+            || enmFsTypeFile == RTFSTYPE_EXT
+            || enmFsTypeFile == RTFSTYPE_EXT2
+            || enmFsTypeFile == RTFSTYPE_EXT3
+            || enmFsTypeFile == RTFSTYPE_EXT4)
+        {
+            RTFILE file;
+            int rc = RTFileOpen(&file, utfFile.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            if (RT_SUCCESS(rc))
+            {
+                RTFOFF maxSize;
+                /* Careful: This function will work only on selected local file systems! */
+                rc = RTFileGetMaxSizeEx(file, &maxSize);
+                RTFileClose(file);
+                if (   RT_SUCCESS(rc)
+                    && maxSize > 0
+                    && i64Size > (LONG64)maxSize)
+                {
+                    const char *pszUnitSiz;
+                    const char *pszUnitMax;
+                    uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
+                    uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
+                    i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
+                            N_("The medium '%ls' has a logical size of %RU64%s "
+                            "but the file system the medium is located on can "
+                            "only handle files up to %RU64%s in theory.\n"
+                            "We strongly recommend to put all your virtual disk "
+                            "images and the snapshot folder onto a proper "
+                            "file system (e.g. ext3) with a sufficient size"),
+                            strFile.raw(), u64PrintSiz, pszUnitSiz, u64PrintMax, pszUnitMax);
+                }
+            }
+        }
+#endif /* !RT_OS_WINDOWS */
+
+        /*
+         * Snapshot folder:
+         * Here we test only for a FAT partition as we had to create a dummy file otherwise
+         */
+        if (   enmFsTypeSnap == RTFSTYPE_FAT
+            && i64Size >= _4G
+            && !mfSnapshotFolderSizeWarningShown)
+        {
+            const char *pszUnit;
+            uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
+            i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
+#ifdef RT_OS_WINDOWS
+                    N_("The snapshot folder of this VM '%ls' seems to be located on "
+                    "a FAT(32) file system. The logical size of the medium '%ls' "
+                    "(%RU64%s) is bigger than the maximum file size this file "
+                    "system can handle (4GB).\n"
+                    "We strongly recommend to put all your virtual disk images and "
+                    "the snapshot folder onto an NTFS partition"),
+#else
+                    N_("The snapshot folder of this VM '%ls' seems to be located on "
+                        "a FAT(32) file system. The logical size of the medium '%ls' "
+                        "(%RU64%s) is bigger than the maximum file size this file "
+                        "system can handle (4GB).\n"
+                        "We strongly recommend to put all your virtual disk images and "
+                        "the snapshot folder onto a proper file system (e.g. ext3)"),
+#endif
+                    strSnap.raw(), strFile.raw(), u64Print, pszUnit);
+            /* Show this particular warning only once */
+            mfSnapshotFolderSizeWarningShown = true;
+        }
+
+#ifdef RT_OS_LINUX
+        /*
+         * Ext4 bug: Check if the host I/O cache is disabled and the disk image is located
+         *           on an ext4 partition. Later we have to check the Linux kernel version!
+         * This bug apparently applies to the XFS file system as well.
+         * Linux 2.6.36 is known to be fixed (tested with 2.6.36-rc4).
+         */
+
+        char szOsRelease[128];
+        int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOsRelease, sizeof(szOsRelease));
+        bool fKernelHasODirectBug =    RT_FAILURE(rc)
+                                    || (RTStrVersionCompare(szOsRelease, "2.6.36-rc4") < 0);
+
+        if (   (uCaps & MediumFormatCapabilities_Asynchronous)
+            && !*pfUseHostIOCache
+            && fKernelHasODirectBug)
+        {
+            if (   enmFsTypeFile == RTFSTYPE_EXT4
+                || enmFsTypeFile == RTFSTYPE_XFS)
+            {
+                i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        N_("The host I/O cache for at least one controller is disabled "
+                           "and the medium '%ls' for this VM "
+                           "is located on an %s partition. There is a known Linux "
+                           "kernel bug which can lead to the corruption of the virtual "
+                           "disk image under these conditions.\n"
+                           "Either enable the host I/O cache permanently in the VM "
+                           "settings or put the disk image and the snapshot folder "
+                           "onto a different file system.\n"
+                           "The host I/O cache will now be enabled for this medium"),
+                        strFile.raw(), enmFsTypeFile == RTFSTYPE_EXT4 ? "ext4" : "xfs");
+                *pfUseHostIOCache = true;
+            }
+            else if (  (   enmFsTypeSnap == RTFSTYPE_EXT4
+                        || enmFsTypeSnap == RTFSTYPE_XFS)
+                     && !mfSnapshotFolderExt4WarningShown)
+            {
+                i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
+                        N_("The host I/O cache for at least one controller is disabled "
+                           "and the snapshot folder for this VM "
+                           "is located on an %s partition. There is a known Linux "
+                           "kernel bug which can lead to the corruption of the virtual "
+                           "disk image under these conditions.\n"
+                           "Either enable the host I/O cache permanently in the VM "
+                           "settings or put the disk image and the snapshot folder "
+                           "onto a different file system.\n"
+                           "The host I/O cache will now be enabled for this medium"),
+                        enmFsTypeSnap == RTFSTYPE_EXT4 ? "ext4" : "xfs");
+                *pfUseHostIOCache = true;
+                mfSnapshotFolderExt4WarningShown = true;
+            }
+        }
+#endif
+    }
+#undef H
+
+    return VINF_SUCCESS;
+}
+
 int Console::i_configMediumAttachment(const char *pcszDevice,
                                       unsigned uInstance,
                                       StorageBus_T enmBus,
@@ -3943,179 +4132,9 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             && (   aMachineState == MachineState_Starting
                 || aMachineState == MachineState_Restoring))
         {
-            /*
-             * Some sanity checks.
-             */
-            ComPtr<IMediumFormat> pMediumFormat;
-            hrc = pMedium->COMGETTER(MediumFormat)(pMediumFormat.asOutParam());             H();
-            ULONG uCaps = 0;
-            com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
-            hrc = pMediumFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));    H();
-
-            for (ULONG j = 0; j < mediumFormatCap.size(); j++)
-                uCaps |= mediumFormatCap[j];
-
-            if (uCaps & MediumFormatCapabilities_File)
-            {
-                Bstr strFile;
-                hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
-                Utf8Str utfFile = Utf8Str(strFile);
-                Bstr strSnap;
-                ComPtr<IMachine> pMachine = i_machine();
-                hrc = pMachine->COMGETTER(SnapshotFolder)(strSnap.asOutParam());            H();
-                Utf8Str utfSnap = Utf8Str(strSnap);
-                RTFSTYPE enmFsTypeFile = RTFSTYPE_UNKNOWN;
-                RTFSTYPE enmFsTypeSnap = RTFSTYPE_UNKNOWN;
-                int rc2 = RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
-                AssertMsgRCReturn(rc2, ("Querying the file type of '%s' failed!\n", utfFile.c_str()), rc2);
-                /* Ignore the error code. On error, the file system type is still 'unknown' so
-                 * none of the following paths are taken. This can happen for new VMs which
-                 * still don't have a snapshot folder. */
-                (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
-                if (!mfSnapshotFolderDiskTypeShown)
-                {
-                    LogRel(("File system of '%s' (snapshots) is %s\n",
-                            utfSnap.c_str(), RTFsTypeName(enmFsTypeSnap)));
-                    mfSnapshotFolderDiskTypeShown = true;
-                }
-                LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
-                LONG64 i64Size;
-                hrc = pMedium->COMGETTER(LogicalSize)(&i64Size);                            H();
-#ifdef RT_OS_WINDOWS
-                if (   enmFsTypeFile == RTFSTYPE_FAT
-                    && i64Size >= _4G)
-                {
-                    const char *pszUnit;
-                    uint64_t u64Print = formatDiskSize((uint64_t)i64Size, &pszUnit);
-                    i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
-                            N_("The medium '%ls' has a logical size of %RU64%s "
-                            "but the file system the medium is located on seems "
-                            "to be FAT(32) which cannot handle files bigger than 4GB.\n"
-                            "We strongly recommend to put all your virtual disk images and "
-                            "the snapshot folder onto an NTFS partition"),
-                            strFile.raw(), u64Print, pszUnit);
-                }
-#else /* !RT_OS_WINDOWS */
-                if (   enmFsTypeFile == RTFSTYPE_FAT
-                    || enmFsTypeFile == RTFSTYPE_EXT
-                    || enmFsTypeFile == RTFSTYPE_EXT2
-                    || enmFsTypeFile == RTFSTYPE_EXT3
-                    || enmFsTypeFile == RTFSTYPE_EXT4)
-                {
-                    RTFILE file;
-                    rc = RTFileOpen(&file, utfFile.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-                    if (RT_SUCCESS(rc))
-                    {
-                        RTFOFF maxSize;
-                        /* Careful: This function will work only on selected local file systems! */
-                        rc = RTFileGetMaxSizeEx(file, &maxSize);
-                        RTFileClose(file);
-                        if (   RT_SUCCESS(rc)
-                            && maxSize > 0
-                            && i64Size > (LONG64)maxSize)
-                        {
-                            const char *pszUnitSiz;
-                            const char *pszUnitMax;
-                            uint64_t u64PrintSiz = formatDiskSize((LONG64)i64Size, &pszUnitSiz);
-                            uint64_t u64PrintMax = formatDiskSize(maxSize, &pszUnitMax);
-                            i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected", /* <= not exact but ... */
-                                    N_("The medium '%ls' has a logical size of %RU64%s "
-                                    "but the file system the medium is located on can "
-                                    "only handle files up to %RU64%s in theory.\n"
-                                    "We strongly recommend to put all your virtual disk "
-                                    "images and the snapshot folder onto a proper "
-                                    "file system (e.g. ext3) with a sufficient size"),
-                                    strFile.raw(), u64PrintSiz, pszUnitSiz, u64PrintMax, pszUnitMax);
-                        }
-                    }
-                }
-#endif /* !RT_OS_WINDOWS */
-
-                /*
-                 * Snapshot folder:
-                 * Here we test only for a FAT partition as we had to create a dummy file otherwise
-                 */
-                if (   enmFsTypeSnap == RTFSTYPE_FAT
-                    && i64Size >= _4G
-                    && !mfSnapshotFolderSizeWarningShown)
-                {
-                    const char *pszUnit;
-                    uint64_t u64Print = formatDiskSize(i64Size, &pszUnit);
-                    i_atVMRuntimeErrorCallbackF(0, "FatPartitionDetected",
-#ifdef RT_OS_WINDOWS
-                            N_("The snapshot folder of this VM '%ls' seems to be located on "
-                            "a FAT(32) file system. The logical size of the medium '%ls' "
-                            "(%RU64%s) is bigger than the maximum file size this file "
-                            "system can handle (4GB).\n"
-                            "We strongly recommend to put all your virtual disk images and "
-                            "the snapshot folder onto an NTFS partition"),
-#else
-                            N_("The snapshot folder of this VM '%ls' seems to be located on "
-                                "a FAT(32) file system. The logical size of the medium '%ls' "
-                                "(%RU64%s) is bigger than the maximum file size this file "
-                                "system can handle (4GB).\n"
-                                "We strongly recommend to put all your virtual disk images and "
-                                "the snapshot folder onto a proper file system (e.g. ext3)"),
-#endif
-                            strSnap.raw(), strFile.raw(), u64Print, pszUnit);
-                    /* Show this particular warning only once */
-                    mfSnapshotFolderSizeWarningShown = true;
-                }
-
-#ifdef RT_OS_LINUX
-                /*
-                 * Ext4 bug: Check if the host I/O cache is disabled and the disk image is located
-                 *           on an ext4 partition. Later we have to check the Linux kernel version!
-                 * This bug apparently applies to the XFS file system as well.
-                 * Linux 2.6.36 is known to be fixed (tested with 2.6.36-rc4).
-                 */
-
-                char szOsRelease[128];
-                rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szOsRelease, sizeof(szOsRelease));
-                bool fKernelHasODirectBug =    RT_FAILURE(rc)
-                                            || (RTStrVersionCompare(szOsRelease, "2.6.36-rc4") < 0);
-
-                if (   (uCaps & MediumFormatCapabilities_Asynchronous)
-                    && !fUseHostIOCache
-                    && fKernelHasODirectBug)
-                {
-                    if (   enmFsTypeFile == RTFSTYPE_EXT4
-                        || enmFsTypeFile == RTFSTYPE_XFS)
-                    {
-                        i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
-                                N_("The host I/O cache for at least one controller is disabled "
-                                   "and the medium '%ls' for this VM "
-                                   "is located on an %s partition. There is a known Linux "
-                                   "kernel bug which can lead to the corruption of the virtual "
-                                   "disk image under these conditions.\n"
-                                   "Either enable the host I/O cache permanently in the VM "
-                                   "settings or put the disk image and the snapshot folder "
-                                   "onto a different file system.\n"
-                                   "The host I/O cache will now be enabled for this medium"),
-                                strFile.raw(), enmFsTypeFile == RTFSTYPE_EXT4 ? "ext4" : "xfs");
-                        fUseHostIOCache = true;
-                    }
-                    else if (  (   enmFsTypeSnap == RTFSTYPE_EXT4
-                                || enmFsTypeSnap == RTFSTYPE_XFS)
-                             && !mfSnapshotFolderExt4WarningShown)
-                    {
-                        i_atVMRuntimeErrorCallbackF(0, "Ext4PartitionDetected",
-                                N_("The host I/O cache for at least one controller is disabled "
-                                   "and the snapshot folder for this VM "
-                                   "is located on an %s partition. There is a known Linux "
-                                   "kernel bug which can lead to the corruption of the virtual "
-                                   "disk image under these conditions.\n"
-                                   "Either enable the host I/O cache permanently in the VM "
-                                   "settings or put the disk image and the snapshot folder "
-                                   "onto a different file system.\n"
-                                   "The host I/O cache will now be enabled for this medium"),
-                                enmFsTypeSnap == RTFSTYPE_EXT4 ? "ext4" : "xfs");
-                        fUseHostIOCache = true;
-                        mfSnapshotFolderExt4WarningShown = true;
-                    }
-                }
-#endif
-            }
+            rc = i_checkMediumLocation(pMedium, &fUseHostIOCache);
+            if (RT_FAILURE(rc))
+                return rc;
         }
 
         if (pMedium)
