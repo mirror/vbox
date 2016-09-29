@@ -1108,6 +1108,9 @@ whose vector indexed a bit set in the EOI-exit bitmap. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
 /** Whether the processor provides additional information for exits due to INS/OUTS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                RT_BOOL((a) & RT_BIT_64(54))
+/** Whether default 1 bits in control MSRs (pin/proc/exit/entry) may be
+ *  cleared to 0 and that 'true' control MSRs are supported. */ */
+#define MSR_IA32_VMX_BASIC_INFO_TRUE_CONTROLS(a)                RT_BOOL((a) & RT_BIT_64(55))
 /** @} */
 
 
