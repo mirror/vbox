@@ -372,8 +372,6 @@ typedef struct AHCIPort
     bool                            fSpunUp;
     /** First D2H FIS was send. */
     bool                            fFirstD2HFisSend;
-    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
-    bool                            fNonRotational;
     /** Attached device is a CD/DVD drive. */
     bool                            fATAPI;
     /** Passthrough SCSI commands. */
@@ -391,7 +389,7 @@ typedef struct AHCIPort
     /** Flag whether the worker thread is sleeping. */
     volatile bool                   fWrkThreadSleeping;
 
-    bool                            afAlignment[3];
+    bool                            afAlignment[4];
 
     /** Number of total sectors. */
     uint64_t                        cTotalSectors;
@@ -3084,7 +3082,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
     if (   pAhciPort->fTrimEnabled
         || pAhciPort->cbSector != 512
-        || pAhciPort->fNonRotational)
+        || pAhciPort->pDrvMedia->pfnIsNonRotational(pAhciPort->pDrvMedia))
     {
         p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
         p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
@@ -3120,7 +3118,7 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
         p[118] = RT_H2LE_U16(cSectorSizeInWords >> 16);
     }
 
-    if (pAhciPort->fNonRotational)
+    if (pAhciPort->pDrvMedia->pfnIsNonRotational(pAhciPort->pDrvMedia))
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
 
     if (pAhciPort->fTrimEnabled) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
@@ -7675,11 +7673,6 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read \"ModelNumber\" as string"));
     }
-
-    rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pAhciPort->fNonRotational, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
     rc = CFGMR3QueryU8Def(pCfgNode, "LogicalSectorsPerPhysical", &pAhciPort->cLogSectorsPerPhysicalExp, 0);
     if (RT_FAILURE(rc))

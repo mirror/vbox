@@ -322,6 +322,8 @@ typedef struct VBOXDISK
     bool                    fMountable;
     /** Visible to the BIOS. */
     bool                    fBiosVisible;
+    /** Flag whether this medium should be presented as non rotational. */
+    bool                    fNonRotational;
 #ifdef VBOX_PERIODIC_FLUSH
     /** HACK: Configuration value for number of bytes written after which to flush. */
     uint32_t                cbFlushInterval;
@@ -2184,6 +2186,15 @@ static DECLCALLBACK(bool) drvvdIsReadOnly(PPDMIMEDIA pInterface)
     bool f = VDIsReadOnly(pThis->pDisk);
     LogFlowFunc(("returns %d\n", f));
     return f;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnIsNonRotational} */
+static DECLCALLBACK(bool) drvvdIsNonRotational(PPDMIMEDIA pInterface)
+{
+    LogFlowFunc(("\n"));
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+
+    return pThis->fNonRotational;
 }
 
 /** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
@@ -4353,6 +4364,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMedia.pfnGetSize            = drvvdGetSize;
     pThis->IMedia.pfnGetSectorSize      = drvvdGetSectorSize;
     pThis->IMedia.pfnIsReadOnly         = drvvdIsReadOnly;
+    pThis->IMedia.pfnIsNonRotational     = drvvdIsNonRotational;
     pThis->IMedia.pfnBiosGetPCHSGeometry = drvvdBiosGetPCHSGeometry;
     pThis->IMedia.pfnBiosSetPCHSGeometry = drvvdBiosSetPCHSGeometry;
     pThis->IMedia.pfnBiosGetLCHSGeometry = drvvdBiosGetLCHSGeometry;
@@ -4473,7 +4485,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                           "CachePath\0CacheFormat\0Discard\0InformAboutZeroBlocks\0"
                                           "SkipConsistencyChecks\0"
                                           "Locked\0BIOSVisible\0Cylinders\0Heads\0Sectors\0Mountable\0"
-                                          "EmptyDrive\0IoBufMax\0"
+                                          "EmptyDrive\0IoBufMax\0NonRotationalMedium\0"
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
                                           "FlushInterval\0IgnoreFlush\0IgnoreFlushAsync\0"
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
@@ -4747,6 +4759,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             rc = CFGMR3QueryU32Def(pCfg, "IoBufMax", &cbIoBufMax, 5 * _1M);
             if (RT_FAILURE(rc))
                 return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IoBufMax\" from the config"));
+
+            rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
+            if (RT_FAILURE(rc))
+                return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                        N_("DrvVD configuration error: Querying \"NonRotationalMedium\" as boolean failed"));
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");

@@ -290,6 +290,14 @@ static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 }
 
 
+/** @interface_method_impl{PDMIMEDIA,pfnIsNonRotational} */
+static DECLCALLBACK(bool) drvHostBaseIsNonRotational(PPDMIMEDIA pInterface)
+{
+    RT_NOREF1(pInterface);
+    return false;
+}
+
+
 /** @interface_method_impl{PDMIBLOCK,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 {
@@ -1873,6 +1881,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType
     pThis->IMedia.pfnWrite                  = drvHostBaseWrite;
     pThis->IMedia.pfnFlush                  = drvHostBaseFlush;
     pThis->IMedia.pfnIsReadOnly             = drvHostBaseIsReadOnly;
+    pThis->IMedia.pfnIsNonRotational        = drvHostBaseIsNonRotational;
     pThis->IMedia.pfnGetSize                = drvHostBaseGetSize;
     pThis->IMedia.pfnGetType                = drvHostBaseGetType;
     pThis->IMedia.pfnGetUuid                = drvHostBaseGetUuid;

@@ -353,6 +353,16 @@ typedef struct PDMIMEDIA
     DECLR3CALLBACKMEMBER(bool, pfnIsReadOnly,(PPDMIMEDIA pInterface));
 
     /**
+     * Returns whether the medium should be marked as rotational or not.
+     *
+     * @returns true if non rotating medium.
+     * @returns false if rotating medium.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsNonRotational,(PPDMIMEDIA pInterface));
+
+    /**
      * Get stored media geometry (physical CHS, PCHS) - BIOS property.
      * This is an optional feature of a media.
      *
@@ -448,7 +458,7 @@ typedef struct PDMIMEDIA
 
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "855b4998-0cd2-45d8-8da3-fe9a47504abb"
+#define PDMIMEDIA_IID                           "d344aeaa-3ad0-4563-bb03-2733383e9230"
 
 
 /**

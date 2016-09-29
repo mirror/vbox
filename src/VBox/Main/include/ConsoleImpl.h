@@ -645,6 +645,7 @@ private:
                        unsigned uMergeTarget,
                        const char *pcszBwGroup,
                        bool fDiscard,
+                       bool fNonRotational,
                        IMedium *pMedium,
                        MachineState_T aMachineState,
                        HRESULT *phrc);

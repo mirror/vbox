@@ -124,8 +124,6 @@ typedef struct DRVSCSI
     volatile uint32_t       StatIoDepth;
     /** Errors printed in the release log. */
     unsigned                cErrors;
-    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
-    bool                    fNonRotational;
     /** Medium is readonly */
     bool                    fReadonly;
 
@@ -376,7 +374,8 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsi
     if (RT_SUCCESS(rc) && (fFeatures & PDMIMEDIAEX_FEATURE_F_DISCARD))
         *pfFeatures |= VSCSI_LUN_FEATURE_UNMAP;
 
-    if (pThis->fNonRotational)
+    if (   pThis->pDrvMedia
+        && pThis->pDrvMedia->pfnIsNonRotational(pThis->pDrvMedia))
         *pfFeatures |= VSCSI_LUN_FEATURE_NON_ROTATIONAL;
 
     if (pThis->fReadonly)
@@ -1116,14 +1115,9 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "NonRotationalMedium\0Readonly\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Readonly\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("SCSI configuration error: unknown option specified"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
-    if (RT_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                    N_("SCSI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
     rc = CFGMR3QueryBoolDef(pCfg, "Readonly", &pThis->fReadonly, false);
     if (RT_FAILURE(rc))

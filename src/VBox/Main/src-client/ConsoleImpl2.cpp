@@ -265,9 +265,6 @@ static int getSmcDeviceKey(IVirtualBox *pVirtualBox, IMachine *pMachine, Utf8Str
 # endif
 #endif
 
-static const char *const g_apszIDEDrives[4] =
-    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
-
 class ConfigError : public RTCError
 {
 public:
@@ -3924,32 +3921,6 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         if (ppLunL0)
             *ppLunL0 = pLunL0;
 
-        PCFGMNODE pCfg = CFGMR3GetChild(pCtlInst, "Config");
-        if (pCfg)
-        {
-            if (!strcmp(pcszDevice, "piix3ide"))
-            {
-                PCFGMNODE pDrive = CFGMR3GetChild(pCfg, g_apszIDEDrives[uLUN]);
-                if (!pDrive)
-                    InsertConfigNode(pCfg, g_apszIDEDrives[uLUN], &pDrive);
-                /* Don't use the RemoveConfigValue wrapper above, as we don't
-                 * know if the leaf is present or not. */
-                CFGMR3RemoveValue(pDrive,  "NonRotationalMedium");
-                InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
-            }
-            else if (!strcmp(pcszDevice, "ahci"))
-            {
-                Utf8Str strPort = Utf8StrFmt("Port%u", uLUN);
-                PCFGMNODE pDrive = CFGMR3GetChild(pCfg, strPort.c_str());
-                if (!pDrive)
-                    InsertConfigNode(pCfg, strPort.c_str(), &pDrive);
-                /* Don't use the RemoveConfigValue wrapper above, as we don't
-                 * know if the leaf is present or not. */
-                CFGMR3RemoveValue(pDrive,  "NonRotationalMedium");
-                InsertConfigInteger(pDrive, "NonRotationalMedium", !!fNonRotational);
-            }
-        }
-
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
@@ -3957,10 +3928,6 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
-            PCFGMNODE pL1Cfg = NULL;
-            InsertConfigNode(pLunL0, "Config", &pL1Cfg);
-            InsertConfigInteger(pL1Cfg, "NonRotationalMedium", !!fNonRotational);
-
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }
 
@@ -4195,6 +4162,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                             uMergeTarget,
                             strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
                             !!fDiscard,
+                            !!fNonRotational,
                             pMedium,
                             aMachineState,
                             phrc);
@@ -4274,6 +4242,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                             unsigned uMergeTarget,
                             const char *pcszBwGroup,
                             bool fDiscard,
+                            bool fNonRotational,
                             IMedium *pMedium,
                             MachineState_T aMachineState,
                             HRESULT *phrc)
@@ -4463,6 +4432,9 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
 
                 if (fDiscard)
                     InsertConfigInteger(pCfg, "Discard", 1);
+
+                if (fNonRotational)
+                    InsertConfigInteger(pCfg, "NonRotationalMedium", 1);
 
                 /* Pass all custom parameters. */
                 bool fHostIP = true;

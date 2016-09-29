@@ -260,8 +260,6 @@ typedef struct ATADevState
     /** Statistics: number of flush operations and the time spend flushing. */
     STAMPROFILE     StatFlushes;
 
-    /** Mark the drive as having a non-rotational medium (i.e. as a SSD). */
-    bool            fNonRotational;
     /** Enable passing through commands directly to the ATAPI drive. */
     bool            fATAPIPassthrough;
     /** Flag whether to overwrite inquiry data in passthrough mode. */
@@ -1295,7 +1293,7 @@ static bool ataR3IdentifySS(ATADevState *s)
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
     if (   s->pDrvMedia->pfnDiscard
         || s->cbSector != 512
-        || s->fNonRotational)
+        || s->pDrvMedia->pfnIsNonRotational(s->pDrvMedia))
     {
         p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
         p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
@@ -1338,7 +1336,7 @@ static bool ataR3IdentifySS(ATADevState *s)
 
     if (s->pDrvMedia->pfnDiscard) /** @todo Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
-    if (s->fNonRotational)
+    if (s->pDrvMedia->pfnIsNonRotational(s->pDrvMedia))
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
     uint32_t uCsum = ataR3Checksum(p, 510);
     p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
@@ -7758,11 +7756,6 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         return PDMDEV_SET_ERROR(pDevIns, rc,
                                     N_("PIIX3 configuration error: failed to read \"ModelNumber\" as string"));
                     }
-
-                    rc = CFGMR3QueryBoolDef(pCfgNode, "NonRotationalMedium", &pIf->fNonRotational, false);
-                    if (RT_FAILURE(rc))
-                        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("PIIX3 configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
                     /* There are three other identification strings for CD drives used for INQUIRY */
                     if (pIf->fATAPI)
