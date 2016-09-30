@@ -392,15 +392,19 @@
                  of Windows that use other default background colors, and on the machines of users that
                  change their Windows color scheme.
                  Also see: http://osdir.com/ml/windows.devel.wix.user/2005-02/msg00300.html -->
-            <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="25" Y="95" Width="200" Height="17"
-                     Property="VBOX_INSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Default="no">
-                <Text>!(loc.Customize2Dlg_CreateShortcut)</Text>
+            <Control Id="StartMenuEntriesCheckBox" Type="CheckBox" X="25" Y="95" Width="200" Height="17"
+                     Property="VBOX_INSTALLSTARTMENUENTRIES" CheckBoxValue="1" Default="no">
+                <Text>!(loc.Customize2Dlg_CreateStartMenuEntries)</Text>
             </Control>
-            <Control Id="QuicklaunchShortcutCheckBox" Type="CheckBox" X="25" Y="115" Width="200" Height="17"
+            <Control Id="DesktopShortcutCheckBox" Type="CheckBox" X="25" Y="115" Width="200" Height="17"
+                     Property="VBOX_INSTALLDESKTOPSHORTCUT" CheckBoxValue="1" Default="no">
+                <Text>!(loc.Customize2Dlg_CreateDesktopShortcut)</Text>
+            </Control>
+            <Control Id="QuicklaunchShortcutCheckBox" Type="CheckBox" X="25" Y="135" Width="200" Height="17"
                      Property="VBOX_INSTALLQUICKLAUNCHSHORTCUT" CheckBoxValue="1" Default="no">
                 <Text>!(loc.Customize2Dlg_CreateQuickLaunch)</Text>
             </Control>
-            <Control Id="RegisterFileExtensionsCheckBox" Type="CheckBox" X="25" Y="135" Width="200" Height="17"
+            <Control Id="RegisterFileExtensionsCheckBox" Type="CheckBox" X="25" Y="155" Width="200" Height="17"
                      Property="VBOX_REGISTERFILEEXTENSIONS" CheckBoxValue="1" Default="no">
                 <Text>!(loc.Customize2Dlg_RegisterFileExtensions)</Text>
             </Control>

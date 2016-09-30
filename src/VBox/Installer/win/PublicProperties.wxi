@@ -24,6 +24,11 @@
   <SetProperty Id="VBOX_INSTALLDESKTOPSHORTCUT" After="AppSearch" Sequence="both"
                Value="{}"><![CDATA[VBOX_INSTALLDESKTOPSHORTCUT="0"]]></SetProperty>
 
+  <!-- Whether or not start menu entries should be created. -->
+  <Property Id="VBOX_INSTALLSTARTMENUENTRIES" Value="1" Secure="yes"/>
+  <SetProperty Id="VBOX_INSTALLSTARTMENUENTRIES" After="AppSearch" Sequence="both"
+               Value="{}"><![CDATA[VBOX_INSTALLSTARTMENUENTRIES="0"]]></SetProperty>
+
   <!-- Whether or not a desktop shortcut for the Quick Launch Bar should be created -->
   <Property Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" Value="1" Secure="yes"/>
   <SetProperty Id="VBOX_INSTALLQUICKLAUNCHSHORTCUT" After="AppSearch" Sequence="both"

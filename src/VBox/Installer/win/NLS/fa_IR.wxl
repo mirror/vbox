@@ -4,7 +4,7 @@
     <!--
             Language Definition Include for VirtualBox WiX script.
 
-            Copyright (C) 2011-2015 Oracle Corporation
+            Copyright (C) 2011-2016 Oracle Corporation
 
             This file is part of VirtualBox Open Source Edition (OSE), as
             available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +96,8 @@
     <!---->
     <String Id="Customize2Dlg_Header">سفارشی</String>
     <String Id="Customize2Dlg_Desc">لطفاً از گزینه های زیر انتخاب کنید:</String>
-    <String Id="Customize2Dlg_CreateShortcut">ایجاد یک میانبر روی دسکتاپ</String>
+    <String Id="Customize2Dlg_CreateStartMenuEntries">Create start menu entries</String>
+    <String Id="Customize2Dlg_CreateDesktopShortcut">ایجاد یک میانبر روی دسکتاپ</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">ایجاد یک میانبر در اِجرای سریع</String>
     <String Id="Customize2Dlg_RegisterFileExtensions">ثبت نام انجمن فایل</String>
     <!---->

@@ -4,7 +4,7 @@
     <!--
             Language Definition Include for VirtualBox WiX script.
 
-            Copyright (C) 2011-2015 Oracle Corporation
+            Copyright (C) 2011-2016 Oracle Corporation
 
             This file is part of VirtualBox Open Source Edition (OSE), as
             available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +96,8 @@
     <!---->
     <String Id="Customize2Dlg_Header">Personalizza</String>
     <String Id="Customize2Dlg_Desc">Scegli dalle opzioni seguenti:</String>
-    <String Id="Customize2Dlg_CreateShortcut">Crea una scorciatoia sul desktop</String>
+    <String Id="Customize2Dlg_CreateStartMenuEntries">Create start menu entries</String>
+    <String Id="Customize2Dlg_CreateDesktopShortcut">Crea una scorciatoia sul desktop</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Crea una scorciatoia nella barra di avvio veloce</String>
     <String Id="Customize2Dlg_RegisterFileExtensions">Registrati associazioni di file</String>
     <!---->

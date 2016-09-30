@@ -2,7 +2,7 @@
 <!--
     VirtualBox Windows Installation Script (WiX)
 
-    Copyright (C) 2014-2015 Oracle Corporation
+    Copyright (C) 2014-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -60,7 +60,7 @@
     <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
     <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
     <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
-    
+
     <Property Id="NETWORKTYPE" Value="NDIS6" Secure="yes"/>
 
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
@@ -255,7 +255,7 @@
                 <Directory Id="INSTALLDIR" Name="VirtualBox">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <Merge Id="msm_VBoxApp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeApp)" DiskId="1">
-                    <ConfigurationData Name="argRegesterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/> 
+                    <ConfigurationData Name="argRegesterExtensions" Value="[VBOX_REGISTERFILEEXTENSIONS]"/>
                 </Merge>
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
                 <Merge Id="msm_VBoxCOM32On64" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeCOM32On64)" DiskId="1" />
@@ -283,7 +283,7 @@
                         <Directory Id="dir_NetFlt" Name="netflt">
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkFlt" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkFlt)" DiskId="1">
-                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
     <?else ?>
                             <Directory Id="msm_VBoxNetworkFltFolder" FileSource=".">
@@ -295,7 +295,7 @@
                         <Directory Id="dir_NetAdp" Name="netadp">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp)" DiskId="1">
-                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
 <?else ?>
                             <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
@@ -308,7 +308,7 @@
                         <Directory Id="dir_NetLwf" Name="netlwf">
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkLwf" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkLwf)" DiskId="1">
-                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
     <?else ?>
                             <Directory Id="msm_VBoxNetworkLwfFolder" FileSource=".">
@@ -320,7 +320,7 @@
                         <Directory Id="dir_NetAdp6" Name="netadp6">
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkAdp6" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp6)" DiskId="1">
-                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/> 
+                            <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
 <?else ?>
                             <Directory Id="msm_VBoxNetworkAdp6Folder" FileSource=".">
@@ -361,8 +361,9 @@
                     </Directory>
                 </Directory>
 
-                <!-- Shortcut(s) in start menu -->
+                <!-- Start menu entries. -->
                 <Component Id="cp_StartMenuVBox" Guid="C2DC321A-CE63-40EE-8A98-724DF8BD12FB" Win64="$(var.Property_Win64)">
+                    <Condition>VBOX_INSTALLSTARTMENUENTRIES</Condition>
                     <Shortcut Id="sc_StartMenuVBox" Directory="dir_StartMenuVBox" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
                               Target="[INSTALLDIR]VirtualBox.exe" WorkingDirectory="INSTALLDIR"/>
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
@@ -370,6 +371,7 @@
                     <?include $(env.PATH_TARGET)\Shortcuts_StartMenu.wxi ?>
                 </Component>
 
+                <!-- Desktop shortcut. -->
                 <Component Id="cp_DesktopShortcut" Guid="668F8A1A-F5CE-48B3-BB1A-3042EE27B279" Win64="$(var.Property_Win64)">
                     <Condition>VBOX_INSTALLDESKTOPSHORTCUT</Condition>
                     <Shortcut Id="sc_DesktopVBox" Directory="DesktopFolder" Name="$(env.VBOX_PRODUCT)" Description="$(env.VBOX_PRODUCT)"
@@ -378,6 +380,7 @@
                                    Value="installed" KeyPath="yes" />
                 </Component>
 
+                <!-- QuickLaunch shortcut. -->
                 <Component Id="cp_QuickLaunchVBox" Guid="CC19E026-938A-41CB-8E77-3F33296244B6" Win64="$(var.Property_Win64)">
                     <CreateFolder/>
                     <Condition>VBOX_INSTALLQUICKLAUNCHSHORTCUT</Condition>

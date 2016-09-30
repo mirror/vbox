@@ -4,7 +4,7 @@
     <!--
             Language Definition Include for VirtualBox WiX script.
 
-            Copyright (C) 2011-2015 Oracle Corporation
+            Copyright (C) 2011-2016 Oracle Corporation
 
             This file is part of VirtualBox Open Source Edition (OSE), as
             available from http://www.virtualbox.org. This file is free software;
@@ -123,7 +123,8 @@
 
 	<String Id="Customize2Dlg_Header">Özelleştir</String>
     <String Id="Customize2Dlg_Desc">Lütfen aşağıdaki seçeneklerden seçin:</String>
-    <String Id="Customize2Dlg_CreateShortcut">Masaüstüne kısayol oluştur</String>
+    <String Id="Customize2Dlg_CreateStartMenuEntries">Create start menu entries</String>
+    <String Id="Customize2Dlg_CreateDesktopShortcut">Masaüstüne kısayol oluştur</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Hızlı Başlat Çubuğuna kısayol oluştur</String>
 
 	<!---->
