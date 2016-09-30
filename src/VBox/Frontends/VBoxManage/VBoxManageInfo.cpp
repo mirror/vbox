@@ -1801,6 +1801,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 const char *pszMonitorStatus = "unknown status";
                 switch (monitorStatus)
                 {
+                    case GuestMonitorStatus_Blank:    pszMonitorStatus = "blank"; break;
                     case GuestMonitorStatus_Enabled:  pszMonitorStatus = "enabled"; break;
                     case GuestMonitorStatus_Disabled: pszMonitorStatus = "disabled"; break;
                     default: break;
