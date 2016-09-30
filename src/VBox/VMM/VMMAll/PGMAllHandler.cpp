@@ -214,12 +214,10 @@ int pgmHandlerPhysicalExRegister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS
      * Validate input.
      */
     AssertPtr(pPhysHandler);
-#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
     PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, pPhysHandler->hType);
     Assert(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC);
     Log(("pgmHandlerPhysicalExRegister: GCPhys=%RGp GCPhysLast=%RGp hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
          GCPhys, GCPhysLast, pPhysHandler->hType, pType->enmKind, R3STRING(pType->pszDesc), pPhysHandler->pszDesc, R3STRING(pPhysHandler->pszDesc)));
-#endif
     AssertReturn(pPhysHandler->Core.Key == NIL_RTGCPHYS, VERR_WRONG_ORDER);
 
     AssertMsgReturn(GCPhys < GCPhysLast, ("GCPhys >= GCPhysLast (%#x >= %#x)\n", GCPhys, GCPhysLast), VERR_INVALID_PARAMETER);
