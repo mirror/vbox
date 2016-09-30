@@ -214,16 +214,17 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
         int         rcRZ;        /* The RZ error code */
     } const s_aAccess[] =
     {
-        { "read MSR",                      " while not in x2APIC mode",   VINF_CPUM_R3_MSR_READ  },
-        { "write MSR",                     " while not in x2APIC mode",   VINF_CPUM_R3_MSR_WRITE },
-        { "read reserved/unknown MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
-        { "write reserved/unknown MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
-        { "read write-only MSR",           "",                            VINF_CPUM_R3_MSR_READ  },
-        { "write read-only MSR",           "",                            VINF_CPUM_R3_MSR_WRITE },
-        { "read reserved bits of MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
-        { "write reserved bits of MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
-        { "write an invalid value to MSR", "",                            VINF_CPUM_R3_MSR_WRITE },
-        { "write MSR",                     "disallowed by configuration", VINF_CPUM_R3_MSR_WRITE }
+        /* enmAccess  pszBefore                        pszAfter                       rcRZ */
+        /* 0 */     { "read MSR",                      " while not in x2APIC mode",   VINF_CPUM_R3_MSR_READ  },
+        /* 1 */     { "write MSR",                     " while not in x2APIC mode",   VINF_CPUM_R3_MSR_WRITE },
+        /* 2 */     { "read reserved/unknown MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
+        /* 3 */     { "write reserved/unknown MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
+        /* 4 */     { "read write-only MSR",           "",                            VINF_CPUM_R3_MSR_READ  },
+        /* 5 */     { "write read-only MSR",           "",                            VINF_CPUM_R3_MSR_WRITE },
+        /* 6 */     { "read reserved bits of MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
+        /* 7 */     { "write reserved bits of MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
+        /* 8 */     { "write an invalid value to MSR", "",                            VINF_CPUM_R3_MSR_WRITE },
+        /* 9 */     { "write MSR",                     "disallowed by configuration", VINF_CPUM_R3_MSR_WRITE }
     };
     AssertCompile(RT_ELEMENTS(s_aAccess) == APICMSRACCESS_COUNT);
 
