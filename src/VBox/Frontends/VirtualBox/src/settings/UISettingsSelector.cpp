@@ -38,7 +38,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** QAccessibleWidget extension used as an accessibility interface for UIToolBar. */
+/** QAccessibleWidget extension used as an accessibility interface for UIToolBar buttons. */
 class UIAccessibilityInterfaceForUIToolBarButton : public QAccessibleWidget
 {
 public:
@@ -46,7 +46,7 @@ public:
     /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
     static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
     {
-        /* Creating segmented-button accessibility interface: */
+        /* Creating toolbar button accessibility interface: */
         if (   pObject
             && strClassname == QLatin1String("QToolButton")
             && pObject->property("Belongs to") == "UISettingsSelectorToolBar")
@@ -58,10 +58,25 @@ public:
 
     /** Constructs an accessibility interface passing @a pWidget to the base-class. */
     UIAccessibilityInterfaceForUIToolBarButton(QWidget *pWidget)
-        : QAccessibleWidget(pWidget, QAccessible::RadioButton)
+        : QAccessibleWidget(pWidget, QAccessible::Button)
     {}
 
-    virtual QAccessible::State state() const
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */
+    {
+        /* Make sure button still alive: */
+        AssertPtrReturn(button(), QAccessible::NoRole);
+
+        /* Return role for checkable button: */
+        if (button()->isCheckable())
+            return QAccessible::RadioButton;
+
+        /* Return default role: */
+        return QAccessible::Button;
+    }
+
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */
     {
         /* Prepare the button state: */
         QAccessible::State state;
@@ -73,13 +88,13 @@ public:
         state.checkable = button()->isCheckable();
         state.checked = button()->isChecked();
 
-        /* Return the segment state: */
+        /* Return the button state: */
         return state;
     }
 
 private:
 
-    /** Returns corresponding segmented-button. */
+    /** Returns corresponding toolbar button. */
     QToolButton *button() const { return qobject_cast<QToolButton*>(widget()); }
 };
 
