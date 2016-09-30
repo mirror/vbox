@@ -1269,6 +1269,15 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 /** EPT capabilities. */
 #define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
+/** Allowed settings of all pin-based VM execution controls. */
+#define MSR_IA32_VMX_TRUE_PINBASED_CTLS     0x48D
+/** Allowed settings of all proc-based VM execution controls. */
+#define MSR_IA32_VMX_TRUE_PROCBASED_CTLS    0x48E
+/** Allowed settings of all VMX exit controls. */
+#define MSR_IA32_VMX_TRUE_EXIT_CTLS         0x48F
+/** Allowed settings of all VMX entry controls. */
+#define MSR_IA32_VMX_TRUE_ENTRY_CTLS        0x490
+
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
 /** Running Average Power Limit (RAPL) power units. */
