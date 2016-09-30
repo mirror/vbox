@@ -1600,8 +1600,11 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
 
     GuestMonitorStatus_T guestMonitorStatus = GuestMonitorStatus_Enabled;
+
     if (pFBInfo->flags & VBVA_SCREEN_F_DISABLED)
         guestMonitorStatus = GuestMonitorStatus_Disabled;
+    else if (pFBInfo->flags & (VBVA_SCREEN_F_BLANK | VBVA_SCREEN_F_BLANK2))
+        guestMonitorStatus = GuestMonitorStatus_Blank;
 
     if (aWidth)
         *aWidth = pFBInfo->w;
