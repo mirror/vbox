@@ -33,7 +33,10 @@ public:
 class ThreadTask
 {
 public:
-    ThreadTask(const Utf8Str &t) : m_hThread(NIL_RTTHREAD), m_strTaskName(t)
+    ThreadTask(const Utf8Str &t)
+        : m_hThread(NIL_RTTHREAD)
+        , m_strTaskName(t)
+        , mAsync(false)
     { }
 
     virtual ~ThreadTask()
@@ -43,8 +46,8 @@ public:
     HRESULT createThreadWithType(RTTHREADTYPE enmType);
     HRESULT createThreadWithRaceCondition(PRTTHREAD pThread);
 
-
     inline Utf8Str getTaskName() const { return m_strTaskName; }
+    bool isAsync() { return mAsync; }
 
 protected:
     HRESULT createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD pThread);
@@ -56,6 +59,7 @@ protected:
     /** The worker thread handle (may be invalid if the thread has shut down). */
     RTTHREAD m_hThread;
     Utf8Str m_strTaskName;
+    bool mAsync;
 
 private:
     virtual void handler() = 0;

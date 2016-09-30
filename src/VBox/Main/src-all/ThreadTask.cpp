@@ -96,6 +96,7 @@ HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD phThrea
                              this->getTaskName().c_str());
     if (RT_SUCCESS(vrc))
     {
+        mAsync = true;
         if (phThread)
             *phThread = m_hThread;
         return S_OK;
