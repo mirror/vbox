@@ -311,8 +311,17 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
             if (RT_SUCCESS(vrc))
                 vrc = RTSystemQueryAvailableRam(&cbHostRamAvail);
             if (RT_SUCCESS(vrc))
-                pfnLog(pReleaseLogger, "Host RAM: %lluMB total, %lluMB available\n",
-                       cbHostRam / _1M, cbHostRamAvail / _1M);
+            {
+                pfnLog(pReleaseLogger, "Host RAM: %lluMB", cbHostRam / _1M);
+                if (cbHostRam > _2G)
+                    pfnLog(pReleaseLogger, " (%lld.%lldGB)",
+                           cbHostRam / _1G, (cbHostRam % _1G) / (_1G / 10));
+                pfnLog(pReleaseLogger, " total, %lluMB", cbHostRamAvail / _1M);
+                if (cbHostRamAvail > _2G)
+                    pfnLog(pReleaseLogger, " (%lld.%lldGB)",
+                           cbHostRamAvail / _1G, (cbHostRamAvail % _1G) / (_1G / 10));
+                pfnLog(pReleaseLogger, " available\n");
+            }
 
             /* the package type is interesting for Linux distributions */
             char szExecName[RTPATH_MAX];
