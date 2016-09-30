@@ -2896,7 +2896,7 @@ vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RT
              */
             pThis->GCPhysVMMDevRAM = GCPhysAddress;
             Assert(pThis->GCPhysVMMDevRAM == GCPhysAddress);
-            rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+            rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
         }
         else
         {
@@ -2918,7 +2918,7 @@ vmmdevIORAMRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RT
              */
             pThis->GCPhysVMMDevHeap = GCPhysAddress;
             Assert(pThis->GCPhysVMMDevHeap == GCPhysAddress);
-            rc = PDMDevHlpMMIO2Map(pPciDev->pDevIns, iRegion, GCPhysAddress);
+            rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
             if (RT_SUCCESS(rc))
                 rc = PDMDevHlpRegisterVMMDevHeap(pPciDev->pDevIns, GCPhysAddress, pThis->pVMMDevHeapR3, VMMDEV_HEAP_SIZE);
         }

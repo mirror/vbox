@@ -519,6 +519,8 @@
 #define VERR_PGM_INVALID_LARGE_PAGE_RANGE       (-1645)
 /** Don't mess around with ballooned pages. */
 #define VERR_PGM_PHYS_PAGE_BALLOONED            (-1646)
+/** Internal processing error \#1 in page access handler code. */
+#define VERR_PGM_HANDLER_IPE_1                  (-1647)
 
 
 /** pgmPhysPageMapCommon encountered PGMPAGETYPE_MMIO2_ALIAS_MMIO. */

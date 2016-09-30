@@ -840,12 +840,12 @@ static int  ich9pciUnmapRegion(PPCIDEVICE pDev, int iRegion)
         else
         {
             RTGCPHYS GCPhysBase = pRegion->addr;
-            if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsR3, pDev->pDevIns, GCPhysBase))
+            if (pBus->pPciHlpR3->pfnIsMMIOExBase(pBus->pDevInsR3, pDev->pDevIns, GCPhysBase))
             {
                 /* unmap it. */
                 rc = pRegion->map_func(pDev, iRegion, NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
                 AssertRC(rc);
-                rc = PDMDevHlpMMIO2Unmap(pDev->pDevIns, iRegion, GCPhysBase);
+                rc = PDMDevHlpMMIOExUnmap(pDev->pDevIns, iRegion, GCPhysBase);
             }
             else
                 rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);

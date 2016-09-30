@@ -807,14 +807,15 @@ typedef struct PDMPCIHLPR3
     DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
 
     /**
-     * Checks if the given address is an MMIO2 base address or not.
+     * Checks if the given address is an MMIO2 or pre-registered MMIO base address.
      *
      * @returns true/false accordingly.
      * @param   pDevIns         The PCI device instance.
      * @param   pOwner          The owner of the memory, optional.
      * @param   GCPhys          The address to check.
+     * @sa      PGMR3PhysMMIOExIsBase
      */
-    DECLR3CALLBACKMEMBER(bool,  pfnIsMMIO2Base,(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys));
+    DECLR3CALLBACKMEMBER(bool,  pfnIsMMIOExBase,(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys));
 
     /**
      * Gets the address of the RC PCI Bus helpers.
@@ -866,7 +867,7 @@ typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 3, 0)
+#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 3, 1)
 
 
 /**
@@ -2524,27 +2525,26 @@ typedef struct PDMDEVHLPR3
                                                 void **ppv, const char *pszDesc));
 
     /**
-     * Deregisters and frees a MMIO2 region.
+     * Deregisters and frees a MMIO or MMIO2 region.
      *
      * Any physical (and virtual) access handlers registered for the region must
-     * be deregistered before calling this function.
+     * be deregistered before calling this function (MMIO2 only).
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   iRegion             The region number used during registration.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Deregister,(PPDMDEVINS pDevIns, uint32_t iRegion));
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExDeregister,(PPDMDEVINS pDevIns, uint32_t iRegion));
 
     /**
-     * Maps a MMIO2 region into the physical memory space.
+     * Maps a MMIO or MMIO2 region into the physical memory space.
      *
-     * A MMIO2 range may overlap with base memory if a lot of RAM
-     * is configured for the VM, in which case we'll drop the base
-     * memory pages. Presently we will make no attempt to preserve
-     * anything that happens to be present in the base memory that
-     * is replaced, this is of course incorrect but it's too much
-     * effort.
+     * A MMIO2 range or a pre-registered MMIO range may overlap with base memory if
+     * a lot of RAM is configured for the VM, in  which case we'll drop the base
+     * memory pages.  Presently we will make no attempt to preserve anything that
+     * happens to be present in the base memory that is replaced, this is of course
+     * incorrect but it's too much effort.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
@@ -2552,10 +2552,10 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              The physical address to map it at.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Map,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys));
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExMap,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys));
 
     /**
-     * Unmaps a MMIO2 region previously mapped using pfnMMIO2Map.
+     * Unmaps a MMIO or MMIO2 region previously mapped using pfnMMIOExMap.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
@@ -2563,7 +2563,7 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              The physical address it's currently mapped at.
      * @thread  EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIO2Unmap,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys));
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExUnmap,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys));
 
     /**
      * Maps a portion of an MMIO2 region into the hypervisor region.
@@ -3606,6 +3606,53 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(VMRESUMEREASON, pfnVMGetResumeReason,(PPDMDEVINS pDevIns));
 
+    /**
+     * Pre-register a Memory Mapped I/O (MMIO) region.
+     *
+     * This API must be used for large PCI MMIO regions, as it handles these much
+     * more efficiently and with greater flexibility when it comes to heap usage.
+     * It is only available during device construction.
+     *
+     * To map and unmap the pre-registered region into and our of guest address
+     * space, use the PDMDevHlpMMIOExMap and PDMDevHlpMMIOExUnmap helpers.
+     *
+     * You may call PDMDevHlpMMIOExDeregister from the destructor to free the region
+     * for reasons of symmetry, but it will be automatically deregistered by PDM
+     * once the destructor returns.
+     *
+     * @returns VBox status.
+     * @param   pDevIns             The device instance to register the MMIO with.
+     * @param   iRegion             The region number.
+     * @param   cbRegion            The size of the range (in bytes).
+     * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
+     * @param   pszDesc             Pointer to description string. This must not be freed.
+     * @param   pvUser              Ring-3 user argument.
+     * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
+     * @param   pfnRead             Pointer to function which is gonna handle Read operations.
+     * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
+     * @param   pvUserR0            Ring-0 user argument. Optional.
+     * @param   pszWriteR0          The name of the ring-0 write handler method. Optional.
+     * @param   pszReadR0           The name of the ring-0 read handler method. Optional.
+     * @param   pszFillR0           The name of the ring-0 fill/memset handler method. Optional.
+     * @param   pvUserRC            Raw-mode context user argument. Optional.  If
+     *                              unsigned value is 0x10000 or higher, it will be
+     *                              automatically relocated with the hypervisor
+     *                              guest mapping.
+     * @param   pszWriteRC          The name of the raw-mode context write handler method. Optional.
+     * @param   pszReadRC           The name of the raw-mode context read handler method. Optional.
+     * @param   pszFillRC           The name of the raw-mode context fill/memset handler method. Optional.
+     * @thread  EMT
+     *
+     * @remarks Caller enters the device critical section prior to invoking the
+     *          registered callback methods.
+     * @sa      PDMDevHlpMMIOExMap, PDMDevHlpMMIOExUnmap, PDMDevHlpMMIOExDeregister,
+     *          PDMDevHlpMMIORegisterEx
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExPreRegister,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                                    uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
+                                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                    RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
+                                                    RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC));
 
     /** Space reserved for future members.
      * @{ */
@@ -3615,8 +3662,8 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
-    DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
-    /*DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
+    DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved9,(void));*/
     /*DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));*/
     /** @} */
@@ -3818,7 +3865,7 @@ typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
 /* 5.0 is (18, 0) so the next version for trunk has to be (19, 0)! */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 1)
 
 
 /**
@@ -4643,27 +4690,42 @@ DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTG
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Deregister
+ * @copydoc PDMDEVHLPR3::pfnMMIOExPreRegister
  */
-DECLINLINE(int) PDMDevHlpMMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
+DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                           uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
+                                           PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                           RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
+                                           RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC)
 {
-    return pDevIns->pHlpR3->pfnMMIO2Deregister(pDevIns, iRegion);
+    return pDevIns->pHlpR3->pfnMMIOExPreRegister(pDevIns, iRegion, cbRegion, fFlags, pszDesc,
+                                                 pvUser, pfnWrite, pfnRead, pfnFill,
+                                                 pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
+                                                 pvUserRC, pszWriteRC, pszReadRC, pszFillRC);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Map
+ * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
  */
-DECLINLINE(int) PDMDevHlpMMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, uint32_t iRegion)
 {
-    return pDevIns->pHlpR3->pfnMMIO2Map(pDevIns, iRegion, GCPhys);
+    return pDevIns->pHlpR3->pfnMMIOExDeregister(pDevIns, iRegion);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Unmap
+ * @copydoc PDMDEVHLPR3::pfnMMIOExMap
  */
-DECLINLINE(int) PDMDevHlpMMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
-    return pDevIns->pHlpR3->pfnMMIO2Unmap(pDevIns, iRegion, GCPhys);
+    return pDevIns->pHlpR3->pfnMMIOExMap(pDevIns, iRegion, GCPhys);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
+ */
+DECLINLINE(int) PDMDevHlpMMIOExUnmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+{
+    return pDevIns->pHlpR3->pfnMMIOExUnmap(pDevIns, iRegion, GCPhys);
 }
 
 /**

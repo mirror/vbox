@@ -1653,6 +1653,218 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
 
 
 /**
+ * Pre-Registers a MMIO region.
+ *
+ * The rest of of the manipulation of this region goes thru the PGMPhysMMIOEx*
+ * APIs: PGMR3PhysMMIOExMap, PGMR3PhysMMIOExUnmap, PGMR3PhysMMIOExDeregister
+ *
+ * @returns VBox status code.
+ * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pDevIns             The device.
+ * @param   iRegion             The region number.
+ * @param   cbRegion            The size of the MMIO region.  Must be a multiple
+ *                              of X86_PAGE_SIZE
+ * @param   fFlags              Flags, see IOMMMIO_FLAGS_XXX.
+ * @param   pszDesc             Pointer to description string. This must not be
+ *                              freed.
+ * @param   pvUserR3            Ring-3 user pointer.
+ * @param   pfnWriteCallbackR3  Callback for handling writes, ring-3. Mandatory.
+ * @param   pfnReadCallbackR3   Callback for handling reads, ring-3. Mandatory.
+ * @param   pfnFillCallbackR3   Callback for handling fills, ring-3. Optional.
+ * @param   pvUserR0            Ring-0 user pointer.
+ * @param   pfnWriteCallbackR0  Callback for handling writes, ring-0. Optional.
+ * @param   pfnReadCallbackR0   Callback for handling reads, ring-0. Optional.
+ * @param   pfnFillCallbackR0   Callback for handling fills, ring-0. Optional.
+ * @param   pvUserRC            Raw-mode context user pointer.  This will be
+ *                              relocated with the hypervisor guest mapping if
+ *                              the unsigned integer value is 0x10000 or above.
+ * @param   pfnWriteCallbackRC  Callback for handling writes, RC. Optional.
+ * @param   pfnReadCallbackRC   Callback for handling reads, RC. Optional.
+ * @param   pfnFillCallbackRC   Callback for handling fills, RC. Optional.
+ */
+VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                            uint32_t fFlags, const char *pszDesc,
+                                            RTR3PTR pvUserR3,
+                                            R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackR3,
+                                            R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackR3,
+                                            R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackR3,
+                                            RTR0PTR pvUserR0,
+                                            R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackR0,
+                                            R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackR0,
+                                            R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackR0,
+                                            RTRCPTR pvUserRC,
+                                            RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackRC,
+                                            RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackRC,
+                                            RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackRC)
+{
+    LogFlow(("IOMR3MmioExPreRegister: pDevIns=%p iRegion=%u cbRegion=%RGp fFlags=%#x pszDesc=%s\n"
+             "                        pvUserR3=%RHv pfnWriteCallbackR3=%RHv pfnReadCallbackR3=%RHv pfnFillCallbackR3=%RHv\n"
+             "                        pvUserR0=%RHv pfnWriteCallbackR0=%RHv pfnReadCallbackR0=%RHv pfnFillCallbackR0=%RHv\n"
+             "                        pvUserRC=%RRv pfnWriteCallbackRC=%RRv pfnReadCallbackRC=%RRv pfnFillCallbackRC=%RRv\n",
+             pDevIns, iRegion, cbRegion, fFlags, pszDesc,
+             pvUserR3, pfnWriteCallbackR3, pfnReadCallbackR3, pfnFillCallbackR3,
+             pvUserR0, pfnWriteCallbackR0, pfnReadCallbackR0, pfnFillCallbackR0,
+             pvUserRC, pfnWriteCallbackRC, pfnReadCallbackRC, pfnFillCallbackRC));
+
+    /*
+     * Validate input.
+     */
+    AssertReturn(cbRegion > 0,  VERR_INVALID_PARAMETER);
+    AssertReturn(RT_ALIGN_T(cbRegion, X86_PAGE_SIZE, RTGCPHYS), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
+                    && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
+                    && (fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
+                    ("%#x\n", fFlags),
+                    VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnWriteCallbackR3, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnReadCallbackR3, VERR_INVALID_POINTER);
+
+    /*
+     * Allocate new range record and initialize it.
+     */
+    PIOMMMIORANGE pRange;
+    int rc = MMHyperAlloc(pVM, sizeof(*pRange), 0, MM_TAG_IOM, (void **)&pRange);
+    if (RT_SUCCESS(rc))
+    {
+        pRange->Core.Key            = NIL_RTGCPHYS;
+        pRange->Core.KeyLast        = NIL_RTGCPHYS;
+        pRange->GCPhys              = NIL_RTGCPHYS;
+        pRange->cb                  = cbRegion;
+        pRange->cRefs               = 1; /* The PGM reference. */
+        pRange->fFlags              = fFlags;
+
+        pRange->pvUserR3            = pvUserR3;
+        pRange->pDevInsR3           = pDevIns;
+        pRange->pfnReadCallbackR3   = pfnReadCallbackR3;
+        pRange->pfnWriteCallbackR3  = pfnWriteCallbackR3;
+        pRange->pfnFillCallbackR3   = pfnFillCallbackR3;
+        pRange->pszDesc             = pszDesc;
+
+        if (pfnReadCallbackR0 || pfnWriteCallbackR0 || pfnFillCallbackR0)
+        {
+            pRange->pvUserR0            = pvUserR0;
+            pRange->pDevInsR0           = MMHyperCCToR0(pVM, pDevIns);
+            pRange->pfnReadCallbackR0   = pfnReadCallbackR0;
+            pRange->pfnWriteCallbackR0  = pfnWriteCallbackR0;
+            pRange->pfnFillCallbackR0   = pfnFillCallbackR0;
+        }
+
+        if (pfnReadCallbackRC || pfnWriteCallbackRC || pfnFillCallbackRC)
+        {
+            pRange->pvUserRC            = pvUserRC;
+            pRange->pDevInsRC           = MMHyperCCToRC(pVM, pDevIns);
+            pRange->pfnReadCallbackRC   = pfnReadCallbackRC;
+            pRange->pfnWriteCallbackRC  = pfnWriteCallbackRC;
+            pRange->pfnFillCallbackRC   = pfnFillCallbackRC;
+        }
+
+        /*
+         * Try register it with PGM.  PGM will call us back when it's mapped in
+         * and out of the guest address space, and once it's destroyed.
+         */
+        rc = PGMR3PhysMMIOExPreRegister(pVM, pDevIns, iRegion, cbRegion, pVM->iom.s.hMmioHandlerType,
+                                        pRange, MMHyperR3ToR0(pVM, pRange), MMHyperR3ToRC(pVM, pRange), pszDesc);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+
+        MMHyperFree(pVM, pRange);
+    }
+    if (pDevIns->iInstance > 0)
+        MMR3HeapFree((void *)pszDesc);
+    return rc;
+
+}
+
+
+/**
+ * Notfication from PGM that the pre-registered MMIO region has been mapped into
+ * user address space.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pvUser          The pvUserR3 argument of PGMR3PhysMMIOExPreRegister.
+ * @param   GCPhys          The mapping address.
+ * @remarks Called while owning the PGM lock.
+ */
+VMMR3_INT_DECL(int) IOMR3MmioExNotifyMapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys)
+{
+    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
+    AssertReturn(pRange->GCPhys == NIL_RTGCPHYS, VERR_IOM_MMIO_IPE_1);
+
+    IOM_LOCK_EXCL(pVM);
+    Assert(pRange->GCPhys == NIL_RTGCPHYS);
+    pRange->GCPhys       = GCPhys;
+    pRange->Core.Key     = GCPhys;
+    pRange->Core.KeyLast = GCPhys + pRange->cb - 1;
+    if (RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRange->Core))
+    {
+        iomR3FlushCache(pVM);
+        IOM_UNLOCK_EXCL(pVM);
+        return VINF_SUCCESS;
+    }
+    IOM_UNLOCK_EXCL(pVM);
+
+    AssertLogRelMsgFailed(("RTAvlroGCPhysInsert failed on %RGp..%RGp - %s\n", pRange->Core.Key, pRange->Core.KeyLast, pRange->pszDesc));
+    pRange->GCPhys       = NIL_RTGCPHYS;
+    pRange->Core.Key     = NIL_RTGCPHYS;
+    pRange->Core.KeyLast = NIL_RTGCPHYS;
+    return VERR_IOM_MMIO_IPE_2;
+}
+
+
+/**
+ * Notfication from PGM that the pre-registered MMIO region has been unmapped
+ * from user address space.
+ *
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pvUser          The pvUserR3 argument of PGMR3PhysMMIOExPreRegister.
+ * @param   GCPhys          The mapping address.
+ * @remarks Called while owning the PGM lock.
+ */
+VMMR3_INT_DECL(void) IOMR3MmioExNotifyUnmapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys)
+{
+    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
+    AssertLogRelReturnVoid(pRange->GCPhys == GCPhys);
+
+    IOM_LOCK_EXCL(pVM);
+    Assert(pRange->GCPhys == GCPhys);
+    PIOMMMIORANGE pRemoved = (PIOMMMIORANGE)RTAvlroGCPhysRemove(&pVM->iom.s.pTreesR3->MMIOTree, GCPhys);
+    if (pRemoved == pRange)
+    {
+        pRange->GCPhys       = NIL_RTGCPHYS;
+        pRange->Core.Key     = NIL_RTGCPHYS;
+        pRange->Core.KeyLast = NIL_RTGCPHYS;
+        iomR3FlushCache(pVM);
+        IOM_UNLOCK_EXCL(pVM);
+    }
+    else
+    {
+        if (pRemoved)
+            RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRemoved->Core);
+        IOM_UNLOCK_EXCL(pVM);
+        AssertLogRelMsgFailed(("RTAvlroGCPhysRemove returned %p instead of %p for %RGp (%s)\n", pRemoved, pRange, pRange->pszDesc));
+    }
+}
+
+
+/**
+ * Notfication from PGM that the pre-registered MMIO region has been mapped into
+ * user address space.
+ *
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pvUser          The pvUserR3 argument of PGMR3PhysMMIOExPreRegister.
+ * @param   GCPhys          The mapping address.
+ * @remarks Called while owning the PGM lock.
+ */
+VMMR3_INT_DECL(void) IOMR3MmioExNotifyDeregistered(PVM pVM, void *pvUser)
+{
+    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
+    AssertLogRelReturnVoid(pRange->GCPhys == NIL_RTGCPHYS);
+    iomMmioReleaseRange(pVM, pRange);
+}
+
+
+/**
  * Handles the unlikely and probably fatal merge cases.
  *
  * @returns Merged status code.

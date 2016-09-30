@@ -741,12 +741,14 @@ VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
                                           RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 VMMR3DECL(int)      PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
-VMMR3DECL(int)      PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion);
-VMMR3DECL(int)      PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-VMMR3DECL(int)      PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
-VMMR3DECL(bool)     PGMR3PhysMMIO2IsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
-VMMR3DECL(int)      PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
-VMMR3DECL(int)      PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr);
+VMMR3DECL(int)      PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
+                                               RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc);
+VMMR3DECL(int)      PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion);
+VMMR3DECL(int)      PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+VMMR3DECL(int)      PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys);
+VMMR3DECL(bool)     PGMR3PhysMMIOExIsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
+VMMR3_INT_DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
+VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr);
 
 /** @name PGMR3PhysRegisterRom flags.
  * @{ */

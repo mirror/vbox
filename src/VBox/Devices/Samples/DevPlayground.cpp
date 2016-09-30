@@ -79,30 +79,22 @@ PDMBOTHCBDECL(int) devPlaygroundMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int)
+devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    NOREF(enmType);
-    int rc;
+    RT_NOREF(enmType, cb);
 
     switch (iRegion)
     {
         case 0:
-            rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL,
-                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                       devPlaygroundMMIOWrite, devPlaygroundMMIORead, "PG-BAR0");
-            break;
         case 2:
-            rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL,
-                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                       devPlaygroundMMIOWrite, devPlaygroundMMIORead, "PG-BAR2");
-            break;
+            Assert(enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64));
+            return PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
+
         default:
             /* We should never get here */
-            AssertMsgFailed(("Invalid PCI region param in map callback"));
-            rc = VERR_INTERNAL_ERROR;
+            AssertMsgFailedReturn(("Invalid PCI region param in map callback"), VERR_INTERNAL_ERROR);
     }
-    return rc;
-
 }
 
 
@@ -152,16 +144,27 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     int rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
     if (RT_FAILURE(rc))
         return rc;
+    /* First region. */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8*_1G64,
                                       (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
                                       devPlaygroundMap);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, 8*_1G64,
+    AssertLogRelRCReturn(rc, rc);
+    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 0, 8*_1G64, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR0",
+                                    NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
+                                    NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
+                                    NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Second region. */
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, 64*_1G64,
                                       (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
                                       devPlaygroundMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertLogRelRCReturn(rc, rc);
+    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 2, 64*_1G64, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR2",
+                                    NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
+                                    NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
+                                    NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+    AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }

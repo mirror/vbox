@@ -443,54 +443,142 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t 
 
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Deregister
+ * @interface_method_impl{PDMDEVHLPR3,pfnMMIOExPreRegister}
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
+static DECLCALLBACK(int)
+pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, uint32_t fFlags, const char *pszDesc,
+                              RTHCPTR pvUser, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                              RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
+                              RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_MMIOExPreRegister: caller='%s'/%d: iRegion=%#x cbRegion=%#RGp fFlags=%RX32 pszDesc=%p:{%s}\n"
+             "                               pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p\n"
+             "                               pvUserR0=%p pszWriteR0=%s pszReadR0=%s pszFillR0=%s\n"
+             "                               pvUserRC=%p pszWriteRC=%s pszReadRC=%s pszFillRC=%s\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, iRegion, cbRegion, fFlags, pszDesc, pszDesc,
+             pvUser, pfnWrite, pfnRead, pfnFill,
+             pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
+             pvUserRC, pszWriteRC, pszReadRC, pszFillRC));
+
+    /*
+     * Resolve the functions.
+     */
+    AssertLogRelReturn(   (!pszWriteR0 && !pszReadR0 && !pszFillR0)
+                       || (pDevIns->pReg->szR0Mod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)),
+                       VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(   (!pszWriteRC && !pszReadRC && !pszFillRC)
+                       || (pDevIns->pReg->szRCMod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)),
+                       VERR_INVALID_PARAMETER);
+
+    /* Ring-0 */
+    int rc;
+    R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteR0 = 0;
+    if (pszWriteR0)
+    {
+        rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszWriteR0, &pfnWriteR0);
+        AssertLogRelMsgRCReturn(rc, ("pszWriteR0=%s rc=%Rrc\n", pszWriteR0, rc), rc);
+    }
+
+    R0PTRTYPE(PFNIOMMMIOREAD) pfnReadR0 = 0;
+    if (pszReadR0)
+    {
+        rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszReadR0, &pfnReadR0);
+        AssertLogRelMsgRCReturn(rc, ("pszReadR0=%s rc=%Rrc\n", pszReadR0, rc), rc);
+    }
+    R0PTRTYPE(PFNIOMMMIOFILL) pfnFillR0 = 0;
+    if (pszFillR0)
+    {
+        rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszFillR0, &pfnFillR0);
+        AssertLogRelMsgRCReturn(rc, ("pszFillR0=%s rc=%Rrc\n", pszFillR0, rc), rc);
+    }
+
+    /* Raw-mode */
+    rc = VINF_SUCCESS;
+    RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteRC = 0;
+    if (pszWriteRC)
+    {
+        rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszWriteRC, &pfnWriteRC);
+        AssertLogRelMsgRCReturn(rc, ("pszWriteRC=%s rc=%Rrc\n", pszWriteRC, rc), rc);
+    }
+
+    RCPTRTYPE(PFNIOMMMIOREAD) pfnReadRC = 0;
+    if (pszReadRC)
+    {
+        rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszReadRC, &pfnReadRC);
+        AssertLogRelMsgRCReturn(rc, ("pszReadRC=%s rc=%Rrc\n", pszReadRC, rc), rc);
+    }
+    RCPTRTYPE(PFNIOMMMIOFILL) pfnFillRC = 0;
+    if (pszFillRC)
+    {
+        rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszFillRC, &pfnFillRC);
+        AssertLogRelMsgRCReturn(rc, ("pszFillRC=%s rc=%Rrc\n", pszFillRC, rc), rc);
+    }
+
+    /*
+     * Call IOM to make the registration.
+     */
+    rc = IOMR3MmioExPreRegister(pVM, pDevIns, iRegion, cbRegion, fFlags, pszDesc,
+                                pvUser,   pfnWrite,   pfnRead,   pfnFill,
+                                pvUserR0, pfnWriteR0, pfnReadR0, pfnFillR0,
+                                pvUserRC, pfnWriteRC, pfnReadRC, pfnFillRC);
+
+    LogFlow(("pdmR3DevHlp_MMIOExPreRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
+ */
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, uint32_t iRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIO2Deregister: caller='%s'/%d: iRegion=%#x\n",
+    LogFlow(("pdmR3DevHlp_MMIOExDeregister: caller='%s'/%d: iRegion=%#x\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iRegion));
 
     AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
 
-    int rc = PGMR3PhysMMIO2Deregister(pDevIns->Internal.s.pVMR3, pDevIns, iRegion);
+    int rc = PGMR3PhysMMIOExDeregister(pDevIns->Internal.s.pVMR3, pDevIns, iRegion);
 
-    LogFlow(("pdmR3DevHlp_MMIO2Deregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIOExDeregister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Map
+ * @copydoc PDMDEVHLPR3::pfnMMIOExMap
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIO2Map: caller='%s'/%d: iRegion=%#x GCPhys=%#RGp\n",
+    LogFlow(("pdmR3DevHlp_MMIOExMap: caller='%s'/%d: iRegion=%#x GCPhys=%#RGp\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iRegion, GCPhys));
 
-    int rc = PGMR3PhysMMIO2Map(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, GCPhys);
+    int rc = PGMR3PhysMMIOExMap(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, GCPhys);
 
-    LogFlow(("pdmR3DevHlp_MMIO2Map: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIOExMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIO2Unmap
+ * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_MMIO2Unmap: caller='%s'/%d: iRegion=%#x GCPhys=%#RGp\n",
+    LogFlow(("pdmR3DevHlp_MMIOExUnmap: caller='%s'/%d: iRegion=%#x GCPhys=%#RGp\n",
              pDevIns->pReg->szName, pDevIns->iInstance, iRegion, GCPhys));
 
-    int rc = PGMR3PhysMMIO2Unmap(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, GCPhys);
+    int rc = PGMR3PhysMMIOExUnmap(pDevIns->Internal.s.pVMR3, pDevIns, iRegion, GCPhys);
 
-    LogFlow(("pdmR3DevHlp_MMIO2Unmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    LogFlow(("pdmR3DevHlp_MMIOExUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -3620,9 +3708,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MMIORegisterR0,
     pdmR3DevHlp_MMIODeregister,
     pdmR3DevHlp_MMIO2Register,
-    pdmR3DevHlp_MMIO2Deregister,
-    pdmR3DevHlp_MMIO2Map,
-    pdmR3DevHlp_MMIO2Unmap,
+    pdmR3DevHlp_MMIOExDeregister,
+    pdmR3DevHlp_MMIOExMap,
+    pdmR3DevHlp_MMIOExUnmap,
     pdmR3DevHlp_MMHyperMapMMIO2,
     pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
@@ -3698,7 +3786,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CallR0,
     pdmR3DevHlp_VMGetSuspendReason,
     pdmR3DevHlp_VMGetResumeReason,
-    0,
+    pdmR3DevHlp_MMIOExPreRegister,
     0,
     0,
     0,
@@ -3873,9 +3961,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MMIORegisterR0,
     pdmR3DevHlp_MMIODeregister,
     pdmR3DevHlp_MMIO2Register,
-    pdmR3DevHlp_MMIO2Deregister,
-    pdmR3DevHlp_MMIO2Map,
-    pdmR3DevHlp_MMIO2Unmap,
+    pdmR3DevHlp_MMIOExDeregister,
+    pdmR3DevHlp_MMIOExMap,
+    pdmR3DevHlp_MMIOExUnmap,
     pdmR3DevHlp_MMHyperMapMMIO2,
     pdmR3DevHlp_MMIO2MapKernel,
     pdmR3DevHlp_ROMRegister,
@@ -3951,7 +4039,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CallR0,
     pdmR3DevHlp_VMGetSuspendReason,
     pdmR3DevHlp_VMGetResumeReason,
-    0,
+    pdmR3DevHlp_MMIOExPreRegister,
     0,
     0,
     0,

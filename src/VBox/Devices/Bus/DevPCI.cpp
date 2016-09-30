@@ -318,12 +318,12 @@ static void pci_update_mappings(PCIDevice *d)
                     } else {
                         RTGCPHYS GCPhysBase = r->addr;
                         int rc;
-                        if (pBus->pPciHlpR3->pfnIsMMIO2Base(pBus->pDevInsR3, d->pDevIns, GCPhysBase))
+                        if (pBus->pPciHlpR3->pfnIsMMIOExBase(pBus->pDevInsR3, d->pDevIns, GCPhysBase))
                         {
                             /* unmap it. */
                             rc = r->map_func(d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
                             AssertRC(rc);
-                            rc = PDMDevHlpMMIO2Unmap(d->pDevIns, i, GCPhysBase);
+                            rc = PDMDevHlpMMIOExUnmap(d->pDevIns, i, GCPhysBase);
                         }
                         else
                             rc = PDMDevHlpMMIODeregister(d->pDevIns, GCPhysBase, r->size);

@@ -38,7 +38,11 @@
 
 /** The maximum number of pages that can be allocated and mapped
  * by various MM, PGM and SUP APIs. */
-#define VBOX_MAX_ALLOC_PAGE_COUNT   (256U * _1M / PAGE_SIZE)
+#if ARCH_BITS == 64
+# define VBOX_MAX_ALLOC_PAGE_COUNT   (_512M / PAGE_SIZE)
+#else
+# define VBOX_MAX_ALLOC_PAGE_COUNT   (_256M / PAGE_SIZE)
+#endif
 
 /** @def VBOX_WITH_PAGE_SHARING
  * Enables the page sharing code.

@@ -633,7 +633,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
     /*
      * Map the MMIO2 region over the specified guest-physical address.
      */
-    int rc = PDMDevHlpMMIO2Map(pDevIns, pRegion->iRegion, GCPhysRegion);
+    int rc = PDMDevHlpMMIOExMap(pDevIns, pRegion->iRegion, GCPhysRegion);
     if (RT_SUCCESS(rc))
     {
         /*

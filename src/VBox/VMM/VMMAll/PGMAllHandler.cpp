@@ -122,6 +122,177 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType
 }
 
 
+/**
+ * Creates an physical access handler.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when successfully installed.
+ * @retval  VINF_PGM_GCPHYS_ALIASED when the shadow PTs could be updated because
+ *          the guest page aliased or/and mapped by multiple PTs. A CR3 sync has been
+ *          flagged together with a pool clearing.
+ * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
+ *          one. A debug assertion is raised.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   hType           The handler type registration handle.
+ * @param   pvUserR3        User argument to the R3 handler.
+ * @param   pvUserR0        User argument to the R0 handler.
+ * @param   pvUserRC        User argument to the RC handler. This can be a value
+ *                          less that 0x10000 or a (non-null) pointer that is
+ *                          automatically relocated.
+ * @param   pszDesc         Description of this handler.  If NULL, the type
+ *                          description will be used instead.
+ * @param   ppPhysHandler   Where to return the access handler structure on
+ *                          success.
+ */
+int pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
+                               R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler)
+{
+    PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, hType);
+    Log(("pgmHandlerPhysicalExCreate: pvUserR3=%RHv pvUserR0=%RHv pvUserGC=%RRv hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
+         pvUserR3, pvUserR0, pvUserRC, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
+
+    /*
+     * Validate input.
+     */
+    AssertPtr(ppPhysHandler);
+    AssertReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, VERR_INVALID_HANDLE);
+    AssertMsgReturn(    (RTRCUINTPTR)pvUserRC < 0x10000
+                    ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
+                    ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
+                    ||  MMHyperR3ToR0(pVM, MMHyperR0ToR3(pVM, pvUserR0)) == pvUserR0,
+                    ("Not R0 pointer! pvUserR0=%RHv\n", pvUserR0),
+                    VERR_INVALID_PARAMETER);
+
+    /*
+     * Allocate and initialize the new entry.
+     */
+    PPGMPHYSHANDLER pNew;
+    int rc = MMHyperAlloc(pVM, sizeof(*pNew), 0, MM_TAG_PGM_HANDLERS, (void **)&pNew);
+    if (RT_SUCCESS(rc))
+    {
+        pNew->Core.Key      = NIL_RTGCPHYS;
+        pNew->Core.KeyLast  = NIL_RTGCPHYS;
+        pNew->cPages        = 0;
+        pNew->cAliasedPages = 0;
+        pNew->cTmpOffPages  = 0;
+        pNew->pvUserR3      = pvUserR3;
+        pNew->pvUserR0      = pvUserR0;
+        pNew->pvUserRC      = pvUserRC;
+        pNew->hType         = hType;
+        pNew->pszDesc       = pszDesc != NIL_RTR3PTR ? pszDesc : pType->pszDesc;
+        pgmHandlerPhysicalTypeRetain(pVM, pType);
+        *ppPhysHandler = pNew;
+        return VINF_SUCCESS;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Register a access handler for a physical range.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when successfully installed.
+ * @retval  VINF_PGM_GCPHYS_ALIASED when the shadow PTs could be updated because
+ *          the guest page aliased or/and mapped by multiple PTs. A CR3 sync has been
+ *          flagged together with a pool clearing.
+ * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
+ *          one. A debug assertion is raised.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pPhysHandler    The physical handler.
+ * @param   GCPhys          Start physical address.
+ * @param   GCPhysLast      Last physical address. (inclusive)
+ */
+int pgmHandlerPhysicalExRegister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtr(pPhysHandler);
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
+    PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, pPhysHandler->hType);
+    Assert(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC);
+    Log(("pgmHandlerPhysicalExRegister: GCPhys=%RGp GCPhysLast=%RGp hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
+         GCPhys, GCPhysLast, pPhysHandler->hType, pType->enmKind, R3STRING(pType->pszDesc), pPhysHandler->pszDesc, R3STRING(pPhysHandler->pszDesc)));
+#endif
+    AssertReturn(pPhysHandler->Core.Key == NIL_RTGCPHYS, VERR_WRONG_ORDER);
+
+    AssertMsgReturn(GCPhys < GCPhysLast, ("GCPhys >= GCPhysLast (%#x >= %#x)\n", GCPhys, GCPhysLast), VERR_INVALID_PARAMETER);
+    switch (pType->enmKind)
+    {
+        case PGMPHYSHANDLERKIND_WRITE:
+            break;
+        case PGMPHYSHANDLERKIND_MMIO:
+        case PGMPHYSHANDLERKIND_ALL:
+            /* Simplification for PGMPhysRead, PGMR0Trap0eHandlerNPMisconfig and others: Full pages. */
+            AssertMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_INVALID_PARAMETER);
+            AssertMsgReturn((GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, ("%RGp\n", GCPhysLast), VERR_INVALID_PARAMETER);
+            break;
+        default:
+            AssertMsgFailed(("Invalid input enmKind=%d!\n", pType->enmKind));
+            return VERR_INVALID_PARAMETER;
+    }
+
+    /*
+     * We require the range to be within registered ram.
+     * There is no apparent need to support ranges which cover more than one ram range.
+     */
+    PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
+    if (   !pRam
+        || GCPhysLast < pRam->GCPhys
+        || GCPhys > pRam->GCPhysLast)
+    {
+#ifdef IN_RING3
+        DBGFR3Info(pVM->pUVM, "phys", NULL, NULL);
+#endif
+        AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
+        return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
+    }
+
+    /*
+     * Try insert into list.
+     */
+    pPhysHandler->Core.Key     = GCPhys;
+    pPhysHandler->Core.KeyLast = GCPhysLast;
+    pPhysHandler->cPages       = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
+
+    pgmLock(pVM);
+    if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pPhysHandler->Core))
+    {
+        int rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pPhysHandler, pRam);
+        if (rc == VINF_PGM_SYNC_CR3)
+            rc = VINF_PGM_GCPHYS_ALIASED;
+        pgmUnlock(pVM);
+
+#ifdef VBOX_WITH_REM
+# ifndef IN_RING3
+        REMNotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
+# else
+        REMR3NotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
+# endif
+#endif
+        if (rc != VINF_SUCCESS)
+            Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
+        return rc;
+    }
+    pgmUnlock(pVM);
+
+    pPhysHandler->Core.Key     = NIL_RTGCPHYS;
+    pPhysHandler->Core.KeyLast = NIL_RTGCPHYS;
+
+#if defined(IN_RING3) && defined(VBOX_STRICT)
+    DBGFR3Info(pVM->pUVM, "handlers", "phys nostats", NULL);
+#endif
+    AssertMsgFailed(("Conflict! GCPhys=%RGp GCPhysLast=%RGp pszDesc=%s/%s\n",
+                     GCPhys, GCPhysLast, R3STRING(pPhysHandler->pszDesc), R3STRING(pType->pszDesc)));
+    return VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
+}
+
 
 /**
  * Register a access handler for a physical range.
@@ -153,103 +324,16 @@ VMMDECL(int) PGMHandlerPhysicalRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhy
     Log(("PGMHandlerPhysicalRegister: GCPhys=%RGp GCPhysLast=%RGp pvUserR3=%RHv pvUserR0=%RHv pvUserGC=%RRv hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
          GCPhys, GCPhysLast, pvUserR3, pvUserR0, pvUserRC, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
 
-    /*
-     * Validate input.
-     */
-    AssertReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, VERR_INVALID_HANDLE);
-    AssertMsgReturn(GCPhys < GCPhysLast, ("GCPhys >= GCPhysLast (%#x >= %#x)\n", GCPhys, GCPhysLast), VERR_INVALID_PARAMETER);
-    switch (pType->enmKind)
-    {
-        case PGMPHYSHANDLERKIND_WRITE:
-            break;
-        case PGMPHYSHANDLERKIND_MMIO:
-        case PGMPHYSHANDLERKIND_ALL:
-            /* Simplification for PGMPhysRead, PGMR0Trap0eHandlerNPMisconfig and others: Full pages. */
-            AssertMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_INVALID_PARAMETER);
-            AssertMsgReturn((GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, ("%RGp\n", GCPhysLast), VERR_INVALID_PARAMETER);
-            break;
-        default:
-            AssertMsgFailed(("Invalid input enmKind=%d!\n", pType->enmKind));
-            return VERR_INVALID_PARAMETER;
-    }
-    AssertMsgReturn(    (RTRCUINTPTR)pvUserRC < 0x10000
-                    ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
-                    ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
-                    ||  MMHyperR3ToR0(pVM, MMHyperR0ToR3(pVM, pvUserR0)) == pvUserR0,
-                    ("Not R0 pointer! pvUserR0=%RHv\n", pvUserR0),
-                    VERR_INVALID_PARAMETER);
-
-    /*
-     * We require the range to be within registered ram.
-     * There is no apparent need to support ranges which cover more than one ram range.
-     */
-    PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
-    if (   !pRam
-        || GCPhysLast < pRam->GCPhys
-        || GCPhys > pRam->GCPhysLast)
-    {
-#ifdef IN_RING3
-        DBGFR3Info(pVM->pUVM, "phys", NULL, NULL);
-#endif
-        AssertMsgFailed(("No RAM range for %RGp-%RGp\n", GCPhys, GCPhysLast));
-        return VERR_PGM_HANDLER_PHYSICAL_NO_RAM_RANGE;
-    }
-
-    /*
-     * Allocate and initialize the new entry.
-     */
     PPGMPHYSHANDLER pNew;
-    int rc = MMHyperAlloc(pVM, sizeof(*pNew), 0, MM_TAG_PGM_HANDLERS, (void **)&pNew);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pNew->Core.Key      = GCPhys;
-    pNew->Core.KeyLast  = GCPhysLast;
-    pNew->cPages        = (GCPhysLast - (GCPhys & X86_PTE_PAE_PG_MASK) + PAGE_SIZE) >> PAGE_SHIFT;
-    pNew->cAliasedPages = 0;
-    pNew->cTmpOffPages  = 0;
-    pNew->pvUserR3      = pvUserR3;
-    pNew->pvUserR0      = pvUserR0;
-    pNew->pvUserRC      = pvUserRC;
-    pNew->hType         = hType;
-    pNew->pszDesc       = pszDesc != NIL_RTR3PTR ? pszDesc : pType->pszDesc;
-    pgmHandlerPhysicalTypeRetain(pVM, pType);
-
-    pgmLock(pVM);
-
-    /*
-     * Try insert into list.
-     */
-    if (RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pNew->Core))
+    int rc = pgmHandlerPhysicalExCreate(pVM, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc, &pNew);
+    if (RT_SUCCESS(rc))
     {
-        rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pNew, pRam);
-        if (rc == VINF_PGM_SYNC_CR3)
-            rc = VINF_PGM_GCPHYS_ALIASED;
-        pgmUnlock(pVM);
-#ifdef VBOX_WITH_REM
-# ifndef IN_RING3
-        REMNotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
-# else
-        REMR3NotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
-# endif
-#endif
-        if (rc != VINF_SUCCESS)
-            Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
-        return rc;
+        rc = pgmHandlerPhysicalExRegister(pVM, pNew, GCPhys, GCPhysLast);
+        if (RT_SUCCESS(rc))
+            return rc;
+        pgmHandlerPhysicalExDestroy(pVM, pNew);
     }
-
-    pgmUnlock(pVM);
-
-#if defined(IN_RING3) && defined(VBOX_STRICT)
-    DBGFR3Info(pVM->pUVM, "handlers", "phys nostats", NULL);
-#endif
-    AssertMsgFailed(("Conflict! GCPhys=%RGp GCPhysLast=%RGp pszDesc=%s/%s\n",
-                     GCPhys, GCPhysLast, R3STRING(pszDesc), R3STRING(pType->pszDesc)));
-    pgmHandlerPhysicalTypeRelease(pVM, pType);
-    MMHyperFree(pVM, pNew);
-    return VERR_PGM_HANDLER_PHYSICAL_CONFLICT;
+    return rc;
 }
 
 
@@ -312,7 +396,88 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
 
 
 /**
- * Register a physical page access handler.
+ * Deregister a physical page access handler.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pPhysHandler    The handler to deregister (but not free).
+ */
+int pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler)
+{
+    LogFlow(("pgmHandlerPhysicalExDeregister: Removing Range %RGp-%RGp %s\n",
+             pPhysHandler->Core.Key, pPhysHandler->Core.KeyLast, R3STRING(pPhysHandler->pszDesc)));
+    AssertReturn(pPhysHandler->Core.Key != NIL_RTGCPHYS, VERR_PGM_HANDLER_NOT_FOUND);
+
+    /*
+     * Remove the handler from the tree.
+     */
+    pgmLock(pVM);
+    PPGMPHYSHANDLER pRemoved = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,
+                                                                    pPhysHandler->Core.Key);
+    if (pRemoved == pPhysHandler)
+    {
+        /*
+         * Clear the page bits, notify the REM about this change and clear
+         * the cache.
+         */
+        pgmHandlerPhysicalResetRamFlags(pVM, pPhysHandler);
+        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pPhysHandler);
+        pVM->pgm.s.pLastPhysHandlerR0 = 0;
+        pVM->pgm.s.pLastPhysHandlerR3 = 0;
+        pVM->pgm.s.pLastPhysHandlerRC = 0;
+
+        pPhysHandler->Core.Key     = NIL_RTGCPHYS;
+        pPhysHandler->Core.KeyLast = NIL_RTGCPHYS;
+
+        pgmUnlock(pVM);
+
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Both of the failure conditions here are considered internal processing
+     * errors because they can only be caused by race conditions or corruption.
+     * If we ever need to handle concurrent deregistration, we have to move
+     * the NIL_RTGCPHYS check inside the PGM lock.
+     */
+    if (pRemoved)
+        RTAvlroGCPhysInsert(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, &pRemoved->Core);
+
+    pgmUnlock(pVM);
+
+    if (!pRemoved)
+        AssertMsgFailed(("Didn't find range starting at %RGp in the tree!\n", pPhysHandler->Core.Key));
+    else
+        AssertMsgFailed(("Found different handle at %RGp in the tree: got %p insteaded of %p\n",
+                         pPhysHandler->Core.Key, pRemoved, pPhysHandler));
+    return VERR_PGM_HANDLER_IPE_1;
+}
+
+
+/**
+ * Destroys (frees) a physical handler.
+ *
+ * The caller must deregister it before destroying it!
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pHandler    The handler to free.  NULL if ignored.
+ */
+int pgmHandlerPhysicalExDestroy(PVM pVM, PPGMPHYSHANDLER pHandler)
+{
+    if (pHandler)
+    {
+        AssertPtr(pHandler);
+        AssertReturn(pHandler->Core.Key == NIL_RTGCPHYS, VERR_WRONG_ORDER);
+        PGMHandlerPhysicalTypeRelease(pVM, pHandler->hType);
+        MMHyperFree(pVM, pHandler);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deregister a physical page access handler.
  *
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.
@@ -324,25 +489,29 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
      * Find the handler.
      */
     pgmLock(pVM);
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
-    if (pCur)
+    PPGMPHYSHANDLER pRemoved = (PPGMPHYSHANDLER)RTAvlroGCPhysRemove(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
+    if (pRemoved)
     {
-        LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %RGp-%RGp %s\n", pCur->Core.Key, pCur->Core.KeyLast, R3STRING(pCur->pszDesc)));
+        LogFlow(("PGMHandlerPhysicalDeregister: Removing Range %RGp-%RGp %s\n",
+                 pRemoved->Core.Key, pRemoved->Core.KeyLast, R3STRING(pRemoved->pszDesc)));
 
         /*
          * Clear the page bits, notify the REM about this change and clear
          * the cache.
          */
-        pgmHandlerPhysicalResetRamFlags(pVM, pCur);
-        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
+        pgmHandlerPhysicalResetRamFlags(pVM, pRemoved);
+        pgmHandlerPhysicalDeregisterNotifyREM(pVM, pRemoved);
         pVM->pgm.s.pLastPhysHandlerR0 = 0;
         pVM->pgm.s.pLastPhysHandlerR3 = 0;
         pVM->pgm.s.pLastPhysHandlerRC = 0;
-        PGMHandlerPhysicalTypeRelease(pVM, pCur->hType);
-        MMHyperFree(pVM, pCur);
+
         pgmUnlock(pVM);
+
+        pRemoved->Core.Key = NIL_RTGCPHYS;
+        pgmHandlerPhysicalExDestroy(pVM, pRemoved);
         return VINF_SUCCESS;
     }
+
     pgmUnlock(pVM);
 
     AssertMsgFailed(("Didn't find range starting at %RGp\n", GCPhys));

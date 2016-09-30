@@ -3813,7 +3813,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS 
             /*
              * Mapping the FIFO RAM.
              */
-            rc = PDMDevHlpMMIO2Map(pDevIns, iRegion, GCPhysAddress);
+            rc = PDMDevHlpMMIOExMap(pDevIns, iRegion, GCPhysAddress);
             AssertRC(rc);
 
 # ifdef DEBUG_FIFO_ACCESS

@@ -5431,7 +5431,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
         /*
          * Mapping the VRAM.
          */
-        rc = PDMDevHlpMMIO2Map(pDevIns, iRegion, GCPhysAddress);
+        rc = PDMDevHlpMMIOExMap(pDevIns, iRegion, GCPhysAddress);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {

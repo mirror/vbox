@@ -47,7 +47,11 @@
 #include "DevE1000Phy.h"
 
 
-/* Options *******************************************************************/
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** @name E1000 Build Options
+ * @{ */
 /** @def E1K_INIT_RA0
  * E1K_INIT_RA0 forces E1000 to set the first entry in Receive Address filter
  * table to MAC address obtained from CFGM. Most guests read MAC address from
@@ -116,6 +120,11 @@
  * order to work properly (see @bugref{6217}).
  */
 #define E1K_WITH_RXD_CACHE
+/** @def E1K_WITH_PREREG_MMIO
+ * E1K_WITH_PREREG_MMIO enables a new style MMIO registration and is
+ * currently only done for testing the relateted PDM, IOM and PGM code. */
+//#define E1K_WITH_PREREG_MMIO
+/* @} */
 /* End of Options ************************************************************/
 
 #ifdef E1K_WITH_TXD_CACHE
@@ -6112,6 +6121,16 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
              *    Partial reads return all 32 bits of data regardless of the
              *    byte enables.
              */
+#ifdef E1K_WITH_PREREG_MMIO
+            pThis->addrMMReg = GCPhysAddress;
+            if (GCPhysAddress == NIL_RTGCPHYS)
+                rc = VINF_SUCCESS;
+            else
+            {
+                Assert(!(GCPhysAddress & 7));
+                rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
+            }
+#else
             pThis->addrMMReg = GCPhysAddress; Assert(!(GCPhysAddress & 7));
             rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
@@ -6122,6 +6141,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
             if (pThis->fRCEnabled && RT_SUCCESS(rc))
                 rc = PDMDevHlpMMIORegisterRC(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
+#endif
             break;
 
         default:
@@ -7640,6 +7660,15 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, E1K_MM_SIZE, PCI_ADDRESS_SPACE_MEM, e1kMap);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef E1K_WITH_PREREG_MMIO
+    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 0, E1K_MM_SIZE, IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD, "E1000",
+                                    NULL        /*pvUserR3*/, e1kMMIOWrite, e1kMMIORead, NULL /*pfnFillR3*/,
+                                    NIL_RTR0PTR /*pvUserR0*/, pThis->fR0Enabled ? "e1kMMIOWrite" : NULL,
+                                    pThis->fR0Enabled ? "e1kMMIORead" : NULL, NULL /*pszFillR0*/,
+                                    NIL_RTRCPTR /*pvUserRC*/, pThis->fRCEnabled ? "e1kMMIOWrite" : NULL,
+                                    pThis->fRCEnabled ? "e1kMMIORead" : NULL, NULL /*pszFillRC*/);
+    AssertLogRelRCReturn(rc, rc);
+#endif
     /* Map our registers to IO space (region 2, see e1kConfigurePCI) */
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, E1K_IOPORT_SIZE, PCI_ADDRESS_SPACE_IO, e1kMap);
     if (RT_FAILURE(rc))
