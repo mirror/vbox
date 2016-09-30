@@ -3243,14 +3243,14 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
                     || (   pLeaf->cchName >= 2
                         && !RTStrNCmp(pLeaf->szName, "cb", 2)) )
                 {
+                    if (pLeaf->Value.Integer.u64 > _2M)
+                        pHlp->pfnPrintf(pHlp, ", %'lld MB", pLeaf->Value.Integer.u64 / _1M);
+                    else if (pLeaf->Value.Integer.u64 > _2K)
+                        pHlp->pfnPrintf(pHlp, ", %'lld KB", pLeaf->Value.Integer.u64 / _1K);
                     if (pLeaf->Value.Integer.u64 > _2G)
                         pHlp->pfnPrintf(pHlp, ", %'lld.%lld GB",
                                               pLeaf->Value.Integer.u64 / _1G,
                                               (pLeaf->Value.Integer.u64 % _1G) / (_1G / 10));
-                    else if (pLeaf->Value.Integer.u64 > _2M)
-                        pHlp->pfnPrintf(pHlp, ", %'lld MB", pLeaf->Value.Integer.u64 / _1M);
-                    else if (pLeaf->Value.Integer.u64 > _2K)
-                        pHlp->pfnPrintf(pHlp, ", %'lld KB", pLeaf->Value.Integer.u64 / _1K);
                 }
                 pHlp->pfnPrintf(pHlp, ")\n");
                 break;
