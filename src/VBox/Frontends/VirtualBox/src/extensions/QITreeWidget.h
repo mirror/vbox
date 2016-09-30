@@ -15,35 +15,40 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QITreeWidget_h__
-#define __QITreeWidget_h__
+#ifndef ___QITreeWidget_h___
+#define ___QITreeWidget_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QTreeWidget>
 
-/*
- * QTreeWidget class which extends standard QTreeWidget's functionality.
- */
-class QITreeWidget: public QTreeWidget
+
+/** QTreeWidget subclass extending standard functionality. */
+class QITreeWidget : public QTreeWidget
 {
     Q_OBJECT;
 
-public:
-
-    QITreeWidget (QWidget *aParent = 0);
-
-    void setSizeHintForItems(const QSize &sizeHint);
-
 signals:
 
-    void painted (QTreeWidgetItem *aItem, QPainter *aPainter);
-    void resized (const QSize &aSize, const QSize &aOldSize);
+    /** Notifies about particular tree-widget @a pItem is painted with @a pPainter. */
+    void painted(QTreeWidgetItem *pItem, QPainter *pPainter);
+    /** Notifies about tree-widget being resized from @a oldSize to @a size. */
+    void resized(const QSize &size, const QSize &oldSize);
+
+public:
+
+    /** Constructs tree-widget passing @a pParent to the base-class. */
+    QITreeWidget(QWidget *pParent = 0);
+
+    /** Defines @a sizeHint for tree-widget items. */
+    void setSizeHintForItems(const QSize &sizeHint);
 
 protected:
 
-    void paintEvent (QPaintEvent *aEvent);
-    void resizeEvent (QResizeEvent *aEvent);
+    /** Handles paint @a pEvent. */
+    void paintEvent(QPaintEvent *pEvent);
+    /** Handles resize @a pEvent. */
+    void resizeEvent(QResizeEvent *pEvent);
 };
 
-#endif /* __QITreeWidget_h__ */
+#endif /* !___QITreeWidget_h___ */
 

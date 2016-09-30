@@ -19,54 +19,55 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
 # include <QPainter>
 # include <QResizeEvent>
 
-/* Local includes */
+/* GUI includes: */
 # include "QITreeWidget.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-QITreeWidget::QITreeWidget (QWidget *aParent)
-    : QTreeWidget (aParent)
+QITreeWidget::QITreeWidget(QWidget *aParent)
+    : QTreeWidget(aParent)
 {
 }
 
 void QITreeWidget::setSizeHintForItems(const QSize &sizeHint)
 {
+    /* Pass the sizeHint to all the top-level items: */
     for (int i = 0; i < topLevelItemCount(); ++i)
         topLevelItem(i)->setSizeHint(0, sizeHint);
 }
 
-void QITreeWidget::paintEvent (QPaintEvent *aEvent)
+void QITreeWidget::paintEvent(QPaintEvent *pEvent)
 {
-    /* Opens Items Painter */
+    /* Create item painter: */
     QPainter painter;
-    painter.begin (viewport());
+    painter.begin(viewport());
 
-    /* Notify connected objects about painting */
-    QTreeWidgetItemIterator it (this);
+    /* Notify listeners about painting: */
+    QTreeWidgetItemIterator it(this);
     while (*it)
     {
-        emit painted (*it, &painter);
-        ++ it;
+        emit painted(*it, &painter);
+        ++it;
     }
 
-    /* Close Items Painter */
+    /* Close item painter: */
     painter.end();
 
-    /* Base-class paint-event */
-    QTreeWidget::paintEvent (aEvent);
+    /* Call to base-class: */
+    QTreeWidget::paintEvent(pEvent);
 }
 
-void QITreeWidget::resizeEvent (QResizeEvent *aEvent)
+void QITreeWidget::resizeEvent(QResizeEvent *pEvent)
 {
-    /* Base-class resize-event */
-    QTreeWidget::resizeEvent (aEvent);
+    /* Call to base-class: */
+    QTreeWidget::resizeEvent(pEvent);
 
-    /* Notify connected objects about resize */
-    emit resized (aEvent->size(), aEvent->oldSize());
+    /* Notify listeners about resizing: */
+    emit resized(pEvent->size(), pEvent->oldSize());
 }
 
