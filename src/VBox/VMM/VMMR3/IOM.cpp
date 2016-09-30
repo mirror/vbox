@@ -1842,7 +1842,8 @@ VMMR3_INT_DECL(void) IOMR3MmioExNotifyUnmapped(PVM pVM, void *pvUser, RTGCPHYS G
         if (pRemoved)
             RTAvlroGCPhysInsert(&pVM->iom.s.pTreesR3->MMIOTree, &pRemoved->Core);
         IOM_UNLOCK_EXCL(pVM);
-        AssertLogRelMsgFailed(("RTAvlroGCPhysRemove returned %p instead of %p for %RGp (%s)\n", pRemoved, pRange, pRange->pszDesc));
+        AssertLogRelMsgFailed(("RTAvlroGCPhysRemove returned %p instead of %p for %RGp (%s)\n",
+                               pRemoved, pRange, GCPhys, pRange->pszDesc));
     }
 }
 

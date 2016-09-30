@@ -1497,7 +1497,7 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
 
 
 /**
- * @callbackmethodimpl{FNPGMRELOCATE, Relocate a floating RAM range.}
+ * @callback_method_impl{FNPGMRELOCATE, Relocate a floating RAM range.}
  * @sa pgmR3PhysMMIO2ExRangeRelocate
  */
 static DECLCALLBACK(bool) pgmR3PhysRamRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
@@ -2457,7 +2457,7 @@ DECLINLINE(PPGMREGMMIORANGE) pgmR3PhysMMIOExFind(PVM pVM, PPDMDEVINS pDevIns, ui
 
 
 /**
- * @callbackmethodimpl{FNPGMRELOCATE, Relocate a floating MMIO/MMIO2 range.}
+ * @callback_method_impl{FNPGMRELOCATE, Relocate a floating MMIO/MMIO2 range.}
  * @sa pgmR3PhysRamRangeRelocate
  */
 static DECLCALLBACK(bool) pgmR3PhysMMIOExRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
