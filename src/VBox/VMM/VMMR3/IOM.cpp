@@ -1854,7 +1854,6 @@ VMMR3_INT_DECL(void) IOMR3MmioExNotifyUnmapped(PVM pVM, void *pvUser, RTGCPHYS G
  *
  * @param   pVM             Pointer to the cross context VM structure.
  * @param   pvUser          The pvUserR3 argument of PGMR3PhysMMIOExPreRegister.
- * @param   GCPhys          The mapping address.
  * @remarks Called while owning the PGM lock.
  */
 VMMR3_INT_DECL(void) IOMR3MmioExNotifyDeregistered(PVM pVM, void *pvUser)

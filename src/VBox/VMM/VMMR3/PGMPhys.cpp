@@ -2686,10 +2686,11 @@ static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIORANGE pNew)
  *                          I/O region this number has to be the number of that
  *                          region. Otherwise it can be any number safe
  *                          UINT8_MAX.
- * @param   cb              The size of the region.  Must be page aligned.
- * @param   fFlags          Reserved for future use, must be zero.
- * @param   ppv             Where to store the pointer to the ring-3 mapping of
- *                          the memory.
+ * @param   cbRegion        The size of the region.  Must be page aligned.
+ * @param   hType           The physical handler callback type.
+ * @param   pvUserR3        User parameter for ring-3 context callbacks.
+ * @param   pvUserR0        User parameter for ring-0 context callbacks.
+ * @param   pvUserRC        User parameter for raw-mode context callbacks.
  * @param   pszDesc         The description.
  *
  * @thread  EMT
@@ -2697,7 +2698,7 @@ static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIORANGE pNew)
  * @sa      PGMR3PhysMMIORegister, PGMR3PhysMMIO2Register,
  *          PGMR3PhysMMIOExMap, PGMR3PhysMMIOExUnmap, PGMR3PhysMMIOExDeregister.
  */
-VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
+VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, PGMPHYSHANDLERTYPE hType,
                                           RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc)
 {
     /*
@@ -2709,11 +2710,11 @@ VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
     AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iRegion) == NULL, VERR_ALREADY_EXISTS);
-    AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!(cbRegion & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cbRegion, VERR_INVALID_PARAMETER);
 
-    const uint32_t cPages = cb >> PAGE_SHIFT;
-    AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cb, VERR_INVALID_PARAMETER);
+    const uint32_t cPages = cbRegion >> PAGE_SHIFT;
+    AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cbRegion, VERR_INVALID_PARAMETER);
     AssertLogRelReturn(cPages <= PGM_MMIO2_MAX_PAGE_COUNT, VERR_OUT_OF_RANGE);
 
     /*
@@ -2737,7 +2738,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
          * Create the registered MMIO range record for it.
          */
         PPGMREGMMIORANGE pNew;
-        rc = pgmR3PhysMMIOExCreate(pVM, pDevIns, iRegion, cb, pszDesc, &pNew);
+        rc = pgmR3PhysMMIOExCreate(pVM, pDevIns, iRegion, cbRegion, pszDesc, &pNew);
         if (RT_SUCCESS(rc))
         {
             pNew->fMmio2         = false;
