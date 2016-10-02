@@ -442,7 +442,11 @@ static void test2(RTTEST hTest)
             - The small letter long s folds to ASCII S.
             - Greek prosgegrammeni folds to iota, which is a letter with both upper
               and lower case foldings of its own. */
-        if (uc == 0x131 || uc == 0x130 || uc == 0x17f || 0x1fbe)
+        if (   uc == 0x131
+            || uc == 0x130
+            || uc == 0x17f
+            || uc == 0x1fbe
+            )
             continue;
 
         if (RTUniCpIsLower(uc))
