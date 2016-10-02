@@ -2865,9 +2865,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 rc = pgmR3PhysMMIOExCreate(pVM, pDevIns, iRegion, cb, pszDesc, &pNew);
                 if (RT_SUCCESS(rc))
                 {
-                    pNew->pvR3      = pvPages;
-                    pNew->idMmio2   = idMmio2;
-                    pNew->fMmio2    = true;
+                    pNew->pvR3          = pvPages;
+                    pNew->RamRange.pvR3 = pvPages;
+                    pNew->idMmio2       = idMmio2;
+                    pNew->fMmio2        = true;
 
                     uint32_t iPage = cPages;
                     while (iPage-- > 0)
