@@ -252,11 +252,6 @@ endif
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
 endef
 
-# Dropped by the time 2.12 rc7 got out. Just struggling rebuilding nasm.
-if "$(KBUILD_TARGET)" == "darwin"
- BS3KIT_NASM_allow_64_bit = --allow-64-bit
-endif
-
 #
 # ELF 64-bit compiler tool with object conversion.
 #
