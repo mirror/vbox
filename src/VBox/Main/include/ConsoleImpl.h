@@ -619,6 +619,20 @@ private:
                                    const ComPtr<IBIOSSettings> &ptrBiosSettings,
                                    bool fHMEnabled);
     int i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache);
+    int i_unmountMediumFromGuest(PUVM pUVM, StorageBus_T enmBus, DeviceType_T enmDevType,
+                                 const char *pcszDevice, unsigned uInstance, unsigned uLUN,
+                                 bool fForceUnmount);
+    int i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
+                                   const char *pcszDevice,
+                                   unsigned uInstance,
+                                   unsigned uLUN,
+                                   StorageBus_T enmBus,
+                                   bool fAttachDetach,
+                                   bool fHotplug,
+                                   bool fForceUnmount,
+                                   PUVM pUVM,
+                                   DeviceType_T enmDevType,
+                                   PCFGMNODE *ppLunL0);
     int i_configMediumAttachment(const char *pcszDevice,
                                  unsigned uInstance,
                                  StorageBus_T enmBus,

@@ -3957,6 +3957,191 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
     return VINF_SUCCESS;
 }
 
+/**
+ * Unmounts the specified medium from the specified device.
+ *
+ * @returns VBox status code.
+ * @param   pUVM       The usermode VM handle.
+ * @param   enmBus     The storage bus.
+ * @param   enmDevType The device type.
+ * @param   pczsDevice The device emulation.
+ * @param   uInstance  Instance of the device.
+ * @param   uLUN       The LUN on the device.
+ */
+int Console::i_unmountMediumFromGuest(PUVM pUVM, StorageBus_T enmBus, DeviceType_T enmDevType,
+                                      const char *pcszDevice, unsigned uInstance, unsigned uLUN,
+                                      bool fForceUnmount)
+{
+    /* Unmount existing media only for floppy and DVD drives. */
+    int rc = VINF_SUCCESS;
+    PPDMIBASE pBase;
+    if (enmBus == StorageBus_USB)
+        rc = PDMR3UsbQueryDriverOnLun(pUVM, pcszDevice, uInstance, uLUN, "SCSI", &pBase);
+    else if (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI)
+             || (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD))
+        rc = PDMR3QueryDriverOnLun(pUVM, pcszDevice, uInstance, uLUN, "SCSI", &pBase);
+    else /* IDE or Floppy */
+        rc = PDMR3QueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
+
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+            rc = VINF_SUCCESS;
+        AssertRC(rc);
+    }
+    else
+    {
+        PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
+        AssertReturn(pIMount, VERR_INVALID_POINTER);
+
+        /* Unmount the media (but do not eject the medium!) */
+        rc = pIMount->pfnUnmount(pIMount, fForceUnmount, false /*=fEject*/);
+        if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
+            rc = VINF_SUCCESS;
+        /* for example if the medium is locked */
+        else if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return rc;
+}
+
+/**
+ * Removes the currently attached medium driver form the specified device
+ * taking care of the controlelr specific configs wrt. to the attached driver chain.
+ *
+ * @returns VBox status code.
+ * @param   pCtlInst      The controler instance node in the CFGM tree.
+ * @param   pczsDevice    The device name.
+ * @param   uInstance     The device instance.
+ * @param   uLUN          The device LUN.
+ * @param   enmBus        The storage bus.
+ * @param   fAttachDetach Flag whether this is a change while the VM is running
+ * @param   fHotplug      Flag whether the guest should be notified about the device change.
+ * @param   fForceUnmount Flag whether to force unmounting the medium even if it is locked.
+ * @param   pUVM          The usermode VM handle.
+ * @param   enmDevType    The device type.
+ * @param   ppLunL0       Where to store the node to attach the new config to on success.
+ */
+int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
+                                        const char *pcszDevice,
+                                        unsigned uInstance,
+                                        unsigned uLUN,
+                                        StorageBus_T enmBus,
+                                        bool fAttachDetach,
+                                        bool fHotplug,
+                                        bool fForceUnmount,
+                                        PUVM pUVM,
+                                        DeviceType_T enmDevType,
+                                        PCFGMNODE *ppLunL0)
+{
+    int rc = VINF_SUCCESS;
+    bool fAddLun = false;
+
+    /* First check if the LUN already exists. */
+    PCFGMNODE pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
+    AssertReturn(!VALID_PTR(pLunL0) || fAttachDetach, VERR_INTERNAL_ERROR);
+
+    if (pLunL0)
+    {
+        /*
+         * Unmount the currently mounted medium if we don't just hot remove the
+         * complete device (SATA) and it supports unmounting (DVD).
+         */
+        if (   (enmDevType != DeviceType_HardDisk)
+            && !fHotplug)
+        {
+            rc = i_unmountMediumFromGuest(pUVM, enmBus, enmDevType, pcszDevice,
+                                          uInstance, uLUN, fForceUnmount);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        /* For USB detach every driver below the SCSI transport driver. */
+        if (enmBus == StorageBus_USB)
+            rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, "SCSI", 0,
+                                      fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+        else
+        {
+            /*
+             * Don't detach the SCSI driver when unmounting the current medium
+             * (we are not ripping out the device but only eject the medium).
+             */
+            char *pszDriverDetach = NULL;
+            if (   !fHotplug
+                && (enmBus == StorageBus_SATA || enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI))
+            {
+                /* Get the current attached driver we have to detach. */
+                PCFGMNODE pDrvLun = CFGMR3GetChildF(pCtlInst, "LUN#%u/AttachedDriver/", uLUN);
+                if (pDrvLun)
+                {
+                    char szDriver[128];
+                    RT_ZERO(szDriver);
+                    rc  = CFGMR3QueryString(pDrvLun, "Driver", &szDriver[0], sizeof(szDriver));
+                    if (RT_SUCCESS(rc))
+                        pszDriverDetach = RTStrDup(&szDriver[0]);
+
+                    pLunL0 = pDrvLun;
+                }
+            }
+
+            rc = PDMR3DriverDetach(pUVM, pcszDevice, uInstance, uLUN,
+                                   pszDriverDetach, 0 /* iOccurence */,
+                                   fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+            if (pszDriverDetach)
+            {
+                RTStrFree(pszDriverDetach);
+                /* Remove the complete node and create new for the new config. */
+                CFGMR3RemoveNode(pLunL0);
+                pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
+                if (pLunL0)
+                {
+                    try
+                    {
+                        InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+                    }
+                    catch (ConfigError &x)
+                    {
+                        // InsertConfig threw something:
+                        return x.m_vrc;
+                    }
+                }
+            }
+        }
+        if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+            rc = VINF_SUCCESS;
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Don't remove the LUN except for IDE (which connects directly to the medium driver
+         * even for DVD devices) or if there is a hotplug event which rips out the complete device.
+         */
+        if (enmBus == StorageBus_IDE || fHotplug)
+        {
+            fAddLun = true;
+            CFGMR3RemoveNode(pLunL0);
+        }
+    }
+    else
+        fAddLun = true;
+
+    try
+    {
+        if (fAddLun)
+            InsertConfigNode(pCtlInst, Utf8StrFmt("LUN#%u", uLUN).c_str(), &pLunL0);
+    }
+    catch (ConfigError &x)
+    {
+        // InsertConfig threw something:
+        return x.m_vrc;
+    }
+
+    if (ppLunL0)
+        *ppLunL0 = pLunL0;
+
+    return rc;
+}
+
 int Console::i_configMediumAttachment(const char *pcszDevice,
                                       unsigned uInstance,
                                       StorageBus_T enmBus,
@@ -4057,65 +4242,23 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             }
         }
 
-        /* First check if the LUN already exists. */
-        pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
-        if (pLunL0)
-        {
-            if (fAttachDetach)
-            {
-                if (lType != DeviceType_HardDisk)
-                {
-                    /* Unmount existing media only for floppy and DVD drives. */
-                    PPDMIBASE pBase;
-                    if (enmBus == StorageBus_USB)
-                        rc = PDMR3UsbQueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
-                    else
-                        rc = PDMR3QueryLun(pUVM, pcszDevice, uInstance, uLUN, &pBase);
-                    if (RT_FAILURE(rc))
-                    {
-                        if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                            rc = VINF_SUCCESS;
-                        AssertRC(rc);
-                    }
-                    else
-                    {
-                        PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
-                        AssertReturn(pIMount, VERR_INVALID_POINTER);
-
-                        /* Unmount the media (but do not eject the medium!) */
-                        rc = pIMount->pfnUnmount(pIMount, fForceUnmount, false /*=fEject*/);
-                        if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
-                            rc = VINF_SUCCESS;
-                        /* for example if the medium is locked */
-                        else if (RT_FAILURE(rc))
-                            return rc;
-                    }
-                }
-
-                if (enmBus == StorageBus_USB)
-                    rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, NULL, 0,
-                                              fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
-                else
-                    rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
-                if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                    rc = VINF_SUCCESS;
-                AssertRCReturn(rc, rc);
-
-                CFGMR3RemoveNode(pLunL0);
-            }
-            else
-                AssertFailedReturn(VERR_INTERNAL_ERROR);
-        }
-
-        InsertConfigNode(pCtlInst, Utf8StrFmt("LUN#%u", uLUN).c_str(), &pLunL0);
+        rc = i_removeMediumDriverFromVm(pCtlInst, pcszDevice, uInstance, uLUN, enmBus, fAttachDetach,
+                                        fHotplug, fForceUnmount, pUVM, lType, &pLunL0);
+        if (RT_FAILURE(rc))
+            return rc;
         if (ppLunL0)
             *ppLunL0 = pLunL0;
 
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
-        /* SCSI has another driver between device and block. */
-        if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
+        /*
+         * Insert the SCSI driver for hotplug events on the SCSI/USB based storage controllers
+         * or for SATA if the new device is a CD/DVD drive.
+         */
+        if (   (fHotplug || !fAttachDetach)
+            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
+                || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
@@ -4207,6 +4350,11 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                     rc = PDMR3UsbDriverAttach(pUVM, pcszDevice, uInstance, uLUN,
                                               fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             }
+            else if (   !fHotplug
+                     && (   (enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI)
+                         || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
+                rc = PDMR3DriverAttach(pUVM, pcszDevice, uInstance, uLUN,
+                                       fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             else
                 rc = PDMR3DeviceAttach(pUVM, pcszDevice, uInstance, uLUN,
                                        fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
