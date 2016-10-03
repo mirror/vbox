@@ -33,6 +33,54 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** QAccessibleObject extension used as an accessibility interface for QITreeWidgetItem. */
+class QIAccessibilityInterfaceForQITreeWidgetItem : public QAccessibleObject
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITreeWidgetItem accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITreeWidgetItem"))
+            return new QIAccessibilityInterfaceForQITreeWidgetItem(pObject);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pObject to the base-class. */
+    QIAccessibilityInterfaceForQITreeWidgetItem(QObject *pObject)
+        : QAccessibleObject(pObject)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */;
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */;
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */;
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */;
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */;
+
+private:
+
+    /** Returns corresponding QITreeWidgetItem. */
+    QITreeWidgetItem *item() const { return qobject_cast<QITreeWidgetItem*>(object()); }
+};
+
+
 /** QAccessibleWidget extension used as an accessibility interface for QITreeWidget. */
 class QIAccessibilityInterfaceForQITreeWidget : public QAccessibleWidget
 {
@@ -67,6 +115,126 @@ private:
     /** Returns corresponding QITreeWidget. */
     QITreeWidget *tree() const { return qobject_cast<QITreeWidget*>(widget()); }
 };
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITreeWidgetItem implementation.                                                            *
+*********************************************************************************************************************************/
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidgetItem::parent() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+
+    /* Return the parent: */
+    return item()->parentItem() ?
+           QAccessible::queryAccessibleInterface(item()->parentItem()) :
+           QAccessible::queryAccessibleInterface(item()->parentTree());
+}
+
+int QIAccessibilityInterfaceForQITreeWidgetItem::childCount() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+
+    /* Return the number of children: */
+    return item()->childCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidgetItem::child(int iIndex) const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(item()->childItem(iIndex));
+}
+
+int QIAccessibilityInterfaceForQITreeWidgetItem::indexOfChild(const QAccessibleInterface *pChild) const
+{
+    /* Search for corresponding child: */
+    for (int i = 0; i < childCount(); ++i)
+        if (child(i) == pChild)
+            return i;
+
+    /* -1 by default: */
+    return -1;
+}
+
+QRect QIAccessibilityInterfaceForQITreeWidgetItem::rect() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), QRect());
+
+    /* Compose common region: */
+    QRegion region;
+
+    /* Append item rectangle: */
+    const QRect  itemRectInViewport = item()->parentTree()->visualItemRect(item());
+    const QSize  itemSize           = itemRectInViewport.size();
+    const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
+    const QPoint itemPosInScreen    = item()->parentTree()->viewport()->mapToGlobal(itemPosInViewport);
+    const QRect  itemRectInScreen   = QRect(itemPosInScreen, itemSize);
+    region += itemRectInScreen;
+
+    /* Append children rectangles: */
+    for (int i = 0; i < childCount(); ++i)
+        region += child(i)->rect();
+
+    /* Return common region bounding rectangle: */
+    return region.boundingRect();
+}
+
+QString QIAccessibilityInterfaceForQITreeWidgetItem::text(QAccessible::Text enmTextRole) const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), QString());
+
+    /* Return a text for the passed enmTextRole: */
+    switch (enmTextRole)
+    {
+        case QAccessible::Name: return item()->text(0);
+        default: break;
+    }
+
+    /* Null-string by default: */
+    return QString();
+}
+
+QAccessible::Role QIAccessibilityInterfaceForQITreeWidgetItem::role() const
+{
+    /* Return the role of item with children: */
+    if (childCount() > 0)
+        return QAccessible::List;
+
+    /* TreeItem by default: */
+    return QAccessible::ListItem;
+}
+
+QAccessible::State QIAccessibilityInterfaceForQITreeWidgetItem::state() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), QAccessible::State());
+
+    /* Compose the state: */
+    QAccessible::State state;
+    state.focusable = true;
+    state.selectable = true;
+
+    /* Compose the state of current item: */
+    if (   item()
+        && item() == QITreeWidgetItem::toItem(item()->treeWidget()->currentItem()))
+    {
+        state.active = true;
+        state.focused = true;
+        state.selected = true;
+    }
+
+    /* Return the state: */
+    return state;
+}
 
 
 /*********************************************************************************************************************************
@@ -206,6 +374,8 @@ QITreeWidget::QITreeWidget(QWidget *pParent)
 {
     /* Install QITreeWidget accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForQITreeWidget::pFactory);
+    /* Install QITreeWidgetItem accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeWidgetItem::pFactory);
 
     // WORKAROUND:
     // Ok, what do we have here..
