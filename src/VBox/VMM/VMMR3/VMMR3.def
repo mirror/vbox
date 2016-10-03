@@ -216,7 +216,7 @@ EXPORTS
     PDMR3UsbDriverAttach
     PDMR3UsbDriverDetach
     PDMR3UsbQueryLun
-    PDMR3UsbQueryDriverLun
+    PDMR3UsbQueryDriverOnLun
 
     PGMHandlerPhysicalPageTempOff
     PGMPhysReadGCPtr
