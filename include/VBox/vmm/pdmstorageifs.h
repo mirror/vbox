@@ -487,7 +487,9 @@ typedef enum PDMMEDIAEXIOREQTYPE
     /** Read request. */
     PDMMEDIAEXIOREQTYPE_READ,
     /** Discard request. */
-    PDMMEDIAEXIOREQTYPE_DISCARD
+    PDMMEDIAEXIOREQTYPE_DISCARD,
+    /** SCSI command. */
+    PDMMEDIAEXIOREQTYPE_SCSI
 } PDMMEDIAEXIOREQTYPE;
 /** Pointer to a I/O request type. */
 typedef PDMMEDIAEXIOREQTYPE *PPDMMEDIAEXIOREQTYPE;
@@ -643,10 +645,18 @@ typedef struct PDMIMEDIAEXPORT
     DECLR3CALLBACKMEMBER(void, pfnIoReqStateChanged, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                       void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState));
 
+    /**
+     * Informs the device that the underlying medium was ejected.
+     *
+     * @returns nothing.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnMediumEjected, (PPDMIMEDIAEXPORT pInterface));
+
 } PDMIMEDIAEXPORT;
 
 /** PDMIMEDIAAEXPORT interface ID. */
-#define PDMIMEDIAEXPORT_IID                  "253e3741-9d79-4a8b-9a1d-81f4a16054a7"
+#define PDMIMEDIAEXPORT_IID                  "e0a586a6-4186-40d0-8067-c754b6585b53"
 
 
 /** Pointer to an extended media interface. */
