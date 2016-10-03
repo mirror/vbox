@@ -47,17 +47,14 @@ extern const char *gVBoxLangIDRegExp;
 extern const char *gVBoxBuiltInLangName;
 
 /* Language item: */
-class UILanguageItem : public QTreeWidgetItem
+class UILanguageItem : public QITreeWidgetItem
 {
 public:
 
-    /* Language item type: */
-    enum { UILanguageItemType = QTreeWidgetItem::UserType + 1 };
-
     /* Language item constructor: */
-    UILanguageItem(QTreeWidget *pParent, const QTranslator &translator,
+    UILanguageItem(QITreeWidget *pParent, const QTranslator &translator,
                    const QString &strId, bool fBuiltIn = false)
-        : QTreeWidgetItem(pParent, UILanguageItemType), m_fBuiltIn(fBuiltIn)
+        : QITreeWidgetItem(pParent), m_fBuiltIn(fBuiltIn)
     {
         Assert (!strId.isEmpty());
 
@@ -112,8 +109,8 @@ public:
 
     /* Constructs an item for an invalid language ID
      * (i.e. when a language file is missing or corrupt): */
-    UILanguageItem(QTreeWidget *pParent, const QString &strId)
-        : QTreeWidgetItem(pParent, UILanguageItemType), m_fBuiltIn(false)
+    UILanguageItem(QITreeWidget *pParent, const QString &strId)
+        : QITreeWidgetItem(pParent), m_fBuiltIn(false)
     {
         Assert(!strId.isEmpty());
 
@@ -130,8 +127,8 @@ public:
 
     /* Constructs an item for the default language ID
      * (column 1 will be set to QString::null): */
-    UILanguageItem(QTreeWidget *pParent)
-        : QTreeWidgetItem(pParent, UILanguageItemType), m_fBuiltIn(false)
+    UILanguageItem(QITreeWidget *pParent)
+        : QITreeWidgetItem(pParent), m_fBuiltIn(false)
     {
         setText(0, UIGlobalSettingsLanguage::tr("Default", "Language"));
         setText(1, QString::null);
@@ -158,9 +155,9 @@ public:
             return false;
         if (m_fBuiltIn)
             return true;
-        if (other.type() == UILanguageItemType && ((UILanguageItem*)&other)->m_fBuiltIn)
+        if (other.type() == ItemType && ((UILanguageItem*)&other)->m_fBuiltIn)
             return false;
-        return QTreeWidgetItem::operator<(other);
+        return QITreeWidgetItem::operator<(other);
     }
 
 private:
@@ -350,7 +347,7 @@ void UIGlobalSettingsLanguage::reload(const QString &strLangId)
 
 void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter)
 {
-    if (pItem && pItem->type() == UILanguageItem::UILanguageItemType)
+    if (pItem && pItem->type() == QITreeWidgetItem::ItemType)
     {
         UILanguageItem *pLanguageItem = static_cast<UILanguageItem*>(pItem);
         if (pLanguageItem->isBuiltIn())

@@ -354,9 +354,9 @@ QWidget *UISettingsSelectorTreeView::addItem(const QString & /* strBigIcon */,
         UISelectorItem *pItem = new UISelectorItem(icon, "", iID, strLink, pPage, iParentID);
         m_list.append(pItem);
 
-        QTreeWidgetItem *pTwItem = new QTreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
-                                                                                    << idToString(iID)
-                                                                                    << strLink);
+        QTreeWidgetItem *pTwItem = new QITreeWidgetItem(m_pTreeWidget, QStringList() << QString("")
+                                                                                     << idToString(iID)
+                                                                                     << strLink);
         pTwItem->setIcon(TreeWidgetSection_Category, pItem->icon());
         pPage->setContentsMargins(0, 0, 0, 0);
         pPage->layout()->setContentsMargins(0, 0, 0, 0);
