@@ -29,6 +29,75 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class QITreeWidgetItem implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+/* static */
+QITreeWidgetItem *QITreeWidgetItem::toItem(QTreeWidgetItem *pItem)
+{
+    /* Make sure alive QITreeWidgetItem passed: */
+    if (!pItem || pItem->type() != QITreeWidgetItem::ItemType)
+        return 0;
+
+    /* Return casted QITreeWidgetItem: */
+    return static_cast<QITreeWidgetItem*>(pItem);
+}
+
+/* static */
+const QITreeWidgetItem *QITreeWidgetItem::toItem(const QTreeWidgetItem *pItem)
+{
+    /* Make sure alive QITreeWidgetItem passed: */
+    if (!pItem || pItem->type() != QITreeWidgetItem::ItemType)
+        return 0;
+
+    /* Return casted QITreeWidgetItem: */
+    return static_cast<const QITreeWidgetItem*>(pItem);
+}
+
+QITreeWidgetItem::QITreeWidgetItem(QITreeWidget *pTreeWidget)
+    : QTreeWidgetItem(pTreeWidget, ItemType)
+{
+}
+
+QITreeWidgetItem::QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem)
+    : QTreeWidgetItem(pTreeWidgetItem, ItemType)
+{
+}
+
+QITreeWidgetItem::QITreeWidgetItem(QITreeWidget *pTreeWidget, const QStringList &strings)
+    : QTreeWidgetItem(pTreeWidget, strings, ItemType)
+{
+}
+
+QITreeWidgetItem::QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem, const QStringList &strings)
+    : QTreeWidgetItem(pTreeWidgetItem, strings, ItemType)
+{
+}
+
+QITreeWidget *QITreeWidgetItem::parentTree() const
+{
+    /* Return the parent tree if any: */
+    return treeWidget() ? qobject_cast<QITreeWidget*>(treeWidget()) : 0;
+}
+
+QITreeWidgetItem *QITreeWidgetItem::parentItem() const
+{
+    /* Return the parent item if any: */
+    return QTreeWidgetItem::parent() ? toItem(QTreeWidgetItem::parent()) : 0;
+}
+
+QITreeWidgetItem *QITreeWidgetItem::childItem(int iIndex) const
+{
+    /* Return the child item with iIndex if any: */
+    return QTreeWidgetItem::child(iIndex) ? toItem(QTreeWidgetItem::child(iIndex)) : 0;
+}
+
+
+/*********************************************************************************************************************************
+*   Class QITreeWidget implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 QITreeWidget::QITreeWidget(QWidget *pParent)
     : QTreeWidget(pParent)
 {
@@ -47,10 +116,10 @@ int QITreeWidget::childCount() const
     return invisibleRootItem()->childCount();
 }
 
-QTreeWidgetItem *QITreeWidget::childItem(int iIndex) const
+QITreeWidgetItem *QITreeWidget::childItem(int iIndex) const
 {
     /* Return the child item with iIndex if any: */
-    return invisibleRootItem()->child(iIndex);
+    return invisibleRootItem()->child(iIndex) ? QITreeWidgetItem::toItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
 void QITreeWidget::paintEvent(QPaintEvent *pEvent)

@@ -20,6 +20,44 @@
 
 /* Qt includes: */
 #include <QTreeWidget>
+#include <QTreeWidgetItem>
+
+/* Forward declarations: */
+class QITreeWidget;
+
+
+/** QTreeWidgetItem subclass extending standard functionality. */
+class QITreeWidgetItem : public QObject, public QTreeWidgetItem
+{
+    Q_OBJECT;
+
+public:
+
+    /** Item type for QITreeWidgetItem. */
+    enum { ItemType = QTreeWidgetItem::UserType + 1 };
+
+    /** Casts QTreeWidgetItem* to QITreeWidgetItem* if possible. */
+    static QITreeWidgetItem *toItem(QTreeWidgetItem *pItem);
+    /** Casts const QTreeWidgetItem* to const QITreeWidgetItem* if possible. */
+    static const QITreeWidgetItem *toItem(const QTreeWidgetItem *pItem);
+
+    /** Constructs item passing @a pTreeWidget into the base-class. */
+    QITreeWidgetItem(QITreeWidget *pTreeWidget);
+    /** Constructs item passing @a pTreeWidgetItem into the base-class. */
+    QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem);
+
+    /** Constructs item passing @a pTreeWidget and @a strings into the base-class. */
+    QITreeWidgetItem(QITreeWidget *pTreeWidget, const QStringList &strings);
+    /** Constructs item passing @a pTreeWidgetItem and @a strings into the base-class. */
+    QITreeWidgetItem(QITreeWidgetItem *pTreeWidgetItem, const QStringList &strings);
+
+    /** Returns the parent tree-widget. */
+    QITreeWidget *parentTree() const;
+    /** Returns the parent tree-widget item. */
+    QITreeWidgetItem *parentItem() const;
+    /** Returns the child tree-widget item with @a iIndex. */
+    QITreeWidgetItem *childItem(int iIndex) const;
+};
 
 
 /** QTreeWidget subclass extending standard functionality. */
@@ -45,7 +83,7 @@ public:
     /** Returns the number of children. */
     int childCount() const;
     /** Returns the child item with @a iIndex. */
-    QTreeWidgetItem *childItem(int iIndex) const;
+    QITreeWidgetItem *childItem(int iIndex) const;
 
 protected:
 
