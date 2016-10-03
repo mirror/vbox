@@ -20,13 +20,116 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QPainter>
 # include <QResizeEvent>
 
 /* GUI includes: */
 # include "QITreeWidget.h"
 
+/* Other VBox includes: */
+# include "iprt/assert.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** QAccessibleWidget extension used as an accessibility interface for QITreeWidget. */
+class QIAccessibilityInterfaceForQITreeWidget : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITreeWidget accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITreeWidget"))
+            return new QIAccessibilityInterfaceForQITreeWidget(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    QIAccessibilityInterfaceForQITreeWidget(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::List)
+    {}
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+private:
+
+    /** Returns corresponding QITreeWidget. */
+    QITreeWidget *tree() const { return qobject_cast<QITreeWidget*>(widget()); }
+};
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITreeWidget implementation.                                                                *
+*********************************************************************************************************************************/
+
+int QIAccessibilityInterfaceForQITreeWidget::childCount() const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+
+    /* Return the number of children: */
+    return tree()->childCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0, 0);
+    if (iIndex >= childCount())
+    {
+        // WORKAROUND:
+        // Normally I would assert here, but Qt5 accessibility code has
+        // a hard-coded architecture for a tree-views which we do not like
+        // but have to live with and this architecture enumerates children
+        // of all levels as children of level 0, so Qt5 can try to address
+        // our interface with index which surely out of bounds by our laws.
+        // So let's assume that's exactly such case and try to enumerate
+        // visible children like they are a part of the list, not tree.
+        // printf("Invalid index: %d\n", iIndex);
+
+        // Do some sanity check as well, enough?
+        AssertReturn(iIndex >= tree()->columnCount(), 0);
+
+        // The enumeration step is column count:
+        int iCurrentIndex = tree()->columnCount();
+        QTreeWidgetItem *pItem = tree()->topLevelItem(0);
+        while (pItem && iCurrentIndex < iIndex)
+        {
+            iCurrentIndex += tree()->columnCount();
+            pItem = tree()->itemBelow(pItem);
+        }
+
+        // Return what we found:
+        // if (pItem)
+        //     printf("Item found: [%s]\n", pItem->text(0).toUtf8().constData());
+        return pItem ? QAccessible::queryAccessibleInterface(QITreeWidgetItem::toItem(pItem)) : 0;
+    }
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));
+}
+
+QString QIAccessibilityInterfaceForQITreeWidget::text(QAccessible::Text /* enmTextRole */) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), QString());
+
+    /* Return tree whats-this: */
+    return tree()->whatsThis();
+}
 
 
 /*********************************************************************************************************************************
@@ -101,6 +204,22 @@ QITreeWidgetItem *QITreeWidgetItem::childItem(int iIndex) const
 QITreeWidget::QITreeWidget(QWidget *pParent)
     : QTreeWidget(pParent)
 {
+    /* Install QITreeWidget accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeWidget::pFactory);
+
+    // WORKAROUND:
+    // Ok, what do we have here..
+    // There is a bug in QAccessible framework which might be just treated like
+    // a functionality flaw. It consist in fact that if an accessibility client
+    // is enabled, base-class can request an accessibility interface in own
+    // constructor before the sub-class registers own factory, so we have to
+    // recreate interface after we finished with our own initialization.
+    QAccessibleInterface *pInterface = QAccessible::queryAccessibleInterface(this);
+    if (pInterface)
+    {
+        QAccessible::deleteAccessibleInterface(QAccessible::uniqueId(pInterface));
+        QAccessible::queryAccessibleInterface(this); // <= new one, proper..
+    }
 }
 
 void QITreeWidget::setSizeHintForItems(const QSize &sizeHint)
