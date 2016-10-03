@@ -29,8 +29,7 @@ typedef struct DRVHOSTBASE *PDRVHOSTBASE;
  * Host base drive access driver instance data.
  *
  * @implements PDMIMOUNT
- * @implements PDMIBLOCKBIOS
- * @implements PDMIBLOCK
+ * @implements PDMIMEDIA
  */
 typedef struct DRVHOSTBASE
 {
