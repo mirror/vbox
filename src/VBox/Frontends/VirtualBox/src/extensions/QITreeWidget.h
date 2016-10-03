@@ -42,6 +42,11 @@ public:
     /** Defines @a sizeHint for tree-widget items. */
     void setSizeHintForItems(const QSize &sizeHint);
 
+    /** Returns the number of children. */
+    int childCount() const;
+    /** Returns the child item with @a iIndex. */
+    QTreeWidgetItem *childItem(int iIndex) const;
+
 protected:
 
     /** Handles paint @a pEvent. */
