@@ -3908,6 +3908,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                     ahciReqSetStatus(pAhciReq, pAhciPort->abATAPISense[2] << 4, ATA_STAT_READY | ATA_STAT_ERR);
                     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7) |
                                                           ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
+                    pAhciReq->cbTransfer = 0;
                 }
             }
             else if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_INVALID)
