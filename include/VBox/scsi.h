@@ -123,7 +123,8 @@ typedef enum SCSICMD
     SCSI_RELEASE_6                      = 0x17,
     SCSI_RESERVE_10                     = 0x56,
     SCSI_RELEASE_10                     = 0x57,
-    SCSI_READ_BLOCK_LIMITS              = 0x05
+    SCSI_READ_BLOCK_LIMITS              = 0x05,
+    SCSI_MAINTENANCE_IN                 = 0xa3
 } SCSICMD;
 
 /**
@@ -133,6 +134,14 @@ typedef enum SCSISVCACTIONIN
 {
     SCSI_SVC_ACTION_IN_READ_CAPACITY_16 = 0x10
 } SCSISVCACTIONIN;
+
+/**
+ * Maintenance in opcode identifiers
+ */
+typedef enum SCSIMAINTENANCEIN
+{
+    SCSI_MAINTENANCE_IN_REPORT_SUPP_OPC = 0x0c
+} SCSIMAINTENANCEIN;
 
 /* Mode page codes for mode sense/select commands. */
 #define SCSI_MODEPAGE_ERROR_RECOVERY   0x01
