@@ -23,6 +23,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_SCSI
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vscsi.h>
@@ -39,6 +40,18 @@
 
 /** The maximum number of release log entries per device. */
 #define MAX_LOG_REL_ERRORS  1024
+
+/**
+ * Eject state.
+ */
+typedef struct DRVSCSIEJECTSTATE
+{
+    /** The item core for the PDM queue. */
+    PDMQUEUEITEMCORE Core;
+    /** Event semaphore to signal when complete. */
+    RTSEMEVENT       hSemEvt;
+} DRVSCSIEJECTSTATE;
+typedef DRVSCSIEJECTSTATE *PDRVSCSIEJECTSTATE;
 
 /**
  * SCSI driver private per request data.
@@ -88,10 +101,14 @@ typedef struct DRVSCSI
     PPDMISCSIPORT           pDevScsiPort;
     /** Pointer to the extended media port interface of the device above. */
     PPDMIMEDIAEXPORT        pDevMediaExPort;
+    /** Pointer to the media port interface of the device above. */
+    PPDMIMEDIAPORT          pDevMediaPort;
     /** pointer to the Led port interface of the dveice above. */
     PPDMILEDPORTS           pLedPort;
     /** The scsi connector interface .*/
     PDMISCSICONNECTOR       ISCSIConnector;
+    /** The media interface for the device above. */
+    PDMIMEDIA               IMedia;
     /** The extended media interface for the device above. */
     PDMIMEDIAEX             IMediaEx;
     /** The media port interface. */
@@ -124,11 +141,13 @@ typedef struct DRVSCSI
     volatile uint32_t       StatIoDepth;
     /** Errors printed in the release log. */
     unsigned                cErrors;
-    /** Medium is readonly */
-    bool                    fReadonly;
 
     /** Size of the I/O request to allocate. */
     size_t                  cbIoReqAlloc;
+    /** Size of a VSCSI I/O request. */
+    size_t                  cbVScsiIoReqAlloc;
+    /** Queue to defer unmounting to EMT. */
+    PPDMQUEUE               pQueue;
 } DRVSCSI, *PDRVSCSI;
 
 /** Convert a VSCSI I/O request handle to the associated PDMIMEDIAEX I/O request. */
@@ -166,7 +185,11 @@ static DECLCALLBACK(int) drvscsiReqAllocSizeSet(VSCSILUN hVScsiLun, void *pvScsi
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
 
     /* We need to store the I/O request handle so we can get it when VSCSI queues an I/O request. */
-    return pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, cbVScsiIoReqAlloc + sizeof(PDMMEDIAEXIOREQ));
+    int rc = pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, cbVScsiIoReqAlloc + sizeof(PDMMEDIAEXIOREQ));
+    if (RT_SUCCESS(rc))
+        pThis->cbVScsiIoReqAlloc = cbVScsiIoReqAlloc + sizeof(PDMMEDIAEXIOREQ);
+
+    return rc;
 }
 
 /**
@@ -244,6 +267,36 @@ static DECLCALLBACK(int) drvscsiSetLock(VSCSILUN hVScsiLun, void *pvScsiLunUser,
         pThis->pDrvMount->pfnUnlock(pThis->pDrvMount);
 
     return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{VSCSILUNIOCALLBACKS,pfnVScsiLunMediumEject} */
+static DECLCALLBACK(int) drvscsiEject(VSCSILUN hVScsiLun, void *pvScsiLunUser)
+{
+    RT_NOREF(hVScsiLun);
+    PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+    int rc = VINF_SUCCESS;
+    RTSEMEVENT hSemEvt = NIL_RTSEMEVENT;
+
+    /* This must be done from EMT. */
+    rc = RTSemEventCreate(&hSemEvt);
+    if (RT_SUCCESS(rc))
+    {
+        PDRVSCSIEJECTSTATE pEjectState = (PDRVSCSIEJECTSTATE)PDMQueueAlloc(pThis->pQueue);
+        if (pEjectState)
+        {
+            pEjectState->hSemEvt = hSemEvt;
+            PDMQueueInsert(pThis->pQueue, &pEjectState->Core);
+
+            /* Wait for completion. */
+            rc = RTSemEventWait(pEjectState->hSemEvt, RT_INDEFINITE_WAIT);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTSemEventDestroy(pEjectState->hSemEvt);
+    }
+
+    return rc;
 }
 
 /**
@@ -378,7 +431,7 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun, void *pvScsi
         && pThis->pDrvMedia->pfnIsNonRotational(pThis->pDrvMedia))
         *pfFeatures |= VSCSI_LUN_FEATURE_NON_ROTATIONAL;
 
-    if (pThis->fReadonly)
+    if (pThis->pDrvMedia->pfnIsReadOnly(pThis->pDrvMedia))
         *pfFeatures |= VSCSI_LUN_FEATURE_READONLY;
 
     return VINF_SUCCESS;
@@ -639,6 +692,45 @@ static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint
     return rc;
 }
 
+/* -=-=-=-=- IMedia -=-=-=-=- */
+
+/** @interface_method_impl{PDMIMEDIA,pfnGetType} */
+static DECLCALLBACK(PDMMEDIATYPE) drvscsiGetType(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    VSCSILUNTYPE enmLunType;
+
+    int rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, 0, &enmLunType);
+    if (RT_FAILURE(rc))
+        return PDMMEDIATYPE_ERROR;
+
+    switch (enmLunType)
+    {
+        case VSCSILUNTYPE_SBC:
+            return PDMMEDIATYPE_HARD_DISK;
+        case VSCSILUNTYPE_MMC:
+            return PDMMEDIATYPE_CDROM;
+        default:
+            return PDMMEDIATYPE_ERROR;
+    }
+
+    return PDMMEDIATYPE_ERROR;
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
+static DECLCALLBACK(int) drvscsiGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+
+    int rc = VINF_SUCCESS;
+    if (pThis->pDrvMedia)
+        rc = pThis->pDrvMedia->pfnGetUuid(pThis->pDrvMedia, pUuid);
+    else
+        RTUuidClear(pUuid);
+
+    return rc;
+}
+
 /* -=-=-=-=- IMediaEx -=-=-=-=- */
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnQueryFeatures} */
@@ -705,14 +797,14 @@ static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMM
 static DECLCALLBACK(int) drvscsiIoReqCancelAll(PPDMIMEDIAEX pInterface)
 {
     RT_NOREF1(pInterface);
-    return VERR_NOT_IMPLEMENTED;
+    return VINF_SUCCESS;
 }
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancel} */
 static DECLCALLBACK(int) drvscsiIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId)
 {
     RT_NOREF2(pInterface, uIoReqId);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_PDM_MEDIAEX_IOREQID_NOT_FOUND;
 }
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqRead} */
@@ -755,6 +847,12 @@ static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMED
     PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
     int rc = VINF_SUCCESS;
 
+    Log(("Dump for pReq=%#p Command: %s\n", pReq, SCSICmdText(pbCdb[0])));
+    Log(("cbCdb=%u\n", cbCdb));
+    for (uint32_t i = 0; i < cbCdb; i++)
+        Log(("pbCdb[%u]=%#x\n", i, pbCdb[i]));
+    Log(("cbBuf=%zu\n", cbBuf));
+
     pReq->enmXferDir = enmTxDir;
     pReq->cbBuf      = cbBuf;
     pReq->pu8ScsiSts = pu8ScsiSts;
@@ -772,8 +870,9 @@ static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMED
         pReq->Seg.pvSeg = pReq->pvBuf;
         pReq->Seg.cbSeg = cbBuf;
 
-        if (   enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN
-            || enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE)
+        if (   cbBuf
+            && (   enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN
+                || enmTxDir == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE))
         {
             RTSGBUF SgBuf;
             RTSgBufInit(&SgBuf, &pReq->Seg, 1);
@@ -874,6 +973,31 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
         PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
 }
 
+/**
+ * Consumer for the queue
+ *
+ * @returns Success indicator.
+ *          If false the item will not be removed and the flushing will stop.
+ * @param   pDrvIns     The driver instance.
+ * @param   pItem       The item to consume. Upon return this item will be freed.
+ */
+static DECLCALLBACK(bool) drvscsiR3NotifyQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItem)
+{
+    PDRVSCSIEJECTSTATE pEjectState = (PDRVSCSIEJECTSTATE)pItem;
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    int rc = pThis->pDrvMount->pfnUnmount(pThis->pDrvMount, false/*=fForce*/, true/*=fEject*/);
+    Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
+    if (RT_SUCCESS(rc))
+    {
+        if (pThis->pDevMediaExPort)
+            pThis->pDevMediaExPort->pfnMediumEjected(pThis->pDevMediaExPort);
+    }
+
+    RTSemEventSignal(pEjectState->hSemEvt);
+    return true;
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -888,6 +1012,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSICONNECTOR, &pThis->ISCSIConnector);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDevMediaExPort ? &pThis->IMediaEx : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, pThis->pDevMediaPort ? &pThis->IMedia : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pThis->IMountNotify);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pThis->IPortEx);
@@ -900,8 +1025,14 @@ static DECLCALLBACK(int) drvscsiQueryDeviceLocation(PPDMIMEDIAPORT pInterface, c
 {
     PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPort);
 
-    return pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, ppcszController,
-                                                       piInstance, piLUN);
+    if (pThis->pDevScsiPort)
+        return pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, ppcszController,
+                                                           piInstance, piLUN);
+    if (pThis->pDevMediaPort)
+        return pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, ppcszController,
+                                                            piInstance, piLUN);
+
+    return VERR_NOT_SUPPORTED;
 }
 
 /**
@@ -1000,6 +1131,79 @@ static DECLCALLBACK(bool) drvscsiIsAsyncResetDone(PPDMDRVINS pDrvIns)
         return true;
 }
 
+/** @copydoc FNPDMDRVATTACH */
+static DECLCALLBACK(int) drvscsiAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    LogFlowFunc(("pDrvIns=%#p fFlags=%#x\n", pDrvIns, fFlags));
+
+    AssertMsgReturn((fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
+                    ("SCSI: Hotplugging is not supported\n"),
+                    VERR_INVALID_PARAMETER);
+
+    /*
+     * Try attach driver below and query it's media interface.
+     */
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
+    AssertMsgReturn(RT_SUCCESS(rc), ("Attaching driver below failed rc=%Rrc\n", rc), rc);
+
+    /*
+     * Query the media interface.
+     */
+    pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIA);
+    AssertMsgReturn(VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
+                    VERR_PDM_MISSING_INTERFACE);
+
+    /* Query the extended media interface. */
+    pThis->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIAEX);
+    AssertMsgReturn(VALID_PTR(pThis->pDrvMediaEx), ("VSCSI configuration error: No extended media interface!\n"),
+                    VERR_PDM_MISSING_INTERFACE);
+
+    pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);
+
+    if (pThis->cbVScsiIoReqAlloc)
+    {
+        rc = pThis->pDrvMediaEx->pfnIoReqAllocSizeSet(pThis->pDrvMediaEx, pThis->cbVScsiIoReqAlloc);
+        AssertMsgReturn(RT_SUCCESS(rc), ("Setting the I/O request allocation size failed with rc=%Rrc\n", rc), rc);
+    }
+
+    if (pThis->pDrvMount)
+    {
+        if (pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia))
+        {
+            rc = VINF_SUCCESS; VSCSILunMountNotify(pThis->hVScsiLun);
+            AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being mounted\n"), rc);
+        }
+        else
+        {
+            rc = VINF_SUCCESS; VSCSILunUnmountNotify(pThis->hVScsiLun);
+            AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being unmounted\n"), rc);
+        }
+    }
+
+    return rc;
+}
+
+/** @copydoc FNPDMDRVDETACH */
+static DECLCALLBACK(void) drvscsiDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    LogFlowFunc(("pDrvIns=%#p fFlags=%#x\n", pDrvIns, fFlags));
+
+    AssertMsgReturnVoid((fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
+                        ("SCSI: Hotplugging is not supported\n"));
+
+    /*
+     * Zero some important members.
+     */
+    pThis->pDrvBase = NULL;
+    pThis->pDrvMedia = NULL;
+    pThis->pDrvMediaEx = NULL;
+    pThis->pDrvMount = NULL;
+}
+
 /**
  * @copydoc FNPDMDRVRESET
  */
@@ -1064,6 +1268,26 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     pDrvIns->IBase.pfnQueryInterface            = drvscsiQueryInterface;
 
+    /* IMedia */
+    pThis->IMedia.pfnRead                       = NULL;
+    pThis->IMedia.pfnReadPcBios                 = NULL;
+    pThis->IMedia.pfnWrite                      = NULL;
+    pThis->IMedia.pfnFlush                      = NULL;
+    pThis->IMedia.pfnSendCmd                    = NULL;
+    pThis->IMedia.pfnMerge                      = NULL;
+    pThis->IMedia.pfnSetSecKeyIf                = NULL;
+    pThis->IMedia.pfnGetSize                    = NULL;
+    pThis->IMedia.pfnGetSectorSize              = NULL;
+    pThis->IMedia.pfnIsReadOnly                 = NULL;
+    pThis->IMedia.pfnBiosGetPCHSGeometry        = NULL;
+    pThis->IMedia.pfnBiosSetPCHSGeometry        = NULL;
+    pThis->IMedia.pfnBiosGetLCHSGeometry        = NULL;
+    pThis->IMedia.pfnBiosSetLCHSGeometry        = NULL;
+    pThis->IMedia.pfnBiosIsVisible              = NULL;
+    pThis->IMedia.pfnGetType                    = drvscsiGetType;
+    pThis->IMedia.pfnGetUuid                    = drvscsiGetUuid;
+    pThis->IMedia.pfnDiscard                    = NULL;
+
     /* IMediaEx */
     pThis->IMediaEx.pfnQueryFeatures            = drvscsiQueryFeatures;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvscsiIoReqAllocSizeSet;
@@ -1093,12 +1317,17 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IPortEx.pfnIoReqQueryDiscardRanges   = drvscsiIoReqQueryDiscardRanges;
     pThis->IPortEx.pfnIoReqStateChanged         = drvscsiIoReqStateChanged;
 
-    /* Query the SCSI port interface above. */
+    /* Query the optional SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
-    AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
+
+    /* Query the optional media port interface above. */
+    pThis->pDevMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
 
     /* Query the optional extended media port interface above. */
     pThis->pDevMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
+
+    AssertMsgReturn(pThis->pDevScsiPort || pThis->pDevMediaExPort,
+                    ("Missing SCSI or extended media port interface above\n"), VERR_PDM_MISSING_INTERFACE);
 
     /* Query the optional LED interface above. */
     pThis->pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
@@ -1115,23 +1344,18 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Readonly\0"))
+    if (!CFGMR3AreValuesValid(pCfg, ""))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("SCSI configuration error: unknown option specified"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Readonly", &pThis->fReadonly, false);
-    if (RT_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                                N_("SCSI configuration error: failed to read \"Readonly\" as boolean"));
-
     /*
-     * Try attach driver below and query it's block interface.
+     * Try attach driver below and query it's media interface.
      */
     rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
     AssertMsgReturn(RT_SUCCESS(rc), ("Attaching driver below failed rc=%Rrc\n", rc), rc);
 
     /*
-     * Query the block and blockbios interfaces.
+     * Query the media interface.
      */
     pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMEDIA);
     AssertMsgReturn(VALID_PTR(pThis->pDrvMedia), ("VSCSI configuration error: No media interface!\n"),
@@ -1174,6 +1398,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->VScsiIoCallbacks.pfnVScsiLunReqFree             = drvscsiReqFree;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSize       = drvscsiGetSize;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumGetSectorSize = drvscsiGetSectorSize;
+    pThis->VScsiIoCallbacks.pfnVScsiLunMediumEject         = drvscsiEject;
     pThis->VScsiIoCallbacks.pfnVScsiLunReqTransferEnqueue  = drvscsiReqTransferEnqueue;
     pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags     = drvscsiGetFeatureFlags;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock       = drvscsiSetLock;
@@ -1210,7 +1435,10 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     uint32_t iCtrlInstance = 0;
     uint32_t iCtrlLun = 0;
 
-    rc = pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
+    if (pThis->pDevScsiPort)
+        rc = pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
+    if (pThis->pDevMediaPort)
+        rc = pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
     if (RT_SUCCESS(rc))
     {
         const char *pszCtrlId =   strcmp(pszCtrl, "Msd") == 0 ? "USB"
@@ -1234,6 +1462,12 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
                                    N_("VSCSI configuration error: Failed to query features of device"));
     if (fFeatures & PDMIMEDIAEX_FEATURE_F_DISCARD)
         LogRel(("SCSI#%d: Enabled UNMAP support\n", pDrvIns->iInstance));
+
+    rc = PDMDrvHlpQueueCreate(pDrvIns, sizeof(DRVSCSIEJECTSTATE), 1, 0, drvscsiR3NotifyQueueConsumer,
+                              "SCSI-Eject", &pThis->pQueue);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                   N_("VSCSI configuration error: Failed to create notification queue"));
 
     return VINF_SUCCESS;
 }
@@ -1278,9 +1512,9 @@ const PDMDRVREG g_DrvSCSI =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    drvscsiAttach,
     /* pfnDetach */
-    NULL,
+    drvscsiDetach,
     /* pfnPowerOff */
     drvscsiPowerOff,
     /* pfnSoftReset */

@@ -472,6 +472,18 @@ DECLINLINE(int) vscsiLunMediumSetLock(PVSCSILUNINT pVScsiLun, bool fLocked)
 }
 
 /**
+ * Wrapper for the eject medium I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN.
+ */
+DECLINLINE(int) vscsiLunMediumEject(PVSCSILUNINT pVScsiLun)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumEject(pVScsiLun,
+                                                                   pVScsiLun->pvVScsiLunUser);
+}
+
+/**
  * Wrapper for the I/O request enqueue I/O callback.
  *
  * @returns VBox status code.
