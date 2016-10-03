@@ -699,22 +699,23 @@ static DECLCALLBACK(PDMMEDIATYPE) drvscsiGetType(PPDMIMEDIA pInterface)
 {
     PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
     VSCSILUNTYPE enmLunType;
+    PDMMEDIATYPE enmMediaType = PDMMEDIATYPE_ERROR;
 
     int rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, 0, &enmLunType);
-    if (RT_FAILURE(rc))
-        return PDMMEDIATYPE_ERROR;
-
-    switch (enmLunType)
+    if (RT_SUCCESS(rc))
     {
-        case VSCSILUNTYPE_SBC:
-            return PDMMEDIATYPE_HARD_DISK;
-        case VSCSILUNTYPE_MMC:
-            return PDMMEDIATYPE_CDROM;
-        default:
-            return PDMMEDIATYPE_ERROR;
+        switch (enmLunType)
+        {
+            case VSCSILUNTYPE_SBC:
+                enmMediaType = PDMMEDIATYPE_HARD_DISK;
+            case VSCSILUNTYPE_MMC:
+                enmMediaType = PDMMEDIATYPE_CDROM;
+            default:
+                enmMediaType = PDMMEDIATYPE_ERROR;
+        }
     }
 
-    return PDMMEDIATYPE_ERROR;
+    return enmMediaType;
 }
 
 /** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
