@@ -245,6 +245,9 @@ void UISettingsDialogGlobal::saveOwnData()
 
 void UISettingsDialogGlobal::retranslateUi()
 {
+    /* Selector itself: */
+    m_pSelector->widget()->setWhatsThis(tr("Allows to navigate through Global Property categories"));
+
     /* General page: */
     m_pSelector->setItemText(GlobalSettingsPageType_General, tr("General"));
 
@@ -597,6 +600,9 @@ void UISettingsDialogMachine::saveOwnData()
 
 void UISettingsDialogMachine::retranslateUi()
 {
+    /* Selector itself: */
+    m_pSelector->widget()->setWhatsThis(tr("Allows to navigate through VM Settings categories"));
+
     /* We have to make sure that the Network, Serial & Parallel pages are retranslated
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already: */
