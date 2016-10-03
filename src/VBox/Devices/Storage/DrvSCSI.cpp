@@ -708,10 +708,13 @@ static DECLCALLBACK(PDMMEDIATYPE) drvscsiGetType(PPDMIMEDIA pInterface)
         {
             case VSCSILUNTYPE_SBC:
                 enmMediaType = PDMMEDIATYPE_HARD_DISK;
+                break;
             case VSCSILUNTYPE_MMC:
                 enmMediaType = PDMMEDIATYPE_CDROM;
+                break;
             default:
                 enmMediaType = PDMMEDIATYPE_ERROR;
+                break;
         }
     }
 
