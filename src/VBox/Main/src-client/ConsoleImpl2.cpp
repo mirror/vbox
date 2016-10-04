@@ -4113,10 +4113,10 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
         AssertRCReturn(rc, rc);
 
         /*
-         * Don't remove the LUN except for IDE (which connects directly to the medium driver
+         * Don't remove the LUN except for IDE/floppy (which connects directly to the medium driver
          * even for DVD devices) or if there is a hotplug event which rips out the complete device.
          */
-        if (enmBus == StorageBus_IDE || fHotplug)
+        if (enmBus == StorageBus_IDE || enmBus == StorageBus_Floppy || fHotplug)
         {
             fAddLun = true;
             CFGMR3RemoveNode(pLunL0);
