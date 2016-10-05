@@ -746,6 +746,9 @@ static int vscsiLunMmcGetEventStatusNotification(PVSCSILUNMMC pVScsiLunMmc, PVSC
     uint8_t aReply[8];
     RT_ZERO(aReply);
 
+    LogFlowFunc(("pVScsiLunMmc=%#p pVScsiReq=%#p cbMaxTransfer=%zu\n",
+                 pVScsiLunMmc, pVScsiReq, cbMaxTransfer));
+
     do
     {
         OldStatus = ASMAtomicReadU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus);
@@ -762,6 +765,7 @@ static int vscsiLunMmcGetEventStatusNotification(PVSCSILUNMMC pVScsiLunMmc, PVSC
                 aReply[5] = 0x02; /* medium present / door closed */
                 aReply[6] = 0x00;
                 aReply[7] = 0x00;
+                pVScsiLunMmc->Core.fReady = true;
                 break;
 
             case MMCEVENTSTATUSTYPE_MEDIA_CHANGED:
@@ -799,6 +803,9 @@ static int vscsiLunMmcGetEventStatusNotification(PVSCSILUNMMC pVScsiLunMmc, PVSC
                 aReply[7] = 0x00;
                 break;
         }
+
+        LogFlowFunc(("OldStatus=%u NewStatus=%u\n", OldStatus, NewStatus));
+
     } while (!ASMAtomicCmpXchgU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus, NewStatus, OldStatus));
 
     RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, RT_MIN(cbMaxTransfer, sizeof(aReply)));
@@ -837,12 +844,18 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     int             rcReq = SCSI_STATUS_OK;
     unsigned        uCmd = pVScsiReq->pbCDB[0];
 
+    LogFlowFunc(("pVScsiLun=%#p{.fReady=%RTbool, .fMediaPresent=%RTbool} pVScsiReq=%#p{.pbCdb[0]=%#x}\n",
+                 pVScsiLun, pVScsiLun->fReady, pVScsiLun->fMediaPresent, pVScsiReq, uCmd));
+
     /*
      * GET CONFIGURATION, GET EVENT/STATUS NOTIFICATION, INQUIRY, and REQUEST SENSE commands
      * operate even when a unit attention condition exists for initiator; every other command
      * needs to report CHECK CONDITION in that case.
      */
-    if (!pVScsiLunMmc->Core.fReady && uCmd != SCSI_INQUIRY)
+    if (   !pVScsiLunMmc->Core.fReady
+        && uCmd != SCSI_INQUIRY
+        && uCmd != SCSI_GET_CONFIGURATION
+        && uCmd != SCSI_GET_EVENT_STATUS_NOTIFICATION)
     {
         /*
          * A note on media changes: As long as a medium is not present, the unit remains in
@@ -1259,27 +1272,34 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
 static DECLCALLBACK(int) vscsiLunMmcMediumInserted(PVSCSILUNINT pVScsiLun)
 {
     PVSCSILUNMMC pVScsiLunMmc = (PVSCSILUNMMC)pVScsiLun;
-
-    uint32_t OldStatus, NewStatus;
-    do
+    uint64_t cbDisk = 0;
+    int rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
+    if (RT_SUCCESS(rc))
     {
-        OldStatus = ASMAtomicReadU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus);
-        switch (OldStatus)
-        {
-            case MMCEVENTSTATUSTYPE_MEDIA_CHANGED:
-            case MMCEVENTSTATUSTYPE_MEDIA_REMOVED:
-                /* no change, we will send "medium removed" + "medium inserted" */
-                NewStatus = MMCEVENTSTATUSTYPE_MEDIA_CHANGED;
-                break;
-            default:
-                NewStatus = MMCEVENTSTATUSTYPE_MEDIA_NEW;
-                break;
-        }
-    } while (!ASMAtomicCmpXchgU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus,
-                                  NewStatus, OldStatus));
+        pVScsiLunMmc->cSectors = cbDisk / pVScsiLunMmc->cbSector;
 
-    ASMAtomicXchgU32(&pVScsiLunMmc->u32MediaTrackType, MMC_MEDIA_TYPE_UNKNOWN);
-    return VINF_SUCCESS;
+        uint32_t OldStatus, NewStatus;
+        do
+        {
+            OldStatus = ASMAtomicReadU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus);
+            switch (OldStatus)
+            {
+                case MMCEVENTSTATUSTYPE_MEDIA_CHANGED:
+                case MMCEVENTSTATUSTYPE_MEDIA_REMOVED:
+                    /* no change, we will send "medium removed" + "medium inserted" */
+                    NewStatus = MMCEVENTSTATUSTYPE_MEDIA_CHANGED;
+                    break;
+                default:
+                    NewStatus = MMCEVENTSTATUSTYPE_MEDIA_NEW;
+                    break;
+            }
+        } while (!ASMAtomicCmpXchgU32((volatile uint32_t *)&pVScsiLunMmc->MediaEventStatus,
+                                      NewStatus, OldStatus));
+
+        ASMAtomicXchgU32(&pVScsiLunMmc->u32MediaTrackType, MMC_MEDIA_TYPE_UNKNOWN);
+    }
+
+    return rc;
 }
 
 /** @interface_method_impl{VSCSILUNDESC,pfnVScsiLunMediumRemoved} */

@@ -1241,7 +1241,7 @@ static DECLCALLBACK(int) drvscsiAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 
     if (pThis->pDrvMount)
     {
-        if (pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia))
+        if (pThis->pDrvMount->pfnIsMounted(pThis->pDrvMount))
         {
             rc = VINF_SUCCESS; VSCSILunMountNotify(pThis->hVScsiLun);
             AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being mounted\n"), rc);
@@ -1273,6 +1273,8 @@ static DECLCALLBACK(void) drvscsiDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
     pThis->pDrvMedia = NULL;
     pThis->pDrvMediaEx = NULL;
     pThis->pDrvMount = NULL;
+
+    VSCSILunUnmountNotify(pThis->hVScsiLun);
 }
 
 /**
@@ -1491,7 +1493,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     // The mount/unmount interface doesn't work in a very sensible manner!
     if (pThis->pDrvMount)
     {
-        if (pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia))
+        if (pThis->pDrvMount->pfnIsMounted(pThis->pDrvMount))
         {
             rc = VINF_SUCCESS; VSCSILunMountNotify(pThis->hVScsiLun);
             AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being mounted\n"), rc);
