@@ -1598,9 +1598,9 @@ if1of ($(DLLS), VBoxRT)
 VBoxRT_CLEAN += $(VBoxRT_0_OUTDIR)/VBoxRT.def
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
 		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-$$(if-expr $$(KBUILD_TARGET_ARCH) == amd64,win64,win32).def \
-		$(if-expr defined(VBOX_WITH_OPENSSL_1_1_0)\
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-1.1plus.def \
-		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-pre-1.1.def )\
+		$(if-expr defined(VBOX_WITH_OPENSSL_PRE_1_1)\
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-pre-1.1.def \
+		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-openssl-1.1plus.def )\
 		$(if-expr "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86" && defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES)\
 		,$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcr100-win32.def ,) #$(PATH_SUB_CURRENT)/r3/win/VBoxRT-msvcp100-win32.def
 	$(RM) -f -- $@
