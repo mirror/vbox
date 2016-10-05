@@ -694,6 +694,73 @@ static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint
 
 /* -=-=-=-=- IMedia -=-=-=-=- */
 
+/** @interface_method_impl{PDMIMEDIA,pfnGetSize} */
+static DECLCALLBACK(uint64_t) drvscsiGetSize(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnGetSectorSize} */
+static DECLCALLBACK(uint32_t) drvscsiGetSectorSize(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnGetSectorSize(pThis->pDrvMedia);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
+static DECLCALLBACK(bool) drvscsiIsReadOnly(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnIsReadOnly(pThis->pDrvMedia);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnIsNonRotational} */
+static DECLCALLBACK(bool) drvscsiIsNonRotational(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnIsNonRotational(pThis->pDrvMedia);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
+static DECLCALLBACK(int) drvscsiBiosGetPCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PPDMMEDIAGEOMETRY pPCHSGeometry)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnBiosGetPCHSGeometry(pThis->pDrvMedia, pPCHSGeometry);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetPCHSGeometry} */
+static DECLCALLBACK(int) drvscsiBiosSetPCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PCPDMMEDIAGEOMETRY pPCHSGeometry)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnBiosSetPCHSGeometry(pThis->pDrvMedia, pPCHSGeometry);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetLCHSGeometry} */
+static DECLCALLBACK(int) drvscsiBiosGetLCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnBiosGetLCHSGeometry(pThis->pDrvMedia, pLCHSGeometry);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetLCHSGeometry} */
+static DECLCALLBACK(int) drvscsiBiosSetLCHSGeometry(PPDMIMEDIA pInterface,
+                                                  PCPDMMEDIAGEOMETRY pLCHSGeometry)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnBiosSetLCHSGeometry(pThis->pDrvMedia, pLCHSGeometry);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnBiosIsVisible} */
+static DECLCALLBACK(bool) drvscsiBiosIsVisible(PPDMIMEDIA pInterface)
+{
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IMedia);
+    return pThis->pDrvMedia->pfnBiosIsVisible(pThis->pDrvMedia);
+}
+
 /** @interface_method_impl{PDMIMEDIA,pfnGetType} */
 static DECLCALLBACK(PDMMEDIATYPE) drvscsiGetType(PPDMIMEDIA pInterface)
 {
@@ -1280,14 +1347,15 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IMedia.pfnSendCmd                    = NULL;
     pThis->IMedia.pfnMerge                      = NULL;
     pThis->IMedia.pfnSetSecKeyIf                = NULL;
-    pThis->IMedia.pfnGetSize                    = NULL;
-    pThis->IMedia.pfnGetSectorSize              = NULL;
-    pThis->IMedia.pfnIsReadOnly                 = NULL;
-    pThis->IMedia.pfnBiosGetPCHSGeometry        = NULL;
-    pThis->IMedia.pfnBiosSetPCHSGeometry        = NULL;
-    pThis->IMedia.pfnBiosGetLCHSGeometry        = NULL;
-    pThis->IMedia.pfnBiosSetLCHSGeometry        = NULL;
-    pThis->IMedia.pfnBiosIsVisible              = NULL;
+    pThis->IMedia.pfnGetSize                    = drvscsiGetSize;
+    pThis->IMedia.pfnGetSectorSize              = drvscsiGetSectorSize;
+    pThis->IMedia.pfnIsReadOnly                 = drvscsiIsReadOnly;
+    pThis->IMedia.pfnIsNonRotational            = drvscsiIsNonRotational;
+    pThis->IMedia.pfnBiosGetPCHSGeometry        = drvscsiBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry        = drvscsiBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry        = drvscsiBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry        = drvscsiBiosSetLCHSGeometry;
+    pThis->IMedia.pfnBiosIsVisible              = drvscsiBiosIsVisible;
     pThis->IMedia.pfnGetType                    = drvscsiGetType;
     pThis->IMedia.pfnGetUuid                    = drvscsiGetUuid;
     pThis->IMedia.pfnDiscard                    = NULL;
