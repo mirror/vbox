@@ -106,9 +106,7 @@ vboxvideo_drv_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMIMemAlloc.cpp \
-	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
-	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMIMemAlloc.cpp
  # Any global symbols in the driver object files will be added to XFree86's
  # symbol table, which can cause problems if we e.g. define a symbol in two
  # modules.
