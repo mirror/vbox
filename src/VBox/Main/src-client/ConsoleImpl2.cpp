@@ -4069,7 +4069,9 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
              */
             char *pszDriverDetach = NULL;
             if (   !fHotplug
-                && (enmBus == StorageBus_SATA || enmBus == StorageBus_SAS || enmBus == StorageBus_SCSI))
+                && (   (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD)
+                    || enmBus == StorageBus_SAS
+                    || enmBus == StorageBus_SCSI))
             {
                 /* Get the current attached driver we have to detach. */
                 PCFGMNODE pDrvLun = CFGMR3GetChildF(pCtlInst, "LUN#%u/AttachedDriver/", uLUN);
@@ -4116,7 +4118,10 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
          * Don't remove the LUN except for IDE/floppy (which connects directly to the medium driver
          * even for DVD devices) or if there is a hotplug event which rips out the complete device.
          */
-        if (enmBus == StorageBus_IDE || enmBus == StorageBus_Floppy || fHotplug)
+        if (   fHotplug
+            || enmBus == StorageBus_IDE
+            || enmBus == StorageBus_Floppy
+            || (enmBus == StorageBus_SATA && enmDevType != DeviceType_DVD))
         {
             fAddLun = true;
             CFGMR3RemoveNode(pLunL0);
