@@ -19,7 +19,7 @@
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 #include <VBox/err.h>
-#include <VBox/log.h>
+// #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
@@ -61,7 +61,7 @@ static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
                                        VBVA_ENABLE);
         if (!p)
         {
-            LogFunc(("HGSMIHeapAlloc failed\n"));
+            // LogFunc(("HGSMIHeapAlloc failed\n"));
         }
         else
         {
@@ -103,13 +103,13 @@ DECLHIDDEN(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
 {
     bool bRc = false;
 
-    LogFlowFunc(("pVBVA %p\n", pVBVA));
+    // LogFlowFunc(("pVBVA %p\n", pVBVA));
 
 #if 0  /* All callers check this */
     if (ppdev->bHGSMISupported)
 #endif
     {
-        LogFunc(("pVBVA %p vbva off 0x%x\n", pVBVA, pCtx->offVRAMBuffer));
+        // LogFunc(("pVBVA %p vbva off 0x%x\n", pVBVA, pCtx->offVRAMBuffer));
 
         pVBVA->hostFlags.u32HostEvents      = 0;
         pVBVA->hostFlags.u32SupportedOrders = 0;
@@ -140,7 +140,7 @@ DECLHIDDEN(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
                                  PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
                                  int32_t cScreen)
 {
-    LogFlowFunc(("\n"));
+    // LogFlowFunc(("\n"));
 
     pCtx->fHwBufferOverflow = false;
     pCtx->pRecord           = NULL;
@@ -177,8 +177,8 @@ DECLHIDDEN(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
         if (indexRecordNext == pCtx->pVBVA->indexRecordFirst)
         {
             /* Even after flush there is no place. Fail the request. */
-            LogFunc(("no space in the queue of records!!! first %d, last %d\n",
-                     pCtx->pVBVA->indexRecordFirst, pCtx->pVBVA->indexRecordFree));
+            // LogFunc(("no space in the queue of records!!! first %d, last %d\n",
+            //          pCtx->pVBVA->indexRecordFirst, pCtx->pVBVA->indexRecordFree));
         }
         else
         {
@@ -240,7 +240,7 @@ static void vboxHwBufferFlush(PHGSMIGUESTCOMMANDCONTEXT pCtx)
                                    VBVA_FLUSH);
     if (!p)
     {
-        LogFunc(("HGSMIHeapAlloc failed\n"));
+        // LogFunc(("HGSMIHeapAlloc failed\n"));
     }
     else
     {
@@ -314,7 +314,7 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
 
         if (cbChunk >= cbHwBufferAvail)
         {
-            LogFunc(("1) avail %d, chunk %d\n", cbHwBufferAvail, cbChunk));
+            // LogFunc(("1) avail %d, chunk %d\n", cbHwBufferAvail, cbChunk));
 
             vboxHwBufferFlush (pHGSMICtx);
 
@@ -322,12 +322,12 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
 
             if (cbChunk >= cbHwBufferAvail)
             {
-                LogFunc(("no place for %d bytes. Only %d bytes available after flush. Going to partial writes.\n",
-                            cb, cbHwBufferAvail));
+                // LogFunc(("no place for %d bytes. Only %d bytes available after flush. Going to partial writes.\n",
+                //             cb, cbHwBufferAvail));
 
                 if (cbHwBufferAvail <= pVBVA->cbPartialWriteThreshold)
                 {
-                    LogFunc(("Buffer overflow!!!\n"));
+                    // LogFunc(("Buffer overflow!!!\n"));
                     pCtx->fHwBufferOverflow = true;
                     Assert(false);
                     return false;

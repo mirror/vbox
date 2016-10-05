@@ -16,12 +16,16 @@
  */
 
 #define LOG_DISABLED /* Maybe we can enabled it all the time now? */
+/** @note commented out all logging statements to avoid pulling the logging
+ * sub-system into places like the Linux kernel driver.  Perhaps the best
+ * thing would be to use return enough information for callers to log what
+ * is needed. */
 #define LOG_GROUP LOG_GROUP_HGSMI
 #include <iprt/heap.h>
 #include <iprt/string.h>
 
 #include <VBox/HGSMI/HGSMI.h>
-#include <VBox/log.h>
+// #include <VBox/log.h>
 
 
 /* Channel flags. */
@@ -271,16 +275,16 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
                              HGSMIOFFSET offBuffer,
                              HGSMIBUFFERCONTEXT *pBufferContext)
 {
-    LogFlowFunc(("buffer 0x%x, area %p %x [0x%x;0x%x]\n",
-                 offBuffer, pArea->pu8Base, pArea->cbArea, pArea->offBase, pArea->offLast));
+    // LogFlowFunc(("buffer 0x%x, area %p %x [0x%x;0x%x]\n",
+    //              offBuffer, pArea->pu8Base, pArea->cbArea, pArea->offBase, pArea->offLast));
 
     int rc = VINF_SUCCESS;
 
     if (   offBuffer < pArea->offBase
         || offBuffer > pArea->offLast)
     {
-        LogFunc(("offset 0x%x is outside the area [0x%x;0x%x]!!!\n",
-                 offBuffer, pArea->offBase, pArea->offLast));
+        // LogFunc(("offset 0x%x is outside the area [0x%x;0x%x]!!!\n",
+        //          offBuffer, pArea->offBase, pArea->offLast));
         rc = VERR_INVALID_PARAMETER;
         HGSMI_STRICT_ASSERT_FAILED();
     }
@@ -292,8 +296,8 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
         /* Quick check of the data size, it should be less than the maximum
          * data size for the buffer at this offset.
          */
-        LogFlowFunc(("datasize check: header.u32DataSize = 0x%x pArea->offLast - offBuffer = 0x%x\n",
-                     header.u32DataSize, pArea->offLast - offBuffer));
+        // LogFlowFunc(("datasize check: header.u32DataSize = 0x%x pArea->offLast - offBuffer = 0x%x\n",
+        //              header.u32DataSize, pArea->offLast - offBuffer));
 
         if (header.u32DataSize <= pArea->offLast - offBuffer)
         {
@@ -301,8 +305,8 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
 
             /* At least both header and tail structures are in the area. Check the checksum. */
             uint32_t u32Checksum = HGSMIChecksum(offBuffer, &header, &tail);
-            LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n",
-                         u32Checksum, tail.u32Checksum));
+            // LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n",
+            //              u32Checksum, tail.u32Checksum));
             if (u32Checksum == tail.u32Checksum)
             {
                 /* Success. */
@@ -312,16 +316,16 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
             }
             else
             {
-                LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n",
-                         u32Checksum, tail.u32Checksum));
+                // LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n",
+                //          u32Checksum, tail.u32Checksum));
                 rc = VERR_INVALID_STATE;
                 HGSMI_STRICT_ASSERT_FAILED();
             }
         }
         else
         {
-            LogFunc(("invalid data size 0x%x, maximum is 0x%x!!!\n",
-                     header.u32DataSize, pArea->offLast - offBuffer));
+            // LogFunc(("invalid data size 0x%x, maximum is 0x%x!!!\n",
+            //          header.u32DataSize, pArea->offLast - offBuffer));
             rc = VERR_TOO_MUCH_DATA;
             HGSMI_STRICT_ASSERT_FAILED();
         }
@@ -361,7 +365,7 @@ int HGSMIBufferProcess(const HGSMIAREA *pArea,
                        HGSMICHANNELINFO *pChannelInfo,
                        HGSMIOFFSET offBuffer)
 {
-    LogFlowFunc(("pArea %p, offBuffer 0x%x\n", pArea, offBuffer));
+    // LogFlowFunc(("pArea %p, offBuffer 0x%x\n", pArea, offBuffer));
 
     AssertPtrReturn(pArea, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pChannelInfo, VERR_INVALID_PARAMETER);

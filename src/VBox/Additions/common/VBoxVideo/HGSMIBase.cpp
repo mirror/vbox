@@ -23,7 +23,7 @@
 #include <VBox/VMMDev.h>
 
 #include <iprt/asm.h>
-#include <iprt/log.h>
+// #include <iprt/log.h>
 #include <iprt/string.h>
 
 /** Send completion notification to the host for the command located at offset
@@ -410,8 +410,8 @@ DECLHIDDEN(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
     *pcbHostArea = cbHostArea;
     *poffVRAMHostArea = offVRAMHostArea;
-    LogFunc(("offVRAMHostArea = 0x%08X, cbHostArea = 0x%08X\n",
-             offVRAMHostArea, cbHostArea));
+    // LogFunc(("offVRAMHostArea = 0x%08X, cbHostArea = 0x%08X\n",
+    //          offVRAMHostArea, cbHostArea));
 }
 
 
@@ -461,7 +461,7 @@ DECLHIDDEN(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                          uint32_t offVRAMHostArea,
                                          uint32_t cbHostArea)
 {
-    Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
+    // Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
     /* setup the flags first to ensure they are initialized by the time the
      * host heap is ready */
@@ -479,7 +479,7 @@ DECLHIDDEN(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         rc = vboxHGSMIReportHostArea(pCtx, offVRAMHostArea, cbHostArea);
         AssertRC(rc);
     }
-    Log(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
+    // Log(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
     return rc;
 }
 
@@ -518,7 +518,7 @@ DECLHIDDEN(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 {
     int rc = VINF_SUCCESS;
     VBVACONF32 *p;
-    LogFunc(("u32Index = %d\n", u32Index));
+    // LogFunc(("u32Index = %d\n", u32Index));
 
     rc = testQueryConf(pCtx);
     if (RT_FAILURE(rc))
@@ -536,14 +536,14 @@ DECLHIDDEN(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         if (RT_SUCCESS(rc))
         {
             *pulValue = p->u32Value;
-            LogFunc(("u32Value = %d\n", p->u32Value));
+            // LogFunc(("u32Value = %d\n", p->u32Value));
         }
         /* Free the IO buffer. */
         VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
-    LogFunc(("rc = %d\n", rc));
+    // LogFunc(("rc = %d\n", rc));
     return rc;
 }
 
@@ -588,11 +588,11 @@ DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
          */
         fFlags |= VBOX_MOUSE_POINTER_VISIBLE;
     }
-    LogFlowFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
+    // LogFlowFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
     if (cbData > cbLength)
     {
-        LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
-                 cbData, cbLength));
+        // LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
+        //          cbData, cbLength));
         return VERR_INVALID_PARAMETER;
     }
     /* Allocate the IO buffer. */
@@ -623,7 +623,7 @@ DECLHIDDEN(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     }
     else
         rc = VERR_NO_MEMORY;
-    LogFlowFunc(("rc %d\n", rc));
+    // LogFlowFunc(("rc %d\n", rc));
     return rc;
 }
 
@@ -646,7 +646,7 @@ DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fRe
 {
     int rc = VINF_SUCCESS;
     VBVACURSORPOSITION *p;
-    Log(("%s: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
+    // Log(("%s: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)x, (unsigned)y));
 
     /* Allocate the IO buffer. */
     p = (VBVACURSORPOSITION *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVACURSORPOSITION), HGSMI_CH_VBVA, VBVA_CURSOR_POSITION);
@@ -663,14 +663,14 @@ DECLHIDDEN(int) VBoxHGSMICursorPosition(PHGSMIGUESTCOMMANDCONTEXT pCtx, bool fRe
                 *pxHost = p->x;
             if (pyHost)
                 *pyHost = p->y;
-            Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)p->x, (unsigned)p->y));
+            // Log(("%s: return: x=%u, y=%u\n", __PRETTY_FUNCTION__, (unsigned)p->x, (unsigned)p->y));
         }
         /* Free the IO buffer. */
         VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
-    LogFunc(("rc = %d\n", rc));
+    // LogFunc(("rc = %d\n", rc));
     return rc;
 }
 

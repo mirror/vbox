@@ -23,7 +23,7 @@
 #include <VBox/VMMDev.h>
 
 #include <iprt/asm.h>
-#include <iprt/log.h>
+// #include <iprt/log.h>
 
 #ifndef VBOX_GUESTR3XF86MOD
 # include <iprt/string.h>
@@ -41,7 +41,7 @@ DECLHIDDEN(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
     /* Query the configured number of displays. */
     uint32_t cDisplays = 0;
     VBoxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
-    LogFunc(("cDisplays = %d\n", cDisplays));
+    // LogFunc(("cDisplays = %d\n", cDisplays));
     if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
         /* Host reported some bad value. Continue in the 1 screen mode. */
         cDisplays = 1;
@@ -257,7 +257,7 @@ DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                    VBVA_INFO_SCREEN);
     if (!p)
     {
-        LogFunc(("HGSMIHeapAlloc failed\n"));
+        // LogFunc(("HGSMIHeapAlloc failed\n"));
     }
     else
     {
@@ -297,8 +297,8 @@ DECLHIDDEN(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 {
     int rc = VINF_SUCCESS;
     VBVAREPORTINPUTMAPPING *p;
-    Log(("%s: cOriginX=%d, cOriginY=%d, cWidth=%u, cHeight=%u\n", __PRETTY_FUNCTION__, (int)cOriginX, (int)cOriginX,
-         (unsigned)cWidth, (unsigned)cHeight));
+    // Log(("%s: cOriginX=%d, cOriginY=%d, cWidth=%u, cHeight=%u\n", __PRETTY_FUNCTION__, (int)cOriginX, (int)cOriginX,
+    //      (unsigned)cWidth, (unsigned)cHeight));
 
     /* Allocate the IO buffer. */
     p = (VBVAREPORTINPUTMAPPING *)VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAREPORTINPUTMAPPING), HGSMI_CH_VBVA,
@@ -316,7 +316,7 @@ DECLHIDDEN(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     }
     else
         rc = VERR_NO_MEMORY;
-    LogFunc(("rc = %d\n", rc));
+    // LogFunc(("rc = %d\n", rc));
     return rc;
 }
 
@@ -340,7 +340,7 @@ DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                    HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);
     if (!p)
     {
-        LogFunc(("HGSMIHeapAlloc failed\n"));
+        // LogFunc(("HGSMIHeapAlloc failed\n"));
         return VERR_NO_MEMORY;
     }
     else
@@ -373,7 +373,7 @@ DECLHIDDEN(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 {
     uint32_t u32Flags = 0;
     int rc = VBoxQueryConfHGSMIDef(pCtx, VBOX_VBVA_CONF32_SCREEN_FLAGS, 0, &u32Flags);
-    LogFunc(("u32Flags = 0x%x rc %Rrc\n", u32Flags, rc));
+    // LogFunc(("u32Flags = 0x%x rc %Rrc\n", u32Flags, rc));
     if (RT_FAILURE(rc))
         u32Flags = 0;
     return (uint16_t)u32Flags;
