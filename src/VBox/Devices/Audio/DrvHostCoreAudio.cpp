@@ -58,11 +58,6 @@
 //# define VBOX_WITH_AUDIO_CA_CONVERTER
 
 #ifdef DEBUG_andy
-/** Enables support for Audio Queues. */
-# define VBOX_WITH_AUDIO_CA_QUEUES
-#endif
-
-#ifdef DEBUG_andy
 # undef  DEBUG_DUMP_PCM_DATA_PATH
 # define DEBUG_DUMP_PCM_DATA_PATH "/Users/anloeffl/Documents/"
 # undef  VBOX_WITH_AUDIO_CA_CONVERTER
@@ -476,47 +471,48 @@ typedef struct COREAUDIOSTREAMOUT
  */
 typedef struct COREAUDIOSTREAM
 {
-    /** Host input stream.
+    /** PDM audio stream data.
      *  Note: Always must come first in this structure! */
-    PDMAUDIOSTREAM          Stream;
-    /** Note: This *always* must come first! */
+    PDMAUDIOSTREAM              Stream;
+    /** Stream-specific data, depending on the stream type. */
     union
     {
-        COREAUDIOSTREAMIN   In;
-        COREAUDIOSTREAMOUT  Out;
+        COREAUDIOSTREAMIN       In;
+        COREAUDIOSTREAMOUT      Out;
     };
     /** List node for the device's stream list. */
-    RTLISTNODE              Node;
+    RTLISTNODE                  Node;
     /** Pointer to driver instance this stream is bound to. */
-    PDRVHOSTCOREAUDIO       pDrv;
+    PDRVHOSTCOREAUDIO           pDrv;
     /** The stream's direction. */
-    PDMAUDIODIR             enmDir;
+    PDMAUDIODIR                 enmDir;
 #ifdef VBOX_WITH_AUDIO_CA_QUEUES
     /** The stream's thread handle for maintaining the audio queue. */
-    RTTHREAD                hThread;
+    RTTHREAD                    hThread;
     /** Flag indicating to start a stream's data processing. */
-    bool                    fRun;
+    bool                        fRun;
     /** Whether the stream is in a running (active) state or not.
      *  For playback streams this means that audio data can be (or is being) played,
      *  for capturing streams this means that audio data is being captured (if available). */
-    bool                    fIsRunning;
+    bool                        fIsRunning;
     /** Thread shutdown indicator. */
-    bool                    fShutdown;
+    bool                        fShutdown;
     /** Critical section for serializing access between thread + callbacks. */
-    RTCRITSECT              CritSect;
+    RTCRITSECT                  CritSect;
     /** The actual audio queue being used. */
-    AudioQueueRef           audioQueue;
+    AudioQueueRef               audioQueue;
     /** The audio buffers which are used with the above audio queue. */
-    AudioQueueBufferRef     audioBuffer[3];
-    AudioStreamBasicDescription asbdAcq;
+    AudioQueueBufferRef         audioBuffer[3];
+    /** The acquired (final) audio format for this stream. */
+    AudioStreamBasicDescription asbdStream;
 #endif
     /** The audio unit for this stream. */
-    COREAUDIOUNIT           Unit;
+    COREAUDIOUNIT               Unit;
     /** Initialization status tracker. Used when some of the device parameters
      *  or the device itself is changed during the runtime. */
-    volatile uint32_t       enmStatus;
+    volatile uint32_t           enmStatus;
     /** An internal ring buffer for transferring data from/to the rendering callbacks. */
-    PRTCIRCBUF              pCircBuf;
+    PRTCIRCBUF                  pCircBuf;
 } COREAUDIOSTREAM, *PCOREAUDIOSTREAM;
 
 static int coreAudioStreamInit(PCOREAUDIOSTREAM pCAStream, PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICE pDev);
@@ -1846,10 +1842,10 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
      */
     OSStatus err;
     if (pCAStream->enmDir == PDMAUDIODIR_IN)
-        err = AudioQueueNewInput(&pCAStream->asbdAcq, coreAudioInputQueueCb, pCAStream /* pvData */,
+        err = AudioQueueNewInput(&pCAStream->asbdStream, coreAudioInputQueueCb, pCAStream /* pvData */,
                                  CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pCAStream->audioQueue);
     else
-        err = AudioQueueNewOutput(&pCAStream->asbdAcq, coreAudioOutputQueueCb, pCAStream /* pvData */,
+        err = AudioQueueNewOutput(&pCAStream->asbdStream, coreAudioOutputQueueCb, pCAStream /* pvData */,
                                   CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pCAStream->audioQueue);
 
     if (err != noErr)
@@ -2142,7 +2138,7 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
     const bool fIn = pCAStream->enmDir == PDMAUDIODIR_IN;
 
     /* Create the recording device's out format based on our required audio settings. */
-    int rc = coreAudioStreamCfgToASBD(pCfgReq, &pCAStream->asbdAcq);
+    int rc = coreAudioStreamCfgToASBD(pCfgReq, &pCAStream->asbdStream);
     if (RT_FAILURE(rc))
     {
         LogRel(("CoreAudio: Failed to convert requested %s format to native format (%Rrc)\n",
@@ -2152,7 +2148,7 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
 
     coreAudioPrintASBD(  fIn
                        ? "Capturing queue format"
-                       : "Playback queue format", &pCAStream->asbdAcq);
+                       : "Playback queue format", &pCAStream->asbdStream);
 
     rc = RTCircBufCreate(&pCAStream->pCircBuf, 8096 << 1 /*pHstStrmIn->Props.cShift*/); /** @todo FIX THIS !!! */
     if (RT_FAILURE(rc))
@@ -3241,15 +3237,16 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
         size_t cbToWrite = RT_MIN(cbMixBuf, RTCircBufUsed(pCAStream->pCircBuf));
 
         uint32_t csWritten, cbWritten;
-        uint8_t *puBuf;
+
+        uint8_t *pvChunk;
+        size_t   cbChunk;
 
         Log3Func(("cbMixBuf=%zu, cbToWrite=%zu/%zu\n", cbMixBuf, cbToWrite, RTCircBufSize(pCAStream->pCircBuf)));
 
         while (cbToWrite)
         {
             /* Try to acquire the necessary block from the ring buffer. */
-            size_t cbChunk;
-            RTCircBufAcquireReadBlock(pCAStream->pCircBuf, cbToWrite, (void **)&puBuf, &cbChunk);
+            RTCircBufAcquireReadBlock(pCAStream->pCircBuf, cbToWrite, (void **)&pvChunk, &cbChunk);
             if (cbChunk)
             {
 #ifdef DEBUG_DUMP_PCM_DATA
@@ -3258,13 +3255,13 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
                                 RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
                 if (RT_SUCCESS(rc))
                 {
-                    RTFileWrite(fh, puBuf, cbChunk, NULL);
+                    RTFileWrite(fh, pvChunk, cbChunk, NULL);
                     RTFileClose(fh);
                 }
                 else
                     AssertFailed();
 #endif
-                rc = AudioMixBufWriteCirc(&pStream->MixBuf, puBuf, cbChunk, &csWritten);
+                rc = AudioMixBufWriteCirc(&pStream->MixBuf, pvChunk, cbChunk, &csWritten);
                 if (rc == VERR_BUFFER_OVERFLOW)
                 {
                     LogRel2(("Core Audio: Capturing host buffer full\n"));
@@ -3295,8 +3292,8 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 
 #ifdef LOG_ENABLED
     uint32_t cbWrittenTotal = AUDIOMIXBUF_S2B(&pStream->MixBuf, csWrittenTotal);
-#endif
     Log3Func(("csWrittenTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", csWrittenTotal, cbWrittenTotal, rc));
+#endif
 
     if (RT_SUCCESS(rc))
     {
@@ -3376,34 +3373,32 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     size_t cbToRead = RT_MIN(cbLive, RTCircBufFree(pCAStream->pCircBuf));
     Log3Func(("cbLive=%zu, cbToRead=%zu\n", cbLive, cbToRead));
 
+    uint8_t *pvChunk;
+    size_t   cbChunk;
+
     while (cbToRead)
     {
         uint32_t cRead, cbRead;
-        uint8_t *puBuf;
-        size_t   cbCopy;
 
         /* Try to acquire the necessary space from the ring buffer. */
-        RTCircBufAcquireWriteBlock(pCAStream->pCircBuf, cbToRead, (void **)&puBuf, &cbCopy);
-        if (!cbCopy)
+        RTCircBufAcquireWriteBlock(pCAStream->pCircBuf, cbToRead, (void **)&pvChunk, &cbChunk);
+        if (!cbChunk)
         {
-            RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbCopy);
+            RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
             break;
         }
 
-        Assert(cbCopy <= cbToRead);
+        Assert(cbChunk <= cbToRead);
 
-        rc = AudioMixBufReadCirc(&pStream->MixBuf, puBuf, cbCopy, &cRead);
-        if (   RT_FAILURE(rc)
-            || !cRead)
-        {
-            RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, 0);
-            break;
-        }
+        rc = AudioMixBufReadCirc(&pStream->MixBuf, pvChunk, cbChunk, &cRead);
 
         cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, cRead);
 
         /* Release the ring buffer, so the read thread could start reading this data. */
-        RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbRead);
+        RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
+
+        if (RT_FAILURE(rc))
+            break;
 
         Assert(cbToRead >= cbRead);
         cbToRead -= cbRead;
@@ -3510,16 +3505,15 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
-        {
 #ifdef VBOX_WITH_AUDIO_CA_QUEUES
+        {
             LogFunc(("Queue disable\n"));
             AudioQueueStop(pCAStream->audioQueue, 1 /* Immediately */);
             ASMAtomicXchgBool(&pCAStream->fRun,       false);
             ASMAtomicXchgBool(&pCAStream->fIsRunning, false);
-#endif
             break;
         }
-
+#endif
         case PDMAUDIOSTREAMCMD_PAUSE:
         {
 #ifdef VBOX_WITH_AUDIO_CA_QUEUES
@@ -3712,12 +3706,14 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
         rc = coreAudioStreamInit(pCAStream, pThis, pDev);
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_AUDIO_CA_QUEUES
             ASMAtomicXchgU32(&pCAStream->enmStatus, COREAUDIOSTATUS_IN_INIT);
 
+#ifdef VBOX_WITH_AUDIO_CA_QUEUES
             rc = coreAudioStreamInitQueue(pCAStream, pCfgReq, pCfgAcq);
-
-            pCfgAcq->cSampleBufferSize = _4K; /** @todo FIX THIS !!! */
+            if (RT_SUCCESS(rc))
+            {
+                pCfgAcq->cSampleBufferSize = _4K; /** @todo FIX THIS !!! */
+            }
 #else
             if (fIn)
                 rc = coreAudioStreamInitIn (pCAStream, pCfgReq, pCfgAcq);
