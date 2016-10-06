@@ -68,12 +68,26 @@ unsigned cRespawn = 0;
 void vbclFatalError(char *pszMessage)
 {
     char *pszCommand;
+    int status;
     if (pszMessage && cRespawn == 0)
     {
         pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"", pszMessage);
         if (pszCommand)
         {
-            int rcShutUpGcc = system(pszCommand); RT_NOREF_PV(rcShutUpGcc);
+            status = system(pszCommand);
+            if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
+            {
+                pszCommand = RTStrAPrintf2("xmessage -buttons OK:0 -center \"VBoxClient: %s\"",
+                                           pszMessage);
+                if (pszCommand)
+                {
+                    status = system(pszCommand);
+                    if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
+                    {
+                        RTPrintf("VBoxClient: %s", pszMessage);
+                    }
+                }
+            }
         }
     }
     _exit(1);
