@@ -230,12 +230,13 @@ void UISettingsDialog::sltCategoryChanged(int cId)
     }
 # endif /* QT_VERSION >= 0x050000 */
 #else
-    m_pLbTitle->setText(m_pSelector->itemText(cId));
     m_pStack->setCurrentIndex(index);
 #endif
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
-#endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+#else
+    m_pLbTitle->setText(m_pSelector->itemText(cId));
+#endif
 }
 
 void UISettingsDialog::sltMarkLoaded()
