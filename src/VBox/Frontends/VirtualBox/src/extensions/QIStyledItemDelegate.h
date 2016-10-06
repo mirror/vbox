@@ -15,53 +15,56 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifdef VBOX_WITH_PRECOMPILED_HEADERS
-# include <precomp.h>
-#else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+#ifndef ___QIStyledItemDelegate_h___
+#define ___QIStyledItemDelegate_h___
+
 /* Qt includes: */
 # include <QStyledItemDelegate>
-#endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/** Own QStyledItemDelegate implementation. */
+
+/** QStyledItemDelegate subclass extending standard functionality. */
 class QIStyledItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies listeners about
-      * created editor's Enter/Return key triggering. */
+    /** Notifies listeners about editor's Enter key triggering. */
     void sigEditorEnterKeyTriggered();
 
 public:
 
-    /** Constructor. */
+    /** Constructs delegate passing @a pParent to the base-class. */
     QIStyledItemDelegate(QObject *pParent)
         : QStyledItemDelegate(pParent)
         , m_fWatchForEditorEnterKeyTriggering(false)
     {}
 
-    /** Defines whether QIStyledItemDelegate should watch for the created editor's Enter/Return key triggering. */
+    /** Defines whether delegate should watch for the editor's Enter key triggering. */
     void setWatchForEditorEnterKeyTriggering(bool fWatch) { m_fWatchForEditorEnterKeyTriggering = fWatch; }
 
 private:
 
-    /** Returns the widget used to edit the item specified by @a index for editing.
-      * The @a pParent widget and style @a option are used to control how the editor widget appears.
-      * Besides that, we are installing the hooks to redirect editor's sigCommitData and sigEnterKeyTriggered signals. */
+    /** Returns the widget used to edit the item specified by @a index.
+      * The @a pParent widget and style @a option are used to control how the editor widget appears. */
     QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         /* Call to base-class to get actual editor created: */
         QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
-        /* All the stuff we actually need from QIStyledItemDelegate is to redirect these signals: */
+
         connect(pEditor, SIGNAL(sigCommitData(QWidget*)), this, SIGNAL(commitData(QWidget*)));
+
+        /* Watch for editor Enter key triggering, redirect to listeners: */
         if (m_fWatchForEditorEnterKeyTriggering)
             connect(pEditor, SIGNAL(sigEnterKeyTriggered()), this, SIGNAL(sigEditorEnterKeyTriggered()));
+
         /* Return actual editor: */
         return pEditor;
     }
 
-    /** Holds whether QIStyledItemDelegate should watch
-      * for the created editor's Enter/Return key triggering. */
+    /** Holds whether delegate should watch for the editor's Enter key triggering. */
     bool m_fWatchForEditorEnterKeyTriggering;
 };
+
+#endif /* !___QIStyledItemDelegate_h___ */
+
