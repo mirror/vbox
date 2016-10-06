@@ -145,6 +145,8 @@ public:
 
     /** @name Application Close configuration stuff.
      * @{ */
+    /** Defines @a defaultCloseAction. */
+    void setDefaultCloseAction(MachineCloseAction defaultCloseAction) { m_defaultCloseAction = defaultCloseAction; }
     /** Returns default close action. */
     MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
     /** Returns merged restricted close actions. */

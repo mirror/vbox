@@ -154,15 +154,15 @@ HINSTANCE g_hInstance = NULL;
 */
 BOOL ShutdownBlockReasonCreateAPI(HWND hWnd,LPCWSTR pwszReason)
 {
-    BOOL result = FALSE;
+    BOOL fResult = FALSE;
     typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
 
     PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
             GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
     _ASSERTE(pfn);
     if (pfn)
-        result = pfn(hWnd, pwszReason);
-    return result;
+        fResult = pfn(hWnd, pwszReason);
+    return fResult;
 }
 
 /*
@@ -171,15 +171,15 @@ BOOL ShutdownBlockReasonCreateAPI(HWND hWnd,LPCWSTR pwszReason)
 */
 BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
 {
-    BOOL result = FALSE;
+    BOOL fResult = FALSE;
     typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONDESTROY)(HWND hWnd);
 
     PFNSHUTDOWNBLOCKREASONDESTROY pfn = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(
         GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
     _ASSERTE(pfn);
     if (pfn)
-        result = pfn(hWnd);
-    return result;
+        fResult = pfn(hWnd);
+    return fResult;
 }
 
 
@@ -197,11 +197,10 @@ LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             ShutdownBlockReasonCreateAPI(hwnd, L"Has active connections.");
             /* decrease a latency of MonitorShutdown loop */
             ASMAtomicXchgU32(&dwTimeOut, 100);
-            Log(("VBoxSVCWinMain: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
+            Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
                 _Module.bActivity, _Module.GetLockCount()));
         }
-        Log(("VBoxSVCWinMain: WM_QUERYENDSESSION msg: %d rc= %d\n", msg, rc));
-    } break;
+     } break;
     case WM_ENDSESSION:
     {
         /* Restore timeout of Monitor Shutdown if user canceled system shutdown */
@@ -210,18 +209,15 @@ LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
             ASMAtomicXchgU32(&dwTimeOut, dwNormalTimeout);
             Log(("VBoxSVCWinMain: user canceled system shutdown.\n"));
         }
-        Log(("VBoxSVCWinMain: WM_ENDSESSION msg: %d. wParam: %d. lParam: %d\n", msg, wParam, lParam));
     } break;
     case WM_DESTROY:
     {
-        Log(("VBoxSVCWinMain: WM_DESTROY \n"));
         ShutdownBlockReasonDestroyAPI(hwnd);
         PostQuitMessage(0);
     } break;
 
     default:
     {
-        Log(("VBoxSVCWinMain: msg %p\n", msg));
         rc = DefWindowProc(hwnd, msg, wParam, lParam);
     }
     }

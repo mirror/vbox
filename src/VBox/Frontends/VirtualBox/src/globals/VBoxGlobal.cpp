@@ -146,6 +146,7 @@
 #include <QProgressDialog>
 #include <QSettings>
 #include <QStyleOptionSpinBox>
+#include <QSessionManager>
 
 /* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
@@ -3898,6 +3899,9 @@ void VBoxGlobal::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
     connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanup()));
+    /* Make sure we handle host OS session shutdown as well: */
+    connect(qApp, SIGNAL(commitDataRequest(QSessionManager &)),
+            this, SLOT(sltHandleCommitDataRequest(QSessionManager &)));
 
 #ifdef VBOX_WS_MAC
     /* Determine OS release early: */
@@ -4410,6 +4414,47 @@ void VBoxGlobal::cleanup()
     UIDesktopWidgetWatchdog::destroy();
 
     mValid = false;
+}
+
+#ifdef VBOX_WS_WIN
+/* static */
+BOOL VBoxGlobal::ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
+{
+    BOOL fResult = FALSE;
+    typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
+
+    PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
+        GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
+    _ASSERTE(pfn);
+    if (pfn)
+        fResult = pfn(hWnd, pwszReason);
+    return fResult;
+}
+#endif
+
+void VBoxGlobal::sltHandleCommitDataRequest(QSessionManager &manager)
+{
+    LogRel(("GUI: VBoxGlobal::sltHandleCommitDataRequest: Emergency shutdown initiated\n"));
+
+    /* For VM process: */
+    if (vboxGlobal().isVMConsoleProcess())
+    {
+        /* Temporary override the default close action to 'SaveState' if necessary: */
+        if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
+            gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
+    }
+
+    /* Ask session manager to postpone shutdown until we done: */
+    manager.cancel();
+
+#ifdef VBOX_WS_WIN
+    // WORKAROUND:
+    // In theory that's Qt5 who should allow us to provide postponing reason as well,
+    // but that functionality seems missed in Windows platform plugin, so we are making that ourselves.
+    // That also implies that since we had postponed a shutdown process, host will send us WM_QUIT to
+    // allow to properly do an application cleanup first. That signal will cause QApplication to quit().
+    ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"Shutdown in progress...");
+#endif
 }
 
 void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
