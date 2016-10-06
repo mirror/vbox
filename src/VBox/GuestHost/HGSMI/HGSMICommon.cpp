@@ -21,7 +21,7 @@
  * thing would be to use return enough information for callers to log what
  * is needed. */
 #define LOG_GROUP LOG_GROUP_HGSMI
-#include <iprt/heap.h>
+
 #include <iprt/string.h>
 
 #include <VBox/HGSMI/HGSMI.h>
