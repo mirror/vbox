@@ -4057,56 +4057,56 @@ int Console::i_removeMediumDriverFromVm(PCFGMNODE pCtlInst,
                 return rc;
         }
 
-        /* For USB detach every driver below the SCSI transport driver. */
+        /*
+         * Don't detach the SCSI driver when unmounting the current medium
+         * (we are not ripping out the device but only eject the medium).
+         */
+        char *pszDriverDetach = NULL;
+        if (   !fHotplug
+            && (   (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD)
+                || enmBus == StorageBus_SAS
+                || enmBus == StorageBus_SCSI
+                || enmBus == StorageBus_USB))
+        {
+            /* Get the current attached driver we have to detach. */
+            PCFGMNODE pDrvLun = CFGMR3GetChildF(pCtlInst, "LUN#%u/AttachedDriver/", uLUN);
+            if (pDrvLun)
+            {
+                char szDriver[128];
+                RT_ZERO(szDriver);
+                rc  = CFGMR3QueryString(pDrvLun, "Driver", &szDriver[0], sizeof(szDriver));
+                if (RT_SUCCESS(rc))
+                    pszDriverDetach = RTStrDup(&szDriver[0]);
+
+                pLunL0 = pDrvLun;
+            }
+        }
+
         if (enmBus == StorageBus_USB)
-            rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, "SCSI", 0,
+            rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN,
+                                      pszDriverDetach, 0 /* iOccurence */,
                                       fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
         else
-        {
-            /*
-             * Don't detach the SCSI driver when unmounting the current medium
-             * (we are not ripping out the device but only eject the medium).
-             */
-            char *pszDriverDetach = NULL;
-            if (   !fHotplug
-                && (   (enmBus == StorageBus_SATA && enmDevType == DeviceType_DVD)
-                    || enmBus == StorageBus_SAS
-                    || enmBus == StorageBus_SCSI))
-            {
-                /* Get the current attached driver we have to detach. */
-                PCFGMNODE pDrvLun = CFGMR3GetChildF(pCtlInst, "LUN#%u/AttachedDriver/", uLUN);
-                if (pDrvLun)
-                {
-                    char szDriver[128];
-                    RT_ZERO(szDriver);
-                    rc  = CFGMR3QueryString(pDrvLun, "Driver", &szDriver[0], sizeof(szDriver));
-                    if (RT_SUCCESS(rc))
-                        pszDriverDetach = RTStrDup(&szDriver[0]);
-
-                    pLunL0 = pDrvLun;
-                }
-            }
-
             rc = PDMR3DriverDetach(pUVM, pcszDevice, uInstance, uLUN,
                                    pszDriverDetach, 0 /* iOccurence */,
                                    fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
-            if (pszDriverDetach)
+
+        if (pszDriverDetach)
+        {
+            RTStrFree(pszDriverDetach);
+            /* Remove the complete node and create new for the new config. */
+            CFGMR3RemoveNode(pLunL0);
+            pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
+            if (pLunL0)
             {
-                RTStrFree(pszDriverDetach);
-                /* Remove the complete node and create new for the new config. */
-                CFGMR3RemoveNode(pLunL0);
-                pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
-                if (pLunL0)
+                try
                 {
-                    try
-                    {
-                        InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                    }
-                    catch (ConfigError &x)
-                    {
-                        // InsertConfig threw something:
-                        return x.m_vrc;
-                    }
+                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+                }
+                catch (ConfigError &x)
+                {
+                    // InsertConfig threw something:
+                    return x.m_vrc;
                 }
             }
         }
