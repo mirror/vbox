@@ -19,65 +19,15 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Qt includes: */
-# include <QStyledItemDelegate>
-
 /* GUI includes: */
 # include "QITableView.h"
+# include "QIStyledItemDelegate.h"
 
 /* Other VBox includes: */
 # include "iprt/assert.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-
-/** QStyledItemDelegate extension used with QITableView. */
-class QITableViewStyledItemDelegate : public QStyledItemDelegate
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies listeners about @a pEditor created for particular model @a index. */
-    void sigEditorCreated(QWidget *pEditor, const QModelIndex &index) const;
-
-public:
-
-    /** Constructs table-view styled-item-delegate on the basis of passed @a pParent. */
-    QITableViewStyledItemDelegate(QObject *pParent);
-
-private:
-
-    /** Returns the widget used to edit the item specified by @a index for editing.
-      * The @a pParent widget and style @a option are used to control how the editor widget appears.
-      * Besides that, we are notifying listener about editor was created for particular model @a index. */
-    virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-};
-
-
-/*********************************************************************************************************************************
-*   Class QITableViewStyledItemDelegate implementation.                                                                          *
-*********************************************************************************************************************************/
-
-QITableViewStyledItemDelegate::QITableViewStyledItemDelegate(QObject *pParent)
-    : QStyledItemDelegate(pParent)
-{
-}
-
-QWidget* QITableViewStyledItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    /* Call to base-class: */
-    QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
-    /* Notify listeners about editor created: */
-    emit sigEditorCreated(pEditor, index);
-    /* Return editor: */
-    return pEditor;
-}
-
-
-/*********************************************************************************************************************************
-*   Class QITableView implementation.                                                                                            *
-*********************************************************************************************************************************/
 
 QITableView::QITableView(QWidget *pParent)
     : QTableView(pParent)
@@ -108,7 +58,7 @@ void QITableView::prepare()
     /* Delete old delegate: */
     delete itemDelegate();
     /* Create new delegate: */
-    QITableViewStyledItemDelegate *pStyledItemDelegate = new QITableViewStyledItemDelegate(this);
+    QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
     AssertPtrReturnVoid(pStyledItemDelegate);
     {
         /* Assign newly created delegate to the table: */
@@ -141,6 +91,4 @@ void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &
     /* Call to base-class: */
     QTableView::currentChanged(current, previous);
 }
-
-#include "QITableView.moc"
 
