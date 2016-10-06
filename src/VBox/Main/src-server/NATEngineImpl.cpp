@@ -274,8 +274,7 @@ HRESULT NATEngine::addRedirect(const com::Utf8Str &aName, NATProtocol_T aProto, 
                 return setError(E_INVALIDARG,
                                 tr("Whitespace in NAT rule name"));
 
-            if (   c == '/'  /* CFGM node path separator */
-                || c == ',') /* VBoxManage natpf<N> argument is csv */
+            if (c == ',') /* we use csv in several places e.g. GetRedirects or natpf<N> argument */
                 return setError(E_INVALIDARG,
                                 tr("'%c' - invalid character in NAT rule name"), c);
         }

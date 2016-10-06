@@ -1369,22 +1369,19 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
 {
     RT_NOREF(pNetwork); /** @todo figure why pNetwork isn't used */
 
+    PCFGMNODE pPFTree = CFGMR3GetChild(pCfg, "PortForwarding");
+    if (pPFTree == NULL)
+        return VINF_SUCCESS;
+
     /*
      * Enumerate redirections.
      */
-    for (PCFGMNODE pNode = CFGMR3GetFirstChild(pCfg); pNode; pNode = CFGMR3GetNextChild(pNode))
+    for (PCFGMNODE pNode = CFGMR3GetFirstChild(pPFTree); pNode; pNode = CFGMR3GetNextChild(pNode))
     {
-#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-        char szNodeName[32];
-        CFGMR3GetName(pNode, szNodeName, 32);
-        if (   !RTStrICmp(szNodeName, "HostResolverMappings")
-            || !RTStrICmp(szNodeName, "AttachedDriver"))
-            continue;
-#endif
         /*
          * Validate the port forwarding config.
          */
-        if (!CFGMR3AreValuesValid(pNode, "Protocol\0UDP\0HostPort\0GuestPort\0GuestIP\0BindIP\0"))
+        if (!CFGMR3AreValuesValid(pNode, "Name\0Protocol\0UDP\0HostPort\0GuestPort\0GuestIP\0BindIP\0"))
             return PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                     N_("Unknown configuration in port forwarding"));
 

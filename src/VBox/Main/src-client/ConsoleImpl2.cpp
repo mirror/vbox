@@ -4966,9 +4966,15 @@ int Console::i_configNetwork(const char *pszDevice,
                 /* port-forwarding */
                 SafeArray<BSTR> pfs;
                 hrc = natEngine->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs));         H();
-                PCFGMNODE pPF = NULL;          /* /Devices/Dev/.../Config/PF#0/ */
+
+                PCFGMNODE pPFTree = NULL;
+                if (pfs.size() > 0)
+                    InsertConfigNode(pCfg, "PortForwarding", &pPFTree);
+
                 for (unsigned int i = 0; i < pfs.size(); ++i)
                 {
+                    PCFGMNODE pPF = NULL; /* /Devices/Dev/.../Config/PortForwarding/$n/ */
+
                     uint16_t port = 0;
                     BSTR r = pfs[i];
                     Utf8Str utf = Utf8Str(r);
@@ -5017,11 +5023,11 @@ int Console::i_configNetwork(const char *pszDevice,
                     if (!fValid)
                         continue;
 
-                    if (strName.isEmpty())
-                        VMSetError(VMR3GetVM(mpUVM), VERR_CFGM_NO_NODE, RT_SRC_POS,
-                                   N_("NAT redirection rule without a name"));
+                    InsertConfigNode(pPFTree, Utf8StrFmt("%u", i).c_str(), &pPF);
 
-                    InsertConfigNode(pCfg, strName.c_str(), &pPF);
+                    if (!strName.isEmpty())
+                        InsertConfigString(pPF, "Name", strName);
+
                     InsertConfigString(pPF, "Protocol", strProto);
 
                     if (!strHostIP.isEmpty())
