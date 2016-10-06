@@ -74,8 +74,6 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     unsigned crtc_id;
     uint16_t flags;
 
-    LogFunc(("vboxvideo: %d: vbox_crtc=%p, CRTC_FB(crtc)=%p\n", __LINE__,
-             vbox_crtc, CRTC_FB(crtc)));
     vbox = crtc->dev->dev_private;
     width = mode->hdisplay ? mode->hdisplay : 640;
     height = mode->vdisplay ? mode->vdisplay : 480;
@@ -106,7 +104,6 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
                                 crtc->x * bpp / 8 + crtc->y * pitch,
                                 pitch, width, height,
                                 vbox_crtc->blanked ? 0 : bpp, flags);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
 static int vbox_set_view(struct drm_crtc *crtc)
@@ -115,7 +112,6 @@ static int vbox_set_view(struct drm_crtc *crtc)
     struct vbox_private *vbox = crtc->dev->dev_private;
     void *p;
 
-    LogFunc(("vboxvideo: %d: vbox_crtc=%p\n", __LINE__, vbox_crtc));
     /* Tell the host about the view.  This design originally targeted the
      * Windows XP driver architecture and assumed that each screen would have
      * a dedicated frame buffer with the command buffer following it, the whole
@@ -139,7 +135,6 @@ static int vbox_set_view(struct drm_crtc *crtc)
     }
     else
         return -ENOMEM;
-    LogFunc(("vboxvideo: %d: p=%p\n", __LINE__, p));
     return 0;
 }
 
@@ -153,8 +148,6 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
     struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
     struct vbox_private *vbox = crtc->dev->dev_private;
 
-    LogFunc(("vboxvideo: %d: vbox_crtc=%p, mode=%d\n", __LINE__, vbox_crtc,
-             mode));
     switch (mode) {
     case DRM_MODE_DPMS_ON:
         vbox_crtc->blanked = false;
@@ -168,7 +161,6 @@ static void vbox_crtc_dpms(struct drm_crtc *crtc, int mode)
     mutex_lock(&vbox->hw_mutex);
     vbox_do_modeset(crtc, &crtc->hwmode);
     mutex_unlock(&vbox->hw_mutex);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
 static bool vbox_crtc_mode_fixup(struct drm_crtc *crtc,
@@ -191,7 +183,6 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
     int ret;
     u64 gpu_addr;
 
-    LogFunc(("vboxvideo: %d: fb=%p, vbox_crtc=%p\n", __LINE__, fb, vbox_crtc));
     /* push the previous fb to system ram */
     if (!atomic && fb) {
         vbox_fb = to_vbox_framebuffer(fb);
@@ -234,15 +225,12 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         vbox->input_mapping_width = CRTC_FB(crtc)->width;
         vbox->input_mapping_height = CRTC_FB(crtc)->height;
     }
-    LogFunc(("vboxvideo: %d: vbox_fb=%p, obj=%p, bo=%p, gpu_addr=%u\n",
-             __LINE__, vbox_fb, obj, bo, (unsigned)gpu_addr));
     return 0;
 }
 
 static int vbox_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
                  struct drm_framebuffer *old_fb)
 {
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return vbox_crtc_do_set_base(crtc, old_fb, x, y, 0);
 }
 
@@ -255,7 +243,6 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
     struct vbox_private *vbox = crtc->dev->dev_private;
     int rc = 0;
 
-    LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_crtc_mode_set_base(crtc, x, y, old_fb);
     mutex_lock(&vbox->hw_mutex);
     rc = vbox_set_view(crtc);
@@ -266,7 +253,6 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
                                 vbox->input_mapping_width,
                                 vbox->input_mapping_height);
     mutex_unlock(&vbox->hw_mutex);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return rc;
 }
 
@@ -323,7 +309,6 @@ static struct vbox_crtc *vbox_crtc_init(struct drm_device *dev, unsigned i)
 {
     struct vbox_crtc *vbox_crtc;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     vbox_crtc = kzalloc(sizeof(struct vbox_crtc), GFP_KERNEL);
     if (!vbox_crtc)
         return NULL;
@@ -332,14 +317,12 @@ static struct vbox_crtc *vbox_crtc_init(struct drm_device *dev, unsigned i)
     drm_crtc_init(dev, &vbox_crtc->base, &vbox_crtc_funcs);
     drm_mode_crtc_set_gamma_size(&vbox_crtc->base, 256);
     drm_crtc_helper_add(&vbox_crtc->base, &vbox_crtc_helper_funcs);
-    LogFunc(("vboxvideo: %d: crtc=%p\n", __LINE__, vbox_crtc));
 
     return vbox_crtc;
 }
 
 static void vbox_encoder_destroy(struct drm_encoder *encoder)
 {
-    LogFunc(("vboxvideo: %d: encoder=%p\n", __LINE__, encoder));
     drm_encoder_cleanup(encoder);
     kfree(encoder);
 }
@@ -357,11 +340,9 @@ static struct drm_encoder *vbox_best_single_encoder(struct drm_connector *connec
 {
     int enc_id = connector->encoder_ids[0];
 
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     /* pick the encoder ids */
     if (enc_id)
         return drm_encoder_find(connector->dev, enc_id);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return NULL;
 }
 
@@ -411,7 +392,6 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
 {
     struct vbox_encoder *vbox_encoder;
 
-    LogFunc(("vboxvideo: %d: dev=%d\n", __LINE__));
     vbox_encoder = kzalloc(sizeof(struct vbox_encoder), GFP_KERNEL);
     if (!vbox_encoder)
         return NULL;
@@ -425,7 +405,6 @@ static struct drm_encoder *vbox_encoder_init(struct drm_device *dev, unsigned i)
     drm_encoder_helper_add(&vbox_encoder->base, &vbox_enc_helper_funcs);
 
     vbox_encoder->base.possible_crtcs = 1 << i;
-    LogFunc(("vboxvideo: %d: vbox_encoder=%p\n", __LINE__, vbox_encoder));
     return &vbox_encoder->base;
 }
 
@@ -497,7 +476,6 @@ static int vbox_get_modes(struct drm_connector *connector)
     unsigned num_modes = 0;
     int preferred_width, preferred_height;
 
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
     vbox = connector->dev->dev_private;
     /* Heuristic: we do not want to tell the host that we support dynamic
@@ -546,7 +524,6 @@ static void vbox_connector_destroy(struct drm_connector *connector)
 {
     struct vbox_connector *vbox_connector = NULL;
 
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_remove(connector);
@@ -563,7 +540,6 @@ vbox_connector_detect(struct drm_connector *connector, bool force)
     struct vbox_connector *vbox_connector = NULL;
 
     (void) force;
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     vbox_connector = to_vbox_connector(connector);
     return vbox_connector->mode_hint.disconnected ?
                 connector_status_disconnected : connector_status_connected;
@@ -575,8 +551,6 @@ static int vbox_fill_modes(struct drm_connector *connector, uint32_t max_x, uint
     struct drm_device *dev;
     struct drm_display_mode *mode, *iterator;
 
-    LogFunc(("vboxvideo: %d: connector=%p, max_x=%lu, max_y = %lu\n", __LINE__,
-             connector, (unsigned long)max_x, (unsigned long)max_y));
     vbox_connector = to_vbox_connector(connector);
     dev = vbox_connector->base.dev;
     list_for_each_entry_safe(mode, iterator, &connector->modes, head)
@@ -607,8 +581,6 @@ static int vbox_connector_init(struct drm_device *dev,
     struct vbox_connector *vbox_connector;
     struct drm_connector *connector;
 
-    LogFunc(("vboxvideo: %d: dev=%p, encoder=%p\n", __LINE__, dev,
-             encoder));
     vbox_connector = kzalloc(sizeof(struct vbox_connector), GFP_KERNEL);
     if (!vbox_connector)
         return -ENOMEM;
@@ -638,7 +610,6 @@ static int vbox_connector_init(struct drm_device *dev,
 
     drm_mode_connector_attach_encoder(connector, encoder);
 
-    LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, connector));
     return 0;
 }
 
@@ -649,7 +620,6 @@ int vbox_mode_init(struct drm_device *dev)
     struct vbox_crtc *vbox_crtc;
     unsigned i;
     /* vbox_cursor_init(dev); */
-    LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
     for (i = 0; i < vbox->num_crtcs; ++i)
     {
         vbox_crtc = vbox_crtc_init(dev, i);

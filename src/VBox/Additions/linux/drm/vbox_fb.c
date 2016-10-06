@@ -88,7 +88,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
     unsigned long flags;
     struct drm_clip_rect rect;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     obj = fbdev->afb.obj;
     bo = gem_to_vbox_bo(obj);
 
@@ -125,7 +124,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
         fbdev->y1 = y;
         fbdev->y2 = y2;
         spin_unlock_irqrestore(&fbdev->dirty_lock, flags);
-        LogFunc(("vboxvideo: %d\n", __LINE__));
         return;
     }
 
@@ -154,8 +152,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
     rect.y1 = y;
     rect.y2 = y2 + 1;
     vbox_framebuffer_dirty_rectangles(&fbdev->afb.base, &rect, 1);
-    LogFunc(("vboxvideo: %d, bo->kmap.virtual=%p, fbdev->sysram=%p, x=%d, y=%d, x2=%d, y2=%d, unmap=%RTbool\n",
-             __LINE__, bo->kmap.virtual, fbdev->sysram, (int)x, (int)y, (int)x2, (int)y2, unmap));
     if (unmap)
         ttm_bo_kunmap(&bo->kmap);
 
@@ -200,7 +196,6 @@ static void vbox_fillrect(struct fb_info *info,
              const struct fb_fillrect *rect)
 {
     struct vbox_fbdev *fbdev = info->par;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     sys_fillrect(info, rect);
     vbox_dirty_update(fbdev, rect->dx, rect->dy, rect->width,
              rect->height);
@@ -210,7 +205,6 @@ static void vbox_copyarea(struct fb_info *info,
              const struct fb_copyarea *area)
 {
     struct vbox_fbdev *fbdev = info->par;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     sys_copyarea(info, area);
     vbox_dirty_update(fbdev, area->dx, area->dy, area->width,
              area->height);
@@ -220,7 +214,6 @@ static void vbox_imageblit(struct fb_info *info,
               const struct fb_image *image)
 {
     struct vbox_fbdev *fbdev = info->par;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     sys_imageblit(info, image);
     vbox_dirty_update(fbdev, image->dx, image->dy, image->width,
              image->height);
@@ -255,7 +248,6 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
 #endif
 
     int ret = 0;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     drm_fb_get_bpp_depth(mode_cmd->pixel_format, &depth, &bpp);
 
     size = pitch * mode_cmd->height;
@@ -264,7 +256,6 @@ static int vboxfb_create_object(struct vbox_fbdev *fbdev,
         return ret;
 
     *gobj_p = gobj;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return ret;
 }
 
@@ -283,7 +274,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     void *sysram;
     struct drm_gem_object *gobj = NULL;
     struct vbox_bo *bo = NULL;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     mode_cmd.width = sizes->surface_width;
     mode_cmd.height = sizes->surface_height;
     pitch = mode_cmd.width * ((sizes->surface_bpp + 7) / 8);
@@ -368,10 +358,8 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     DRM_DEBUG_KMS("allocated %dx%d\n",
               fb->width, fb->height);
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;
 out:
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return ret;
 }
 
@@ -400,7 +388,6 @@ static void vbox_fbdev_destroy(struct drm_device *dev,
 {
     struct fb_info *info;
     struct vbox_framebuffer *afb = &fbdev->afb;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     if (fbdev->helper.fbdev) {
         info = fbdev->helper.fbdev;
         unregister_framebuffer(info);
@@ -420,7 +407,6 @@ static void vbox_fbdev_destroy(struct drm_device *dev,
     drm_framebuffer_unregister_private(&afb->base);
 #endif
     drm_framebuffer_cleanup(&afb->base);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
 int vbox_fbdev_init(struct drm_device *dev)
@@ -429,7 +415,6 @@ int vbox_fbdev_init(struct drm_device *dev)
     struct vbox_fbdev *fbdev;
     int ret;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     fbdev = kzalloc(sizeof(struct vbox_fbdev), GFP_KERNEL);
     if (!fbdev)
         return -ENOMEM;
@@ -457,14 +442,12 @@ int vbox_fbdev_init(struct drm_device *dev)
     if (ret)
         goto fini;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;
 fini:
     drm_fb_helper_fini(&fbdev->helper);
 free:
     kfree(fbdev);
     vbox->fbdev = NULL;
-    LogFunc(("vboxvideo: %d, ret=%d\n", __LINE__, ret));
     return ret;
 }
 
@@ -475,7 +458,6 @@ void vbox_fbdev_fini(struct drm_device *dev)
     if (!vbox->fbdev)
         return;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     vbox_fbdev_destroy(dev, vbox->fbdev);
     kfree(vbox->fbdev);
     vbox->fbdev = NULL;
@@ -485,7 +467,6 @@ void vbox_fbdev_set_suspend(struct drm_device *dev, int state)
 {
     struct vbox_private *vbox = dev->dev_private;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     if (!vbox->fbdev)
         return;
 

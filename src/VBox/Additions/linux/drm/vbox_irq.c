@@ -110,10 +110,6 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
         vbox_connector = to_vbox_connector(connector);
         hints = &vbox->last_mode_hints[vbox_connector->vbox_crtc->crtc_id];
         if (hints->magic == VBVAMODEHINT_MAGIC) {
-            LogFunc(("vboxvideo: %d: crtc_id=%u, mode %hdx%hd(enabled:%d),%hdx%hd\n",
-                     __LINE__, (unsigned)vbox_connector->vbox_crtc->crtc_id,
-                     (short)hints->cx, (short)hints->cy, (int)hints->fEnabled,
-                     (short)hints->dx, (short)hints->dy));
             disconnected = !(hints->fEnabled);
             crtc_id = vbox_connector->vbox_crtc->crtc_id;
             flags =   VBVA_SCREEN_F_ACTIVE
@@ -149,7 +145,6 @@ static void vbox_hotplug_worker(struct work_struct *work)
     struct vbox_private *vbox = container_of(work, struct vbox_private,
                                              hotplug_work);
 
-    LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_update_mode_hints(vbox);
     drm_kms_helper_hotplug_event(vbox->dev);
 }
@@ -158,7 +153,6 @@ int vbox_irq_init(struct vbox_private *vbox)
 {
     int ret;
 
-    LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     vbox_update_mode_hints(vbox);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     ret = drm_irq_install(vbox->dev, vbox->dev->pdev->irq);
@@ -172,13 +166,11 @@ int vbox_irq_init(struct vbox_private *vbox)
     }
     INIT_WORK(&vbox->hotplug_work, vbox_hotplug_worker);
     vbox->isr_installed = true;
-    LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     return 0;
 }
 
 void vbox_irq_fini(struct vbox_private *vbox)
 {
-    LogFunc(("vboxvideo: %d: vbox=%p\n", __LINE__, vbox));
     if (vbox->isr_installed) {
         drm_irq_uninstall(vbox->dev);
         flush_work(&vbox->hotplug_work);

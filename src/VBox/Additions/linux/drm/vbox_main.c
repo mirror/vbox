@@ -59,8 +59,6 @@ static void vbox_user_framebuffer_destroy(struct drm_framebuffer *fb)
     if (vbox_fb->obj)
         drm_gem_object_unreference_unlocked(vbox_fb->obj);
 
-    LogFunc(("vboxvideo: %d: vbox_fb=%p, vbox_fb->obj=%p\n", __LINE__,
-             vbox_fb, vbox_fb->obj));
     drm_framebuffer_cleanup(fb);
     kfree(fb);
 }
@@ -71,10 +69,12 @@ void vbox_enable_accel(struct vbox_private *vbox)
     struct VBVABUFFER *vbva;
     uint32_t vram_map_offset = vbox->available_vram_size - vbox->vram_map_start;
 
-    AssertLogRelReturnVoid(vbox->vbva_info != NULL);
+    if (vbox->vbva_info == NULL) {  /* Should never happen... */
+        printk(KERN_ERR "vboxvideo: failed to set up VBVA.\n");
+        return;
+    }
     for (i = 0; i < vbox->num_crtcs; ++i) {
         if (vbox->vbva_info[i].pVBVA == NULL) {
-            LogFunc(("vboxvideo: enabling VBVA.\n"));
             vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->mapped_vram)
                                            + vram_map_offset
                                            + i * VBVA_MIN_BUFFER_SIZE);
@@ -114,8 +114,6 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
     struct drm_crtc *crtc;
     unsigned i;
 
-    LogFunc(("vboxvideo: %d: fb=%p, num_rects=%u, vbox=%p\n", __LINE__, fb,
-             num_rects, vbox));
     mutex_lock(&vbox->hw_mutex);
     list_for_each_entry(crtc, &fb->dev->mode_config.crtc_list, head) {
         if (CRTC_FB(crtc) == fb) {
@@ -147,7 +145,6 @@ void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
         }
     }
     mutex_unlock(&vbox->hw_mutex);
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 }
 
 static int vbox_user_framebuffer_dirty(struct drm_framebuffer *fb,
@@ -176,17 +173,13 @@ int vbox_framebuffer_init(struct drm_device *dev,
 {
     int ret;
 
-    LogFunc(("vboxvideo: %d: dev=%p, vbox_fb=%p, obj=%p\n", __LINE__, dev,
-             vbox_fb, obj));
     drm_helper_mode_fill_fb_struct(&vbox_fb->base, mode_cmd);
     vbox_fb->obj = obj;
     ret = drm_framebuffer_init(dev, &vbox_fb->base, &vbox_fb_funcs);
     if (ret) {
         DRM_ERROR("framebuffer init failed %d\n", ret);
-        LogFunc(("vboxvideo: %d\n", __LINE__));
         return ret;
     }
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;
 }
 
@@ -202,7 +195,6 @@ vbox_user_framebuffer_create(struct drm_device *dev,
     struct vbox_framebuffer *vbox_fb;
     int ret;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
     obj = drm_gem_object_lookup(filp, mode_cmd->handles[0]);
 #else
@@ -223,7 +215,6 @@ vbox_user_framebuffer_create(struct drm_device *dev,
         kfree(vbox_fb);
         return ERR_PTR(ret);
     }
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return &vbox_fb->base;
 }
 
@@ -244,8 +235,6 @@ static void vbox_accel_fini(struct vbox_private *vbox)
 static int vbox_accel_init(struct vbox_private *vbox)
 {
     unsigned i;
-    LogFunc(("vboxvideo: %d: vbox=%p, vbox->num_crtcs=%u, vbox->vbva_info=%p\n",
-             __LINE__, vbox, (unsigned)vbox->num_crtcs, vbox->vbva_info));
     if (!vbox->vbva_info)
     {
         vbox->vbva_info = kzalloc(  sizeof(struct VBVABUFFERCONTEXT)
@@ -260,8 +249,6 @@ static int vbox_accel_init(struct vbox_private *vbox)
         VBoxVBVASetupBufferContext(&vbox->vbva_info[i],
                                    vbox->available_vram_size + i * VBVA_MIN_BUFFER_SIZE,
                                    VBVA_MIN_BUFFER_SIZE);
-    LogFunc(("vboxvideo: %d: vbox->vbva_info=%p, vbox->available_vram_size=%u\n",
-             __LINE__, vbox->vbva_info, (unsigned)vbox->available_vram_size));
     return 0;
 }
 
@@ -359,7 +346,6 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     struct vbox_private *vbox;
     int ret = 0;
 
-    LogFunc(("vboxvideo: %d: dev=%p\n", __LINE__, dev));
     if (!VBoxHGSMIIsSupported())
         return -ENODEV;
     vbox = kzalloc(sizeof(struct vbox_private), GFP_KERNEL);
@@ -399,12 +385,9 @@ int vbox_driver_load(struct drm_device *dev, unsigned long flags)
     ret = vbox_fbdev_init(dev);
     if (ret)
         goto out_free;
-    LogFunc(("vboxvideo: %d: vbox=%p, vbox->mapped_vram=%p, vbox->full_vram_size=%u\n",
-             __LINE__, vbox, vbox->mapped_vram, (unsigned)vbox->full_vram_size));
     return 0;
 out_free:
     vbox_driver_unload(dev);
-    LogFunc(("vboxvideo: %d: ret=%d\n", __LINE__, ret));
     return ret;
 }
 
@@ -412,7 +395,6 @@ int vbox_driver_unload(struct drm_device *dev)
 {
     struct vbox_private *vbox = dev->dev_private;
 
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     vbox_fbdev_fini(dev);
     vbox_irq_fini(vbox);
     vbox_mode_fini(dev);
@@ -425,7 +407,6 @@ int vbox_driver_unload(struct drm_device *dev)
         pci_iounmap(dev->pdev, vbox->mapped_vram);
     kfree(vbox);
     dev->dev_private = NULL;
-    LogFunc(("vboxvideo: %d\n", __LINE__));
     return 0;
 }
 
@@ -453,8 +434,6 @@ int vbox_gem_create(struct drm_device *dev,
     struct vbox_bo *vboxbo;
     int ret;
 
-    LogFunc(("vboxvideo: %d: dev=%p, size=%u, iskernel=%u\n", __LINE__,
-             dev, (unsigned)size, (unsigned)iskernel));
     *obj = NULL;
 
     size = roundup(size, PAGE_SIZE);
@@ -468,7 +447,6 @@ int vbox_gem_create(struct drm_device *dev,
         return ret;
     }
     *obj = &vboxbo->gem;
-    LogFunc(("vboxvideo: %d: obj=%p\n", __LINE__, obj));
     return 0;
 }
 
@@ -480,9 +458,6 @@ int vbox_dumb_create(struct drm_file *file,
     struct drm_gem_object *gobj;
     u32 handle;
 
-    LogFunc(("vboxvideo: %d: args->width=%u, args->height=%u, args->bpp=%u\n",
-             __LINE__, (unsigned)args->width, (unsigned)args->height,
-             (unsigned)args->bpp));
     args->pitch = args->width * ((args->bpp + 7) / 8);
     args->size = args->pitch * args->height;
 
@@ -497,8 +472,6 @@ int vbox_dumb_create(struct drm_file *file,
         return ret;
 
     args->handle = handle;
-    LogFunc(("vboxvideo: %d: args->handle=%u\n", __LINE__,
-             (unsigned)args->handle));
     return 0;
 }
 
@@ -507,8 +480,6 @@ int vbox_dumb_destroy(struct drm_file *file,
              struct drm_device *dev,
              uint32_t handle)
 {
-    LogFunc(("vboxvideo: %d: dev=%p, handle=%u\n", __LINE__, dev,
-             (unsigned)handle));
     return drm_gem_handle_delete(file, handle);
 }
 #endif
@@ -520,7 +491,6 @@ static void vbox_bo_unref(struct vbox_bo **bo)
     if ((*bo) == NULL)
         return;
 
-    LogFunc(("vboxvideo: %d: bo=%p\n", __LINE__, bo));
     tbo = &((*bo)->bo);
     ttm_bo_unref(&tbo);
     if (tbo == NULL)
@@ -531,7 +501,6 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 {
     struct vbox_bo *vbox_bo = gem_to_vbox_bo(obj);
 
-    LogFunc(("vboxvideo: %d: vbox_bo=%p\n", __LINE__, vbox_bo));
     vbox_bo_unref(&vbox_bo);
 }
 
@@ -554,8 +523,6 @@ vbox_dumb_mmap_offset(struct drm_file *file,
     int ret;
     struct vbox_bo *bo;
 
-    LogFunc(("vboxvideo: %d: dev=%p, handle=%u\n", __LINE__,
-             dev, (unsigned)handle));
     mutex_lock(&dev->struct_mutex);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
     obj = drm_gem_object_lookup(file, handle);
@@ -572,8 +539,6 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 
     drm_gem_object_unreference(obj);
     ret = 0;
-    LogFunc(("vboxvideo: %d: bo=%p, *offset=%llu\n", __LINE__,
-             bo, (unsigned long long)*offset));
 out_unlock:
     mutex_unlock(&dev->struct_mutex);
     return ret;
