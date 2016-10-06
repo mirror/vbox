@@ -37,22 +37,27 @@ public:
     /** Constructs delegate passing @a pParent to the base-class. */
     QIStyledItemDelegate(QObject *pParent)
         : QStyledItemDelegate(pParent)
+        , m_fWatchForEditorDataCommits(false)
         , m_fWatchForEditorEnterKeyTriggering(false)
     {}
 
+    /** Defines whether delegate should watch for the editor's data commits. */
+    void setWatchForEditorDataCommits(bool fWatch) { m_fWatchForEditorDataCommits = fWatch; }
     /** Defines whether delegate should watch for the editor's Enter key triggering. */
     void setWatchForEditorEnterKeyTriggering(bool fWatch) { m_fWatchForEditorEnterKeyTriggering = fWatch; }
 
-private:
+protected:
 
     /** Returns the widget used to edit the item specified by @a index.
       * The @a pParent widget and style @a option are used to control how the editor widget appears. */
-    QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const /* override */
     {
         /* Call to base-class to get actual editor created: */
         QWidget *pEditor = QStyledItemDelegate::createEditor(pParent, option, index);
 
-        connect(pEditor, SIGNAL(sigCommitData(QWidget*)), this, SIGNAL(commitData(QWidget*)));
+        /* Watch for editor data commits, redirect to listeners: */
+        if (m_fWatchForEditorDataCommits)
+            connect(pEditor, SIGNAL(sigCommitData(QWidget *)), this, SIGNAL(commitData(QWidget *)));
 
         /* Watch for editor Enter key triggering, redirect to listeners: */
         if (m_fWatchForEditorEnterKeyTriggering)
@@ -62,8 +67,12 @@ private:
         return pEditor;
     }
 
+private:
+
+    /** Holds whether delegate should watch for the editor's data commits. */
+    bool m_fWatchForEditorDataCommits : 1;
     /** Holds whether delegate should watch for the editor's Enter key triggering. */
-    bool m_fWatchForEditorEnterKeyTriggering;
+    bool m_fWatchForEditorEnterKeyTriggering : 1;
 };
 
 #endif /* !___QIStyledItemDelegate_h___ */

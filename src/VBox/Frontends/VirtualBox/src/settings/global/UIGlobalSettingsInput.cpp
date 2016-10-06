@@ -602,6 +602,9 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
 
     /* Set configured item editor factory for table delegate: */
     pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+
+    /* Configure item delegate: */
+    pStyledItemDelegate->setWatchForEditorDataCommits(true);
 }
 
 void UIHotKeyTable::sltHandleShortcutsLoaded()

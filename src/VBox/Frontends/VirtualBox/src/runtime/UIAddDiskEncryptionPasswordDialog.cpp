@@ -407,6 +407,7 @@ void UIEncryptionDataTable::prepare()
         delete itemDelegate();
         setItemDelegate(pStyledItemDelegate);
         /* Configure item delegate: */
+        pStyledItemDelegate->setWatchForEditorDataCommits(true);
         pStyledItemDelegate->setWatchForEditorEnterKeyTriggering(true);
         connect(pStyledItemDelegate, SIGNAL(sigEditorEnterKeyTriggered()),
                 this, SIGNAL(sigEditorEnterKeyTriggered()));
