@@ -730,7 +730,9 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
         return ret;
     if (   caps & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER
         || !(caps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
-        return -EINVAL;
+        /* -EINVAL means cursor_set2() not supported, -EAGAIN means
+         * retry at once. */
+        return -EBUSY;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
     obj = drm_gem_object_lookup(file_priv, handle);
