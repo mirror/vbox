@@ -21,7 +21,8 @@
 /* Qt includes: */
 #include <QTableView>
 
-/** QTableView extension providing GUI with advanced functionality. */
+
+/** QTableView subclass extending standard functionality. */
 class QITableView : public QTableView
 {
     Q_OBJECT;
@@ -33,28 +34,26 @@ signals:
 
 public:
 
-    /** Constructs table-view on the basis of passed @a pParent. */
+    /** Constructs table-view passing @a pParent to the base-class. */
     QITableView(QWidget *pParent = 0);
 
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();
 
-protected:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Handles index change from @a previous to @a current. */
-    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) /* override */;
-
 protected slots:
 
     /** Stores the created @a pEditor for passed @a index in the map. */
-    void sltEditorCreated(QWidget *pEditor, const QModelIndex &index);
+    virtual void sltEditorCreated(QWidget *pEditor, const QModelIndex &index);
     /** Clears the destoyed @a pEditor from the map. */
-    void sltEditorDestroyed(QObject *pEditor);
+    virtual void sltEditorDestroyed(QObject *pEditor);
 
-private:
+protected:
+
+    /** Prepares all. */
+    virtual void prepare();
+
+    /** Handles index change from @a previous to @a current. */
+    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) /* override */;
 
     /** Holds the map of editors stored for passed indexes. */
     QMap<QModelIndex, QObject*> m_editors;
