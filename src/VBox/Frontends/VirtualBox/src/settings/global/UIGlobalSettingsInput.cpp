@@ -149,6 +149,11 @@ private slots:
 
     /* Handler: Readiness stuff: */
     void sltHandleShortcutsLoaded();
+
+private:
+
+    /** Prepares all. */
+    void prepare();
 };
 
 
@@ -477,11 +482,25 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
 {
     /* Set object name: */
     setObjectName(strObjectName);
-
-    /* Connect model: */
+    /* Set model: */
     setModel(pModel);
-    connect(pModel, SIGNAL(sigShortcutsLoaded()), this, SLOT(sltHandleShortcutsLoaded()));
 
+    /* Prepare all: */
+    prepare();
+}
+
+void UIHotKeyTable::sltHandleShortcutsLoaded()
+{
+    /* Resize columns to feat contents: */
+    resizeColumnsToContents();
+
+    /* Configure sorting: */
+    sortByColumn(Section_Name, Qt::AscendingOrder);
+    setSortingEnabled(true);
+}
+
+void UIHotKeyTable::prepare()
+{
     /* Configure self: */
     setTabKeyNavigation(false);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -501,39 +520,36 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
     horizontalHeader()->setResizeMode(Section_Value, QHeaderView::Stretch);
 #endif /* QT_VERSION < 0x050000 */
 
+    /* Connect model: */
+    connect(model(), SIGNAL(sigShortcutsLoaded()), this, SLOT(sltHandleShortcutsLoaded()));
+
     /* Reinstall delegate: */
     delete itemDelegate();
     QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
     setItemDelegate(pStyledItemDelegate);
+    AssertPtrReturnVoid(pStyledItemDelegate);
+    {
+        /* Configure item delegate: */
+        pStyledItemDelegate->setWatchForEditorDataCommits(true);
 
-    /* Create new item editor factory: */
-    QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+        /* Create new item editor factory: */
+        QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+        AssertPtrReturnVoid(pNewItemEditorFactory);
+        {
+            /* Register UIHotKeyEditor as the UIHotKey editor: */
+            int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
+            QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
+            pNewItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
 
-    /* Register UIHotKeyEditor as the UIHotKey editor: */
-    int iHotKeyTypeId = qRegisterMetaType<UIHotKey>();
-    QStandardItemEditorCreator<UIHotKeyEditor> *pHotKeyItemEditorCreator = new QStandardItemEditorCreator<UIHotKeyEditor>();
-    pNewItemEditorFactory->registerEditor((QVariant::Type)iHotKeyTypeId, pHotKeyItemEditorCreator);
+            /* Register UIHostComboEditor as the UIHostComboWrapper editor: */
+            int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
+            QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
+            pNewItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
 
-    /* Register UIHostComboEditor as the UIHostComboWrapper: */
-    int iHostComboTypeId = qRegisterMetaType<UIHostComboWrapper>();
-    QStandardItemEditorCreator<UIHostComboEditor> *pHostComboItemEditorCreator = new QStandardItemEditorCreator<UIHostComboEditor>();
-    pNewItemEditorFactory->registerEditor((QVariant::Type)iHostComboTypeId, pHostComboItemEditorCreator);
-
-    /* Set configured item editor factory for table delegate: */
-    pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
-
-    /* Configure item delegate: */
-    pStyledItemDelegate->setWatchForEditorDataCommits(true);
-}
-
-void UIHotKeyTable::sltHandleShortcutsLoaded()
-{
-    /* Resize columns to feat contents: */
-    resizeColumnsToContents();
-
-    /* Configure sorting: */
-    sortByColumn(Section_Name, Qt::AscendingOrder);
-    setSortingEnabled(true);
+            /* Assign configured item editor factory to item delegate: */
+            pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+        }
+    }
 }
 
 
