@@ -1384,7 +1384,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
     GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSend);
     GEN_CHECK_OFF(AHCIPort, fATAPI);
-    GEN_CHECK_OFF(AHCIPort, fATAPIPassthrough);
     GEN_CHECK_OFF(AHCIPort, fPortReset);
     GEN_CHECK_OFF(AHCIPort, fTrimEnabled);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
@@ -1396,10 +1395,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
     GEN_CHECK_OFF(AHCIPort, abATAPISense);
-    GEN_CHECK_OFF(AHCIPort, cNotifiedMediaChange);
     GEN_CHECK_OFF(AHCIPort, cLogSectorsPerPhysicalExp);
-    GEN_CHECK_OFF(AHCIPort, MediaEventStatus);
-    GEN_CHECK_OFF(AHCIPort, MediaTrackType);
     GEN_CHECK_OFF(AHCIPort, iLUN);
     GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
     GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
@@ -1409,17 +1405,14 @@ int main()
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvMedia);
     GEN_CHECK_OFF(AHCIPort, pDrvMediaEx);
-    GEN_CHECK_OFF(AHCIPort, pDrvMount);
     GEN_CHECK_OFF(AHCIPort, IBase);
     GEN_CHECK_OFF(AHCIPort, IPort);
     GEN_CHECK_OFF(AHCIPort, IMediaExPort);
-    GEN_CHECK_OFF(AHCIPort, IMountNotify);
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
     GEN_CHECK_OFF(AHCIPort, Led);
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
 
     GEN_CHECK_OFF(AHCIPort, pTaskErr);
-    GEN_CHECK_OFF(AHCIPort, pTrackList);
     GEN_CHECK_OFF(AHCIPort, hEvtProcess);
     GEN_CHECK_OFF(AHCIPort, StatDMA);
     GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
@@ -1435,11 +1428,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH]); /* One additional byte for the termination.*/
     GEN_CHECK_OFF(AHCIPort, szModelNumber);
     GEN_CHECK_OFF(AHCIPort, szModelNumber[AHCI_MODEL_NUMBER_LENGTH]); /* One additional byte for the termination.*/
-    GEN_CHECK_OFF(AHCIPort, szInquiryVendorId[AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH]);
-    GEN_CHECK_OFF(AHCIPort, szInquiryProductId);
-    GEN_CHECK_OFF(AHCIPort, szInquiryProductId[AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH]);
-    GEN_CHECK_OFF(AHCIPort, szInquiryRevision);
-    GEN_CHECK_OFF(AHCIPort, szInquiryRevision[AHCI_ATAPI_INQUIRY_REVISION_LENGTH]);
     GEN_CHECK_OFF(AHCIPort, cErrors);
     GEN_CHECK_OFF(AHCIPort, fRedo);
 

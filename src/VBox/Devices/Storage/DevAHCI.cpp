@@ -59,7 +59,6 @@
 #endif
 #include "PIIX3ATABmDma.h"
 #include "ide.h"
-#include "ATAPIPassthrough.h"
 #include "VBoxDD.h"
 
 #if   defined(VBOX_WITH_DTRACE) \
@@ -79,10 +78,10 @@
 /** Maximum number of command slots available. */
 #define AHCI_NR_COMMAND_SLOTS   32
 
-#define AHCI_MAX_ALLOC_TOO_MUCH 20
-
 /** The current saved state version. */
-#define AHCI_SAVED_STATE_VERSION                        8
+#define AHCI_SAVED_STATE_VERSION                        9
+/** The saved state version before the ATAPI emulation was removed and the generic SCSI driver was used. */
+#define AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE       8
 /** The saved state version before changing the port reset logic in an incompatible way. */
 #define AHCI_SAVED_STATE_VERSION_PRE_PORT_RESET_CHANGES 7
 /** Saved state version before the per port hotplug port was added. */
@@ -129,19 +128,6 @@
 #define AHCI_SERIAL_NUMBER_LENGTH            20
 #define AHCI_FIRMWARE_REVISION_LENGTH         8
 #define AHCI_MODEL_NUMBER_LENGTH             40
-#define AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
-#define AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
-#define AHCI_ATAPI_INQUIRY_REVISION_LENGTH    4
-
-/* MediaEventStatus */
-#define ATA_EVENT_STATUS_UNCHANGED              0    /**< medium event status not changed */
-#define ATA_EVENT_STATUS_MEDIA_NEW              1    /**< new medium inserted */
-#define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
-#define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
-#define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
-
-/* Media track type */
-#define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
 
 /** ATAPI sense info size. */
 #define ATAPI_SENSE_SIZE 64
@@ -313,7 +299,6 @@ typedef struct DEVPORTNOTIFIERQUEUEITEM
  * @implements PDMIBASE
  * @implements PDMIMEDIAPORT
  * @implements PDMIMEDIAEXPORT
- * @implements PDMIMOUNTNOTIFY
  */
 typedef struct AHCIPort
 {
@@ -379,8 +364,6 @@ typedef struct AHCIPort
     bool                            fFirstD2HFisSend;
     /** Attached device is a CD/DVD drive. */
     bool                            fATAPI;
-    /** Passthrough SCSI commands. */
-    bool                            fATAPIPassthrough;
     /** Flag whether this port is in a reset state. */
     volatile bool                   fPortReset;
     /** Flag whether TRIM is supported. */
@@ -406,14 +389,8 @@ typedef struct AHCIPort
     uint8_t                         uATATransferMode;
     /** ATAPI sense data. */
     uint8_t                         abATAPISense[ATAPI_SENSE_SIZE];
-    /** HACK: Countdown till we report a newly unmounted drive as mounted. */
-    uint8_t                         cNotifiedMediaChange;
     /** Exponent of logical sectors in a physical sector, number of logical sectors is 2^exp. */
     uint8_t                         cLogSectorsPerPhysicalExp;
-    /** The same for GET_EVENT_STATUS for mechanism */
-    volatile uint32_t               MediaEventStatus;
-    /** Media type if known. */
-    volatile uint32_t               MediaTrackType;
     /** The LUN. */
     RTUINT                          iLUN;
 
@@ -442,16 +419,12 @@ typedef struct AHCIPort
     R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
     /** Pointer to the attached driver's extended interface. */
     R3PTRTYPE(PPDMIMEDIAEX)         pDrvMediaEx;
-    /** Pointer to the attached driver's mount interface. */
-    R3PTRTYPE(PPDMIMOUNT)           pDrvMount;
     /** The base interface. */
     PDMIBASE                        IBase;
     /** The block port interface. */
     PDMIMEDIAPORT                   IPort;
     /** The extended media port interface. */
     PDMIMEDIAEXPORT                 IMediaExPort;
-    /** The mount notify interface. */
-    PDMIMOUNTNOTIFY                 IMountNotify;
     /** Physical geometry of this image. */
     PDMMEDIAGEOMETRY                PCHSGeometry;
     /** The status LED state for this drive. */
@@ -463,8 +436,6 @@ typedef struct AHCIPort
     R3PTRTYPE(PPDMTHREAD)           pAsyncIOThread;
     /** First task throwing an error. */
     R3PTRTYPE(volatile PAHCIREQ)    pTaskErr;
-    /** The current tracklist of the loaded medium if passthrough is used. */
-    R3PTRTYPE(PTRACKLIST)           pTrackList;
 
     /** The event semaphore the processing thread waits on. */
     SUPSEMEVENT                     hEvtProcess;
@@ -490,12 +461,6 @@ typedef struct AHCIPort
     char                            szFirmwareRevision[AHCI_FIRMWARE_REVISION_LENGTH+1]; /** < one extra byte for termination */
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                            szModelNumber[AHCI_MODEL_NUMBER_LENGTH+1]; /** < one extra byte for termination */
-    /** The vendor identification string for SCSI INQUIRY commands. */
-    char                            szInquiryVendorId[AHCI_ATAPI_INQUIRY_VENDOR_ID_LENGTH+1];
-    /** The product identification string for SCSI INQUIRY commands. */
-    char                            szInquiryProductId[AHCI_ATAPI_INQUIRY_PRODUCT_ID_LENGTH+1];
-    /** The revision string for SCSI INQUIRY commands. */
-    char                            szInquiryRevision[AHCI_ATAPI_INQUIRY_REVISION_LENGTH+1];
     /** Error counter */
     uint32_t                        cErrors;
 
@@ -903,8 +868,6 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
 RT_C_DECLS_END
 
 #define PCIDEV_2_PAHCI(pPciDev)                  ( (PAHCI)(pPciDev) )
-#define PDMIMOUNT_2_PAHCIPORT(pInterface)        ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMount)) )
-#define PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface)  ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMountNotify)) )
 #define PDMIBASE_2_PAHCIPORT(pInterface)         ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IBase)) )
 #define PDMIMEDIAPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IPort)) )
 #define PDMIBASE_2_PAHCI(pInterface)             ( (PAHCI)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCI, IBase)) )
@@ -2033,9 +1996,6 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->u32QueuedTasksFinished = 0;
     pAhciPort->u32CurrentCommandSlot = 0;
 
-    ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
-    ASMAtomicWriteU32(&pAhciPort->MediaTrackType, ATA_MEDIA_TYPE_UNKNOWN);
-
     if (pAhciPort->pDrvBase)
     {
         pAhciPort->regCMD |= AHCI_PORT_CMD_CPS; /* Indicate that there is a device on that port */
@@ -2654,7 +2614,6 @@ static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pAhciPort->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pAhciPort->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pAhciPort->IMediaExPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);
     return NULL;
 }
 
@@ -3092,7 +3051,6 @@ static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     int rc;
 
     /* Send a status good D2H FIS. */
-    ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
     pAhciPort->fResetDevice = false;
     if (pAhciPort->regCMD & AHCI_PORT_CMD_FRE)
         ahciPostFirstD2HFisIntoMemory(pAhciPort);
@@ -3900,7 +3858,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 {
                     ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
                     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7)
-                        /*| ((pAhciReq->enmType != AHCITXDIR_WRITE) ? ATAPI_INT_REASON_IO : 0) @todo */
+                        | ((pAhciReq->fFlags & AHCI_REQ_XFER_2_HOST) ? ATAPI_INT_REASON_IO : 0)
                         | (!pAhciReq->cbTransfer ? ATAPI_INT_REASON_CD : 0);
                 }
                 else
@@ -3909,6 +3867,7 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                     pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7) |
                                                           ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
                     pAhciReq->cbTransfer = 0;
+                    LogFlowFunc(("SCSI request completed with %u status\n", pAhciReq->u8ScsiSts));
                 }
             }
             else if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_INVALID)
@@ -4241,7 +4200,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
                 pAhciReq->fFlags |= AHCI_REQ_PIO_DATA;
                 pAhciReq->cbTransfer = cbData;
                 pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] = (pAhciReq->cmdFis[AHCI_CMDFIS_SECTN] & ~7)
-                    /*| ((pAhciReq->enmTxDir != AHCITXDIR_WRITE) ? ATAPI_INT_REASON_IO : 0) @todo */
+                    | ((pAhciReq->fFlags & AHCI_REQ_XFER_2_HOST) ? ATAPI_INT_REASON_IO : 0)
                     | (!pAhciReq->cbTransfer ? ATAPI_INT_REASON_CD : 0);
 
                 ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
@@ -5041,8 +5000,6 @@ static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         /* ATAPI saved state. */
         SSMR3PutBool(pSSM, pThis->ahciPort[i].fATAPI);
         SSMR3PutMem(pSSM, &pThis->ahciPort[i].abATAPISense[0], sizeof(pThis->ahciPort[i].abATAPISense));
-        SSMR3PutU8(pSSM, pThis->ahciPort[i].cNotifiedMediaChange);
-        SSMR3PutU32(pSSM, pThis->ahciPort[i].MediaEventStatus);
     }
 
     return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
@@ -5286,8 +5243,11 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             {
                 SSMR3GetBool(pSSM, &pThis->ahciPort[i].fATAPI);
                 SSMR3GetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
-                SSMR3GetU8(pSSM, &pThis->ahciPort[i].cNotifiedMediaChange);
-                SSMR3GetU32(pSSM, (uint32_t*)&pThis->ahciPort[i].MediaEventStatus);
+                if (uVersion < AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE)
+                {
+                    SSMR3Skip(pSSM, 1); /* cNotifiedMediaChange. */
+                    SSMR3Skip(pSSM, 4); /* MediaEventStatus */
+                }
             }
             else if (pThis->ahciPort[i].fATAPI)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=false config=true"));
@@ -5370,8 +5330,6 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
                     ("AHCI configuration error: LUN#%d misses the extended media interface!\n", pAhciPort->iLUN),
                     VERR_PDM_MISSING_INTERFACE);
 
-    pAhciPort->pDrvMount = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMOUNT);
-
     /*
      * Validate type.
      */
@@ -5379,9 +5337,6 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
     AssertMsgReturn(enmType == PDMMEDIATYPE_HARD_DISK || enmType == PDMMEDIATYPE_CDROM || enmType == PDMMEDIATYPE_DVD,
                     ("AHCI configuration error: LUN#%d isn't a disk or cd/dvd. enmType=%u\n", pAhciPort->iLUN, enmType),
                     VERR_PDM_UNSUPPORTED_BLOCK_TYPE);
-    AssertMsgReturn(enmType == PDMMEDIATYPE_HARD_DISK || pAhciPort->pDrvMount,
-                    ("AHCI configuration error: LUN#%d is CD/DVD-ROM without a mountable interface\n", pAhciPort->iLUN),
-                    VERR_INTERNAL_ERROR);
 
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAllocSizeSet(pAhciPort->pDrvMediaEx, sizeof(AHCIREQ));
     if (RT_FAILURE(rc))
@@ -5597,43 +5552,6 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
     if (pAhciPort->cLogSectorsPerPhysicalExp >= 16)
         return PDMDEV_SET_ERROR(pDevIns, rc,
                     N_("AHCI configuration error: \"LogicalSectorsPerPhysical\" must be between 0 and 15"));
-
-    /* There are three other identification strings for CD drives used for INQUIRY */
-    if (pAhciPort->fATAPI)
-    {
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pAhciPort->szInquiryVendorId, sizeof(pAhciPort->szInquiryVendorId),
-                                  "VBOX");
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIVendorId\" is longer than 16 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIVendorId\" as string"));
-        }
-
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pAhciPort->szInquiryProductId, sizeof(pAhciPort->szInquiryProductId),
-                                  "CD-ROM");
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIProductId\" is longer than 16 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIProductId\" as string"));
-        }
-
-        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pAhciPort->szInquiryRevision, sizeof(pAhciPort->szInquiryRevision),
-                                  "1.0");
-        if (RT_FAILURE(rc))
-        {
-            if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
-                return PDMDEV_SET_ERROR(pDevIns, VERR_INVALID_PARAMETER,
-                                N_("AHCI configuration error: \"ATAPIRevision\" is longer than 4 bytes"));
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                    N_("AHCI configuration error: failed to read \"ATAPIRevision\" as string"));
-        }
-    }
 
     return rc;
 }
