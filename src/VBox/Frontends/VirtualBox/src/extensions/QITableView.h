@@ -49,11 +49,13 @@ protected slots:
 
 protected:
 
-    /** Prepares all. */
-    virtual void prepare();
-
     /** Handles index change from @a previous to @a current. */
     virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) /* override */;
+
+private:
+
+    /** Prepares all. */
+    void prepare();
 
     /** Holds the map of editors stored for passed indexes. */
     QMap<QModelIndex, QObject*> m_editors;

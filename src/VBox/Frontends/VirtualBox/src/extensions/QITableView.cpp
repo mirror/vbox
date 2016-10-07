@@ -68,6 +68,14 @@ void QITableView::sltEditorDestroyed(QObject *pEditor)
     m_editors.remove(index);
 }
 
+void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
+{
+    /* Notify listeners about index changed: */
+    emit sigCurrentChanged(current, previous);
+    /* Call to base-class: */
+    QTableView::currentChanged(current, previous);
+}
+
 void QITableView::prepare()
 {
     /* Delete old delegate: */
@@ -82,13 +90,5 @@ void QITableView::prepare()
         connect(pStyledItemDelegate, SIGNAL(sigEditorCreated(QWidget *, const QModelIndex &)),
                 this, SLOT(sltEditorCreated(QWidget *, const QModelIndex &)));
     }
-}
-
-void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
-{
-    /* Notify listeners about index changed: */
-    emit sigCurrentChanged(current, previous);
-    /* Call to base-class: */
-    QTableView::currentChanged(current, previous);
 }
 
