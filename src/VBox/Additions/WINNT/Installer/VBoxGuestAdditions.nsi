@@ -1094,7 +1094,7 @@ Function .onInit
   StrCpy $g_bNoVideoDrv "false"
   StrCpy $g_bNoGuestDrv "false"
   StrCpy $g_bNoMouseDrv "false"
-  StrCpy $g_bStartMenuEntries "false"
+  StrCpy $g_bNoStartMenuEntries "false"
   StrCpy $g_bWithAutoLogon "false"
   StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
