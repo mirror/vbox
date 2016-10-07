@@ -3,7 +3,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2014 Oracle Corporation
+; Copyright (C) 2006-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -35,9 +35,11 @@ LangString VBOX_UNINSTALL_REBOOT ${LANG_GERMAN}                     "Es wird dri
 
 LangString VBOX_COMPONENT_MAIN ${LANG_GERMAN}                       "VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_GERMAN}                  "Hauptkomponenten der VirtualBox Guest Additions"
+
 LangString VBOX_COMPONENT_AUTOLOGON ${LANG_GERMAN}                  "Unterstützung für automatisches Anmelden"
 LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_GERMAN}             "Ermöglicht automatisches Anmelden von Benutzern"
 LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_GERMAN}    "Es ist bereits eine Komponente für das automatische Anmelden installiert.$\r$\nFalls Sie diese Komponente nun mit der von VirtualBox ersetzen, könnte das System instabil werden.$\r$\nDennoch installieren?"
+
 LangString VBOX_COMPONENT_D3D  ${LANG_GERMAN}                       "Direct3D-Unterstützung (Experimentell)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_GERMAN}                  "Ermöglicht Direct3D-Unterstützung für Gäste (Experimentell)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_GERMAN}                  "Windows befindet sich aktuell nicht im abgesicherten Modus.$\r$\nDaher kann die D3D-Unterstützung nicht installiert werden."
@@ -46,6 +48,9 @@ LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_GERMAN}                "Für diesen 
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_GERMAN}              "Bitte beachten Sie, dass die virtuelle Maschine für die Benutzung von 3D-Beschleunigung einen Grafikspeicher von mindestens 128 MB für einen Monitor benötigt und für den Multi-Monitor-Betrieb bis zu 256 MB empfohlen wird.$\r$\n$\r$\nSie können den Grafikspeicher in den VM-Einstellungen in der Kategorie $\"Anzeige$\" ändern."
 LangString VBOX_COMPONENT_D3D_INVALID ${LANG_GERMAN}                "Das Setup hat eine ungültige/beschädigte DirectX-Installation festgestellt.$\r$\n$\r$\nUm die Direct3D-Unterstützung installieren zu können wird empfohlen, zuerst das VirtualBox Benutzerhandbuch zu konsultieren.$\r$\n$\r$\nMit der Installation jetzt trotzdem fortfahren?"
 LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_GERMAN}         "Soll nun das VirtualBox-Handbuch angezeigt werden um nach einer Lösung zu suchen?"
+
+LangString VBOX_COMPONENT_STARTMENU ${LANG_GERMAN}                  "Startmenü-Einträge"
+LangString VBOX_COMPONENT_STARTMENU_DESC ${LANG_GERMAN}             "Erstellt Einträge im Startmenü"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}                     "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}                      "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"

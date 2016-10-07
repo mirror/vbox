@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2012-2014 Oracle Corporation
+; Copyright (C) 2012-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -233,6 +233,7 @@ Var g_bNoVBoxTrayExit                   ; Cmd line: Do not quit VBoxTray before 
 Var g_bNoVideoDrv                       ; Cmd line: Do not install the VBoxVideo driver
 Var g_bNoGuestDrv                       ; Cmd line: Do not install the VBoxGuest driver
 Var g_bNoMouseDrv                       ; Cmd line: Do not install the VBoxMouse driver
+Var g_bNoStartMenuEntries               ; Cmd line: Do not create start menu entries
 Var g_bWithAutoLogon                    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
 Var g_bWithD3D                          ; Cmd line: Install Direct3D support
 Var g_bOnlyExtract                      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
@@ -342,6 +343,10 @@ Function HandleCommandLine
 
       ${Case} '/no_mousedrv' ; Not officially documented
         StrCpy $g_bNoMouseDrv "true"
+        ${Break}
+
+      ${Case} '/no_startmenuentries' ; Not officially documented
+        StrCpy $g_bNoStartMenuEntries "true"
         ${Break}
 
 !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
@@ -888,11 +893,12 @@ SectionEnd
 !ifdef USE_MUI
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SEC01} $(VBOX_COMPONENT_MAIN_DESC)
-    !insertmacro MUI_DESCRIPTION_TEXT ${SEC02} $(VBOX_COMPONENT_AUTOLOGON_DESC)
-  !if $%VBOX_WITH_CROGL% == "1"
-    !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} $(VBOX_COMPONENT_D3D_DESC)
-  !endif
+    !insertmacro MUI_DESCRIPTION_TEXT   ${SEC01} $(VBOX_COMPONENT_MAIN_DESC)
+    !insertmacro MUI_DESCRIPTION_TEXT   ${SEC02} $(VBOX_COMPONENT_AUTOLOGON_DESC)
+    !if $%VBOX_WITH_CROGL% == "1"
+      !insertmacro MUI_DESCRIPTION_TEXT ${SEC03} $(VBOX_COMPONENT_D3D_DESC)
+    !endif
+    !insertmacro MUI_DESCRIPTION_TEXT   ${SEC04} $(VBOX_COMPONENT_STARTMENU_DESC)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 !endif ; USE_MUI
 
@@ -902,6 +908,8 @@ Section -Content
 
 SectionEnd
 
+; Start menu entries. Enabled by default and can be disabled by the user.
+Section /o $(VBOX_COMPONENT_STARTMENU) SEC04
 Section -StartMenu
 
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
@@ -1087,6 +1095,7 @@ Function .onInit
   StrCpy $g_bNoVideoDrv "false"
   StrCpy $g_bNoGuestDrv "false"
   StrCpy $g_bNoMouseDrv "false"
+  StrCpy $g_bStartMenuEntries "false"
   StrCpy $g_bWithAutoLogon "false"
   StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
@@ -1176,10 +1185,16 @@ Function .onInit
 
   Call CheckForInstalledComponents
 
-  ; Set section bits
+  ;
+  ; Section 02
+  ;
   ${If} $g_bWithAutoLogon == "true" ; Auto-logon support
     !insertmacro SelectSection ${SEC02}
   ${EndIf}
+
+  ;
+  ; Section 03
+  ;
 !if $%VBOX_WITH_CROGL% == "1"
   ${If} $g_bWithD3D == "true" ; D3D support
     !insertmacro SelectSection ${SEC03}
@@ -1195,6 +1210,13 @@ Function .onInit
   ${OrIf} $g_strWinVersion == "10"
     IntOp $0 ${SF_SELECTED} | ${SF_RO}
     SectionSetFlags ${SEC03} $0
+  ${EndIf}
+
+  ;
+  ; Section 04
+  ;
+  ${If} $g_bNoStartMenuEntries == "false" ; Start menu entries
+    !insertmacro SelectSection ${SEC04}
   ${EndIf}
 
 !ifdef USE_MUI

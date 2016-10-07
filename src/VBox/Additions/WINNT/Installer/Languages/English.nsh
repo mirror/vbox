@@ -3,7 +3,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2014 Oracle Corporation
+; Copyright (C) 2006-2016 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -35,9 +35,11 @@ LangString VBOX_UNINSTALL_REBOOT ${LANG_ENGLISH}                    "It is stron
 
 LangString VBOX_COMPONENT_MAIN ${LANG_ENGLISH}                      "VirtualBox Guest Additions"
 LangString VBOX_COMPONENT_MAIN_DESC ${LANG_ENGLISH}                 "VirtualBox Guest Additions main files"
+
 LangString VBOX_COMPONENT_AUTOLOGON ${LANG_ENGLISH}                 "Auto-Logon support"
 LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_ENGLISH}            "Enables automatic log-on support for guests"
 LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_ENGLISH}   "Another installed application already provides automatic log-on support.$\r$\nIf you replace this support with that provided by VirtualBox the system could become unstable.$\r$\nAre you sure you wish to proceed?"
+
 LangString VBOX_COMPONENT_D3D  ${LANG_ENGLISH}                      "Direct3D Support (Experimental)"
 LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D support for guests (Experimental)"
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}                 "Windows is currently not running in safe mode so Direct3D support cannot be installed."
@@ -46,6 +48,9 @@ LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_ENGLISH}               "This system
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_ENGLISH}             "Please note that in order to use 3D acceleration the virtual machine requires at least 128 MB of video memory with 256 MB recommended if you wish to use it with multiple monitors.$\r$\n$\r$\nIf necessary you can change the video memory size in the $\"Display$\" section of the virtual machine settings."
 LangString VBOX_COMPONENT_D3D_INVALID ${LANG_ENGLISH}               "The setup detected a corrupt/invalid DirectX installation.$\r$\n$\r$\nIn order to get Direct3D support working, consulting the VirtualBox manual is highly recommended.$\r$\n$\r$\nContinue anyway?"
 LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_ENGLISH}        "Shall the VirtualBox manual be displayed now to look for a solution?"
+
+LangString VBOX_COMPONENT_STARTMENU ${LANG_ENGLISH}                 "Start menu entries"
+LangString VBOX_COMPONENT_STARTMENU_DESC ${LANG_ENGLISH}            "Creates entries in the start menu"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_ENGLISH}                    "In order to make ${PRODUCT_NAME} work correctly some system files have been replaced.$\r$\nIf the Windows File Protection service offers to restore the original files you should cancel the request to retain the newly installed functionality."
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}                     "To apply all changes, the system must be restarted. Restart Windows now?"
