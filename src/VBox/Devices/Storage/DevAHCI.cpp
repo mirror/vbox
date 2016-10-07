@@ -242,7 +242,7 @@ typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
 #define AHCI_REQ_IS_QUEUED   RT_BIT_32(3)
 /** Flag whether the request is stored on the stack. */
 #define AHCI_REQ_IS_ON_STACK RT_BIT_32(4)
-/** FLag whether this request transfers data from the device to the HBA or
+/** Flag whether this request transfers data from the device to the HBA or
  * the other way around .*/
 #define AHCI_REQ_XFER_2_HOST RT_BIT_32(5)
 
@@ -3582,78 +3582,6 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
-/* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
-
-/** Makes a PAHCIPort out of a PPDMIMEDIAASYNCPORT. */
-#define PDMIMEDIAASYNCPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)pInterface - RT_OFFSETOF(AHCIPort, IPortAsync)) )
-
-static void ahciWarningDiskFull(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("AHCI: Host disk full\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_DISKFULL",
-                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
-    AssertRC(rc);
-}
-
-static void ahciWarningFileTooBig(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("AHCI: File too big\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_FILETOOBIG",
-                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
-    AssertRC(rc);
-}
-
-static void ahciWarningISCSI(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("AHCI: iSCSI target unavailable\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_ISCSIDOWN",
-                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
-    AssertRC(rc);
-}
-
-static void ahciWarningDekMissing(PPDMDEVINS pDevIns)
-{
-    LogRel(("AHCI#%u: DEK is missing\n", pDevIns->iInstance));
-    int rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DrvVD_DEKMISSING",
-                                        N_("AHCI: The DEK for this disk is missing"));
-    AssertRC(rc);
-}
-
-bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
-{
-    if (rc == VERR_DISK_FULL)
-    {
-        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
-            ahciWarningDiskFull(pAhciPort->CTX_SUFF(pDevIns));
-        return true;
-    }
-    if (rc == VERR_FILE_TOO_BIG)
-    {
-        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
-            ahciWarningFileTooBig(pAhciPort->CTX_SUFF(pDevIns));
-        return true;
-    }
-    if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-    {
-        /* iSCSI connection abort (first error) or failure to reestablish
-         * connection (second error). Pause VM. On resume we'll retry. */
-        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
-            ahciWarningISCSI(pAhciPort->CTX_SUFF(pDevIns));
-        return true;
-    }
-    if (rc == VERR_VD_DEK_MISSING)
-    {
-        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
-            ahciWarningDekMissing(pAhciPort->CTX_SUFF(pDevIns));
-        return true;
-    }
-
-    return false;
-}
-
 /**
  * Creates the array of ranges to trim.
  *
@@ -3745,7 +3673,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     PDMMEDIAEXIOREQ hIoReq = NULL;
 
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
-                                                   uTag, PDMIMEDIAEX_F_DEFAULT);
+                                                   uTag, PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
     if (RT_SUCCESS(rc))
     {
         pAhciReq->hIoReq = hIoReq;
@@ -3784,7 +3712,6 @@ static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
  */
 static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcReq)
 {
-    bool fRedo = false;
     bool fCanceled = false;
 
     LogFlowFunc(("pAhciPort=%p pAhciReq=%p rcReq=%d\n",
@@ -3833,21 +3760,15 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                             pAhciReq->cbTransfer, rcReq));
             }
 
-            fRedo = ahciIsRedoSetWarning(pAhciPort, rcReq);
-            if (!fRedo)
-            {
-                ahciReqSetStatus(pAhciReq, ID_ERR, ATA_STAT_READY | ATA_STAT_ERR);
-                /*
-                 * We have to duplicate the request here as the underlying I/O
-                 * request will be freed later.
-                 */
-                PAHCIREQ pReqDup = (PAHCIREQ)RTMemDup(pAhciReq, sizeof(AHCIREQ));
-                if (   pReqDup
-                    && !ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pReqDup, NULL))
-                    RTMemFree(pReqDup);
-            }
-            else
-                ASMAtomicOrU32(&pAhciPort->u32TasksRedo, RT_BIT_32(pAhciReq->uTag));
+            ahciReqSetStatus(pAhciReq, ID_ERR, ATA_STAT_READY | ATA_STAT_ERR);
+            /*
+             * We have to duplicate the request here as the underlying I/O
+             * request will be freed later.
+             */
+            PAHCIREQ pReqDup = (PAHCIREQ)RTMemDup(pAhciReq, sizeof(AHCIREQ));
+            if (   pReqDup
+                && !ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pReqDup, NULL))
+                RTMemFree(pReqDup);
         }
         else
         {
@@ -3904,31 +3825,28 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
         memcpy(&cmdFis[0], &pAhciReq->cmdFis[0], sizeof(cmdFis));
 
         ahciR3ReqFree(pAhciPort, pAhciReq);
-        if (!fRedo)
+
+        /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
+        if (fFlags & AHCI_REQ_PIO_DATA)
+            ahciSendPioSetupFis(pAhciPort, cbTransfer, &cmdFis[0], fRead, false /* fInterrupt */);
+
+        if (fFlags & AHCI_REQ_CLEAR_SACT)
         {
-
-            /* Post a PIO setup FIS first if this is a PIO command which transfers data. */
-            if (fFlags & AHCI_REQ_PIO_DATA)
-                ahciSendPioSetupFis(pAhciPort, cbTransfer, &cmdFis[0], fRead, false /* fInterrupt */);
-
-            if (fFlags & AHCI_REQ_CLEAR_SACT)
-            {
-                if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIREQ))
-                    ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, RT_BIT_32(uTag));
-            }
-
-            if (fFlags & AHCI_REQ_IS_QUEUED)
-            {
-                /*
-                 * Always raise an interrupt after task completion; delaying
-                 * this (interrupt coalescing) increases latency and has a significant
-                 * impact on performance (see @bugref{5071})
-                 */
-                ahciSendSDBFis(pAhciPort, 0, true);
-            }
-            else
-                ahciSendD2HFis(pAhciPort, uTag, &cmdFis[0], true);
+            if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIREQ))
+                ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, RT_BIT_32(uTag));
         }
+
+        if (fFlags & AHCI_REQ_IS_QUEUED)
+        {
+            /*
+             * Always raise an interrupt after task completion; delaying
+             * this (interrupt coalescing) increases latency and has a significant
+             * impact on performance (see @bugref{5071})
+             */
+            ahciSendSDBFis(pAhciPort, 0, true);
+        }
+        else
+            ahciSendD2HFis(pAhciPort, uTag, &cmdFis[0], true);
     }
     else
     {
@@ -4064,12 +3982,26 @@ static DECLCALLBACK(int) ahciR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface, 
 static DECLCALLBACK(void) ahciR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                   void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
 {
-    RT_NOREF(hIoReq);
+    RT_NOREF2(hIoReq, pvIoReqAlloc);
     PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
-    PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
-    RT_NOREF3(pAhciPort, pIoReq, enmState);
-    AssertLogRelMsgFailed(("This should not be hit because I/O requests should not be suspended\n"));
+    switch (enmState)
+    {
+        case PDMMEDIAEXIOREQSTATE_SUSPENDED:
+        {
+            /* Make sure the request is not accounted for so the VM can suspend successfully. */
+            uint32_t cTasksActive = ASMAtomicDecU32(&pAhciPort->cTasksActive);
+            if (!cTasksActive && pAhciPort->pAhciR3->fSignalIdle)
+                PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
+            break;
+        }
+        case PDMMEDIAEXIOREQSTATE_ACTIVE:
+            /* Make sure the request is accounted for so the VM suspends only when the request is complete. */
+            ASMAtomicIncU32(&pAhciPort->cTasksActive);
+            break;
+        default:
+            AssertMsgFailed(("Invalid request state given %u\n", enmState));
+    }
 }
 
 /**
