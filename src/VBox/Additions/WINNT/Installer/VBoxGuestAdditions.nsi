@@ -910,7 +910,6 @@ SectionEnd
 
 ; Start menu entries. Enabled by default and can be disabled by the user.
 Section /o $(VBOX_COMPONENT_STARTMENU) SEC04
-Section -StartMenu
 
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url" "" "$INSTDIR\iexplore.ico"
