@@ -413,7 +413,6 @@ EOF
 # setup_script
 setup()
 {
-    rm -f $LOG
     if test -r $config; then
       . $config
     else
