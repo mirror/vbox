@@ -307,8 +307,6 @@ static struct drm_driver driver =
 
 static int __init vbox_init(void)
 {
-    unsigned i;
-
 #ifdef CONFIG_VGA_CONSOLE
     if (vgacon_text_force() && vbox_modeset == -1)
         return -EINVAL;
