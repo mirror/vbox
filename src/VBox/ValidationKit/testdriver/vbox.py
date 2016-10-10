@@ -2535,7 +2535,7 @@ class TestDriver(base.TestDriver):                                              
         Terminates the VM specified by oSession and adds the release logs to
         the test report.
 
-        This will try archive this by using powerOff, but will resort to
+        This will try achieve this by using powerOff, but will resort to
         tougher methods if that fails.
 
         The session will always be removed from the task list.
