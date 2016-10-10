@@ -5400,7 +5400,8 @@ static uint32_t supR3HardenedWinFindAdversaries(void)
     HANDLE hDir;
     NTSTATUS rcNt = NtOpenDirectoryObject(&hDir, DIRECTORY_QUERY | FILE_LIST_DIRECTORY, &ObjAttr);
 #ifdef VBOX_STRICT
-    SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
+    if (rcNt != STATUS_ACCESS_DENIED) /* non-admin */
+        SUPR3HARDENED_ASSERT_NT_SUCCESS(rcNt);
 #endif
     if (NT_SUCCESS(rcNt))
     {
