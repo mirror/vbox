@@ -18,6 +18,8 @@
 #ifndef ___VBoxMPVbva_h___
 #define ___VBoxMPVbva_h___
 
+#include <VBox/cdefs.h>  /* for VBOXCALL */
+
 typedef struct VBOXVBVAINFO
 {
     VBVABUFFERCONTEXT Vbva;
