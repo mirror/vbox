@@ -26,7 +26,6 @@
 #ifndef ___VBox_VMMDev_h
 #define ___VBox_VMMDev_h
 
-#include <VBox/VBoxVideo.h>             /* For VBVA definitions. */
 #include <VBox/cdefs.h>
 #include <VBox/param.h>                 /* for the PCI IDs. */
 #include <VBox/types.h>
@@ -2056,7 +2055,39 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     return VINF_SUCCESS;
 }
 
+/** @name VBVA ring defines.
+ *
+ * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
+ * data. For example big bitmaps which do not fit to the buffer.
+ *
+ * Guest starts writing to the buffer by initializing a record entry in the
+ * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
+ * written. As data is written to the ring buffer, the guest increases off32End
+ * for the record.
+ *
+ * The host reads the aRecords on flushes and processes all completed records.
+ * When host encounters situation when only a partial record presents and
+ * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
+ * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
+ * off32Head. After that on each flush the host continues fetching the data
+ * until the record is completed.
+ *
+ */
+#define VMMDEV_VBVA_RING_BUFFER_SIZE        (_4M - _1K)
+#define VMMDEV_VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
+
+#define VMMDEV_VBVA_MAX_RECORDS (64)
 /** @} */
+
+/**
+ * VBVA record.
+ */
+typedef struct VMMDEVVBVARECORD
+{
+    /** The length of the record. Changed by guest. */
+    uint32_t cbRecord;
+} VMMDEVVBVARECORD;
+AssertCompileSize(VMMDEVVBVARECORD, 4);
 
 
 /**
@@ -2075,10 +2106,10 @@ typedef struct VBVAMEMORY
     uint32_t off32Free;
 
     /** The ring buffer for data. */
-    uint8_t  au8RingBuffer[VBVA_RING_BUFFER_SIZE];
+    uint8_t  au8RingBuffer[VMMDEV_VBVA_RING_BUFFER_SIZE];
 
     /** The queue of record descriptions. */
-    VBVARECORD aRecords[VBVA_MAX_RECORDS];
+    VMMDEVVBVARECORD aRecords[VMMDEV_VBVA_MAX_RECORDS];
     uint32_t indexRecordFirst;
     uint32_t indexRecordFree;
 

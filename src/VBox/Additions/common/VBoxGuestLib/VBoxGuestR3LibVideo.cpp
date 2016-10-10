@@ -65,7 +65,7 @@ VBGLR3DECL(int) VbglR3VideoAccelEnable(bool fEnable)
     VMMDevVideoAccelEnable Req;
     vmmdevInitRequest(&Req.header, VMMDevReq_VideoAccelEnable);
     Req.u32Enable = fEnable;
-    Req.cbRingBuffer = VBVA_RING_BUFFER_SIZE;
+    Req.cbRingBuffer = VMMDEV_VBVA_RING_BUFFER_SIZE;
     Req.fu32Status = 0;
     return vbglR3GRPerform(&Req.header);
 }

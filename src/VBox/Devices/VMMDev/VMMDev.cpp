@@ -82,6 +82,7 @@
 *********************************************************************************************************************************/
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 #define LOG_GROUP LOG_GROUP_DEV_VMM
+#include <VBox/VBoxVideo.h>  /* For VBVA definitions. */
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/log.h>
@@ -1794,10 +1795,10 @@ static int vmmdevReqHandler_VideoAccelEnable(PVMMDEV pThis, VMMDevRequestHeader 
         return VERR_NOT_SUPPORTED;
     }
 
-    if (pReq->cbRingBuffer != VBVA_RING_BUFFER_SIZE)
+    if (pReq->cbRingBuffer != VMMDEV_VBVA_RING_BUFFER_SIZE)
     {
         /* The guest driver seems compiled with different headers. */
-        LogRelMax(16,("VMMDevReq_VideoAccelEnable guest ring buffer size %#x, should be %#x!!\n", pReq->cbRingBuffer, VBVA_RING_BUFFER_SIZE));
+        LogRelMax(16,("VMMDevReq_VideoAccelEnable guest ring buffer size %#x, should be %#x!!\n", pReq->cbRingBuffer, VMMDEV_VBVA_RING_BUFFER_SIZE));
         return VERR_INVALID_PARAMETER;
     }
 
