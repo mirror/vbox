@@ -26,6 +26,7 @@
 #ifndef ___VBox_VMMDev_h
 #define ___VBox_VMMDev_h
 
+#include <VBox/VBoxVideo.h>             /* For VBVA definitions. */
 #include <VBox/cdefs.h>
 #include <VBox/param.h>                 /* for the PCI IDs. */
 #include <VBox/types.h>
@@ -347,7 +348,7 @@ typedef struct VMMDevReqMousePointer
 {
     /** Header. */
     VMMDevRequestHeader header;
-    /** VBOX_MOUSE_POINTER_* bit flags. */
+    /** VBOX_MOUSE_POINTER_* bit flags from VBox/VBoxVideo.h. */
     uint32_t fFlags;
     /** x coordinate of hot spot. */
     uint32_t xHot;
@@ -403,20 +404,6 @@ DECLINLINE(size_t) vmmdevGetMousePointerReqSize(uint32_t width, uint32_t height)
     return RT_MAX(cbBase + ((cbMask + 3) & ~3) + cbArgb,
                   sizeof(VMMDevReqMousePointer));
 }
-
-/** @name VMMDevReqMousePointer::fFlags
- * @note The VBOX_MOUSE_POINTER_* flags are used in the guest video driver,
- *       values must be <= 0x8000 and must not be changed. (try make more sense
- *       of this, please).
- * @{
- */
-/** pointer is visible */
-#define VBOX_MOUSE_POINTER_VISIBLE (0x0001)
-/** pointer has alpha channel */
-#define VBOX_MOUSE_POINTER_ALPHA   (0x0002)
-/** pointerData contains new pointer shape */
-#define VBOX_MOUSE_POINTER_SHAPE   (0x0004)
-/** @} */
 
 
 /**
@@ -2070,65 +2057,6 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
 }
 
 /** @} */
-
-
-/**
- * VBVA command header.
- *
- * @todo Where does this fit in?
- */
-typedef struct VBVACMDHDR
-{
-   /** Coordinates of affected rectangle. */
-   int16_t x;
-   int16_t y;
-   uint16_t w;
-   uint16_t h;
-} VBVACMDHDR;
-AssertCompileSize(VBVACMDHDR, 8);
-
-/** @name VBVA ring defines.
- *
- * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
- * data. For example big bitmaps which do not fit to the buffer.
- *
- * Guest starts writing to the buffer by initializing a record entry in the
- * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
- * written. As data is written to the ring buffer, the guest increases off32End
- * for the record.
- *
- * The host reads the aRecords on flushes and processes all completed records.
- * When host encounters situation when only a partial record presents and
- * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
- * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
- * off32Head. After that on each flush the host continues fetching the data
- * until the record is completed.
- *
- */
-#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
-#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
-
-#define VBVA_MAX_RECORDS (64)
-
-#define VBVA_F_MODE_ENABLED         UINT32_C(0x00000001)
-#define VBVA_F_MODE_VRDP            UINT32_C(0x00000002)
-#define VBVA_F_MODE_VRDP_RESET      UINT32_C(0x00000004)
-#define VBVA_F_MODE_VRDP_ORDER_MASK UINT32_C(0x00000008)
-
-#define VBVA_F_STATE_PROCESSING     UINT32_C(0x00010000)
-
-#define VBVA_F_RECORD_PARTIAL       UINT32_C(0x80000000)
-/** @} */
-
-/**
- * VBVA record.
- */
-typedef struct VBVARECORD
-{
-    /** The length of the record. Changed by guest. */
-    uint32_t cbRecord;
-} VBVARECORD;
-AssertCompileSize(VBVARECORD, 4);
 
 
 /**

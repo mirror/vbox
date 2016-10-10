@@ -26,11 +26,11 @@
 #ifndef ___VBox_VBoxVideo_h
 #define ___VBox_VBoxVideo_h
 
-#include <VBox/VMMDev.h>
 #include <VBox/Hardware/VBoxVideoVBE.h>
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/assert.h>
 
 /*
  * The last 4096 bytes of the guest VRAM contains the generic info for all
@@ -80,6 +80,64 @@
 
 #define VBOX_VIDEO_PRIMARY_SCREEN 0
 #define VBOX_VIDEO_NO_SCREEN ~0
+
+/**
+ * VBVA command header.
+ *
+ * @todo Where does this fit in?
+ */
+typedef struct VBVACMDHDR
+{
+   /** Coordinates of affected rectangle. */
+   int16_t x;
+   int16_t y;
+   uint16_t w;
+   uint16_t h;
+} VBVACMDHDR;
+AssertCompileSize(VBVACMDHDR, 8);
+
+/** @name VBVA ring defines.
+ *
+ * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of
+ * data. For example big bitmaps which do not fit to the buffer.
+ *
+ * Guest starts writing to the buffer by initializing a record entry in the
+ * aRecords queue. VBVA_F_RECORD_PARTIAL indicates that the record is being
+ * written. As data is written to the ring buffer, the guest increases off32End
+ * for the record.
+ *
+ * The host reads the aRecords on flushes and processes all completed records.
+ * When host encounters situation when only a partial record presents and
+ * cbRecord & ~VBVA_F_RECORD_PARTIAL >= VBVA_RING_BUFFER_SIZE -
+ * VBVA_RING_BUFFER_THRESHOLD, the host fetched all record data and updates
+ * off32Head. After that on each flush the host continues fetching the data
+ * until the record is completed.
+ *
+ */
+#define VBVA_RING_BUFFER_SIZE        (_4M - _1K)
+#define VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
+
+#define VBVA_MAX_RECORDS (64)
+
+#define VBVA_F_MODE_ENABLED         UINT32_C(0x00000001)
+#define VBVA_F_MODE_VRDP            UINT32_C(0x00000002)
+#define VBVA_F_MODE_VRDP_RESET      UINT32_C(0x00000004)
+#define VBVA_F_MODE_VRDP_ORDER_MASK UINT32_C(0x00000008)
+
+#define VBVA_F_STATE_PROCESSING     UINT32_C(0x00010000)
+
+#define VBVA_F_RECORD_PARTIAL       UINT32_C(0x80000000)
+/** @} */
+
+/**
+ * VBVA record.
+ */
+typedef struct VBVARECORD
+{
+    /** The length of the record. Changed by guest. */
+    uint32_t cbRecord;
+} VBVARECORD;
+AssertCompileSize(VBVARECORD, 4);
 
 /* The size of the information. */
 /*
@@ -939,6 +997,20 @@ typedef struct VBVACONF32
     uint32_t u32Value;
 } VBVACONF32;
 
+/** Reserved for historical reasons. */
+#define VBOX_VBVA_CURSOR_CAPABILITY_RESERVED0  RT_BIT(0)
+/** Guest cursor capability: can the host show a hardware cursor at the host
+ * pointer location? */
+#define VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE   RT_BIT(1)
+/** Reserved for historical reasons. */
+#define VBOX_VBVA_CURSOR_CAPABILITY_RESERVED2  RT_BIT(2)
+/** Reserved for historical reasons.  Must always be unset. */
+#define VBOX_VBVA_CURSOR_CAPABILITY_RESERVED3  RT_BIT(3)
+/** Reserved for historical reasons. */
+#define VBOX_VBVA_CURSOR_CAPABILITY_RESERVED4  RT_BIT(4)
+/** Reserved for historical reasons. */
+#define VBOX_VBVA_CURSOR_CAPABILITY_RESERVED5  RT_BIT(5)
+
 typedef struct VBVAINFOVIEW
 {
     /* Index of the screen, assigned by the guest. */
@@ -1099,6 +1171,20 @@ typedef struct VBVAMOUSEPOINTERSHAPE
     uint8_t au8Data[4];
 
 } VBVAMOUSEPOINTERSHAPE;
+
+/** @name VBVAMOUSEPOINTERSHAPE::fu32Flags
+ * @note The VBOX_MOUSE_POINTER_* flags are used in the guest video driver,
+ *       values must be <= 0x8000 and must not be changed. (try make more sense
+ *       of this, please).
+ * @{
+ */
+/** pointer is visible */
+#define VBOX_MOUSE_POINTER_VISIBLE (0x0001)
+/** pointer has alpha channel */
+#define VBOX_MOUSE_POINTER_ALPHA   (0x0002)
+/** pointerData contains new pointer shape */
+#define VBOX_MOUSE_POINTER_SHAPE   (0x0004)
+/** @} */
 
 /* the guest driver can handle asynch guest cmd completion by reading the command offset from io port */
 #define VBVACAPS_COMPLETEGCMD_BY_IOREAD 0x00000001

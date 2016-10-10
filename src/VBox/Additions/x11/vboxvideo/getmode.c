@@ -167,8 +167,7 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 
 static bool useHardwareCursor(uint32_t fCursorCapabilities)
 {
-    if (   !(fCursorCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-        && (fCursorCapabilities & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
+    if (fCursorCapabilities & VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE)
         return true;
     return false;
 }

@@ -32,6 +32,8 @@
 #include <VBox/HGSMI/HGSMIChSetup.h>
 #include <VBox/VBoxVideo.h>
 
+#include <iprt/err.h>  /* The functions in here return IPRT errors. */
+
 #ifdef VBOX_XPDM_MINIPORT
 # include <iprt/nt/miniport.h>
 # include <ntddvdeo.h> /* sdk, clean */

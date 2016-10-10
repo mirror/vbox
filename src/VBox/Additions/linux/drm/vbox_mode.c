@@ -698,8 +698,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
     ret = -RTErrConvertToErrno(rc);
     if (ret)
         return ret;
-    if (   caps & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER
-        || !(caps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
+    if (!(caps & VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE))
         /* -EINVAL means cursor_set2() not supported, -EAGAIN means
          * retry at once. */
         return -EBUSY;
