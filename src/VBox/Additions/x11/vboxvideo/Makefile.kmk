@@ -28,8 +28,6 @@ vboxvideo_15_DEFS := \
 	$(vboxvideo_13_DEFS) NO_ANSIC PCIACCESS XSERVER_LIBPCIACCESS _XORG_SERVER_H_ _DIX_CONFIG_H_
 vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/fontsproto-2.1.0 \
-	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
-	$(VBOX_PATH_X11_ROOT)/MesaLib-8.0.4-GL \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
 	$(VBOX_PATH_X11_ROOT)/kbproto-1.0.6 \
 	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
