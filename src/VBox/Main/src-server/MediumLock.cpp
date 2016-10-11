@@ -29,6 +29,9 @@ MediumLock::MediumLock()
 
 MediumLock::~MediumLock()
 {
+    // destroying medium locks is routinely done as part of error handling
+    // and it's not expected to lose error info
+    ErrorInfoKeeper eik;
     Unlock();
 }
 
@@ -155,6 +158,9 @@ MediumLockList::MediumLockList()
 
 MediumLockList::~MediumLockList()
 {
+    // destroying medium lock lists is routinely done as part of error handling
+    // and it's not expected to lose error info
+    ErrorInfoKeeper eik;
     Clear();
     // rest is done by the list object's destructor
 }
@@ -268,6 +274,9 @@ MediumLockListMap::MediumLockListMap()
 
 MediumLockListMap::~MediumLockListMap()
 {
+    // destroying medium lock list maps is routinely done as part of
+    // error handling and it's not expected to lose error info
+    ErrorInfoKeeper eik;
     Clear();
     // rest is done by the map object's destructor
 }
