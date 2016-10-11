@@ -118,7 +118,7 @@
 
     <String Id="Customize2Dlg_Header">Personaliser</String>
     <String Id="Customize2Dlg_Desc">Veuillez choisir une des options suivantes:</String>
-    <String Id="Customize2Dlg_CreateStartMenuEntries">Create start menu entries</String>
+    <String Id="Customize2Dlg_CreateStartMenuEntries">Créer des éléments dans le menu démarrer</String>
     <String Id="Customize2Dlg_CreateDesktopShortcut">Créer un raccourci sur le bureau</String>
     <String Id="Customize2Dlg_CreateQuickLaunch">Créer un raccourci dans la barre de lancement rapide</String>
     <String Id="Customize2Dlg_RegisterFileExtensions">Inscription des associations de fichiers</String>
