@@ -5175,7 +5175,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             {
                 SSMR3GetBool(pSSM, &pThis->ahciPort[i].fATAPI);
                 SSMR3GetMem(pSSM, pThis->ahciPort[i].abATAPISense, sizeof(pThis->ahciPort[i].abATAPISense));
-                if (uVersion < AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE)
+                if (uVersion <= AHCI_SAVED_STATE_VERSION_PRE_ATAPI_REMOVE)
                 {
                     SSMR3Skip(pSSM, 1); /* cNotifiedMediaChange. */
                     SSMR3Skip(pSSM, 4); /* MediaEventStatus */
