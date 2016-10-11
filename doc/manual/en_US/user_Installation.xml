@@ -353,17 +353,18 @@
     </sect2>
 
     <sect2 id="externalkernelmodules">
-      <title>The VirtualBox kernel module</title>
+      <title>The VirtualBox driver modules</title>
 
-      <para>VirtualBox uses a special kernel module called
-      <computeroutput>vboxdrv</computeroutput> to perform physical memory
-      allocation and to gain control of the processor for guest system
-      execution. Without this kernel module, you can still use the VirtualBox
-      manager to configure virtual machines, but they will not start. In
-      addition, there are the network kernel modules
+      <para>In order to run other operating systems in virtual machines
+      alongside your main operating system, VirtualBox needs to integrate
+      very tightly into the system.  To do this it installs a "driver"
+      module called <computeroutput>vboxdrv</computeroutput> which does
+      a lot of the work. Without this kernel module, you can still use the
+      VirtualBox manager to configure virtual machines, but they will not
+      start. It also installs network drivers called
       <computeroutput>vboxnetflt</computeroutput> and
-      <computeroutput>vboxnetadp</computeroutput> which are required for the
-      more advanced networking features of VirtualBox.</para>
+      <computeroutput>vboxnetadp</computeroutput> which let virtual machines
+      make more use of your computer's network capabilities.</para>
 
       <para>The modules will be built automatically during installation or
       after kernel updates if your Linux system is prepared for building
@@ -371,49 +372,53 @@
 
       <para>Most Linux distributions can be set up simply by installing
       the right packages - normally, these will be the GNU compiler
-      (GCC), GNU Make (make) and packages containing header files for
+      (GCC), GNU Make (make) and packages containing "header files" for
       your kernel - and making sure that all system updates are
       installed and that the system is running the most up-to-date
-      kernel included in the distribution. <emphasis>The version numbers
-      of the header file packages must be the same as that of the kernel
-      you are using.</emphasis></para>
+      kernel included in the distribution. <emphasis>The running kernel
+      and the header files must be updated to matching versions.</emphasis>
+      We will give some instructions for common distributions.  For most
+      of them you will want to start by finding the version name of your
+      kernel using the command
+      <computeroutput>uname -r</computeroutput> in a terminal.  They
+      assume that you have not changed too much from the original
+      installation, particularly not installed a different kernel type.
+      If you have then you will need to determine yourself what to set
+      up.</para>
 
       <itemizedlist>
         <listitem>
-          <para>With Debian and Ubuntu releases, you must install the
-          right version of the
-          <computeroutput>linux-headers</computeroutput> and if it
-          exists the <computeroutput>linux-kbuild</computeroutput>
-          package. Current Ubuntu releases should have the right
+          <para>With Debian and Ubuntu-based distributions, you
+          must install the right version of the
+          <computeroutput>linux-headers</computeroutput>, usually
+          whichever of <computeroutput>linux-headers-generic
+          </computeroutput>, <computeroutput>linux-headers-amd64
+          </computeroutput>, <computeroutput>linux-headers-i686
+          </computeroutput> or <computeroutput>linux-headers-i686-pae
+          </computeroutput> best matches the kernel version name;
+          and if it exists the <computeroutput>linux-kbuild
+          </computeroutput>
+          package. Basic Ubuntu releases should have the right
           packages installed by default.</para>
         </listitem>
 
         <listitem>
-          <para>In even older Debian and Ubuntu releases, you must
-          install the right version of the
-          <computeroutput>kernel-headers</computeroutput>
-          package.</para>
-        </listitem>
-
-        <listitem>
-          <para>On Fedora and Redhat systems, the package is
+          <para>On Fedora, Redhat, Oracle Linux and many other
+          RPM-based systems, the kernel version sometimes has
+          a code of letters or a word close to the end of the
+          version name, for example "uek" for the Oracle
+          Enterprise kernel or "default" or "desktop" for the
+          standard SUSE kernels.  In this case the package name is
+          <computeroutput>kernel-uek-devel</computeroutput> or
+          equivalent.  If there is no such code, it is usually
           <computeroutput>kernel-devel</computeroutput>.</para>
         </listitem>
 
         <listitem>
-          <para>On SUSE and openSUSE Linux, you must install the right
-          versions of the <computeroutput>kernel-source</computeroutput>
+          <para>On older SUSE and openSUSE Linux, you must install
+          the <computeroutput>kernel-source</computeroutput>
           and <computeroutput>kernel-syms</computeroutput>
           packages.</para>
-        </listitem>
-
-        <listitem>
-          <para>If you have built your own kernel, you will need to make
-          sure that you also installed all the required header and other
-          files for building external modules to the right locations.
-          The details of how to do this will depend on how you built
-          your kernel, and if you are unsure you should consult the
-          documentation which you followed to do so.</para>
         </listitem>
       </itemizedlist>
 
