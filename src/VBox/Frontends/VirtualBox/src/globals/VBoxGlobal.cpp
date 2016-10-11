@@ -4501,6 +4501,11 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
             /* If that is Selector UI: */
             if (!isVMConsoleProcess())
             {
+                /* Recreate Main event listeners: */
+                UIVirtualBoxEventHandler::destroy();
+                UIExtraDataManager::destroy();
+                UIExtraDataManager::instance();
+                UIVirtualBoxEventHandler::instance();
                 /* Recreate/show selector-window: */
                 UISelectorWindow::destroy();
                 UISelectorWindow::create();
