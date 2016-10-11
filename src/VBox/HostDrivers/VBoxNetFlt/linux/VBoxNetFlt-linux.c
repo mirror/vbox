@@ -90,8 +90,13 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # define VBOX_SKB_KMAP_FRAG(frag) kmap_atomic(skb_frag_page(frag))
 # define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_atomic(vaddr)
 #else
-# define VBOX_SKB_KMAP_FRAG(frag) kmap_skb_frag(frag)
-# define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_skb_frag(vaddr)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+#  define VBOX_SKB_KMAP_FRAG(frag) kmap_atomic(skb_frag_page(frag), KM_SKB_DATA_SOFTIRQ))
+#  define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_atomic(vaddr, KM_SKB_DATA_SOFTIRQ)
+# else
+#  define VBOX_SKB_KMAP_FRAG(frag) kmap_atomic(frag->page, KM_SKB_DATA_SOFTIRQ))
+#  define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_atomic(vaddr, KM_SKB_DATA_SOFTIRQ)
+# endif
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
