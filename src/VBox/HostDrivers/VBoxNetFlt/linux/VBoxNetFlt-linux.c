@@ -86,6 +86,12 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # define VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr) ((struct net_device *)ptr)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+# define VBOX_SKB_PAGE(page) page.p
+#else
+# define VBOX_SKB_PAGE(page) page
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
 # define VBOX_NETDEV_NAME(dev)              netdev_name(dev)
 #else
@@ -103,9 +109,11 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 # define VBOX_SKB_RESET_NETWORK_HDR(skb)    skb_reset_network_header(skb)
 # define VBOX_SKB_RESET_MAC_HDR(skb)        skb_reset_mac_header(skb)
+# define VBOX_SKB_CSUM_OFFSET(skb)          skb->csum_offset
 #else
 # define VBOX_SKB_RESET_NETWORK_HDR(skb)    skb->nh.raw = skb->data
 # define VBOX_SKB_RESET_MAC_HDR(skb)        skb->mac.raw = skb->data
+# define VBOX_SKB_CSUM_OFFSET(skb)          skb->csum
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
@@ -852,7 +860,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
     if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
     {
         unsigned uCsumStartOffset = vboxNetFltLinuxGetChecksumStartOffset(pBuf);
-        unsigned uCsumStoreOffset = uCsumStartOffset + pBuf->csum_offset - cbConsumed;
+        unsigned uCsumStoreOffset = uCsumStartOffset + VBOX_SKB_CSUM_OFFSET(pBuf) - cbConsumed;
         Log3(("cbConsumed=%u cbProduced=%u uCsumStartOffset=%u uCsumStoreOffset=%u\n",
               cbConsumed, cbProduced, uCsumStartOffset, uCsumStoreOffset));
         Assert(cbProduced + uCsumStoreOffset + sizeof(uint16_t) <= cbExtra);
@@ -897,7 +905,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
     {
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
         pSG->aSegs[iSeg].cb = pFrag->size;
-        pSG->aSegs[iSeg].pv = kmap_atomic(pFrag->page.p) + pFrag->page_offset;
+        pSG->aSegs[iSeg].pv = kmap_atomic(VBOX_SKB_PAGE(pFrag->page)) + pFrag->page_offset;
         Log6((" %p", pSG->aSegs[iSeg].pv));
         pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
         Assert(iSeg <= pSG->cSegsAlloc);
@@ -913,7 +921,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
         {
             skb_frag_t *pFrag = &skb_shinfo(pFragBuf)->frags[i];
             pSG->aSegs[iSeg].cb = pFrag->size;
-            pSG->aSegs[iSeg].pv = kmap_atomic(pFrag->page.p) + pFrag->page_offset;
+            pSG->aSegs[iSeg].pv = kmap_atomic(VBOX_SKB_PAGE(pFrag->page)) + pFrag->page_offset;
             Log6((" %p", pSG->aSegs[iSeg].pv));
             pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
             Assert(iSeg <= pSG->cSegsAlloc);
@@ -1100,7 +1108,7 @@ DECLINLINE(unsigned) vboxNetFltLinuxCalcSGSegments(struct sk_buff *pBuf, unsigne
     unsigned cSegs = 1 + skb_shinfo(pBuf)->nr_frags;
     if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
     {
-        *pcbTemp = vboxNetFltLinuxGetChecksumStartOffset(pBuf) + pBuf->csum_offset + sizeof(uint16_t);
+        *pcbTemp = vboxNetFltLinuxGetChecksumStartOffset(pBuf) + VBOX_SKB_CSUM_OFFSET(pBuf) + sizeof(uint16_t);
     }
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
     if (vlan_tx_tag_present(pBuf))
