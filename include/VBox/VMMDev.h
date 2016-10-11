@@ -2055,6 +2055,8 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     return VINF_SUCCESS;
 }
 
+/** @} */
+
 /** @name VBVA ring defines.
  *
  * The VBVA ring buffer is suitable for transferring large (< 2GB) amount of

@@ -127,7 +127,6 @@ AssertCompileSize(VBVACMDHDR, 8);
 #define VBVA_F_STATE_PROCESSING     UINT32_C(0x00010000)
 
 #define VBVA_F_RECORD_PARTIAL       UINT32_C(0x80000000)
-/** @} */
 
 /**
  * VBVA record.
