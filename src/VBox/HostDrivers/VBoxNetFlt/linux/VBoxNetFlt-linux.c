@@ -86,10 +86,12 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # define VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr) ((struct net_device *)ptr)
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
-# define VBOX_SKB_PAGE(page) page.p
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+# define VBOX_SKB_KMAP_FRAG(frag) kmap_atomic(skb_frag_page(frag))
+# define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_atomic(vaddr)
 #else
-# define VBOX_SKB_PAGE(page) page
+# define VBOX_SKB_KMAP_FRAG(frag) kmap_skb_frag(frag)
+# define VBOX_SKB_KUNMAP_FRAG(vaddr) kunmap_skb_frag(vaddr)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
@@ -905,7 +907,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
     {
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
         pSG->aSegs[iSeg].cb = pFrag->size;
-        pSG->aSegs[iSeg].pv = kmap_atomic(VBOX_SKB_PAGE(pFrag->page)) + pFrag->page_offset;
+        pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->page_offset;
         Log6((" %p", pSG->aSegs[iSeg].pv));
         pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
         Assert(iSeg <= pSG->cSegsAlloc);
@@ -921,7 +923,7 @@ static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf,
         {
             skb_frag_t *pFrag = &skb_shinfo(pFragBuf)->frags[i];
             pSG->aSegs[iSeg].cb = pFrag->size;
-            pSG->aSegs[iSeg].pv = kmap_atomic(VBOX_SKB_PAGE(pFrag->page)) + pFrag->page_offset;
+            pSG->aSegs[iSeg].pv = VBOX_SKB_KMAP_FRAG(pFrag) + pFrag->page_offset;
             Log6((" %p", pSG->aSegs[iSeg].pv));
             pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
             Assert(iSeg <= pSG->cSegsAlloc);
@@ -1163,7 +1165,7 @@ static void vboxNetFltLinuxDestroySG(PINTNETSG pSG, struct sk_buff *pBuf)
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
     {
         Log6((" %p", pSG->aSegs[iSeg].pv));
-        kunmap_atomic(pSG->aSegs[iSeg++].pv);
+        VBOX_SKB_KUNMAP_FRAG(pSG->aSegs[iSeg++].pv);
     }
     struct sk_buff *pFragBuf;
     for (pFragBuf = skb_shinfo(pBuf)->frag_list; pFragBuf; pFragBuf = pFragBuf->next)
@@ -1172,7 +1174,7 @@ static void vboxNetFltLinuxDestroySG(PINTNETSG pSG, struct sk_buff *pBuf)
         for (i = 0; i < skb_shinfo(pFragBuf)->nr_frags; i++)
         {
             Log6((" %p", pSG->aSegs[iSeg].pv));
-            kunmap_atomic(pSG->aSegs[iSeg++].pv);
+            VBOX_SKB_KUNMAP_FRAG(pSG->aSegs[iSeg++].pv);
         }
     }
 # ifdef LOG_ENABLED
