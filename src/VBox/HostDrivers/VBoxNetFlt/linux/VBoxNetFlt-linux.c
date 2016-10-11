@@ -146,7 +146,7 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # define NET_IP_ALIGN 2
 #endif
 
-#if 0
+#if 1
 /** Create scatter / gather segments for fragments. When not used, we will
  *  linearize the socket buffer before creating the internal networking SG. */
 # define VBOXNETFLT_SG_SUPPORT 1
@@ -780,54 +780,156 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 
 
 /**
+ * Return the offset where to start checksum computation from.
+ *
+ * @returns the offset relative to pBuf->data.
+ * @param   pBuf                The socket buffer.
+ */
+DECLINLINE(unsigned) vboxNetFltLinuxGetChecksumStartOffset(struct sk_buff *pBuf)
+{
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 21)
+    unsigned char *pTransportHdr = pBuf->h.raw;
+#  if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18)
+    /*
+     * Try to work around the problem with CentOS 4.7 and 5.2 (2.6.9
+     * and 2.6.18 kernels), they pass wrong 'h' pointer down. We take IP
+     * header length from the header itself and reconstruct 'h' pointer
+     * to TCP (or whatever) header.
+     */
+    if (pBuf->h.raw == pBuf->nh.raw && pBuf->protocol == htons(ETH_P_IP))
+        pTransportHdr = pBuf->nh.raw + pBuf->nh.iph->ihl * 4;
+#  endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18) */
+    return pTransportHdr - pBuf->data;
+# else /* LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 21) */
+    return skb_checksum_start_offset(pBuf);
+# endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 21) */
+}
+
+
+/**
  * Initializes a SG list from an sk_buff.
  *
  * @returns Number of segments.
  * @param   pThis               The instance.
  * @param   pBuf                The sk_buff.
  * @param   pSG                 The SG.
+ * @param   cExtra              The number of bytes of extra space allocated immediately after the SG.
  * @param   cSegs               The number of segments allocated for the SG.
  *                              This should match the number in the mbuf exactly!
  * @param   fSrc                The source of the frame.
  * @param   pGsoCtx             Pointer to the GSO context if it's a GSO
  *                              internal network frame.  NULL if regular frame.
  */
-DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, PINTNETSG pSG,
-                                          unsigned cSegs, uint32_t fSrc, PCPDMNETWORKGSO pGsoCtx)
+static void vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, PINTNETSG pSG,
+                                     unsigned cbExtra, unsigned cSegs, uint32_t fSrc, PCPDMNETWORKGSO pGsoCtx)
 {
     int i;
     NOREF(pThis);
 
+#ifndef VBOXNETFLT_SG_SUPPORT
     Assert(!skb_shinfo(pBuf)->frag_list);
+#else /* VBOXNETFLT_SG_SUPPORT */
+    uint8_t *pExtra = (uint8_t *)&pSG->aSegs[cSegs];
+    unsigned cbConsumed = 0;
+    unsigned cbProduced = 0;
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+    /* Restore VLAN tag stripped by host hardware */
+    if (vlan_tx_tag_present(pBuf))
+    {
+        uint8_t *pMac = pBuf->data;
+        struct vlan_ethhdr *pVHdr = (struct vlan_ethhdr *)pExtra;
+        Assert(ETH_ALEN * 2 + VLAN_HLEN <= cbExtra);
+        memmove(pVHdr, pMac, ETH_ALEN * 2);
+        cbConsumed += ETH_ALEN * 2;
+        pVHdr->h_vlan_proto = RT_H2N_U16(ETH_P_8021Q);
+        pVHdr->h_vlan_TCI   = RT_H2N_U16(vlan_tx_tag_get(pBuf));
+        pVHdr->h_vlan_encapsulated_proto = *(uint16_t*)(pMac + ETH_ALEN * 2);
+        cbProduced += VLAN_ETH_HLEN;
+    }
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+
+    if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
+    {
+        unsigned uCsumStartOffset = vboxNetFltLinuxGetChecksumStartOffset(pBuf);
+        unsigned uCsumStoreOffset = uCsumStartOffset + pBuf->csum_offset - cbConsumed;
+        Log3(("cbConsumed=%u cbProduced=%u uCsumStartOffset=%u uCsumStoreOffset=%u\n",
+              cbConsumed, cbProduced, uCsumStartOffset, uCsumStoreOffset));
+        Assert(cbProduced + uCsumStoreOffset + sizeof(uint16_t) <= cbExtra);
+        /*
+         * We assume that the checksum is stored at the very end of the transport header
+         * so we will have all headers in a single fragment. If our assumption is wrong
+         * we may see suboptimal performance.
+         */
+        memmove(pExtra + cbProduced,
+                pBuf->data + cbConsumed,
+                uCsumStoreOffset);
+        unsigned uChecksum = skb_checksum(pBuf, uCsumStartOffset, pBuf->len - uCsumStartOffset, 0);
+        *(uint16_t*)(pExtra + cbProduced + uCsumStoreOffset) = csum_fold(uChecksum);
+        cbProduced += uCsumStoreOffset + sizeof(uint16_t);
+        cbConsumed += uCsumStoreOffset + sizeof(uint16_t);
+    }
+#endif /* VBOXNETFLT_SG_SUPPORT */
 
     if (!pGsoCtx)
         IntNetSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
     else
         IntNetSgInitTempSegsGso(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/, pGsoCtx);
 
+    int iSeg = 0;
 #ifdef VBOXNETFLT_SG_SUPPORT
-    pSG->aSegs[0].cb = skb_headlen(pBuf);
-    pSG->aSegs[0].pv = pBuf->data;
-    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
+    if (cbProduced)
+    {
+        pSG->aSegs[iSeg].cb = cbProduced;
+        pSG->aSegs[iSeg].pv = pExtra;
+        pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
+    }
+    pSG->aSegs[iSeg].cb = skb_headlen(pBuf) - cbConsumed;
+    pSG->aSegs[iSeg].pv = pBuf->data + cbConsumed;
+    pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
+    Assert(iSeg <= pSG->cSegsAlloc);
 
+# ifdef LOG_ENABLED
+    if (pBuf->data_len)
+        Log6(("  kmap_atomic:"));
+# endif /* LOG_ENABLED */
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
     {
         skb_frag_t *pFrag = &skb_shinfo(pBuf)->frags[i];
-        pSG->aSegs[i+1].cb = pFrag->size;
-        pSG->aSegs[i+1].pv = kmap(pFrag->page);
-        printk("%p = kmap()\n", pSG->aSegs[i+1].pv);
-        pSG->aSegs[i+1].Phys = NIL_RTHCPHYS;
+        pSG->aSegs[iSeg].cb = pFrag->size;
+        pSG->aSegs[iSeg].pv = kmap_atomic(pFrag->page.p) + pFrag->page_offset;
+        Log6((" %p", pSG->aSegs[iSeg].pv));
+        pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
+        Assert(iSeg <= pSG->cSegsAlloc);
     }
-    ++i;
-
+    struct sk_buff *pFragBuf;
+    for (pFragBuf = skb_shinfo(pBuf)->frag_list; pFragBuf; pFragBuf = pFragBuf->next)
+    {
+        pSG->aSegs[iSeg].cb = skb_headlen(pFragBuf);
+        pSG->aSegs[iSeg].pv = pFragBuf->data;
+        pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
+        Assert(iSeg <= pSG->cSegsAlloc);
+        for (i = 0; i < skb_shinfo(pFragBuf)->nr_frags; i++)
+        {
+            skb_frag_t *pFrag = &skb_shinfo(pFragBuf)->frags[i];
+            pSG->aSegs[iSeg].cb = pFrag->size;
+            pSG->aSegs[iSeg].pv = kmap_atomic(pFrag->page.p) + pFrag->page_offset;
+            Log6((" %p", pSG->aSegs[iSeg].pv));
+            pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
+            Assert(iSeg <= pSG->cSegsAlloc);
+        }
+    }
+# ifdef LOG_ENABLED
+    if (pBuf->data_len)
+        Log6(("\n"));
+# endif /* LOG_ENABLED */
 #else
-    pSG->aSegs[0].cb = pBuf->len;
-    pSG->aSegs[0].pv = pBuf->data;
-    pSG->aSegs[0].Phys = NIL_RTHCPHYS;
-    i = 1;
+    pSG->aSegs[iSeg].cb = pBuf->len;
+    pSG->aSegs[iSeg].pv = pBuf->data;
+    pSG->aSegs[iSeg++].Phys = NIL_RTHCPHYS;
 #endif
 
-    pSG->cSegsUsed = i;
+    pSG->cSegsUsed = iSeg;
 
 #ifdef PADD_RUNT_FRAMES_FROM_HOST
     /*
@@ -839,23 +941,24 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
      */
     if (pSG->cbTotal < 60 && (fSrc & INTNETTRUNKDIR_HOST))
     {
+        Assert(pBuf->data_len == 0); /* Packets with fragments are never small! */
         static uint8_t const s_abZero[128] = {0};
 
-        AssertReturnVoid(i < cSegs);
+        AssertReturnVoid(iSeg < cSegs);
 
-        pSG->aSegs[i].Phys = NIL_RTHCPHYS;
-        pSG->aSegs[i].pv = (void *)&s_abZero[0];
-        pSG->aSegs[i].cb = 60 - pSG->cbTotal;
+        pSG->aSegs[iSeg].Phys = NIL_RTHCPHYS;
+        pSG->aSegs[iSeg].pv = (void *)&s_abZero[0];
+        pSG->aSegs[iSeg++].cb = 60 - pSG->cbTotal;
         pSG->cbTotal = 60;
         pSG->cSegsUsed++;
-        Assert(i + 1 <= pSG->cSegsAlloc)
+        Assert(iSeg <= pSG->cSegsAlloc)
     }
 #endif
 
-    Log4(("vboxNetFltLinuxSkBufToSG: allocated=%d, segments=%d frags=%d next=%p frag_list=%p pkt_type=%x fSrc=%x\n",
+    Log6(("vboxNetFltLinuxSkBufToSG: allocated=%d, segments=%d frags=%d next=%p frag_list=%p pkt_type=%x fSrc=%x\n",
           pSG->cSegsAlloc, pSG->cSegsUsed, skb_shinfo(pBuf)->nr_frags, pBuf->next, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, fSrc));
     for (i = 0; i < pSG->cSegsUsed; i++)
-        Log4(("vboxNetFltLinuxSkBufToSG:   #%d: cb=%d pv=%p\n",
+        Log6(("vboxNetFltLinuxSkBufToSG:   #%d: cb=%d pv=%p\n",
               i, pSG->aSegs[i].cb, pSG->aSegs[i].pv));
 }
 
@@ -883,7 +986,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
     Log3(("vboxNetFltLinuxPacketHandler: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
           pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-    Log4(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
+    Log6(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
 # endif
 #else
     Log3(("vboxNetFltLinuxPacketHandler: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u tso_size=%u tso_seqs=%u frag_list=%p pkt_type=%x\n",
@@ -915,7 +1018,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
         return 0;
     }
 
-    Log4(("vboxNetFltLinuxPacketHandler: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
+    Log6(("vboxNetFltLinuxPacketHandler: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
     if (vboxNetFltLinuxSkBufIsOur(pBuf))
     {
         Log2(("vboxNetFltLinuxPacketHandler: got our own sk_buff, drop it.\n"));
@@ -957,25 +1060,25 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
         Log3(("vboxNetFltLinuxPacketHandler: skb copy len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-        Log4(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
-#  endif
-# else
+        Log6(("vboxNetFltLinuxPacketHandler: packet dump follows:\n%.*Rhxd\n", pBuf->len-pBuf->data_len, skb_mac_header(pBuf)));
+#  endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22) */
+# else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
         Log3(("vboxNetFltLinuxPacketHandler: skb copy len=%u data_len=%u truesize=%u next=%p nr_frags=%u tso_size=%u tso_seqs=%u frag_list=%p pkt_type=%x\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->tso_size, skb_shinfo(pBuf)->tso_segs, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
-# endif
+# endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) */
     }
-#endif
+#endif /* !VBOXNETFLT_SG_SUPPORT */
 
 #ifdef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
     /* Forward it to the internal network. */
     vboxNetFltLinuxForwardToIntNet(pThis, pBuf);
-#else
+#else /* !VBOXNETFLT_LINUX_NO_XMIT_QUEUE */
     /* Add the packet to transmit queue and schedule the bottom half. */
     skb_queue_tail(&pThis->u.s.XmitQueue, pBuf);
     schedule_work(&pThis->u.s.XmitTask);
-    Log4(("vboxNetFltLinuxPacketHandler: scheduled work %p for sk_buff %p\n",
+    Log6(("vboxNetFltLinuxPacketHandler: scheduled work %p for sk_buff %p\n",
           &pThis->u.s.XmitTask, pBuf));
-#endif
+#endif /* !VBOXNETFLT_LINUX_NO_XMIT_QUEUE */
 
     /* It does not really matter what we return, it is ignored by the kernel. */
     return 0;
@@ -986,11 +1089,37 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
  *
  * @returns Segment count.
  * @param   pBuf                The socket buffer.
+ * @param   pcbTemp             Where to store the number of bytes of the part
+ *                              of the socket buffer that will be copied to
+ *                              a temporary storage.
  */
-DECLINLINE(unsigned) vboxNetFltLinuxCalcSGSegments(struct sk_buff *pBuf)
+DECLINLINE(unsigned) vboxNetFltLinuxCalcSGSegments(struct sk_buff *pBuf, unsigned *pcbTemp)
 {
+    *pcbTemp = 0;
 #ifdef VBOXNETFLT_SG_SUPPORT
     unsigned cSegs = 1 + skb_shinfo(pBuf)->nr_frags;
+    if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
+    {
+        *pcbTemp = vboxNetFltLinuxGetChecksumStartOffset(pBuf) + pBuf->csum_offset + sizeof(uint16_t);
+    }
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+    if (vlan_tx_tag_present(pBuf))
+    {
+        if (*pcbTemp)
+            *pcbTemp += VLAN_HLEN;
+        else
+            *pcbTemp = VLAN_ETH_HLEN;
+    }
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+    if (*pcbTemp)
+        ++cSegs;
+    struct sk_buff *pFrag;
+    for (pFrag = skb_shinfo(pBuf)->frag_list; pFrag; pFrag = pFrag->next)
+    {
+        Log6(("vboxNetFltLinuxCalcSGSegments: frag=%p len=%d data_len=%d frags=%d frag_list=%p next=%p\n",
+              pFrag, pFrag->len, pFrag->data_len, skb_shinfo(pFrag)->nr_frags, skb_shinfo(pFrag)->frag_list, pFrag->next));
+        cSegs += 1 + skb_shinfo(pFrag)->nr_frags;
+    }
 #else
     unsigned cSegs = 1;
 #endif
@@ -1002,20 +1131,46 @@ DECLINLINE(unsigned) vboxNetFltLinuxCalcSGSegments(struct sk_buff *pBuf)
     return cSegs;
 }
 
+
 /**
  * Destroy the intnet scatter / gather buffer created by
  * vboxNetFltLinuxSkBufToSG.
+ *
+ * @param   pSG             The (scatter/)gather list.
+ * @param   pBuf            The original socket buffer that was used to create
+ *                          the scatter/gather list.
  */
-static void vboxNetFltLinuxDestroySG(PINTNETSG pSG)
+static void vboxNetFltLinuxDestroySG(PINTNETSG pSG, struct sk_buff *pBuf)
 {
 #ifdef VBOXNETFLT_SG_SUPPORT
-    int i;
-
+    int i, iSeg = 1; /* Skip non-paged part of SKB */
+    /* Check if the extra buffer behind SG structure was used for modified packet header */
+    if (pBuf->data != pSG->aSegs[0].pv)
+        ++iSeg; /* Skip it as well */
+# ifdef LOG_ENABLED
+    if (pBuf->data_len)
+        Log6(("kunmap_atomic:"));
+# endif /* LOG_ENABLED */
+    /* iSeg now points to the first mapped fragment if there are any */
     for (i = 0; i < skb_shinfo(pBuf)->nr_frags; i++)
     {
-        printk("kunmap(%p)\n", pSG->aSegs[i+1].pv);
-        kunmap(pSG->aSegs[i+1].pv);
+        Log6((" %p", pSG->aSegs[iSeg].pv));
+        kunmap_atomic(pSG->aSegs[iSeg++].pv);
     }
+    struct sk_buff *pFragBuf;
+    for (pFragBuf = skb_shinfo(pBuf)->frag_list; pFragBuf; pFragBuf = pFragBuf->next)
+    {
+        ++iSeg; /* Non-fragment (unmapped) portion of chained SKB */
+        for (i = 0; i < skb_shinfo(pFragBuf)->nr_frags; i++)
+        {
+            Log6((" %p", pSG->aSegs[iSeg].pv));
+            kunmap_atomic(pSG->aSegs[iSeg++].pv);
+        }
+    }
+# ifdef LOG_ENABLED
+    if (pBuf->data_len)
+        Log6(("\n"));
+# endif /* LOG_ENABLED */
 #endif
     NOREF(pSG);
 }
@@ -1048,18 +1203,17 @@ static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhe
          pSG->cbTotal, iPacketNo));
     if (pSG->cSegsUsed == 1)
     {
-        Log3(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
+        Log4(("%.*Rhxd\n", pSG->aSegs[0].cb, pSG->aSegs[0].pv));
     }
     else
     {
         for (i = 0, offSeg = 0; i < pSG->cSegsUsed; i++)
         {
-            Log3(("-- segment %d at 0x%x (%d bytes) --\n%.*Rhxd\n",
+            Log4(("-- segment %d at 0x%x (%d bytes)\n --\n%.*Rhxd\n",
                   i, offSeg, pSG->aSegs[i].cb, pSG->aSegs[i].cb, pSG->aSegs[i].pv));
             offSeg += pSG->aSegs[i].cb;
         }
     }
-
 }
 #else
 # define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
@@ -1110,39 +1264,6 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
     {
         Log5(("vboxNetFltLinuxCanForwardAsGso: gso_size=%#x skb_len=%#x (max=%#x)\n", skb_shinfo(pSkb)->gso_size, pSkb->len, VBOX_MAX_GSO_SIZE));
         return false;
-    }
-    /*
-     * It is possible to receive GSO packets from wire if GRO is enabled.
-     */
-    if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
-    {
-        Log5(("vboxNetFltLinuxCanForwardAsGso: fSrc=wire\n"));
-#ifdef VBOXNETFLT_WITH_GRO
-        /*
-         * The packet came from the wire and the driver has already consumed
-         * mac header. We need to restore it back.
-         */
-        pSkb->mac_len = skb_network_header(pSkb) - skb_mac_header(pSkb);
-        skb_push(pSkb, pSkb->mac_len);
-        Log5(("vboxNetFltLinuxCanForwardAsGso: mac_len=%d data=%p mac_header=%p network_header=%p\n",
-              pSkb->mac_len, pSkb->data, skb_mac_header(pSkb), skb_network_header(pSkb)));
-#else /* !VBOXNETFLT_WITH_GRO */
-        /* Older kernels didn't have GRO. */
-        return false;
-#endif /* !VBOXNETFLT_WITH_GRO */
-    }
-    else
-    {
-        /*
-         * skb_gso_segment does the following. Do we need to do it as well?
-         */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
-        skb_reset_mac_header(pSkb);
-        pSkb->mac_len = pSkb->network_header - pSkb->mac_header;
-#else
-        pSkb->mac.raw = pSkb->data;
-        pSkb->mac_len = pSkb->nh.raw - pSkb->data;
-#endif
     }
 
     /*
@@ -1292,34 +1413,24 @@ static bool vboxNetFltLinuxCanForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff 
 static int vboxNetFltLinuxForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSkb, uint32_t fSrc, PCPDMNETWORKGSO pGsoCtx)
 {
     int         rc;
-    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pSkb);
-    if (RT_LIKELY(cSegs <= MAX_SKB_FRAGS + 1))
+    unsigned    cbExtra;
+    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pSkb, &cbExtra);
+    PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]) + cbExtra);
+    if (RT_LIKELY(pSG))
     {
-        PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
-        if (RT_LIKELY(pSG))
-        {
-            vboxNetFltLinuxSkBufToSG(pThis, pSkb, pSG, cSegs, fSrc, pGsoCtx);
+        vboxNetFltLinuxSkBufToSG(pThis, pSkb, pSG, cbExtra, cSegs, fSrc, pGsoCtx);
 
-            vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
-            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
+        vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
+        pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
 
-            vboxNetFltLinuxDestroySG(pSG);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            Log(("VBoxNetFlt: Dropping the sk_buff (failure case).\n"));
-            rc = VERR_NO_MEMORY;
-        }
+        vboxNetFltLinuxDestroySG(pSG, pSkb);
+        rc = VINF_SUCCESS;
     }
     else
     {
-        Log(("VBoxNetFlt: Bad sk_buff? cSegs=%#x.\n", cSegs));
-        rc = VERR_INTERNAL_ERROR_3;
+        Log(("VBoxNetFlt: Dropping the sk_buff (failure case).\n"));
+        rc = VERR_NO_MEMORY;
     }
-
-    Log4(("VBoxNetFlt: Dropping the sk_buff.\n"));
-    dev_kfree_skb(pSkb);
     return rc;
 }
 
@@ -1336,93 +1447,101 @@ static int vboxNetFltLinuxForwardAsGso(PVBOXNETFLTINS pThis, struct sk_buff *pSk
 static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, uint32_t fSrc)
 {
     int         rc;
-    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pBuf);
-    if (cSegs <= MAX_SKB_FRAGS + 1)
+    unsigned    cbExtra;
+    unsigned    cSegs = vboxNetFltLinuxCalcSGSegments(pBuf, &cbExtra);
+    PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]) + cbExtra);
+    if (RT_LIKELY(pSG))
     {
-        PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
-        if (RT_LIKELY(pSG))
-        {
-            if (fSrc & INTNETTRUNKDIR_WIRE)
-            {
-                /*
-                 * The packet came from wire, ethernet header was removed by device driver.
-                 * Restore it using mac_len field. This takes into account VLAN headers too.
-                 */
-                skb_push(pBuf, pBuf->mac_len);
-            }
+        vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cbExtra, cSegs, fSrc, NULL /*pGsoCtx*/);
 
-            vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc, NULL /*pGsoCtx*/);
+        vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
+        pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
 
-            vboxNetFltDumpPacket(pSG, false, (fSrc & INTNETTRUNKDIR_HOST) ? "host" : "wire", 1);
-            pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, NULL /* pvIf */, pSG, fSrc);
-
-            vboxNetFltLinuxDestroySG(pSG);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            Log(("VBoxNetFlt: Failed to allocate SG buffer.\n"));
-            rc = VERR_NO_MEMORY;
-        }
+        vboxNetFltLinuxDestroySG(pSG, pBuf);
+        rc = VINF_SUCCESS;
     }
     else
     {
-        Log(("VBoxNetFlt: Bad sk_buff? cSegs=%#x.\n", cSegs));
-        rc = VERR_INTERNAL_ERROR_3;
+        Log(("VBoxNetFlt: Failed to allocate SG buffer.\n"));
+        rc = VERR_NO_MEMORY;
     }
-
-    Log4(("VBoxNetFlt: Dropping the sk_buff.\n"));
-    dev_kfree_skb(pBuf);
     return rc;
 }
+
 
 /**
  * I won't disclose what I do, figure it out yourself, including pThis referencing.
  *
  * @param   pThis       The net filter instance.
- * @param   pBuf        The socket buffer.  This is consumed by this function.
+ * @param   pBuf        The socket buffer.
+ * @param   fSrc        Where the packet comes from.
  */
-static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
+static void vboxNetFltLinuxForwardToIntNetInner(PVBOXNETFLTINS pThis, struct sk_buff *pBuf, uint32_t fSrc)
 {
-    uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
-
 #ifdef VBOXNETFLT_WITH_GSO
     if (skb_is_gso(pBuf))
     {
         PDMNETWORKGSO GsoCtx;
-        Log3(("vboxNetFltLinuxForwardToIntNet: skb len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x ip_summed=%d\n",
-              pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, pBuf->ip_summed));
+        Log6(("vboxNetFltLinuxForwardToIntNetInner: skb len=%u data_len=%u truesize=%u next=%p"
+              " nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x ip_summed=%d\n",
+              pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next,
+              skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size,
+              skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type,
+              skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, pBuf->ip_summed));
+#ifndef VBOXNETFLT_SG_SUPPORT
+        if (RT_LIKELY(fSrc & INTNETTRUNKDIR_HOST))
+        {
+            /*
+             * skb_gso_segment does the following. Do we need to do it as well?
+             */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
+            skb_reset_mac_header(pBuf);
+            pBuf->mac_len = pBuf->network_header - pBuf->mac_header;
+# else
+            pBuf->mac.raw = pBuf->data;
+            pBuf->mac_len = pBuf->nh.raw - pBuf->data;
+# endif
+        }
+#endif /* !VBOXNETFLT_SG_SUPPORT */
 # ifdef VBOXNETFLT_WITH_GSO_RECV
         if (   (skb_shinfo(pBuf)->gso_type & (SKB_GSO_UDP | SKB_GSO_TCPV6 | SKB_GSO_TCPV4))
             && vboxNetFltLinuxCanForwardAsGso(pThis, pBuf, fSrc, &GsoCtx) )
             vboxNetFltLinuxForwardAsGso(pThis, pBuf, fSrc, &GsoCtx);
         else
-# endif
+# endif /* VBOXNETFLT_WITH_GSO_RECV */
         {
             /* Need to segment the packet */
             struct sk_buff *pNext;
             struct sk_buff *pSegment = skb_gso_segment(pBuf, 0 /*supported features*/);
             if (IS_ERR(pSegment))
             {
-                dev_kfree_skb(pBuf);
                 LogRel(("VBoxNetFlt: Failed to segment a packet (%d).\n", PTR_ERR(pSegment)));
                 return;
             }
 
             for (; pSegment; pSegment = pNext)
             {
-                Log3(("vboxNetFltLinuxForwardToIntNet: segment len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
-                      pSegment->len, pSegment->data_len, pSegment->truesize, pSegment->next, skb_shinfo(pSegment)->nr_frags, skb_shinfo(pSegment)->gso_size, skb_shinfo(pSegment)->gso_segs, skb_shinfo(pSegment)->gso_type, skb_shinfo(pSegment)->frag_list, pSegment->pkt_type));
+                Log6(("vboxNetFltLinuxForwardToIntNetInner: segment len=%u data_len=%u truesize=%u next=%p"
+                      " nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
+                      pSegment->len, pSegment->data_len, pSegment->truesize, pSegment->next,
+                      skb_shinfo(pSegment)->nr_frags, skb_shinfo(pSegment)->gso_size,
+                      skb_shinfo(pSegment)->gso_segs, skb_shinfo(pSegment)->gso_type,
+                      skb_shinfo(pSegment)->frag_list, pSegment->pkt_type));
                 pNext = pSegment->next;
                 pSegment->next = 0;
                 vboxNetFltLinuxForwardSegment(pThis, pSegment, fSrc);
+                dev_kfree_skb(pSegment);
             }
-            dev_kfree_skb(pBuf);
         }
     }
     else
 #endif /* VBOXNETFLT_WITH_GSO */
     {
+        Log6(("vboxNetFltLinuxForwardToIntNetInner: ptk_type=%d ip_summed=%d len=%d"
+              " data_len=%d headroom=%d hdr_len=%d csum_offset=%d\n",
+              pBuf->pkt_type, pBuf->ip_summed, pBuf->len, pBuf->data_len, skb_headroom(pBuf),
+              skb_headlen(pBuf), skb_checksum_start_offset(pBuf)));
+#ifndef VBOXNETFLT_SG_SUPPORT
         if (pBuf->ip_summed == CHECKSUM_PARTIAL && pBuf->pkt_type == PACKET_OUTGOING)
         {
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18)
@@ -1436,20 +1555,57 @@ static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff 
             if (pBuf->h.raw == pBuf->nh.raw && pBuf->protocol == htons(ETH_P_IP))
                 pBuf->h.raw = pBuf->nh.raw + pBuf->nh.iph->ihl * 4;
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18) */
-            if (VBOX_SKB_CHECKSUM_HELP(pBuf))
-            {
-                LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
-                dev_kfree_skb(pBuf);
-                return;
-            }
+            int rc = VBOX_SKB_CHECKSUM_HELP(pBuf);
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18)
             /* Restore the original (wrong) pointer. */
             pBuf->h.raw = tmp;
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18) */
+            if (rc) {
+                LogRel(("VBoxNetFlt: Failed to compute checksum, dropping the packet.\n"));
+                return;
+            }
         }
+#endif /* !VBOXNETFLT_SG_SUPPORT */
         vboxNetFltLinuxForwardSegment(pThis, pBuf, fSrc);
     }
 }
+
+
+/**
+ * Temporarily adjust pBuf->data so it always points to the Ethernet header,
+ * then forward it to the internal network. 
+ *
+ * @param   pThis       The net filter instance.
+ * @param   pBuf        The socket buffer.  This is consumed by this function.
+ */
+static void vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf)
+{
+    uint32_t fSrc = pBuf->pkt_type == PACKET_OUTGOING ? INTNETTRUNKDIR_HOST : INTNETTRUNKDIR_WIRE;
+
+    if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
+    {
+        /*
+         * The packet came from the wire and the driver has already consumed
+         * mac header. We need to restore it back. Moreover, after we are
+         * through with this skb we need to restore its original state!
+         */
+        skb_push(pBuf, pBuf->mac_len);
+        Log5(("vboxNetFltLinuxForwardToIntNet: mac_len=%d data=%p mac_header=%p network_header=%p\n",
+              pBuf->mac_len, pBuf->data, skb_mac_header(pBuf), skb_network_header(pBuf)));
+    }
+
+    vboxNetFltLinuxForwardToIntNetInner(pThis, pBuf, fSrc);
+    
+    /*
+     * Restore the original state of skb as there are other handlers this skb
+     * will be provided to.
+     */
+    if (RT_UNLIKELY(fSrc & INTNETTRUNKDIR_WIRE))
+        skb_pull(pBuf, pBuf->mac_len);
+
+    dev_kfree_skb(pBuf);
+}
+
 
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
 /**
@@ -1467,7 +1623,7 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
     PVBOXNETFLTINS  pThis   = VBOX_FLT_XT_TO_INST(pWork);
     struct sk_buff *pBuf;
 
-    Log4(("vboxNetFltLinuxXmitTask: Got work %p.\n", pWork));
+    Log6(("vboxNetFltLinuxXmitTask: Got work %p.\n", pWork));
 
     /*
      * Active? Retain the instance and increment the busy counter.
@@ -2106,8 +2262,8 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
             if (pBuf)
             {
                 vboxNetFltDumpPacket(pSG, true, "wire", 1);
-                Log4(("vboxNetFltPortOsXmit: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
-                Log4(("vboxNetFltPortOsXmit: dev_queue_xmit(%p)\n", pBuf));
+                Log6(("vboxNetFltPortOsXmit: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
+                Log6(("vboxNetFltPortOsXmit: dev_queue_xmit(%p)\n", pBuf));
                 err = dev_queue_xmit(pBuf);
                 if (err)
                     rc = RTErrConvertFromErrno(err);
@@ -2125,8 +2281,8 @@ int  vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, u
             if (pBuf)
             {
                 vboxNetFltDumpPacket(pSG, true, "host", (fDst & INTNETTRUNKDIR_WIRE) ? 0 : 1);
-                Log4(("vboxNetFltPortOsXmit: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
-                Log4(("vboxNetFltPortOsXmit: netif_rx_ni(%p)\n", pBuf));
+                Log6(("vboxNetFltPortOsXmit: pBuf->cb dump:\n%.*Rhxd\n", sizeof(pBuf->cb), pBuf->cb));
+                Log6(("vboxNetFltPortOsXmit: netif_rx_ni(%p)\n", pBuf));
                 err = netif_rx_ni(pBuf);
                 if (err)
                     rc = RTErrConvertFromErrno(err);
