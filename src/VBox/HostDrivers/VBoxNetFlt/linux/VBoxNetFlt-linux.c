@@ -828,7 +828,7 @@ DECLINLINE(unsigned) vboxNetFltLinuxGetChecksumStartOffset(struct sk_buff *pBuf)
  * @param   pThis               The instance.
  * @param   pBuf                The sk_buff.
  * @param   pSG                 The SG.
- * @param   cExtra              The number of bytes of extra space allocated immediately after the SG.
+ * @param   cbExtra             The number of bytes of extra space allocated immediately after the SG.
  * @param   cSegs               The number of segments allocated for the SG.
  *                              This should match the number in the mbuf exactly!
  * @param   fSrc                The source of the frame.
