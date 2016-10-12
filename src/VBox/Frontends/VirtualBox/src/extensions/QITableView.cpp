@@ -32,6 +32,54 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** QAccessibleObject extension used as an accessibility interface for QITableViewCell. */
+class QIAccessibilityInterfaceForQITableViewCell : public QAccessibleObject
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITableViewCell accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITableViewCell"))
+            return new QIAccessibilityInterfaceForQITableViewCell(pObject);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pObject to the base-class. */
+    QIAccessibilityInterfaceForQITableViewCell(QObject *pObject)
+        : QAccessibleObject(pObject)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */;
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */ { return 0; }
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */ { return 0; }
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */ { return -1; }
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */;
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */;
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */;
+
+private:
+
+    /** Returns corresponding QITableViewCell. */
+    QITableViewCell *cell() const { return qobject_cast<QITableViewCell*>(object()); }
+};
+
+
 /** QAccessibleObject extension used as an accessibility interface for QITableViewRow. */
 class QIAccessibilityInterfaceForQITableViewRow : public QAccessibleObject
 {
@@ -116,6 +164,73 @@ private:
     /** Returns corresponding QITableView. */
     QITableView *table() const { return qobject_cast<QITableView*>(widget()); }
 };
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITableViewCell implementation.                                                              *
+*********************************************************************************************************************************/
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITableViewCell::parent() const
+{
+    /* Make sure cell still alive: */
+    AssertPtrReturn(cell(), 0);
+
+    /* Return the parent: */
+    return QAccessible::queryAccessibleInterface(cell()->row());
+}
+
+QRect QIAccessibilityInterfaceForQITableViewCell::rect() const
+{
+    /* Make sure cell still alive: */
+    AssertPtrReturn(cell(), QRect());
+    AssertPtrReturn(cell()->row(), QRect());
+    AssertPtrReturn(cell()->row()->table(), QRect());
+
+    /* Calculate local item coordinates: */
+    const int iIndexInParent = parent()->indexOfChild(this);
+    const int iParentIndexInParent = parent()->parent()->indexOfChild(parent());
+    const int iX = cell()->row()->table()->columnViewportPosition(iIndexInParent);
+    const int iY = cell()->row()->table()->rowViewportPosition(iParentIndexInParent);
+    const int iWidth = cell()->row()->table()->columnWidth(iIndexInParent);
+    const int iHeight = cell()->row()->table()->rowHeight(iParentIndexInParent);
+
+    /* Map local item coordinates to global: */
+    const QPoint itemPosInScreen = cell()->row()->table()->viewport()->mapToGlobal(QPoint(iX, iY));
+
+    /* Return item rectangle: */
+    return QRect(itemPosInScreen, QSize(iWidth, iHeight));
+}
+
+QString QIAccessibilityInterfaceForQITableViewCell::text(QAccessible::Text enmTextRole) const
+{
+    /* Make sure cell still alive: */
+    AssertPtrReturn(cell(), QString());
+
+    /* Return a text for the passed enmTextRole: */
+    switch (enmTextRole)
+    {
+        case QAccessible::Name: return cell()->text();
+        default: break;
+    }
+
+    /* Null-string by default: */
+    return QString();
+}
+
+QAccessible::Role QIAccessibilityInterfaceForQITableViewCell::role() const
+{
+    /* Cell by default: */
+    return QAccessible::Cell;
+}
+
+QAccessible::State QIAccessibilityInterfaceForQITableViewCell::state() const
+{
+    /* Make sure cell still alive: */
+    AssertPtrReturn(cell(), QAccessible::State());
+
+    /* Empty state by default: */
+    return QAccessible::State();
+}
 
 
 /*********************************************************************************************************************************
@@ -315,6 +430,8 @@ void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &
 
 void QITableView::prepare()
 {
+    /* Install QITableViewCell accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITableViewCell::pFactory);
     /* Install QITableViewRow accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForQITableViewRow::pFactory);
     /* Install QITableView accessibility interface factory: */
