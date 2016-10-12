@@ -205,7 +205,7 @@ static DECLCALLBACK(int) drvscsiReqAlloc(VSCSILUN hVScsiLun, void *pvScsiLunUser
     PDMMEDIAEXIOREQ hIoReq;
     void *pvIoReqAlloc;
     int rc = pThis->pDrvMediaEx->pfnIoReqAlloc(pThis->pDrvMediaEx, &hIoReq, &pvIoReqAlloc, u64Tag,
-                                               PDMIMEDIAEX_F_DEFAULT);
+                                               PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
     if (RT_SUCCESS(rc))
     {
         PPDMMEDIAEXIOREQ phIoReq = (PPDMMEDIAEXIOREQ)pvIoReqAlloc;
@@ -453,7 +453,7 @@ static DECLCALLBACK(int) drvscsiIoReqCompleteNotify(PPDMIMEDIAEXPORT pInterface,
     RT_NOREF1(hIoReq);
 
     PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPortEx);
-    VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)((uint8_t *)pvIoReqAlloc + sizeof(PDMMEDIAEXIOREQ));
+    VSCSIIOREQ hVScsiIoReq = DRVSCSI_PDMMEDIAEXIOREQ_2_VSCSIIOREQ(pvIoReqAlloc);
     VSCSIIOREQTXDIR enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
 
     LogFlowFunc(("Request hVScsiIoReq=%#p completed\n", hVScsiIoReq));
@@ -599,8 +599,28 @@ static DECLCALLBACK(int) drvscsiIoReqQueryDiscardRanges(PPDMIMEDIAEXPORT pInterf
 static DECLCALLBACK(void) drvscsiIoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                    void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
 {
-    RT_NOREF4(pInterface, hIoReq, pvIoReqAlloc, enmState);
-    AssertLogRelMsgFailed(("This should not be hit because I/O requests should not be suspended\n"));
+    RT_NOREF2(hIoReq, pvIoReqAlloc);
+    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPortEx);
+
+    switch (enmState)
+    {
+        case PDMMEDIAEXIOREQSTATE_SUSPENDED:
+        {
+            /* Make sure the request is not accounted for so the VM can suspend successfully. */
+            uint32_t cTasksActive = ASMAtomicDecU32(&pThis->StatIoDepth);
+            if (!cTasksActive && pThis->fDummySignal)
+                PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
+            break;
+        }
+        case PDMMEDIAEXIOREQSTATE_ACTIVE:
+            /* Make sure the request is accounted for so the VM suspends only when the request is complete. */
+            ASMAtomicIncU32(&pThis->StatIoDepth);
+            break;
+        default:
+            AssertMsgFailed(("Invalid request state given %u\n", enmState));
+    }
+
+    pThis->pDevMediaExPort->pfnIoReqStateChanged(pThis->pDevMediaExPort, hIoReq, pvIoReqAlloc, enmState);
 }
 
 static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
@@ -852,9 +872,6 @@ static DECLCALLBACK(int) drvscsiIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOR
     RT_NOREF1(pInterface);
     PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
 
-    if (pReq->pvBuf)
-        RTMemFree(pReq->pvBuf);
-
     RTMemFree(pReq);
     return VINF_SUCCESS;
 }
@@ -1027,7 +1044,8 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
     ASMAtomicDecU32(&pThis->StatIoDepth);
 
     /* Sync buffers. */
-    if (   pReq->cbBuf
+    if (   RT_SUCCESS(rcReq)
+        && pReq->cbBuf
         && (   pReq->enmXferDir == PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN
             || pReq->enmXferDir == PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE))
     {
@@ -1037,6 +1055,12 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
                                                                  &pReq->abAlloc[0], 0, &SgBuf, pReq->cbBuf);
         if (RT_FAILURE(rcCopy))
             rcReq = rcCopy;
+    }
+
+    if (pReq->pvBuf)
+    {
+        RTMemFree(pReq->pvBuf);
+        pReq->pvBuf = NULL;
     }
 
     *pReq->pu8ScsiSts = (uint8_t)rcScsiCode;
