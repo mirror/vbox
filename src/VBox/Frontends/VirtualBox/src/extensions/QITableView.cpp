@@ -32,6 +32,54 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** QAccessibleObject extension used as an accessibility interface for QITableViewRow. */
+class QIAccessibilityInterfaceForQITableViewRow : public QAccessibleObject
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITableViewRow accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITableViewRow"))
+            return new QIAccessibilityInterfaceForQITableViewRow(pObject);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pObject to the base-class. */
+    QIAccessibilityInterfaceForQITableViewRow(QObject *pObject)
+        : QAccessibleObject(pObject)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */;
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */;
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */;
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */;
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */;
+
+private:
+
+    /** Returns corresponding QITableViewRow. */
+    QITableViewRow *row() const { return qobject_cast<QITableViewRow*>(object()); }
+};
+
+
 /** QAccessibleWidget extension used as an accessibility interface for QITableView. */
 class QIAccessibilityInterfaceForQITableView : public QAccessibleWidget
 {
@@ -68,6 +116,105 @@ private:
     /** Returns corresponding QITableView. */
     QITableView *table() const { return qobject_cast<QITableView*>(widget()); }
 };
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITableViewRow implementation.                                                              *
+*********************************************************************************************************************************/
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITableViewRow::parent() const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), 0);
+
+    /* Return the parent: */
+    return QAccessible::queryAccessibleInterface(row()->table());
+}
+
+int QIAccessibilityInterfaceForQITableViewRow::childCount() const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), 0);
+
+    /* Return the number of children: */
+    return row()->childCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITableViewRow::child(int iIndex) const /* override */
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(row()->childItem(iIndex));
+}
+
+int QIAccessibilityInterfaceForQITableViewRow::indexOfChild(const QAccessibleInterface *pChild) const /* override */
+{
+    /* Search for corresponding child: */
+    for (int i = 0; i < childCount(); ++i)
+        if (child(i) == pChild)
+            return i;
+
+    /* -1 by default: */
+    return -1;
+}
+
+QRect QIAccessibilityInterfaceForQITableViewRow::rect() const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), QRect());
+    AssertPtrReturn(row()->table(), QRect());
+
+    /* Calculate local item coordinates: */
+    const int iIndexInParent = parent()->indexOfChild(this);
+    const int iX = row()->table()->columnViewportPosition(0);
+    const int iY = row()->table()->rowViewportPosition(iIndexInParent);
+    int iWidth = 0;
+    int iHeight = 0;
+    for (int i = 0; i < childCount(); ++i)
+        iWidth += row()->table()->columnWidth(i);
+    iHeight += row()->table()->rowHeight(iIndexInParent);
+
+    /* Map local item coordinates to global: */
+    const QPoint itemPosInScreen = row()->table()->viewport()->mapToGlobal(QPoint(iX, iY));
+
+    /* Return item rectangle: */
+    return QRect(itemPosInScreen, QSize(iWidth, iHeight));
+}
+
+QString QIAccessibilityInterfaceForQITableViewRow::text(QAccessible::Text enmTextRole) const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), QString());
+
+    /* Return a text for the passed enmTextRole: */
+    switch (enmTextRole)
+    {
+        case QAccessible::Name: return childCount() > 0 && child(0) ? child(0)->text(enmTextRole) : QString();
+        default: break;
+    }
+
+    /* Null-string by default: */
+    return QString();
+}
+
+QAccessible::Role QIAccessibilityInterfaceForQITableViewRow::role() const
+{
+    /* Row by default: */
+    return QAccessible::Row;
+}
+
+QAccessible::State QIAccessibilityInterfaceForQITableViewRow::state() const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(row(), QAccessible::State());
+
+    /* Empty state by default: */
+    return QAccessible::State();
+}
 
 
 /*********************************************************************************************************************************
@@ -168,6 +315,8 @@ void QITableView::currentChanged(const QModelIndex &current, const QModelIndex &
 
 void QITableView::prepare()
 {
+    /* Install QITableViewRow accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITableViewRow::pFactory);
     /* Install QITableView accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForQITableView::pFactory);
 
