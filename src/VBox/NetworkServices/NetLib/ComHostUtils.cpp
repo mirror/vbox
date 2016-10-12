@@ -118,48 +118,6 @@ int localMappings(const ComNatPtr& nat, AddressToOffsetMapping& mapping)
     return VINF_SUCCESS;
 }
 
-/**
- * @note: const dropped here, because of map<K,V>::operator[] which isn't const, map<K,V>::at() has const
- * variant but it's C++11.
- */
-int hostDnsServers(const ComHostPtr& host, const RTNETADDRIPV4& networkid,
-                   /*const*/ AddressToOffsetMapping& mapping, AddressList& servers)
-{
-    servers.clear();
-
-    ComBstrArray strs;
-    if (SUCCEEDED(host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(strs))))
-    {
-        RTNETADDRIPV4 addr;
-        int rc;
-
-        for (unsigned int i = 0; i < strs.size(); ++i)
-        {
-            rc = RTNetStrToIPv4Addr(com::Utf8Str(strs[i]).c_str(), &addr);
-            if (RT_SUCCESS(rc))
-            {
-                if (addr.au8[0] == 127)
-                {
-                    /* XXX: here we want map<K,V>::at(const K& k) const */
-                    if (mapping[addr] != 0)
-                    {
-                        addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u)
-                                            + mapping[addr]);
-                    }
-                    else
-                        continue; /* XXX: Warning here (local mapping wasn't registered) */
-                }
-
-                servers.push_back(addr);
-            }
-        }
-    }
-    else
-        return VERR_NOT_FOUND;
-
-    return VINF_SUCCESS;
-}
-
 
 int hostDnsSearchList(const ComHostPtr& host, std::vector<std::string>& strings)
 {

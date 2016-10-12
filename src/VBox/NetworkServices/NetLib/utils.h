@@ -74,7 +74,6 @@ inline RTNETADDRIPV4 networkid(const RTNETADDRIPV4& addr, const RTNETADDRIPV4& n
 
 
 int localMappings(const ComNatPtr&, AddressToOffsetMapping&);
-int hostDnsServers(const ComHostPtr&, const RTNETADDRIPV4&,/* const */ AddressToOffsetMapping&, AddressList&);
 int hostDnsSearchList(const ComHostPtr&, std::vector<std::string>&);
 int hostDnsDomain(const ComHostPtr&, std::string& domainStr);
 

@@ -114,6 +114,11 @@ private:
     int initNoMain();
     int initWithMain();
     HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
+
+    static int hostDnsServers(const ComHostPtr& host,
+                              const RTNETADDRIPV4& networkid,
+                              /* const */ AddressToOffsetMapping& mapping,
+                              AddressList& servers);
     int fetchAndUpdateDnsInfo();
 
 protected:
@@ -609,6 +614,68 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * @note: const dropped here, because of map<K,V>::operator[] which
+ * isn't const, map<K,V>::at() has const variant but it's C++11.
+ */
+int VBoxNetDhcp::hostDnsServers(const ComHostPtr& host,
+                                const RTNETADDRIPV4& networkid,
+                                /* const */ AddressToOffsetMapping& mapping,
+                                AddressList& servers)
+{
+    ComBstrArray strs;
+
+    HRESULT hrc = host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(strs));
+    if (FAILED(hrc))
+        return VERR_NOT_FOUND;
+
+    /*
+     * Recent fashion is to run dnsmasq on 127.0.1.1 which we
+     * currently can't map.  If that's the only nameserver we've got,
+     * we need to use DNS proxy for VMs to reach it.
+     */
+    bool fUnmappedLoopback = false;
+
+    for (size_t i = 0; i < strs.size(); ++i)
+    {
+        RTNETADDRIPV4 addr;
+        int rc;
+
+        rc = RTNetStrToIPv4Addr(com::Utf8Str(strs[i]).c_str(), &addr);
+        if (RT_FAILURE(rc))
+            continue;
+
+        if (addr.au8[0] == 127)
+        {
+            /* XXX: here we want map<K,V>::at(const K& k) const */
+            if (mapping[addr] != 0)
+            {
+                addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u)
+                                    + mapping[addr]);
+            }
+            else
+            {
+                fUnmappedLoopback = true;
+                continue;
+            }
+        }
+
+        servers.push_back(addr);
+    }
+
+    if (servers.empty() && fUnmappedLoopback)
+    {
+        RTNETADDRIPV4 proxy;
+
+        proxy.u = networkid.u | RT_H2N_U32_C(1U);
+        servers.push_back(proxy);
+    }
+
+    return VINF_SUCCESS;
+}
+
 
 HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 {
