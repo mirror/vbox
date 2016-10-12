@@ -117,7 +117,7 @@ private:
 
     static int hostDnsServers(const ComHostPtr& host,
                               const RTNETADDRIPV4& networkid,
-                              /* const */ AddressToOffsetMapping& mapping,
+                              const AddressToOffsetMapping& mapping,
                               AddressList& servers);
     int fetchAndUpdateDnsInfo();
 
@@ -616,13 +616,9 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
 }
 
 
-/**
- * @note: const dropped here, because of map<K,V>::operator[] which
- * isn't const, map<K,V>::at() has const variant but it's C++11.
- */
 int VBoxNetDhcp::hostDnsServers(const ComHostPtr& host,
                                 const RTNETADDRIPV4& networkid,
-                                /* const */ AddressToOffsetMapping& mapping,
+                                const AddressToOffsetMapping& mapping,
                                 AddressList& servers)
 {
     ComBstrArray strs;
@@ -649,11 +645,12 @@ int VBoxNetDhcp::hostDnsServers(const ComHostPtr& host,
 
         if (addr.au8[0] == 127)
         {
-            /* XXX: here we want map<K,V>::at(const K& k) const */
-            if (mapping[addr] != 0)
+            AddressToOffsetMapping::const_iterator remap(mapping.find(addr));
+
+            if (remap != mapping.end())
             {
-                addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u)
-                                    + mapping[addr]);
+                int offset = remap->second;
+                addr.u = RT_H2N_U32(RT_N2H_U32(networkid.u) + offset);
             }
             else
             {
