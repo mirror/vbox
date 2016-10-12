@@ -59,9 +59,9 @@ public:
     /** Returns the number of children. */
     virtual int childCount() const /* override */ { return 0; }
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const /* override */ { return 0; }
+    virtual QAccessibleInterface *child(int /* iIndex */) const /* override */ { return 0; }
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */ { return -1; }
+    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const /* override */ { return -1; }
 
     /** Returns the rect. */
     virtual QRect rect() const /* override */;
