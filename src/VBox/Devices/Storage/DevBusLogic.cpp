@@ -3864,8 +3864,8 @@ static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
                         VERR_PDM_MISSING_INTERFACE);
 
         rc = pDevice->pDrvMediaEx->pfnIoReqAllocSizeSet(pDevice->pDrvMediaEx, sizeof(BUSLOGICREQ));
-        AssertMsgRCReturn(rc, ("BusLogic configuration error: LUN#%u: Failed to set I/O request size!"),
-                               pDevice->iLUN);
+        AssertMsgRCReturn(rc, ("BusLogic configuration error: LUN#%u: Failed to set I/O request size!", pDevice->iLUN),
+                          rc);
 
         pDevice->fPresent = true;
     }
