@@ -1140,7 +1140,7 @@ static DECLCALLBACK(int) usbMsdLun0IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
     else
     {
         size_t cbCopied = RTSgBufCopyToBuf(pSgBuf, pReq->pbBuf + offDst, cbCopy);
-        Assert(cbCopied == cbCopy);
+        Assert(cbCopied == cbCopy); RT_NOREF(cbCopied);
     }
 
     return rc;
@@ -1163,7 +1163,7 @@ static DECLCALLBACK(int) usbMsdLun0IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
     else
     {
         size_t cbCopied = RTSgBufCopyFromBuf(pSgBuf, pReq->pbBuf + offSrc, cbCopy);
-        Assert(cbCopied == cbCopy);
+        Assert(cbCopied == cbCopy); RT_NOREF(cbCopied);
     }
 
     return rc;
