@@ -135,9 +135,12 @@ RT_C_DECLS_BEGIN
 int vboxscsiInitialize(PVBOXSCSI pVBoxSCSI);
 int vboxscsiReadRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint32_t *pu32Value);
 int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal);
-int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint32_t *puTargetDevice);
-int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, int rcCompletion);
-void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest);
+int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, uint32_t *puLun, uint8_t **ppbCdb, size_t *pcbCdb,
+                         size_t *pcbBuf, uint32_t *puTargetDevice);
+int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, int rcCompletion);
+size_t vboxscsiCopyToBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy);
+size_t vboxscsiCopyFromBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy);
+void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI);
 int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
                         uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb);
 int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,

@@ -276,14 +276,18 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
  *
  * @returns VBox status code.
  * @param   pVBoxSCSI      Pointer to the SCSI state.
- * @param   pScsiRequest   Pointer to a scsi request to setup.
+ * @paam    puLun          Where to store the LUN on success.
+ * @param   ppbCdb         Where to store the pointer to the CDB on success.
+ * @param   pcbCdb         Where to store the size of the CDB on success.
+ * @param   pcbBuf         Where to store th size of the data buffer on success.
  * @param   puTargetDevice Where to store the target device ID.
  */
-int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint32_t *puTargetDevice)
+int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, uint32_t *puLun, uint8_t **ppbCdb,
+                         size_t *pcbCdb, size_t *pcbBuf, uint32_t *puTargetDevice)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pVBoxSCSI=%#p pScsiRequest=%#p puTargetDevice=%#p\n", pVBoxSCSI, pScsiRequest, puTargetDevice));
+    LogFlowFunc(("pVBoxSCSI=%#p puTargetDevice=%#p\n", pVBoxSCSI, puTargetDevice));
 
     AssertMsg(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, ("Invalid state %u\n", pVBoxSCSI->enmState));
 
@@ -300,28 +304,10 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
             return VERR_NO_MEMORY;
     }
 
-    /* Allocate scatter gather element. */
-    pScsiRequest->paScatterGatherHead = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 1); /* Only one element. */
-    if (!pScsiRequest->paScatterGatherHead)
-    {
-        RTMemFree(pVBoxSCSI->pbBuf);
-        pVBoxSCSI->pbBuf = NULL;
-        return VERR_NO_MEMORY;
-    }
-
-    /* Allocate sense buffer. */
-    pScsiRequest->cbSenseBuffer = 18;
-    pScsiRequest->pbSenseBuffer = (uint8_t *)RTMemAllocZ(pScsiRequest->cbSenseBuffer);
-
-    pScsiRequest->cbCDB = pVBoxSCSI->cbCDB;
-    pScsiRequest->pbCDB = pVBoxSCSI->abCDB;
-    pScsiRequest->uLogicalUnit = 0;
-    pScsiRequest->cbScatterGather = pVBoxSCSI->cbBuf;
-    pScsiRequest->cScatterGatherEntries = 1;
-
-    pScsiRequest->paScatterGatherHead[0].cbSeg = pVBoxSCSI->cbBuf;
-    pScsiRequest->paScatterGatherHead[0].pvSeg = pVBoxSCSI->pbBuf;
-
+    *puLun = 0;
+    *ppbCdb = &pVBoxSCSI->abCDB[0];
+    *pcbCdb = pVBoxSCSI->cbCDB;
+    *pcbBuf = pVBoxSCSI->cbBuf;
     *puTargetDevice = pVBoxSCSI->uTargetDevice;
 
     return rc;
@@ -331,11 +317,9 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
  * Notifies the device that a request finished and the incoming data
  * is ready at the incoming data port.
  */
-int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, int rcCompletion)
+int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, int rcCompletion)
 {
-    LogFlowFunc(("pVBoxSCSI=%#p pScsiRequest=%#p\n", pVBoxSCSI, pScsiRequest));
-    RTMemFree(pScsiRequest->paScatterGatherHead);
-    RTMemFree(pScsiRequest->pbSenseBuffer);
+    LogFlowFunc(("pVBoxSCSI=%#p\n", pVBoxSCSI));
 
     if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_TO_DEVICE)
         vboxscsiReset(pVBoxSCSI, false /*fEverything*/);
@@ -345,6 +329,24 @@ int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, i
     ASMAtomicXchgBool(&pVBoxSCSI->fBusy, false);
 
     return VINF_SUCCESS;
+}
+
+size_t vboxscsiCopyToBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
+{
+    AssertPtrReturn(pVBoxSCSI->pbBuf, 0);
+    AssertReturn(cbSkip + cbCopy <= pVBoxSCSI->cbBuf, 0);
+
+    void *pvBuf = pVBoxSCSI->pbBuf + cbSkip;
+    return RTSgBufCopyToBuf(pSgBuf, pvBuf, cbCopy);
+}
+
+size_t vboxscsiCopyFromBuf(PVBOXSCSI pVBoxSCSI, PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
+{
+    AssertPtrReturn(pVBoxSCSI->pbBuf, 0);
+    AssertReturn(cbSkip + cbCopy <= pVBoxSCSI->cbBuf, 0);
+
+    void *pvBuf = pVBoxSCSI->pbBuf + cbSkip;
+    return RTSgBufCopyFromBuf(pSgBuf, pvBuf, cbCopy);
 }
 
 int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
@@ -451,12 +453,9 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     return rc;
 }
 
-void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest)
+void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI)
 {
     AssertMsg(pVBoxSCSI->fBusy, ("No request to redo\n"));
-
-    RTMemFree(pScsiRequest->paScatterGatherHead);
-    RTMemFree(pScsiRequest->pbSenseBuffer);
 
     if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_FROM_DEVICE)
     {
