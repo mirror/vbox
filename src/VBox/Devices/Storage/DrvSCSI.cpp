@@ -81,7 +81,6 @@ typedef DRVSCSIREQ *PDRVSCSIREQ;
 /**
  * SCSI driver instance data.
  *
- * @implements  PDMISCSICONNECTOR
  * @implements  PDMIMEDIAEXPORT
  * @implements  PDMIMEDIAEX
  * @implements  PDMIMOUNTNOTIFY
@@ -99,16 +98,12 @@ typedef struct DRVSCSI
     PPDMIMEDIAEX            pDrvMediaEx;
     /** Pointer to the attached driver's mount interface. */
     PPDMIMOUNT              pDrvMount;
-    /** Pointer to the SCSI port interface of the device above. */
-    PPDMISCSIPORT           pDevScsiPort;
     /** Pointer to the extended media port interface of the device above. */
     PPDMIMEDIAEXPORT        pDevMediaExPort;
     /** Pointer to the media port interface of the device above. */
     PPDMIMEDIAPORT          pDevMediaPort;
     /** pointer to the Led port interface of the dveice above. */
     PPDMILEDPORTS           pLedPort;
-    /** The scsi connector interface .*/
-    PDMISCSICONNECTOR       ISCSIConnector;
     /** The media interface for the device above. */
     PDMIMEDIA               IMedia;
     /** The extended media interface for the device above. */
@@ -623,98 +618,6 @@ static DECLCALLBACK(void) drvscsiIoReqStateChanged(PPDMIMEDIAEXPORT pInterface, 
     pThis->pDevMediaExPort->pfnIoReqStateChanged(pThis->pDevMediaExPort, hIoReq, pvIoReqAlloc, enmState);
 }
 
-static DECLCALLBACK(void) drvscsiVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
-                                                   void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible, int rcReq)
-{
-    RT_NOREF(hVScsiDevice);
-    PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
-
-    ASMAtomicDecU32(&pThis->StatIoDepth);
-
-    pThis->pDevScsiPort->pfnSCSIRequestCompleted(pThis->pDevScsiPort, (PPDMSCSIREQUEST)pVScsiReqUser,
-                                                 rcScsiCode, fRedoPossible, rcReq);
-
-    if (RT_UNLIKELY(pThis->fDummySignal) && !pThis->StatIoDepth)
-        PDMDrvHlpAsyncNotificationCompleted(pThis->pDrvIns);
-}
-
-/* -=-=-=-=- ISCSIConnector -=-=-=-=- */
-
-#ifdef DEBUG
-/**
- * Dumps a SCSI request structure for debugging purposes.
- *
- * @returns nothing.
- * @param   pRequest    Pointer to the request to dump.
- */
-static void drvscsiDumpScsiRequest(PPDMSCSIREQUEST pRequest)
-{
-    Log(("Dump for pRequest=%#p Command: %s\n", pRequest, SCSICmdText(pRequest->pbCDB[0])));
-    Log(("cbCDB=%u\n", pRequest->cbCDB));
-    for (uint32_t i = 0; i < pRequest->cbCDB; i++)
-        Log(("pbCDB[%u]=%#x\n", i, pRequest->pbCDB[i]));
-    Log(("cbScatterGather=%u\n", pRequest->cbScatterGather));
-    Log(("cScatterGatherEntries=%u\n", pRequest->cScatterGatherEntries));
-    /* Print all scatter gather entries. */
-    for (uint32_t i = 0; i < pRequest->cScatterGatherEntries; i++)
-    {
-        Log(("ScatterGatherEntry[%u].cbSeg=%u\n", i, pRequest->paScatterGatherHead[i].cbSeg));
-        Log(("ScatterGatherEntry[%u].pvSeg=%#p\n", i, pRequest->paScatterGatherHead[i].pvSeg));
-    }
-    Log(("pvUser=%#p\n", pRequest->pvUser));
-}
-#endif
-
-/** @interface_method_impl{PDMISCSICONNECTOR,pfnSCSIRequestSend} */
-static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest)
-{
-    int rc;
-    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, ISCSIConnector);
-    VSCSIREQ hVScsiReq;
-
-#ifdef DEBUG
-    drvscsiDumpScsiRequest(pSCSIRequest);
-#endif
-
-    rc = VSCSIDeviceReqCreate(pThis->hVScsiDevice, &hVScsiReq,
-                              pSCSIRequest->uLogicalUnit,
-                              pSCSIRequest->pbCDB,
-                              pSCSIRequest->cbCDB,
-                              pSCSIRequest->cbScatterGather,
-                              pSCSIRequest->cScatterGatherEntries,
-                              pSCSIRequest->paScatterGatherHead,
-                              pSCSIRequest->pbSenseBuffer,
-                              pSCSIRequest->cbSenseBuffer,
-                              pSCSIRequest);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    ASMAtomicIncU32(&pThis->StatIoDepth);
-    rc = VSCSIDeviceReqEnqueue(pThis->hVScsiDevice, hVScsiReq);
-
-    return rc;
-}
-
-/** @interface_method_impl{PDMISCSICONNECTOR,pfnQueryLUNType} */
-static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint32_t iLun, PPDMSCSILUNTYPE pLunType)
-{
-    PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, ISCSIConnector);
-    VSCSILUNTYPE enmLunType;
-
-    int rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, iLun, &enmLunType);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    switch (enmLunType)
-    {
-    case VSCSILUNTYPE_SBC:  *pLunType = PDMSCSILUNTYPE_SBC; break;
-    case VSCSILUNTYPE_MMC:  *pLunType = PDMSCSILUNTYPE_MMC; break;
-    case VSCSILUNTYPE_SSC:  *pLunType = PDMSCSILUNTYPE_SSC; break;
-    default:                *pLunType = PDMSCSILUNTYPE_INVALID;
-    }
-
-    return rc;
-}
 
 /* -=-=-=-=- IMedia -=-=-=-=- */
 
@@ -1088,10 +991,7 @@ static DECLCALLBACK(bool) drvscsiR3NotifyQueueConsumer(PPDMDRVINS pDrvIns, PPDMQ
     int rc = pThis->pDrvMount->pfnUnmount(pThis->pDrvMount, false/*=fForce*/, true/*=fEject*/);
     Assert(RT_SUCCESS(rc) || rc == VERR_PDM_MEDIA_LOCKED || rc == VERR_PDM_MEDIA_NOT_MOUNTED);
     if (RT_SUCCESS(rc))
-    {
-        if (pThis->pDevMediaExPort)
-            pThis->pDevMediaExPort->pfnMediumEjected(pThis->pDevMediaExPort);
-    }
+        pThis->pDevMediaExPort->pfnMediumEjected(pThis->pDevMediaExPort);
 
     pEjectState->rcReq = rc;
     RTSemEventSignal(pEjectState->hSemEvt);
@@ -1110,7 +1010,6 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->pDrvMount);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSICONNECTOR, &pThis->ISCSIConnector);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDevMediaExPort ? &pThis->IMediaEx : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, pThis->pDrvMedia ? &pThis->IMedia : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IPort);
@@ -1124,14 +1023,8 @@ static DECLCALLBACK(int) drvscsiQueryDeviceLocation(PPDMIMEDIAPORT pInterface, c
 {
     PDRVSCSI pThis = RT_FROM_MEMBER(pInterface, DRVSCSI, IPort);
 
-    if (pThis->pDevScsiPort)
-        return pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, ppcszController,
-                                                           piInstance, piLUN);
-    if (pThis->pDevMediaPort)
-        return pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, ppcszController,
-                                                            piInstance, piLUN);
-
-    return VERR_NOT_SUPPORTED;
+    return pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, ppcszController,
+                                                        piInstance, piLUN);
 }
 
 /**
@@ -1364,8 +1257,6 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Initialize the instance data.
      */
     pThis->pDrvIns                              = pDrvIns;
-    pThis->ISCSIConnector.pfnSCSIRequestSend    = drvscsiRequestSend;
-    pThis->ISCSIConnector.pfnQueryLUNType       = drvscsiQueryLUNType;
 
     pDrvIns->IBase.pfnQueryInterface            = drvscsiQueryInterface;
 
@@ -1419,17 +1310,14 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IPortEx.pfnIoReqQueryDiscardRanges   = drvscsiIoReqQueryDiscardRanges;
     pThis->IPortEx.pfnIoReqStateChanged         = drvscsiIoReqStateChanged;
 
-    /* Query the optional SCSI port interface above. */
-    pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
-
     /* Query the optional media port interface above. */
     pThis->pDevMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
 
     /* Query the optional extended media port interface above. */
     pThis->pDevMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
 
-    AssertMsgReturn(pThis->pDevScsiPort || pThis->pDevMediaExPort,
-                    ("Missing SCSI or extended media port interface above\n"), VERR_PDM_MISSING_INTERFACE);
+    AssertMsgReturn(pThis->pDevMediaExPort,
+                    ("Missing extended media port interface above\n"), VERR_PDM_MISSING_INTERFACE);
 
     /* Query the optional LED interface above. */
     pThis->pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
@@ -1505,11 +1393,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->VScsiIoCallbacks.pfnVScsiLunGetFeatureFlags     = drvscsiGetFeatureFlags;
     pThis->VScsiIoCallbacks.pfnVScsiLunMediumSetLock       = drvscsiSetLock;
 
-    rc = VSCSIDeviceCreate(&pThis->hVScsiDevice,
-                             pThis->pDevMediaExPort
-                           ? drvscsiIoReqVScsiReqCompleted
-                           : drvscsiVScsiReqCompleted,
-                           pThis);
+    rc = VSCSIDeviceCreate(&pThis->hVScsiDevice, drvscsiIoReqVScsiReqCompleted, pThis);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create VSCSI device rc=%Rrc\n", rc), rc);
     rc = VSCSILunCreate(&pThis->hVScsiLun, enmLunType, &pThis->VScsiIoCallbacks,
                         pThis);
@@ -1537,10 +1421,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     uint32_t iCtrlInstance = 0;
     uint32_t iCtrlLun = 0;
 
-    if (pThis->pDevScsiPort)
-        rc = pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
-    if (pThis->pDevMediaPort)
-        rc = pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
+    rc = pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
     if (RT_SUCCESS(rc))
     {
         const char *pszCtrlId =   strcmp(pszCtrl, "Msd") == 0 ? "USB"
