@@ -21,6 +21,67 @@
 /* Qt includes: */
 #include <QTableView>
 
+/* Forward declarations: */
+class QITableViewCell;
+class QITableViewRow;
+class QITableView;
+
+
+/** OObject subclass used as cell for the QITableView. */
+class QITableViewCell : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs table-view cell for passed @a pParent. */
+    QITableViewCell(QITableViewRow *pParent)
+        : m_pRow(pParent)
+    {}
+
+    /** Defines the parent @a pRow reference. */
+    void setRow(QITableViewRow *pRow) { m_pRow = pRow; }
+    /** Returns the parent row reference. */
+    QITableViewRow *row() const { return m_pRow; }
+
+    /** Returns the cell text. */
+    virtual QString text() const = 0;
+
+private:
+
+    /** Holds the parent row reference. */
+    QITableViewRow *m_pRow;
+};
+
+
+/** OObject subclass used as row for the QITableView. */
+class QITableViewRow : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs table-view row for passed @a pParent. */
+    QITableViewRow(QITableView *pParent)
+        : m_pTable(pParent)
+    {}
+
+    /** Defines the parent @a pTable reference. */
+    void setTable(QITableView *pTable) { m_pTable = pTable; }
+    /** Returns the parent table reference. */
+    QITableView *table() const { return m_pTable; }
+
+    /** Returns the number of children. */
+    virtual int childCount() const = 0;
+    /** Returns the child item with @a iIndex. */
+    virtual QITableViewCell *childItem(int iIndex) const = 0;
+
+private:
+
+    /** Holds the parent table reference. */
+    QITableView *m_pTable;
+};
+
 
 /** QTableView subclass extending standard functionality. */
 class QITableView : public QTableView
@@ -36,6 +97,11 @@ public:
 
     /** Constructs table-view passing @a pParent to the base-class. */
     QITableView(QWidget *pParent = 0);
+
+    /** Returns the number of children. */
+    virtual int childCount() const { return 0; }
+    /** Returns the child item with @a iIndex. */
+    virtual QITableViewRow *childItem(int iIndex) const { Q_UNUSED(iIndex); return 0; }
 
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();
