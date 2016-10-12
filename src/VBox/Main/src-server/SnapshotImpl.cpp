@@ -3129,7 +3129,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
             {
                 // make sure that the diff image to be deleted has no parent,
                 // even in error cases (where the deparenting may be missing)
-                it->mpSource->i_deparent();
+                if (it->mpSource->i_getParent())
+                    it->mpSource->i_deparent();
                 it->mpSource->uninit();
             }
 
