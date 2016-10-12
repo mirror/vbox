@@ -359,19 +359,21 @@
       alongside your main operating system, VirtualBox needs to integrate
       very tightly into the system.  To do this it installs a "driver"
       module called <computeroutput>vboxdrv</computeroutput> which does
-      a lot of the work. Without this kernel module, you can still use the
+      a lot of that work into the system kernel, which is the part of
+      the operating system which controls your processor and physical
+      hardware. Without this kernel module, you can still use the
       VirtualBox manager to configure virtual machines, but they will not
       start. It also installs network drivers called
       <computeroutput>vboxnetflt</computeroutput> and
       <computeroutput>vboxnetadp</computeroutput> which let virtual machines
-      make more use of your computer's network capabilities.</para>
+      make more use of your computer's network capabilities and are needed
+      for any virtual machine networking beyond the basic "NAT" mode.</para>
 
-      <para>The modules will be built automatically during installation or
-      after kernel updates if your Linux system is prepared for building
-      external kernel modules.</para>
-
-      <para>Most Linux distributions can be set up simply by installing
-      the right packages - normally, these will be the GNU compiler
+      <para>Since distributing driver modules separately from the kernel
+      is not something which Linux supports well, we create the modules
+      on the system where they will be used.  This usually means first
+      installing software packages from the distribution which are needed
+      for the "build" process.  Normally, these will be the GNU compiler
       (GCC), GNU Make (make) and packages containing "header files" for
       your kernel - and making sure that all system updates are
       installed and that the system is running the most up-to-date
