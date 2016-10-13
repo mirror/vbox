@@ -446,24 +446,34 @@ static int rtR0NtInitMp(RTNTSDBOSVER const *pOsVerInfo)
                 ProcNum.Number   = (UCHAR)idxMember;
                 ProcNum.Reserved = 0;
                 ULONG idxCpu = g_pfnrtKeGetProcessorIndexFromNumber(&ProcNum);
-                MY_CHECK_BREAK(idxCpu != INVALID_PROCESSOR_INDEX,
-                               ("IPRT: Fatal: KeGetProcessorIndexFromNumber(%u/%u) failed\n", idxGroup, idxMember));
-                MY_CHECK_BREAK(idxCpu < g_cRtMpNtMaxCpus && idxCpu < RTCPUSET_MAX_CPUS,
-                               ("IPRT: Fatal: idxCpu=%u >= g_cRtMpNtMaxCpu=%u (RTCPUSET_MAX_CPUS=%u)\n",
-                                idxCpu, g_cRtMpNtMaxCpus, RTCPUSET_MAX_CPUS));
-                MY_CHECK_BREAK(idxCpu == idxCpuExpect, ("IPRT: Fatal: idxCpu=%u != idxCpuExpect=%u\n", idxCpu, idxCpuExpect));
+                if (idxCpu != INVALID_PROCESSOR_INDEX)
+                {
+                    MY_CHECK_BREAK(idxCpu < g_cRtMpNtMaxCpus && idxCpu < RTCPUSET_MAX_CPUS,
+                                   ("IPRT: Fatal: idxCpu=%u >= g_cRtMpNtMaxCpu=%u (RTCPUSET_MAX_CPUS=%u)\n",
+                                    idxCpu, g_cRtMpNtMaxCpus, RTCPUSET_MAX_CPUS));
+                    MY_CHECK_BREAK(idxCpu == idxCpuExpect, ("IPRT: Fatal: idxCpu=%u != idxCpuExpect=%u\n", idxCpu, idxCpuExpect));
 
-                ProcNum.Group    = UINT16_MAX;
-                ProcNum.Number   = UINT8_MAX;
-                ProcNum.Reserved = UINT8_MAX;
-                NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(idxCpu, &ProcNum);
-                MY_CHECK_BREAK(NT_SUCCESS(rcNt), ("IPRT: Fatal: KeGetProcessorNumberFromIndex(%u,) -> %#x!\n", idxCpu, rcNt));
-                MY_CHECK_BREAK(ProcNum.Group == idxGroup && ProcNum.Number == idxMember,
-                               ("IPRT: Fatal: KeGetProcessorXxxxFromYyyy roundtrip error for %#x! Group: %u vs %u, Number: %u vs %u\n",
-                                idxCpu, ProcNum.Group, idxGroup, ProcNum.Number, idxMember));
+                    ProcNum.Group    = UINT16_MAX;
+                    ProcNum.Number   = UINT8_MAX;
+                    ProcNum.Reserved = UINT8_MAX;
+                    NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(idxCpu, &ProcNum);
+                    MY_CHECK_BREAK(NT_SUCCESS(rcNt), ("IPRT: Fatal: KeGetProcessorNumberFromIndex(%u,) -> %#x!\n", idxCpu, rcNt));
+                    MY_CHECK_BREAK(ProcNum.Group == idxGroup && ProcNum.Number == idxMember,
+                                   ("IPRT: Fatal: KeGetProcessorXxxxFromYyyy roundtrip error for %#x! Group: %u vs %u, Number: %u vs %u\n",
+                                    idxCpu, ProcNum.Group, idxGroup, ProcNum.Number, idxMember));
 
-                if (pGrpInfo->ActiveProcessorMask & RT_BIT_64(idxMember))
-                    RTCpuSetAddByIndex(&g_rtMpNtCpuSet, idxCpu);
+                    if (pGrpInfo->ActiveProcessorMask & RT_BIT_64(idxMember))
+                        RTCpuSetAddByIndex(&g_rtMpNtCpuSet, idxCpu);
+                }
+                else
+                {
+                    /* W2K8 server gives me a max of 64 logical CPUs, even if the system only has 12,
+                       causing failures here.  Not yet sure how this would work with two CPU groups yet... */
+                    MY_CHECK_BREAK(   idxMember >= pGrpInfo->ActiveProcessorCount
+                                   && !(pGrpInfo->ActiveProcessorMask & RT_BIT_64(idxMember)),
+                                   ("IPRT: Fatal: KeGetProcessorIndexFromNumber(%u/%u) failed! cMax=%u cActive=%u\n",
+                                    idxGroup, idxMember, pGrpInfo->MaximumProcessorCount, pGrpInfo->ActiveProcessorCount));
+                }
             }
         }
         RTMemFree(pInfo);
