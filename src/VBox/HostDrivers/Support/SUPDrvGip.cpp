@@ -705,7 +705,7 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  */
 
 /**
- * Used by supdrvInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
+ * Used by supdrvGipInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
  * to update the TSC frequency related GIP variables.
  *
  * @param   pGip                The GIP.
@@ -756,7 +756,7 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
  * @param   pvUser      Opaque pointer to the device instance data.
  * @param   iTick       The timer tick.
  */
-static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) supdrvGipInitRefineInvariantTscFreqTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip = pDevExt->pGip;
@@ -965,7 +965,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
      */
     rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, RT_NS_1SEC,
                          RTTIMER_FLAGS_CPU(RTMpCpuIdToSetIndex(pDevExt->idCpuInvarTscRefine)),
-                         supdrvInitRefineInvariantTscFreqTimer, pDevExt);
+                         supdrvGipInitRefineInvariantTscFreqTimer, pDevExt);
     if (RT_SUCCESS(rc))
     {
         rc = RTTimerStart(pDevExt->pInvarTscRefineTimer, 2*RT_NS_100MS);
@@ -977,7 +977,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     if (rc == VERR_CPU_OFFLINE || rc == VERR_NOT_SUPPORTED)
     {
         rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, RT_NS_1SEC, RTTIMER_FLAGS_CPU_ANY,
-                             supdrvInitRefineInvariantTscFreqTimer, pDevExt);
+                             supdrvGipInitRefineInvariantTscFreqTimer, pDevExt);
         if (RT_SUCCESS(rc))
         {
             rc = RTTimerStart(pDevExt->pInvarTscRefineTimer, 2*RT_NS_100MS);
