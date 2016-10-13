@@ -35,19 +35,19 @@
   section.</para>
 
   <sect1 id="harddiskcontrollers">
-    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSD</title>
+    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSD, NVMe</title>
 
     <para>In a real PC, hard disks and CD/DVD drives are connected to a device
     called hard disk controller which drives hard disk operation and data
     transfers. VirtualBox can emulate the five most common types of hard disk
     controllers typically found in today's PCs: IDE, SATA (AHCI), SCSI,
-    SAS and USB-based mass storage devices.<footnote>
+    SAS, USB-based and NVMe mass storage devices.<footnote>
         <para>SATA support was added with VirtualBox 1.6; experimental SCSI
         support was added with 2.1 and fully implemented with 2.2. Generally,
         storage attachments were made much more flexible with VirtualBox 3.1;
         see below. Support for the LSI Logic SAS controller was added with
         VirtualBox 3.2; USB mass storage devices are supported since
-        VirtualBox 5.0.</para>
+        VirtualBox 5.0; NVMe controller support was added with VirtualBox 5.1.</para>
       </footnote><itemizedlist>
         <listitem>
           <para><emphasis role="bold">IDE (ATA)</emphasis> controllers are a
@@ -205,8 +205,26 @@
           as virtual storage controller. Each disk attached to the controller
           appears as a dedicated USB device to the guest.</para>
           <warning>
-            <para>Booting from drives attached via USB is not supported as the
+            <para>Booting from drives attached via USB is when EFI is used as the
               BIOS lacks USB support.</para>
+          </warning>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold">Non volatile memory express (NVMe)</emphasis>
+          is a very recent standard which emerged in 2011 connecting non volatile
+          memory (NVM) directly over PCI express to lift the bandwidth limitation
+          of the previously used SATA protocol for SSDs. Unlike other standards
+          the command set is very simple to achieve maximum throughput and is
+          not compatible with ATA or SCSI. Operating systems need to support NVMe
+          devices to make use of them. For example Windows 8.1 added native NVMe
+          support, for Windows 7 native support was added with an update.
+          <footnote>
+            <para>The NVMe controller is part of the extension pack.</para>
+          </footnote></para>
+          <warning>
+            <para>Booting from drives attached via NVMe is only supported when
+            EFI is used as the BIOS lacks the appropriate driver.</para>
           </warning>
         </listitem>
       </itemizedlist></para>
@@ -236,6 +254,11 @@
 
         <listitem>
           <para>eight slots attached to the virtual USB controller, if enabled and
+          supported by the guest operating system.</para>
+        </listitem>
+
+        <listitem>
+          <para>up to 255 slots attached to the NVMe controller, if enabled and
           supported by the guest operating system.</para>
         </listitem>
       </orderedlist></para>
