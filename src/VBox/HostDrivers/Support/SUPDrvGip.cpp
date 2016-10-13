@@ -306,7 +306,6 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
                 if (   ASMIsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
                     && (ASMCpuId_EDX(UINT32_C(0x80000001)) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
                 {
-                    uint32_t const  uGroupedAux = (uint8_t)pGipCpu->iCpuGroupMember | ((uint32_t)pGipCpu->iCpuGroup << 8);
                     uint32_t        uAux;
                     ASMReadTscWithAux(&uAux);
                     if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
@@ -317,13 +316,17 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
                             fSupported |= SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS;
                     }
 
-                    if (   (uAux & UINT16_MAX) == uGroupedAux
-                        && pGipCpu->iCpuGroupMember <= UINT8_MAX)
+                    if (pGipCpu)
                     {
-                        ASMNopPause();
-                        ASMReadTscWithAux(&uAux);
-                        if ((uAux & UINT16_MAX) == uGroupedAux)
-                            fSupported |= SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL;
+                        uint32_t const  uGroupedAux = (uint8_t)pGipCpu->iCpuGroupMember | ((uint32_t)pGipCpu->iCpuGroup << 8);
+                        if (   (uAux & UINT16_MAX) == uGroupedAux
+                            && pGipCpu->iCpuGroupMember <= UINT8_MAX)
+                        {
+                            ASMNopPause();
+                            ASMReadTscWithAux(&uAux);
+                            if ((uAux & UINT16_MAX) == uGroupedAux)
+                                fSupported |= SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL;
+                        }
                     }
                 }
             }
