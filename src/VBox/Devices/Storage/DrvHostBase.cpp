@@ -175,7 +175,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
                 RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
                 0, 0, 0, 0, 0
             };
-            rc = DRVHostBaseScsiCmd(pThis, abCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
+            rc = drvHostBaseScsiCmdOs(pThis, abCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
 
             off    += cbRead32;
             cbRead -= cbRead32;
@@ -676,7 +676,7 @@ static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDS
                     SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, false, 0,
                     0,0,0,0,0,0,0,0,0,0
                 };
-                DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
+                drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
             }
             return VINF_SUCCESS;
         }
@@ -1147,7 +1147,7 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
         SCSI_READ_CAPACITY, 0, 0, 0, 0, 0, 0,
         0,0,0,0,0,0,0,0,0
     };
-    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_FROM_DEVICE, &Buf, &cbBuf, NULL, 0, 0);
+    int rc = drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_FROM_DEVICE, &Buf, &cbBuf, NULL, 0, 0);
     if (RT_SUCCESS(rc))
     {
         Assert(cbBuf == sizeof(Buf));
@@ -1208,204 +1208,6 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
     return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
 #endif
 }
-
-
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-/**
- * Execute a SCSI command.
- *
- * @param pThis             The instance data.
- * @param pbCmd             Pointer to the SCSI command.
- * @param cbCmd             The size of the SCSI command.
- * @param enmTxDir          The transfer direction.
- * @param pvBuf             The buffer. Can be NULL if enmTxDir is PDMMEDIATXDIR_NONE.
- * @param pcbBuf            Where to get the buffer size from and put the actual transfer size. Can be NULL.
- * @param pbSense           Where to put the sense data. Can be NULL.
- * @param cbSense           Size of the sense data buffer.
- * @param cTimeoutMillies   The timeout. 0 mean the default timeout.
- *
- * @returns VINF_SUCCESS on success (no sense code).
- * @returns VERR_UNRESOLVED_ERROR if sense code is present.
- * @returns Some other VBox status code on failures without sense code.
- *
- * @todo Fix VERR_UNRESOLVED_ERROR abuse.
- */
-DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
-                                     void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies)
-{
-    /*
-     * Minimal input validation.
-     */
-    Assert(enmTxDir == PDMMEDIATXDIR_NONE || enmTxDir == PDMMEDIATXDIR_FROM_DEVICE || enmTxDir == PDMMEDIATXDIR_TO_DEVICE);
-    Assert(!pvBuf || pcbBuf);
-    Assert(pvBuf || enmTxDir == PDMMEDIATXDIR_NONE);
-    Assert(pbSense || !cbSense);
-    AssertPtr(pbCmd);
-    Assert(cbCmd <= 16 && cbCmd >= 1);
-    const uint32_t cbBuf = pcbBuf ? *pcbBuf : 0;
-    if (pcbBuf)
-        *pcbBuf = 0;
-
-# ifdef RT_OS_DARWIN
-    Assert(pThis->ppScsiTaskDI);
-
-    int rc = VERR_GENERAL_FAILURE;
-    SCSITaskInterface **ppScsiTaskI = (*pThis->ppScsiTaskDI)->CreateSCSITask(pThis->ppScsiTaskDI);
-    if (!ppScsiTaskI)
-        return VERR_NO_MEMORY;
-    do
-    {
-        /* Setup the scsi command. */
-        SCSICommandDescriptorBlock cdb = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-        memcpy(&cdb[0], pbCmd, cbCmd);
-        IOReturn irc = (*ppScsiTaskI)->SetCommandDescriptorBlock(ppScsiTaskI, cdb, cbCmd);
-        AssertBreak(irc == kIOReturnSuccess);
-
-        /* Setup the buffer. */
-        if (enmTxDir == PDMMEDIATXDIR_NONE)
-            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, NULL, 0, 0, kSCSIDataTransfer_NoDataTransfer);
-        else
-        {
-            IOVirtualRange Range = { (IOVirtualAddress)pvBuf, cbBuf };
-            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, &Range, 1, cbBuf,
-                                                          enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
-                                                          ? kSCSIDataTransfer_FromTargetToInitiator
-                                                          : kSCSIDataTransfer_FromInitiatorToTarget);
-        }
-        AssertBreak(irc == kIOReturnSuccess);
-
-        /* Set the timeout. */
-        irc = (*ppScsiTaskI)->SetTimeoutDuration(ppScsiTaskI, cTimeoutMillies ? cTimeoutMillies : 30000 /*ms*/);
-        AssertBreak(irc == kIOReturnSuccess);
-
-        /* Execute the command and get the response. */
-        SCSI_Sense_Data SenseData = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-        SCSIServiceResponse     ServiceResponse = kSCSIServiceResponse_Request_In_Process;
-        SCSITaskStatus TaskStatus = kSCSITaskStatus_GOOD;
-        UInt64 cbReturned = 0;
-        irc = (*ppScsiTaskI)->ExecuteTaskSync(ppScsiTaskI, &SenseData, &TaskStatus, &cbReturned);
-        AssertBreak(irc == kIOReturnSuccess);
-        if (pcbBuf)
-            *pcbBuf = (int32_t)cbReturned;
-
-        irc = (*ppScsiTaskI)->GetSCSIServiceResponse(ppScsiTaskI, &ServiceResponse);
-        AssertBreak(irc == kIOReturnSuccess);
-        AssertBreak(ServiceResponse == kSCSIServiceResponse_TASK_COMPLETE);
-
-        if (TaskStatus == kSCSITaskStatus_GOOD)
-            rc = VINF_SUCCESS;
-        else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
-                 && pbSense)
-        {
-            memset(pbSense, 0, cbSense); /* lazy */
-            memcpy(pbSense, &SenseData, RT_MIN(sizeof(SenseData), cbSense));
-            rc = VERR_UNRESOLVED_ERROR;
-        }
-        /** @todo convert sense codes when caller doesn't wish to do this himself. */
-        /*else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
-                 && SenseData.ADDITIONAL_SENSE_CODE == 0x3A)
-            rc = VERR_MEDIA_NOT_PRESENT; */
-        else
-        {
-            rc = enmTxDir == PDMMEDIATXDIR_NONE
-               ? VERR_DEV_IO_ERROR
-               : enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
-               ? VERR_READ_ERROR
-               : VERR_WRITE_ERROR;
-            if (pThis->cLogRelErrors++ < 10)
-                LogRel(("DVD scsi error: cmd={%.*Rhxs} TaskStatus=%#x key=%#x ASC=%#x ASCQ=%#x (%Rrc)\n",
-                        cbCmd, pbCmd, TaskStatus, SenseData.SENSE_KEY, SenseData.ADDITIONAL_SENSE_CODE,
-                        SenseData.ADDITIONAL_SENSE_CODE_QUALIFIER, rc));
-        }
-    } while (0);
-
-    (*ppScsiTaskI)->Release(ppScsiTaskI);
-
-# elif defined(RT_OS_FREEBSD)
-    int rc = VINF_SUCCESS;
-    int rcBSD = 0;
-    union ccb DeviceCCB;
-    union ccb *pDeviceCCB = &DeviceCCB;
-    u_int32_t fFlags;
-
-    memset(pDeviceCCB, 0, sizeof(DeviceCCB));
-    pDeviceCCB->ccb_h.path_id   = pThis->ScsiBus;
-    pDeviceCCB->ccb_h.target_id = pThis->ScsiTargetID;
-    pDeviceCCB->ccb_h.target_lun = pThis->ScsiLunID;
-
-    /* The SCSI INQUIRY command can't be passed through directly. */
-    if (pbCmd[0] == SCSI_INQUIRY)
-    {
-        pDeviceCCB->ccb_h.func_code = XPT_GDEV_TYPE;
-
-        rcBSD = ioctl(RTFileToNative(pThis->hFileDevice), CAMIOCOMMAND, pDeviceCCB);
-        if (!rcBSD)
-        {
-            uint32_t cbCopy =   cbBuf < sizeof(struct scsi_inquiry_data)
-                              ? cbBuf
-                              : sizeof(struct scsi_inquiry_data);;
-            memcpy(pvBuf, &pDeviceCCB->cgd.inq_data, cbCopy);
-            memset(pbSense, 0, cbSense);
-
-            if (pcbBuf)
-                *pcbBuf = cbCopy;
-        }
-        else
-            rc = RTErrConvertFromErrno(errno);
-    }
-    else
-    {
-        /* Copy the CDB. */
-        memcpy(&pDeviceCCB->csio.cdb_io.cdb_bytes, pbCmd, cbCmd);
-
-        /* Set direction. */
-        if (enmTxDir == PDMMEDIATXDIR_NONE)
-            fFlags = CAM_DIR_NONE;
-        else if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
-            fFlags = CAM_DIR_IN;
-        else
-            fFlags = CAM_DIR_OUT;
-
-        fFlags |= CAM_DEV_QFRZDIS;
-
-        cam_fill_csio(&pDeviceCCB->csio, 1, NULL, fFlags, MSG_SIMPLE_Q_TAG,
-                      (u_int8_t *)pvBuf, cbBuf, cbSense, cbCmd,
-                      cTimeoutMillies ? cTimeoutMillies : 30000/* timeout */);
-
-        /* Send command */
-        rcBSD = ioctl(RTFileToNative(pThis->hFileDevice), CAMIOCOMMAND, pDeviceCCB);
-        if (!rcBSD)
-        {
-            switch (pDeviceCCB->ccb_h.status & CAM_STATUS_MASK)
-            {
-                case CAM_REQ_CMP:
-                    rc = VINF_SUCCESS;
-                    break;
-                case CAM_SEL_TIMEOUT:
-                    rc = VERR_DEV_IO_ERROR;
-                    break;
-                case CAM_CMD_TIMEOUT:
-                    rc = VERR_TIMEOUT;
-                    break;
-                default:
-                    rc = VERR_DEV_IO_ERROR;
-            }
-
-            if (pcbBuf)
-                *pcbBuf = cbBuf - pDeviceCCB->csio.resid;
-
-            if (pbSense)
-                memcpy(pbSense, &pDeviceCCB->csio.sense_data,
-                       cbSense - pDeviceCCB->csio.sense_resid);
-        }
-        else
-            rc = RTErrConvertFromErrno(errno);
-    }
-# endif
-
-    return rc;
-}
-#endif
 
 
 /**

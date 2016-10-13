@@ -151,7 +151,7 @@ static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, b
                 SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
                 0,0,0,0,0,0,0,0,0,0
             };
-            rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
+            rc = drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
             rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROMEJECT, 0);
@@ -241,7 +241,7 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
         SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, fLock, 0,
         0,0,0,0,0,0,0,0,0,0
     };
-    int rc = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
+    int rc = drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
 
 #elif defined(RT_OS_LINUX)
     int rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_LOCKDOOR, (int)fLock);
@@ -335,7 +335,7 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     bool fMediaPresent = false;
     uint8_t abCmd[16] = { SCSI_TEST_UNIT_READY, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
     uint8_t abSense[32];
-    int rc2 = DRVHostBaseScsiCmd(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
+    int rc2 = drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
     if (RT_SUCCESS(rc2))
         fMediaPresent = true;
     else if (   rc2 == VERR_UNRESOLVED_ERROR
@@ -356,6 +356,9 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
 
 #elif defined(RT_OS_LINUX)
     bool fMediaPresent = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
+    bool fMediaChanged = false;
+    if (pThis->fMediaPresent != fMediaPresent)
+        fMediaChanged = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
 
 #elif defined(RT_OS_SOLARIS)
     bool fMediaPresent = false;
@@ -393,13 +396,6 @@ static DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
         /*
          * Poll for media change.
          */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-        /* taken care of above. */
-#elif defined(RT_OS_LINUX)
-        bool fMediaChanged = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
-#else
-# error "Unsupported platform."
-#endif
         if (fMediaChanged)
         {
             LogFlow(("drvHostDVDMediaThread: Media changed!\n"));
@@ -431,7 +427,7 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t 
      */
     if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
         memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
-    rc = DRVHostBaseScsiCmd(pThis, pbCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
+    rc = drvHostBaseScsiCmdOs(pThis, pbCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
     if (rc == VERR_UNRESOLVED_ERROR)
         /* sense information set */
         rc = VERR_DEV_IO_ERROR;

@@ -18,7 +18,13 @@
 #ifndef __HostDrvBase_h__
 #define __HostDrvBase_h__
 
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/critsect.h>
+#include <iprt/log.h>
 #include <VBox/cdefs.h>
+#include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/pdmstorageifs.h>
 
 RT_C_DECLS_BEGIN
 
@@ -183,7 +189,7 @@ int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
 void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
 DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns);
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-DECLCALLBACK(int) DRVHostBaseScsiCmd(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
+DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
                                      void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies);
 #endif
 
