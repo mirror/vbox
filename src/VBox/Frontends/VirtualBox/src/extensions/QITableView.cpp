@@ -350,7 +350,31 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITableView::child(int iIndex) 
     /* Make sure table still alive: */
     AssertPtrReturn(table(), 0);
     /* Make sure index is valid: */
-    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+    AssertReturn(iIndex >= 0, 0);
+    if (iIndex >= childCount())
+    {
+        // WORKAROUND:
+        // Normally I would assert here, but Qt5 accessibility code has
+        // a hard-coded architecture for a table-views which we do not like
+        // but have to live with and this architecture enumerates cells
+        // including header column and row, so Qt5 can try to address
+        // our interface with index which surely out of bounds by our laws.
+        // So let's assume that's exactly such case and try to enumerate
+        // table cells including header column and row.
+        // printf("Invalid index: %d\n", iIndex);
+
+        // Split delimeter is overall column count, including vertical header:
+        const int iColumnCount = table()->model()->columnCount() + 1 /* v_header */;
+        // Real index is zero-based, incoming is 1-based:
+        const int iRealIndex = iIndex - 1;
+        // Real row index, excluding horizontal header:
+        const int iRealRowIndex = iRealIndex / iColumnCount - 1 /* h_header */;
+        // printf("Actual row index: %d\n", iRealRowIndex);
+
+        // Return what we found:
+        return iRealRowIndex >= 0 && iRealRowIndex < childCount() ?
+               QAccessible::queryAccessibleInterface(table()->childItem(iRealRowIndex)) : 0;
+    }
 
     /* Return the child with the passed iIndex: */
     return QAccessible::queryAccessibleInterface(table()->childItem(iIndex));
