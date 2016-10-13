@@ -45,7 +45,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     Assert(pvBuf || enmTxDir == PDMMEDIATXDIR_NONE);
     Assert(pbSense || !cbSense);
     AssertPtr(pbCmd);
-    Assert(cbCmd <= 16 && cbCmd >= 1);
+    Assert(cbCmd <= 16 && cbCmd >= 1); RT_NOREF(cbCmd);
 
     int rc = VERR_GENERAL_FAILURE;
     int direction;
