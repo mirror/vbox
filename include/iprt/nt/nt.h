@@ -182,6 +182,12 @@
 /*
  * Use ntifs.h and wdm.h.
  */
+# if _MSC_VER >= 1200 /* Fix/workaround for KeInitializeSpinLock visibility issue on AMD64. */
+#  define FORCEINLINE static __forceinline
+# else
+#  define FORCEINLINE static __inline
+# endif
+
 # pragma warning(push)
 # ifdef RT_ARCH_X86
 #  define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
