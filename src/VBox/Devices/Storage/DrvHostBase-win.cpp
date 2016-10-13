@@ -20,7 +20,12 @@
 #define _interlockedbittestandreset    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset
 #define _interlockedbittestandset64    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset64
 #define _interlockedbittestandreset64  they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset64
+
+#define WIN32_NO_STATUS
 #include <iprt/win/windows.h>
+#include <dbt.h>
+#undef WIN32_NO_STATUS
+
 #include <winioctl.h>
 #include <ntddscsi.h>
 #pragma warning(default : 4163)
@@ -28,6 +33,48 @@
 #undef _interlockedbittestandreset
 #undef _interlockedbittestandset64
 #undef _interlockedbittestandreset64
+#include <ntstatus.h>
+
+/* from ntdef.h */
+typedef LONG NTSTATUS;
+
+/* from ntddk.h */
+typedef struct _IO_STATUS_BLOCK {
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    };
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+
+/* from ntinternals.com */
+typedef enum _FS_INFORMATION_CLASS {
+    FileFsVolumeInformation=1,
+    FileFsLabelInformation,
+    FileFsSizeInformation,
+    FileFsDeviceInformation,
+    FileFsAttributeInformation,
+    FileFsControlInformation,
+    FileFsFullSizeInformation,
+    FileFsObjectIdInformation,
+    FileFsMaximumInformation
+} FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
+
+typedef struct _FILE_FS_SIZE_INFORMATION {
+    LARGE_INTEGER   TotalAllocationUnits;
+    LARGE_INTEGER   AvailableAllocationUnits;
+    ULONG           SectorsPerAllocationUnit;
+    ULONG           BytesPerSector;
+} FILE_FS_SIZE_INFORMATION, *PFILE_FS_SIZE_INFORMATION;
+
+extern "C"
+NTSTATUS __stdcall NtQueryVolumeInformationFile(
+        /*IN*/ HANDLE               FileHandle,
+        /*OUT*/ PIO_STATUS_BLOCK    IoStatusBlock,
+        /*OUT*/ PVOID               FileSystemInformation,
+        /*IN*/ ULONG                Length,
+        /*IN*/ FS_INFORMATION_CLASS FileSystemInformationClass );
 
 #include <iprt/file.h>
 #include <VBox/scsi.h>
