@@ -31,6 +31,7 @@
 
 extern "C" char *getfullblkname(char *);
 
+#include <iprt/file.h>
 #include "DrvHostBase.h"
 
 #ifdef VBOX_WITH_SUID_WRAPPER
