@@ -52,9 +52,14 @@ enum UIHotKeyColumnIndex
 };
 
 
-/* Global settings / Input page / Cache / Shortcut cache item: */
+/** Global settings / Input page / Cache / Shortcut cache item. */
 struct UIShortcutCacheItem
 {
+    /** Constructs table row on the basis of passed arguments.
+      * @param  strKey              Brings the unique key inentifying held sequence.
+      * @param  strDescription      Brings the deescription for the held sequence.
+      * @param  strCurrentSequence  Brings the current held sequence.
+      * @param  strDefaultSequence  Brings the default held sequence. */
     UIShortcutCacheItem(const QString &strKey,
                         const QString &strDescription,
                         const QString &strCurrentSequence,
@@ -65,6 +70,7 @@ struct UIShortcutCacheItem
         , defaultSequence(strDefaultSequence)
     {}
 
+    /** Constructs table row on the basis of @a other one. */
     UIShortcutCacheItem(const UIShortcutCacheItem &other)
         : key(other.key)
         , description(other.description)
@@ -72,57 +78,77 @@ struct UIShortcutCacheItem
         , defaultSequence(other.defaultSequence)
     {}
 
-    UIShortcutCacheItem& operator=(const UIShortcutCacheItem &other)
+    /** Copies a table row from @a other one. */
+    UIShortcutCacheItem &operator=(const UIShortcutCacheItem &other)
     {
+        /* Reassign variables: */
         key = other.key;
         description = other.description;
         currentSequence = other.currentSequence;
         defaultSequence = other.defaultSequence;
+
+        /* Return this: */
         return *this;
     }
 
+    /** Returns whether this row equals to @a other. */
     bool operator==(const UIShortcutCacheItem &other) const
     {
+        /* Compare by the key only: */
         return key == other.key;
     }
 
+    /** Holds the key. */
     QString key;
+    /** Holds the description. */
     QString description;
+    /** Holds the current sequence. */
     QString currentSequence;
+    /** Holds the default sequence. */
     QString defaultSequence;
 };
 
-/* Global settings / Input page / Cache / Shortcut cache: */
+
+/** Global settings / Input page / Cache / Shortcut cache. */
 typedef QList<UIShortcutCacheItem> UIShortcutCache;
 
-/* Global settings / Input page / Cache: */
+
+/** Global settings / Input page / Cache. */
 class UISettingsCacheGlobalInput : public QObject
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs cache passing @a pParent to the base-class. */
     UISettingsCacheGlobalInput(QObject *pParent)
         : QObject(pParent)
         , m_fAutoCapture(false)
     {}
 
+    /** Holds the shortcut cache. */
     UIShortcutCache m_shortcuts;
+
+    /** Holds whether the keyboard auto-capture is enabled. */
     bool m_fAutoCapture;
 };
 
 
-/* Global settings / Input page / Cache / Shortcut cache item sort functor: */
+/** Global settings / Input page / Cache / Shortcut cache item sort functor. */
 class UIShortcutCacheItemFunctor
 {
 public:
 
+    /** Constructs cache sorting functor.
+      * @param  iColumn  Brings the column sorting should be done according to.
+      * @param  m_order  Brings the sorting order to be applied. */
     UIShortcutCacheItemFunctor(int iColumn, Qt::SortOrder order)
         : m_iColumn(iColumn)
         , m_order(order)
-    {
-    }
+    {}
 
+    /** Returns whether the @a item1 is more/less than the @a item2.
+      * @note  Order depends on the one set through constructor, stored in m_order. */
     bool operator()(const UIShortcutCacheItem &item1, const UIShortcutCacheItem &item2)
     {
         switch (m_iColumn)
@@ -138,7 +164,9 @@ public:
 
 private:
 
+    /** Holds the column sorting should be done according to. */
     int m_iColumn;
+    /** Holds the sorting order to be applied. */
     Qt::SortOrder m_order;
 };
 
