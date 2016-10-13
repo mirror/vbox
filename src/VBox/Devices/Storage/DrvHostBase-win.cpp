@@ -15,15 +15,20 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
-#include <mach/mach.h>
-#include <Carbon/Carbon.h>
-#include <IOKit/IOKitLib.h>
-#include <IOKit/storage/IOStorageDeviceCharacteristics.h>
-#include <IOKit/scsi/SCSITaskLib.h>
-#include <IOKit/scsi/SCSICommandOperationCodes.h>
-#include <IOKit/IOBSD.h>
-#include <DiskArbitration/DiskArbitration.h>
-#include <mach/mach_error.h>
+#pragma warning(disable : 4163)
+#define _interlockedbittestandset      they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset
+#define _interlockedbittestandreset    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset
+#define _interlockedbittestandset64    they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandset64
+#define _interlockedbittestandreset64  they_messed_it_up_in_winnt_h_this_time_sigh__interlockedbittestandreset64
+#include <iprt/win/windows.h>
+#include <winioctl.h>
+#include <ntddscsi.h>
+#pragma warning(default : 4163)
+#undef _interlockedbittestandset
+#undef _interlockedbittestandreset
+#undef _interlockedbittestandset64
+#undef _interlockedbittestandreset64
+
 #include <VBox/scsi.h>
 
 #include "DrvHostBase.h"
