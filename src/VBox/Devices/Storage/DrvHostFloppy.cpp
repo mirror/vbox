@@ -27,16 +27,7 @@
 # include <linux/fd.h>
 # include <sys/fcntl.h>
 # include <errno.h>
-
-# elif defined(RT_OS_WINDOWS)
-# include <iprt/win/windows.h>
-# include <dbt.h>
-
-#elif defined(RT_OS_L4)
-
-#else /* !RT_OS_WINDOWS nor RT_OS_LINUX nor RT_OS_L4 */
-# error "Unsupported Platform."
-#endif /* !RT_OS_WINDOWS nor RT_OS_LINUX nor RT_OS_L4 */
+#endif
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -63,74 +54,6 @@ typedef struct DRVHOSTFLOPPY
     bool            fPrevDiskIn;
 
 } DRVHOSTFLOPPY, *PDRVHOSTFLOPPY;
-
-
-
-#ifdef RT_OS_WINDOWS
-/**
- * Get media size - needs a special IOCTL.
- *
- * @param   pThis   The instance data.
- */
-static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
-{
-    DISK_GEOMETRY   geom;
-    DWORD           cbBytesReturned;
-    int             rc;
-    int             cbSectors;
-
-    memset(&geom, 0, sizeof(geom));
-    rc = DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_DISK_GET_DRIVE_GEOMETRY,
-                         NULL, 0, &geom, sizeof(geom), &cbBytesReturned,  NULL);
-    if (rc) {
-        cbSectors = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack;
-        *pcb = cbSectors * geom.BytesPerSector;
-        rc = VINF_SUCCESS;
-    }
-    else
-    {
-        DWORD   dwLastError;
-
-        dwLastError = GetLastError();
-        rc = RTErrConvertFromWin32(dwLastError);
-        Log(("DrvHostFloppy: IOCTL_DISK_GET_DRIVE_GEOMETRY(%s) failed, LastError=%d rc=%Rrc\n",
-             pThis->pszDevice, dwLastError, rc));
-        return rc;
-    }
-
-    return rc;
-}
-#endif /* RT_OS_WINDOWS */
-
-#ifdef RT_OS_LINUX
-/**
- * Get media size and do change processing.
- *
- * @param   pThis   The instance data.
- */
-static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
-{
-    int rc = ioctl(RTFileToNative(pThis->hFileDevice), FDFLUSH);
-    if (rc)
-    {
-        rc = RTErrConvertFromErrno (errno);
-        Log(("DrvHostFloppy: FDFLUSH ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
-        return rc;
-    }
-
-    floppy_drive_struct DrvStat;
-    rc = ioctl(RTFileToNative(pThis->hFileDevice), FDGETDRVSTAT, &DrvStat);
-    if (rc)
-    {
-        rc = RTErrConvertFromErrno(errno);
-        Log(("DrvHostFloppy: FDGETDRVSTAT ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
-        return rc;
-    }
-    pThis->fReadOnly = !(DrvStat.flags & FD_DISK_WRITABLE);
-
-    return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
-}
-#endif /* RT_OS_LINUX */
 
 
 #ifdef RT_OS_LINUX
@@ -200,12 +123,8 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
             /*
              * Override stuff.
              */
-#ifdef RT_OS_WINDOWS
-            pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
-#endif
 #ifdef RT_OS_LINUX
             pThis->Base.pfnPoll         = drvHostFloppyPoll;
-            pThis->Base.pfnGetMediaSize = drvHostFloppyGetMediaSize;
 #endif
 
             /*

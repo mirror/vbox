@@ -305,28 +305,6 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 }
 
 
-
-#ifdef RT_OS_LINUX
-/**
- * Get the media size.
- *
- * @returns VBox status code.
- * @param   pThis   The instance data.
- * @param   pcb     Where to store the size.
- */
-static DECLCALLBACK(int) drvHostDvdGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
-{
-    /*
-     * Query the media size.
-     */
-    /* Clear the media-changed-since-last-call-thingy just to be on the safe side. */
-    ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT);
-    return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
-
-}
-#endif /* RT_OS_LINUX */
-
-
 #ifdef USE_MEDIA_POLLING
 /**
  * Do media change polling.
@@ -531,9 +509,6 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                 pThis->pfnPoll       = drvHostDvdPoll;
             else
                 pThis->pfnPoll       = NULL;
-#endif
-#ifdef RT_OS_LINUX
-            pThis->pfnGetMediaSize   = drvHostDvdGetMediaSize;
 #endif
 
             /*
