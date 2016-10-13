@@ -30,58 +30,9 @@
 /* Forward declartions: */
 class QTabWidget;
 class QLineEdit;
+class UISettingsCacheGlobalInput;
 class UIHotKeyTableModel;
 class UIHotKeyTable;
-
-/* Global settings / Input page / Cache / Shortcut cache item: */
-struct UIShortcutCacheItem
-{
-    UIShortcutCacheItem(const QString &strKey,
-                        const QString &strDescription,
-                        const QString &strCurrentSequence,
-                        const QString &strDefaultSequence)
-        : key(strKey)
-        , description(strDescription)
-        , currentSequence(strCurrentSequence)
-        , defaultSequence(strDefaultSequence)
-    {}
-
-    UIShortcutCacheItem(const UIShortcutCacheItem &other)
-        : key(other.key)
-        , description(other.description)
-        , currentSequence(other.currentSequence)
-        , defaultSequence(other.defaultSequence)
-    {}
-
-    UIShortcutCacheItem& operator=(const UIShortcutCacheItem &other)
-    {
-        key = other.key;
-        description = other.description;
-        currentSequence = other.currentSequence;
-        defaultSequence = other.defaultSequence;
-        return *this;
-    }
-
-    bool operator==(const UIShortcutCacheItem &other) const
-    {
-        return key == other.key;
-    }
-
-    QString key;
-    QString description;
-    QString currentSequence;
-    QString defaultSequence;
-};
-
-/* Global settings / Input page / Cache / Shortcut cache: */
-typedef QList<UIShortcutCacheItem> UIShortcutCache;
-
-/* Global settings / Input page / Cache: */
-struct UISettingsCacheGlobalInput
-{
-    UIShortcutCache m_shortcuts;
-    bool m_fAutoCapture;
-};
 
 /* Global settings / Input page: */
 class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSettingsInput
@@ -130,8 +81,6 @@ private:
     /* Helper: Prepare stuff: */
     void prepareValidation();
 
-    /* Cache: */
-    UISettingsCacheGlobalInput m_cache;
     QTabWidget *m_pTabWidget;
     QLineEdit *m_pSelectorFilterEditor;
     UIHotKeyTableModel *m_pSelectorModel;
@@ -139,6 +88,9 @@ private:
     QLineEdit *m_pMachineFilterEditor;
     UIHotKeyTableModel *m_pMachineModel;
     UIHotKeyTable *m_pMachineTable;
+
+    /** Holds the cache instance. */
+    UISettingsCacheGlobalInput *m_pCache;
 };
 
 #endif // __UIGlobalSettingsInput_h__
