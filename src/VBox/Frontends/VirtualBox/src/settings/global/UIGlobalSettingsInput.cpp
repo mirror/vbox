@@ -140,6 +140,16 @@ public:
         , m_fAutoCapture(false)
     {}
 
+    /** Returns the shortcuts cache [full access]. */
+    UIShortcutCache &shortcuts() { return m_shortcuts; }
+
+    /** Defines whether the keyboard auto-capture is @a fEnabled. */
+    void setAutoCapture(bool fEnabled) { m_fAutoCapture = fEnabled; }
+    /** Returns whether the keyboard auto-capture is enabled. */
+    bool autoCapture() const { return m_fAutoCapture; }
+
+private:
+
     /** Holds the shortcut cache. */
     UIShortcutCache m_shortcuts;
 
@@ -736,19 +746,19 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Load host-combo shortcut to cache: */
-    m_pCache->m_shortcuts << UIShortcutCacheItem(UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
+    m_pCache->shortcuts() << UIShortcutCacheItem(UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
     /* Load all other shortcuts to cache: */
     const QMap<QString, UIShortcut>& shortcuts = gShortcutPool->shortcuts();
     const QList<QString> shortcutKeys = shortcuts.keys();
     foreach (const QString &strShortcutKey, shortcutKeys)
     {
         const UIShortcut &shortcut = shortcuts[strShortcutKey];
-        m_pCache->m_shortcuts << UIShortcutCacheItem(strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
-                                                   shortcut.sequence().toString(QKeySequence::NativeText),
-                                                   shortcut.defaultSequence().toString(QKeySequence::NativeText));
+        m_pCache->shortcuts() << UIShortcutCacheItem(strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
+                                                     shortcut.sequence().toString(QKeySequence::NativeText),
+                                                     shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
     /* Load other things to cache: */
-    m_pCache->m_fAutoCapture = m_settings.autoCapture();
+    m_pCache->setAutoCapture(m_settings.autoCapture());
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -759,9 +769,9 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsInput::getFromCache()
 {
     /* Fetch from cache: */
-    m_pSelectorModel->load(m_pCache->m_shortcuts);
-    m_pMachineModel->load(m_pCache->m_shortcuts);
-    m_pEnableAutoGrabCheckbox->setChecked(m_pCache->m_fAutoCapture);
+    m_pSelectorModel->load(m_pCache->shortcuts());
+    m_pMachineModel->load(m_pCache->shortcuts());
+    m_pEnableAutoGrabCheckbox->setChecked(m_pCache->autoCapture());
 
     /* Revalidate: */
     revalidate();
@@ -772,9 +782,9 @@ void UIGlobalSettingsInput::getFromCache()
 void UIGlobalSettingsInput::putToCache()
 {
     /* Upload to cache: */
-    m_pSelectorModel->save(m_pCache->m_shortcuts);
-    m_pMachineModel->save(m_pCache->m_shortcuts);
-    m_pCache->m_fAutoCapture = m_pEnableAutoGrabCheckbox->isChecked();
+    m_pSelectorModel->save(m_pCache->shortcuts());
+    m_pMachineModel->save(m_pCache->shortcuts());
+    m_pCache->setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -786,17 +796,17 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
 
     /* Save host-combo shortcut from cache: */
     UIShortcutCacheItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
-    int iIndexOfHostComboItem = m_pCache->m_shortcuts.indexOf(fakeHostComboItem);
+    int iIndexOfHostComboItem = m_pCache->shortcuts().indexOf(fakeHostComboItem);
     if (iIndexOfHostComboItem != -1)
-        m_settings.setHostCombo(m_pCache->m_shortcuts[iIndexOfHostComboItem].currentSequence());
+        m_settings.setHostCombo(m_pCache->shortcuts()[iIndexOfHostComboItem].currentSequence());
     /* Iterate over cached shortcuts: */
     QMap<QString, QString> sequences;
-    foreach (const UIShortcutCacheItem &item, m_pCache->m_shortcuts)
+    foreach (const UIShortcutCacheItem &item, m_pCache->shortcuts())
         sequences.insert(item.key(), item.currentSequence());
     /* Save shortcut sequences from cache: */
     gShortcutPool->setOverrides(sequences);
     /* Save other things from cache: */
-    m_settings.setAutoCapture(m_pCache->m_fAutoCapture);
+    m_settings.setAutoCapture(m_pCache->autoCapture());
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
