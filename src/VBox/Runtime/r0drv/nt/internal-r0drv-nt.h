@@ -52,34 +52,49 @@ typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIMEPRECISE)(PLARGE_INTEGER pTime);
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-extern RTCPUSET                         g_rtMpNtCpuSet;
-extern PFNMYEXSETTIMERRESOLUTION        g_pfnrtNtExSetTimerResolution;
-extern PFNMYKEFLUSHQUEUEDDPCS           g_pfnrtNtKeFlushQueuedDpcs;
-extern PFNHALREQUESTIPI_W7PLUS          g_pfnrtHalRequestIpiW7Plus;
-extern PFNHALREQUESTIPI_PRE_W7          g_pfnrtHalRequestIpiPreW7;
-extern PFNHALSENDSOFTWAREINTERRUPT      g_pfnrtNtHalSendSoftwareInterrupt;
-extern PFNRTSENDIPI                     g_pfnrtMpPokeCpuWorker;
-extern PFNRTKEIPIGENERICCALL            g_pfnrtKeIpiGenericCall;
-extern PFNKEINITIALIZEAFFINITYEX        g_pfnrtKeInitializeAffinityEx;
-extern PFNKEADDPROCESSORAFFINITYEX      g_pfnrtKeAddProcessorAffinityEx;
-extern PFNKEGETPROCESSORINDEXFROMNUMBER g_pfnrtKeGetProcessorIndexFromNumber;
+extern RTCPUSET                                g_rtMpNtCpuSet;
+extern uint32_t                                g_cRtMpNtMaxGroups;
+extern uint32_t                                g_cRtMpNtMaxCpus;
 
-extern PFNRTRTLGETVERSION               g_pfnrtRtlGetVersion;
+extern PFNMYEXSETTIMERRESOLUTION               g_pfnrtNtExSetTimerResolution;
+extern PFNMYKEFLUSHQUEUEDDPCS                  g_pfnrtNtKeFlushQueuedDpcs;
+extern PFNHALREQUESTIPI_W7PLUS                 g_pfnrtHalRequestIpiW7Plus;
+extern PFNHALREQUESTIPI_PRE_W7                 g_pfnrtHalRequestIpiPreW7;
+extern PFNHALSENDSOFTWAREINTERRUPT             g_pfnrtNtHalSendSoftwareInterrupt;
+extern PFNRTSENDIPI                            g_pfnrtMpPokeCpuWorker;
+extern PFNRTKEIPIGENERICCALL                   g_pfnrtKeIpiGenericCall;
+extern PFNKESETTARGETPROCESSORDPCEX            g_pfnrtKeSetTargetProcessorDpcEx;
+extern PFNKEINITIALIZEAFFINITYEX               g_pfnrtKeInitializeAffinityEx;
+extern PFNKEADDPROCESSORAFFINITYEX             g_pfnrtKeAddProcessorAffinityEx;
+extern PFNKEGETPROCESSORINDEXFROMNUMBER        g_pfnrtKeGetProcessorIndexFromNumber;
+extern PFNKEGETPROCESSORNUMBERFROMINDEX        g_pfnrtKeGetProcessorNumberFromIndex;
+extern PFNKEGETCURRENTPROCESSORNUMBEREX        g_pfnrtKeGetCurrentProcessorNumberEx;
+extern PFNKEQUERYACTIVEPROCESSORS              g_pfnrtKeQueryActiveProcessors;
+extern PFNKEQUERYMAXIMUMPROCESSORCOUNT         g_pfnrtKeQueryMaximumProcessorCount;
+extern PFNKEQUERYMAXIMUMPROCESSORCOUNTEX       g_pfnrtKeQueryMaximumProcessorCountEx;
+extern PFNKEQUERYMAXIMUMGROUPCOUNT             g_pfnrtKeQueryMaximumGroupCount;
+extern PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRelationship;
+extern PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
+extern PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
+extern PFNRTRTLGETVERSION                      g_pfnrtRtlGetVersion;
 #ifndef RT_ARCH_AMD64
-extern PFNRTKEQUERYINTERRUPTTIME        g_pfnrtKeQueryInterruptTime;
-extern PFNRTKEQUERYSYSTEMTIME           g_pfnrtKeQuerySystemTime;
+extern PFNRTKEQUERYINTERRUPTTIME               g_pfnrtKeQueryInterruptTime;
+extern PFNRTKEQUERYSYSTEMTIME                  g_pfnrtKeQuerySystemTime;
 #endif
-extern PFNRTKEQUERYINTERRUPTTIMEPRECISE g_pfnrtKeQueryInterruptTimePrecise;
-extern PFNRTKEQUERYSYSTEMTIMEPRECISE    g_pfnrtKeQuerySystemTimePrecise;
-extern uint32_t                         g_offrtNtPbQuantumEnd;
-extern uint32_t                         g_cbrtNtPbQuantumEnd;
-extern uint32_t                         g_offrtNtPbDpcQueueDepth;
+extern PFNRTKEQUERYINTERRUPTTIMEPRECISE        g_pfnrtKeQueryInterruptTimePrecise;
+extern PFNRTKEQUERYSYSTEMTIMEPRECISE           g_pfnrtKeQuerySystemTimePrecise;
+
+extern uint32_t                                g_offrtNtPbQuantumEnd;
+extern uint32_t                                g_cbrtNtPbQuantumEnd;
+extern uint32_t                                g_offrtNtPbDpcQueueDepth;
 
 
 int __stdcall rtMpPokeCpuUsingDpc(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu);
+
+DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu);
 
 RT_C_DECLS_END
 

@@ -510,6 +510,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pvUser = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
     KeInitializeTimerEx(&pTimer->NtTimer, SynchronizationTimer);
+    int rc = VINF_SUCCESS;
     if (pTimer->fOmniTimer)
     {
         /*
@@ -518,7 +519,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
          * ASSUMES that no cpus will ever go offline.
          */
         pTimer->idCpu = NIL_RTCPUID;
-        for (unsigned iCpu = 0; iCpu < cSubTimers; iCpu++)
+        for (unsigned iCpu = 0; iCpu < cSubTimers && RT_SUCCESS(rc); iCpu++)
         {
             pTimer->aSubTimers[iCpu].iTick = 0;
             pTimer->aSubTimers[iCpu].pParent = pTimer;
@@ -532,7 +533,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
             else
                 KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
             KeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
-            KeSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, (int)RTMpCpuIdFromSetIndex(iCpu));
+            rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
         }
         Assert(pTimer->idCpu != NIL_RTCPUID);
     }
@@ -548,11 +549,16 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
         KeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
         if (pTimer->fSpecificCpu)
-            KeSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
+            rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        *ppTimer = pTimer;
+        return VINF_SUCCESS;
     }
 
-    *ppTimer = pTimer;
-    return VINF_SUCCESS;
+    RTMemFree(pTimer);
+    return rc;
 }
 
 

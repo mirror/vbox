@@ -75,20 +75,17 @@ typedef RTMPNTONSPECIFICARGS *PRTMPNTONSPECIFICARGS;
 
 
 
-/* test a couple of assumption. */
-AssertCompile(MAXIMUM_PROCESSORS <= RTCPUSET_MAX_CPUS);
-AssertCompile(NIL_RTCPUID >= MAXIMUM_PROCESSORS);
-
-/** @todo
- * We cannot do other than assume a 1:1 relationship between the
- * affinity mask and the process despite the vagueness/warnings in
- * the docs. If someone knows a better way to get this done, please
- * let bird know.
- */
-
-
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    if (g_pfnrtKeGetCurrentProcessorNumberEx)
+    {
+        KEPROCESSORINDEX idxCpu = g_pfnrtKeGetCurrentProcessorNumberEx(NULL);
+        Assert(idxCpu < RTCPUSET_MAX_CPUS);
+        return idxCpu;
+    }
+
     /* WDK upgrade warning: PCR->Number changed from BYTE to WORD. */
     return KeGetCurrentProcessorNumber();
 }
@@ -96,85 +93,86 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 
 RTDECL(int) RTMpCurSetIndex(void)
 {
-    /* WDK upgrade warning: PCR->Number changed from BYTE to WORD. */
-    return KeGetCurrentProcessorNumber();
+    return (int)RTMpCpuId();
 }
 
 
 RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
 {
-    return *pidCpu = KeGetCurrentProcessorNumber();
+    return *pidCpu = RTMpCpuId();
 }
 
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < MAXIMUM_PROCESSORS ? (int)idCpu : -1;
+    /* 1:1 mapping, just do range checks. */
+    return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return (unsigned)iCpu < MAXIMUM_PROCESSORS ? iCpu : NIL_RTCPUID;
+    /* 1:1 mapping, just do range checks. */
+    return (unsigned)iCpu < RTCPUSET_MAX_CPUS ? iCpu : NIL_RTCPUID;
 }
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
-    /** @todo use KeQueryMaximumProcessorCount on vista+ */
-    return MAXIMUM_PROCESSORS - 1;
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    /* According to MSDN the processor indexes goes from 0 to the maximum
+       number of CPUs in the system.  We've check this in initterm-r0drv-nt.cpp. */
+    return g_cRtMpNtMaxCpus - 1;
 }
 
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
-    if (idCpu >= MAXIMUM_PROCESSORS)
-        return false;
-
-#if 0 /* this isn't safe at all IRQLs (great work guys) */
-    KAFFINITY Mask = KeQueryActiveProcessors();
-    return !!(Mask & RT_BIT_64(idCpu));
-#else
-    return RTCpuSetIsMember(&g_rtMpNtCpuSet, idCpu);
-#endif
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+    return idCpu < RTCPUSET_MAX_CPUS
+        && RTCpuSetIsMember(&g_rtMpNtCpuSet, idCpu);
 }
 
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
-    /* Cannot easily distinguish between online and offline cpus. */
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
-     *        (KeQueryMaximumProcessorCount). */
-    return RTMpIsCpuOnline(idCpu);
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    /* A possible CPU ID is one with a value lower than g_cRtMpNtMaxCpus (see
+       comment in RTMpGetMaxCpuId). */
+    return idCpu < g_cRtMpNtMaxCpus;
 }
 
 
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
-     *        (KeQueryMaximumProcessorCount). */
-    return RTMpGetOnlineSet(pSet);
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    /* The set of possible CPU IDs(/indexes) are from 0 up to
+       g_cRtMpNtMaxCpus (see comment in RTMpGetMaxCpuId). */
+    RTCpuSetEmpty(pSet);
+    int idxCpu = g_cRtMpNtMaxCpus;
+    while (idxCpu-- > 0)
+        RTCpuSetAddByIndex(pSet, idxCpu);
+    return pSet;
 }
 
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    /** @todo online/present cpu stuff must be corrected for proper W2K8 support
-     *        (KeQueryMaximumProcessorCount). */
-    return RTMpGetOnlineCount();
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+    return g_cRtMpNtMaxCpus;
 }
 
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
-#if 0 /* this isn't safe at all IRQLs (great work guys) */
-    KAFFINITY Mask = KeQueryActiveProcessors();
-    return RTCpuSetFromU64(pSet, Mask);
-#else
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
     *pSet = g_rtMpNtCpuSet;
     return pSet;
-#endif
 }
 
 
@@ -235,7 +233,7 @@ static ULONG_PTR rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
     /*ASMAtomicIncU32(&pArgs->cHits); - not needed */
-    pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
+    pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
     return 0;
 }
 
@@ -249,7 +247,7 @@ static ULONG_PTR rtmpNtOnAllBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 static ULONG_PTR rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
-    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    RTCPUID idCpu = RTMpCpuId();
     if (pArgs->idCpu != idCpu)
     {
         /*ASMAtomicIncU32(&pArgs->cHits); - not needed */
@@ -268,7 +266,7 @@ static ULONG_PTR rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 static ULONG_PTR rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
-    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    RTCPUID idCpu = RTMpCpuId();
     if (   pArgs->idCpu  == idCpu
         || pArgs->idCpu2 == idCpu)
     {
@@ -288,7 +286,7 @@ static ULONG_PTR rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 static ULONG_PTR rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 {
     PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
-    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    RTCPUID idCpu = RTMpCpuId();
     if (pArgs->idCpu == idCpu)
     {
         ASMAtomicIncU32(&pArgs->cHits);
@@ -347,13 +345,45 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
     RT_NOREF3(Dpc, SystemArgument1, SystemArgument2);
 
     ASMAtomicIncU32(&pArgs->cHits);
-    pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
+    pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
 
     /* Dereference the argument structure. */
     int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
     Assert(cRefs >= 0);
     if (cRefs == 0)
         ExFreePool(pArgs);
+}
+
+
+/**
+ * Wrapper around KeSetTargetProcessorDpcEx / KeSetTargetProcessorDpc.
+ *
+ * This is shared with the timer code.
+ *
+ * @returns IPRT status code (errors are asserted).
+ * @param   pDpc                The DPC.
+ * @param   idCpu               The ID of the new target CPU.
+ */
+DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
+{
+    if (g_pfnrtKeSetTargetProcessorDpcEx)
+    {
+        /* Convert to stupid process number (bet KeSetTargetProcessorDpcEx does
+           the reverse conversion internally). */
+        PROCESSOR_NUMBER ProcNum;
+        NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(idCpu, &ProcNum);
+        AssertMsgReturn(NT_SUCCESS(rcNt),
+                        ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
+                        RTErrConvertFromNtStatus(rcNt));
+
+        rcNt = g_pfnrtKeSetTargetProcessorDpcEx(pDpc, &ProcNum);
+        AssertMsgReturn(NT_SUCCESS(rcNt),
+                        ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
+                        RTErrConvertFromNtStatus(rcNt));
+    }
+    else
+        KeSetTargetProcessorDpc(pDpc, (int)idCpu);
+    return VINF_SUCCESS;
 }
 
 
@@ -395,7 +425,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     if (!g_pfnrtNtKeFlushQueuedDpcs)
         return VERR_NOT_SUPPORTED;
 
-    pArgs = (PRTMPARGS)ExAllocatePoolWithTag(NonPagedPool, MAXIMUM_PROCESSORS*sizeof(KDPC) + sizeof(RTMPARGS), (ULONG)'RTMp');
+    pArgs = (PRTMPARGS)ExAllocatePoolWithTag(NonPagedPool, g_cRtMpNtMaxCpus * sizeof(KDPC) + sizeof(RTMPARGS), (ULONG)'RTMp');
     if (!pArgs)
         return VERR_NO_MEMORY;
 
@@ -409,33 +439,41 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
 
     paExecCpuDpcs = (KDPC *)(pArgs + 1);
 
+    int rc;
     if (enmCpuid == RT_NT_CPUID_SPECIFIC)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
-        KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
+        rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[0], idCpu);
         pArgs->idCpu = idCpu;
     }
     else if (enmCpuid == RT_NT_CPUID_PAIR)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
-        KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
+        rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[0], idCpu);
         pArgs->idCpu = idCpu;
 
         KeInitializeDpc(&paExecCpuDpcs[1], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[1], HighImportance);
-        KeSetTargetProcessorDpc(&paExecCpuDpcs[1], (int)idCpu2);
+        if (RT_SUCCESS(rc))
+            rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[1], (int)idCpu2);
         pArgs->idCpu2 = idCpu2;
     }
     else
     {
-        for (unsigned i = 0; i < MAXIMUM_PROCESSORS; i++)
+        rc = VINF_SUCCESS;
+        for (unsigned i = 0; i < g_cRtMpNtMaxCpus && RT_SUCCESS(rc); i++)
         {
             KeInitializeDpc(&paExecCpuDpcs[i], rtmpNtDPCWrapper, pArgs);
             KeSetImportanceDpc(&paExecCpuDpcs[i], HighImportance);
-            KeSetTargetProcessorDpc(&paExecCpuDpcs[i], i);
+            rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[i], i);
         }
+    }
+    if (RT_FAILURE(rc))
+    {
+        ExFreePool(pArgs);
+        return rc;
     }
 
     /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
@@ -468,9 +506,9 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     }
     else
     {
-        unsigned iSelf = KeGetCurrentProcessorNumber();
+        unsigned iSelf = RTMpCpuId();
 
-        for (unsigned i = 0; i < MAXIMUM_PROCESSORS; i++)
+        for (unsigned i = 0; i < g_cRtMpNtMaxCpus; i++)
         {
             if (    (i != iSelf)
                 &&  (Mask & RT_BIT_64(i)))
@@ -504,7 +542,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         ExFreePool(pArgs);
 
     return VINF_SUCCESS;
-#endif /* */
+#endif /* !IPRT_TARGET_NT4 */
 }
 
 
@@ -610,7 +648,7 @@ static VOID rtMpNtOnSpecificDpcWrapper(IN PKDPC Dpc, IN PVOID DeferredContext,
 
     ASMAtomicWriteBool(&pArgs->fExecuting, true);
 
-    pArgs->CallbackArgs.pfnWorker(KeGetCurrentProcessorNumber(), pArgs->CallbackArgs.pvUser1, pArgs->CallbackArgs.pvUser2);
+    pArgs->CallbackArgs.pfnWorker(RTMpCpuId(), pArgs->CallbackArgs.pvUser1, pArgs->CallbackArgs.pvUser2);
 
     ASMAtomicWriteBool(&pArgs->fDone, true);
     KeSetEvent(&pArgs->DoneEvt, 1 /*PriorityIncrement*/, FALSE /*Wait*/);
@@ -682,7 +720,12 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     KeInitializeEvent(&pArgs->DoneEvt, SynchronizationEvent, FALSE /* not signalled */);
     KeInitializeDpc(&pArgs->Dpc, rtMpNtOnSpecificDpcWrapper, pArgs);
     KeSetImportanceDpc(&pArgs->Dpc, HighImportance);
-    KeSetTargetProcessorDpc(&pArgs->Dpc, (int)idCpu);
+    rc = rtMpNtSetTargetProcessorDpc(&pArgs->Dpc, idCpu);
+    if (RT_FAILURE(rc))
+    {
+        ExFreePool(pArgs);
+        return rc;
+    }
 
     /*
      * Disable preemption while we check the current processor and inserts the DPC.
@@ -831,15 +874,10 @@ int rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu)
  */
 int rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu)
 {
-    /*
-     * I think we'll let idCpu be an NT processor number and not a HAL processor
-     * index.  KeAddProcessorAffinityEx is for HAL and uses HAL processor
-     * indexes as input from what I can tell.
-     */
-    PROCESSOR_NUMBER ProcNumber = { /*Group=*/ idCpu / 64, /*Number=*/ idCpu % 64, /* Reserved=*/ 0};
-    KAFFINITY_EX     Target;
+    /* idCpu is an HAL processor index, so we can use it directly. */
+    KAFFINITY_EX Target;
     g_pfnrtKeInitializeAffinityEx(&Target);
-    g_pfnrtKeAddProcessorAffinityEx(&Target, g_pfnrtKeGetProcessorIndexFromNumber(&ProcNumber));
+    g_pfnrtKeAddProcessorAffinityEx(&Target, idCpu);
 
     g_pfnrtHalRequestIpiW7Plus(0, &Target);
     return VINF_SUCCESS;
@@ -867,20 +905,25 @@ int rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu)
 
 int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
 {
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
     /*
      * APC fallback.
      */
-    static KDPC s_aPokeDpcs[MAXIMUM_PROCESSORS] = {0};
+    static KDPC s_aPokeDpcs[RTCPUSET_MAX_CPUS] = {0};
     static bool s_fPokeDPCsInitialized = false;
 
     if (!s_fPokeDPCsInitialized)
     {
-        for (unsigned i = 0; i < RT_ELEMENTS(s_aPokeDpcs); i++)
+        for (unsigned i = 0; i < g_cRtMpNtMaxCpus; i++)
         {
             KeInitializeDpc(&s_aPokeDpcs[i], rtMpNtPokeCpuDummy, NULL);
             KeSetImportanceDpc(&s_aPokeDpcs[i], HighImportance);
-            KeSetTargetProcessorDpc(&s_aPokeDpcs[i], (int)i);
+            int rc = rtMpNtSetTargetProcessorDpc(&s_aPokeDpcs[i], idCpu);
+            if (RT_FAILURE(rc))
+                return rc;
         }
+
         s_fPokeDPCsInitialized = true;
     }
 
@@ -909,7 +952,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
         return !RTMpIsCpuPossible(idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
-    /* Calls rtMpSendIpiFallback, rtMpSendIpiWin7AndLater or rtMpSendIpiVista. */
+    /* Calls rtMpPokeCpuUsingDpc, rtMpPokeCpuUsingHalReqestIpiW7Plus or rtMpPokeCpuUsingBroadcastIpi. */
     return g_pfnrtMpPokeCpuWorker(idCpu);
 }
 
