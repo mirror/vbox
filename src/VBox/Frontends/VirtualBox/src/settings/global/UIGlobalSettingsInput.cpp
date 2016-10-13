@@ -305,6 +305,11 @@ public:
     /* Constructor: */
     UIHotKeyTableModel(QObject *pParent, UIActionPoolType type);
 
+    /** Returns the number of children. */
+    int childCount() const;
+    /** Returns the child item with @a iIndex. */
+    QITableViewRow *childItem(int iIndex);
+
     /* API: Loading/saving stuff: */
     void load(const UIShortcutCache &shortcuts);
     void save(UIShortcutCache &shortcuts);
@@ -354,6 +359,13 @@ public:
     /* Constructor: */
     UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName);
 
+protected:
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child item with @a iIndex. */
+    virtual QITableViewRow *childItem(int iIndex) const /* override */;
+
 private slots:
 
     /* Handler: Readiness stuff: */
@@ -374,6 +386,20 @@ UIHotKeyTableModel::UIHotKeyTableModel(QObject *pParent, UIActionPoolType type)
     : QAbstractTableModel(pParent)
     , m_type(type)
 {
+}
+
+int UIHotKeyTableModel::childCount() const
+{
+    /* Return row count: */
+    return rowCount();
+}
+
+QITableViewRow *UIHotKeyTableModel::childItem(int iIndex)
+{
+    /* Make sure index within the bounds: */
+    AssertReturn(iIndex >= 0 && iIndex < m_filteredShortcuts.size(), 0);
+    /* Return corresponding filtered row: */
+    return &m_filteredShortcuts[iIndex];
 }
 
 void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
@@ -696,6 +722,18 @@ UIHotKeyTable::UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const
 
     /* Prepare all: */
     prepare();
+}
+
+int UIHotKeyTable::childCount() const
+{
+    /* Redirect request to table model: */
+    return qobject_cast<UIHotKeyTableModel*>(model())->childCount();
+}
+
+QITableViewRow *UIHotKeyTable::childItem(int iIndex) const
+{
+    /* Redirect request to table model: */
+    return qobject_cast<UIHotKeyTableModel*>(model())->childItem(iIndex);
 }
 
 void UIHotKeyTable::sltHandleShortcutsLoaded()
