@@ -43,6 +43,15 @@
 using namespace UIExtraDataDefs;
 
 
+/** Column index enumerator. */
+enum UIHotKeyColumnIndex
+{
+    UIHotKeyColumnIndex_Description,
+    UIHotKeyColumnIndex_Sequence,
+    UIHotKeyColumnIndex_Max
+};
+
+
 /* Global settings / Input page / Cache / Shortcut cache item: */
 struct UIShortcutCacheItem
 {
@@ -118,8 +127,10 @@ public:
     {
         switch (m_iColumn)
         {
-            case 0: return m_order == Qt::AscendingOrder ? item1.description < item2.description : item1.description > item2.description;
-            case 1: return m_order == Qt::AscendingOrder ? item1.currentSequence < item2.currentSequence : item1.currentSequence > item2.currentSequence;
+            case UIHotKeyColumnIndex_Description:
+                return m_order == Qt::AscendingOrder ? item1.description < item2.description : item1.description > item2.description;
+            case UIHotKeyColumnIndex_Sequence:
+                return m_order == Qt::AscendingOrder ? item1.currentSequence < item2.currentSequence : item1.currentSequence > item2.currentSequence;
             default: break;
         }
         return m_order == Qt::AscendingOrder ? item1.key < item2.key : item1.key > item2.key;
@@ -195,13 +206,6 @@ class UIHotKeyTable : public QITableView
     Q_OBJECT;
 
 public:
-
-    /* Hot-key table field indexes: */
-    enum Section
-    {
-        Section_Name = 0,
-        Section_Value = 1
-    };
 
     /* Constructor: */
     UIHotKeyTable(QWidget *pParent, UIHotKeyTableModel *pModel, const QString &strObjectName);
@@ -309,8 +313,8 @@ Qt::ItemFlags UIHotKeyTableModel::flags(const QModelIndex &index) const
     /* Switch for different columns: */
     switch (index.column())
     {
-        case UIHotKeyTable::Section_Name: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-        case UIHotKeyTable::Section_Value: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        case UIHotKeyColumnIndex_Description: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        case UIHotKeyColumnIndex_Sequence: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
         default: break;
     }
     /* No flags by default: */
@@ -329,8 +333,8 @@ QVariant UIHotKeyTableModel::headerData(int iSection, Qt::Orientation orientatio
             /* Switch for different columns: */
             switch (iSection)
             {
-                case UIHotKeyTable::Section_Name: return tr("Name");
-                case UIHotKeyTable::Section_Value: return tr("Shortcut");
+                case UIHotKeyColumnIndex_Description: return tr("Name");
+                case UIHotKeyColumnIndex_Sequence: return tr("Shortcut");
                 default: break;
             }
             /* Invalid for other cases: */
@@ -355,12 +359,12 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyTable::Section_Name:
+                case UIHotKeyColumnIndex_Description:
                 {
                     /* Return shortcut description: */
                     return m_filteredShortcuts[iIndex].description;
                 }
-                case UIHotKeyTable::Section_Value:
+                case UIHotKeyColumnIndex_Sequence:
                 {
                     /* If that is host-combo cell: */
                     if (m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey())
@@ -385,12 +389,12 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyTable::Section_Value: return m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey() ?
-                                                        QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence)) :
-                                                        QVariant::fromValue(UIHotKey(m_type == UIActionPoolType_Runtime ?
-                                                                                     UIHotKeyType_Simple : UIHotKeyType_WithModifiers,
-                                                                                     m_filteredShortcuts[iIndex].currentSequence,
-                                                                                     m_filteredShortcuts[iIndex].defaultSequence));
+                case UIHotKeyColumnIndex_Sequence: return m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey() ?
+                                                          QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence)) :
+                                                          QVariant::fromValue(UIHotKey(m_type == UIActionPoolType_Runtime ?
+                                                                                       UIHotKeyType_Simple : UIHotKeyType_WithModifiers,
+                                                                                       m_filteredShortcuts[iIndex].currentSequence,
+                                                                                       m_filteredShortcuts[iIndex].defaultSequence));
                 default: break;
             }
             /* Invalid for other cases: */
@@ -403,7 +407,7 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyTable::Section_Value:
+                case UIHotKeyColumnIndex_Sequence:
                 {
                     if (m_filteredShortcuts[iIndex].key != UIHostCombo::hostComboCacheKey() &&
                         m_filteredShortcuts[iIndex].currentSequence != m_filteredShortcuts[iIndex].defaultSequence)
@@ -420,7 +424,7 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyTable::Section_Value:
+                case UIHotKeyColumnIndex_Sequence:
                 {
                     if (m_duplicatedSequences.contains(m_filteredShortcuts[iIndex].key))
                         return QBrush(Qt::red);
@@ -449,7 +453,7 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyTable::Section_Value:
+                case UIHotKeyColumnIndex_Sequence:
                 {
                     /* Get index: */
                     int iIndex = index.row();
@@ -556,7 +560,7 @@ void UIHotKeyTable::sltHandleShortcutsLoaded()
     resizeColumnsToContents();
 
     /* Configure sorting: */
-    sortByColumn(Section_Name, Qt::AscendingOrder);
+    sortByColumn(UIHotKeyColumnIndex_Description, Qt::AscendingOrder);
     setSortingEnabled(true);
 }
 
@@ -574,11 +578,11 @@ void UIHotKeyTable::prepare()
     verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
     horizontalHeader()->setStretchLastSection(false);
 #if QT_VERSION >= 0x050000
-    horizontalHeader()->setSectionResizeMode(Section_Name, QHeaderView::Interactive);
-    horizontalHeader()->setSectionResizeMode(Section_Value, QHeaderView::Stretch);
+    horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Description, QHeaderView::Interactive);
+    horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
 #else /* QT_VERSION < 0x050000 */
-    horizontalHeader()->setResizeMode(Section_Name, QHeaderView::Interactive);
-    horizontalHeader()->setResizeMode(Section_Value, QHeaderView::Stretch);
+    horizontalHeader()->setResizeMode(UIHotKeyColumnIndex_Description, QHeaderView::Interactive);
+    horizontalHeader()->setResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
 #endif /* QT_VERSION < 0x050000 */
 
     /* Connect model: */

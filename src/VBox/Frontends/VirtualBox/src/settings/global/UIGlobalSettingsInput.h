@@ -20,7 +20,6 @@
 
 /* Qt includes: */
 #include <QAbstractTableModel>
-#include <QTableView>
 
 /* GUI includes: */
 #include "UISettingsPage.h"
@@ -33,6 +32,7 @@ class QLineEdit;
 class UISettingsCacheGlobalInput;
 class UIHotKeyTableModel;
 class UIHotKeyTable;
+
 
 /* Global settings / Input page: */
 class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSettingsInput
