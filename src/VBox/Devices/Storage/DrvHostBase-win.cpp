@@ -29,6 +29,7 @@
 #undef _interlockedbittestandset64
 #undef _interlockedbittestandreset64
 
+#include <iprt/file.h>
 #include <VBox/scsi.h>
 
 #include "DrvHostBase.h"
