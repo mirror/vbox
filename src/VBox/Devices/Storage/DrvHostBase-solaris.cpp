@@ -166,3 +166,19 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     return rc;
 }
 
+DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
+{
+    /*
+     * Sun docs suggests using DKIOCGGEOM instead of DKIOCGMEDIAINFO, but
+     * Sun themselves use DKIOCGMEDIAINFO for DVDs/CDs, and use DKIOCGGEOM
+     * for secondary storage devices.
+     */
+    struct dk_minfo MediaInfo;
+    if (ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCGMEDIAINFO, &MediaInfo) == 0)
+    {
+        *pcb = MediaInfo.dki_capacity * (uint64_t)MediaInfo.dki_lbsize;
+        return VINF_SUCCESS;
+    }
+    return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+}
+

@@ -30,6 +30,7 @@
 /* Those macros that are needed are defined in the header below. */
 # include "swab.h"
 #endif
+#include <linux/fd.h>
 #include <linux/cdrom.h>
 #include <limits.h>
 
@@ -122,6 +123,41 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     /* The value of cgc.buflen does not reliably reflect the actual amount
      * of data transferred (for packet commands with little data transfer
      * it's 0). So just assume that everything worked ok. */
+
+    return rc;
+}
+
+DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
+{
+    int rc = VERR_INVALID_STATE;
+
+    if (PDMMEDIATYPE_IS_FLOPPY(pThis->enmType))
+    {
+        rc = ioctl(RTFileToNative(pThis->hFileDevice), FDFLUSH);
+        if (rc)
+        {
+            rc = RTErrConvertFromErrno (errno);
+            Log(("DrvHostFloppy: FDFLUSH ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
+            return rc;
+        }
+
+        floppy_drive_struct DrvStat;
+        rc = ioctl(RTFileToNative(pThis->hFileDevice), FDGETDRVSTAT, &DrvStat);
+        if (rc)
+        {
+            rc = RTErrConvertFromErrno(errno);
+            Log(("DrvHostFloppy: FDGETDRVSTAT ioctl(%s) failed, errno=%d rc=%Rrc\n", pThis->pszDevice, errno, rc));
+            return rc;
+        }
+        pThis->fReadOnly = !(DrvStat.flags & FD_DISK_WRITABLE);
+        rc = RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+    }
+    else if (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
+    {
+        /* Clear the media-changed-since-last-call-thingy just to be on the safe side. */
+        ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT);
+        rc = RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+    }
 
     return rc;
 }

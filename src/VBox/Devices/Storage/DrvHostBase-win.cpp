@@ -112,3 +112,64 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     return rc;
 }
 
+DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
+{
+    int rc = VERR_GENERAL_FAILURE;
+
+    if (PDMMEDIATYPE_IS_FLOPPY(pThis->enmType))
+    {
+        DISK_GEOMETRY   geom;
+        DWORD           cbBytesReturned;
+        int             cbSectors;
+
+        memset(&geom, 0, sizeof(geom));
+        rc = DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_DISK_GET_DRIVE_GEOMETRY,
+                             NULL, 0, &geom, sizeof(geom), &cbBytesReturned,  NULL);
+        if (rc) {
+            cbSectors = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack;
+            *pcb = cbSectors * geom.BytesPerSector;
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            DWORD   dwLastError;
+
+            dwLastError = GetLastError();
+            rc = RTErrConvertFromWin32(dwLastError);
+            Log(("DrvHostFloppy: IOCTL_DISK_GET_DRIVE_GEOMETRY(%s) failed, LastError=%d rc=%Rrc\n",
+                 pThis->pszDevice, dwLastError, rc));
+            return rc;
+        }
+    }
+    else
+    {
+        /* use NT api, retry a few times if the media is being verified. */
+        IO_STATUS_BLOCK             IoStatusBlock = {0};
+        FILE_FS_SIZE_INFORMATION    FsSize= {0};
+        NTSTATUS rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+                                                     &FsSize, sizeof(FsSize), FileFsSizeInformation);
+        int cRetries = 5;
+        while (rcNt == STATUS_VERIFY_REQUIRED && cRetries-- > 0)
+        {
+            RTThreadSleep(10);
+            rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+                                                &FsSize, sizeof(FsSize), FileFsSizeInformation);
+        }
+        if (rcNt >= 0)
+        {
+            *pcb = FsSize.TotalAllocationUnits.QuadPart * FsSize.BytesPerSector;
+            return VINF_SUCCESS;
+        }
+
+        /* convert nt status code to VBox status code. */
+        /** @todo Make conversion function!. */
+        switch (rcNt)
+        {
+            case STATUS_NO_MEDIA_IN_DEVICE:     rc = VERR_MEDIA_NOT_PRESENT; break;
+            case STATUS_VERIFY_REQUIRED:        rc = VERR_TRY_AGAIN; break;
+        }
+        LogFlow(("drvHostBaseGetMediaSize: NtQueryVolumeInformationFile -> %#lx\n", rcNt, rc));
+    }
+    return rc;
+}
+

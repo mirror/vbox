@@ -192,6 +192,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns);
 DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
                                      void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies);
 
+DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb);
 
 /** Makes a PDRVHOSTBASE out of a PPDMIMOUNT. */
 #define PDMIMOUNT_2_DRVHOSTBASE(pInterface)        ( (PDRVHOSTBASE)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IMount)) )
