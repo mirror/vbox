@@ -234,21 +234,21 @@ DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
      */
     if (pThis->ppScsiTaskDI)
     {
-        LogFlow(("%s-%d: releasing exclusive scsi access!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        LogFlow(("%s-%d: releasing exclusive scsi access!\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
         (*pThis->ppScsiTaskDI)->ReleaseExclusiveAccess(pThis->ppScsiTaskDI);
         (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
         pThis->ppScsiTaskDI = NULL;
     }
     if (pThis->pDADisk)
     {
-        LogFlow(("%s-%d: unclaiming the disk!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        LogFlow(("%s-%d: unclaiming the disk!\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
         DADiskUnclaim(pThis->pDADisk);
         CFRelease(pThis->pDADisk);
         pThis->pDADisk = NULL;
     }
     if (pThis->ppMMCDI)
     {
-        LogFlow(("%s-%d: releasing the MMC object!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        LogFlow(("%s-%d: releasing the MMC object!\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
         (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
         pThis->ppMMCDI = NULL;
     }
@@ -259,7 +259,7 @@ DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
     }
     if (pThis->pDASession)
     {
-        LogFlow(("%s-%d: releasing the DA session!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        LogFlow(("%s-%d: releasing the DA session!\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
         CFRelease(pThis->pDASession);
         pThis->pDASession = NULL;
     }
