@@ -52,6 +52,31 @@ enum UIHotKeyColumnIndex
 };
 
 
+/** Global settings / Input page / Shortcut table cell. */
+class UIShortcutCacheCell : public QITableViewCell
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs table cell.
+      * @param  pParent  Brings the row this cell belongs too.
+      * @param  strText  Brings the text describing this cell. */
+    UIShortcutCacheCell(QITableViewRow *pParent, const QString &strText)
+        : QITableViewCell(pParent)
+        , m_strText(strText)
+    {}
+
+    /** Returns the cell text. */
+    virtual QString text() const /* override */ { return m_strText; }
+
+private:
+
+    /** Holds the cell text. */
+    QString m_strText;
+};
+
+
 /** Global settings / Input page / Shortcut table row. */
 class UIShortcutCacheRow : public QITableViewRow
 {
@@ -75,7 +100,10 @@ public:
         , m_strDescription(strDescription)
         , m_strCurrentSequence(strCurrentSequence)
         , m_strDefaultSequence(strDefaultSequence)
-    {}
+    {
+        /* Create cells: */
+        createCells();
+    }
 
     /** Constructs table row on the basis of @a other one. */
     UIShortcutCacheRow(const UIShortcutCacheRow &other)
@@ -84,7 +112,17 @@ public:
         , m_strDescription(other.description())
         , m_strCurrentSequence(other.currentSequence())
         , m_strDefaultSequence(other.defaultSequence())
-    {}
+    {
+        /* Create cells: */
+        createCells();
+    }
+
+    /** Destructs table row. */
+    ~UIShortcutCacheRow()
+    {
+        /* Destroy cells: */
+        destroyCells();
+    }
 
     /** Copies a table row from @a other one. */
     UIShortcutCacheRow &operator=(const UIShortcutCacheRow &other)
@@ -95,6 +133,10 @@ public:
         m_strDescription = other.description();
         m_strCurrentSequence = other.currentSequence();
         m_strDefaultSequence = other.defaultSequence();
+
+        /* Recreate cells: */
+        destroyCells();
+        createCells();
 
         /* Return this: */
         return *this;
@@ -124,17 +166,40 @@ protected:
     /** Returns the number of children. */
     virtual int childCount() const /* override */
     {
-        return 0;
+        return UIHotKeyColumnIndex_Max;
     }
 
     /** Returns the child item with @a iIndex. */
     virtual QITableViewCell *childItem(int iIndex) const /* override */
     {
-        Q_UNUSED(iIndex);
+        switch (iIndex)
+        {
+            case UIHotKeyColumnIndex_Description: return m_cells.first;
+            case UIHotKeyColumnIndex_Sequence: return m_cells.second;
+            default: break;
+        }
         return 0;
     }
 
 private:
+
+    /** Creates cells. */
+    void createCells()
+    {
+        /* Create cells on the basis of description and current sequence: */
+        m_cells = qMakePair(new UIShortcutCacheCell(this, m_strDescription),
+                            new UIShortcutCacheCell(this, m_strCurrentSequence));
+    }
+
+    /** Destroys cells. */
+    void destroyCells()
+    {
+        /* Destroy cells: */
+        delete m_cells.first;
+        delete m_cells.second;
+        m_cells.first = 0;
+        m_cells.second = 0;
+    }
 
     /** Holds the key. */
     QString m_strKey;
@@ -144,6 +209,9 @@ private:
     QString m_strCurrentSequence;
     /** Holds the default sequence. */
     QString m_strDefaultSequence;
+
+    /** Holds the cell instances. */
+    QPair<UIShortcutCacheCell*, UIShortcutCacheCell*> m_cells;
 };
 
 
