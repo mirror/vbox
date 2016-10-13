@@ -64,28 +64,28 @@ struct UIShortcutCacheItem
                         const QString &strDescription,
                         const QString &strCurrentSequence,
                         const QString &strDefaultSequence)
-        : key(strKey)
-        , description(strDescription)
-        , currentSequence(strCurrentSequence)
-        , defaultSequence(strDefaultSequence)
+        : m_strKey(strKey)
+        , m_strDescription(strDescription)
+        , m_strCurrentSequence(strCurrentSequence)
+        , m_strDefaultSequence(strDefaultSequence)
     {}
 
     /** Constructs table row on the basis of @a other one. */
     UIShortcutCacheItem(const UIShortcutCacheItem &other)
-        : key(other.key)
-        , description(other.description)
-        , currentSequence(other.currentSequence)
-        , defaultSequence(other.defaultSequence)
+        : m_strKey(other.key())
+        , m_strDescription(other.description())
+        , m_strCurrentSequence(other.currentSequence())
+        , m_strDefaultSequence(other.defaultSequence())
     {}
 
     /** Copies a table row from @a other one. */
     UIShortcutCacheItem &operator=(const UIShortcutCacheItem &other)
     {
         /* Reassign variables: */
-        key = other.key;
-        description = other.description;
-        currentSequence = other.currentSequence;
-        defaultSequence = other.defaultSequence;
+        m_strKey = other.key();
+        m_strDescription = other.description();
+        m_strCurrentSequence = other.currentSequence();
+        m_strDefaultSequence = other.defaultSequence();
 
         /* Return this: */
         return *this;
@@ -95,17 +95,31 @@ struct UIShortcutCacheItem
     bool operator==(const UIShortcutCacheItem &other) const
     {
         /* Compare by the key only: */
-        return key == other.key;
+        return m_strKey == other.key();
     }
 
+    /** Returns the key. */
+    QString key() const { return m_strKey; }
+    /** Returns the description. */
+    QString description() const { return m_strDescription; }
+    /** Returns the current sequence. */
+    QString currentSequence() const { return m_strCurrentSequence; }
+    /** Returns the default sequence. */
+    QString defaultSequence() const { return m_strDefaultSequence; }
+
+    /** Defines @a strCurrentSequence. */
+    void setCurrentSequence(const QString &strCurrentSequence) { m_strCurrentSequence = strCurrentSequence; }
+
+private:
+
     /** Holds the key. */
-    QString key;
+    QString m_strKey;
     /** Holds the description. */
-    QString description;
+    QString m_strDescription;
     /** Holds the current sequence. */
-    QString currentSequence;
+    QString m_strCurrentSequence;
     /** Holds the default sequence. */
-    QString defaultSequence;
+    QString m_strDefaultSequence;
 };
 
 
@@ -154,12 +168,12 @@ public:
         switch (m_iColumn)
         {
             case UIHotKeyColumnIndex_Description:
-                return m_order == Qt::AscendingOrder ? item1.description < item2.description : item1.description > item2.description;
+                return m_order == Qt::AscendingOrder ? item1.description() < item2.description() : item1.description() > item2.description();
             case UIHotKeyColumnIndex_Sequence:
-                return m_order == Qt::AscendingOrder ? item1.currentSequence < item2.currentSequence : item1.currentSequence > item2.currentSequence;
+                return m_order == Qt::AscendingOrder ? item1.currentSequence() < item2.currentSequence() : item1.currentSequence() > item2.currentSequence();
             default: break;
         }
-        return m_order == Qt::AscendingOrder ? item1.key < item2.key : item1.key > item2.key;
+        return m_order == Qt::AscendingOrder ? item1.key() < item2.key() : item1.key() > item2.key();
     }
 
 private:
@@ -266,8 +280,8 @@ void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
     foreach (const UIShortcutCacheItem &item, shortcuts)
     {
         /* Filter out unnecessary shortcuts: */
-        if ((m_type == UIActionPoolType_Selector && item.key.startsWith(GUI_Input_MachineShortcuts)) ||
-            (m_type == UIActionPoolType_Runtime && item.key.startsWith(GUI_Input_SelectorShortcuts)))
+        if ((m_type == UIActionPoolType_Selector && item.key().startsWith(GUI_Input_MachineShortcuts)) ||
+            (m_type == UIActionPoolType_Runtime && item.key().startsWith(GUI_Input_SelectorShortcuts)))
             continue;
         /* Load shortcut cache item into model: */
         m_shortcuts << item;
@@ -298,8 +312,8 @@ bool UIHotKeyTableModel::isAllShortcutsUnique()
     /* Enumerate all the sequences: */
     QMap<QString, QString> usedSequences;
     foreach (const UIShortcutCacheItem &item, m_shortcuts)
-        if (!item.currentSequence.isEmpty())
-            usedSequences.insertMulti(item.currentSequence, item.key);
+        if (!item.currentSequence().isEmpty())
+            usedSequences.insertMulti(item.currentSequence(), item.key());
     /* Enumerate all the duplicated sequences: */
     QSet<QString> duplicatedSequences;
     foreach (const QString &strKey, usedSequences.keys())
@@ -390,16 +404,16 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
                 case UIHotKeyColumnIndex_Description:
                 {
                     /* Return shortcut description: */
-                    return m_filteredShortcuts[iIndex].description;
+                    return m_filteredShortcuts[iIndex].description();
                 }
                 case UIHotKeyColumnIndex_Sequence:
                 {
                     /* If that is host-combo cell: */
-                    if (m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey())
+                    if (m_filteredShortcuts[iIndex].key() == UIHostCombo::hostComboCacheKey())
                         /* We should return host-combo: */
-                        return UIHostCombo::toReadableString(m_filteredShortcuts[iIndex].currentSequence);
+                        return UIHostCombo::toReadableString(m_filteredShortcuts[iIndex].currentSequence());
                     /* In other cases we should return hot-combo: */
-                    QString strHotCombo = m_filteredShortcuts[iIndex].currentSequence;
+                    QString strHotCombo = m_filteredShortcuts[iIndex].currentSequence();
                     /* But if that is machine table and hot-combo is not empty: */
                     if (m_type == UIActionPoolType_Runtime && !strHotCombo.isEmpty())
                         /* We should prepend it with Host+ prefix: */
@@ -417,12 +431,12 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             /* Switch for different columns: */
             switch (index.column())
             {
-                case UIHotKeyColumnIndex_Sequence: return m_filteredShortcuts[iIndex].key == UIHostCombo::hostComboCacheKey() ?
-                                                          QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence)) :
+                case UIHotKeyColumnIndex_Sequence: return m_filteredShortcuts[iIndex].key() == UIHostCombo::hostComboCacheKey() ?
+                                                          QVariant::fromValue(UIHostComboWrapper(m_filteredShortcuts[iIndex].currentSequence())) :
                                                           QVariant::fromValue(UIHotKey(m_type == UIActionPoolType_Runtime ?
                                                                                        UIHotKeyType_Simple : UIHotKeyType_WithModifiers,
-                                                                                       m_filteredShortcuts[iIndex].currentSequence,
-                                                                                       m_filteredShortcuts[iIndex].defaultSequence));
+                                                                                       m_filteredShortcuts[iIndex].currentSequence(),
+                                                                                       m_filteredShortcuts[iIndex].defaultSequence()));
                 default: break;
             }
             /* Invalid for other cases: */
@@ -437,8 +451,8 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             {
                 case UIHotKeyColumnIndex_Sequence:
                 {
-                    if (m_filteredShortcuts[iIndex].key != UIHostCombo::hostComboCacheKey() &&
-                        m_filteredShortcuts[iIndex].currentSequence != m_filteredShortcuts[iIndex].defaultSequence)
+                    if (m_filteredShortcuts[iIndex].key() != UIHostCombo::hostComboCacheKey() &&
+                        m_filteredShortcuts[iIndex].currentSequence() != m_filteredShortcuts[iIndex].defaultSequence())
                         font.setBold(true);
                     break;
                 }
@@ -454,7 +468,7 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::D
             {
                 case UIHotKeyColumnIndex_Sequence:
                 {
-                    if (m_duplicatedSequences.contains(m_filteredShortcuts[iIndex].key))
+                    if (m_duplicatedSequences.contains(m_filteredShortcuts[iIndex].key()))
                         return QBrush(Qt::red);
                     break;
                 }
@@ -490,9 +504,9 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
                     int iShortcutIndex = m_shortcuts.indexOf(filteredShortcut);
                     if (iShortcutIndex != -1)
                     {
-                        filteredShortcut.currentSequence = filteredShortcut.key == UIHostCombo::hostComboCacheKey() ?
-                                                           value.value<UIHostComboWrapper>().toString() :
-                                                           value.value<UIHotKey>().sequence();
+                        filteredShortcut.setCurrentSequence(filteredShortcut.key() == UIHostCombo::hostComboCacheKey() ?
+                                                            value.value<UIHostComboWrapper>().toString() :
+                                                            value.value<UIHotKey>().sequence());
                         m_shortcuts[iShortcutIndex] = filteredShortcut;
                         emit sigRevalidationRequired();
                         return true;
@@ -549,8 +563,8 @@ void UIHotKeyTableModel::applyFilter()
         foreach (const UIShortcutCacheItem &item, m_shortcuts)
         {
             /* If neither description nor sequence matches the filter, skip item: */
-            if (!item.description.contains(m_strFilter, Qt::CaseInsensitive) &&
-                !item.currentSequence.contains(m_strFilter, Qt::CaseInsensitive))
+            if (!item.description().contains(m_strFilter, Qt::CaseInsensitive) &&
+                !item.currentSequence().contains(m_strFilter, Qt::CaseInsensitive))
                 continue;
             /* Add that item: */
             m_filteredShortcuts << item;
@@ -774,11 +788,11 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     UIShortcutCacheItem fakeHostComboItem(UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
     int iIndexOfHostComboItem = m_pCache->m_shortcuts.indexOf(fakeHostComboItem);
     if (iIndexOfHostComboItem != -1)
-        m_settings.setHostCombo(m_pCache->m_shortcuts[iIndexOfHostComboItem].currentSequence);
+        m_settings.setHostCombo(m_pCache->m_shortcuts[iIndexOfHostComboItem].currentSequence());
     /* Iterate over cached shortcuts: */
     QMap<QString, QString> sequences;
     foreach (const UIShortcutCacheItem &item, m_pCache->m_shortcuts)
-        sequences.insert(item.key, item.currentSequence);
+        sequences.insert(item.key(), item.currentSequence());
     /* Save shortcut sequences from cache: */
     gShortcutPool->setOverrides(sequences);
     /* Save other things from cache: */
