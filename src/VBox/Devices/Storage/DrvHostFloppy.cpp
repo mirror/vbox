@@ -27,6 +27,9 @@
 # include <linux/fd.h>
 # include <sys/fcntl.h>
 # include <errno.h>
+# elif defined(RT_OS_WINDOWS)
+# include <iprt/win/windows.h>
+# include <dbt.h>
 #endif
 
 #include <VBox/vmm/pdmdrv.h>
