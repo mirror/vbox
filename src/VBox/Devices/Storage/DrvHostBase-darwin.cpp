@@ -207,3 +207,61 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
     return VINF_SUCCESS;
 }
 
+
+DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+{
+    return RTSemEventSignal(pThis->EventPoller);
+}
+
+
+DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->EventPoller != NULL)
+    {
+        RTSemEventDestroy(pThis->EventPoller);
+        pThis->EventPoller = NULL;
+    }
+
+    /*
+     * The unclaiming doesn't seem to mean much, the DVD is actually
+     * remounted when we release exclusive access. I'm not quite sure
+     * if I should put the unclaim first or not...
+     *
+     * Anyway, that it's automatically remounted very good news for us,
+     * because that means we don't have to mess with that ourselves. Of
+     * course there is the unlikely scenario that we've succeeded in claiming
+     * and umount the DVD but somehow failed to gain exclusive scsi access...
+     */
+    if (pThis->ppScsiTaskDI)
+    {
+        LogFlow(("%s-%d: releasing exclusive scsi access!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        (*pThis->ppScsiTaskDI)->ReleaseExclusiveAccess(pThis->ppScsiTaskDI);
+        (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
+        pThis->ppScsiTaskDI = NULL;
+    }
+    if (pThis->pDADisk)
+    {
+        LogFlow(("%s-%d: unclaiming the disk!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        DADiskUnclaim(pThis->pDADisk);
+        CFRelease(pThis->pDADisk);
+        pThis->pDADisk = NULL;
+    }
+    if (pThis->ppMMCDI)
+    {
+        LogFlow(("%s-%d: releasing the MMC object!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
+        pThis->ppMMCDI = NULL;
+    }
+    if (pThis->MasterPort != IO_OBJECT_NULL)
+    {
+        mach_port_deallocate(mach_task_self(), pThis->MasterPort);
+        pThis->MasterPort = IO_OBJECT_NULL;
+    }
+    if (pThis->pDASession)
+    {
+        LogFlow(("%s-%d: releasing the DA session!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
+        CFRelease(pThis->pDASession);
+        pThis->pDASession = NULL;
+    }
+}
+

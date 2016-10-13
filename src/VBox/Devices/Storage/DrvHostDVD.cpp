@@ -441,15 +441,6 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t 
 /** @copydoc FNPDMDRVDESTRUCT */
 static DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
 {
-#ifdef RT_OS_LINUX
-    PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
-
-    if (pThis->pbDoubleBuffer)
-    {
-        RTMemFree(pThis->pbDoubleBuffer);
-        pThis->pbDoubleBuffer = NULL;
-    }
-#endif
     return DRVHostBaseDestruct(pDrvIns);
 }
 

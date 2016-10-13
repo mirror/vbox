@@ -22,6 +22,7 @@
 #include <iprt/err.h>
 #include <iprt/critsect.h>
 #include <iprt/log.h>
+#include <iprt/semaphore.h>
 #include <VBox/cdefs.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -195,6 +196,9 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb);
 DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf, size_t cbRead);
 DECLHIDDEN(int) drvHostBaseWriteOs(PDRVHOSTBASE pThis, uint64_t off, const void *pvBuf, size_t cbWrite);
 DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis);
+
+DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis);
+DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis);
 
 /** Makes a PDRVHOSTBASE out of a PPDMIMOUNT. */
 #define PDMIMOUNT_2_DRVHOSTBASE(pInterface)        ( (PDRVHOSTBASE)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IMount)) )

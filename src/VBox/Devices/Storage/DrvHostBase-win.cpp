@@ -238,3 +238,36 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
     return RTFileFlush(pThis->hFileDevice);
 }
 
+
+DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->hwndDeviceChange)
+        PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
+
+    return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->EventPoller != NULL)
+    {
+        RTSemEventDestroy(pThis->EventPoller);
+        pThis->EventPoller = NULL;
+    }
+
+    if (pThis->hwndDeviceChange)
+    {
+        if (SetWindowLongPtr(pThis->hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
+            PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
+        pThis->hwndDeviceChange = NULL;
+    }
+
+    if (pThis->hFileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->hFileDevice);
+        AssertRC(rc);
+        pThis->hFileDevice = NIL_RTFILE;
+    }
+}
+

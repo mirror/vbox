@@ -200,3 +200,39 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
     return RTFileFlush(pThis->hFileDevice);
 }
 
+
+DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+{
+    return RTSemEventSignal(pThis->EventPoller);
+}
+
+
+DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->EventPoller != NULL)
+    {
+        RTSemEventDestroy(pThis->EventPoller);
+        pThis->EventPoller = NULL;
+    }
+
+    if (pThis->hFileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->hFileDevice);
+        AssertRC(rc);
+        pThis->hFileDevice = NIL_RTFILE;
+    }
+
+    if (pThis->hFileRawDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->hFileRawDevice);
+        AssertRC(rc);
+        pThis->hFileRawDevice = NIL_RTFILE;
+    }
+
+    if (pThis->pszRawDeviceOpen)
+    {
+        RTStrFree(pThis->pszRawDeviceOpen);
+        pThis->pszRawDeviceOpen = NULL;
+    }
+}
+

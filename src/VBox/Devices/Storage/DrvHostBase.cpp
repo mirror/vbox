@@ -1368,12 +1368,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         int cTimes = 50;
         do
         {
-#ifdef RT_OS_WINDOWS
-            if (pThis->hwndDeviceChange)
-                PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
-#else
-            RTSemEventSignal(pThis->EventPoller);
-#endif
+            drvHostBasePollerWakeupOs(pThis);
             rc = RTThreadWait(pThis->ThreadPoller, 100, NULL);
         } while (cTimes-- > 0 && rc == VERR_TIMEOUT);
 
@@ -1403,86 +1398,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     /*
      * Cleanup the other resources.
      */
-#ifdef RT_OS_WINDOWS
-    if (pThis->hwndDeviceChange)
-    {
-        if (SetWindowLongPtr(pThis->hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
-            PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
-        pThis->hwndDeviceChange = NULL;
-    }
-#else
-    if (pThis->EventPoller != NULL)
-    {
-        RTSemEventDestroy(pThis->EventPoller);
-        pThis->EventPoller = NULL;
-    }
-#endif
-
-#ifdef RT_OS_DARWIN
-    /*
-     * The unclaiming doesn't seem to mean much, the DVD is actually
-     * remounted when we release exclusive access. I'm not quite sure
-     * if I should put the unclaim first or not...
-     *
-     * Anyway, that it's automatically remounted very good news for us,
-     * because that means we don't have to mess with that ourselves. Of
-     * course there is the unlikely scenario that we've succeeded in claiming
-     * and umount the DVD but somehow failed to gain exclusive scsi access...
-     */
-    if (pThis->ppScsiTaskDI)
-    {
-        LogFlow(("%s-%d: releasing exclusive scsi access!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-        (*pThis->ppScsiTaskDI)->ReleaseExclusiveAccess(pThis->ppScsiTaskDI);
-        (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
-        pThis->ppScsiTaskDI = NULL;
-    }
-    if (pThis->pDADisk)
-    {
-        LogFlow(("%s-%d: unclaiming the disk!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-        DADiskUnclaim(pThis->pDADisk);
-        CFRelease(pThis->pDADisk);
-        pThis->pDADisk = NULL;
-    }
-    if (pThis->ppMMCDI)
-    {
-        LogFlow(("%s-%d: releasing the MMC object!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-        (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
-        pThis->ppMMCDI = NULL;
-    }
-    if (pThis->MasterPort != IO_OBJECT_NULL)
-    {
-        mach_port_deallocate(mach_task_self(), pThis->MasterPort);
-        pThis->MasterPort = IO_OBJECT_NULL;
-    }
-    if (pThis->pDASession)
-    {
-        LogFlow(("%s-%d: releasing the DA session!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-        CFRelease(pThis->pDASession);
-        pThis->pDASession = NULL;
-    }
-#else
-    if (pThis->hFileDevice != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->hFileDevice);
-        AssertRC(rc);
-        pThis->hFileDevice = NIL_RTFILE;
-    }
-#endif
-
-#ifdef RT_OS_SOLARIS
-    if (pThis->hFileRawDevice != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->hFileRawDevice);
-        AssertRC(rc);
-        pThis->hFileRawDevice = NIL_RTFILE;
-    }
-
-    if (pThis->pszRawDeviceOpen)
-    {
-        RTStrFree(pThis->pszRawDeviceOpen);
-        pThis->pszRawDeviceOpen = NULL;
-    }
-#endif
+    drvHostBaseDestructOs(pThis);
 
     if (pThis->pszDevice)
     {
