@@ -827,7 +827,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                                                &SecAttrs,
                                                OPEN_EXISTING,
                                                FILE_FLAG_OVERLAPPED,
-                                               NULL /*no template hanlde*/);
+                                               NULL /*no template handle*/);
                     if (hPipe != INVALID_HANDLE_VALUE)
                     {
                         pThis->hNmPipe = hPipe;
@@ -1463,7 +1463,7 @@ RTDECL(int) RTLocalIpcSessionFlush(RTLOCALIPCSESSION hSession)
             /* No flushing on Windows needed since RTLocalIpcSessionWrite will block until
              * all data was written (or an error occurred). */
             /** @todo r=bird: above comment is misinformed.
-            /*        Implement this as soon as we want an explicit asynchronous version of
+             *        Implement this as soon as we want an explicit asynchronous version of
              *        RTLocalIpcSessionWrite on Windows. */
             rc = VINF_SUCCESS;
         }
