@@ -250,12 +250,6 @@ DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
 
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->EventPoller != NULL)
-    {
-        RTSemEventDestroy(pThis->EventPoller);
-        pThis->EventPoller = NULL;
-    }
-
     if (pThis->hwndDeviceChange)
     {
         if (SetWindowLongPtr(pThis->hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
