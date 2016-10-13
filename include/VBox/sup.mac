@@ -38,13 +38,16 @@ struc SUPGIPCPU
     .iTSCHistoryHead            resd 1
     .au32TSCHistory             resd 8
     .u32PrevUpdateIntervalNS    resd 1
-    .au32Reserved0              resd (5)
+    .u32Reserved                resd 1
     .u64TSCSample               resq 1
-    .au32Reserved1              resd (1)
+    .au32Reserved1              resd 3
     .enmState                   resd 1
     .idCpu                      resd 1
     .iCpuSet                    resw 1
+    .iCpuGroup                  resw 1
+    .iCpuGroupMember            resw 1
     .idApic                     resw 1
+    .iReservedForNumaNode       resd 1
 endstruc
 
 %define SUPGIPUSETSCDELTA_NOT_APPLICABLE        0
@@ -75,7 +78,7 @@ struc SUPGLOBALINFOPAGE
     .cOnlineCpus                resw 1
     .cPresentCpus               resw 1
     .cPossibleCpus              resw 1
-    .u16Padding0                resw 1
+    .cPossibleCpuGroups         resw 1
     .idCpuMax                   resd 1
     .enmUseTscDelta             resd 1
     .fGetGipCpu                 resd 1
@@ -83,6 +86,7 @@ struc SUPGLOBALINFOPAGE
     .au32Padding1               resd 24
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
+    .aiFirstCpuSetIdxFromCpuGroup resw 256
     .aCPUs                      resb SUPGIPCPU_size
 endstruc
 
