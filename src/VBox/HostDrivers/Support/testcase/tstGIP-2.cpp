@@ -130,17 +130,25 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
                 && g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
                 SUPR3GipSetFlags(SUPGIP_FLAGS_TESTING_ENABLE, UINT32_MAX);
 
-            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u64CpuHz=%RU64  uCpuHzRef=%RU64  u32Mode=%d (%s)  fTestMode=%RTbool  u32Version=%#x\n",
+            RTPrintf("tstGIP-2: u32Mode=%d (%s)  fTestMode=%RTbool  u32Version=%#x  fGetGipCpu=%#RX32\n",
+                     g_pSUPGlobalInfoPage->u32Mode,
+                     SUPGetGIPModeName(g_pSUPGlobalInfoPage),
+                     fTestMode,
+                     g_pSUPGlobalInfoPage->u32Version,
+                     g_pSUPGlobalInfoPage->fGetGipCpu);
+            RTPrintf("tstGIP-2: cCpus=%d  cPossibleCpus=%d cPossibleCpuGroups=%d cPresentCpus=%d cOnlineCpus=%d\n",
                      g_pSUPGlobalInfoPage->cCpus,
+                     g_pSUPGlobalInfoPage->cPossibleCpus,
+                     g_pSUPGlobalInfoPage->cPossibleCpuGroups,
+                     g_pSUPGlobalInfoPage->cPresentCpus,
+                     g_pSUPGlobalInfoPage->cOnlineCpus);
+            RTPrintf("tstGIP-2: u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u64CpuHz=%RU64  uCpuHzRef=%RU64\n",
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
                      g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz,
                      g_pSUPGlobalInfoPage->u64CpuHz,
-                     uCpuHzRef,
-                     g_pSUPGlobalInfoPage->u32Mode,
-                     SUPGetGIPModeName(g_pSUPGlobalInfoPage),
-                     fTestMode,
-                     g_pSUPGlobalInfoPage->u32Version);
+                     uCpuHzRef);
+
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
                      : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      %sTSC Interval History...\n",

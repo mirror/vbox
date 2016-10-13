@@ -90,13 +90,18 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #  endif
             uint8_t  const  idApic   = ASMGetApicId();
             uint16_t const  iGipCpu  = pGip->aiCpuFromApicId[idApic];
-# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
+    || TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
 #  if TMPL_MODE != TMPL_MODE_ASYNC
             uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
 #  endif
             uint32_t        uAux;
             ASMReadTscWithAux(&uAux);
+#  if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
             uint16_t const  iCpuSet  = uAux & (RTCPUSET_MAX_CPUS - 1);
+#  else
+            uint16_t const  iCpuSet  = pGip->aiFirstCpuSetIdxFromCpuGroup[(uAux >> 8) & UINT8_MAX] + (uAux & UINT8_MAX);
+#  endif
             uint16_t const  iGipCpu  = pGip->aiCpuFromCpuSetIdx[iCpuSet];
 # elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
             uint16_t const  cbLim    = ASMGetIdtrLimit();
@@ -123,7 +128,8 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                 TMPL_READ_FENCE();
 #elif TMPL_MODE != TMPL_MODE_ASYNC \
    && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID \
-   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                 uint32_t const u32TransactionId = pGip->aCPUs[0].u32TransactionId;
                 ASMCompilerBarrier();
                 TMPL_READ_FENCE();
@@ -148,7 +154,8 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 # endif
 #endif
                 uint64_t u64PrevNanoTS          = ASMAtomicUoReadU64(pData->pu64Prev);
-#if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+#if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
+ || TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                 ASMCompilerBarrier();
                 uint32_t uAux2;
                 uint64_t u64Delta               = ASMReadTscWithAux(&uAux2); /* serializing */
@@ -167,7 +174,8 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #if defined(IN_RING3) && ( TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA )
 # if   TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID
                 if (RT_LIKELY(ASMGetApicId() == idApic))
-# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
+    || TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                 if (RT_LIKELY(uAux2 == uAux))
 # elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
                 if (RT_LIKELY(ASMGetIdtrLimit() == cbLim))

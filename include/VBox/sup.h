@@ -229,56 +229,60 @@ typedef struct SUPGIPCPU
      * thusly that odd numbers indicates update in progress, while even numbers
      * indicate stable data. Use this to make sure that the data items you fetch
      * are consistent. */
-    volatile uint32_t   u32TransactionId;
+    volatile uint32_t       u32TransactionId;
     /** The interval in TSC ticks between two NanoTS updates.
      * This is the average interval over the last 2, 4 or 8 updates + a little slack.
      * The slack makes the time go a tiny tiny bit slower and extends the interval enough
      * to avoid ending up with too many 1ns increments. */
-    volatile uint32_t   u32UpdateIntervalTSC;
+    volatile uint32_t       u32UpdateIntervalTSC;
     /** Current nanosecond timestamp. */
-    volatile uint64_t   u64NanoTS;
+    volatile uint64_t       u64NanoTS;
     /** The TSC at the time of u64NanoTS. */
-    volatile uint64_t   u64TSC;
+    volatile uint64_t       u64TSC;
     /** Current CPU Frequency. */
-    volatile uint64_t   u64CpuHz;
+    volatile uint64_t       u64CpuHz;
     /** The TSC delta with reference to the master TSC, subtract from RDTSC. */
-    volatile int64_t    i64TSCDelta;
+    volatile int64_t        i64TSCDelta;
     /** Number of errors during updating.
      * Typical errors are under/overflows. */
-    volatile uint32_t   cErrors;
+    volatile uint32_t       cErrors;
     /** Index of the head item in au32TSCHistory. */
-    volatile uint32_t   iTSCHistoryHead;
+    volatile uint32_t       iTSCHistoryHead;
     /** Array of recent TSC interval deltas.
      * The most recent item is at index iTSCHistoryHead.
      * This history is used to calculate u32UpdateIntervalTSC.
      */
-    volatile uint32_t   au32TSCHistory[8];
+    volatile uint32_t       au32TSCHistory[8];
     /** The interval between the last two NanoTS updates. (experiment for now) */
-    volatile uint32_t   u32PrevUpdateIntervalNS;
+    volatile uint32_t       u32PrevUpdateIntervalNS;
 
     /** Reserved for future per processor data. */
-    volatile uint32_t   au32Reserved0[5];
-
+    volatile uint32_t       u32Reserved;
     /** The TSC value read while doing TSC delta measurements across CPUs. */
-    volatile uint64_t   u64TSCSample;
-
+    volatile uint64_t       u64TSCSample;
     /** Reserved for future per processor data. */
-    volatile uint32_t   au32Reserved1[1];
+    volatile uint32_t       au32Reserved1[3];
 
-    /** @todo Add topology/NUMA info. */
     /** The CPU state. */
     SUPGIPCPUSTATE volatile enmState;
     /** The host CPU ID of this CPU (the SUPGIPCPU is indexed by APIC ID). */
     RTCPUID                 idCpu;
     /** The CPU set index of this CPU. */
     int16_t                 iCpuSet;
+    /** CPU group number (always zero, except on windows). */
+    uint16_t                iCpuGroup;
+    /** CPU group number (same as iCpuSet, except on windows). */
+    uint16_t                iCpuGroupMember;
     /** The APIC ID of this CPU. */
     uint16_t                idApic;
+    /** @todo Add topology/NUMA info. */
+    uint32_t                iReservedForNumaNode;
 } SUPGIPCPU;
 AssertCompileSize(RTCPUID, 4);
 AssertCompileSize(SUPGIPCPU, 128);
 AssertCompileMemberAlignment(SUPGIPCPU, u64NanoTS, 8);
 AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8);
+AssertCompileMemberAlignment(SUPGIPCPU, u64TSCSample, 8);
 
 /** Pointer to per cpu data.
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
@@ -313,6 +317,12 @@ typedef enum SUPGIPUSETSCDELTA
 
 
 /** @name SUPGIPGETCPU_XXX - methods that aCPUs can be indexed.
+ *
+ * @note    Linux offers information via selector 0x78, and Windows via selector
+ *          0x53.  But since they both support RDTSCP as well, and because most
+ *          CPUs now have RDTSCP, we prefer it over LSL.  We can implement more
+ *          alternatives if it becomes necessary.
+ *
  * @{
  */
 /** Use ASMGetApicId (or equivalent) and translate the result via
@@ -334,8 +344,17 @@ typedef enum SUPGIPUSETSCDELTA
  * value in the IDT limit.  The masking is a precaution against what linux
  * does with RDTSCP. */
 #define SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS   RT_BIT_32(2)
-/* Linux also offers information via selector 0x78, but we'll settle for
-   RDTSCP for now. */
+/** Windows specific RDTSCP variant, where CH gives you the group and CL gives
+ * you the CPU number within that group.
+ *
+ * Use SUPGLOBALINFOPAGE::aidFirstCpuFromCpuGroup to get the group base CPU set
+ * index, then translate the sum of thru aiCpuFromCpuSetIdx to find the aCPUs
+ * entry.
+ *
+ * @note The group number is actually 16-bit wide (ECX[23:8]), but we simplify
+ *       it since we only support 256 CPUs/groups at the moment.
+ */
+#define SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL RT_BIT_32(3)
 /** @} */
 
 
@@ -380,7 +399,8 @@ typedef struct SUPGLOBALINFOPAGE
     volatile uint16_t   cPresentCpus;
     /** The highest number of CPUs possible. */
     uint16_t            cPossibleCpus;
-    uint16_t            u16Padding0;
+    /** The highest number of CPU groups possible. */
+    uint16_t            cPossibleCpuGroups;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
     /** The applicability of SUPGIPCPU::i64TscDelta. */
@@ -398,6 +418,9 @@ typedef struct SUPGLOBALINFOPAGE
     uint16_t            aiCpuFromApicId[256];
     /** CPU set index to CPU table index. */
     uint16_t            aiCpuFromCpuSetIdx[RTCPUSET_MAX_CPUS];
+    /** Table indexed by CPU group index to get the CPU set index of the first
+     *  CPU. */
+    uint16_t            aiFirstCpuSetIdxFromCpuGroup[RTCPUSET_MAX_CPUS];
 
     /** Array of per-cpu data.
      * This is index by ApicId via the aiCpuFromApicId table.
@@ -414,6 +437,7 @@ AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 32);
 #else
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 256);
 #endif
+AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000); /* Keeping it less or equal to a page for raw-mode (saved state). */
 
 /** Pointer to the global info page.
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
@@ -425,7 +449,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00060001
+#define SUPGLOBALINFOPAGE_VERSION   0x00070000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -568,6 +592,29 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
     }
     AssertFailed();
     return UINT64_MAX;
+}
+
+
+/**
+ * Gets the pointer to the per CPU data for a CPU given by its set index.
+ *
+ * @returns Pointer to the corresponding per CPU structure, or NULL if invalid.
+ * @param   pGip        The GIP pointer.
+ * @param   iCpuSet     The CPU set index of the CPU which we want.
+ */
+DECLINLINE(PSUPGIPCPU) SUPGetGipCpuBySetIndex(PSUPGLOBALINFOPAGE pGip, uint32_t iCpuSet)
+{
+    if (RT_LIKELY(   pGip
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC))
+    {
+        if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        {
+            uint16_t iCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+            if (RT_LIKELY(iCpu < pGip->cCpus))
+                return &pGip->aCPUs[iCpu];
+        }
+    }
+    return NULL;
 }
 
 

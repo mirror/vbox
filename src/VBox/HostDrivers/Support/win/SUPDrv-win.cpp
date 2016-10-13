@@ -358,6 +358,40 @@ static FAST_IO_DISPATCH const g_VBoxDrvFastIoDispatch =
 };
 #endif /* VBOXDRV_WITH_FAST_IO */
 
+/** Default ZERO value. */
+static ULONG                        g_fOptDefaultZero = 0;
+/** Registry values.
+ * We wrap these in a struct to ensure they are followed by a little zero
+ * padding in order to limit the chance of trouble on unpatched systems.  */
+struct
+{
+    /** The ForceAsync registry value. */
+    ULONG                           fOptForceAsyncTsc;
+    /** Padding. */
+    uint64_t                        au64Padding[2];
+}                                   g_Options = { FALSE, 0, 0 };
+/** Registry query table for RtlQueryRegistryValues. */
+static RTL_QUERY_REGISTRY_TABLE     g_aRegValues[] =
+{
+    {
+        /* .QueryRoutine = */   NULL,
+        /* .Flags = */          RTL_QUERY_REGISTRY_DIRECT | RTL_QUERY_REGISTRY_TYPECHECK,
+        /* .Name = */           L"ForceAsyncTsc",
+        /* .EntryContext = */   &g_Options.fOptForceAsyncTsc,
+        /* .DefaultType = */    (REG_DWORD << RTL_QUERY_REGISTRY_TYPECHECK_SHIFT) | REG_DWORD,
+        /* .DefaultData = */    &g_fOptDefaultZero,
+        /* .DefaultLength = */  sizeof(g_fOptDefaultZero),
+    },
+    {   NULL, 0, NULL, NULL, 0, NULL, 0 } /* terminator entry. */
+};
+
+/** Pointer to KeQueryMaximumGroupCount. */
+static PFNKEQUERYMAXIMUMGROUPCOUNT      g_pfnKeQueryMaximumGroupCount = NULL;
+/** Pointer to KeGetProcessorIndexFromNumber. */
+static PFNKEGETPROCESSORINDEXFROMNUMBER g_pfnKeGetProcessorIndexFromNumber = NULL;
+/** Pointer to KeGetProcessorNumberFromIndex. */
+static PFNKEGETPROCESSORNUMBERFROMINDEX g_pfnKeGetProcessorNumberFromIndex = NULL;
+
 #ifdef VBOX_WITH_HARDENING
 /** Pointer to the stub device instance. */
 static PDEVICE_OBJECT               g_pDevObjStub = NULL;
@@ -553,9 +587,43 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
 #endif
 
     /*
-     * Initialize the runtime (IPRT).
+     * Query options first so any overflows on unpatched machines will do less
+     * harm (see MS11-011 / 2393802 / 2011-03-18).
+     *
+     * Unfortunately, pRegPath isn't documented as zero terminated, even if it
+     * quite likely always is, so we have to make a copy here.
      */
     NTSTATUS rcNt;
+    PWSTR pwszCopy = (PWSTR)ExAllocatePoolWithTag(NonPagedPool, pRegPath->Length + sizeof(WCHAR), 'VBox');
+    if (pwszCopy)
+    {
+        memcpy(pwszCopy, pRegPath->Buffer, pRegPath->Length);
+        pwszCopy[pRegPath->Length / sizeof(WCHAR)] = '\0';
+        rcNt = RtlQueryRegistryValues(RTL_REGISTRY_ABSOLUTE | RTL_REGISTRY_OPTIONAL, pwszCopy,
+                                      g_aRegValues, NULL /*pvContext*/, NULL /*pvEnv*/);
+        ExFreePoolWithTag(pwszCopy, 'VBox');
+        /* Probably safe to ignore rcNt here. */
+    }
+
+    /*
+     * Resolve methods we want but isn't available everywhere.
+     */
+    UNICODE_STRING RoutineName;
+    RtlInitUnicodeString(&RoutineName, L"KeQueryMaximumGroupCount");
+    g_pfnKeQueryMaximumGroupCount = (PFNKEQUERYMAXIMUMGROUPCOUNT)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeGetProcessorIndexFromNumber");
+    g_pfnKeGetProcessorIndexFromNumber = (PFNKEGETPROCESSORINDEXFROMNUMBER)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeGetProcessorNumberFromIndex");
+    g_pfnKeGetProcessorNumberFromIndex = (PFNKEGETPROCESSORNUMBERFROMINDEX)MmGetSystemRoutineAddress(&RoutineName);
+
+    Assert(   (g_pfnKeGetProcessorNumberFromIndex != NULL) == (g_pfnKeGetProcessorIndexFromNumber != NULL)
+           && (g_pfnKeGetProcessorNumberFromIndex != NULL) == (g_pfnKeQueryMaximumGroupCount != NULL)); /* all or nothing. */
+
+    /*
+     * Initialize the runtime (IPRT).
+     */
     int vrc = RTR0Init(0);
     if (RT_SUCCESS(vrc))
     {
@@ -1642,6 +1710,73 @@ void VBOXCALL supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSIO
 }
 
 
+void VBOXCALL supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
+{
+    NOREF(pDevExt);
+
+    /*
+     * The indexes are assigned in group order (see initterm-r0drv-nt.cpp).
+     */
+    if (   g_pfnKeQueryMaximumGroupCount
+        && g_pfnKeGetProcessorIndexFromNumber)
+    {
+        unsigned cGroups = g_pfnKeQueryMaximumGroupCount();
+        AssertStmt(cGroups > 0, cGroups = 1);
+        AssertStmt(cGroups < RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup),
+                   cGroups = RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup));
+        pGip->cPossibleCpuGroups = cGroups;
+
+        KEPROCESSORINDEX idxCpuMin = 0;
+        for (unsigned iGroup = 0; iGroup < cGroups; iGroup++)
+        {
+            PROCESSOR_NUMBER ProcNum;
+            ProcNum.Group    = (USHORT)iGroup;
+            ProcNum.Number   = 0;
+            ProcNum.Reserved = 0;
+            KEPROCESSORINDEX idxCpu = g_pfnKeGetProcessorIndexFromNumber(&ProcNum);
+            Assert(idxCpu != INVALID_PROCESSOR_INDEX);
+            Assert(idxCpu >= idxCpuMin);
+            idxCpuMin = idxCpu;
+            pGip->aiFirstCpuSetIdxFromCpuGroup[iGroup] = (uint16_t)idxCpu;
+        }
+    }
+    else
+    {
+        Assert(!g_pfnKeQueryMaximumGroupCount);
+        Assert(!g_pfnKeGetProcessorIndexFromNumber);
+
+        pGip->cPossibleCpuGroups              = 1;
+        pGip->aiFirstCpuSetIdxFromCpuGroup[0] = 0;
+    }
+}
+
+
+uint16_t VBOXCALL supdrvOSGipGetGroupFromCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu, uint16_t *piCpuGroupMember)
+{
+    NOREF(pDevExt);
+
+    /*
+     * This is just a wrapper around KeGetProcessorNumberFromIndex.
+     */
+    if (g_pfnKeGetProcessorNumberFromIndex)
+    {
+        PROCESSOR_NUMBER ProcNum = { UINT16_MAX, UINT8_MAX, 0 };
+        NTSTATUS rcNt = g_pfnKeGetProcessorNumberFromIndex(idCpu, &ProcNum);
+        if (NT_SUCCESS(rcNt))
+        {
+            Assert(ProcNum.Group < g_pfnKeQueryMaximumGroupCount());
+            *piCpuGroupMember = ProcNum.Number;
+            return ProcNum.Group;
+        }
+
+        AssertMsgFailed(("rcNt=%#x for idCpu=%u\n", rcNt, idCpu));
+    }
+
+    *piCpuGroupMember = 0;
+    return idCpu;
+}
+
+
 /**
  * Initializes any OS specific object creator fields.
  */
@@ -1679,7 +1814,7 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     RT_NOREF1(pDevExt);
-    return false;
+    return g_Options.fOptForceAsyncTsc != 0;
 }
 
 

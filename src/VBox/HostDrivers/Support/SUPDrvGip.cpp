@@ -273,6 +273,8 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
             && iCpuSet < RTCPUSET_MAX_CPUS
             && RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS))
         {
+            PSUPGIPCPU pGipCpu = SUPGetGipCpuBySetIndex(pGip, iCpuSet);
+
             /*
              * Check whether the IDTR.LIMIT contains a CPU number.
              */
@@ -304,7 +306,8 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
                 if (   ASMIsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
                     && (ASMCpuId_EDX(UINT32_C(0x80000001)) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
                 {
-                    uint32_t uAux;
+                    uint32_t const  uGroupedAux = (uint8_t)pGipCpu->iCpuGroupMember | ((uint32_t)pGipCpu->iCpuGroup << 8);
+                    uint32_t        uAux;
                     ASMReadTscWithAux(&uAux);
                     if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
                     {
@@ -312,6 +315,15 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
                         ASMReadTscWithAux(&uAux);
                         if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
                             fSupported |= SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS;
+                    }
+
+                    if (   (uAux & UINT16_MAX) == uGroupedAux
+                        && pGipCpu->iCpuGroupMember <= UINT8_MAX)
+                    {
+                        ASMNopPause();
+                        ASMReadTscWithAux(&uAux);
+                        if ((uAux & UINT16_MAX) == uGroupedAux)
+                            fSupported |= SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL;
                     }
                 }
             }
@@ -1258,11 +1270,11 @@ static uint32_t supdrvGipFindOrAllocCpuIndexForCpuId(PSUPGLOBALINFOPAGE pGip, RT
  */
 static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 {
-    int         iCpuSet = 0;
-    uint16_t    idApic = UINT16_MAX;
-    uint32_t    i = 0;
-    uint64_t    u64NanoTS = 0;
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    PSUPGLOBALINFOPAGE  pGip      = pDevExt->pGip;
+    int                 iCpuSet   = 0;
+    uint16_t            idApic    = UINT16_MAX;
+    uint32_t            i         = 0;
+    uint64_t            u64NanoTS = 0;
 
     AssertPtrReturnVoid(pGip);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -1300,6 +1312,12 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     ASMAtomicWriteU16(&pGip->aCPUs[i].idApic,  idApic);
     ASMAtomicWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
     ASMAtomicWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
+
+    pGip->aCPUs[i].iCpuGroup = 0;
+    pGip->aCPUs[i].iCpuGroupMember = iCpuSet;
+#ifdef RT_OS_WINDOWS
+    pGip->aCPUs[i].iCpuGroup = supdrvOSGipGetGroupFromCpu(pDevExt, idCpu, &pGip->aCPUs[i].iCpuGroupMember);
+#endif
 
     /*
      * Update the APIC ID and CPU set index mappings.
@@ -1682,10 +1700,13 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
     pCpu->u64TSCSample       = GIP_TSC_DELTA_RSVD;
     pCpu->i64TSCDelta        = pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED ? INT64_MAX : 0;
 
-    ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
-    ASMAtomicWriteU32(&pCpu->idCpu,     NIL_RTCPUID);
-    ASMAtomicWriteS16(&pCpu->iCpuSet,   -1);
-    ASMAtomicWriteU16(&pCpu->idApic,    UINT16_MAX);
+    ASMAtomicWriteSize(&pCpu->enmState,             SUPGIPCPUSTATE_INVALID);
+    ASMAtomicWriteU32(&pCpu->idCpu,                 NIL_RTCPUID);
+    ASMAtomicWriteS16(&pCpu->iCpuSet,               -1);
+    ASMAtomicWriteU16(&pCpu->iCpuGroup,             0);
+    ASMAtomicWriteU16(&pCpu->iCpuGroupMember,       UINT16_MAX);
+    ASMAtomicWriteU16(&pCpu->idApic,                UINT16_MAX);
+    ASMAtomicWriteU32(&pCpu->iReservedForNumaNode,  0);
 
     /*
      * The first time we're called, we don't have a CPU frequency handy,
@@ -1763,11 +1784,18 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cOnlineCpus             = RTMpGetOnlineCount();
     pGip->cPresentCpus            = RTMpGetPresentCount();
     pGip->cPossibleCpus           = RTMpGetCount();
+    pGip->cPossibleCpuGroups      = 1;
     pGip->idCpuMax                = RTMpGetMaxCpuId();
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = UINT16_MAX;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
+    pGip->aiFirstCpuSetIdxFromCpuGroup[0] = 0;
+    for (i = 1; i < RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup); i++)
+        pGip->aiFirstCpuSetIdxFromCpuGroup[i] = UINT16_MAX;
+#ifdef RT_OS_WINDOWS
+    supdrvOSInitGipGroupTable(pDevExt, pGip);
+#endif
     for (i = 0; i < cCpus; i++)
         supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS, 0 /*uCpuHz*/);
 
@@ -2393,7 +2421,9 @@ static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uin
      * the onlined CPU but the tick creeps in before the event notification is
      * run.
      */
-    if (RT_UNLIKELY(iTick == 1))
+    if (RT_LIKELY(iTick != 1))
+    { /* likely*/ }
+    else
     {
         iCpu = supdrvGipFindOrAllocCpuIndexForCpuId(pGip, idCpu);
         if (pGip->aCPUs[iCpu].enmState == SUPGIPCPUSTATE_OFFLINE)

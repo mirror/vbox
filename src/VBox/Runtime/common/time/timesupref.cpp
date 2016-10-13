@@ -111,6 +111,13 @@ RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseRdtscp);
 # include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseIdtrLim);
 
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl);
+
 #else  /* IN_RC || IN_RING0: Disable interrupts and call getter function. */
 
 # undef  TMPL_MODE
@@ -194,6 +201,13 @@ RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseRdtscp);
 # define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsyncUseIdtrLim
 # include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseIdtrLim);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl);
 
 #else  /* IN_RC || IN_RING0: Disable interrupts and call getter function. */
 

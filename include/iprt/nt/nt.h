@@ -2389,6 +2389,17 @@ typedef RTL_CRITICAL_SECTION *PRTL_CRITICAL_SECTION;
 
 /*NTSYSAPI ULONG NTAPI RtlNtStatusToDosError(NTSTATUS rcNt);*/
 
+/** @def RTL_QUERY_REGISTRY_TYPECHECK
+ * WDK 8.1+, backported in updates, ignored in older. */
+#if !defined(RTL_QUERY_REGISTRY_TYPECHECK) || defined(DOXYGEN_RUNNING)
+# define RTL_QUERY_REGISTRY_TYPECHECK       UINT32_C(0x00000100)
+#endif
+/** @def RTL_QUERY_REGISTRY_TYPECHECK_SHIFT
+ * WDK 8.1+, backported in updates, ignored in older. */
+#if !defined(RTL_QUERY_REGISTRY_TYPECHECK_SHIFT) || defined(DOXYGEN_RUNNING)
+# define RTL_QUERY_REGISTRY_TYPECHECK_SHIFT 24
+#endif
+
 
 RT_C_DECLS_END
 /** @} */
