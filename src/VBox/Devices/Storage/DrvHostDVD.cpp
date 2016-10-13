@@ -117,12 +117,25 @@
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock);
-#ifdef VBOX_WITH_SUID_WRAPPER
-static int solarisCheckUserAuth();
-static int solarisEnterRootMode(uid_t *pEffUserID);
-static int solarisExitRootMode(uid_t *pEffUserID);
-#endif
 
+#ifdef VBOX_WITH_SUID_WRAPPER
+/**
+ * Checks if the current user is authorized using Solaris' role-based access control.
+ * Made as a separate function with so that it need not be invoked each time we need
+ * to gain root access.
+ *
+ * @returns VBox error code.
+ */
+static int solarisCheckUserAuth()
+{
+    /* Uses Solaris' role-based access control (RBAC).*/
+    struct passwd *pPass = getpwuid(getuid());
+    if (pPass == NULL || chkauthattr("solaris.device.cdrw", pPass->pw_name) == 0)
+        return VERR_PERMISSION_DENIED;
+
+    return VINF_SUCCESS;
+}
+#endif
 
 /** @interface_method_impl{PDMIMOUNT,pfnUnmount} */
 static DECLCALLBACK(int) drvHostDvdUnmount(PPDMIMOUNT pInterface, bool fForce, bool fEject)
@@ -420,218 +433,16 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t 
     int rc;
     LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /*
      * Pass the request on to the internal scsi command interface.
      * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...
      */
     if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
         memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
-    rc = drvHostBaseScsiCmdOs(pThis, pbCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
+    rc = drvHostBaseScsiCmdOs(pThis, pbCmd, 12, enmTxDir, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
     if (rc == VERR_UNRESOLVED_ERROR)
         /* sense information set */
         rc = VERR_DEV_IO_ERROR;
-
-#elif defined(RT_OS_LINUX)
-    int direction;
-    struct cdrom_generic_command cgc;
-
-    switch (enmTxDir)
-    {
-        case PDMMEDIATXDIR_NONE:
-            Assert(*pcbBuf == 0);
-            direction = CGC_DATA_NONE;
-            break;
-        case PDMMEDIATXDIR_FROM_DEVICE:
-            Assert(*pcbBuf != 0);
-            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
-            /* Make sure that the buffer is clear for commands reading
-             * data. The actually received data may be shorter than what
-             * we expect, and due to the unreliable feedback about how much
-             * data the ioctl actually transferred, it's impossible to
-             * prevent that. Returning previous buffer contents may cause
-             * security problems inside the guest OS, if users can issue
-             * commands to the CDROM device. */
-            memset(pThis->pbDoubleBuffer, '\0', *pcbBuf);
-            direction = CGC_DATA_READ;
-            break;
-        case PDMMEDIATXDIR_TO_DEVICE:
-            Assert(*pcbBuf != 0);
-            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
-            memcpy(pThis->pbDoubleBuffer, pvBuf, *pcbBuf);
-            direction = CGC_DATA_WRITE;
-            break;
-        default:
-            AssertMsgFailed(("enmTxDir invalid!\n"));
-            direction = CGC_DATA_NONE;
-    }
-    memset(&cgc, '\0', sizeof(cgc));
-    memcpy(cgc.cmd, pbCmd, CDROM_PACKET_SIZE);
-    cgc.buffer = (unsigned char *)pThis->pbDoubleBuffer;
-    cgc.buflen = *pcbBuf;
-    cgc.stat = 0;
-    Assert(cbSense >= sizeof(struct request_sense));
-    cgc.sense = (struct request_sense *)pabSense;
-    cgc.data_direction = direction;
-    cgc.quiet = false;
-    cgc.timeout = cTimeoutMillies;
-    rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_SEND_PACKET, &cgc);
-    if (rc < 0)
-    {
-        if (errno == EBUSY)
-            rc = VERR_PDM_MEDIA_LOCKED;
-        else if (errno == ENOSYS)
-            rc = VERR_NOT_SUPPORTED;
-        else
-        {
-            rc = RTErrConvertFromErrno(errno);
-            if (rc == VERR_ACCESS_DENIED && cgc.sense->sense_key == SCSI_SENSE_NONE)
-                cgc.sense->sense_key = SCSI_SENSE_ILLEGAL_REQUEST;
-            Log2(("%s: error status %d, rc=%Rrc\n", __FUNCTION__, cgc.stat, rc));
-        }
-    }
-    switch (enmTxDir)
-    {
-        case PDMMEDIATXDIR_FROM_DEVICE:
-            memcpy(pvBuf, pThis->pbDoubleBuffer, *pcbBuf);
-            break;
-        default:
-            ;
-    }
-    Log2(("%s: after ioctl: cgc.buflen=%d txlen=%d\n", __FUNCTION__, cgc.buflen, *pcbBuf));
-    /* The value of cgc.buflen does not reliably reflect the actual amount
-     * of data transferred (for packet commands with little data transfer
-     * it's 0). So just assume that everything worked ok. */
-
-#elif defined(RT_OS_SOLARIS)
-    struct uscsi_cmd usc;
-    union scsi_cdb scdb;
-    memset(&usc, 0, sizeof(struct uscsi_cmd));
-    memset(&scdb, 0, sizeof(scdb));
-
-    switch (enmTxDir)
-    {
-        case PDMMEDIATXDIR_NONE:
-            Assert(*pcbBuf == 0);
-            usc.uscsi_flags = USCSI_READ;
-            /* nothing to do */
-            break;
-
-        case PDMMEDIATXDIR_FROM_DEVICE:
-            Assert(*pcbBuf != 0);
-            /* Make sure that the buffer is clear for commands reading
-             * data. The actually received data may be shorter than what
-             * we expect, and due to the unreliable feedback about how much
-             * data the ioctl actually transferred, it's impossible to
-             * prevent that. Returning previous buffer contents may cause
-             * security problems inside the guest OS, if users can issue
-             * commands to the CDROM device. */
-            memset(pvBuf, '\0', *pcbBuf);
-            usc.uscsi_flags = USCSI_READ;
-            break;
-        case PDMMEDIATXDIR_TO_DEVICE:
-            Assert(*pcbBuf != 0);
-            usc.uscsi_flags = USCSI_WRITE;
-            break;
-        default:
-            AssertMsgFailedReturn(("%d\n", enmTxDir), VERR_INTERNAL_ERROR);
-    }
-    usc.uscsi_flags |= USCSI_RQENABLE;
-    usc.uscsi_rqbuf = (char *)pabSense;
-    usc.uscsi_rqlen = cbSense;
-    usc.uscsi_cdb = (caddr_t)&scdb;
-    usc.uscsi_cdblen = 12;
-    memcpy (usc.uscsi_cdb, pbCmd, usc.uscsi_cdblen);
-    usc.uscsi_bufaddr = (caddr_t)pvBuf;
-    usc.uscsi_buflen = *pcbBuf;
-    usc.uscsi_timeout = (cTimeoutMillies + 999) / 1000;
-
-    /* We need root privileges for user-SCSI under Solaris. */
-#ifdef VBOX_WITH_SUID_WRAPPER
-    uid_t effUserID = geteuid();
-    solarisEnterRootMode(&effUserID); /** @todo check return code when this really works. */
-#endif
-    rc = ioctl(RTFileToNative(pThis->hFileRawDevice), USCSICMD, &usc);
-#ifdef VBOX_WITH_SUID_WRAPPER
-    solarisExitRootMode(&effUserID);
-#endif
-    if (rc < 0)
-    {
-        if (errno == EPERM)
-            return VERR_PERMISSION_DENIED;
-        if (usc.uscsi_status)
-        {
-            rc = RTErrConvertFromErrno(errno);
-            Log2(("%s: error status. rc=%Rrc\n", __FUNCTION__, rc));
-        }
-    }
-    Log2(("%s: after ioctl: residual buflen=%d original buflen=%d\n", __FUNCTION__, usc.uscsi_resid, usc.uscsi_buflen));
-
-#elif defined(RT_OS_WINDOWS)
-    int direction;
-    struct _REQ
-    {
-        SCSI_PASS_THROUGH_DIRECT spt;
-        uint8_t aSense[64];
-    } Req;
-    DWORD cbReturned = 0;
-
-    switch (enmTxDir)
-    {
-        case PDMMEDIATXDIR_NONE:
-            direction = SCSI_IOCTL_DATA_UNSPECIFIED;
-            break;
-        case PDMMEDIATXDIR_FROM_DEVICE:
-            Assert(*pcbBuf != 0);
-            /* Make sure that the buffer is clear for commands reading
-             * data. The actually received data may be shorter than what
-             * we expect, and due to the unreliable feedback about how much
-             * data the ioctl actually transferred, it's impossible to
-             * prevent that. Returning previous buffer contents may cause
-             * security problems inside the guest OS, if users can issue
-             * commands to the CDROM device. */
-            memset(pvBuf, '\0', *pcbBuf);
-            direction = SCSI_IOCTL_DATA_IN;
-            break;
-        case PDMMEDIATXDIR_TO_DEVICE:
-            direction = SCSI_IOCTL_DATA_OUT;
-            break;
-        default:
-            AssertMsgFailed(("enmTxDir invalid!\n"));
-            direction = SCSI_IOCTL_DATA_UNSPECIFIED;
-    }
-    memset(&Req, '\0', sizeof(Req));
-    Req.spt.Length = sizeof(Req.spt);
-    Req.spt.CdbLength = 12;
-    memcpy(Req.spt.Cdb, pbCmd, Req.spt.CdbLength);
-    Req.spt.DataBuffer = pvBuf;
-    Req.spt.DataTransferLength = *pcbBuf;
-    Req.spt.DataIn = direction;
-    Req.spt.TimeOutValue = (cTimeoutMillies + 999) / 1000; /* Convert to seconds */
-    Assert(cbSense <= sizeof(Req.aSense));
-    Req.spt.SenseInfoLength = (UCHAR)RT_MIN(sizeof(Req.aSense), cbSense);
-    Req.spt.SenseInfoOffset = RT_OFFSETOF(struct _REQ, aSense);
-    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_SCSI_PASS_THROUGH_DIRECT,
-                        &Req, sizeof(Req), &Req, sizeof(Req), &cbReturned, NULL))
-    {
-        if (cbReturned > RT_OFFSETOF(struct _REQ, aSense))
-            memcpy(pabSense, Req.aSense, cbSense);
-        else
-            memset(pabSense, '\0', cbSense);
-        /* Windows shares the property of not properly reflecting the actually
-         * transferred data size. See above. Assume that everything worked ok.
-         * Except if there are sense information. */
-        rc = (pabSense[2] & 0x0f) == SCSI_SENSE_NONE
-                 ? VINF_SUCCESS
-                 : VERR_DEV_IO_ERROR;
-    }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-    Log2(("%s: scsistatus=%d bytes returned=%d tlength=%d\n", __FUNCTION__, Req.spt.ScsiStatus, cbReturned, Req.spt.DataTransferLength));
-
-#else
-# error "Unsupported platform."
-#endif
 
     if (pbCmd[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION)
     {
@@ -644,79 +455,6 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t 
     LogFlow(("%s: rc=%Rrc\n", __FUNCTION__, rc));
     return rc;
 }
-
-
-#ifdef VBOX_WITH_SUID_WRAPPER
-/* These functions would have to go into a separate solaris binary with
- * the setuid permission set, which would run the user-SCSI ioctl and
- * return the value. BUT... this might be prohibitively slow.
- */
-# ifdef RT_OS_SOLARIS
-
-/**
- * Checks if the current user is authorized using Solaris' role-based access control.
- * Made as a separate function with so that it need not be invoked each time we need
- * to gain root access.
- *
- * @returns VBox error code.
- */
-static int solarisCheckUserAuth()
-{
-    /* Uses Solaris' role-based access control (RBAC).*/
-    struct passwd *pPass = getpwuid(getuid());
-    if (pPass == NULL || chkauthattr("solaris.device.cdrw", pPass->pw_name) == 0)
-        return VERR_PERMISSION_DENIED;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Setuid wrapper to gain root access.
- *
- * @returns VBox error code.
- * @param   pEffUserID     Pointer to effective user ID.
- */
-static int solarisEnterRootMode(uid_t *pEffUserID)
-{
-    /* Increase privilege if required */
-    if (*pEffUserID != 0)
-    {
-        if (seteuid(0) == 0)
-        {
-            *pEffUserID = 0;
-            return VINF_SUCCESS;
-        }
-        return VERR_PERMISSION_DENIED;
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Setuid wrapper to relinquish root access.
- *
- * @returns VBox error code.
- * @param   pEffUserID     Pointer to effective user ID.
- */
-static int solarisExitRootMode(uid_t *pEffUserID)
-{
-    /* Get back to user mode. */
-    if (*pEffUserID == 0)
-    {
-        uid_t realID = getuid();
-        if (seteuid(realID) == 0)
-        {
-            *pEffUserID = realID;
-            return VINF_SUCCESS;
-        }
-        return VERR_PERMISSION_DENIED;
-    }
-    return VINF_SUCCESS;
-}
-
-# endif   /* RT_OS_SOLARIS */
-#endif /* VBOX_WITH_SUID_WRAPPER */
 
 
 /* -=-=-=-=- driver interface -=-=-=-=- */
