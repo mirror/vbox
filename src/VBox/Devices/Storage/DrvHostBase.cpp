@@ -144,60 +144,22 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
      * Check the state.
      */
     int rc;
-#ifdef RT_OS_DARWIN
-    if (    pThis->fMediaPresent
-        &&  pThis->ppScsiTaskDI
-        &&  pThis->cbBlock)
-#elif defined(RT_OS_FREEBSD)
-    if (    pThis->fMediaPresent
-        &&  pThis->cbBlock)
-#else
     if (pThis->fMediaPresent)
-#endif
     {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-        /*
-         * Issue a READ(12) request.
-         */
-        do
-        {
-            const uint32_t  LBA       = off / pThis->cbBlock;
-            AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
-            uint32_t        cbRead32  =   cbRead > SCSI_MAX_BUFFER_SIZE
-                                        ? SCSI_MAX_BUFFER_SIZE
-                                        : (uint32_t)cbRead;
-            const uint32_t  cBlocks   = cbRead32 / pThis->cbBlock;
-            AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
-            uint8_t         abCmd[16] =
-            {
-                SCSI_READ_12, 0,
-                RT_BYTE4(LBA),     RT_BYTE3(LBA),     RT_BYTE2(LBA),     RT_BYTE1(LBA),
-                RT_BYTE4(cBlocks), RT_BYTE3(cBlocks), RT_BYTE2(cBlocks), RT_BYTE1(cBlocks),
-                0, 0, 0, 0, 0
-            };
-            rc = drvHostBaseScsiCmdOs(pThis, abCmd, 12, PDMMEDIATXDIR_FROM_DEVICE, pvBuf, &cbRead32, NULL, 0, 0);
-
-            off    += cbRead32;
-            cbRead -= cbRead32;
-            pvBuf   = (uint8_t *)pvBuf + cbRead32;
-        } while ((cbRead > 0) && RT_SUCCESS(rc));
-
-#else
         /*
          * Seek and read.
          */
-        rc = RTFileReadAt(pThis->hFileDevice, off, pvBuf, cbRead, NULL);
+        rc = drvHostBaseReadOs(pThis, off, pvBuf, cbRead);
         if (RT_SUCCESS(rc))
         {
-            Log2(("%s-%d: drvHostBaseRead: off=%#llx cbRead=%#x\n"
+            Log2(("%s-%d: drvHostBaseReadOs: off=%#llx cbRead=%#x\n"
                   "%16.*Rhxd\n",
                   pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbRead, cbRead, pvBuf));
         }
         else
-            Log(("%s-%d: drvHostBaseRead: RTFileReadAt(%RTfile, %#llx, %p, %#x) -> %Rrc ('%s')\n",
-                 pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->hFileDevice,
+            Log(("%s-%d: drvHostBaseReadOs: drvHostBaseReadOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+                 pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
                  off, pvBuf, cbRead, rc, pThis->pszDevice));
-#endif
     }
     else
         rc = VERR_MEDIA_NOT_PRESENT;
@@ -228,20 +190,14 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
     {
         if (pThis->fMediaPresent)
         {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-            /** @todo write support... */
-            rc = VERR_WRITE_PROTECT;
-
-#else
             /*
              * Seek and write.
              */
-            rc = RTFileWriteAt(pThis->hFileDevice, off, pvBuf, cbWrite, NULL);
+            rc = drvHostBaseWriteOs(pThis, off, pvBuf, cbWrite);
             if (RT_FAILURE(rc))
-                Log(("%s-%d: drvHostBaseWrite: RTFileWriteAt(%RTfile, %#llx, %p, %#x) -> %Rrc ('%s')\n",
-                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->hFileDevice,
+                Log(("%s-%d: drvHostBaseWrite: drvHostBaseWriteOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
                      off, pvBuf, cbWrite, rc, pThis->pszDevice));
-#endif
         }
         else
             rc = VERR_MEDIA_NOT_PRESENT;
@@ -265,14 +221,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
     RTCritSectEnter(&pThis->CritSect);
 
     if (pThis->fMediaPresent)
-    {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-        rc = VINF_SUCCESS;
-        /** @todo scsi device buffer flush... */
-#else
-        rc = RTFileFlush(pThis->hFileDevice);
-#endif
-    }
+        rc = drvHostBaseFlushOs(pThis);
     else
         rc = VERR_MEDIA_NOT_PRESENT;
 
