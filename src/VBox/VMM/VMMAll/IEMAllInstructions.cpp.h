@@ -6998,7 +6998,7 @@ FNIEMOP_STUB(iemOp_paddq_Pq_Qq__paddq_Vdq_Wdq);
 /** Opcode 0x0f 0xd5. */
 FNIEMOP_STUB(iemOp_pmulq_Pq_Qq__pmullw_Vdq_Wdq);
 /** Opcode 0x0f 0xd6. */
-FNIEMOP_STUB(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq);
+FNIEMOP_STUB(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq); /** @todo Win10 w/o np may need this: 66 0f d6 0a */
 
 
 /** Opcode 0x0f 0xd7. */
