@@ -208,6 +208,63 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
 }
 
 
+DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
+{
+    uint8_t abCmd[16] =
+    {
+        SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, fLock, 0,
+        0,0,0,0,0,0,0,0,0,0
+    };
+    return drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
+}
+
+
+DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
+{
+    uint8_t abCmd[16] =
+    {
+        SCSI_START_STOP_UNIT, 0, 0, 0, 2 /*eject+stop*/, 0,
+        0,0,0,0,0,0,0,0,0,0
+    };
+    return drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
+}
+
+
+DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent)
+{
+    AssertReturn(pThis->ppScsiTaskDI, VERR_INTERNAL_ERROR);
+
+    /*
+     * Issue a TEST UNIT READY request.
+     */
+    *pfMediaChanged = false;
+    *pfMediaPresent = false;
+    uint8_t abCmd[16] = { SCSI_TEST_UNIT_READY, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+    uint8_t abSense[32];
+    int rc = drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, abSense, sizeof(abSense), 0);
+    if (RT_SUCCESS(rc))
+        *pfMediaPresent = true;
+    else if (   rc == VERR_UNRESOLVED_ERROR
+             && abSense[2] == 6 /* unit attention */
+             && (   (abSense[12] == 0x29 && abSense[13] < 5 /* reset */)
+                 || (abSense[12] == 0x2a && abSense[13] == 0 /* parameters changed */)                        //???
+                 || (abSense[12] == 0x3f && abSense[13] == 0 /* target operating conditions have changed */)  //???
+                 || (abSense[12] == 0x3f && abSense[13] == 2 /* changed operating definition */)              //???
+                 || (abSense[12] == 0x3f && abSense[13] == 3 /* inquiry parameters changed */)
+                 || (abSense[12] == 0x3f && abSense[13] == 5 /* device identifier changed */)
+                 )
+            )
+    {
+        *pfMediaPresent = false;
+        *pfMediaChanged = true;
+        rc = VINF_SUCCESS;
+        /** @todo check this media change stuff on Darwin. */
+    }
+
+    return rc;
+}
+
+
 DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
 {
     return RTSemEventSignal(pThis->EventPoller);

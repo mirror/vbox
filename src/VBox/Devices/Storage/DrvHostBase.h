@@ -184,7 +184,7 @@ typedef struct DRVHOSTBASE
 } DRVHOSTBASE;
 
 
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType);
+int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType);
 int DRVHostBaseInitFinish(PDRVHOSTBASE pThis);
 int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
 void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
@@ -196,7 +196,10 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb);
 DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf, size_t cbRead);
 DECLHIDDEN(int) drvHostBaseWriteOs(PDRVHOSTBASE pThis, uint64_t off, const void *pvBuf, size_t cbWrite);
 DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis);
+DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock);
+DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis);
 
+DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent);
 DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis);
 

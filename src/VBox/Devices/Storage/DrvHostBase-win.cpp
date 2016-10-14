@@ -239,6 +239,53 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
 }
 
 
+DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
+{
+    PREVENT_MEDIA_REMOVAL PreventMediaRemoval = {fLock};
+    DWORD cbReturned;
+    int rc;
+    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_STORAGE_MEDIA_REMOVAL,
+                        &PreventMediaRemoval, sizeof(PreventMediaRemoval),
+                        NULL, 0, &cbReturned,
+                        NULL))
+        rc = VINF_SUCCESS;
+    else
+        /** @todo figure out the return codes for already locked. */
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    return rc;
+}
+
+
+DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
+{
+    int rc = VINF_SUCCESS;
+    RTFILE hFileDevice = pThis->hFileDevice;
+    if (hFileDevice == NIL_RTFILE) /* obsolete crap */
+        rc = RTFileOpen(&hFileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        /* do ioctl */
+        DWORD cbReturned;
+        if (DeviceIoControl((HANDLE)RTFileToNative(hFileDevice), IOCTL_STORAGE_EJECT_MEDIA,
+                            NULL, 0,
+                            NULL, 0, &cbReturned,
+                            NULL))
+            rc = VINF_SUCCESS;
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+
+        /* clean up handle */
+        if (hFileDevice != pThis->hFileDevice)
+            RTFileClose(hFileDevice);
+    }
+    else
+        AssertMsgFailed(("Failed to open '%s' for ejecting this tray.\n",  rc));
+
+    return rc;
+}
+
+
 DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
 {
     if (pThis->hwndDeviceChange)

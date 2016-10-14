@@ -1433,10 +1433,11 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
  *
  * @returns VBox status code.
  * @param   pDrvIns         Driver instance.
+ * @param   pszCfgValid     Pointer to a string ofvalid CFGM options.
  * @param   pCfg            Configuration handle.
  * @param   enmType         Device type.
  */
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType)
+int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType)
 {
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: DRVHostBaseInitData: iInstance=%d\n", pDrvIns->pReg->szName, pDrvIns->iInstance, pDrvIns->iInstance));
@@ -1490,6 +1491,12 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMMEDIATYPE enmType
     pThis->IMount.pfnLock                   = drvHostBaseLock;
     pThis->IMount.pfnUnlock                 = drvHostBaseUnlock;
     pThis->IMount.pfnIsLocked               = drvHostBaseIsLocked;
+
+    if (!CFGMR3AreValuesValid(pCfg, pszCfgValid))
+    {
+        pThis->fAttachFailError = true;
+        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    }
 
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.

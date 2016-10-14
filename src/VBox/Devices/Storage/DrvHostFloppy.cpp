@@ -115,32 +115,23 @@ static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMMEDIATYPE_FLOPPY_1_44);
+    int rc = DRVHostBaseInitData(pDrvIns, pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0",
+                                 PDMMEDIATYPE_FLOPPY_1_44);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Validate configuration.
+         * Override stuff.
          */
-        if (CFGMR3AreValuesValid(pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0"))
-        {
-            /*
-             * Override stuff.
-             */
 #ifdef RT_OS_LINUX
-            pThis->Base.pfnPoll         = drvHostFloppyPoll;
+        pThis->Base.pfnPoll         = drvHostFloppyPoll;
 #endif
 
-            /*
-             * 2nd init part.
-             */
-            rc = DRVHostBaseInitFinish(&pThis->Base);
-        }
-        else
-        {
-            pThis->Base.fAttachFailError = true;
-            rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-        }
+        /*
+         * 2nd init part.
+         */
+        rc = DRVHostBaseInitFinish(&pThis->Base);
     }
+
     if (RT_FAILURE(rc))
     {
         if (!pThis->Base.fAttachFailError)
