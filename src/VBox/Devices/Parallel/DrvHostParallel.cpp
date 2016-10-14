@@ -46,10 +46,13 @@
 # include <errno.h>
 #endif
 
-/** @def VBOX_WITH_WIN_PARPORT_SUP *
+/** @def VBOX_WITH_WIN_PARPORT_SUP
  * Indicates whether to use the generic direct hardware access or host specific
  * code to access the parallel port.
  */
+#if defined(DOXYGEN_RUNNING)
+# define VBOX_WITH_WIN_PARPORT_SUP
+#endif
 #if defined(RT_OS_LINUX)
 # undef VBOX_WITH_WIN_PARPORT_SUP
 #elif defined(RT_OS_WINDOWS)
@@ -269,7 +272,7 @@ static int drvR0HostParallelReqSetPortDir(PDRVHOSTPARALLEL pThis, uint64_t u64Ar
 }
 
 /**
- * @interface_method_impl{FNPDMDRVREQHANDLERR0}
+ * @callback_method_impl{FNPDMDRVREQHANDLERR0}
  */
 PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
 {

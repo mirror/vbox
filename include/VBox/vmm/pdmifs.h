@@ -1248,10 +1248,10 @@ typedef struct PDMISTREAM
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvBuf           Where to store the read bits.
-     * @param   cbRead          Number of bytes to read/bytes actually read.
+     * @param   pcbRead         Number of bytes to read/bytes actually read.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMISTREAM pInterface, void *pvBuf, size_t *cbRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMISTREAM pInterface, void *pvBuf, size_t *pcbRead));
 
     /**
      * Write bits.
@@ -1259,10 +1259,10 @@ typedef struct PDMISTREAM
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvBuf           Where to store the write bits.
-     * @param   cbWrite         Number of bytes to write/bytes actually written.
+     * @param   pcbWrite        Number of bytes to write/bytes actually written.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite));
 } PDMISTREAM;
 /** PDMISTREAM interface ID. */
 #define PDMISTREAM_IID                          "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"

@@ -159,8 +159,8 @@ typedef struct PARALLELPORT
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
-PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
+PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb);
+PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb);
 #if 0
 PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -318,7 +318,7 @@ static DECLCALLBACK(int) parallelR3NotifyInterrupt(PPDMIHOSTPARALLELPORT pInterf
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PPARALLELPORT);
     int           rc = VINF_SUCCESS;
@@ -328,10 +328,10 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     {
         uint8_t u8 = u32;
 
-        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
+        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, uPort, u32));
 
-        Port &= 7;
-        switch (Port)
+        uPort &= 7;
+        switch (uPort)
         {
             case 0:
 #ifndef IN_RING3
@@ -416,7 +416,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         }
     }
     else
-        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cb, u32));
 
     return rc;
 }
@@ -425,7 +425,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
     int           rc = VINF_SUCCESS;
@@ -433,8 +433,8 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
     if (cb == 1)
     {
-        Port &= 7;
-        switch (Port)
+        uPort &= 7;
+        switch (uPort)
         {
             case 0:
                 if (!(pThis->regControl & LPT_CONTROL_ENABLE_BIDIRECT))

@@ -449,8 +449,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
  * Send thread loop.
  *
  * @returns VINF_SUCCESS.
- * @param   ThreadSelf  Thread handle to this thread.
- * @param   pvUser      User argument.
+ * @param   pDrvIns     PDM driver instance data.
+ * @param   pThread     The PDM thread data.
  */
 static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -565,8 +565,9 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
  * @param     pDrvIns     The driver instance.
  * @param     pThread     The send thread.
  */
-static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD /*pThread*/)
+static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc;
 
@@ -591,8 +592,8 @@ static DECLCALLBACK(int) drvHostSerialWakeupSendThread(PPDMDRVINS pDrvIns, PPDMT
  * chain toward the serial device.
  *
  * @returns VINF_SUCCESS.
- * @param   ThreadSelf  Thread handle to this thread.
- * @param   pvUser      User argument.
+ * @param   pDrvIns     PDM driver instance data.
+ * @param   pThread     The PDM thread data.
  */
 static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -854,14 +855,15 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
 }
 
 /**
- * Unblock the send thread so it can respond to a state change.
+ * Unblock the receive thread so it can respond to a state change.
  *
  * @returns a VBox status code.
  * @param     pDrvIns     The driver instance.
- * @param     pThread     The send thread.
+ * @param     pThread     The receive thread.
  */
-static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD /*pThread*/)
+static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
+    RT_NOREF(pThread);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     size_t cbIgnored;
@@ -886,8 +888,8 @@ static DECLCALLBACK(int) drvHostSerialWakeupRecvThread(PPDMDRVINS pDrvIns, PPDMT
  * if they change.
  *
  * @returns VINF_SUCCESS.
- * @param   ThreadSelf  Thread handle to this thread.
- * @param   pvUser      User argument.
+ * @param   pDrvIns     PDM driver instance data.
+ * @param   pThread     The PDM thread data.
  */
 static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -1150,8 +1152,9 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t /*fFlags*/)
+static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    RT_NOREF1(fFlags);
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);

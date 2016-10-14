@@ -855,7 +855,7 @@ static DECLCALLBACK(void) serialTransmitTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     int          rc;
@@ -864,12 +864,12 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 
     if (cb == 1)
     {
-        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, u32));
-        rc = serial_ioport_write(pThis, Port, u32);
+        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, uPort, u32));
+        rc = serial_ioport_write(pThis, uPort, u32);
     }
     else
     {
-        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        AssertMsgFailed(("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32));
         rc = VINF_SUCCESS;
     }
 
@@ -880,7 +880,7 @@ PDMBOTHCBDECL(int) serialIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMINS_2_DATA(pDevIns, PDEVSERIAL);
     int          rc;
@@ -889,8 +889,8 @@ PDMBOTHCBDECL(int) serialIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
 
     if (cb == 1)
     {
-        *pu32 = serial_ioport_read(pThis, Port, &rc);
-        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, Port, *pu32));
+        *pu32 = serial_ioport_read(pThis, uPort, &rc);
+        Log2(("%s: port %#06x val %#04x\n", __FUNCTION__, uPort, *pu32));
     }
     else
         rc = VERR_IOM_IOPORT_UNUSED;
