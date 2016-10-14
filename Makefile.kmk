@@ -959,7 +959,6 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/\/src\/VBox\/HostServices\/SharedOpenGL\/.* warning/b ignore' \
                -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Storage\/.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/Support\/win\/SUPR3HardenedMain-win\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
                \
