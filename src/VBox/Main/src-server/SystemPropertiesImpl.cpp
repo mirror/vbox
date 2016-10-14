@@ -99,12 +99,12 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     m->ulLogHistoryCount = 3;
 
 
-    /* On Windows and OS X, HW virtualization use isn't exclusive by
-     * default so that VT-x or AMD-V can be shared with other
+    /* On Windows, OS X and Solaris, HW virtualization use isn't exclusive
+     * by default so that VT-x or AMD-V can be shared with other
      * hypervisors without requiring user intervention.
      * NB: See also SystemProperties constructor in settings.h
      */
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
     m->fExclusiveHwVirt = false;
 #else
     m->fExclusiveHwVirt = true;

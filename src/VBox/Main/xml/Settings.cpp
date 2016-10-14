@@ -1526,7 +1526,7 @@ SystemProperties::SystemProperties() :
     ulLogHistoryCount(3),
     fExclusiveHwVirt(true)
 {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
     fExclusiveHwVirt = false;
 #endif
 }
