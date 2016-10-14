@@ -67,7 +67,10 @@ endif
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxOGL_INCS           = .
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
- VBoxOGL_INCS     += \
+ ifdef VBOX_USE_SYSTEM_GL_HEADERS
+  VBoxOGL_INCS += x11
+ else
+  VBoxOGL_INCS     += \
 	$(VBOX_PATH_X11_ROOT)/libXdamage-1.1 \
 	$(VBOX_PATH_X11_ROOT)/libXcomposite-0.4.0 \
 	$(VBOX_PATH_X11_ROOT)/libXext-1.3.1 \
@@ -78,8 +81,8 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
 	$(VBOX_PATH_X11_ROOT)/libx11-1.1.5-other \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
-	$(VBOX_GL_INCS) \
-	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.13
+	$(VBOX_GL_INCS)
+ endif
  VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
 endif
 
@@ -213,11 +216,15 @@ VBoxOGL_LIBS.win += \
 	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
- VBoxOGL_LIBS += \
+ ifdef VBOX_USE_SYSTEM_GL_HEADERS
+  VBoxOGL_LIBS += Xcomposite Xdamage Xfixes Xext
+ else
+  VBoxOGL_LIBS += \
  	$(PATH_STAGE_LIB)/libXcomposite.so \
  	$(PATH_STAGE_LIB)/libXdamage.so \
  	$(PATH_STAGE_LIB)/libXfixes.so \
  	$(PATH_STAGE_LIB)/libXext.so
+ endif
  ifdef VBoxOGL_FAKEDRI
   ifeq ($(KBUILD_TARGET), freebsd)
     VBoxOGL_LIBS += \
