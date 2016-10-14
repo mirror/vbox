@@ -2380,13 +2380,9 @@ ifdef VBOX_WITH_CROGL
  if1of ($(KBUILD_TARGET), freebsd linux solaris)
  # VBOX_PATH_MESA_SOURCE = $(PATH_ROOT)/src/libs/mesa-7.2
   VBOX_PATH_MESA_SOURCE = $(VBOX_PATH_X11_ROOT)/mesa-7.2
-  VBOX_MESA_INCS = \
-        $(VBOX_PATH_MESA_SOURCE) \
-        $(VBOX_PATH_MESA_SOURCE)/include \
-        $(VBOX_PATH_MESA_SOURCE)/src/mesa/ \
-        $(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
-        $(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
-        $(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common
+  VBOX_GL_INCS = \
+        $(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+        $(VBOX_PATH_X11_ROOT)/mesa-7.2
  endif
 
  VBOX_DARWIN_OPENGL_INST     = obj/VBoxOGL/GL/

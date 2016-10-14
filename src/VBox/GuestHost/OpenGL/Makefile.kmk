@@ -54,7 +54,7 @@ VBoxOGLcrutil_SDKS.win      = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrutil_INCS += \
-	$(VBOX_MESA_INCS)
+	$(VBOX_GL_INCS)
 endif
 VBoxOGLcrutil_SOURCES       = \
 	util/bbox.c \
@@ -199,7 +199,7 @@ VBoxOGLcrpacker_INCS = \
 	packer
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrpacker_INCS += \
-	$(VBOX_MESA_INCS)
+	$(VBOX_GL_INCS)
 endif
 VBoxOGLcrpacker_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_packfunctions.h \
@@ -350,7 +350,7 @@ VBoxOGLspuload_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLspuload_INCS += \
-	$(VBOX_MESA_INCS)
+	$(VBOX_GL_INCS)
 endif
 VBoxOGLspuload_SOURCES = \
 	spu_loader/spuinit.c \
@@ -423,7 +423,7 @@ VBoxOGLcrstate_INCS = \
 	state_tracker
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrstate_INCS += \
-	$(VBOX_MESA_INCS)
+	$(VBOX_GL_INCS)
 endif
 VBoxOGLcrstate_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h \
@@ -624,7 +624,7 @@ VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLerrorspu_INCS += \
-	$(VBOX_MESA_INCS)
+	$(VBOX_GL_INCS)
 endif
 VBoxOGLerrorspu_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/errorspu.c \

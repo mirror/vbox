@@ -78,7 +78,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
 	$(VBOX_PATH_X11_ROOT)/libx11-1.1.5-other \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
-	$(VBOX_MESA_INCS) \
+	$(VBOX_GL_INCS) \
 	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.13
  VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
 endif
@@ -445,7 +445,7 @@ VBoxOGLarrayspu_INCS          = \
 	array
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLarrayspu_INCS += \
-        $(VBOX_MESA_INCS)
+        $(VBOX_GL_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLarrayspu_INSTTYPE.win = none
@@ -493,7 +493,7 @@ VBoxOGLpassthroughspu_INCS        = \
 	passthrough
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLpassthroughspu_INCS += \
-        $(VBOX_MESA_INCS)
+        $(VBOX_GL_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLpassthroughspu_INSTTYPE.win = none
@@ -542,7 +542,7 @@ VBoxOGLpackspu_INCS          = \
 	pack
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLpackspu_INCS += \
-        $(VBOX_MESA_INCS)
+        $(VBOX_GL_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLpackspu_INSTTYPE.win = none
@@ -648,7 +648,7 @@ VBoxOGLfeedbackspu_INCS        = \
 	feedback
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLfeedbackspu_INCS += \
-        $(VBOX_MESA_INCS)
+        $(VBOX_GL_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLfeedbackspu_INSTTYPE.win = none
