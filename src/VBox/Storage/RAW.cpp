@@ -514,7 +514,7 @@ static DECLCALLBACK(int) rawClose(void *pBackendData, bool fDelete)
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnRead */
-static DECLCALLBACK(int) rawRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
+static DECLCALLBACK(int) rawRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                  PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     int rc = VINF_SUCCESS;
@@ -529,18 +529,18 @@ static DECLCALLBACK(int) rawRead(void *pBackendData, uint64_t uOffset, size_t cb
     }
 
     rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, uOffset,
-                               pIoCtx, cbRead);
+                               pIoCtx, cbToRead);
     if (RT_SUCCESS(rc))
     {
-        *pcbActuallyRead = cbRead;
-        pImage->offAccess = uOffset + cbRead;
+        *pcbActuallyRead = cbToRead;
+        pImage->offAccess = uOffset + cbToRead;
     }
 
     return rc;
 }
 
 /** @copydoc VDIMAGEBACKEND::pfnWrite */
-static DECLCALLBACK(int) rawWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
+static DECLCALLBACK(int) rawWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                   size_t *pcbPostRead, unsigned fWrite)
 {
@@ -559,13 +559,13 @@ static DECLCALLBACK(int) rawWrite(void *pBackendData, uint64_t uOffset, size_t c
     }
 
     rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage, uOffset,
-                                pIoCtx, cbWrite, NULL, NULL);
+                                pIoCtx, cbToWrite, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
-        *pcbWriteProcess = cbWrite;
+        *pcbWriteProcess = cbToWrite;
         *pcbPostRead = 0;
         *pcbPreRead  = 0;
-        pImage->offAccess = uOffset + cbWrite;
+        pImage->offAccess = uOffset + cbToWrite;
     }
 
     return rc;

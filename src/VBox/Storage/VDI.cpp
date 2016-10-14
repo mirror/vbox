@@ -326,7 +326,15 @@ static unsigned vdiTranslateVDI2ImageFlags(VDIIMAGETYPE enmType)
 
 /**
  * Internal: Init VDI header. Always use latest header version.
- * @param   pHeader     Assumes it was initially initialized to all zeros.
+ *
+ * @returns nothing.
+ * @param   pHeader      Assumes it was initially initialized to all zeros.
+ * @param   uImageFlags  Flags for this image.
+ * @param   pszComment   Optional comment to set for the image.
+ * @param   cbDisk       Size of the disk in bytes.
+ * @param   cbBlock      Size of one block in the image.
+ * @param   cbBlockExtra Extra data for one block private to the image.
+ * @param   cbDataAlign  The alignment for all data structures.
  */
 static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
                           const char *pszComment, uint64_t cbDisk,
@@ -1934,7 +1942,7 @@ static DECLCALLBACK(int) vdiGetComment(void *pBackendData, char *pszComment,
     return rc;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnGetComment */
+/** @copydoc VDIMAGEBACKEND::pfnSetComment */
 static DECLCALLBACK(int) vdiSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));

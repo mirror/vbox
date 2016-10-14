@@ -1714,7 +1714,7 @@ static int iscsiLogin(PISCSIIMAGE pImage)
  * Full Feature Phase.
  *
  * @returns VBox status code.
- * @param   pImage      The iSCSI connection state to be used.
+ * @param   pvUser      The iSCSI connection state to be used as opaque user data.
  */
 static DECLCALLBACK(int) iscsiAttach(void *pvUser)
 {
@@ -1767,7 +1767,7 @@ static DECLCALLBACK(int) iscsiAttach(void *pvUser)
  * Detach from an iSCSI target.
  *
  * @returns VBox status code.
- * @param   pImage      The iSCSI connection state to be used.
+ * @param   pvUser      The iSCSI connection state to be used as opaque user data.
  */
 static DECLCALLBACK(int) iscsiDetach(void *pvUser)
 {
@@ -2157,6 +2157,7 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq,
  *
  * @returns VBOX status
  * @param   pImage      The iSCSI connection state to be used.
+ * @param   itt         The initiator task tag. 
  * @param   paRes       Pointer to array of iSCSI response sections.
  * @param   cnRes       Number of valid iSCSI response sections in the array.
  * @param   fRecvFlags  PDU receive flags.
@@ -2966,8 +2967,8 @@ static int iscsiRecvPDUUpdateRequest(PISCSIIMAGE pImage, PISCSIRES paRes, uint32
  * @param   pbBuf       Pointer to the key-value buffer.
  * @param   cbBuf       Length of the key-value buffer.
  * @param   pcbBufCurr  Currently used portion of the key-value buffer.
- * @param   pszKey      Pointer to a string containing the key.
- * @param   pszValue    Pointer to either a string containing the value or to a large binary value.
+ * @param   pcszKey     Pointer to a string containing the key.
+ * @param   pcszValue   Pointer to either a string containing the value or to a large binary value.
  * @param   cbValue     Length of the binary value if applicable.
  */
 static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr, const char *pcszKey,
@@ -3026,8 +3027,8 @@ static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr
  * @returns VBox status code.
  * @param   pbBuf       Buffer containing key=value pairs.
  * @param   cbBuf       Length of buffer with key=value pairs.
- * @param   pszKey      Pointer to key for which to retrieve the value.
- * @param   ppszValue   Pointer to value string pointer.
+ * @param   pcszKey     Pointer to key for which to retrieve the value.
+ * @param   ppcszValue  Pointer to value string pointer.
  */
 static int iscsiTextGetKeyValue(const uint8_t *pbBuf, size_t cbBuf, const char *pcszKey, const char **ppcszValue)
 {
@@ -3053,7 +3054,7 @@ static int iscsiTextGetKeyValue(const uint8_t *pbBuf, size_t cbBuf, const char *
  * Convert a long-binary value from a value string to the binary representation.
  *
  * @returns VBOX status
- * @param   pszValue    Pointer to a string containing the textual value representation.
+ * @param   pcszValue   Pointer to a string containing the textual value representation.
  * @param   pbValue     Pointer to the value buffer for the binary value.
  * @param   pcbValue    In: length of value buffer, out: actual length of binary value.
  */

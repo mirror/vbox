@@ -1001,35 +1001,35 @@ VBOXDDU_DECL(int) VDFilterRemoveAll(PVBOXHDD pDisk);
  * Read data from virtual HDD.
  *
  * @return  VBox status code.
- * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
+ * @retval  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
- * @param   off             Offset of first reading byte from start of disk.
+ * @param   uOffset         Offset of first reading byte from start of disk.
  *                          Must be aligned to a sector boundary.
- * @param   pvBuffer        Pointer to buffer for reading data.
- * @param   cbBuffer        Number of bytes to read.
+ * @param   pvBuf           Pointer to buffer for reading data.
+ * @param   cbRead          Number of bytes to read.
  *                          Must be aligned to a sector boundary.
  */
-VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t off, void *pvBuffer, size_t cbBuffer);
+VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf, size_t cbRead);
 
 /**
  * Write data to virtual HDD.
  *
  * @return  VBox status code.
- * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
+ * @retval  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
- * @param   off             Offset of first writing byte from start of disk.
+ * @param   uOffset         Offset of first writing byte from start of disk.
  *                          Must be aligned to a sector boundary.
- * @param   pvBuffer        Pointer to buffer for writing data.
- * @param   cbBuffer        Number of bytes to write.
+ * @param   pvBuf           Pointer to buffer for writing data.
+ * @param   cbWrite         Number of bytes to write.
  *                          Must be aligned to a sector boundary.
  */
-VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t off, const void *pvBuffer, size_t cbBuffer);
+VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf, size_t cbWrite);
 
 /**
  * Make sure the on disk representation of a virtual HDD is up to date.
  *
  * @return  VBox status code.
- * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.
+ * @retval  VERR_VD_NOT_OPENED if no image is opened in HDD container.
  * @param   pDisk           Pointer to HDD container.
  */
 VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk);

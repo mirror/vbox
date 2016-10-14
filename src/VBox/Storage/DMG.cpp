@@ -716,6 +716,8 @@ static void dmgUdifIdFile2HostEndian(PDMGUDIFID pId)
 /**
  * Swaps endian.
  * @param   pCkSum      The structure.
+ * @param   u32Kind     Kind of the checksum (CRC32, none)
+ * @param   cBits       Size of the checksum in bits.
  */
 static void dmgSwapEndianUdifCkSum(PDMGUDIFCKSUM pCkSum, uint32_t u32Kind, uint32_t cBits)
 {
@@ -946,7 +948,7 @@ static const char *dmgXmlFindTagEnd(const char *pszCur)
 /**
  * Finds the end tag.
  *
- * Does not deal with '<tag attr="1"/>' style tags.
+ * Does not deal with @verbatim<tag attr="1"/>@endverbatim style tags.
  *
  * @returns Pointer to the first char in the end tag. NULL if another tag
  *          was encountered first or if we hit the end of the file.
@@ -1116,7 +1118,6 @@ static const char *dmgXmlParseData(const char **ppszCur, uint8_t **ppbData, size
  * @returns NULL on success, pointer to the problematic text on failure.
  * @param   pThis       The DMG instance data.
  * @param   pszXml      The XML text to parse, UTF-8.
- * @param   cch         The size of the XML text.
  */
 static const char *dmgOpenXmlToRsrc(PDMGIMAGE pThis, char const *pszXml)
 {
@@ -1284,6 +1285,7 @@ static const char *dmgOpenXmlToRsrc(PDMGIMAGE pThis, char const *pszXml)
  * @returns VBox status code.
  * @param   pThis        The DMG instance data.
  * @param   pcszRsrcName Name of the resource to get.
+ * @param   ppcRsrc      Where to store the pointer to the resource data on success.
  */
 static int dmgGetRsrcData(PDMGIMAGE pThis, const char *pcszRsrcName,
                           PCDMGUDIFRSRCARRAY *ppcRsrc)

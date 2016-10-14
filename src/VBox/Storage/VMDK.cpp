@@ -1378,8 +1378,15 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 }
 
 /**
+ * Unquotes the given string returning the result in a separate buffer.
+ *
+ * @returns VBox status code.
+ * @param   pImage          The VMDK image state.
+ * @param   pszStr          The string to unquote.
  * @param   ppszUnquoted    Where to store the return value, use RTMemTmpFree to
  *                          free.
+ * @param   ppszNext        Where to store the pointer to any character following
+ *                          the quoted value, optional.
  */
 static int vmdkStringUnquote(PVMDKIMAGE pImage, const char *pszStr,
                              char **ppszUnquoted, char **ppszNext)
@@ -1589,6 +1596,13 @@ static int vmdkDescBaseGetU32(PVMDKDESCRIPTOR pDescriptor, const char *pszKey,
 }
 
 /**
+ * Returns the value of the given key as a string allocating the necessary memory.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_VD_VMDK_VALUE_NOT_FOUND if the value could not be found.
+ * @param   pImage          The VMDK image state.
+ * @param   pDescriptor     The descriptor to fetch the value from.
+ * @param   pszKey          The key to get the value from.
  * @param   ppszValue       Where to store the return value, use RTMemTmpFree to
  *                          free.
  */
@@ -1727,6 +1741,14 @@ static int vmdkDescExtInsert(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 }
 
 /**
+ * Returns the value of the given key from the DDB as a string allocating
+ * the necessary memory.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_VD_VMDK_VALUE_NOT_FOUND if the value could not be found.
+ * @param   pImage          The VMDK image state.
+ * @param   pDescriptor     The descriptor to fetch the value from.
+ * @param   pszKey          The key to get the value from.
  * @param   ppszValue       Where to store the return value, use RTMemTmpFree to
  *                          free.
  */

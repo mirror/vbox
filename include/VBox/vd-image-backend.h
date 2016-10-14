@@ -176,11 +176,11 @@ typedef struct VDIMAGEBACKEND
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to read from.
-     * @param   cbRead          How many bytes to read.
+     * @param   cbToRead        How many bytes to read.
      * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, size_t cbRead,
+    DECLR3CALLBACKMEMBER(int, pfnRead, (void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
@@ -189,7 +189,7 @@ typedef struct VDIMAGEBACKEND
      * @returns VBox status code.
      * @param   pBackendData    Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to write to.
-     * @param   cbWrite         How many bytes to write.
+     * @param   cbToWrite       How many bytes to write.
      * @param   pIoCtx          I/O context associated with this request.
      * @param   pcbWriteProcess Pointer to returned number of bytes that could
      *                          be processed. In case the function returned
@@ -204,7 +204,7 @@ typedef struct VDIMAGEBACKEND
      * @param   fWrite          Flags which affect write behavior. Combination
      *                          of the VD_WRITE_* flags.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset, size_t cbWrite,
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                          PVDIOCTX pIoCtx,
                                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                                          size_t *pcbPostRead, unsigned fWrite));
@@ -479,8 +479,8 @@ typedef struct VDIMAGEBACKEND
      * Get the relative path to parent image. May be NULL.
      *
      * @returns VBox status code.
-     * @param   pBackendData      Opaque state data for this image.
-     * @param   pszParentFilename Where to store the path.
+     * @param   pBackendData       Opaque state data for this image.
+     * @param   ppszParentFilename Where to store the path.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetParentFilename, (void *pBackendData, char **ppszParentFilename));
 

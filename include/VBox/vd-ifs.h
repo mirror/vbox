@@ -356,21 +356,21 @@ typedef struct VDINTERFACEIO
      *                          of the request initiator (ie the one who calls
      *                          VDAsyncRead or VDAsyncWrite) in pvCompletion
      *                          if this is NULL.
-     * @param   ppStorage       Where to store the opaque storage handle.
+     * @param   ppvStorage      Where to store the opaque storage handle.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation,
                                         uint32_t fOpen,
                                         PFNVDCOMPLETED pfnCompleted,
-                                        void **ppStorage));
+                                        void **ppvStorage));
 
     /**
      * Close callback.
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The opaque storage handle to close.
+     * @param   pvStorage       The opaque storage handle to close.
      */
-    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvUser, void *pStorage));
+    DECLR3CALLBACKMEMBER(int, pfnClose, (void *pvUser, void *pvStorage));
 
     /**
      * Delete callback.
@@ -418,10 +418,10 @@ typedef struct VDINTERFACEIO
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The opaque storage handle to close.
-     * @param   pcbSize         Where to store the size of the storage backend.
+     * @param   pvStorage       The opaque storage handle to get the size from.
+     * @param   pcb             Where to store the size of the storage backend.
      */
-    DECLR3CALLBACKMEMBER(int, pfnGetSize, (void *pvUser, void *pStorage, uint64_t *pcbSize));
+    DECLR3CALLBACKMEMBER(int, pfnGetSize, (void *pvUser, void *pvStorage, uint64_t *pcb));
 
     /**
      * Sets the size of the opened storage backend if possible.
@@ -429,8 +429,8 @@ typedef struct VDINTERFACEIO
      * @return  VBox status code.
      * @retval  VERR_NOT_SUPPORTED if the backend does not support this operation.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The opaque storage handle to close.
-     * @param   cbSize          The new size of the image.
+     * @param   pvStorage       The opaque storage handle to set the size for.
+     * @param   cb              The new size of the image.
      *
      * @note Depending on the host the underlying storage (backing file, etc.)
      *       might not have all required storage allocated (sparse file) which
@@ -440,7 +440,7 @@ typedef struct VDINTERFACEIO
      *       Use VDINTERFACEIO::pfnSetAllocationSize to make sure the storage is
      *       really alloacted.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetSize, (void *pvUser, void *pStorage, uint64_t cbSize));
+    DECLR3CALLBACKMEMBER(int, pfnSetSize, (void *pvUser, void *pvStorage, uint64_t cb));
 
     /**
      * Sets the size of the opened storage backend making sure the given size
@@ -450,12 +450,12 @@ typedef struct VDINTERFACEIO
      * @retval VERR_NOT_SUPPORTED if the implementer of the interface doesn't support
      *         this method.
      * @param  pvUser          The opaque data passed on container creation.
-     * @param  pStorage        The storage handle.
+     * @param  pvStorage       The storage handle.
      * @param  cbSize          The new size of the image.
      * @param  fFlags          Flags for controlling the allocation strategy.
      *                         Reserved for future use, MBZ.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, void *pStorage,
+    DECLR3CALLBACKMEMBER(int, pfnSetAllocationSize, (void *pvUser, void *pvStorage,
                                                      uint64_t cbSize, uint32_t fFlags));
 
     /**
@@ -463,44 +463,44 @@ typedef struct VDINTERFACEIO
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to use.
-     * @param   uOffset         The offset to start from.
-     * @param   pvBuffer        Pointer to the bits need to be written.
-     * @param   cbBuffer        How many bytes to write.
+     * @param   pvStorage       The storage handle to use.
+     * @param   off             The offset to start from.
+     * @param   pvBuf           Pointer to the bits need to be written.
+     * @param   cbToWrite       How many bytes to write.
      * @param   pcbWritten      Where to store how many bytes were actually written.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteSync, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                             const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnWriteSync, (void *pvUser, void *pvStorage, uint64_t off,
+                                             const void *pvBuf, size_t cbToWrite, size_t *pcbWritten));
 
     /**
      * Synchronous read callback.
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to use.
-     * @param   uOffset         The offset to start from.
-     * @param   pvBuffer        Where to store the read bits.
-     * @param   cbBuffer        How many bytes to read.
+     * @param   pvStorage       The storage handle to use.
+     * @param   off             The offset to start from.
+     * @param   pvBuf           Where to store the read bits.
+     * @param   cbToRead        How many bytes to read.
      * @param   pcbRead         Where to store how many bytes were actually read.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadSync, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                            void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnReadSync, (void *pvUser, void *pvStorage, uint64_t off,
+                                            void *pvBuf, size_t cbToRead, size_t *pcbRead));
 
     /**
      * Flush data to the storage backend.
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to flush.
+     * @param   pvStorage       The storage handle to flush.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, void *pStorage));
+    DECLR3CALLBACKMEMBER(int, pfnFlushSync, (void *pvUser, void *pvStorage));
 
     /**
      * Initiate an asynchronous read request.
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on container creation.
-     * @param   pStorage       The storage handle.
+     * @param   pvStorage      The storage handle.
      * @param   uOffset        The offset to start reading from.
      * @param   paSegments     Scatter gather list to store the data in.
      * @param   cSegments      Number of segments in the list.
@@ -508,7 +508,7 @@ typedef struct VDINTERFACEIO
      * @param   pvCompletion   The opaque user data which is returned upon completion.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReadAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
+    DECLR3CALLBACKMEMBER(int, pfnReadAsync, (void *pvUser, void *pvStorage, uint64_t uOffset,
                                              PCRTSGSEG paSegments, size_t cSegments,
                                              size_t cbRead, void *pvCompletion,
                                              void **ppTask));
@@ -518,7 +518,7 @@ typedef struct VDINTERFACEIO
      *
      * @return  VBox status code.
      * @param   pvUser         The opaque user data passed on conatiner creation.
-     * @param   pStorage       The storage handle.
+     * @param   pvStorage      The storage handle.
      * @param   uOffset        The offset to start writing to.
      * @param   paSegments     Scatter gather list of the data to write
      * @param   cSegments      Number of segments in the list.
@@ -526,7 +526,7 @@ typedef struct VDINTERFACEIO
      * @param   pvCompletion   The opaque user data which is returned upon completion.
      * @param   ppTask         Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWriteAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
+    DECLR3CALLBACKMEMBER(int, pfnWriteAsync, (void *pvUser, void *pvStorage, uint64_t uOffset,
                                               PCRTSGSEG paSegments, size_t cSegments,
                                               size_t cbWrite, void *pvCompletion,
                                               void **ppTask));
@@ -536,11 +536,11 @@ typedef struct VDINTERFACEIO
      *
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
-     * @param   pStorage        The storage handle to flush.
+     * @param   pvStorage       The storage handle to flush.
      * @param   pvCompletion    The opaque user data which is returned upon completion.
      * @param   ppTask          Where to store the opaque task handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, void *pStorage,
+    DECLR3CALLBACKMEMBER(int, pfnFlushAsync, (void *pvUser, void *pvStorage,
                                               void *pvCompletion, void **ppTask));
 
 } VDINTERFACEIO, *PVDINTERFACEIO;

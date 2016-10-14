@@ -712,7 +712,7 @@ DECLINLINE(uint64_t) qedByte2Cluster(PQEDIMAGE pImage, uint64_t cb)
  *
  * @returns The start offset of the new cluster in the image.
  * @param   pImage    The image instance data.
- * @param   cCLusters Number of clusters to allocate.
+ * @param   cClusters Number of clusters to allocate.
  */
 DECLINLINE(uint64_t) qedClusterAllocate(PQEDIMAGE pImage, uint32_t cClusters)
 {
@@ -1652,7 +1652,7 @@ static DECLCALLBACK(int) qedClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnWrite */
+/** @copydoc VDIMAGEBACKEND::pfnRead */
 static DECLCALLBACK(int) qedRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                  PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -1691,7 +1691,7 @@ static DECLCALLBACK(int) qedRead(void *pBackendData, uint64_t uOffset, size_t cb
     return rc;
 }
 
-/** @copydoc VDIMAGEBACKEND::pfnRead */
+/** @copydoc VDIMAGEBACKEND::pfnWrite */
 static DECLCALLBACK(int) qedWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                   size_t *pcbPostRead, unsigned fWrite)

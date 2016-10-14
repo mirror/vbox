@@ -1447,19 +1447,20 @@ static DECLCALLBACK(int) vhdClose(void *pBackendData, bool fDelete)
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnRead} */
-static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
+static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
                                  PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbRead=%u pcbActuallyRead=%p\n", pBackendData, uOffset, pIoCtx, cbRead, pcbActuallyRead));
+    LogFlowFunc(("pBackendData=%p uOffset=%#llx pIoCtx=%#p cbToRead=%u pcbActuallyRead=%p\n",
+                 pBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
 
     AssertPtr(pImage);
     Assert(uOffset % 512 == 0);
-    Assert(cbRead % 512 == 0);
-    AssertReturn((VALID_PTR(pIoCtx) && cbRead), VERR_INVALID_PARAMETER);
-    AssertReturn(uOffset + cbRead <= pImage->cbSize, VERR_INVALID_PARAMETER);
+    Assert(cbToRead % 512 == 0);
+    AssertReturn((VALID_PTR(pIoCtx) && cbToRead), VERR_INVALID_PARAMETER);
+    AssertReturn(uOffset + cbToRead <= pImage->cbSize, VERR_INVALID_PARAMETER);
 
     /*
      * If we have a dynamic disk image, we need to find the data block and sector to read.
@@ -1479,7 +1480,7 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
         /*
          * Clip read range to remain in this data block.
          */
-        cbRead = RT_MIN(cbRead, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
+        cbToRead = RT_MIN(cbToRead, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
 
         /*
          * If the block is not allocated the content of the entry is ~0
@@ -1489,7 +1490,7 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
         else
         {
             uVhdOffset = ((uint64_t)pImage->pBlockAllocationTable[cBlockAllocationTableEntry] + pImage->cDataBlockBitmapSectors + cBATEntryIndex) * VHD_SECTOR_SIZE;
-            LogFlowFunc(("uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
+            LogFlowFunc(("uVhdOffset=%llu cbToRead=%u\n", uVhdOffset, cbToRead));
 
             /* Read in the block's bitmap. */
             PVDMETAXFER pMetaXfer;
@@ -1513,18 +1514,18 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
                      * can from child. Note that only sectors that are marked dirty
                      * must be read from child.
                      */
-                    while (   (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                    while (   (cSectors < (cbToRead / VHD_SECTOR_SIZE))
                            && vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
                     {
                         cBATEntryIndex++;
                         cSectors++;
                     }
 
-                    cbRead = cSectors * VHD_SECTOR_SIZE;
+                    cbToRead = cSectors * VHD_SECTOR_SIZE;
 
-                    LogFlowFunc(("uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
+                    LogFlowFunc(("uVhdOffset=%llu cbToRead=%u\n", uVhdOffset, cbToRead));
                     rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage,
-                                               uVhdOffset, pIoCtx, cbRead);
+                                               uVhdOffset, pIoCtx, cbToRead);
                 }
                 else
                 {
@@ -1539,15 +1540,15 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
                     cBATEntryIndex++;
                     cSectors = 1;
 
-                    while (   (cSectors < (cbRead / VHD_SECTOR_SIZE))
+                    while (   (cSectors < (cbToRead / VHD_SECTOR_SIZE))
                            && !vhdBlockBitmapSectorContainsData(pImage, cBATEntryIndex))
                     {
                         cBATEntryIndex++;
                         cSectors++;
                     }
 
-                    cbRead = cSectors * VHD_SECTOR_SIZE;
-                    LogFunc(("Sectors free: uVhdOffset=%llu cbRead=%u\n", uVhdOffset, cbRead));
+                    cbToRead = cSectors * VHD_SECTOR_SIZE;
+                    LogFunc(("Sectors free: uVhdOffset=%llu cbToRead=%u\n", uVhdOffset, cbToRead));
                     rc = VERR_VD_BLOCK_FREE;
                 }
             }
@@ -1556,31 +1557,31 @@ static DECLCALLBACK(int) vhdRead(void *pBackendData, uint64_t uOffset, size_t cb
         }
     }
     else
-        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, uOffset, pIoCtx, cbRead);
+        rc = vdIfIoIntFileReadUser(pImage->pIfIo, pImage->pStorage, uOffset, pIoCtx, cbToRead);
 
     if (pcbActuallyRead)
-        *pcbActuallyRead = cbRead;
+        *pcbActuallyRead = cbToRead;
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
 /** @interface_method_impl{VDIMAGEBACKEND,pfnWrite} */
-static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
+static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                          PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                          size_t *pcbPostRead, unsigned fWrite)
 {
     PVHDIMAGE pImage = (PVHDIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
-             pBackendData, uOffset, pIoCtx, cbWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
+    LogFlowFunc(("pBackendData=%p uOffset=%llu pIoCtx=%#p cbToWrite=%u pcbWriteProcess=%p pcbPreRead=%p pcbPostRead=%p fWrite=%u\n",
+             pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite));
 
     AssertPtr(pImage);
     Assert(!(uOffset % VHD_SECTOR_SIZE));
-    Assert(!(cbWrite % VHD_SECTOR_SIZE));
-    AssertReturn((VALID_PTR(pIoCtx) && cbWrite), VERR_INVALID_PARAMETER);
-    AssertReturn(uOffset + cbWrite <= pImage->cbSize, VERR_INVALID_PARAMETER);
+    Assert(!(cbToWrite % VHD_SECTOR_SIZE));
+    AssertReturn((VALID_PTR(pIoCtx) && cbToWrite), VERR_INVALID_PARAMETER);
+    AssertReturn(uOffset + cbToWrite <= pImage->cbSize, VERR_INVALID_PARAMETER);
 
     if (pImage->pBlockAllocationTable)
     {
@@ -1595,7 +1596,7 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
         /*
          * Clip write range.
          */
-        cbWrite = RT_MIN(cbWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
+        cbToWrite = RT_MIN(cbToWrite, (pImage->cbDataBlock - (cBATEntryIndex * VHD_SECTOR_SIZE)));
 
         /*
          * If the block is not allocated the content of the entry is ~0
@@ -1610,13 +1611,13 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
         {
             /* Check if the block allocation should be suppressed. */
             if (   (fWrite & VD_WRITE_NO_ALLOC)
-                || (cbWrite != pImage->cbDataBlock))
+                || (cbToWrite != pImage->cbDataBlock))
             {
                 *pcbPreRead = cBATEntryIndex * VHD_SECTOR_SIZE;
-                *pcbPostRead = pImage->cSectorsPerDataBlock * VHD_SECTOR_SIZE - cbWrite - *pcbPreRead;
+                *pcbPostRead = pImage->cSectorsPerDataBlock * VHD_SECTOR_SIZE - cbToWrite - *pcbPreRead;
 
                 if (pcbWriteProcess)
-                    *pcbWriteProcess = cbWrite;
+                    *pcbWriteProcess = cbToWrite;
                 return VERR_VD_BLOCK_FREE;
             }
 
@@ -1631,7 +1632,7 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
             pExpand->idxBlockBe = RT_H2BE_U32(pImage->uCurrentEndOfFile / VHD_SECTOR_SIZE);
 
             /* Set the bits for all sectors having been written. */
-            for (uint32_t iSector = 0; iSector < (cbWrite / VHD_SECTOR_SIZE); iSector++)
+            for (uint32_t iSector = 0; iSector < (cbToWrite / VHD_SECTOR_SIZE); iSector++)
             {
                 /* No need to check for a changed value because this is an initial write. */
                 vhdBlockBitmapSectorSet(pImage, pExpand->au8Bitmap, cBATEntryIndex);
@@ -1668,7 +1669,7 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
                  */
                 rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
                                             pImage->uCurrentEndOfFile + (pImage->cDataBlockBitmapSectors + (cSector % pImage->cSectorsPerDataBlock)) * VHD_SECTOR_SIZE,
-                                            pIoCtx, cbWrite,
+                                            pIoCtx, cbToWrite,
                                             vhdAsyncExpansionDataComplete,
                                             pExpand);
                 if (RT_SUCCESS(rc))
@@ -1751,14 +1752,14 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
 
                 /* Write data. */
                 rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                            uVhdOffset, pIoCtx, cbWrite,
+                                            uVhdOffset, pIoCtx, cbToWrite,
                                             NULL, NULL);
                 if (RT_SUCCESS(rc) || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                 {
                     bool fChanged = false;
 
                     /* Set the bits for all sectors having been written. */
-                    for (uint32_t iSector = 0; iSector < (cbWrite / VHD_SECTOR_SIZE); iSector++)
+                    for (uint32_t iSector = 0; iSector < (cbToWrite / VHD_SECTOR_SIZE); iSector++)
                     {
                         fChanged |= vhdBlockBitmapSectorSet(pImage, pImage->pu8Bitmap, cBATEntryIndex);
                         cBATEntryIndex++;
@@ -1788,10 +1789,10 @@ static DECLCALLBACK(int) vhdWrite(void *pBackendData, uint64_t uOffset, size_t c
     }
     else
         rc = vdIfIoIntFileWriteUser(pImage->pIfIo, pImage->pStorage,
-                                    uOffset, pIoCtx, cbWrite, NULL, NULL);
+                                    uOffset, pIoCtx, cbToWrite, NULL, NULL);
 
     if (pcbWriteProcess)
-        *pcbWriteProcess = cbWrite;
+        *pcbWriteProcess = cbToWrite;
 
     /* Stay on the safe side. Do not run the risk of confusing the higher
      * level, as that can be pretty lethal to image consistency. */
