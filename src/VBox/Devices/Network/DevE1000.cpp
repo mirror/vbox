@@ -1095,8 +1095,8 @@ struct E1kState_st
     bool        fItrEnabled;
     /** All: throttle RX interrupts. */
     bool        fItrRxEnabled;
-
-    bool        Alignment2;
+    /** All: Delay TX interrupts using TIDV/TADV. */
+    bool        fTidEnabled;
     /** Link up delay (in milliseconds). */
     uint32_t    cMsLinkUpDelay;
 
@@ -3244,7 +3244,7 @@ static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 }
 # endif /* E1K_TX_DELAY */
 
-# ifdef E1K_USE_TX_TIMERS
+//# ifdef E1K_USE_TX_TIMERS
 
 /**
  * Transmit Interrupt Delay Timer handler.
@@ -3258,6 +3258,8 @@ static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns);
+    RT_NOREF(pTimer);
     PE1KSTATE pThis = (PE1KSTATE )pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatTID);
@@ -3280,6 +3282,8 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  */
 static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
+    RT_NOREF(pDevIns);
+    RT_NOREF(pTimer);
     PE1KSTATE pThis = (PE1KSTATE )pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatTAD);
@@ -3288,7 +3292,7 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
     e1kRaiseInterrupt(pThis, ICR_TXDW);
 }
 
-# endif /* E1K_USE_TX_TIMERS */
+//# endif /* E1K_USE_TX_TIMERS */
 # ifdef E1K_USE_RX_TIMERS
 
 /**
@@ -4444,8 +4448,8 @@ static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
         e1kWriteBackDesc(pThis, pDesc, addr);
         if (pDesc->legacy.cmd.fEOP)
         {
-#ifdef E1K_USE_TX_TIMERS
-            if (pDesc->legacy.cmd.fIDE)
+//#ifdef E1K_USE_TX_TIMERS
+            if (pThis->fTidEnabled && pDesc->legacy.cmd.fIDE)
             {
                 E1K_INC_ISTAT_CNT(pThis->uStatTxIDE);
                 //if (pThis->fIntRaised)
@@ -4466,18 +4470,22 @@ static void e1kDescReport(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
             }
             else
             {
-                E1kLog2(("%s No IDE set, cancel TAD timer and raise interrupt\n",
-                        pThis->szPrf));
+                if (pThis->fTidEnabled)
+                {
+                    E1kLog2(("%s No IDE set, cancel TAD timer and raise interrupt\n",
+                             pThis->szPrf));
+                    /* Cancel both timers if armed and fire immediately. */
 # ifndef E1K_NO_TAD
-                /* Cancel both timers if armed and fire immediately. */
-                e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
+                    TMTimerStop(pThis->CTX_SUFF(pTADTimer));
 # endif
-#endif /* E1K_USE_TX_TIMERS */
+                    TMTimerStop(pThis->CTX_SUFF(pTIDTimer));
+                }
+//#endif /* E1K_USE_TX_TIMERS */
                 E1K_INC_ISTAT_CNT(pThis->uStatIntTx);
                 e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_TXDW);
-#ifdef E1K_USE_TX_TIMERS
+//#ifdef E1K_USE_TX_TIMERS
             }
-#endif /* E1K_USE_TX_TIMERS */
+//#endif /* E1K_USE_TX_TIMERS */
         }
     }
     else
@@ -4509,9 +4517,10 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr, bool fO
 
     e1kPrintTDesc(pThis, pDesc, "vvv");
 
-#ifdef E1K_USE_TX_TIMERS
-    e1kCancelTimer(pThis, pThis->CTX_SUFF(pTIDTimer));
-#endif /* E1K_USE_TX_TIMERS */
+//#ifdef E1K_USE_TX_TIMERS
+    if (pThis->fTidEnabled)
+        e1kCancelTimer(pThis, pThis->CTX_SUFF(pTIDTimer));
+//#endif /* E1K_USE_TX_TIMERS */
 
     switch (e1kGetDescType(pDesc))
     {
@@ -4769,9 +4778,10 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr,
 
     e1kPrintTDesc(pThis, pDesc, "vvv");
 
-#ifdef E1K_USE_TX_TIMERS
-    e1kCancelTimer(pThis, pThis->CTX_SUFF(pTIDTimer));
-#endif /* E1K_USE_TX_TIMERS */
+//#ifdef E1K_USE_TX_TIMERS
+    if (pThis->fTidEnabled)
+        TMTimerStop(pThis->CTX_SUFF(pTIDTimer));
+//#endif /* E1K_USE_TX_TIMERS */
 
     switch (e1kGetDescType(pDesc))
     {
@@ -6643,12 +6653,15 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #ifdef E1K_TX_DELAY
     e1kCancelTimer(pThis, pThis->CTX_SUFF(pTXDTimer));
 #endif /* E1K_TX_DELAY */
-#ifdef E1K_USE_TX_TIMERS
-    e1kCancelTimer(pThis, pThis->CTX_SUFF(pTIDTimer));
+//#ifdef E1K_USE_TX_TIMERS
+    if (pThis->fTidEnabled)
+    {
+        e1kCancelTimer(pThis, pThis->CTX_SUFF(pTIDTimer));
 #ifndef E1K_NO_TAD
-    e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
+        e1kCancelTimer(pThis, pThis->CTX_SUFF(pTADTimer));
 #endif /* E1K_NO_TAD */
-#endif /* E1K_USE_TX_TIMERS */
+    }
+//#endif /* E1K_USE_TX_TIMERS */
 #ifdef E1K_USE_RX_TIMERS
     e1kCancelTimer(pThis, pThis->CTX_SUFF(pRIDTimer));
     e1kCancelTimer(pThis, pThis->CTX_SUFF(pRADTimer));
@@ -7351,12 +7364,15 @@ static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pThis->pRIDTimerRC   = TMTimerRCPtr(pThis->pRIDTimerR3);
     pThis->pRADTimerRC   = TMTimerRCPtr(pThis->pRADTimerR3);
 #endif /* E1K_USE_RX_TIMERS */
-#ifdef E1K_USE_TX_TIMERS
-    pThis->pTIDTimerRC   = TMTimerRCPtr(pThis->pTIDTimerR3);
+//#ifdef E1K_USE_TX_TIMERS
+    if (pThis->fTidEnabled)
+    {
+        pThis->pTIDTimerRC   = TMTimerRCPtr(pThis->pTIDTimerR3);
 # ifndef E1K_NO_TAD
-    pThis->pTADTimerRC   = TMTimerRCPtr(pThis->pTADTimerR3);
+        pThis->pTADTimerRC   = TMTimerRCPtr(pThis->pTADTimerR3);
 # endif /* E1K_NO_TAD */
-#endif /* E1K_USE_TX_TIMERS */
+    }
+//#endif /* E1K_USE_TX_TIMERS */
 #ifdef E1K_TX_DELAY
     pThis->pTXDTimerRC   = TMTimerRCPtr(pThis->pTXDTimerR3);
 #endif /* E1K_TX_DELAY */
@@ -7537,13 +7553,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /** @todo LineSpeed unused! */
 
-    pThis->fR0Enabled    = true;
-    pThis->fRCEnabled    = true;
-    pThis->fEthernetCRC  = true;
-    pThis->fGSOEnabled   = true;
-    pThis->fItrEnabled   = true;
-    pThis->fItrRxEnabled = true;
-
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured.au8));
     if (RT_FAILURE(rc))
@@ -7578,7 +7587,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'GSOEnabled'"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "ItrEnabled", &pThis->fItrEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "ItrEnabled", &pThis->fItrEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'ItrEnabled'"));
@@ -7587,6 +7596,11 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'ItrRxEnabled'"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "TidEnabled", &pThis->fTidEnabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'TidEnabled'"));
 
     rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 5000); /* ms */
     if (RT_FAILURE(rc))
@@ -7598,12 +7612,13 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (pThis->cMsLinkUpDelay == 0)
         LogRel(("%s WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
-    LogRel(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s R0=%s GC=%s\n", pThis->szPrf,
+    LogRel(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s TID=%s R0=%s GC=%s\n", pThis->szPrf,
             g_aChips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
             pThis->fEthernetCRC ? "on" : "off",
             pThis->fGSOEnabled ? "enabled" : "disabled",
             pThis->fItrEnabled ? "enabled" : "disabled",
             pThis->fItrRxEnabled ? "enabled" : "disabled",
+            pThis->fTidEnabled ? "enabled" : "disabled",
             pThis->fR0Enabled ? "enabled" : "disabled",
             pThis->fRCEnabled ? "enabled" : "disabled"));
 
@@ -7702,27 +7717,30 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     TMR3TimerSetCritSect(pThis->pTXDTimerR3, &pThis->csTx);
 #endif /* E1K_TX_DELAY */
 
-#ifdef E1K_USE_TX_TIMERS
-    /* Create Transmit Interrupt Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT,
-                                "E1000 Transmit Interrupt Delay Timer", &pThis->pTIDTimerR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pTIDTimerR0 = TMTimerR0Ptr(pThis->pTIDTimerR3);
-    pThis->pTIDTimerRC = TMTimerRCPtr(pThis->pTIDTimerR3);
+//#ifdef E1K_USE_TX_TIMERS
+    if (pThis->fTidEnabled)
+    {
+        /* Create Transmit Interrupt Delay Timer */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer, pThis,
+                                    TMTIMER_FLAGS_NO_CRIT_SECT,
+                                    "E1000 Transmit Interrupt Delay Timer", &pThis->pTIDTimerR3);
+        if (RT_FAILURE(rc))
+            return rc;
+        pThis->pTIDTimerR0 = TMTimerR0Ptr(pThis->pTIDTimerR3);
+        pThis->pTIDTimerRC = TMTimerRCPtr(pThis->pTIDTimerR3);
 
 # ifndef E1K_NO_TAD
-    /* Create Transmit Absolute Delay Timer */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT,
-                                "E1000 Transmit Absolute Delay Timer", &pThis->pTADTimerR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pTADTimerR0 = TMTimerR0Ptr(pThis->pTADTimerR3);
-    pThis->pTADTimerRC = TMTimerRCPtr(pThis->pTADTimerR3);
+        /* Create Transmit Absolute Delay Timer */
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer, pThis,
+                                    TMTIMER_FLAGS_NO_CRIT_SECT,
+                                    "E1000 Transmit Absolute Delay Timer", &pThis->pTADTimerR3);
+        if (RT_FAILURE(rc))
+            return rc;
+        pThis->pTADTimerR0 = TMTimerR0Ptr(pThis->pTADTimerR3);
+        pThis->pTADTimerRC = TMTimerRCPtr(pThis->pTADTimerR3);
 # endif /* E1K_NO_TAD */
-#endif /* E1K_USE_TX_TIMERS */
+    }
+//#endif /* E1K_USE_TX_TIMERS */
 
 #ifdef E1K_USE_RX_TIMERS
     /* Create Receive Interrupt Delay Timer */
