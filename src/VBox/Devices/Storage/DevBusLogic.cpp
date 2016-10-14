@@ -1015,7 +1015,7 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode);
  * @returns nothing.
  * @param   pBusLogic       Pointer to the BusLogic device instance.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
- * @param   uFlag           Type of interrupt being generated.
+ * @param   uIrqType        Type of interrupt being generated.
  */
 static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t uIrqType)
 {
@@ -1046,8 +1046,8 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t
 /**
  * Deasserts the interrupt line of the BusLogic adapter.
  *
- * @returns nothing
- * @param   pBuslogic  Pointer to the BusLogic device instance.
+ * @returns nothing.
+ * @param   pBusLogic  Pointer to the BusLogic device instance.
  */
 static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
 {
@@ -1067,6 +1067,9 @@ static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
 
 /**
  * Advances the mailbox pointer to the next slot.
+ *
+ * @returns nothing.
+ * @param   pBusLogic       The BusLogic controller instance.
  */
 DECLINLINE(void) buslogicR3OutgoingMailboxAdvance(PBUSLOGIC pBusLogic)
 {
@@ -1077,7 +1080,7 @@ DECLINLINE(void) buslogicR3OutgoingMailboxAdvance(PBUSLOGIC pBusLogic)
  * Initialize local RAM of host adapter with default values.
  *
  * @returns nothing.
- * @param   pBusLogic.
+ * @param   pBusLogic       The BusLogic controller instance.
  */
 static void buslogicR3InitializeLocalRam(PBUSLOGIC pBusLogic)
 {
@@ -1201,7 +1204,7 @@ static void buslogicR3InitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
  * @returns nothing.
  * @param   pBusLogic                 Pointer to the BusLogic device instance.
  * @param   GCPhysAddrCCB             The physical guest address of the CCB the mailbox is for.
- * @param   pCCBGuet                  The command control block.
+ * @param   pCCBGuest                 The command control block.
  * @param   uHostAdapterStatus        The host adapter status code to set.
  * @param   uDeviceStatus             The target device status to set.
  * @param   uMailboxCompletionCode    Completion status code to set in the mailbox.
@@ -1380,7 +1383,6 @@ static void buslogicR3ReadSGEntries(PPDMDEVINS pDevIns, bool fIs24Bit, RTGCPHYS 
  * @param   pDevIns       PDM device instance.
  * @param   pCCBGuest     The CCB of the guest.
  * @param   fIs24Bit      Flag whether the 24bit SG format is used.
- * @para    cbSGEntry     Size of one SG entry in bytes.
  * @param   pcbBuf        Where to store the size of the guest data buffer on success.
  */
 static int buslogicR3QueryDataBufferSize(PPDMDEVINS pDevIns, PCCBU pCCBGuest, bool fIs24Bit, size_t *pcbBuf)
@@ -2495,10 +2497,10 @@ PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    unsigned iRegister = Port % 4;
+    unsigned iRegister = uPort % 4;
     RT_NOREF_PV(pvUser); RT_NOREF_PV(cb);
 
     Assert(cb == 1);
@@ -2517,10 +2519,10 @@ PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    unsigned iRegister = Port % 4;
+    unsigned iRegister = uPort % 4;
     uint8_t uVal = (uint8_t)u32;
     RT_NOREF2(pvUser, cb);
 
@@ -2528,8 +2530,8 @@ PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
     int rc = buslogicRegisterWrite(pBusLogic, iRegister, (uint8_t)uVal);
 
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x rc=%Rrc\n",
-          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port, rc));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x rc=%Rrc\n",
+          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort, rc));
 
     return rc;
 }
@@ -2609,17 +2611,17 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
 
     Assert(cb == 1);
 
-    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pu32);
+    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (uPort - BUSLOGIC_BIOS_IO_PORT), pu32);
 
     //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-    //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_BIOS_IO_PORT), rc));
+    //      __FUNCTION__, pu32, 1, pu32, (uPort - BUSLOGIC_BIOS_IO_PORT), rc));
 
     return rc;
 }
@@ -2635,11 +2637,11 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUs
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort));
 
     /*
      * If there is already a request form the BIOS pending ignore this write
@@ -2650,7 +2652,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 
     Assert(cb == 1);
 
-    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
+    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (uPort - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
@@ -3745,7 +3747,7 @@ static bool buslogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 }
 
 /**
- * Callback employed by buslogicR3Suspend and buslogicR3PowerOff..
+ * Callback employed by buslogicR3Suspend and buslogicR3PowerOff.
  *
  * @returns true if we've quiesced, false if we're still working.
  * @param   pDevIns     The device instance.

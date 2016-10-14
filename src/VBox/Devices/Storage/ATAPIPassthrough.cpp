@@ -306,6 +306,7 @@ static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const
  *
  * @returns VBox status code.
  * @param   pTrackList    The track list to update.
+ * @param   iTrack        The first track the TOC has data for.
  * @param   fMSF          Flag whether block addresses are in MSF or LBA format.
  * @param   pbBuf         Buffer holding the formatted TOC.
  * @param   cbBuffer      Size of the buffer.

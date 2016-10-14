@@ -2019,7 +2019,7 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
 /**
  * Hardware reset used for machine power on and reset.
  *
- * @param pAhciport     The port to reset.
+ * @param pAhciPort     The port to reset.
  */
 static void ahciPortHwReset(PAHCIPort pAhciPort)
 {
@@ -2360,7 +2360,7 @@ PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   Port        Port address where the write starts.
- * @param   pv          Where to fetch the result.
+ * @param   u32         Where to fetch the result.
  * @param   cb          Number of bytes to write.
  */
 PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
@@ -2404,7 +2404,7 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   Port        Port address where the read starts.
- * @param   pv          Where to fetch the result.
+ * @param   pu32        Where to fetch the result.
  * @param   cb          Number of bytes to write.
  */
 PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
@@ -3569,8 +3569,6 @@ static int ahciR3PrdtQuerySize(PAHCI pThis, PAHCIREQ pAhciReq, size_t *pcbPrdt)
  *
  * @returns Whether all active tasks were canceled.
  * @param   pAhciPort        The AHCI port.
- * @param   pAhciReqExcept   The given request is excepted from the cancelling
- *                           (used for error page reading).
  */
 static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
 {
@@ -3689,6 +3687,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
  *
  * @returns nothing.
  * @param   pAhciPort    The AHCI port.
+ * @param   pAhciReq     The request to free.
  */
 static void ahciR3ReqFree(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
@@ -4025,7 +4024,9 @@ static DECLCALLBACK(void) ahciR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
  * Process an non read/write ATA command.
  *
  * @returns The direction of the data transfer
- * @param   pCmdHdr Pointer to the command header.
+ * @param   pAhciPort     The AHCI port of the request.
+ * @param   pAhciReq      The AHCI request state.
+ * @param   pCmdFis       Pointer to the command FIS.
  */
 static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t *pCmdFis)
 {
@@ -4303,7 +4304,8 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
  * Retrieve a command FIS from guest memory.
  *
  * @returns whether the H2D FIS was successfully read from the guest memory.
- * @param pAhciReq The state of the actual task.
+ * @param pAhciPort    The AHCI port of the request.
+ * @param pAhciReq     The state of the actual task.
  */
 static bool ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 {
@@ -5336,7 +5338,7 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
 }
 
 /**
- * Callback employed by ahciR3Suspend and ahciR3PowerOff..
+ * Callback employed by ahciR3Suspend and ahciR3PowerOff.
  *
  * @returns true if we've quiesced, false if we're still working.
  * @param   pDevIns     The device instance.
@@ -5418,7 +5420,7 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
  * @returns VBox status code.
  * @param   pDevIns      The device instance.
  * @param   pAhciPort    The attached device.
- * @param   szName       Name of the port to get the CFGM node.
+ * @param   pszName      Name of the port to get the CFGM node.
  */
 static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *pszName)
 {
@@ -5660,9 +5662,8 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  *
  * @param   pDevIns     The device instance data.
  */
-static int ahciR3ResetCommon(PPDMDEVINS pDevIns, bool fConstructor)
+static int ahciR3ResetCommon(PPDMDEVINS pDevIns)
 {
-    RT_NOREF(fConstructor);
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
 
     ahciHBAReset(pAhci);
@@ -5687,7 +5688,7 @@ static DECLCALLBACK(bool) ahciR3IsAsyncResetDone(PPDMDEVINS pDevIns)
         return false;
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
 
-    ahciR3ResetCommon(pDevIns, false /*fConstructor*/);
+    ahciR3ResetCommon(pDevIns);
     return true;
 }
 
@@ -5706,7 +5707,7 @@ static DECLCALLBACK(void) ahciR3Reset(PPDMDEVINS pDevIns)
     else
     {
         ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-        ahciR3ResetCommon(pDevIns, false /*fConstructor*/);
+        ahciR3ResetCommon(pDevIns);
     }
 }
 
@@ -6131,7 +6132,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "AHCI info", ahciR3Info);
 
-    return ahciR3ResetCommon(pDevIns, true /*fConstructor*/);
+    return ahciR3ResetCommon(pDevIns);
 }
 
 /**

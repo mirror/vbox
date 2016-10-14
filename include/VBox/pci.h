@@ -86,6 +86,7 @@ typedef enum PCIADDRESSSPACE
  *                          that the device deregister access handlers for it and update its internal
  *                          state to reflect this.
  *
+ * @param   cb              Size of the region in bytes.
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because

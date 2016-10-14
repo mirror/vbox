@@ -1687,10 +1687,10 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg = Port - pThis->IOPortBase;
+    uint32_t        offReg = uPort - pThis->IOPortBase;
     int             rc;
     RT_NOREF2(pvUser, cb);
 
@@ -1712,10 +1712,10 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PLSILOGICSCSI   pThis   = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg  = Port - pThis->IOPortBase;
+    uint32_t        offReg  = uPort - pThis->IOPortBase;
     RT_NOREF_PV(pvUser);
     RT_NOREF_PV(cb);
 
@@ -2310,7 +2310,7 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, RTGCPHYS GCPhysMe
 
 
 /**
- * @interface_method_impl{PDMIMEDIA,pfnQueryDeviceLocation}
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
  */
 static DECLCALLBACK(int) lsilogicR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN)
@@ -2426,9 +2426,12 @@ static DECLCALLBACK(void) lsilogicR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pThis,
                                                           PMptConfigurationPagesSupported pPages,
@@ -2481,9 +2484,12 @@ static int lsilogicR3ConfigurationIOUnitPageGetFromNumber(PLSILOGICSCSI pThis,
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pThis,
                                                        PMptConfigurationPagesSupported pPages,
@@ -2541,9 +2547,12 @@ static int lsilogicR3ConfigurationIOCPageGetFromNumber(PLSILOGICSCSI pThis,
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI pThis,
                                                                  PMptConfigurationPagesSupported pPages,
@@ -2630,9 +2639,12 @@ static int lsilogicR3ConfigurationManufacturingPageGetFromNumber(PLSILOGICSCSI p
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationBiosPageGetFromNumber(PLSILOGICSCSI pThis,
                                                         PMptConfigurationPagesSupported pPages,
@@ -2675,9 +2687,13 @@ static int lsilogicR3ConfigurationBiosPageGetFromNumber(PLSILOGICSCSI pThis,
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
+ * @param   u8Port        The port to retrieve the page for.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pThis,
                                                                PMptConfigurationPagesSupported pPages,
@@ -2724,9 +2740,14 @@ static int lsilogicR3ConfigurationSCSISPIPortPageGetFromNumber(PLSILOGICSCSI pTh
  *
  * @returns VINF_SUCCESS if successful
  *          VERR_NOT_FOUND if the requested page could be found.
+ * @param   pThis         The LsiLogic controller instance data.
+ * @param   pPages        The pages supported by the controller.
+ * @param   u8Bus         The bus the device is on the page should be returned.
+ * @param   u8TargetID    The target ID of the device to return the page for.
  * @param   u8PageNumber  Number of the page to get.
  * @param   ppPageHeader  Where to store the pointer to the page header.
  * @param   ppbPageData   Where to store the pointer to the page data.
+ * @param   pcbPage       Where to store the size of the page data in bytes on success.
  */
 static int lsilogicR3ConfigurationSCSISPIDevicePageGetFromNumber(PLSILOGICSCSI pThis,
                                                                  PMptConfigurationPagesSupported pPages,
@@ -2974,9 +2995,9 @@ static int lsilogicR3ConfigurationSASDevicePageGetFromNumber(PLSILOGICSCSI pThis
  *          VERR_NOT_FOUND if the requested page could be found.
  * @param   pThis               Pointer to the LsiLogic device state.
  * @param   pConfigurationReq   The configuration request.
- * @param   u8PageNumber        Number of the page to get.
- * @param   ppPageHeader        Where to store the pointer to the page header.
+ * @param   ppPageHeader        Where to return the pointer to the page header on success.
  * @param   ppbPageData         Where to store the pointer to the page data.
+ * @param   pcbPage             Where to store the size of the page in bytes.
  */
 static int lsilogicR3ConfigurationPageGetExtended(PLSILOGICSCSI pThis, PMptConfigurationRequest pConfigurationReq,
                                                   PMptExtendedConfigurationPageHeader *ppPageHeader,
@@ -4956,7 +4977,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 
 /**
- * @interface_method_impl{PDMILEDPORTS,pfnQueryInterface, For a SCSI device.}
+ * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, For a SCSI device.}
  *
  * @remarks Called by the scsi driver, proxying the main calls.
  */

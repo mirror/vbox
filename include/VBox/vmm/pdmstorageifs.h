@@ -290,12 +290,15 @@ typedef struct PDMIMEDIA
      * @param   pbCmd           Offset to start reading from.
      * @param   enmTxDir        Direction of transfer.
      * @param   pvBuf           Pointer tp the transfer buffer.
-     * @param   cbBuf           Size of the transfer buffer.
-     * @param   pbSenseKey      Status of the command (when return value is VERR_DEV_IO_ERROR).
+     * @param   pcbBuf          Size of the transfer buffer.
+     * @param   pabSense        Status of the command (when return value is VERR_DEV_IO_ERROR).
+     * @param   cbSense         Size of the sense buffer in bytes.
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIMEDIA pInterface, const uint8_t *pbCmd, PDMMEDIATXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIMEDIA pInterface, const uint8_t *pbCmd, PDMMEDIATXDIR enmTxDir,
+                                          void *pvBuf, uint32_t *pcbBuf, uint8_t *pabSense, size_t cbSense,
+                                          uint32_t cTimeoutMillies));
 
     /**
      * Merge medium contents during a live snapshot deletion. All details

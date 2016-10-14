@@ -118,8 +118,10 @@ typedef struct VSCSILUNIOCALLBACKS
      * Sets the size of the allocator specific memory for a I/O request.
      *
      * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   cbIoReqAlloc    The size of the allocator specific memory in bytes.
+     * @param   hVScsiLun            Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser        Opaque user data which may be used to identify the
+     *                               medium.
+     * @param   cbVScsiIoReqAlloc    The size of the allocator specific memory in bytes.
      * @thread  EMT.
      */
     DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqAllocSizeSet, (VSCSILUN hVScsiLun, void *pvScsiLunUser,

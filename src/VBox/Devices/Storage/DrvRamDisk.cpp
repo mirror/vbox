@@ -308,13 +308,13 @@ static int drvramdiskWriteWorker(PDRVRAMDISK pThis, PRTSGBUF pSgBuf,
 }
 
 /**
- * Verifies a read request.
+ * Read data from the ram disk.
  *
  * @returns VBox status code.
- * @param   pThis    Disk integrity driver instance data.
+ * @param   pThis    RAM disk driver instance data.
  * @param   pSgBuf   The S/G buffer to store the data.
  * @param   off      Start offset.
- * @param   cbWrite  Number of bytes to verify.
+ * @param   cbRead   Number of bytes to read.
  */
 static int drvramdiskReadWorker(PDRVRAMDISK pThis, PRTSGBUF pSgBuf,
                                 uint64_t off, size_t cbRead)
@@ -871,7 +871,7 @@ static int drvramdiskMediaExIoReqCompleteWorker(PDRVRAMDISK pThis, PPDMMEDIAEXIO
  * Allocates a memory buffer suitable for I/O for the given request.
  *
  * @returns VBox status code.
- * @param   VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if there is no I/O memory available to allocate and
+ * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if there is no I/O memory available to allocate and
  *          the request was placed on a waiting list.
  * @param   pThis     VBox disk container instance data.
  * @param   pIoReq    I/O request to allocate memory for.
@@ -1444,7 +1444,7 @@ static DECLCALLBACK(uint32_t) drvramdiskIoReqGetSuspendedCount(PPDMIMEDIAEX pInt
 }
 
 /**
- * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedFirst}
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedStart}
  */
 static DECLCALLBACK(int) drvramdiskIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq,
                                                             void **ppvIoReqAlloc)

@@ -70,7 +70,7 @@ extern bool DevINIPConfigured(void);
  * Enable support for periodically flushing the VDI to disk. This may prove
  * useful for those nasty problems with the ultra-slow host filesystems.
  * If this is enabled, it can be configured via the CFGM key
- * "VBoxInternal/Devices/piix3ide/0/LUN#<x>/Config/FlushInterval". <x>
+ * "VBoxInternal/Devices/piix3ide/0/LUN#<x>/Config/FlushInterval". @verbatim<x>@endverbatim
  * must be replaced with the correct LUN number of the disk that should
  * do the periodic flushes. The value of the key is the number of bytes
  * written between flushes. A value of 0 (the default) denotes no flushes. */
@@ -82,7 +82,7 @@ extern bool DevINIPConfigured(void);
  * Windows guests). NOTE that this does not disable the flushes caused by
  * the periodic flush cache feature above.
  * If this feature is enabled, it can be configured via the CFGM key
- * "VBoxInternal/Devices/piix3ide/0/LUN#<x>/Config/IgnoreFlush". <x>
+ * "VBoxInternal/Devices/piix3ide/0/LUN#<x>/Config/IgnoreFlush". @verbatim<x>@endverbatim
  * must be replaced with the correct LUN number of the disk that should
  * ignore flush requests. The value of the key is a boolean. The default
  * is to ignore flushes, i.e. true. */
@@ -1348,7 +1348,7 @@ typedef struct VDSOCKETINT
 #define VDSOCKET_POLL_ID_PIPE   1
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSocketCreate} */
-static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
+static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET phVdSock)
 {
     int rc = VINF_SUCCESS;
     int rc2 = VINF_SUCCESS;
@@ -1378,7 +1378,7 @@ static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
                                       RTPOLL_EVT_READ, VDSOCKET_POLL_ID_PIPE);
                 if (RT_SUCCESS(rc))
                 {
-                    *pSock = pSockInt;
+                    *phVdSock = pSockInt;
                     return VINF_SUCCESS;
                 }
 
@@ -1395,7 +1395,7 @@ static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
     }
     else
     {
-        *pSock = pSockInt;
+        *phVdSock = pSockInt;
         return VINF_SUCCESS;
     }
 
@@ -1405,10 +1405,10 @@ static DECLCALLBACK(int) drvvdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSocketDestroy} */
-static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
+static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET hVdSock)
 {
     int rc = VINF_SUCCESS;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     /* Destroy the pipe and pollset if necessary. */
     if (pSockInt->hPollSet != NIL_RTPOLLSET)
@@ -1437,11 +1437,11 @@ static DECLCALLBACK(int) drvvdTcpSocketDestroy(VDSOCKET Sock)
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnClientConnect} */
-static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
+static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET hVdSock, const char *pszAddress, uint32_t uPort,
                                                RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     rc = RTTcpClientConnectEx(pszAddress, uPort, &pSockInt->hSocket, cMillies, NULL);
     if (RT_SUCCESS(rc))
@@ -1465,10 +1465,10 @@ static DECLCALLBACK(int) drvvdTcpClientConnect(VDSOCKET Sock, const char *pszAdd
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnClientClose} */
-static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
+static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET hVdSock)
 {
     int rc = VINF_SUCCESS;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     if (pSockInt->hPollSet != NIL_RTPOLLSET)
     {
@@ -1483,108 +1483,108 @@ static DECLCALLBACK(int) drvvdTcpClientClose(VDSOCKET Sock)
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnIsClientConnected} */
-static DECLCALLBACK(bool) drvvdTcpIsClientConnected(VDSOCKET Sock)
+static DECLCALLBACK(bool) drvvdTcpIsClientConnected(VDSOCKET hVdSock)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return pSockInt->hSocket != NIL_RTSOCKET;
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOne} */
-static DECLCALLBACK(int) drvvdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvvdTcpSelectOne(VDSOCKET hVdSock, RTMSINTERVAL cMillies)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpSelectOne(pSockInt->hSocket, cMillies);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnRead} */
-static DECLCALLBACK(int) drvvdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+static DECLCALLBACK(int) drvvdTcpRead(VDSOCKET hVdSock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpRead(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnWrite} */
-static DECLCALLBACK(int) drvvdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
+static DECLCALLBACK(int) drvvdTcpWrite(VDSOCKET hVdSock, const void *pvBuffer, size_t cbBuffer)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpWrite(pSockInt->hSocket, pvBuffer, cbBuffer);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSgWrite} */
-static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
+static DECLCALLBACK(int) drvvdTcpSgWrite(VDSOCKET hVdSock, PCRTSGBUF pSgBuf)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpSgWrite(pSockInt->hSocket, pSgBuf);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnReadNB} */
-static DECLCALLBACK(int) drvvdTcpReadNB(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
+static DECLCALLBACK(int) drvvdTcpReadNB(VDSOCKET hVdSock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpReadNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbRead);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnWriteNB} */
-static DECLCALLBACK(int) drvvdTcpWriteNB(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
+static DECLCALLBACK(int) drvvdTcpWriteNB(VDSOCKET hVdSock, const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpWriteNB(pSockInt->hSocket, pvBuffer, cbBuffer, pcbWritten);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSgWriteNB} */
-static DECLCALLBACK(int) drvvdTcpSgWriteNB(VDSOCKET Sock, PRTSGBUF pSgBuf, size_t *pcbWritten)
+static DECLCALLBACK(int) drvvdTcpSgWriteNB(VDSOCKET hVdSock, PRTSGBUF pSgBuf, size_t *pcbWritten)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpSgWriteNB(pSockInt->hSocket, pSgBuf, pcbWritten);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnFlush} */
-static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET Sock)
+static DECLCALLBACK(int) drvvdTcpFlush(VDSOCKET hVdSock)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpFlush(pSockInt->hSocket);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSetSendCoalescing} */
-static DECLCALLBACK(int) drvvdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
+static DECLCALLBACK(int) drvvdTcpSetSendCoalescing(VDSOCKET hVdSock, bool fEnable)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpSetSendCoalescing(pSockInt->hSocket, fEnable);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnGetLocalAddress} */
-static DECLCALLBACK(int) drvvdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+static DECLCALLBACK(int) drvvdTcpGetLocalAddress(VDSOCKET hVdSock, PRTNETADDR pAddr)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpGetLocalAddress(pSockInt->hSocket, pAddr);
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnGetPeerAddress} */
-static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
+static DECLCALLBACK(int) drvvdTcpGetPeerAddress(VDSOCKET hVdSock, PRTNETADDR pAddr)
 {
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     return RTTcpGetPeerAddress(pSockInt->hSocket, pAddr);
 }
 
-static DECLCALLBACK(int) drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents,
+static DECLCALLBACK(int) drvvdTcpSelectOneExPoll(VDSOCKET hVdSock, uint32_t fEvents,
                                                  uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     int rc = VINF_SUCCESS;
     uint32_t id = 0;
     uint32_t fEventsRecv = 0;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     *pfEvents = 0;
 
@@ -1653,11 +1653,11 @@ static DECLCALLBACK(int) drvvdTcpSelectOneExPoll(VDSOCKET Sock, uint32_t fEvents
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnSelectOneEx} */
-static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET Sock, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET hVdSock, uint32_t fEvents, uint32_t *pfEvents, RTMSINTERVAL cMillies)
 {
     RT_NOREF(cMillies); /** @todo timeouts */
     int rc = VINF_SUCCESS;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     *pfEvents = 0;
 
@@ -1793,11 +1793,11 @@ static DECLCALLBACK(int) drvvdTcpSelectOneExNoPoll(VDSOCKET Sock, uint32_t fEven
 }
 
 /** @interface_method_impl{VDINTERFACETCPNET,pfnPoke} */
-static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET Sock)
+static DECLCALLBACK(int) drvvdTcpPoke(VDSOCKET hVdSock)
 {
     int rc = VINF_SUCCESS;
     size_t cbWritten = 0;
-    PVDSOCKETINT pSockInt = (PVDSOCKETINT)Sock;
+    PVDSOCKETINT pSockInt = (PVDSOCKETINT)hVdSock;
 
     ASMAtomicXchgBool(&pSockInt->fWokenUp, true);
 
@@ -2464,18 +2464,18 @@ static DECLCALLBACK(void) drvvdBlkCacheReqComplete(void *pvUser1, void *pvUser2,
 
 
 /** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
-static DECLCALLBACK(void) drvvdBlkCacheXferCompleteIoReq(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
+static DECLCALLBACK(void) drvvdBlkCacheXferCompleteIoReq(PPDMDRVINS pDrvIns, void *pvUser, int rc)
 {
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
-    drvvdMediaExIoReqCompleteWorker(pThis, (PPDMMEDIAEXIOREQINT)pvUser, rcReq, true /* fUpNotify */);
+    drvvdMediaExIoReqCompleteWorker(pThis, (PPDMMEDIAEXIOREQINT)pvUser, rc, true /* fUpNotify */);
 }
 
 /** @copydoc FNPDMBLKCACHEXFERENQUEUEDRV */
 static DECLCALLBACK(int) drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
                                                   PDMBLKCACHEXFERDIR enmXferDir,
                                                   uint64_t off, size_t cbXfer,
-                                                  PCRTSGBUF pcSgBuf, PPDMBLKCACHEIOXFER hIoXfer)
+                                                  PCRTSGBUF pSgBuf, PPDMBLKCACHEIOXFER hIoXfer)
 {
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
@@ -2485,11 +2485,11 @@ static DECLCALLBACK(int) drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
     switch (enmXferDir)
     {
         case PDMBLKCACHEXFERDIR_READ:
-            rc = VDAsyncRead(pThis->pDisk, off, cbXfer, pcSgBuf, drvvdBlkCacheReqComplete,
+            rc = VDAsyncRead(pThis->pDisk, off, cbXfer, pSgBuf, drvvdBlkCacheReqComplete,
                              pThis, hIoXfer);
             break;
         case PDMBLKCACHEXFERDIR_WRITE:
-            rc = VDAsyncWrite(pThis->pDisk, off, cbXfer, pcSgBuf, drvvdBlkCacheReqComplete,
+            rc = VDAsyncWrite(pThis->pDisk, off, cbXfer, pSgBuf, drvvdBlkCacheReqComplete,
                               pThis, hIoXfer);
             break;
         case PDMBLKCACHEXFERDIR_FLUSH:
@@ -2891,7 +2891,7 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
  * Allocates a memory buffer suitable for I/O for the given request.
  *
  * @returns VBox status code.
- * @param   VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if there is no I/O memory available to allocate and
+ * @retval  VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS if there is no I/O memory available to allocate and
  *          the request was placed on a waiting list.
  * @param   pThis     VBox disk container instance data.
  * @param   pIoReq    I/O request to allocate memory for.
@@ -3683,7 +3683,7 @@ static DECLCALLBACK(uint32_t) drvvdIoReqGetSuspendedCount(PPDMIMEDIAEX pInterfac
 }
 
 /**
- * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedFirst}
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedStart}
  */
 static DECLCALLBACK(int) drvvdIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq,
                                                        void **ppvIoReqAlloc)

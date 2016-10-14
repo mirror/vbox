@@ -186,7 +186,7 @@ static int hbdMgrQueryNtLinkTarget(PRTUTF16 pwszLinkNt, PRTUTF16 *ppwszLinkTarge
  * block device path.
  *
  * @returns VBox status code.
- * @param   pwszDriveWin32  The Win32 path to the block device (e.g. \\.\PhysicalDrive0 for example)
+ * @param   pwszDriveWin32  The Win32 path to the block device (e.g. "\\.\PhysicalDrive0" for example)
  * @param   ppwszDriveNt    Where to store the NT path to the volume on success.
  *                          Must be freed with RTUtf16Free().
  */

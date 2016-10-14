@@ -276,7 +276,7 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
  *
  * @returns VBox status code.
  * @param   pVBoxSCSI      Pointer to the SCSI state.
- * @paam    puLun          Where to store the LUN on success.
+ * @param   puLun          Where to store the LUN on success.
  * @param   ppbCdb         Where to store the pointer to the CDB on success.
  * @param   pcbCdb         Where to store the size of the CDB on success.
  * @param   pcbBuf         Where to store th size of the data buffer on success.

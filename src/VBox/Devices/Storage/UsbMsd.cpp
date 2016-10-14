@@ -1938,7 +1938,7 @@ static int usbMsdHandleDefaultPipe(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb)
 
 
 /**
- * @interface_method_impl{PDMUSBREG,pfnQueue}
+ * @interface_method_impl{PDMUSBREG,pfnUrbQueue}
  */
 static DECLCALLBACK(int) usbMsdQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {

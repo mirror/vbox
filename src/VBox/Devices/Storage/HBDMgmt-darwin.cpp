@@ -241,7 +241,7 @@ static void hbdMgrDACallbackComplete(DADiskRef hDiskRef, DADissenterRef hDissent
  *
  * @returns Reference to a DADissenter object which contains the result.
  * @param   hDiskRef         The disk that is about to be mounted.
- * @param   pvCOntext        Pointer to the block device manager.
+ * @param   pvContext        Pointer to the block device manager.
  */
 static DADissenterRef hbdMgrDAMountApprovalCallback(DADiskRef hDiskRef, void *pvContext)
 {

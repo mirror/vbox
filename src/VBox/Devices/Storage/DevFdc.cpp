@@ -2405,26 +2405,26 @@ static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-static DECLCALLBACK(int) fdcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(int) fdcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     if (cb == 1)
-        fdctrl_write (pvUser, Port & 7, u32);
+        fdctrl_write (pvUser, uPort & 7, u32);
     else
-        AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+        AssertMsgFailed(("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32));
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTIN}
  */
-static DECLCALLBACK(int) fdcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(int) fdcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     if (cb == 1)
     {
-        *pu32 = fdctrl_read (pvUser, Port & 7);
+        *pu32 = fdctrl_read (pvUser, uPort & 7);
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;

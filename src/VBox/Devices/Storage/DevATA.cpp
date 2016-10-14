@@ -6117,6 +6117,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
  *                          I/O port, else it's a physical address.
  *                          This address is *NOT* relative to pci_mem_base like earlier!
+ * @param   cb              Size of the region in bytes.
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  */
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
@@ -6644,7 +6645,7 @@ static DECLCALLBACK(void) ataR3Resume(PPDMDEVINS pDevIns)
  *
  * @returns true on success.
  * @returns false when one or more threads is still processing.
- * @param   pThis               Pointer to the instance data.
+ * @param   pDevIns               Pointer to the PDM device instance.
  */
 static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
 {

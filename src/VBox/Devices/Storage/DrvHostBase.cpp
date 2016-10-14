@@ -132,7 +132,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 
 /* -=-=-=-=- IBlock -=-=-=-=- */
 
-/** @interface_method_impl{PDMIBLOCK,pfnRead} */
+/** @interface_method_impl{PDMIMEDIA,pfnRead} */
 static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -170,7 +170,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnWrite} */
+/** @interface_method_impl{PDMIMEDIA,pfnWrite} */
 static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
     RT_NOREF(off, pvBuf, cbWrite);
@@ -211,7 +211,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnFlush} */
+/** @interface_method_impl{PDMIMEDIA,pfnFlush} */
 static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 {
     int rc;
@@ -231,7 +231,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnIsReadOnly} */
+/** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -247,7 +247,7 @@ static DECLCALLBACK(bool) drvHostBaseIsNonRotational(PPDMIMEDIA pInterface)
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnGetSize} */
+/** @interface_method_impl{PDMIMEDIA,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -263,7 +263,7 @@ static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnGetType} */
+/** @interface_method_impl{PDMIMEDIA,pfnGetType} */
 static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -272,7 +272,7 @@ static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 }
 
 
-/** @interface_method_impl{PDMIBLOCK,pfnGetUuid} */
+/** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
 static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
     PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -284,7 +284,7 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 }
 
 
-/** @interface_method_impl{PDMIBLOCKBIOS,pfnBiosGetPCHSGeometry} */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -312,7 +312,7 @@ static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 }
 
 
-/** @interface_method_impl{PDMIBLOCKBIOS,pfnBiosSetPCHSGeometry} */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -336,7 +336,7 @@ static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 }
 
 
-/** @interface_method_impl{PDMIBLOCKBIOS,pfnGetLCHSGeometry} */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosGetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -364,7 +364,7 @@ static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 }
 
 
-/** @interface_method_impl{PDMIBLOCKBIOS,pfnSetLCHSGeometry} */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosSetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
@@ -388,7 +388,7 @@ static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 }
 
 
-/** @interface_method_impl{PDMIBLOCKBIOS,pfnIsVisible} */
+/** @interface_method_impl{PDMIMEDIA,pfnBiosIsVisible} */
 static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);

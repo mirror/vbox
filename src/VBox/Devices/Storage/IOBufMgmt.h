@@ -72,7 +72,7 @@ DECLHIDDEN(int) IOBUFMgrCreate(PIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFla
  * Destroys the given I/O buffer manager.
  *
  * @returns VBox status code.
- * @param   VERR_INVALID_STATE if there is still memory allocated by the given manager.
+ * @retval  VERR_INVALID_STATE if there is still memory allocated by the given manager.
  * @param   hIoBufMgr          The I/O buffer manager.
  */
 DECLHIDDEN(int) IOBUFMgrDestroy(IOBUFMGR hIoBufMgr);
