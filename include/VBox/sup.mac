@@ -87,7 +87,7 @@ struc SUPGLOBALINFOPAGE
     .au32Padding1               resd 24
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
-    .aiFirstCpuSetIdxFromCpuGroup resw 256
+    .aoffCpuGroup               resw 256
     .aCPUs                      resb SUPGIPCPU_size
 endstruc
 
