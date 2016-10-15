@@ -800,6 +800,16 @@ void VBOXCALL   supdrvOSSessionHashTabInserted(PSUPDRVDEVEXT pDevExt, PSUPDRVSES
 void VBOXCALL   supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, void *pvUser);
 
 /**
+ * Called during GIP initializtion to calc the CPU group table size.
+ *
+ * This is currently only implemented on windows [lazy bird].
+ *
+ * @returns Number of bytes needed for SUPGIPCPUGROUP structures.
+ * @param   pDevExt             The device globals.
+ */
+size_t VBOXCALL supdrvOSGipGetGroupTableSize(PSUPDRVDEVEXT pDevExt);
+
+/**
  * Called during GIP initialization to set up the group table and group count.
  *
  * This is currently only implemented on windows [lazy bird].
@@ -807,11 +817,14 @@ void VBOXCALL   supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
  * @param   pDevExt             The device globals.
  * @param   pGip                The GIP which group table needs initialization.
  *                              It's only partially initialized at this point.
+ * @param   cbGipCpuGroups      What supdrvOSGipGetGroupTableSize returned.
  */
-void VBOXCALL   supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip);
+int VBOXCALL    supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, size_t cbGipCpuGroups);
 
 /**
- * Gets the CPU group and member indexes for the given CPU ID.
+ * Initializes the group related members when a CPU is added to the GIP.
+ *
+ * This is called both during GIP initalization and during an CPU online event.
  *
  * This is currently only implemented on windows [lazy bird].
  *
@@ -820,7 +833,7 @@ void VBOXCALL   supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOP
  * @param   idCpu               The ID of the CPU.
  * @param   piCpuGroupMember    Where to return the group member number.
  */
-uint16_t VBOXCALL supdrvOSGipGetGroupFromCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu, uint16_t *piCpuGroupMember);
+void VBOXCALL supdrvOSGipInitGroupBitsForCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu);
 
 void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession);
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);

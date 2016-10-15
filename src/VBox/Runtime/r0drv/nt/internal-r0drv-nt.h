@@ -55,6 +55,7 @@ typedef VOID (__stdcall *PFNRTKEQUERYSYSTEMTIMEPRECISE)(PLARGE_INTEGER pTime);
 extern RTCPUSET                                g_rtMpNtCpuSet;
 extern uint32_t                                g_cRtMpNtMaxGroups;
 extern uint32_t                                g_cRtMpNtMaxCpus;
+extern RTCPUID                                 g_aidRtMpNtByCpuSetIdx[RTCPUSET_MAX_CPUS];
 
 extern PFNMYEXSETTIMERRESOLUTION               g_pfnrtNtExSetTimerResolution;
 extern PFNMYKEFLUSHQUEUEDDPCS                  g_pfnrtNtKeFlushQueuedDpcs;
@@ -73,6 +74,8 @@ extern PFNKEQUERYACTIVEPROCESSORS              g_pfnrtKeQueryActiveProcessors;
 extern PFNKEQUERYMAXIMUMPROCESSORCOUNT         g_pfnrtKeQueryMaximumProcessorCount;
 extern PFNKEQUERYMAXIMUMPROCESSORCOUNTEX       g_pfnrtKeQueryMaximumProcessorCountEx;
 extern PFNKEQUERYMAXIMUMGROUPCOUNT             g_pfnrtKeQueryMaximumGroupCount;
+extern PFNKEQUERYACTIVEPROCESSORCOUNT          g_pfnrtKeQueryActiveProcessorCount;
+extern PFNKEQUERYACTIVEPROCESSORCOUNTEX        g_pfnrtKeQueryActiveProcessorCountEx;
 extern PFNKEQUERYLOGICALPROCESSORRELATIONSHIP  g_pfnrtKeQueryLogicalProcessorRelationship;
 extern PFNKEREGISTERPROCESSORCHANGECALLBACK    g_pfnrtKeRegisterProcessorChangeCallback;
 extern PFNKEDEREGISTERPROCESSORCHANGECALLBACK  g_pfnrtKeDeregisterProcessorChangeCallback;
@@ -94,6 +97,9 @@ int __stdcall rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiW7Plus(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingHalReqestIpiPreW7(RTCPUID idCpu);
 
+struct RTNTSDBOSVER;
+DECLHIDDEN(int)  rtR0MpNtInit(struct RTNTSDBOSVER const *pOsVerInfo);
+DECLHIDDEN(void) rtR0MpNtTerm(void);
 DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu);
 
 RT_C_DECLS_END

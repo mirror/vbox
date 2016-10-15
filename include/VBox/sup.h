@@ -271,7 +271,7 @@ typedef struct SUPGIPCPU
     int16_t                 iCpuSet;
     /** CPU group number (always zero, except on windows). */
     uint16_t                iCpuGroup;
-    /** CPU group number (same as iCpuSet, except on windows). */
+    /** CPU group member number (same as iCpuSet, except on windows). */
     uint16_t                iCpuGroupMember;
     /** The APIC ID of this CPU. */
     uint16_t                idApic;
@@ -288,6 +288,26 @@ AssertCompileMemberAlignment(SUPGIPCPU, u64TSCSample, 8);
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
 typedef SUPGIPCPU *PSUPGIPCPU;
 
+/**
+ * CPU group information.
+ * @remarks Windows only.
+ */
+typedef struct SUPGIPCPUGROUP
+{
+    /** Current number of CPUs in this group. */
+    uint16_t volatile       cMembers;
+    /** Maximum number of CPUs in the group. */
+    uint16_t                cMaxMembers;
+    /** The CPU set index of the members. This table has cMaxMembers entries.
+     * @note For various reasons, entries from cMembers and up to cMaxMembers are
+     *       may change as the host OS does set dynamic assignments during CPU
+     *       hotplugging. */
+    int16_t                 aiCpuSetIdxs[1];
+} SUPGIPCPUGROUP;
+/** Pointer to a GIP CPU group structure. */
+typedef SUPGIPCPUGROUP *PSUPGIPCPUGROUP;
+/** Pointer to a const GIP CPU group structure. */
+typedef SUPGIPCPUGROUP const *PCSUPGIPCPUGROUP;
 
 /**
  * The rules concerning the applicability of SUPGIPCPU::i64TscDelta.
@@ -357,6 +377,13 @@ typedef enum SUPGIPUSETSCDELTA
 #define SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL RT_BIT_32(3)
 /** @} */
 
+/** @def SUPGIP_MAX_CPU_GROUPS
+ * Maximum number of CPU groups.  */
+#if RTCPUSET_MAX_CPUS >= 256
+# define SUPGIP_MAX_CPU_GROUPS 256
+#else
+# define SUPGIP_MAX_CPU_GROUPS 256
+#endif
 
 /**
  * Global Information Page.
@@ -418,9 +445,11 @@ typedef struct SUPGLOBALINFOPAGE
     uint16_t            aiCpuFromApicId[256];
     /** CPU set index to CPU table index. */
     uint16_t            aiCpuFromCpuSetIdx[RTCPUSET_MAX_CPUS];
-    /** Table indexed by CPU group index to get the CPU set index of the first
-     *  CPU. */
-    uint16_t            aiFirstCpuSetIdxFromCpuGroup[RTCPUSET_MAX_CPUS];
+    /** Table indexed by CPU group to containing offsets to SUPGIPCPUGROUP
+     * structures, invalid entries are set to UINT16_MAX.  The offsets are relative
+     * to the start of this structure.
+     * @note Windows only. The other hosts sets all entries to UINT16_MAX! */
+    uint16_t            aoffCpuGroup[SUPGIP_MAX_CPU_GROUPS];
 
     /** Array of per-cpu data.
      * This is index by ApicId via the aiCpuFromApicId table.
@@ -449,7 +478,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00070000
+#define SUPGLOBALINFOPAGE_VERSION   0x00080000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.

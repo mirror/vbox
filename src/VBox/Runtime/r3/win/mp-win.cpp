@@ -39,29 +39,74 @@
 #include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
+#include <iprt/param.h>
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 # include <iprt/asm-amd64-x86.h>
+#endif
+#if defined(VBOX) && !defined(IN_GUEST)
+# include <VBox/sup.h>
+# define IPRT_WITH_GIP_MP_INFO
+#else
+# undef  IPRT_WITH_GIP_MP_INFO
 #endif
 
 #include "internal-r3-win.h"
 
 
-
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @def RTMPWIN_UPDATE_GIP_GLOBAL
+ * Does lazy (re-)initialization using information provieded by GIP. */
+#ifdef IPRT_WITH_GIP_MP_INFO
+# define RTMPWIN_UPDATE_GIP_GLOBAL() \
+    do { RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP(); } while (0)
+#else
+# define RTMPWIN_UPDATE_GIP_GLOBAL() do { } while (0)
+#endif
+
+/** @def RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP
+ * Does lazy (re-)initialization using information provieded by GIP and
+ * declare and initalize a pGip local variable. */
+#ifdef IPRT_WITH_GIP_MP_INFO
+#define RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP() \
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage; \
+    if (pGip) \
+    { \
+        if (   pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC \
+            && RTOnce(&g_MpInitOnceGip, rtMpWinInitOnceGip, NULL) == VINF_SUCCESS) \
+        { \
+            if (g_cRtMpWinActiveCpus >= pGip->cOnlineCpus) \
+            { /* likely */ } \
+            else \
+                rtMpWinRefreshGip(); \
+        } \
+        else \
+            pGip = NULL; \
+    } else do { } while (0)
+#else
+# define RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP() do { } while (0)
+#endif
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /** Initialize once. */
 static RTONCE                                       g_MpInitOnce = RTONCE_INITIALIZER;
-//static decltype(GetMaximumProcessorCount)          *g_pfnGetMaximumProcessorCount;
+#ifdef IPRT_WITH_GIP_MP_INFO
+/** Initialize once using GIP. */
+static RTONCE                                       g_MpInitOnceGip = RTONCE_INITIALIZER;
+#endif
+
+static decltype(GetMaximumProcessorCount)          *g_pfnGetMaximumProcessorCount;
+//static decltype(GetActiveProcessorCount)           *g_pfnGetActiveProcessorCount;
 static decltype(GetCurrentProcessorNumber)         *g_pfnGetCurrentProcessorNumber;
 static decltype(GetCurrentProcessorNumberEx)       *g_pfnGetCurrentProcessorNumberEx;
 static decltype(GetLogicalProcessorInformation)    *g_pfnGetLogicalProcessorInformation;
 static decltype(GetLogicalProcessorInformationEx)  *g_pfnGetLogicalProcessorInformationEx;
 
 
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
 /** The required buffer size for getting group relations. */
 static uint32_t     g_cbRtMpWinGrpRelBuf;
 /** The max number of CPUs (RTMpGetCount). */
@@ -70,18 +115,28 @@ static uint32_t     g_cRtMpWinMaxCpus;
 static uint32_t     g_cRtMpWinMaxCpuCores;
 /** The max number of groups. */
 static uint32_t     g_cRtMpWinMaxCpuGroups;
-/** Static per group info. */
+/** The number of active CPUs the last time we checked. */
+static uint32_t volatile g_cRtMpWinActiveCpus;
+/** Static per group info.
+ * @remarks  With RTCPUSET_MAX_CPUS as 256, this takes up 33KB.
+ * @sa g_aRtMpNtCpuGroups */
 static struct
 {
-    /** The CPU ID (and CPU set index) of the first CPU in the group. */
-    uint16_t    idFirstCpu;
     /** The max CPUs in the group. */
     uint16_t    cMaxCpus;
-} g_aRtMpWinCpuGroups[RTCPUSET_MAX_CPUS];
+    /** The number of active CPUs at the time of initialization. */
+    uint16_t    cActiveCpus;
+    /** CPU set indexes for each CPU in the group. */
+    int16_t     aidxCpuSetMembers[64];
+}                   g_aRtMpWinCpuGroups[RTCPUSET_MAX_CPUS];
+/** Maps CPU set indexes to RTCPUID.
+ * @sa g_aidRtMpNtByCpuSetIdx  */
+RTCPUID             g_aidRtMpWinByCpuSetIdx[RTCPUSET_MAX_CPUS];
 
 
 /**
- * @callback_method_impl{FNRTONCE, Resolves dynamic imports.}
+ * @callback_method_impl{FNRTONCE,
+ *      Resolves dynamic imports and initializes globals.}
  */
 static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
 {
@@ -97,27 +152,40 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
         do { \
             RT_CONCAT(g_pfn,a_FnName) = (decltype(a_FnName) *)GetProcAddress(g_hModKernel32, #a_FnName); \
         } while (0)
-    //RESOLVE_API("kernel32.dll", GetMaximumProcessorCount); /* Calls GetLogicalProcessorInformationEx/RelationGroup in W10. */
+    RESOLVE_API("kernel32.dll", GetMaximumProcessorCount);
+    //RESOLVE_API("kernel32.dll", GetActiveProcessorCount); - slow :/
     RESOLVE_API("kernel32.dll", GetCurrentProcessorNumber);
     RESOLVE_API("kernel32.dll", GetCurrentProcessorNumberEx);
     RESOLVE_API("kernel32.dll", GetLogicalProcessorInformation);
     RESOLVE_API("kernel32.dll", GetLogicalProcessorInformationEx);
 
     /*
-     * Query group information, partitioning CPU IDs and CPU set
-     * indexes (they are the same).
+     * Reset globals.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx); i++)
+        g_aidRtMpWinByCpuSetIdx[i] = NIL_RTCPUID;
+    for (unsigned idxGroup = 0; idxGroup < RT_ELEMENTS(g_aRtMpWinCpuGroups); idxGroup++)
+    {
+        g_aRtMpWinCpuGroups[idxGroup].cMaxCpus    = 0;
+        g_aRtMpWinCpuGroups[idxGroup].cActiveCpus = 0;
+        for (unsigned idxMember = 0; idxMember < RT_ELEMENTS(g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers); idxMember++)
+            g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = -1;
+    }
+
+    /*
+     * Query group information, partitioning CPU IDs and CPU set indexes.
      *
      * We ASSUME the the GroupInfo index is the same as the group number.
      *
-     * We ASSUME there are no inactive groups, because otherwise it will
-     * be difficult to tell how many possible CPUs we can have and do a
-     * reasonable CPU ID/index partitioning. [probably bad assumption]
+     * We CANNOT ASSUME that the kernel CPU indexes are assigned in any given
+     * way, though they usually are in group order by active processor.  So,
+     * we do that to avoid trouble.  We must use information provided thru GIP
+     * if we want the kernel CPU set indexes.  Even there, the inactive CPUs
+     * wont have sensible indexes.  Sigh.
      *
-     * We ASSUME that the kernel processor indexes are assigned in group order,
-     * which we match here with our own ID+index assignments.  This claim is
-     * verified by initterm-r0drv-nt.cpp.
+     * We try to assign IDs to inactive CPUs in the same manner as mp-r0drv-nt.cpp
      *
-     * Note! We will die if there are too many processors!
+     * Note! We will die (AssertFatal) if there are too many processors!
      */
     union
     {
@@ -145,36 +213,84 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
                   ("%u vs %u\n", uBuf.Info.Group.MaximumGroupCount, uBuf.Info.Group.ActiveGroupCount));
         AssertFatal(uBuf.Info.Group.MaximumGroupCount >= uBuf.Info.Group.ActiveGroupCount);
 
+        g_cRtMpWinMaxCpuGroups = uBuf.Info.Group.MaximumGroupCount;
+
+        /* Count max cpus (see mp-r0drv0-nt.cpp) why we don't use GetMaximumProcessorCount(ALL). */
+        uint32_t idxGroup;
+        g_cRtMpWinMaxCpus = 0;
+        for (idxGroup = 0; idxGroup < uBuf.Info.Group.ActiveGroupCount; idxGroup++)
+            g_cRtMpWinMaxCpus += uBuf.Info.Group.GroupInfo[idxGroup].MaximumProcessorCount;
 
         /* Process the active groups. */
-        g_cRtMpWinMaxCpuGroups = uBuf.Info.Group.MaximumGroupCount;
-        uint16_t idxCpu        = 0;
-        uint32_t idxGroup      = 0;
-        for (; idxGroup < uBuf.Info.Group.ActiveGroupCount; idxGroup++)
+        uint32_t cActive   = 0;
+        uint32_t cInactive = 0;
+        uint32_t idxCpu    = 0;
+        uint32_t idxCpuSetNextInactive = g_cRtMpWinMaxCpus - 1;
+        for (idxGroup = 0; idxGroup < uBuf.Info.Group.ActiveGroupCount; idxGroup++)
         {
-            g_aRtMpWinCpuGroups[idxGroup].idFirstCpu = idxCpu;
-            g_aRtMpWinCpuGroups[idxGroup].cMaxCpus   = uBuf.Info.Group.GroupInfo[idxGroup].MaximumProcessorCount;
-            idxCpu += uBuf.Info.Group.GroupInfo[idxGroup].MaximumProcessorCount;
+            PROCESSOR_GROUP_INFO const *pGroupInfo = &uBuf.Info.Group.GroupInfo[idxGroup];
+            g_aRtMpWinCpuGroups[idxGroup].cMaxCpus    = pGroupInfo->MaximumProcessorCount;
+            g_aRtMpWinCpuGroups[idxGroup].cActiveCpus = pGroupInfo->ActiveProcessorCount;
+            for (uint32_t idxMember = 0; idxMember < pGroupInfo->MaximumProcessorCount; idxMember++)
+            {
+                if (pGroupInfo->ActiveProcessorMask & RT_BIT_64(idxMember))
+                {
+                    g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpu;
+                    g_aidRtMpWinByCpuSetIdx[idxCpu] = idxCpu;
+                    idxCpu++;
+                    cActive++;
+                }
+                else
+                {
+                    if (idxCpuSetNextInactive >= idxCpu)
+                    {
+                        g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpuSetNextInactive;
+                        g_aidRtMpWinByCpuSetIdx[idxCpuSetNextInactive] = idxCpuSetNextInactive;
+                        idxCpuSetNextInactive--;
+                    }
+                    cInactive++;
+                }
+            }
         }
+        g_cRtMpWinActiveCpus = cActive;
+        Assert(cActive + cInactive <= g_cRtMpWinMaxCpus);
+        Assert(idxCpu <= idxCpuSetNextInactive + 1);
+        Assert(idxCpu <= g_cRtMpWinMaxCpus);
 
         /* Just in case the 2nd assumption doesn't hold true and there are inactive groups. */
         for (; idxGroup < uBuf.Info.Group.MaximumGroupCount; idxGroup++)
         {
-            g_aRtMpWinCpuGroups[idxGroup].idFirstCpu = idxCpu;
-            g_aRtMpWinCpuGroups[idxGroup].cMaxCpus   = RT_MAX(MAXIMUM_PROC_PER_GROUP, 64);
-            idxCpu += RT_MAX(MAXIMUM_PROC_PER_GROUP, 64);
+            DWORD cMaxMembers = g_pfnGetMaximumProcessorCount(idxGroup);
+            g_aRtMpWinCpuGroups[idxGroup].cMaxCpus    = cMaxMembers;
+            g_aRtMpWinCpuGroups[idxGroup].cActiveCpus = 0;
+            for (uint32_t idxMember = 0; idxMember < cMaxMembers; idxMember++)
+            {
+                if (idxCpuSetNextInactive >= idxCpu)
+                {
+                    g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpuSetNextInactive;
+                    g_aidRtMpWinByCpuSetIdx[idxCpuSetNextInactive] = idxCpuSetNextInactive;
+                    idxCpuSetNextInactive--;
+                }
+                cInactive++;
+            }
         }
-
-        g_cRtMpWinMaxCpus = idxCpu;
+        Assert(cActive + cInactive <= g_cRtMpWinMaxCpus);
+        Assert(idxCpu <= idxCpuSetNextInactive + 1);
     }
     else
     {
         /* Legacy: */
         GetSystemInfo(&uBuf.SysInfo);
-        g_cRtMpWinMaxCpus                   = uBuf.SysInfo.dwNumberOfProcessors;
         g_cRtMpWinMaxCpuGroups              = 1;
-        g_aRtMpWinCpuGroups[0].idFirstCpu   = 0;
+        g_cRtMpWinMaxCpus                   = uBuf.SysInfo.dwNumberOfProcessors;
         g_aRtMpWinCpuGroups[0].cMaxCpus     = uBuf.SysInfo.dwNumberOfProcessors;
+        g_aRtMpWinCpuGroups[0].cActiveCpus  = uBuf.SysInfo.dwNumberOfProcessors;
+
+        for (uint32_t idxMember = 0; idxMember < uBuf.SysInfo.dwNumberOfProcessors; idxMember++)
+        {
+            g_aRtMpWinCpuGroups[0].aidxCpuSetMembers[idxMember] = idxMember;
+            g_aidRtMpWinByCpuSetIdx[idxMember] = idxMember;
+        }
     }
 
     AssertFatalMsg(g_cRtMpWinMaxCpus <= RTCPUSET_MAX_CPUS,
@@ -267,72 +383,279 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
 }
 
 
-RTDECL(RTCPUID) RTMpCpuId(void)
+#ifdef IPRT_WITH_GIP_MP_INFO
+/**
+ * @callback_method_impl{FNRTONCE, Updates globals with information from GIP.}
+ */
+static DECLCALLBACK(int32_t) rtMpWinInitOnceGip(void *pvUser)
 {
+    RT_NOREF(pvUser);
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
 
-    if (g_pfnGetCurrentProcessorNumberEx)
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (   pGip
+        && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
     {
-        PROCESSOR_NUMBER ProcNum;
-        g_pfnGetCurrentProcessorNumberEx(&ProcNum);
-        Assert(ProcNum.Group < g_cRtMpWinMaxCpuGroups);
-        Assert(ProcNum.Number < g_aRtMpWinCpuGroups[ProcNum.Group].cMaxCpus);
-        return g_aRtMpWinCpuGroups[ProcNum.Group].idFirstCpu + ProcNum.Number;
+        /*
+         * Update globals.
+         */
+        if (g_cRtMpWinMaxCpus != pGip->cPossibleCpus)
+            g_cRtMpWinMaxCpus = pGip->cPossibleCpus;
+        if (g_cRtMpWinActiveCpus != pGip->cOnlineCpus)
+            g_cRtMpWinActiveCpus = pGip->cOnlineCpus;
+        Assert(g_cRtMpWinMaxCpuGroups == pGip->cPossibleCpuGroups);
+        if (g_cRtMpWinMaxCpuGroups != pGip->cPossibleCpuGroups)
+        {
+            g_cRtMpWinMaxCpuGroups = pGip->cPossibleCpuGroups;
+            g_cbRtMpWinGrpRelBuf   = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
+                                   + (g_cRtMpWinMaxCpuGroups + 2) * sizeof(PROCESSOR_GROUP_INFO);
+        }
+
+        /*
+         * Update CPU set IDs.
+         */
+        for (unsigned i = g_cRtMpWinMaxCpus; i < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx); i++)
+            g_aidRtMpWinByCpuSetIdx[i] = NIL_RTCPUID;
+
+        unsigned const cbGip = pGip->cPages * PAGE_SIZE;
+        for (uint32_t idxGroup = 0; idxGroup < g_cRtMpWinMaxCpus; idxGroup++)
+        {
+            uint32_t idxMember;
+            unsigned offCpuGroup = pGip->aoffCpuGroup[idxGroup];
+            if (offCpuGroup < cbGip)
+            {
+                PSUPGIPCPUGROUP pGipCpuGrp  = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offCpuGroup);
+                uint32_t        cMaxMembers = pGipCpuGrp->cMaxMembers;
+                AssertStmt(cMaxMembers < RT_ELEMENTS(g_aRtMpWinCpuGroups[0].aidxCpuSetMembers),
+                           cMaxMembers = RT_ELEMENTS(g_aRtMpWinCpuGroups[0].aidxCpuSetMembers));
+                g_aRtMpWinCpuGroups[idxGroup].cMaxCpus     = cMaxMembers;
+                g_aRtMpWinCpuGroups[idxGroup].cActiveCpus  = RT_MIN(pGipCpuGrp->cMembers, cMaxMembers);
+
+                for (idxMember = 0; idxMember < cMaxMembers; idxMember++)
+                {
+                    int16_t idxSet = pGipCpuGrp->aiCpuSetIdxs[idxMember];
+                    g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxSet;
+                    if ((unsigned)idxSet < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx))
+# ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                        g_aidRtMpWinByCpuSetIdx[idxSet] = RTMPCPUID_FROM_GROUP_AND_NUMBER(idxGroup, idxMember);
+# else
+                        g_aidRtMpWinByCpuSetIdx[idxSet] = idxSet;
+# endif
+                }
+            }
+            else
+                idxMember = 0;
+            for (; idxMember < RT_ELEMENTS(g_aRtMpWinCpuGroups[0].aidxCpuSetMembers); idxMember++)
+                g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = -1;
+        }
     }
 
-    if (g_pfnGetCurrentProcessorNumber)
-    {
-        /* Should be safe wrt processor numbering, I hope... Only affects W2k3 and Vista. */
-        Assert(g_cRtMpWinMaxCpuGroups == 1);
-        return g_pfnGetCurrentProcessorNumber();
-    }
-
-    /* The API was introduced with W2K3 according to MSDN. */
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-    return ASMGetApicId();
-#else
-# error "Not ported to this architecture."
-    return NIL_RTAPICID;
-#endif
+    return VINF_SUCCESS;
 }
 
+
+/**
+ * Refreshes globals from GIP after one or more CPUs were added.
+ *
+ * There are potential races here.  We might race other threads and we may race
+ * more CPUs being added.
+ */
+static void rtMpWinRefreshGip(void)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (   pGip
+        && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
+    {
+        /*
+         * Since CPUs cannot be removed, we only have to update the IDs and
+         * indexes of CPUs that we think are inactive and the group member counts.
+         */
+        for (;;)
+        {
+            unsigned const cbGip          = pGip->cPages * PAGE_SIZE;
+            uint32_t const cGipActiveCpus = pGip->cOnlineCpus;
+            uint32_t const cMyActiveCpus  = ASMAtomicReadU32(&g_cRtMpWinActiveCpus);
+            ASMCompilerBarrier();
+
+            for (uint32_t idxGroup = 0; idxGroup < g_cRtMpWinMaxCpus; idxGroup++)
+            {
+                unsigned offCpuGroup = pGip->aoffCpuGroup[idxGroup];
+                if (offCpuGroup < cbGip)
+                {
+                    PSUPGIPCPUGROUP pGipCpuGrp  = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offCpuGroup);
+                    uint32_t        cMaxMembers = pGipCpuGrp->cMaxMembers;
+                    AssertStmt(cMaxMembers < RT_ELEMENTS(g_aRtMpWinCpuGroups[0].aidxCpuSetMembers),
+                               cMaxMembers = RT_ELEMENTS(g_aRtMpWinCpuGroups[0].aidxCpuSetMembers));
+                    for (uint32_t idxMember = g_aRtMpWinCpuGroups[idxGroup].cActiveCpus; idxMember < cMaxMembers; idxMember++)
+                    {
+                        int16_t idxSet = pGipCpuGrp->aiCpuSetIdxs[idxMember];
+                        g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxSet;
+                        if ((unsigned)idxSet < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx))
+# ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                            g_aidRtMpWinByCpuSetIdx[idxSet] = RTMPCPUID_FROM_GROUP_AND_NUMBER(idxGroup, idxMember);
+# else
+                            g_aidRtMpWinByCpuSetIdx[idxSet] = idxSet;
+# endif
+                    }
+                    g_aRtMpWinCpuGroups[idxGroup].cMaxCpus    = RT_MIN(pGipCpuGrp->cMembers, cMaxMembers);
+                    g_aRtMpWinCpuGroups[idxGroup].cActiveCpus = RT_MIN(pGipCpuGrp->cMembers, cMaxMembers);
+                }
+                else
+                    Assert(g_aRtMpWinCpuGroups[idxGroup].cActiveCpus == 0);
+            }
+
+            ASMCompilerBarrier();
+            if (cGipActiveCpus == pGip->cOnlineCpus)
+                if (ASMAtomicCmpXchgU32(&g_cRtMpWinActiveCpus, cGipActiveCpus, cMyActiveCpus))
+                    break;
+        }
+    }
+}
+
+#endif /* IPRT_WITH_GIP_MP_INFO */
+
+
+/*
+ * Conversion between CPU ID and set index.
+ */
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBAL();
 
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    if (idCpu != NIL_RTCPUID)
+        return RTMpSetIndexFromCpuGroupMember(rtMpCpuIdGetGroup(idCpu), rtMpCpuIdGetGroupMember(idCpu));
+    return -1;
+
+#else
     /* 1:1 mapping, just do range checking. */
     return idCpu < g_cRtMpWinMaxCpus ? idCpu : -1;
+#endif
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBAL();
 
-    /* 1:1 mapping, just do range checking. */
-    return (unsigned)iCpu < g_cRtMpWinMaxCpus ? iCpu : NIL_RTCPUID;
+    if ((unsigned)iCpu < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx))
+    {
+        RTCPUID idCpu = g_aidRtMpWinByCpuSetIdx[iCpu];
+
+#if defined(IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER) && defined(RT_STRICT)
+        /* Check the correctness of the mapping table. */
+        RTCPUID idCpuGip = NIL_RTCPUID;
+        if (   pGip
+            && (unsigned)iCpu < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx))
+        {
+            unsigned idxSupCpu = pGip->aiCpuFromCpuSetIdx[idxGuess];
+            if (idxSupCpu < pGip->cCpus)
+                if (pGip->aCPUs[idxSupCpu].enmState != SUPGIPCPUSTATE_INVALID)
+                    idCpuGip = pGip->aCPUs[idxSupCpu].idCpu;
+        }
+        AssertMsg(idCpu == idCpuGip, ("table:%#x  gip:%#x\n", idCpu, idCpuGip));
+#endif
+
+        return idCpu;
+    }
+    return NIL_RTCPUID;
 }
 
+
+RTDECL(int) RTMpSetIndexFromCpuGroupMember(uint32_t idxGroup, uint32_t idxMember)
+{
+    if (idxGroup < g_cRtMpWinMaxCpuGroups)
+        if (idxMember < g_aRtMpWinCpuGroups[idxGroup].cMaxCpus)
+            return g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember];
+    return -1;
+}
+
+
+RTDECL(uint32_t) RTMpGetCpuGroupCounts(uint32_t idxGroup, uint32_t *pcActive)
+{
+    if (idxGroup < g_cRtMpWinMaxCpuGroups)
+    {
+        if (pcActive)
+            *pcActive = g_aRtMpWinCpuGroups[idxGroup].cActiveCpus;
+        return g_aRtMpWinCpuGroups[idxGroup].cMaxCpus;
+    }
+    if (pcActive)
+        *pcActive = 0;
+    return 0;
+}
+
+
+RTDECL(uint32_t) RTMpGetMaxCpuGroupCount(void)
+{
+    return g_cRtMpWinMaxCpuGroups;
+}
+
+
+
+/*
+ * Get current CPU.
+ */
+
+RTDECL(RTCPUID) RTMpCpuId(void)
+{
+    RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    RTMPWIN_UPDATE_GIP_GLOBAL();
+#endif
+
+    PROCESSOR_NUMBER ProcNum;
+    ProcNum.Group = 0;
+    ProcNum.Number = 0xff;
+    if (g_pfnGetCurrentProcessorNumberEx)
+        g_pfnGetCurrentProcessorNumberEx(&ProcNum);
+    else if (g_pfnGetCurrentProcessorNumber)
+    {
+        DWORD iCpu = g_pfnGetCurrentProcessorNumber();
+        Assert(iCpu < g_cRtMpWinMaxCpus);
+        ProcNum.Number = iCpu;
+    }
+    else
+    {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+        ProcNum.Number = ASMGetApicId();
+#else
+# error "Not ported to this architecture."
+        return NIL_RTCPUID;
+#endif
+    }
+
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    return RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number);
+#else
+    return RTMpSetIndexFromCpuGroupMember(ProcNum.Group, ProcNum.Number);
+#endif
+}
+
+
+/*
+ * Possible CPUs and cores.
+ */
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    return RTMPCPUID_FROM_GROUP_AND_NUMBER(g_cRtMpWinMaxCpuGroups - 1,
+                                           g_aRtMpWinCpuGroups[g_cRtMpWinMaxCpuGroups - 1].cMaxCpus - 1);
+#else
     return g_cRtMpWinMaxCpus - 1;
-}
-
-
-RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
-{
-    RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
-    RTCPUSET Set;
-    return RTCpuSetIsMember(RTMpGetOnlineSet(&Set), idCpu);
+#endif
 }
 
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBAL();
+
     /* Any CPU between 0 and g_cRtMpWinMaxCpus are possible. */
     return idCpu < g_cRtMpWinMaxCpus;
 }
@@ -340,10 +663,10 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
-    RTCPUID idCpu = RTMpGetCount();
+    RTCPUID iCpu = RTMpGetCount();
     RTCpuSetEmpty(pSet);
-    while (idCpu-- > 0)
-        RTCpuSetAdd(pSet, idCpu);
+    while (iCpu-- > 0)
+        RTCpuSetAddByIndex(pSet, iCpu);
     return pSet;
 }
 
@@ -351,6 +674,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+
     return g_cRtMpWinMaxCpus;
 }
 
@@ -358,13 +682,27 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+
     return g_cRtMpWinMaxCpuCores;
 }
 
 
+/*
+ * Online CPUs and cores.
+ */
+
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+
+#ifdef IPRT_WITH_GIP_MP_INFO
+    RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP();
+    if (pGip)
+    {
+        *pSet = pGip->OnlineCpuSet;
+        return pSet;
+    }
+#endif
 
     if (g_pfnGetLogicalProcessorInformationEx)
     {
@@ -375,6 +713,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
          * we ASSUME that PROCESSOR_GROUP_INFO::MaximumProcessorCount gives the
          * active processor mask width.
          */
+        /** @todo this is not correct for WOW64   */
         DWORD                                    cbInfo = g_cbRtMpWinGrpRelBuf;
         SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *pInfo = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)alloca(cbInfo);
         AssertFatalMsg(g_pfnGetLogicalProcessorInformationEx(RelationGroup, pInfo, &cbInfo) != FALSE,
@@ -396,7 +735,6 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 #ifdef RT_STRICT
                 uint32_t    cMembersLeft = pInfo->Group.GroupInfo[idxGroup].ActiveProcessorCount;
 #endif
-                int const   idxFirst  = g_aRtMpWinCpuGroups[idxGroup].idFirstCpu;
                 int const   cMembers  = g_aRtMpWinCpuGroups[idxGroup].cMaxCpus;
                 for (int idxMember = 0; idxMember < cMembers; idxMember++)
                 {
@@ -405,7 +743,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 #ifdef RT_STRICT
                         cMembersLeft--;
 #endif
-                        RTCpuSetAddByIndex(pSet, idxFirst + idxMember);
+                        RTCpuSetAddByIndex(pSet, g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember]);
                         fActive >>= 1;
                         if (!fActive)
                             break;
@@ -433,8 +771,21 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 }
 
 
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    RTCPUSET Set;
+    return RTCpuSetIsMember(RTMpGetOnlineSet(&Set), idCpu);
+}
+
+
 RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 {
+#ifdef IPRT_WITH_GIP_MP_INFO
+    RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP();
+    if (pGip)
+        return pGip->cOnlineCpus;
+#endif
+
     RTCPUSET Set;
     RTMpGetOnlineSet(&Set);
     return RTCpuSetCount(&Set);

@@ -36,6 +36,7 @@
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
 #include <iprt/asm-amd64-x86.h>
+#include <iprt/param.h>
 #include <VBox/sup.h>
 #ifdef IN_RC
 # include <VBox/vmm/vmm.h>

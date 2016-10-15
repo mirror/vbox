@@ -1710,70 +1710,100 @@ void VBOXCALL supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSIO
 }
 
 
-void VBOXCALL supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
+size_t VBOXCALL supdrvOSGipGetGroupTableSize(PSUPDRVDEVEXT pDevExt)
 {
     NOREF(pDevExt);
+    uint32_t cMaxCpus = RTMpGetCount();
+    uint32_t cGroups  = RTMpGetMaxCpuGroupCount();
 
-    /*
-     * The indexes are assigned in group order (see initterm-r0drv-nt.cpp).
-     */
-    if (   g_pfnKeQueryMaximumGroupCount
-        && g_pfnKeGetProcessorIndexFromNumber)
-    {
-        unsigned cGroups = g_pfnKeQueryMaximumGroupCount();
-        AssertStmt(cGroups > 0, cGroups = 1);
-        AssertStmt(cGroups < RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup),
-                   cGroups = RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup));
-        pGip->cPossibleCpuGroups = cGroups;
-
-        KEPROCESSORINDEX idxCpuMin = 0;
-        for (unsigned iGroup = 0; iGroup < cGroups; iGroup++)
-        {
-            PROCESSOR_NUMBER ProcNum;
-            ProcNum.Group    = (USHORT)iGroup;
-            ProcNum.Number   = 0;
-            ProcNum.Reserved = 0;
-            KEPROCESSORINDEX idxCpu = g_pfnKeGetProcessorIndexFromNumber(&ProcNum);
-            Assert(idxCpu != INVALID_PROCESSOR_INDEX);
-            Assert(idxCpu >= idxCpuMin);
-            idxCpuMin = idxCpu;
-            pGip->aiFirstCpuSetIdxFromCpuGroup[iGroup] = (uint16_t)idxCpu;
-        }
-    }
-    else
-    {
-        Assert(!g_pfnKeQueryMaximumGroupCount);
-        Assert(!g_pfnKeGetProcessorIndexFromNumber);
-
-        pGip->cPossibleCpuGroups              = 1;
-        pGip->aiFirstCpuSetIdxFromCpuGroup[0] = 0;
-    }
+    return cGroups * RT_OFFSETOF(SUPGIPCPUGROUP, aiCpuSetIdxs)
+         + RT_SIZEOFMEMB(SUPGIPCPUGROUP, aiCpuSetIdxs[0]) * cMaxCpus;
 }
 
 
-uint16_t VBOXCALL supdrvOSGipGetGroupFromCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu, uint16_t *piCpuGroupMember)
+int VBOXCALL supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, size_t cbGipCpuGroups)
+{
+    Assert(cbGipCpuGroups > 0); NOREF(cbGipCpuGroups); NOREF(pDevExt);
+
+    unsigned const  cGroups = RTMpGetMaxCpuGroupCount();
+    AssertReturn(cGroups > 0 && cGroups < RT_ELEMENTS(pGip->aoffCpuGroup), VERR_INTERNAL_ERROR_2);
+    pGip->cPossibleCpuGroups = cGroups;
+
+    PSUPGIPCPUGROUP pGroup = (PSUPGIPCPUGROUP)&pGip->aCPUs[pGip->cCpus];
+    for (uint32_t idxGroup = 0; idxGroup < cGroups; idxGroup++)
+    {
+        uint32_t cActive  = 0;
+        uint32_t cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
+        uint32_t cbNeeded = RT_OFFSETOF(SUPGIPCPUGROUP, aiCpuSetIdxs[cMax]);
+        AssertReturn(cbNeeded <= cbGipCpuGroups, VERR_INTERNAL_ERROR_3);
+        AssertReturn(cActive <= cMax, VERR_INTERNAL_ERROR_4);
+
+        pGip->aoffCpuGroup[idxGroup] = (uint16_t)((uintptr_t)pGroup - (uintptr_t)pGip);
+        pGroup->cMembers    = cActive;
+        pGroup->cMaxMembers = cMax;
+        for (uint32_t idxMember = 0; idxMember < cMax; idxMember++)
+        {
+            pGroup->aiCpuSetIdxs[idxMember] = RTMpSetIndexFromCpuGroupMember(idxGroup, idxMember);
+            Assert((unsigned)pGroup->aiCpuSetIdxs[idxMember] < pGip->cPossibleCpus);
+        }
+
+        /* advance. */
+        cbGipCpuGroups -= cbNeeded;
+        pGroup = (PSUPGIPCPUGROUP)&pGroup->aiCpuSetIdxs[cMax];
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+void VBOXCALL supdrvOSGipInitGroupBitsForCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu)
 {
     NOREF(pDevExt);
 
     /*
-     * This is just a wrapper around KeGetProcessorNumberFromIndex.
+     * Translate the CPU index into a group and member.
      */
+    PROCESSOR_NUMBER ProcNum = { 0, pGipCpu->iCpuSet, 0 };
     if (g_pfnKeGetProcessorNumberFromIndex)
     {
-        PROCESSOR_NUMBER ProcNum = { UINT16_MAX, UINT8_MAX, 0 };
-        NTSTATUS rcNt = g_pfnKeGetProcessorNumberFromIndex(idCpu, &ProcNum);
+        NTSTATUS rcNt = g_pfnKeGetProcessorNumberFromIndex(pGipCpu->iCpuSet, &ProcNum);
         if (NT_SUCCESS(rcNt))
-        {
             Assert(ProcNum.Group < g_pfnKeQueryMaximumGroupCount());
-            *piCpuGroupMember = ProcNum.Number;
-            return ProcNum.Group;
+        else
+        {
+            AssertFailed();
+            ProcNum.Group  = 0;
+            ProcNum.Number = pGipCpu->iCpuSet;
         }
-
-        AssertMsgFailed(("rcNt=%#x for idCpu=%u\n", rcNt, idCpu));
     }
+    pGipCpu->iCpuGroup       = ProcNum.Group;
+    pGipCpu->iCpuGroupMember = ProcNum.Number;
 
-    *piCpuGroupMember = 0;
-    return idCpu;
+    /*
+     * Update the group info.  Just do this wholesale for now (doesn't scale well).
+     */
+    for (uint32_t idxGroup = 0; idxGroup < pGip->cPossibleCpuGroups; idxGroup++)
+        if (pGip->aoffCpuGroup[idxGroup] != UINT16_MAX)
+        {
+            PSUPGIPCPUGROUP pGroup = (PSUPGIPCPUGROUP)((uintptr_t)pGip + pGip->aoffCpuGroup[idxGroup]);
+
+            uint32_t cActive  = 0;
+            uint32_t cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
+            AssertStmt(cMax == pGroup->cMaxMembers, cMax = pGroup->cMaxMembers);
+            AssertStmt(cActive <= cMax, cActive = cMax);
+            if (pGroup->cMembers != cActive)
+                pGroup->cMembers = cActive;
+
+            for (uint32_t idxMember = 0; idxMember < cMax; idxMember++)
+            {
+                int idxCpuSet = RTMpSetIndexFromCpuGroupMember(idxGroup, idxMember);
+                AssertMsg((unsigned)idxCpuSet < pGip->cPossibleCpus,
+                          ("%d vs %d for %u.%u\n", idxCpuSet, pGip->cPossibleCpus, idxGroup, idxMember));
+
+                if (pGroup->aiCpuSetIdxs[idxMember] != idxCpuSet)
+                    pGroup->aiCpuSetIdxs[idxMember] = idxCpuSet;
+            }
+        }
 }
 
 

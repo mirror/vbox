@@ -33,16 +33,25 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#ifdef VBOX
+# include <VBox/sup.h>
+#endif
 
 
 
-int main()
+int main(int argc, char **argv)
 {
     RTTEST hTest;
     RTEXITCODE rcExit = RTTestInitAndCreate("tstRTMp-1", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
+
+    NOREF(argc); NOREF(argv);
+#ifdef VBOX
+    if (argc > 1)
+        SUPR3Init(NULL);
+#endif
 
     /*
      * Present and possible CPUs.

@@ -35,9 +35,12 @@
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/time.h>
 #include "r0drv/mp-r0drv.h"
+#include "symdb.h"
 #include "internal-r0drv-nt.h"
+#include "internal/mp.h"
 
 
 /*********************************************************************************************************************************
@@ -74,10 +77,837 @@ typedef struct RTMPNTONSPECIFICARGS
 typedef RTMPNTONSPECIFICARGS *PRTMPNTONSPECIFICARGS;
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Inactive bit for g_aidRtMpNtByCpuSetIdx. */
+#define RTMPNT_ID_F_INACTIVE    RT_BIT_32(31)
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Maximum number of processor groups. */
+uint32_t                                g_cRtMpNtMaxGroups;
+/** Maximum number of processors. */
+uint32_t                                g_cRtMpNtMaxCpus;
+/** Number of active processors. */
+uint32_t volatile                       g_cRtMpNtActiveCpus;
+/** The NT CPU set.
+ * KeQueryActiveProcssors() cannot be called at all IRQLs and therefore we'll
+ * have to cache it.  Fortunately, NT doesn't really support taking CPUs offline,
+ * and taking them online was introduced with W2K8 where it is intended for virtual
+ * machines and not real HW.  We update this, g_cRtMpNtActiveCpus and
+ * g_aidRtMpNtByCpuSetIdx from the rtR0NtMpProcessorChangeCallback.
+ */
+RTCPUSET                                g_rtMpNtCpuSet;
+
+/** Static per group info.
+ * @remarks  With RTCPUSET_MAX_CPUS as 256, this takes up 33KB. */
+static struct
+{
+    /** The max CPUs in the group. */
+    uint16_t    cMaxCpus;
+    /** The number of active CPUs at the time of initialization. */
+    uint16_t    cActiveCpus;
+    /** CPU set indexes for each CPU in the group. */
+    int16_t     aidxCpuSetMembers[64];
+}                                       g_aRtMpNtCpuGroups[RTCPUSET_MAX_CPUS];
+/** Maps CPU set indexes to RTCPUID.
+ * Inactive CPUs has bit 31 set (RTMPNT_ID_F_INACTIVE) so we can identify them
+ * and shuffle duplicates during CPU hotplugging.  We assign temporary IDs to
+ * the inactive CPUs starting at g_cRtMpNtMaxCpus - 1, ASSUMING that active
+ * CPUs has IDs from 0 to g_cRtMpNtActiveCpus. */
+RTCPUID                                 g_aidRtMpNtByCpuSetIdx[RTCPUSET_MAX_CPUS];
+/** The handle of the rtR0NtMpProcessorChangeCallback registration. */
+static PVOID                            g_pvMpCpuChangeCallback = NULL;
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static VOID __stdcall rtR0NtMpProcessorChangeCallback(void *pvUser, PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT pChangeCtx,
+                                                      PNTSTATUS prcOperationStatus);
+static int rtR0NtInitQueryGroupRelations(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX **ppInfo);
+
+
+
+/**
+ * Initalizes multiprocessor globals (called by rtR0InitNative).
+ *
+ * @returns IPRT status code.
+ * @param   pOsVerInfo          Version information.
+ */
+DECLHIDDEN(int) rtR0MpNtInit(RTNTSDBOSVER const *pOsVerInfo)
+{
+#define MY_CHECK_BREAK(a_Check, a_DbgPrintArgs) \
+        AssertMsgBreakStmt(a_Check, a_DbgPrintArgs, DbgPrint a_DbgPrintArgs; rc = VERR_INTERNAL_ERROR_4 )
+#define MY_CHECK_RETURN(a_Check, a_DbgPrintArgs, a_rcRet) \
+        AssertMsgReturnStmt(a_Check, a_DbgPrintArgs, DbgPrint a_DbgPrintArgs, a_rcRet)
+#define MY_CHECK(a_Check, a_DbgPrintArgs) \
+        AssertMsgStmt(a_Check, a_DbgPrintArgs, DbgPrint a_DbgPrintArgs; rc = VERR_INTERNAL_ERROR_4 )
+
+    /*
+     * API combination checks.
+     */
+    MY_CHECK_RETURN(!g_pfnrtKeSetTargetProcessorDpcEx || g_pfnrtKeGetProcessorNumberFromIndex,
+                    ("IPRT: Fatal: Missing KeSetTargetProcessorDpcEx without KeGetProcessorNumberFromIndex!\n"),
+                    VERR_SYMBOL_NOT_FOUND);
+
+    /*
+     * Get max number of processor groups.
+     *
+     * We may need to upadjust this number below, because windows likes to keep
+     * all options open when it comes to hotplugged CPU group assignments.  A
+     * server advertising up to 64 CPUs in the ACPI table will get a result of
+     * 64 from KeQueryMaximumGroupCount.  That makes sense.  However, when windows
+     * server 2012 does a two processor group setup for it, the sum of the
+     * GroupInfo[*].MaximumProcessorCount members below is 128.  This is probably
+     * because windows doesn't want to make decisions grouping of hotpluggable CPUs.
+     * So, we need to bump the maximum count to 128 below do deal with this as we
+     * want to have valid CPU set indexes for all potential CPUs - how could we
+     * otherwise use the RTMpGetSet() result and also RTCpuSetCount(RTMpGetSet())
+     * should equal RTMpGetCount().
+     */
+    if (g_pfnrtKeQueryMaximumGroupCount)
+    {
+        g_cRtMpNtMaxGroups = g_pfnrtKeQueryMaximumGroupCount();
+        MY_CHECK_RETURN(g_cRtMpNtMaxGroups <= RTCPUSET_MAX_CPUS && g_cRtMpNtMaxGroups > 0,
+                        ("IPRT: Fatal: g_cRtMpNtMaxGroups=%u, max %u\n", g_cRtMpNtMaxGroups, RTCPUSET_MAX_CPUS),
+                        VERR_MP_TOO_MANY_CPUS);
+    }
+    else
+        g_cRtMpNtMaxGroups = 1;
+
+    /*
+     * Get max number CPUs.
+     * This also defines the range of NT CPU indexes, RTCPUID and index into RTCPUSET.
+     */
+    if (g_pfnrtKeQueryMaximumProcessorCountEx)
+    {
+        g_cRtMpNtMaxCpus = g_pfnrtKeQueryMaximumProcessorCountEx(ALL_PROCESSOR_GROUPS);
+        MY_CHECK_RETURN(g_cRtMpNtMaxCpus <= RTCPUSET_MAX_CPUS && g_cRtMpNtMaxCpus > 0,
+                        ("IPRT: Fatal: g_cRtMpNtMaxCpus=%u, max %u [KeQueryMaximumProcessorCountEx]\n",
+                         g_cRtMpNtMaxGroups, RTCPUSET_MAX_CPUS),
+                        VERR_MP_TOO_MANY_CPUS);
+    }
+    else if (g_pfnrtKeQueryMaximumProcessorCount)
+    {
+        g_cRtMpNtMaxCpus = g_pfnrtKeQueryMaximumProcessorCount();
+        MY_CHECK_RETURN(g_cRtMpNtMaxCpus <= RTCPUSET_MAX_CPUS && g_cRtMpNtMaxCpus > 0,
+                        ("IPRT: Fatal: g_cRtMpNtMaxCpus=%u, max %u [KeQueryMaximumProcessorCount]\n",
+                         g_cRtMpNtMaxGroups, RTCPUSET_MAX_CPUS),
+                        VERR_MP_TOO_MANY_CPUS);
+    }
+    else if (g_pfnrtKeQueryActiveProcessors)
+    {
+        KAFFINITY fActiveProcessors = g_pfnrtKeQueryActiveProcessors();
+        MY_CHECK_RETURN(fActiveProcessors != 0,
+                        ("IPRT: Fatal: KeQueryActiveProcessors returned 0!\n"),
+                        VERR_INTERNAL_ERROR_2);
+        g_cRtMpNtMaxCpus = 0;
+        do
+        {
+            g_cRtMpNtMaxCpus++;
+            fActiveProcessors >>= 1;
+        } while (fActiveProcessors);
+    }
+    else
+        g_cRtMpNtMaxCpus = KeNumberProcessors;
+
+    /*
+     * Just because we're a bit paranoid about getting something wrong wrt to the
+     * kernel interfaces, we try 16 times to get the KeQueryActiveProcessorCountEx
+     * and KeQueryLogicalProcessorRelationship information to match up.
+     */
+    for (unsigned cTries = 0;; cTries++)
+    {
+        /*
+         * Get number of active CPUs.
+         */
+        if (g_pfnrtKeQueryActiveProcessorCountEx)
+        {
+            g_cRtMpNtActiveCpus = g_pfnrtKeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS);
+            MY_CHECK_RETURN(g_cRtMpNtActiveCpus <= g_cRtMpNtMaxCpus && g_cRtMpNtActiveCpus > 0,
+                            ("IPRT: Fatal: g_cRtMpNtMaxGroups=%u, max %u [KeQueryActiveProcessorCountEx]\n",
+                             g_cRtMpNtMaxGroups, g_cRtMpNtMaxCpus),
+                            VERR_MP_TOO_MANY_CPUS);
+        }
+        else if (g_pfnrtKeQueryActiveProcessorCount)
+        {
+            g_cRtMpNtActiveCpus = g_pfnrtKeQueryActiveProcessorCount(NULL);
+            MY_CHECK_RETURN(g_cRtMpNtActiveCpus <= g_cRtMpNtMaxCpus && g_cRtMpNtActiveCpus > 0,
+                            ("IPRT: Fatal: g_cRtMpNtMaxGroups=%u, max %u [KeQueryActiveProcessorCount]\n",
+                             g_cRtMpNtMaxGroups, g_cRtMpNtMaxCpus),
+                            VERR_MP_TOO_MANY_CPUS);
+        }
+        else
+            g_cRtMpNtActiveCpus = g_cRtMpNtMaxCpus;
+
+        /*
+         * Query the details for the groups to figure out which CPUs are online as
+         * well as the NT index limit.
+         */
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aidRtMpNtByCpuSetIdx); i++)
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+            g_aidRtMpNtByCpuSetIdx[i] = NIL_RTCPUID;
+#else
+            g_aidRtMpNtByCpuSetIdx[i] = i < g_cRtMpNtMaxCpus ? i : NIL_RTCPUID;
+#endif
+        for (unsigned idxGroup = 0; idxGroup < RT_ELEMENTS(g_aRtMpNtCpuGroups); idxGroup++)
+        {
+            g_aRtMpNtCpuGroups[idxGroup].cMaxCpus    = 0;
+            g_aRtMpNtCpuGroups[idxGroup].cActiveCpus = 0;
+            for (unsigned idxMember = 0; idxMember < RT_ELEMENTS(g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers); idxMember++)
+                g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = -1;
+        }
+
+        if (g_pfnrtKeQueryLogicalProcessorRelationship)
+        {
+            MY_CHECK_RETURN(g_pfnrtKeGetProcessorIndexFromNumber,
+                            ("IPRT: Fatal: Found KeQueryLogicalProcessorRelationship but not KeGetProcessorIndexFromNumber!\n"),
+                            VERR_SYMBOL_NOT_FOUND);
+            MY_CHECK_RETURN(g_pfnrtKeGetProcessorNumberFromIndex,
+                            ("IPRT: Fatal: Found KeQueryLogicalProcessorRelationship but not KeGetProcessorIndexFromNumber!\n"),
+                            VERR_SYMBOL_NOT_FOUND);
+            MY_CHECK_RETURN(g_pfnrtKeSetTargetProcessorDpcEx,
+                            ("IPRT: Fatal: Found KeQueryLogicalProcessorRelationship but not KeSetTargetProcessorDpcEx!\n"),
+                            VERR_SYMBOL_NOT_FOUND);
+
+            SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *pInfo = NULL;
+            int rc = rtR0NtInitQueryGroupRelations(&pInfo);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            MY_CHECK(pInfo->Group.MaximumGroupCount == g_cRtMpNtMaxGroups,
+                     ("IPRT: Fatal: MaximumGroupCount=%u != g_cRtMpNtMaxGroups=%u!\n",
+                      pInfo->Group.MaximumGroupCount, g_cRtMpNtMaxGroups));
+            MY_CHECK(pInfo->Group.ActiveGroupCount > 0 && pInfo->Group.ActiveGroupCount <= g_cRtMpNtMaxGroups,
+                     ("IPRT: Fatal: ActiveGroupCount=%u != g_cRtMpNtMaxGroups=%u!\n",
+                      pInfo->Group.ActiveGroupCount, g_cRtMpNtMaxGroups));
+
+            /*
+             * First we need to recalc g_cRtMpNtMaxCpus (see above).
+             */
+            uint32_t cMaxCpus = 0;
+            uint32_t idxGroup;
+            for (idxGroup = 0; RT_SUCCESS(rc) && idxGroup < pInfo->Group.ActiveGroupCount; idxGroup++)
+            {
+                const PROCESSOR_GROUP_INFO *pGrpInfo = &pInfo->Group.GroupInfo[idxGroup];
+                MY_CHECK_BREAK(pGrpInfo->MaximumProcessorCount <= MAXIMUM_PROC_PER_GROUP,
+                               ("IPRT: Fatal: MaximumProcessorCount=%u\n", pGrpInfo->MaximumProcessorCount));
+                MY_CHECK_BREAK(pGrpInfo->ActiveProcessorCount <= pGrpInfo->MaximumProcessorCount,
+                               ("IPRT: Fatal: ActiveProcessorCount=%u > MaximumProcessorCount=%u\n",
+                                pGrpInfo->ActiveProcessorCount, pGrpInfo->MaximumProcessorCount));
+                cMaxCpus += pGrpInfo->MaximumProcessorCount;
+            }
+            if (cMaxCpus > g_cRtMpNtMaxCpus && RT_SUCCESS(rc))
+            {
+                DbgPrint("IPRT: g_cRtMpNtMaxCpus=%u -> %u\n", g_cRtMpNtMaxCpus, cMaxCpus);
+#ifndef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                uint32_t i = RT_MIN(cMaxCpus, RT_ELEMENTS(g_aidRtMpNtByCpuSetIdx));
+                while (i-- > g_cRtMpNtMaxCpus)
+                    g_aidRtMpNtByCpuSetIdx[i] = i;
+#endif
+                g_cRtMpNtMaxCpus = cMaxCpus;
+                if (g_cRtMpNtMaxGroups > RTCPUSET_MAX_CPUS)
+                {
+                    MY_CHECK(g_cRtMpNtMaxGroups <= RTCPUSET_MAX_CPUS && g_cRtMpNtMaxGroups > 0,
+                             ("IPRT: Fatal: g_cRtMpNtMaxGroups=%u, max %u\n", g_cRtMpNtMaxGroups, RTCPUSET_MAX_CPUS));
+                    rc = VERR_MP_TOO_MANY_CPUS;
+                }
+            }
+
+            /*
+             * Calc online mask, partition IDs and such.
+             *
+             * Also check ASSUMPTIONS:
+             *
+             *      1. Processor indexes going from 0 and up to
+             *         KeQueryMaximumProcessorCountEx(ALL_PROCESSOR_GROUPS) - 1.
+             *
+             *      2. Currently valid processor indexes, i.e. accepted by
+             *         KeGetProcessorIndexFromNumber & KeGetProcessorNumberFromIndex, goes
+             *         from 0 thru KeQueryActiveProcessorCountEx(ALL_PROCESSOR_GROUPS) - 1.
+             *
+             *      3. PROCESSOR_GROUP_INFO::MaximumProcessorCount gives the number of
+             *         relevant bits in the ActiveProcessorMask (from LSB).
+             *
+             *      4. Active processor count found in KeQueryLogicalProcessorRelationship
+             *         output matches what KeQueryActiveProcessorCountEx(ALL) returns.
+             *
+             *      5. Active + inactive processor counts in same does not exceed
+             *         KeQueryMaximumProcessorCountEx(ALL).
+             *
+             * Note! Processor indexes are assigned as CPUs come online and are not
+             *       preallocated according to group maximums.  Since CPUS are only taken
+             *       online and never offlined, this means that internal CPU bitmaps are
+             *       never sparse and no time is wasted scanning unused bits.
+             *
+             *       Unfortunately, it means that ring-3 cannot easily guess the index
+             *       assignments when hotswapping is used, and must use GIP when available.
+             */
+            RTCpuSetEmpty(&g_rtMpNtCpuSet);
+            uint32_t cInactive = 0;
+            uint32_t cActive   = 0;
+            uint32_t idxCpuMax = 0;
+            uint32_t idxCpuSetNextInactive = g_cRtMpNtMaxCpus - 1;
+            for (idxGroup = 0; RT_SUCCESS(rc) && idxGroup < pInfo->Group.ActiveGroupCount; idxGroup++)
+            {
+                const PROCESSOR_GROUP_INFO *pGrpInfo = &pInfo->Group.GroupInfo[idxGroup];
+                MY_CHECK_BREAK(pGrpInfo->MaximumProcessorCount <= MAXIMUM_PROC_PER_GROUP,
+                               ("IPRT: Fatal: MaximumProcessorCount=%u\n", pGrpInfo->MaximumProcessorCount));
+                MY_CHECK_BREAK(pGrpInfo->ActiveProcessorCount <= pGrpInfo->MaximumProcessorCount,
+                               ("IPRT: Fatal: ActiveProcessorCount=%u > MaximumProcessorCount=%u\n",
+                                pGrpInfo->ActiveProcessorCount, pGrpInfo->MaximumProcessorCount));
+
+                g_aRtMpNtCpuGroups[idxGroup].cMaxCpus    = pGrpInfo->MaximumProcessorCount;
+                g_aRtMpNtCpuGroups[idxGroup].cActiveCpus = pGrpInfo->ActiveProcessorCount;
+
+                for (uint32_t idxMember = 0; idxMember < pGrpInfo->MaximumProcessorCount; idxMember++)
+                {
+                    PROCESSOR_NUMBER ProcNum;
+                    ProcNum.Group    = (USHORT)idxGroup;
+                    ProcNum.Number   = (UCHAR)idxMember;
+                    ProcNum.Reserved = 0;
+                    ULONG idxCpu = g_pfnrtKeGetProcessorIndexFromNumber(&ProcNum);
+                    if (idxCpu != INVALID_PROCESSOR_INDEX)
+                    {
+                        MY_CHECK_BREAK(idxCpu < g_cRtMpNtMaxCpus && idxCpu < RTCPUSET_MAX_CPUS, /* ASSUMPTION #1 */
+                                       ("IPRT: Fatal: idxCpu=%u >= g_cRtMpNtMaxCpus=%u (RTCPUSET_MAX_CPUS=%u)\n",
+                                        idxCpu, g_cRtMpNtMaxCpus, RTCPUSET_MAX_CPUS));
+                        if (idxCpu > idxCpuMax)
+                            idxCpuMax = idxCpu;
+                        g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpu;
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                        g_aidRtMpNtByCpuSetIdx[idxCpu] = RTMPCPUID_FROM_GROUP_AND_NUMBER(idxGroup, idxMember);
+#endif
+
+                        ProcNum.Group    = UINT16_MAX;
+                        ProcNum.Number   = UINT8_MAX;
+                        ProcNum.Reserved = UINT8_MAX;
+                        NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(idxCpu, &ProcNum);
+                        MY_CHECK_BREAK(NT_SUCCESS(rcNt),
+                                       ("IPRT: Fatal: KeGetProcessorNumberFromIndex(%u,) -> %#x!\n", idxCpu, rcNt));
+                        MY_CHECK_BREAK(ProcNum.Group == idxGroup && ProcNum.Number == idxMember,
+                                       ("IPRT: Fatal: KeGetProcessorXxxxFromYyyy roundtrip error for %#x! Group: %u vs %u, Number: %u vs %u\n",
+                                        idxCpu, ProcNum.Group, idxGroup, ProcNum.Number, idxMember));
+
+                        if (pGrpInfo->ActiveProcessorMask & RT_BIT_64(idxMember))
+                        {
+                            RTCpuSetAddByIndex(&g_rtMpNtCpuSet, idxCpu);
+                            cActive++;
+                        }
+                        else
+                            cInactive++; /* (This is a little unexpected, but not important as long as things add up below.) */
+                    }
+                    else
+                    {
+                        /* Must be not present / inactive when KeGetProcessorIndexFromNumber fails. */
+                        MY_CHECK_BREAK(!(pGrpInfo->ActiveProcessorMask & RT_BIT_64(idxMember)),
+                                       ("IPRT: Fatal: KeGetProcessorIndexFromNumber(%u/%u) failed but CPU is active! cMax=%u cActive=%u fActive=%p\n",
+                                        idxGroup, idxMember, pGrpInfo->MaximumProcessorCount, pGrpInfo->ActiveProcessorCount,
+                                        pGrpInfo->ActiveProcessorMask));
+                        cInactive++;
+                        if (idxCpuSetNextInactive >= g_cRtMpNtActiveCpus)
+                        {
+                            g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpuSetNextInactive;
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                            g_aidRtMpNtByCpuSetIdx[idxCpuSetNextInactive] = RTMPCPUID_FROM_GROUP_AND_NUMBER(idxGroup, idxMember)
+                                                                          | RTMPNT_ID_F_INACTIVE;
+#endif
+                            idxCpuSetNextInactive--;
+                        }
+                    }
+                }
+            }
+
+            MY_CHECK(cInactive + cActive <= g_cRtMpNtMaxCpus, /* ASSUMPTION #5 (not '==' because of inactive groups) */
+                     ("IPRT: Fatal: cInactive=%u + cActive=%u > g_cRtMpNtMaxCpus=%u\n", cInactive, cActive, g_cRtMpNtMaxCpus));
+
+            /* Deal with inactive groups using KeQueryMaximumProcessorCountEx or as
+               best as we can by as best we can by stipulating maximum member counts
+               from the previous group. */
+            if (   RT_SUCCESS(rc)
+                && idxGroup < pInfo->Group.MaximumGroupCount)
+            {
+                uint16_t cInactiveLeft = g_cRtMpNtMaxCpus - (cInactive + cActive);
+                while (idxGroup < pInfo->Group.MaximumGroupCount)
+                {
+                    uint32_t cMaxMembers = 0;
+                    if (g_pfnrtKeQueryMaximumProcessorCountEx)
+                        cMaxMembers = g_pfnrtKeQueryMaximumProcessorCountEx(idxGroup);
+                    if (cMaxMembers != 0 || cInactiveLeft == 0)
+                        AssertStmt(cMaxMembers <= cInactiveLeft, cMaxMembers = cInactiveLeft);
+                    else
+                    {
+                        uint16_t cGroupsLeft = pInfo->Group.MaximumGroupCount - idxGroup;
+                        cMaxMembers = pInfo->Group.GroupInfo[idxGroup - 1].MaximumProcessorCount;
+                        while (cMaxMembers * cGroupsLeft < cInactiveLeft)
+                            cMaxMembers++;
+                        if (cMaxMembers > cInactiveLeft)
+                            cMaxMembers = cInactiveLeft;
+                    }
+
+                    g_aRtMpNtCpuGroups[idxGroup].cMaxCpus    = (uint16_t)cMaxMembers;
+                    g_aRtMpNtCpuGroups[idxGroup].cActiveCpus = 0;
+                    for (uint16_t idxMember = 0; idxMember < cMaxMembers; idxMember++)
+                        if (idxCpuSetNextInactive >= g_cRtMpNtActiveCpus)
+                        {
+                            g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers[idxMember] = idxCpuSetNextInactive;
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                            g_aidRtMpNtByCpuSetIdx[idxCpuSetNextInactive] = RTMPCPUID_FROM_GROUP_AND_NUMBER(idxGroup, idxMember)
+                                                                          | RTMPNT_ID_F_INACTIVE;
+#endif
+                            idxCpuSetNextInactive--;
+                        }
+                    cInactiveLeft -= cMaxMembers;
+                    idxGroup++;
+                }
+            }
+
+            /* We're done with pInfo now, free it so we can start returning when assertions fail. */
+            RTMemFree(pInfo);
+            if (RT_FAILURE(rc)) /* MY_CHECK_BREAK sets rc. */
+                return rc;
+            MY_CHECK_RETURN(cActive >= g_cRtMpNtActiveCpus,
+                            ("IPRT: Fatal: cActive=%u < g_cRtMpNtActiveCpus=%u - CPUs removed?\n", cActive, g_cRtMpNtActiveCpus),
+                            VERR_INTERNAL_ERROR_3);
+            MY_CHECK_RETURN(idxCpuMax < cActive, /* ASSUMPTION #2 */
+                            ("IPRT: Fatal: idCpuMax=%u >= cActive=%u! Unexpected CPU index allocation. CPUs removed?\n",
+                             idxCpuMax, cActive),
+                            VERR_INTERNAL_ERROR_4);
+
+            /* Retry if CPUs were added. */
+            if (   cActive != g_cRtMpNtActiveCpus
+                && cTries < 16)
+                continue;
+            MY_CHECK_RETURN(cActive == g_cRtMpNtActiveCpus, /* ASSUMPTION #4 */
+                            ("IPRT: Fatal: cActive=%u != g_cRtMpNtActiveCpus=%u\n", cActive, g_cRtMpNtActiveCpus),
+                            VERR_INTERNAL_ERROR_5);
+        }
+        else
+        {
+            /* Legacy: */
+            MY_CHECK_RETURN(g_cRtMpNtMaxGroups == 1, ("IPRT: Fatal: Missing KeQueryLogicalProcessorRelationship!\n"),
+                            VERR_SYMBOL_NOT_FOUND);
+
+            /** @todo Is it possible that the affinity mask returned by
+             *        KeQueryActiveProcessors is sparse? */
+            if (g_pfnrtKeQueryActiveProcessors)
+                RTCpuSetFromU64(&g_rtMpNtCpuSet, g_pfnrtKeQueryActiveProcessors());
+            else if (g_cRtMpNtMaxCpus < 64)
+                RTCpuSetFromU64(&g_rtMpNtCpuSet, (UINT64_C(1) << g_cRtMpNtMaxCpus) - 1);
+            else
+            {
+                MY_CHECK_RETURN(g_cRtMpNtMaxCpus == 64, ("IPRT: Fatal: g_cRtMpNtMaxCpus=%u, expect 64 or less\n", g_cRtMpNtMaxCpus),
+                                VERR_MP_TOO_MANY_CPUS);
+                RTCpuSetFromU64(&g_rtMpNtCpuSet, UINT64_MAX);
+            }
+
+            g_aRtMpNtCpuGroups[0].cMaxCpus    = g_cRtMpNtMaxCpus;
+            g_aRtMpNtCpuGroups[0].cActiveCpus = g_cRtMpNtMaxCpus;
+            for (unsigned i = 0; i < g_cRtMpNtMaxCpus; i++)
+            {
+                g_aRtMpNtCpuGroups[0].aidxCpuSetMembers[i] = i;
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+                g_aidRtMpNtByCpuSetIdx[i] = RTMPCPUID_FROM_GROUP_AND_NUMBER(0, i);
+#endif
+            }
+        }
+
+        /*
+         * Register CPU hot plugging callback (it also counts active CPUs).
+         */
+        Assert(g_pvMpCpuChangeCallback == NULL);
+        if (g_pfnrtKeRegisterProcessorChangeCallback)
+        {
+            MY_CHECK_RETURN(g_pfnrtKeDeregisterProcessorChangeCallback,
+                            ("IPRT: Fatal: KeRegisterProcessorChangeCallback without KeDeregisterProcessorChangeCallback!\n"),
+                            VERR_SYMBOL_NOT_FOUND);
+
+            RTCPUSET const ActiveSetCopy = g_rtMpNtCpuSet;
+            RTCpuSetEmpty(&g_rtMpNtCpuSet);
+            uint32_t const cActiveCpus   = g_cRtMpNtActiveCpus;
+            g_cRtMpNtActiveCpus = 0;
+
+            g_pvMpCpuChangeCallback = g_pfnrtKeRegisterProcessorChangeCallback(rtR0NtMpProcessorChangeCallback, NULL /*pvUser*/,
+                                                                               KE_PROCESSOR_CHANGE_ADD_EXISTING);
+            if (g_pvMpCpuChangeCallback)
+            {
+                if (cActiveCpus == g_cRtMpNtActiveCpus)
+                { /* likely */ }
+                else
+                {
+                    g_pfnrtKeDeregisterProcessorChangeCallback(g_pvMpCpuChangeCallback);
+                    if (cTries < 16)
+                    {
+                        /* Retry if CPUs were added. */
+                        MY_CHECK_RETURN(g_cRtMpNtActiveCpus >= cActiveCpus,
+                                        ("IPRT: Fatal: g_cRtMpNtActiveCpus=%u < cActiveCpus=%u! CPUs removed?\n",
+                                         g_cRtMpNtActiveCpus, cActiveCpus),
+                                        VERR_INTERNAL_ERROR_2);
+                        MY_CHECK_RETURN(g_cRtMpNtActiveCpus <= g_cRtMpNtMaxCpus,
+                                        ("IPRT: Fatal: g_cRtMpNtActiveCpus=%u > g_cRtMpNtMaxCpus=%u!\n",
+                                         g_cRtMpNtActiveCpus, g_cRtMpNtMaxCpus),
+                                        VERR_INTERNAL_ERROR_2);
+                        continue;
+                    }
+                    MY_CHECK_RETURN(0, ("IPRT: Fatal: g_cRtMpNtActiveCpus=%u cActiveCpus=%u\n", g_cRtMpNtActiveCpus, cActiveCpus),
+                                    VERR_INTERNAL_ERROR_3);
+                }
+            }
+            else
+            {
+                AssertFailed();
+                g_rtMpNtCpuSet      = ActiveSetCopy;
+                g_cRtMpNtActiveCpus = cActiveCpus;
+            }
+        }
+        break;
+    } /* Retry loop for stable active CPU count. */
+
+#undef MY_CHECK_RETURN
+
+    /*
+     * Special IPI fun for RTMpPokeCpu.
+     *
+     * On Vista and later the DPC method doesn't seem to reliably send IPIs,
+     * so we have to use alternative methods.
+     *
+     * On AMD64 We used to use the HalSendSoftwareInterrupt API (also x86 on
+     * W10+), it looks faster and more convenient to use, however we're either
+     * using it wrong or it doesn't reliably do what we want (see @bugref{8343}).
+     *
+     * The HalRequestIpip API is thus far the only alternative to KeInsertQueueDpc
+     * for doing targetted IPIs.  Trouble with this API is that it changed
+     * fundamentally in Window 7 when they added support for lots of processors.
+     *
+     * If we really think we cannot use KeInsertQueueDpc, we use the broadcast IPI
+     * API KeIpiGenericCall.
+     */
+    if (   pOsVerInfo->uMajorVer > 6
+        || (pOsVerInfo->uMajorVer == 6 && pOsVerInfo->uMinorVer > 0))
+        g_pfnrtHalRequestIpiPreW7 = NULL;
+    else
+        g_pfnrtHalRequestIpiW7Plus = NULL;
+
+    g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingDpc;
+#ifndef IPRT_TARGET_NT4
+    if (   g_pfnrtHalRequestIpiW7Plus
+        && g_pfnrtKeInitializeAffinityEx
+        && g_pfnrtKeAddProcessorAffinityEx
+        && g_pfnrtKeGetProcessorIndexFromNumber)
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingHalReqestIpiW7Plus\n");
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingHalReqestIpiW7Plus;
+    }
+    else if (pOsVerInfo->uMajorVer >= 6 && g_pfnrtKeIpiGenericCall)
+    {
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingBroadcastIpi\n");
+        g_pfnrtMpPokeCpuWorker = rtMpPokeCpuUsingBroadcastIpi;
+    }
+    else
+        DbgPrint("IPRT: RTMpPoke => rtMpPokeCpuUsingDpc\n");
+    /* else: Windows XP should send always send an IPI -> VERIFY */
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Called by rtR0TermNative.
+ */
+DECLHIDDEN(void) rtR0MpNtTerm(void)
+{
+    /*
+     * Deregister the processor change callback.
+     */
+    PVOID pvMpCpuChangeCallback = g_pvMpCpuChangeCallback;
+    g_pvMpCpuChangeCallback = NULL;
+    if (pvMpCpuChangeCallback)
+    {
+        AssertReturnVoid(g_pfnrtKeDeregisterProcessorChangeCallback);
+        g_pfnrtKeDeregisterProcessorChangeCallback(pvMpCpuChangeCallback);
+    }
+}
+
+
+DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
+{
+    return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
+{
+}
+
+
+/**
+ * Implements the NT PROCESSOR_CALLBACK_FUNCTION callback function.
+ *
+ * This maintains the g_rtMpNtCpuSet and works MP notification callbacks.  When
+ * registered, it's called for each active CPU in the system, avoiding racing
+ * CPU hotplugging (as well as testing the callback).
+ *
+ * @param   pvUser              User context (not used).
+ * @param   pChangeCtx          Change context (in).
+ * @param   prcOperationStatus  Operation status (in/out).
+ *
+ * @remarks ASSUMES no concurrent execution of KeProcessorAddCompleteNotify
+ *          notification callbacks.  At least during callback registration
+ *          callout, we're owning KiDynamicProcessorLock.
+ *
+ * @remarks When registering the handler, we first get KeProcessorAddStartNotify
+ *          callbacks for all active CPUs, and after they all succeed we get the
+ *          KeProcessorAddCompleteNotify callbacks.
+ */
+static VOID __stdcall rtR0NtMpProcessorChangeCallback(void *pvUser, PKE_PROCESSOR_CHANGE_NOTIFY_CONTEXT pChangeCtx,
+                                                      PNTSTATUS prcOperationStatus)
+{
+    RT_NOREF(pvUser, prcOperationStatus);
+    switch (pChangeCtx->State)
+    {
+        /*
+         * Check whether we can deal with the CPU, failing the start operation if we
+         * can't.  The checks we are doing here are to avoid complicated/impossible
+         * cases in KeProcessorAddCompleteNotify.  They are really just verify specs.
+         */
+        case KeProcessorAddStartNotify:
+        {
+            NTSTATUS rcNt = STATUS_SUCCESS;
+            if (pChangeCtx->NtNumber < RTCPUSET_MAX_CPUS)
+            {
+                if (pChangeCtx->NtNumber >= g_cRtMpNtMaxCpus)
+                {
+                    DbgPrint("IPRT: KeProcessorAddStartNotify failure: NtNumber=%u is higher than the max CPU count (%u)!\n",
+                             pChangeCtx->NtNumber, g_cRtMpNtMaxCpus);
+                    rcNt = STATUS_INTERNAL_ERROR;
+                }
+
+                /* The ProcessNumber field was introduced in Windows 7. */
+                PROCESSOR_NUMBER ProcNum;
+                if (g_pfnrtKeGetProcessorIndexFromNumber)
+                {
+                    ProcNum = pChangeCtx->ProcNumber;
+                    KEPROCESSORINDEX idxCpu = g_pfnrtKeGetProcessorIndexFromNumber(&ProcNum);
+                    if (idxCpu != pChangeCtx->NtNumber)
+                    {
+                        DbgPrint("IPRT: KeProcessorAddStartNotify failure: g_pfnrtKeGetProcessorIndexFromNumber(%u.%u) -> %u, expected %u!\n",
+                                 ProcNum.Group, ProcNum.Number, idxCpu, pChangeCtx->NtNumber);
+                        rcNt = STATUS_INTERNAL_ERROR;
+                    }
+                }
+                else
+                {
+                    ProcNum.Group  = 0;
+                    ProcNum.Number = pChangeCtx->NtNumber;
+                }
+
+                if (   ProcNum.Group  < RT_ELEMENTS(g_aRtMpNtCpuGroups)
+                    && ProcNum.Number < RT_ELEMENTS(g_aRtMpNtCpuGroups[0].aidxCpuSetMembers))
+                {
+                    if (ProcNum.Group >= g_cRtMpNtMaxGroups)
+                    {
+                        DbgPrint("IPRT: KeProcessorAddStartNotify failure: %u.%u is out of range - max groups: %u!\n",
+                                 ProcNum.Group, ProcNum.Number, g_cRtMpNtMaxGroups);
+                        rcNt = STATUS_INTERNAL_ERROR;
+                    }
+
+                    if (ProcNum.Number < g_aRtMpNtCpuGroups[ProcNum.Group].cMaxCpus)
+                    {
+                        Assert(g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number] != -1);
+                        if (g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number] == -1)
+                        {
+                            DbgPrint("IPRT: KeProcessorAddStartNotify failure: Internal error! %u.%u was assigned -1 as set index!\n",
+                                     ProcNum.Group, ProcNum.Number);
+                            rcNt = STATUS_INTERNAL_ERROR;
+                        }
+
+                        Assert(g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber] != NIL_RTCPUID);
+                        if (g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber] == NIL_RTCPUID)
+                        {
+                            DbgPrint("IPRT: KeProcessorAddStartNotify failure: Internal error! %u (%u.%u) translates to NIL_RTCPUID!\n",
+                                     pChangeCtx->NtNumber, ProcNum.Group, ProcNum.Number);
+                            rcNt = STATUS_INTERNAL_ERROR;
+                        }
+                    }
+                    else
+                    {
+                        DbgPrint("IPRT: KeProcessorAddStartNotify failure: max processors in group %u is %u, cannot add %u to it!\n",
+                                 ProcNum.Group, g_aRtMpNtCpuGroups[ProcNum.Group].cMaxCpus, ProcNum.Group, ProcNum.Number);
+                        rcNt = STATUS_INTERNAL_ERROR;
+                    }
+                }
+                else
+                {
+                    DbgPrint("IPRT: KeProcessorAddStartNotify failure: %u.%u is out of range (max %u.%u)!\n",
+                             ProcNum.Group, ProcNum.Number, RT_ELEMENTS(g_aRtMpNtCpuGroups), RT_ELEMENTS(g_aRtMpNtCpuGroups[0].aidxCpuSetMembers));
+                    rcNt = STATUS_INTERNAL_ERROR;
+                }
+            }
+            else
+            {
+                DbgPrint("IPRT: KeProcessorAddStartNotify failure: NtNumber=%u is outside RTCPUSET_MAX_CPUS (%u)!\n",
+                         pChangeCtx->NtNumber, RTCPUSET_MAX_CPUS);
+                rcNt = STATUS_INTERNAL_ERROR;
+            }
+            if (!NT_SUCCESS(rcNt))
+                *prcOperationStatus = rcNt;
+            break;
+        }
+
+        /*
+         * Update the globals.  Since we've checked out range limits and other
+         * limitations already we just AssertBreak here.
+         */
+        case KeProcessorAddCompleteNotify:
+        {
+            /*
+             * Calc the processor number and assert conditions checked in KeProcessorAddStartNotify.
+             */
+            AssertBreak(pChangeCtx->NtNumber < RTCPUSET_MAX_CPUS);
+            AssertBreak(pChangeCtx->NtNumber < g_cRtMpNtMaxCpus);
+            Assert(pChangeCtx->NtNumber == g_cRtMpNtActiveCpus); /* light assumption */
+            PROCESSOR_NUMBER ProcNum;
+            if (g_pfnrtKeGetProcessorIndexFromNumber)
+            {
+                ProcNum = pChangeCtx->ProcNumber;
+                AssertBreak(g_pfnrtKeGetProcessorIndexFromNumber(&ProcNum) == pChangeCtx->NtNumber);
+                AssertBreak(ProcNum.Group < RT_ELEMENTS(g_aRtMpNtCpuGroups));
+                AssertBreak(ProcNum.Group < g_cRtMpNtMaxGroups);
+            }
+            else
+            {
+                ProcNum.Group  = 0;
+                ProcNum.Number = pChangeCtx->NtNumber;
+            }
+            AssertBreak(ProcNum.Number < RT_ELEMENTS(g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers));
+            AssertBreak(ProcNum.Number < g_aRtMpNtCpuGroups[ProcNum.Group].cMaxCpus);
+            AssertBreak(g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number] != -1);
+            AssertBreak(g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber] != NIL_RTCPUID);
+
+            /*
+             * Add ourselves to the online CPU set and update the active CPU count.
+             */
+            RTCpuSetAddByIndex(&g_rtMpNtCpuSet, pChangeCtx->NtNumber);
+            ASMAtomicIncU32(&g_cRtMpNtActiveCpus);
+
+            /*
+             * Update the group info.
+             *
+             * If the index prediction failed (real hotplugging callbacks only) we
+             * have to switch it around.  This is particularly annoying when we
+             * use the index as the ID.
+             */
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+            RTCPUID idCpu = RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number);
+            RTCPUID idOld = g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber];
+            if ((idOld & ~RTMPNT_ID_F_INACTIVE) != idCpu)
+            {
+                Assert(idOld & RTMPNT_ID_F_INACTIVE);
+                int idxDest = g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number];
+                g_aRtMpNtCpuGroups[rtMpCpuIdGetGroup(idOld)].aidxCpuSetMembers[rtMpCpuIdGetGroupMember(idOld)] = idxDest;
+                g_aidRtMpNtByCpuSetIdx[idxDest] = idOld;
+            }
+            g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber] = idCpu;
+#else
+            Assert(g_aidRtMpNtByCpuSetIdx[pChangeCtx->NtNumber] == pChangeCtx->NtNumber);
+            int idxDest = g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number];
+            if ((ULONG)idxDest != pChangeCtx->NtNumber)
+            {
+                bool     fFound = false;
+                uint32_t idxOldGroup = g_cRtMpNtMaxGroups;
+                while (idxOldGroup-- > 0 && !fFound)
+                {
+                    uint32_t idxMember = g_aRtMpNtCpuGroups[idxOldGroup].cMaxCpus;
+                    while (idxMember-- > 0)
+                        if (g_aRtMpNtCpuGroups[idxOldGroup].aidxCpuSetMembers[idxMember] == (int)pChangeCtx->NtNumber)
+                        {
+                            g_aRtMpNtCpuGroups[idxOldGroup].aidxCpuSetMembers[idxMember] = idxDest;
+                            fFound = true;
+                            break;
+                        }
+                }
+                Assert(fFound);
+            }
+#endif
+            g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number] = pChangeCtx->NtNumber;
+
+            /*
+             * Do MP notification callbacks.
+             */
+            rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, pChangeCtx->NtNumber);
+            break;
+        }
+
+        case KeProcessorAddFailureNotify:
+            /* ignore */
+            break;
+
+        default:
+            AssertMsgFailed(("State=%u\n", pChangeCtx->State));
+    }
+}
+
+
+/**
+ * Wrapper around KeQueryLogicalProcessorRelationship.
+ *
+ * @returns IPRT status code.
+ * @param   ppInfo  Where to return the info. Pass to RTMemFree when done.
+ */
+static int rtR0NtInitQueryGroupRelations(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX **ppInfo)
+{
+    ULONG    cbInfo = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
+                    + g_cRtMpNtMaxGroups * sizeof(GROUP_RELATIONSHIP);
+    NTSTATUS rcNt;
+    do
+    {
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *pInfo = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)RTMemAlloc(cbInfo);
+        if (pInfo)
+        {
+            rcNt = g_pfnrtKeQueryLogicalProcessorRelationship(NULL /*pProcNumber*/, RelationGroup, pInfo, &cbInfo);
+            if (NT_SUCCESS(rcNt))
+            {
+                *ppInfo = pInfo;
+                return VINF_SUCCESS;
+            }
+
+            RTMemFree(pInfo);
+            pInfo = NULL;
+        }
+        else
+            rcNt = STATUS_NO_MEMORY;
+    } while (rcNt == STATUS_INFO_LENGTH_MISMATCH);
+    DbgPrint("IPRT: Fatal: KeQueryLogicalProcessorRelationship failed: %#x\n", rcNt);
+    AssertMsgFailed(("KeQueryLogicalProcessorRelationship failed: %#x\n", rcNt));
+    return RTErrConvertFromNtStatus(rcNt);
+}
+
+
+
+
 
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
     Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    PROCESSOR_NUMBER ProcNum;
+    ProcNum.Group = 0;
+    if (g_pfnrtKeGetCurrentProcessorNumberEx)
+    {
+        ProcNum.Number = 0;
+        g_pfnrtKeGetCurrentProcessorNumberEx(&ProcNum);
+    }
+    else
+        ProcNum.Number = KeGetCurrentProcessorNumber(); /* Number is 8-bit, so we're not subject to BYTE -> WORD upgrade in WDK.  */
+    return RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number);
+
+#else
 
     if (g_pfnrtKeGetCurrentProcessorNumberEx)
     {
@@ -86,34 +916,140 @@ RTDECL(RTCPUID) RTMpCpuId(void)
         return idxCpu;
     }
 
-    /* WDK upgrade warning: PCR->Number changed from BYTE to WORD. */
-    return KeGetCurrentProcessorNumber();
+    return (uint8_t)KeGetCurrentProcessorNumber(); /* PCR->Number was changed from BYTE to WORD in the WDK, thus the cast. */
+#endif
 }
 
 
 RTDECL(int) RTMpCurSetIndex(void)
 {
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    if (g_pfnrtKeGetCurrentProcessorNumberEx)
+    {
+        KEPROCESSORINDEX idxCpu = g_pfnrtKeGetCurrentProcessorNumberEx(NULL);
+        Assert(idxCpu < RTCPUSET_MAX_CPUS);
+        return idxCpu;
+    }
+    return (uint8_t)KeGetCurrentProcessorNumber(); /* PCR->Number was changed from BYTE to WORD in the WDK, thus the cast. */
+#else
     return (int)RTMpCpuId();
+#endif
 }
 
 
 RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
 {
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    PROCESSOR_NUMBER ProcNum = { 0 , 0,  0 };
+    KEPROCESSORINDEX idxCpu = g_pfnrtKeGetCurrentProcessorNumberEx(&ProcNum);
+    Assert(idxCpu < RTCPUSET_MAX_CPUS);
+    *pidCpu = RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number);
+    return idxCpu;
+#else
     return *pidCpu = RTMpCpuId();
+#endif
 }
 
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    if (idCpu != NIL_RTCPUID)
+    {
+        if (g_pfnrtKeGetProcessorIndexFromNumber)
+        {
+            PROCESSOR_NUMBER ProcNum;
+            ProcNum.Group    = rtMpCpuIdGetGroup(idCpu);
+            ProcNum.Number   = rtMpCpuIdGetGroupMember(idCpu);
+            ProcNum.Reserved = 0;
+            KEPROCESSORINDEX idxCpu = g_pfnrtKeGetProcessorIndexFromNumber(&ProcNum);
+            if (idxCpu != INVALID_PROCESSOR_INDEX)
+            {
+                Assert(idxCpu < g_cRtMpNtMaxCpus);
+                Assert((ULONG)g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number] == idxCpu);
+                return idxCpu;
+            }
+
+            /* Since NT assigned indexes as the CPUs come online, we cannot produce an ID <-> index
+               mapping for not-yet-onlined CPUS that is consistent.  We just have to do our best... */
+            if (   ProcNum.Group < g_cRtMpNtMaxGroups
+                && ProcNum.Number < g_aRtMpNtCpuGroups[ProcNum.Group].cMaxCpus)
+                return g_aRtMpNtCpuGroups[ProcNum.Group].aidxCpuSetMembers[ProcNum.Number];
+        }
+        else if (rtMpCpuIdGetGroup(idCpu) == 0)
+            return rtMpCpuIdGetGroupMember(idCpu);
+    }
+    return -1;
+#else
     /* 1:1 mapping, just do range checks. */
     return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
+#endif
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    if ((unsigned)iCpu < g_cRtMpNtMaxCpus)
+    {
+        if (g_pfnrtKeGetProcessorIndexFromNumber)
+        {
+            PROCESSOR_NUMBER ProcNum = { 0, 0, 0 };
+            NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(iCpu, &ProcNum);
+            if (NT_SUCCESS(rcNt))
+            {
+                Assert(ProcNum.Group <= g_cRtMpNtMaxGroups);
+                Assert(   (g_aidRtMpNtByCpuSetIdx[iCpu] & ~RTMPNT_ID_F_INACTIVE)
+                       == RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number));
+                return RTMPCPUID_FROM_GROUP_AND_NUMBER(ProcNum.Group, ProcNum.Number);
+            }
+        }
+        return g_aidRtMpNtByCpuSetIdx[iCpu];
+    }
+    return NIL_RTCPUID;
+#else
     /* 1:1 mapping, just do range checks. */
     return (unsigned)iCpu < RTCPUSET_MAX_CPUS ? iCpu : NIL_RTCPUID;
+#endif
+}
+
+
+RTDECL(int) RTMpSetIndexFromCpuGroupMember(uint32_t idxGroup, uint32_t idxMember)
+{
+    Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
+
+    if (idxGroup < g_cRtMpNtMaxGroups)
+        if (idxMember < g_aRtMpNtCpuGroups[idxGroup].cMaxCpus)
+            return g_aRtMpNtCpuGroups[idxGroup].aidxCpuSetMembers[idxMember];
+    return -1;
+}
+
+
+RTDECL(uint32_t) RTMpGetCpuGroupCounts(uint32_t idxGroup, uint32_t *pcActive)
+{
+    if (idxGroup < g_cRtMpNtMaxGroups)
+    {
+        if (pcActive)
+            *pcActive = g_aRtMpNtCpuGroups[idxGroup].cActiveCpus;
+        return g_aRtMpNtCpuGroups[idxGroup].cMaxCpus;
+    }
+    if (pcActive)
+        *pcActive = 0;
+    return 0;
+}
+
+
+RTDECL(uint32_t) RTMpGetMaxCpuGroupCount(void)
+{
+    return g_cRtMpNtMaxGroups;
 }
 
 
@@ -121,17 +1057,20 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
     Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
 
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    return RTMPCPUID_FROM_GROUP_AND_NUMBER(g_cRtMpNtMaxGroups - 1, g_aRtMpNtCpuGroups[g_cRtMpNtMaxGroups - 1].cMaxCpus - 1);
+#else
     /* According to MSDN the processor indexes goes from 0 to the maximum
        number of CPUs in the system.  We've check this in initterm-r0drv-nt.cpp. */
     return g_cRtMpNtMaxCpus - 1;
+#endif
 }
 
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
     Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
-    return idCpu < RTCPUSET_MAX_CPUS
-        && RTCpuSetIsMember(&g_rtMpNtCpuSet, idCpu);
+    return RTCpuSetIsMember(&g_rtMpNtCpuSet, idCpu);
 }
 
 
@@ -139,9 +1078,20 @@ RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     Assert(g_cRtMpNtMaxCpus > 0 && g_cRtMpNtMaxGroups > 0); /* init order */
 
+#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
+    if (idCpu != NIL_RTCPUID)
+    {
+        unsigned idxGroup = rtMpCpuIdGetGroup(idCpu);
+        if (idxGroup < g_cRtMpNtMaxGroups)
+            return rtMpCpuIdGetGroupMember(idCpu) < g_aRtMpNtCpuGroups[idxGroup].cMaxCpus;
+    }
+    return false;
+
+#else
     /* A possible CPU ID is one with a value lower than g_cRtMpNtMaxCpus (see
        comment in RTMpGetMaxCpuId). */
     return idCpu < g_cRtMpNtMaxCpus;
+#endif
 }
 
 
@@ -182,6 +1132,14 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     RTMpGetOnlineSet(&Set);
     return RTCpuSetCount(&Set);
 }
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
+{
+    /** @todo fix me */
+    return RTMpGetOnlineCount();
+}
+
 
 
 #if 0
@@ -371,7 +1329,7 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
         /* Convert to stupid process number (bet KeSetTargetProcessorDpcEx does
            the reverse conversion internally). */
         PROCESSOR_NUMBER ProcNum;
-        NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(idCpu, &ProcNum);
+        NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(RTMpCpuIdToSetIndex(idCpu), &ProcNum);
         AssertMsgReturn(NT_SUCCESS(rcNt),
                         ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
                         RTErrConvertFromNtStatus(rcNt));
@@ -382,7 +1340,7 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
                         RTErrConvertFromNtStatus(rcNt));
     }
     else
-        KeSetTargetProcessorDpc(pDpc, (int)idCpu);
+        KeSetTargetProcessorDpc(pDpc, RTMpCpuIdToSetIndex(idCpu));
     return VINF_SUCCESS;
 }
 
@@ -409,23 +1367,44 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     return VERR_NOT_SUPPORTED;
 
 #else  /* !IPRT_TARGET_NT4 */
-    PRTMPARGS pArgs;
-    KDPC     *paExecCpuDpcs;
-
 # if 0
     /* KeFlushQueuedDpcs must be run at IRQL PASSIVE_LEVEL according to MSDN, but the
      * driver verifier doesn't complain...
      */
     AssertMsg(KeGetCurrentIrql() == PASSIVE_LEVEL, ("%d != %d (PASSIVE_LEVEL)\n", KeGetCurrentIrql(), PASSIVE_LEVEL));
 # endif
-
-    KAFFINITY Mask = KeQueryActiveProcessors();
-
     /* KeFlushQueuedDpcs is not present in Windows 2000; import it dynamically so we can just fail this call. */
     if (!g_pfnrtNtKeFlushQueuedDpcs)
         return VERR_NOT_SUPPORTED;
 
-    pArgs = (PRTMPARGS)ExAllocatePoolWithTag(NonPagedPool, g_cRtMpNtMaxCpus * sizeof(KDPC) + sizeof(RTMPARGS), (ULONG)'RTMp');
+    /*
+     * Make a copy of the active CPU set and figure out how many KDPCs we really need.
+     * We must not try setup DPCs for CPUs which aren't there, because that may fail.
+     */
+    RTCPUSET  OnlineSet = g_rtMpNtCpuSet;
+    uint32_t  cDpcsNeeded;
+    switch (enmCpuid)
+    {
+        case RT_NT_CPUID_SPECIFIC:
+            cDpcsNeeded = 1;
+            break;
+        case RT_NT_CPUID_PAIR:
+            cDpcsNeeded = 2;
+            break;
+        default:
+            do
+            {
+                cDpcsNeeded = g_cRtMpNtActiveCpus;
+                OnlineSet   = g_rtMpNtCpuSet;
+            } while (cDpcsNeeded != g_cRtMpNtActiveCpus);
+            break;
+    }
+
+    /*
+     * Allocate an RTMPARGS structure followed by cDpcsNeeded KDPCs
+     * and initialize them.
+     */
+    PRTMPARGS pArgs = (PRTMPARGS)ExAllocatePoolWithTag(NonPagedPool, sizeof(RTMPARGS) + cDpcsNeeded * sizeof(KDPC), (ULONG)'RTMp');
     if (!pArgs)
         return VERR_NO_MEMORY;
 
@@ -437,9 +1416,8 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     pArgs->cHits     = 0;
     pArgs->cRefs     = 1;
 
-    paExecCpuDpcs = (KDPC *)(pArgs + 1);
-
     int rc;
+    KDPC *paExecCpuDpcs = (KDPC *)(pArgs + 1);
     if (enmCpuid == RT_NT_CPUID_SPECIFIC)
     {
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
@@ -463,12 +1441,13 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     else
     {
         rc = VINF_SUCCESS;
-        for (unsigned i = 0; i < g_cRtMpNtMaxCpus && RT_SUCCESS(rc); i++)
-        {
-            KeInitializeDpc(&paExecCpuDpcs[i], rtmpNtDPCWrapper, pArgs);
-            KeSetImportanceDpc(&paExecCpuDpcs[i], HighImportance);
-            rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[i], i);
-        }
+        for (uint32_t i = 0; i < cDpcsNeeded && RT_SUCCESS(rc); i++)
+            if (RTCpuSetIsMemberByIndex(&OnlineSet, i))
+            {
+                KeInitializeDpc(&paExecCpuDpcs[i], rtmpNtDPCWrapper, pArgs);
+                KeSetImportanceDpc(&paExecCpuDpcs[i], HighImportance);
+                rc = rtMpNtSetTargetProcessorDpc(&paExecCpuDpcs[i], RTMpCpuIdFromSetIndex(i));
+            }
     }
     if (RT_FAILURE(rc))
     {
@@ -476,7 +1455,8 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         return rc;
     }
 
-    /* Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
+    /*
+     * Raise the IRQL to DISPATCH_LEVEL so we can't be rescheduled to another cpu.
      * KeInsertQueueDpc must also be executed at IRQL >= DISPATCH_LEVEL.
      */
     KIRQL oldIrql;
@@ -506,12 +1486,11 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     }
     else
     {
-        unsigned iSelf = RTMpCpuId();
-
-        for (unsigned i = 0; i < g_cRtMpNtMaxCpus; i++)
+        uint32_t iSelf = RTMpCurSetIndex();
+        for (uint32_t i = 0; i < cDpcsNeeded; i++)
         {
-            if (    (i != iSelf)
-                &&  (Mask & RT_BIT_64(i)))
+            if (   (i != iSelf)
+                && RTCpuSetIsMemberByIndex(&OnlineSet, i))
             {
                 ASMAtomicIncS32(&pArgs->cRefs);
                 BOOLEAN fRc = KeInsertQueueDpc(&paExecCpuDpcs[i], 0, 0);
@@ -524,7 +1503,9 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
 
     KeLowerIrql(oldIrql);
 
-    /* Flush all DPCs and wait for completion. (can take long!) */
+    /*
+     * Flush all DPCs and wait for completion. (can take long!)
+     */
     /** @todo Consider changing this to an active wait using some atomic inc/dec
      *  stuff (and check for the current cpu above in the specific case). */
     /** @todo Seems KeFlushQueuedDpcs doesn't wait for the DPCs to be completely

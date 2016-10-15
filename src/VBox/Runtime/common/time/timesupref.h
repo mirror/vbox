@@ -100,7 +100,15 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #  if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
             uint16_t const  iCpuSet  = uAux & (RTCPUSET_MAX_CPUS - 1);
 #  else
-            uint16_t const  iCpuSet  = pGip->aiFirstCpuSetIdxFromCpuGroup[(uAux >> 8) & UINT8_MAX] + (uAux & UINT8_MAX);
+            uint16_t        iCpuSet = 0;
+            uint16_t        offGipCpuGroup = pGip->aoffCpuGroup[(uAux >> 8) & UINT8_MAX];
+            if (offGipCpuGroup < pGip->cPages * PAGE_SIZE)
+            {
+                PSUPGIPCPUGROUP pGipCpuGroup = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offGipCpuGroup);
+                if (   (uAux & UINT8_MAX) < pGipCpuGroup->cMaxMembers
+                    && pGipCpuGroup->aiCpuSetIdxs[uAux & UINT8_MAX] != -1)
+                    iCpuSet = pGipCpuGroup->aiCpuSetIdxs[uAux & UINT8_MAX];
+            }
 #  endif
             uint16_t const  iGipCpu  = pGip->aiCpuFromCpuSetIdx[iCpuSet];
 # elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS

@@ -1319,7 +1319,7 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     pGip->aCPUs[i].iCpuGroup = 0;
     pGip->aCPUs[i].iCpuGroupMember = iCpuSet;
 #ifdef RT_OS_WINDOWS
-    pGip->aCPUs[i].iCpuGroup = supdrvOSGipGetGroupFromCpu(pDevExt, idCpu, &pGip->aCPUs[i].iCpuGroupMember);
+    supdrvOSGipInitGroupBitsForCpu(pDevExt, pGip, &pGip->aCPUs[i]);
 #endif
 
     /*
@@ -1743,6 +1743,7 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
 /**
  * Initializes the GIP data.
  *
+ * @returns VBox status code.
  * @param   pDevExt             Pointer to the device instance data.
  * @param   pGip                Pointer to the read-write kernel mapping of the GIP.
  * @param   HCPhys              The physical address of the GIP.
@@ -1750,12 +1751,15 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
  * @param   uUpdateHz           The update frequency.
  * @param   uUpdateIntervalNS   The update interval in nanoseconds.
  * @param   cCpus               The CPU count.
+ * @param   cbGipCpuGroups      The supdrvOSGipGetGroupTableSize return value we
+ *                              used when allocating the GIP structure.
  */
-static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
-                          uint64_t u64NanoTS, unsigned uUpdateHz, unsigned uUpdateIntervalNS, unsigned cCpus)
+static int supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys,
+                         uint64_t u64NanoTS, unsigned uUpdateHz, unsigned uUpdateIntervalNS,
+                         unsigned cCpus, size_t cbGipCpuGroups)
 {
-    size_t const    cbGip = RT_ALIGN_Z(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), PAGE_SIZE);
-    unsigned        i;
+    size_t const cbGip = RT_ALIGN_Z(RT_OFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]) + cbGipCpuGroups, PAGE_SIZE);
+    unsigned i;
 #ifdef DEBUG_DARWIN_GIP
     OSDBGPRINT(("supdrvGipInit: pGip=%p HCPhys=%lx u64NanoTS=%llu uUpdateHz=%d cCpus=%u\n", pGip, (long)HCPhys, u64NanoTS, uUpdateHz, cCpus));
 #else
@@ -1793,14 +1797,14 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
         pGip->aiCpuFromApicId[i]    = UINT16_MAX;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
-    pGip->aiFirstCpuSetIdxFromCpuGroup[0] = 0;
-    for (i = 1; i < RT_ELEMENTS(pGip->aiFirstCpuSetIdxFromCpuGroup); i++)
-        pGip->aiFirstCpuSetIdxFromCpuGroup[i] = UINT16_MAX;
-#ifdef RT_OS_WINDOWS
-    supdrvOSInitGipGroupTable(pDevExt, pGip);
-#endif
+    for (i = 0; i < RT_ELEMENTS(pGip->aoffCpuGroup); i++)
+        pGip->aoffCpuGroup[i] = UINT16_MAX;
     for (i = 0; i < cCpus; i++)
         supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS, 0 /*uCpuHz*/);
+#ifdef RT_OS_WINDOWS
+    int rc = supdrvOSInitGipGroupTable(pDevExt, pGip, cbGipCpuGroups);
+    AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Link it to the device extension.
@@ -1808,6 +1812,8 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pDevExt->pGip      = pGip;
     pDevExt->HCPhysGip = HCPhys;
     pDevExt->cGipUsers = 0;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1820,6 +1826,8 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
 int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 {
     PSUPGLOBALINFOPAGE  pGip;
+    size_t              cbGip;
+    size_t              cbGipCpuGroups;
     RTHCPHYS            HCPhysGip;
     uint32_t            u32SystemResolution;
     uint32_t            u32Interval;
@@ -1861,7 +1869,9 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     /*
      * Allocate a contiguous set of pages with a default kernel mapping.
      */
-    rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]), false /*fExecutable*/);
+    cbGipCpuGroups = supdrvOSGipGetGroupTableSize(pDevExt);
+    cbGip = RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]) + cbGipCpuGroups;
+    rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, cbGip, false /*fExecutable*/);
     if (RT_FAILURE(rc))
     {
         OSDBGPRINT(("supdrvGipCreate: failed to allocate the GIP page. rc=%d\n", rc));
@@ -1883,22 +1893,24 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     if (uMod)
         u32Interval += u32SystemResolution - uMod;
 
-    supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), RT_NS_1SEC / u32Interval /*=Hz*/, u32Interval, cCpus);
+    rc = supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), RT_NS_1SEC / u32Interval /*=Hz*/, u32Interval,
+                       cCpus, cbGipCpuGroups);
 
     /*
-     * Important sanity check...
+     * Important sanity check...  (Sets rc)
      */
     if (RT_UNLIKELY(   pGip->enmUseTscDelta == SUPGIPUSETSCDELTA_ZERO_CLAIMED
                     && pGip->u32Mode == SUPGIPMODE_ASYNC_TSC
                     && !supdrvOSGetForcedAsyncTscMode(pDevExt)))
     {
         OSDBGPRINT(("supdrvGipCreate: Host-OS/user claims the TSC-deltas are zero but we detected async. TSC! Bad.\n"));
-        return VERR_INTERNAL_ERROR_2;
+        rc = VERR_INTERNAL_ERROR_2;
     }
 
     /* It doesn't make sense to do TSC-delta detection on systems we detect as async. */
-    AssertReturn(   pGip->u32Mode != SUPGIPMODE_ASYNC_TSC
-                 || pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED, VERR_INTERNAL_ERROR_3);
+    AssertStmt(   pGip->u32Mode != SUPGIPMODE_ASYNC_TSC
+               || pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED,
+               rc = VERR_INTERNAL_ERROR_3);
 
     /*
      * Do the TSC frequency measurements.
@@ -1911,110 +1923,113 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      * that supdrvGipInitOnCpu() can populate the TSC interval and history
      * array with more reasonable values.
      */
-    if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-    {
-        rc = supdrvGipInitMeasureTscFreq(pGip, true /*fRough*/); /* cannot fail */
-        supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt);
-    }
-    else
-        rc = supdrvGipInitMeasureTscFreq(pGip, false /*fRough*/);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Start TSC-delta measurement thread before we start getting MP
-         * events that will try kick it into action (includes the
-         * RTMpOnAll/supdrvGipInitOnCpu call below).
-         */
-        RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
-        RTCpuSetEmpty(&pDevExt->TscDeltaObtainedCpuSet);
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-        if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
-            rc = supdrvTscDeltaThreadInit(pDevExt);
-#endif
-        if (RT_SUCCESS(rc))
+        if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
         {
-            rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Do GIP initialization on all online CPUs.  Wake up the
-                 * TSC-delta thread afterwards.
-                 */
-                rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
-                if (RT_SUCCESS(rc))
-                {
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-                    supdrvTscDeltaThreadStartMeasurement(pDevExt, true /* fForceAll */);
-#else
-                    uint16_t iCpu;
-                    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
-                    {
-                        /*
-                         * Measure the TSC deltas now that we have MP notifications.
-                         */
-                        int cTries = 5;
-                        do
-                        {
-                            rc = supdrvTscMeasureInitialDeltas(pDevExt);
-                            if (   rc != VERR_TRY_AGAIN
-                                && rc != VERR_CPU_OFFLINE)
-                                break;
-                        } while (--cTries > 0);
-                        for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-                            Log(("supdrvTscDeltaInit: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
-                    }
-                    else
-                    {
-                        for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-                            AssertMsg(!pGip->aCPUs[iCpu].i64TSCDelta, ("iCpu=%u %lld mode=%d\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta, pGip->u32Mode));
-                    }
-                    if (RT_SUCCESS(rc))
-#endif
-                    {
-                        /*
-                         * Create the timer.
-                         * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
-                         */
-                        if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
-                        {
-                            rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, RTTIMER_FLAGS_CPU_ALL,
-                                                 supdrvGipAsyncTimer, pDevExt);
-                            if (rc == VERR_NOT_SUPPORTED)
-                            {
-                                OSDBGPRINT(("supdrvGipCreate: omni timer not supported, falling back to synchronous mode\n"));
-                                pGip->u32Mode = SUPGIPMODE_SYNC_TSC;
-                            }
-                        }
-                        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-                            rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */,
-                                                 supdrvGipSyncAndInvariantTimer, pDevExt);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * We're good.
-                             */
-                            Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
-                            supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
-
-                            g_pSUPGlobalInfoPage = pGip;
-                            return VINF_SUCCESS;
-                        }
-
-                        OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
-                        Assert(!pDevExt->pGipTimer);
-                    }
-                }
-                else
-                    OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed. rc=%Rrc\n", rc));
-            }
-            else
-                OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
+            rc = supdrvGipInitMeasureTscFreq(pGip, true /*fRough*/); /* cannot fail */
+            supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt);
         }
         else
-            OSDBGPRINT(("supdrvGipCreate: supdrvTscDeltaInit failed. rc=%Rrc\n", rc));
+            rc = supdrvGipInitMeasureTscFreq(pGip, false /*fRough*/);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Start TSC-delta measurement thread before we start getting MP
+             * events that will try kick it into action (includes the
+             * RTMpOnAll/supdrvGipInitOnCpu call below).
+             */
+            RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
+            RTCpuSetEmpty(&pDevExt->TscDeltaObtainedCpuSet);
+    #ifdef SUPDRV_USE_TSC_DELTA_THREAD
+            if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+                rc = supdrvTscDeltaThreadInit(pDevExt);
+    #endif
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Do GIP initialization on all online CPUs.  Wake up the
+                     * TSC-delta thread afterwards.
+                     */
+                    rc = RTMpOnAll(supdrvGipInitOnCpu, pDevExt, pGip);
+                    if (RT_SUCCESS(rc))
+                    {
+    #ifdef SUPDRV_USE_TSC_DELTA_THREAD
+                        supdrvTscDeltaThreadStartMeasurement(pDevExt, true /* fForceAll */);
+    #else
+                        uint16_t iCpu;
+                        if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+                        {
+                            /*
+                             * Measure the TSC deltas now that we have MP notifications.
+                             */
+                            int cTries = 5;
+                            do
+                            {
+                                rc = supdrvTscMeasureInitialDeltas(pDevExt);
+                                if (   rc != VERR_TRY_AGAIN
+                                    && rc != VERR_CPU_OFFLINE)
+                                    break;
+                            } while (--cTries > 0);
+                            for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                                Log(("supdrvTscDeltaInit: cpu[%u] delta %lld\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta));
+                        }
+                        else
+                        {
+                            for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+                                AssertMsg(!pGip->aCPUs[iCpu].i64TSCDelta, ("iCpu=%u %lld mode=%d\n", iCpu, pGip->aCPUs[iCpu].i64TSCDelta, pGip->u32Mode));
+                        }
+                        if (RT_SUCCESS(rc))
+    #endif
+                        {
+                            /*
+                             * Create the timer.
+                             * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
+                             */
+                            if (pGip->u32Mode == SUPGIPMODE_ASYNC_TSC)
+                            {
+                                rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, RTTIMER_FLAGS_CPU_ALL,
+                                                     supdrvGipAsyncTimer, pDevExt);
+                                if (rc == VERR_NOT_SUPPORTED)
+                                {
+                                    OSDBGPRINT(("supdrvGipCreate: omni timer not supported, falling back to synchronous mode\n"));
+                                    pGip->u32Mode = SUPGIPMODE_SYNC_TSC;
+                                }
+                            }
+                            if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+                                rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */,
+                                                     supdrvGipSyncAndInvariantTimer, pDevExt);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * We're good.
+                                 */
+                                Log(("supdrvGipCreate: %u ns interval.\n", u32Interval));
+                                supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
+
+                                g_pSUPGlobalInfoPage = pGip;
+                                return VINF_SUCCESS;
+                            }
+
+                            OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
+                            Assert(!pDevExt->pGipTimer);
+                        }
+                    }
+                    else
+                        OSDBGPRINT(("supdrvGipCreate: RTMpOnAll failed. rc=%Rrc\n", rc));
+                }
+                else
+                    OSDBGPRINT(("supdrvGipCreate: failed to register MP event notfication. rc=%Rrc\n", rc));
+            }
+            else
+                OSDBGPRINT(("supdrvGipCreate: supdrvTscDeltaInit failed. rc=%Rrc\n", rc));
+        }
+        else
+            OSDBGPRINT(("supdrvGipCreate: supdrvTscMeasureInitialDeltas failed. rc=%Rrc\n", rc));
     }
-    else
-        OSDBGPRINT(("supdrvGipCreate: supdrvTscMeasureInitialDeltas failed. rc=%Rrc\n", rc));
 
     /* Releases timer frequency increase too. */
     supdrvGipDestroy(pDevExt);

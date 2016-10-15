@@ -779,7 +779,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
-	generic/mppresent-generic.cpp \
+	generic/mppresent-generic-online.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
@@ -2246,7 +2246,7 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/mppresent-generic.cpp \
+	generic/mppresent-generic-online.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/RTNtPathExpand8dot3Path.cpp \
@@ -2262,7 +2262,6 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/memobj-r0drv-nt.cpp \
 	r0drv/nt/memuserkernel-r0drv-nt.cpp \
 	r0drv/nt/mp-r0drv-nt.cpp \
-	r0drv/nt/mpnotification-r0drv-nt.cpp \
 	r0drv/nt/process-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
 	r0drv/nt/semevent-r0drv-nt.cpp \

@@ -1302,6 +1302,8 @@
 # define RTMpGetCount                                   RT_MANGLER(RTMpGetCount)
 # define RTMpGetCurFrequency                            RT_MANGLER(RTMpGetCurFrequency)
 # define RTMpGetDescription                             RT_MANGLER(RTMpGetDescription)
+# define RTMpGetCpuGroupCounts                          RT_MANGLER(RTMpGetCpuGroupCounts)
+# define RTMpGetMaxCpuGroupCount                        RT_MANGLER(RTMpGetMaxCpuGroupCount)
 # define RTMpGetMaxCpuId                                RT_MANGLER(RTMpGetMaxCpuId)
 # define RTMpGetMaxFrequency                            RT_MANGLER(RTMpGetMaxFrequency)
 # define RTMpGetOnlineCount                             RT_MANGLER(RTMpGetOnlineCount)
@@ -1325,6 +1327,7 @@
 # define RTMpOnPairIsConcurrentExecSupported            RT_MANGLER(RTMpOnPairIsConcurrentExecSupported) /* r0drv */
 # define RTMpOnSpecific                                 RT_MANGLER(RTMpOnSpecific)             /* r0drv */
 # define RTMpPokeCpu                                    RT_MANGLER(RTMpPokeCpu)                /* r0drv */
+# define RTMpSetIndexFromCpuGroupMember                 RT_MANGLER(RTMpSetIndexFromCpuGroupMember)
 # define RTMsgError                                     RT_MANGLER(RTMsgError)
 # define RTMsgErrorExit                                 RT_MANGLER(RTMsgErrorExit)
 # define RTMsgErrorExitV                                RT_MANGLER(RTMsgErrorExitV)
