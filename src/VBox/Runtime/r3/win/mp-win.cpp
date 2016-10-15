@@ -43,7 +43,7 @@
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 # include <iprt/asm-amd64-x86.h>
 #endif
-#if defined(VBOX) && !defined(IN_GUEST)
+#if defined(VBOX) && !defined(IN_GUEST) && !defined(IN_RT_STATIC)
 # include <VBox/sup.h>
 # define IPRT_WITH_GIP_MP_INFO
 #else
