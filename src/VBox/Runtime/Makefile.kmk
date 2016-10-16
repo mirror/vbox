@@ -657,7 +657,8 @@ RuntimeR3_SOURCES       = \
 	r3/udp.cpp \
 	r3/generic/semspinmutex-r3-generic.cpp \
 	r3/xml.cpp \
-	common/zip/xarvfs.cpp
+	common/zip/xarvfs.cpp \
+	r3/localipc.cpp
 
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)

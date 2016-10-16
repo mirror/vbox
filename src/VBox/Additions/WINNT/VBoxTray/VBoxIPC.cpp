@@ -174,6 +174,7 @@ static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEAD
     return rc;
 }
 
+
 /**
  * Initializes the IPC communication.
  *
@@ -194,30 +195,36 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
     int rc = RTCritSectInit(&pCtx->CritSect);
     if (RT_SUCCESS(rc))
     {
-        char szPipeName[512 + sizeof(VBOXTRAY_IPC_PIPE_PREFIX)];
-        strcpy(szPipeName, VBOXTRAY_IPC_PIPE_PREFIX);
+        char szUserName[512];
         rc = RTProcQueryUsername(NIL_RTPROCESS,
-                                 &szPipeName[sizeof(VBOXTRAY_IPC_PIPE_PREFIX) - 1],
-                                 sizeof(szPipeName) - sizeof(VBOXTRAY_IPC_PIPE_PREFIX) + 1,
+                                 szUserName,
+                                 sizeof(szUserName),
                                  NULL /*pcbUser*/);
         if (RT_SUCCESS(rc))
         {
-            rc = RTLocalIpcServerCreate(&pCtx->hServer, szPipeName, 0 /*fFlags*/);
+            char szPipeName[80];
+            size_t cbPipeName = sizeof(szPipeName);
+            rc = RTLocalIpcMakeNameUniqueUser(VBOXTRAY_IPC_PIPE_PREFIX, szUserName, szPipeName, &cbPipeName);
             if (RT_SUCCESS(rc))
             {
-                pCtx->pEnv = pEnv;
-                RTListInit(&pCtx->SessionList);
 
-                *ppInstance = pCtx;
+                rc = RTLocalIpcServerCreate(&pCtx->hServer, szPipeName, 0 /*fFlags*/);
+                if (RT_SUCCESS(rc))
+                {
+                    pCtx->pEnv = pEnv;
+                    RTListInit(&pCtx->SessionList);
 
-                /* GetLastInputInfo only is available starting at Windows 2000 -- might fail. */
-                g_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
-                    RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
+                    *ppInstance = pCtx;
 
-                LogRelFunc(("Local IPC server now running at \"%s\"\n", szPipeName));
-                return VINF_SUCCESS;
+                    /* GetLastInputInfo only is available starting at Windows 2000 -- might fail. */
+                    g_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
+                        RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
+
+                    LogRelFunc(("Local IPC server now running at \"%s\"\n", szPipeName));
+                    return VINF_SUCCESS;
+                }
+
             }
-
         }
 
         RTCritSectDelete(&pCtx->CritSect);

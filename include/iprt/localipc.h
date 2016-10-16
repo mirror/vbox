@@ -316,6 +316,23 @@ RTDECL(int) RTLocalIpcSessionQueryUserId(RTLOCALIPCSESSION hSession, PRTUID pUid
  */
 RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTGID pGid);
 
+/**
+* Make the IPC pipe name unique for user
+* in a form like 'VBoxTrayIPC-6a4500cb7c726949'
+*
+* @returns IPRT status code.
+* @retval  VINF_SUCCESS and *pcbDest if pipe name created successfully.
+* @retval  VERR_INVALID_PARAMETER in case of invalid parameter value.
+* @retval  VERR_BUFFER_OVERFLOW if the pszDest is too small.
+*
+* @param   pszPrefix        Pipe name prefix, for example 'VBoxTrayIPC-'
+* @param   pszUserName      User name
+* @param   pszDest          Destination buffer to store created pipe name
+* @param   pcbDest          IN  - size of destination buffer in bytes,
+*                           OUT - length of created pipe name in bytes without trailing zero
+*/
+RTDECL(int) RTLocalIpcMakeNameUniqueUser(const char* pszPrefix, const char* pszUserName, char* pszDest, size_t* pcbDest);
+
 /** @} */
 RT_C_DECLS_END
 
