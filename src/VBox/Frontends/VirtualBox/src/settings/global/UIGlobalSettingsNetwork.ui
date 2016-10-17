@@ -26,7 +26,7 @@
         <number>3</number>
        </property>
        <item>
-        <widget class="QTreeWidget" name="m_pTreeNetworkNAT">
+        <widget class="QITreeWidget" name="m_pTreeNetworkNAT">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -61,7 +61,7 @@
         <number>3</number>
        </property>
        <item>
-        <widget class="QTreeWidget" name="m_pTreeNetworkHost">
+        <widget class="QITreeWidget" name="m_pTreeNetworkHost">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -106,6 +106,11 @@
    <class>QITabWidget</class>
    <extends>QTabWidget</extends>
    <header>QITabWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>QITreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

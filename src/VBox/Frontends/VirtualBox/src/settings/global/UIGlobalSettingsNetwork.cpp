@@ -45,7 +45,7 @@
 
 
 /* Global settings / Network page / NAT network item: */
-class UIItemNetworkNAT : public QTreeWidgetItem
+class UIItemNetworkNAT : public QITreeWidgetItem
 {
 public:
 
@@ -67,6 +67,9 @@ public:
     QString name() const { return m_data.m_strName; }
     QString newName() const { return m_data.m_strNewName; }
 
+    /** Returns default text. */
+    virtual QString defaultText() const /* override */;
+
 private:
 
     /* Variable: Network data: */
@@ -75,7 +78,7 @@ private:
 
 
 /* Global settings / Network page / Host network item: */
-class UIItemNetworkHost : public QTreeWidgetItem
+class UIItemNetworkHost : public QITreeWidgetItem
 {
 public:
 
@@ -103,7 +106,7 @@ private:
 
 
 UIItemNetworkNAT::UIItemNetworkNAT()
-    : QTreeWidgetItem()
+    : QITreeWidgetItem()
 {
 }
 
@@ -213,9 +216,15 @@ void UIItemNetworkNAT::updateData()
     m_data.m_fEnabled = checkState(0) == Qt::Checked;
 }
 
+QString UIItemNetworkNAT::defaultText() const
+{
+    /* Return 2nd cell text as default: */
+    return text(1);
+}
+
 
 UIItemNetworkHost::UIItemNetworkHost()
-    : QTreeWidgetItem()
+    : QITreeWidgetItem()
 {
 }
 
