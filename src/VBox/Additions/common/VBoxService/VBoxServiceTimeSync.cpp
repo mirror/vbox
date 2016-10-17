@@ -70,10 +70,10 @@
  * the drift is noticeable.
  *
  * It now boils down to these three (configuration) factors:
- *  -# g_TimeSyncMinAdjust - The minimum drift we will ever bother with.
+ *  -# g_cMsTimeSyncMinAdjust - The minimum drift we will ever bother with.
  *  -# g_TimeSyncLatencyFactor - The factor we multiply the latency by to
  *     calculate the dynamic minimum adjust factor.
- *  -# g_TimeSyncMaxLatency - When to start discarding the data as utterly
+ *  -# g_cMsTimeSyncMaxLatency - When to start discarding the data as utterly
  *     useless and take a rest (someone is too busy to give us good data).
  *  -# g_TimeSyncSetThreshold - The threshold at which we will just set the time
  *     instead of trying to adjust it (milliseconds).
@@ -108,22 +108,22 @@
 /** The timesync interval (milliseconds). */
 static uint32_t         g_TimeSyncInterval = 0;
 /**
- * @see pg_vboxservice_timesync
+ * @see pg_vgsvc_timesync
  *
  * @remark  OS/2: There is either a 1 second resolution on the DosSetDateTime
  *                API or a bug in my settimeofday implementation.  Thus, don't
  *                bother unless there is at least a 1 second drift.
  */
 #ifdef RT_OS_OS2
-static uint32_t         g_TimeSyncMinAdjust = 1000;
+static uint32_t         g_cMsTimeSyncMinAdjust = 1000;
 #else
-static uint32_t         g_TimeSyncMinAdjust = 100;
+static uint32_t         g_cMsTimeSyncMinAdjust = 100;
 #endif
-/** @see pg_vboxservice_timesync */
+/** @see pg_vgsvc_timesync */
 static uint32_t         g_TimeSyncLatencyFactor = 8;
-/** @see pg_vboxservice_timesync */
-static uint32_t         g_TimeSyncMaxLatency = 250;
-/** @see pg_vboxservice_timesync */
+/** @see pg_vgsvc_timesync */
+static uint32_t         g_cMsTimeSyncMaxLatency = 250;
+/** @see pg_vgsvc_timesync */
 static uint32_t         g_TimeSyncSetThreshold = 20*60*1000;
 /** Whether the next adjustment should just set the time instead of trying to
  * adjust it. This is used to implement --timesync-set-start.  */
@@ -184,7 +184,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
             rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-min-adjust",
-                                     &g_TimeSyncMinAdjust, 0, 3600000);
+                                     &g_cMsTimeSyncMinAdjust, 0, 3600000);
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
             rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-latency-factor",
@@ -192,7 +192,7 @@ static DECLCALLBACK(int) vgsvcTimeSyncPreInit(void)
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
             rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-max-latency",
-                                     &g_TimeSyncMaxLatency, 1, 3600000);
+                                     &g_cMsTimeSyncMaxLatency, 1, 3600000);
         if (   RT_SUCCESS(rc)
             || rc == VERR_NOT_FOUND)
             rc = VGSvcReadPropUInt32(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold",
@@ -244,11 +244,11 @@ static DECLCALLBACK(int) vgsvcTimeSyncOption(const char **ppszShort, int argc, c
     else if (!strcmp(argv[*pi], "--timesync-interval"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncInterval, 50, UINT32_MAX - 1);
     else if (!strcmp(argv[*pi], "--timesync-min-adjust"))
-        rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncMinAdjust, 0, 3600000);
+        rc = VGSvcArgUInt32(argc, argv, "", pi, &g_cMsTimeSyncMinAdjust, 0, 3600000);
     else if (!strcmp(argv[*pi], "--timesync-latency-factor"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncLatencyFactor, 1, 1024);
     else if (!strcmp(argv[*pi], "--timesync-max-latency"))
-        rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncMaxLatency, 1, 3600000);
+        rc = VGSvcArgUInt32(argc, argv, "", pi, &g_cMsTimeSyncMaxLatency, 1, 3600000);
     else if (!strcmp(argv[*pi], "--timesync-set-threshold"))
         rc = VGSvcArgUInt32(argc, argv, "", pi, &g_TimeSyncSetThreshold, 0, 7*24*60*60*1000); /* a week */
     else if (!strcmp(argv[*pi], "--timesync-set-start"))
@@ -527,7 +527,7 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
             /* calc latency and check if it's ok. */
             RTTIMESPEC GuestElapsed = GuestNow;
             RTTimeSpecSub(&GuestElapsed, &GuestNow0);
-            if ((uint32_t)RTTimeSpecGetMilli(&GuestElapsed) < g_TimeSyncMaxLatency)
+            if ((uint32_t)RTTimeSpecGetMilli(&GuestElapsed) < g_cMsTimeSyncMaxLatency)
             {
                 /*
                  * Set the time once after we were restored.
@@ -550,13 +550,13 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                  * Calculate the adjustment threshold and the current drift.
                  */
                 uint32_t MinAdjust = RTTimeSpecGetMilli(&GuestElapsed) * g_TimeSyncLatencyFactor;
-                if (MinAdjust < g_TimeSyncMinAdjust)
-                    MinAdjust = g_TimeSyncMinAdjust;
+                if (MinAdjust < g_cMsTimeSyncMinAdjust)
+                    MinAdjust = g_cMsTimeSyncMinAdjust;
 
                 RTTIMESPEC Drift = HostNow;
                 RTTimeSpecSub(&Drift, &GuestNow);
                 if (RTTimeSpecGetMilli(&Drift) < 0)
-                    MinAdjust += g_TimeSyncMinAdjust; /* extra buffer against moving time backwards. */
+                    MinAdjust += g_cMsTimeSyncMinAdjust; /* extra buffer against moving time backwards. */
 
                 RTTIMESPEC AbsDrift = Drift;
                 RTTimeSpecAbsolute(&AbsDrift);
@@ -590,7 +590,8 @@ DECLCALLBACK(int) vgsvcTimeSyncWorker(bool volatile *pfShutdown)
                     vgsvcTimeSyncCancelAdjust();
                 break;
             }
-            VGSvcVerbose(3, "vgsvcTimeSyncWorker: %RDtimespec: latency too high (%RDtimespec) sleeping 1s\n", GuestElapsed);
+            VGSvcVerbose(3, "vgsvcTimeSyncWorker: %RDtimespec: latency too high (%RDtimespec, max %ums) sleeping 1s\n",
+                         &GuestNow, &GuestElapsed, g_cMsTimeSyncMaxLatency);
             RTThreadSleep(1000);
         } while (--cTries > 0);
 
