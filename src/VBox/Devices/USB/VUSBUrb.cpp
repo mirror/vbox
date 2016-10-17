@@ -744,6 +744,9 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
  * pipe state which we grab from the device for the URB.
  *
  * @param   pUrb        The URB to submit.
+ * @param   pSetup      The setup packet for the message transfer.
+ * @param   pExtra      Pointer to the additional state requred for a control transfer.
+ * @param   pPipe       The message pipe state.
  */
 static void vusbMsgDoTransfer(PVUSBURB pUrb, PVUSBSETUP pSetup, PVUSBCTRLEXTRA pExtra, PVUSBPIPE pPipe)
 {

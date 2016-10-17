@@ -94,7 +94,7 @@
  * control transfer. VUSB is not inspecting the request content or anything,
  * but passes it down the device.
  *
- * @subsection subsec_dev_vusb_urb_bulk  Isochronous
+ * @subsection subsec_dev_vusb_urb_isoc  Isochronous
  *
  * This kind of transfers hasn't yet been implemented.
  *
@@ -916,7 +916,7 @@ static DECLCALLBACK(int) vusbRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, P
 }
 
 
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnSetFrameProcessing} */
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnSetPeriodicFrameProcessing} */
 static DECLCALLBACK(int) vusbRhSetFrameProcessing(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uFrameRate)
 {
     int rc = VINF_SUCCESS;

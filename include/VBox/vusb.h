@@ -660,7 +660,7 @@ typedef struct VUSBIROOTHUBPORT
      *
      * @returns nothing.
      * @param   pInterface      Pointer to this structure.
-     * @param   u32Framerate    The new frame rate.
+     * @param   u32FrameRate    The new frame rate.
      */
     DECLR3CALLBACKMEMBER(void, pfnFrameRateChanged, (PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate));
 

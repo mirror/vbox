@@ -3207,7 +3207,12 @@ static bool ohciServiceIsochronousTdUnlink(POHCI pThis, POHCIITD pITd, uint32_t 
  *
  * @returns true on success.
  * @returns false on failure to submit.
+ * @param   pThis   The OHCI controller instance data.
+ * @param   pITd    The transfer descriptor to service.
+ * @param   ITdAddr The address of the transfer descriptor in gues memory.
  * @param   R       The start packet (frame) relative to the start of frame in HwInfo.
+ * @param   pEd     The OHCI endpoint descriptor.
+ * @param   EdAddr  The endpoint descriptor address in guest memory.
  */
 static bool ohciServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdAddr, const unsigned R, PCOHCIED pEd, uint32_t EdAddr)
 {
@@ -4117,9 +4122,7 @@ static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_
     return pThis->fIdle;
 }
 
-/**
- * @interface_method_impl{VUSBIROOTHUBPORT,pfnFramerateChanged}.
- */
+/** @interface_method_impl{VUSBIROOTHUBPORT,pfnFrameRateChanged} */
 static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate)
 {
     POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
@@ -5523,7 +5526,6 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSM        The handle to the saved state.
- * @param   u32Version  The data unit version number.
  */
 static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {

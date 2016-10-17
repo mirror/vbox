@@ -76,7 +76,7 @@ static PCVUSBSNIFFERFMT s_aVUsbSnifferFmts[] =
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-/** @interface_method_impl{VUSBSNIFFERSTRM,pfnWrite}. */
+/** @interface_method_impl{VUSBSNIFFERSTRM,pfnWrite} */
 static DECLCALLBACK(int) vusbSnifferStrmWrite(PVUSBSNIFFERSTRM pStrm, const void *pvBuf, size_t cbBuf)
 {
     PVUSBSNIFFERINT pThis = RT_FROM_MEMBER(pStrm, VUSBSNIFFERINT, Strm);
@@ -105,7 +105,7 @@ static PCVUSBSNIFFERFMT vusbSnifferGetFmtFromString(const char *pszFmt)
  * Returns a supporting format writer taken from the file suffix.
  *
  * @returns Pointer to the format structure or NULL if none was found.
- * @param   pFilename    The file name to take the suffix from.
+ * @param   pszFilename    The file name to take the suffix from.
  */
 static PCVUSBSNIFFERFMT vusbSnifferGetFmtFromFilename(const char *pszFilename)
 {

@@ -1150,6 +1150,8 @@ static DECLCALLBACK(int) vusbDevCancelAllUrbsWorker(PVUSBDEV pDev, bool fDetachi
  * on a device. This is typically done as part of a reset and
  * before detaching a device.
  *
+ * @returns nothing.
+ * @param   pDev        The VUSB device instance.
  * @param   fDetaching  If set, we will unconditionally unlink (and leak)
  *                      any URBs which isn't reaped.
  */
@@ -1432,11 +1434,12 @@ static int vusbDevResetWorker(PVUSBDEV pDev, bool fResetOnLinux, bool fUseTimer,
  *
  * @returns VBox status code.
  *
- * @param   pDev            Pointer to the VUSB device interface.
+ * @param   pDevice         Pointer to the VUSB device interface.
  * @param   fResetOnLinux   Whether it's safe to reset the device(s) on a linux
  *                          host system. See discussion of logical reconnects elsewhere.
  * @param   pfnDone         Pointer to the completion routine. If NULL a synchronous
  *                          reset is preformed not respecting the 10ms.
+ * @param   pvUser          Opaque user data to pass to the done callback.
  * @param   pVM             Pointer to the VM handle for performing the done function
  *                          on the EMT thread.
  * @thread  EMT
@@ -1744,8 +1747,9 @@ static DECLCALLBACK(int) vusbDevGetDescriptorCacheWorker(PPDMUSBINS pUsbIns, PCP
  * Initialize a new VUSB device.
  *
  * @returns VBox status code.
- * @param   pDev    The VUSB device to initialize.
- * @param   pUsbIns Pointer to the PDM USB Device instance.
+ * @param   pDev                  The VUSB device to initialize.
+ * @param   pUsbIns               Pointer to the PDM USB Device instance.
+ * @param   pszCaptureFilename    Optional fileame to capture the traffic to.
  */
 int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilename)
 {

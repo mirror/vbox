@@ -407,10 +407,11 @@ static void usbProxyLinuxUrbFreeSplitList(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLN
  *
  * @returns The Cfg#.
  * @returns -1 if no active config.
+ * @param   pProxyDev       The proxy device instance.
  * @param   pszDevNode      The path to the device. We infere the location of
  *                          the devices file, which bus and device number we're
  *                          looking for.
- * @param   iFirstCfg       The first configuration. (optional)
+ * @param   piFirstCfg      The first configuration. (optional)
  * @internal
  */
 static int usbProxyLinuxFindActiveConfigUsbfs(PUSBPROXYDEV pProxyDev, const char *pszDevNode, int *piFirstCfg)
@@ -542,6 +543,7 @@ static int usbProxyLinuxFindActiveConfigUsbfs(PUSBPROXYDEV pProxyDev, const char
  *
  * @returns The Cfg#.
  * @returns -1 if no active config.
+ * @param   pProxyDev       The proxy device instance.
  * @param   pszPath         The sysfs path for the device.
  * @param   piFirstCfg      The first configuration. (optional)
  * @internal
@@ -569,9 +571,10 @@ static int usbProxyLinuxFindActiveConfigSysfs(PUSBPROXYDEV pProxyDev, const char
  *
  * @returns The Cfg#.
  * @returns -1 if no active config.
+ * @param   pProxyDev       The proxy device instance.
  * @param   pszPath         The sysfs path for the device, or the usbfs device
  *                          node path.
- * @param   iFirstCfg       The first configuration. (optional)
+ * @param   piFirstCfg      The first configuration. (optional)
  * @internal
  */
 static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *pszPath, int *piFirstCfg)
@@ -1011,12 +1014,7 @@ static int usb_reset_logical_reconnect(PUSBPROXYDEV pDev)
 #endif /* !NO_PORT_RESET && !NO_LOGICAL_RECONNECT */
 
 
-/**
- * Reset a device.
- *
- * @returns VBox status code.
- * @param   pDev    The device to reset.
- */
+/** @interface_method_impl{USBPROXYBACK,pfnReset} */
 static DECLCALLBACK(int) usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
 #ifdef NO_PORT_RESET

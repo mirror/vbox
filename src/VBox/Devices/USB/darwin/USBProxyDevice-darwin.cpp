@@ -1425,12 +1425,7 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
 }
 
 
-/**
- * Reset a device.
- *
- * @returns VBox status code.
- * @param   pDev    The device to reset.
- */
+/** @interface_method_impl{USBPROXYBACK,pfnReset}*/
 static DECLCALLBACK(int) usbProxyDarwinReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 {
     RT_NOREF(fResetOnLinux);
