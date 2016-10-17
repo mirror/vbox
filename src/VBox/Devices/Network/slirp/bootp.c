@@ -869,20 +869,35 @@ void bootp_input(PNATState pData, struct mbuf *m)
     u_int mlen = m_length(m, NULL);
     size_t vlen;
 
-    if (mlen < RT_OFFSETOF(struct bootp_t, bp_vend) + BOOTP_VENDOR_LEN)
+    if (mlen < RT_OFFSETOF(struct bootp_t, bp_vend) + sizeof(rfc1533_cookie))
+    {
+        LogRelMax(50, ("NAT: ignoring invalid BOOTP request (mlen %u too short)\n", mlen));
         return;
+    }
 
     if (bp->bp_op != BOOTP_REQUEST)
+    {
+        LogRelMax(50, ("NAT: ignoring invalid BOOTP request (wrong opcode %u)\n", bp->bp_op));
         return;
+    }
 
     if (bp->bp_htype != RTNET_ARP_ETHER)
+    {
+        LogRelMax(50, ("NAT: ignoring invalid BOOTP request (wrong HW type %u)\n", bp->bp_htype));
         return;
+    }
 
     if (bp->bp_hlen != ETH_ALEN)
+    {
+        LogRelMax(50, ("NAT: ignoring invalid BOOTP request (wrong HW address length %u)\n", bp->bp_hlen));
         return;
+    }
 
     if (bp->bp_hops != 0)
+    {
+        LogRelMax(50, ("NAT: ignoring invalid BOOTP request (wrong hop count %u)\n", bp->bp_hops));
         return;
+    }
 
     vlen = mlen - RT_OFFSETOF(struct bootp_t, bp_vend);
     dhcp_decode(pData, bp, vlen);
