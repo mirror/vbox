@@ -1044,7 +1044,6 @@
 # define RTLinuxSysFsWriteU32FileV                      RT_MANGLER(RTLinuxSysFsWriteU32FileV)
 # define RTLinuxSysFsWriteU64File                       RT_MANGLER(RTLinuxSysFsWriteU64File)
 # define RTLinuxSysFsWriteU64FileV                      RT_MANGLER(RTLinuxSysFsWriteU64FileV)
-# define RTLocalIpcMakeNameUniqueUser                   RT_MANGLER(RTLocalIpcMakeNameUniqueUser)
 # define RTLocalIpcServerCreate                         RT_MANGLER(RTLocalIpcServerCreate)
 # define RTLocalIpcServerDestroy                        RT_MANGLER(RTLocalIpcServerDestroy)
 # define RTLocalIpcServerCancel                         RT_MANGLER(RTLocalIpcServerCancel)

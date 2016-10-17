@@ -33,7 +33,6 @@
 #include <iprt/localipc.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include <iprt/localipc.h>
 
 /* Required structures/defines of VBoxTray. */
 #include "../../VBoxTray/VBoxTrayMsg.h"
@@ -152,13 +151,14 @@ static int vboxConnectToVBoxTray(RTLOCALIPCSESSION *phSession)
         rc = RTUtf16ToUtf8(wszUserName, &pszUserName);
         if (RT_SUCCESS(rc))
         {
-            char szPipeName[80];
-            size_t cbPipeName = sizeof(szPipeName);
-            rc = RTLocalIpcMakeNameUniqueUser(VBOXTRAY_IPC_PIPE_PREFIX, pszUserName, szPipeName, &cbPipeName);
-            if (RT_SUCCESS(rc))
+            char szPipeName[255];
+            if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
+                            VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
             {
                 rc = RTLocalIpcSessionConnect(phSession, szPipeName, 0 /* Flags */);
             }
+            else
+                rc = VERR_NO_MEMORY;
 
             RTStrFree(pszUserName);
         }

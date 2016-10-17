@@ -39,7 +39,6 @@
 #include <iprt/time.h>
 #include <iprt/thread.h>
 
-
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
@@ -955,11 +954,10 @@ static int vgsvcVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const ch
     /* pszDomain is optional. */
 
     int rc = VINF_SUCCESS;
-    char szPipeName[80];
-    size_t cbPipeName = sizeof(szPipeName);
-    rc = RTLocalIpcMakeNameUniqueUser(VBOXTRAY_IPC_PIPE_PREFIX, pszUser, szPipeName, &cbPipeName);
+
+    char szPipeName[255];
 /** @todo r=bird:  Pointless if.  */
-    if (RT_SUCCESS(rc))
+    if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s", VBOXTRAY_IPC_PIPE_PREFIX, pszUser))
     {
         bool fReportToHost = false;
         VBoxGuestUserState userState = VBoxGuestUserState_Unknown;
