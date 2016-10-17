@@ -67,9 +67,7 @@ endif
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxOGL_INCS           = .
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
- ifdef VBOX_USE_SYSTEM_GL_HEADERS
-  VBoxOGL_INCS += x11
- else
+ ifndef VBOX_USE_SYSTEM_GL_HEADERS
   VBoxOGL_INCS     += \
 	$(VBOX_PATH_X11_ROOT)/libXdamage-1.1 \
 	$(VBOX_PATH_X11_ROOT)/libXcomposite-0.4.0 \
@@ -716,7 +714,9 @@ $(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)
 
 VBoxEGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
 VBoxEGL_SOURCES        = egl.c
-VBoxEGL_INCS           = $(VBOX_PATH_X11_ROOT)/mesa-11.0.7
+ifndef VBOX_USE_SYSTEM_GL_HEADERS
+ VBoxEGL_INCS           = $(VBOX_PATH_X11_ROOT)/mesa-11.0.7
+endif
 VBoxEGL_LIBS           = $(VBOX_LIB_OGL) $(VBOX_LIB_IPRT_GUEST_R3_SHARED)
 VBoxEGL_SONAME.linux   = libEGL.so.1
 
