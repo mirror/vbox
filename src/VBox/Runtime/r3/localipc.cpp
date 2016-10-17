@@ -83,3 +83,4 @@ RTDECL(int) RTLocalIpcMakeNameUniqueUser(const char *pszPrefix, const char *pszU
     *pcbDst = cbRes;
     return VINF_SUCCESS;
 }
+
