@@ -56,13 +56,13 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def RTMPWIN_UPDATE_GIP_GLOBAL
+/** @def RTMPWIN_UPDATE_GIP_GLOBALS
  * Does lazy (re-)initialization using information provieded by GIP. */
 #ifdef IPRT_WITH_GIP_MP_INFO
-# define RTMPWIN_UPDATE_GIP_GLOBAL() \
+# define RTMPWIN_UPDATE_GIP_GLOBALS() \
     do { RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP(); } while (0)
 #else
-# define RTMPWIN_UPDATE_GIP_GLOBAL() do { } while (0)
+# define RTMPWIN_UPDATE_GIP_GLOBALS() do { } while (0)
 #endif
 
 /** @def RTMPWIN_UPDATE_GIP_GLOBALS_AND_GET_PGIP
@@ -522,7 +522,7 @@ static void rtMpWinRefreshGip(void)
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
-    RTMPWIN_UPDATE_GIP_GLOBAL();
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
 #ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
     if (idCpu != NIL_RTCPUID)
@@ -539,7 +539,7 @@ RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
-    RTMPWIN_UPDATE_GIP_GLOBAL();
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
     if ((unsigned)iCpu < RT_ELEMENTS(g_aidRtMpWinByCpuSetIdx))
     {
@@ -567,6 +567,9 @@ RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 
 RTDECL(int) RTMpSetIndexFromCpuGroupMember(uint32_t idxGroup, uint32_t idxMember)
 {
+    RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
+
     if (idxGroup < g_cRtMpWinMaxCpuGroups)
         if (idxMember < g_aRtMpWinCpuGroups[idxGroup].cMaxCpus)
             return g_aRtMpWinCpuGroups[idxGroup].aidxCpuSetMembers[idxMember];
@@ -576,6 +579,9 @@ RTDECL(int) RTMpSetIndexFromCpuGroupMember(uint32_t idxGroup, uint32_t idxMember
 
 RTDECL(uint32_t) RTMpGetCpuGroupCounts(uint32_t idxGroup, uint32_t *pcActive)
 {
+    RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
+
     if (idxGroup < g_cRtMpWinMaxCpuGroups)
     {
         if (pcActive)
@@ -590,6 +596,9 @@ RTDECL(uint32_t) RTMpGetCpuGroupCounts(uint32_t idxGroup, uint32_t *pcActive)
 
 RTDECL(uint32_t) RTMpGetMaxCpuGroupCount(void)
 {
+    RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
+
     return g_cRtMpWinMaxCpuGroups;
 }
 
@@ -602,9 +611,7 @@ RTDECL(uint32_t) RTMpGetMaxCpuGroupCount(void)
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
-#ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
-    RTMPWIN_UPDATE_GIP_GLOBAL();
-#endif
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
     PROCESSOR_NUMBER ProcNum;
     ProcNum.Group = 0;
@@ -642,6 +649,8 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
+
 #ifdef IPRT_WITH_RTCPUID_AS_GROUP_AND_NUMBER
     return RTMPCPUID_FROM_GROUP_AND_NUMBER(g_cRtMpWinMaxCpuGroups - 1,
                                            g_aRtMpWinCpuGroups[g_cRtMpWinMaxCpuGroups - 1].cMaxCpus - 1);
@@ -654,7 +663,7 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
-    RTMPWIN_UPDATE_GIP_GLOBAL();
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
     /* Any CPU between 0 and g_cRtMpWinMaxCpus are possible. */
     return idCpu < g_cRtMpWinMaxCpus;
@@ -674,6 +683,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
     return g_cRtMpWinMaxCpus;
 }
@@ -682,6 +692,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     RTOnce(&g_MpInitOnce, rtMpWinInitOnce, NULL);
+    RTMPWIN_UPDATE_GIP_GLOBALS();
 
     return g_cRtMpWinMaxCpuCores;
 }
