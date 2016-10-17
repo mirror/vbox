@@ -113,24 +113,35 @@ Function NT4_CopyFiles
 
   SetOutPath "$INSTDIR"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestDrvInst.exe"
+  AccessControl::SetOnFile "$INSTDIR\VBoxGuestDrvInst.exe" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\RegCleanup.exe"
+  AccessControl::SetOnFile "$INSTDIR\RegCleanup.exe" "(BU)" "GenericRead"
 
   ; The files to install for NT 4, they go into the system directories
   SetOutPath "$SYSDIR"
   FILE "$%PATH_OUT%\bin\additions\VBoxDisp.dll"
+  AccessControl::SetOnFile "$SYSDIR\VBoxDisp.dll" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
+  AccessControl::SetOnFile "$SYSDIR\VBoxTray.exe" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"
+  AccessControl::SetOnFile "$SYSDIR\VBoxHook.dll" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\VBoxControl.exe"
+  AccessControl::SetOnFile "$SYSDIR\VBoxControl.exe" "(BU)" "GenericRead"
 
   ; VBoxService
   FILE "$%PATH_OUT%\bin\additions\VBoxServiceNT.exe"
+  AccessControl::SetOnFile "$SYSDIR\VBoxServiceNT.exe" "(BU)" "GenericRead"
 
   ; The drivers into the "drivers" directory
   SetOutPath "$SYSDIR\drivers"
   FILE "$%PATH_OUT%\bin\additions\VBoxVideo.sys"
+  AccessControl::SetOnFile "$SYSDIR\drivers\VBoxVideo.sys" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\VBoxMouseNT.sys"
+  AccessControl::SetOnFile "$SYSDIR\drivers\VBoxMouseNT.sys" "(BU)" "GenericRead"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuestNT.sys"
+  AccessControl::SetOnFile "$SYSDIR\drivers\VBoxGuestNT.sys" "(BU)" "GenericRead"
   ;FILE "$%PATH_OUT%\bin\additions\VBoxSFNT.sys" ; Shared Folders not available on NT4!
+  ;AccessControl::SetOnFile "$SYSDIR\drivers\VBoxSFNT.sys" "(BU)" "GenericRead"
 
 FunctionEnd
 
