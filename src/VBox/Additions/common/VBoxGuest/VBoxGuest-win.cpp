@@ -273,9 +273,9 @@ static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
                  * If we reached this point we're fine with the basic driver setup,
                  * so continue to init our own things.
                  */
-#ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
+# ifdef VBOX_WITH_GUEST_BUGCHECK_DETECTION
                 vgdrvNtBugCheckCallback(pDevExt); /* Ignore failure! */
-#endif
+# endif
                 if (NT_SUCCESS(rc))
                 {
                     /* VBoxGuestPower is pageable; ensure we are not called at elevated IRQL */
@@ -308,7 +308,7 @@ static NTSTATUS vgdrvNtAddDevice(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj)
     LogFunc(("Returning with rc=%#x\n", rc));
     return rc;
 }
-#endif /* TARGET_NT4 */
+#endif /* !TARGET_NT4 */
 
 
 #ifdef LOG_ENABLED
@@ -382,9 +382,10 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
     PVBOXGUESTDEVEXTWIN pDevExt = (PVBOXGUESTDEVEXTWIN)pDevObj->DeviceExtension;
 #ifndef TARGET_NT4
     PIO_STACK_LOCATION  pStack  = IoGetCurrentIrpStackLocation(pIrp);
+    LogFlowFunc(("ENTER: pDevObj=%p pIrp=%p\n", pDevObj, pIrp));
+#else
+    LogFlowFunc(("ENTER: pDrvObj=%p pDevObj=%p pRegPath=%p\n", pDrvObj, pDevObj, pRegPath));
 #endif
-
-    LogFlowFuncEnter();
 
     NTSTATUS rcNt;
 #ifdef TARGET_NT4
@@ -463,7 +464,7 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
         /*
          * Register DPC and ISR.
          */
-        LogFlowFunc(("Initializing DPC/ISR ...\n"));
+        LogFlowFunc(("Initializing DPC/ISR (pDevObj=%p)...\n", pDevExt->pDeviceObject));
 
         IoInitializeDpcRequest(pDevExt->pDeviceObject, vgdrvNtDpcHandler);
 #ifdef TARGET_NT4
@@ -492,7 +493,11 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
 #endif
         if (pDevExt->interruptVector)
         {
-            LogFlowFunc(("Connecting interrupt ...\n"));
+#ifdef TARGET_NT4
+            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", uInterruptVector, irqLevel));
+#else
+            LogFlowFunc(("Connecting interrupt (IntVector=%#u), IrqLevel=%u) ...\n", pDevExt->interruptVector, pDevExt->interruptLevel));
+#endif
 
             rcNt = IoConnectInterrupt(&pDevExt->pInterruptObject,                 /* Out: interrupt object. */
                                       (PKSERVICE_ROUTINE)vgdrvNtIsrHandler,        /* Our ISR handler. */
@@ -512,7 +517,7 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
                                       pDevExt->interruptAffinity,                 /* CPU affinity. */
                                       FALSE);                                     /* Don't save FPU stack. */
             if (NT_ERROR(rcNt))
-                LogFunc(("Could not connect interrupt, rcNt=%#x\n", rcNt));
+                LogFunc(("Could not connect interrupt: rcNt=%#x!\n", rcNt));
         }
         else
             LogFunc(("No interrupt vector found!\n"));
@@ -558,6 +563,13 @@ NTSTATUS vgdrvNtInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICODE_ST
 /**
  * Cleans up hardware resources.
  * Do not delete DevExt here.
+ *
+ * @todo r=bird: HC SVNT DRACONES!
+ *
+ *       This code leaves clients hung when vgdrvNtInit is called afterwards.
+ *       This happens when for instance hotplugging a CPU.  Problem is
+ *       vgdrvNtInit doing a full VGDrvCommonInitDevExt, orphaning all pDevExt
+ *       members, like session lists and stuff.
  *
  * @param   pDevObj     Device object.
  */

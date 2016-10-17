@@ -382,9 +382,9 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                 fclose(phFile);
             if (SUCCEEDED(hr))
             {
-                _tprintf(_T("Driver was installed successfully!\n"));
+                _tprintf(_T("Driver was %sinstalled successfully!\n"), fInstall ? _T("") : _T("un"));
                 if (fReboot)
-                    _tprintf(_T("A reboot is needed to complete the driver (un)installation!\n"));
+                    _tprintf(_T("A reboot is needed to complete the driver %sinstallation!\n"), fInstall ? _T("") : _T("un"));
             }
         }
     }
