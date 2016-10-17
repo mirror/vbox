@@ -143,6 +143,28 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemov
     {
         VQUEUESEG *pSeg;
 
+        /*
+         * Malicious guests may try to trick us into writing beyond aSegsIn or
+         * aSegsOut boundaries by linking several descriptors into a loop. We
+         * cannot possibly get a sequence of linked descriptors exceeding the
+         * total number of descriptors in the ring (see @bugref{8620}).
+         */
+        if (pElem->nIn + pElem->nOut >= VRING_MAX_SIZE)
+        {
+            static volatile uint32_t s_cMessages  = 0;
+            static volatile uint32_t s_cThreshold = 1;
+            if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
+            {
+                LogRel(("%s: too many linked descriptors; check if the guest arranges descriptors in a loop.\n",
+                        INSTANCE(pState)));
+                if (ASMAtomicReadU32(&s_cMessages) != 1)
+                    LogRel(("%s: (the above error has occured %u times so far)\n",
+                            INSTANCE(pState), ASMAtomicReadU32(&s_cMessages)));
+                ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
+            }
+            break;
+        }
+        
         vringReadDesc(pState, &pQueue->VRing, idx, &desc);
         if (desc.u16Flags & VRINGDESC_F_WRITE)
         {
