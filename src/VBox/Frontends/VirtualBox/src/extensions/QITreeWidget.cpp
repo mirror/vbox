@@ -276,8 +276,9 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex)
         QTreeWidgetItem *pItem = tree()->topLevelItem(0);
         while (pItem && iCurrentIndex < iIndex)
         {
-            iCurrentIndex += tree()->columnCount();
-            pItem = tree()->itemBelow(pItem);
+            ++iCurrentIndex;
+            if (iCurrentIndex % tree()->columnCount() == 0)
+                pItem = tree()->itemBelow(pItem);
         }
 
         // Return what we found:
