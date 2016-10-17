@@ -195,7 +195,7 @@ QString QIAccessibilityInterfaceForQITreeWidgetItem::text(QAccessible::Text enmT
     /* Return a text for the passed enmTextRole: */
     switch (enmTextRole)
     {
-        case QAccessible::Name: return item()->text(0);
+        case QAccessible::Name: return item()->defaultText();
         default: break;
     }
 
@@ -282,7 +282,7 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex)
 
         // Return what we found:
         // if (pItem)
-        //     printf("Item found: [%s]\n", pItem->text(0).toUtf8().constData());
+        //     printf("Item found: [%s]\n", pItem->defaultText().toUtf8().constData());
         return pItem ? QAccessible::queryAccessibleInterface(QITreeWidgetItem::toItem(pItem)) : 0;
     }
 
@@ -326,6 +326,11 @@ const QITreeWidgetItem *QITreeWidgetItem::toItem(const QTreeWidgetItem *pItem)
     return static_cast<const QITreeWidgetItem*>(pItem);
 }
 
+QITreeWidgetItem::QITreeWidgetItem()
+    : QTreeWidgetItem(ItemType)
+{
+}
+
 QITreeWidgetItem::QITreeWidgetItem(QITreeWidget *pTreeWidget)
     : QTreeWidgetItem(pTreeWidget, ItemType)
 {
@@ -362,6 +367,12 @@ QITreeWidgetItem *QITreeWidgetItem::childItem(int iIndex) const
 {
     /* Return the child item with iIndex if any: */
     return QTreeWidgetItem::child(iIndex) ? toItem(QTreeWidgetItem::child(iIndex)) : 0;
+}
+
+QString QITreeWidgetItem::defaultText() const
+{
+    /* Return 1st cell text as default: */
+    return text(0);
 }
 
 

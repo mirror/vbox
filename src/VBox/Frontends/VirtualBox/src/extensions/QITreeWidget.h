@@ -41,6 +41,9 @@ public:
     /** Casts const QTreeWidgetItem* to const QITreeWidgetItem* if possible. */
     static const QITreeWidgetItem *toItem(const QTreeWidgetItem *pItem);
 
+    /** Constructs item. */
+    QITreeWidgetItem();
+
     /** Constructs item passing @a pTreeWidget into the base-class. */
     QITreeWidgetItem(QITreeWidget *pTreeWidget);
     /** Constructs item passing @a pTreeWidgetItem into the base-class. */
@@ -57,6 +60,9 @@ public:
     QITreeWidgetItem *parentItem() const;
     /** Returns the child tree-widget item with @a iIndex. */
     QITreeWidgetItem *childItem(int iIndex) const;
+
+    /** Returns default text. */
+    virtual QString defaultText() const;
 };
 
 
