@@ -71,7 +71,7 @@ RT_EXPORT_SYMBOL(g_u32RTAssertLine);
 /** Set if assertions are quiet. */
 static bool volatile                g_fQuiet = false;
 /** Set if assertions may panic. */
-static bool volatile                g_fMayPanic = false;//true;
+static bool volatile                g_fMayPanic = true;
 
 
 RTDECL(bool) RTAssertSetQuiet(bool fQuiet)
