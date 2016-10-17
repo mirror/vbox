@@ -32,6 +32,7 @@
 #include <iprt/initterm.h>
 #include <iprt/localipc.h>
 #include <iprt/mem.h>
+#include <iprt/process.h>
 #include <iprt/string.h>
 
 /* Required structures/defines of VBoxTray. */
@@ -137,33 +138,14 @@ static void vboxPushResultAsString(HRESULT hr)
  */
 static int vboxConnectToVBoxTray(RTLOCALIPCSESSION *phSession)
 {
-    int rc = VINF_SUCCESS;
-
-    RTUTF16 wszUserName[255];
-    DWORD cchUserName = sizeof(wszUserName) / sizeof(RTUTF16);
-    BOOL fRc = GetUserNameW(wszUserName, &cchUserName);
-    if (!fRc)
-        rc = RTErrConvertFromWin32(GetLastError());
-
+    char szPipeName[512 + sizeof(VBOXTRAY_IPC_PIPE_PREFIX)];
+    memcpy(szPipeName, VBOXTRAY_IPC_PIPE_PREFIX, sizeof(VBOXTRAY_IPC_PIPE_PREFIX));
+    int rc = RTProcQueryUsername(NIL_RTPROCESS,
+                                 &szPipeName[sizeof(VBOXTRAY_IPC_PIPE_PREFIX) - 1],
+                                 sizeof(szPipeName) - sizeof(VBOXTRAY_IPC_PIPE_PREFIX) + 1,
+                                 NULL /*pcbUser*/);
     if (RT_SUCCESS(rc))
-    {
-        char *pszUserName;
-        rc = RTUtf16ToUtf8(wszUserName, &pszUserName);
-        if (RT_SUCCESS(rc))
-        {
-            char szPipeName[255];
-            if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
-                            VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
-            {
-                rc = RTLocalIpcSessionConnect(phSession, szPipeName, 0 /* Flags */);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-
-            RTStrFree(pszUserName);
-        }
-    }
-
+        rc = RTLocalIpcSessionConnect(phSession, szPipeName, RTLOCALIPC_FLAGS_NATIVE_NAME);
     return rc;
 }
 
