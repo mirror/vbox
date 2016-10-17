@@ -39,16 +39,13 @@
 
 
 /* Extension package item: */
-class UIExtensionPackageItem : public QTreeWidgetItem
+class UIExtensionPackageItem : public QITreeWidgetItem
 {
 public:
 
-    /* Extension package item type: */
-    enum { UIItemType = QTreeWidgetItem::UserType + 1 };
-
     /* Extension package item constructor: */
-    UIExtensionPackageItem(QTreeWidget *pParent, const UISettingsCacheGlobalExtensionItem &data)
-        : QTreeWidgetItem(pParent, UIItemType)
+    UIExtensionPackageItem(QITreeWidget *pParent, const UISettingsCacheGlobalExtensionItem &data)
+        : QITreeWidgetItem(pParent)
         , m_data(data)
     {
         /* Icon: */
@@ -80,6 +77,13 @@ public:
     }
 
     QString name() const { return m_data.m_strName; }
+
+    /** Returns default text. */
+    virtual QString defaultText() const /* override */
+    {
+        /* Return 2nd cell text as default: */
+        return text(1);
+    }
 
 private:
 
@@ -401,8 +405,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
 {
     /* Get current item: */
     UIExtensionPackageItem *pItem = m_pPackagesTree &&
-                                    m_pPackagesTree->currentItem() &&
-                                    m_pPackagesTree->currentItem()->type() == UIExtensionPackageItem::UIItemType ?
+                                    m_pPackagesTree->currentItem() ?
                                     static_cast<UIExtensionPackageItem*>(m_pPackagesTree->currentItem()) : 0;
 
     /* Uninstall chosen package: */

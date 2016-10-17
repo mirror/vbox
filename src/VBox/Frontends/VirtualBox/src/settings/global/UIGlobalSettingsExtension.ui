@@ -38,7 +38,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QTreeWidget" name="m_pPackagesTree">
+       <widget class="QITreeWidget" name="m_pPackagesTree">
         <property name="sizePolicy">
          <sizepolicy vsizetype="MinimumExpanding" hsizetype="MinimumExpanding">
           <horstretch>0</horstretch>
@@ -92,6 +92,11 @@
    <class>UIToolBar</class>
    <extends>QToolBar</extends>
    <header>UIToolBar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>QITreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
