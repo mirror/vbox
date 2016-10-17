@@ -362,14 +362,17 @@ soread(PNATState pData, struct socket *so)
         else
         {
             int fUninitializedTemplate = 0;
+            int shuterr;
+
             fUninitializedTemplate = RT_BOOL((   sototcpcb(so)
                                               && (  sototcpcb(so)->t_template.ti_src.s_addr == INADDR_ANY
                                                  || sototcpcb(so)->t_template.ti_dst.s_addr == INADDR_ANY)));
             /* nn == 0 means peer has performed an orderly shutdown */
             Log2(("%s: disconnected, nn = %d, errno = %d (%s)\n",
                   RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn, sockerr, strerror(sockerr)));
-            sofcantrcvmore(so);
-            if (!fUninitializedTemplate)
+
+            shuterr = sofcantrcvmore(so);
+            if (!sockerr && !shuterr && !fUninitializedTemplate)
                 tcp_sockclosed(pData, sototcpcb(so));
             else
                 tcp_drop(pData, sototcpcb(so), sockerr);
@@ -1100,21 +1103,42 @@ soisfconnected(struct socket *so)
     LogFlowFunc(("LEAVE: so:%R[natsock]\n", so));
 }
 
-void
+int
 sofcantrcvmore(struct  socket *so)
 {
+    int err = 0;
+
     LogFlowFunc(("ENTER: so:%R[natsock]\n", so));
     if ((so->so_state & SS_NOFDREF) == 0)
     {
-        shutdown(so->s, 0);
+        /*
+         * If remote closes first and then sends an RST, the recv() in
+         * soread() will keep reporting EOF without any error
+         * indication, so we must also check if shutdown() succeeds
+         * here.
+         */
+        int status = shutdown(so->s, 0);
+        if (status < 0)
+            err = errno;
     }
     so->so_state &= ~(SS_ISFCONNECTING);
     if (so->so_state & SS_FCANTSENDMORE)
+    {
+        /*
+         * If we have closed first, and remote closes, shutdown will
+         * return ENOTCONN, but this is expected.  Don't tell the
+         * caller there was an error.
+         */
+        if (err == ENOTCONN)
+            err = 0;
         so->so_state = SS_NOFDREF; /* Don't select it */
                                    /* XXX close() here as well? */
+    }
     else
         so->so_state |= SS_FCANTRCVMORE;
-    LogFlowFuncLeave();
+
+    LogFlowFunc(("LEAVE: %d\n", err));
+    return err;
 }
 
 void

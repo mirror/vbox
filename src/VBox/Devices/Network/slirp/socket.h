@@ -181,7 +181,7 @@ void sorwakeup (struct socket *);
 void sowwakeup (struct socket *);
 void soisfconnecting (register struct socket *);
 void soisfconnected (register struct socket *);
-void sofcantrcvmore (struct  socket *);
+int sofcantrcvmore (struct  socket *);
 void sofcantsendmore (struct socket *);
 void soisfdisconnected (struct socket *);
 void sofwdrain (struct socket *);
