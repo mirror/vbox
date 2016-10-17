@@ -1869,7 +1869,11 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     /*
      * Allocate a contiguous set of pages with a default kernel mapping.
      */
+#ifdef RT_OS_WINDOWS
     cbGipCpuGroups = supdrvOSGipGetGroupTableSize(pDevExt);
+#else
+    cbGipCpuGroups = 0;
+#endif
     cbGip = RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[cCpus]) + cbGipCpuGroups;
     rc = RTR0MemObjAllocCont(&pDevExt->GipMemObj, cbGip, false /*fExecutable*/);
     if (RT_FAILURE(rc))
