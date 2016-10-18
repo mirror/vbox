@@ -333,6 +333,8 @@ setup_modules()
         --no-print-directory install >> $LOG 2>&1; then
         info "Look at $LOG to find out what went wrong"
     fi
+    echo "override vboxguest * misc" > /etc/depmod.d/vboxvideo-upstream.conf
+    echo "override vboxsf * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     echo "override vboxvideo * misc" > /etc/depmod.d/vboxvideo-upstream.conf
     depmod
     return 0
