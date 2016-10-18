@@ -1215,15 +1215,11 @@ int __cdecl _tmain(int argc, _TCHAR *argv[])
             if (   !_tcsicmp(argv[2], _T("create"))
                 && argc >= 8)
             {
-                /* Make sure that the image path is in quotes. */
-                _TCHAR szImagePath[_MAX_PATH];
-                _sntprintf(szImagePath, sizeof(szImagePath) / sizeof(TCHAR), _T("\"%ws\""), argv[7]);
-
                 rc = CreateService(argv[3],
                                    argv[4],
                                    _ttoi(argv[5]),
                                    _ttoi(argv[6]),
-                                   szImagePath,
+                                   argv[7],
                                    (argc > 8) ? argv[8] : NULL,
                                    (argc > 9) ? argv[9] : NULL,
                                    (argc > 10) ? argv[10] : NULL,
