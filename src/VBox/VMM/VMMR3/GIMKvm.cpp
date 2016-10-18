@@ -283,22 +283,12 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
         PCGIMKVMCPU pKvmCpu = &pVM->aCpus[i].gim.s.u.KvmCpu;
-
-        /* Guest may alter flags (namely GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED bit). So re-read them from guest-memory. */
-        GIMKVMSYSTEMTIME SystemTime;
-        RT_ZERO(SystemTime);
-        if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
-        {
-            int rc = PGMPhysSimpleReadGCPhys(pVM, &SystemTime, pKvmCpu->GCPhysSystemTime, sizeof(GIMKVMSYSTEMTIME));
-            AssertRCReturn(rc, rc);
-        }
-
         SSMR3PutU64(pSSM, pKvmCpu->u64SystemTimeMsr);
         SSMR3PutU64(pSSM, pKvmCpu->uTsc);
         SSMR3PutU64(pSSM, pKvmCpu->uVirtNanoTS);
         SSMR3PutGCPhys(pSSM, pKvmCpu->GCPhysSystemTime);
         SSMR3PutU32(pSSM, pKvmCpu->u32SystemTimeVersion);
-        SSMR3PutU8(pSSM, SystemTime.fFlags);
+        SSMR3PutU8(pSSM, pKvmCpu->fSystemTimeFlags);
     }
 
     /*
@@ -358,8 +348,7 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM)
         {
             Assert(!TMVirtualIsTicking(pVM));       /* paranoia. */
             Assert(!TMCpuTickIsTicking(pVCpu));
-            rc = gimR3KvmEnableSystemTime(pVM, pVCpu);
-            AssertRCReturn(rc, rc);
+            gimR3KvmEnableSystemTime(pVM, pVCpu);
         }
     }
 

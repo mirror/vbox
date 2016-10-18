@@ -274,7 +274,6 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             }
 
             /* Is the system-time struct. already enabled? If so, get flags that need preserving. */
-            /*uint8_t fFlags = 0; - unused */
             GIMKVMSYSTEMTIME SystemTime;
             RT_ZERO(SystemTime);
             if (   MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr)
@@ -293,7 +292,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             if (RT_FAILURE(rc))
             {
                 pKvmCpu->u64SystemTimeMsr = 0;
-                return VERR_CPUM_RAISE_GP_0;
+                /* We shouldn't throw a #GP(0) here for buggy guests (neither does KVM apparently), see @bugref{8627}. */
             }
             return VINF_SUCCESS;
 #endif
