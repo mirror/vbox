@@ -110,8 +110,16 @@ static inline bool rtcsTrue() { return true; }
  */
 typedef struct USBPROXYURBLNX
 {
-    /** The kernel URB data */
+    /** The kernel URB data. */
+#if RT_GNUC_PREREQ(4, 6)
+    /* gcc 6.2 complains about the [] member of KUrb */
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
     struct usbdevfs_urb             KUrb;
+#if RT_GNUC_PREREQ(4, 6)
+# pragma GCC diagnostic pop
+#endif
     /** Space filler for the isochronous packets. */
     struct usbdevfs_iso_packet_desc aIsocPktsDonUseTheseUseTheOnesInKUrb[8];
     /** Node to link the URB in of the existing lists. */
@@ -121,11 +129,11 @@ typedef struct USBPROXYURBLNX
     /** The next linux URB if split up. */
     struct USBPROXYURBLNX           *pSplitNext;
     /** Don't report these back. */
-    bool                             fCanceledBySubmit;
+    bool                            fCanceledBySubmit;
     /** This split element is reaped. */
-    bool                             fSplitElementReaped;
+    bool                            fSplitElementReaped;
     /** Size to transfer in remaining fragments of a split URB */
-    uint32_t                         cbSplitRemaining;
+    uint32_t                        cbSplitRemaining;
 } USBPROXYURBLNX, *PUSBPROXYURBLNX;
 
 /**

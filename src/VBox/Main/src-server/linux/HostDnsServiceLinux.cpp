@@ -34,6 +34,11 @@
 
 #include <linux/limits.h>
 
+/* Workaround for <sys/cdef.h> defining __flexarr to [] which beats us in
+ * struct inotify_event (char name __flexarr). */
+#include <sys/cdefs.h>
+#undef __flexarr
+#define __flexarr [0]
 #include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/socket.h>
