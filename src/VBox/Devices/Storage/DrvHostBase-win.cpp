@@ -535,6 +535,13 @@ DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
 }
 
 
+DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent)
+{
+    RT_NOREF3(pThis, pfMediaChanged, pfMediaPresent); /* We don't support the polling method. */
+    return VERR_NOT_SUPPORTED;
+}
+
+
 DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
 {
     /* For Windows we alwys use an internal approach. */
