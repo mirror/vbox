@@ -111,13 +111,13 @@ static inline bool rtcsTrue() { return true; }
 typedef struct USBPROXYURBLNX
 {
     /** The kernel URB data. */
-#if RT_GNUC_PREREQ(4, 6)
+#if RT_GNUC_PREREQ(6, 0)
     /* gcc 6.2 complains about the [] member of KUrb */
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wpedantic"
 #endif
     struct usbdevfs_urb             KUrb;
-#if RT_GNUC_PREREQ(4, 6)
+#if RT_GNUC_PREREQ(6, 0)
 # pragma GCC diagnostic pop
 #endif
     /** Space filler for the isochronous packets. */
