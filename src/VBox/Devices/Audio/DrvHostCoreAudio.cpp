@@ -2015,15 +2015,17 @@ int coreAudioOutputQueueProcBuffer(PCOREAUDIOSTREAM pCAStream, AudioQueueBufferR
         /* Try to acquire the necessary block from the ring buffer. */
         RTCircBufAcquireReadBlock(pCircBuf, cbLeft, (void **)&pvSrc, &cbToRead);
 
-        /* Break if nothing is used anymore. */
-        if (!cbToRead)
-            break;
-
-        /* Copy the data from our ring buffer to the core audio buffer. */
-        memcpy((UInt8 *)pvDst + cbRead, pvSrc, cbToRead);
+        if (cbToRead)
+        {
+            /* Copy the data from our ring buffer to the core audio buffer. */
+            memcpy((UInt8 *)pvDst + cbRead, pvSrc, cbToRead);
+        }
 
         /* Release the read buffer, so it could be used for new data. */
         RTCircBufReleaseReadBlock(pCircBuf, cbToRead);
+
+        if (!cbToRead)
+            break;
 
         /* Move offset. */
         cbRead += cbToRead;
