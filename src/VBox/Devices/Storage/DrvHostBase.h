@@ -64,12 +64,16 @@ typedef struct DRVHOSTBASE
     /** Uuid of the drive. */
     RTUUID                  Uuid;
 
-    /** Pointer to the block port interface above us. */
+    /** Pointer to the media port interface above us. */
     PPDMIMEDIAPORT          pDrvMediaPort;
+    /** Pointer to the extended media port interface above us. */
+    PPDMIMEDIAEXPORT        pDrvMediaExPort;
     /** Pointer to the mount notify interface above us. */
     PPDMIMOUNTNOTIFY        pDrvMountNotify;
     /** Our media interface. */
     PDMIMEDIA               IMedia;
+    /** Our extended media interface. */
+    PDMIMEDIAEX             IMediaEx;
     /** Our mountable interface. */
     PDMIMOUNT               IMount;
 
@@ -95,6 +99,13 @@ typedef struct DRVHOSTBASE
     /** BIOS LCHS geometry. */
     PDMMEDIAGEOMETRY        LCHSGeometry;
 
+    /** Pointer to the current buffer holding data. */
+    void                    *pvBuf;
+    /** Size of the buffer. */
+    size_t                  cbBuf;
+    /** Size of the I/O request to allocate. */
+    size_t                  cbIoReqAlloc;
+
     /**
      * Performs the locking / unlocking of the device.
      *
@@ -116,6 +127,17 @@ typedef struct DRVHOSTBASE
 } DRVHOSTBASE;
 
 
+/**
+ * Request structure fo a request.
+ */
+typedef struct DRVHOSTBASEREQ
+{
+    /** Start of the request data for the device above us. */
+    uint8_t                  abAlloc[1];
+} DRVHOSTBASEREQ;
+/** Pointer to a request structure. */
+typedef DRVHOSTBASEREQ *PDRVHOSTBASEREQ;
+
 DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType);
 DECLHIDDEN(int) DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
 DECLHIDDEN(void) DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
@@ -136,6 +158,9 @@ DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent);
 DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis);
+
+DECLHIDDEN(int) drvHostBaseBufferRetain(PDRVHOSTBASE pThis, PDRVHOSTBASEREQ pReq, size_t cbBuf, bool fWrite, void **ppvBuf);
+DECLHIDDEN(int) drvHostBaseBufferRelease(PDRVHOSTBASE pThis, PDRVHOSTBASEREQ pReq, size_t cbBuf, bool fWrite, void *pvBuf);
 
 RT_C_DECLS_END
 

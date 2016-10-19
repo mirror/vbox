@@ -67,7 +67,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
                   pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbRead, cbRead, pvBuf));
         }
         else
-            Log(("%s-%d: drvHostBaseReadOs: drvHostBaseReadOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+            Log(("%s-%d: drvHostBaseRead: drvHostBaseReadOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
                  pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
                  off, pvBuf, cbRead, rc, pThis->pszDevice));
     }
@@ -216,7 +216,8 @@ static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: %s: returns %Rrc CHS={%d,%d,%d}\n",
-             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, rc, pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, rc,
+             pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors));
     return rc;
 }
 
@@ -226,7 +227,8 @@ static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 {
     PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
-             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__,
+             pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -268,7 +270,8 @@ static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: %s: returns %Rrc CHS={%d,%d,%d}\n",
-             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, rc, pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, rc,
+             pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors));
     return rc;
 }
 
@@ -278,7 +281,8 @@ static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 {
     PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
-             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__,
+             pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -302,6 +306,300 @@ static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 {
     PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     return pThis->fBiosVisible;
+}
+
+
+
+/* -=-=-=-=- IMediaEx -=-=-=-=- */
+
+DECLHIDDEN(int) drvHostBaseBufferRetain(PDRVHOSTBASE pThis, PDRVHOSTBASEREQ pReq, size_t cbBuf, bool fWrite, void **ppvBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pThis->cbBuf < cbBuf)
+    {
+        RTMemFree(pThis->pvBuf);
+        pThis->cbBuf = 0;
+        pThis->pvBuf = RTMemAlloc(cbBuf);
+        if (pThis->pvBuf)
+            pThis->cbBuf = cbBuf;
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc) && fWrite)
+    {
+        RTSGSEG Seg;
+        RTSGBUF SgBuf;
+
+        Seg.pvSeg = pThis->pvBuf;
+        Seg.cbSeg = cbBuf;
+        RTSgBufInit(&SgBuf, &Seg, 1);
+        rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, (PDMMEDIAEXIOREQ)pReq,
+                                                       &pReq->abAlloc[0], 0, &SgBuf, cbBuf);
+    }
+
+    if (RT_SUCCESS(rc))
+        *ppvBuf = pThis->pvBuf;
+
+    return rc;
+}
+
+DECLHIDDEN(int) drvHostBaseBufferRelease(PDRVHOSTBASE pThis, PDRVHOSTBASEREQ pReq, size_t cbBuf, bool fWrite, void *pvBuf)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!fWrite)
+    {
+        RTSGSEG Seg;
+        RTSGBUF SgBuf;
+
+        Seg.pvSeg = pvBuf;
+        Seg.cbSeg = cbBuf;
+        RTSgBufInit(&SgBuf, &Seg, 1);
+        rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, (PDMMEDIAEXIOREQ)pReq,
+                                                         &pReq->abAlloc[0], 0, &SgBuf, cbBuf);
+    }
+
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnQueryFeatures} */
+static DECLCALLBACK(int) drvHostBaseQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t *pfFeatures)
+{
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+
+    *pfFeatures = pThis->IMediaEx.pfnIoReqSendScsiCmd ? PDMIMEDIAEX_FEATURE_F_RAWSCSICMD : 0;
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet} */
+static DECLCALLBACK(int) drvHostBaseIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
+{
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+
+    pThis->cbIoReqAlloc = RT_OFFSETOF(DRVHOSTBASEREQ, abAlloc[cbIoReqAlloc]);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqAlloc} */
+static DECLCALLBACK(int) drvHostBaseIoReqAlloc(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc,
+                                               PDMMEDIAEXIOREQID uIoReqId, uint32_t fFlags)
+{
+    RT_NOREF2(uIoReqId, fFlags);
+
+    int rc = VINF_SUCCESS;
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+    PDRVHOSTBASEREQ pReq = (PDRVHOSTBASEREQ)RTMemAllocZ(pThis->cbIoReqAlloc);
+    if (RT_LIKELY(pReq))
+    {
+        *phIoReq = (PDMMEDIAEXIOREQ)pReq;
+        *ppvIoReqAlloc = &pReq->abAlloc[0];
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqFree} */
+static DECLCALLBACK(int) drvHostBaseIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF1(pInterface);
+    PDRVHOSTBASEREQ pReq = (PDRVHOSTBASEREQ)hIoReq;
+
+    RTMemFree(pReq);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryResidual} */
+static DECLCALLBACK(int) drvHostBaseIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual)
+{
+    RT_NOREF2(pInterface, hIoReq);
+
+    *pcbResidual = 0; /** @todo: Implement. */
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancelAll} */
+static DECLCALLBACK(int) drvHostBaseIoReqCancelAll(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return VINF_SUCCESS;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancel} */
+static DECLCALLBACK(int) drvHostBaseIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQID uIoReqId)
+{
+    RT_NOREF2(pInterface, uIoReqId);
+    return VERR_PDM_MEDIAEX_IOREQID_NOT_FOUND;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqRead} */
+static DECLCALLBACK(int) drvHostBaseIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbRead)
+{
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+    PDRVHOSTBASEREQ pReq = (PDRVHOSTBASEREQ)hIoReq;
+    LogFlow(("%s-%d: drvHostBaseIoReqRead: off=%#llx cbRead=%#x (%s)\n",
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbRead, pThis->pszDevice));
+    RTCritSectEnter(&pThis->CritSect);
+
+    /*
+     * Check the state.
+     */
+    int rc;
+    if (pThis->fMediaPresent)
+    {
+        void *pvBuf;
+        rc = drvHostBaseBufferRetain(pThis, pReq, cbRead, false, &pvBuf);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Seek and read.
+             */
+            rc = drvHostBaseReadOs(pThis, off, pvBuf, cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                Log2(("%s-%d: drvHostBaseReadOs: off=%#llx cbRead=%#x\n"
+                      "%16.*Rhxd\n",
+                      pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbRead, cbRead, pvBuf));
+            }
+            else
+                Log(("%s-%d: drvHostBaseIoReqRead: drvHostBaseReadOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
+                     off, pvBuf, cbRead, rc, pThis->pszDevice));
+
+            rc = drvHostBaseBufferRelease(pThis, pReq, cbRead, false, pvBuf);
+        }
+        else
+            Log(("%s-%d: drvHostBaseIoReqRead: drvHostBaseBufferRetain(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+                 pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
+                 off, pvBuf, cbRead, rc, pThis->pszDevice));
+    }
+    else
+        rc = VERR_MEDIA_NOT_PRESENT;
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlow(("%s-%d: drvHostBaseIoReqRead: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqWrite} */
+static DECLCALLBACK(int) drvHostBaseIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint64_t off, size_t cbWrite)
+{
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+    PDRVHOSTBASEREQ pReq = (PDRVHOSTBASEREQ)hIoReq;
+    LogFlow(("%s-%d: drvHostBaseIoReqWrite: off=%#llx cbWrite=%#x (%s)\n",
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbWrite, pThis->pszDevice));
+    RTCritSectEnter(&pThis->CritSect);
+
+    /*
+     * Check the state.
+     */
+    int rc;
+    if (!pThis->fReadOnly)
+    {
+        if (pThis->fMediaPresent)
+        {
+            void *pvBuf;
+            rc = drvHostBaseBufferRetain(pThis, pReq, cbWrite, true, &pvBuf);
+            if (RT_SUCCESS(rc))
+            {
+                Log2(("%s-%d: drvHostBaseIoReqWrite: off=%#llx cbWrite=%#x\n"
+                      "%16.*Rhxd\n",
+                      pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbWrite, cbWrite, pvBuf));
+                /*
+                 * Seek and write.
+                 */
+                rc = drvHostBaseWriteOs(pThis, off, pvBuf, cbWrite);
+                if (RT_FAILURE(rc))
+                    Log(("%s-%d: drvHostBaseIoReqWrite: drvHostBaseWriteOs(%#llx, %p, %#x) -> %Rrc ('%s')\n",
+                         pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance,
+                         off, pvBuf, cbWrite, rc, pThis->pszDevice));
+
+                rc = drvHostBaseBufferRelease(pThis, pReq, cbWrite, true, pvBuf);
+            }
+        }
+        else
+            rc = VERR_MEDIA_NOT_PRESENT;
+    }
+    else
+        rc = VERR_WRITE_PROTECT;
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlow(("%s-%d: drvHostBaseIoReqWrite: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqFlush} */
+static DECLCALLBACK(int) drvHostBaseIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF1(hIoReq);
+
+    int rc;
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMediaEx);
+    LogFlow(("%s-%d: drvHostBaseIoReqFlush: (%s)\n",
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice));
+    RTCritSectEnter(&pThis->CritSect);
+
+    if (pThis->fMediaPresent)
+        rc = drvHostBaseFlushOs(pThis);
+    else
+        rc = VERR_MEDIA_NOT_PRESENT;
+
+    RTCritSectLeave(&pThis->CritSect);
+    LogFlow(("%s-%d: drvHostBaseFlush: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
+    return rc;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqDiscard} */
+static DECLCALLBACK(int) drvHostBaseIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, unsigned cRangesMax)
+{
+    RT_NOREF3(pInterface, hIoReq, cRangesMax);
+    return VERR_NOT_SUPPORTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetActiveCount} */
+static DECLCALLBACK(uint32_t) drvHostBaseIoReqGetActiveCount(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return 0;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqGetSuspendedCount} */
+static DECLCALLBACK(uint32_t) drvHostBaseIoReqGetSuspendedCount(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return 0;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedStart} */
+static DECLCALLBACK(int) drvHostBaseIoReqQuerySuspendedStart(PPDMIMEDIAEX pInterface, PPDMMEDIAEXIOREQ phIoReq, void **ppvIoReqAlloc)
+{
+    RT_NOREF3(pInterface, phIoReq, ppvIoReqAlloc);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQuerySuspendedNext} */
+static DECLCALLBACK(int) drvHostBaseIoReqQuerySuspendedNext(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                            PPDMMEDIAEXIOREQ phIoReqNext, void **ppvIoReqAllocNext)
+{
+    RT_NOREF4(pInterface, hIoReq, phIoReqNext, ppvIoReqAllocNext);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedSave} */
+static DECLCALLBACK(int) drvHostBaseIoReqSuspendedSave(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF3(pInterface, pSSM, hIoReq);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSuspendedLoad} */
+static DECLCALLBACK(int) drvHostBaseIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHANDLE pSSM, PDMMEDIAEXIOREQ hIoReq)
+{
+    RT_NOREF3(pInterface, pSSM, hIoReq);
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -441,6 +739,7 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, con
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, &pThis->IMount);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEX, pThis->pDrvMediaExPort ? &pThis->IMediaEx : NULL);
     return NULL;
 }
 
@@ -684,6 +983,13 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         pThis->pszDeviceOpen = NULL;
     }
 
+    if (pThis->pvBuf)
+    {
+        RTMemFree(pThis->pvBuf);
+        pThis->pvBuf = NULL;
+        pThis->cbBuf = 0;
+    }
+
     /* Forget about the notifications. */
     pThis->pDrvMountNotify = NULL;
 
@@ -739,6 +1045,25 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
     pThis->IMedia.pfnBiosSetLCHSGeometry    = drvHostBaseSetLCHSGeometry;
     pThis->IMedia.pfnBiosIsVisible          = drvHostBaseIsVisible;
 
+    /* IMediaEx */
+    pThis->IMediaEx.pfnQueryFeatures            = drvHostBaseQueryFeatures;
+    pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvHostBaseIoReqAllocSizeSet;
+    pThis->IMediaEx.pfnIoReqAlloc               = drvHostBaseIoReqAlloc;
+    pThis->IMediaEx.pfnIoReqFree                = drvHostBaseIoReqFree;
+    pThis->IMediaEx.pfnIoReqQueryResidual       = drvHostBaseIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqCancelAll           = drvHostBaseIoReqCancelAll;
+    pThis->IMediaEx.pfnIoReqCancel              = drvHostBaseIoReqCancel;
+    pThis->IMediaEx.pfnIoReqRead                = drvHostBaseIoReqRead;
+    pThis->IMediaEx.pfnIoReqWrite               = drvHostBaseIoReqWrite;
+    pThis->IMediaEx.pfnIoReqFlush               = drvHostBaseIoReqFlush;
+    pThis->IMediaEx.pfnIoReqDiscard             = drvHostBaseIoReqDiscard;
+    pThis->IMediaEx.pfnIoReqGetActiveCount      = drvHostBaseIoReqGetActiveCount;
+    pThis->IMediaEx.pfnIoReqGetSuspendedCount   = drvHostBaseIoReqGetSuspendedCount;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedStart = drvHostBaseIoReqQuerySuspendedStart;
+    pThis->IMediaEx.pfnIoReqQuerySuspendedNext  = drvHostBaseIoReqQuerySuspendedNext;
+    pThis->IMediaEx.pfnIoReqSuspendedSave       = drvHostBaseIoReqSuspendedSave;
+    pThis->IMediaEx.pfnIoReqSuspendedLoad       = drvHostBaseIoReqSuspendedLoad;
+
     /* IMount. */
     pThis->IMount.pfnUnmount                = drvHostBaseUnmount;
     pThis->IMount.pfnIsMounted              = drvHostBaseIsMounted;
@@ -755,7 +1080,7 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
     }
 
     /*
-     * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
+     * Get the IMediaPort & IMountNotify interfaces of the above driver/device.
      */
     pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
     if (!pThis->pDrvMediaPort)
@@ -763,6 +1088,7 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
         AssertMsgFailed(("Configuration error: No media port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
+    pThis->pDrvMediaExPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAEXPORT);
     pThis->pDrvMountNotify = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
 
     /*
