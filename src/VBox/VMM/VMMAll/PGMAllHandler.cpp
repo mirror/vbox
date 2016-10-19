@@ -123,7 +123,7 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType
 
 
 /**
- * Creates an physical access handler.
+ * Creates a physical access handler.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS when successfully installed.
@@ -193,15 +193,33 @@ int pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUser
 
 
 /**
+ * Duplicates a physical access handler.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS when successfully installed.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pPhysHandlerSrc The source handler to duplicate
+ * @param   ppPhysHandler   Where to return the access handler structure on
+ *                          success.
+ */
+int pgmHandlerPhysicalExDup(PVM pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler)
+{
+    return pgmHandlerPhysicalExCreate(pVM,
+                                      pPhysHandlerSrc->hType,
+                                      pPhysHandlerSrc->pvUserR3,
+                                      pPhysHandlerSrc->pvUserR0,
+                                      pPhysHandlerSrc->pvUserRC,
+                                      pPhysHandlerSrc->pszDesc,
+                                      ppPhysHandler);
+}
+
+
+/**
  * Register a access handler for a physical range.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS when successfully installed.
- * @retval  VINF_PGM_GCPHYS_ALIASED when the shadow PTs could be updated because
- *          the guest page aliased or/and mapped by multiple PTs. A CR3 sync has been
- *          flagged together with a pool clearing.
- * @retval  VERR_PGM_HANDLER_PHYSICAL_CONFLICT if the range conflicts with an existing
- *          one. A debug assertion is raised.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pPhysHandler    The physical handler.

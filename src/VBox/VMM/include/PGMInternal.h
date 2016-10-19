@@ -1708,12 +1708,8 @@ typedef struct PGMREGMMIORANGE
     RTR3PTR                             pvR3;
     /** Pointer to the next range - R3. */
     R3PTRTYPE(struct PGMREGMMIORANGE *) pNextR3;
-    /** Whether this is MMIO2 or plain MMIO. */
-    bool                                fMmio2;
-    /** Whether it's mapped or not. */
-    bool                                fMapped;
-    /** Whether it's overlapping or not. */
-    bool                                fOverlapping;
+    /** Flags (PGMREGMMIORANGE_F_XXX). */
+    uint16_t                            fFlags;
     /** The PCI region number.
      * @remarks This ASSUMES that nobody will ever really need to have multiple
      *          PCI devices with matching MMIO region numbers on a single device. */
@@ -1723,7 +1719,7 @@ typedef struct PGMREGMMIORANGE
     /** MMIO2 range identifier, for page IDs (PGMPAGE::s.idPage). */
     uint8_t                             idMmio2;
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
-    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 : 2];
+    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 7 : 3];
     /** Pointer to the physical handler for MMIO. */
     R3PTRTYPE(PPGMPHYSHANDLER)          pPhysHandlerR3;
     /** Live save per page tracking data for MMIO2. */
@@ -1734,6 +1730,21 @@ typedef struct PGMREGMMIORANGE
 AssertCompileMemberAlignment(PGMREGMMIORANGE, RamRange, 16);
 /** Pointer to a MMIO2 or pre-registered MMIO range. */
 typedef PGMREGMMIORANGE *PPGMREGMMIORANGE;
+
+/** @name PGMREGMMIORANGE_F_XXX - Registered MMIO range flags.
+ * @{ */
+/** Set if it's an MMIO2 range. */
+#define PGMREGMMIORANGE_F_MMIO2             UINT16_C(0x0001)
+/** Set if this is the first chunk in the MMIO2 range. */
+#define PGMREGMMIORANGE_F_FIRST_CHUNK       UINT16_C(0x0002)
+/** Set if this is the last chunk in the MMIO2 range. */
+#define PGMREGMMIORANGE_F_LAST_CHUNK        UINT16_C(0x0004)
+/** Set if the whole range is mapped. */
+#define PGMREGMMIORANGE_F_MAPPED            UINT16_C(0x0008)
+/** Set if it's overlapping, clear if not. */
+#define PGMREGMMIORANGE_F_OVERLAPPING       UINT16_C(0x0010)
+/** @} */
+
 
 /** @name Internal MMIO2 constants.
  * @{ */
@@ -4145,6 +4156,7 @@ DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs
 
 int             pgmHandlerPhysicalExCreate(PVM pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
                                            RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
+int             pgmHandlerPhysicalExDup(PVM pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExRegister(PVM pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 int             pgmHandlerPhysicalExDeregister(PVM pVM, PPGMPHYSHANDLER pPhysHandler);
 int             pgmHandlerPhysicalExDestroy(PVM pVM, PPGMPHYSHANDLER pHandler);

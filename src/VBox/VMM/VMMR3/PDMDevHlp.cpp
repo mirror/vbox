@@ -1369,8 +1369,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
             /*
              * Sanity check: Don't allow to register more than 2GB of the PCI MMIO space.
              */
-            AssertLogRelMsgReturn(cbRegion <= _2G,
-                                  ("caller='%s'/%d: %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, cbRegion),
+            AssertLogRelMsgReturn(cbRegion <= MM_MMIO_32_MAX,
+                                  ("caller='%s'/%d: %RGp (max %RGp)\n",
+                                   pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, (RTGCPHYS)MM_MMIO_32_MAX),
                                   VERR_OUT_OF_RANGE);
             break;
 
@@ -1379,8 +1380,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
             /*
              * Sanity check: Don't allow to register more than 64GB of the 64-bit PCI MMIO space.
              */
-            AssertLogRelMsgReturn(cbRegion <= 64*_1G64,
-                                  ("caller='%s'/%d: %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, cbRegion),
+            AssertLogRelMsgReturn(cbRegion <= MM_MMIO_64_MAX,
+                                  ("caller='%s'/%d: %RGp (max %RGp)\n",
+                                   pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, MM_MMIO_64_MAX),
                                   VERR_OUT_OF_RANGE);
             break;
 
