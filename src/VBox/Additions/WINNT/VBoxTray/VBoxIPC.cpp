@@ -200,9 +200,11 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
                                  &szPipeName[sizeof(VBOXTRAY_IPC_PIPE_PREFIX) - 1],
                                  sizeof(szPipeName) - sizeof(VBOXTRAY_IPC_PIPE_PREFIX) + 1,
                                  NULL /*pcbUser*/);
+        AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             rc = RTLocalIpcServerCreate(&pCtx->hServer, szPipeName, RTLOCALIPC_FLAGS_NATIVE_NAME);
+            AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
                 pCtx->pEnv = pEnv;
@@ -229,6 +231,9 @@ DECLCALLBACK(int) VBoxIPCInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 
 DECLCALLBACK(void) VBoxIPCStop(void *pInstance)
 {
+    /* Can be NULL if VBoxIPCInit failed. */
+    if (!pInstance)
+        return;
     AssertPtrReturnVoid(pInstance);
 
     LogFlowFunc(("Stopping pInstance=%p\n", pInstance));
