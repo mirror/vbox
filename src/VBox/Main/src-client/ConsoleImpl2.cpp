@@ -4257,18 +4257,6 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
-        /*
-         * Insert the SCSI driver for hotplug events on the SCSI/USB based storage controllers
-         * or for SATA if the new device is a CD/DVD drive.
-         */
-        if (   (fHotplug || !fAttachDetach)
-            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
-                || (enmBus == StorageBus_SATA && lType == DeviceType_DVD)))
-        {
-            InsertConfigString(pLunL0, "Driver", "SCSI");
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-        }
-
         ComPtr<IMedium> pMedium;
         hrc = pMediumAtt->COMGETTER(Medium)(pMedium.asOutParam());                          H();
 
@@ -4318,6 +4306,18 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         if (!pBwGroup.isNull())
         {
             hrc = pBwGroup->COMGETTER(Name)(strBwGroup.asOutParam());                       H();
+        }
+
+        /*
+         * Insert the SCSI driver for hotplug events on the SCSI/USB based storage controllers
+         * or for SATA if the new device is a CD/DVD drive.
+         */
+        if (   (fHotplug || !fAttachDetach)
+            && (   (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
+                || (enmBus == StorageBus_SATA && lType == DeviceType_DVD && !fPassthrough)))
+        {
+            InsertConfigString(pLunL0, "Driver", "SCSI");
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }
 
         rc = i_configMedium(pLunL0,
