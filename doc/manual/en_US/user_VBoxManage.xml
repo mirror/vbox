@@ -3178,9 +3178,10 @@ Virtual system 0:
 
     <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
                             --name &lt;name&gt;
-                            [--add &lt;ide/sata/scsi/floppy&gt;]
-                            [--controller &lt;LsiLogic|LSILogicSAS|BusLogic|
-                                          IntelAhci|PIIX3|PIIX4|ICH6|I82078|usb&gt;]
+                            [--add ide|sata|scsi|floppy|sas|usb|pcie]
+                            [--controller LSILogic|LSILogicSAS|BusLogic|
+                                          IntelAhci|PIIX3|PIIX4|ICH6|I82078|
+                                          USB|NVMe]
                             [--portcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]
