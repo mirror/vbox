@@ -22,15 +22,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_FLOPPY
-#ifdef RT_OS_LINUX
-# include <sys/ioctl.h>
-# include <linux/fd.h>
-# include <sys/fcntl.h>
-# include <errno.h>
-# elif defined(RT_OS_WINDOWS)
-# include <iprt/win/windows.h>
-# include <dbt.h>
-#endif
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -47,61 +38,6 @@
 #include "DrvHostBase.h"
 
 
-/**
- * Floppy driver instance data.
- */
-typedef struct DRVHOSTFLOPPY
-{
-    DRVHOSTBASE     Base;
-    /** Previous poll status. */
-    bool            fPrevDiskIn;
-
-} DRVHOSTFLOPPY, *PDRVHOSTFLOPPY;
-
-
-#ifdef RT_OS_LINUX
-/**
- * This thread will periodically poll the Floppy for media presence.
- *
- * @returns Ignored.
- * @param   ThreadSelf  Handle of this thread. Ignored.
- * @param   pvUser      Pointer to the driver instance structure.
- */
-static DECLCALLBACK(int) drvHostFloppyPoll(PDRVHOSTBASE pThis)
-{
-    PDRVHOSTFLOPPY          pThisFloppy = (PDRVHOSTFLOPPY)pThis;
-    floppy_drive_struct     DrvStat;
-    int rc = ioctl(RTFileToNative(pThis->hFileDevice), FDPOLLDRVSTAT, &DrvStat);
-    if (rc)
-        return RTErrConvertFromErrno(errno);
-
-    RTCritSectEnter(&pThis->CritSect);
-    bool fDiskIn = !(DrvStat.flags & (FD_VERIFY | FD_DISK_NEWCHANGE));
-    if (    fDiskIn
-        &&  !pThisFloppy->fPrevDiskIn)
-    {
-        if (pThis->fMediaPresent)
-            DRVHostBaseMediaNotPresent(pThis);
-        rc = DRVHostBaseMediaPresent(pThis);
-        if (RT_FAILURE(rc))
-        {
-            pThisFloppy->fPrevDiskIn = fDiskIn;
-            RTCritSectLeave(&pThis->CritSect);
-            return rc;
-        }
-    }
-
-    if (    !fDiskIn
-        &&  pThisFloppy->fPrevDiskIn
-        &&  pThis->fMediaPresent)
-        DRVHostBaseMediaNotPresent(pThis);
-    pThisFloppy->fPrevDiskIn = fDiskIn;
-
-    RTCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
-}
-#endif /* RT_OS_LINUX */
-
 
 /**
  * @copydoc FNPDMDRVCONSTRUCT
@@ -109,42 +45,13 @@ static DECLCALLBACK(int) drvHostFloppyPoll(PDRVHOSTBASE pThis)
 static DECLCALLBACK(int) drvHostFloppyConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PDRVHOSTFLOPPY pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTFLOPPY);
     LogFlow(("drvHostFloppyConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInitData(pDrvIns, pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0",
-                                 PDMMEDIATYPE_FLOPPY_1_44);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Override stuff.
-         */
-#ifdef RT_OS_LINUX
-        pThis->Base.pfnPoll         = drvHostFloppyPoll;
-#endif
-
-        /*
-         * 2nd init part.
-         */
-        rc = DRVHostBaseInitFinish(&pThis->Base);
-    }
-
-    if (RT_FAILURE(rc))
-    {
-        if (!pThis->Base.fAttachFailError)
-        {
-            /* Suppressing the attach failure error must not affect the normal
-             * DRVHostBaseDestruct, so reset this flag below before leaving. */
-            pThis->Base.fKeepInstance = true;
-            rc = VINF_SUCCESS;
-        }
-        DRVHostBaseDestruct(pDrvIns);
-        pThis->Base.fKeepInstance = false;
-    }
-
+    int rc = DRVHostBaseInit(pDrvIns, pCfg, "Path\0ReadOnly\0Interval\0Locked\0BIOSVisible\0",
+                             PDMMEDIATYPE_FLOPPY_1_44);
     LogFlow(("drvHostFloppyConstruct: returns %Rrc\n", rc));
     return rc;
 }
@@ -172,7 +79,7 @@ const PDMDRVREG g_DrvHostFloppy =
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
-    sizeof(DRVHOSTFLOPPY),
+    sizeof(DRVHOSTBASE),
     /* pfnConstruct */
     drvHostFloppyConstruct,
     /* pfnDestruct */

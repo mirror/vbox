@@ -32,6 +32,24 @@
 extern "C" char *getfullblkname(char *);
 
 #include <iprt/file.h>
+
+/**
+ * Host backend specific data.
+ */
+typedef struct DRVHOSTBASEOS
+{
+    /** The filehandle of the device. */
+    RTFILE                  hFileDevice;
+    /** The raw filehandle of the device. */
+    RTFILE                  hFileRawDevice;
+    /** Device name of raw device (RTStrFree). */
+    char                   *pszRawDeviceOpen;
+} DRVHOSTBASEOS;
+/** Pointer to the host backend specific data. */
+typedef DRVHOSTBASEOS *PDRVHOSBASEOS;
+AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
+
+#define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
 
 #ifdef VBOX_WITH_SUID_WRAPPER
@@ -39,6 +57,23 @@ extern "C" char *getfullblkname(char *);
  * the setuid permission set, which would run the user-SCSI ioctl and
  * return the value. BUT... this might be prohibitively slow.
  */
+
+/**
+ * Checks if the current user is authorized using Solaris' role-based access control.
+ * Made as a separate function with so that it need not be invoked each time we need
+ * to gain root access.
+ *
+ * @returns VBox error code.
+ */
+static int solarisCheckUserAuth()
+{
+    /* Uses Solaris' role-based access control (RBAC).*/
+    struct passwd *pPass = getpwuid(getuid());
+    if (pPass == NULL || chkauthattr("solaris.device.cdrw", pPass->pw_name) == 0)
+        return VERR_PERMISSION_DENIED;
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Setuid wrapper to gain root access.
@@ -147,7 +182,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     uid_t effUserID = geteuid();
     solarisEnterRootMode(&effUserID); /** @todo check return code when this really works. */
 #endif
-    rc = ioctl(RTFileToNative(pThis->hFileRawDevice), USCSICMD, &usc);
+    rc = ioctl(RTFileToNative(pThis->Os.hFileRawDevice), USCSICMD, &usc);
 #ifdef VBOX_WITH_SUID_WRAPPER
     solarisExitRootMode(&effUserID);
 #endif
@@ -174,36 +209,36 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
      * for secondary storage devices.
      */
     struct dk_minfo MediaInfo;
-    if (ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCGMEDIAINFO, &MediaInfo) == 0)
+    if (ioctl(RTFileToNative(pThis->Os.hFileRawDevice), DKIOCGMEDIAINFO, &MediaInfo) == 0)
     {
         *pcb = MediaInfo.dki_capacity * (uint64_t)MediaInfo.dki_lbsize;
         return VINF_SUCCESS;
     }
-    return RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+    return RTFileSeek(pThis->Os.hFileDevice, 0, RTFILE_SEEK_END, pcb);
 }
 
 
 DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    return RTFileReadAt(pThis->hFileDevice, off, pvBuf, cbRead, NULL);
+    return RTFileReadAt(pThis->Os.hFileDevice, off, pvBuf, cbRead, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseWriteOs(PDRVHOSTBASE pThis, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    return RTFileWriteAt(pThis->hFileDevice, off, pvBuf, cbWrite, NULL);
+    return RTFileWriteAt(pThis->Os.hFileDevice, off, pvBuf, cbWrite, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
 {
-    return RTFileFlush(pThis->hFileDevice);
+    return RTFileFlush(pThis->Os.hFileDevice);
 }
 
 
 DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
 {
-    int rc = ioctl(RTFileToNative(pThis->hFileRawDevice), fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
+    int rc = ioctl(RTFileToNative(pThis->Os.hFileRawDevice), fLock ? DKIOCLOCK : DKIOCUNLOCK, 0);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -220,7 +255,7 @@ DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
 
 DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
 {
-    int rc = ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCEJECT, 0);
+    int rc = ioctl(RTFileToNative(pThis->Os.hFileRawDevice), DKIOCEJECT, 0);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -245,7 +280,7 @@ DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaC
     /* Need to pass the previous state and DKIO_NONE for the first time. */
     static dkio_state s_DeviceState = DKIO_NONE;
     dkio_state PreviousState = s_DeviceState;
-    int rc = ioctl(RTFileToNative(pThis->hFileRawDevice), DKIOCSTATE, &s_DeviceState);
+    int rc = ioctl(RTFileToNative(pThis->Os.hFileRawDevice), DKIOCSTATE, &s_DeviceState);
     if (rc == 0)
     {
         *pfMediaPresent = (s_DeviceState == DKIO_INSERTED);
@@ -257,38 +292,105 @@ DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaC
 }
 
 
-DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+DECLHIDDEN(void) drvHostBaseInitOs(PDRVHOSTBASE pThis)
 {
-    return RTSemEventSignal(pThis->EventPoller);
+    pThis->Os.hFileDevice      = NIL_RTFILE;
+    pThis->Os.hFileRawDevice   = NIL_RTFILE;
+    pThis->Os.pszRawDeviceOpen = NULL;
+}
+
+
+DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly)
+{
+#ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
+    if (   (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
+        && pThis->IMedia.pfnSendCmd)
+    {
+        rc = solarisCheckUserAuth();
+        if (RT_FAILURE(rc))
+        {
+            Log(("DVD: solarisCheckUserAuth failed. Permission denied!\n"));
+            return rc;
+        }
+    }
+#endif /* VBOX_WITH_SUID_WRAPPER */
+
+    char *pszBlockDevName = getfullblkname(pThis->pszDevice);
+    if (!pszBlockDevName)
+        return VERR_NO_MEMORY;
+    pThis->pszDeviceOpen = RTStrDup(pszBlockDevName);  /* for RTStrFree() */
+    free(pszBlockDevName);
+    pThis->Os.pszRawDeviceOpen = RTStrDup(pThis->pszDevice);
+    if (!pThis->pszDeviceOpen || !pThis->Os.pszRawDeviceOpen);
+        return VERR_NO_MEMORY;
+
+    unsigned fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE)
+                    | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK;
+    int rc = RTFileOpen(&pThis->Os.hFileDevice, pThis->pszDeviceOpen, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileOpen(&pThis->Os.hFileRawDevice, pThis->Os.pszRawDeviceOpen, fFlags);
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->Os.pszRawDeviceOpen, rc));
+        RTFileClose(pThis->Os.hFileDevice);
+    }
+    else
+        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszDeviceOpen, rc));
+    return rc;
+}
+
+
+DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+    return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
+        return true;
+
+    AssertMsgFailed(("Solaris supports only CD/DVD host drive access\n"));
+    return false;
 }
 
 
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->EventPoller != NULL)
+    /*
+     * Unlock the drive if we've locked it or we're in passthru mode.
+     */
+    if (    pThis->fLocked
+        &&  pThis->Os.hFileDevice != NIL_RTFILE
+        &&  pThis->pfnDoLock)
     {
-        RTSemEventDestroy(pThis->EventPoller);
-        pThis->EventPoller = NULL;
+        int rc = pThis->pfnDoLock(pThis, false);
+        if (RT_SUCCESS(rc))
+            pThis->fLocked = false;
     }
 
-    if (pThis->hFileDevice != NIL_RTFILE)
+    if (pThis->Os.hFileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pThis->hFileDevice);
+        int rc = RTFileClose(pThis->Os.hFileDevice);
         AssertRC(rc);
-        pThis->hFileDevice = NIL_RTFILE;
+        pThis->Os.hFileDevice = NIL_RTFILE;
     }
 
-    if (pThis->hFileRawDevice != NIL_RTFILE)
+    if (pThis->Os.hFileRawDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pThis->hFileRawDevice);
+        int rc = RTFileClose(pThis->Os.hFileRawDevice);
         AssertRC(rc);
-        pThis->hFileRawDevice = NIL_RTFILE;
+        pThis->Os.hFileRawDevice = NIL_RTFILE;
     }
 
-    if (pThis->pszRawDeviceOpen)
+    if (pThis->Os.pszRawDeviceOpen)
     {
-        RTStrFree(pThis->pszRawDeviceOpen);
-        pThis->pszRawDeviceOpen = NULL;
+        RTStrFree(pThis->Os.pszRawDeviceOpen);
+        pThis->Os.pszRawDeviceOpen = NULL;
     }
 }
 

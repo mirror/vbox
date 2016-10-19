@@ -61,10 +61,6 @@ typedef struct DRVHOSTBASE
     char                   *pszDevice;
     /** Device name to open (RTStrFree). */
     char                   *pszDeviceOpen;
-#ifdef RT_OS_SOLARIS
-    /** Device name of raw device (RTStrFree). */
-    char                   *pszRawDeviceOpen;
-#endif
     /** Uuid of the drive. */
     RTUUID                  Uuid;
 
@@ -84,21 +80,11 @@ typedef struct DRVHOSTBASE
     /** The size of the media currently in the drive.
      * This is invalid if no drive is in the drive. */
     uint64_t volatile       cbSize;
-#if !defined(RT_OS_DARWIN)
-    /** The filehandle of the device. */
-    RTFILE                  hFileDevice;
-#endif
-#ifdef RT_OS_SOLARIS
-    /** The raw filehandle of the device. */
-    RTFILE                  hFileRawDevice;
-#endif
 
     /** Handle of the poller thread. */
     RTTHREAD                ThreadPoller;
-#ifndef RT_OS_WINDOWS
     /** Event semaphore the thread will wait on. */
     RTSEMEVENT              EventPoller;
-#endif
     /** The poller interval. */
     RTMSINTERVAL            cMilliesPoller;
     /** The shutdown indicator. */
@@ -108,48 +94,6 @@ typedef struct DRVHOSTBASE
     PDMMEDIAGEOMETRY        PCHSGeometry;
     /** BIOS LCHS geometry. */
     PDMMEDIAGEOMETRY        LCHSGeometry;
-
-    /** The number of errors that could go into the release log. (flood gate) */
-    uint32_t                cLogRelErrors;
-
-#ifdef RT_OS_DARWIN
-    /** The master port. */
-    mach_port_t             MasterPort;
-    /** The MMC-2 Device Interface. (This is only used to get the scsi task interface.) */
-    MMCDeviceInterface    **ppMMCDI;
-    /** The SCSI Task Device Interface. */
-    SCSITaskDeviceInterface **ppScsiTaskDI;
-    /** The block size. Set when querying the media size. */
-    uint32_t                cbBlock;
-    /** The disk arbitration session reference. NULL if we didn't have to claim & unmount the device. */
-    DASessionRef            pDASession;
-    /** The disk arbitration disk reference. NULL if we didn't have to claim & unmount the device. */
-    DADiskRef               pDADisk;
-#endif
-
-#ifdef RT_OS_WINDOWS
-    /** Handle to the window we use to catch the device change broadcast messages. */
-    volatile HWND           hwndDeviceChange;
-    /** The unit mask. */
-    DWORD                   fUnitMask;
-#endif
-
-#ifdef RT_OS_LINUX
-    /** Double buffer required for ioctl with the Linux kernel as long as we use
-     * remap_pfn_range() instead of vm_insert_page(). */
-    uint8_t                *pbDoubleBuffer;
-#endif
-
-#ifdef RT_OS_FREEBSD
-    /** The block size. Set when querying the media size. */
-    uint32_t                cbBlock;
-    /** SCSI bus number. */
-    path_id_t               ScsiBus;
-    /** target ID of the passthrough device. */
-    target_id_t             ScsiTargetID;
-    /** LUN of the passthrough device. */
-    lun_id_t                ScsiLunID;
-#endif
 
     /**
      * Performs the locking / unlocking of the device.
@@ -162,32 +106,19 @@ typedef struct DRVHOSTBASE
      */
     DECLCALLBACKMEMBER(int, pfnDoLock)(PDRVHOSTBASE pThis, bool fLock);
 
-    /**
-     * Queries the media size.
-     * Can also be used to perform actions on media change.
-     *
-     * This callback pointer should be set to NULL if the default action is fine for this device.
-     *
-     * @returns VBox status code.
-     * @param   pThis       Pointer to the instance data.
-     * @param   pcb         Where to store the media size in bytes.
-     */
-    DECLCALLBACKMEMBER(int, pfnGetMediaSize)(PDRVHOSTBASE pThis, uint64_t *pcb);
-
-    /***
-     * Performs the polling operation.
-     *
-     * @returns VBox status code. (Failure means retry.)
-     * @param   pThis       Pointer to the instance data.
-     */
-    DECLCALLBACKMEMBER(int, pfnPoll)(PDRVHOSTBASE pThis);
+    union
+    {
+#ifdef DRVHOSTBASE_OS_INT_DECLARED
+        DRVHOSTBASEOS       Os;
+#endif
+        uint8_t             abPadding[64];
+    };
 } DRVHOSTBASE;
 
 
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType);
-int DRVHostBaseInitFinish(PDRVHOSTBASE pThis);
-int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
-void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
+DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType);
+DECLHIDDEN(int) DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
+DECLHIDDEN(void) DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);
 DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns);
 
 DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
@@ -199,15 +130,12 @@ DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock);
 DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis);
 
+DECLHIDDEN(void) drvHostBaseInitOs(PDRVHOSTBASE pThis);
+DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly);
+DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent);
-DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis);
+DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis);
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis);
-
-/** Makes a PDRVHOSTBASE out of a PPDMIMOUNT. */
-#define PDMIMOUNT_2_DRVHOSTBASE(pInterface)        ( (PDRVHOSTBASE)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IMount)) )
-
-/** Makes a PDRVHOSTBASE out of a PPDMIMEDIA. */
-#define PDMIMEDIA_2_DRVHOSTBASE(pInterface)        ( (PDRVHOSTBASE)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTBASE, IMedia)) )
 
 RT_C_DECLS_END
 

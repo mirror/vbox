@@ -38,6 +38,24 @@
 #include <iprt/file.h>
 #include <VBox/scsi.h>
 
+/**
+ * Host backend specific data.
+ */
+typedef struct DRVHOSTBASEOS
+{
+    /** The filehandle of the device. */
+    RTFILE                  hFileDevice;
+    /** Double buffer required for ioctl with the Linux kernel as long as we use
+     * remap_pfn_range() instead of vm_insert_page(). */
+    uint8_t                *pbDoubleBuffer;
+    /** Previous disk inserted indicator for the media polling on floppy drives. */
+    bool                   fPrevDiskIn;
+} DRVHOSTBASEOS;
+/** Pointer to the host backend specific data. */
+typedef DRVHOSTBASEOS *PDRVHOSBASEOS;
+AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
+
+#define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
 
 DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
@@ -52,6 +70,14 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     Assert(pbSense || !cbSense); RT_NOREF(cbSense);
     AssertPtr(pbCmd);
     Assert(cbCmd <= 16 && cbCmd >= 1);
+
+    /* Allocate the temporary buffer lazily. */
+    if(RT_UNLIKELY(!pThis->Os.pbDoubleBuffer))
+    {
+        pThis->Os.pbDoubleBuffer = (uint8_t *)RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
+        if (!pThis->Os.pbDoubleBuffer)
+            return VERR_NO_MEMORY;
+    }
 
     int rc = VERR_GENERAL_FAILURE;
     int direction;
@@ -73,13 +99,13 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
              * prevent that. Returning previous buffer contents may cause
              * security problems inside the guest OS, if users can issue
              * commands to the CDROM device. */
-            memset(pThis->pbDoubleBuffer, '\0', *pcbBuf);
+            memset(pThis->Os.pbDoubleBuffer, '\0', *pcbBuf);
             direction = CGC_DATA_READ;
             break;
         case PDMMEDIATXDIR_TO_DEVICE:
             Assert(*pcbBuf != 0);
             Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
-            memcpy(pThis->pbDoubleBuffer, pvBuf, *pcbBuf);
+            memcpy(pThis->Os.pbDoubleBuffer, pvBuf, *pcbBuf);
             direction = CGC_DATA_WRITE;
             break;
         default:
@@ -88,7 +114,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     }
     memset(&cgc, '\0', sizeof(cgc));
     memcpy(cgc.cmd, pbCmd, RT_MIN(CDROM_PACKET_SIZE, cbCmd));
-    cgc.buffer = (unsigned char *)pThis->pbDoubleBuffer;
+    cgc.buffer = (unsigned char *)pThis->Os.pbDoubleBuffer;
     cgc.buflen = *pcbBuf;
     cgc.stat = 0;
     Assert(cbSense >= sizeof(struct request_sense));
@@ -96,7 +122,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     cgc.data_direction = direction;
     cgc.quiet = false;
     cgc.timeout = cTimeoutMillies;
-    rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_SEND_PACKET, &cgc);
+    rc = ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROM_SEND_PACKET, &cgc);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -114,7 +140,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     switch (enmTxDir)
     {
         case PDMMEDIATXDIR_FROM_DEVICE:
-            memcpy(pvBuf, pThis->pbDoubleBuffer, *pcbBuf);
+            memcpy(pvBuf, pThis->Os.pbDoubleBuffer, *pcbBuf);
             break;
         default:
             ;
@@ -133,7 +159,7 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
 
     if (PDMMEDIATYPE_IS_FLOPPY(pThis->enmType))
     {
-        rc = ioctl(RTFileToNative(pThis->hFileDevice), FDFLUSH);
+        rc = ioctl(RTFileToNative(pThis->Os.hFileDevice), FDFLUSH);
         if (rc)
         {
             rc = RTErrConvertFromErrno (errno);
@@ -142,7 +168,7 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
         }
 
         floppy_drive_struct DrvStat;
-        rc = ioctl(RTFileToNative(pThis->hFileDevice), FDGETDRVSTAT, &DrvStat);
+        rc = ioctl(RTFileToNative(pThis->Os.hFileDevice), FDGETDRVSTAT, &DrvStat);
         if (rc)
         {
             rc = RTErrConvertFromErrno(errno);
@@ -150,13 +176,13 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
             return rc;
         }
         pThis->fReadOnly = !(DrvStat.flags & FD_DISK_WRITABLE);
-        rc = RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+        rc = RTFileSeek(pThis->Os.hFileDevice, 0, RTFILE_SEEK_END, pcb);
     }
     else if (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
     {
         /* Clear the media-changed-since-last-call-thingy just to be on the safe side. */
-        ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT);
-        rc = RTFileSeek(pThis->hFileDevice, 0, RTFILE_SEEK_END, pcb);
+        ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT);
+        rc = RTFileSeek(pThis->Os.hFileDevice, 0, RTFILE_SEEK_END, pcb);
     }
 
     return rc;
@@ -165,25 +191,25 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
 
 DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    return RTFileReadAt(pThis->hFileDevice, off, pvBuf, cbRead, NULL);
+    return RTFileReadAt(pThis->Os.hFileDevice, off, pvBuf, cbRead, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseWriteOs(PDRVHOSTBASE pThis, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    return RTFileWriteAt(pThis->hFileDevice, off, pvBuf, cbWrite, NULL);
+    return RTFileWriteAt(pThis->Os.hFileDevice, off, pvBuf, cbWrite, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
 {
-    return RTFileFlush(pThis->hFileDevice);
+    return RTFileFlush(pThis->Os.hFileDevice);
 }
 
 
 DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
 {
-    int rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_LOCKDOOR, (int)fLock);
+    int rc = ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROM_LOCKDOOR, (int)fLock);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -200,7 +226,7 @@ DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
 
 DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
 {
-    int rc = ioctl(RTFileToNative(pThis->hFileDevice), CDROMEJECT, 0);
+    int rc = ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROMEJECT, 0);
     if (rc < 0)
     {
         if (errno == EBUSY)
@@ -217,40 +243,119 @@ DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
 
 DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent)
 {
-    *pfMediaPresent = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
-    *pfMediaChanged = false;
-    if (pThis->fMediaPresent != *pfMediaPresent)
-        *pfMediaChanged = ioctl(RTFileToNative(pThis->hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
+    int rc = VINF_SUCCESS;
 
-    return VINF_SUCCESS;
+    if (PDMMEDIATYPE_IS_FLOPPY(pThis->enmType))
+    {
+        floppy_drive_struct DrvStat;
+        int rcLnx = ioctl(RTFileToNative(pThis->Os.hFileDevice), FDPOLLDRVSTAT, &DrvStat);
+        if (!rcLnx)
+        {
+            bool fDiskIn = !(DrvStat.flags & (FD_VERIFY | FD_DISK_NEWCHANGE));
+            *pfMediaPresent = fDiskIn;
+
+            if (fDiskIn != pThis->Os.fPrevDiskIn)
+                *pfMediaChanged = true;
+
+            pThis->Os.fPrevDiskIn = fDiskIn;
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
+    else
+    {
+        *pfMediaPresent = ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROM_DRIVE_STATUS, CDSL_CURRENT) == CDS_DISC_OK;
+        *pfMediaChanged = false;
+        if (pThis->fMediaPresent != *pfMediaPresent)
+            *pfMediaChanged = ioctl(RTFileToNative(pThis->Os.hFileDevice), CDROM_MEDIA_CHANGED, CDSL_CURRENT) == 1;
+    }
+
+    return rc;
 }
 
 
-DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+DECLHIDDEN(void) drvHostBaseInitOs(PDRVHOSTBASE pThis)
 {
-    return RTSemEventSignal(pThis->EventPoller);
+    pThis->Os.hFileDevice    = NIL_RTFILE;
+    pThis->Os.pbDoubleBuffer = NULL;
+    pThis->Os.fPrevDiskIn    = false;
+}
+
+
+DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly)
+{
+    uint32_t fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK;
+    return RTFileOpen(&pThis->Os.hFileDevice, pThis->pszDevice, fFlags);
+}
+
+
+DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis)
+{
+    /*
+     * Need to re-open the device because it will kill off any cached data
+     * that Linux for some peculiar reason thinks should survive a media change.
+     */
+    if (pThis->Os.hFileDevice != NIL_RTFILE)
+    {
+        RTFileClose(pThis->Os.hFileDevice);
+        pThis->Os.hFileDevice = NIL_RTFILE;
+    }
+    int rc = drvHostBaseOpenOs(pThis, pThis->fReadOnlyConfig);
+    if (RT_FAILURE(rc))
+    {
+        if (!pThis->fReadOnlyConfig)
+        {
+            LogFlow(("%s-%d: drvHostBaseMediaRefreshOs: '%s' - retry readonly (%Rrc)\n",
+                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice, rc));
+            rc = drvHostBaseOpenOs(pThis, true);
+        }
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("%s-%d: failed to open device '%s', rc=%Rrc\n",
+                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice, rc));
+            return rc;
+        }
+        pThis->fReadOnly = true;
+    }
+    else
+        pThis->fReadOnly = pThis->fReadOnlyConfig;
+
+    return rc;
+}
+
+
+DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+    return true; /* On Linux we always use media polling. */
 }
 
 
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->pbDoubleBuffer)
+    /*
+     * Unlock the drive if we've locked it or we're in passthru mode.
+     */
+    if (    pThis->fLocked
+        &&  pThis->Os.hFileDevice != NIL_RTFILE
+        &&  pThis->pfnDoLock)
     {
-        RTMemFree(pThis->pbDoubleBuffer);
-        pThis->pbDoubleBuffer = NULL;
+        int rc = pThis->pfnDoLock(pThis, false);
+        if (RT_SUCCESS(rc))
+            pThis->fLocked = false;
     }
 
-    if (pThis->EventPoller != NULL)
+    if (pThis->Os.pbDoubleBuffer)
     {
-        RTSemEventDestroy(pThis->EventPoller);
-        pThis->EventPoller = NULL;
+        RTMemFree(pThis->Os.pbDoubleBuffer);
+        pThis->Os.pbDoubleBuffer = NULL;
     }
 
-    if (pThis->hFileDevice != NIL_RTFILE)
+    if (pThis->Os.hFileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pThis->hFileDevice);
+        int rc = RTFileClose(pThis->Os.hFileDevice);
         AssertRC(rc);
-        pThis->hFileDevice = NIL_RTFILE;
+        pThis->Os.hFileDevice = NIL_RTFILE;
     }
 }
 

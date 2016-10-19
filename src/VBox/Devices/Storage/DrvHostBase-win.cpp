@@ -76,10 +76,156 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
         /*IN*/ ULONG                Length,
         /*IN*/ FS_INFORMATION_CLASS FileSystemInformationClass );
 
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <VBox/scsi.h>
 
+/**
+ * Host backend specific data.
+ */
+typedef struct DRVHOSTBASEOS
+{
+    /** The filehandle of the device. */
+    RTFILE                  hFileDevice;
+    /** Handle to the window we use to catch the device change broadcast messages. */
+    volatile HWND           hwndDeviceChange;
+    /** The unit mask. */
+    DWORD                   fUnitMask;
+    /** Handle of the poller thread. */
+    RTTHREAD                hThrdMediaChange;
+} DRVHOSTBASEOS;
+/** Pointer to the host backend specific data. */
+typedef DRVHOSTBASEOS *PDRVHOSBASEOS;
+AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
+
+#define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
+
+
+/**
+ * Window procedure for the invisible window used to catch the WM_DEVICECHANGE broadcasts.
+ */
+static LRESULT CALLBACK DeviceChangeWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    Log2(("DeviceChangeWindowProc: hwnd=%08x uMsg=%08x\n", hwnd, uMsg));
+    if (uMsg == WM_DESTROY)
+    {
+        PDRVHOSTBASE pThis = (PDRVHOSTBASE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+        if (pThis)
+            ASMAtomicXchgSize(&pThis->Os.hwndDeviceChange, NULL);
+        PostQuitMessage(0);
+    }
+
+    if (uMsg != WM_DEVICECHANGE)
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+
+    PDEV_BROADCAST_HDR  lpdb = (PDEV_BROADCAST_HDR)lParam;
+    PDRVHOSTBASE        pThis = (PDRVHOSTBASE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    Assert(pThis);
+    if (pThis == NULL)
+        return 0;
+
+    switch (wParam)
+    {
+        case DBT_DEVICEARRIVAL:
+        case DBT_DEVICEREMOVECOMPLETE:
+            // Check whether a CD or DVD was inserted into or removed from a drive.
+            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME)
+            {
+                PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
+                if (    (lpdbv->dbcv_flags & DBTF_MEDIA)
+                    &&  (pThis->Os.fUnitMask & lpdbv->dbcv_unitmask))
+                {
+                    RTCritSectEnter(&pThis->CritSect);
+                    if (wParam == DBT_DEVICEARRIVAL)
+                    {
+                        int cRetries = 10;
+                        int rc = DRVHostBaseMediaPresent(pThis);
+                        while (RT_FAILURE(rc) && cRetries-- > 0)
+                        {
+                            RTThreadSleep(50);
+                            rc = DRVHostBaseMediaPresent(pThis);
+                        }
+                    }
+                    else
+                        DRVHostBaseMediaNotPresent(pThis);
+                    RTCritSectLeave(&pThis->CritSect);
+                }
+            }
+            break;
+    }
+    return TRUE;
+}
+
+
+/**
+ * This thread will wait for changed media notificatons.
+ *
+ * @returns Ignored.
+ * @param   ThreadSelf  Handle of this thread. Ignored.
+ * @param   pvUser      Pointer to the driver instance structure.
+ */
+static DECLCALLBACK(int) drvHostBaseMediaThreadWin(RTTHREAD ThreadSelf, void *pvUser)
+{
+    PDRVHOSTBASE pThis = (PDRVHOSTBASE)pvUser;
+    LogFlow(("%s-%d: drvHostBaseMediaThreadWin: ThreadSelf=%p pvUser=%p\n",
+             pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, ThreadSelf, pvUser));
+    static WNDCLASS s_classDeviceChange = {0};
+    static ATOM     s_hAtomDeviceChange = 0;
+
+    /*
+     * Register custom window class.
+     */
+    if (s_hAtomDeviceChange == 0)
+    {
+        memset(&s_classDeviceChange, 0, sizeof(s_classDeviceChange));
+        s_classDeviceChange.lpfnWndProc   = DeviceChangeWindowProc;
+        s_classDeviceChange.lpszClassName = "VBOX_DeviceChangeClass";
+        s_classDeviceChange.hInstance     = GetModuleHandle("VBoxDD.dll");
+        Assert(s_classDeviceChange.hInstance);
+        s_hAtomDeviceChange = RegisterClassA(&s_classDeviceChange);
+        Assert(s_hAtomDeviceChange);
+    }
+
+    /*
+     * Create Window w/ the pThis as user data.
+     */
+    HWND hwnd = CreateWindow((LPCTSTR)s_hAtomDeviceChange, "", WS_POPUP, 0, 0, 0, 0, 0, 0, s_classDeviceChange.hInstance, 0);
+    AssertMsg(hwnd, ("CreateWindow failed with %d\n", GetLastError()));
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
+
+    /*
+     * Signal the waiting EMT thread that everything went fine.
+     */
+    ASMAtomicXchgPtr((void * volatile *)&pThis->Os.hwndDeviceChange, hwnd);
+    RTThreadUserSignal(ThreadSelf);
+    if (!hwnd)
+    {
+        LogFlow(("%s-%d: drvHostBaseMediaThreadWin: returns VERR_GENERAL_FAILURE\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
+        return VERR_GENERAL_FAILURE;
+    }
+    LogFlow(("%s-%d: drvHostBaseMediaThreadWin: Created hwndDeviceChange=%p\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, hwnd));
+
+    /*
+     * Message pump.
+     */
+    MSG         Msg;
+    BOOL        fRet;
+    while ((fRet = GetMessage(&Msg, NULL, 0, 0)) != FALSE)
+    {
+        if (fRet != -1)
+        {
+            TranslateMessage(&Msg);
+            DispatchMessage(&Msg);
+        }
+        //else: handle the error and possibly exit
+    }
+    Assert(!pThis->Os.hwndDeviceChange);
+    /* (Don't clear the thread handle here, the destructor thread is using it to wait.) */
+    LogFlow(("%s-%d: drvHostBaseMediaThreadWin: returns VINF_SUCCESS\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
+    return VINF_SUCCESS;
+}
+
 
 DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, size_t cbCmd, PDMMEDIATXDIR enmTxDir,
                                      void *pvBuf, uint32_t *pcbBuf, uint8_t *pbSense, size_t cbSense, uint32_t cTimeoutMillies)
@@ -138,7 +284,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     Assert(cbSense <= sizeof(Req.aSense));
     Req.spt.SenseInfoLength = (UCHAR)RT_MIN(sizeof(Req.aSense), cbSense);
     Req.spt.SenseInfoOffset = RT_OFFSETOF(struct _REQ, aSense);
-    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_SCSI_PASS_THROUGH_DIRECT,
+    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->Os.hFileDevice), IOCTL_SCSI_PASS_THROUGH_DIRECT,
                         &Req, sizeof(Req), &Req, sizeof(Req), &cbReturned, NULL))
     {
         if (cbReturned > RT_OFFSETOF(struct _REQ, aSense))
@@ -170,7 +316,7 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
         int             cbSectors;
 
         memset(&geom, 0, sizeof(geom));
-        rc = DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_DISK_GET_DRIVE_GEOMETRY,
+        rc = DeviceIoControl((HANDLE)RTFileToNative(pThis->Os.hFileDevice), IOCTL_DISK_GET_DRIVE_GEOMETRY,
                              NULL, 0, &geom, sizeof(geom), &cbBytesReturned,  NULL);
         if (rc) {
             cbSectors = geom.Cylinders.QuadPart * geom.TracksPerCylinder * geom.SectorsPerTrack;
@@ -193,13 +339,13 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
         /* use NT api, retry a few times if the media is being verified. */
         IO_STATUS_BLOCK             IoStatusBlock = {0};
         FILE_FS_SIZE_INFORMATION    FsSize= {0};
-        NTSTATUS rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+        NTSTATUS rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->Os.hFileDevice),  &IoStatusBlock,
                                                      &FsSize, sizeof(FsSize), FileFsSizeInformation);
         int cRetries = 5;
         while (rcNt == STATUS_VERIFY_REQUIRED && cRetries-- > 0)
         {
             RTThreadSleep(10);
-            rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->hFileDevice),  &IoStatusBlock,
+            rcNt = NtQueryVolumeInformationFile((HANDLE)RTFileToNative(pThis->Os.hFileDevice),  &IoStatusBlock,
                                                 &FsSize, sizeof(FsSize), FileFsSizeInformation);
         }
         if (rcNt >= 0)
@@ -223,19 +369,19 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
 
 DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    return RTFileReadAt(pThis->hFileDevice, off, pvBuf, cbRead, NULL);
+    return RTFileReadAt(pThis->Os.hFileDevice, off, pvBuf, cbRead, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseWriteOs(PDRVHOSTBASE pThis, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    return RTFileWriteAt(pThis->hFileDevice, off, pvBuf, cbWrite, NULL);
+    return RTFileWriteAt(pThis->Os.hFileDevice, off, pvBuf, cbWrite, NULL);
 }
 
 
 DECLHIDDEN(int) drvHostBaseFlushOs(PDRVHOSTBASE pThis)
 {
-    return RTFileFlush(pThis->hFileDevice);
+    return RTFileFlush(pThis->Os.hFileDevice);
 }
 
 
@@ -244,7 +390,7 @@ DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
     PREVENT_MEDIA_REMOVAL PreventMediaRemoval = {fLock};
     DWORD cbReturned;
     int rc;
-    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->hFileDevice), IOCTL_STORAGE_MEDIA_REMOVAL,
+    if (DeviceIoControl((HANDLE)RTFileToNative(pThis->Os.hFileDevice), IOCTL_STORAGE_MEDIA_REMOVAL,
                         &PreventMediaRemoval, sizeof(PreventMediaRemoval),
                         NULL, 0, &cbReturned,
                         NULL))
@@ -260,7 +406,7 @@ DECLHIDDEN(int) drvHostBaseDoLockOs(PDRVHOSTBASE pThis, bool fLock)
 DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
 {
     int rc = VINF_SUCCESS;
-    RTFILE hFileDevice = pThis->hFileDevice;
+    RTFILE hFileDevice = pThis->Os.hFileDevice;
     if (hFileDevice == NIL_RTFILE) /* obsolete crap */
         rc = RTFileOpen(&hFileDevice, pThis->pszDeviceOpen, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
@@ -276,7 +422,7 @@ DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
             rc = RTErrConvertFromWin32(GetLastError());
 
         /* clean up handle */
-        if (hFileDevice != pThis->hFileDevice)
+        if (hFileDevice != pThis->Os.hFileDevice)
             RTFileClose(hFileDevice);
     }
     else
@@ -286,29 +432,143 @@ DECLHIDDEN(int) drvHostBaseEjectOs(PDRVHOSTBASE pThis)
 }
 
 
+DECLHIDDEN(void) drvHostBaseInitOs(PDRVHOSTBASE pThis)
+{
+    pThis->Os.hFileDevice      = NIL_RTFILE;
+    pThis->Os.hwndDeviceChange = NULL;
+    pThis->Os.hThrdMediaChange = NIL_RTTHREAD;
+}
+
+
+DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly)
+{
+    UINT uDriveType = GetDriveType(pThis->pszDevice);
+    switch (pThis->enmType)
+    {
+        case PDMMEDIATYPE_FLOPPY_360:
+        case PDMMEDIATYPE_FLOPPY_720:
+        case PDMMEDIATYPE_FLOPPY_1_20:
+        case PDMMEDIATYPE_FLOPPY_1_44:
+        case PDMMEDIATYPE_FLOPPY_2_88:
+        case PDMMEDIATYPE_FLOPPY_FAKE_15_6:
+        case PDMMEDIATYPE_FLOPPY_FAKE_63_5:
+            if (uDriveType != DRIVE_REMOVABLE)
+            {
+                AssertMsgFailed(("Configuration error: '%s' is not a floppy (type=%d)\n",
+                                 pThis->pszDevice, uDriveType));
+                return VERR_INVALID_PARAMETER;
+            }
+            break;
+        case PDMMEDIATYPE_CDROM:
+        case PDMMEDIATYPE_DVD:
+            if (uDriveType != DRIVE_CDROM)
+            {
+                AssertMsgFailed(("Configuration error: '%s' is not a cdrom (type=%d)\n",
+                                 pThis->pszDevice, uDriveType));
+                return VERR_INVALID_PARAMETER;
+            }
+            break;
+        case PDMMEDIATYPE_HARD_DISK:
+        default:
+            AssertMsgFailed(("enmType=%d\n", pThis->enmType));
+            return VERR_INVALID_PARAMETER;
+    }
+
+    int iBit = RT_C_TO_UPPER(pThis->pszDevice[0]) - 'A';
+    if (    iBit > 'Z' - 'A'
+        ||  pThis->pszDevice[1] != ':'
+        ||  pThis->pszDevice[2])
+    {
+        AssertMsgFailed(("Configuration error: Invalid drive specification: '%s'\n", pThis->pszDevice));
+        return VERR_INVALID_PARAMETER;
+    }
+    pThis->Os.fUnitMask = 1 << iBit;
+    RTStrAPrintf(&pThis->pszDeviceOpen, "\\\\.\\%s", pThis->pszDevice);
+    if (!pThis->pszDeviceOpen)
+        return VERR_NO_MEMORY;
+
+    uint32_t fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
+    int rc = RTFileOpen(&pThis->Os.hFileDevice, pThis->pszDeviceOpen, fFlags);
+
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Start the thread which will wait for the media change events.
+         */
+        rc = RTThreadCreate(&pThis->Os.hThrdMediaChange, drvHostBaseMediaThreadWin, pThis, 0,
+                            RTTHREADTYPE_INFREQUENT_POLLER, RTTHREADFLAGS_WAITABLE, "DVDMEDIA");
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to create poller thread. rc=%Rrc\n", rc));
+            return rc;
+        }
+
+        /*
+         * Wait for the thread to start up (!w32:) and do one detection loop.
+         */
+        rc = RTThreadUserWait(pThis->Os.hThrdMediaChange, 10000);
+        AssertRC(rc);
+
+        if (!pThis->Os.hwndDeviceChange)
+            return VERR_GENERAL_FAILURE;
+
+        DRVHostBaseMediaPresent(pThis);
+    }
+
+    return rc;
+}
+
+
+DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+    return VINF_SUCCESS;
+}
+
+
 DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->hwndDeviceChange)
-        PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
+    if (pThis->Os.hwndDeviceChange)
+        PostMessage(pThis->Os.hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
 
     return VINF_SUCCESS;
 }
 
 
+DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
+{
+    /* For Windows we alwys use an internal approach. */
+    RT_NOREF(pThis);
+    return false;
+}
+
+
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->hwndDeviceChange)
+    /*
+     * Unlock the drive if we've locked it or we're in passthru mode.
+     */
+    if (    pThis->fLocked
+        &&  pThis->Os.hFileDevice != NIL_RTFILE
+        &&  pThis->pfnDoLock)
     {
-        if (SetWindowLongPtr(pThis->hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
-            PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
-        pThis->hwndDeviceChange = NULL;
+        int rc = pThis->pfnDoLock(pThis, false);
+        if (RT_SUCCESS(rc))
+            pThis->fLocked = false;
     }
 
-    if (pThis->hFileDevice != NIL_RTFILE)
+    if (pThis->Os.hwndDeviceChange)
     {
-        int rc = RTFileClose(pThis->hFileDevice);
+        if (SetWindowLongPtr(pThis->Os.hwndDeviceChange, GWLP_USERDATA, 0) == (LONG_PTR)pThis)
+            PostMessage(pThis->Os.hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
+        pThis->Os.hwndDeviceChange = NULL;
+    }
+
+    if (pThis->Os.hFileDevice != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->Os.hFileDevice);
         AssertRC(rc);
-        pThis->hFileDevice = NIL_RTFILE;
+        pThis->Os.hFileDevice = NIL_RTFILE;
     }
 }
 

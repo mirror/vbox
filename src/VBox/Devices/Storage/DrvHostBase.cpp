@@ -20,96 +20,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
-#ifdef RT_OS_DARWIN
-# include <mach/mach.h>
-# include <Carbon/Carbon.h>
-# include <IOKit/IOKitLib.h>
-# include <IOKit/storage/IOStorageDeviceCharacteristics.h>
-# include <IOKit/scsi/SCSITaskLib.h>
-# include <IOKit/scsi/SCSICommandOperationCodes.h>
-# include <IOKit/IOBSD.h>
-# include <DiskArbitration/DiskArbitration.h>
-# include <mach/mach_error.h>
-# include <VBox/scsi.h>
-
-#elif defined(RT_OS_L4)
-  /* Nothing special requires... yeah, right. */
-
-#elif defined(RT_OS_LINUX)
-# include <sys/ioctl.h>
-# include <sys/fcntl.h>
-# include <errno.h>
-
-#elif defined(RT_OS_SOLARIS)
-# include <fcntl.h>
-# include <errno.h>
-# include <stropts.h>
-# include <malloc.h>
-# include <sys/dkio.h>
-extern "C" char *getfullblkname(char *);
-
-#elif defined(RT_OS_WINDOWS)
-# define WIN32_NO_STATUS
-# include <iprt/win/windows.h>
-# include <dbt.h>
-# undef WIN32_NO_STATUS
-# include <ntstatus.h>
-
-/* from ntdef.h */
-typedef LONG NTSTATUS;
-
-/* from ntddk.h */
-typedef struct _IO_STATUS_BLOCK {
-    union {
-        NTSTATUS Status;
-        PVOID Pointer;
-    };
-    ULONG_PTR Information;
-} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
-
-
-/* from ntinternals.com */
-typedef enum _FS_INFORMATION_CLASS {
-    FileFsVolumeInformation=1,
-    FileFsLabelInformation,
-    FileFsSizeInformation,
-    FileFsDeviceInformation,
-    FileFsAttributeInformation,
-    FileFsControlInformation,
-    FileFsFullSizeInformation,
-    FileFsObjectIdInformation,
-    FileFsMaximumInformation
-} FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
-
-typedef struct _FILE_FS_SIZE_INFORMATION {
-    LARGE_INTEGER   TotalAllocationUnits;
-    LARGE_INTEGER   AvailableAllocationUnits;
-    ULONG           SectorsPerAllocationUnit;
-    ULONG           BytesPerSector;
-} FILE_FS_SIZE_INFORMATION, *PFILE_FS_SIZE_INFORMATION;
-
-extern "C"
-NTSTATUS __stdcall NtQueryVolumeInformationFile(
-        /*IN*/ HANDLE               FileHandle,
-        /*OUT*/ PIO_STATUS_BLOCK    IoStatusBlock,
-        /*OUT*/ PVOID               FileSystemInformation,
-        /*IN*/ ULONG                Length,
-        /*IN*/ FS_INFORMATION_CLASS FileSystemInformationClass );
-
-#elif defined(RT_OS_FREEBSD)
-# include <sys/cdefs.h>
-# include <sys/param.h>
-# include <errno.h>
-# include <stdio.h>
-# include <cam/cam.h>
-# include <cam/cam_ccb.h>
-# include <cam/scsi/scsi_message.h>
-# include <cam/scsi/scsi_pass.h>
-# include <VBox/scsi.h>
-# include <iprt/log.h>
-#else
-# error "Unsupported Platform."
-#endif
 
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -135,7 +45,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 /** @interface_method_impl{PDMIMEDIA,pfnRead} */
 static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead)
 {
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: drvHostBaseRead: off=%#llx pvBuf=%p cbRead=%#x (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, pvBuf, cbRead, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
@@ -173,8 +83,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
 /** @interface_method_impl{PDMIMEDIA,pfnWrite} */
 static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite)
 {
-    RT_NOREF(off, pvBuf, cbWrite);
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: drvHostBaseWrite: off=%#llx pvBuf=%p cbWrite=%#x (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, pvBuf, cbWrite, pThis->pszDevice));
     Log2(("%s-%d: drvHostBaseWrite: off=%#llx cbWrite=%#x\n"
@@ -215,7 +124,7 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
 static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 {
     int rc;
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: drvHostBaseFlush: (%s)\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
@@ -234,7 +143,7 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvHostBaseIsReadOnly(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     return pThis->fReadOnly;
 }
 
@@ -250,7 +159,7 @@ static DECLCALLBACK(bool) drvHostBaseIsNonRotational(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnGetSize} */
 static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     RTCritSectEnter(&pThis->CritSect);
 
     uint64_t cb = 0;
@@ -266,7 +175,7 @@ static DECLCALLBACK(uint64_t) drvHostBaseGetSize(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnGetType} */
 static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: drvHostBaseGetType: returns %d\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->enmType));
     return pThis->enmType;
 }
@@ -275,7 +184,7 @@ static DECLCALLBACK(PDMMEDIATYPE) drvHostBaseGetType(PPDMIMEDIA pInterface)
 /** @interface_method_impl{PDMIMEDIA,pfnGetUuid} */
 static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 {
-    PDRVHOSTBASE pThis = PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
 
     *pUuid = pThis->Uuid;
 
@@ -287,7 +196,7 @@ static DECLCALLBACK(int) drvHostBaseGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid
 /** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -315,7 +224,7 @@ static DECLCALLBACK(int) drvHostBaseGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 /** @interface_method_impl{PDMIMEDIA,pfnBiosSetPCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
@@ -339,7 +248,7 @@ static DECLCALLBACK(int) drvHostBaseSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 /** @interface_method_impl{PDMIMEDIA,pfnBiosGetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -367,7 +276,7 @@ static DECLCALLBACK(int) drvHostBaseGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMM
 /** @interface_method_impl{PDMIMEDIA,pfnBiosSetLCHSGeometry} */
 static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
-    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     LogFlow(("%s-%d: %s: cCylinders=%d cHeads=%d cSectors=%d\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, __FUNCTION__, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     RTCritSectEnter(&pThis->CritSect);
@@ -391,7 +300,7 @@ static DECLCALLBACK(int) drvHostBaseSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDM
 /** @interface_method_impl{PDMIMEDIA,pfnBiosIsVisible} */
 static DECLCALLBACK(bool) drvHostBaseIsVisible(PPDMIMEDIA pInterface)
 {
-    PDRVHOSTBASE pThis =  PDMIMEDIA_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     return pThis->fBiosVisible;
 }
 
@@ -404,7 +313,7 @@ static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, 
 {
     RT_NOREF(fEject);
     /* While we're not mountable (see drvHostBaseMount), we're unmountable. */
-    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMount);
     RTCritSectEnter(&pThis->CritSect);
 
     /*
@@ -422,6 +331,14 @@ static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, 
                 pThis->fLocked = false;
         }
 
+        if (fEject)
+        {
+            /*
+             * Eject the disc.
+             */
+            rc = drvHostBaseEjectOs(pThis);
+        }
+
         /*
          * Media is no longer present.
          */
@@ -429,7 +346,7 @@ static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, 
     }
     else
     {
-        Log(("drvHostiBaseUnmount: Locked\n"));
+        Log(("drvHostBaseUnmount: Locked\n"));
         rc = VERR_PDM_MEDIA_LOCKED;
     }
 
@@ -442,7 +359,7 @@ static DECLCALLBACK(int) drvHostBaseUnmount(PPDMIMOUNT pInterface, bool fForce, 
 /** @interface_method_impl{PDMIMOUNT,pfnIsMounted} */
 static DECLCALLBACK(bool) drvHostBaseIsMounted(PPDMIMOUNT pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMount);
     RTCritSectEnter(&pThis->CritSect);
 
     bool fRc = pThis->fMediaPresent;
@@ -455,7 +372,7 @@ static DECLCALLBACK(bool) drvHostBaseIsMounted(PPDMIMOUNT pInterface)
 /** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(int) drvHostBaseLock(PPDMIMOUNT pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMount);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -478,7 +395,7 @@ static DECLCALLBACK(int) drvHostBaseLock(PPDMIMOUNT pInterface)
 /** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(int) drvHostBaseUnlock(PPDMIMOUNT pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMount);
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = VINF_SUCCESS;
@@ -501,7 +418,7 @@ static DECLCALLBACK(int) drvHostBaseUnlock(PPDMIMOUNT pInterface)
 /** @interface_method_impl{PDMIMOUNT,pfnIsLocked} */
 static DECLCALLBACK(bool) drvHostBaseIsLocked(PPDMIMOUNT pInterface)
 {
-    PDRVHOSTBASE pThis = PDMIMOUNT_2_DRVHOSTBASE(pInterface);
+    PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMount);
     RTCritSectEnter(&pThis->CritSect);
 
     bool fRc = pThis->fLocked;
@@ -530,560 +447,6 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, con
 
 /* -=-=-=-=- poller thread -=-=-=-=- */
 
-#ifdef RT_OS_DARWIN
-/** The runloop input source name for the disk arbitration events. */
-# define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA") /** @todo r=bird: Check if this will cause trouble in the same way that the one in the USB code did. */
-
-/**
- * Gets the BSD Name (/dev/disc[0-9]+) for the service.
- *
- * This is done by recursing down the I/O registry until we hit upon an entry
- * with a BSD Name. Usually we find it two levels down. (Further down under
- * the IOCDPartitionScheme, the volume (slices) BSD Name is found. We don't
- * seem to have to go this far fortunately.)
- *
- * @return  VINF_SUCCESS if found, VERR_FILE_NOT_FOUND otherwise.
- * @param   Entry       The current I/O registry entry reference.
- * @param   pszName     Where to store the name. 128 bytes.
- * @param   cRecursions Number of recursions. This is used as an precaution
- *                      just to limit the depth and avoid blowing the stack
- *                      should we hit a bug or something.
- */
-static int drvHostBaseGetBSDName(io_registry_entry_t Entry, char *pszName, unsigned cRecursions)
-{
-    int rc = VERR_FILE_NOT_FOUND;
-    io_iterator_t Children = 0;
-    kern_return_t krc = IORegistryEntryGetChildIterator(Entry, kIOServicePlane, &Children);
-    if (krc == KERN_SUCCESS)
-    {
-        io_object_t Child;
-        while (     rc == VERR_FILE_NOT_FOUND
-               &&   (Child = IOIteratorNext(Children)) != 0)
-        {
-            CFStringRef BSDNameStrRef = (CFStringRef)IORegistryEntryCreateCFProperty(Child, CFSTR(kIOBSDNameKey), kCFAllocatorDefault, 0);
-            if (BSDNameStrRef)
-            {
-                if (CFStringGetCString(BSDNameStrRef, pszName, 128, kCFStringEncodingUTF8))
-                    rc = VINF_SUCCESS;
-                else
-                    AssertFailed();
-                CFRelease(BSDNameStrRef);
-            }
-            if (rc == VERR_FILE_NOT_FOUND && cRecursions < 10)
-                rc = drvHostBaseGetBSDName(Child, pszName, cRecursions + 1);
-            IOObjectRelease(Child);
-        }
-        IOObjectRelease(Children);
-    }
-    return rc;
-}
-
-
-/**
- * Callback notifying us that the async DADiskClaim()/DADiskUnmount call has completed.
- *
- * @param   DiskRef         The disk that was attempted claimed / unmounted.
- * @param   DissenterRef    NULL on success, contains details on failure.
- * @param   pvContext       Pointer to the return code variable.
- */
-static void drvHostBaseDADoneCallback(DADiskRef DiskRef, DADissenterRef DissenterRef, void *pvContext)
-{
-    RT_NOREF(DiskRef);
-    int *prc = (int *)pvContext;
-    if (!DissenterRef)
-        *prc = 0;
-    else
-        *prc = DADissenterGetStatus(DissenterRef) ? DADissenterGetStatus(DissenterRef) : -1;
-    CFRunLoopStop(CFRunLoopGetCurrent());
-}
-
-
-/**
- * Obtain exclusive access to the DVD device, umount it if necessary.
- *
- * @return  VBox status code.
- * @param   pThis       The driver instance.
- * @param   DVDService  The DVD service object.
- */
-static int drvHostBaseObtainExclusiveAccess(PDRVHOSTBASE pThis, io_object_t DVDService)
-{
-    PPDMDRVINS pDrvIns = pThis->pDrvIns; NOREF(pDrvIns);
-
-    for (unsigned iTry = 0;; iTry++)
-    {
-        IOReturn irc = (*pThis->ppScsiTaskDI)->ObtainExclusiveAccess(pThis->ppScsiTaskDI);
-        if (irc == kIOReturnSuccess)
-        {
-            /*
-             * This is a bit weird, but if we unmounted the DVD drive we also need to
-             * unlock it afterwards or the guest won't be able to eject it later on.
-             */
-            if (pThis->pDADisk)
-            {
-                uint8_t abCmd[16] =
-                {
-                    SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL, 0, 0, 0, false, 0,
-                    0,0,0,0,0,0,0,0,0,0
-                };
-                drvHostBaseScsiCmdOs(pThis, abCmd, 6, PDMMEDIATXDIR_NONE, NULL, NULL, NULL, 0, 0);
-            }
-            return VINF_SUCCESS;
-        }
-        if (irc == kIOReturnExclusiveAccess)
-            return VERR_SHARING_VIOLATION;      /* already used exclusivly. */
-        if (irc != kIOReturnBusy)
-            return VERR_GENERAL_FAILURE;        /* not mounted */
-
-        /*
-         * Attempt to the unmount all volumes of the device.
-         * It seems we can can do this all in one go without having to enumerate the
-         * volumes (sessions) and deal with them one by one. This is very fortuitous
-         * as the disk arbitration API is a bit cumbersome to deal with.
-         */
-        if (iTry > 2)
-            return VERR_DRIVE_LOCKED;
-        char szName[128];
-        int rc = drvHostBaseGetBSDName(DVDService, &szName[0], 0);
-        if (RT_SUCCESS(rc))
-        {
-            pThis->pDASession = DASessionCreate(kCFAllocatorDefault);
-            if (pThis->pDASession)
-            {
-                DASessionScheduleWithRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
-                pThis->pDADisk = DADiskCreateFromBSDName(kCFAllocatorDefault, pThis->pDASession, szName);
-                if (pThis->pDADisk)
-                {
-                    /*
-                     * Try claim the device.
-                     */
-                    Log(("%s-%d: calling DADiskClaim on '%s'.\n", pDrvIns->pReg->szName, pDrvIns->iInstance, szName));
-                    int rcDA = -2;
-                    DADiskClaim(pThis->pDADisk, kDADiskClaimOptionDefault, NULL, NULL, drvHostBaseDADoneCallback, &rcDA);
-                    SInt32 rc32 = CFRunLoopRunInMode(MY_RUN_LOOP_MODE, 120.0, FALSE);
-                    AssertMsg(rc32 == kCFRunLoopRunStopped, ("rc32=%RI32 (%RX32)\n", rc32, rc32));
-                    if (    rc32 == kCFRunLoopRunStopped
-                        &&  !rcDA)
-                    {
-                        /*
-                         * Try unmount the device.
-                         */
-                        Log(("%s-%d: calling DADiskUnmount on '%s'.\n", pDrvIns->pReg->szName, pDrvIns->iInstance, szName));
-                        rcDA = -2;
-                        DADiskUnmount(pThis->pDADisk, kDADiskUnmountOptionWhole, drvHostBaseDADoneCallback, &rcDA);
-                        rc32 = CFRunLoopRunInMode(MY_RUN_LOOP_MODE, 120.0, FALSE);
-                        AssertMsg(rc32 == kCFRunLoopRunStopped, ("rc32=%RI32 (%RX32)\n", rc32, rc32));
-                        if (    rc32 == kCFRunLoopRunStopped
-                            &&  !rcDA)
-                        {
-                            iTry = 99;
-                            DASessionUnscheduleFromRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
-                            Log(("%s-%d: unmount succeed - retrying.\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-                            continue;
-                        }
-                        Log(("%s-%d: umount => rc32=%d & rcDA=%#x\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc32, rcDA));
-
-                        /* failed - cleanup */
-                        DADiskUnclaim(pThis->pDADisk);
-                    }
-                    else
-                        Log(("%s-%d: claim => rc32=%d & rcDA=%#x\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc32, rcDA));
-
-                    CFRelease(pThis->pDADisk);
-                    pThis->pDADisk = NULL;
-                }
-                else
-                    Log(("%s-%d: failed to open disk '%s'!\n", pDrvIns->pReg->szName, pDrvIns->iInstance, szName));
-
-                DASessionUnscheduleFromRunLoop(pThis->pDASession, CFRunLoopGetCurrent(), MY_RUN_LOOP_MODE);
-                CFRelease(pThis->pDASession);
-                pThis->pDASession = NULL;
-            }
-            else
-                Log(("%s-%d: failed to create DA session!\n", pDrvIns->pReg->szName, pDrvIns->iInstance));
-        }
-        RTThreadSleep(10);
-    }
-}
-#endif /* RT_OS_DARWIN */
-
-
-#ifndef RT_OS_SOLARIS
-/**
- * Wrapper for open / RTFileOpen / IOKit.
- *
- * @remark  The Darwin code must correspond exactly to the enumeration
- *          done in Main/darwin/iokit.c.
- */
-static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOnly)
-{
-# ifdef RT_OS_DARWIN
-    RT_NOREF(fReadOnly);
-
-    /* Darwin is kind of special... */
-    Assert(!pFileDevice); NOREF(pFileDevice);
-    Assert(!pThis->cbBlock);
-    Assert(pThis->MasterPort == IO_OBJECT_NULL);
-    Assert(!pThis->ppMMCDI);
-    Assert(!pThis->ppScsiTaskDI);
-
-    /*
-     * Open the master port on the first invocation.
-     */
-    kern_return_t krc = IOMasterPort(MACH_PORT_NULL, &pThis->MasterPort);
-    AssertReturn(krc == KERN_SUCCESS, VERR_GENERAL_FAILURE);
-
-    /*
-     * Create a matching dictionary for searching for CD, DVD and BlueRay services in the IOKit.
-     *
-     * The idea is to find all the devices which are of class IOCDBlockStorageDevice.
-     * CD devices are represented by IOCDBlockStorageDevice class itself, while DVD and BlueRay ones
-     * have it as a parent class.
-     */
-    CFMutableDictionaryRef RefMatchingDict = IOServiceMatching("IOCDBlockStorageDevice");
-    AssertReturn(RefMatchingDict, VERR_NOT_FOUND);
-
-    /*
-     * do the search and get a collection of keyboards.
-     */
-    io_iterator_t DVDServices = IO_OBJECT_NULL;
-    IOReturn irc = IOServiceGetMatchingServices(pThis->MasterPort, RefMatchingDict, &DVDServices);
-    AssertMsgReturn(irc == kIOReturnSuccess, ("irc=%d\n", irc), VERR_NOT_FOUND);
-    RefMatchingDict = NULL; /* the reference is consumed by IOServiceGetMatchingServices. */
-
-    /*
-     * Enumerate the matching drives (services).
-     * (This enumeration must be identical to the one performed in Main/src-server/darwin/iokit.cpp.)
-     */
-    int rc = VERR_FILE_NOT_FOUND;
-    unsigned i = 0;
-    io_object_t DVDService;
-    while ((DVDService = IOIteratorNext(DVDServices)) != 0)
-    {
-        /*
-         * Get the properties we use to identify the DVD drive.
-         *
-         * While there is a (weird 12 byte) GUID, it isn't persistent
-         * across boots. So, we have to use a combination of the
-         * vendor name and product name properties with an optional
-         * sequence number for identification.
-         */
-        CFMutableDictionaryRef PropsRef = 0;
-        krc = IORegistryEntryCreateCFProperties(DVDService, &PropsRef, kCFAllocatorDefault, kNilOptions);
-        if (krc == KERN_SUCCESS)
-        {
-            /* Get the Device Characteristics dictionary. */
-            CFDictionaryRef DevCharRef = (CFDictionaryRef)CFDictionaryGetValue(PropsRef, CFSTR(kIOPropertyDeviceCharacteristicsKey));
-            if (DevCharRef)
-            {
-                /* The vendor name. */
-                char szVendor[128];
-                char *pszVendor = &szVendor[0];
-                CFTypeRef ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyVendorNameKey));
-                if (    ValueRef
-                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
-                    &&  CFStringGetCString((CFStringRef)ValueRef, szVendor, sizeof(szVendor), kCFStringEncodingUTF8))
-                    pszVendor = RTStrStrip(szVendor);
-                else
-                    *pszVendor = '\0';
-
-                /* The product name. */
-                char szProduct[128];
-                char *pszProduct = &szProduct[0];
-                ValueRef = CFDictionaryGetValue(DevCharRef, CFSTR(kIOPropertyProductNameKey));
-                if (    ValueRef
-                    &&  CFGetTypeID(ValueRef) == CFStringGetTypeID()
-                    &&  CFStringGetCString((CFStringRef)ValueRef, szProduct, sizeof(szProduct), kCFStringEncodingUTF8))
-                    pszProduct = RTStrStrip(szProduct);
-                else
-                    *pszProduct = '\0';
-
-                /* Construct the two names and compare thwm with the one we're searching for. */
-                char szName1[256 + 32];
-                char szName2[256 + 32];
-                if (*pszVendor || *pszProduct)
-                {
-                    if (*pszVendor && *pszProduct)
-                    {
-                        RTStrPrintf(szName1, sizeof(szName1), "%s %s", pszVendor, pszProduct);
-                        RTStrPrintf(szName2, sizeof(szName2), "%s %s (#%u)", pszVendor, pszProduct, i);
-                    }
-                    else
-                    {
-                        strcpy(szName1, *pszVendor ? pszVendor : pszProduct);
-                        RTStrPrintf(szName2, sizeof(szName2), "%s (#%u)", *pszVendor ? pszVendor : pszProduct, i);
-                    }
-                }
-                else
-                {
-                    RTStrPrintf(szName1, sizeof(szName1), "(#%u)", i);
-                    strcpy(szName2, szName1);
-                }
-
-                if (    !strcmp(szName1, pThis->pszDeviceOpen)
-                    ||  !strcmp(szName2, pThis->pszDeviceOpen))
-                {
-                    /*
-                     * Found it! Now, get the client interface and stuff.
-                     * Note that we could also query kIOSCSITaskDeviceUserClientTypeID here if the
-                     * MMC client plugin is missing. For now we assume this won't be necessary.
-                     */
-                    SInt32 Score = 0;
-                    IOCFPlugInInterface **ppPlugInInterface = NULL;
-                    krc = IOCreatePlugInInterfaceForService(DVDService, kIOMMCDeviceUserClientTypeID, kIOCFPlugInInterfaceID,
-                                                            &ppPlugInInterface, &Score);
-                    if (krc == KERN_SUCCESS)
-                    {
-                        HRESULT hrc = (*ppPlugInInterface)->QueryInterface(ppPlugInInterface,
-                                                                           CFUUIDGetUUIDBytes(kIOMMCDeviceInterfaceID),
-                                                                           (LPVOID *)&pThis->ppMMCDI);
-                        (*ppPlugInInterface)->Release(ppPlugInInterface);
-                        ppPlugInInterface = NULL;
-                        if (hrc == S_OK)
-                        {
-                            pThis->ppScsiTaskDI = (*pThis->ppMMCDI)->GetSCSITaskDeviceInterface(pThis->ppMMCDI);
-                            if (pThis->ppScsiTaskDI)
-                                rc = VINF_SUCCESS;
-                            else
-                            {
-                                LogRel(("GetSCSITaskDeviceInterface failed on '%s'\n", pThis->pszDeviceOpen));
-                                rc = VERR_NOT_SUPPORTED;
-                                (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
-                            }
-                        }
-                        else
-                        {
-                            rc = VERR_GENERAL_FAILURE;//RTErrConvertFromDarwinCOM(krc);
-                            pThis->ppMMCDI = NULL;
-                        }
-                    }
-                    else /* Check for kIOSCSITaskDeviceUserClientTypeID? */
-                        rc = VERR_GENERAL_FAILURE;//RTErrConvertFromDarwinKern(krc);
-
-                    /* Obtain exclusive access to the device so we can send SCSI commands. */
-                    if (RT_SUCCESS(rc))
-                        rc = drvHostBaseObtainExclusiveAccess(pThis, DVDService);
-
-                    /* Cleanup on failure. */
-                    if (RT_FAILURE(rc))
-                    {
-                        if (pThis->ppScsiTaskDI)
-                        {
-                            (*pThis->ppScsiTaskDI)->Release(pThis->ppScsiTaskDI);
-                            pThis->ppScsiTaskDI = NULL;
-                        }
-                        if (pThis->ppMMCDI)
-                        {
-                            (*pThis->ppMMCDI)->Release(pThis->ppMMCDI);
-                            pThis->ppMMCDI = NULL;
-                        }
-                    }
-
-                    IOObjectRelease(DVDService);
-                    break;
-                }
-            }
-            CFRelease(PropsRef);
-        }
-        else
-            AssertMsgFailed(("krc=%#x\n", krc));
-
-        IOObjectRelease(DVDService);
-        i++;
-    }
-
-    IOObjectRelease(DVDServices);
-    return rc;
-
-#elif defined(RT_OS_FREEBSD)
-    RTFILE hFileDevice;
-    int rc = RTFileOpen(&hFileDevice, pThis->pszDeviceOpen, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * The current device handle can't passthrough SCSI commands.
-     * We have to get he passthrough device path and open this.
-     */
-    union ccb DeviceCCB;
-    memset(&DeviceCCB, 0, sizeof(DeviceCCB));
-
-    DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
-    int rcBSD = ioctl(RTFileToNative(hFileDevice), CAMGETPASSTHRU, &DeviceCCB);
-    if (!rcBSD)
-    {
-        char *pszPassthroughDevice = NULL;
-        rc = RTStrAPrintf(&pszPassthroughDevice, "/dev/%s%u",
-                          DeviceCCB.cgdl.periph_name, DeviceCCB.cgdl.unit_number);
-        if (rc >= 0)
-        {
-            RTFILE hPassthroughDevice;
-            rc = RTFileOpen(&hPassthroughDevice, pszPassthroughDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-            RTStrFree(pszPassthroughDevice);
-            if (RT_SUCCESS(rc))
-            {
-                /* Get needed device parameters. */
-
-                /*
-                 * The device path, target id and lun id. Those are
-                 * needed for the SCSI passthrough ioctl.
-                 */
-                memset(&DeviceCCB, 0, sizeof(DeviceCCB));
-                DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
-
-                rcBSD = ioctl(RTFileToNative(hPassthroughDevice), CAMGETPASSTHRU, &DeviceCCB);
-                if (!rcBSD)
-                {
-                    if (DeviceCCB.cgdl.status != CAM_GDEVLIST_ERROR)
-                    {
-                        pThis->ScsiBus      = DeviceCCB.ccb_h.path_id;
-                        pThis->ScsiTargetID = DeviceCCB.ccb_h.target_id;
-                        pThis->ScsiLunID    = DeviceCCB.ccb_h.target_lun;
-                        *pFileDevice = hPassthroughDevice;
-                    }
-                    else
-                    {
-                        /* The passthrough device wasn't found. */
-                        rc = VERR_NOT_FOUND;
-                    }
-                }
-                else
-                    rc = RTErrConvertFromErrno(errno);
-
-                if (RT_FAILURE(rc))
-                    RTFileClose(hPassthroughDevice);
-            }
-        }
-        else
-            rc = VERR_NO_STR_MEMORY;
-    }
-    else
-        rc = RTErrConvertFromErrno(errno);
-
-    RTFileClose(hFileDevice);
-    return rc;
-
-#else
-    uint32_t fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE) | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
-# ifdef RT_OS_LINUX
-    fFlags |= RTFILE_O_NON_BLOCK;
-# endif
-    return RTFileOpen(pFileDevice, pThis->pszDeviceOpen, fFlags);
-#endif
-}
-
-#else   /* RT_OS_SOLARIS */
-
-/**
- * Solaris wrapper for RTFileOpen.
- *
- * Solaris has to deal with two filehandles, a block and a raw one. Rather than messing
- * with drvHostBaseOpen's function signature & body, having a separate one is better.
- *
- * @returns VBox status code.
- */
-static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileBlockDevice, PRTFILE pFileRawDevice, bool fReadOnly)
-{
-    unsigned fFlags = (fReadOnly ? RTFILE_O_READ : RTFILE_O_READWRITE)
-                    | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK;
-    int rc = RTFileOpen(pFileBlockDevice, pThis->pszDeviceOpen, fFlags);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTFileOpen(pFileRawDevice, pThis->pszRawDeviceOpen, fFlags);
-        if (RT_SUCCESS(rc))
-            return rc;
-
-        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszRawDeviceOpen, rc));
-        RTFileClose(*pFileBlockDevice);
-    }
-    else
-        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszDeviceOpen, rc));
-    return rc;
-}
-#endif  /* RT_OS_SOLARIS */
-
-
-/**
- * (Re)opens the device.
- *
- * This is used to open the device during construction, but it's also used to re-open
- * the device when a media is inserted. This re-open will kill off any cached data
- * that Linux for some peculiar reason thinks should survive a media change...
- *
- * @returns VBOX status code.
- * @param   pThis       Instance data.
- */
-static int drvHostBaseReopen(PDRVHOSTBASE pThis)
-{
-#ifndef RT_OS_DARWIN /* Only *one* open for darwin. */
-    LogFlow(("%s-%d: drvHostBaseReopen: '%s'\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen));
-
-    RTFILE hFileDevice;
-#ifdef RT_OS_SOLARIS
-    if (pThis->hFileRawDevice != NIL_RTFILE)
-    {
-        RTFileClose(pThis->hFileRawDevice);
-        pThis->hFileRawDevice = NIL_RTFILE;
-    }
-    if (pThis->hFileDevice != NIL_RTFILE)
-    {
-        RTFileClose(pThis->hFileDevice);
-        pThis->hFileDevice = NIL_RTFILE;
-    }
-    RTFILE hFileRawDevice;
-    int rc = drvHostBaseOpen(pThis, &hFileDevice, &hFileRawDevice, pThis->fReadOnlyConfig);
-#else
-    int rc = drvHostBaseOpen(pThis, &hFileDevice, pThis->fReadOnlyConfig);
-#endif
-    if (RT_FAILURE(rc))
-    {
-        if (!pThis->fReadOnlyConfig)
-        {
-            LogFlow(("%s-%d: drvHostBaseReopen: '%s' - retry readonly (%Rrc)\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDeviceOpen, rc));
-#ifdef RT_OS_SOLARIS
-            rc = drvHostBaseOpen(pThis, &hFileDevice, &hFileRawDevice, false);
-#else
-            rc = drvHostBaseOpen(pThis, &hFileDevice, false);
-#endif
-        }
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("%s-%d: failed to open device '%s', rc=%Rrc\n",
-                     pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice, rc));
-            return rc;
-        }
-        pThis->fReadOnly = true;
-    }
-    else
-        pThis->fReadOnly = pThis->fReadOnlyConfig;
-
-#ifdef RT_OS_SOLARIS
-    if (pThis->hFileRawDevice != NIL_RTFILE)
-        RTFileClose(pThis->hFileRawDevice);
-    pThis->hFileRawDevice = hFileRawDevice;
-#endif
-
-    if (pThis->hFileDevice != NIL_RTFILE)
-        RTFileClose(pThis->hFileDevice);
-    pThis->hFileDevice = hFileDevice;
-#else  /* RT_OS_DARWIN */
-    RT_NOREF(pThis);
-#endif /* RT_OS_DARWIN */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Queries the media size.
- *
- * @returns VBox status code.
- * @param   pThis       Pointer to the instance data.
- * @param   pcb         Where to store the media size in bytes.
- */
-static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *pcb)
-{
-    return drvHostBaseGetMediaSizeOs(pThis, pcb);
-}
-
 
 /**
  * Media present.
@@ -1091,12 +454,12 @@ static DECLCALLBACK(int) drvHostBaseGetMediaSize(PDRVHOSTBASE pThis, uint64_t *p
  *
  * @param   pThis   The instance data.
  */
-int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis)
+DECLHIDDEN(int) DRVHostBaseMediaPresent(PDRVHOSTBASE pThis)
 {
     /*
      * Open the drive.
      */
-    int rc = drvHostBaseReopen(pThis);
+    int rc = drvHostBaseMediaRefreshOs(pThis);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1104,7 +467,7 @@ int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis)
      * Determine the size.
      */
     uint64_t cb;
-    rc = pThis->pfnGetMediaSize(pThis, &cb);
+    rc = drvHostBaseGetMediaSizeOs(pThis, &cb);
     if (RT_FAILURE(rc))
     {
         LogFlow(("%s-%d: failed to figure media size of %s, rc=%Rrc\n",
@@ -1129,7 +492,7 @@ int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis)
  * Media no longer present.
  * @param   pThis   The instance data.
  */
-void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis)
+DECLHIDDEN(void) DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis)
 {
     pThis->fMediaPresent = false;
     pThis->fLocked = false;
@@ -1144,64 +507,43 @@ void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis)
 }
 
 
-#ifdef RT_OS_WINDOWS
-
-/**
- * Window procedure for the invisible window used to catch the WM_DEVICECHANGE broadcasts.
- */
-static LRESULT CALLBACK DeviceChangeWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static int drvHostBaseMediaPoll(PDRVHOSTBASE pThis)
 {
-    Log2(("DeviceChangeWindowProc: hwnd=%08x uMsg=%08x\n", hwnd, uMsg));
-    if (uMsg == WM_DESTROY)
+    /*
+     * Poll for media change.
+     */
+    bool fMediaPresent = false;
+    bool fMediaChanged = false;
+    drvHostBaseQueryMediaStatusOs(pThis, &fMediaChanged, &fMediaPresent);
+
+    RTCritSectEnter(&pThis->CritSect);
+
+    int rc = VINF_SUCCESS;
+    if (pThis->fMediaPresent != fMediaPresent)
     {
-        PDRVHOSTBASE pThis = (PDRVHOSTBASE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-        if (pThis)
-            ASMAtomicXchgSize(&pThis->hwndDeviceChange, NULL);
-        PostQuitMessage(0);
+        LogFlow(("drvHostDvdPoll: %d -> %d\n", pThis->fMediaPresent, fMediaPresent));
+        pThis->fMediaPresent = false;
+        if (fMediaPresent)
+            rc = DRVHostBaseMediaPresent(pThis);
+        else
+            DRVHostBaseMediaNotPresent(pThis);
+    }
+    else if (fMediaPresent)
+    {
+        /*
+         * Poll for media change.
+         */
+        if (fMediaChanged)
+        {
+            LogFlow(("drvHostDVDMediaThread: Media changed!\n"));
+            DRVHostBaseMediaNotPresent(pThis);
+            rc = DRVHostBaseMediaPresent(pThis);
+        }
     }
 
-    if (uMsg != WM_DEVICECHANGE)
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-
-    PDEV_BROADCAST_HDR  lpdb = (PDEV_BROADCAST_HDR)lParam;
-    PDRVHOSTBASE        pThis = (PDRVHOSTBASE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-    Assert(pThis);
-    if (pThis == NULL)
-        return 0;
-
-    switch (wParam)
-    {
-        case DBT_DEVICEARRIVAL:
-        case DBT_DEVICEREMOVECOMPLETE:
-            // Check whether a CD or DVD was inserted into or removed from a drive.
-            if (lpdb->dbch_devicetype == DBT_DEVTYP_VOLUME)
-            {
-                PDEV_BROADCAST_VOLUME lpdbv = (PDEV_BROADCAST_VOLUME)lpdb;
-                if (    (lpdbv->dbcv_flags & DBTF_MEDIA)
-                    &&  (pThis->fUnitMask & lpdbv->dbcv_unitmask))
-                {
-                    RTCritSectEnter(&pThis->CritSect);
-                    if (wParam == DBT_DEVICEARRIVAL)
-                    {
-                        int cRetries = 10;
-                        int rc = DRVHostBaseMediaPresent(pThis);
-                        while (RT_FAILURE(rc) && cRetries-- > 0)
-                        {
-                            RTThreadSleep(50);
-                            rc = DRVHostBaseMediaPresent(pThis);
-                        }
-                    }
-                    else
-                        DRVHostBaseMediaNotPresent(pThis);
-                    RTCritSectLeave(&pThis->CritSect);
-                }
-            }
-            break;
-    }
-    return TRUE;
+    RTCritSectLeave(&pThis->CritSect);
+    return rc;
 }
-
-#endif /* RT_OS_WINDOWS */
 
 
 /**
@@ -1216,60 +558,6 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
     PDRVHOSTBASE pThis = (PDRVHOSTBASE)pvUser;
     LogFlow(("%s-%d: drvHostBaseMediaThread: ThreadSelf=%p pvUser=%p\n",
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, ThreadSelf, pvUser));
-#ifdef RT_OS_WINDOWS
-    static WNDCLASS s_classDeviceChange = {0};
-    static ATOM     s_hAtomDeviceChange = 0;
-
-    /*
-     * Register custom window class.
-     */
-    if (s_hAtomDeviceChange == 0)
-    {
-        memset(&s_classDeviceChange, 0, sizeof(s_classDeviceChange));
-        s_classDeviceChange.lpfnWndProc   = DeviceChangeWindowProc;
-        s_classDeviceChange.lpszClassName = "VBOX_DeviceChangeClass";
-        s_classDeviceChange.hInstance     = GetModuleHandle("VBoxDD.dll");
-        Assert(s_classDeviceChange.hInstance);
-        s_hAtomDeviceChange = RegisterClassA(&s_classDeviceChange);
-        Assert(s_hAtomDeviceChange);
-    }
-
-    /*
-     * Create Window w/ the pThis as user data.
-     */
-    HWND hwnd = CreateWindow((LPCTSTR)s_hAtomDeviceChange, "", WS_POPUP, 0, 0, 0, 0, 0, 0, s_classDeviceChange.hInstance, 0);
-    AssertMsg(hwnd, ("CreateWindow failed with %d\n", GetLastError()));
-    SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
-
-    /*
-     * Signal the waiting EMT thread that everything went fine.
-     */
-    ASMAtomicXchgPtr((void * volatile *)&pThis->hwndDeviceChange, hwnd);
-    RTThreadUserSignal(ThreadSelf);
-    if (!hwnd)
-    {
-        LogFlow(("%s-%d: drvHostBaseMediaThread: returns VERR_GENERAL_FAILURE\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
-        return VERR_GENERAL_FAILURE;
-    }
-    LogFlow(("%s-%d: drvHostBaseMediaThread: Created hwndDeviceChange=%p\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, hwnd));
-
-    /*
-     * Message pump.
-     */
-    MSG         Msg;
-    BOOL        fRet;
-    while ((fRet = GetMessage(&Msg, NULL, 0, 0)) != FALSE)
-    {
-        if (fRet != -1)
-        {
-            TranslateMessage(&Msg);
-            DispatchMessage(&Msg);
-        }
-        //else: handle the error and possibly exit
-    }
-    Assert(!pThis->hwndDeviceChange);
-
-#else /* !RT_OS_WINDOWS */
     bool        fFirst = true;
     int         cRetries = 10;
     while (!pThis->fShutdownPoller)
@@ -1277,11 +565,10 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
         /*
          * Perform the polling (unless we've run out of 50ms retries).
          */
-        if (    pThis->pfnPoll
-            &&  cRetries-- > 0)
+        if (cRetries-- > 0)
         {
 
-            int rc = pThis->pfnPoll(pThis);
+            int rc = drvHostBaseMediaPoll(pThis);
             if (RT_FAILURE(rc))
             {
                 RTSemEventWait(pThis->EventPoller, 50);
@@ -1312,8 +599,6 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
         }
         cRetries = 10;
     }
-
-#endif /* !RT_OS_WINDOWS */
 
     /* (Don't clear the thread handle here, the destructor thread is using it to wait.) */
     LogFlow(("%s-%d: drvHostBaseMediaThread: returns VINF_SUCCESS\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance));
@@ -1368,7 +653,7 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
         int cTimes = 50;
         do
         {
-            drvHostBasePollerWakeupOs(pThis);
+            RTSemEventSignal(pThis->EventPoller);
             rc = RTThreadWait(pThis->ThreadPoller, 100, NULL);
         } while (cTimes-- > 0 && rc == VERR_TIMEOUT);
 
@@ -1377,28 +662,15 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
     }
 
     /*
-     * Unlock the drive if we've locked it or we're in passthru mode.
-     */
-#ifdef RT_OS_DARWIN
-    if (    (   pThis->fLocked
-             || pThis->IMedia.pfnSendCmd)
-        &&  pThis->ppScsiTaskDI
-#else /** @todo Check if the other guys can mix pfnDoLock with scsi passthru.
-       * (We're currently not unlocking the device after use. See todo in DevATA.cpp.) */
-    if (    pThis->fLocked
-        &&  pThis->hFileDevice != NIL_RTFILE
-#endif
-        &&  pThis->pfnDoLock)
-    {
-        int rc = pThis->pfnDoLock(pThis, false);
-        if (RT_SUCCESS(rc))
-            pThis->fLocked = false;
-    }
-
-    /*
      * Cleanup the other resources.
      */
     drvHostBaseDestructOs(pThis);
+
+    if (pThis->EventPoller != NULL)
+    {
+        RTSemEventDestroy(pThis->EventPoller);
+        pThis->EventPoller = NULL;
+    }
 
     if (pThis->pszDevice)
     {
@@ -1424,23 +696,21 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 
 
 /**
- * Initializes the instance data (init part 1).
- *
- * The driver which derives from this base driver will override function pointers after
- * calling this method, and complete the construction by calling DRVHostBaseInitFinish().
+ * Initializes the instance data .
  *
  * On failure call DRVHostBaseDestruct().
  *
  * @returns VBox status code.
  * @param   pDrvIns         Driver instance.
- * @param   pszCfgValid     Pointer to a string ofvalid CFGM options.
+ * @param   pszCfgValid     Pointer to a string of valid CFGM options.
  * @param   pCfg            Configuration handle.
  * @param   enmType         Device type.
  */
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType)
+DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgValid, PDMMEDIATYPE enmType)
 {
+    int src = VINF_SUCCESS;
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
-    LogFlow(("%s-%d: DRVHostBaseInitData: iInstance=%d\n", pDrvIns->pReg->szName, pDrvIns->iInstance, pDrvIns->iInstance));
+    LogFlow(("%s-%d: DRVHostBaseInit: iInstance=%d\n", pDrvIns->pReg->szName, pDrvIns->iInstance, pDrvIns->iInstance));
 
     /*
      * Initialize most of the data members.
@@ -1448,24 +718,8 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgVa
     pThis->pDrvIns                          = pDrvIns;
     pThis->fKeepInstance                    = false;
     pThis->ThreadPoller                     = NIL_RTTHREAD;
-#ifdef RT_OS_DARWIN
-    pThis->MasterPort                       = IO_OBJECT_NULL;
-    pThis->ppMMCDI                          = NULL;
-    pThis->ppScsiTaskDI                     = NULL;
-    pThis->cbBlock                          = 0;
-    pThis->pDADisk                          = NULL;
-    pThis->pDASession                       = NULL;
-#else
-    pThis->hFileDevice                      = NIL_RTFILE;
-#endif
-#ifdef RT_OS_SOLARIS
-    pThis->hFileRawDevice                   = NIL_RTFILE;
-#endif
     pThis->enmType                          = enmType;
-    //pThis->cErrors                          = 0;
     pThis->fAttachFailError                 = true; /* It's an error until we've read the config. */
-
-    pThis->pfnGetMediaSize                  = drvHostBaseGetMediaSize;
 
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvHostBaseQueryInterface;
@@ -1491,6 +745,8 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgVa
     pThis->IMount.pfnLock                   = drvHostBaseLock;
     pThis->IMount.pfnUnlock                 = drvHostBaseUnlock;
     pThis->IMount.pfnIsLocked               = drvHostBaseIsLocked;
+
+    drvHostBaseInitOs(pThis);
 
     if (!CFGMR3AreValuesValid(pCfg, pszCfgValid))
     {
@@ -1522,42 +778,43 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgVa
 
     /* Mountable */
     uint32_t u32;
-    rc = CFGMR3QueryU32(pCfg, "Interval", &u32);
+    rc = CFGMR3QueryU32Def(pCfg, "Interval", &u32, 1000);
     if (RT_SUCCESS(rc))
         pThis->cMilliesPoller = u32;
-    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->cMilliesPoller = 1000;
-    else if (RT_FAILURE(rc))
+    else
     {
         AssertMsgFailed(("Configuration error: Query \"Mountable\" resulted in %Rrc.\n", rc));
         return rc;
     }
 
-    /* ReadOnly */
-    rc = CFGMR3QueryBool(pCfg, "ReadOnly", &pThis->fReadOnlyConfig);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fReadOnlyConfig = enmType == PDMMEDIATYPE_DVD || enmType == PDMMEDIATYPE_CDROM ? true : false;
-    else if (RT_FAILURE(rc))
+    /* ReadOnly - passthrough mode requires read/write access in any case. */
+    if (   (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
+        && pThis->IMedia.pfnSendCmd)
+            pThis->fReadOnlyConfig = false;
+    else
     {
-        AssertMsgFailed(("Configuration error: Query \"ReadOnly\" resulted in %Rrc.\n", rc));
-        return rc;
+        rc = CFGMR3QueryBoolDef(pCfg, "ReadOnly", &pThis->fReadOnlyConfig,
+                                  enmType == PDMMEDIATYPE_DVD || enmType == PDMMEDIATYPE_CDROM
+                                ? true
+                                : false);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Configuration error: Query \"ReadOnly\" resulted in %Rrc.\n", rc));
+            return rc;
+        }
     }
 
     /* Locked */
-    rc = CFGMR3QueryBool(pCfg, "Locked", &pThis->fLocked);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fLocked = false;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfg, "Locked", &pThis->fLocked, false);
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"Locked\" resulted in %Rrc.\n", rc));
         return rc;
     }
 
     /* BIOS visible */
-    rc = CFGMR3QueryBool(pCfg, "BIOSVisible", &pThis->fBiosVisible);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        pThis->fBiosVisible = true;
-    else if (RT_FAILURE(rc))
+    rc = CFGMR3QueryBoolDef(pCfg, "BIOSVisible", &pThis->fBiosVisible, true);
+    if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Query \"BIOSVisible\" resulted in %Rrc.\n", rc));
         return rc;
@@ -1586,56 +843,9 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *pszCfgVa
     }
 
     /* Define whether attach failure is an error (default) or not. */
-    bool fAttachFailError;
-    rc = CFGMR3QueryBool(pCfg, "AttachFailError", &fAttachFailError);
-    if (RT_FAILURE(rc))
-        fAttachFailError = true;
+    bool fAttachFailError = true;
+    rc = CFGMR3QueryBoolDef(pCfg, "AttachFailError", &fAttachFailError, true);
     pThis->fAttachFailError = fAttachFailError;
-
-    /* name to open & watch for */
-#ifdef RT_OS_WINDOWS
-    int iBit = RT_C_TO_UPPER(pThis->pszDevice[0]) - 'A';
-    if (    iBit > 'Z' - 'A'
-        ||  pThis->pszDevice[1] != ':'
-        ||  pThis->pszDevice[2])
-    {
-        AssertMsgFailed(("Configuration error: Invalid drive specification: '%s'\n", pThis->pszDevice));
-        return VERR_INVALID_PARAMETER;
-    }
-    pThis->fUnitMask = 1 << iBit;
-    RTStrAPrintf(&pThis->pszDeviceOpen, "\\\\.\\%s", pThis->pszDevice);
-
-#elif defined(RT_OS_SOLARIS)
-    char *pszBlockDevName = getfullblkname(pThis->pszDevice);
-    if (!pszBlockDevName)
-        return VERR_NO_MEMORY;
-    pThis->pszDeviceOpen = RTStrDup(pszBlockDevName);  /* for RTStrFree() */
-    free(pszBlockDevName);
-    pThis->pszRawDeviceOpen = RTStrDup(pThis->pszDevice);
-
-#else
-    pThis->pszDeviceOpen = RTStrDup(pThis->pszDevice);
-#endif
-
-    if (!pThis->pszDeviceOpen)
-        return VERR_NO_MEMORY;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Do the 2nd part of the init after the derived driver has overridden the defaults.
- *
- * On failure call DRVHostBaseDestruct().
- *
- * @returns VBox status code.
- * @param   pThis       Pointer to the instance data.
- */
-int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
-{
-    int src = VINF_SUCCESS;
-    PPDMDRVINS pDrvIns = pThis->pDrvIns;
 
     /* log config summary */
     Log(("%s-%d: pszDevice='%s' (%s) cMilliesPoller=%d fReadOnlyConfig=%d fLocked=%d fBIOSVisible=%d Uuid=%RTuuid\n",
@@ -1652,55 +862,21 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Register saved state.
      */
-    int rc = PDMDrvHlpSSMRegisterLoadDone(pDrvIns, drvHostBaseLoadDone);
+    rc = PDMDrvHlpSSMRegisterLoadDone(pDrvIns, drvHostBaseLoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
-     * Verify type.
+     * Initialize the critical section used for serializing the access to the media.
      */
-#ifdef RT_OS_WINDOWS
-    UINT uDriveType = GetDriveType(pThis->pszDevice);
-    switch (pThis->enmType)
-    {
-        case PDMMEDIATYPE_FLOPPY_360:
-        case PDMMEDIATYPE_FLOPPY_720:
-        case PDMMEDIATYPE_FLOPPY_1_20:
-        case PDMMEDIATYPE_FLOPPY_1_44:
-        case PDMMEDIATYPE_FLOPPY_2_88:
-        case PDMMEDIATYPE_FLOPPY_FAKE_15_6:
-        case PDMMEDIATYPE_FLOPPY_FAKE_63_5:
-            if (uDriveType != DRIVE_REMOVABLE)
-            {
-                AssertMsgFailed(("Configuration error: '%s' is not a floppy (type=%d)\n",
-                                 pThis->pszDevice, uDriveType));
-                return VERR_INVALID_PARAMETER;
-            }
-            break;
-        case PDMMEDIATYPE_CDROM:
-        case PDMMEDIATYPE_DVD:
-            if (uDriveType != DRIVE_CDROM)
-            {
-                AssertMsgFailed(("Configuration error: '%s' is not a cdrom (type=%d)\n",
-                                 pThis->pszDevice, uDriveType));
-                return VERR_INVALID_PARAMETER;
-            }
-            break;
-        case PDMMEDIATYPE_HARD_DISK:
-        default:
-            AssertMsgFailed(("enmType=%d\n", pThis->enmType));
-            return VERR_INVALID_PARAMETER;
-    }
-#endif
+    rc = RTCritSectInit(&pThis->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Open the device.
      */
-#if defined(RT_OS_DARWIN)
-    rc = drvHostBaseOpen(pThis, NULL, pThis->fReadOnlyConfig);
-#else
-    rc = drvHostBaseReopen(pThis);
-#endif
+    rc = drvHostBaseOpenOs(pThis, pThis->fReadOnlyConfig);
     if (RT_FAILURE(rc))
     {
         char *pszDevice = pThis->pszDevice;
@@ -1709,10 +885,6 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         if (   RTPathExists(pszDevice)
             && RT_SUCCESS(RTPathReal(pszDevice, szPathReal, sizeof(szPathReal))))
             pszDevice = szPathReal;
-        pThis->hFileDevice = NIL_RTFILE;
-#endif
-#ifdef RT_OS_SOLARIS
-        pThis->hFileRawDevice = NIL_RTFILE;
 #endif
 
         /*
@@ -1751,10 +923,6 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
             }
         }
     }
-#ifdef RT_OS_WINDOWS
-    if (RT_SUCCESS(src))
-        DRVHostBaseMediaPresent(pThis);
-#endif
 
     /*
      * Lock the drive if that's required by the configuration.
@@ -1770,8 +938,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         }
     }
 
-#ifndef RT_OS_WINDOWS
-    if (RT_SUCCESS(src))
+    if (RT_SUCCESS(src) && drvHostBaseIsMediaPollingRequiredOs(pThis))
     {
         /*
          * Create the event semaphore which the poller thread will wait on.
@@ -1779,18 +946,7 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         rc = RTSemEventCreate(&pThis->EventPoller);
         if (RT_FAILURE(rc))
             return rc;
-    }
-#endif
 
-    /*
-     * Initialize the critical section used for serializing the access to the media.
-     */
-    rc = RTCritSectInit(&pThis->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (RT_SUCCESS(src))
-    {
         /*
          * Start the thread which will poll for the media.
          */
@@ -1807,14 +963,24 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
          */
         rc = RTThreadUserWait(pThis->ThreadPoller, 10000);
         AssertRC(rc);
-#ifdef RT_OS_WINDOWS
-        if (!pThis->hwndDeviceChange)
-            return VERR_GENERAL_FAILURE;
-#endif
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (!pThis->fAttachFailError)
+        {
+            /* Suppressing the attach failure error must not affect the normal
+             * DRVHostBaseDestruct, so reset this flag below before leaving. */
+            pThis->fKeepInstance = true;
+            rc = VINF_SUCCESS;
+        }
+        DRVHostBaseDestruct(pDrvIns);
+        pThis->fKeepInstance = false;
     }
 
     if (RT_FAILURE(src))
         return src;
+
     return rc;
 }
 

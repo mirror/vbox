@@ -26,6 +26,27 @@
 #include <VBox/scsi.h>
 #include <iprt/log.h>
 
+/**
+ * Host backend specific data.
+ */
+typedef struct DRVHOSTBASEOS
+{
+    /** The filehandle of the device. */
+    RTFILE                  hFileDevice;
+    /** The block size. Set when querying the media size. */
+    uint32_t                cbBlock;
+    /** SCSI bus number. */
+    path_id_t               ScsiBus;
+    /** target ID of the passthrough device. */
+    target_id_t             ScsiTargetID;
+    /** LUN of the passthrough device. */
+    lun_id_t                ScsiLunID;
+} DRVHOSTBASEOS;
+/** Pointer to the host backend specific data. */
+typedef DRVHOSTBASEOS *PDRVHOSBASEOS;
+AssertCompile(sizeof(DRVHOSTBASEOS) <= 64);
+
+#define DRVHOSTBASE_OS_INT_DECLARED
 #include "DrvHostBase.h"
 
 
@@ -45,81 +66,85 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     if (pcbBuf)
         *pcbBuf = 0;
 
-    Assert(pThis->ppScsiTaskDI);
+    int rc = VINF_SUCCESS;
+    int rcBSD = 0;
+    union ccb DeviceCCB;
+    union ccb *pDeviceCCB = &DeviceCCB;
+    u_int32_t fFlags;
 
-    int rc = VERR_GENERAL_FAILURE;
-    SCSITaskInterface **ppScsiTaskI = (*pThis->ppScsiTaskDI)->CreateSCSITask(pThis->ppScsiTaskDI);
-    if (!ppScsiTaskI)
-        return VERR_NO_MEMORY;
-    do
+    memset(pDeviceCCB, 0, sizeof(DeviceCCB));
+    pDeviceCCB->ccb_h.path_id   = pThis->Os.ScsiBus;
+    pDeviceCCB->ccb_h.target_id = pThis->Os.ScsiTargetID;
+    pDeviceCCB->ccb_h.target_lun = pThis->Os.ScsiLunID;
+
+    /* The SCSI INQUIRY command can't be passed through directly. */
+    if (pbCmd[0] == SCSI_INQUIRY)
     {
-        /* Setup the scsi command. */
-        SCSICommandDescriptorBlock cdb = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-        memcpy(&cdb[0], pbCmd, cbCmd);
-        IOReturn irc = (*ppScsiTaskI)->SetCommandDescriptorBlock(ppScsiTaskI, cdb, cbCmd);
-        AssertBreak(irc == kIOReturnSuccess);
+        pDeviceCCB->ccb_h.func_code = XPT_GDEV_TYPE;
 
-        /* Setup the buffer. */
+        rcBSD = ioctl(RTFileToNative(pThis->Os.hFileDevice), CAMIOCOMMAND, pDeviceCCB);
+        if (!rcBSD)
+        {
+            uint32_t cbCopy =   cbBuf < sizeof(struct scsi_inquiry_data)
+                              ? cbBuf
+                              : sizeof(struct scsi_inquiry_data);;
+            memcpy(pvBuf, &pDeviceCCB->cgd.inq_data, cbCopy);
+            memset(pbSense, 0, cbSense);
+
+            if (pcbBuf)
+                *pcbBuf = cbCopy;
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+    }
+    else
+    {
+        /* Copy the CDB. */
+        memcpy(&pDeviceCCB->csio.cdb_io.cdb_bytes, pbCmd, cbCmd);
+
+        /* Set direction. */
         if (enmTxDir == PDMMEDIATXDIR_NONE)
-            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, NULL, 0, 0, kSCSIDataTransfer_NoDataTransfer);
+            fFlags = CAM_DIR_NONE;
+        else if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
+            fFlags = CAM_DIR_IN;
         else
+            fFlags = CAM_DIR_OUT;
+
+        fFlags |= CAM_DEV_QFRZDIS;
+
+        cam_fill_csio(&pDeviceCCB->csio, 1, NULL, fFlags, MSG_SIMPLE_Q_TAG,
+                      (u_int8_t *)pvBuf, cbBuf, cbSense, cbCmd,
+                      cTimeoutMillies ? cTimeoutMillies : 30000/* timeout */);
+
+        /* Send command */
+        rcBSD = ioctl(RTFileToNative(pThis->Os.hFileDevice), CAMIOCOMMAND, pDeviceCCB);
+        if (!rcBSD)
         {
-            IOVirtualRange Range = { (IOVirtualAddress)pvBuf, cbBuf };
-            irc = (*ppScsiTaskI)->SetScatterGatherEntries(ppScsiTaskI, &Range, 1, cbBuf,
-                                                          enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
-                                                          ? kSCSIDataTransfer_FromTargetToInitiator
-                                                          : kSCSIDataTransfer_FromInitiatorToTarget);
+            switch (pDeviceCCB->ccb_h.status & CAM_STATUS_MASK)
+            {
+                case CAM_REQ_CMP:
+                    rc = VINF_SUCCESS;
+                    break;
+                case CAM_SEL_TIMEOUT:
+                    rc = VERR_DEV_IO_ERROR;
+                    break;
+                case CAM_CMD_TIMEOUT:
+                    rc = VERR_TIMEOUT;
+                    break;
+                default:
+                    rc = VERR_DEV_IO_ERROR;
+            }
+
+            if (pcbBuf)
+                *pcbBuf = cbBuf - pDeviceCCB->csio.resid;
+
+            if (pbSense)
+                memcpy(pbSense, &pDeviceCCB->csio.sense_data,
+                       cbSense - pDeviceCCB->csio.sense_resid);
         }
-        AssertBreak(irc == kIOReturnSuccess);
-
-        /* Set the timeout. */
-        irc = (*ppScsiTaskI)->SetTimeoutDuration(ppScsiTaskI, cTimeoutMillies ? cTimeoutMillies : 30000 /*ms*/);
-        AssertBreak(irc == kIOReturnSuccess);
-
-        /* Execute the command and get the response. */
-        SCSI_Sense_Data SenseData = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
-        SCSIServiceResponse     ServiceResponse = kSCSIServiceResponse_Request_In_Process;
-        SCSITaskStatus TaskStatus = kSCSITaskStatus_GOOD;
-        UInt64 cbReturned = 0;
-        irc = (*ppScsiTaskI)->ExecuteTaskSync(ppScsiTaskI, &SenseData, &TaskStatus, &cbReturned);
-        AssertBreak(irc == kIOReturnSuccess);
-        if (pcbBuf)
-            *pcbBuf = (int32_t)cbReturned;
-
-        irc = (*ppScsiTaskI)->GetSCSIServiceResponse(ppScsiTaskI, &ServiceResponse);
-        AssertBreak(irc == kIOReturnSuccess);
-        AssertBreak(ServiceResponse == kSCSIServiceResponse_TASK_COMPLETE);
-
-        if (TaskStatus == kSCSITaskStatus_GOOD)
-            rc = VINF_SUCCESS;
-        else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
-                 && pbSense)
-        {
-            memset(pbSense, 0, cbSense); /* lazy */
-            memcpy(pbSense, &SenseData, RT_MIN(sizeof(SenseData), cbSense));
-            rc = VERR_UNRESOLVED_ERROR;
-        }
-        /** @todo convert sense codes when caller doesn't wish to do this himself. */
-        /*else if (   TaskStatus == kSCSITaskStatus_CHECK_CONDITION
-                 && SenseData.ADDITIONAL_SENSE_CODE == 0x3A)
-            rc = VERR_MEDIA_NOT_PRESENT; */
         else
-        {
-            rc = enmTxDir == PDMMEDIATXDIR_NONE
-               ? VERR_DEV_IO_ERROR
-               : enmTxDir == PDMMEDIATXDIR_FROM_DEVICE
-               ? VERR_READ_ERROR
-               : VERR_WRITE_ERROR;
-            if (pThis->cLogRelErrors++ < 10)
-                LogRel(("DVD scsi error: cmd={%.*Rhxs} TaskStatus=%#x key=%#x ASC=%#x ASCQ=%#x (%Rrc)\n",
-                        cbCmd, pbCmd, TaskStatus, SenseData.SENSE_KEY, SenseData.ADDITIONAL_SENSE_CODE,
-                        SenseData.ADDITIONAL_SENSE_CODE_QUALIFIER, rc));
-        }
-    } while (0);
-
-    (*ppScsiTaskI)->Release(ppScsiTaskI);
-
-    return rc;
+            rc = RTErrConvertFromErrno(errno);
+    }
 }
 
 
@@ -147,7 +172,7 @@ DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
         Buf.cbBlock = RT_BE2H_U32(Buf.cbBlock);
         //if (Buf.cbBlock > 2048) /* everyone else is doing this... check if it needed/right.*/
         //    Buf.cbBlock = 2048;
-        pThis->cbBlock = Buf.cbBlock;
+        pThis->Os.cbBlock = Buf.cbBlock;
 
         *pcb = (uint64_t)Buf.cBlocks * Buf.cbBlock;
     }
@@ -159,20 +184,20 @@ DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf,
 {
     int rc = VINF_SUCCESS;
 
-    if (pThis->cbBlock)
+    if (pThis->Os.cbBlock)
     {
         /*
          * Issue a READ(12) request.
          */
         do
         {
-            const uint32_t  LBA       = off / pThis->cbBlock;
-            AssertReturn(!(off % pThis->cbBlock), VERR_INVALID_PARAMETER);
+            const uint32_t  LBA       = off / pThis->Os.cbBlock;
+            AssertReturn(!(off % pThis->Os.cbBlock), VERR_INVALID_PARAMETER);
             uint32_t        cbRead32  =   cbRead > SCSI_MAX_BUFFER_SIZE
                                         ? SCSI_MAX_BUFFER_SIZE
                                         : (uint32_t)cbRead;
-            const uint32_t  cBlocks   = cbRead32 / pThis->cbBlock;
-            AssertReturn(!(cbRead % pThis->cbBlock), VERR_INVALID_PARAMETER);
+            const uint32_t  cBlocks   = cbRead32 / pThis->Os.cbBlock;
+            AssertReturn(!(cbRead % pThis->Os.cbBlock), VERR_INVALID_PARAMETER);
             uint8_t         abCmd[16] =
             {
                 SCSI_READ_12, 0,
@@ -263,25 +288,120 @@ DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaC
 }
 
 
-DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
+DECLHIDDEN(void) drvHostBaseInitOs(PDRVHOSTBASE pThis)
 {
-    return RTSemEventSignal(pThis->EventPoller);
+    pThis->Os.hFileDevice = NIL_RTFILE;
+}
+
+
+DECLHIDDEN(int) drvHostBaseOpenOs(PDRVHOSTBASE pThis, bool fReadOnly)
+{
+    RT_NOREF(fReadOnly);
+    RTFILE hFileDevice;
+    int rc = RTFileOpen(&hFileDevice, pThis->pszDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * The current device handle can't passthrough SCSI commands.
+     * We have to get he passthrough device path and open this.
+     */
+    union ccb DeviceCCB;
+    memset(&DeviceCCB, 0, sizeof(DeviceCCB));
+
+    DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
+    int rcBSD = ioctl(RTFileToNative(hFileDevice), CAMGETPASSTHRU, &DeviceCCB);
+    if (!rcBSD)
+    {
+        char *pszPassthroughDevice = NULL;
+        rc = RTStrAPrintf(&pszPassthroughDevice, "/dev/%s%u",
+                          DeviceCCB.cgdl.periph_name, DeviceCCB.cgdl.unit_number);
+        if (rc >= 0)
+        {
+            RTFILE hPassthroughDevice;
+            rc = RTFileOpen(&hPassthroughDevice, pszPassthroughDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+            RTStrFree(pszPassthroughDevice);
+            if (RT_SUCCESS(rc))
+            {
+                /* Get needed device parameters. */
+
+                /*
+                 * The device path, target id and lun id. Those are
+                 * needed for the SCSI passthrough ioctl.
+                 */
+                memset(&DeviceCCB, 0, sizeof(DeviceCCB));
+                DeviceCCB.ccb_h.func_code = XPT_GDEVLIST;
+
+                rcBSD = ioctl(RTFileToNative(hPassthroughDevice), CAMGETPASSTHRU, &DeviceCCB);
+                if (!rcBSD)
+                {
+                    if (DeviceCCB.cgdl.status != CAM_GDEVLIST_ERROR)
+                    {
+                        pThis->Os.ScsiBus      = DeviceCCB.ccb_h.path_id;
+                        pThis->Os.ScsiTargetID = DeviceCCB.ccb_h.target_id;
+                        pThis->Os.ScsiLunID    = DeviceCCB.ccb_h.target_lun;
+                        pThis->Os.hFileDevice  = hPassthroughDevice;
+                    }
+                    else
+                    {
+                        /* The passthrough device wasn't found. */
+                        rc = VERR_NOT_FOUND;
+                    }
+                }
+                else
+                    rc = RTErrConvertFromErrno(errno);
+
+                if (RT_FAILURE(rc))
+                    RTFileClose(hPassthroughDevice);
+            }
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+
+    RTFileClose(hFileDevice);
+    return rc;
+}
+
+
+DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+    return VINF_SUCCESS;
+}
+
+
+DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
+{
+    if (pThis->enmType == PDMMEDIATYPE_CDROM || pThis->enmType == PDMMEDIATYPE_DVD)
+        return true;
+
+    AssertMsgFailed(("FreeBSD supports only CD/DVD host drive access\n"));
+    return false;
 }
 
 
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
-    if (pThis->EventPoller != NULL)
+    /*
+     * Unlock the drive if we've locked it or we're in passthru mode.
+     */
+    if (    pThis->fLocked
+        &&  pThis->Os.hFileDevice != NIL_RTFILE
+        &&  pThis->pfnDoLock)
     {
-        RTSemEventDestroy(pThis->EventPoller);
-        pThis->EventPoller = NULL;
+        int rc = pThis->pfnDoLock(pThis, false);
+        if (RT_SUCCESS(rc))
+            pThis->fLocked = false;
     }
 
-    if (pThis->hFileDevice != NIL_RTFILE)
+    if (pThis->Os.hFileDevice != NIL_RTFILE)
     {
-        int rc = RTFileClose(pThis->hFileDevice);
+        int rc = RTFileClose(pThis->Os.hFileDevice);
         AssertRC(rc);
-        pThis->hFileDevice = NIL_RTFILE;
+        pThis->Os.hFileDevice = NIL_RTFILE;
     }
 }
 
