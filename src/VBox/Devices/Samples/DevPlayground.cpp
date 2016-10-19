@@ -89,6 +89,8 @@ devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPH
         case 0:
         case 2:
             Assert(enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64));
+            if (GCPhysAddress == NIL_RTGCPHYS)
+                return VINF_SUCCESS; /* We ignore the unmap notification. */
             return PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
 
         default:
@@ -144,23 +146,26 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     int rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
     if (RT_FAILURE(rc))
         return rc;
+
     /* First region. */
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 8*_1G64,
+    RTGCPHYS const cbFirst = 8*_1G64;
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, cbFirst,
                                       (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
                                       devPlaygroundMap);
     AssertLogRelRCReturn(rc, rc);
-    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 0, 8*_1G64, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR0",
+    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 0, cbFirst, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR0",
                                     NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
                                     NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
                                     NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
     AssertLogRelRCReturn(rc, rc);
 
     /* Second region. */
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, 64*_1G64,
+    RTGCPHYS const cbSecond = 256*_1G64;
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, cbSecond,
                                       (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
                                       devPlaygroundMap);
     AssertLogRelRCReturn(rc, rc);
-    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 2, 64*_1G64, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR2",
+    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 2, cbSecond, IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR2",
                                     NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
                                     NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
                                     NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
