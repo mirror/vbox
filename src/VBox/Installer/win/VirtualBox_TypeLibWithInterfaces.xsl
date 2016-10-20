@@ -75,7 +75,7 @@
       <xsl:attribute name="MinorVersion"><xsl:value-of select="substring(@version,3)"/></xsl:attribute>
       <xsl:attribute name="Language">0</xsl:attribute>
       <xsl:attribute name="Description"><xsl:value-of select="@desc"/></xsl:attribute>
-      <xsl:attribute name="HelpDirectory"><xsl:text>INSTALLDIR</xsl:text></xsl:attribute>
+      <xsl:attribute name="HelpDirectory"><xsl:text>msm_VBoxApplicationFolder</xsl:text></xsl:attribute>
       <AppId>
         <xsl:attribute name="Id"><xsl:value-of select="@appUuid"/></xsl:attribute>
         <xsl:attribute name="Description"><xsl:value-of select="@name"/> Application</xsl:attribute>

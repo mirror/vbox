@@ -37,11 +37,11 @@
 
         <!-- Here comes the file/directory list -->
         <Directory Id="TARGETDIR" Name="SourceDir">
-            <Directory Id="MergeRedirectFolder" FileSource=".">
+            <Directory Id="msm_VBoxApplicationFolder" FileSource=".">
 
                 <?include VBoxMergeCOM32On64.wxi ?>
 
-            </Directory> <!-- MergeRedirectFolder -->
+            </Directory> <!-- msm_VBoxApplicationFolder -->
         </Directory> <!-- TARGETDIR -->
 
     </Module>
