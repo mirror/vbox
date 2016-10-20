@@ -1059,6 +1059,17 @@ void UISelectorWindow::sltHandleSegmentedButtonSwitch(int iSegment)
         /* Raise the desktop pane with welcome text or error details: */
         m_pContainerDetails->setCurrentWidget(m_pPaneDesktop);
     }
+
+#ifdef VBOX_WS_MAC
+    // WORKAROUND:
+    // Qt 5.6.x has weird bug:
+    // When some cocoa widget being focused for a first time
+    // previously focused Qt widget being erased unless
+    // someone calls for it's update directly or
+    // indirectly (like with mouse hovering).
+    // Doing that directly for Chooser pane.
+    m_pPaneChooser->update();
+#endif
 }
 
 void UISelectorWindow::sltPerformSegmentedButtonSwitch(int iSegment)
