@@ -15,8 +15,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __PCIInternal_h__
-#define __PCIInternal_h__
+#ifndef ___PCIInternal_h
+#define ___PCIInternal_h
+
+/** @defgroup grp_pci_int   PCI Internals
+ * @ingroup grp_pci
+ * @internal
+ * @{
+ */
+
 
 /**
  * PCI I/O region.
@@ -73,23 +80,23 @@ struct PCIBus;
 enum {
     /** Set if the specific device function was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
-    PCIDEV_FLAG_REQUESTED_DEVFUNC  = 1<<0,
+    PCIDEV_FLAG_REQUESTED_DEVFUNC  = RT_BIT_32(0),
     /** Flag whether the device is a pci-to-pci bridge.
      * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_TO_PCI_BRIDGE  = 1<<1,
+    PCIDEV_FLAG_PCI_TO_PCI_BRIDGE  = RT_BIT_32(1),
     /** Flag whether the device is a PCI Express device.
      * This is set prior to device registration.  */
-    PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2,
+    PCIDEV_FLAG_PCI_EXPRESS_DEVICE = RT_BIT_32(2),
     /** Flag whether the device is capable of MSI.
      * This one is set by MsiInit().  */
-    PCIDEV_FLAG_MSI_CAPABLE        = 1<<3,
+    PCIDEV_FLAG_MSI_CAPABLE        = RT_BIT_32(3),
     /** Flag whether the device is capable of MSI-X.
      * This one is set by MsixInit().  */
-    PCIDEV_FLAG_MSIX_CAPABLE       = 1<<4,
+    PCIDEV_FLAG_MSIX_CAPABLE       = RT_BIT_32(4),
     /** Flag if device represents real physical device in passthrough mode. */
-    PCIDEV_FLAG_PASSTHROUGH        = 1<<5,
+    PCIDEV_FLAG_PASSTHROUGH        = RT_BIT_32(5),
     /** Flag whether the device is capable of MSI using 64-bit address.  */
-    PCIDEV_FLAG_MSI64_CAPABLE      = 1<<6
+    PCIDEV_FLAG_MSI64_CAPABLE      = RT_BIT_32(6)
 
 };
 
@@ -99,27 +106,20 @@ enum {
 typedef struct PCIDEVICEINT
 {
     /** I/O regions. */
-    PCIIOREGION                     aIORegions[PCI_NUM_REGIONS];
+    PCIIOREGION                     aIORegions[VBOX_PCI_NUM_REGIONS];
     /** Pointer to the PCI bus of the device. (R3 ptr) */
     R3PTRTYPE(struct PCIBus *)      pBusR3;
     /** Pointer to the PCI bus of the device. (R0 ptr) */
     R0PTRTYPE(struct PCIBus *)      pBusR0;
     /** Pointer to the PCI bus of the device. (RC ptr) */
     RCPTRTYPE(struct PCIBus *)      pBusRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         Alignment0;
-#endif
 
-    /** Page used for MSI-X state.             (R3 ptr) */
-    R3PTRTYPE(void*)                pMsixPageR3;
-    /** Page used for MSI-X state.             (R0 ptr) */
-    R0PTRTYPE(void*)                pMsixPageR0;
     /** Page used for MSI-X state.             (RC ptr) */
-    RCPTRTYPE(void*)                pMsixPageRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         Alignment1;
-#endif
-
+    RCPTRTYPE(void *)               pMsixPageRC;
+    /** Page used for MSI-X state.             (R3 ptr) */
+    R3PTRTYPE(void *)               pMsixPageR3;
+    /** Page used for MSI-X state.             (R0 ptr) */
+    R0PTRTYPE(void *)               pMsixPageR0;
 
     /** Read config callback. */
     R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
@@ -140,23 +140,24 @@ typedef struct PCIDEVICEINT
     /** Size of MSI-X PCI capability in config space, or 0. */
     uint8_t                         u8MsixCapSize;
 
-    uint32_t                        Alignment2;
+    /** Explicit alignment padding. */
+    uint32_t                        u32Alignment0;
 
     /** Pointer to bus specific data.                 (R3 ptr) */
-    R3PTRTYPE(const void*)          pPciBusPtrR3;
+    R3PTRTYPE(const void *)         pPciBusPtrR3;
 
     /** Read config callback for PCI bridges to pass requests
-     *  to devices on another bus.
-     */
+     * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGREAD) pfnBridgeConfigRead;
     /** Write config callback for PCI bridges to pass requests
-     *  to devices on another bus.
-     */
+     * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGWRITE) pfnBridgeConfigWrite;
 
 } PCIDEVICEINT;
 
 /** Indicate that PCIDEVICE::Int.s can be declared. */
 #define PCIDEVICEINT_DECLARED
+
+/** @} */
 
 #endif

@@ -157,7 +157,7 @@ int main()
     GEN_CHECK_OFF(PCIDEVICE, Int);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[1]);
-    GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[PCI_NUM_REGIONS - 1]);
+    GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[VBOX_PCI_NUM_REGIONS - 1]);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[0].addr);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[0].size);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.aIORegions[0].type);
