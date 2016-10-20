@@ -47,7 +47,6 @@
  */
 #include "vbox_drv.h"
 
-#include <VBox/VBoxGuest.h>
 #include "version-generated.h"
 #include "revision-generated.h"
 

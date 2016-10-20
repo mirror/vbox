@@ -18,12 +18,9 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
-#include <VBox/VBoxGuest.h>
 #include <VBox/Hardware/VBoxVideoVBE.h>
-#include <VBox/VMMDev.h>
 
 #include <iprt/asm.h>
-// #include <iprt/log.h>
 #include <iprt/string.h>
 
 /** Send completion notification to the host for the command located at offset

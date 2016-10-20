@@ -48,7 +48,6 @@
 /* Include from most specific to most general to be able to override things. */
 #include "vbox_drv.h"
 #include <VBox/VBoxVideo.h>
-#include <VBox/VMMDev.h>
 
 #include <linux/module.h>
 #include <linux/kernel.h>
