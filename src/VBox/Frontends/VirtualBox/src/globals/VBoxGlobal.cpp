@@ -50,7 +50,6 @@
 # if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 #  include <QScreen>
 #  include <xcb/xcb.h>
-#  include <xcb/xcb_icccm.h>
 # endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 /* GUI includes: */
@@ -3704,6 +3703,29 @@ void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCo
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
 }
 
+typedef struct {
+/** User specified flags */
+uint32_t flags;
+/** User-specified position */
+int32_t x, y;
+/** User-specified size */
+int32_t width, height;
+/** Program-specified minimum size */
+int32_t min_width, min_height;
+/** Program-specified maximum size */
+int32_t max_width, max_height;
+/** Program-specified resize increments */
+int32_t width_inc, height_inc;
+/** Program-specified minimum aspect ratios */
+int32_t min_aspect_num, min_aspect_den;
+/** Program-specified maximum aspect ratios */
+int32_t max_aspect_num, max_aspect_den;
+/** Program-specified base size */
+int32_t base_width, base_height;
+/** Program-specified window gravity */
+uint32_t win_gravity;
+} xcb_size_hints_t;
+
 /* static */
 void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h)
 {
@@ -3723,7 +3745,8 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         xcb_configure_window(QX11Info::connection(), (xcb_window_t)pWidget->winId(),
                              fMask, values);
         xcb_size_hints_t hints;
-        hints.flags = XCB_ICCCM_SIZE_HINT_US_POSITION | XCB_ICCCM_SIZE_HINT_US_SIZE;
+        hints.flags =   1 /* XCB_ICCCM_SIZE_HINT_US_POSITION */
+                      | 2 /* XCB_ICCCM_SIZE_HINT_US_SIZE */;
         hints.x          = x;
         hints.y          = y;
         hints.width      = w;
@@ -3733,9 +3756,9 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         hints.max_width  = pWidget->maximumSize().width();
         hints.max_height = pWidget->maximumSize().height();
         if (hints.min_width > 0 || hints.min_height > 0)
-            hints.flags |= XCB_ICCCM_SIZE_HINT_P_MIN_SIZE;
+            hints.flags |= 16 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */;
         if (hints.max_width < QWINDOWSIZE_MAX || hints.max_height < QWINDOWSIZE_MAX)
-            hints.flags |= XCB_ICCCM_SIZE_HINT_P_MAX_SIZE;
+            hints.flags |= 32 /* XCB_ICCCM_SIZE_HINT_P_MAX_SIZE */;
         xcb_change_property(QX11Info::connection(), XCB_PROP_MODE_REPLACE,
                             (xcb_window_t)pWidget->winId(), XCB_ATOM_WM_NORMAL_HINTS,
                             XCB_ATOM_WM_SIZE_HINTS, 32, sizeof(hints) >> 2, &hints);
