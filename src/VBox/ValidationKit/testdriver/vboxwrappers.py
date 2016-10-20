@@ -2028,7 +2028,16 @@ class SessionWrapper(TdTaskBase):
             oAudioAdapter = self.o.machine.audioAdapter;
 
             oAudioAdapter.audioController = eAudioCtlType;
-            oAudioAdapter.audioDriver = vboxcon.AudioDriverType_Null;
+
+            sHost = utils.getHostOs()
+            if   sHost == 'darwin':    oAudioAdapter.audioDriver = vboxcon.AudioDriverType_CoreAudio;
+            elif sHost == 'win':       oAudioAdapter.audioDriver = vboxcon.AudioDriverType_DirectSound;
+            elif sHost == 'linux':     oAudioAdapter.audioDriver = vboxcon.AudioDriverType_Pulse;
+            elif sHost == 'solaris':   oAudioAdapter.audioDriver = vboxcon.AudioDriverType_OSS;
+            else:
+                reporter.error('Unsupported host "%s".' % (sHost,));
+                oAudioAdapter.audioDriver = vboxcon.AudioDriverType_Null;
+
             # Disable by default
             oAudioAdapter.enabled = False;
         except:

@@ -1907,6 +1907,13 @@ class TestDriver(base.TestDriver):                                              
         else: sType = "unknown %s" % (oAudioAdapter.audioController);
         reporter.log("    AudioController: %s" % (sType));
         reporter.log("    AudioEnabled: %s" % (oAudioAdapter.enabled));
+        if   oAudioAdapter.audioDriver == vboxcon.AudioDriverType_CoreAudio: sType = "CoreAudio";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_DirectSound: sType = "DirectSound";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Pulse: sType = "PulseAudio";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_OSS: sType = "OSS";
+        elif oAudioAdapter.audioDriver == vboxcon.AudioDriverType_Null: sType = "NULL";
+        else: sType = "unknown %s" % (oAudioAdapter.audioDriver);
+        reporter.log("    Host AudioDriver: %s" % (sType));
 
         self.processPendingEvents();
         aoAttachments = self.oVBoxMgr.getArray(oVM, 'mediumAttachments')
