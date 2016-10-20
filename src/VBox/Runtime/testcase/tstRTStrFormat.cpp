@@ -213,20 +213,20 @@ int main()
             const char   chAfter    = cbBuf != 0 ? '\0' : 0xcc; \
             const size_t cchCompare = cbBuf >= sizeof(g_szCheck42Expect) ? sizeof(g_szCheck42Expect) - 1 \
                                     : cbBuf > 0 ? cbBuf - 1 : 0; \
-            /*size_t       cch1Expect = cchCompare; */ \
+            size_t       cch1Expect = cchCompare; \
             ssize_t      cch2Expect = cbBuf >= sizeof(g_szCheck42Expect) \
                                     ? sizeof(g_szCheck42Expect) - 1 : -(ssize_t)sizeof(g_szCheck42Expect); \
             \
-            cch2 = RTStrPrintf(pszBuf, cbBuf, g_szCheck42Fmt, arg, 42, arg, 42);\
+            cch = RTStrPrintf(pszBuf, cbBuf, g_szCheck42Fmt, arg, 42, arg, 42);\
             if (   memcmp(pszBuf, g_szCheck42Expect, cchCompare) != 0 \
                 || pszBuf[cchCompare] != chAfter) \
                 RTTestIFailed("at line %d: format '%s' (#1, cbBuf=%zu)\n" \
                               "    output: '%s'\n"  \
                               "    wanted: '%s'\n", \
                               __LINE__, fmt, cbBuf, cbBuf ? pszBuf : "", g_szCheck42Expect); \
-            /*if (cch != cch1Expect) - code is buggy */ \
-            /*     RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (#1)\n", */ \
-            /*                   __LINE__, cch, cbBuf, cch1Expect); */ \
+            if (cch != cch1Expect) \
+                 RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (#1)\n", \
+                               __LINE__, cch, cbBuf, cch1Expect); \
             \
             cch2 = RTStrPrintf2(pszBuf, cbBuf, g_szCheck42Fmt, arg, 42, arg, 42);\
             if (   memcmp(pszBuf, g_szCheck42Expect, cchCompare) != 0 \
@@ -245,7 +245,13 @@ int main()
 #define CHECKSTR(Correct) \
     if (strcmp(pszBuf, Correct)) \
         RTTestIFailed("error:    '%s'\n" \
-                      "expected: '%s'\n", pszBuf, Correct); \
+                      "expected: '%s'\n", pszBuf, Correct);
+
+    /*
+     * Test the waters.
+     */
+    CHECK42("%d", 127, "127");
+    CHECK42("%s", "721", "721");
 
     /*
      * Runtime extensions.
