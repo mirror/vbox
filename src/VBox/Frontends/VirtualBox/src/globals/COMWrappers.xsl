@@ -7,7 +7,7 @@
  *  in platform-independent script-like manner.
  */
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2016 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -256,7 +256,7 @@
     <xsl:text>&#x0A;</xsl:text>
     <xsl:apply-templates select="if | interface[not(@internal='yes')]" mode="define"/>
 
-    <!-- Finishing COMEnums.h file: -->
+    <!-- Finishing COMWrappers.cpp file: -->
     <xsl:call-template name="endFile">
         <xsl:with-param name="file" select="'COMWrappers.cpp'" />
     </xsl:call-template>
