@@ -318,12 +318,21 @@ Py_nsIID::PyTypeMethod_str(PyObject *self)
 	return ret;
 }
 
+#if PY_VERSION_HEX >= 0x03020000
+/* static */Py_hash_t
+Py_nsIID::PyTypeMethod_hash(PyObject *self)
+#else
 /* static */long
 Py_nsIID::PyTypeMethod_hash(PyObject *self)
+#endif
 {
 	const nsIID &iid = ((Py_nsIID *)self)->m_iid;
 
+#if PY_VERSION_HEX >= 0x03020000
+	Py_hash_t ret = iid.m0 + iid.m1 + iid.m2;
+#else
 	long ret = iid.m0 + iid.m1 + iid.m2;
+#endif
 	for (int i=0;i<7;i++)
 		ret += iid.m3[i];
 	if ( ret == -1 )
