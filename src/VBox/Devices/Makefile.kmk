@@ -549,15 +549,33 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # --- Audio bits. ---
 
  if 0 # Not stable yet.
-  VBoxDD_DEFS += VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
-  VBoxDD_DEFS += VBOX_WITH_HDA_51_SURROUND
+  # Enable microphone-in support for HDA. Otherwise only line-in is supported. 
+  VBoxDD_DEFS += VBOX_WITH_AUDIO_HDA_MIC_IN
+
+  # Enable interleavig streams support for HDA. Needed for 5.1 surround support.
+  VBoxDD_DEFS += VBOX_WITH_AUDIO_HDA_INTERLEAVING_STREAMS_SUPPORT
+
+  # Enable 5.1 surround support (Front, Center/LFE, Rear) for HDA. 
+  # Without this, only stereo output (Front) is supported.
+  VBoxDD_DEFS += VBOX_WITH_AUDIO_HDA_51_SURROUND
  endif
 
- # Enable generic callback support.
- VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
+ # Enable backend-independent device enumeration support. 
+ #VBoxDD_DEFS  += VBOX_WITH_AUDIO_ENUM
+
+ # Enable backend callback support.
+ #VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
 
  # Enable Audio Queues implementation for macOS hosts (Core Audio backend).
  VBoxDD_DEFS.darwin += VBOX_WITH_AUDIO_CA_QUEUES
+
+ # Enable one-time audio stream initialization at device creation (VM startup) instead
+ # of creating the stream when needed at some later point in time. 
+ #
+ # This was the default behavior ever since.
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_SB16_ONETIME_INIT
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_AC97_ONETIME_INIT
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ONETIME_INIT
 
  # Not yet enabled: Callbacks for the device emulation to let the backends
  #                  tell the emulation when and how to process data.

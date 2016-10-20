@@ -219,7 +219,7 @@ static int coreAudioStreamCfgToASBD(PPDMAUDIOSTREAMCFG pCfg, AudioStreamBasicDes
     return rc;
 }
 
-#ifndef VBOX_WITH_AUDIO_CA_QUEUES
+#ifndef VBOX_WITH_AUDIO_CALLBACKS
 static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pASBD, VERR_INVALID_PARAMETER);
@@ -255,7 +255,9 @@ static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDI
     AssertRC(rc);
     return rc;
 }
+#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
+#ifndef VBOX_WITH_AUDIO_CA_QUEUES
 static OSStatus coreAudioSetFrameBufferSize(AudioDeviceID deviceID, bool fInput, UInt32 cReqSize, UInt32 *pcActSize)
 {
     AudioObjectPropertyScope propScope = fInput
@@ -537,6 +539,7 @@ static OSStatus coreAudioDevPropChgCb(AudioObjectID propertyID, UInt32 nAddresse
 #ifndef VBOX_WITH_AUDIO_CA_QUEUES
 static OSStatus coreAudioPlaybackCb(void *pvUser, AudioUnitRenderActionFlags *pActionFlags, const AudioTimeStamp *pAudioTS, UInt32 uBusID, UInt32 cFrames, AudioBufferList* pBufData);
 #else
+static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq);
 static void coreAudioInputQueueCb(void *pvUser, AudioQueueRef audioQueue, AudioQueueBufferRef audioBuffer, const AudioTimeStamp *pAudioTS, UInt32 cPacketDesc, const AudioStreamPacketDescription *paPacketDesc);
 static void coreAudioOutputQueueCb(void *pvUser, AudioQueueRef audioQueue, AudioQueueBufferRef audioBuffer);
 #endif
@@ -1027,28 +1030,6 @@ int coreAudioDevicesEnumerateAll(PDRVHOSTCOREAUDIO pThis, PPDMAUDIODEVICEENUM pE
 }
 
 
-#if 0
-static int coreAudioDeviceInit(PPDMAUDIODEVICE pDev, PDRVHOSTCOREAUDIO pDrv, PDMAUDIODIR enmUsage, AudioDeviceID deviceID)
-{
-    AssertPtrReturn(pDev, VERR_INVALID_POINTER);
-
-    PCOREAUDIODEVICEDATA pData = (PCOREAUDIODEVICEDATA)pDev->pvData;
-    AssertPtrReturn(pData, VERR_INVALID_POINTER);
-
-    /* Init common parameters. */
-    pDev->enmUsage   = enmUsage;
-
-    /* Init Core Audio-specifics. */
-    pData->deviceID  = deviceID;
-    pData->pDrv      = pDrv;
-
-    RTListInit(&pData->lstStreams);
-
-    return VINF_SUCCESS;
-}
-#endif
-
-
 /**
  * Initializes a Core Audio-specific device data structure.
  *
@@ -1318,7 +1299,7 @@ static int coreAudioStreamReinit(PDRVHOSTCOREAUDIO pThis, PCOREAUDIOSTREAM pCASt
 
     return rc;
 }
-#endif /* VBOX_WITH_AUDIO_CALLBACKS */
+#endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
 #ifdef VBOX_WITH_AUDIO_CA_CONVERTER
 /* Callback to convert audio input data from one format to another. */
@@ -3002,12 +2983,10 @@ static DECLCALLBACK(OSStatus) coreAudioDevPropChgCb(AudioObjectID               
 {
     RT_NOREF(cAddresses, properties, pvUser);
 
-#ifdef DEBUG
     PPDMAUDIODEVICE pDev = (PPDMAUDIODEVICE)pvUser;
     AssertPtr(pDev);
 
     LogFlowFunc(("propertyID=%u, nAddresses=%u, pDev=%p\n", propertyID, cAddresses, pDev));
-#endif
 
     switch (propertyID)
     {
@@ -3023,6 +3002,8 @@ static DECLCALLBACK(OSStatus) coreAudioDevPropChgCb(AudioObjectID               
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
             int rc2 = coreAudioDevicePropagateStatus(pDev, COREAUDIOSTATUS_REINIT);
             AssertRC(rc2);
+#else
+            RT_NOREF(pDev);
 #endif
             break;
         }

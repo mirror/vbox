@@ -56,22 +56,18 @@
 //#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
 
-#ifdef DEBUG_andy
 /*
  * HDA_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust HDA_DEBUG_DUMP_PCM_DATA_PATH
  * to your needs before using this!
  */
-# define HDA_DEBUG_DUMP_PCM_DATA
+//#define HDA_DEBUG_DUMP_PCM_DATA
+#ifdef HDA_DEBUG_DUMP_PCM_DATA
 # ifdef RT_OS_WINDOWS
 #  define HDA_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
 # else
 #  define HDA_DEBUG_DUMP_PCM_DATA_PATH "/tmp/"
 # endif
-
-/* Enables experimental support for separate mic-in handling.
-   Do not enable this yet for regular builds, as this needs more testing first! */
-//# define VBOX_WITH_HDA_MIC_IN
 #endif
 
 #if defined(VBOX_WITH_HP_HDA)
@@ -98,9 +94,9 @@
  * writes 1, hw sets it to 1 (after completion), sw reads 1, sw writes 0). */
 #define BIRD_THINKS_CORBRP_IS_MOSTLY_RO
 
-/* Make sure that interleaving streams support is enabled if the 5.1 code is being used. */
-#if defined (VBOX_WITH_HDA_51_SURROUND) && !defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT)
-# define VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+/* Make sure that interleaving streams support is enabled if the 5.1 surround code is being used. */
+#if defined (VBOX_WITH_AUDIO_HDA_51_SURROUND) && !defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT)
+# define VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
 #endif
 
 /**
@@ -752,13 +748,13 @@ typedef struct HDADRIVER
     R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pConnector;
     /** Mixer stream for line input. */
     HDAMIXERSTREAM                     LineIn;
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     /** Mixer stream for mic input. */
     HDAMIXERSTREAM                     MicIn;
 #endif
     /** Mixer stream for front output. */
     HDAMIXERSTREAM                     Front;
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     /** Mixer stream for center/LFE output. */
     HDAMIXERSTREAM                     CenterLFE;
     /** Mixer stream for rear output. */
@@ -846,7 +842,7 @@ typedef struct HDASTATE
     R3PTRTYPE(PAUDIOMIXER)             pMixer;
     /** HDA sink for (front) output. */
     HDAMIXERSINK                       SinkFront;
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     /** HDA sink for center / LFE output. */
     HDAMIXERSINK                       SinkCenterLFE;
     /** HDA sink for rear output. */
@@ -854,7 +850,7 @@ typedef struct HDASTATE
 #endif
     /** HDA mixer sink for line input. */
     HDAMIXERSINK                       SinkLineIn;
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     /** Audio mixer sink for microphone input. */
     HDAMIXERSINK                       SinkMicIn;
 #endif
@@ -1904,7 +1900,7 @@ static int hdaStreamStop(PHDASTREAM pStream)
     return rc;
 }
 
-# if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
 static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvBuf, size_t cbBuf)
 {
     AssertPtrReturn(pChan, VERR_INVALID_POINTER);
@@ -1952,7 +1948,7 @@ static int hdaStreamChannelExtract(PPDMAUDIOSTREAMCHANNEL pChan, const void *pvB
 
     return VINF_SUCCESS;
 }
-# endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
+# endif /* defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND) */
 
 # if 0 /** @todo hdaStreamChannelAdvance is unused */
 static int hdaStreamChannelAdvance(PPDMAUDIOSTREAMCHANNEL pChan, size_t cbAdv)
@@ -1996,7 +1992,7 @@ static void hdaStreamChannelDataDestroy(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     pChanData->fFlags = PDMAUDIOSTREAMCHANNELDATA_FLAG_NONE;
 }
 
-# if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+# if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
 
 static int hdaStreamChannelAcquireData(PPDMAUDIOSTREAMCHANNELDATA pChanData, void *pvData, size_t *pcbData)
 {
@@ -2018,7 +2014,7 @@ static int hdaStreamChannelReleaseData(PPDMAUDIOSTREAMCHANNELDATA pChanData)
     return VINF_SUCCESS;
 }
 
-# endif /* defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND) */
+# endif /* defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND) */
 
 # if 0 /* currently unused */
 static int hdaStreamWaitForStateChange(PHDASTREAM pStream, RTMSINTERVAL msTimeout)
@@ -2668,7 +2664,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     int rc = VINF_SUCCESS;
 
     bool fUseFront = true; /* Always use front out by default. */
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     bool fUseRear;
     bool fUseCenter;
     bool fUseLFE;
@@ -2715,7 +2711,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             break;
         }
     }
-#else /* !VBOX_WITH_HDA_51_SURROUND */
+#else /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
     /* Only support mono or stereo channels. */
     if (   pCfg->cChannels != 1 /* Mono */
         && pCfg->cChannels != 2 /* Stereo */)
@@ -2748,7 +2744,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_FRONT, pCfg);
         }
 
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         if (   RT_SUCCESS(rc)
             && (fUseCenter || fUseLFE))
         {
@@ -2772,7 +2768,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
             if (RT_SUCCESS(rc))
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_REAR, pCfg);
         }
-#endif /* VBOX_WITH_HDA_51_SURROUND */
+#endif /* VBOX_WITH_AUDIO_HDA_51_SURROUND */
 
     } while (0);
 
@@ -2800,7 +2796,7 @@ static int hdaAddStreamIn(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
                 rc = hdaCodecAddStream(pThis->pCodec, PDMAUDIOMIXERCTL_LINE_IN, pCfg);
             break;
         }
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIORECSOURCE_MIC:
         {
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_MIC_IN);
@@ -2848,7 +2844,7 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     switch (strmCfg.enmDir)
     {
         case PDMAUDIODIR_IN:
-# ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
 #  error "Implement me!"
 # else
             strmCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
@@ -3376,7 +3372,7 @@ static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg)
     if (RT_SUCCESS(rc))
     {
         pMapping->cChannels = pCfg->cChannels;
-#ifdef VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+#ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
         pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
 #else
         pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
@@ -3673,15 +3669,15 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
          */
         if (cbBuf >= hdaStreamGetFIFOW(pThis, pStream))
         {
-#if defined(VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_HDA_51_SURROUND)
+#if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
             PHDASTREAMMAPPING pMapping            = &pStream->State.Mapping;
 #endif
 
             /** @todo Which channel is which? */
-#ifdef VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+#ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
             PPDMAUDIOSTREAMCHANNEL pChanFront     = &pMapping->paChannels[0];
 #endif
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             PPDMAUDIOSTREAMCHANNEL pChanCenterLFE = &pMapping->paChannels[2]; /** @todo FIX! */
             PPDMAUDIOSTREAMCHANNEL pChanRear      = &pMapping->paChannels[4]; /** @todo FIX! */
 #endif
@@ -3689,7 +3685,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
 
             void  *pvDataFront = NULL;
             size_t cbDataFront;
-#ifdef VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+#ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
             rc2 = hdaStreamChannelExtract(pChanFront, pvBuf, cbBuf);
             AssertRC(rc2);
 
@@ -3700,7 +3696,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
             pvDataFront = pvBuf;
             cbDataFront = cbBuf;
 #endif
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             void  *pvDataCenterLFE;
             size_t cbDataCenterLFE;
             rc2 = hdaStreamChannelExtract(pChanCenterLFE, pvBuf, cbBuf);
@@ -3723,7 +3719,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
             rc2 = AudioMixerSinkWrite(pThis->SinkFront.pMixSink, AUDMIXOP_COPY, pvDataFront,     (uint32_t)cbDataFront,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             rc2 = AudioMixerSinkWrite(pThis->SinkCenterLFE,      AUDMIXOP_COPY, pvDataCenterLFE, cbDataCenterLFE,
                                       NULL /* pcbWritten */);
             AssertRC(rc2);
@@ -3732,10 +3728,10 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
             AssertRC(rc2);
 #endif
 
-#ifdef VBOX_WITH_HDA_INTERLEAVING_STREAMS_SUPPORT
+#ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
             hdaStreamChannelReleaseData(&pChanFront->Data);
 #endif
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             hdaStreamChannelReleaseData(&pChanCenterLFE->Data);
             hdaStreamChannelReleaseData(&pChanRear->Data);
 #endif
@@ -3802,7 +3798,7 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         case PDMAUDIOMIXERCTL_FRONT:
             pSink = &pThis->SinkFront;
             break;
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         case PDMAUDIOMIXERCTL_CENTER_LFE:
             pSink = &pThis->SinkCenterLFE;
             break;
@@ -3813,7 +3809,7 @@ static PHDAMIXERSINK hdaMixerControlToSink(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         case PDMAUDIOMIXERCTL_LINE_IN:
             pSink = &pThis->SinkLineIn;
             break;
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIOMIXERCTL_MIC_IN:
             pSink = &pThis->SinkMicIn;
             break;
@@ -3869,7 +3865,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
                 case PDMAUDIORECSOURCE_LINE:
                     pStream = &pDrv->LineIn;
                     break;
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
                 case PDMAUDIORECSOURCE_MIC:
                     pStream = &pDrv->MicIn;
                     break;
@@ -3888,7 +3884,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
                 case PDMAUDIOPLAYBACKDEST_FRONT:
                     pStream = &pDrv->Front;
                     break;
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 case PDMAUDIOPLAYBACKDEST_CENTER_LFE:
                     pStream = &pDrv->CenterLFE;
                     break;
@@ -4000,7 +3996,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     pMixStream = pDrv->LineIn.pMixStrm;
                     pDrv->LineIn.pMixStrm = NULL;
                     break;
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
                 case PDMAUDIOMIXERCTL_MIC_IN:
                     pMixStream = pDrv->MicIn.pMixStrm;
                     pDrv->MicIn.pMixStrm = NULL;
@@ -4013,7 +4009,7 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
                     pMixStream = pDrv->Front.pMixStrm;
                     pDrv->Front.pMixStrm = NULL;
                     break;
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
                 case PDMAUDIOMIXERCTL_CENTER_LFE:
                     pMixStream = pDrv->CenterLFE.pMixStrm;
                     pDrv->CenterLFE.pMixStrm = NULL;
@@ -4197,11 +4193,11 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     bool fKickTimer = false;
 
     PHDASTREAM pStreamLineIn  = hdaGetStreamFromSink(pThis, &pThis->SinkLineIn);
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     PHDASTREAM pStreamMicIn   = hdaGetStreamFromSink(pThis, &pThis->SinkMicIn);
 #endif
     PHDASTREAM pStreamFront   = hdaGetStreamFromSink(pThis, &pThis->SinkFront);
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     /** @todo See note below. */
 #endif
 
@@ -4217,7 +4213,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         }
     }
 
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     rc = AudioMixerSinkUpdate(pThis->SinkMicIn.pMixSink);
     if (RT_SUCCESS(rc))
     {
@@ -4230,7 +4226,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     }
 #endif
 
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     rc = AudioMixerSinkUpdate(pThis->SinkCenterLFE.pMixSink);
     if (RT_SUCCESS(rc))
     {
@@ -5522,11 +5518,11 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
      * Stop any audio currently playing and/or recording.
      */
     AudioMixerSinkCtl(pThis->SinkFront.pMixSink,     AUDMIXSINKCMD_DISABLE);
-# ifdef VBOX_WITH_HDA_MIC_IN
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     AudioMixerSinkCtl(pThis->SinkMicIn.pMixSink,     AUDMIXSINKCMD_DISABLE);
 # endif
     AudioMixerSinkCtl(pThis->SinkLineIn.pMixSink,    AUDMIXSINKCMD_DISABLE);
-# ifdef VBOX_WITH_HDA_51_SURROUND
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     AudioMixerSinkCtl(pThis->SinkCenterLFE.pMixSink, AUDMIXSINKCMD_DISABLE);
     AudioMixerSinkCtl(pThis->SinkRear.pMixSink,      AUDMIXSINKCMD_DISABLE);
 # endif
@@ -5538,13 +5534,13 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
      * We use SD0 for input and SD4 for output by default.
      * These stream numbers can be changed by the guest dynamically lateron.
      */
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_MIC_IN    , 1 /* SD0 */, 0 /* Channel */);
 #endif
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_LINE_IN   , 1 /* SD0 */, 0 /* Channel */);
 
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_FRONT     , 5 /* SD4 */, 0 /* Channel */);
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE, 5 /* SD4 */, 0 /* Channel */);
     hdaMixerSetStream(pThis, PDMAUDIOMIXERCTL_REAR      , 5 /* SD4 */, 0 /* Channel */);
 #endif
@@ -5992,7 +5988,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             /*
              * Add mixer output sinks.
              */
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Front",
                                       AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
             AssertRC(rc);
@@ -6013,7 +6009,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In",
                                       AUDMIXSINKDIR_INPUT, &pThis->SinkLineIn.pMixSink);
             AssertRC(rc);
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
             rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In",
                                       AUDMIXSINKDIR_INPUT, &pThis->SinkMicIn.pMixSink);
             AssertRC(rc);
@@ -6064,6 +6060,120 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             rc = hdaStreamCreate(&pThis->aStreams[i], i /* uSD */);
             AssertRC(rc);
         }
+
+#ifdef VBOX_WITH_AUDIO_HDA_ONETIME_INIT
+        /*
+         * Initialize the driver chain.
+         */
+        PHDADRIVER pDrv;
+        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+        {
+            /*
+             * Only primary drivers are critical for the VM to run. Everything else
+             * might not worth showing an own error message box in the GUI.
+             */
+            if (!(pDrv->Flags & PDMAUDIODRVFLAGS_PRIMARY))
+                continue;
+
+            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+            AssertPtr(pCon);
+
+            bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+            bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
+# endif
+            bool fValidOut    = AudioMixerStreamIsValid(pDrv->Front.pMixStrm);
+# ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+            /** @todo Anything to do here? */
+# endif
+
+            if (    !fValidLineIn
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+                 && !fValidMicIn
+# endif
+                 && !fValidOut)
+            {
+                LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
+
+                hdaReset(pDevIns);
+                hdaReattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
+
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                    N_("No audio devices could be opened. Selecting the NULL audio backend "
+                       "with the consequence that no sound is audible"));
+            }
+            else
+            {
+                bool fWarn = false;
+
+                PDMAUDIOBACKENDCFG backendCfg;
+                int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
+                if (RT_SUCCESS(rc2))
+                {
+                    if (backendCfg.cMaxStreamsIn)
+                    {
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+                        /* If the audio backend supports two or more input streams at once,
+                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
+                        if (backendCfg.cMaxStreamsIn >= 2)
+                            fWarn = !fValidLineIn || !fValidMicIn;
+                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
+                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
+                         * One of the two simply is not in use then. */
+                        else if (backendCfg.cMaxStreamsIn == 1)
+                            fWarn = !fValidLineIn && !fValidMicIn;
+                        /* Don't warn if our backend is not able of supporting any input streams at all. */
+# else /* !VBOX_WITH_AUDIO_HDA_MIC_IN */
+                        /* We only have line-in as input source. */
+                        fWarn = !fValidLineIn;
+# endif /* VBOX_WITH_AUDIO_HDA_MIC_IN */
+                    }
+
+                    if (   !fWarn
+                        && backendCfg.cMaxStreamsOut)
+                    {
+                        fWarn = !fValidOut;
+                    }
+                }
+                else
+                {
+                    LogRel(("HDA: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
+                    fWarn = true;
+                }
+
+                if (fWarn)
+                {
+                    char   szMissingStreams[255];
+                    size_t len = 0;
+                    if (!fValidLineIn)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
+                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
+                    }
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+                    if (!fValidMicIn)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
+                    }
+# endif /* VBOX_WITH_AUDIO_HDA_MIC_IN */
+                    if (!fValidOut)
+                    {
+                        LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
+                        len += RTStrPrintf(szMissingStreams + len,
+                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
+                    }
+
+                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                               N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
+                                                  "output or depending on audio input may hang. Make sure your host audio device "
+                                                  "is working properly. Check the logfile for error messages of the audio "
+                                                  "subsystem"), szMissingStreams);
+                }
+            }
+        }
+#endif /* VBOX_WITH_AUDIO_HDA_ONETIME_INIT */
     }
 
     if (RT_SUCCESS(rc))

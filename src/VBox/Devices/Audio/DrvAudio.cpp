@@ -40,7 +40,9 @@
 #include "DrvAudio.h"
 #include "AudioMixBuffer.h"
 
+#ifdef VBOX_WITH_AUDIO_ENUM
 static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDIODEVICEENUM pDevEnum);
+#endif
 
 static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream);
 static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd);
@@ -621,6 +623,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     return rc;
 }
 
+#ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
  * Schedules a re-initialization of all current audio streams.
  * The actual re-initialization will happen at some later point in time.
@@ -639,11 +642,14 @@ static int drvAudioScheduleReInitInternal(PDRVAUDIO pThis)
     RTListForEach(&pThis->lstHstStreams, pHstStream, PDMAUDIOSTREAM, Node)
         pHstStream->fStatus |= PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT;
 
+# ifdef VBOX_WITH_AUDIO_ENUM
     /* Re-enumerate all host devices as soon as possible. */
     pThis->fEnumerateDevices = true;
+# endif
 
     return VINF_SUCCESS;
 }
+#endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
 /**
  * Re-initializes an audio stream with its existing host and guest stream configuration.
@@ -927,6 +933,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     /* Is the stream scheduled for re-initialization? Do so now. */
     if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT)
     {
+#ifdef VBOX_WITH_AUDIO_ENUM
         if (pThis->fEnumerateDevices)
         {
             /* Re-enumerate all host devices. */
@@ -934,6 +941,7 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
 
             pThis->fEnumerateDevices = false;
         }
+#endif /* VBOX_WITH_AUDIO_ENUM */
 
         /* Remove the pending re-init flag in any case, regardless whether the actual re-initialization succeeded
          * or not. If it failed, the backend needs to notify us again to try again at some later point in time. */
@@ -1462,6 +1470,7 @@ static DECLCALLBACK(int) drvAudioBackendCallback(PPDMDRVINS pDrvIns,
 }
 #endif /* VBOX_WITH_AUDIO_CALLBACKS */
 
+#ifdef VBOX_WITH_AUDIO_ENUM
 /**
  * Enumerates all host audio devices.
  * This functionality might not be implemented by all backends and will return VERR_NOT_SUPPORTED
@@ -1529,6 +1538,7 @@ static int drvAudioDevicesEnumerateInternal(PDRVAUDIO pThis, bool fLog, PPDMAUDI
     LogFunc(("Returning %Rrc\n", rc));
     return rc;
 }
+#endif /* VBOX_WITH_AUDIO_ENUM */
 
 /**
  * Initializes the host backend and queries its initial configuration.
@@ -1578,8 +1588,13 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
              /* Clamp for logging. Unlimited streams are defined by UINT32_MAX. */
              RT_MIN(64, pThis->cStreamsFreeIn), RT_MIN(64, pThis->cStreamsFreeOut)));
 
+#ifdef VBOX_WITH_AUDIO_ENUM
     int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
+    AssertRC(rc2);
+
+    RT_NOREF(rc2);
     /* Ignore rc. */
+#endif
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
     /*
@@ -1587,7 +1602,7 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
      */
     if (pThis->pHostDrvAudio->pfnSetCallback)
     {
-        rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
+        int rc2 = pThis->pHostDrvAudio->pfnSetCallback(pThis->pHostDrvAudio, drvAudioBackendCallback);
         if (RT_FAILURE(rc2))
              LogRel(("Audio: Error registering backend callback, rc=%Rrc\n", rc2));
         /* Not fatal. */

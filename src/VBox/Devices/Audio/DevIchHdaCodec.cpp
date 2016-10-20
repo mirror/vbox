@@ -2359,7 +2359,7 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
 
             /* Propagate to the controller. */
             pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
             pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
             pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 #endif
@@ -2367,7 +2367,7 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
         else if (enmDir == PDMAUDIODIR_IN)
         {
             pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
             pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 #endif
         }
@@ -3023,7 +3023,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
     {
         case PDMAUDIOMIXERCTL_VOLUME_MASTER:
         case PDMAUDIOMIXERCTL_FRONT:
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         case PDMAUDIOMIXERCTL_CENTER_LFE:
         case PDMAUDIOMIXERCTL_REAR:
 #endif
@@ -3031,7 +3031,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
             break;
         }
         case PDMAUDIOMIXERCTL_LINE_IN:
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         case PDMAUDIOMIXERCTL_MIC_IN:
 #endif
         {
@@ -3152,14 +3152,14 @@ void hdaCodecPowerOff(PHDACODEC pThis)
 
     int rc2 = hdaCodecRemoveStream(pThis, PDMAUDIOMIXERCTL_FRONT);
     AssertRC(rc2);
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
     rc2 = hdaCodecRemoveStream(pThis, PDMAUDIOMIXERCTL_CENTER_LFE);
     AssertRC(rc2);
     rc2 = hdaCodecRemoveStream(pThis, PDMAUDIOMIXERCTL_REAR);
     AssertRC(rc2);
 #endif
 
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     rc2 = hdaCodecRemoveStream(pThis, PDMAUDIOMIXERCTL_MIC_IN);
     AssertRC(rc2);
 #endif
@@ -3237,7 +3237,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         if (RT_FAILURE(rc2))
             LogRel2(("HDA: Failed to add front output stream: %Rrc\n", rc2));
 
-#ifdef VBOX_WITH_HDA_51_SURROUND
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
         /* Center / LFE. */
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Center / LFE");
         strmCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
@@ -3259,7 +3259,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
          */
         strmCfg.enmDir = PDMAUDIODIR_IN;
 
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
         RTStrPrintf(strmCfg.szName, RT_ELEMENTS(strmCfg.szName), "Microphone In");
         strmCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
         rc2 = hdaCodecAddStream(pThis, PDMAUDIOMIXERCTL_MIC_IN, &strmCfg);
@@ -3288,7 +3288,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
      */
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params,       PDMAUDIOMIXERCTL_FRONT);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
-#ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
     #error "Implement mic-in support!"
 #endif
 
