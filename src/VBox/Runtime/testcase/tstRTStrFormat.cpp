@@ -225,7 +225,7 @@ int main()
                               "    wanted: '%s'\n", \
                               __LINE__, fmt, cbBuf, cbBuf ? pszBuf : "", g_szCheck42Expect); \
             /*if (cch != cch1Expect) - code is buggy */ \
-            /*     RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (%#1)\n", */ \
+            /*     RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (#1)\n", */ \
             /*                   __LINE__, cch, cbBuf, cch1Expect); */ \
             \
             cch2 = RTStrPrintf2(pszBuf, cbBuf, g_szCheck42Fmt, arg, 42, arg, 42);\
@@ -236,7 +236,7 @@ int main()
                               "    wanted: '%s'\n", \
                               __LINE__, fmt, cbBuf, cbBuf ? pszBuf : "", g_szCheck42Expect); \
             if (cch2 != cch2Expect) \
-                RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (%#2)\n", \
+                RTTestIFailed("at line %d: Invalid length %d returned for cbBuf=%zu, expected %zd! (#2)\n", \
                                __LINE__, cch2, cbBuf, cch2Expect); \
         } \
         RTTestIRestoreAssertions(); \
