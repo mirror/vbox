@@ -371,14 +371,14 @@ void UIMachineWindowNormal::loadSettings()
             {
                 /* Restore window geometry: */
                 m_normalGeometry = geo;
-                setGeometry(m_normalGeometry);
+                VBoxGlobal::setTopLevelGeometry(this, m_normalGeometry);
             }
             /* If previous machine-state was NOT SAVED: */
             else
             {
                 /* Restore only window position: */
                 m_normalGeometry = QRect(geo.x(), geo.y(), width(), height());
-                setGeometry(m_normalGeometry);
+                VBoxGlobal::setTopLevelGeometry(this, m_normalGeometry);
                 /* And normalize to the optimal-size: */
                 normalizeGeometry(false /* adjust position */);
             }
@@ -400,7 +400,7 @@ void UIMachineWindowNormal::loadSettings()
             /* Move newly created window to the screen-center: */
             m_normalGeometry = geometry();
             m_normalGeometry.moveCenter(availableGeo.center());
-            setGeometry(m_normalGeometry);
+            VBoxGlobal::setTopLevelGeometry(this, m_normalGeometry);
         }
 
         /* Normalize to the optimal size: */
@@ -574,8 +574,8 @@ void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
         frGeo = VBoxGlobal::normalizeGeometry(frGeo, gpDesktop->overallAvailableRegion());
 
     /* Finally, set the frame geometry: */
-    setGeometry(frGeo.left() + dl, frGeo.top() + dt,
-                frGeo.width() - dl - dr, frGeo.height() - dt - db);
+    VBoxGlobal::setTopLevelGeometry(this, frGeo.left() + dl, frGeo.top() + dt,
+                                    frGeo.width() - dl - dr, frGeo.height() - dt - db);
 #else /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
     /* Customer request: There should no be
      * machine-window resize/move on machine-view resize: */

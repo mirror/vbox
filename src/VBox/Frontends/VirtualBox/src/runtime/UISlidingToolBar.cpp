@@ -139,15 +139,15 @@ void UISlidingToolBar::prepareGeometry()
     {
         case Position_Top:
         {
-            setGeometry(m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
-                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
             m_pEmbeddedWidget->setGeometry(0, -sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
         case Position_Bottom:
         {
-            setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
             m_pEmbeddedWidget->setGeometry(0,  sh.height(), qMax(width(), sh.width()), sh.height());
             break;
         }
@@ -196,14 +196,14 @@ void UISlidingToolBar::adjustGeometry()
     {
         case Position_Top:
         {
-            setGeometry(m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
-                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y()                         + m_indentRect.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
             break;
         }
         case Position_Bottom:
         {
-            setGeometry(m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
-                        qMax(m_parentRect.width(), sh.width()), sh.height());
+            VBoxGlobal::setTopLevelGeometry(this, m_parentRect.x(), m_parentRect.y() + m_parentRect.height() - m_indentRect.height() - sh.height(),
+                                                  qMax(m_parentRect.width(), sh.width()), sh.height());
             break;
         }
     }

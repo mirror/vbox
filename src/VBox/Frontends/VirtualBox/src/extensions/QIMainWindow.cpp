@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 # include "QIMainWindow.h"
+# include "VBoxGlobal.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -38,7 +39,7 @@ void QIMainWindow::restoreGeometry()
     resize(m_geometry.size());
 #else /* VBOX_WS_MAC */
     /* Use the new approach for Windows/X11: */
-    setGeometry(m_geometry);
+    VBoxGlobal::setTopLevelGeometry(this, m_geometry);
 #endif /* !VBOX_WS_MAC */
 
     /* Maximize (if necessary): */

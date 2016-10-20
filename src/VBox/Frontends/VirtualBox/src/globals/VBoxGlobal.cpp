@@ -49,6 +49,8 @@
 # endif /* VBOX_GUI_WITH_PIDFILE */
 # if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 #  include <QScreen>
+#  include <xcb/xcb.h>
+#  include <xcb/xcb_icccm.h>
 # endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 /* GUI includes: */
@@ -3700,6 +3702,58 @@ void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCo
 
     /* Tune spin-box minimum-width: */
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
+}
+
+/* static */
+void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h)
+{
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+# define QWINDOWSIZE_MAX ((1<<24)-1)
+    if (pWidget->isWindow() && pWidget->isVisible())
+    {
+        /* X11 window managers are not required to accept geometry changes on
+         * the top-level window.  Unfortunately, current at Qt 5.6 and 5.7, Qt
+         * assumes that the change will succeed, and resizes all sub-windows
+         * unconditionally.  By calling ConfigureWindow directly, Qt will see
+         * our change request as an externally triggered one on success and not
+         * at all if it is rejected. */
+        uint16_t fMask =   XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
+                         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+        uint32_t values[] = { (uint32_t)x, (uint32_t)y, (uint32_t)w, (uint32_t)h };
+        xcb_configure_window(QX11Info::connection(), (xcb_window_t)pWidget->winId(),
+                             fMask, values);
+        xcb_size_hints_t hints;
+        hints.flags = XCB_ICCCM_SIZE_HINT_US_POSITION | XCB_ICCCM_SIZE_HINT_US_SIZE;
+        hints.x          = x;
+        hints.y          = y;
+        hints.width      = w;
+        hints.height     = h;
+        hints.min_width  = pWidget->minimumSize().width();
+        hints.min_height = pWidget->minimumSize().height();
+        hints.max_width  = pWidget->maximumSize().width();
+        hints.max_height = pWidget->maximumSize().height();
+        if (hints.min_width > 0 || hints.min_height > 0)
+            hints.flags |= XCB_ICCCM_SIZE_HINT_P_MIN_SIZE;
+        if (hints.max_width < QWINDOWSIZE_MAX || hints.max_height < QWINDOWSIZE_MAX)
+            hints.flags |= XCB_ICCCM_SIZE_HINT_P_MAX_SIZE;
+        xcb_change_property(QX11Info::connection(), XCB_PROP_MODE_REPLACE,
+                            (xcb_window_t)pWidget->winId(), XCB_ATOM_WM_NORMAL_HINTS,
+                            XCB_ATOM_WM_SIZE_HINTS, 32, sizeof(hints) >> 2, &hints);
+        xcb_flush(QX11Info::connection());
+    }
+    else
+        /* Call the Qt method if the window is not visible as otherwise no
+         * Configure event will arrive to tell Qt what geometry we want. */
+        pWidget->setGeometry(x, y, w, h);
+# else
+    pWidget->setGeometry(x, y, w, h);
+# endif
+}
+
+/* static */
+void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, const QRect &rect)
+{
+    VBoxGlobal::setTopLevelGeometry(pWidget, rect.x(), rect.y(), rect.width(), rect.height());
 }
 
 // Public slots

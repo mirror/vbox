@@ -442,6 +442,13 @@ public:
      * to strict the minimum width to reflect at least [n] symbols. */
     static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
 
+    /** Assigns top-level @a pWidget geometry passed as QRect coordinates.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h);
+    /** Assigns top-level @a pWidget geometry passed as @a rect.
+      * @note  Take into account that this request may fail on X11. */
+    static void setTopLevelGeometry(QWidget *pWidget, const QRect &rect);
+
 signals:
 
     /** Notifies listeners about the VBoxSVC availability change. */

@@ -27,6 +27,7 @@
 # include <QStatusBar>
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIPopupStack.h"
 # include "UIPopupStackViewport.h"
 
@@ -166,7 +167,7 @@ void UIPopupStack::sltAdjustGeometry()
     }
 
     /* Adjust geometry: */
-    setGeometry(iX, iY, iWidth, iHeight);
+    VBoxGlobal::setTopLevelGeometry(this, iX, iY, iWidth, iHeight);
 }
 
 void UIPopupStack::sltPopupPaneRemoved(QString)

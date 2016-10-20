@@ -193,7 +193,7 @@ VBoxScreenshotViewer::VBoxScreenshotViewer (QWidget *aParent, const QPixmap &aSc
 
     QRect geo (QPoint (0, 0), initSize);
     geo.moveCenter (parentWidget()->geometry().center());
-    setGeometry (geo);
+    VBoxGlobal::setTopLevelGeometry(this, geo);
 
     retranslateUi();
 }
