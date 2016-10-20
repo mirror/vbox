@@ -554,6 +554,7 @@ RuntimeR3_SOURCES       = \
 	common/string/strhash1.cpp \
 	common/string/stringalloc.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf2.cpp \
 	common/string/strcache.cpp \
 	common/string/strspace.cpp \
 	common/string/strstrip.cpp \
@@ -2068,6 +2069,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strformattype.cpp \
 	common/string/strhash1.cpp \
 	common/string/strprintf.cpp \
+	common/string/strprintf2.cpp \
 	common/string/strtonum.cpp \
 	common/string/stringalloc.cpp \
 	common/string/unidata-flags.cpp \
@@ -2587,6 +2589,7 @@ ifdef VBOX_WITH_RAW_MODE
  	common/string/strncmp.cpp \
  	common/string/strpbrk.cpp \
  	common/string/strprintf.cpp \
+ 	common/string/strprintf2.cpp \
  	common/string/RTStrCopy.cpp \
  	common/string/RTStrCopyEx.cpp \
  	common/table/avllu32.cpp \

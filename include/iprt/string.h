@@ -1497,6 +1497,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
 
 /**
  * Partial implementation of a printf like formatter.
+ *
  * It doesn't do everything correct, and there is no floating point support.
  * However, it supports custom formats by the means of a format callback.
  *
@@ -1717,6 +1718,8 @@ RTDECL(int) RTStrFormatTypeSetUser(const char *pszType, void *pvUser);
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
+ *
+ * @deprecated Use RTStrPrintf2V! Problematic return value on overflow.
  */
 RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
 
@@ -1729,9 +1732,10 @@ RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFo
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
+ *
+ * @deprecated Use RTStrPrintf2! Problematic return value on overflow.
  */
 RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
-
 
 /**
  * String printf with custom formatting.
@@ -1744,6 +1748,8 @@ RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFor
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
+ *
+ * @deprecated Use RTStrPrintf2ExV! Problematic return value on overflow.
  */
 RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer,
                               const char *pszFormat, va_list args)  RT_IPRT_FORMAT_ATTR(5, 0);
@@ -1759,10 +1765,73 @@ RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuff
  * @param   cchBuffer   Size of the output buffer.
  * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
+ *
+ * @deprecated Use RTStrPrintf2Ex! Problematic return value on overflow.
  */
 RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer,
                              const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(5, 6);
 
+/**
+ * String printf, version 2.
+ *
+ * @returns On success, positive count of formatted character excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator char).
+ *
+ * @param   pszBuffer   Output buffer.
+ * @param   cbBuffer    Size of the output buffer.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   args        The format argument.
+ */
+RTDECL(ssize_t) RTStrPrintf2V(char *pszBuffer, size_t cbBuffer, const char *pszFormat, va_list args) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * String printf, version 2.
+ *
+ * @returns On success, positive count of formatted character excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator char).
+ *
+ * @param   pszBuffer   Output buffer.
+ * @param   cbBuffer    Size of the output buffer.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   ...         The format argument.
+ */
+RTDECL(ssize_t) RTStrPrintf2(char *pszBuffer, size_t cbBuffer, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+
+/**
+ * String printf with custom formatting, version 2.
+ *
+ * @returns On success, positive count of formatted character excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator char).
+ *
+ * @param   pfnFormat   Pointer to handler function for the custom formats.
+ * @param   pvArg       Argument to the pfnFormat function.
+ * @param   pszBuffer   Output buffer.
+ * @param   cbBuffer    Size of the output buffer.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   args        The format argument.
+ */
+RTDECL(ssize_t) RTStrPrintf2ExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cbBuffer,
+                                const char *pszFormat, va_list args)  RT_IPRT_FORMAT_ATTR(5, 0);
+
+/**
+ * String printf with custom formatting, version 2.
+ *
+ * @returns On success, positive count of formatted character excluding the
+ *          terminator.  On buffer overflow, negative number giving the required
+ *          buffer size (including terminator char).
+ *
+ * @param   pfnFormat   Pointer to handler function for the custom formats.
+ * @param   pvArg       Argument to the pfnFormat function.
+ * @param   pszBuffer   Output buffer.
+ * @param   cbBuffer   Size of the output buffer.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
+ * @param   ...         The format argument.
+ */
+RTDECL(ssize_t) RTStrPrintf2Ex(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cbBuffer,
+                               const char *pszFormat, ...)  RT_IPRT_FORMAT_ATTR(5, 6);
 
 /**
  * Allocating string printf (default tag).
