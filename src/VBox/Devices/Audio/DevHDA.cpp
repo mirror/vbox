@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevIchHda - VBox ICH Intel HD Audio Controller.
+ * DevHDA - VBox Intel HD Audio Controller.
  *
  * Implemented against the specifications found in "High Definition Audio
  * Specification", Revision 1.0a June 17, 2010, and  "Intel I/O Controller
@@ -45,8 +45,8 @@
 
 #include "AudioMixBuffer.h"
 #include "AudioMixer.h"
-#include "DevIchHdaCodec.h"
-#include "DevIchHdaCommon.h"
+#include "HDACodec.h"
+#include "DevHDACommon.h"
 #include "DrvAudio.h"
 
 
@@ -6262,7 +6262,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     {
         /* Start the emulation timer. */
         rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, hdaTimer, pThis,
-                                    TMTIMER_FLAGS_NO_CRIT_SECT, "DevIchHda", &pThis->pTimer);
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, "DevHDA", &pThis->pTimer);
         AssertRCReturn(rc, rc);
 
         if (RT_SUCCESS(rc))
@@ -6327,7 +6327,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 /**
  * The device registration structure.
  */
-const PDMDEVREG g_DeviceICH6_HDA =
+const PDMDEVREG g_DeviceHDA =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,

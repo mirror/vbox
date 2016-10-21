@@ -589,8 +589,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_SOURCES         += \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
-	Audio/DevIchHda.cpp \
-	Audio/DevIchHdaCodec.cpp \
+	Audio/DevHDA.cpp \
+	Audio/HDACodec.cpp \
 	Audio/AudioMixBuffer.cpp \
 	Audio/AudioMixer.cpp \
 	Audio/DrvAudio.cpp \
@@ -928,7 +928,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	VMMDev/VMMDevTesting.cpp
 
   VBoxDDRC_SOURCES      += \
- 	Audio/DevIchHda.cpp
+ 	Audio/DevHDA.cpp
 
   ifdef VBOX_WITH_E1000
    VBoxDDRC_DEFS        += VBOX_WITH_E1000
@@ -1093,7 +1093,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp \
- 	Audio/DevIchHda.cpp
+ 	Audio/DevHDA.cpp
 
  VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 

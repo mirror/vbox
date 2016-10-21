@@ -116,7 +116,7 @@
 # undef LOG_GROUP
 # include "../Audio/DevIchAc97.cpp"
 # undef LOG_GROUP
-# include "../Audio/DevIchHda.cpp"
+# include "../Audio/DevHDA.cpp"
 #ifdef VBOX_WITH_NVME_IMPL
 # undef LOG_GROUP
 # include "../Storage/DevNVMe.cpp"

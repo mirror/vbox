@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevIchHdaCommon.h - Shared defines / functions between controller and codec.
+ * DevHDACommon.h - Shared defines / functions between HDA controller and codec.
  */
 
 /*

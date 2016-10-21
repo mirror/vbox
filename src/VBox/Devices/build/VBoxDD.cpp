@@ -126,7 +126,7 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceSB16);
     if (RT_FAILURE(rc))
         return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceICH6_HDA);
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceHDA);
     if (RT_FAILURE(rc))
         return rc;
 #ifdef VBOX_WITH_VUSB

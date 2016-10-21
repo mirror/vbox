@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevIchHdaCodec - VBox ICH Intel HD Audio Codec.
+ * HDACodec - VBox HD Audio Codec.
  */
 
 /*

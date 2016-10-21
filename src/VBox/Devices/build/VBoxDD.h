@@ -57,7 +57,7 @@ extern const PDMDEVREG g_DeviceINIP;
 #endif
 extern const PDMDEVREG g_DeviceICHAC97;
 extern const PDMDEVREG g_DeviceSB16;
-extern const PDMDEVREG g_DeviceICH6_HDA;
+extern const PDMDEVREG g_DeviceHDA;
 extern const PDMDEVREG g_DeviceOHCI;
 extern const PDMDEVREG g_DeviceEHCI;
 extern const PDMDEVREG g_DeviceXHCI;
