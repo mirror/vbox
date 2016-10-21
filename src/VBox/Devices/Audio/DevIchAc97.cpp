@@ -742,15 +742,18 @@ static void ichac97DestroyIn(PAC97STATE pThis, PDMAUDIORECSOURCE enmRecSource)
 
     LogFlowFuncEnter();
 
-    PAUDMIXSINK pSink;
     switch (enmRecSource)
     {
         case PDMAUDIORECSOURCE_MIC:
-            pSink = pThis->pSinkMicIn;
+            AudioMixerSinkDestroy(pThis->pSinkMicIn);
+            pThis->pSinkMicIn = NULL;
             break;
+
         case PDMAUDIORECSOURCE_LINE:
-            pSink = pThis->pSinkLineIn;
+            AudioMixerSinkDestroy(pThis->pSinkLineIn);
+            pThis->pSinkLineIn = NULL;
             break;
+
         default:
             AssertMsgFailed(("Audio source %ld not supported\n", enmRecSource));
             return;
@@ -765,11 +768,6 @@ static void ichac97DestroyIn(PAC97STATE pThis, PDMAUDIORECSOURCE enmRecSource)
         else
             pStream = &pDrv->LineIn;
 
-        if (pStream->pMixStrm)
-        {
-            AudioMixerSinkRemoveStream(pSink, pStream->pMixStrm);
-            AudioMixerStreamDestroy(pStream->pMixStrm);
-        }
         pStream->pMixStrm = NULL;
     }
 }
@@ -780,16 +778,13 @@ static void ichac97DestroyOut(PAC97STATE pThis)
 
     LogFlowFuncEnter();
 
+    AudioMixerSinkDestroy(pThis->pSinkOut);
+    pThis->pSinkOut = NULL;
+
     PAC97DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        if (pDrv->Out.pMixStrm)
-        {
-            AudioMixerSinkRemoveStream(pThis->pSinkOut, pDrv->Out.pMixStrm);
-            AudioMixerStreamDestroy(pDrv->Out.pMixStrm);
-
-            pDrv->Out.pMixStrm = NULL;
-        }
+        pDrv->Out.pMixStrm = NULL;
     }
 }
 
@@ -2479,6 +2474,10 @@ static DECLCALLBACK(void) ichac97PowerOff(PPDMDEVINS pDevIns)
 
     LogRel2(("AC97: Powering off ...\n"));
 
+    /* Note: Involves mixer stream / sink destruction, so also do this here
+     *       instead of in ichac97Destruct(). */
+    ichac97StreamsDestroy(pThis);
+
     /**
      * Note: Destroy the mixer while powering off and *not* in ichac97Destruct,
      *       giving the mixer the chance to release any references held to
@@ -2537,8 +2536,6 @@ static DECLCALLBACK(int) ichac97Destruct(PPDMDEVINS pDevIns)
     PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
 
     LogFlowFuncEnter();
-
-    ichac97StreamsDestroy(pThis);
 
     PAC97DRIVER pDrv, pDrvNext;
     RTListForEachSafe(&pThis->lstDrv, pDrv, pDrvNext, AC97DRIVER, Node)
