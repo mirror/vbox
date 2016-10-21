@@ -339,7 +339,7 @@ static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
     PGIMMMIO2REGION pCur = GIMR3GetMmio2Regions(pVM, &cRegions);
     for (uint32_t i = 0; i < cRegions; i++, pCur++)
     {
-        int rc = PDMDevHlpMMIOExDeregister(pDevIns, pCur->iRegion);
+        int rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, pCur->iRegion);
         if (RT_FAILURE(rc))
             return rc;
     }

@@ -4417,7 +4417,7 @@ static DECLCALLBACK(int) pcnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     if (pThis->fSharedRegion)
     {
         /* drop this dummy region */
-        rc = PDMDevHlpMMIOExDeregister(pDevIns, 2);
+        rc = PDMDevHlpMMIOExDeregister(pDevIns, NULL, 2);
         pThis->fSharedRegion = false;
     }
     return rc;
