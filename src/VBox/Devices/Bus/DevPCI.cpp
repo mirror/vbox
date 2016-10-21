@@ -323,7 +323,7 @@ static void pci_update_mappings(PCIDevice *d)
                             /* unmap it. */
                             rc = r->map_func(d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
                             AssertRC(rc);
-                            rc = PDMDevHlpMMIOExUnmap(d->pDevIns, i, GCPhysBase);
+                            rc = PDMDevHlpMMIOExUnmap(d->pDevIns, d, i, GCPhysBase);
                         }
                         else
                             rc = PDMDevHlpMMIODeregister(d->pDevIns, GCPhysBase, r->size);

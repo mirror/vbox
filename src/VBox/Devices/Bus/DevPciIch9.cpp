@@ -845,7 +845,7 @@ static int  ich9pciUnmapRegion(PPCIDEVICE pDev, int iRegion)
                 /* unmap it. */
                 rc = pRegion->map_func(pDev, iRegion, NIL_RTGCPHYS, pRegion->size, (PCIADDRESSSPACE)(pRegion->type));
                 AssertRC(rc);
-                rc = PDMDevHlpMMIOExUnmap(pDev->pDevIns, iRegion, GCPhysBase);
+                rc = PDMDevHlpMMIOExUnmap(pDev->pDevIns, pDev, iRegion, GCPhysBase);
             }
             else
                 rc = PDMDevHlpMMIODeregister(pDev->pDevIns, GCPhysBase, pRegion->size);
