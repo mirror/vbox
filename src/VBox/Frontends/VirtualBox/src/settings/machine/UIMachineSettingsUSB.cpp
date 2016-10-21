@@ -848,7 +848,7 @@ void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &us
     m_filters << usbFilterData;
 
     /* Append tree-widget with item: */
-    QTreeWidgetItem *pItem = new QTreeWidgetItem;
+    QITreeWidgetItem *pItem = new QITreeWidgetItem;
     pItem->setCheckState(0, usbFilterData.m_fActive ? Qt::Checked : Qt::Unchecked);
     pItem->setText(0, usbFilterData.m_strName);
     pItem->setToolTip(0, toolTipFor(usbFilterData));

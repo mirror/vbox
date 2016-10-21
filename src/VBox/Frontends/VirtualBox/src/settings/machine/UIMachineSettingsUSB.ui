@@ -144,7 +144,7 @@
           <number>3</number>
          </property>
          <item>
-          <widget class="QTreeWidget" name="mTwFilters" >
+          <widget class="QITreeWidget" name="mTwFilters" >
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
              <horstretch>0</horstretch>
@@ -179,6 +179,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QITreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>QITreeWidget.h</header>
+  </customwidget>
   <customwidget>
    <class>QILabelSeparator</class>
    <extends>QLabel</extends>
