@@ -3622,7 +3622,10 @@ typedef struct PDMDEVHLPR3
      *
      * @returns VBox status.
      * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   iRegion             The region number.
+     * @param   pPciDev             The PCI device to associate the region with, use
+     *                              NULL to not associate it with any device.
+     * @param   iRegion             The PCI region number.  When @a pPciDev is NULL,
+     *                              this is a unique number between 0 and UINT8_MAX.
      * @param   cbRegion            The size of the range (in bytes).
      * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
      * @param   pszDesc             Pointer to description string. This must not be freed.
@@ -3648,7 +3651,7 @@ typedef struct PDMDEVHLPR3
      * @sa      PDMDevHlpMMIOExMap, PDMDevHlpMMIOExUnmap, PDMDevHlpMMIOExDeregister,
      *          PDMDevHlpMMIORegisterEx
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExPreRegister,(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExPreRegister,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
                                                     uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
                                                     PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                     RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
@@ -3865,7 +3868,7 @@ typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
 /* 5.0 is (18, 0) so the next version for trunk has to be (19, 0)! */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 17, 2)
 
 
 /**
@@ -4692,13 +4695,13 @@ DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTG
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExPreRegister
  */
-DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
                                            uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
                                            PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                            RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
                                            RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC)
 {
-    return pDevIns->pHlpR3->pfnMMIOExPreRegister(pDevIns, iRegion, cbRegion, fFlags, pszDesc,
+    return pDevIns->pHlpR3->pfnMMIOExPreRegister(pDevIns, pPciDev, iRegion, cbRegion, fFlags, pszDesc,
                                                  pvUser, pfnWrite, pfnRead, pfnFill,
                                                  pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
                                                  pvUserRC, pszWriteRC, pszReadRC, pszFillRC);

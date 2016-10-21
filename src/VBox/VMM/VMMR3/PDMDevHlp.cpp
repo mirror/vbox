@@ -446,7 +446,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, uint32_t 
  * @interface_method_impl{PDMDEVHLPR3,pfnMMIOExPreRegister}
  */
 static DECLCALLBACK(int)
-pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, uint32_t fFlags, const char *pszDesc,
+pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS cbRegion, uint32_t fFlags,
+                              const char *pszDesc,
                               RTHCPTR pvUser, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                               RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
                               RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC)
@@ -454,14 +455,16 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbR
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_MMIOExPreRegister: caller='%s'/%d: iRegion=%#x cbRegion=%#RGp fFlags=%RX32 pszDesc=%p:{%s}\n"
+    LogFlow(("pdmR3DevHlp_MMIOExPreRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x cbRegion=%#RGp fFlags=%RX32 pszDesc=%p:{%s}\n"
              "                               pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p\n"
              "                               pvUserR0=%p pszWriteR0=%s pszReadR0=%s pszFillR0=%s\n"
              "                               pvUserRC=%p pszWriteRC=%s pszReadRC=%s pszFillRC=%s\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, iRegion, cbRegion, fFlags, pszDesc, pszDesc,
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, cbRegion,
+             fFlags, pszDesc, pszDesc,
              pvUser, pfnWrite, pfnRead, pfnFill,
              pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
              pvUserRC, pszWriteRC, pszReadRC, pszFillRC));
+    NOREF(pPciDev);
 
     /*
      * Resolve the functions.
