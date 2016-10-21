@@ -678,18 +678,26 @@ static int ichac97StreamsInit(PAC97STATE pThis)
 
     int rc = ichac97StreamInit    (&pThis->StreamLineIn, AC97SOUNDSOURCE_PI_INDEX);
     if (RT_SUCCESS(rc))
+    {
         rc = ichac97StreamInit    (&pThis->StreamMicIn,  AC97SOUNDSOURCE_MC_INDEX);
         if (RT_SUCCESS(rc))
+        {
             rc = ichac97StreamInit(&pThis->StreamOut,    AC97SOUNDSOURCE_PO_INDEX);
+        }
+    }
 
     /* Open all streams with the current AC'97 mixer settings. */
     if (RT_SUCCESS(rc))
     {
         rc = ichac97StreamOpen        (pThis, &pThis->StreamLineIn);
         if (RT_SUCCESS(rc))
+        {
             rc = ichac97StreamOpen    (pThis, &pThis->StreamMicIn);
             if (RT_SUCCESS(rc))
+            {
                 rc = ichac97StreamOpen(pThis, &pThis->StreamOut);
+            }
+        }
     }
 
     LogFlowFunc(("Returning %Rrc\n", rc));
