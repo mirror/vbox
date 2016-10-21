@@ -112,16 +112,6 @@
     <?include $(env.PATH_TARGET)\DirComponentsAndFiles_DTrace.wxi ?>
 
 
-    <!--
-
-    <Component Id="cp_StartMenuShortcut" Guid="1C137D24-E599-47BD-98D0-2F62F202A8EA" Win64="$(var.Property_Win64)">
-        <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)" Type="string"
-                       Value="installed" KeyPath="yes" />
-        <Shortcut Id="ShortcutStartMenuVBox" Directory="ProgramMenuDir"
-                  Name="VirtualBox" WorkingDirectory="INSTALLDIR" Advertise="no" Target="VirtualBox.exe" />
-        <RemoveFolder Id="ShortcutStartMenuVBoxRemove" On="uninstall" />
-    </Component>-->
-
     <!---->
 
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
@@ -192,10 +182,7 @@
         <File Id="file_VBoxManage.exe" Name="VBoxManage.exe"
               Source="$(env.PATH_OUT)\bin\VBoxManage.exe" />
         <File Id="file_VBoxHeadless.exe" Name="VBoxHeadless.exe"
-              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe">
-            <!-- Create a simple shortcut for VBoxVRDP, which is not present anymore, pointing to VBoxHeadless.exe -->
-       <!--     <Shortcut Id="ShortcutVBoxVRDP" Directory="INSTALLDIR" Name="VBoxVRDP" Show="normal" WorkingDirectory="INSTALLDIR"/> -->
-        </File>
+              Source="$(env.PATH_OUT)\bin\VBoxHeadless.exe" />
 <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
         <File Id="file_VBoxHeadless.dll" Name="VBoxHeadless.dll"
               Source="$(env.PATH_OUT)\bin\VBoxHeadless.dll">
@@ -228,7 +215,7 @@
               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
 <?endif ?>
 <?if $(env.VBOX_WITH_DTRACE) = "yes" ?>
-	 <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe" Source="$(env.PATH_OUT)\bin\VBoxDTrace.exe" />
+        <File Id="file_VBoxDTrace.exe" Name="VBoxDTrace.exe" Source="$(env.PATH_OUT)\bin\VBoxDTrace.exe" />
 <?endif ?>
         <!-- VBox DLL files -->
         <File Id="file_VBoxDD.dll" Name="VBoxDD.dll"
