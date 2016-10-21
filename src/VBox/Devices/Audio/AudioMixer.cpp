@@ -338,7 +338,6 @@ static int audioMixerRemoveSinkInternal(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
     /* Remove sink from mixer. */
     RTListNodeRemove(&pSink->Node);
     Assert(pMixer->cSinks);
-    pMixer->cSinks--;
 
     /* Set mixer to NULL so that we know we're not part of any mixer anymore. */
     pSink->pParent = NULL;
@@ -709,9 +708,10 @@ void AudioMixerSinkDestroy(PAUDMIXSINK pSink)
 
     if (pSink->pParent)
     {
-        /* Save sink pointer, as after audioMixerRemoveSinkInternal() the
+        /* Save mixer pointer, as after audioMixerRemoveSinkInternal() the
          * pointer will be gone from the stream. */
         PAUDIOMIXER pMixer = pSink->pParent;
+        AssertPtr(pMixer);
 
         audioMixerRemoveSinkInternal(pMixer, pSink);
 
