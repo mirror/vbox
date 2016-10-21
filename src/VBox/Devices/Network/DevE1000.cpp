@@ -6138,7 +6138,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
             else
             {
                 Assert(!(GCPhysAddress & 7));
-                rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
+                rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, pPciDev, iRegion, GCPhysAddress);
             }
 #else
             pThis->addrMMReg = GCPhysAddress; Assert(!(GCPhysAddress & 7));
