@@ -95,6 +95,12 @@ typedef struct DBGDIGGERLINUX
     bool fValid;
     /** Set if 64-bit, clear if 32-bit.  */
     bool f64Bit;
+    /** Set if the kallsyms table uses relative addressing, clear
+     * if absolute addresses are used. */
+    bool fRelKrnlAddr;
+    /** The relative base when kernel symbols use offsets rather than
+     * absolute addresses. */
+    RTGCUINTPTR uKernelRelativeBase;
 
     /** The address of the linux banner.
      * This is set during probing. */
@@ -211,6 +217,36 @@ static uint64_t g_au64LnxKernelAddresses[] =
 };
 
 static const uint8_t g_abLinuxVersion[] = "Linux version ";
+
+/**
+ * Converts a given offset into an absolute address if relative kernel offsets are used for
+ * kallsyms.
+ *
+ * @returns The absolute kernel address.
+ * @param   pThis               The Linux digger data.
+ * @param   uOffset             The offset to convert.
+ */
+DECLINLINE(RTGCUINTPTR) dbgDiggerLinuxConvOffsetToAddr(PDBGDIGGERLINUX pThis, int32_t uOffset)
+{
+    RTGCUINTPTR uAddr;
+
+    /*
+     * How the absolute address is calculated from the offset depends on the
+     * CONFIG_KALLSYMS_ABSOLUTE_PERCPU config which is only set for 64bit
+     * SMP kernels (we assume that all 64bit kernels always have SMP enabled too).
+     */
+    if (pThis->f64Bit)
+    {
+        if (uOffset >= 0)
+            uAddr = uOffset;
+        else
+            uAddr = pThis->uKernelRelativeBase - 1 - uOffset;
+    }
+    else
+        uAddr = pThis->uKernelRelativeBase + (uint32_t)uOffset;
+
+    return uAddr;
+}
 
 /**
  * Disassembles a simple getter returning the value for it.
@@ -1137,7 +1173,19 @@ static int dbgDiggerLinuxFoundStartOfNames(PDBGDIGGERLINUX pThis, PCDBGFADDRESS 
     pThis->cKernelSymbols = cKernelSymbols;
     pThis->AddrKernelNames = *pAddrKernelNames;
     pThis->AddrKernelAddresses = *pAddrKernelNames;
-    DBGFR3AddrSub(&pThis->AddrKernelAddresses, (cKernelSymbols + 1) * cbAddress);
+    uint32_t cbSymbolsSkip = (pThis->fRelKrnlAddr ? 2 : 1) * cbAddress; /* Relative addressing introduces kallsyms_relative_base. */
+    uint32_t cbOffsets = pThis->fRelKrnlAddr ? sizeof(int32_t) : cbAddress; /* Offsets are always 32bits wide for relative addressing. */
+    uint32_t cbAlign = 0;
+
+    /*
+     * If the number of symbols is odd there is padding to align the following guest pointer
+     * sized data properly on 64bit systems with relative addressing.
+     */
+    if (   pThis->fRelKrnlAddr
+        && pThis->f64Bit
+        && (pThis->cKernelSymbols & 1))
+        cbAlign = sizeof(int32_t);
+    DBGFR3AddrSub(&pThis->AddrKernelAddresses, cKernelSymbols * cbOffsets + cbSymbolsSkip + cbAlign);
 
     Log(("dbgDiggerLinuxFoundStartOfNames: AddrKernelAddresses=%RGv\n"
          "dbgDiggerLinuxFoundStartOfNames: cKernelSymbols=%#x (at %RGv)\n"
@@ -1186,22 +1234,47 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
             return rc;
 
         /*
-         * We assume that the three symbols are aligned on guest pointer boundrary.
+         * Since Linux 4.6 there are two different methods to store the kallsyms addresses
+         * in the image.
          *
-         * The boundrary between the two tables should be noticable as the number
-         * is unlikely to be more than 16 millions, there will be at least one zero
-         * byte where it is, 64-bit will have 5 zero bytes.  Zero bytes aren't all
-         * that common in the kallsyms_names table.
+         * The first and longer existing method is to store the absolute addresses in an
+         * array starting at kallsyms_addresses followed by a field which stores the number
+         * of kernel symbols called kallsyms_num_syms.
+         * The newer method is to use offsets stored in kallsyms_offsets and have a base pointer
+         * to relate the offsets to called kallsyms_relative_base. One entry in kallsyms_offsets is
+         * always 32bit wide regardless of the guest pointer size (this halves the table on 64bit
+         * systems) but means more work for us for the 64bit case.
          *
-         * Also the kallsyms_names table starts with a length byte, which means
-         * we're likely to see a byte in the range 1..31.
+         * When absolute addresses are used the following assumptions hold:
          *
-         * The kallsyms_addresses are mostly sorted (except for the start where the
-         * absolute symbols are), so we'll spot a bunch of kernel addresses
-         * immediately preceeding the kallsyms_num_syms field.
+         *     We assume that the three symbols are aligned on guest pointer boundary.
          *
-         * Lazy bird: If kallsyms_num_syms is on a buffer boundrary, we skip
-         *            the check for kernel addresses preceeding it.
+         *     The boundary between the two tables should be noticable as the number
+         *     is unlikely to be more than 16 millions, there will be at least one zero
+         *     byte where it is, 64-bit will have 5 zero bytes.  Zero bytes aren't all
+         *     that common in the kallsyms_names table.
+         *
+         *     Also the kallsyms_names table starts with a length byte, which means
+         *     we're likely to see a byte in the range 1..31.
+         *
+         *     The kallsyms_addresses are mostly sorted (except for the start where the
+         *     absolute symbols are), so we'll spot a bunch of kernel addresses
+         *     immediately preceeding the kallsyms_num_syms field.
+         *
+         *     Lazy bird: If kallsyms_num_syms is on a buffer boundrary, we skip
+         *                the check for kernel addresses preceeding it.
+         *
+         * For relative offsets most of the assumptions from above are true too
+         * except that we have to distinguish between the relative base address and the offsets.
+         * Every observed kernel has a valid kernel address fo the relative base and kallsyms_relative_base
+         * always comes before kallsyms_num_syms and is aligned on a guest pointer boundary.
+         * Offsets are stored before kallsyms_relative_base and don't contain valid kernel addresses.
+         *
+         * To distinguish between absolute and relative offsetting we check the data before a candidate
+         * for kallsyms_num_syms. If all entries before the kallsyms_num_syms candidate are valid kernel
+         * addresses absolute addresses are assumed. If this is not the case but the first entry before
+         * kallsyms_num_syms is a valid kernel address we check whether the data before and the possible
+         * relative base form a valid kernel address and assume relative offsets.
          */
         if (pThis->f64Bit)
         {
@@ -1214,6 +1287,34 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                     if (   pb[0] <= LNX_MAX_KALLSYMS_ENC_LENGTH
                         && pb[0] >= LNX_MIN_KALLSYMS_ENC_LENGTH)
                     {
+                        /*
+                         * Check whether we have a valid kernel address and try to distinguish
+                         * whether the kernel uses relative offsetting or absolute addresses.
+                         */
+                        if (   (i >= 1 && LNX64_VALID_ADDRESS(uBuf.au64[i - 1]))
+                            && (i >= 2 && !LNX64_VALID_ADDRESS(uBuf.au64[i - 2]))
+                            && (i >= 3 && !LNX64_VALID_ADDRESS(uBuf.au64[i - 3])))
+                        {
+                            RTGCUINTPTR uKrnlRelBase = uBuf.au64[i - 1];
+                            DBGFADDRESS RelAddr = CurAddr;
+                            int32_t aiRelOff[3];
+                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrAdd(&RelAddr, (i - 1) * sizeof(uint64_t) - sizeof(aiRelOff)),
+                                               &aiRelOff[0], sizeof(aiRelOff));
+                            if (   RT_SUCCESS(rc)
+                                && LNX64_VALID_ADDRESS(uKrnlRelBase + aiRelOff[0])
+                                && LNX64_VALID_ADDRESS(uKrnlRelBase + aiRelOff[1])
+                                && LNX64_VALID_ADDRESS(uKrnlRelBase + aiRelOff[2]))
+                            {
+                                Log(("dbgDiggerLinuxFindStartOfNamesAndSymbolCount: relative base %RGv (at %RGv)\n",
+                                     uKrnlRelBase, CurAddr.FlatPtr + (i - 1) * sizeof(uint64_t)));
+                                pThis->fRelKrnlAddr = true;
+                                pThis->uKernelRelativeBase = uKrnlRelBase;
+                                return dbgDiggerLinuxFoundStartOfNames(pThis,
+                                                                       DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint64_t)),
+                                                                       (uint32_t)uBuf.au64[i], sizeof(uint64_t));
+                            }
+                        }
+
                         if (   (i <= 0 || LNX64_VALID_ADDRESS(uBuf.au64[i - 1]))
                             && (i <= 1 || LNX64_VALID_ADDRESS(uBuf.au64[i - 2]))
                             && (i <= 2 || LNX64_VALID_ADDRESS(uBuf.au64[i - 3])))
@@ -1234,6 +1335,23 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                     if (   pb[0] <= LNX_MAX_KALLSYMS_ENC_LENGTH
                         && pb[0] >= LNX_MIN_KALLSYMS_ENC_LENGTH)
                     {
+                        /* Check for relative base addressing. */
+                        if (i >= 1 && LNX32_VALID_ADDRESS(uBuf.au32[i - 1]))
+                        {
+                            RTGCUINTPTR uKrnlRelBase = uBuf.au32[i - 1];
+                            if (   (i <= 1 || LNX32_VALID_ADDRESS(uKrnlRelBase + uBuf.au32[i - 2]))
+                                && (i <= 2 || LNX32_VALID_ADDRESS(uKrnlRelBase + uBuf.au32[i - 3])))
+                            {
+                                Log(("dbgDiggerLinuxFindStartOfNamesAndSymbolCount: relative base %RGv (at %RGv)\n",
+                                     uKrnlRelBase, CurAddr.FlatPtr + (i - 1) * sizeof(uint32_t)));
+                                pThis->fRelKrnlAddr = true;
+                                pThis->uKernelRelativeBase = uKrnlRelBase;
+                                return dbgDiggerLinuxFoundStartOfNames(pThis,
+                                                                       DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint32_t)),
+                                                                       uBuf.au32[i], sizeof(uint32_t));
+                            }
+                        }
+
                         if (   (i <= 0 || LNX32_VALID_ADDRESS(uBuf.au32[i - 1]))
                             && (i <= 1 || LNX32_VALID_ADDRESS(uBuf.au32[i - 2]))
                             && (i <= 2 || LNX32_VALID_ADDRESS(uBuf.au32[i - 3])))
@@ -1467,13 +1585,161 @@ static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PDBGDIGGERLINUX pThis)
 
 
 /**
- * Loads the kernel symbols from the kallsyms tables.
+ * Loads the kernel symbols from the given kallsyms offset table decoding the symbol names
+ * (worker common for dbgDiggerLinuxLoadKernelSymbolsAbsolute() and dbgDiggerLinuxLoadKernelSymbolsRelative()).
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pThis               The Linux digger data.
+ * @param   uKernelStart        Flat kernel start address.
+ * @param   cbKernel            Size of the kernel in bytes.
+ * @param   pauSymOff           Pointer to the array of symbol offsets in the kallsyms table
+ *                              relative to the start of the kernel.
+ */
+static int dbgDiggerLinuxLoadKernelSymbolsWorker(PUVM pUVM, PDBGDIGGERLINUX pThis, RTGCUINTPTR uKernelStart,
+                                                 RTGCUINTPTR cbKernel, RTGCUINTPTR *pauSymOff)
+{
+    uint8_t *pbNames = (uint8_t *)RTMemAllocZ(pThis->cbKernelNames);
+    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelNames, pbNames, pThis->cbKernelNames);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszzTokens = (char *)RTMemAllocZ(pThis->cbKernelTokenTable);
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenTable, pszzTokens, pThis->cbKernelTokenTable);
+        if (RT_SUCCESS(rc))
+        {
+            uint16_t *paoffTokens = (uint16_t *)RTMemAllocZ(256 * sizeof(uint16_t));
+            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenIndex, paoffTokens, 256 * sizeof(uint16_t));
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Create a module for the kernel.
+                 */
+                RTDBGMOD hMod;
+                rc = RTDbgModCreate(&hMod, "vmlinux", cbKernel, 0 /*fFlags*/);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTDbgModSetTag(hMod, DIG_LNX_MOD_TAG); AssertRC(rc);
+                    rc = VINF_SUCCESS;
+
+                    /*
+                     * Enumerate the symbols.
+                     */
+                    uint32_t        offName   = 0;
+                    uint32_t        cLeft = pThis->cKernelSymbols;
+                    while (cLeft-- > 0 && RT_SUCCESS(rc))
+                    {
+                        /* Decode the symbol name first. */
+                        if (RT_LIKELY(offName < pThis->cbKernelNames))
+                        {
+                            uint8_t cbName = pbNames[offName++];
+                            if (RT_LIKELY(offName + cbName <= pThis->cbKernelNames))
+                            {
+                                char     szSymbol[4096];
+                                uint32_t offSymbol = 0;
+                                while (cbName-- > 0)
+                                {
+                                    uint8_t  bEnc     = pbNames[offName++];
+                                    uint16_t offToken = paoffTokens[bEnc];
+                                    if (RT_LIKELY(offToken < pThis->cbKernelTokenTable))
+                                    {
+                                        const char *pszToken = &pszzTokens[offToken];
+                                        char ch;
+                                        while ((ch = *pszToken++) != '\0')
+                                            if (offSymbol < sizeof(szSymbol) - 1)
+                                                szSymbol[offSymbol++] = ch;
+                                    }
+                                    else
+                                    {
+                                        rc = VERR_INVALID_UTF8_ENCODING;
+                                        break;
+                                    }
+                                }
+                                szSymbol[offSymbol < sizeof(szSymbol) ? offSymbol : sizeof(szSymbol) - 1] = '\0';
+
+                                /* The offset. */
+                                RTGCUINTPTR uSymOff = *pauSymOff;
+                                pauSymOff++;
+
+                                /* Add it without the type char. */
+                                if (uSymOff <= cbKernel)
+                                {
+                                    rc = RTDbgModSymbolAdd(hMod, &szSymbol[1], RTDBGSEGIDX_RVA, uSymOff,
+                                                           0 /*cb*/, 0 /*fFlags*/, NULL);
+                                    if (RT_FAILURE(rc))
+                                    {
+                                        if (   rc == VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE
+                                            || rc == VERR_DBG_INVALID_RVA
+                                            || rc == VERR_DBG_ADDRESS_CONFLICT
+                                            || rc == VERR_DBG_DUPLICATE_SYMBOL)
+                                        {
+                                            Log2(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModSymbolAdd(,%s,) failed %Rrc (ignored)\n", szSymbol, rc));
+                                            rc = VINF_SUCCESS;
+                                        }
+                                        else
+                                            Log(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModSymbolAdd(,%s,) failed %Rrc\n", szSymbol, rc));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                rc = VERR_END_OF_STRING;
+                                Log(("dbgDiggerLinuxLoadKernelSymbols: offName=%#x cLeft=%#x cbName=%#x cbKernelNames=%#x\n",
+                                     offName, cLeft, cbName, pThis->cbKernelNames));
+                            }
+                        }
+                        else
+                        {
+                            rc = VERR_END_OF_STRING;
+                            Log(("dbgDiggerLinuxLoadKernelSymbols: offName=%#x cLeft=%#x cbKernelNames=%#x\n",
+                                 offName, cLeft, pThis->cbKernelNames));
+                        }
+                    }
+
+                    /*
+                     * Link the module into the address space.
+                     */
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+                        if (hAs != NIL_RTDBGAS)
+                            rc = RTDbgAsModuleLink(hAs, hMod, uKernelStart, RTDBGASLINK_FLAGS_REPLACE);
+                        else
+                            rc = VERR_INTERNAL_ERROR;
+                        RTDbgAsRelease(hAs);
+                    }
+                    else
+                        Log(("dbgDiggerLinuxLoadKernelSymbols: Failed: %Rrc\n", rc));
+                    RTDbgModRelease(hMod);
+                }
+                else
+                    Log(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModCreate failed: %Rrc\n", rc));
+            }
+            else
+                Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token index at %RGv failed: %Rrc\n",
+                     pThis->AddrKernelTokenIndex.FlatPtr, rc));
+            RTMemFree(paoffTokens);
+        }
+        else
+            Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token table at %RGv failed: %Rrc\n",
+                 pThis->AddrKernelTokenTable.FlatPtr, rc));
+        RTMemFree(pszzTokens);
+    }
+    else
+        Log(("dbgDiggerLinuxLoadKernelSymbols: Reading encoded names at %RGv failed: %Rrc\n",
+             pThis->AddrKernelNames.FlatPtr, rc));
+    RTMemFree(pbNames);
+
+    return rc;
+}
+
+/**
+ * Loads the kernel symbols from the kallsyms table if it contains absolute addresses
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
  * @param   pThis               The Linux digger data.
  */
-static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
+static int dbgDiggerLinuxLoadKernelSymbolsAbsolute(PUVM pUVM, PDBGDIGGERLINUX pThis)
 {
     /*
      * Allocate memory for temporary table copies, reading the tables as we go.
@@ -1483,187 +1749,149 @@ static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
     int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses, pvAddresses, pThis->cKernelSymbols * cbGuestAddr);
     if (RT_SUCCESS(rc))
     {
-        uint8_t *pbNames = (uint8_t *)RTMemAllocZ(pThis->cbKernelNames);
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelNames, pbNames, pThis->cbKernelNames);
-        if (RT_SUCCESS(rc))
+        /*
+         * Figure out the kernel start and end and convert the absolute addresses to relative offsets.
+         */
+        RTGCUINTPTR uKernelStart = pThis->AddrKernelAddresses.FlatPtr;
+        RTGCUINTPTR uKernelEnd   = pThis->AddrKernelTokenIndex.FlatPtr + 256 * sizeof(uint16_t);
+        RTGCUINTPTR *pauSymOff   = (RTGCUINTPTR *)RTMemTmpAllocZ(pThis->cKernelSymbols * sizeof(RTGCUINTPTR));
+        uint32_t    i;
+        if (cbGuestAddr == sizeof(uint64_t))
         {
-            char *pszzTokens = (char *)RTMemAllocZ(pThis->cbKernelTokenTable);
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenTable, pszzTokens, pThis->cbKernelTokenTable);
-            if (RT_SUCCESS(rc))
-            {
-                uint16_t *paoffTokens = (uint16_t *)RTMemAllocZ(256 * sizeof(uint16_t));
-                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenIndex, paoffTokens, 256 * sizeof(uint16_t));
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Figure out the kernel start and end.
-                     */
-                    RTGCUINTPTR uKernelStart = pThis->AddrKernelAddresses.FlatPtr;
-                    RTGCUINTPTR uKernelEnd   = pThis->AddrKernelTokenIndex.FlatPtr + 256 * sizeof(uint16_t);
-                    uint32_t    i;
-                    if (cbGuestAddr == sizeof(uint64_t))
-                    {
-                        uint64_t *pauAddrs = (uint64_t *)pvAddresses;
-                        for (i = 0; i < pThis->cKernelSymbols; i++)
-                            if (   pauAddrs[i] < uKernelStart
-                                && LNX64_VALID_ADDRESS(pauAddrs[i])
-                                && uKernelStart - pauAddrs[i] < LNX_MAX_KERNEL_SIZE)
-                                uKernelStart = pauAddrs[i];
+            uint64_t *pauAddrs = (uint64_t *)pvAddresses;
+            for (i = 0; i < pThis->cKernelSymbols; i++)
+                if (   pauAddrs[i] < uKernelStart
+                    && LNX64_VALID_ADDRESS(pauAddrs[i])
+                    && uKernelStart - pauAddrs[i] < LNX_MAX_KERNEL_SIZE)
+                    uKernelStart = pauAddrs[i];
 
-                        for (i = pThis->cKernelSymbols - 1; i > 0; i--)
-                            if (   pauAddrs[i] > uKernelEnd
-                                && LNX64_VALID_ADDRESS(pauAddrs[i])
-                                && pauAddrs[i] - uKernelEnd < LNX_MAX_KERNEL_SIZE)
-                                uKernelEnd = pauAddrs[i];
-                    }
-                    else
-                    {
-                        uint32_t *pauAddrs = (uint32_t *)pvAddresses;
-                        for (i = 0; i < pThis->cKernelSymbols; i++)
-                            if (   pauAddrs[i] < uKernelStart
-                                && LNX32_VALID_ADDRESS(pauAddrs[i])
-                                && uKernelStart - pauAddrs[i] < LNX_MAX_KERNEL_SIZE)
-                                uKernelStart = pauAddrs[i];
+            for (i = pThis->cKernelSymbols - 1; i > 0; i--)
+                if (   pauAddrs[i] > uKernelEnd
+                    && LNX64_VALID_ADDRESS(pauAddrs[i])
+                    && pauAddrs[i] - uKernelEnd < LNX_MAX_KERNEL_SIZE)
+                    uKernelEnd = pauAddrs[i];
 
-                        for (i = pThis->cKernelSymbols - 1; i > 0; i--)
-                            if (   pauAddrs[i] > uKernelEnd
-                                && LNX32_VALID_ADDRESS(pauAddrs[i])
-                                && pauAddrs[i] - uKernelEnd < LNX_MAX_KERNEL_SIZE)
-                                uKernelEnd = pauAddrs[i];
-                    }
-
-                    RTGCUINTPTR cbKernel = uKernelEnd - uKernelStart;
-                    pThis->cbKernel = (uint32_t)cbKernel;
-                    DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
-                    Log(("dbgDiggerLinuxLoadKernelSymbols: uKernelStart=%RGv cbKernel=%#x\n", uKernelStart, cbKernel));
-
-                    /*
-                     * Create a module for the kernel.
-                     */
-                    RTDBGMOD hMod;
-                    rc = RTDbgModCreate(&hMod, "vmlinux", cbKernel, 0 /*fFlags*/);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = RTDbgModSetTag(hMod, DIG_LNX_MOD_TAG); AssertRC(rc);
-                        rc = VINF_SUCCESS;
-
-                        /*
-                         * Enumerate the symbols.
-                         */
-                        uint8_t const  *pbCurAddr = (uint8_t const *)pvAddresses;
-                        uint32_t        offName   = 0;
-                        uint32_t        cLeft = pThis->cKernelSymbols;
-                        while (cLeft-- > 0 && RT_SUCCESS(rc))
-                        {
-                            /* Decode the symbol name first. */
-                            if (RT_LIKELY(offName < pThis->cbKernelNames))
-                            {
-                                uint8_t cbName = pbNames[offName++];
-                                if (RT_LIKELY(offName + cbName <= pThis->cbKernelNames))
-                                {
-                                    char     szSymbol[4096];
-                                    uint32_t offSymbol = 0;
-                                    while (cbName-- > 0)
-                                    {
-                                        uint8_t  bEnc     = pbNames[offName++];
-                                        uint16_t offToken = paoffTokens[bEnc];
-                                        if (RT_LIKELY(offToken < pThis->cbKernelTokenTable))
-                                        {
-                                            const char *pszToken = &pszzTokens[offToken];
-                                            char ch;
-                                            while ((ch = *pszToken++) != '\0')
-                                                if (offSymbol < sizeof(szSymbol) - 1)
-                                                    szSymbol[offSymbol++] = ch;
-                                        }
-                                        else
-                                        {
-                                            rc = VERR_INVALID_UTF8_ENCODING;
-                                            break;
-                                        }
-                                    }
-                                    szSymbol[offSymbol < sizeof(szSymbol) ? offSymbol : sizeof(szSymbol) - 1] = '\0';
-
-                                    /* The address. */
-                                    RTGCUINTPTR uSymAddr = cbGuestAddr == sizeof(uint64_t)
-                                                         ? *(uint64_t *)pbCurAddr : *(uint32_t *)pbCurAddr;
-                                    pbCurAddr += cbGuestAddr;
-
-                                    /* Add it without the type char. */
-                                    if (uSymAddr - uKernelStart <= cbKernel)
-                                    {
-                                        rc = RTDbgModSymbolAdd(hMod, &szSymbol[1], RTDBGSEGIDX_RVA, uSymAddr - uKernelStart,
-                                                               0 /*cb*/, 0 /*fFlags*/, NULL);
-                                        if (RT_FAILURE(rc))
-                                        {
-                                            if (   rc == VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE
-                                                || rc == VERR_DBG_INVALID_RVA
-                                                || rc == VERR_DBG_ADDRESS_CONFLICT
-                                                || rc == VERR_DBG_DUPLICATE_SYMBOL)
-                                            {
-                                                Log2(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModSymbolAdd(,%s,) failed %Rrc (ignored)\n", szSymbol, rc));
-                                                rc = VINF_SUCCESS;
-                                            }
-                                            else
-                                                Log(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModSymbolAdd(,%s,) failed %Rrc\n", szSymbol, rc));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    rc = VERR_END_OF_STRING;
-                                    Log(("dbgDiggerLinuxLoadKernelSymbols: offName=%#x cLeft=%#x cbName=%#x cbKernelNames=%#x\n",
-                                         offName, cLeft, cbName, pThis->cbKernelNames));
-                                }
-                            }
-                            else
-                            {
-                                rc = VERR_END_OF_STRING;
-                                Log(("dbgDiggerLinuxLoadKernelSymbols: offName=%#x cLeft=%#x cbKernelNames=%#x\n",
-                                     offName, cLeft, pThis->cbKernelNames));
-                            }
-                        }
-
-                        /*
-                         * Link the module into the address space.
-                         */
-                        if (RT_SUCCESS(rc))
-                        {
-                            RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
-                            if (hAs != NIL_RTDBGAS)
-                                rc = RTDbgAsModuleLink(hAs, hMod, uKernelStart, RTDBGASLINK_FLAGS_REPLACE);
-                            else
-                                rc = VERR_INTERNAL_ERROR;
-                            RTDbgAsRelease(hAs);
-                        }
-                        else
-                            Log(("dbgDiggerLinuxLoadKernelSymbols: Failed: %Rrc\n", rc));
-                        RTDbgModRelease(hMod);
-                    }
-                    else
-                        Log(("dbgDiggerLinuxLoadKernelSymbols: RTDbgModCreate failed: %Rrc\n", rc));
-                }
-                else
-                    Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token index at %RGv failed: %Rrc\n",
-                         pThis->AddrKernelTokenIndex.FlatPtr, rc));
-                RTMemFree(paoffTokens);
-            }
-            else
-                Log(("dbgDiggerLinuxLoadKernelSymbols: Reading token table at %RGv failed: %Rrc\n",
-                     pThis->AddrKernelTokenTable.FlatPtr, rc));
-            RTMemFree(pszzTokens);
+            for (i = 0; i < pThis->cKernelSymbols; i++)
+                pauSymOff[i] = pauAddrs[i] - uKernelStart;
         }
         else
-            Log(("dbgDiggerLinuxLoadKernelSymbols: Reading encoded names at %RGv failed: %Rrc\n",
-                 pThis->AddrKernelNames.FlatPtr, rc));
-        RTMemFree(pbNames);
+        {
+            uint32_t *pauAddrs = (uint32_t *)pvAddresses;
+            for (i = 0; i < pThis->cKernelSymbols; i++)
+                if (   pauAddrs[i] < uKernelStart
+                    && LNX32_VALID_ADDRESS(pauAddrs[i])
+                    && uKernelStart - pauAddrs[i] < LNX_MAX_KERNEL_SIZE)
+                    uKernelStart = pauAddrs[i];
+
+            for (i = pThis->cKernelSymbols - 1; i > 0; i--)
+                if (   pauAddrs[i] > uKernelEnd
+                    && LNX32_VALID_ADDRESS(pauAddrs[i])
+                    && pauAddrs[i] - uKernelEnd < LNX_MAX_KERNEL_SIZE)
+                    uKernelEnd = pauAddrs[i];
+
+            for (i = 0; i < pThis->cKernelSymbols; i++)
+                pauSymOff[i] = pauAddrs[i] - uKernelStart;
+        }
+
+        RTGCUINTPTR cbKernel = uKernelEnd - uKernelStart;
+        pThis->cbKernel = (uint32_t)cbKernel;
+        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
+        Log(("dbgDiggerLinuxLoadKernelSymbolsAbsolute: uKernelStart=%RGv cbKernel=%#x\n", uKernelStart, cbKernel));
+
+        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pThis, uKernelStart, cbKernel, pauSymOff);
+        if (RT_FAILURE(rc))
+            Log(("dbgDiggerLinuxLoadKernelSymbolsAbsolute: Loading symbols from given offset table failed: %Rrc\n", rc));
+        RTMemTmpFree(pauSymOff);
     }
     else
-        Log(("dbgDiggerLinuxLoadKernelSymbols: Reading symbol addresses at %RGv failed: %Rrc\n",
+        Log(("dbgDiggerLinuxLoadKernelSymbolsAbsolute: Reading symbol addresses at %RGv failed: %Rrc\n",
              pThis->AddrKernelAddresses.FlatPtr, rc));
     RTMemFree(pvAddresses);
+
     return rc;
 }
 
+
+/**
+ * Loads the kernel symbols from the kallsyms table if it contains absolute addresses
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pThis               The Linux digger data.
+ */
+static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PDBGDIGGERLINUX pThis)
+{
+    /*
+     * Allocate memory for temporary table copies, reading the tables as we go.
+     */
+    int32_t *pai32Offsets = (int32_t *)RTMemAllocZ(pThis->cKernelSymbols * sizeof(int32_t));
+    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses, pai32Offsets, pThis->cKernelSymbols * sizeof(int32_t));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Figure out the kernel start and end and convert the absolute addresses to relative offsets.
+         */
+        RTGCUINTPTR uKernelStart = pThis->AddrKernelAddresses.FlatPtr;
+        RTGCUINTPTR uKernelEnd   = pThis->AddrKernelTokenIndex.FlatPtr + 256 * sizeof(uint16_t);
+        RTGCUINTPTR *pauSymOff   = (RTGCUINTPTR *)RTMemTmpAllocZ(pThis->cKernelSymbols * sizeof(RTGCUINTPTR));
+        uint32_t    i;
+
+        for (i = 0; i < pThis->cKernelSymbols; i++)
+        {
+            RTGCUINTPTR uSymAddr = dbgDiggerLinuxConvOffsetToAddr(pThis, pai32Offsets[i]);
+
+            if (   uSymAddr < uKernelStart
+                && (pThis->f64Bit ? LNX64_VALID_ADDRESS(uSymAddr) : LNX32_VALID_ADDRESS(uSymAddr))
+                && uKernelStart - uSymAddr < LNX_MAX_KERNEL_SIZE)
+                uKernelStart = uSymAddr;
+        }
+
+        for (i = pThis->cKernelSymbols - 1; i > 0; i--)
+        {
+            RTGCUINTPTR uSymAddr = dbgDiggerLinuxConvOffsetToAddr(pThis, pai32Offsets[i]);
+
+            if (   uSymAddr > uKernelEnd
+                && (pThis->f64Bit ? LNX64_VALID_ADDRESS(uSymAddr) : LNX32_VALID_ADDRESS(uSymAddr))
+                && uSymAddr - uKernelEnd < LNX_MAX_KERNEL_SIZE)
+                uKernelEnd = uSymAddr;
+
+            /* Store the offset from the derived kernel start address. */
+            pauSymOff[i] = uSymAddr - uKernelStart;
+        }
+
+        RTGCUINTPTR cbKernel = uKernelEnd - uKernelStart;
+        pThis->cbKernel = (uint32_t)cbKernel;
+        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
+        Log(("dbgDiggerLinuxLoadKernelSymbolsRelative: uKernelStart=%RGv cbKernel=%#x\n", uKernelStart, cbKernel));
+
+        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pThis, uKernelStart, cbKernel, pauSymOff);
+        if (RT_FAILURE(rc))
+            Log(("dbgDiggerLinuxLoadKernelSymbolsRelative: Loading symbols from given offset table failed: %Rrc\n", rc));
+        RTMemTmpFree(pauSymOff);
+    }
+    else
+        Log(("dbgDiggerLinuxLoadKernelSymbolsRelative: Reading symbol addresses at %RGv failed: %Rrc\n",
+             pThis->AddrKernelAddresses.FlatPtr, rc));
+    RTMemFree(pai32Offsets);
+
+    return rc;
+}
+
+
+/**
+ * Loads the kernel symbols.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   pThis               The Linux digger data.
+ */
+static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
+{
+    if (pThis->fRelKrnlAddr)
+        return dbgDiggerLinuxLoadKernelSymbolsRelative(pUVM, pThis);
+    else
+        return dbgDiggerLinuxLoadKernelSymbolsAbsolute(pUVM, pThis);
+}
 
 /**
  * Checks if there is a likely kallsyms_names fragment at pHitAddr.
@@ -2196,6 +2424,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
      * Assume 64-bit kernels all live way beyond 32-bit address space.
      */
     pThis->f64Bit = pThis->AddrLinuxBanner.FlatPtr > UINT32_MAX;
+    pThis->fRelKrnlAddr = false;
 
     pThis->hCfgDb = NULL;
 
