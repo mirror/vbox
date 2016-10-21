@@ -511,6 +511,8 @@
 #define CODEC_F1C_ASSOCIATION_GROUP_5                      0x6
 #define CODEC_F1C_ASSOCIATION_GROUP_6                      0x7
 #define CODEC_F1C_ASSOCIATION_GROUP_7                      0x8
+/* Note: Windows OSes will treat group 15 (0xF) as single PIN devices.
+ *       The sequence number associated with that group then will be ignored. */
 #define CODEC_F1C_ASSOCIATION_GROUP_15                     0xF
 
 /* Configuration default: Association Sequence. */
@@ -1154,7 +1156,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_PINK,
                                                           CODEC_F1C_MISC_NONE,
-                                                          CODEC_F1C_ASSOCIATION_GROUP_4, 0x0 /* Seq */);
+                                                          CODEC_F1C_ASSOCIATION_GROUP_15, 0x0 /* Ignored */);
             /* Fall through is intentional. */
 
         port_init:
@@ -1179,10 +1181,9 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
             /* If Line in is reported as enabled, OS X sees no speakers! Windows does
              * not care either way, although Linux does.
              */
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, 0);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0 /* fPresent */, 0);
 
             pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
-                                                | CODEC_F00_09_CAP_UNSOL
                                                 | CODEC_F00_09_CAP_STEREO;
 
             pNode->port.node.au32F00_param[0xC] = CODEC_F00_0C_CAP_INPUT
@@ -1203,7 +1204,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
         {
             pNode->port.u32F07_param = CODEC_F07_IN_ENABLE | CODEC_F07_OUT_ENABLE;
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(true /* fPresent */, CODEC_F09_ANALOG_NA);
+            pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1 /* fPresent */, CODEC_F09_ANALOG_NA);
 
             pNode->port.node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
                                                 | CODEC_F00_09_CAP_CONNECTION_LIST
@@ -1436,7 +1437,7 @@ static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODEC
                                                               CODEC_F1C_CONNECTION_TYPE_UNKNOWN,
                                                               CODEC_F1C_COLOR_UNKNOWN,
                                                               CODEC_F1C_MISC_NONE,
-                                                              CODEC_F1C_ASSOCIATION_GROUP_15, 0xB /* Seq */);
+                                                              CODEC_F1C_ASSOCIATION_GROUP_15, 0x0 /* Ignored */);
             break;
         }
 
