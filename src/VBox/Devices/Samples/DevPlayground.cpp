@@ -91,7 +91,7 @@ devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPH
             Assert(enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64));
             if (GCPhysAddress == NIL_RTGCPHYS)
                 return VINF_SUCCESS; /* We ignore the unmap notification. */
-            return PDMDevHlpMMIOExMap(pPciDev->pDevIns, iRegion, GCPhysAddress);
+            return PDMDevHlpMMIOExMap(pPciDev->pDevIns, pPciDev, iRegion, GCPhysAddress);
 
         default:
             /* We should never get here */

@@ -4710,24 +4710,27 @@ DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDe
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
  */
-DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, uint32_t iRegion)
+DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion)
 {
+    NOREF(pPciDev);
     return pDevIns->pHlpR3->pfnMMIOExDeregister(pDevIns, iRegion);
 }
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExMap
  */
-DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
+    NOREF(pPciDev);
     return pDevIns->pHlpR3->pfnMMIOExMap(pDevIns, iRegion, GCPhys);
 }
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
  */
-DECLINLINE(int) PDMDevHlpMMIOExUnmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
+DECLINLINE(int) PDMDevHlpMMIOExUnmap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
+    NOREF(pPciDev);
     return pDevIns->pHlpR3->pfnMMIOExUnmap(pDevIns, iRegion, GCPhys);
 }
 
