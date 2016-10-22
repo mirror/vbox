@@ -44,7 +44,7 @@
  * Combines the BS3_USE_RM_TEXT_SEG,  BS3_USE_X0_TEXT_SEG, and
  * BS3_USE_X1_TEXT_SEG indicators into a single one.
  */
-#if defined(BS3_USE_RM_TEXT_SEG) || defined(BS3_USE_X0_TEXT_SEG) || defined(BS3_USE_X1_TEXT_SEG)
+#if defined(BS3_USE_RM_TEXT_SEG) || defined(BS3_USE_X0_TEXT_SEG) || defined(BS3_USE_X1_TEXT_SEG) || defined(DOXYGEN_RUNNING)
 # define BS3_USE_ALT_16BIT_TEXT_SEG
 #else
 # undef  BS3_USE_ALT_16BIT_TEXT_SEG
@@ -538,7 +538,7 @@ RT_C_DECLS_BEGIN
 # define BS3_FP_OFF(a_pv)            ((uintptr_t)(a_pv))
 #endif
 
-/** @def BS3_MAKE_PROT_PTR_FROM_FLAT
+/** @def BS3_MAKE_PROT_R0PTR_FROM_FLAT
  * Creates a protected mode pointer from a flat address.
  *
  * For sake of convenience, this macro also works in 32-bit and 64-bit mode,
@@ -694,7 +694,7 @@ RT_C_DECLS_BEGIN
  * Example: @code{.c}
  *  \#define Bs3Gdt BS3_DATA_NM(Bs3Gdt)
  *  extern X86DESC BS3_FAR_DATA Bs3Gdt
-f * @endcode
+ * @endcode
  *
  * @param   a_Name      The name of the global variable.
  * @remarks Mainly used in bs3kit-mangling.h, internal headers and templates.
@@ -706,9 +706,9 @@ f * @endcode
 //converter does this now//#endif
 
 /**
- * Template for createing a pointer union type.
+ * Template for creating a pointer union type.
  * @param   a_BaseName      The base type name.
- * @param   a_Modifier      The type modifier.
+ * @param   a_Modifiers     The type modifier.
  */
 #define BS3_PTR_UNION_TEMPLATE(a_BaseName, a_Modifiers) \
     typedef union a_BaseName \
@@ -1009,7 +1009,7 @@ extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt32;
 /** Structure for the LIDT instruction for loading the 64-bit IDT. */
 extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Idt64;
 /** Structure for the LIDT instruction for loading the real mode interrupt
- *  vector table.. */
+ *  vector table. */
 extern X86XDTR64 BS3_FAR_DATA Bs3Lidt_Ivt;
 /** Structure for the LGDT instruction for loading the current GDT. */
 extern X86XDTR64 BS3_FAR_DATA Bs3Lgdt_Gdt;
@@ -1189,7 +1189,7 @@ AssertCompileSize(BS3XPTR, 4);
 # error "ARCH_BITS"
 #endif
 
-/** @def BS3_XPTR_DEF_MEMBER
+/** @def BS3_XPTR_MEMBER
  * Defines a pointer member that can be shared by all CPU modes.
  *
  * @param   a_Type      The type we're pointing to.
@@ -1197,7 +1197,7 @@ AssertCompileSize(BS3XPTR, 4);
  */
 #define BS3_XPTR_MEMBER(a_Type, a_Name) BS3_XPTR_DEF_INTERNAL(RT_NOTHING, a_Type, a_Name)
 
-/** @def BS3_XPTR_DEF_AUTO
+/** @def BS3_XPTR_AUTO
  * Defines a pointer static variable for working with an XPTR.
  *
  * This is typically used to convert flat pointers into context specific
@@ -1208,7 +1208,7 @@ AssertCompileSize(BS3XPTR, 4);
  */
 #define BS3_XPTR_AUTO(a_Type, a_Name) BS3_XPTR_DEF_INTERNAL(RT_NOTHING, a_Type, a_Name)
 
-/** @def BS3_XPTR_SET
+/** @def BS3_XPTR_SET_FLAT
  * Sets a cross context pointer.
  *
  * @param   a_Type      The type we're pointing to.
@@ -1377,7 +1377,7 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
     BS3_DECL_NEAR(a_RetType) BS3_CMN_NM(a_Name) a_Params
 #endif
 
-/** @BS3_CMN_PROTO_STUB
+/** @def BS3_CMN_PROTO_STUB
  * Macro for prototyping all the variations of a common function with automatic
  * near -> far stub.
  *
@@ -1388,7 +1388,7 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  */
 #define BS3_CMN_PROTO_STUB(a_RetType, a_Name, a_Params) BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params)
 
-/** @BS3_CMN_PROTO_NOSB
+/** @def BS3_CMN_PROTO_NOSB
  * Macro for prototyping all the variations of a common function without any
  * near > far stub.
  *
@@ -1399,7 +1399,7 @@ DECLINLINE(void BS3_FAR *) Bs3XptrFlatToCurrent(RTCCUINTXREG uFlatPtr)
  */
 #define BS3_CMN_PROTO_NOSB(a_RetType, a_Name, a_Params) BS3_CMN_PROTO_INT(a_RetType, a_Name, a_Params)
 
-/** @BS3_CMN_PROTO_FRST
+/** @def BS3_CMN_PROTO_FARSTUB
  * Macro for prototyping all the variations of a common function with automatic
  * far -> near stub.
  *
@@ -1486,7 +1486,7 @@ BS3_CMN_PROTO_NOSB(void, Bs3PrintX32,(uint32_t uValue));
 /**
  * Formats and prints a string to the screen.
  *
- * See #Bs3StrFormatV_c16 for supported format types.
+ * See #Bs3StrFormatV for supported format types.
  *
  * @param   pszFormat       The format string.
  * @param   ...             Format arguments.
@@ -1496,7 +1496,7 @@ BS3_CMN_PROTO_STUB(size_t, Bs3Printf,(const char BS3_FAR *pszFormat, ...));
 /**
  * Formats and prints a string to the screen, va_list version.
  *
- * See #Bs3Format_c16 for supported format types.
+ * See #Bs3StrFormatV for supported format types.
  *
  * @param   pszFormat       The format string.
  * @param   va              Format arguments.
@@ -1513,7 +1513,7 @@ BS3_CMN_PROTO_STUB(void, Bs3PrintStr,(const char BS3_FAR *pszString));
 /**
  * Prints a string to the screen.
  *
- * @param   pchString       The string to print.  Any terminator charss will be printed.
+ * @param   pszString       The string to print.  Any terminator charss will be printed.
  * @param   cchString       The exact number of characters to print.
  */
 BS3_CMN_PROTO_NOSB(void, Bs3PrintStrN,(const char BS3_FAR *pszString, size_t cchString));
@@ -1563,7 +1563,7 @@ BS3_CMN_PROTO_STUB(size_t, Bs3StrFormatV,(const char BS3_FAR *pszFormat, va_list
 /**
  * Formats a string into a buffer.
  *
- * See #Bs3Format_c16 for supported format types.
+ * See #Bs3StrFormatV for supported format types.
  *
  * @returns The length of the formatted string (excluding terminator).
  *          This will be higher or equal to @c cbBuf in case of an overflow.
@@ -1577,7 +1577,7 @@ BS3_CMN_PROTO_STUB(size_t, Bs3StrPrintfV,(char BS3_FAR *pszBuf, size_t cbBuf, co
 /**
  * Formats a string into a buffer.
  *
- * See #Bs3Format_c16 for supported format types.
+ * See #Bs3StrFormatV for supported format types.
  *
  * @returns The length of the formatted string (excluding terminator).
  *          This will be higher or equal to @c cbBuf in case of an overflow.
@@ -1623,7 +1623,7 @@ BS3_CMN_PROTO_STUB(char BS3_FAR *, Bs3StrCpy,(char BS3_FAR *pszDst, const char B
  * @returns pvDst
  * @param   pvDst           The destination buffer.
  * @param   pvSrc           The source buffer.
- * @param   cbCopy          The number of bytes to copy.
+ * @param   cbToCopy        The number of bytes to copy.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
@@ -1633,7 +1633,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemCpy,(void BS3_FAR *pvDst, const void BS
  * @returns pvDst + cbCopy
  * @param   pvDst           The destination buffer.
  * @param   pvSrc           The source buffer.
- * @param   cbCopy          The number of bytes to copy.
+ * @param   cbToCopy        The number of bytes to copy.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
@@ -1643,7 +1643,7 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemPCpy,(void BS3_FAR *pvDst, const void B
  * @returns pvDst
  * @param   pvDst           The destination buffer.
  * @param   pvSrc           The source buffer.
- * @param   cbCopy          The number of bytes to copy.
+ * @param   cbToCopy        The number of bytes to copy.
  */
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3MemMove,(void BS3_FAR *pvDst, const void BS3_FAR *pvSrc, size_t cbToCopy));
 
@@ -1680,7 +1680,7 @@ BS3_CMN_PROTO_NOSB(void BS3_FAR *, Bs3MemChr,(void const BS3_FAR *pvHaystack, ui
  *          side, and positive in the other case.
  * @param   pv1             The left hand memory.
  * @param   pv2             The right hand memory.
- * @param   bNeedle         The number of bytes to compare.
+ * @param   cb              The number of bytes to compare.
  */
 BS3_CMN_PROTO_NOSB(int, Bs3MemCmp,(void const BS3_FAR *pv1, void const BS3_FAR *pv2, size_t cb));
 
@@ -2640,7 +2640,7 @@ BS3_CMN_PROTO_STUB(void, Bs3Trap64Init,(void));
  * Modifies the real-mode / V86 IVT entry specified by @a iIvt.
  *
  * @param   iIvt        The index of the IDT entry to set.
- * @param   uSel        The handler real-mode segment.
+ * @param   uSeg        The handler real-mode segment.
  * @param   off         The handler offset.
  */
 BS3_CMN_PROTO_STUB(void, Bs3TrapRmV86SetGate,(uint8_t iIvt, uint16_t uSeg, uint16_t off));
@@ -3330,6 +3330,8 @@ BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t c
  */
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_t cEntries, uint32_t fFlags));
 
+
+/** @} */
 
 /** @} */
 

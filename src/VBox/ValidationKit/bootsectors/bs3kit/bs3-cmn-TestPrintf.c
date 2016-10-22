@@ -58,7 +58,7 @@ typedef struct BS3TESTPRINTBUF
 
 
 /**
- * @impl_callback_method{FNBS3STRFORMATOUTPUT, Prints to screen and VMMDev}
+ * @callback_method_impl{FNBS3STRFORMATOUTPUT, Prints to screen and VMMDev}
  */
 static BS3_DECL_CALLBACK(size_t) bs3TestPrintfStrOutput(char ch, void BS3_FAR *pvUser)
 {

@@ -137,7 +137,7 @@ BS3_DECL(bool) bs3TestIsVmmDevTestingPresent(void);
 BS3_DECL(void) bs3TestSubCleanup(void);
 
 /**
- * @impl_callback_method{FNBS3STRFORMATOUTPUT,
+ * @callback_method_impl{FNBS3STRFORMATOUTPUT,
  *      Used by Bs3TestFailedV and Bs3TestSkippedV.
  *
  *      The @a pvUser parameter must point a BS3TESTFAILEDBUF structure. }

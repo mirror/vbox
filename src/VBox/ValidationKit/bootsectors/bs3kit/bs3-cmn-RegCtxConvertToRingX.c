@@ -71,7 +71,7 @@ static uint16_t bs3RegCtxConvertRealSegToRingX(uint16_t uSeg, uint8_t bRing)
  * Transforms a protected mode selector to a different ring.
  *
  * @returns Adjusted protected mode selector.
- * @param   uSeg            The current selector value.
+ * @param   uSel            The current selector value.
  * @param   bRing           The target ring.
  * @param   iReg            Register index.
  */
