@@ -718,6 +718,7 @@ static int netperfTCPThroughputRecv(NETPERFPARAMS const *pParams, NETPERFHDR *pB
  * Prints the statistics for the latency test.
  *
  * @param   pStats              The statistics.
+ * @param   cbPacket            The packet size in bytes.
  */
 static void netperfPrintLatencyStats(NETPERFSTATS const *pStats, uint32_t cbPacket)
 {
@@ -1703,7 +1704,8 @@ static int netperfTCPClient(const char *pszServer, NETPERFPARAMS *pParams)
  *
  * @returns Exit code.
  * @param   enmProto            The protocol.
- * @param   pParams             The parameter block.
+ * @param   pszServer           The server name.
+ * @param   pvUser              The parameter block as opaque user data.
  */
 static RTEXITCODE netperfClient(NETPERFPROTO enmProto, const char *pszServer, void *pvUser)
 {

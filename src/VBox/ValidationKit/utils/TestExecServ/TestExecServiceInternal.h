@@ -76,7 +76,6 @@ typedef struct TXSTRANSPORT
     /**
      * Print the usage information for this transport layer.
      *
-     * @param   pThis               Pointer to the transport layer descriptor.
      * @param   pStream             The stream to print the usage info to.
      *
      * @remarks This is only required if TXSTRANSPORT::cOpts is greater than 0.
@@ -93,7 +92,6 @@ typedef struct TXSTRANSPORT
      * @retval  VERR_TRY_AGAIN if not handled.
      * @retval  VERR_INVALID_PARAMETER if we should exit with a non-zero status.
      *
-     * @param   pThis               Pointer to the transport layer descriptor.
      * @param   ch                  The short option value.
      * @param   pVal                Pointer to the value union.
      *

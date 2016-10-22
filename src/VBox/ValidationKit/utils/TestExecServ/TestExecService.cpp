@@ -386,7 +386,7 @@ static int txsReplyAck(PCTXSPKTHDR pPktHdr)
  * @param   pPktHdr             The original packet (for future use).
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
- * @param   pszDetailsFmt       Longer description of the problem (format
+ * @param   pszDetailFmt        Longer description of the problem (format
  *                              string).
  * @param   va                  Format arguments.
  */
@@ -412,7 +412,7 @@ static int txsReplyFailureV(PCTXSPKTHDR pPktHdr, const char *pszOpcode, const ch
  * @param   pPktHdr             The original packet (for future use).
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
- * @param   pszDetails          Longer description of the problem (format
+ * @param   pszDetailFmt        Longer description of the problem (format
  *                              string).
  * @param   ...                 Format arguments.
  */
@@ -1574,7 +1574,7 @@ static int txsExecSendExitStatus(PTXSEXEC pTxsExec, bool fProcessAlive, bool fPr
  * @param   hPollSet            The polling set.
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
  * @param   phPipeR             The pipe handle.
- * @param   pu32Crc             The current CRC-32 of the stream. (In/Out)
+ * @param   puCrc32             The current CRC-32 of the stream. (In/Out)
  * @param   enmHndId            The handle ID.
  * @param   pszOpcode           The opcode for the data upload.
  *
@@ -1734,7 +1734,7 @@ static void txsDoExecHlpHandleStdInWritableEvent(RTPOLLSET hPollSet, uint32_t fP
  * @param   hPollSet            The polling set.
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
  * @param   idPollHnd           The handle ID.
- * @param   hStdInW             The standard input pipe.
+ * @param   phStdInW            The standard input pipe.
  * @param   pStdInBuf           The standard input buffer.
  */
 static int txsDoExecHlpHandleTransportEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, uint32_t idPollHnd,
@@ -2239,6 +2239,7 @@ static int txsExecSetupTestPipe(PTXSEXEC pTxsExec, const char *pszTestPipe)
  * @returns IPRT status code, reply to client made on error.
  * @param   pTxsExec            The TXSEXEC instance.
  * @param   pszHowTo            How to set up this standard handle.
+ * @param   pszStdWhat          For what to setup redirection (stdin/stdout/stderr).
  * @param   fd                  Which standard handle it is (0 == stdin, 1 ==
  *                              stdout, 2 == stderr).
  * @param   ph                  The generic handle that @a pph may be set
@@ -2890,6 +2891,7 @@ static RTEXITCODE txsFinalizeScratch(void)
  * @param   argc                The number of arguments.
  * @param   argv                The argument vector.
  * @param   pfExit              For indicating exit when the exit code is zero.
+ * @param   pszUpgrading        The upgraded image path.
  */
 static RTEXITCODE txsAutoUpdateStage2(int argc, char **argv, bool *pfExit, const char *pszUpgrading)
 {
@@ -3192,7 +3194,7 @@ static void txsSetDefaults(void)
  * @param   pStrm               Where to print it.
  * @param   pszArgv0            The program name (argv[0]).
  */
-static void txsUsage(PRTSTREAM pStrm, const char *argv0)
+static void txsUsage(PRTSTREAM pStrm, const char *pszArgv0)
 {
     RTStrmPrintf(pStrm,
                  "Usage: %Rbn [options]\n"
@@ -3205,7 +3207,7 @@ static void txsUsage(PRTSTREAM pStrm, const char *argv0)
                  "      Where to put scratch files.\n"
                  "      Default: %s \n"
                  ,
-                 argv0,
+                 pszArgv0,
                  g_szDefCdRomPath,
                  g_szDefScratchPath);
     RTStrmPrintf(pStrm,

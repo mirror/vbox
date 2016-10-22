@@ -58,7 +58,7 @@
  * Leave GS alone on 64-bit darwin (gs is 0, no ldt or gdt entry to load that'll
  * restore the lower 32-bits of the base when saving and restoring the register).
  */
-#if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+#if (defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)) || defined(DOXYGEN_RUNNING)
 # define CIDET_LEAVE_GS_ALONE
 #endif
 
@@ -708,7 +708,7 @@ static bool CidetAppDearmBuf(PCIDETAPP pThis, PCIDETAPPBUF pAppBuf)
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnReInitDataBuf}
+ * @interface_method_impl{CIDETCORE,pfnReInitDataBuf}
  */
 static DECLCALLBACK(bool) CidetAppCbReInitDataBuf(PCIDETCORE pThis, PCIDETBUF pBuf)
 {
@@ -762,7 +762,7 @@ static DECLCALLBACK(bool) CidetAppCbReInitDataBuf(PCIDETCORE pThis, PCIDETBUF pB
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnSetupDataBuf}
+ * @interface_method_impl{CIDETCORE,pfnSetupDataBuf}
  */
 static DECLCALLBACK(bool) CidetAppCbSetupDataBuf(PCIDETCORE pThis, PCIDETBUF pBuf, void const *pvSrc)
 {
@@ -786,7 +786,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupDataBuf(PCIDETCORE pThis, PCIDETBUF pBu
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnIsBufEqual}
+ * @interface_method_impl{CIDETCORE,pfnIsBufEqual}
  */
 static DECLCALLBACK(bool) CidetAppCbIsBufEqual(PCIDETCORE pThis, struct CIDETBUF *pBuf, void const *pvExpected)
 {
@@ -830,7 +830,7 @@ static DECLCALLBACK(bool) CidetAppCbIsBufEqual(PCIDETCORE pThis, struct CIDETBUF
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnReInitCodeBuf}
+ * @interface_method_impl{CIDETCORE,pfnReInitCodeBuf}
  */
 static DECLCALLBACK(bool) CidetAppCbReInitCodeBuf(PCIDETCORE pThis, PCIDETBUF pBuf)
 {
@@ -884,7 +884,7 @@ static DECLCALLBACK(bool) CidetAppCbReInitCodeBuf(PCIDETCORE pThis, PCIDETBUF pB
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnSetupCodeBuf}
+ * @interface_method_impl{CIDETCORE,pfnSetupCodeBuf}
  */
 static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBuf, void const *pvInstr)
 {
@@ -1054,7 +1054,7 @@ static DECLCALLBACK(bool) CidetAppCbSetupCodeBuf(PCIDETCORE pThis, PCIDETBUF pBu
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnExecute}
+ * @interface_method_impl{CIDETCORE,pfnExecute}
  */
 static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
 {
@@ -1104,12 +1104,12 @@ static DECLCALLBACK(bool) CidetAppCbExecute(PCIDETCORE pThis)
 
 
 /**
- * @interface_method_impl{CIDETCORE::pfnSetupBuf}
+ * @interface_method_impl{CIDETCORE,pfnFailure}
  */
-static DECLCALLBACK(void) CidetAppCbFailureV(PCIDETCORE pThis, const char *pszMsg, va_list va)
+static DECLCALLBACK(void) CidetAppCbFailureV(PCIDETCORE pThis, const char *pszFormat, va_list va)
 {
     RT_NOREF_PV(pThis);
-    RTTestIFailedV(pszMsg, va);
+    RTTestIFailedV(pszFormat, va);
 }
 
 

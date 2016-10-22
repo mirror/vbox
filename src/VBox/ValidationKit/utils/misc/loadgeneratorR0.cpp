@@ -70,7 +70,7 @@ static int loadgenR0Ipi(uint64_t cIpis)
 /**
  * Service request handler entry point.
  *
- * @copydoc SUPR0SERVICEREQHANDLER
+ * @copydoc FNSUPR0SERVICEREQHANDLER
  */
 extern "C" DECLEXPORT(int) LoadGenR0ServiceReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
                                                       uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)

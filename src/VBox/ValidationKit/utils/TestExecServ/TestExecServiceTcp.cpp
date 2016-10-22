@@ -346,7 +346,7 @@ static int txsTcpConnect(void)
 }
 
 /**
- * @interface_method_impl{TXSTRANSPORT,txsTcpNotifyReboot}
+ * @interface_method_impl{TXSTRANSPORT,pfnNotifyReboot}
  */
 static DECLCALLBACK(void) txsTcpNotifyReboot(void)
 {
