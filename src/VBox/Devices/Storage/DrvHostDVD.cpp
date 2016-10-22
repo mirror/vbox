@@ -612,10 +612,10 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
             for (uint32_t i = cSectors; i > 0; i -= cReqSectors)
             {
                 if (i * cbSector > SCSI_MAX_BUFFER_SIZE)
-                    cReqSectors = SCSI_MAX_BUFFER_SIZE / cbSector;
+                    cReqSectors = SCSI_MAX_BUFFER_SIZE / (uint32_t)cbSector;
                 else
                     cReqSectors = i;
-                uint32_t cbCurrTX = cbSector * cReqSectors;
+                uint32_t cbCurrTX = (uint32_t)cbSector * cReqSectors;
                 switch (pbCdb[0])
                 {
                     case SCSI_READ_10:
