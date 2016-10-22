@@ -275,7 +275,7 @@ static void utsGadgetClassTestCleanup(PUTSGADGETCLASSINT pClass)
 }
 
 /**
- * @interface_method_impl{UTSGADGETCLASS,pfnInit}
+ * @interface_method_impl{UTSGADGETCLASSIF,pfnInit}
  */
 static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTSGADGETCFGITEM paCfg)
 {
@@ -396,7 +396,7 @@ static DECLCALLBACK(int) utsGadgetClassTestInit(PUTSGADGETCLASSINT pClass, PCUTS
 
 
 /**
- * @interface_method_impl{UTSGADGETCLASS,pfnTerm}
+ * @interface_method_impl{UTSGADGETCLASSIF,pfnTerm}
  */
 static DECLCALLBACK(void) utsGadgetClassTestTerm(PUTSGADGETCLASSINT pClass)
 {
@@ -408,7 +408,7 @@ static DECLCALLBACK(void) utsGadgetClassTestTerm(PUTSGADGETCLASSINT pClass)
 
 
 /**
- * @interface_method_impl{UTSGADGETCLASS,pfnGetBusId}
+ * @interface_method_impl{UTSGADGETCLASSIF,pfnGetBusId}
  */
 static DECLCALLBACK(uint32_t) utsGadgetClassTestGetBusId(PUTSGADGETCLASSINT pClass)
 {
@@ -417,7 +417,7 @@ static DECLCALLBACK(uint32_t) utsGadgetClassTestGetBusId(PUTSGADGETCLASSINT pCla
 
 
 /**
- * @interface_method_impl{UTSGADGETCLASS,pfnConnect}
+ * @interface_method_impl{UTSGADGETCLASSIF,pfnConnect}
  */
 static DECLCALLBACK(int) utsGadgetClassTestConnect(PUTSGADGETCLASSINT pClass)
 {
@@ -430,7 +430,7 @@ static DECLCALLBACK(int) utsGadgetClassTestConnect(PUTSGADGETCLASSINT pClass)
 
 
 /**
- * @interface_method_impl{UTSGADGETCLASS,pfnDisconnect}
+ * @interface_method_impl{UTSGADGETCLASSIF,pfnDisconnect}
  */
 static DECLCALLBACK(int) utsGadgetClassTestDisconnect(PUTSGADGETCLASSINT pClass)
 {

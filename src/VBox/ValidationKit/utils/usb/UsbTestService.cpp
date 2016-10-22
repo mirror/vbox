@@ -396,8 +396,8 @@ static int utsReplyAck(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
  * @param   rcReq               Status code.
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
- * @param   pszDetailsFmt       Longer description of the problem (format
- *                              string).
+ * @param   rcReq               The status code of the request.
+ * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   va                  Format arguments.
  */
 static int utsReplyFailureV(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, va_list va)
@@ -424,11 +424,10 @@ static int utsReplyFailureV(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, const char 
  * @returns IPRT status code of the send.
  * @param   pClient             The UTS client structure.
  * @param   pPktHdr             The original packet (for future use).
- * @param   rcReq               Status code.
  * @param   pszOpcode           The status opcode.  Exactly 8 chars long, padd
  *                              with space.
- * @param   pszDetails          Longer description of the problem (format
- *                              string).
+ * @param   rcReq               Status code.
+ * @param   pszDetailFmt        Longer description of the problem (format string).
  * @param   ...                 Format arguments.
  */
 static int utsReplyFailure(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr, const char *pszOpcode, int rcReq, const char *pszDetailFmt, ...)
@@ -550,6 +549,7 @@ static int utsReplyInvalidState(PUTSCLIENT pClient, PCUTSPKTHDR pPktHdr)
  *
  * @returns IPRT status code.
  * @retval  VERR_OUT_OF_RANGE if the parsed value exceeds the given maximum.
+ * @param   pszVal              The value string.
  * @param   uMax                The maximum value.
  * @param   pu64                Where to store the parsed number on success.
  */
@@ -570,6 +570,7 @@ static int utsDoGadgetCreateCfgParseUInt(const char *pszVal, uint64_t uMax, uint
  *
  * @returns IPRT status code.
  * @retval  VERR_OUT_OF_RANGE if the parsed value exceeds the given range.
+ * @param   pszVal              The value string.
  * @param   iMin                The minimum value.
  * @param   iMax                The maximum value.
  * @param   pi64                Where to store the parsed number on success.
@@ -1391,7 +1392,7 @@ static void utsSetDefaults(void)
  * @param   pStrm               Where to print it.
  * @param   pszArgv0            The program name (argv[0]).
  */
-static void utsUsage(PRTSTREAM pStrm, const char *argv0)
+static void utsUsage(PRTSTREAM pStrm, const char *pszArgv0)
 {
     RTStrmPrintf(pStrm,
                  "Usage: %Rbn [options]\n"
@@ -1406,7 +1407,7 @@ static void utsUsage(PRTSTREAM pStrm, const char *argv0)
                  "      Where to put scratch files.\n"
                  "      Default: %s \n"
                  ,
-                 argv0,
+                 pszArgv0,
                  g_szDefCdRomPath,
                  g_szDefScratchPath);
     RTStrmPrintf(pStrm,

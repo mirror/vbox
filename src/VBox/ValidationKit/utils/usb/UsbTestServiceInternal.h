@@ -55,7 +55,6 @@ typedef struct UTSTRANSPORT
     /**
      * Print the usage information for this transport layer.
      *
-     * @param   pThis               Pointer to the transport layer descriptor.
      * @param   pStream             The stream to print the usage info to.
      *
      * @remarks This is only required if TXSTRANSPORT::cOpts is greater than 0.
@@ -72,7 +71,6 @@ typedef struct UTSTRANSPORT
      * @retval  VERR_TRY_AGAIN if not handled.
      * @retval  VERR_INVALID_PARAMETER if we should exit with a non-zero status.
      *
-     * @param   pThis               Pointer to the transport layer descriptor.
      * @param   ch                  The short option value.
      * @param   pVal                Pointer to the value union.
      *
@@ -115,7 +113,7 @@ typedef struct UTSTRANSPORT
      *
      * @returns IPRT status code.
      * @param   hPollSet            The poll set to add them to.
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      * @param   idStart             The handle ID to start at.
      */
     DECLR3CALLBACKMEMBER(int, pfnPollSetAdd, (RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart));
@@ -125,7 +123,7 @@ typedef struct UTSTRANSPORT
      *
      * @returns IPRT status code.
      * @param   hPollSet            The poll set to remove from.
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      * @param   idStart             The handle ID to remove.
      */
     DECLR3CALLBACKMEMBER(int, pfnPollSetRemove, (RTPOLLSET hPollSet, PUTSTRANSPORTCLIENT pClient, uint32_t idStart));
@@ -141,7 +139,7 @@ typedef struct UTSTRANSPORT
      *          interrupted, the transport layer will store the data until the next
      *          receive call.
      *
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      * @param   ppPktHdr            Where to return the pointer to the packet we've
      *                              read.  This is allocated from the heap using
      *                              RTMemAlloc (w/ UTSPKT_ALIGNMENT) and must be
@@ -157,7 +155,7 @@ typedef struct UTSTRANSPORT
      * @returns IPRT status code.
      * @retval  VERR_INTERRUPTED if interrupted before anything was sent.
      *
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      * @param   pPktHdr             The packet to send.  The size is given by
      *                              aligning the size in the header by
      *                              UTSPKT_ALIGNMENT.
@@ -167,7 +165,7 @@ typedef struct UTSTRANSPORT
     /**
      * Sends a babble packet and disconnects the client (if applicable).
      *
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      * @param   pPktHdr             The packet to send.  The size is given by
      *                              aligning the size in the header by
      *                              UTSPKT_ALIGNMENT.
@@ -178,7 +176,7 @@ typedef struct UTSTRANSPORT
     /**
      * Notification about a client HOWDY.
      *
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyHowdy, (PUTSTRANSPORTCLIENT pClient));
 
@@ -188,7 +186,7 @@ typedef struct UTSTRANSPORT
      * For connection oriented transport layers, it would be good to disconnect the
      * client at this point.
      *
-     * @paramm  pClient             The transport client structure.
+     * @param   pClient             The transport client structure.
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyBye, (PUTSTRANSPORTCLIENT pClient));
 

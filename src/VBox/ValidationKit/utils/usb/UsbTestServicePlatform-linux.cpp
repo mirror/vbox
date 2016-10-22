@@ -281,7 +281,7 @@ DECLHIDDEN(int) utsPlatformInit(void)
     int rc = utsPlatformModuleLoad("libcomposite", NULL, 0);
     if (RT_SUCCESS(rc))
     {
-        const char *apszArg[] = { "num=20" }; /** @todo Make configurable from config. */
+        const char *apszArg[] = { "num=20" }; /** @todo: Make configurable from config. */
         rc = utsPlatformModuleLoad("dummy_hcd", &apszArg[0], RT_ELEMENTS(apszArg));
         if (RT_SUCCESS(rc))
             rc = utsPlatformModuleLoad("dummy_hcd_ss", &apszArg[0], RT_ELEMENTS(apszArg));
