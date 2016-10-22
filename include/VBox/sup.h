@@ -2243,6 +2243,7 @@ SUPR0DECL(void) SUPR0TracerUmodProbeFire(PSUPDRVSESSION pSession, PSUPDRVTRACERU
  *
  * @returns VBox status code.
  * @param   pSession    The caller's session.
+ * @param   uOperation  The operation identifier.
  * @param   u64Arg      64-bit integer argument.
  * @param   pReqHdr     The request header. Input / Output. Optional.
  */
