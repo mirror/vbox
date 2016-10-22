@@ -292,12 +292,12 @@ static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
     RT_NOREF_PV(pvUser);
 
-    switch (Port)
+    switch (uPort)
     {
         /*
          * The NOP I/O ports are used for performance measurements.
@@ -592,12 +592,12 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
     RT_NOREF_PV(pvUser);
 
-    switch (Port)
+    switch (uPort)
     {
         /*
          * The NOP I/O ports are used for performance measurements.
