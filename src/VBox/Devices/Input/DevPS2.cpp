@@ -797,7 +797,7 @@ static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 }
 
 /**
- * @callback_method_impl{FNSSMDEVLOADDONE, Key state fix-up after loading
+ * @callback_method_impl{FNSSMDEVLOADDONE, Key state fix-up after loading}
  */
 static DECLCALLBACK(int) kbdLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {

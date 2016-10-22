@@ -177,7 +177,7 @@ typedef struct USBHID
     /** The current configuration.
      * (0 - default, 1 - the one supported configuration, i.e configured.) */
     uint8_t             bConfigurationValue;
-    /** USB HID Idle value..
+    /** USB HID Idle value.
      * (0 - only report state change, !=0 - report in bIdle * 4ms intervals.) */
     uint8_t             bIdle;
     /** Endpoint 0 is the default control pipe, 1 is the dev->host interrupt one. */

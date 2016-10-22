@@ -317,13 +317,13 @@ typedef struct PDMIMOUSEPORT
      *
      * @param   pInterface     Pointer to this interface structure.
      * @param   x              The X value, in the range 0 to 0xffff.
-     * @param   z              The Y value, in the range 0 to 0xffff.
+     * @param   y              The Y value, in the range 0 to 0xffff.
      * @param   dz             The Z delta.
      * @param   dw             The W (horizontal scroll button) delta.
      * @param   fButtons       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface,
-                                              uint32_t x, uint32_t z,
+                                              uint32_t x, uint32_t y,
                                               int32_t dz, int32_t dw,
                                               uint32_t fButtons));
     /**
