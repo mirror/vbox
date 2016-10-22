@@ -4709,6 +4709,8 @@ DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDe
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
+ * @param   pPciDev             The PCI device the region is associated with, use
+ *                              NULL to indicate it is not associated with a device.
  */
 DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion)
 {
@@ -4718,6 +4720,8 @@ DECLINLINE(int) PDMDevHlpMMIOExDeregister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExMap
+ * @param   pPciDev             The PCI device the region is associated with, use
+ *                              NULL to indicate it is not associated with a device.
  */
 DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
@@ -4727,6 +4731,8 @@ DECLINLINE(int) PDMDevHlpMMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint3
 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
+ * @param   pPciDev             The PCI device the region is associated with, use
+ *                              NULL to indicate it is not associated with a device.
  */
 DECLINLINE(int) PDMDevHlpMMIOExUnmap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
