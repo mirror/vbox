@@ -1457,7 +1457,7 @@ typedef struct PDMIACPIPORT
      *
      * @returns VBox status code
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pfEnabled       Is set to true if the guest entered the ACPI mode, false otherwise.
+     * @param   pfEntered       Is set to true if the guest entered the ACPI mode, false otherwise.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetGuestEnteredACPIMode,(PPDMIACPIPORT pInterface, bool *pfEntered));
 

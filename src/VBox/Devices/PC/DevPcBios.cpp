@@ -389,7 +389,7 @@ static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
  * (partition table).
  *
  * @returns VBox status code.
- * @param   pBlock          The block device interface of the disk.
+ * @param   pMedia          The media device interface of the disk.
  * @param   pLCHSGeometry   Where to return the disk geometry on success
  */
 static int biosGuessDiskLCHS(PPDMIMEDIA pMedia, PPDMMEDIAGEOMETRY pLCHSGeometry)
@@ -1041,6 +1041,7 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
  * Convert config value to DEVPCBIOSBOOT.
  *
  * @returns VBox status code.
+ * @param   pDevIns         Device instance data.
  * @param   pCfg            Configuration handle.
  * @param   pszParam        The name of the value to read.
  * @param   penmBoot        Where to store the boot method.

@@ -1043,7 +1043,7 @@ static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
   * the VM is resetting or loading state.
   *
   * @param   pThis              The ACPI instance
-  * @param   uNow               The current time
+  * @param   u64Now             The current time
   */
 
 static void acpiPmTimerUpdate(ACPIState *pThis, uint64_t u64Now)

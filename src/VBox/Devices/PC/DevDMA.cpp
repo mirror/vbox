@@ -539,7 +539,7 @@ static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
 /**
  * @callback_method_impl{FNIOMIOPORTIN,
- *      EISA style high page registers, for extending the DMA addresses to cover
+ *      EISA style high page registers for extending the DMA addresses to cover
  *      the entire 32-bit address space.  Ports 0x480-0x487 & 0x488-0x48f}
  */
 static DECLCALLBACK(int) dmaReadHiPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb)

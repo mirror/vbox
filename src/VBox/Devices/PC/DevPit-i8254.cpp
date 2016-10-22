@@ -648,19 +648,19 @@ static void pit_irq_timer_update(PPITCHANNEL pChan, uint64_t current_time, uint6
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    Log2(("pitIOPortRead: Port=%#x cb=%x\n", Port, cb));
+    Log2(("pitIOPortRead: uPort=%#x cb=%x\n", uPort, cb));
     NOREF(pvUser);
-    Port &= 3;
-    if (cb != 1 || Port == 3)
+    uPort &= 3;
+    if (cb != 1 || uPort == 3)
     {
-        Log(("pitIOPortRead: Port=%#x cb=%x *pu32=unused!\n", Port, cb));
+        Log(("pitIOPortRead: uPort=%#x cb=%x *pu32=unused!\n", uPort, cb));
         return VERR_IOM_IOPORT_UNUSED;
     }
 
     PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
-    PPITCHANNEL pChan = &pThis->channels[Port];
+    PPITCHANNEL pChan = &pThis->channels[uPort];
     int ret;
 
     DEVPIT_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
@@ -721,7 +721,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     }
 
     *pu32 = ret;
-    Log2(("pitIOPortRead: Port=%#x cb=%x *pu32=%#04x\n", Port, cb, *pu32));
+    Log2(("pitIOPortRead: uPort=%#x cb=%x *pu32=%#04x\n", uPort, cb, *pu32));
     return VINF_SUCCESS;
 }
 
@@ -729,16 +729,16 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    Log2(("pitIOPortWrite: Port=%#x cb=%x u32=%#04x\n", Port, cb, u32));
+    Log2(("pitIOPortWrite: uPort=%#x cb=%x u32=%#04x\n", uPort, cb, u32));
     NOREF(pvUser);
     if (cb != 1)
         return VINF_SUCCESS;
 
     PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
-    Port &= 3;
-    if (Port == 3)
+    uPort &= 3;
+    if (uPort == 3)
     {
         /*
          * Port 43h - Mode/Command Register.
@@ -819,7 +819,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         /*
          * Port 40-42h - Channel Data Ports.
          */
-        PPITCHANNEL pChan = &pThis->channels[Port];
+        PPITCHANNEL pChan = &pThis->channels[uPort];
         DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
         switch (pChan->write_state)
         {
@@ -849,9 +849,9 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 /**
  * @callback_method_impl{FNIOMIOPORTIN, Speaker}
  */
-PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF2(pvUser, Port);
+    RT_NOREF2(pvUser, uPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
@@ -883,10 +883,10 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
               | (fSpeakerStatus << 1)
               | (fRefresh << 4)
               | (fOut << 5);
-        Log(("pitIOPortSpeakerRead: Port=%#x cb=%x *pu32=%#x\n", Port, cb, *pu32));
+        Log(("pitIOPortSpeakerRead: uPort=%#x cb=%x *pu32=%#x\n", uPort, cb, *pu32));
         return VINF_SUCCESS;
     }
-    Log(("pitIOPortSpeakerRead: Port=%#x cb=%x *pu32=unused!\n", Port, cb));
+    Log(("pitIOPortSpeakerRead: uPort=%#x cb=%x *pu32=unused!\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -895,9 +895,9 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 /**
  * @callback_method_impl{FNIOMIOPORTOUT, Speaker}
  */
-PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF2(pvUser, Port);
+    RT_NOREF2(pvUser, uPort);
     if (cb == 1)
     {
         PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
@@ -991,7 +991,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
         DEVPIT_UNLOCK_BOTH(pThis);
     }
-    Log(("pitIOPortSpeakerWrite: Port=%#x cb=%x u32=%#x\n", Port, cb, u32));
+    Log(("pitIOPortSpeakerWrite: uPort=%#x cb=%x u32=%#x\n", uPort, cb, u32));
     return VINF_SUCCESS;
 }
 

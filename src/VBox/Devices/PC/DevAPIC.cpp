@@ -1095,7 +1095,7 @@ static int apicReadRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iRe
 }
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnWriteMSRR3}
+ * @interface_method_impl{PDMAPICREG,pfnWriteMsrR3}
  */
 PDMBOTHCBDECL(VBOXSTRICTRC) apicWriteMSR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
 {
@@ -1110,7 +1110,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) apicWriteMSR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnReadMSRR3}
+ * @interface_method_impl{PDMAPICREG,pfnReadMsrR3}
  */
 PDMBOTHCBDECL(VBOXSTRICTRC) apicReadMSR(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
@@ -2033,7 +2033,7 @@ static void apicR3DumpVec(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHLP 
  * @param   pDev                The PDM device instance.
  * @param   pApic               The Local APIC in question.
  * @param   pHlp                The output helper.
- * @param   iStartReg           The register to start at.
+ * @param   pReg                The register to start at.
  */
 static void apicR3DumpPending(APICDeviceInfo *pDev, APICState *pApic, PCDBGFINFOHLP pHlp, PCAPIC256BITREG pReg)
 {

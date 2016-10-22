@@ -688,7 +688,7 @@ static uint32_t pic_ioport_read(PPICSTATE pPic, uint32_t addr1, int *pRC)
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
@@ -698,7 +698,7 @@ PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     {
         int rc;
         PIC_LOCK(pThis, VINF_IOM_R3_IOPORT_READ);
-        *pu32 = pic_ioport_read(&pThis->aPics[iPic], Port, &rc);
+        *pu32 = pic_ioport_read(&pThis->aPics[iPic], uPort, &rc);
         PIC_UNLOCK(pThis);
         return rc;
     }
@@ -709,7 +709,7 @@ PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     uint32_t    iPic  = (uint32_t)(uintptr_t)pvUser;
@@ -720,7 +720,7 @@ PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     {
         int rc;
         PIC_LOCK(pThis, VINF_IOM_R3_IOPORT_WRITE);
-        rc = pic_ioport_write(pThis, &pThis->aPics[iPic], Port, u32);
+        rc = pic_ioport_write(pThis, &pThis->aPics[iPic], uPort, u32);
         PIC_UNLOCK(pThis);
         return rc;
     }

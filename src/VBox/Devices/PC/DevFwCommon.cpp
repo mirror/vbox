@@ -373,8 +373,8 @@ AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
 /**
  * Calculate a simple checksum for the MPS table.
  *
- * @param   data            data
- * @param   len             size of data
+ * @param   au8Data         data
+ * @param   u32Length       size of data
  */
 static uint8_t fwCommonChecksum(const uint8_t * const au8Data, uint32_t u32Length)
 {
@@ -939,7 +939,9 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
  * Construct the SMBIOS and DMI headers table pointer at VM construction and
  * reset.
  *
- * @param   pDevIns    The device instance data.
+ * @param   pDevIns         The device instance data.
+ * @param   cbDmiTables     Size of all DMI tables planted in bytes.
+ * @param   cNumDmiTables   Number of DMI tables planted.
  */
 void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint16_t cbDmiTables, uint16_t cNumDmiTables)
 {

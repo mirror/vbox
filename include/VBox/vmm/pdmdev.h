@@ -2185,7 +2185,7 @@ typedef struct PDMDMAREG
      * @param pDevIns               Device instance of the DMAC.
      * @param uChannel              Channel number.
      * @param pfnTransferHandler    Device specific transfer function.
-     * @param pvUSer                User pointer to be passed to the callback.
+     * @param pvUser                User pointer to be passed to the callback.
      * @remarks No locks held, called on an EMT.
      */
     DECLR3CALLBACKMEMBER(void, pfnRegister,(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser));
@@ -2195,6 +2195,7 @@ typedef struct PDMDMAREG
      *
      * @returns Number of bytes read.
      * @param pDevIns           Device instance of the DMAC.
+     * @param uChannel          Channel number.
      * @param pvBuffer          Pointer to target buffer.
      * @param off               DMA position.
      * @param cbBlock           Block size.
@@ -2207,6 +2208,7 @@ typedef struct PDMDMAREG
      *
      * @returns Number of bytes written.
      * @param pDevIns           Device instance of the DMAC.
+     * @param uChannel          Channel number.
      * @param pvBuffer          Memory to write.
      * @param off               DMA position.
      * @param cbBlock           Block size.
