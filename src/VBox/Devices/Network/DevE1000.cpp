@@ -6103,7 +6103,8 @@ static void e1kDumpState(PE1KSTATE pThis)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion);
     PE1KSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, E1KSTATE*);
@@ -6113,13 +6114,13 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
     {
         case PCI_ADDRESS_SPACE_IO:
             pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
-            rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, pThis->IOPortBase, cb, NULL /*pvUser*/,
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, cb, NULL /*pvUser*/,
                                          e1kIOPortOut, e1kIOPortIn, NULL, NULL, "E1000");
             if (pThis->fR0Enabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, pThis->IOPortBase, cb, NIL_RTR0PTR /*pvUser*/,
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             if (pThis->fRCEnabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pThis->IOPortBase, cb, NIL_RTRCPTR /*pvUser*/,
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, cb, NIL_RTRCPTR /*pvUser*/,
                                                "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             break;
 
@@ -6138,18 +6139,18 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhys
             else
             {
                 Assert(!(GCPhysAddress & 7));
-                rc = PDMDevHlpMMIOExMap(pPciDev->pDevIns, pPciDev, iRegion, GCPhysAddress);
+                rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
             }
 #else
             pThis->addrMMReg = GCPhysAddress; Assert(!(GCPhysAddress & 7));
-            rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+            rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
                                        e1kMMIOWrite, e1kMMIORead, "E1000");
             if (pThis->fR0Enabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpMMIORegisterR0(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
+                rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
             if (pThis->fRCEnabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpMMIORegisterRC(pPciDev->pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
+                rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
                                              "e1kMMIOWrite", "e1kMMIORead");
 #endif
             break;

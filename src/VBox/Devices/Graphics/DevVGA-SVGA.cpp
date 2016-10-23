@@ -3759,24 +3759,12 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
 }
 
 /**
- * Callback function for mapping a PCI I/O region.
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device.
- *                          Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region.
- *                          If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative
- *                          to pci_mem_base like earlier!
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb,
-                                      PCIADDRESSSPACE enmType)
+DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     int         rc;
-    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
     Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));

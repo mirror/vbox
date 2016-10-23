@@ -1050,8 +1050,8 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress,
-                                               RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) serialIOPortRegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pPciDev, DEVSERIAL, PciDev);
     int rc = VINF_SUCCESS;
@@ -1067,7 +1067,7 @@ static DECLCALLBACK(int) serialIOPortRegionMap(PPCIDEVICE pPciDev, int iRegion, 
     /*
      * Register our port IO handlers.
      */
-    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress, 8, (void *)pThis,
+    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, 8, (void *)pThis,
                                  serial_io_write, serial_io_read, NULL, NULL, "SERIAL");
     AssertRC(rc);
     return rc;

@@ -276,7 +276,8 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
                 for (RTGCPHYS offCur = pLookup->u.MMIO2.off; offCur < offEnd; offCur += PAGE_SIZE)
                 {
                     RTHCPHYS HCPhys;
-                    rc = PGMR3PhysMMIO2GetHCPhys(pVM, pLookup->u.MMIO2.pDevIns, pLookup->u.MMIO2.iRegion, offCur, &HCPhys);
+                    rc = PGMR3PhysMMIO2GetHCPhys(pVM, pLookup->u.MMIO2.pDevIns, pLookup->u.MMIO2.iSubDev,
+                                                 pLookup->u.MMIO2.iRegion, offCur, &HCPhys);
                     if (RT_FAILURE(rc))
                         break;
                     rc = PGMMap(pVM, GCPtr + (offCur - pLookup->u.MMIO2.off), HCPhys, PAGE_SIZE, 0);
@@ -523,24 +524,25 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
  * Maps a portion of an MMIO2 region into the hypervisor region.
  *
  * Callers of this API must never deregister the MMIO2 region before the
- * VM is powered off. If this becomes a requirement MMR3HyperUnmapMMIO2
+ * VM is powered off.  If this becomes a requirement MMR3HyperUnmapMMIO2
  * API will be needed to perform cleanups.
  *
  * @return VBox status code.
  *
  * @param   pVM         The cross context VM structure.
  * @param   pDevIns     The device owning the MMIO2 memory.
+ * @param   iSubDev     The sub-device number.
  * @param   iRegion     The region.
  * @param   off         The offset into the region. Will be rounded down to closest page boundary.
  * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundary.
  * @param   pszDesc     Mapping description.
  * @param   pRCPtr      Where to store the RC address.
  */
-VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
+VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                 const char *pszDesc, PRTRCPTR pRCPtr)
 {
-    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
-             pDevIns, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
+    LogFlow(("MMR3HyperMapMMIO2: pDevIns=%p iSubDev=%#x iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
+             pDevIns, iSubDev, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
     int rc;
 
     /*
@@ -557,8 +559,8 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
     for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
     {
         RTHCPHYS HCPhys;
-        rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
-        AssertMsgRCReturn(rc, ("rc=%Rrc - iRegion=%d off=%RGp\n", rc, iRegion, off), rc);
+        rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iSubDev, iRegion, offCur, &HCPhys);
+        AssertMsgRCReturn(rc, ("rc=%Rrc - iSubDev=%#x iRegion=%#x off=%RGp\n", rc, iSubDev, iRegion, off), rc);
     }
 
     /*
@@ -571,6 +573,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
     {
         pLookup->enmType = MMLOOKUPHYPERTYPE_MMIO2;
         pLookup->u.MMIO2.pDevIns = pDevIns;
+        pLookup->u.MMIO2.iSubDev = iSubDev;
         pLookup->u.MMIO2.iRegion = iRegion;
         pLookup->u.MMIO2.off = off;
 
@@ -582,7 +585,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             for (RTGCPHYS offCur = off; offCur < offEnd; offCur += PAGE_SIZE)
             {
                 RTHCPHYS HCPhys;
-                rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
+                rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iSubDev, iRegion, offCur, &HCPhys);
                 AssertRCReturn(rc, rc);
                 rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
                 if (RT_FAILURE(rc))

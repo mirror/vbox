@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_DEVICE
+#define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
@@ -64,18 +65,21 @@ static bool pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc);
  */
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysRead} */
-static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
+                                                 void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->Internal.s.pHeadPciDevRC;
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
 
 #ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
      * Just check the busmaster setting here and forward the request to the generic read helper.
      */
-    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceRC;
-    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
-
-    if (!PCIDevIsBusmaster(pPciDev))
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely */ }
+    else
     {
         Log(("pdmRCDevHlp_PCIPhysRead: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbRead=%#zx\n",
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbRead));
@@ -88,36 +92,44 @@ static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GC
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPCIPhysWrite} */
-static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) pdmRCDevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
+                                                  const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->Internal.s.pHeadPciDevRC;
+    AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
 
+#ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
      * Just check the busmaster setting here and forward the request to the generic read helper.
      */
-    PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceRC;
-    AssertReleaseMsg(pPciDev, ("No PCI device registered!\n"));
-
-    if (!PCIDevIsBusmaster(pPciDev))
+    if (PCIDevIsBusmaster(pPciDev))
+    { /* likely*/ }
+    else
     {
         Log(("pdmRCDevHlp_PCIPhysWrite: caller=%p/%d: returns %Rrc - Not bus master! GCPhys=%RGp cbWrite=%#zx\n",
              pDevIns, pDevIns->iInstance, VERR_PDM_NOT_PCI_BUS_MASTER, GCPhys, cbWrite));
         return VERR_PDM_NOT_PCI_BUS_MASTER;
     }
+#endif
 
     return pDevIns->pHlpRC->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPCISetIrq} */
-static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmRCDevHlp_PCISetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
+    if (!pPciDev) /* NULL is an alias for the default PCI device. */
+        pPciDev = pDevIns->Internal.s.pHeadPciDevRC;
+    AssertReturnVoid(pPciDev);
+    LogFlow(("pdmRCDevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
+             pDevIns, pDevIns->iInstance, pPciDev, pPciDev->devfn, iIrq, iLevel));
 
     PVM         pVM     = pDevIns->Internal.s.pVMRC;
-    PPCIDEVICE  pPciDev = pDevIns->Internal.s.pPciDeviceRC;
-    PPDMPCIBUS  pPciBus = pDevIns->Internal.s.pPciBusRC;
+    PPDMPCIBUS  pPciBus = pPciDev->Int.s.pPdmBusRC;
 
     pdmLock(pVM);
     uint32_t uTagSrc;
@@ -153,9 +165,10 @@ static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
 
         pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
         pTask->pDevInsR3 = PDMDEVINS_2_R3PTR(pDevIns);
-        pTask->u.SetIRQ.iIrq = iIrq;
-        pTask->u.SetIRQ.iLevel = iLevel;
-        pTask->u.SetIRQ.uTagSrc = uTagSrc;
+        pTask->u.PciSetIRQ.iIrq = iIrq;
+        pTask->u.PciSetIRQ.iLevel = iLevel;
+        pTask->u.PciSetIRQ.uTagSrc = uTagSrc;
+        pTask->u.PciSetIRQ.pPciDevR3 = MMHyperRCToR3(pVM, pPciDev);
 
         PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
     }
@@ -391,6 +404,16 @@ extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
     pdmRCDevHlp_TMTimeVirtGetFreq,
     pdmRCDevHlp_TMTimeVirtGetNano,
     pdmRCDevHlp_DBGFTraceBuf,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     PDM_DEVHLPRC_VERSION
 };
 
@@ -741,9 +764,9 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
             pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
-            pTask->u.SetIRQ.iIrq = iIrq;
-            pTask->u.SetIRQ.iLevel = iLevel;
-            pTask->u.SetIRQ.uTagSrc = uTagSrc;
+            pTask->u.IoApicSetIRQ.iIrq = iIrq;
+            pTask->u.IoApicSetIRQ.iLevel = iLevel;
+            pTask->u.IoApicSetIRQ.uTagSrc = uTagSrc;
 
             PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
         }
@@ -964,9 +987,9 @@ static bool pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel, uint32_t uTagSrc)
 
     pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
     pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
-    pTask->u.SetIRQ.iIrq = iIrq;
-    pTask->u.SetIRQ.iLevel = iLevel;
-    pTask->u.SetIRQ.uTagSrc = uTagSrc;
+    pTask->u.IsaSetIRQ.iIrq = iIrq;
+    pTask->u.IsaSetIRQ.iLevel = iLevel;
+    pTask->u.IsaSetIRQ.uTagSrc = uTagSrc;
 
     PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueRC, &pTask->Core, 0);
     return false;

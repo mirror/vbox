@@ -2279,18 +2279,17 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int)
-ichac97IOPortMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                          RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(cb, enmType);
-    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PAC97STATE  pThis   = RT_FROM_MEMBER(pPciDev, AC97STATE, PciDev);
     RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
 
-    if (iRegion < 0 || iRegion > 1) /* We support 2 regions max. at the moment. */
+    if (iRegion > 1) /* We support 2 regions max. at the moment. */
         return VERR_INVALID_PARAMETER;
 
     int rc;

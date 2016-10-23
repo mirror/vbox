@@ -253,6 +253,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM
+#define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/em.h>
@@ -572,10 +573,21 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             if (pDevIns->pCritSectRoR3)
                 pDevIns->pCritSectRoRC  = MMHyperR3ToRC(pVM, pDevIns->pCritSectRoR3);
             pDevIns->Internal.s.pVMRC   = pVM->pVMRC;
-            if (pDevIns->Internal.s.pPciBusR3)
-                pDevIns->Internal.s.pPciBusRC    = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
-            if (pDevIns->Internal.s.pPciDeviceR3)
-                pDevIns->Internal.s.pPciDeviceRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciDeviceR3);
+
+            PPDMPCIDEV pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+            if (pPciDev)
+            {
+                pDevIns->Internal.s.pHeadPciDevRC = MMHyperR3ToRC(pVM, pPciDev);
+                do
+                {
+                    pPciDev->Int.s.pDevInsRC = MMHyperR3ToRC(pVM, pPciDev->Int.s.pDevInsR3);
+                    pPciDev->Int.s.pPdmBusRC = MMHyperR3ToRC(pVM, pPciDev->Int.s.pPdmBusR3);
+                    if (pPciDev->Int.s.pNextR3)
+                        pPciDev->Int.s.pNextRC = MMHyperR3ToRC(pVM, pPciDev->Int.s.pNextR3);
+                    pPciDev = pPciDev->Int.s.pNextR3;
+                } while (pPciDev);
+            }
+
             if (pDevIns->pReg->pfnRelocate)
             {
                 LogFlow(("PDMR3Relocate: Relocating device '%s'/%d\n",
@@ -738,7 +750,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
         pdmR3CritSectBothDeleteDevice(pVM, pDevIns);
         pdmR3ThreadDestroyDevice(pVM, pDevIns);
         PDMR3QueueDestroyDevice(pVM, pDevIns);
-        PGMR3PhysMMIOExDeregister(pVM, pDevIns, UINT32_MAX);
+        PGMR3PhysMMIOExDeregister(pVM, pDevIns, UINT32_MAX, UINT32_MAX);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
         pdmR3AsyncCompletionTemplateDestroyDevice(pVM, pDevIns);
 #endif

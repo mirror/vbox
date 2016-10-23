@@ -331,12 +331,9 @@ int pdmR3DevInit(PVM pVM)
         pDevIns->Internal.s.pVMRC               = pVM->pVMRC;
         //pDevIns->Internal.s.pLunsR3             = NULL;
         pDevIns->Internal.s.pCfgHandle          = paDevs[i].pNode;
-        //pDevIns->Internal.s.pPciDeviceR3        = NULL;
-        //pDevIns->Internal.s.pPciBusR3           = NULL;
-        //pDevIns->Internal.s.pPciDeviceR0        = 0;
-        //pDevIns->Internal.s.pPciBusR0           = 0;
-        //pDevIns->Internal.s.pPciDeviceRC        = 0;
-        //pDevIns->Internal.s.pPciBusRC           = 0;
+        //pDevIns->Internal.s.pHeadPciDevR3       = NULL;
+        //pDevIns->Internal.s.pHeadPciDevR0       = 0;
+        //pDevIns->Internal.s.pHeadPciDevRC       = 0;
         pDevIns->Internal.s.fIntFlags           = PDMDEVINSINT_FLAGS_SUSPENDED;
         //pDevIns->Internal.s.uLastIrqTag         = 0;
         pDevIns->pHlpR3                         = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;

@@ -315,7 +315,8 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->dev.config[0xf2] = RT_BYTE3(RCBA_BASE);
     pThis->dev.config[0xf3] = RT_BYTE4(RCBA_BASE);
 
-    rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pThis->dev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_NOT_MANDATORY_NO,
+                                31 /*uPciDevNo*/, 0 /*uPciFunNo*/, "lpc");
     if (RT_FAILURE(rc))
         return rc;
 

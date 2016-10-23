@@ -140,31 +140,23 @@ typedef struct PDMDEVINSINT
 
     /** R3 pointer to the VM this instance was created for. */
     PVMR3                           pVMR3;
-    /** R3 pointer to associated PCI device structure. */
-    R3PTRTYPE(struct PCIDevice *)   pPciDeviceR3;
-    /** R3 pointer to associated PCI bus structure. */
-    R3PTRTYPE(PPDMPCIBUS)           pPciBusR3;
+    /** Associated PCI device list head (first is default). (R3 ptr) */
+    R3PTRTYPE(PPDMPCIDEV)        pHeadPciDevR3;
 
     /** R0 pointer to the VM this instance was created for. */
     PVMR0                           pVMR0;
-    /** R0 pointer to associated PCI device structure. */
-    R0PTRTYPE(struct PCIDevice *)   pPciDeviceR0;
-    /** R0 pointer to associated PCI bus structure. */
-    R0PTRTYPE(PPDMPCIBUS)           pPciBusR0;
+    /** Associated PCI device list head (first is default). (R0 ptr) */
+    R0PTRTYPE(PPDMPCIDEV)        pHeadPciDevR0;
 
     /** RC pointer to the VM this instance was created for. */
     PVMRC                           pVMRC;
-    /** RC pointer to associated PCI device structure. */
-    RCPTRTYPE(struct PCIDevice *)   pPciDeviceRC;
-    /** RC pointer to associated PCI bus structure. */
-    RCPTRTYPE(PPDMPCIBUS)           pPciBusRC;
+    /** Associated PCI device list head (first is default). (RC ptr) */
+    RCPTRTYPE(PPDMPCIDEV)        pHeadPciDevRC;
 
     /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
     uint32_t                        fIntFlags;
     /** The last IRQ tag (for tracing it thru clearing). */
     uint32_t                        uLastIrqTag;
-    /** Size padding. */
-    uint32_t                        u32Padding;
 } PDMDEVINSINT;
 
 /** @name PDMDEVINSINT::fIntFlags
@@ -713,7 +705,8 @@ typedef struct PDMPCIBUS
     /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
     /** @copydoc PDMPCIBUSREG::pfnRegisterR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, const char *pszName, int iDev));
+    DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t fFlags,
+                                                   uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
     /** @copydoc PDMPCIBUSREG::pfnRegisterMsiR3 */
     DECLR3CALLBACKMEMBER(int,       pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg));
     /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterR3 */
@@ -990,9 +983,9 @@ typedef struct PDMDEVHLPTASK
     union PDMDEVHLPTASKPARAMS
     {
         /**
-         * PDMDEVHLPTASKOP_ISA_SET_IRQ and PDMDEVHLPTASKOP_PCI_SET_IRQ.
+         * PDMDEVHLPTASKOP_ISA_SET_IRQ and PDMDEVHLPTASKOP_IOAPIC_SET_IRQ.
          */
-        struct PDMDEVHLPTASKSETIRQ
+        struct PDMDEVHLPTASKISASETIRQ
         {
             /** The IRQ */
             int                     iIrq;
@@ -1000,7 +993,22 @@ typedef struct PDMDEVHLPTASK
             int                     iLevel;
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
-        } SetIRQ;
+        } IsaSetIRQ, IoApicSetIRQ;
+
+        /**
+         * PDMDEVHLPTASKOP_PCI_SET_IRQ
+         */
+        struct PDMDEVHLPTASKPCISETIRQ
+        {
+            /** Pointer to the PCI device (R3 Ptr). */
+            R3PTRTYPE(PPDMPCIDEV)    pPciDevR3;
+            /** The IRQ */
+            int                         iIrq;
+            /** The new level. */
+            int                         iLevel;
+            /** The IRQ tag and source. */
+            uint32_t                    uTagSrc;
+        } PciSetIRQ;
 
         /** Expanding the structure. */
         uint64_t    au64[2];

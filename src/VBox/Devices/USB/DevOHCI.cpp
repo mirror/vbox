@@ -5363,11 +5363,12 @@ PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ohciR3Map(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                   RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     POHCI pThis = (POHCI)pPciDev;
-    int rc = PDMDevHlpMMIORegister(pThis->CTX_SUFF(pDevIns), GCPhysAddress, cb, NULL /*pvUser*/,
+    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                    IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED
                                    | IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE,
                                    ohciMmioWrite, ohciMmioRead, "USB OHCI");
@@ -5376,13 +5377,11 @@ static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCP
 
     if (pThis->fRZEnabled)
     {
-        rc = PDMDevHlpMMIORegisterRC(pThis->CTX_SUFF(pDevIns), GCPhysAddress, cb,
-                                     NIL_RTRCPTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
         if (RT_FAILURE(rc))
             return rc;
 
-        rc = PDMDevHlpMMIORegisterR0(pThis->CTX_SUFF(pDevIns), GCPhysAddress, cb,
-                                     NIL_RTR0PTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
         if (RT_FAILURE(rc))
             return rc;
     }

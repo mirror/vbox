@@ -284,8 +284,8 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
         for (uint32_t i = 0; i < cRegions; i++, pCur++)
         {
             Assert(!pCur->fRegistered);
-            rc = PDMDevHlpMMIO2Register(pDevIns, pCur->iRegion, pCur->cbRegion, 0 /* fFlags */, &pCur->pvPageR3,
-                                            pCur->szDescription);
+            rc = PDMDevHlpMMIO2Register(pDevIns, NULL, pCur->iRegion, pCur->cbRegion, 0 /* fFlags */, &pCur->pvPageR3,
+                                        pCur->szDescription);
             if (RT_FAILURE(rc))
                 return rc;
 
@@ -293,7 +293,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
             RTR0PTR pR0Mapping = 0;
-            rc = PDMDevHlpMMIO2MapKernel(pDevIns, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
+            rc = PDMDevHlpMMIO2MapKernel(pDevIns, NULL, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
                                          &pR0Mapping);
             AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pCur->cbRegion, rc), rc);
             pCur->pvPageR0 = pR0Mapping;
@@ -307,7 +307,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
             if (pCur->fRCMapping)
             {
                 RTRCPTR pRCMapping = 0;
-                rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
+                rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, NULL, pCur->iRegion, 0 /* off */, pCur->cbRegion, pCur->szDescription,
                                               &pRCMapping);
                 AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", pCur->cbRegion, rc), rc);
                 pCur->pvPageRC = pRCMapping;

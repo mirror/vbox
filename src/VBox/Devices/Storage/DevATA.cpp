@@ -6109,18 +6109,9 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 #ifdef IN_RING3
 
 /**
- * Callback function for mapping an PCI I/O region.
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative to pci_mem_base like earlier!
- * @param   cb              Size of the region in bytes.
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
+static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
@@ -6133,7 +6124,7 @@ static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ i
     /* Register the port range. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        int rc2 = PDMDevHlpIOPortRegister(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
+        int rc2 = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
                                           (RTHCPTR)(uintptr_t)i, ataBMDMAIOPortWrite, ataBMDMAIOPortRead,
                                           NULL, NULL, "ATA Bus Master DMA");
         AssertRC(rc2);
@@ -6142,7 +6133,7 @@ static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ i
 
         if (pThis->fRCEnabled)
         {
-            rc2 = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
+            rc2 = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
                                             (RTGCPTR)i, "ataBMDMAIOPortWrite", "ataBMDMAIOPortRead",
                                             NULL, NULL, "ATA Bus Master DMA");
             AssertRC(rc2);
@@ -6151,7 +6142,7 @@ static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ i
         }
         if (pThis->fR0Enabled)
         {
-            rc2 = PDMDevHlpIOPortRegisterR0(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
+            rc2 = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
                                             (RTR0PTR)i, "ataBMDMAIOPortWrite", "ataBMDMAIOPortRead",
                                             NULL, NULL, "ATA Bus Master DMA");
             AssertRC(rc2);
@@ -7504,18 +7495,14 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /*
      * Register the PCI device.
-     * N.B. There's a hack in the PIIX3 PCI bridge device to assign this
-     *      device the slot next to itself.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pThis->dev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_NOT_MANDATORY_NO,
+                                1 /*uPciDevNo*/, 1 /*uPciDevFn*/, "piix3ide");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 cannot register PCI device"));
-    //AssertMsg(pThis->dev.devfn == 9 || iInstance != 0, ("pThis->dev.devfn=%d\n", pThis->dev.devfn));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI device"));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ataR3BMDMAIORangeMap);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 cannot register PCI I/O region for BMDMA"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI I/O region for BMDMA"));
 
     /*
      * Register the I/O ports.

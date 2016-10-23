@@ -3265,22 +3265,21 @@ static int acpiR3PlantTables(ACPIState *pThis)
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
-static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb)
+static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t Address, unsigned cb)
 {
-    PPDMDEVINS pDevIns = pPciDev->pDevIns;
     ACPIState *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     Log2(("acpi: PCI config read: 0x%x (%d)\n", Address, cb));
-    return pThis->pfnAcpiPciConfigRead(pPciDev, Address, cb);
+    return pThis->pfnAcpiPciConfigRead(pDevIns, pPciDev, Address, cb);
 }
 
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(void) acpiR3PciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t Address,
+                                               uint32_t u32Value, unsigned cb)
 {
-    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
-    ACPIState  *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
     DEVACPI_LOCK_R3(pThis);
@@ -3291,7 +3290,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPCIDEVICE pPciDev, uint32_t Addr
         u32Value = SCI_INT;
     }
 
-    pThis->pfnAcpiPciConfigWrite(pPciDev, Address, u32Value, cb);
+    pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, Address, u32Value, cb);
 
     /* Assume that the base address is only changed when the corresponding
      * hardware functionality is disabled. The IO region is mapped when the

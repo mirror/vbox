@@ -2448,12 +2448,11 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
-                                       RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
-    PPDMDEVINS pDevIns = pPciDev->pDevIns;
 
     Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
@@ -2493,12 +2492,11 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
  *      Map the legacy I/O port ranges to make Solaris work with the
  *      controller.}
  */
-static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
-                                                    RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                                    RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
-    PPDMDEVINS pDevIns = pPciDev->pDevIns;
     int   rc = VINF_SUCCESS;
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
@@ -2534,12 +2532,11 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsign
  * @callback_method_impl{FNPCIIOREGIONMAP,
  *      Map the BMDMA I/O port range (used for the Index/Data pair register access)}
  */
-static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
-                                                 RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
     PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
-    PPDMDEVINS pDevIns = pPciDev->pDevIns;
     int   rc = VINF_SUCCESS;
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));

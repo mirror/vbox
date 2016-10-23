@@ -5397,27 +5397,18 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
 /* -=-=-=-=-=- Ring 3: PCI Device -=-=-=-=-=- */
 
 /**
- * Callback function for unmapping and/or mapping the VRAM MMIO2 region (called by the PCI bus).
- *
- * @return VBox status code.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
- *                          I/O port, else it's a physical address.
- *                          This address is *NOT* relative to pci_mem_base like earlier!
- * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ * @callback_method_impl{FNPCIIOREGIONMAP, Mapping/unmapping the VRAM MMI2 region}
  */
-static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress,
-                                          RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                          RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF1(cb);
     int         rc;
-    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 #ifdef VBOX_WITH_VMSVGA
-    AssertReturn(   (iRegion == ((pThis->fVMSVGAEnabled) ? 1 : 0))
-                 && (enmType == ((pThis->fVMSVGAEnabled) ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH)),
+    AssertReturn(   iRegion == (pThis->fVMSVGAEnabled ? 1U : 0U)
+                 && enmType == (pThis->fVMSVGAEnabled ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH),
                  VERR_INTERNAL_ERROR);
 #else
     AssertReturn(iRegion == 0 && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
@@ -6206,6 +6197,47 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertRCReturn(rc, rc);
 
     /*
+     * PCI device registration.
+     */
+    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->Dev);
+    if (RT_FAILURE(rc))
+        return rc;
+    /*AssertMsg(pThis->Dev.devfn == 16 || iInstance != 0, ("pThis->Dev.devfn=%d\n", pThis->Dev.devfn));*/
+    if (pThis->Dev.devfn != 16 && iInstance == 0)
+        Log(("!!WARNING!!: pThis->dev.devfn=%d (ignore if testcase or not started by Main)\n", pThis->Dev.devfn));
+
+#ifdef VBOX_WITH_VMSVGA
+    if (pThis->fVMSVGAEnabled)
+    {
+        /* Register the io command ports. */
+        rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0 /* iRegion */, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
+        if (RT_FAILURE (rc))
+            return rc;
+        /* VMware's MetalKit doesn't like PCI_ADDRESS_SPACE_MEM_PREFETCH */
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1 /* iRegion */, pThis->vram_size,
+                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, VMSVGA_FIFO_SIZE,
+                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+#endif /* VBOX_WITH_VMSVGA */
+    {
+#ifdef VBOX_WITH_VMSVGA
+        int iPCIRegionVRAM = (pThis->fVMSVGAEnabled) ? 1 : 0;
+#else
+        int iPCIRegionVRAM = 0;
+#endif
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, iPCIRegionVRAM, pThis->vram_size,
+                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /*
      * Allocate the VRAM and map the first 512KB of it into GC so we can speed up VGA support.
      */
 #ifdef VBOX_WITH_VMSVGA
@@ -6216,7 +6248,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate and initialize the FIFO MMIO2 memory.
          */
-        rc = PDMDevHlpMMIO2Register(pDevIns, 2 /*iRegion*/, VMSVGA_FIFO_SIZE, 0 /*fFlags*/, (void **)&pThis->svga.pFIFOR3, "VMSVGA-FIFO");
+        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, 2 /*iRegion*/, VMSVGA_FIFO_SIZE,
+                                    0 /*fFlags*/, (void **)&pThis->svga.pFIFOR3, "VMSVGA-FIFO");
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                         N_("Failed to allocate %u bytes of memory for the VMSVGA device"), VMSVGA_FIFO_SIZE);
@@ -6226,19 +6259,20 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #else
     int iPCIRegionVRAM = 0;
 #endif
-    rc = PDMDevHlpMMIO2Register(pDevIns, iPCIRegionVRAM, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
+    rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, iPCIRegionVRAM, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
     pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
 
     if (pThis->fGCEnabled)
     {
         RTRCPTR pRCMapping = 0;
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, iPCIRegionVRAM, 0 /* off */,  VGA_MAPPING_SIZE, "VGA VRam", &pRCMapping);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, &pThis->Dev, iPCIRegionVRAM, 0 /* off */,  VGA_MAPPING_SIZE,
+                                      "VGA VRam", &pRCMapping);
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
         pThis->vram_ptrRC = pRCMapping;
-# ifdef VBOX_WITH_VMSVGA
+#ifdef VBOX_WITH_VMSVGA
         /* Don't need a mapping in RC */
-# endif
+#endif
     }
 
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
@@ -6530,42 +6564,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 NULL,          vgaR3LoadExec, vgaR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
-
-    /*
-     * PCI device registration.
-     */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->Dev);
-    if (RT_FAILURE(rc))
-        return rc;
-    /*AssertMsg(pThis->Dev.devfn == 16 || iInstance != 0, ("pThis->Dev.devfn=%d\n", pThis->Dev.devfn));*/
-    if (pThis->Dev.devfn != 16 && iInstance == 0)
-        Log(("!!WARNING!!: pThis->dev.devfn=%d (ignore if testcase or not started by Main)\n", pThis->Dev.devfn));
-
-#ifdef VBOX_WITH_VMSVGA
-    if (pThis->fVMSVGAEnabled)
-    {
-        /* Register the io command ports. */
-        rc = PDMDevHlpPCIIORegionRegister (pDevIns, 0 /* iRegion */, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
-        if (RT_FAILURE (rc))
-            return rc;
-        /* VMware's MetalKit doesn't like PCI_ADDRESS_SPACE_MEM_PREFETCH */
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1 /* iRegion */, pThis->vram_size,
-                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, VMSVGA_FIFO_SIZE,
-                                          PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-    else
-#endif /* VBOX_WITH_VMSVGA */
-    {
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, iPCIRegionVRAM, pThis->vram_size,
-                                          PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
 
     /*
      * Create the refresh timer.

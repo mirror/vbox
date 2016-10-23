@@ -40,13 +40,29 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * Device Instance Data.
+ * Playground device per function (sub-device) data.
+ */
+typedef struct VBOXPLAYGROUNDDEVICEFUNCTION
+{
+    /** The PCI devices. */
+    PDMPCIDEV   PciDev;
+    /** The function number. */
+    uint8_t     iFun;
+    /** Device function name. */
+    char        szName[31];
+} VBOXPLAYGROUNDDEVICEFUNCTION;
+/** Pointer to a PCI function of the playground device. */
+typedef VBOXPLAYGROUNDDEVICEFUNCTION *PVBOXPLAYGROUNDDEVICEFUNCTION;
+
+/**
+ * Playground device instance data.
  */
 typedef struct VBOXPLAYGROUNDDEVICE
 {
-    /** The PCI device. */
-    PCIDEVICE           PciDev;
+    /** PCI device functions. */
+    VBOXPLAYGROUNDDEVICEFUNCTION aPciFuns[8];
 } VBOXPLAYGROUNDDEVICE;
+/** Pointer to the instance data of a playground device instance. */
 typedef VBOXPLAYGROUNDDEVICE *PVBOXPLAYGROUNDDEVICE;
 
 
@@ -79,10 +95,10 @@ PDMBOTHCBDECL(int) devPlaygroundMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int)
-devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) devPlaygroundMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                          RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(enmType, cb);
+    RT_NOREF(pPciDev, enmType, cb);
 
     switch (iRegion)
     {
@@ -91,7 +107,7 @@ devPlaygroundMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPH
             Assert(enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64));
             if (GCPhysAddress == NIL_RTGCPHYS)
                 return VINF_SUCCESS; /* We ignore the unmap notification. */
-            return PDMDevHlpMMIOExMap(pPciDev->pDevIns, pPciDev, iRegion, GCPhysAddress);
+            return PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
 
         default:
             /* We should never get here */
@@ -130,10 +146,6 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
      * Initialize the instance data so that the destructor won't mess up.
      */
     PVBOXPLAYGROUNDDEVICE pThis = PDMINS_2_DATA(pDevIns, PVBOXPLAYGROUNDDEVICE);
-    PCIDevSetVendorId(&pThis->PciDev, 0x80ee);
-    PCIDevSetDeviceId(&pThis->PciDev, 0xde4e);
-    PCIDevSetClassBase(&pThis->PciDev, 0x07);   /* communications device */
-    PCIDevSetClassSub(&pThis->PciDev, 0x80);    /* other communications device */
 
     /*
      * Validate and read the configuration.
@@ -143,35 +155,50 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     /*
      * PCI device setup.
      */
-    int rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
-    if (RT_FAILURE(rc))
-        return rc;
+    uint32_t iPciDevNo = PDMPCIDEVREG_DEV_NO_FIRST_UNUSED;
+    for (uint32_t iPciFun = 0; iPciFun < RT_ELEMENTS(pThis->aPciFuns); iPciFun++)
+    {
+        PVBOXPLAYGROUNDDEVICEFUNCTION pFun = &pThis->aPciFuns[iPciFun];
+        RTStrPrintf(pFun->szName, sizeof(pThis->aPciFuns[iPciFun].PciDev), "playground%u", iPciFun);
+        pFun->iFun = iPciFun;
 
-    /* First region. */
-    RTGCPHYS const cbFirst = 8*_1G64;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, cbFirst,
-                                      (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
-                                      devPlaygroundMap);
-    AssertLogRelRCReturn(rc, rc);
-    rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pThis->PciDev, 0, cbFirst,
-                                    IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR0",
-                                    NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
-                                    NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
-                                    NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
-    AssertLogRelRCReturn(rc, rc);
+        PCIDevSetVendorId( &pFun->PciDev, 0x80ee);
+        PCIDevSetDeviceId( &pFun->PciDev, 0xde4e);
+        PCIDevSetClassBase(&pFun->PciDev, 0x07);   /* communications device */
+        PCIDevSetClassSub( &pFun->PciDev, 0x80);   /* other communications device */
+        int rc = PDMDevHlpPCIRegisterEx(pDevIns, &pFun->PciDev, iPciFun, 0 /*fFlags*/, iPciDevNo, iPciFun,
+                                        pThis->aPciFuns[iPciFun].szName);
+        AssertLogRelRCReturn(rc, rc);
 
-    /* Second region. */
-    RTGCPHYS const cbSecond = 256*_1G64;
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, cbSecond,
-                                      (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
-                                      devPlaygroundMap);
-    AssertLogRelRCReturn(rc, rc);
-    rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pThis->PciDev, 2, cbSecond,
-                                    IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR2",
-                                    NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
-                                    NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
-                                    NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
-    AssertLogRelRCReturn(rc, rc);
+        /* First region. */
+        RTGCPHYS const cbFirst = iPciFun == 0 ? 8*_1G64 : iPciFun * _4K;
+        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 0, cbFirst,
+                                            (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
+                                            devPlaygroundMap);
+        AssertLogRelRCReturn(rc, rc);
+        rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 0, cbFirst,
+                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR0",
+                                        NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
+                                        NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
+                                        NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+        AssertLogRelRCReturn(rc, rc);
+
+        /* Second region. */
+        RTGCPHYS const cbSecond = iPciFun == 0  ? 256*_1G64 : iPciFun * _32K;
+        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 2, cbSecond,
+                                            (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
+                                            devPlaygroundMap);
+        AssertLogRelRCReturn(rc, rc);
+        rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 2, cbSecond,
+                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "PG-BAR2",
+                                        NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
+                                        NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
+                                        NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+        AssertLogRelRCReturn(rc, rc);
+
+        /* Subsequent function should use the same major as the previous one. */
+        iPciDevNo = PDMPCIDEVREG_DEV_NO_SAME_AS_PREV;
+    }
 
     return VINF_SUCCESS;
 }

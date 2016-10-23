@@ -1661,6 +1661,7 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
  * @returns VBox status code.
  * @param   pVM                 Pointer to the cross context VM structure.
  * @param   pDevIns             The device.
+ * @param   iSubDev             The sub-device number.
  * @param   iRegion             The region number.
  * @param   cbRegion            The size of the MMIO region.  Must be a multiple
  *                              of X86_PAGE_SIZE
@@ -1682,7 +1683,7 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
  * @param   pfnReadCallbackRC   Callback for handling reads, RC. Optional.
  * @param   pfnFillCallbackRC   Callback for handling fills, RC. Optional.
  */
-VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRegion,
                                             uint32_t fFlags, const char *pszDesc,
                                             RTR3PTR pvUserR3,
                                             R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackR3,
@@ -1697,11 +1698,11 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
                                             RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackRC,
                                             RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackRC)
 {
-    LogFlow(("IOMR3MmioExPreRegister: pDevIns=%p iRegion=%u cbRegion=%RGp fFlags=%#x pszDesc=%s\n"
+    LogFlow(("IOMR3MmioExPreRegister: pDevIns=%p iSubDev=%u iRegion=%u cbRegion=%RGp fFlags=%#x pszDesc=%s\n"
              "                        pvUserR3=%RHv pfnWriteCallbackR3=%RHv pfnReadCallbackR3=%RHv pfnFillCallbackR3=%RHv\n"
              "                        pvUserR0=%RHv pfnWriteCallbackR0=%RHv pfnReadCallbackR0=%RHv pfnFillCallbackR0=%RHv\n"
              "                        pvUserRC=%RRv pfnWriteCallbackRC=%RRv pfnReadCallbackRC=%RRv pfnFillCallbackRC=%RRv\n",
-             pDevIns, iRegion, cbRegion, fFlags, pszDesc,
+             pDevIns, iSubDev, iRegion, cbRegion, fFlags, pszDesc,
              pvUserR3, pfnWriteCallbackR3, pfnReadCallbackR3, pfnFillCallbackR3,
              pvUserR0, pfnWriteCallbackR0, pfnReadCallbackR0, pfnFillCallbackR0,
              pvUserRC, pfnWriteCallbackRC, pfnReadCallbackRC, pfnFillCallbackRC));
@@ -1762,7 +1763,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
          * Try register it with PGM.  PGM will call us back when it's mapped in
          * and out of the guest address space, and once it's destroyed.
          */
-        rc = PGMR3PhysMMIOExPreRegister(pVM, pDevIns, iRegion, cbRegion, pVM->iom.s.hMmioHandlerType,
+        rc = PGMR3PhysMMIOExPreRegister(pVM, pDevIns, iSubDev, iRegion, cbRegion, pVM->iom.s.hMmioHandlerType,
                                         pRange, MMHyperR3ToR0(pVM, pRange), MMHyperR3ToRC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;

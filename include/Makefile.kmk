@@ -77,6 +77,7 @@ hdrs := $(filter-out \
 	VBox/dbus-calls.h \
 	VBox/VDEPlugSymDefs.h \
 	VBox/VBoxKeyboard.h \
+	VBox/vmm/pdmpcidevint.h \
 	iprt/runtime-loader.h \
 	iprt/mangling.h \
 	\

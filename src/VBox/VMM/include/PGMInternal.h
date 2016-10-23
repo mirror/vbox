@@ -1710,16 +1710,16 @@ typedef struct PGMREGMMIORANGE
     R3PTRTYPE(struct PGMREGMMIORANGE *) pNextR3;
     /** Flags (PGMREGMMIORANGE_F_XXX). */
     uint16_t                            fFlags;
-    /** The PCI region number.
-     * @remarks This ASSUMES that nobody will ever really need to have multiple
-     *          PCI devices with matching MMIO region numbers on a single device. */
+    /** The sub device number (internal PCI config (CFGM) number). */
+    uint8_t                             iSubDev;
+    /** The PCI region number. */
     uint8_t                             iRegion;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
     /** MMIO2 range identifier, for page IDs (PGMPAGE::s.idPage). */
     uint8_t                             idMmio2;
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
-    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 7 : 3];
+    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 : 2];
     /** Pointer to the physical handler for MMIO. */
     R3PTRTYPE(PPGMPHYSHANDLER)          pPhysHandlerR3;
     /** Live save per page tracking data for MMIO2. */

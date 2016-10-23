@@ -673,8 +673,14 @@ typedef struct MMLOOKUPHYPER
         {
             /** The device instance owning the MMIO2 region. */
             PPDMDEVINSR3            pDevIns;
+            /** The sub-device number. */
+            uint32_t                iSubDev;
             /** The region number. */
             uint32_t                iRegion;
+#if HC_ARCH_BITS == 32
+            /** Alignment padding. */
+            uint32_t                uPadding;
+#endif
             /** The offset into the MMIO2 region. */
             RTGCPHYS                off;
         } MMIO2;

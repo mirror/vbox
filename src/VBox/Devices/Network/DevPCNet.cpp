@@ -3866,12 +3866,11 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-NET I/O Ports.}
  */
-static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
+static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
                                         RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
     int         rc;
-    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
     PPCNETSTATE pThis   = PCIDEV_2_PCNETSTATE(pPciDev);
 
@@ -3918,7 +3917,7 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRe
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-Net MMIO region.}
  */
-static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion,
+static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
@@ -3929,7 +3928,7 @@ static DECLCALLBACK(int) pcnetMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegi
     Assert(cb >= PCNET_PNPMMIO_SIZE);
 
     /* We use the assigned size here, because we only support page aligned MMIO ranges. */
-    rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, pThis,
+    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pThis,
                                IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                pcnetMMIOWrite, pcnetMMIORead, "PCNet");
     if (RT_FAILURE(rc))
@@ -4291,7 +4290,7 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMMIO2Register(pDevIns, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
+        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCNetSh");
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                      N_("Failed to allocate the dummy shmem region for the PCNet device"));

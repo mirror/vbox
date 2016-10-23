@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * MSI support routines
+ *
+ * @todo Straighten up this file!!
  */
 
 /*
@@ -15,21 +17,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #define LOG_GROUP LOG_GROUP_DEV_PCI
-/* Hack to get PCIDEVICEINT declare at the right point - include "PCIInternal.h". */
-#define PCI_INCLUDE_PRIVATE
+#define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include <VBox/pci.h>
 #include <VBox/msi.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/log.h>
 
 #include "MsiCommon.h"
+#include "PciInline.h"
 
 DECLINLINE(uint16_t) msiGetMessageControl(PPCIDEVICE pDev)
 {
     uint32_t idxMessageControl = pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL;
 #ifdef IN_RING3
     if (pciDevIsPassthrough(pDev)) {
-        return pDev->Int.s.pfnConfigRead(pDev, idxMessageControl, 2);
+        return pDev->Int.s.pfnConfigRead(pDev->Int.s.CTX_SUFF(pDevIns), pDev, idxMessageControl, 2);
     }
 #endif
     return PCIDevGetWord(pDev, idxMessageControl);

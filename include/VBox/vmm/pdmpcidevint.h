@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevPCI - PCI Internal header - Only for hiding bits of PCIDEVICE.
+ * DevPCI - PDM PCI Internal header - Only for hiding bits of PCIDEVICE.
  */
 
 /*
@@ -15,12 +15,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___PCIInternal_h
-#define ___PCIInternal_h
+#ifndef ___VBox_vmm_pdmpcidevint_h
+#define ___VBox_vmm_pdmpcidevint_h
 
-/** @defgroup grp_pci_int   PCI Internals
- * @ingroup grp_pci
- * @internal
+#include <VBox/vmm/pdmdev.h>
+
+/** @defgroup grp_pdm_pcidev_int    The PDM PCI Device Internals
+ * @ingroup grp_pdm_pci
+ *
+ * @remarks The PDM PCI device internals are visible to both PDM and the PCI Bus
+ *          implementation, thus it lives among the the public headers despite
+ *          being rather private and internal.
+ *
  * @{
  */
 
@@ -78,9 +84,6 @@ typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
 struct PCIBus;
 
 enum {
-    /** Set if the specific device function was requested by PDM.
-     * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
-    PCIDEV_FLAG_REQUESTED_DEVFUNC  = RT_BIT_32(0),
     /** Flag whether the device is a pci-to-pci bridge.
      * This is set prior to device registration.  */
     PCIDEV_FLAG_PCI_TO_PCI_BRIDGE  = RT_BIT_32(1),
@@ -100,52 +103,62 @@ enum {
 
 };
 
+
 /**
- * PCI Device - Internal data.
+ * PDM PCI Device - Internal data.
+ *
+ * @sa PDMPCIDEVICE
  */
-typedef struct PCIDEVICEINT
+typedef struct PDMPCIDEVICEINT
 {
-    /** I/O regions. */
-    PCIIOREGION                     aIORegions[VBOX_PCI_NUM_REGIONS];
+    /** @name Owned by PDM.
+     * @remarks The bus may use the device instance pointers.
+     * @{
+     */
+    /** Pointer to the PDM device the PCI device belongs to. (R3 ptr)  */
+    PPDMDEVINSR3                    pDevInsR3;
+    /** Pointer to the next PDM device associate with the PDM device. (R3 ptr) */
+    R3PTRTYPE(PPDMPCIDEV)        pNextR3;
+    /** Pointer to the internal PDM PCI bus for the device. (R3 ptr) */
+    R3PTRTYPE(struct PDMPCIBUS *)   pPdmBusR3;
+
+    /** Pointer to the PDM device the PCI device belongs to. (R0 ptr)  */
+    PPDMDEVINSR0                    pDevInsR0;
+    /** Pointer to the next PDM device associate with the PDM device. (R0 ptr) */
+    R0PTRTYPE(PPDMPCIDEV)        pNextR0;
+    /** Pointer to the internal PDM PCI bus for the device. (R0 ptr) */
+    R0PTRTYPE(struct PDMPCIBUS *)   pPdmBusR0;
+
+    /** Pointer to the PDM device the PCI device belongs to. (RC ptr)  */
+    PPDMDEVINSRC                    pDevInsRC;
+    /** Pointer to the next PDM device associate with the PDM device. (RC ptr) */
+    RCPTRTYPE(PPDMPCIDEV)        pNextRC;
+    /** Pointer to the internal PDM PCI bus for the device. (RC ptr) */
+    RCPTRTYPE(struct PDMPCIBUS *)   pPdmBusRC;
+
+    /** The CFGM device configuration index (default, PciDev1..255).
+     * This also works as the internal sub-device ordinal with MMIOEx. */
+    uint8_t                         idxDevCfg;
+    /** Set if the it can be reassigned to a different PCI device number. */
+    bool                            fReassignableDevNo;
+    /** Set if the it can be reassigned to a different PCI function number. */
+    bool                            fReassignableFunNo;
+    /** Alignment padding.   */
+    uint8_t                         bPadding0;
+    /** @} */
+
+    /** @name Owned by the PCI Bus
+     * @remarks PDM will not touch anything here (includes not relocating anything).
+     * @{
+     */
     /** Pointer to the PCI bus of the device. (R3 ptr) */
     R3PTRTYPE(struct PCIBus *)      pBusR3;
-    /** Pointer to the PCI bus of the device. (R0 ptr) */
-    R0PTRTYPE(struct PCIBus *)      pBusR0;
-    /** Pointer to the PCI bus of the device. (RC ptr) */
-    RCPTRTYPE(struct PCIBus *)      pBusRC;
-
-    /** Page used for MSI-X state.             (RC ptr) */
-    RCPTRTYPE(void *)               pMsixPageRC;
     /** Page used for MSI-X state.             (R3 ptr) */
     R3PTRTYPE(void *)               pMsixPageR3;
-    /** Page used for MSI-X state.             (R0 ptr) */
-    R0PTRTYPE(void *)               pMsixPageR0;
-
     /** Read config callback. */
     R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
     /** Write config callback. */
     R3PTRTYPE(PFNPCICONFIGWRITE)    pfnConfigWrite;
-
-    /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants. */
-    uint32_t                        fFlags;
-    /** Current state of the IRQ pin of the device. */
-    int32_t                         uIrqPinState;
-
-    /** Offset of MSI PCI capability in config space, or 0. */
-    uint8_t                         u8MsiCapOffset;
-    /** Size of MSI PCI capability in config space, or 0. */
-    uint8_t                         u8MsiCapSize;
-    /** Offset of MSI-X PCI capability in config space, or 0. */
-    uint8_t                         u8MsixCapOffset;
-    /** Size of MSI-X PCI capability in config space, or 0. */
-    uint8_t                         u8MsixCapSize;
-
-    /** Explicit alignment padding. */
-    uint32_t                        u32Alignment0;
-
-    /** Pointer to bus specific data.                 (R3 ptr) */
-    R3PTRTYPE(const void *)         pPciBusPtrR3;
-
     /** Read config callback for PCI bridges to pass requests
      * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGREAD) pfnBridgeConfigRead;
@@ -153,11 +166,52 @@ typedef struct PCIDEVICEINT
      * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGWRITE) pfnBridgeConfigWrite;
 
-} PCIDEVICEINT;
+    /** Pointer to the PCI bus of the device. (R0 ptr) */
+    R0PTRTYPE(struct PCIBus *)      pBusR0;
+    /** Page used for MSI-X state.             (R0 ptr) */
+    R0PTRTYPE(void *)               pMsixPageR0;
+
+    /** Pointer to the PCI bus of the device. (RC ptr) */
+    RCPTRTYPE(struct PCIBus *)      pBusRC;
+    /** Page used for MSI-X state.             (RC ptr) */
+    RCPTRTYPE(void *)               pMsixPageRC;
+
+    /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants. */
+    uint32_t                        fFlags;
+    /** Current state of the IRQ pin of the device. */
+    int32_t                         uIrqPinState;
+
+    /** Offset of MSI PCI capability in config space, or 0.
+     * @todo fix non-standard naming.  */
+    uint8_t                         u8MsiCapOffset;
+    /** Size of MSI PCI capability in config space, or 0.
+     * @todo fix non-standard naming.  */
+    uint8_t                         u8MsiCapSize;
+    /** Offset of MSI-X PCI capability in config space, or 0.
+     * @todo fix non-standard naming.  */
+    uint8_t                         u8MsixCapOffset;
+    /** Size of MSI-X PCI capability in config space, or 0.
+     * @todo fix non-standard naming.  */
+    uint8_t                         u8MsixCapSize;
+#if HC_ARCH_BITS == 64
+    /** Explicit alignment padding.   */
+    uint8_t                         abPadding1[HC_ARCH_BITS == 32 ? 0 : 4];
+#endif
+
+    /** Pointer to bus specific data. (R3 ptr) */
+    R3PTRTYPE(const void *)         pPciBusPtrR3;
+
+    /** I/O regions. */
+    PCIIOREGION                     aIORegions[VBOX_PCI_NUM_REGIONS];
+    /** @}  */
+} PDMPCIDEVICEINT;
+AssertCompileMemberAlignment(PDMPCIDEVICEINT, aIORegions, 8);
+AssertCompileSize(PDMPCIDEVICEINT, HC_ARCH_BITS == 32 ? 264 : 384);
 
 /** Indicate that PCIDEVICE::Int.s can be declared. */
-#define PCIDEVICEINT_DECLARED
+#define PDMPCIDEVICEINT_DECLARED
 
 /** @} */
 
 #endif
+

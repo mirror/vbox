@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VMware SVGA device
  */
@@ -12,8 +13,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __DEVVGA_SVGA_H__
-#define __DEVVGA_SVGA_H__
+
+#ifndef ___DevVGA_SVGA_h___
+#define ___DevVGA_SVGA_h___
 
 
 /** Default FIFO size. */
@@ -40,9 +42,11 @@
 #define VMSVGA_ACTION_CHANGEMODE_BIT    0
 #define VMSVGA_ACTION_CHANGEMODE        RT_BIT(VMSVGA_ACTION_CHANGEMODE_BIT)
 
-DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
+DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
 
-DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId,
+                                         uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
 
 int vmsvgaInit(PPDMDEVINS pDevIns);
 int vmsvgaReset(PPDMDEVINS pDevIns);
@@ -53,4 +57,5 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
 
-#endif  /* __DEVVGA_SVGA_H__ */
+#endif
+
