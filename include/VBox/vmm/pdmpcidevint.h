@@ -21,7 +21,7 @@
 #include <VBox/vmm/pdmdev.h>
 
 /** @defgroup grp_pdm_pcidev_int    The PDM PCI Device Internals
- * @ingroup grp_pdm_pci
+ * @ingroup grp_pdm_pcidev
  *
  * @remarks The PDM PCI device internals are visible to both PDM and the PCI Bus
  *          implementation, thus it lives among the the public headers despite

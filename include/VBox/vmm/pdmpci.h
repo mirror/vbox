@@ -31,7 +31,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_pdm_pcidev    The raw PCI Devices API
+/** @defgroup grp_pdm_pciraw    The raw PCI Devices API
  * @ingroup grp_pdm
  * @{
  */
