@@ -433,7 +433,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, PPCIDEVIC
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIO2Register: caller='%s'/%d: pPciDev=%p (%#x) iRegion=%#x cb=%#RGp fFlags=%RX32 ppv=%p pszDescp=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion,
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion,
              cb, fFlags, ppv, pszDesc, pszDesc));
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
 
@@ -464,7 +464,7 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t i
              "                               pvUser=%p pfnWrite=%p pfnRead=%p pfnFill=%p\n"
              "                               pvUserR0=%p pszWriteR0=%s pszReadR0=%s pszFillR0=%s\n"
              "                               pvUserRC=%p pszWriteRC=%s pszReadRC=%s pszFillRC=%s\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, cbRegion,
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, cbRegion,
              fFlags, pszDesc, pszDesc,
              pvUser, pfnWrite, pfnRead, pfnFill,
              pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
@@ -546,7 +546,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, PPCIDE
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIOExDeregister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion));
 
     AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
@@ -566,7 +566,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pP
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIOExMap: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x GCPhys=%#RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, GCPhys));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, GCPhys));
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 != NULL, VERR_INVALID_PARAMETER);
 
     int rc = PGMR3PhysMMIOExMap(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion, GCPhys);
@@ -584,7 +584,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, PPCIDEVICE 
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_MMIOExUnmap: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x GCPhys=%#RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, GCPhys));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, GCPhys));
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 != NULL, VERR_INVALID_PARAMETER);
 
     int rc = PGMR3PhysMMIOExUnmap(pDevIns->Internal.s.pVMR3, pDevIns, pPciDev ? pPciDev->Int.s.idxDevCfg : 254, iRegion, GCPhys);
@@ -604,7 +604,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, PPCIDEV
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_MMHyperMapMMIO2: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pRCPtr=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pRCPtr));
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
 
     if (pDevIns->iInstance > 0)
@@ -631,7 +631,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, PPCIDEVI
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_MMIO2MapKernel: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%#x off=%RGp cb=%RGp pszDesc=%p:{%s} pR0Ptr=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->devfn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pR0Ptr));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev ? pPciDev->uDevFn : UINT32_MAX, iRegion, off, cb, pszDesc, pszDesc, pR0Ptr));
     AssertReturn(!pPciDev || pPciDev->Int.s.pDevInsR3 == pDevIns, VERR_INVALID_PARAMETER);
 
     if (pDevIns->iInstance > 0)
@@ -1465,7 +1465,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVI
         pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: pPciDev=%p:{%#x} pMsgReg=%p:{cMsiVectors=%d, cMsixVectors=%d}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->devfn, pMsiReg, pMsiReg->cMsiVectors, pMsiReg->cMsixVectors));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, pMsiReg, pMsiReg->cMsiVectors, pMsiReg->cMsixVectors));
 
     PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3; Assert(pBus);
     PVM        pVM  = pDevIns->Internal.s.pVMR3;
@@ -1493,7 +1493,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPC
         pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d pfnCallback=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->devfn, iRegion, cbRegion, enmType, pfnCallback));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, pfnCallback));
 
     /*
      * Validate input.
@@ -1681,7 +1681,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPCIDEVICE p
         pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR3DevHlp_PCISetIrq: caller='%s'/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->devfn, iIrq, iLevel));
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
 
     /*
      * Validate input.

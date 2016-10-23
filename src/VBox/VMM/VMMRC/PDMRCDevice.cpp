@@ -126,7 +126,7 @@ static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
         pPciDev = pDevIns->Internal.s.pHeadPciDevRC;
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmRCDevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
-             pDevIns, pDevIns->iInstance, pPciDev, pPciDev->devfn, iIrq, iLevel));
+             pDevIns, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
 
     PVM         pVM     = pDevIns->Internal.s.pVMRC;
     PPDMPCIBUS  pPciBus = pPciDev->Int.s.pPdmBusRC;
