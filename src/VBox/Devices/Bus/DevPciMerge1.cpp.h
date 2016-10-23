@@ -144,7 +144,7 @@ static int pciR3MergedRegisterDeviceOnBus(PPCIMERGEDBUS pBus, PPDMPCIDEV pPciDev
             else
                 AssertLogRelMsgReturn(cSameDevInses == 0,
                                       ("PCI Configuration conflict at %u.* appending %s (%u of %u pDevIns matches)!\n",
-                                       uPciDevNo, pszName, cSameDevInses),
+                                       uPciDevNo, pszName, cSameDevInses, VBOX_PCI_MAX_FUNCTIONS),
                                       VERR_PDM_TOO_PCI_MANY_DEVICES);
         }
         if (pClash)
