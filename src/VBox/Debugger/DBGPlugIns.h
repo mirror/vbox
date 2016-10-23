@@ -25,7 +25,7 @@
 
 RT_C_DECLS_BEGIN
 
-//extern const DBGFOSREG g_DBGDiggerFreeBSD;
+extern const DBGFOSREG g_DBGDiggerFreeBsd;
 extern const DBGFOSREG g_DBGDiggerDarwin;
 extern const DBGFOSREG g_DBGDiggerLinux;
 extern const DBGFOSREG g_DBGDiggerOS2;

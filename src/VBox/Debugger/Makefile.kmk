@@ -63,6 +63,7 @@ DbgPlugInDiggers_SOURCES = \
 	DBGPlugInSolaris.cpp \
 	DBGPlugInWinNt.cpp \
 	DBGPlugInOS2.cpp \
+	DBGPlugInFreeBsd.cpp \
 	DBGPlugInCommonELF.cpp
 DbgPlugInDiggers_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \

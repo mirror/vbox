@@ -32,7 +32,7 @@ DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t u
     static PCDBGFOSREG s_aPlugIns[] =
     {
         &g_DBGDiggerDarwin,
-        //&g_DBGDiggerFreeBSD,
+        &g_DBGDiggerFreeBsd,
         &g_DBGDiggerLinux,
         &g_DBGDiggerOS2,
         &g_DBGDiggerSolaris,
