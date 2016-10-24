@@ -3703,6 +3703,7 @@ void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCo
     pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
 }
 
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 typedef struct {
 /** User specified flags */
 uint32_t flags;
@@ -3725,10 +3726,12 @@ int32_t base_width, base_height;
 /** Program-specified window gravity */
 uint32_t win_gravity;
 } xcb_size_hints_t;
+#endif /* defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
 
 /* static */
 void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int h)
 {
+    AssertPtrReturnVoid(pWidget);
 #if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
 # define QWINDOWSIZE_MAX ((1<<24)-1)
     if (pWidget->isWindow() && pWidget->isVisible())
@@ -3747,18 +3750,25 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         xcb_size_hints_t hints;
         hints.flags =   1 /* XCB_ICCCM_SIZE_HINT_US_POSITION */
                       | 2 /* XCB_ICCCM_SIZE_HINT_US_SIZE */;
-        hints.x          = x;
-        hints.y          = y;
-        hints.width      = w;
-        hints.height     = h;
-        hints.min_width  = pWidget->minimumSize().width();
-        hints.min_height = pWidget->minimumSize().height();
-        hints.max_width  = pWidget->maximumSize().width();
-        hints.max_height = pWidget->maximumSize().height();
+        hints.x           = x;
+        hints.y           = y;
+        hints.width       = w;
+        hints.height      = h;
+        hints.min_width   = pWidget->minimumSize().width();
+        hints.min_height  = pWidget->minimumSize().height();
+        hints.max_width   = pWidget->maximumSize().width();
+        hints.max_height  = pWidget->maximumSize().height();
+        hints.width_inc   = pWidget->sizeIncrement().width();
+        hints.height_inc  = pWidget->sizeIncrement().height();
+        hints.base_width  = pWidget->baseSize().width();
+        hints.base_height = pWidget->baseSize().height();
         if (hints.min_width > 0 || hints.min_height > 0)
             hints.flags |= 16 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */;
         if (hints.max_width < QWINDOWSIZE_MAX || hints.max_height < QWINDOWSIZE_MAX)
             hints.flags |= 32 /* XCB_ICCCM_SIZE_HINT_P_MAX_SIZE */;
+        if (hints.width_inc > 0 || hints.height_inc)
+            hints.flags |=   64 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */
+                           | 256 /* XCB_ICCCM_SIZE_HINT_BASE_SIZE */;
         xcb_change_property(QX11Info::connection(), XCB_PROP_MODE_REPLACE,
                             (xcb_window_t)pWidget->winId(), XCB_ATOM_WM_NORMAL_HINTS,
                             XCB_ATOM_WM_SIZE_HINTS, 32, sizeof(hints) >> 2, &hints);
@@ -3768,9 +3778,9 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         /* Call the Qt method if the window is not visible as otherwise no
          * Configure event will arrive to tell Qt what geometry we want. */
         pWidget->setGeometry(x, y, w, h);
-# else
+# else /* !defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
     pWidget->setGeometry(x, y, w, h);
-# endif
+# endif /* !defined(VBOX_WS_X11) && QT_VERSION >= 0x050000 */
 }
 
 /* static */
