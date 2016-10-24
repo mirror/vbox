@@ -93,15 +93,17 @@ typedef struct HDACODEC
     const uint8_t           u8AdcVolsLineIn;
     const uint8_t           u8DacLineOut;
 
+    /** Public codec functions. */
+    DECLR3CALLBACKMEMBER(int,  pfnLookup, (PHDACODEC pThis, uint32_t uVerb, uint64_t *puResp));
+    DECLR3CALLBACKMEMBER(void, pfnReset, (PHDACODEC pThis));
+    DECLR3CALLBACKMEMBER(int,  pfnNodeReset, (PHDACODEC pThis, uint8_t, PCODECNODE));
+
     /** Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
-    DECLR3CALLBACKMEMBER(int, pfnMixerAddStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg));
-    DECLR3CALLBACKMEMBER(int, pfnMixerRemoveStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl));
-    DECLR3CALLBACKMEMBER(int, pfnMixerSetStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel));
-    DECLR3CALLBACKMEMBER(int, pfnMixerSetVolume, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
-    /** Callbacks by codec implementation. */
-    DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t uVerb, uint64_t *puResp));
-    DECLR3CALLBACKMEMBER(int, pfnReset, (PHDACODEC pThis));
-    DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (PHDACODEC pThis, uint8_t, PCODECNODE));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerAddStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOSTREAMCFG pCfg));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerRemoveStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetStream, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel));
+    DECLR3CALLBACKMEMBER(int,  pfnCbMixerSetVolume, (PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol));
+
     /** These callbacks are set by codec implementation to answer debugger requests. */
     DECLR3CALLBACKMEMBER(void, pfnDbgListNodes, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));
     DECLR3CALLBACKMEMBER(void, pfnDbgSelector, (PHDACODEC pThis, PCDBGFINFOHLP pHlp, const char *pszArgs));

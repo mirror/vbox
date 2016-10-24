@@ -3770,16 +3770,6 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
 }
 
 /**
- * @interface_method_impl{HDACODEC,pfnReset}
- */
-static DECLCALLBACK(int) hdaCodecReset(PHDACODEC pCodec)
-{
-    PHDASTATE pThis = pCodec->pHDAState;
-    NOREF(pThis);
-    return VINF_SUCCESS;
-}
-
-/**
  * Retrieves a corresponding sink for a given mixer control.
  * Returns NULL if no sink is found.
  *
@@ -5527,6 +5517,15 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 # endif
 
     /*
+     * Reset the codec.
+     */
+    if (   pThis->pCodec
+        && pThis->pCodec->pfnReset)
+    {
+        pThis->pCodec->pfnReset(pThis->pCodec);
+    }
+
+    /*
      * Set some sensible defaults for which HDA sinks
      * are connected to which stream number.
      *
@@ -6027,12 +6026,11 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         if (!pThis->pCodec)
             return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating HDA codec state"));
 
-        /* Set codec callbacks. */
-        pThis->pCodec->pfnMixerAddStream    = hdaMixerAddStream;
-        pThis->pCodec->pfnMixerRemoveStream = hdaMixerRemoveStream;
-        pThis->pCodec->pfnMixerSetStream    = hdaMixerSetStream;
-        pThis->pCodec->pfnMixerSetVolume    = hdaMixerSetVolume;
-        pThis->pCodec->pfnReset             = hdaCodecReset;
+        /* Set codec callbacks to this controller. */
+        pThis->pCodec->pfnCbMixerAddStream    = hdaMixerAddStream;
+        pThis->pCodec->pfnCbMixerRemoveStream = hdaMixerRemoveStream;
+        pThis->pCodec->pfnCbMixerSetStream    = hdaMixerSetStream;
+        pThis->pCodec->pfnCbMixerSetVolume    = hdaMixerSetVolume;
 
         pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
 

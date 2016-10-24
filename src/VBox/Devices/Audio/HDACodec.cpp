@@ -885,6 +885,34 @@ static DECLCALLBACK(void) stac9220DbgNodes(PHDACODEC pThis, PCDBGFINFOHLP pHlp, 
 }
 #endif
 
+/**
+ * Resets the codec with all its connected nodes.
+ *
+ * @param   pThis               HDA codec to reset.
+ */
+static DECLCALLBACK(void) stac9220Reset(PHDACODEC pThis)
+{
+    AssertPtrReturnVoid(pThis->paNodes);
+    AssertPtrReturnVoid(pThis->pfnNodeReset);
+
+    LogRel(("HDA: Codec reset\n"));
+
+    pThis->fInReset = true;
+
+    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+        pThis->pfnNodeReset(pThis, i, &pThis->paNodes[i]);
+
+    pThis->fInReset = false;
+}
+
+/**
+ * Resets a single node of the codec.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA codec of node to reset.
+ * @param   uNID                Node ID to set node to.
+ * @param   pNode               Node to reset.
+ */
 static DECLCALLBACK(int) stac9220ResetNode(PHDACODEC pThis, uint8_t uNID, PCODECNODE pNode)
 {
     LogFlowFunc(("NID=0x%x (%RU8)\n", uNID, uNID));
@@ -1453,7 +1481,8 @@ static int stac9220Construct(PHDACODEC pThis)
 {
     unconst(pThis->cTotalNodes) = STAC9221_NUM_NODES;
 
-    pThis->pfnCodecNodeReset = stac9220ResetNode;
+    pThis->pfnReset     = stac9220Reset;
+    pThis->pfnNodeReset = stac9220ResetNode;
 
     pThis->u16VendorId  = 0x8384; /* SigmaTel */
     /*
@@ -1489,6 +1518,22 @@ static int stac9220Construct(PHDACODEC pThis)
 
     unconst(pThis->u8AdcVolsLineIn) = STAC9220_NID_AMP_ADC0;
     unconst(pThis->u8DacLineOut)    = STAC9220_NID_DAC1;
+
+    /*
+     * Initialize all codec nodes.
+     * This is specific to the codec, so do this here.
+     *
+     * Note: Do *not* call stac9220Reset() here, as this would not
+     *       initialize the node default configuration values then!
+     */
+    AssertPtr(pThis->paNodes);
+    AssertPtr(pThis->pfnNodeReset);
+
+    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
+    {
+        int rc2 = stac9220ResetNode(pThis, i, &pThis->paNodes[i]);
+        AssertRC(rc2);
+    }
 
     return VINF_SUCCESS;
 }
@@ -1575,7 +1620,7 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCT
     rVol = (rVol + 1) * (2 * 255) / 256;
 
     PDMAUDIOVOLUME Vol = { RT_BOOL(iMute), lVol, rVol };
-    return pThis->pfnMixerSetVolume(pThis->pHDAState, enmMixerCtl, &Vol);
+    return pThis->pfnCbMixerSetVolume(pThis->pHDAState, enmMixerCtl, &Vol);
 }
 
 DECLINLINE(void) hdaCodecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
@@ -2065,18 +2110,9 @@ static DECLCALLBACK(int) vrbProcReset(PHDACODEC pThis, uint32_t cmd, uint64_t *p
     Assert(CODEC_NID(cmd) == STAC9220_NID_AFG);
 
     if (   CODEC_NID(cmd) == STAC9220_NID_AFG
-        && pThis->pfnCodecNodeReset)
+        && pThis->pfnReset)
     {
-        LogFunc(("Entering reset ...\n"));
-
-        pThis->fInReset = true;
-
-        for (uint8_t i = 0; i < pThis->cTotalNodes; ++i)
-            pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
-
-        pThis->fInReset = false;
-
-        LogFunc(("Exited reset\n"));
+        pThis->pfnReset(pThis);
     }
 
     *pResp = 0;
@@ -2358,17 +2394,17 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
             /** @todo Check if non-interleaved streams need a different channel / SDn? */
 
             /* Propagate to the controller. */
-            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
+            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_FRONT,      uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
-            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
+            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_CENTER_LFE, uSD, uChannel);
+            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_REAR,       uSD, uChannel);
 #endif
         }
         else if (enmDir == PDMAUDIODIR_IN)
         {
-            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
+            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_LINE_IN,    uSD, uChannel);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            pThis->pfnMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
+            pThis->pfnCbMixerSetStream(pThis->pHDAState, PDMAUDIOMIXERCTL_MIC_IN,     uSD, uChannel);
 #endif
         }
     }
@@ -3044,7 +3080,7 @@ int hdaCodecAddStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOST
     }
 
     if (RT_SUCCESS(rc))
-        rc = pThis->pfnMixerAddStream(pThis->pHDAState, enmMixerCtl, pCfg);
+        rc = pThis->pfnCbMixerAddStream(pThis->pHDAState, enmMixerCtl, pCfg);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3054,7 +3090,7 @@ int hdaCodecRemoveStream(PHDACODEC pThis, PDMAUDIOMIXERCTL enmMixerCtl)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    int rc = pThis->pfnMixerRemoveStream(pThis->pHDAState, enmMixerCtl);
+    int rc = pThis->pfnCbMixerRemoveStream(pThis->pHDAState, enmMixerCtl);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3273,15 +3309,6 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
             LogRel2(("HDA: Failed to add line input stream: %Rrc\n", rc2));
 
     } while (0);
-
-    /*
-     * Reset nodes.
-     */
-    AssertPtr(pThis->paNodes);
-    AssertPtr(pThis->pfnCodecNodeReset);
-
-    for (uint8_t i = 0; i < pThis->cTotalNodes; i++)
-        pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
     /*
      * Set initial volume.
