@@ -319,8 +319,8 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
      *
      * All checked FreeBSD kernels so far have the following layout in the kernel:
      *     [.interp] - contiains the /red/herring string we used for probing earlier
-     *     [.hash]   - contains the hashes of the symbol names, 8 byte alignent
-     *     [.dynsym] - contains the ELF symbol descriptors, 8 byte alignment
+     *     [.hash]   - contains the hashes of the symbol names, 8 byte alignment on 64bit, 4 byte on 32bit
+     *     [.dynsym] - contains the ELF symbol descriptors, 8 byte alignment, 4 byte on 32bit
      *     [.dynstr] - contains the symbol names as a string table, 1 byte alignmnt
      *     [.text]   - contains the executable code, 16 byte alignment.
      * The sections are always adjacent (sans alignment) so we just parse the .hash section right after
@@ -337,7 +337,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
     /* Calculate the start of the .hash section. */
     DBGFADDRESS AddrHashStart = pThis->AddrKernelInterp;
     DBGFR3AddrAdd(&AddrHashStart, sizeof(g_abNeedleInterp));
-    AddrHashStart.FlatPtr = RT_ALIGN_GCPT(AddrHashStart.FlatPtr, 8, RTGCUINTPTR);
+    AddrHashStart.FlatPtr = RT_ALIGN_GCPT(AddrHashStart.FlatPtr, pThis->f64Bit ? 8 : 4, RTGCUINTPTR);
     uint32_t au32Counters[2];
     int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrHashStart, &au32Counters[0], sizeof(au32Counters));
     if (RT_SUCCESS(rc))
@@ -351,7 +351,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
             RTGCUINTPTR uKernelStart = pThis->AddrKernelElfStart.FlatPtr;
 
             DBGFR3AddrAdd(&AddrDynsymStart, cbHash);
-            AddrDynsymStart.FlatPtr = RT_ALIGN_GCPT(AddrDynsymStart.FlatPtr, 8, RTGCUINTPTR);
+            AddrDynsymStart.FlatPtr = RT_ALIGN_GCPT(AddrDynsymStart.FlatPtr, pThis->f64Bit ? 8 : 4, RTGCUINTPTR);
 
             DBGFADDRESS AddrDynstrStart = AddrDynsymStart;
             while (AddrDynstrStart.FlatPtr < pThis->AddrKernelText.FlatPtr)
