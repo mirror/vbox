@@ -605,7 +605,7 @@ static DECLCALLBACK(void *) dbgDiggerFreeBsdQueryInterface(PUVM pUVM, void *pvDa
 static DECLCALLBACK(int)  dbgDiggerFreeBsdQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
-    Assert(pThis->fValid);
+    Assert(pThis->fValid); RT_NOREF(pThis);
 
     RTDBGSYMBOL SymInfo;
     int rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "kernel!version", &SymInfo, NULL);
