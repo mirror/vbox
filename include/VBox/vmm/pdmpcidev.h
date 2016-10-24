@@ -108,7 +108,7 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 
 
 /*
- * Hack to include the PDMPCIDEVICEINT structure at the right place
+ * Hack to include the PDMPCIDEVINT structure at the right place
  * to avoid duplications of FNPCIIOREGIONMAP and such.
  */
 #ifdef PDMPCIDEV_INCLUDE_PRIVATE
@@ -132,8 +132,8 @@ typedef struct PDMPCIDEV
     /** Internal data. */
     union
     {
-#ifdef PDMPCIDEVICEINT_DECLARED
-        PDMPCIDEVICEINT     s;
+#ifdef PDMPCIDEVINT_DECLARED
+        PDMPCIDEVINT        s;
 #endif
         uint8_t             padding[HC_ARCH_BITS == 32 ? 272 : 384];
     } Int;
@@ -151,7 +151,7 @@ typedef struct PDMPCIDEV
     RTR3PTR                 pvReserved;
     /** @} */
 } PDMPCIDEV;
-#ifdef PDMPCIDEVICEINT_DECLARED
+#ifdef PDMPCIDEVINT_DECLARED
 AssertCompile(RT_SIZEOFMEMB(PDMPCIDEV, Int.s) <= RT_SIZEOFMEMB(PDMPCIDEV, Int.padding));
 #endif
 

@@ -109,7 +109,7 @@ enum {
  *
  * @sa PDMPCIDEV
  */
-typedef struct PDMPCIDEVICEINT
+typedef struct PDMPCIDEVINT
 {
     /** @name Owned by PDM.
      * @remarks The bus may use the device instance pointers.
@@ -204,12 +204,12 @@ typedef struct PDMPCIDEVICEINT
     /** I/O regions. */
     PCIIOREGION                     aIORegions[VBOX_PCI_NUM_REGIONS];
     /** @}  */
-} PDMPCIDEVICEINT;
-AssertCompileMemberAlignment(PDMPCIDEVICEINT, aIORegions, 8);
-AssertCompileSize(PDMPCIDEVICEINT, HC_ARCH_BITS == 32 ? 264 : 384);
+} PDMPCIDEVINT;
+AssertCompileMemberAlignment(PDMPCIDEVINT, aIORegions, 8);
+AssertCompileSize(PDMPCIDEVINT, HC_ARCH_BITS == 32 ? 264 : 384);
 
 /** Indicate that PDMPCIDEV::Int.s can be declared. */
-#define PDMPCIDEVICEINT_DECLARED
+#define PDMPCIDEVINT_DECLARED
 
 /** @} */
 
