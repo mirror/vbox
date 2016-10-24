@@ -2626,6 +2626,15 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     rc2 = RTCritSectDelete(&pThis->CritSect);
     AssertRC(rc2);
 
+#ifdef VBOX_WITH_STATISTICS
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalStreamsActive);
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalStreamsCreated);
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalSamplesPlayed);
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalSamplesCaptured);
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalBytesRead);
+    PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pThis->Stats.TotalBytesWritten);
+#endif
+
     LogFlowFuncLeave();
 }
 
