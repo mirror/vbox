@@ -459,7 +459,7 @@ DECLINLINE(PAUDMIXSINK) ichac97IndexToSink(PAC97STATE pThis, uint8_t uIndex)
         case AC97SOUNDSOURCE_PI_INDEX: return pThis->pSinkLineIn; break;
         case AC97SOUNDSOURCE_PO_INDEX: return pThis->pSinkOut;    break;
         case AC97SOUNDSOURCE_MC_INDEX: return pThis->pSinkMicIn;  break;
-        default:       break;
+        default:                                                  break;
     }
 
     AssertMsgFailed(("Wrong index %RU8\n", uIndex));
@@ -676,17 +676,34 @@ static int ichac97StreamsInit(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
-    int rc = ichac97StreamInit    (&pThis->StreamLineIn, AC97SOUNDSOURCE_PI_INDEX);
+    /*
+     * Create all sinks and AC'97 streams.
+     */
+
+    /* Line-In. */
+    int rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
+    if (RT_SUCCESS(rc))
+        rc = ichac97StreamInit(&pThis->StreamLineIn, AC97SOUNDSOURCE_PI_INDEX);
+
+    /* Microphone-In. */
     if (RT_SUCCESS(rc))
     {
-        rc = ichac97StreamInit    (&pThis->StreamMicIn,  AC97SOUNDSOURCE_MC_INDEX);
+        rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
         if (RT_SUCCESS(rc))
-        {
-            rc = ichac97StreamInit(&pThis->StreamOut,    AC97SOUNDSOURCE_PO_INDEX);
-        }
+            rc = ichac97StreamInit(&pThis->StreamMicIn, AC97SOUNDSOURCE_MC_INDEX);
     }
 
-    /* Open all streams with the current AC'97 mixer settings. */
+    /* Output. */
+    if (RT_SUCCESS(rc))
+    {
+        rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
+        if (RT_SUCCESS(rc))
+            rc = ichac97StreamInit(&pThis->StreamOut, AC97SOUNDSOURCE_PO_INDEX);
+    }
+
+    /*
+     * Open all streams with the current AC'97 mixer settings.
+     */
     if (RT_SUCCESS(rc))
     {
         rc = ichac97StreamOpen        (pThis, &pThis->StreamLineIn);
@@ -2873,21 +2890,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
     if (RT_SUCCESS(rc))
-    {
         rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
-        if (RT_SUCCESS(rc))
-        {
-            /* Add all required audio sinks. */
-            int rc2 = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
-            AssertRC(rc2);
-
-            rc2 = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
-            AssertRC(rc2);
-
-            rc2 = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
-            AssertRC(rc2);
-        }
-    }
 
     ichac97Reset(pDevIns);
 
