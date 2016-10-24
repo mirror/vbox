@@ -40,22 +40,22 @@
  * Devices register themselves when the module containing them is loaded.  PDM
  * will call the entry point 'VBoxDevicesRegister' when loading a device module.
  * The device module will then use the supplied callback table to check the VMM
- * version and to register its devices.  Each device has an unique (for the
- * configured VM) name.  The name is not only used in PDM but also in CFGM (to
- * organize device and device instance settings) and by anyone who wants to talk
- * to a specific device instance.
+ * version and to register its devices.  Each device has an unique name (within
+ * the VM configuration anyway).  The name is not only used in PDM, but also in
+ * CFGM to organize device and device instance settings, and by anyone who wants
+ * to talk to a specific device instance.
  *
  * When all device modules have been successfully loaded PDM will instantiate
  * those devices which are configured for the VM.  Note that a device may have
- * more than one instance, see network adaptors for instance.  When
+ * more than one instance, take network adaptors as an example.  When
  * instantiating a device PDM provides device instance memory and a callback
  * table (aka Device Helpers / DevHlp) with the VM APIs which the device
  * instance is trusted with.
  *
  * Some devices are trusted devices, most are not.  The trusted devices are an
- * integrated part of the VM and can obtain the VM handle from their device
- * instance handles, thus enabling them to call any VM API.  Untrusted devices
- * can only use the callbacks provided during device instantiation.
+ * integrated part of the VM and can obtain the VM handle, thus enabling them to
+ * call any VM API.  Untrusted devices can only use the callbacks provided
+ * during device instantiation.
  *
  * The main purpose in having DevHlps rather than just giving all the devices
  * the VM handle and let them call the internal VM APIs directly, is both to
@@ -71,6 +71,28 @@
  * make sense.  Also, the device has to be trusted to be loaded into R0/RC
  * because of the extra privilege it entails.  Note that raw-mode code and data
  * will be subject to relocation.
+ *
+ *
+ * @subsection sec_pdm_dev_pci          PCI Devices
+ *
+ * A PDM device usually registers one a PCI device during it's instantiation,
+ * legacy devices may register zero, while a few (currently none) more
+ * complicated devices may register multiple PCI functions or devices.
+ *
+ * The bus, device and function assignments can either be done explictly via the
+ * configuration or the registration call, or it can be left up to the PCI bus.
+ * The typical VBox configuration construct (ConsoleImpl2.cpp) will do explict
+ * assignments for all devices it's BusAssignmentManager class knows about.
+ *
+ * For explict CFGM style configuration, the "PCIBusNo", "PCIDeviceNo", and
+ * "PCIFunctionNo" values in the PDM device instance configuration (not the
+ * "config" subkey, but the top level one) will be picked up for the primary PCI
+ * device.  The primary PCI configuration is by default the first one, but this
+ * can be controlled using the @a idxDevCfg parameter of the
+ * PDMDEVHLPR3::pfnPCIRegister method.  For subsequent configuration (@a
+ * idxDevCfg > 0) the values are taken from the "PciDevNN" subkey, where "NN" is
+ * replaced by the @a idxDevCfg value.
+ *
  *
  *
  * @section sec_pdm_special_devs    Special Devices
