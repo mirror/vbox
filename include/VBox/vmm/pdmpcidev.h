@@ -152,16 +152,8 @@ typedef struct PDMPCIDEV
      * @sa VBOX_PCI_DEVFN_MAKE, VBOX_PCI_DEVFN_FUN_MASK, VBOX_PCI_DEVFN_DEV_SHIFT */
     uint32_t                uDevFn;
     uint32_t                Alignment0; /**< Alignment. */
-
-    union
-    {
-        /** Device name. */
-        R3PTRTYPE(const char *) pszNameR3;
-#ifndef PDMPCIDEVICE_NO_DEPRECATED
-        /** @deprecated Use pszNameR3! */
-        R3PTRTYPE(const char *) name;
-#endif
-    };
+    /** Device name. */
+    R3PTRTYPE(const char *) pszNameR3;
     /** Reserved. */
     RTR3PTR                 pvReserved;
     /** @} */

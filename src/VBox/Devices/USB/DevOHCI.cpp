@@ -4153,7 +4153,7 @@ static void ohciBusStart(POHCI pThis)
     VUSBIDevPowerOn(pThis->RootHub.pIDev);
     pThis->dqic = 0x7;
 
-    Log(("ohci: %s: Bus started\n", pThis->PciDev.name));
+    Log(("ohci: %s: Bus started\n", pThis->PciDev.pszNameR3));
 
     pThis->SofTime = PDMDevHlpTMTimeVirtGet(pThis->CTX_SUFF(pDevIns));
     int rc = pThis->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThis->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
@@ -4892,7 +4892,7 @@ static int HcRhDescriptorA_w(POHCI pThis, uint32_t iReg, uint32_t val)
     if ((val & (OHCI_RHA_NDP | OHCI_RHA_DT)) != OHCI_NDP_CFG(pThis))
     {
         Log(("ohci: %s: invalid write to NDP or DT in roothub descriptor A!!! val=0x%.8x\n",
-                pThis->PciDev.name, val));
+             pThis->PciDev.pszNameR3, val));
         val &= ~(OHCI_RHA_NDP | OHCI_RHA_DT);
         val |= OHCI_NDP_CFG(pThis);
     }
@@ -4928,8 +4928,7 @@ static int HcRhDescriptorB_w(POHCI pThis, uint32_t iReg, uint32_t val)
 
     if ( pThis->RootHub.desc_b != val )
         Log(("ohci: %s: unsupported write to root descriptor B!!! 0x%.8x -> 0x%.8x\n",
-                pThis->PciDev.name,
-                pThis->RootHub.desc_b, val));
+             pThis->PciDev.pszNameR3, pThis->RootHub.desc_b, val));
     pThis->RootHub.desc_b = val;
     return VINF_SUCCESS;
 }
@@ -4973,7 +4972,7 @@ static int HcRhStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
     if ( val & OHCI_RHS_LPSC )
     {
         unsigned i;
-        Log2(("ohci: %s: global power up\n", pThis->PciDev.name));
+        Log2(("ohci: %s: global power up\n", pThis->PciDev.pszNameR3));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
             rhport_power(&pThis->RootHub, i, true /* power up */);
     }
@@ -4982,7 +4981,7 @@ static int HcRhStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
     if ( val & OHCI_RHS_LPS )
     {
         unsigned i;
-        Log2(("ohci: %s: global power down\n", pThis->PciDev.name));
+        Log2(("ohci: %s: global power down\n", pThis->PciDev.pszNameR3));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
             rhport_power(&pThis->RootHub, i, false /* power down */);
     }
@@ -5635,12 +5634,12 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     {
         static SSMFIELD const s_aOhciFields22[] =
         {
-            SSMFIELD_ENTRY_OLD(           PciDev.config,                256),   /* DevPCI restores this. */
+            SSMFIELD_ENTRY_OLD(           PciDev.abConfig,              256),   /* DevPCI restores this. */
             SSMFIELD_ENTRY_OLD(           PciDev.Int,                   224),
-            SSMFIELD_ENTRY_OLD(           PciDev.devfn,                 4),
+            SSMFIELD_ENTRY_OLD(           PciDev.uDevFn,                4),
             SSMFIELD_ENTRY_OLD(           PciDev.Alignment0,            4),
-            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.name),
-            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.pDevIns),
+            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.pszNameR3),
+            SSMFIELD_ENTRY_OLD_HCPTR(     PciDev.pvReserved),
             SSMFIELD_ENTRY_OLD_HCPTR(     pDevInsR3),
             SSMFIELD_ENTRY_OLD_HCPTR(     pEndOfFrameTimerR3),
             SSMFIELD_ENTRY_OLD_HCPTR(     pDevInsR0),
