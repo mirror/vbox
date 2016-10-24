@@ -672,7 +672,7 @@ static void ichac97StreamDestroy(PAC97STREAM pStream)
         RTCritSectDelete(&pStream->CritSect);
 }
 
-static int ichac97StreamsInit(PAC97STATE pThis)
+static int ichac97StreamsCreate(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
 
@@ -2456,7 +2456,7 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
             ichac97MixerSetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER,
                              ichac97MixerGet(pThis, AC97_Headphone_Volume_Mute));
 
-    rc2 = ichac97StreamsInit(pThis);
+    rc2 = ichac97StreamsCreate(pThis);
     if (RT_SUCCESS(rc2))
     {
         /** @todo r=andy Stream IDs are hardcoded to certain streams. */
@@ -2896,7 +2896,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     if (RT_SUCCESS(rc))
     {
-        ichac97StreamsInit(pThis);
+        ichac97StreamsCreate(pThis);
 
 #ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
         PAC97DRIVER pDrv;
@@ -2928,7 +2928,8 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 ichac97Reset(pDevIns);
                 ichac97Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
 
-                ichac97StreamsInit(pThis);
+                /* Re-create the streams after re-attaching.
+                ichac97StreamsCreate(pThis);
 
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
