@@ -551,7 +551,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 #endif
 
     PDMAUDIOSTREAMCFG CfgHostAcq;
-    int rc = drvAudioStreamCreateInternalBackend(pThis,pHstStream, pCfgHost, &CfgHostAcq);
+    int rc = drvAudioStreamCreateInternalBackend(pThis, pHstStream, pCfgHost, &CfgHostAcq);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1870,10 +1870,7 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
          */
         rc = drvAudioStreamInitInternal(pThis, pHstStrm, pCfgHost, pCfgGuest);
         if (RT_FAILURE(rc))
-        {
-            LogFlowFunc(("Stream not available (yet)\n"));
-            rc = VINF_SUCCESS;
-        }
+            break;
 
 #ifdef VBOX_WITH_STATISTICS
         char szStatName[255];
@@ -1906,6 +1903,8 @@ static DECLCALLBACK(int) drvAudioStreamCreate(PPDMIAUDIOCONNECTOR pInterface,
             PDMDrvHlpSTAMRegCounterEx(pThis->pDrvIns, &pHstStrm->Out.StatSamplesPlayed,
                                       szStatName, STAMUNIT_COUNT, "Total samples played.");
         }
+        else
+            AssertFailed();
 #endif
 
     } while (0);
@@ -2208,6 +2207,8 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                 {
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pHstStream->Out.StatSamplesPlayed);
                 }
+                else
+                    AssertFailed();
 #endif
                 RTListNodeRemove(&pHstStream->Node);
 
@@ -2237,6 +2238,8 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->Out.StatBytesTotalWritten);
                     PDMDrvHlpSTAMDeregister(pThis->pDrvIns, &pGstStream->Out.StatSamplesPlayed);
                 }
+                else
+                    AssertFailed();
 #endif
                 RTListNodeRemove(&pGstStream->Node);
 
