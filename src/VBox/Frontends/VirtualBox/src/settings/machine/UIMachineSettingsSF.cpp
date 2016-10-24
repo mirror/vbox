@@ -34,11 +34,9 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-class SFTreeViewItem : public QTreeWidgetItem
+class SFTreeViewItem : public QITreeWidgetItem
 {
 public:
-
-    enum { SFTreeViewItemType = QTreeWidgetItem::UserType + 1 };
 
     enum FormatType
     {
@@ -50,8 +48,8 @@ public:
     };
 
     /* Root Item */
-    SFTreeViewItem (QTreeWidget *aParent, const QStringList &aFields, FormatType aFormat)
-        : QTreeWidgetItem (aParent, aFields, SFTreeViewItemType), mFormat (aFormat)
+    SFTreeViewItem (QITreeWidget *aParent, const QStringList &aFields, FormatType aFormat)
+        : QITreeWidgetItem (aParent, aFields), mFormat (aFormat)
     {
         setFirstColumnSpanned (true);
         setFlags (flags() ^ Qt::ItemIsSelectable);
@@ -59,7 +57,7 @@ public:
 
     /* Child Item */
     SFTreeViewItem (SFTreeViewItem *aParent, const QStringList &aFields, FormatType aFormat)
-        : QTreeWidgetItem (aParent, aFields, SFTreeViewItemType), mFormat (aFormat)
+        : QITreeWidgetItem (aParent, aFields), mFormat (aFormat)
     {
         updateText (aFields);
     }
@@ -67,14 +65,14 @@ public:
     bool operator< (const QTreeWidgetItem &aOther) const
     {
         /* Root items should always been sorted by id-field. */
-        return parent() ? text (0).toLower() < aOther.text (0).toLower() :
-                          text (1).toLower() < aOther.text (1).toLower();
+        return parentItem() ? text (0).toLower() < aOther.text (0).toLower() :
+                              text (1).toLower() < aOther.text (1).toLower();
     }
 
     SFTreeViewItem* child (int aIndex) const
     {
         QTreeWidgetItem *item = QTreeWidgetItem::child (aIndex);
-        return item && item->type() == SFTreeViewItemType ? static_cast <SFTreeViewItem*> (item) : 0;
+        return item ? static_cast <SFTreeViewItem*> (item) : 0;
     }
 
     QString getText (int aIndex) const
@@ -105,7 +103,7 @@ private:
         QFontMetrics fm = treeWidget()->fontMetrics();
         int oldSize = fm.width (oneString);
         int indentSize = fm.width (" ... ");
-        int itemIndent = parent() ? treeWidget()->indentation() * 2 : treeWidget()->indentation();
+        int itemIndent = parentItem() ? treeWidget()->indentation() * 2 : treeWidget()->indentation();
         if (aColumn == 0)
             indentSize += itemIndent;
         int cWidth = treeWidget()->columnWidth (aColumn);
@@ -462,16 +460,15 @@ void UIMachineSettingsSF::edtTriggered()
 {
     /* Check selected item */
     QTreeWidgetItem *selectedItem = mTwFolders->selectedItems().size() == 1 ? mTwFolders->selectedItems() [0] : 0;
-    SFTreeViewItem *item = selectedItem && selectedItem->type() == SFTreeViewItem::SFTreeViewItemType ?
-                           static_cast <SFTreeViewItem*> (selectedItem) : 0;
+    SFTreeViewItem *item = selectedItem ? static_cast <SFTreeViewItem*> (selectedItem) : 0;
     Assert (item);
-    Assert (item->parent());
+    Assert (item->parentItem());
 
     /* Invoke Edit-Box Dialog */
     UIMachineSettingsSFDetails dlg (UIMachineSettingsSFDetails::EditType, isSharedFolderTypeSupported(ConsoleType), usedList (false), this);
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
-    dlg.setPermanent ((UISharedFolderType)item->parent()->text (1).toInt() != ConsoleType);
+    dlg.setPermanent ((UISharedFolderType)item->parentItem()->text (1).toInt() != ConsoleType);
     dlg.setAutoMount (item->getText (2) == mTrYes);
     dlg.setWriteable (item->getText (3) == mTrFull);
     if (dlg.exec() == QDialog::Accepted)
@@ -490,10 +487,10 @@ void UIMachineSettingsSF::edtTriggered()
                << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */);
         item->updateText (fields);
         mTwFolders->sortItems (0, Qt::AscendingOrder);
-        if (item->parent() != pRoot)
+        if (item->parentItem() != pRoot)
         {
             /* Move the selected item into new location */
-            item->parent()->takeChild (item->parent()->indexOfChild (item));
+            item->parentItem()->takeChild (item->parentItem()->indexOfChild (item));
             pRoot->insertChild (pRoot->childCount(), item);
             mTwFolders->scrollToItem (item);
             mTwFolders->setCurrentItem (item);
@@ -588,9 +585,7 @@ void UIMachineSettingsSF::adjustFields()
         QTreeWidgetItem *subRoot = mainRoot->child (i);
         for (int j = 0; j < subRoot->childCount(); ++ j)
         {
-            SFTreeViewItem *item = subRoot->child (j) &&
-                                   subRoot->child (j)->type() == SFTreeViewItem::SFTreeViewItemType ?
-                                   static_cast <SFTreeViewItem*> (subRoot->child (j)) : 0;
+            SFTreeViewItem *item = subRoot->child (j) ? static_cast <SFTreeViewItem*> (subRoot->child (j)) : 0;
             if (item)
                 item->adjustText();
         }
@@ -637,11 +632,10 @@ SFoldersNameList UIMachineSettingsSF::usedList (bool aIncludeSelected)
     QTreeWidgetItemIterator it (mTwFolders);
     while (*it)
     {
-        if ((*it)->parent() && (aIncludeSelected || !(*it)->isSelected()) &&
-            (*it)->type() == SFTreeViewItem::SFTreeViewItemType)
+        if ((*it)->parent() && (aIncludeSelected || !(*it)->isSelected()))
         {
             SFTreeViewItem *item = static_cast <SFTreeViewItem*> (*it);
-            UISharedFolderType type = (UISharedFolderType) item->parent()->text (1).toInt();
+            UISharedFolderType type = (UISharedFolderType) item->parentItem()->text (1).toInt();
             list << qMakePair (item->getText (0), type);
         }
         ++ it;
