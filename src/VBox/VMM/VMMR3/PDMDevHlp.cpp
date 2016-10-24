@@ -1298,10 +1298,29 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     uint8_t const uPciDevNoRaw = uPciDevNo;
     if (uPciDevNo == PDMPCIDEVREG_DEV_NO_SAME_AS_PREV)
     {
-        AssertLogRelMsgReturn(pPrevPciDev, ("'%s'/%d: Can't use PDMPCIDEVREG_DEV_NO_SAME_AS_PREV with the first PCI device!\n",
-                                            pDevIns->pReg->szName, pDevIns->iInstance),
-                              VERR_WRONG_ORDER);
-        uPciDevNo = pPrevPciDev->uDevFn >> 3;
+        if (pPrevPciDev)
+            uPciDevNo = pPrevPciDev->uDevFn >> 3;
+        else
+        {
+            /* Look for PCI device registered with an earlier device instance so we can more
+               easily have multiple functions spanning multiple PDM device instances. */
+            PPDMPCIDEV pOtherPciDev = NULL;
+            PPDMDEVINS pPrevIns = pDevIns->Internal.s.pDevR3->pInstances;
+            while (pPrevIns != pDevIns && pPrevIns)
+            {
+                pOtherPciDev = pPrevIns->Internal.s.pHeadPciDevR3;
+                pPrevIns = pPrevIns->Internal.s.pNextR3;
+            }
+            Assert(pPrevIns == pDevIns);
+            AssertLogRelMsgReturn(pOtherPciDev,
+                                  ("'%s'/%d: Can't use PDMPCIDEVREG_DEV_NO_SAME_AS_PREV without a previously registered PCI device by the same or earlier PDM device instance!\n",
+                                   pDevIns->pReg->szName, pDevIns->iInstance),
+                                  VERR_WRONG_ORDER);
+
+            while (pOtherPciDev->Int.s.pNextR3)
+                pOtherPciDev = pOtherPciDev->Int.s.pNextR3;
+            uPciDevNo = pOtherPciDev->uDevFn >> 3;
+        }
     }
 
     /*

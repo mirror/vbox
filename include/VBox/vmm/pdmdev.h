@@ -2343,8 +2343,10 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** Use the next device configuration number in the sequence (max + 1). */
 # define PDMPCIDEVREG_CFG_NEXT              UINT32_MAX
 /** Same device number as the previous PCI device registered with the PDM device.
- * This is handy when registering multiple PCI device functions
- * and the device number is left up to the PCI bus. */
+ * This is handy when registering multiple PCI device functions and the device
+ * number is left up to the PCI bus.  In order to facilitate on PDM device
+ * instance for each PCI function, this searches earlier PDM device
+ * instances as well. */
 # define PDMPCIDEVREG_DEV_NO_SAME_AS_PREV   UINT8_C(0xfd)
 /** Use the first unused device number (all functions must be unused). */
 # define PDMPCIDEVREG_DEV_NO_FIRST_UNUSED   UINT8_C(0xfe)
