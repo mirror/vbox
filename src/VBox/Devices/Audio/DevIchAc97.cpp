@@ -354,7 +354,7 @@ typedef struct AC97DRIVER
 typedef struct AC97STATE
 {
     /** The PCI device state. */
-    PCIDevice               PciDev;
+    PDMPCIDEV               PciDev;
     /** R3 Pointer to the device instance. */
     PPDMDEVINSR3            pDevInsR3;
     /** Global Control (Bus Master Control Register). */
@@ -2296,7 +2296,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(cb, enmType);

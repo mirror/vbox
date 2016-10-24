@@ -625,7 +625,7 @@ void vpciSetReadLed(PVPCISTATE pState, bool fOn)
  * @param   u16Value    The value to store in the register.
  * @thread  EMT
  */
-DECLINLINE(void) vpciCfgSetU8(PCIDEVICE& refPciDev, uint32_t uOffset, uint8_t u8Value)
+DECLINLINE(void) vpciCfgSetU8(PDMPCIDEV& refPciDev, uint32_t uOffset, uint8_t u8Value)
 {
     Assert(uOffset < sizeof(refPciDev.config));
     refPciDev.config[uOffset] = u8Value;
@@ -638,7 +638,7 @@ DECLINLINE(void) vpciCfgSetU8(PCIDEVICE& refPciDev, uint32_t uOffset, uint8_t u8
  * @param   u16Value    The value to store in the register.
  * @thread  EMT
  */
-DECLINLINE(void) vpciCfgSetU16(PCIDEVICE& refPciDev, uint32_t uOffset, uint16_t u16Value)
+DECLINLINE(void) vpciCfgSetU16(PDMPCIDEV& refPciDev, uint32_t uOffset, uint16_t u16Value)
 {
     Assert(uOffset+sizeof(u16Value) <= sizeof(refPciDev.config));
     *(uint16_t*)&refPciDev.config[uOffset] = u16Value;
@@ -652,7 +652,7 @@ DECLINLINE(void) vpciCfgSetU16(PCIDEVICE& refPciDev, uint32_t uOffset, uint16_t 
  * @param   u32Value    The value to store in the register.
  * @thread  EMT
  */
-DECLINLINE(void) vpciCfgSetU32(PCIDEVICE& refPciDev, uint32_t uOffset, uint32_t u32Value)
+DECLINLINE(void) vpciCfgSetU32(PDMPCIDEV& refPciDev, uint32_t uOffset, uint32_t u32Value)
 {
     Assert(uOffset+sizeof(u32Value) <= sizeof(refPciDev.config));
     *(uint32_t*)&refPciDev.config[uOffset] = u32Value;
@@ -799,7 +799,7 @@ int vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
  * @param   uClass       Class of PCI device (network, etc)
  * @thread  EMT
  */
-static DECLCALLBACK(void) vpciConfigure(PCIDEVICE& pci,
+static DECLCALLBACK(void) vpciConfigure(PDMPCIDEV& pci,
                                         uint16_t uDeviceId,
                                         uint16_t uClass)
 {

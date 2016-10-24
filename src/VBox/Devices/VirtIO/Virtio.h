@@ -187,7 +187,7 @@ typedef struct VPCIState_st
 #endif
 
     /** TODO */
-    PCIDEVICE              pciDevice;
+    PDMPCIDEV              pciDevice;
     /** Base port of I/O space region. */
     RTIOPORT               IOPortBase;
 

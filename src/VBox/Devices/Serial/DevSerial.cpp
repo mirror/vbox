@@ -229,7 +229,7 @@ typedef struct SerialState
     uint64_t                        char_transmit_time;
 
 #ifdef VBOX_SERIAL_PCI
-    PCIDEVICE                       PciDev;
+    PDMPCIDEV                       PciDev;
 #endif /* VBOX_SERIAL_PCI */
 } DEVSERIAL;
 /** Pointer to the serial device state. */
@@ -1050,7 +1050,7 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) serialIOPortRegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) serialIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PDEVSERIAL pThis = RT_FROM_MEMBER(pPciDev, DEVSERIAL, PciDev);

@@ -501,7 +501,7 @@ typedef struct VGAState {
     /** The critical section protect the instance data. */
     PDMCRITSECT                 CritSect;
     /** The PCI device. */
-    PCIDEVICE                   Dev;
+    PDMPCIDEV                   Dev;
 
     STAMPROFILE                 StatRZMemoryRead;
     STAMPROFILE                 StatR3MemoryRead;

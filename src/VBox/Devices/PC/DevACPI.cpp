@@ -281,7 +281,7 @@ enum
  */
 typedef struct ACPIState
 {
-    PCIDevice           dev;
+    PDMPCIDEV           dev;
     /** Critical section protecting the ACPI state. */
     PDMCRITSECT         CritSect;
 
@@ -3265,7 +3265,7 @@ static int acpiR3PlantTables(ACPIState *pThis)
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
-static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t Address, unsigned cb)
+static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address, unsigned cb)
 {
     ACPIState *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
@@ -3276,7 +3276,7 @@ static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPCIDEVICE
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t Address,
+static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address,
                                                uint32_t u32Value, unsigned cb)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);

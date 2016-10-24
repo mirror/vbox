@@ -29,34 +29,34 @@ typedef PCPDMPCIHLPRC PCPDMPCIHLP;
 
 #ifdef IN_RING3
 /* Init MSI support in the device. */
-int      MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
+int      MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
 #endif
 
 /* If MSI is enabled, so that MSINotify() shall be used for notifications.  */
-bool     MsiIsEnabled(PPCIDEVICE pDev);
+bool     MsiIsEnabled(PPDMPCIDEV pDev);
 
 /* Device notification (aka interrupt). */
-void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc);
+void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVector, int iLevel, uint32_t uTagSrc);
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI registers */
-void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
-uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
+uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPDMPCIDEV pDev, uint32_t u32Address, unsigned len);
 #endif
 
 #ifdef IN_RING3
 /* Init MSI-X support in the device. */
-int      MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
+int      MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg);
 #endif
 
 /* If MSI-X is enabled, so that MSIXNotify() shall be used for notifications.  */
-bool     MsixIsEnabled(PPCIDEVICE pDev);
+bool     MsixIsEnabled(PPDMPCIDEV pDev);
 
 /* Device notification (aka interrupt). */
-void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc);
+void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVector, int iLevel, uint32_t uTagSrc);
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI-X */
-void     MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
-uint32_t MsixPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+void     MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len);
+uint32_t MsixPciConfigRead (PPDMDEVINS pDevIns, PPDMPCIDEV pDev, uint32_t u32Address, unsigned len);
 #endif

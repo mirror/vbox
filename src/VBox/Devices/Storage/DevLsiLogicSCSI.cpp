@@ -188,7 +188,7 @@ typedef struct LSILOGICREQ *PLSILOGICREQ;
 typedef struct LSILOGICSCSI
 {
     /** PCI device structure. */
-    PCIDEVICE            PciDev;
+    PDMPCIDEV            PciDev;
     /** Pointer to the device instance. - R3 ptr. */
     PPDMDEVINSR3         pDevInsR3;
     /** Pointer to the device instance. - R0 ptr. */
@@ -3989,7 +3989,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pv
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb,
                                        PCIADDRESSSPACE enmType)
 {

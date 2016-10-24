@@ -26,7 +26,7 @@
 #include "MsiCommon.h"
 #include "PciInline.h"
 
-DECLINLINE(uint16_t) msiGetMessageControl(PPCIDEVICE pDev)
+DECLINLINE(uint16_t) msiGetMessageControl(PPDMPCIDEV pDev)
 {
     uint32_t idxMessageControl = pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL;
 #ifdef IN_RING3
@@ -37,12 +37,12 @@ DECLINLINE(uint16_t) msiGetMessageControl(PPCIDEVICE pDev)
     return PCIDevGetWord(pDev, idxMessageControl);
 }
 
-DECLINLINE(bool) msiIs64Bit(PPCIDEVICE pDev)
+DECLINLINE(bool) msiIs64Bit(PPDMPCIDEV pDev)
 {
     return pciDevIsMsi64Capable(pDev);
 }
 
-DECLINLINE(uint32_t*) msiGetMaskBits(PPCIDEVICE pDev)
+DECLINLINE(uint32_t*) msiGetMaskBits(PPDMPCIDEV pDev)
 {
     uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_MASK_BITS_64 : VBOX_MSI_CAP_MASK_BITS_32;
     /* passthrough devices may have no masked/pending support */
@@ -52,7 +52,7 @@ DECLINLINE(uint32_t*) msiGetMaskBits(PPCIDEVICE pDev)
     return (uint32_t*)(pDev->config + iOff);
 }
 
-DECLINLINE(uint32_t*) msiGetPendingBits(PPCIDEVICE pDev)
+DECLINLINE(uint32_t*) msiGetPendingBits(PPDMPCIDEV pDev)
 {
     uint8_t iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_PENDING_BITS_64 : VBOX_MSI_CAP_PENDING_BITS_32;
     /* passthrough devices may have no masked/pending support */
@@ -62,17 +62,17 @@ DECLINLINE(uint32_t*) msiGetPendingBits(PPCIDEVICE pDev)
     return (uint32_t*)(pDev->config + iOff);
 }
 
-DECLINLINE(bool) msiIsEnabled(PPCIDEVICE pDev)
+DECLINLINE(bool) msiIsEnabled(PPDMPCIDEV pDev)
 {
     return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_ENABLE) != 0;
 }
 
-DECLINLINE(uint8_t) msiGetMme(PPCIDEVICE pDev)
+DECLINLINE(uint8_t) msiGetMme(PPDMPCIDEV pDev)
 {
     return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_QSIZE) >> 4;
 }
 
-DECLINLINE(RTGCPHYS) msiGetMsiAddress(PPCIDEVICE pDev)
+DECLINLINE(RTGCPHYS) msiGetMsiAddress(PPDMPCIDEV pDev)
 {
     if (msiIs64Bit(pDev))
     {
@@ -86,7 +86,7 @@ DECLINLINE(RTGCPHYS) msiGetMsiAddress(PPCIDEVICE pDev)
     }
 }
 
-DECLINLINE(uint32_t) msiGetMsiData(PPCIDEVICE pDev, int32_t iVector)
+DECLINLINE(uint32_t) msiGetMsiData(PPDMPCIDEV pDev, int32_t iVector)
 {
     int16_t  iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_MESSAGE_DATA_64 : VBOX_MSI_CAP_MESSAGE_DATA_32;
     uint16_t lo = PCIDevGetWord(pDev, pDev->Int.s.u8MsiCapOffset + iOff);
@@ -116,7 +116,7 @@ DECLINLINE(bool) msiBitJustSet(uint32_t uOldValue,
     return (!(uOldValue & uMask) && !!(uNewValue & uMask));
 }
 
-void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev,
+void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev,
                            uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
@@ -201,7 +201,7 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
     }
 }
 
-uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
+uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPDMPCIDEV pDev, uint32_t u32Address, unsigned len)
 {
     RT_NOREF1(pDevIns);
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
@@ -230,7 +230,7 @@ uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
     return rv;
 }
 
-int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
+int MsiInit(PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 {
     if (pMsiReg->cMsiVectors == 0)
          return VINF_SUCCESS;
@@ -283,12 +283,12 @@ int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 #endif /* IN_RING3 */
 
 
-bool     MsiIsEnabled(PPCIDEVICE pDev)
+bool     MsiIsEnabled(PPDMPCIDEV pDev)
 {
     return pciDevIsMsiCapable(pDev) && msiIsEnabled(pDev);
 }
 
-void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc)
+void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVector, int iLevel, uint32_t uTagSrc)
 {
     AssertMsg(msiIsEnabled(pDev), ("Must be enabled to use that"));
 

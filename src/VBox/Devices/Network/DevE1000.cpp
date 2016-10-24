@@ -1078,7 +1078,7 @@ struct E1kState_st
     /** Base port of I/O space region. */
     RTIOPORT    IOPortBase;
     /** EMT: */
-    PCIDEVICE   pciDevice;
+    PDMPCIDEV   pciDevice;
     /** EMT: Last time the interrupt was acknowledged.  */
     uint64_t    u64AckedAt;
     /** All: Used for eliminating spurious interrupts. */
@@ -6103,7 +6103,7 @@ static void e1kDumpState(PE1KSTATE pThis)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion);
@@ -7421,7 +7421,7 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
  * @param   pci         Reference to PCI device structure.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kConfigurePciDev(PPCIDEVICE pPciDev, E1KCHIP eChip)
+static DECLCALLBACK(void) e1kConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
 {
     Assert(eChip < RT_ELEMENTS(g_aChips));
     /* Configure PCI Device, assume 32-bit mode ******************************/

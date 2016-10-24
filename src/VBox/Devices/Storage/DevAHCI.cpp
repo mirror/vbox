@@ -481,7 +481,7 @@ AssertCompileSizeAlignment(AHCIPort, 8);
 typedef struct AHCI
 {
     /** The PCI device structure. */
-    PCIDEVICE                       dev;
+    PDMPCIDEV                       dev;
     /** Pointer to the device instance - R3 ptr */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the device instance - R0 ptr */
@@ -2448,7 +2448,7 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
@@ -2492,7 +2492,7 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, u
  *      Map the legacy I/O port ranges to make Solaris work with the
  *      controller.}
  */
-static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);
@@ -2532,7 +2532,7 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPCIDEVI
  * @callback_method_impl{FNPCIIOREGIONMAP,
  *      Map the BMDMA I/O port range (used for the Index/Data pair register access)}
  */
-static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);

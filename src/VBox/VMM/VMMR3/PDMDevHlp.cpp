@@ -427,7 +427,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIO2Register
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS cb,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
                                                    uint32_t fFlags, void **ppv, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -451,7 +451,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIO2Register(PPDMDEVINS pDevIns, PPCIDEVIC
  * @interface_method_impl{PDMDEVHLPR3,pfnMMIOExPreRegister}
  */
 static DECLCALLBACK(int)
-pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS cbRegion, uint32_t fFlags,
+pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion, uint32_t fFlags,
                               const char *pszDesc,
                               RTHCPTR pvUser, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                               RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
@@ -541,7 +541,7 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t i
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExDeregister
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
@@ -561,7 +561,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExDeregister(PPDMDEVINS pDevIns, PPCIDE
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExMap
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
@@ -579,7 +579,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExMap(PPDMDEVINS pDevIns, PPCIDEVICE pP
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIOExUnmap
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
+static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
@@ -597,7 +597,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIOExUnmap(PPDMDEVINS pDevIns, PPCIDEVICE 
 /**
  * @copydoc PDMDEVHLPR3::pfnMMHyperMapMMIO2
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS off,
+static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
                                                      RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -624,7 +624,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMHyperMapMMIO2(PPDMDEVINS pDevIns, PPCIDEV
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel
  */
-static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion, RTGCPHYS off,
+static DECLCALLBACK(int) pdmR3DevHlp_MMIO2MapKernel(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS off,
                                                     RTGCPHYS cb,const char *pszDesc, PRTR0PTR pR0Ptr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1214,7 +1214,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
 /**
  * @interface_method_impl{PDMDEVHLPR3,pfnPCIRegister}
  */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
                                                  uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1458,7 +1458,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIRegisterMsi} */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg)
+static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
@@ -1483,7 +1483,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVI
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIIORegionRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                          RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1583,7 +1583,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPC
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCISetConfigCallbacks} */
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                             PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1621,7 +1621,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysRead} */
 static DECLCALLBACK(int)
-pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
@@ -1648,7 +1648,7 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, RTGCPHYS GCPhys,
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIPhysWrite} */
 static DECLCALLBACK(int)
-pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
@@ -1674,7 +1674,7 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, RTGCPHYS GCPhys
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrq} */
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
@@ -1720,7 +1720,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPCIDEVICE p
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrqNoWait} */
-static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel)
 {
     pdmR3DevHlp_PCISetIrq(pDevIns, pPciDev, iIrq, iLevel);
 }
@@ -4211,7 +4211,7 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
         {
             /* Same as pdmR3DevHlp_PCISetIrq, except we've got a tag already. */
-            PPCIDEVICE pPciDev = pTask->u.PciSetIRQ.pPciDevR3;
+            PPDMPCIDEV pPciDev = pTask->u.PciSetIRQ.pPciDevR3;
             if (pPciDev)
             {
                 PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3;

@@ -246,7 +246,7 @@
 /**
  * PCNET state.
  *
- * @extends     PCIDEVICE
+ * @extends     PDMPCIDEV
  * @implements  PDMIBASE
  * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
@@ -254,7 +254,7 @@
  */
 typedef struct PCNETSTATE
 {
-    PCIDEVICE                           PciDev;
+    PDMPCIDEV                           PciDev;
 
     /** Pointer to the device instance - R3. */
     PPDMDEVINSR3                        pDevInsR3;
@@ -3866,7 +3866,7 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-NET I/O Ports.}
  */
-static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                         RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);
@@ -3917,7 +3917,7 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, 
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, For the PC-Net MMIO region.}
  */
-static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);

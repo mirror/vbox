@@ -263,7 +263,7 @@ typedef struct OHCIPAGECACHE
 typedef struct OHCI
 {
     /** The PCI device. */
-    PCIDEVICE           PciDev;
+    PDMPCIDEV           PciDev;
 
     /** Pointer to the device instance - R3 ptr. */
     PPDMDEVINSR3        pDevInsR3;
@@ -5363,7 +5363,7 @@ PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ohciR3Map(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ohciR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                    RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, enmType);

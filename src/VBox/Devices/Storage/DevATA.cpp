@@ -479,12 +479,12 @@ typedef enum CHIPSET
 /**
  * The state of the ATA PCI device.
  *
- * @extends     PCIDEVICE
+ * @extends     PDMPCIDEV
  * @implements  PDMILEDPORTS
  */
 typedef struct PCIATAState
 {
-    PCIDEVICE           dev;
+    PDMPCIDEV           dev;
     /** The controllers. */
     ATACONTROLLER       aCts[2];
     /** Pointer to device instance. */
@@ -6111,7 +6111,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(iRegion, cb, enmType);

@@ -35,15 +35,6 @@
  * @{
  */
 
-/** @deprecated. */
-typedef PPDMPCIDEV          PPCIDEVICE;
-/** @deprecated. */
-typedef struct PDMPCIDEV    PCIDEVICE;
-/** Legacy type name.
- * @deprecated  */
-#define PCIDevice           PDMPCIDEV
-
-
 /**
  * Callback function for reading from the PCI configuration space.
  *
@@ -110,7 +101,7 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
  *
  * @todo add pDevIns parameter and fix iRegion type.
  */
-typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
 /** Pointer to a FNPCIIOREGIONMAP() function. */
 typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;

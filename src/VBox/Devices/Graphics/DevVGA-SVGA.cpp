@@ -3761,7 +3761,7 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     int         rc;

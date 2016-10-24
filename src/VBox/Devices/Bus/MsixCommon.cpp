@@ -39,73 +39,73 @@ AssertCompileSize(MsixTableRecord, VBOX_MSIX_ENTRY_SIZE);
 #pragma pack()
 
 /** @todo use accessors so that raw PCI devices work correctly with MSI-X. */
-DECLINLINE(uint16_t)  msixGetMessageControl(PPCIDEVICE pDev)
+DECLINLINE(uint16_t)  msixGetMessageControl(PPDMPCIDEV pDev)
 {
     return PCIDevGetWord(pDev, pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL);
 }
 
-DECLINLINE(bool)      msixIsEnabled(PPCIDEVICE pDev)
+DECLINLINE(bool)      msixIsEnabled(PPDMPCIDEV pDev)
 {
     return (msixGetMessageControl(pDev) & VBOX_PCI_MSIX_FLAGS_ENABLE) != 0;
 }
 
-DECLINLINE(bool)      msixIsMasked(PPCIDEVICE pDev)
+DECLINLINE(bool)      msixIsMasked(PPDMPCIDEV pDev)
 {
     return (msixGetMessageControl(pDev) & VBOX_PCI_MSIX_FLAGS_FUNCMASK) != 0;
 }
 
-DECLINLINE(uint16_t)  msixTableSize(PPCIDEVICE pDev)
+DECLINLINE(uint16_t)  msixTableSize(PPDMPCIDEV pDev)
 {
     return (msixGetMessageControl(pDev) & 0x3ff) + 1;
 }
 
-DECLINLINE(uint8_t*)  msixGetPageOffset(PPCIDEVICE pDev, uint32_t off)
+DECLINLINE(uint8_t*)  msixGetPageOffset(PPDMPCIDEV pDev, uint32_t off)
 {
     return (uint8_t*)pDev->Int.s.CTX_SUFF(pMsixPage) + off;
 }
 
-DECLINLINE(MsixTableRecord*) msixGetVectorRecord(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(MsixTableRecord*) msixGetVectorRecord(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return (MsixTableRecord*)msixGetPageOffset(pDev, iVector * VBOX_MSIX_ENTRY_SIZE);
 }
 
-DECLINLINE(RTGCPHYS)  msixGetMsiAddress(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(RTGCPHYS)  msixGetMsiAddress(PPDMPCIDEV pDev, uint32_t iVector)
 {
     MsixTableRecord* pRec = msixGetVectorRecord(pDev, iVector);
     return RT_MAKE_U64(pRec->u32MsgAddressLo & ~UINT32_C(0x3), pRec->u32MsgAddressHi);
 }
 
-DECLINLINE(uint32_t)  msixGetMsiData(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(uint32_t)  msixGetMsiData(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return msixGetVectorRecord(pDev, iVector)->u32MsgData;
 }
 
-DECLINLINE(uint32_t)  msixIsVectorMasked(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(uint32_t)  msixIsVectorMasked(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return (msixGetVectorRecord(pDev, iVector)->u32VectorControl & 0x1) != 0;
 }
 
-DECLINLINE(uint8_t*)  msixPendingByte(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(uint8_t*)  msixPendingByte(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return msixGetPageOffset(pDev, 0x800 + iVector / 8);
 }
 
-DECLINLINE(void)      msixSetPending(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(void)      msixSetPending(PPDMPCIDEV pDev, uint32_t iVector)
 {
     *msixPendingByte(pDev, iVector) |= (1 << (iVector & 0x7));
 }
 
-DECLINLINE(void)      msixClearPending(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(void)      msixClearPending(PPDMPCIDEV pDev, uint32_t iVector)
 {
     *msixPendingByte(pDev, iVector) &= ~(1 << (iVector & 0x7));
 }
 
-DECLINLINE(bool)      msixIsPending(PPCIDEVICE pDev, uint32_t iVector)
+DECLINLINE(bool)      msixIsPending(PPDMPCIDEV pDev, uint32_t iVector)
 {
     return (*msixPendingByte(pDev, iVector) & (1 << (iVector & 0x7))) != 0;
 }
 
-static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t iVector)
+static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t iVector)
 {
     if (msixIsPending(pDev, iVector) && !msixIsVectorMasked(pDev, iVector))
         MsixNotify(pDevIns, pPciHlp, pDev, iVector, 1 /* iLevel */, 0 /*uTagSrc*/);
@@ -122,7 +122,7 @@ PDMBOTHCBDECL(int) msixMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                     VERR_INTERNAL_ERROR);
 
     uint32_t off = (uint32_t)(GCPhysAddr & 0xfff);
-    PPCIDEVICE pPciDev = (PPCIDEVICE)pvUser;
+    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
 
     *(uint32_t*)pv = *(uint32_t*)msixGetPageOffset(pPciDev, off);
 
@@ -135,7 +135,7 @@ PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     AssertMsgReturn(cb == 4,
                     ("MSI-X must be accessed with 4-byte reads"),
                     VERR_INTERNAL_ERROR);
-    PPCIDEVICE pPciDev = (PPCIDEVICE)pvUser;
+    PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
 
     uint32_t off = (uint32_t)(GCPhysAddr & 0xfff);
 
@@ -151,7 +151,7 @@ PDMBOTHCBDECL(int) msixMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
  */
-static DECLCALLBACK(int) msixMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) msixMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
@@ -167,7 +167,7 @@ static DECLCALLBACK(int) msixMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_
     return VINF_SUCCESS;
 }
 
-int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
+int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
 {
     if (pMsiReg->cMsixVectors == 0)
          return VINF_SUCCESS;
@@ -235,12 +235,12 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 }
 #endif
 
-bool     MsixIsEnabled(PPCIDEVICE pDev)
+bool     MsixIsEnabled(PPDMPCIDEV pDev)
 {
     return pciDevIsMsixCapable(pDev) && msixIsEnabled(pDev);
 }
 
-void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc)
+void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, int iVector, int iLevel, uint32_t uTagSrc)
 {
     AssertMsg(msixIsEnabled(pDev), ("Must be enabled to use that"));
 
@@ -276,14 +276,14 @@ DECLINLINE(bool) msixBitJustCleared(uint32_t uOldValue,
     return (!!(uOldValue & uMask) && !(uNewValue & uMask));
 }
 
-static void msixCheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev)
+static void msixCheckPendingVectors(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev)
 {
     for (uint32_t i = 0; i < msixTableSize(pDev); i++)
         msixCheckPendingVector(pDevIns, pPciHlp, pDev, i);
 }
 
 
-void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
+void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsixCapOffset;
     Assert(iOff >= 0 && (pciDevIsMsixCapable(pDev) && iOff < pDev->Int.s.u8MsixCapSize));
@@ -329,7 +329,7 @@ void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev
 }
 
 
-uint32_t MsixPciConfigRead(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
+uint32_t MsixPciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, uint32_t u32Address, unsigned len)
 {
     NOREF(pDevIns);
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)

@@ -5399,7 +5399,7 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP, Mapping/unmapping the VRAM MMI2 region}
  */
-static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t iRegion,
+static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF1(cb);

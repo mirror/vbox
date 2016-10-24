@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevPCI - PDM PCI Internal header - Only for hiding bits of PCIDEVICE.
+ * DevPCI - PDM PCI Internal header - Only for hiding bits of PDMPCIDEV.
  */
 
 /*
@@ -107,7 +107,7 @@ enum {
 /**
  * PDM PCI Device - Internal data.
  *
- * @sa PDMPCIDEVICE
+ * @sa PDMPCIDEV
  */
 typedef struct PDMPCIDEVICEINT
 {
@@ -208,7 +208,7 @@ typedef struct PDMPCIDEVICEINT
 AssertCompileMemberAlignment(PDMPCIDEVICEINT, aIORegions, 8);
 AssertCompileSize(PDMPCIDEVICEINT, HC_ARCH_BITS == 32 ? 264 : 384);
 
-/** Indicate that PCIDEVICE::Int.s can be declared. */
+/** Indicate that PDMPCIDEV::Int.s can be declared. */
 #define PDMPCIDEVICEINT_DECLARED
 
 /** @} */

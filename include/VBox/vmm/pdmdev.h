@@ -546,7 +546,7 @@ typedef struct PDMPCIBUSREG
      *
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterR3,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t fFlags,
+    DECLR3CALLBACKMEMBER(int, pfnRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                              uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
 
     /**
@@ -3162,7 +3162,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszName             Device name, if NULL PDMDEVREG::szName is used.
      *                              The pointer is saved, so don't free or changed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIRegister,(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+    DECLR3CALLBACKMEMBER(int, pfnPCIRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
                                               uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
 
     /**
@@ -5194,7 +5194,7 @@ DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev)
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIRegister
  */
-DECLINLINE(int) PDMDevHlpPCIRegisterEx(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+DECLINLINE(int) PDMDevHlpPCIRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
                                        uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
     return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev, idxDevCfg, fFlags, uPciDevNo, uPciFunNo, pszName);

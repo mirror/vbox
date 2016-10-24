@@ -64,7 +64,7 @@
 typedef struct
 {
     /** PCI device structure. */
-    PCIDEVICE      dev;
+    PDMPCIDEV      dev;
 
     /** Pointer to the device instance. - R3 ptr. */
     PPDMDEVINSR3   pDevIns;
