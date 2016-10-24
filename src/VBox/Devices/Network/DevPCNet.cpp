@@ -4953,33 +4953,33 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* PCI Device */
     PCIDevSetVendorId(&pThis->PciDev, 0x1022);
     PCIDevSetDeviceId(&pThis->PciDev, 0x2000);
-    pThis->PciDev.config[0x04] = 0x07; /* command */
-    pThis->PciDev.config[0x05] = 0x00;
-    pThis->PciDev.config[0x06] = 0x80; /* status */
-    pThis->PciDev.config[0x07] = 0x02;
-    pThis->PciDev.config[0x08] = pThis->fAm79C973 ? 0x40 : 0x10; /* revision */
-    pThis->PciDev.config[0x09] = 0x00;
-    pThis->PciDev.config[0x0a] = 0x00; /* ethernet network controller */
-    pThis->PciDev.config[0x0b] = 0x02;
-    pThis->PciDev.config[0x0e] = 0x00; /* header_type */
+    pThis->PciDev.abConfig[0x04] = 0x07; /* command */
+    pThis->PciDev.abConfig[0x05] = 0x00;
+    pThis->PciDev.abConfig[0x06] = 0x80; /* status */
+    pThis->PciDev.abConfig[0x07] = 0x02;
+    pThis->PciDev.abConfig[0x08] = pThis->fAm79C973 ? 0x40 : 0x10; /* revision */
+    pThis->PciDev.abConfig[0x09] = 0x00;
+    pThis->PciDev.abConfig[0x0a] = 0x00; /* ethernet network controller */
+    pThis->PciDev.abConfig[0x0b] = 0x02;
+    pThis->PciDev.abConfig[0x0e] = 0x00; /* header_type */
 
-    pThis->PciDev.config[0x10] = 0x01; /* IO Base */
-    pThis->PciDev.config[0x11] = 0x00;
-    pThis->PciDev.config[0x12] = 0x00;
-    pThis->PciDev.config[0x13] = 0x00;
-    pThis->PciDev.config[0x14] = 0x00; /* MMIO Base */
-    pThis->PciDev.config[0x15] = 0x00;
-    pThis->PciDev.config[0x16] = 0x00;
-    pThis->PciDev.config[0x17] = 0x00;
+    pThis->PciDev.abConfig[0x10] = 0x01; /* IO Base */
+    pThis->PciDev.abConfig[0x11] = 0x00;
+    pThis->PciDev.abConfig[0x12] = 0x00;
+    pThis->PciDev.abConfig[0x13] = 0x00;
+    pThis->PciDev.abConfig[0x14] = 0x00; /* MMIO Base */
+    pThis->PciDev.abConfig[0x15] = 0x00;
+    pThis->PciDev.abConfig[0x16] = 0x00;
+    pThis->PciDev.abConfig[0x17] = 0x00;
 
     /* subsystem and subvendor IDs */
-    pThis->PciDev.config[0x2c] = 0x22; /* subsystem vendor id */
-    pThis->PciDev.config[0x2d] = 0x10;
-    pThis->PciDev.config[0x2e] = 0x00; /* subsystem id */
-    pThis->PciDev.config[0x2f] = 0x20;
-    pThis->PciDev.config[0x3d] = 1;    /* interrupt pin 0 */
-    pThis->PciDev.config[0x3e] = 0x06;
-    pThis->PciDev.config[0x3f] = 0xff;
+    pThis->PciDev.abConfig[0x2c] = 0x22; /* subsystem vendor id */
+    pThis->PciDev.abConfig[0x2d] = 0x10;
+    pThis->PciDev.abConfig[0x2e] = 0x00; /* subsystem id */
+    pThis->PciDev.abConfig[0x2f] = 0x20;
+    pThis->PciDev.abConfig[0x3d] = 1;    /* interrupt pin 0 */
+    pThis->PciDev.abConfig[0x3e] = 0x06;
+    pThis->PciDev.abConfig[0x3f] = 0xff;
 
     /*
      * We use our own critical section (historical reasons).

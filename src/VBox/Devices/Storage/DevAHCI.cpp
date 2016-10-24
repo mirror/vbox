@@ -5866,18 +5866,18 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetInterruptLine(&pThis->dev, 0x00);
     PCIDevSetInterruptPin (&pThis->dev, 0x01);
 
-    pThis->dev.config[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
-    pThis->dev.config[0x71] = 0xa8; /* next */
-    pThis->dev.config[0x72] = 0x03; /* version ? */
+    pThis->dev.abConfig[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
+    pThis->dev.abConfig[0x71] = 0xa8; /* next */
+    pThis->dev.abConfig[0x72] = 0x03; /* version ? */
 
-    pThis->dev.config[0x90] = 0x40; /* AHCI mode. */
-    pThis->dev.config[0x92] = 0x3f;
-    pThis->dev.config[0x94] = 0x80;
-    pThis->dev.config[0x95] = 0x01;
-    pThis->dev.config[0x97] = 0x78;
+    pThis->dev.abConfig[0x90] = 0x40; /* AHCI mode. */
+    pThis->dev.abConfig[0x92] = 0x3f;
+    pThis->dev.abConfig[0x94] = 0x80;
+    pThis->dev.abConfig[0x95] = 0x01;
+    pThis->dev.abConfig[0x97] = 0x78;
 
-    pThis->dev.config[0xa8] = 0x12;                /* SATACR capability */
-    pThis->dev.config[0xa9] = 0x00;                /* next */
+    pThis->dev.abConfig[0xa8] = 0x12;              /* SATACR capability */
+    pThis->dev.abConfig[0xa9] = 0x00;              /* next */
     PCIDevSetWord(&pThis->dev, 0xaa, 0x0010);      /* Revision */
     PCIDevSetDWord(&pThis->dev, 0xac, 0x00000028); /* SATA Capability Register 1 */
 
@@ -6070,7 +6070,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
             /* Mark that a device is present on that port */
             if (i < 6)
-                pThis->dev.config[0x93] |= (1 << i);
+                pThis->dev.abConfig[0x93] |= (1 << i);
 
             /*
              * Init vendor product data.

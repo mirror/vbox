@@ -189,11 +189,11 @@ static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     LPCState   *pThis = PDMINS_2_DATA(pDevIns, LPCState *);
     LogFlow(("lpcInfo: \n"));
 
-    if (pThis->dev.config[0xde] == 0xbe && pThis->dev.config[0xad] == 0xef)
+    if (pThis->dev.abConfig[0xde] == 0xbe && pThis->dev.abConfig[0xad] == 0xef)
         pHlp->pfnPrintf(pHlp, "APIC backdoor activated\n");
     else
         pHlp->pfnPrintf(pHlp, "APIC backdoor closed: %02x %02x\n",
-                        pThis->dev.config[0xde], pThis->dev.config[0xad]);
+                        pThis->dev.abConfig[0xde], pThis->dev.abConfig[0xad]);
 
 
     for (int iLine = 0; iLine < 8; ++iLine)
@@ -245,40 +245,40 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* See p. 427 of ICH9 specification for register description */
 
     /* 40h - 43h PMBASE 40-43 ACPI Base Address */
-    pThis->dev.config[0x40] = 0x01; /* IO space */
-    pThis->dev.config[0x41] = 0x80; /* base address / 128, see DevACPI.cpp */
+    pThis->dev.abConfig[0x40] = 0x01; /* IO space */
+    pThis->dev.abConfig[0x41] = 0x80; /* base address / 128, see DevACPI.cpp */
 
     /* 44h       ACPI_CNTL    ACPI Control */
-    pThis->dev.config[0x44] = 0x00 | (1<<7); /* SCI is IRQ9, ACPI enabled */
+    pThis->dev.abConfig[0x44] = 0x00 | (1<<7); /* SCI is IRQ9, ACPI enabled */
     /* 48h–4Bh   GPIOBASE     GPIO Base Address */
 
     /* 4C        GC           GPIO Control */
-    pThis->dev.config[0x4c] = 0x4d;
+    pThis->dev.abConfig[0x4c] = 0x4d;
     /* ???? */
-    pThis->dev.config[0x4e] = 0x03;
-    pThis->dev.config[0x4f] = 0x00;
+    pThis->dev.abConfig[0x4e] = 0x03;
+    pThis->dev.abConfig[0x4f] = 0x00;
 
     /* 60h-63h PIRQ[n]_ROUT PIRQ[A-D] Routing Control */
-    pThis->dev.config[0x60] = 0x0b; /* PCI A -> IRQ 11 */
-    pThis->dev.config[0x61] = 0x09; /* PCI B -> IRQ 9  */
-    pThis->dev.config[0x62] = 0x0b; /* PCI C -> IRQ 11 */
-    pThis->dev.config[0x63] = 0x09; /* PCI D -> IRQ 9  */
+    pThis->dev.abConfig[0x60] = 0x0b; /* PCI A -> IRQ 11 */
+    pThis->dev.abConfig[0x61] = 0x09; /* PCI B -> IRQ 9  */
+    pThis->dev.abConfig[0x62] = 0x0b; /* PCI C -> IRQ 11 */
+    pThis->dev.abConfig[0x63] = 0x09; /* PCI D -> IRQ 9  */
 
     /* 64h SIRQ_CNTL Serial IRQ Control 10h R/W, RO */
-    pThis->dev.config[0x64] = 0x10;
+    pThis->dev.abConfig[0x64] = 0x10;
 
     /* 68h-6Bh PIRQ[n]_ROUT PIRQ[E-H] Routing Control  */
-    pThis->dev.config[0x68] = 0x80;
-    pThis->dev.config[0x69] = 0x80;
-    pThis->dev.config[0x6A] = 0x80;
-    pThis->dev.config[0x6B] = 0x80;
+    pThis->dev.abConfig[0x68] = 0x80;
+    pThis->dev.abConfig[0x69] = 0x80;
+    pThis->dev.abConfig[0x6A] = 0x80;
+    pThis->dev.abConfig[0x6B] = 0x80;
 
     /* 6C-6Dh     LPC_IBDF  IOxAPIC Bus:Device:Function   00F8h     R/W */
-    pThis->dev.config[0x70] = 0x80;
-    pThis->dev.config[0x76] = 0x0c;
-    pThis->dev.config[0x77] = 0x0c;
-    pThis->dev.config[0x78] = 0x02;
-    pThis->dev.config[0x79] = 0x00;
+    pThis->dev.abConfig[0x70] = 0x80;
+    pThis->dev.abConfig[0x76] = 0x0c;
+    pThis->dev.abConfig[0x77] = 0x0c;
+    pThis->dev.abConfig[0x78] = 0x02;
+    pThis->dev.abConfig[0x79] = 0x00;
     /* 80h        LPC_I/O_DEC I/O Decode Ranges           0000h     R/W */
     /* 82h-83h    LPC_EN   LPC I/F Enables                0000h     R/W */
     /* 84h-87h    GEN1_DEC   LPC I/F Generic Decode Range 1 00000000h   R/W */
@@ -287,18 +287,18 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* 90h-93h    GEN4_DEC LPC I/F Generic Decode Range 4 00000000h R/W */
 
     /* A0h-CFh    Power Management */
-    pThis->dev.config[0xa0] = 0x08;
-    pThis->dev.config[0xa2] = 0x00;
-    pThis->dev.config[0xa3] = 0x00;
-    pThis->dev.config[0xa4] = 0x00;
-    pThis->dev.config[0xa5] = 0x00;
-    pThis->dev.config[0xa6] = 0x00;
-    pThis->dev.config[0xa7] = 0x00;
-    pThis->dev.config[0xa8] = 0x0f;
-    pThis->dev.config[0xaa] = 0x00;
-    pThis->dev.config[0xab] = 0x00;
-    pThis->dev.config[0xac] = 0x00;
-    pThis->dev.config[0xae] = 0x00;
+    pThis->dev.abConfig[0xa0] = 0x08;
+    pThis->dev.abConfig[0xa2] = 0x00;
+    pThis->dev.abConfig[0xa3] = 0x00;
+    pThis->dev.abConfig[0xa4] = 0x00;
+    pThis->dev.abConfig[0xa5] = 0x00;
+    pThis->dev.abConfig[0xa6] = 0x00;
+    pThis->dev.abConfig[0xa7] = 0x00;
+    pThis->dev.abConfig[0xa8] = 0x0f;
+    pThis->dev.abConfig[0xaa] = 0x00;
+    pThis->dev.abConfig[0xab] = 0x00;
+    pThis->dev.abConfig[0xac] = 0x00;
+    pThis->dev.abConfig[0xae] = 0x00;
 
     /* D0h-D3h   FWH_SEL1  Firmware Hub Select 1  */
     /* D4h-D5h   FWH_SEL2  Firmware Hub Select 2 */
@@ -310,10 +310,10 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* E4h-EBh   FDVCT     Feature Vector Description */
 
     /* F0h-F3h RCBA Root Complex Base Address */
-    pThis->dev.config[0xf0] = RT_BYTE1(RCBA_BASE | 1); /* enabled */
-    pThis->dev.config[0xf1] = RT_BYTE2(RCBA_BASE);
-    pThis->dev.config[0xf2] = RT_BYTE3(RCBA_BASE);
-    pThis->dev.config[0xf3] = RT_BYTE4(RCBA_BASE);
+    pThis->dev.abConfig[0xf0] = RT_BYTE1(RCBA_BASE | 1); /* enabled */
+    pThis->dev.abConfig[0xf1] = RT_BYTE2(RCBA_BASE);
+    pThis->dev.abConfig[0xf2] = RT_BYTE3(RCBA_BASE);
+    pThis->dev.abConfig[0xf3] = RT_BYTE4(RCBA_BASE);
 
     rc = PDMDevHlpPCIRegisterEx(pDevIns, &pThis->dev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_NOT_MANDATORY_NO,
                                 31 /*uPciDevNo*/, 0 /*uPciFunNo*/, "lpc");

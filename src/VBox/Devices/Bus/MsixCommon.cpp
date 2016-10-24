@@ -309,11 +309,11 @@ void MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev
             case VBOX_MSIX_CAP_MESSAGE_CONTROL + 1:
             {
                 /* don't change read-only bits 8-13 */
-                u8NewVal = (u8Val & UINT8_C(~0x3f)) | (pDev->config[uAddr] & UINT8_C(0x3f));
+                u8NewVal = (u8Val & UINT8_C(~0x3f)) | (pDev->abConfig[uAddr] & UINT8_C(0x3f));
                 /* If just enabled globally - check pending vectors */
-                fJustEnabled |= msixBitJustCleared(pDev->config[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_ENABLE >> 8);
-                fJustEnabled |= msixBitJustCleared(pDev->config[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_FUNCMASK >> 8);
-                pDev->config[uAddr] = u8NewVal;
+                fJustEnabled |= msixBitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_ENABLE >> 8);
+                fJustEnabled |= msixBitJustCleared(pDev->abConfig[uAddr], u8NewVal, VBOX_PCI_MSIX_FLAGS_FUNCMASK >> 8);
+                pDev->abConfig[uAddr] = u8NewVal;
                 break;
         }
             default:

@@ -258,7 +258,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
     int cmd, i;
     uint32_t last_addr, new_addr, config_ofs;
 
-    cmd = RT_LE2H_U16(*(uint16_t *)(d->config + PCI_COMMAND));
+    cmd = RT_LE2H_U16(*(uint16_t *)(d->abConfig + PCI_COMMAND));
     for(i = 0; i < PCI_NUM_REGIONS; i++) {
         r = &d->Int.s.aIORegions[i];
         if (i == PCI_ROM_SLOT) {
@@ -269,7 +269,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
         if (r->size != 0) {
             if (r->type & PCI_ADDRESS_SPACE_IO) {
                 if (cmd & PCI_COMMAND_IO) {
-                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->config +
+                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->abConfig +
                                                          config_ofs));
                     new_addr = new_addr & ~(r->size - 1);
                     last_addr = new_addr + r->size - 1;
@@ -283,7 +283,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
                 }
             } else {
                 if (cmd & PCI_COMMAND_MEMORY) {
-                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->config +
+                    new_addr = RT_LE2H_U32(*(uint32_t *)(d->abConfig +
                                                          config_ofs));
                     /* the ROM slot has a specific enable bit */
                     if (i == PCI_ROM_SLOT && !(new_addr & 1))
@@ -312,7 +312,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
                         int devclass;
                         /* NOTE: specific hack for IDE in PC case:
                            only one byte must be mapped. */
-                        devclass = d->config[0x0a] | (d->config[0x0b] << 8);
+                        devclass = d->abConfig[0x0a] | (d->abConfig[0x0b] << 8);
                         if (devclass == 0x0101 && r->size == 4) {
                             int rc = PDMDevHlpIOPortDeregister(d->Int.s.CTX_SUFF(pDevIns), r->addr + 2, 1);
                             AssertRC(rc);
@@ -354,14 +354,14 @@ static DECLCALLBACK(uint32_t) pci_default_read_config(PPDMDEVINS pDevIns, PDMPCI
     uint32_t val;
     switch(len) {
     case 1:
-        val = d->config[address];
+        val = d->abConfig[address];
         break;
     case 2:
-        val = RT_LE2H_U16(*(uint16_t *)(d->config + address));
+        val = RT_LE2H_U16(*(uint16_t *)(d->abConfig + address));
         break;
     default:
     case 4:
-        val = RT_LE2H_U32(*(uint32_t *)(d->config + address));
+        val = RT_LE2H_U32(*(uint32_t *)(d->abConfig + address));
         break;
     }
     return val;
@@ -395,7 +395,7 @@ static DECLCALLBACK(void) pci_default_write_config(PPDMDEVINS pDevIns, PDMPCIDEV
             val &= ~(r->size - 1);
             val |= r->type;
         }
-        *(uint32_t *)(d->config + address) = RT_H2LE_U32(val);
+        *(uint32_t *)(d->abConfig + address) = RT_H2LE_U32(val);
         pci_update_mappings(d);
         return;
     }
@@ -404,7 +404,7 @@ static DECLCALLBACK(void) pci_default_write_config(PPDMDEVINS pDevIns, PDMPCIDEV
     addr = address;
     for(i = 0; i < len; i++) {
         /* default read/write accesses */
-        switch(d->config[0x0e]) {
+        switch(d->abConfig[0x0e]) {
         case 0x00: /* normal device */
         case 0x80: /* multi-function device */
             switch(addr) {
@@ -459,26 +459,26 @@ static DECLCALLBACK(void) pci_default_write_config(PPDMDEVINS pDevIns, PDMPCIDEV
         {
             /* don't change reserved bits (11-15) */
             val &= ~UINT32_C(0xf8);
-            d->config[addr] = val;
+            d->abConfig[addr] = val;
         }
         else if (addr == 0x06)  /* Status register, bits 0-7. */
         {
             /* don't change read-only bits => actually all lower bits are read-only */
             val &= ~UINT32_C(0xff);
             /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-            d->config[addr] &= ~val;
+            d->abConfig[addr] &= ~val;
         }
         else if (addr == 0x07)  /* Status register, bits 8-15. */
         {
             /* don't change read-only bits */
             val &= ~UINT32_C(0x06);
             /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-            d->config[addr] &= ~val;
+            d->abConfig[addr] &= ~val;
         }
         else
 #endif
         if (can_write) {
-            d->config[addr] = val;
+            d->abConfig[addr] = val;
         }
         addr++;
         val >>= 8;
@@ -671,8 +671,8 @@ DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
 static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PPCIBUS     pBus =     &pGlobals->PciBus;
-    uint8_t    *pbCfg = pGlobals->PIIX3State.dev.config;
-    const bool  fIsAcpiDevice = pPciDev->config[2] == 0x13 && pPciDev->config[3] == 0x71;
+    uint8_t    *pbCfg = pGlobals->PIIX3State.dev.abConfig;
+    const bool  fIsAcpiDevice = pPciDev->abConfig[2] == 0x13 && pPciDev->abConfig[3] == 0x71;
     /* If the two configuration space bytes at 0xde, 0xad are set to 0xbe, 0xef, a back door
      * is opened to route PCI interrupts directly to the I/O APIC and bypass the PIC.
      * See the \_SB_.PCI0._PRT method in vbox.dsl.
@@ -696,7 +696,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
                  * kludge (i.e. we fetch the hardwired value from ACPIs
                  * PCI device configuration space).
                  */
-                apic_set_irq(pBus, uDevFn, pPciDev, -1, iLevel, pPciDev->config[PCI_INTERRUPT_LINE], uTagSrc);
+                apic_set_irq(pBus, uDevFn, pPciDev, -1, iLevel, pPciDev->abConfig[PCI_INTERRUPT_LINE], uTagSrc);
             else
                 apic_set_irq(pBus, uDevFn, pPciDev, iIrq, iLevel, -1, uTagSrc);
             return;
@@ -705,7 +705,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
         if (fIsAcpiDevice)
         {
             /* As per above treat ACPI in a special way */
-            pic_irq = pPciDev->config[PCI_INTERRUPT_LINE];
+            pic_irq = pPciDev->abConfig[PCI_INTERRUPT_LINE];
             pGlobals->acpi_irq = pic_irq;
             pGlobals->acpi_irq_level = iLevel & PDM_IRQ_LEVEL_HIGH;
         }
@@ -788,8 +788,8 @@ DECLINLINE(PPDMPCIDEV) pciR3FindBridge(PPCIBUS pBus, uint8_t iBus)
         AssertMsg(pBridgeTemp && pciDevIsPci2PciBridge(pBridgeTemp),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
 
-        if (   iBus >= pBridgeTemp->config[VBOX_PCI_SECONDARY_BUS]
-            && iBus <= pBridgeTemp->config[VBOX_PCI_SUBORDINATE_BUS])
+        if (   iBus >= pBridgeTemp->abConfig[VBOX_PCI_SECONDARY_BUS]
+            && iBus <= pBridgeTemp->abConfig[VBOX_PCI_SUBORDINATE_BUS])
             return pBridgeTemp;
     }
 
@@ -799,7 +799,7 @@ DECLINLINE(PPDMPCIDEV) pciR3FindBridge(PPCIBUS pBus, uint8_t iBus)
 
 static void pciR3Piix3Reset(PIIX3State *d)
 {
-    uint8_t *pci_conf = d->dev.config;
+    uint8_t *pci_conf = d->dev.abConfig;
 
     pci_conf[0x04] = 0x07; /* master, memory and I/O */
     pci_conf[0x05] = 0x00;
@@ -1274,7 +1274,7 @@ static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
         if (pDev)
         {
             SSMR3PutU32(pSSM, i);
-            SSMR3PutMem(pSSM, pDev->config, sizeof(pDev->config));
+            SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
 
             int rc = SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
             if (RT_FAILURE(rc))
@@ -1423,7 +1423,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
      * Loop thru the fields covering the 64 bytes of standard registers.
      */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
-    uint8_t *pbDstConfig = &pDev->config[0];
+    uint8_t *pbDstConfig = &pDev->abConfig[0];
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
         if (s_aFields[i].fBridge & fBridge)
         {
@@ -1475,7 +1475,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
      * of the registers, so the device is responsible for correctly
      * restoring functionality governed by these registers.
      */
-    for (uint32_t off = 0x40; off < sizeof(pDev->config); off++)
+    for (uint32_t off = 0x40; off < sizeof(pDev->abConfig); off++)
         if (pbDstConfig[off] != pbSrcConfig[off])
         {
             LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
@@ -1558,7 +1558,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
 
         /* get the data */
         DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
-        SSMR3GetMem(pSSM, DevTmp.config, sizeof(DevTmp.config));
+        SSMR3GetMem(pSSM, DevTmp.abConfig, sizeof(DevTmp.abConfig));
         if (uVersion < 3)
         {
             int32_t i32Temp;
@@ -1587,13 +1587,13 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
         }
 
         /* match the vendor id assuming that this will never be changed. */
-        if (    DevTmp.config[0] != pDev->config[0]
-            ||  DevTmp.config[1] != pDev->config[1])
+        if (   DevTmp.abConfig[0] != pDev->abConfig[0]
+            || DevTmp.abConfig[1] != pDev->abConfig[1])
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
-                                     i, pDev->pszNameR3, DevTmp.config, pDev->config);
+                                    i, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
-        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
+        pciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
     }
@@ -2255,7 +2255,7 @@ static DECLCALLBACK(void) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t i
     LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
+    if (iBus != pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS])
     {
         PPDMPCIDEV pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -2288,7 +2288,7 @@ static DECLCALLBACK(uint32_t) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_
     LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS])
+    if (iBus != pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS])
     {
         PPDMPCIDEV pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -2342,9 +2342,9 @@ static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
 
     /* Reset config space to default values. */
-    pBus->PciDev.config[VBOX_PCI_PRIMARY_BUS] = 0;
-    pBus->PciDev.config[VBOX_PCI_SECONDARY_BUS] = 0;
-    pBus->PciDev.config[VBOX_PCI_SUBORDINATE_BUS] = 0;
+    pBus->PciDev.abConfig[VBOX_PCI_PRIMARY_BUS] = 0;
+    pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS] = 0;
+    pBus->PciDev.abConfig[VBOX_PCI_SUBORDINATE_BUS] = 0;
 }
 
 

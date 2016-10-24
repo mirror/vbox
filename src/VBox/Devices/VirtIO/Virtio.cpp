@@ -618,31 +618,6 @@ void vpciSetReadLed(PVPCISTATE pState, bool fOn)
         pState->led.Actual.s.fReading = fOn;
 }
 
-/**
- * Sets 8-bit register in PCI configuration space.
- * @param   refPciDev   The PCI device.
- * @param   uOffset     The register offset.
- * @param   u16Value    The value to store in the register.
- * @thread  EMT
- */
-DECLINLINE(void) vpciCfgSetU8(PDMPCIDEV& refPciDev, uint32_t uOffset, uint8_t u8Value)
-{
-    Assert(uOffset < sizeof(refPciDev.config));
-    refPciDev.config[uOffset] = u8Value;
-}
-
-/**
- * Sets 16-bit register in PCI configuration space.
- * @param   refPciDev   The PCI device.
- * @param   uOffset     The register offset.
- * @param   u16Value    The value to store in the register.
- * @thread  EMT
- */
-DECLINLINE(void) vpciCfgSetU16(PDMPCIDEV& refPciDev, uint32_t uOffset, uint16_t u16Value)
-{
-    Assert(uOffset+sizeof(u16Value) <= sizeof(refPciDev.config));
-    *(uint16_t*)&refPciDev.config[uOffset] = u16Value;
-}
 
 #if 0 /* unused */
 /**
@@ -806,20 +781,20 @@ static DECLCALLBACK(void) vpciConfigure(PDMPCIDEV& pci,
     /* Configure PCI Device, assume 32-bit mode ******************************/
     PCIDevSetVendorId(&pci, DEVICE_PCI_VENDOR_ID);
     PCIDevSetDeviceId(&pci, DEVICE_PCI_BASE_ID + uDeviceId);
-    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
-    vpciCfgSetU16(pci, VBOX_PCI_SUBSYSTEM_ID, DEVICE_PCI_SUBSYSTEM_BASE_ID + uDeviceId);
+    PDMPciDevSetWord(&pci,  VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
+    PDMPciDevSetWord(&pci,  VBOX_PCI_SUBSYSTEM_ID, DEVICE_PCI_SUBSYSTEM_BASE_ID + uDeviceId);
 
     /* ABI version, must be equal 0 as of 2.6.30 kernel. */
-    vpciCfgSetU8( pci, VBOX_PCI_REVISION_ID,          0x00);
+    PDMPciDevSetByte(&pci,  VBOX_PCI_REVISION_ID,          0x00);
     /* Ethernet adapter */
-    vpciCfgSetU8( pci, VBOX_PCI_CLASS_PROG,           0x00);
-    vpciCfgSetU16(pci, VBOX_PCI_CLASS_DEVICE,       uClass);
+    PDMPciDevSetByte(&pci,  VBOX_PCI_CLASS_PROG,           0x00);
+    PDMPciDevSetWord(&pci,  VBOX_PCI_CLASS_DEVICE,         uClass);
     /* Interrupt Pin: INTA# */
-    vpciCfgSetU8( pci, VBOX_PCI_INTERRUPT_PIN,        0x01);
+    PDMPciDevSetByte(&pci,  VBOX_PCI_INTERRUPT_PIN,        0x01);
 
 #ifdef VBOX_WITH_MSI_DEVICES
-    PCIDevSetCapabilityList     (&pci, 0x80);
-    PCIDevSetStatus             (&pci, VBOX_PCI_STATUS_CAP_LIST);
+    PCIDevSetCapabilityList(&pci, 0x80);
+    PCIDevSetStatus( &pci,  VBOX_PCI_STATUS_CAP_LIST);
 #endif
 }
 

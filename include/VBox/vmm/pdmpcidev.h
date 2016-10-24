@@ -126,15 +126,8 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
  */
 typedef struct PDMPCIDEV
 {
-    union
-    {
-        /** PCI config space. */
-        uint8_t             abConfig[256];
-#ifndef PDMPCIDEVICE_NO_DEPRECATED
-        /** @deprecated Use abConfig! */
-        uint8_t             config[256];
-#endif
-    };
+    /** PCI config space. */
+    uint8_t                 abConfig[256];
 
     /** Internal data. */
     union

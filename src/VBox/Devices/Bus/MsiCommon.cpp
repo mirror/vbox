@@ -49,7 +49,7 @@ DECLINLINE(uint32_t*) msiGetMaskBits(PPDMPCIDEV pDev)
     if (iOff >= pDev->Int.s.u8MsiCapSize)
         return NULL;
     iOff += pDev->Int.s.u8MsiCapOffset;
-    return (uint32_t*)(pDev->config + iOff);
+    return (uint32_t*)(pDev->abConfig + iOff);
 }
 
 DECLINLINE(uint32_t*) msiGetPendingBits(PPDMPCIDEV pDev)
@@ -59,7 +59,7 @@ DECLINLINE(uint32_t*) msiGetPendingBits(PPDMPCIDEV pDev)
     if (iOff >= pDev->Int.s.u8MsiCapSize)
         return NULL;
     iOff += pDev->Int.s.u8MsiCapOffset;
-    return (uint32_t*)(pDev->config + iOff);
+    return (uint32_t*)(pDev->abConfig + iOff);
 }
 
 DECLINLINE(bool) msiIsEnabled(PPDMPCIDEV pDev)
@@ -139,13 +139,13 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV p
             case VBOX_MSI_CAP_MESSAGE_CONTROL:
                 /* don't change read-only bits: 1-3,7 */
                 u8Val &= UINT8_C(~0x8e);
-                pDev->config[uAddr] = u8Val | (pDev->config[uAddr] & UINT8_C(0x8e));
+                pDev->abConfig[uAddr] = u8Val | (pDev->abConfig[uAddr] & UINT8_C(0x8e));
                 break;
             case VBOX_MSI_CAP_MESSAGE_CONTROL + 1:
                 /* don't change read-only bit 8, and reserved 9-15 */
                 break;
             default:
-                if (pDev->config[uAddr] != u8Val)
+                if (pDev->abConfig[uAddr] != u8Val)
                 {
                     int32_t maskUpdated = -1;
 
@@ -174,26 +174,26 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPDMPCIDEV p
                             int32_t iBit = 1 << iBitNum;
                             uint32_t uVector = maskUpdated*8 + iBitNum;
 
-                            if (msiBitJustCleared(pDev->config[uAddr], u8Val, iBit))
+                            if (msiBitJustCleared(pDev->abConfig[uAddr], u8Val, iBit))
                             {
                                 Log(("msi: mask updated bit %d@%x (%d)\n", iBitNum, uAddr, maskUpdated));
 
                                 /* To ensure that we're no longer masked */
-                                pDev->config[uAddr] &= ~iBit;
+                                pDev->abConfig[uAddr] &= ~iBit;
                                 if ((*puPending & (1 << uVector)) != 0)
                                 {
                                     Log(("msi: notify earlier masked pending vector: %d\n", uVector));
                                     MsiNotify(pDevIns, pPciHlp, pDev, uVector, PDM_IRQ_LEVEL_HIGH, 0 /*uTagSrc*/);
                                 }
                             }
-                            if (msiBitJustSet(pDev->config[uAddr], u8Val, iBit))
+                            if (msiBitJustSet(pDev->abConfig[uAddr], u8Val, iBit))
                             {
                                 Log(("msi: mask vector: %d\n", uVector));
                             }
                         }
                     }
 
-                    pDev->config[uAddr] = u8Val;
+                    pDev->abConfig[uAddr] = u8Val;
                 }
         }
         uAddr++;

@@ -7415,9 +7415,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         case CHIPSET_ICH6:
             PCIDevSetDeviceId(&pThis->dev, 0x269e); /* ICH6 IDE */
             /** @todo do we need it? Do we need anything else? */
-            pThis->dev.config[0x48] = 0x00; /* UDMACTL */
-            pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
-            pThis->dev.config[0x4B] = 0x00;
+            pThis->dev.abConfig[0x48] = 0x00; /* UDMACTL */
+            pThis->dev.abConfig[0x4A] = 0x00; /* UDMATIM */
+            pThis->dev.abConfig[0x4B] = 0x00;
             {
                 /*
                  * See www.intel.com/Assets/PDF/manual/298600.pdf p. 30
@@ -7427,16 +7427,16 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                  *   SCR0, SCR1: 80-pin secondary cable reporting for both disks
                  */
                 uint16_t u16Config = (1<<10) | (1<<7)  | (1<<6) | (1<<5) | (1<<4) ;
-                pThis->dev.config[0x54] = u16Config & 0xff;
-                pThis->dev.config[0x55] = u16Config >> 8;
+                pThis->dev.abConfig[0x54] = u16Config & 0xff;
+                pThis->dev.abConfig[0x55] = u16Config >> 8;
             }
             break;
         case CHIPSET_PIIX4:
             PCIDevSetDeviceId(&pThis->dev, 0x7111); /* PIIX4 IDE */
             PCIDevSetRevisionId(&pThis->dev, 0x01); /* PIIX4E */
-            pThis->dev.config[0x48] = 0x00; /* UDMACTL */
-            pThis->dev.config[0x4A] = 0x00; /* UDMATIM */
-            pThis->dev.config[0x4B] = 0x00;
+            pThis->dev.abConfig[0x48] = 0x00; /* UDMACTL */
+            pThis->dev.abConfig[0x4A] = 0x00; /* UDMATIM */
+            pThis->dev.abConfig[0x4B] = 0x00;
             break;
         case CHIPSET_PIIX3:
             PCIDevSetDeviceId(&pThis->dev, 0x7010); /* PIIX3 IDE */

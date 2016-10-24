@@ -1063,7 +1063,7 @@ static int ich9pciR3CommonSaveExec(PICH9PCIBUS pBus, PSSMHANDLE pSSM)
             /* Device position */
             SSMR3PutU32(pSSM, i);
             /* PCI config registers */
-            SSMR3PutMem(pSSM, pDev->config, sizeof(pDev->config));
+            SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
 
             /* Device flags */
             int rc = SSMR3PutU32(pSSM, pDev->Int.s.fFlags);
@@ -1302,7 +1302,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
      */
     uint8_t const fBridge = fIsBridge ? 2 : 1;
     Assert(!pciDevIsPassthrough(pDev));
-    uint8_t *pbDstConfig = &pDev->config[0];
+    uint8_t *pbDstConfig = &pDev->abConfig[0];
 
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
         if (s_aFields[i].fBridge & fBridge)
@@ -1355,7 +1355,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
      * of the registers, so the device is responsible for correctly
      * restoring functionality governed by these registers.
      */
-    for (uint32_t off = 0x40; off < sizeof(pDev->config); off++)
+    for (uint32_t off = 0x40; off < sizeof(pDev->abConfig); off++)
         if (pbDstConfig[off] != pbSrcConfig[off])
         {
             LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
@@ -1448,7 +1448,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PICH9PCIBUS pBus, PSSMHANDLE pS
         DevTmp.Int.s.u8MsixCapOffset = 0;
         DevTmp.Int.s.u8MsixCapSize = 0;
         DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
-        SSMR3GetMem(pSSM, DevTmp.config, sizeof(DevTmp.config));
+        SSMR3GetMem(pSSM, DevTmp.abConfig, sizeof(DevTmp.abConfig));
 
         SSMR3GetU32(pSSM, &DevTmp.Int.s.fFlags);
         SSMR3GetS32(pSSM, &DevTmp.Int.s.uIrqPinState);
@@ -1493,7 +1493,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PICH9PCIBUS pBus, PSSMHANDLE pS
 
         /* commit the loaded device config. */
         Assert(!pciDevIsPassthrough(pDev));
-        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
+        pciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
         pDev->Int.s.u8MsiCapOffset  = DevTmp.Int.s.u8MsiCapOffset;
@@ -2184,13 +2184,13 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
                 /* don't change read-only bits => actually all lower bits are read-only */
                 u8Val &= ~UINT32_C(0xff);
                 /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-                pPciDev->config[addr] &= ~u8Val;
+                pPciDev->abConfig[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                 /* don't change read-only bits */
                 u8Val &= ~UINT32_C(0x06);
                 /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-                pPciDev->config[addr] &= ~u8Val;
+                pPciDev->abConfig[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_ROM_ADDRESS:    case VBOX_PCI_ROM_ADDRESS   +1: case VBOX_PCI_ROM_ADDRESS   +2: case VBOX_PCI_ROM_ADDRESS   +3:
                 fRom = true;
@@ -2610,14 +2610,14 @@ static void ich9pciResetDevice(PPDMPCIDEV pDev)
         if (pciDevIsMsiCapable(pDev))
         {
             /* Extracted from MsiPciConfigWrite(). */
-            pDev->config[pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL] &= 0x8e;
+            pDev->abConfig[pDev->Int.s.u8MsiCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL] &= 0x8e;
         }
 
         /* Reset MSI-X message control. */
         if (pciDevIsMsixCapable(pDev))
         {
             /* Extracted from MsixPciConfigWrite(); no side effects. */
-            pDev->config[pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL + 1] &= 0x3f;
+            pDev->abConfig[pDev->Int.s.u8MsixCapOffset + VBOX_MSIX_CAP_MESSAGE_CONTROL + 1] &= 0x3f;
         }
     }
 }

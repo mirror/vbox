@@ -792,8 +792,8 @@ DECLINLINE(bool) gpe0_level(ACPIState *pThis)
 DECLINLINE(bool) smbus_level(ACPIState *pThis)
 {
     return    (pThis->u8SMBusHstCnt & SMBHSTCNT_INTEREN)
-           && (pThis->dev.config[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
-           && (pThis->dev.config[SMBHSTCFG] & SMBHSTCFG_INTRSEL) == SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT
+           && (pThis->dev.abConfig[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
+           && (pThis->dev.abConfig[SMBHSTCFG] & SMBHSTCFG_INTRSEL) == SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT
            && (pThis->u8SMBusHstSts & SMBHSTSTS_INT_MASK);
 }
 
@@ -1926,10 +1926,10 @@ PDMBOTHCBDECL(int) acpiR3DchrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  */
 static void acpiR3PmPCIBIOSFake(ACPIState *pThis)
 {
-    pThis->dev.config[PMBA  ] = pThis->uPmIoPortBase | 1; /* PMBA, PM base address, bit 0 marks it as IO range */
-    pThis->dev.config[PMBA+1] = pThis->uPmIoPortBase >> 8;
-    pThis->dev.config[PMBA+2] = 0x00;
-    pThis->dev.config[PMBA+3] = 0x00;
+    pThis->dev.abConfig[PMBA  ] = pThis->uPmIoPortBase | 1; /* PMBA, PM base address, bit 0 marks it as IO range */
+    pThis->dev.abConfig[PMBA+1] = pThis->uPmIoPortBase >> 8;
+    pThis->dev.abConfig[PMBA+2] = 0x00;
+    pThis->dev.abConfig[PMBA+3] = 0x00;
 }
 
 /**
@@ -2227,15 +2227,15 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  */
 static void acpiR3SMBusPCIBIOSFake(ACPIState *pThis)
 {
-    pThis->dev.config[SMBBA  ] = pThis->uSMBusIoPortBase | 1; /* SMBBA, SMBus base address, bit 0 marks it as IO range */
-    pThis->dev.config[SMBBA+1] = pThis->uSMBusIoPortBase >> 8;
-    pThis->dev.config[SMBBA+2] = 0x00;
-    pThis->dev.config[SMBBA+3] = 0x00;
-    pThis->dev.config[SMBHSTCFG] = SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT | SMBHSTCFG_SMB_HST_EN; /* SMBHSTCFG */
-    pThis->dev.config[SMBSLVC] = 0x00; /* SMBSLVC */
-    pThis->dev.config[SMBSHDW1] = 0x00; /* SMBSHDW1 */
-    pThis->dev.config[SMBSHDW2] = 0x00; /* SMBSHDW2 */
-    pThis->dev.config[SMBREV] = 0x00; /* SMBREV */
+    pThis->dev.abConfig[SMBBA  ] = pThis->uSMBusIoPortBase | 1; /* SMBBA, SMBus base address, bit 0 marks it as IO range */
+    pThis->dev.abConfig[SMBBA+1] = pThis->uSMBusIoPortBase >> 8;
+    pThis->dev.abConfig[SMBBA+2] = 0x00;
+    pThis->dev.abConfig[SMBBA+3] = 0x00;
+    pThis->dev.abConfig[SMBHSTCFG] = SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT | SMBHSTCFG_SMB_HST_EN; /* SMBHSTCFG */
+    pThis->dev.abConfig[SMBSLVC] = 0x00; /* SMBSLVC */
+    pThis->dev.abConfig[SMBSHDW1] = 0x00; /* SMBSHDW1 */
+    pThis->dev.abConfig[SMBSHDW2] = 0x00; /* SMBSHDW2 */
+    pThis->dev.abConfig[SMBREV] = 0x00; /* SMBREV */
 }
 
 /**
@@ -3300,7 +3300,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pP
     {
         RTIOPORT NewIoPortBase = 0;
         /* Check Power Management IO Space Enable (PMIOSE) bit */
-        if (pPciDev->config[PMREGMISC] & 0x01)
+        if (pPciDev->abConfig[PMREGMISC] & 0x01)
         {
             NewIoPortBase = (RTIOPORT)PCIDevGetDWord(pPciDev, PMBA);
             NewIoPortBase &= 0xffc0;
@@ -3314,7 +3314,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pP
     {
         RTIOPORT NewIoPortBase = 0;
         /* Check SMBus Controller Host Interface Enable (SMB_HST_EN) bit */
-        if (pPciDev->config[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
+        if (pPciDev->abConfig[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
         {
             NewIoPortBase = (RTIOPORT)PCIDevGetDWord(pPciDev, SMBBA);
             NewIoPortBase &= 0xfff0;
