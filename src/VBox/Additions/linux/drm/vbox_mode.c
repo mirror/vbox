@@ -695,7 +695,7 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
         return -EINVAL;
     rc = VBoxQueryConfHGSMI(&vbox->submit_info,
                             VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &caps);
-    ret = -RTErrConvertToErrno(rc);
+    ret = rc == VINF_SUCCESS ? 0 : rc == VERR_NO_MEMORY ? -ENOMEM : -EINVAL;
     if (ret)
         return ret;
     if (!(caps & VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE))
@@ -739,7 +739,10 @@ static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                                                      vbox->cursor_hot_y,
                                                      width, height, dst,
                                                      data_size);
-                    ret = -RTErrConvertToErrno(rc);
+                    ret =   rc == VINF_SUCCESS ? 0
+                          : rc == VERR_NO_MEMORY ? -ENOMEM
+                          : rc == VERR_NOT_SUPPORTED ? -EBUSY
+                          : -EINVAL;
                 }
                 else
                     DRM_ERROR("src cursor bo should be in main memory\n");
@@ -778,7 +781,9 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
                                  y + crtc->y, &host_x, &host_y);
     /* Work around a bug after save and restore in 5.0.20 and earlier. */
     if (RT_FAILURE(rc) || (host_x == 0 && host_y == 0))
-        return -RTErrConvertToErrno(rc);
+        return   rc == VINF_SUCCESS ? 0
+               : rc == VERR_NO_MEMORY ? -ENOMEM
+               : -EINVAL;
     if (x + crtc->x < host_x)
         hot_x = min(host_x - x - crtc->x, vbox->cursor_width);
     if (y + crtc->y < host_y)
@@ -791,5 +796,8 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
                                      vbox->cursor_width, vbox->cursor_height,
                                      vbox->cursor_data,
                                      vbox->cursor_data_size);
-    return -RTErrConvertToErrno(rc);
+    return   rc == VINF_SUCCESS ? 0
+           : rc == VERR_NO_MEMORY ? -ENOMEM
+           : rc == VERR_NOT_SUPPORTED ? -EBUSY
+           : -EINVAL;
 }
