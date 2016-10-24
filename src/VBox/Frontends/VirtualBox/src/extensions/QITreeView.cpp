@@ -29,61 +29,61 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-QITreeView::QITreeView (QWidget *aParent)
-    : QTreeView (aParent)
+QITreeView::QITreeView(QWidget *pParent)
+    : QTreeView(pParent)
 {
     /* Mark header hidden: */
-    setHeaderHidden (true);
+    setHeaderHidden(true);
     /* Mark root hidden: */
-    setRootIsDecorated (false);
+    setRootIsDecorated(false);
 }
 
-void QITreeView::currentChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious)
+void QITreeView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
 {
     /* Notify listeners about it: */
-    emit currentItemChanged (aCurrent, aPrevious);
+    emit currentItemChanged(current, previous);
     /* Call to base-class: */
-    QTreeView::currentChanged (aCurrent, aPrevious);
+    QTreeView::currentChanged(current, previous);
 }
 
-void QITreeView::drawBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex) const
+void QITreeView::drawBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index) const
 {
     /* Notify listeners about it: */
-    emit drawItemBranches (aPainter, aRect, aIndex);
+    emit drawItemBranches(pPainter, rect, index);
     /* Call to base-class: */
-    QTreeView::drawBranches (aPainter, aRect, aIndex);
+    QTreeView::drawBranches(pPainter, rect, index);
 }
 
-void QITreeView::mouseMoveEvent (QMouseEvent *aEvent)
+void QITreeView::mouseMoveEvent(QMouseEvent *pEvent)
 {
     /* Reject event initially: */
-    aEvent->setAccepted (false);
+    pEvent->setAccepted(false);
     /* Notify listeners about event allowing them to handle it: */
-    emit mouseMoved (aEvent);
+    emit mouseMoved(pEvent);
     /* Call to base-class only if event was not yet accepted: */
-    if (!aEvent->isAccepted())
-        QTreeView::mouseMoveEvent (aEvent);
+    if (!pEvent->isAccepted())
+        QTreeView::mouseMoveEvent(pEvent);
 }
 
-void QITreeView::mousePressEvent (QMouseEvent *aEvent)
+void QITreeView::mousePressEvent(QMouseEvent *pEvent)
 {
     /* Reject event initially: */
-    aEvent->setAccepted (false);
+    pEvent->setAccepted(false);
     /* Notify listeners about event allowing them to handle it: */
-    emit mousePressed (aEvent);
+    emit mousePressed(pEvent);
     /* Call to base-class only if event was not yet accepted: */
-    if (!aEvent->isAccepted())
-        QTreeView::mousePressEvent (aEvent);
+    if (!pEvent->isAccepted())
+        QTreeView::mousePressEvent(pEvent);
 }
 
-void QITreeView::mouseDoubleClickEvent (QMouseEvent *aEvent)
+void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {
     /* Reject event initially: */
-    aEvent->setAccepted (false);
+    pEvent->setAccepted(false);
     /* Notify listeners about event allowing them to handle it: */
-    emit mouseDoubleClicked (aEvent);
+    emit mouseDoubleClicked(pEvent);
     /* Call to base-class only if event was not yet accepted: */
-    if (!aEvent->isAccepted())
-        QTreeView::mouseDoubleClickEvent (aEvent);
+    if (!pEvent->isAccepted())
+        QTreeView::mouseDoubleClickEvent(pEvent);
 }
 

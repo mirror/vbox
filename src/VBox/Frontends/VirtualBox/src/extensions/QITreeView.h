@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBox Qt GUI - Qt extensions: QITreeView class declaration.
  */
@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QITreeView_h__
-#define __QITreeView_h__
+#ifndef ___QITreeView_h___
+#define ___QITreeView_h___
 
 /* Qt includes: */
 #include <QTreeView>
@@ -27,49 +27,49 @@ class QITreeView: public QTreeView
 {
     Q_OBJECT;
 
-public:
-
-    /** Constructs table-view passing @a aParent to the base-class. */
-    QITreeView (QWidget *aParent = 0);
-
 signals:
 
-    /** Notifies listeners about index changed from @a aPrevious to @a aCurrent.*/
-    void currentItemChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious);
+    /** Notifies listeners about index changed from @a previous to @a current.*/
+    void currentItemChanged(const QModelIndex &current, const QModelIndex &previous);
 
     /** Notifies listeners about painting of item branches.
-      * @param  aPainter  Brings the painter to draw branches.
-      * @param  aRect     Brings the rectangle embedding branches.
-      * @param  aIndex    Brings the index of the item for which branches will be painted. */
-    void drawItemBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex) const;
+      * @param  pPainter  Brings the painter to draw branches.
+      * @param  rect      Brings the rectangle embedding branches.
+      * @param  index     Brings the index of the item for which branches will be painted. */
+    void drawItemBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index) const;
 
-    /** Notifies listeners about mouse moved @a aEvent. */
-    void mouseMoved (QMouseEvent *aEvent);
-    /** Notifies listeners about mouse pressed @a aEvent. */
-    void mousePressed (QMouseEvent *aEvent);
-    /** Notifies listeners about mouse double-clicked @a aEvent. */
-    void mouseDoubleClicked (QMouseEvent *aEvent);
+    /** Notifies listeners about mouse moved @a pEvent. */
+    void mouseMoved(QMouseEvent *pEvent);
+    /** Notifies listeners about mouse pressed @a pEvent. */
+    void mousePressed(QMouseEvent *pEvent);
+    /** Notifies listeners about mouse double-clicked @a pEvent. */
+    void mouseDoubleClicked(QMouseEvent *pEvent);
+
+public:
+
+    /** Constructs table-view passing @a pParent to the base-class. */
+    QITreeView(QWidget *pParent = 0);
 
 protected slots:
 
-    /** Handles index changed from @a aPrevious to @a aCurrent.*/
-    void currentChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious);
+    /** Handles index changed from @a previous to @a current.*/
+    void currentChanged(const QModelIndex &current, const QModelIndex &previous);
 
 protected:
 
     /** Handles painting of item branches.
-      * @param  aPainter  Brings the painter to draw branches.
-      * @param  aRect     Brings the rectangle embedding branches.
-      * @param  aIndex    Brings the index of the item for which branches will be painted. */
-    void drawBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex) const;
+      * @param  pPainter  Brings the painter to draw branches.
+      * @param  rect      Brings the rectangle embedding branches.
+      * @param  index     Brings the index of the item for which branches will be painted. */
+    void drawBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index) const;
 
-    /** Handles mouse move @a aEvent. */
-    void mouseMoveEvent (QMouseEvent *aEvent);
-    /** Handles mouse press @a aEvent. */
-    void mousePressEvent (QMouseEvent *aEvent);
-    /** Handles mouse double-click @a aEvent. */
-    void mouseDoubleClickEvent (QMouseEvent *aEvent);
+    /** Handles mouse move @a pEvent. */
+    void mouseMoveEvent(QMouseEvent *pEvent);
+    /** Handles mouse press @a pEvent. */
+    void mousePressEvent(QMouseEvent *pEvent);
+    /** Handles mouse double-click @a pEvent. */
+    void mouseDoubleClickEvent(QMouseEvent *pEvent);
 };
 
-#endif /* !__QITreeView_h__ */
+#endif /* !___QITreeView_h___ */
 
