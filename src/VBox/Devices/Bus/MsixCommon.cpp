@@ -199,14 +199,14 @@ int MsixInit(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     /* If device is passthrough, BAR is registered using common mechanism. */
     if (!pciDevIsPassthrough(pDev))
     {
-        rc = PDMDevHlpPCIIORegionRegister(pDev->pDevIns, iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDev->Int.s.CTX_SUFF(pDevIns), iBar, 0x1000, PCI_ADDRESS_SPACE_MEM, msixMap);
         if (RT_FAILURE (rc))
             return rc;
     }
 
     pDev->Int.s.u8MsixCapOffset = iCapOffset;
     pDev->Int.s.u8MsixCapSize   = VBOX_MSIX_CAP_SIZE;
-    PVM pVM = PDMDevHlpGetVM(pDev->pDevIns);
+    PVM pVM = PDMDevHlpGetVM(pDev->Int.s.CTX_SUFF(pDevIns));
 
     pDev->Int.s.pMsixPageR3     = NULL;
 

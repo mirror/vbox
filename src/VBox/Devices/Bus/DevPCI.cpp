@@ -314,24 +314,24 @@ static void pci_update_mappings(PDMPCIDEV *d)
                            only one byte must be mapped. */
                         devclass = d->config[0x0a] | (d->config[0x0b] << 8);
                         if (devclass == 0x0101 && r->size == 4) {
-                            int rc = PDMDevHlpIOPortDeregister(d->pDevIns, r->addr + 2, 1);
+                            int rc = PDMDevHlpIOPortDeregister(d->Int.s.CTX_SUFF(pDevIns), r->addr + 2, 1);
                             AssertRC(rc);
                         } else {
-                            int rc = PDMDevHlpIOPortDeregister(d->pDevIns, r->addr, r->size);
+                            int rc = PDMDevHlpIOPortDeregister(d->Int.s.CTX_SUFF(pDevIns), r->addr, r->size);
                             AssertRC(rc);
                         }
                     } else {
                         RTGCPHYS GCPhysBase = r->addr;
                         int rc;
-                        if (pBus->pPciHlpR3->pfnIsMMIOExBase(pBus->pDevInsR3, d->pDevIns, GCPhysBase))
+                        if (pBus->pPciHlpR3->pfnIsMMIOExBase(pBus->pDevInsR3, d->Int.s.CTX_SUFF(pDevIns), GCPhysBase))
                         {
                             /* unmap it. */
                             rc = r->map_func(d->Int.s.pDevInsR3, d, i, NIL_RTGCPHYS, r->size, (PCIADDRESSSPACE)(r->type));
                             AssertRC(rc);
-                            rc = PDMDevHlpMMIOExUnmap(d->pDevIns, d, i, GCPhysBase);
+                            rc = PDMDevHlpMMIOExUnmap(d->Int.s.CTX_SUFF(pDevIns), d, i, GCPhysBase);
                         }
                         else
-                            rc = PDMDevHlpMMIODeregister(d->pDevIns, GCPhysBase, r->size);
+                            rc = PDMDevHlpMMIODeregister(d->Int.s.CTX_SUFF(pDevIns), GCPhysBase, r->size);
                         AssertMsgRC(rc, ("rc=%Rrc d=%s i=%d GCPhysBase=%RGp size=%#x\n", rc, d->name, i, GCPhysBase, r->size));
                     }
                 }
@@ -518,7 +518,7 @@ static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
+                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice, config_addr, val, len);
             }
 #else
             RT_NOREF2(val, len);
@@ -565,7 +565,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
+                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice, config_addr, len);
             }
 #else
             NOREF(len);
@@ -1457,10 +1457,10 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
                 {
                     if (!s_aFields[i].fWritable)
                         LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x - !READ ONLY!\n",
-                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                                pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                     else
                         LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x\n",
-                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                                pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                 }
                 if (off == VBOX_PCI_COMMAND)
                     PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadExec. */
@@ -1479,7 +1479,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
         if (pbDstConfig[off] != pbSrcConfig[off])
         {
             LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
-                    pDev->name, pDev->pDevIns->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
+                    pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
             pbDstConfig[off] = pbSrcConfig[off];
         }
 }
@@ -1939,7 +1939,7 @@ static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRe
         pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
-            PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PPCIBUS);
+            PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns), PPCIBUS);
             pciR3BusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
         }
     }
@@ -2261,7 +2261,7 @@ static DECLCALLBACK(void) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t i
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice, u32Address, u32Value, cb);
         }
     }
     else
@@ -2294,7 +2294,7 @@ static DECLCALLBACK(uint32_t) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_
         if (pBridgeDevice)
         {
             AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
-            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
+            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice, u32Address, cb);
         }
     }
     else

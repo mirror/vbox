@@ -153,7 +153,7 @@ int main()
     GEN_CHECK_OFF(PDMPCIDEV, config);
     GEN_CHECK_OFF(PDMPCIDEV, devfn);
     GEN_CHECK_OFF(PDMPCIDEV, name);
-    GEN_CHECK_OFF(PDMPCIDEV, pDevIns);
+    GEN_CHECK_OFF(PDMPCIDEV, pvReserved);
     GEN_CHECK_OFF(PDMPCIDEV, Int);
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.aIORegions);
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.aIORegions[1]);

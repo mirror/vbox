@@ -1400,7 +1400,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         }
 
         /* Set some of the public members too. */
-        pPciDev->pDevIns   = pDevIns;
         pPciDev->pszNameR3 = pszName;
 
         /*

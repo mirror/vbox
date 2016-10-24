@@ -6106,8 +6106,8 @@ static void e1kDumpState(PE1KSTATE pThis)
 static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion);
-    PE1KSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, E1KSTATE*);
+    RT_NOREF(pPciDev, iRegion);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE *);
     int       rc;
 
     switch (enmType)

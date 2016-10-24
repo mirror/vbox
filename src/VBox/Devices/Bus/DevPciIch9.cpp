@@ -333,7 +333,7 @@ static int ich9pciDataWriteAddr(PICH9PCIGLOBALS pGlobals, PciAddress* pAddr,
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, pAddr->iBus, pAddr->iDeviceFunc,
+                pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), pAddr->iBus, pAddr->iDeviceFunc,
                                                           pAddr->iRegister, val, cb);
             }
 #else
@@ -446,7 +446,8 @@ static int ich9pciDataReadAddr(PICH9PCIGLOBALS pGlobals, PciAddress* pPciAddr, i
             if (pBridgeDevice)
             {
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, pPciAddr->iBus, pPciAddr->iDeviceFunc, pPciAddr->iRegister, cb);
+                *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), pPciAddr->iBus,
+                                                                 pPciAddr->iDeviceFunc, pPciAddr->iRegister, cb);
             }
             else
                 ich9pciNoMem(pu32, cb);
@@ -1143,7 +1144,8 @@ static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, u32Value, cb);
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
+                                                      u32Address, u32Value, cb);
         }
     }
     else
@@ -1172,7 +1174,8 @@ static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint
         if (pBridgeDevice)
         {
             AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
-            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
+            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
+                                                                u32Address, cb);
         }
         else
             ich9pciNoMem(&u32Value, 4);
@@ -1334,10 +1337,10 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
                 {
                     if (!s_aFields[i].fWritable)
                         LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x - !READ ONLY!\n",
-                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                                pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                     else
                         LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x\n",
-                                pDev->name, pDev->pDevIns->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
+                                pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
                 }
                 if (off == VBOX_PCI_COMMAND)
                     PCIDevSetCommand(pDev, 0); /* For remapping, see ich9pciR3CommonLoadExec. */
@@ -1356,7 +1359,7 @@ static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig
         if (pbDstConfig[off] != pbSrcConfig[off])
         {
             LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
-                    pDev->name, pDev->pDevIns->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
+                    pDev->name, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
             pbDstConfig[off] = pbSrcConfig[off];
         }
 }
@@ -1865,7 +1868,7 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
                     /* OK, found bus this device attached to. */
                     break;
                 }
-                pBus = PDMINS_2_DATA(pBridge->pDevIns, PICH9PCIBUS);
+                pBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PICH9PCIBUS);
             }
 
             /* We need to go up to the host bus to see which irq pin this
@@ -1912,7 +1915,7 @@ static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus
         PPDMPCIDEV pBridge = pBus->papBridgesR3[iBridge];
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
-        PICH9PCIBUS pChildBus = PDMINS_2_DATA(pBridge->pDevIns, PICH9PCIBUS);
+        PICH9PCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PICH9PCIBUS);
         pGlobals->uBus++;
         ich9pciInitBridgeTopology(pGlobals, pChildBus, uBusSecondary, pGlobals->uBus);
     }
@@ -1975,7 +1978,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDE
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
         LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
-                pPciDev->name, pPciDev->pDevIns->iInstance, u32Address));
+                pPciDev->name, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, u32Address));
         return 0;
     }
 
@@ -2074,7 +2077,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
         LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
-                pPciDev->name, pPciDev->pDevIns->iInstance, u32Address));
+                pPciDev->name, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, u32Address));
         return;
     }
 
@@ -2351,7 +2354,7 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
         pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
-            PICH9PCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PICH9PCIBUS);
+            PICH9PCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns), PICH9PCIBUS);
             ich9pciBusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
         }
     }
@@ -2638,7 +2641,7 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         if (pBus->papBridgesR3[iBridge])
-            ich9pcibridgeReset(pBus->papBridgesR3[iBridge]->pDevIns);
+            ich9pcibridgeReset(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns));
     }
 
     ich9pciFakePCIBIOS(pDevIns);

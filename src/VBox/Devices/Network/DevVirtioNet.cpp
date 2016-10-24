@@ -1780,8 +1780,8 @@ static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vnetMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion);
-    PVNETSTATE pThis = PDMINS_2_DATA(pPciDev->pDevIns, PVNETSTATE);
+    RT_NOREF(pPciDev, iRegion);
+    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
     int       rc;
 
     if (enmType != PCI_ADDRESS_SPACE_IO)

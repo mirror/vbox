@@ -169,9 +169,8 @@ typedef struct PDMPCIDEV
         R3PTRTYPE(const char *) name;
 #endif
     };
-    /** Pointer to the device instance which registered the device.
-     * @todo eliminate this one?  */
-    PPDMDEVINSR3            pDevIns;
+    /** Reserved. */
+    RTR3PTR                 pvReserved;
     /** @} */
 } PDMPCIDEV;
 #ifdef PDMPCIDEVICEINT_DECLARED
