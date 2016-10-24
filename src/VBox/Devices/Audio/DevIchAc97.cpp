@@ -567,7 +567,8 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
     PAUDMIXSINK pSink = ichac97IndexToSink(pThis, pStream->u8Strm);
-    AssertPtr(pSink);
+    if (!pSink) /* No sink available (yet)? Bail out early. */
+        return VINF_SUCCESS;
 
     const bool fIsEnabled = AudioMixerSinkGetStatus(pSink) & AUDMIXSINK_STS_RUNNING;
 
@@ -1120,26 +1121,29 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
 
     Log(("-> fMuted=%RTbool, lVol=%RU8, rVol=%RU8\n", fCntlMuted, lVol, rVol));
 
-    int rc;
+    int rc = VINF_SUCCESS;
 
     if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
     {
-        PDMAUDIOVOLUME Vol = { fCntlMuted, lVol, rVol };
+        PDMAUDIOVOLUME Vol   = { fCntlMuted, lVol, rVol };
+        PAUDMIXSINK    pSink = NULL;
+
         switch (enmMixerCtl)
         {
             case PDMAUDIOMIXERCTL_VOLUME_MASTER:
-                rc = AudioMixerSetMasterVolume(pThis->pMixer,    &Vol);
+                rc = AudioMixerSetMasterVolume(pThis->pMixer, &Vol);
                 break;
+
             case PDMAUDIOMIXERCTL_FRONT:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkOut,    &Vol);
+                pSink = pThis->pSinkOut;
                 break;
 
             case PDMAUDIOMIXERCTL_MIC_IN:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkMicIn,  &Vol);
+                pSink = pThis->pSinkMicIn;
                 break;
 
             case PDMAUDIOMIXERCTL_LINE_IN:
-                rc = AudioMixerSinkSetVolume(pThis->pSinkLineIn, &Vol);
+                pSink = pThis->pSinkLineIn;
                 break;
 
             default:
@@ -1147,9 +1151,10 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
                 rc = VERR_NOT_SUPPORTED;
                 break;
         }
+
+        if (pSink)
+            rc = AudioMixerSinkSetVolume(pSink, &Vol);
     }
-    else
-        rc = VINF_SUCCESS;
 
     ichac97MixerSet(pThis, index, uVal);
 
@@ -1941,13 +1946,9 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
     PAC97STREAM pStream = ichac97GetStreamFromID(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
 
-    PAUDMIXSINK pSink   = NULL;
-
     if (pStream)
     {
         pRegs = &pStream->Regs;
-        pSink = ichac97IndexToSink(pThis, pStream->u8Strm);
-        AssertPtr(pSink);
 
         int rc2 = RTCritSectEnter(&pStream->CritSect);
         AssertRC(rc2);
