@@ -3678,7 +3678,7 @@ static void lsilogicR3InitializeConfigurationPages(PLSILOGICSCSI pThis)
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEnabled = true;
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEmbedded = true;
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIBusNumber = 0;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pThis->PciDev.devfn;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pThis->PciDev.uDevFn;
 
     /* I/O Unit page 3. */
     MPT_CONFIG_PAGE_HEADER_INIT_IO_UNIT(&pPages->IOUnitPage3,

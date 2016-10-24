@@ -6202,9 +6202,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->Dev);
     if (RT_FAILURE(rc))
         return rc;
-    /*AssertMsg(pThis->Dev.devfn == 16 || iInstance != 0, ("pThis->Dev.devfn=%d\n", pThis->Dev.devfn));*/
-    if (pThis->Dev.devfn != 16 && iInstance == 0)
-        Log(("!!WARNING!!: pThis->dev.devfn=%d (ignore if testcase or not started by Main)\n", pThis->Dev.devfn));
+    /*AssertMsg(pThis->Dev.uDevFn == 16 || iInstance != 0, ("pThis->Dev.uDevFn=%d\n", pThis->Dev.uDevFn));*/
+    if (pThis->Dev.uDevFn != 16 && iInstance == 0)
+        Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pThis->Dev.uDevFn));
 
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)

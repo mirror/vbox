@@ -304,7 +304,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
                     new_addr = ~0U;
                 }
             }
-            //LogRel(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", d->devfn >> 3, d->devfn & 7, i, r->addr, new_addr, r->size));
+            //LogRel(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", d->uDevFn >> 3, d->uDevFn & 7, i, r->addr, new_addr, r->size));
             /* now do the real mapping */
             if (new_addr != r->addr) {
                 if (r->addr != ~0U) {
@@ -664,9 +664,9 @@ DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
  * @param   uTagSrc         The IRQ tag and source ID (for tracing).
- * @remark  uDevFn and pPciDev->devfn are not the same if the device is behind a bridge.
- *          In that case uDevFn will be the slot of the bridge which is needed to calculate the
- *          PIRQ value.
+ * @remark  uDevFn and pPciDev->uDevFn are not the same if the device is behind
+ *          a bridge. In that case uDevFn will be the slot of the bridge which
+ *          is needed to calculate the PIRQ value.
  */
 static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
@@ -762,7 +762,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
  */
 PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-    pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel, uTagSrc);
+    pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), pPciDev->uDevFn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
 #ifdef IN_RING3
@@ -1748,7 +1748,7 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
         /* Set to trigger level. */
         elcr[irq >> 3] |= (1 << (irq & 7));
         /* Activate irq remapping in PIIX3. */
-        pci_config_writeb(pGlobals, 0, pGlobals->PIIX3State.dev.devfn, 0x60 + i, irq);
+        pci_config_writeb(pGlobals, 0, pGlobals->PIIX3State.dev.uDevFn, 0x60 + i, irq);
     }
 
     /* Tell to the PIC. */
@@ -1788,7 +1788,7 @@ static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     NOREF(pszArgs);
 
-    uint16_t router = pGlobals->PIIX3State.dev.devfn;
+    uint16_t router = pGlobals->PIIX3State.dev.uDevFn;
     pHlp->pfnPrintf(pHlp, "PCI interrupt router at: %02X:%02X:%X\n",
                     router >> 8, (router >> 3) & 0x1f, router & 0x7);
 
@@ -2231,8 +2231,8 @@ PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int 
     /* Walk the chain until we reach the host bus. */
     do
     {
-        uDevFnBridge  = pBus->PciDev.devfn;
-        iIrqPinBridge = ((pPciDevBus->devfn >> 3) + iIrqPinBridge) & 3;
+        uDevFnBridge  = pBus->PciDev.uDevFn;
+        iIrqPinBridge = ((pPciDevBus->uDevFn >> 3) + iIrqPinBridge) & 3;
 
         /* Get the parent. */
         pBus = pBus->PciDev.Int.s.CTX_SUFF(pBus);

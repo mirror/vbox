@@ -207,7 +207,7 @@ DECLINLINE(void) ich9pciStateToPciAddr(PICH9PCIGLOBALS pGlobals, RTGCPHYS addr, 
 PDMBOTHCBDECL(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     LogFlowFunc(("invoked by %p/%d: iIrq=%d iLevel=%d uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, iIrq, iLevel, uTagSrc));
-    ich9pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel, uTagSrc);
+    ich9pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), pPciDev->uDevFn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
 PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
@@ -227,8 +227,8 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
     /* Walk the chain until we reach the host bus. */
     do
     {
-        uDevFnBridge  = pBus->aPciDev.devfn;
-        iIrqPinBridge = ((pPciDevBus->devfn >> 3) + iIrqPinBridge) & 3;
+        uDevFnBridge  = pBus->aPciDev.uDevFn;
+        iIrqPinBridge = ((pPciDevBus->uDevFn >> 3) + iIrqPinBridge) & 3;
 
         /* Get the parent. */
         pBus = pBus->aPciDev.Int.s.CTX_SUFF(pBus);
@@ -937,7 +937,7 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
             } else
                 uNew = INVALID_PCI_ADDRESS;
         }
-        LogRel2(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", pDev->devfn >> 3, pDev->devfn & 7, iRegion, pRegion->addr, uNew, pRegion->size));
+        LogRel2(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", pDev->uDevFn >> 3, pDev->uDevFn & 7, iRegion, pRegion->addr, uNew, pRegion->size));
         /* now do the real mapping */
         if (uNew != pRegion->addr)
         {
@@ -1877,7 +1877,7 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
             while (pBus->iBus != 0)
             {
                 /* Get the pin the device would assert on the bridge. */
-                iPin = ((pBus->aPciDev.devfn >> 3) + iPin) & 3;
+                iPin = ((pBus->aPciDev.uDevFn >> 3) + iPin) & 3;
                 pBus = pBus->aPciDev.Int.s.pBusR3;
             };
         }

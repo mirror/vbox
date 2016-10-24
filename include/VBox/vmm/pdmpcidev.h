@@ -148,16 +148,9 @@ typedef struct PDMPCIDEV
     /** @name Read only data.
      * @{
      */
-    union
-    {
-        /** PCI device number [11:3] and function [2:0] on the pci bus.
-         * @sa VBOX_PCI_DEVFN_MAKE, VBOX_PCI_DEVFN_FUN_MASK, VBOX_PCI_DEVFN_DEV_SHIFT */
-        uint32_t            uDevFn;
-#ifndef PDMPCIDEVICE_NO_DEPRECATED
-        /** @deprecated Use uDevFn! */
-        int32_t             devfn;
-#endif
-    };
+    /** PCI device number [11:3] and function [2:0] on the pci bus.
+     * @sa VBOX_PCI_DEVFN_MAKE, VBOX_PCI_DEVFN_FUN_MASK, VBOX_PCI_DEVFN_DEV_SHIFT */
+    uint32_t                uDevFn;
     uint32_t                Alignment0; /**< Alignment. */
 
     union

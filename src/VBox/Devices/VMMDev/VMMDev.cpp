@@ -4150,8 +4150,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->PciDev.devfn != 32 || iInstance != 0)
-        Log(("!!WARNING!!: pThis->PciDev.devfn=%d (ignore if testcase or no started by Main)\n", pThis->PciDev.devfn));
+    if (pThis->PciDev.uDevFn != 32 || iInstance != 0)
+        Log(("!!WARNING!!: pThis->PciDev.uDevFn=%d (ignore if testcase or no started by Main)\n", pThis->PciDev.uDevFn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
     if (RT_FAILURE(rc))
         return rc;
