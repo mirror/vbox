@@ -107,24 +107,28 @@ typedef struct PCIGLOBALS
 
     /** Value latched in Configuration Address Port (0CF8h) */
     uint32_t            uConfigReg;
-    /** ACPI IRQ level */
-    uint32_t            acpi_irq_level;
-    /** ACPI PIC IRQ */
-    int                 acpi_irq;
     uint32_t            u32Alignment;
 
     /** I/O APIC irq levels */
-    volatile uint32_t   uaPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
+    volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
+    /** Members only used by the PIIX3 code variant. */
+    struct
+    {
+        /** Irq levels for the four PCI Irqs.
+         * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
+         * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+         * @remarks Labling this "legacy" might be a bit off...
+         */
+        volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
 
-    /** Irq levels for the four PCI Irqs.
-     * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
-     * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
-     * @remarks Labling this "legacy" might be a bit off...
-     */
-    volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
+        /** ACPI IRQ level */
+        uint32_t            iAcpiIrqLevel;
+        /** ACPI PIC IRQ */
+        int32_t             iAcpiIrq;
 
-    /** ISA bridge state. */
-    PIIX3               PIIX3State;
+        /** ISA bridge state. */
+        PIIX3               PIIX3State;
+    } Piix3;
 
 #if 1 /* Will be moved into the BIOS "soon". */
     /** The next I/O port address which the PCI BIOS will use. */
@@ -574,23 +578,23 @@ static inline int pci_slot_get_apic_pirq(uint8_t uDevFn, int irq_num)
 
 static inline int get_pci_irq_apic_level(PPCIGLOBALS pGlobals, int irq_num)
 {
-    return (pGlobals->uaPciApicIrqLevels[irq_num] != 0);
+    return (pGlobals->auPciApicIrqLevels[irq_num] != 0);
 }
 
-static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int irq_num1, int iLevel, int acpi_irq, uint32_t uTagSrc)
+static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int irq_num1, int iLevel, int iAcpiIrq, uint32_t uTagSrc)
 {
     /* This is only allowed to be called with a pointer to the host bus. */
     AssertMsg(pBus->iBus == 0, ("iBus=%u\n", pBus->iBus));
 
-    if (acpi_irq == -1) {
+    if (iAcpiIrq == -1) {
         int apic_irq, apic_level;
         PPCIGLOBALS pGlobals = PCIBUS_2_PCIGLOBALS(pBus);
         int irq_num = pci_slot_get_apic_pirq(uDevFn, irq_num1);
 
         if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_HIGH)
-            ASMAtomicIncU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
+            ASMAtomicIncU32(&pGlobals->auPciApicIrqLevels[irq_num]);
         else if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_LOW)
-            ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
+            ASMAtomicDecU32(&pGlobals->auPciApicIrqLevels[irq_num]);
 
         apic_irq = irq_num + 0x10;
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
@@ -599,7 +603,7 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int i
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
-            ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
+            ASMAtomicDecU32(&pGlobals->auPciApicIrqLevels[irq_num]);
             pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
             apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
             Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
@@ -607,15 +611,15 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int i
             pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
         }
     } else {
-        Log3(("apic_set_irq: %s: irq_num1=%d level=%d acpi_irq=%d\n",
-              R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, acpi_irq));
-        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), acpi_irq, iLevel, uTagSrc);
+        Log3(("apic_set_irq: %s: irq_num1=%d level=%d iAcpiIrq=%d\n",
+              R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, iAcpiIrq));
+        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), iAcpiIrq, iLevel, uTagSrc);
     }
 }
 
 DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
 {
-    return (pGlobals->auPciLegacyIrqLevels[irq_num] != 0);
+    return (pGlobals->Piix3.auPciLegacyIrqLevels[irq_num] != 0);
 }
 
 /**
@@ -634,7 +638,7 @@ DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
 static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PPCIBUS     pBus =     &pGlobals->PciBus;
-    uint8_t    *pbCfg = pGlobals->PIIX3State.dev.abConfig;
+    uint8_t    *pbCfg = pGlobals->Piix3.PIIX3State.dev.abConfig;
     const bool  fIsAcpiDevice = pPciDev->abConfig[2] == 0x13 && pPciDev->abConfig[3] == 0x71;
     /* If the two configuration space bytes at 0xde, 0xad are set to 0xbe, 0xef, a back door
      * is opened to route PCI interrupts directly to the I/O APIC and bypass the PIC.
@@ -669,8 +673,8 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
         {
             /* As per above treat ACPI in a special way */
             pic_irq = pPciDev->abConfig[PCI_INTERRUPT_LINE];
-            pGlobals->acpi_irq = pic_irq;
-            pGlobals->acpi_irq_level = iLevel & PDM_IRQ_LEVEL_HIGH;
+            pGlobals->Piix3.iAcpiIrq = pic_irq;
+            pGlobals->Piix3.iAcpiIrqLevel = iLevel & PDM_IRQ_LEVEL_HIGH;
         }
         else
         {
@@ -678,9 +682,9 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
             irq_num = pci_slot_get_pirq(uDevFn, iIrq);
 
             if (pPciDev->Int.s.uIrqPinState == PDM_IRQ_LEVEL_HIGH)
-                ASMAtomicIncU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
+                ASMAtomicIncU32(&pGlobals->Piix3.auPciLegacyIrqLevels[irq_num]);
             else if (pPciDev->Int.s.uIrqPinState == PDM_IRQ_LEVEL_LOW)
-                ASMAtomicDecU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
+                ASMAtomicDecU32(&pGlobals->Piix3.auPciLegacyIrqLevels[irq_num]);
 
             /* now we change the pic irq level according to the piix irq mappings */
             pic_irq = pbCfg[0x60 + irq_num];
@@ -688,7 +692,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
             {
                 if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
                 {
-                    ASMAtomicDecU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
+                    ASMAtomicDecU32(&pGlobals->Piix3.auPciLegacyIrqLevels[irq_num]);
                     pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
                 }
 
@@ -706,8 +710,8 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
             pic_level |= get_pci_irq_level(pGlobals, 2);
         if (pic_irq == pbCfg[0x63])
             pic_level |= get_pci_irq_level(pGlobals, 3);
-        if (pic_irq == pGlobals->acpi_irq)
-            pic_level |= pGlobals->acpi_irq_level;
+        if (pic_irq == pGlobals->Piix3.iAcpiIrq)
+            pic_level |= pGlobals->Piix3.iAcpiIrqLevel;
 
         Log3(("pciSetIrq: %s: iLevel=%d iIrq=%d pic_irq=%d pic_level=%d uTagSrc=%#x\n",
               R3STRING(pPciDev->pszNameR3), iLevel, iIrq, pic_irq, pic_level, uTagSrc));
@@ -1264,13 +1268,13 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Save IRQ states.
      */
-    for (i = 0; i < RT_ELEMENTS(pThis->auPciLegacyIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->auPciLegacyIrqLevels[i]);
-    for (i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
+    for (i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
+        SSMR3PutU32(pSSM, pThis->Piix3.auPciLegacyIrqLevels[i]);
+    for (i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+        SSMR3PutU32(pSSM, pThis->auPciApicIrqLevels[i]);
 
-    SSMR3PutU32(pSSM, pThis->acpi_irq_level);
-    SSMR3PutS32(pSSM, pThis->acpi_irq);
+    SSMR3PutU32(pSSM, pThis->Piix3.iAcpiIrqLevel);
+    SSMR3PutS32(pSSM, pThis->Piix3.iAcpiIrq);
 
     SSMR3PutU32(pSSM, UINT32_MAX);      /* separator */
 
@@ -1591,13 +1595,13 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /* Load IRQ states. */
     if (uVersion > 2)
     {
-        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->auPciLegacyIrqLevels); i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->auPciLegacyIrqLevels[i]);
-        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->uaPciApicIrqLevels[i]);
+        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->Piix3.auPciLegacyIrqLevels[i]);
+        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->auPciApicIrqLevels[i]);
 
-        SSMR3GetU32(pSSM, &pThis->acpi_irq_level);
-        SSMR3GetS32(pSSM, &pThis->acpi_irq);
+        SSMR3GetU32(pSSM, &pThis->Piix3.iAcpiIrqLevel);
+        SSMR3GetS32(pSSM, &pThis->Piix3.iAcpiIrq);
     }
 
     /* separator */
@@ -1710,7 +1714,7 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
         /* Set to trigger level. */
         elcr[irq >> 3] |= (1 << (irq & 7));
         /* Activate irq remapping in PIIX3. */
-        pci_config_writeb(pGlobals, 0, pGlobals->PIIX3State.dev.uDevFn, 0x60 + i, irq);
+        pci_config_writeb(pGlobals, 0, pGlobals->Piix3.PIIX3State.dev.uDevFn, 0x60 + i, irq);
     }
 
     /* Tell to the PIC. */
@@ -1750,7 +1754,7 @@ static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     NOREF(pszArgs);
 
-    uint16_t router = pGlobals->PIIX3State.dev.uDevFn;
+    uint16_t router = pGlobals->Piix3.PIIX3State.dev.uDevFn;
     pHlp->pfnPrintf(pHlp, "PCI interrupt router at: %02X:%02X:%X\n",
                     router >> 8, (router >> 3) & 0x1f, router & 0x7);
 
@@ -1774,7 +1778,7 @@ static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
     pHlp->pfnPrintf(pHlp, "PCI I/O APIC IRQ levels:\n");
     for (int i = 0; i < DEVPCI_APIC_IRQ_PINS; ++i)
-        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->uaPciApicIrqLevels[i]);
+        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->auPciApicIrqLevels[i]);
 }
 
 /**
@@ -1997,9 +2001,9 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     pGlobals->uPciBiosIo   = 0xc000;
     pGlobals->uPciBiosMmio = 0xf0000000;
-    memset((void *)&pGlobals->auPciLegacyIrqLevels, 0, sizeof(pGlobals->auPciLegacyIrqLevels));
+    memset((void *)&pGlobals->Piix3.auPciLegacyIrqLevels, 0, sizeof(pGlobals->Piix3.auPciLegacyIrqLevels));
     pGlobals->fUseIoApic   = fUseIoApic;
-    memset((void *)&pGlobals->uaPciApicIrqLevels, 0, sizeof(pGlobals->uaPciApicIrqLevels));
+    memset((void *)&pGlobals->auPciApicIrqLevels, 0, sizeof(pGlobals->auPciApicIrqLevels));
 
     pGlobals->pDevInsR3 = pDevIns;
     pGlobals->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -2059,15 +2063,15 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertLogRelRCReturn(rc, rc);
 
     /* PIIX3 */
-    PCIDevSetVendorId(  &pGlobals->PIIX3State.dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(  &pGlobals->PIIX3State.dev, 0x7000); /* 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
-    PCIDevSetClassSub(  &pGlobals->PIIX3State.dev,   0x01); /* PCI_ISA */
-    PCIDevSetClassBase( &pGlobals->PIIX3State.dev,   0x06); /* PCI_bridge */
-    PCIDevSetHeaderType(&pGlobals->PIIX3State.dev,   0x80); /* PCI_multifunction, generic */
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pGlobals->PIIX3State.dev, PDMPCIDEVREG_CFG_NEXT, 0 /*fFlags*/,
+    PCIDevSetVendorId(  &pGlobals->Piix3.PIIX3State.dev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  &pGlobals->Piix3.PIIX3State.dev, 0x7000); /* 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
+    PCIDevSetClassSub(  &pGlobals->Piix3.PIIX3State.dev,   0x01); /* PCI_ISA */
+    PCIDevSetClassBase( &pGlobals->Piix3.PIIX3State.dev,   0x06); /* PCI_bridge */
+    PCIDevSetHeaderType(&pGlobals->Piix3.PIIX3State.dev,   0x80); /* PCI_multifunction, generic */
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pGlobals->Piix3.PIIX3State.dev, PDMPCIDEVREG_CFG_NEXT, 0 /*fFlags*/,
                                 1 /*uPciDevNo*/, 0 /*uPciFunNo*/, "PIIX3");
     AssertLogRelRCReturn(rc, rc);
-    pciR3Piix3Reset(&pGlobals->PIIX3State);
+    pciR3Piix3Reset(&pGlobals->Piix3.PIIX3State);
 
     pBus->iDevSearch = 16;
 

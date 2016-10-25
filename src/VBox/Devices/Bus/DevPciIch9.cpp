@@ -81,7 +81,7 @@ typedef struct
     uint64_t            u64PciConfigMMioLength;
 
     /** I/O APIC irq levels */
-    volatile uint32_t   uaPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
+    volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
     /** Value latched in Configuration Address Port (0CF8h) */
     uint32_t            uConfigReg;
 
@@ -537,13 +537,13 @@ static const uint8_t aPciIrqs[4] = { 11, 10, 9, 5 };
 /* Add one more level up request on APIC input line */
 DECLINLINE(void) ich9pciApicLevelUp(PICH9PCIGLOBALS pGlobals, int irq_num)
 {
-    ASMAtomicIncU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
+    ASMAtomicIncU32(&pGlobals->auPciApicIrqLevels[irq_num]);
 }
 
 /* Remove one level up request on APIC input line */
 DECLINLINE(void) ich9pciApicLevelDown(PICH9PCIGLOBALS pGlobals, int irq_num)
 {
-    ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
+    ASMAtomicDecU32(&pGlobals->auPciApicIrqLevels[irq_num]);
 }
 
 static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int irq_num1, int iLevel,
@@ -564,7 +564,7 @@ static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciD
             ich9pciApicLevelDown(pGlobals, irq_num);
 
         apic_irq = irq_num + 0x10;
-        apic_level = pGlobals->uaPciApicIrqLevels[irq_num] != 0;
+        apic_level = pGlobals->auPciApicIrqLevels[irq_num] != 0;
         Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d uTagSrc=%#x\n",
               R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, apic_irq, apic_level, irq_num, uTagSrc));
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
@@ -577,7 +577,7 @@ static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciD
              */
             ich9pciApicLevelDown(pGlobals, irq_num);
             pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
-            apic_level = pGlobals->uaPciApicIrqLevels[irq_num] != 0;
+            apic_level = pGlobals->auPciApicIrqLevels[irq_num] != 0;
             Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d uTagSrc=%#x (flop)\n",
                   R3STRING(pPciDev->pszNameR3), irq_num1, iLevel, apic_irq, apic_level, irq_num, uTagSrc));
             pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
@@ -1085,8 +1085,8 @@ static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Save IRQ states.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+        SSMR3PutU32(pSSM, pThis->auPciApicIrqLevels[i]);
 
     SSMR3PutU32(pSSM, UINT32_MAX);  /* separator */
 
@@ -1503,8 +1503,8 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     /*
      * Load IRQ states.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
-        SSMR3GetU32(pSSM, (uint32_t*)&pThis->uaPciApicIrqLevels[i]);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
+        SSMR3GetU32(pSSM, (uint32_t*)&pThis->auPciApicIrqLevels[i]);
 
     /* separator */
     rc = SSMR3GetU32(pSSM, &u32);
