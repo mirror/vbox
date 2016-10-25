@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DevPci - Common code that is included by both DevPci and DevPciIch9.
+ * DevPci - Early attempt at common code for DevPci and DevPciIch9.
  *
- * @note All the code in this file is written by us!
- * @note No #ifdefs, use instant data booleans/flags/whatever.  Goal is to
- *       completely merge these files!
+ * @note    Don't add more, add code to DevPciIch9.cpp instead.
+ * @note    We'll keep this file like this for a little while longer
+ *          because of 5.1.
  */
 
 /*

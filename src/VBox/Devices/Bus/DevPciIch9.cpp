@@ -2,14 +2,12 @@
 /** @file
  * DevPCI - ICH9 southbridge PCI bus emulation device.
  *
- * @remarks New code is currently added to DevPciMerge1.cpp.h, the goal is
- *          to end up with a large common code base for the two PCI bus
- *          implementations.  The merge file will soon be compiled separately
- *          and not included, so it shall not be used as a template with
- *          \#ifdefs for different PCI bus configs, but rather use config
- *          flags in the structures to select paths & feature sets.
+ * @remarks We'll be slowly promoting the code in this file to common PCI bus
+ *          code.   Function without 'static' and using 'devpci' as prefix is
+ *          also used by DevPCI.cpp and have a prototype in DevPciInternal.h.
  *
- *          When moving code, always prefer the ICH9 version (this file)!
+ *          For the time being the DevPciMerge1.cpp.h file will remain separate,
+ *          due to 5.1.  We can merge it into this one later in the dev cycle.
  */
 
 /*
@@ -2553,33 +2551,43 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     ich9pciFakePCIBIOS(pDevIns);
 }
 
-static void ich9pciRelocateDevice(PPDMPCIDEV pDev, RTGCINTPTR offDelta)
-{
-    if (pDev)
-    {
-        pDev->Int.s.pBusRC += offDelta;
-        if (pDev->Int.s.pMsixPageRC)
-            pDev->Int.s.pMsixPageRC += offDelta;
-    }
-}
 
 /**
- * @copydoc FNPDMDEVRELOCATE
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) ich9pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+DECLCALLBACK(void) devpciR3BusRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS     pBus     = &pGlobals->PciBus;
-    pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
 
-    pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
 
     /* Relocate RC pointers for the attached pci devices. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-        ich9pciRelocateDevice(pBus->apDevices[i], offDelta);
-
+    {
+        PPDMPCIDEV pDev = pBus->apDevices[i];
+        if (pDev)
+        {
+            pDev->Int.s.pBusRC += offDelta;
+            if (pDev->Int.s.pMsixPageRC)
+                pDev->Int.s.pMsixPageRC += offDelta;
+        }
+    }
 }
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnRelocate}
+ */
+DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+
+    AssertCompileMemberOffset(DEVPCIROOT, PciBus, 0);
+    devpciR3BusRelocate(pDevIns, offDelta);
+}
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -2728,18 +2736,6 @@ static void ich9pcibridgeReset(PPDMDEVINS pDevIns)
 }
 
 
-/**
- * @copydoc FNPDMDEVRELOCATE
- */
-static DECLCALLBACK(void) ich9pcibridgeRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* Relocate RC pointers for the attached pci devices. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-        ich9pciRelocateDevice(pBus->apDevices[i], offDelta);
-}
 
 /**
  * The PCI bus device registration structure.
@@ -2769,7 +2765,7 @@ const PDMDEVREG g_DevicePciIch9 =
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    ich9pciRelocate,
+    devpciR3RootRelocate,
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
@@ -2825,7 +2821,7 @@ const PDMDEVREG g_DevicePciIch9Bridge =
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    ich9pcibridgeRelocate,
+    devpciR3BusRelocate,
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */

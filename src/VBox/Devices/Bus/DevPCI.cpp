@@ -2,14 +2,11 @@
 /** @file
  * DevPCI - PCI BUS Device.
  *
- * @remarks New code is currently added to DevPciMerge1.cpp.h, the goal is
- *          to end up with a large common code base for the two PCI bus
- *          implementations.  The merge file will soon be compiled separately
- *          and not included, so it shall not be used as a template with
- *          \#ifdefs for different PCI bus configs, but rather use config
- *          flags in the structures to select paths & feature sets.
- *
- *          When moving code, always prefer the ICH9 version, not this!
+ * @remarks New code shall be added to DevPciIch9.cpp as that will become
+ *          the common PCI bus code soon.  Don't fix code in both DevPCI.cpp
+ *          and DevPciIch9.cpp when it's possible to just make the latter
+ *          version common.   Common code uses the 'devpci' prefix, is
+ *          prototyped in DevPciInternal.h, and is defined in DevPciIch9.cpp.
  */
 
 /*
@@ -1820,26 +1817,6 @@ static DECLCALLBACK(void) pciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
 /* -=-=-=-=-=- PDMDEVREG  -=-=-=-=-=- */
 
-/**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) pciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS     pBus     = &pGlobals->PciBus;
-    pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
-    pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* Relocate RC pointers for the attached pci devices. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-    {
-        if (pBus->apDevices[i])
-            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
-    }
-}
-
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
@@ -2040,7 +2017,7 @@ const PDMDEVREG g_DevicePCI =
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pciR3Relocate,
+    devpciR3RootRelocate,
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */
@@ -2211,23 +2188,6 @@ static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) pcibridgeR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* Relocate RC pointers for the attached pci devices. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
-    {
-        if (pBus->apDevices[i])
-            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
-    }
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -2375,7 +2335,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
-    pcibridgeR3Relocate,
+    devpciR3BusRelocate,
     /* pfnMemSetup */
     NULL,
     /* pfnPowerOn */

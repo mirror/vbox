@@ -180,5 +180,8 @@ typedef DEVPCIROOT *PDEVPCIROOT;
     DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
 
 
+DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+DECLCALLBACK(void) devpciR3BusRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+
 #endif
 
