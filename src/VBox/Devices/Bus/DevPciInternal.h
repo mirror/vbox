@@ -161,5 +161,24 @@ typedef struct DEVPCIROOT
 typedef DEVPCIROOT *PDEVPCIROOT;
 
 
+/** Converts a PCI bus device instance pointer to a DEVPCIBUS pointer. */
+#define DEVINS_2_DEVPCIBUS(pDevIns)     (&PDMINS_2_DATA(pDevIns, PDEVPCIROOT)->PciBus)
+/** Converts a pointer to a PCI bus instance to a DEVPCIROOT pointer. */
+#define DEVPCIBUS_2_DEVPCIROOT(pPciBus) RT_FROM_MEMBER(pPciBus, DEVPCIROOT, PciBus)
+
+/** @def PCI_LOCK
+ * Acquires the PDM lock. This is a NOP if locking is disabled. */
+/** @def PCI_UNLOCK
+ * Releases the PDM lock. This is a NOP if locking is disabled. */
+#define PCI_LOCK(pDevIns, rc) \
+    do { \
+        int rc2 = DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnLock((pDevIns), rc); \
+        if (rc2 != VINF_SUCCESS) \
+            return rc2; \
+    } while (0)
+#define PCI_UNLOCK(pDevIns) \
+    DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
+
+
 #endif
 

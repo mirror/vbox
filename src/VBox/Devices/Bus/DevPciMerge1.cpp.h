@@ -220,7 +220,8 @@ static int pciR3MergedRegisterDeviceOnBus(PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, u
 static DECLCALLBACK(int) pciR3MergedRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                              uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
-    PDEVPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    AssertCompileMemberOffset(DEVPCIROOT, PciBus, 0);
     return pciR3MergedRegisterDeviceOnBus(pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
                                           pciR3UnmergedConfigReadDev, pciR3UnmergedConfigWriteDev);
 }
