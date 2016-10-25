@@ -214,23 +214,6 @@ AssertCompileSize(CmdHdr, 32);
 /** Pointer to a task state. */
 typedef struct AHCIREQ *PAHCIREQ;
 
-/**
- * Data processing callback
- *
- * @returns VBox status code.
- * @param   pAhciReq    The task state.
- * @param   pSgBuf      Buffer holding the data to process.
- * @param   cbBuf       Size of the buffer.
- * @param   offBuf      Offset into the guest buffer.
- * @param   ppvProc     Where to store the pointer to the buffer holding the processed data on success.
- *                      Must be freed with RTMemFree().
- * @param   pcbProc     Where to store the size of the buffer on success.
- */
-typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIREQ pAhciReq, PRTSGBUF pSgBuf, size_t cbBuf,
-                                              uint32_t offBuf, void **ppvProc, size_t *pcbProc);
-/** Pointer to a FNAHCIPOSTPROCESS() function. */
-typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
-
 /** Task encountered a buffer overflow. */
 #define AHCI_REQ_OVERFLOW    RT_BIT_32(0)
 /** Request is a PIO data command, if this flag is not set it either is
@@ -277,10 +260,6 @@ typedef struct AHCIREQ
     uint32_t                   fFlags;
     /** SCSI status code. */
     uint8_t                    u8ScsiSts;
-    /** Post processing callback.
-     * If this is set we will use a buffer for the data
-     * and the callback returns a buffer with the final data. */
-    PFNAHCIPOSTPROCESS         pfnPostProcess;
 } AHCIREQ;
 
 /**
@@ -3363,7 +3342,7 @@ DECLINLINE(uint32_t) ahciGetNSectorsQueued(uint8_t *pCmdFis)
 /**
  * Copy from guest to host memory worker.
  *
- * @copydoc{AHCIR3MEMCOPYCALLBACK}
+ * @copydoc AHCIR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) ahciR3CopyBufferFromGuestWorker(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                           size_t cbCopy, size_t *pcbSkip)
@@ -3388,7 +3367,7 @@ static DECLCALLBACK(void) ahciR3CopyBufferFromGuestWorker(PAHCI pThis, RTGCPHYS 
 /**
  * Copy from host to guest memory worker.
  *
- * @copydoc{AHCIR3MEMCOPYCALLBACK}
+ * @copydoc AHCIR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) ahciR3CopyBufferToGuestWorker(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                         size_t cbCopy, size_t *pcbSkip)
@@ -3670,10 +3649,7 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
                                                    uTag, PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
     if (RT_SUCCESS(rc))
-    {
         pAhciReq->hIoReq = hIoReq;
-        pAhciReq->pfnPostProcess = NULL;
-    }
     else
         pAhciReq = NULL;
     return pAhciReq;
@@ -3791,7 +3767,20 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 ahciReqSetStatus(pAhciReq, 0, ATA_STAT_READY | ATA_STAT_SEEK);
 
             /* Write updated command header into memory of the guest. */
-            uint32_t u32PRDBC = (uint32_t)pAhciReq->cbTransfer;
+            uint32_t u32PRDBC = 0;
+            if (pAhciReq->enmType!= PDMMEDIAEXIOREQTYPE_INVALID)
+            {
+                size_t cbXfer = 0;
+                size_t cbResidual = 0;
+                int rc = pAhciPort->pDrvMediaEx->pfnIoReqQueryXferSize(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq, &cbXfer);
+                AssertRC(rc);
+                rc = pAhciPort->pDrvMediaEx->pfnIoReqQueryResidual(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq, &cbResidual);
+                AssertRC(rc); Assert(cbXfer >= cbResidual);
+                u32PRDBC = (uint32_t)(cbXfer - cbResidual);
+            }
+            else
+                u32PRDBC = (uint32_t)pAhciReq->cbTransfer;
+
             PDMDevHlpPCIPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr + RT_OFFSETOF(CmdHdr, u32PRDBC),
                                   &u32PRDBC, sizeof(u32PRDBC));
 
@@ -3902,20 +3891,7 @@ static DECLCALLBACK(int) ahciR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDM
     int rc = VINF_SUCCESS;
     PAHCIREQ pIoReq = (PAHCIREQ)pvIoReqAlloc;
 
-    if (!pIoReq->pfnPostProcess)
-        ahciR3CopySgBufToPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pSgBuf, offDst, cbCopy);
-    else
-    {
-        /* Post process data and copy afterwards. */
-        void *pv = NULL;
-        size_t cb = 0;
-        rc = pIoReq->pfnPostProcess(pIoReq, pSgBuf, cbCopy, offDst, &pv, &cb);
-        if (RT_SUCCESS(rc))
-        {
-            ahciR3CopyBufferToPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pv, cb, offDst);
-            RTMemFree(pv);
-        }
-    }
+    ahciR3CopySgBufToPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pSgBuf, offDst, cbCopy);
 
     if (pIoReq->fFlags & AHCI_REQ_OVERFLOW)
         rc = VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
@@ -4438,6 +4414,7 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
 
         if (pAhciReq->cPrdtlEntries)
             rc = ahciR3PrdtQuerySize(pAhciPort->CTX_SUFF(pAhci), pAhciReq, &cbBuf);
+        pAhciReq->cbTransfer = cbBuf;
         if (RT_SUCCESS(rc))
         {
             if (cbBuf && (pAhciReq->fFlags & AHCI_REQ_XFER_2_HOST))
