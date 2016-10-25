@@ -320,6 +320,7 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
     PIOBUFMGRINT pThis = hIoBufMgr;
 
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(cbIoBuf > 0, VERR_INVALID_PARAMETER);
 
     if (!pThis->cbFree)
         return VERR_NO_MEMORY;
@@ -351,6 +352,8 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
         pIoBufDesc->Int.cSegsUsed = iSeg;
         pIoBufDesc->Int.pIoBufMgr = pThis;
         *pcbIoBufAllocated = cbIoBuf - cbLeft;
+        Assert(   (RT_SUCCESS(rc) && *pcbIoBufAllocated > 0)
+               || RT_FAILURE(rc));
 
         pThis->cbFree -= cbIoBuf - cbLeft;
 
