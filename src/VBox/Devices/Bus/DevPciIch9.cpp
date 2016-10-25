@@ -88,6 +88,7 @@ DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus);
 static void ich9pciBiosInitDevice(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn);
 #endif
 
+
 // See 7.2.2. PCI Express Enhanced Configuration Mechanism for details of address
 // mapping, we take n=6 approach
 DECLINLINE(void) ich9pciPhysToPciAddr(PDEVPCIROOT pGlobals, RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
