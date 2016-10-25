@@ -212,7 +212,7 @@ SOLARIS_INSTALLER_FILES = \
 # List of kernel module files that are copied from INST_BIN to platform/i86pc/kernel/drv/[amd64/] and stripped of debug info.
 SOLARIS_FILE_LIST_VARS += SOLARIS_DRIVER_BINS
 SOLARIS_DRIVER_BINS.SUBDIRS := no
-SOLARIS_DRIVER_BINS.STRIP   := yes
+SOLARIS_DRIVER_BINS.STRIP   := no
 SOLARIS_DRIVER_BINS.MODE    := 0644
 SOLARIS_DRIVER_BINS.SRC     := $(PATH_STAGE_BIN)
 SOLARIS_DRIVER_BINS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/platform/i86pc/kernel/drv/$(subst x86,,$(KBUILD_TARGET_ARCH))
