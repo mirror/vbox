@@ -730,6 +730,22 @@ typedef struct PDMIMEDIAEX
     DECLR3CALLBACKMEMBER(int, pfnIoReqQueryResidual, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual));
 
     /**
+     * Queries the residual amount of data not transfered when the request completed.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE has not completed yet.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request.
+     * @param   pcbXfer         Where to store the amount of resdiual data in bytes.
+     * @thread  Any thread.
+     *
+     * @note For simple read/write requests this returns the amount to read/write as given to the
+     *       PDMIMEDIAEX::pfnIoReqRead or PDMIMEDIAEX::pfnIoReqWrite call.
+     *       For SCSI commands this returns the transfer size as given in the provided CDB.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQueryXferSize, (PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbXfer));
+
+    /**
      * Cancels all I/O active requests.
      *
      * @returns VBox status code.
@@ -916,7 +932,7 @@ typedef struct PDMIMEDIAEX
 
 } PDMIMEDIAEX;
 /** PDMIMEDIAEX interface ID. */
-#define PDMIMEDIAEX_IID                      "134a5ba9-0d6c-443f-8619-14fea6caaa8d"
+#define PDMIMEDIAEX_IID                      "1f82b709-a9f7-4928-ad50-e879c9bbeba1"
 
 /**
  * Data direction.

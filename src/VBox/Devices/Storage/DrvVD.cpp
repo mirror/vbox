@@ -3401,11 +3401,36 @@ static DECLCALLBACK(int) drvvdIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMED
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     if (   pIoReq->enmType != PDMMEDIAEXIOREQTYPE_READ
-        && pIoReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE)
+        && pIoReq->enmType != PDMMEDIAEXIOREQTYPE_WRITE
+        && pIoReq->enmType != PDMMEDIAEXIOREQTYPE_FLUSH)
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
     *pcbResidual = 0; /* No data left to transfer always. */
     return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryXferSize}
+ */
+static DECLCALLBACK(int) drvvdIoReqQueryXferSize(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbXfer)
+{
+    int rc = VINF_SUCCESS;
+    RT_NOREF1(pInterface);
+
+    PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
+
+    if (pIoReq->enmState != VDIOREQSTATE_COMPLETED)
+        return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
+
+    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+        || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+        *pcbXfer = pIoReq->ReadWrite.cbReq;
+    else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_FLUSH)
+        *pcbXfer = 0;
+    else
+        rc = VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
+
+    return rc;
 }
 
 /**
@@ -4388,6 +4413,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->IMediaEx.pfnIoReqAlloc               = drvvdIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvvdIoReqFree;
     pThis->IMediaEx.pfnIoReqQueryResidual       = drvvdIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqQueryXferSize       = drvvdIoReqQueryXferSize;
     pThis->IMediaEx.pfnIoReqCancelAll           = drvvdIoReqCancelAll;
     pThis->IMediaEx.pfnIoReqCancel              = drvvdIoReqCancel;
     pThis->IMediaEx.pfnIoReqRead                = drvvdIoReqRead;

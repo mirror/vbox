@@ -132,6 +132,10 @@ typedef struct DRVHOSTBASE
  */
 typedef struct DRVHOSTBASEREQ
 {
+    /** Transfer size. */
+    size_t                   cbReq;
+    /** Amount of residual data. */
+    size_t                   cbResidual;
     /** Start of the request data for the device above us. */
     uint8_t                  abAlloc[1];
 } DRVHOSTBASEREQ;

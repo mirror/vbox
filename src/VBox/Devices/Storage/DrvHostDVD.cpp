@@ -565,6 +565,9 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
         void *pvBuf = NULL;
         size_t cbXferCur = cbXfer;
 
+        pReq->cbReq = cbXfer;
+        pReq->cbResidual = cbXfer;
+
         if (cbXfer)
             rc = drvHostBaseBufferRetain(&pThis->Core, pReq, cbXfer, enmXferDir == PDMMEDIATXDIR_TO_DEVICE, &pvBuf);
 
@@ -644,6 +647,8 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                                           cTimeoutMillies /**< @todo timeout */);
                 if (rc != VINF_SUCCESS)
                     break;
+
+                pReq->cbResidual -= cbCurrTX;
                 iATAPILBA += cReqSectors;
                 pbBuf += cbSector * cReqSectors;
             }
@@ -653,6 +658,8 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
             uint32_t cbXferTmp = (uint32_t)cbXferCur;
             rc = drvHostBaseScsiCmdOs(&pThis->Core, pbCdb, cbCdb, enmXferDir, pvBuf, &cbXferTmp,
                                       &pThis->abATAPISense[0], sizeof(pThis->abATAPISense), cTimeoutMillies);
+            if (RT_SUCCESS(rc))
+                pReq->cbResidual -= cbXferTmp;
         }
 
         if (RT_SUCCESS(rc))

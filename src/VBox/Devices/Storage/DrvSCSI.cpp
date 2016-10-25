@@ -788,6 +788,16 @@ static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMM
     return VINF_SUCCESS;
 }
 
+/** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryXferSize} */
+static DECLCALLBACK(int) drvscsiIoReqQueryXferSize(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbXfer)
+{
+    RT_NOREF1(pInterface);
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
+
+    *pcbXfer = pReq->cbBuf; /** @todo: Implement properly. */
+    return VINF_SUCCESS;
+}
+
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancelAll} */
 static DECLCALLBACK(int) drvscsiIoReqCancelAll(PPDMIMEDIAEX pInterface)
 {
@@ -1287,6 +1297,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IMediaEx.pfnIoReqAlloc               = drvscsiIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvscsiIoReqFree;
     pThis->IMediaEx.pfnIoReqQueryResidual       = drvscsiIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqQueryXferSize       = drvscsiIoReqQueryXferSize;
     pThis->IMediaEx.pfnIoReqCancelAll           = drvscsiIoReqCancelAll;
     pThis->IMediaEx.pfnIoReqCancel              = drvscsiIoReqCancel;
     pThis->IMediaEx.pfnIoReqRead                = drvscsiIoReqRead;
