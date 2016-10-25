@@ -171,6 +171,53 @@ typedef struct VSCSIVPDPOOL
 typedef VSCSIVPDPOOL *PVSCSIVPDPOOL;
 
 /**
+ * Supported operation code information entry.
+ */
+typedef struct VSCSILUNSUPOPC
+{
+    /** The operation code. */
+    uint8_t                 u8Opc;
+    /** Service action code if required as indicated by
+     * VSCSI_LUN_SUP_OPC_SVC_ACTION_REQUIRED */
+    uint16_t                u16SvcAction;
+    /** Flags. */
+    uint32_t                fFlags;
+    /** Readable description for the op code. */
+    const char              *pszOpc;
+    /** The length of the CDB for this operation code. */
+    uint8_t                 cbCdb;
+    /** Pointer to the CDB usage data. */
+    uint8_t                 *pbCdbUsage;
+    /* The operation specific valuefor the timeout descriptor. */
+    uint8_t                 u8OpcTimeoutSpec;
+    /** The nominal processing timeout in seconds. */
+    uint16_t                cNominalProcessingTimeout;
+    /** The recommend timeout in seconds. */
+    uint16_t                cRecommendTimeout;
+} VSCSILUNSUPOPC;
+/** Pointer to a operation code information entry. */
+typedef VSCSILUNSUPOPC *PVSCSILUNSUPOPC;
+/** Pointer to a const operation code information entry. */
+typedef const VSCSILUNSUPOPC *PCVSCSILUNSUPOPC;
+
+/** @name Flags for the supported operation code infromation entries.
+ * @{ */
+/** Flag indicating wheter the service action member is valid and should be
+ * evaluated to find the desired opcode information. */
+#define VSCSI_LUN_SUP_OPC_SVC_ACTION_REQUIRED      RT_BIT_32(0)
+/** Flag whether the values for the timeout descriptor are valid. */
+#define VSCSI_LUN_SUP_OPC_TIMEOUT_DESC_VALID       RT_BIT_32(1)
+/** @} */
+
+/** @name Support macros to create supported operation code information entries.
+ * @{ */
+#define VSCSI_LUN_SUP_OPC(a_u8Opc, a_pszOpc, a_cbCdb, a_pbCdbUsage) \
+    { a_u8Opc, 0, 0, a_pszOpc, a_cbCdb, a_pbCdbUsage, 0, 0, 0}
+#define VSCSI_LUN_SUP_OPC_SVC(a_u8Opc, a_u16SvcAction, a_pszOpc, a_cbCdb, a_pbCdbUsage) \
+    { a_u8Opc, a_u16SvcAction, VSCSI_LUN_SUP_OPC_SVC_ACTION_REQUIRED, a_pszOpc, a_cbCdb, a_pbCdbUsage, 0, 0, 0}
+/** @} */
+
+/**
  * Virtual SCSI LUN descriptor.
  */
 typedef struct VSCSILUNDESC
@@ -181,6 +228,13 @@ typedef struct VSCSILUNDESC
     const char          *pcszDescName;
     /** LUN type size */
     size_t               cbLun;
+    /** Number of entries in the supported operation codes array. */
+    uint32_t             cSupOpcInfo;
+    /** Pointer to the array of supported operation codes for the
+     * REPORT RUPPORTED OPERATION CODES command handled by the generic
+     * device driver - optional.
+     */
+    PCVSCSILUNSUPOPC     paSupOpcInfo;
 
     /**
      * Initialise a Lun instance.

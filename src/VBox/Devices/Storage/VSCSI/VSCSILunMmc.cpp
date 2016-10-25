@@ -1321,6 +1321,10 @@ VSCSILUNDESC g_VScsiLunTypeMmc =
     "MMC",
     /** cbLun */
     sizeof(VSCSILUNMMC),
+    /** cSupOpcInfo */
+    0,
+    /** paSupOpcInfo */
+    NULL,
     /** pfnVScsiLunInit */
     vscsiLunMmcInit,
     /** pfnVScsiLunDestroy */

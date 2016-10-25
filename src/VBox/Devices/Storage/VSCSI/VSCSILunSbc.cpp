@@ -587,6 +587,10 @@ VSCSILUNDESC g_VScsiLunTypeSbc =
     "SBC",
     /** cbLun */
     sizeof(VSCSILUNSBC),
+    /** cSupOpcInfo */
+    0,
+    /** paSupOpcInfo */
+    NULL,
     /** pfnVScsiLunInit */
     vscsiLunSbcInit,
     /** pfnVScsiLunDestroy */

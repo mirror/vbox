@@ -119,6 +119,52 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 *prcReq = vscsiReqSenseCmd(&pVScsiDevice->VScsiSense, pVScsiReq);
             break;
         }
+#if 0
+        case SCSI_MAINTENANCE_IN:
+        {
+            if (pVScsiReq->pbCDB[1] == SCSI_MAINTENANCE_IN_REPORT_SUPP_OPC)
+            {
+                /*
+                 * If the LUN is present and has the CDB info set we will execute the command, otherwise
+                 * just fail with an illegal request error.
+                 */
+                if (vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun))
+                {
+                    PVSCSILUNINT pVScsiLun = pVScsiDevice->papVScsiLun[pVScsiReq->iLun];
+                    if (pVScsiLun->pVScsiLunDesc->paSupOpcInfo)
+                    {
+                        bool fTimeoutDesc = RT_BOOL(pVScsiReq->pbCDB[2] & 0x80);
+                        uint8_t u8ReportMode = pVScsiReq->pbCDB[2] & 0x7;
+                        uint8_t u8Opc = pVScsiReq->pbCDB[3];
+                        uint16_t u16SvcAction = vscsiBE2HU16(&pVScsiReq->pbCDB[4]);
+                        uint16_t cbData = vscsiBE2HU16(&pVScsiReq->pbCDB[6]);
+
+                        switch (u8ReportMode)
+                        {
+                            case 0:
+                                *prcReq = vscsiDeviceReportAllSupportedOpc(pVScsiLun, pVScsiReq, fTimeoutDesc, cbData);
+                                break;
+                            case 1:
+                                *prcReq = vscsiDeviceReportOpc(pVScsiLun, pVScsiReq, u8Opc, fTimeoutDesc, cbData);
+                                break;
+                            case 2:
+                                *prcReq = vscsiDeviceReportOpc(pVScsiLun, pVScsiReq, u8Opc, fTimeoutDesc, cbData);
+                                break;
+                            default:
+                                *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq,
+                                                                SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+                        }
+                    }
+                    else
+                        *prcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+                }
+                else
+                    *prcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
+            }
+            else
+                fProcessed = false; /* Might also be the SEND KEY MMC command. */
+        }
+#endif
         default:
             fProcessed = false;
     }
