@@ -115,24 +115,26 @@ DECLINLINE(uint32_t) drvHostDvdMSF2LBA(const uint8_t *pbBuf)
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
 
-static void drvHostDvdCmdOK(PDRVHOSTDVD pThis)
+static uint8_t drvHostDvdCmdOK(PDRVHOSTDVD pThis)
 {
     memset(pThis->abATAPISense, '\0', sizeof(pThis->abATAPISense));
     pThis->abATAPISense[0] = 0x70;
     pThis->abATAPISense[7] = 10;
+    return SCSI_STATUS_OK;
 }
 
-static void drvHostDvdCmdError(PDRVHOSTDVD pThis, const uint8_t *pabATAPISense, size_t cbATAPISense)
+static uint8_t drvHostDvdCmdError(PDRVHOSTDVD pThis, const uint8_t *pabATAPISense, size_t cbATAPISense)
 {
     Log(("%s: sense=%#x (%s) asc=%#x ascq=%#x (%s)\n", __FUNCTION__, pabATAPISense[2] & 0x0f, SCSISenseText(pabATAPISense[2] & 0x0f),
              pabATAPISense[12], pabATAPISense[13], SCSISenseExtText(pabATAPISense[12], pabATAPISense[13])));
     memset(pThis->abATAPISense, '\0', sizeof(pThis->abATAPISense));
     memcpy(pThis->abATAPISense, pabATAPISense, RT_MIN(cbATAPISense, sizeof(pThis->abATAPISense)));
+    return SCSI_STATUS_CHECK_CONDITION;
 }
 
 /** @todo deprecated function - doesn't provide enough info. Replace by direct
  * calls to drvHostDvdCmdError()  with full data. */
-static void drvHostDvdCmdErrorSimple(PDRVHOSTDVD pThis, uint8_t uATAPISenseKey, uint8_t uATAPIASC)
+static uint8_t drvHostDvdCmdErrorSimple(PDRVHOSTDVD pThis, uint8_t uATAPISenseKey, uint8_t uATAPIASC)
 {
     uint8_t abATAPISense[ATAPI_SENSE_SIZE];
     memset(abATAPISense, '\0', sizeof(abATAPISense));
@@ -140,7 +142,7 @@ static void drvHostDvdCmdErrorSimple(PDRVHOSTDVD pThis, uint8_t uATAPISenseKey, 
     abATAPISense[2] = uATAPISenseKey & 0x0f;
     abATAPISense[7] = 10;
     abATAPISense[12] = uATAPIASC;
-    drvHostDvdCmdError(pThis, abATAPISense, sizeof(abATAPISense));
+    return drvHostDvdCmdError(pThis, abATAPISense, sizeof(abATAPISense));
 }
 
 static void drvHostDvdSCSIPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
@@ -442,8 +444,7 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
                 case 0x0e: /* download microcode with offsets and defer activation */
                 case 0x0f: /* activate deferred microcode */
                     LogRel(("HostDVD#%u: CD-ROM passthrough command attempted to update firmware, blocked\n", pThis->Core.pDrvIns->iInstance));
-                    drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
-                    *pu8ScsiSts = SCSI_STATUS_CHECK_CONDITION;
+                    *pu8ScsiSts = drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                     break;
                 default:
                     cbXfer = drvHostDvdBE2H_U16(pbCdb + 6);
@@ -463,13 +464,11 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
              * as the Linux kernel doesn't like it (message "scsi: unknown
              * opcode 0x01" in syslog) and replies with a sense code of 0,
              * which sends cdrecord to an endless loop. */
-            drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-            *pu8ScsiSts = SCSI_STATUS_CHECK_CONDITION;
+            *pu8ScsiSts = drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
         default:
             LogRel(("HostDVD#%u: Passthrough unimplemented for command %#x\n", pThis->Core.pDrvIns->iInstance, pbCdb[0]));
-            drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-            *pu8ScsiSts = SCSI_STATUS_CHECK_CONDITION;
+            *pu8ScsiSts = drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
     }
 
@@ -604,8 +603,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                 default:
                     AssertMsgFailed(("Don't know how to split command %#04x\n", pbCdb[0]));
                     LogRelMax(10, ("HostDVD#%u: CD-ROM passthrough split error\n", pThis->Core.pDrvIns->iInstance));
-                    drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-                    *pu8ScsiSts = SCSI_STATUS_CHECK_CONDITION;
+                    *pu8ScsiSts = drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
                     rc = drvHostBaseBufferRelease(&pThis->Core, pReq, cbBuf, enmXferDir == PDMMEDIATXDIR_TO_DEVICE, pvBuf);
                     RTCritSectLeave(&pThis->Core.CritSect);
                     return VINF_SUCCESS;
@@ -711,8 +709,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                     Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbXferCur, cbXferCur, (uint8_t *)pvBuf));
             }
 
-            drvHostDvdCmdOK(pThis);
-            *pu8ScsiSts = SCSI_STATUS_OK;
+            *pu8ScsiSts = drvHostDvdCmdOK(pThis);
         }
         else
         {
@@ -729,7 +726,6 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                           pThis->Core.pDrvIns->iInstance, pbCdb[0], pThis->abATAPISense[2] & 0x0f,
                           pThis->abATAPISense[12], pThis->abATAPISense[13], rc));
             } while (0);
-            drvHostDvdCmdError(pThis, &pThis->abATAPISense[0], sizeof(pThis->abATAPISense));
             *pu8ScsiSts = SCSI_STATUS_CHECK_CONDITION;
             rc = VINF_SUCCESS;
         }
