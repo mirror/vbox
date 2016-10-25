@@ -182,6 +182,8 @@ typedef DEVPCIROOT *PDEVPCIROOT;
 
 DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 DECLCALLBACK(void) devpciR3BusRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
+DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
+DECLCALLBACK(void) devpciR3InfoPciIrq(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 #endif
 

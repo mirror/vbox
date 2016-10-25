@@ -2127,32 +2127,52 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
 }
 
 
-static void printIndent(PCDBGFINFOHLP pHlp, int iIndent)
+/* -=-=-=-=-=- Debug Info Handlers -=-=-=-=-=- */
+
+/**
+ * Indents an info line.
+ * @param   pHlp                The info helper.
+ * @param   iIndentLvl          The desired indentation level.
+ */
+static void devpciR3InfoIndent(PCDBGFINFOHLP pHlp, unsigned iIndentLvl)
 {
-    for (int i = 0; i < iIndent; i++)
-    {
+    for (unsigned i = 0; i < iIndentLvl; i++)
         pHlp->pfnPrintf(pHlp, "    ");
-    }
 }
 
-static void ich9pciBusInfo(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
+
+/**
+ * Recursive worker for devpciR3InfoPci.
+ *
+ * @param   pBus                The bus to show info for.
+ * @param   pHlp                The info helpers.
+ * @param   iIndentLvl          The indentation level.
+ * @param   fRegisters          Whether to show device registers or not.
+ */
+static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIndentLvl, bool fRegisters)
 {
+/** @todo r=bird: Not sure if we should actually do PCI config space
+ *                callbacks from this code!! */
+
     for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
     {
         PPDMPCIDEV pPciDev = pBus->apDevices[iDev];
         if (pPciDev != NULL)
         {
-            printIndent(pHlp, iIndent);
+            devpciR3InfoIndent(pHlp, iIndentLvl);
 
             /*
              * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
              * as host driver handles real devices interrupts.
              */
-            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x",
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x %s%s%s",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
                             pPciDev->pszNameR3,
                             pciDevIsPassthrough(pPciDev) ? " (PASSTHROUGH)" : "",
-                            ich9pciGetWord(pPciDev, VBOX_PCI_VENDOR_ID), ich9pciGetWord(pPciDev, VBOX_PCI_DEVICE_ID)
+                            ich9pciGetWord(pPciDev, VBOX_PCI_VENDOR_ID), ich9pciGetWord(pPciDev, VBOX_PCI_DEVICE_ID),
+                            pBus->fTypeIch9 ? "ICH9" : pBus->fTypePiix3 ? "PIIX3" : "?type?",
+                            pciDevIsMsiCapable(pPciDev)  ? " MSI" : "",
+                            pciDevIsMsixCapable(pPciDev) ? " MSI-X" : ""
                             );
             if (ich9pciGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN) != 0)
             {
@@ -2163,7 +2183,7 @@ static void ich9pciBusInfo(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, boo
 
             if (pciDevIsMsiCapable(pPciDev) || pciDevIsMsixCapable(pPciDev))
             {
-                printIndent(pHlp, iIndent + 2);
+                devpciR3InfoIndent(pHlp, iIndentLvl + 2);
 
                 if (pciDevIsMsiCapable(pPciDev))
                     pHlp->pfnPrintf(pHlp, "MSI:%s ", MsiIsEnabled(pPciDev) ? "on" : "off");
@@ -2177,15 +2197,15 @@ static void ich9pciBusInfo(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, boo
             uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
             {
-                for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+                for (unsigned iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
                 {
-                    PCIIORegion* pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-                    uint64_t  iRegionSize = pRegion->size;
+                    PCIIORegion const *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
+                    uint64_t const     cbRegion = pRegion->size;
 
-                    if (iRegionSize == 0)
+                    if (cbRegion == 0)
                         continue;
 
-                    uint32_t u32Addr = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion));
+                    uint32_t uAddr = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion));
                     const char * pszDesc;
                     char szDescBuf[128];
 
@@ -2194,53 +2214,49 @@ static void ich9pciBusInfo(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, boo
                     if (pRegion->type & PCI_ADDRESS_SPACE_IO)
                     {
                         pszDesc = "IO";
-                        u32Addr &= ~0x3;
+                        uAddr &= ~0x3;
                     }
                     else
                     {
                         RTStrPrintf(szDescBuf, sizeof(szDescBuf), "MMIO%s%s",
                                     f64Bit ? "64" : "32",
-                                    (pRegion->type & PCI_ADDRESS_SPACE_MEM_PREFETCH) ? " PREFETCH" : "");
+                                    pRegion->type & PCI_ADDRESS_SPACE_MEM_PREFETCH ? " PREFETCH" : "");
                         pszDesc = szDescBuf;
-                        u32Addr &= ~0xf;
+                        uAddr &= ~0xf;
                     }
 
-                    printIndent(pHlp, iIndent + 2);
-                    pHlp->pfnPrintf(pHlp, "%s region #%d: ",pszDesc, iRegion);
+                    devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+                    pHlp->pfnPrintf(pHlp, "%s region #%u: ", pszDesc, iRegion);
                     if (f64Bit)
                     {
                         uint32_t u32High = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion+1));
-                        uint64_t u64Addr = RT_MAKE_U64(u32Addr, u32High);
-                        pHlp->pfnPrintf(pHlp, "%RX64..%RX64\n", u64Addr, u64Addr+iRegionSize);
+                        uint64_t u64Addr = RT_MAKE_U64(uAddr, u32High);
+                        pHlp->pfnPrintf(pHlp, "%RX64..%RX64\n", u64Addr, u64Addr + cbRegion);
                         iRegion++;
                     }
                     else
-                        pHlp->pfnPrintf(pHlp, "%x..%x\n", u32Addr, u32Addr+iRegionSize);
+                        pHlp->pfnPrintf(pHlp, "%x..%x\n", uAddr, uAddr + (uint32_t)cbRegion);
                 }
             }
 
-            printIndent(pHlp, iIndent + 2);
+            devpciR3InfoIndent(pHlp, iIndentLvl + 2);
             uint16_t iStatus = ich9pciGetWord(pPciDev, VBOX_PCI_STATUS);
-            pHlp->pfnPrintf(pHlp, "Command: %04X, Status: %04X\n",
-                            iCmd, iStatus);
-            printIndent(pHlp, iIndent + 2);
-            pHlp->pfnPrintf(pHlp, "Bus master: %s\n",
-                            iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
+            pHlp->pfnPrintf(pHlp, "Command: %04X, Status: %04x\n", iCmd, iStatus);
+            devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+            pHlp->pfnPrintf(pHlp, "Bus master: %s\n", iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
 
             if (fRegisters)
             {
-                printIndent(pHlp, iIndent + 2);
+                devpciR3InfoIndent(pHlp, iIndentLvl + 2);
                 pHlp->pfnPrintf(pHlp, "PCI registers:\n");
-                for (int iReg = 0; iReg < 0x100; )
+                for (unsigned iReg = 0; iReg < 0x100; )
                 {
-                    int iPerLine = 0x10;
-                    Assert (0x100 % iPerLine == 0);
-                    printIndent(pHlp, iIndent + 3);
+                    unsigned iPerLine = 0x10;
+                    Assert(0x100 % iPerLine == 0);
+                    devpciR3InfoIndent(pHlp, iIndentLvl + 3);
 
                     while (iPerLine-- > 0)
-                    {
                         pHlp->pfnPrintf(pHlp, "%02x ", ich9pciGetByte(pPciDev, iReg++));
-                    }
                     pHlp->pfnPrintf(pHlp, "\n");
                 }
             }
@@ -2249,40 +2265,46 @@ static void ich9pciBusInfo(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, boo
 
     if (pBus->cBridges > 0)
     {
-        printIndent(pHlp, iIndent);
+        devpciR3InfoIndent(pHlp, iIndentLvl);
         pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
             PDEVPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
-            ich9pciBusInfo(pBusSub, pHlp, iIndent + 1, fRegisters);
+            devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
     }
 }
 
+
 /**
- * Info handler, device version.
- *
- * @param   pDevIns     Device instance which registered the info.
- * @param   pHlp        Callback functions for doing output.
- * @param   pszArgs     Argument string. Optional and specific to the handler.
+ * @callback_method_impl{FNDBGFHANDLERDEV, 'pci'}
  */
-static DECLCALLBACK(void) ich9pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPCIBUS pBus = DEVINS_2_DEVPCIBUS(pDevIns);
 
-    if (pszArgs == NULL || !strcmp(pszArgs, "basic"))
-    {
-        ich9pciBusInfo(pBus, pHlp, 0, false);
-    }
+    if (pszArgs == NULL || !*pszArgs || !strcmp(pszArgs, "basic"))
+        devpciR3InfoPciBus(pBus, pHlp, 0 /*iIndentLvl*/, false /*fRegisters*/);
     else if (!strcmp(pszArgs, "verbose"))
-    {
-        ich9pciBusInfo(pBus, pHlp, 0, true);
-    }
+        devpciR3InfoPciBus(pBus, pHlp, 0 /*iIndentLvl*/, true /*fRegisters*/);
     else
-    {
         pHlp->pfnPrintf(pHlp, "Invalid argument. Recognized arguments are 'basic', 'verbose'.\n");
-    }
 }
+
+
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, 'pciirq'}
+ */
+DECLCALLBACK(void) devpciR3InfoPciIrq(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    NOREF(pszArgs);
+
+    pHlp->pfnPrintf(pHlp, "PCI I/O APIC IRQ levels:\n");
+    for (int i = 0; i < DEVPCI_APIC_IRQ_PINS; ++i)
+        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->auPciApicIrqLevels[i]);
+}
+
 
 
 static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE  pCfg)
@@ -2470,8 +2492,10 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /** @todo other chipset devices shall be registered too */
 
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. Recognizes 'basic' or 'verbose' "
-                                              "as arguments, defaults to 'basic'.", ich9pciInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pci",
+                              "Display PCI bus status. Recognizes 'basic' or 'verbose' as arguments, defaults to 'basic'.",
+                              devpciR3InfoPci);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ state. (no arguments)", devpciR3InfoPciIrq);
 
     return VINF_SUCCESS;
 }
