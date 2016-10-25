@@ -84,6 +84,82 @@ typedef DEVPCIBUS *PDEVPCIBUS;
  */
 #define DEVPCI_LEGACY_IRQ_PINS  4
 
+/**
+ * PIIX3 ISA bridge state.
+ */
+typedef struct PIIX3ISABRIDGE
+{
+    /** The PCI device of the bridge. */
+    PDMPCIDEV dev;
+} PIIX3ISABRIDGE;
+
+
+/**
+ * PCI Globals - This is the host-to-pci bridge and the root bus.
+ *
+ * @note Only used by the root bus, not the bridges.
+ */
+typedef struct DEVPCIROOT
+{
+    /** PCI bus which is attached to the host-to-PCI bridge.
+     * @note This must come first so we can share more code with the bridges!  */
+    DEVPCIBUS           PciBus;
+
+    /** R3 pointer to the device instance. */
+    PPDMDEVINSR3        pDevInsR3;
+    /** R0 pointer to the device instance. */
+    PPDMDEVINSR0        pDevInsR0;
+    /** RC pointer to the device instance. */
+    PPDMDEVINSRC        pDevInsRC;
+
+    /** I/O APIC usage flag (always true of ICH9, see constructor). */
+    bool                fUseIoApic;
+    /** Reserved for future config flags. */
+    bool                afFutureFlags[3];
+    /** Physical address of PCI config space MMIO region. */
+    uint64_t            u64PciConfigMMioAddress;
+    /** Length of PCI config space MMIO region. */
+    uint64_t            u64PciConfigMMioLength;
+
+    /** I/O APIC irq levels */
+    volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
+    /** Value latched in Configuration Address Port (0CF8h) */
+    uint32_t            uConfigReg;
+    /** Alignment padding.   */
+    uint32_t            u32Alignment1;
+    /** Members only used by the PIIX3 code variant. */
+    struct
+    {
+        /** ACPI IRQ level */
+        uint32_t            iAcpiIrqLevel;
+        /** ACPI PIC IRQ */
+        int32_t             iAcpiIrq;
+        /** Irq levels for the four PCI Irqs.
+         * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
+         * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+         * @remarks Labling this "legacy" might be a bit off...
+         */
+        volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
+        /** ISA bridge state. */
+        PIIX3ISABRIDGE      PIIX3State;
+    } Piix3;
+
+#if 1 /* Will be moved into the BIOS "soon". */
+    /** Current bus number (?). */
+    uint8_t             uPciBiosBus;
+    uint8_t             abAlignment2[7];
+    /** The next I/O port address which the PCI BIOS will use. */
+    uint32_t            uPciBiosIo;
+    /** The next MMIO address which the PCI BIOS will use. */
+    uint32_t            uPciBiosMmio;
+    /** The next 64-bit MMIO address which the PCI BIOS will use. */
+    uint64_t            uPciBiosMmio64;
+#endif
+
+} DEVPCIROOT;
+/** Pointer to PCI device globals. */
+typedef DEVPCIROOT *PDEVPCIROOT;
+
 
 #endif
 

@@ -51,53 +51,12 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef DEVPCIBUS  ICH9PCIBUS;
-typedef PDEVPCIBUS PICH9PCIBUS;
+typedef DEVPCIBUS     ICH9PCIBUS;
+typedef PDEVPCIBUS    PICH9PCIBUS;
+typedef DEVPCIROOT    ICH9PCIGLOBALS;
+typedef PDEVPCIROOT   PICH9PCIGLOBALS;
 
 
-/**
- * PCI Globals - This is the host-to-pci bridge and the root bus.
- */
-typedef struct
-{
-    /** PCI bus which is attached to the host-to-PCI bridge.
-     * This must come first so we can share more code with the bridges!  */
-    DEVPCIBUS           PciBus;
-
-    /** R3 pointer to the device instance. */
-    PPDMDEVINSR3        pDevInsR3;
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0        pDevInsR0;
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC        pDevInsRC;
-
-    /** I/O APIC usage flag (always true of ICH9, see constructor). */
-    bool                fUseIoApic;
-    /** Reserved for future config flags. */
-    bool                afFutureFlags[3];
-    /** Physical address of PCI config space MMIO region. */
-    uint64_t            u64PciConfigMMioAddress;
-    /** Length of PCI config space MMIO region. */
-    uint64_t            u64PciConfigMMioLength;
-
-    /** I/O APIC irq levels */
-    volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
-    /** Value latched in Configuration Address Port (0CF8h) */
-    uint32_t            uConfigReg;
-
-#if 1 /* Will be moved into the BIOS "soon". */
-    /** Current bus number (?). */
-    uint8_t             uPciBiosBus;
-    uint8_t             Alignment0[3];
-    /** The next I/O port address which the PCI BIOS will use. */
-    uint32_t            uPciBiosIo;
-    /** The next MMIO address which the PCI BIOS will use. */
-    uint32_t            uPciBiosMmio;
-    /** The next 64-bit MMIO address which the PCI BIOS will use. */
-    uint64_t            uPciBiosMmio64;
-#endif
-
-} ICH9PCIGLOBALS, *PICH9PCIGLOBALS;
 
 
 /**

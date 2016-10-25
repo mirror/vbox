@@ -28,9 +28,7 @@
 #define VBOX_WITH_HGCM                  /* grumble */
 #define VBOX_DEVICE_STRUCT_TESTCASE
 #undef LOG_GROUP
-#include "../Bus/DevPCI.cpp"
-#undef LOG_GROUP
-#include "../Bus/DevPciIch9.cpp"
+#include "../Bus/DevPciInternal.h"
 #undef LOG_GROUP
 #include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
@@ -361,7 +359,8 @@ int main()
 # endif
 #endif
     CHECK_MEMBER_ALIGNMENT(DEVPCIBUS, apDevices, 64);
-//    CHECK_MEMBER_ALIGNMENT(PCIGLOBALS, Piix3.auPciLegacyIrqLevels, 16); - reenable later
+    CHECK_MEMBER_ALIGNMENT(DEVPCIROOT, auPciApicIrqLevels, 16);
+    CHECK_MEMBER_ALIGNMENT(DEVPCIROOT, Piix3.auPciLegacyIrqLevels, 16);
     CHECK_MEMBER_ALIGNMENT(PCNETSTATE, u64LastPoll, 8);
     CHECK_MEMBER_ALIGNMENT(PCNETSTATE, CritSect, 8);
     CHECK_MEMBER_ALIGNMENT(PCNETSTATE, StatReceiveBytes, 8);

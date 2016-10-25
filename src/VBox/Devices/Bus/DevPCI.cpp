@@ -70,80 +70,10 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-typedef DEVPCIBUS  PCIBUS;
-typedef PDEVPCIBUS PPCIBUS;
-
-
-/**
- * PIIX3 ISA Bridge state.
- */
-typedef struct PIIX3State
-{
-    /** The PCI device of the bridge. */
-    PDMPCIDEV dev;
-} PIIX3State, PIIX3, *PPIIX3;
-
-
-/**
- * PCI Globals - This is the host-to-pci bridge and the root bus.
- */
-typedef struct PCIGLOBALS
-{
-    /** PCI bus which is attached to the host-to-PCI bridge.
-     * This must come first!  */
-    DEVPCIBUS           PciBus;
-
-    /** R3 pointer to the device instance. */
-    PPDMDEVINSR3        pDevInsR3;
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0        pDevInsR0;
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC        pDevInsRC;
-
-    /** I/O APIC usage flag */
-    bool                fUseIoApic;
-    /** Reserved for future config flags. */
-    bool                afFutureFlags[3];
-
-    /** Value latched in Configuration Address Port (0CF8h) */
-    uint32_t            uConfigReg;
-    uint32_t            u32Alignment;
-
-    /** I/O APIC irq levels */
-    volatile uint32_t   auPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
-    /** Members only used by the PIIX3 code variant. */
-    struct
-    {
-        /** Irq levels for the four PCI Irqs.
-         * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
-         * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
-         * @remarks Labling this "legacy" might be a bit off...
-         */
-        volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
-
-        /** ACPI IRQ level */
-        uint32_t            iAcpiIrqLevel;
-        /** ACPI PIC IRQ */
-        int32_t             iAcpiIrq;
-
-        /** ISA bridge state. */
-        PIIX3               PIIX3State;
-    } Piix3;
-
-#if 1 /* Will be moved into the BIOS "soon". */
-    /** The next I/O port address which the PCI BIOS will use. */
-    uint32_t            uPciBiosIo;
-    /** The next MMIO address which the PCI BIOS will use. */
-    uint32_t            uPciBiosMmio;
-    /** Actual bus number. */
-    uint8_t             uBus;
-    uint8_t             uAlignment0[7];
-#endif
-
-} PCIGLOBALS;
-/** Pointer to per VM data. */
-typedef PCIGLOBALS *PPCIGLOBALS;
-
+typedef DEVPCIBUS       PCIBUS;
+typedef PDEVPCIBUS      PPCIBUS;
+typedef DEVPCIROOT      PCIGLOBALS;
+typedef PDEVPCIROOT     PPCIGLOBALS;
 
 
 /*********************************************************************************************************************************
@@ -764,7 +694,7 @@ DECLINLINE(PPDMPCIDEV) pciR3FindBridge(PPCIBUS pBus, uint8_t iBus)
     return NULL;
 }
 
-static void pciR3Piix3Reset(PIIX3State *d)
+static void pciR3Piix3Reset(PIIX3ISABRIDGE *d)
 {
     uint8_t *pci_conf = d->dev.abConfig;
 
@@ -951,9 +881,9 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                 /* Init PCI-to-PCI bridge. */
                 pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_PRIMARY_BUS, uBus);
 
-                AssertMsg(pGlobals->uBus < 255, ("Too many bridges on the bus\n"));
-                pGlobals->uBus++;
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, pGlobals->uBus);
+                AssertMsg(pGlobals->uPciBiosBus < 255, ("Too many bridges on the bus\n"));
+                pGlobals->uPciBiosBus++;
+                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, pGlobals->uPciBiosBus);
                 pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, 0xff); /* Temporary until we know how many other bridges are behind this one. */
 
                 /* Add position of this bridge into the array. */
@@ -984,7 +914,7 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                     pci_bios_init_device(pGlobals, uBus + 1, iDev, cBridgeDepth + 1, paBridgePositions);
 
                 /* The number of bridges behind the this one is now available. */
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus);
+                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uPciBiosBus);
 
                 /*
                  * Set I/O limit register. If there is no device with I/O space behind the bridge
@@ -1701,9 +1631,9 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Set the start addresses.
      */
-    pGlobals->uPciBiosIo  = 0xd000;
+    pGlobals->uPciBiosBus  = 0;
+    pGlobals->uPciBiosIo   = 0xd000;
     pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
-    pGlobals->uBus = 0;
 
     /*
      * Activate IRQ mappings.
