@@ -41,7 +41,8 @@ typedef struct DEVPCIBUS
     uint32_t                fTypeIch9: 1;
     /** Set if this is a pure bridge, i.e. not part of DEVPCIGLOBALS struct. */
     uint32_t                fPureBridge : 1;
-    uint32_t                uUnused : 29;
+    /** Reserved for future config flags. */
+    uint32_t                uReservedConfigFlags : 29;
 
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3            pDevInsR3;
