@@ -164,7 +164,8 @@ static int atapiTrackListReallocate(PTRACKLIST pTrackList, unsigned cTracks, uin
             rc = VERR_NO_MEMORY;
     }
 
-    pTrackList->cTracksCurrent = cTracks;
+    if (RT_SUCCESS(rc))
+        pTrackList->cTracksCurrent = cTracks;
 
     return rc;
 }
@@ -326,7 +327,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 
     cTracks = cbToc / 8 + iTrackFirst;
 
-    rc = atapiTrackListReallocate(pTrackList, cTracks, ATAPI_TRACK_LIST_REALLOCATE_FLAGS_DONT_CLEAR);
+    rc = atapiTrackListReallocate(pTrackList, iTrackFirst + cTracks, ATAPI_TRACK_LIST_REALLOCATE_FLAGS_DONT_CLEAR);
     if (RT_SUCCESS(rc))
     {
         PTRACK pTrack = &pTrackList->paTracks[iTrackFirst];
