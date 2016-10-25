@@ -1,6 +1,15 @@
 /* $Id$ */
 /** @file
  * DevPCI - PCI BUS Device.
+ *
+ * @remarks New code is currently added to DevPciMerge1.cpp.h, the goal is
+ *          to end up with a large common code base for the two PCI bus
+ *          implementations.  The merge file will soon be compiled separately
+ *          and not included, so it shall not be used as a template with
+ *          \#ifdefs for different PCI bus configs, but rather use config
+ *          flags in the structures to select paths & feature sets.
+ *
+ *          When moving code, always prefer the ICH9 version, not this!
  */
 
 /*
@@ -55,11 +64,16 @@
 
 #include "PciInline.h"
 #include "VBoxDD.h"
+#include "DevPciInternal.h"
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+typedef DEVPCIBUS  PCIBUS;
+typedef PDEVPCIBUS PPCIBUS;
+
+
 /**
  * PIIX3 ISA Bridge state.
  */
@@ -68,53 +82,6 @@ typedef struct PIIX3State
     /** The PCI device of the bridge. */
     PDMPCIDEV dev;
 } PIIX3State, PIIX3, *PPIIX3;
-
-/**
- * PCI Bus instance.
- */
-typedef struct PCIBus
-{
-    /** Bus number. */
-    int32_t             iBus;
-    /** Start device number. */
-    uint32_t            iDevSearch;
-    /** Number of bridges attached to the bus. */
-    uint32_t            cBridges;
-
-    uint32_t            Alignment0;
-
-    union
-    {
-        /** Array of PCI devices. */
-        R3PTRTYPE(PPDMPCIDEV) apDevices[256];
-        /** @deprecated   */
-        R3PTRTYPE(PPDMPCIDEV) devices[256];
-    };
-    /** Array of bridges attached to the bus. */
-    R3PTRTYPE(PPDMPCIDEV *) papBridgesR3;
-
-    /** R3 pointer to the device instance. */
-    PPDMDEVINSR3        pDevInsR3;
-    /** Pointer to the PCI R3  helpers. */
-    PCPDMPCIHLPR3       pPciHlpR3;
-
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0        pDevInsR0;
-    /** Pointer to the PCI R0 helpers. */
-    PCPDMPCIHLPR0       pPciHlpR0;
-
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC        pDevInsRC;
-    /** Pointer to the PCI RC helpers. */
-    PCPDMPCIHLPRC       pPciHlpRC;
-
-    /** The PCI device for the PCI bridge. */
-    PDMPCIDEV           PciDev;
-
-} PCIBUS;
-/** Pointer to a PCIBUS instance. */
-typedef PCIBUS *PPCIBUS;
-typedef PCIBUS PCIBus;
 
 /** @def PCI_IRQ_PINS
  * Number of pins for interrupts (PIRQ#0...PIRQ#3)
@@ -132,30 +99,30 @@ typedef PCIBUS PCIBus;
 typedef struct PCIGLOBALS
 {
     /** Irq levels for the four PCI Irqs.
-     *  These count how many devices asserted
-     *  the IRQ line. If greater 0 an IRQ is sent to the guest.
-     *  If it drops to 0 the IRQ is deasserted.
+     * These count how many devices asserted the IRQ line. If greater 0 an IRQ is
+     * sent to the guest.  If it drops to 0 the IRQ is deasserted.
      */
     volatile uint32_t   pci_irq_levels[PCI_IRQ_PINS];
 
-#if 1 /* Will be moved into the BIOS soon. */
+#if 1 /* Will be moved into the BIOS "soon". */
     /** The next I/O port address which the PCI BIOS will use. */
-    uint32_t            pci_bios_io_addr;
+    uint32_t            uPciBiosIo;
     /** The next MMIO address which the PCI BIOS will use. */
-    uint32_t            pci_bios_mem_addr;
+    uint32_t            uPciBiosMmio;
     /** Actual bus number. */
     uint8_t             uBus;
+    uint8_t             uAlignment0[2];
 #endif
 
     /** I/O APIC usage flag */
     bool                fUseIoApic;
     /** I/O APIC irq levels */
-    volatile uint32_t   pci_apic_irq_levels[PCI_APIC_IRQ_PINS];
+    volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
     /** ACPI IRQ level */
     uint32_t            acpi_irq_level;
     /** ACPI PIC IRQ */
     int                 acpi_irq;
-    /** Config register. */
+    /** Value latched in Configuration Address Port (0CF8h) */
     uint32_t            uConfigReg;
 
     /** R3 pointer to the device instance. */
@@ -172,7 +139,7 @@ typedef struct PCIGLOBALS
     /** ISA bridge state. */
     PIIX3               PIIX3State;
     /** PCI bus which is attached to the host-to-PCI bridge. */
-    PCIBUS              PciBus;
+    DEVPCIBUS           PciBus;
 
 } PCIGLOBALS;
 /** Pointer to per VM data. */
@@ -187,7 +154,7 @@ typedef PCIGLOBALS *PPCIGLOBALS;
 #define PCIBUS_2_DEVINS(pPciBus)        ((pPciBus)->CTX_SUFF(pDevIns))
 /** Converts a PCI bus device instance pointer to a PCIGLOBALS pointer. */
 #define DEVINS_2_PCIGLOBALS(pDevIns)    ((PPCIGLOBALS)(PDMINS_2_DATA(pDevIns, PPCIGLOBALS)))
-/** Converts a PCI bus device instance pointer to a PCIBUS pointer. */
+/** Converts a PCI bus device instance pointer to a DEVPCIBUS pointer. */
 #define DEVINS_2_PCIBUS(pDevIns)        ((PPCIBUS)(&PDMINS_2_DATA(pDevIns, PPCIGLOBALS)->PciBus))
 
 /** Converts a pointer to a PCI bus instance to a PCIGLOBALS pointer.
@@ -528,7 +495,7 @@ static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int
     }
     else
     {
-        R3PTRTYPE(PDMPCIDEV *) pci_dev = pGlobals->PciBus.devices[iDevice];
+        R3PTRTYPE(PDMPCIDEV *) pci_dev = pGlobals->PciBus.apDevices[iDevice];
         if (pci_dev)
         {
 #ifdef IN_RING3
@@ -575,7 +542,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
     }
     else
     {
-        R3PTRTYPE(PDMPCIDEV *) pci_dev = pGlobals->PciBus.devices[iDevice];
+        R3PTRTYPE(PDMPCIDEV *) pci_dev = pGlobals->PciBus.apDevices[iDevice];
         if (pci_dev)
         {
 #ifdef IN_RING3
@@ -611,7 +578,7 @@ static inline int pci_slot_get_apic_pirq(uint8_t uDevFn, int irq_num)
 
 static inline int get_pci_irq_apic_level(PPCIGLOBALS pGlobals, int irq_num)
 {
-    return (pGlobals->pci_apic_irq_levels[irq_num] != 0);
+    return (pGlobals->uaPciApicIrqLevels[irq_num] != 0);
 }
 
 static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int irq_num1, int iLevel, int acpi_irq, uint32_t uTagSrc)
@@ -625,9 +592,9 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int i
         int irq_num = pci_slot_get_apic_pirq(uDevFn, irq_num1);
 
         if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_HIGH)
-            ASMAtomicIncU32(&pGlobals->pci_apic_irq_levels[irq_num]);
+            ASMAtomicIncU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
         else if ((iLevel & PDM_IRQ_LEVEL_HIGH) == PDM_IRQ_LEVEL_LOW)
-            ASMAtomicDecU32(&pGlobals->pci_apic_irq_levels[irq_num]);
+            ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
 
         apic_irq = irq_num + 0x10;
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
@@ -636,7 +603,7 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int i
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
-            ASMAtomicDecU32(&pGlobals->pci_apic_irq_levels[irq_num]);
+            ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
             pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
             apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
             Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
@@ -997,20 +964,20 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                  * This does not change anything really as the access to the device is not going
                  * through the bridge but we want to be compliant to the spec.
                  */
-                if ((pGlobals->pci_bios_io_addr % 4096) != 0)
-                    pGlobals->pci_bios_io_addr = RT_ALIGN_32(pGlobals->pci_bios_io_addr, 4*1024);
-                Log(("%s: Aligned I/O start address. New address %#x\n", __FUNCTION__, pGlobals->pci_bios_io_addr));
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_BASE, (pGlobals->pci_bios_io_addr >> 8) & 0xf0);
+                if ((pGlobals->uPciBiosIo % 4096) != 0)
+                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, 4*1024);
+                Log(("%s: Aligned I/O start address. New address %#x\n", __FUNCTION__, pGlobals->uPciBiosIo));
+                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_BASE, (pGlobals->uPciBiosIo >> 8) & 0xf0);
 
                 /* The MMIO range for the bridge must be aligned to a 1MB boundary. */
-                if ((pGlobals->pci_bios_mem_addr % (1024 * 1024)) != 0)
-                    pGlobals->pci_bios_mem_addr = RT_ALIGN_32(pGlobals->pci_bios_mem_addr, 1024*1024);
-                Log(("%s: Aligned MMIO start address. New address %#x\n", __FUNCTION__, pGlobals->pci_bios_mem_addr));
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_BASE, (pGlobals->pci_bios_mem_addr >> 16) & UINT32_C(0xffff0));
+                if ((pGlobals->uPciBiosMmio % (1024 * 1024)) != 0)
+                    pGlobals->uPciBiosMmio = RT_ALIGN_32(pGlobals->uPciBiosMmio, 1024*1024);
+                Log(("%s: Aligned MMIO start address. New address %#x\n", __FUNCTION__, pGlobals->uPciBiosMmio));
+                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_BASE, (pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xffff0));
 
                 /* Save values to compare later to. */
-                uint32_t u32IoAddressBase = pGlobals->pci_bios_io_addr;
-                uint32_t u32MMIOAddressBase = pGlobals->pci_bios_mem_addr;
+                uint32_t u32IoAddressBase = pGlobals->uPciBiosIo;
+                uint32_t u32MMIOAddressBase = pGlobals->uPciBiosMmio;
 
                 /* Init devices behind the bridge and possibly other bridges as well. */
                 for (int iDev = 0; iDev <= 255; iDev++)
@@ -1025,20 +992,20 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                  * The result with a real bridge is that no I/O transactions are passed to the secondary
                  * interface. Again this doesn't really matter here but we want to be compliant to the spec.
                  */
-                if ((u32IoAddressBase != pGlobals->pci_bios_io_addr) && ((pGlobals->pci_bios_io_addr % 4096) != 0))
+                if ((u32IoAddressBase != pGlobals->uPciBiosIo) && ((pGlobals->uPciBiosIo % 4096) != 0))
                 {
                     /* The upper boundary must be one byte less than a 4KB boundary. */
-                    pGlobals->pci_bios_io_addr = RT_ALIGN_32(pGlobals->pci_bios_io_addr, 4*1024);
+                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, 4*1024);
                 }
-                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pGlobals->pci_bios_io_addr >> 8) & 0xf0) - 1);
+                pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pGlobals->uPciBiosIo >> 8) & 0xf0) - 1);
 
                 /* Same with the MMIO limit register but with 1MB boundary here. */
-                if ((u32MMIOAddressBase != pGlobals->pci_bios_mem_addr) && ((pGlobals->pci_bios_mem_addr % (1024 * 1024)) != 0))
+                if ((u32MMIOAddressBase != pGlobals->uPciBiosMmio) && ((pGlobals->uPciBiosMmio % (1024 * 1024)) != 0))
                 {
                     /* The upper boundary must be one byte less than a 1MB boundary. */
-                    pGlobals->pci_bios_mem_addr = RT_ALIGN_32(pGlobals->pci_bios_mem_addr, 1024*1024);
+                    pGlobals->uPciBiosMmio = RT_ALIGN_32(pGlobals->uPciBiosMmio, 1024*1024);
                 }
-                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pGlobals->pci_bios_mem_addr >> 16) & UINT32_C(0xfff0)) - 1);
+                pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pGlobals->uPciBiosMmio >> 16) & UINT32_C(0xfff0)) - 1);
 
                 /*
                  * Set the prefetch base and limit registers. We currently have no device with a prefetchable region
@@ -1092,9 +1059,9 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                     if (u32Size)
                     {
                         if (fIsPio)
-                            paddr = &pGlobals->pci_bios_io_addr;
+                            paddr = &pGlobals->uPciBiosIo;
                         else
-                            paddr = &pGlobals->pci_bios_mem_addr;
+                            paddr = &pGlobals->uPciBiosMmio;
                         uint32_t uNew = *paddr;
                         uNew = (uNew + u32Size - 1) & ~(u32Size - 1);
                         if (fIsPio)
@@ -1248,7 +1215,6 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  *       completely merge these files!  File #1 contains code we write, where
  *       as a possible file #2 contains external code if there's any left.
  */
-typedef PPCIBUS PPCIMERGEDBUS;
 # define pciR3UnmergedConfigReadDev  pci_default_read_config
 # define pciR3UnmergedConfigWriteDev pci_default_write_config
 # include "DevPciMerge1.cpp.h"
@@ -1268,9 +1234,9 @@ static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
     /*
      * Iterate thru all the devices.
      */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
-        PPDMPCIDEV pDev = pBus->devices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[i];
         if (pDev)
         {
             SSMR3PutU32(pSSM, i);
@@ -1305,7 +1271,7 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     for (i = 0; i < PCI_IRQ_PINS; i++)
         SSMR3PutU32(pSSM, pThis->pci_irq_levels[i]);
     for (i = 0; i < PCI_APIC_IRQ_PINS; i++)
-        SSMR3PutU32(pSSM, pThis->pci_apic_irq_levels[i]);
+        SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
 
     SSMR3PutU32(pSSM, pThis->acpi_irq_level);
     SSMR3PutS32(pSSM, pThis->acpi_irq);
@@ -1510,9 +1476,9 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
      * The register value is restored afterwards so we can do proper
      * LogRels in pciR3CommonRestoreConfig.
      */
-    for (i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    for (i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
-        PPDMPCIDEV pDev = pBus->devices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[i];
         if (pDev)
         {
             uint16_t u16 = PCIDevGetCommand(pDev);
@@ -1536,7 +1502,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
             return rc;
         if (u32 == (uint32_t)~0)
             break;
-        if (    u32 >= RT_ELEMENTS(pBus->devices)
+        if (    u32 >= RT_ELEMENTS(pBus->apDevices)
             ||  u32 < i)
         {
             AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
@@ -1546,13 +1512,13 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
         /* skip forward to the device checking that no new devices are present. */
         for (; i < u32; i++)
         {
-            if (pBus->devices[i])
+            if (pBus->apDevices[i])
             {
-                LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->devices[i]->pszNameR3,
-                        PCIDevGetVendorId(pBus->devices[i]), PCIDevGetDeviceId(pBus->devices[i])));
+                LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->apDevices[i]->pszNameR3,
+                        PCIDevGetVendorId(pBus->apDevices[i]), PCIDevGetDeviceId(pBus->apDevices[i])));
                 if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                     return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
-                                            i, pBus->devices[i]->pszNameR3, PCIDevGetVendorId(pBus->devices[i]), PCIDevGetDeviceId(pBus->devices[i]));
+                                            i, pBus->apDevices[i]->pszNameR3, PCIDevGetVendorId(pBus->apDevices[i]), PCIDevGetDeviceId(pBus->apDevices[i]));
             }
         }
 
@@ -1575,7 +1541,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, uint
         }
 
         /* check that it's still around. */
-        pDev = pBus->devices[i];
+        pDev = pBus->apDevices[i];
         if (!pDev)
         {
             LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
@@ -1632,7 +1598,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         for (uint8_t i = 0; i < PCI_IRQ_PINS; i++)
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->pci_irq_levels[i]);
         for (uint8_t i = 0; i < PCI_APIC_IRQ_PINS; i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->pci_apic_irq_levels[i]);
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->uaPciApicIrqLevels[i]);
 
         SSMR3GetU32(pSSM, &pThis->acpi_irq_level);
         SSMR3GetS32(pSSM, &pThis->acpi_irq);
@@ -1735,8 +1701,8 @@ static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Set the start addresses.
      */
-    pGlobals->pci_bios_io_addr  = 0xd000;
-    pGlobals->pci_bios_mem_addr = UINT32_C(0xf0000000);
+    pGlobals->uPciBiosIo  = 0xd000;
+    pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
     pGlobals->uBus = 0;
 
     /*
@@ -1813,7 +1779,7 @@ static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "PCI I/O APIC IRQ levels:\n");
     for (int i = 0; i < PCI_APIC_IRQ_PINS; ++i)
     {
-        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->pci_apic_irq_levels[i]);
+        pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->uaPciApicIrqLevels[i]);
     }
 }
 
@@ -1840,9 +1806,9 @@ static void pciR3PrintIndent(PCDBGFINFOHLP pHlp, int iIndent)
  */
 static void pciR3BusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bool fRegisters)
 {
-    for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->devices); iDev++)
+    for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
     {
-        PPDMPCIDEV pPciDev = pBus->devices[iDev];
+        PPDMPCIDEV pPciDev = pBus->apDevices[iDev];
         if (pPciDev != NULL)
         {
             pciR3PrintIndent(pHlp, iIndent);
@@ -1977,10 +1943,10 @@ static DECLCALLBACK(void) pciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     /* Relocate RC pointers for the attached pci devices. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
-        if (pBus->devices[i])
-            pBus->devices[i]->Int.s.pBusRC += offDelta;
+        if (pBus->apDevices[i])
+            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
     }
 }
 
@@ -2035,11 +2001,11 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Init data and register the PCI bus.
      */
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    pGlobals->pci_bios_io_addr    = 0xc000;
-    pGlobals->pci_bios_mem_addr   = 0xf0000000;
+    pGlobals->uPciBiosIo    = 0xc000;
+    pGlobals->uPciBiosMmio   = 0xf0000000;
     memset((void *)&pGlobals->pci_irq_levels, 0, sizeof(pGlobals->pci_irq_levels));
     pGlobals->fUseIoApic          = fUseIoApic;
-    memset((void *)&pGlobals->pci_apic_irq_levels, 0, sizeof(pGlobals->pci_apic_irq_levels));
+    memset((void *)&pGlobals->uaPciApicIrqLevels, 0, sizeof(pGlobals->uaPciApicIrqLevels));
 
     pGlobals->pDevInsR3 = pDevIns;
     pGlobals->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -2049,7 +2015,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pGlobals->PciBus.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->PciBus.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pGlobals->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns,   sizeof(PPDMPCIDEV)
-                                                                                 * RT_ELEMENTS(pGlobals->PciBus.devices));
+                                                                                 * RT_ELEMENTS(pGlobals->PciBus.apDevices));
 
     PDMPCIBUSREG PciBusReg;
     PPCIBUS      pBus = &pGlobals->PciBus;
@@ -2267,7 +2233,7 @@ static DECLCALLBACK(void) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t i
     else
     {
         /* This is the target bus, pass the write to the device. */
-        PPDMPCIDEV pPciDev = pBus->devices[iDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
         if (pPciDev)
         {
             Log(("%s: %s: addr=%02x val=%08x len=%d\n", __FUNCTION__, pPciDev->pszNameR3, u32Address, u32Value, cb));
@@ -2300,7 +2266,7 @@ static DECLCALLBACK(uint32_t) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, uint8_
     else
     {
         /* This is the target bus, pass the read to the device. */
-        PPDMPCIDEV pPciDev = pBus->devices[iDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
         if (pPciDev)
         {
             u32Value = pPciDev->Int.s.pfnConfigRead(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, u32Address, cb);
@@ -2357,10 +2323,10 @@ static DECLCALLBACK(void) pcibridgeR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR off
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     /* Relocate RC pointers for the attached pci devices. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
-        if (pBus->devices[i])
-            pBus->devices[i]->Int.s.pBusRC += offDelta;
+        if (pBus->apDevices[i])
+            pBus->apDevices[i]->Int.s.pBusRC += offDelta;
     }
 }
 
@@ -2400,7 +2366,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->devices));
+    pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
 
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
@@ -2503,7 +2469,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
-    sizeof(PCIBUS),
+    sizeof(DEVPCIBUS),
     /* pfnConstruct */
     pcibridgeR3Construct,
     /* pfnDestruct */

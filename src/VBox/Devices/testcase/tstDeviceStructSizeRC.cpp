@@ -36,6 +36,8 @@
 #define VBOX_DEVICE_STRUCT_TESTCASE
 #define VBOX_WITH_HGCM                  /* grumble */
 #undef LOG_GROUP
+#include "../Bus/DevPciInternal.h"
+#undef LOG_GROUP
 #include "../Bus/DevPCI.cpp" /* must be first! */
 #undef LOG_GROUP
 #include "../Bus/DevPciIch9.cpp"
@@ -146,10 +148,10 @@ int main()
     GEN_CHECK_OFF(PDMDEVINS, pvInstanceDataRC);
     GEN_CHECK_OFF(PDMDEVINS, achInstanceData);
 
-    /* DevPCI.cpp */
+    /* PDMPCIDEV */
     GEN_CHECK_SIZE(PDMPCIDEV);
     GEN_CHECK_SIZE(PDMPCIDEVINT);
-    GEN_CHECK_SIZE(PCIIOREGION);
+    GEN_CHECK_SIZE(PCIIOREGION); /** @todo fix name of PCIIOREGION */
     GEN_CHECK_OFF(PDMPCIDEV, abConfig);
     GEN_CHECK_OFF(PDMPCIDEV, uDevFn);
     GEN_CHECK_OFF(PDMPCIDEV, pszNameR3);
@@ -172,29 +174,33 @@ int main()
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.pfnBridgeConfigRead);
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.pfnBridgeConfigWrite);
     GEN_CHECK_PADDING(PDMPCIDEV, Int, 8);
+
+    /* DevPciInternal.h */
+    GEN_CHECK_SIZE(DEVPCIBUS);
+    GEN_CHECK_OFF(DEVPCIBUS, iBus);
+    GEN_CHECK_OFF(DEVPCIBUS, iDevSearch);
+    GEN_CHECK_OFF(DEVPCIBUS, cBridges);
+    GEN_CHECK_OFF(DEVPCIBUS, apDevices);
+    GEN_CHECK_OFF(DEVPCIBUS, apDevices[1]);
+    GEN_CHECK_OFF(DEVPCIBUS, pDevInsR3);
+    GEN_CHECK_OFF(DEVPCIBUS, pPciHlpR3);
+    GEN_CHECK_OFF(DEVPCIBUS, papBridgesR3);
+    GEN_CHECK_OFF(DEVPCIBUS, pDevInsR0);
+    GEN_CHECK_OFF(DEVPCIBUS, pPciHlpR0);
+    GEN_CHECK_OFF(DEVPCIBUS, pDevInsRC);
+    GEN_CHECK_OFF(DEVPCIBUS, pPciHlpRC);
+    GEN_CHECK_OFF(DEVPCIBUS, PciDev);
+
+    /* DevPCI.cpp */
     GEN_CHECK_SIZE(PIIX3State);
-    GEN_CHECK_SIZE(PCIBUS);
-    GEN_CHECK_OFF(PCIBUS, iBus);
-    GEN_CHECK_OFF(PCIBUS, iDevSearch);
-    GEN_CHECK_OFF(PCIBUS, cBridges);
-    GEN_CHECK_OFF(PCIBUS, devices);
-    GEN_CHECK_OFF(PCIBUS, devices[1]);
-    GEN_CHECK_OFF(PCIBUS, pDevInsR3);
-    GEN_CHECK_OFF(PCIBUS, pPciHlpR3);
-    GEN_CHECK_OFF(PCIBUS, papBridgesR3);
-    GEN_CHECK_OFF(PCIBUS, pDevInsR0);
-    GEN_CHECK_OFF(PCIBUS, pPciHlpR0);
-    GEN_CHECK_OFF(PCIBUS, pDevInsRC);
-    GEN_CHECK_OFF(PCIBUS, pPciHlpRC);
-    GEN_CHECK_OFF(PCIBUS, PciDev);
     GEN_CHECK_SIZE(PCIGLOBALS);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_bios_io_addr);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_bios_mem_addr);
+    GEN_CHECK_OFF(PCIGLOBALS, uPciBiosIo);
+    GEN_CHECK_OFF(PCIGLOBALS, uPciBiosMmio);
     GEN_CHECK_OFF(PCIGLOBALS, pci_irq_levels);
     GEN_CHECK_OFF(PCIGLOBALS, pci_irq_levels[1]);
     GEN_CHECK_OFF(PCIGLOBALS, fUseIoApic);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_apic_irq_levels);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_apic_irq_levels[1]);
+    GEN_CHECK_OFF(PCIGLOBALS, uaPciApicIrqLevels);
+    GEN_CHECK_OFF(PCIGLOBALS, uaPciApicIrqLevels[1]);
     GEN_CHECK_OFF(PCIGLOBALS, acpi_irq_level);
     GEN_CHECK_OFF(PCIGLOBALS, acpi_irq);
     GEN_CHECK_OFF(PCIGLOBALS, uConfigReg);
@@ -205,19 +211,6 @@ int main()
     GEN_CHECK_OFF(PCIGLOBALS, PciBus);
 
     /* DevPciIch9.cpp */
-    GEN_CHECK_SIZE(ICH9PCIBUS);
-    GEN_CHECK_OFF(ICH9PCIBUS, iBus);
-    GEN_CHECK_OFF(ICH9PCIBUS, cBridges);
-    GEN_CHECK_OFF(ICH9PCIBUS, apDevices);
-    GEN_CHECK_OFF(ICH9PCIBUS, apDevices[1]);
-    GEN_CHECK_OFF(ICH9PCIBUS, pDevInsR3);
-    GEN_CHECK_OFF(ICH9PCIBUS, pPciHlpR3);
-    GEN_CHECK_OFF(ICH9PCIBUS, papBridgesR3);
-    GEN_CHECK_OFF(ICH9PCIBUS, pDevInsR0);
-    GEN_CHECK_OFF(ICH9PCIBUS, pPciHlpR0);
-    GEN_CHECK_OFF(ICH9PCIBUS, pDevInsRC);
-    GEN_CHECK_OFF(ICH9PCIBUS, pPciHlpRC);
-    GEN_CHECK_OFF(ICH9PCIBUS, aPciDev);
     GEN_CHECK_SIZE(ICH9PCIGLOBALS);
     GEN_CHECK_OFF(ICH9PCIGLOBALS, pDevInsR3);
     GEN_CHECK_OFF(ICH9PCIGLOBALS, pDevInsR0);
@@ -231,7 +224,7 @@ int main()
     GEN_CHECK_OFF(ICH9PCIGLOBALS, uBus);
     GEN_CHECK_OFF(ICH9PCIGLOBALS, u64PciConfigMMioAddress);
     GEN_CHECK_OFF(ICH9PCIGLOBALS, u64PciConfigMMioLength);
-    GEN_CHECK_OFF(ICH9PCIGLOBALS, aPciBus);
+    GEN_CHECK_OFF(ICH9PCIGLOBALS, PciBus);
 
     /* EFI/DevSMC.cpp */
     GEN_CHECK_SIZE(DEVSMC);

@@ -81,7 +81,7 @@ typedef FNPCIBRIDGECONFIGWRITE *PFNPCIBRIDGECONFIGWRITE;
 typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
 
 /* Forward declaration */
-struct PCIBus;
+struct DEVPCIBUS;
 
 enum {
     /** Flag whether the device is a pci-to-pci bridge.
@@ -118,21 +118,21 @@ typedef struct PDMPCIDEVINT
     /** Pointer to the PDM device the PCI device belongs to. (R3 ptr)  */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the next PDM device associate with the PDM device. (R3 ptr) */
-    R3PTRTYPE(PPDMPCIDEV)        pNextR3;
+    R3PTRTYPE(PPDMPCIDEV)           pNextR3;
     /** Pointer to the internal PDM PCI bus for the device. (R3 ptr) */
     R3PTRTYPE(struct PDMPCIBUS *)   pPdmBusR3;
 
     /** Pointer to the PDM device the PCI device belongs to. (R0 ptr)  */
     PPDMDEVINSR0                    pDevInsR0;
     /** Pointer to the next PDM device associate with the PDM device. (R0 ptr) */
-    R0PTRTYPE(PPDMPCIDEV)        pNextR0;
+    R0PTRTYPE(PPDMPCIDEV)           pNextR0;
     /** Pointer to the internal PDM PCI bus for the device. (R0 ptr) */
     R0PTRTYPE(struct PDMPCIBUS *)   pPdmBusR0;
 
     /** Pointer to the PDM device the PCI device belongs to. (RC ptr)  */
     PPDMDEVINSRC                    pDevInsRC;
     /** Pointer to the next PDM device associate with the PDM device. (RC ptr) */
-    RCPTRTYPE(PPDMPCIDEV)        pNextRC;
+    RCPTRTYPE(PPDMPCIDEV)           pNextRC;
     /** Pointer to the internal PDM PCI bus for the device. (RC ptr) */
     RCPTRTYPE(struct PDMPCIBUS *)   pPdmBusRC;
 
@@ -152,7 +152,7 @@ typedef struct PDMPCIDEVINT
      * @{
      */
     /** Pointer to the PCI bus of the device. (R3 ptr) */
-    R3PTRTYPE(struct PCIBus *)      pBusR3;
+    R3PTRTYPE(struct DEVPCIBUS *)   pBusR3;
     /** Page used for MSI-X state.             (R3 ptr) */
     R3PTRTYPE(void *)               pMsixPageR3;
     /** Read config callback. */
@@ -167,12 +167,12 @@ typedef struct PDMPCIDEVINT
     R3PTRTYPE(PFNPCIBRIDGECONFIGWRITE) pfnBridgeConfigWrite;
 
     /** Pointer to the PCI bus of the device. (R0 ptr) */
-    R0PTRTYPE(struct PCIBus *)      pBusR0;
+    R0PTRTYPE(struct DEVPCIBUS *)   pBusR0;
     /** Page used for MSI-X state.             (R0 ptr) */
     R0PTRTYPE(void *)               pMsixPageR0;
 
     /** Pointer to the PCI bus of the device. (RC ptr) */
-    RCPTRTYPE(struct PCIBus *)      pBusRC;
+    RCPTRTYPE(struct DEVPCIBUS *)   pBusRC;
     /** Page used for MSI-X state.             (RC ptr) */
     RCPTRTYPE(void *)               pMsixPageRC;
 
