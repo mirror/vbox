@@ -98,32 +98,9 @@ typedef struct PIIX3State
  */
 typedef struct PCIGLOBALS
 {
-    /** Irq levels for the four PCI Irqs.
-     * These count how many devices asserted the IRQ line. If greater 0 an IRQ is
-     * sent to the guest.  If it drops to 0 the IRQ is deasserted.
-     */
-    volatile uint32_t   pci_irq_levels[PCI_IRQ_PINS];
-
-#if 1 /* Will be moved into the BIOS "soon". */
-    /** The next I/O port address which the PCI BIOS will use. */
-    uint32_t            uPciBiosIo;
-    /** The next MMIO address which the PCI BIOS will use. */
-    uint32_t            uPciBiosMmio;
-    /** Actual bus number. */
-    uint8_t             uBus;
-    uint8_t             uAlignment0[2];
-#endif
-
-    /** I/O APIC usage flag */
-    bool                fUseIoApic;
-    /** I/O APIC irq levels */
-    volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
-    /** ACPI IRQ level */
-    uint32_t            acpi_irq_level;
-    /** ACPI PIC IRQ */
-    int                 acpi_irq;
-    /** Value latched in Configuration Address Port (0CF8h) */
-    uint32_t            uConfigReg;
+    /** PCI bus which is attached to the host-to-PCI bridge.
+     * This must come first!  */
+    DEVPCIBUS           PciBus;
 
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3        pDevInsR3;
@@ -132,18 +109,45 @@ typedef struct PCIGLOBALS
     /** RC pointer to the device instance. */
     PPDMDEVINSRC        pDevInsRC;
 
-#if HC_ARCH_BITS == 64
-    uint32_t            Alignment0;
-#endif
+    /** I/O APIC usage flag */
+    bool                fUseIoApic;
+    /** Reserved for future config flags. */
+    bool                afFutureFlags[3];
+
+    /** Value latched in Configuration Address Port (0CF8h) */
+    uint32_t            uConfigReg;
+    /** ACPI IRQ level */
+    uint32_t            acpi_irq_level;
+    /** ACPI PIC IRQ */
+    int                 acpi_irq;
+    uint32_t            u32Alignment;
+
+    /** I/O APIC irq levels */
+    volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
+
+    /** Irq levels for the four PCI Irqs.
+     * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
+     * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+     */
+    volatile uint32_t   pci_irq_levels[PCI_IRQ_PINS];
 
     /** ISA bridge state. */
     PIIX3               PIIX3State;
-    /** PCI bus which is attached to the host-to-PCI bridge. */
-    DEVPCIBUS           PciBus;
+
+#if 1 /* Will be moved into the BIOS "soon". */
+    /** The next I/O port address which the PCI BIOS will use. */
+    uint32_t            uPciBiosIo;
+    /** The next MMIO address which the PCI BIOS will use. */
+    uint32_t            uPciBiosMmio;
+    /** Actual bus number. */
+    uint8_t             uBus;
+    uint8_t             uAlignment0[7];
+#endif
 
 } PCIGLOBALS;
 /** Pointer to per VM data. */
 typedef PCIGLOBALS *PPCIGLOBALS;
+
 
 
 /*********************************************************************************************************************************
@@ -2001,21 +2005,27 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Init data and register the PCI bus.
      */
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    pGlobals->uPciBiosIo    = 0xc000;
-    pGlobals->uPciBiosMmio   = 0xf0000000;
+    pGlobals->uPciBiosIo   = 0xc000;
+    pGlobals->uPciBiosMmio = 0xf0000000;
     memset((void *)&pGlobals->pci_irq_levels, 0, sizeof(pGlobals->pci_irq_levels));
-    pGlobals->fUseIoApic          = fUseIoApic;
+    pGlobals->fUseIoApic   = fUseIoApic;
     memset((void *)&pGlobals->uaPciApicIrqLevels, 0, sizeof(pGlobals->uaPciApicIrqLevels));
 
     pGlobals->pDevInsR3 = pDevIns;
     pGlobals->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
+    pGlobals->PciBus.fTypePiix3  = true;
+    pGlobals->PciBus.fTypeIch9   = false;
+    pGlobals->PciBus.fPureBridge = false;
     pGlobals->PciBus.pDevInsR3 = pDevIns;
     pGlobals->PciBus.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->PciBus.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pGlobals->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns,   sizeof(PPDMPCIDEV)
-                                                                                 * RT_ELEMENTS(pGlobals->PciBus.apDevices));
+    pGlobals->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns,
+                                                                        sizeof(PPDMPCIDEV)
+                                                                        * RT_ELEMENTS(pGlobals->PciBus.apDevices));
+    AssertLogRelReturn(pGlobals->PciBus.papBridgesR3, VERR_NO_MEMORY);
+
 
     PDMPCIBUSREG PciBusReg;
     PPCIBUS      pBus = &pGlobals->PciBus;
@@ -2363,10 +2373,14 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
      * Init data and register the PCI bus.
      */
     PPCIBUS pBus = PDMINS_2_DATA(pDevIns, PPCIBUS);
+    pBus->fTypePiix3  = true;
+    pBus->fTypeIch9   = false;
+    pBus->fPureBridge = true;
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
+    AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
 
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;

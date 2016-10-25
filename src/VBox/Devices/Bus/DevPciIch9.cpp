@@ -65,6 +65,10 @@ typedef PDEVPCIBUS PICH9PCIBUS;
  */
 typedef struct
 {
+    /** PCI bus which is attached to the host-to-PCI bridge.
+     * This must come first so we can share more code with the bridges!  */
+    DEVPCIBUS           PciBus;
+
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3        pDevInsR3;
     /** R0 pointer to the device instance. */
@@ -72,30 +76,32 @@ typedef struct
     /** RC pointer to the device instance. */
     PPDMDEVINSRC        pDevInsRC;
 
-    /** Value latched in Configuration Address Port (0CF8h) */
-    uint32_t            uConfigReg;
+    /** I/O APIC usage flag (always true of ICH9, see constructor). */
+    bool                fUseIoApic;
+    /** Reserved for future config flags. */
+    bool                afFutureFlags[3];
+    /** Physical address of PCI config space MMIO region. */
+    uint64_t            u64PciConfigMMioAddress;
+    /** Length of PCI config space MMIO region. */
+    uint64_t            u64PciConfigMMioLength;
 
     /** I/O APIC irq levels */
     volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
+    /** Value latched in Configuration Address Port (0CF8h) */
+    uint32_t            uConfigReg;
 
 #if 1 /* Will be moved into the BIOS "soon". */
+    /** Current bus number (?). */
+    uint8_t             uPciBiosBus;
+    uint8_t             Alignment0[3];
     /** The next I/O port address which the PCI BIOS will use. */
     uint32_t            uPciBiosIo;
     /** The next MMIO address which the PCI BIOS will use. */
     uint32_t            uPciBiosMmio;
     /** The next 64-bit MMIO address which the PCI BIOS will use. */
     uint64_t            uPciBiosMmio64;
-    /** Actual bus number. */
-    uint8_t             uBus;
-    uint8_t             Alignment0[7];
 #endif
-    /** Physical address of PCI config space MMIO region. */
-    uint64_t            u64PciConfigMMioAddress;
-    /** Length of PCI config space MMIO region. */
-    uint64_t            u64PciConfigMMioLength;
 
-    /** PCI bus which is attached to the host-to-PCI bridge. */
-    DEVPCIBUS           PciBus;
 } ICH9PCIGLOBALS, *PICH9PCIGLOBALS;
 
 
@@ -1687,7 +1693,7 @@ static void ich9pciBiosInitDevice(PICH9PCIGLOBALS pGlobals, uint8_t uBus, uint8_
             break;
         case 0x0604:
             /* PCI-to-PCI bridge. */
-            AssertMsg(pGlobals->uBus < 255, ("Too many bridges on the bus\n"));
+            AssertMsg(pGlobals->uPciBiosBus < 255, ("Too many bridges on the bus\n"));
             ich9pciBiosInitBridge(pGlobals, uBus, uDevFn);
             break;
         default:
@@ -1885,10 +1891,10 @@ static void ich9pciInitBridgeTopology(PICH9PCIGLOBALS pGlobals, PICH9PCIBUS pBus
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PICH9PCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PICH9PCIBUS);
-        pGlobals->uBus++;
-        ich9pciInitBridgeTopology(pGlobals, pChildBus, uBusSecondary, pGlobals->uBus);
+        pGlobals->uPciBiosBus++;
+        ich9pciInitBridgeTopology(pGlobals, pChildBus, uBusSecondary, pGlobals->uPciBiosBus);
     }
-    PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uBus);
+    PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uPciBiosBus);
     Log2(("ich9pciInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
           pBus,
           PCIDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
@@ -1908,10 +1914,10 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Set the start addresses.
      */
+    pGlobals->uPciBiosBus    = 0;
     pGlobals->uPciBiosIo     = 0xd000;
     pGlobals->uPciBiosMmio   = cbBelow4GB;
     pGlobals->uPciBiosMmio64 = cbAbove4GB + _4G;
-    pGlobals->uBus = 0;
 
     /* NB: Assume that if MMIO range is enabled, it is at the bottom of the memory hole. */
     if (pGlobals->u64PciConfigMMioAddress)
@@ -2415,14 +2421,19 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"McfgLength\""));
 
+    pGlobals->fUseIoApic = fUseIoApic;
     pGlobals->pDevInsR3 = pDevIns;
     pGlobals->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
+    pGlobals->PciBus.fTypePiix3  = false;
+    pGlobals->PciBus.fTypeIch9   = true;
+    pGlobals->PciBus.fPureBridge = false;
     pGlobals->PciBus.pDevInsR3 = pDevIns;
     pGlobals->PciBus.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pGlobals->PciBus.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pGlobals->PciBus.papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pGlobals->PciBus.apDevices));
+    AssertLogRelReturn(pGlobals->PciBus.papBridgesR3, VERR_NO_MEMORY);
 
     /*
      * Register bus
@@ -2678,10 +2689,14 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
      * Init data and register the PCI bus.
      */
     PICH9PCIBUS pBus = PDMINS_2_DATA(pDevIns, PICH9PCIBUS);
+    pBus->fTypePiix3  = false;
+    pBus->fTypeIch9   = true;
+    pBus->fPureBridge = true;
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
+    AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
 
     PDMPCIBUSREG PciBusReg;
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;

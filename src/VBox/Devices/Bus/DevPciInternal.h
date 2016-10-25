@@ -35,8 +35,13 @@ typedef struct DEVPCIBUS
     uint32_t                cBridges;
     /** Start device number - always zero (only for DevPCI source compat). */
     uint32_t                iDevSearch;
-    /** Size alignemnt padding. */
-    uint32_t                u32Alignment0;
+    /** Set if PIIX3 type. */
+    uint32_t                fTypePiix3 : 1;
+    /** Set if ICH9 type. */
+    uint32_t                fTypeIch9: 1;
+    /** Set if this is a pure bridge, i.e. not part of DEVPCIGLOBALS struct. */
+    uint32_t                fPureBridge : 1;
+    uint32_t                uUnused : 29;
 
     /** R3 pointer to the device instance. */
     PPDMDEVINSR3            pDevInsR3;
