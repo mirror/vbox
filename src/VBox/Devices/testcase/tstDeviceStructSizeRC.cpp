@@ -196,8 +196,8 @@ int main()
     GEN_CHECK_SIZE(PCIGLOBALS);
     GEN_CHECK_OFF(PCIGLOBALS, uPciBiosIo);
     GEN_CHECK_OFF(PCIGLOBALS, uPciBiosMmio);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_irq_levels);
-    GEN_CHECK_OFF(PCIGLOBALS, pci_irq_levels[1]);
+    GEN_CHECK_OFF(PCIGLOBALS, auPciLegacyIrqLevels);
+    GEN_CHECK_OFF(PCIGLOBALS, auPciLegacyIrqLevels[1]);
     GEN_CHECK_OFF(PCIGLOBALS, fUseIoApic);
     GEN_CHECK_OFF(PCIGLOBALS, uaPciApicIrqLevels);
     GEN_CHECK_OFF(PCIGLOBALS, uaPciApicIrqLevels[1]);

@@ -83,15 +83,6 @@ typedef struct PIIX3State
     PDMPCIDEV dev;
 } PIIX3State, PIIX3, *PPIIX3;
 
-/** @def PCI_IRQ_PINS
- * Number of pins for interrupts (PIRQ#0...PIRQ#3)
- */
-#define PCI_IRQ_PINS 4
-
-/** @def PCI_APIC_IRQ_PINS
- * Number of pins for interrupts if the APIC is used.
- */
-#define PCI_APIC_IRQ_PINS 8
 
 /**
  * PCI Globals - This is the host-to-pci bridge and the root bus.
@@ -123,13 +114,14 @@ typedef struct PCIGLOBALS
     uint32_t            u32Alignment;
 
     /** I/O APIC irq levels */
-    volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
+    volatile uint32_t   uaPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
 
     /** Irq levels for the four PCI Irqs.
      * These count how many devices asserted the IRQ line.  If greater 0 an IRQ
      * is sent to the guest.  If it drops to 0 the IRQ is deasserted.
+     * @remarks Labling this "legacy" might be a bit off...
      */
-    volatile uint32_t   pci_irq_levels[PCI_IRQ_PINS];
+    volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
 
     /** ISA bridge state. */
     PIIX3               PIIX3State;
@@ -623,7 +615,7 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PDMPCIDEV *pPciDev, int i
 
 DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
 {
-    return (pGlobals->pci_irq_levels[irq_num] != 0);
+    return (pGlobals->auPciLegacyIrqLevels[irq_num] != 0);
 }
 
 /**
@@ -686,9 +678,9 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
             irq_num = pci_slot_get_pirq(uDevFn, iIrq);
 
             if (pPciDev->Int.s.uIrqPinState == PDM_IRQ_LEVEL_HIGH)
-                ASMAtomicIncU32(&pGlobals->pci_irq_levels[irq_num]);
+                ASMAtomicIncU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
             else if (pPciDev->Int.s.uIrqPinState == PDM_IRQ_LEVEL_LOW)
-                ASMAtomicDecU32(&pGlobals->pci_irq_levels[irq_num]);
+                ASMAtomicDecU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
 
             /* now we change the pic irq level according to the piix irq mappings */
             pic_irq = pbCfg[0x60 + irq_num];
@@ -696,7 +688,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPDMPCIDEV p
             {
                 if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
                 {
-                    ASMAtomicDecU32(&pGlobals->pci_irq_levels[irq_num]);
+                    ASMAtomicDecU32(&pGlobals->auPciLegacyIrqLevels[irq_num]);
                     pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
                 }
 
@@ -1272,9 +1264,9 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Save IRQ states.
      */
-    for (i = 0; i < PCI_IRQ_PINS; i++)
-        SSMR3PutU32(pSSM, pThis->pci_irq_levels[i]);
-    for (i = 0; i < PCI_APIC_IRQ_PINS; i++)
+    for (i = 0; i < RT_ELEMENTS(pThis->auPciLegacyIrqLevels); i++)
+        SSMR3PutU32(pSSM, pThis->auPciLegacyIrqLevels[i]);
+    for (i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
         SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
 
     SSMR3PutU32(pSSM, pThis->acpi_irq_level);
@@ -1599,9 +1591,9 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /* Load IRQ states. */
     if (uVersion > 2)
     {
-        for (uint8_t i = 0; i < PCI_IRQ_PINS; i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->pci_irq_levels[i]);
-        for (uint8_t i = 0; i < PCI_APIC_IRQ_PINS; i++)
+        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->auPciLegacyIrqLevels); i++)
+            SSMR3GetU32(pSSM, (uint32_t *)&pThis->auPciLegacyIrqLevels[i]);
+        for (uint8_t i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->uaPciApicIrqLevels[i]);
 
         SSMR3GetU32(pSSM, &pThis->acpi_irq_level);
@@ -1781,10 +1773,8 @@ static DECLCALLBACK(void) pciR3IrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "PCI I/O APIC IRQ levels:\n");
-    for (int i = 0; i < PCI_APIC_IRQ_PINS; ++i)
-    {
+    for (int i = 0; i < DEVPCI_APIC_IRQ_PINS; ++i)
         pHlp->pfnPrintf(pHlp, "  IRQ%02d: %u\n", 0x10 + i, pGlobals->uaPciApicIrqLevels[i]);
-    }
 }
 
 /**
@@ -2007,7 +1997,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     pGlobals->uPciBiosIo   = 0xc000;
     pGlobals->uPciBiosMmio = 0xf0000000;
-    memset((void *)&pGlobals->pci_irq_levels, 0, sizeof(pGlobals->pci_irq_levels));
+    memset((void *)&pGlobals->auPciLegacyIrqLevels, 0, sizeof(pGlobals->auPciLegacyIrqLevels));
     pGlobals->fUseIoApic   = fUseIoApic;
     memset((void *)&pGlobals->uaPciApicIrqLevels, 0, sizeof(pGlobals->uaPciApicIrqLevels));
 

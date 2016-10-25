@@ -55,11 +55,6 @@ typedef DEVPCIBUS  ICH9PCIBUS;
 typedef PDEVPCIBUS PICH9PCIBUS;
 
 
-/** @def PCI_APIC_IRQ_PINS
- * Number of pins for interrupts if the APIC is used.
- */
-#define PCI_APIC_IRQ_PINS 8
-
 /**
  * PCI Globals - This is the host-to-pci bridge and the root bus.
  */
@@ -86,7 +81,7 @@ typedef struct
     uint64_t            u64PciConfigMMioLength;
 
     /** I/O APIC irq levels */
-    volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
+    volatile uint32_t   uaPciApicIrqLevels[DEVPCI_APIC_IRQ_PINS];
     /** Value latched in Configuration Address Port (0CF8h) */
     uint32_t            uConfigReg;
 
@@ -1090,7 +1085,7 @@ static DECLCALLBACK(int) ich9pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Save IRQ states.
      */
-    for (int i = 0; i < PCI_APIC_IRQ_PINS; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
         SSMR3PutU32(pSSM, pThis->uaPciApicIrqLevels[i]);
 
     SSMR3PutU32(pSSM, UINT32_MAX);  /* separator */
@@ -1508,7 +1503,7 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     /*
      * Load IRQ states.
      */
-    for (int i = 0; i < PCI_APIC_IRQ_PINS; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->uaPciApicIrqLevels); i++)
         SSMR3GetU32(pSSM, (uint32_t*)&pThis->uaPciApicIrqLevels[i]);
 
     /* separator */
