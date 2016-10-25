@@ -342,6 +342,8 @@ typedef struct LSILOGICSCSI
     PDMILEDPORTS                   ILeds;
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
+    /** Status LUN: Media Notifys. */
+    R3PTRTYPE(PPDMIMEDIANOTIFY)    pMediaNotify;
     /** Pointer to the configuration page area. */
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
 
@@ -1860,7 +1862,7 @@ static void lsilogicDumpSGEntry(PMptSGEntryUnion pSGEntry)
 /**
  * Copy from guest to host memory worker.
  *
- * @copydoc{LSILOGICR3MEMCOPYCALLBACK}
+ * @copydoc LSILOGICR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) lsilogicR3CopyBufferFromGuestWorker(PLSILOGICSCSI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                               size_t cbCopy, size_t *pcbSkip)
@@ -1885,7 +1887,7 @@ static DECLCALLBACK(void) lsilogicR3CopyBufferFromGuestWorker(PLSILOGICSCSI pThi
 /**
  * Copy from host to guest memory worker.
  *
- * @copydoc{LSILOGICR3MEMCOPYCALLBACK}
+ * @copydoc LSILOGICR3MEMCOPYCALLBACK
  */
 static DECLCALLBACK(void) lsilogicR3CopyBufferToGuestWorker(PLSILOGICSCSI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
                                                             size_t cbCopy, size_t *pcbSkip)
@@ -2416,7 +2418,13 @@ static DECLCALLBACK(void) lsilogicR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
     PLSILOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, LSILOGICDEVICE, IMediaExPort);
     PLSILOGICSCSI pThis = pTgtDev->CTX_SUFF(pLsiLogic);
 
-    RT_NOREF(pThis); /** @todo */
+    if (pThis->pMediaNotify)
+    {
+        int rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), VMCPUID_ANY,
+                                   (PFNRT)pThis->pMediaNotify->pfnEjected, 2,
+                                   pThis->pMediaNotify, pTgtDev->iLUN);
+        AssertRC(rc);
+    }
 }
 
 
@@ -5618,7 +5626,10 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
+    {
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
+    }
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
