@@ -419,7 +419,9 @@ TryConnect(PRFileDesc **result)
   PRFileDesc *fd;
   PRNetAddr addr;
   PRSocketOptionData opt;
-  nsresult rv = NS_ERROR_FAILURE;
+  // don't use NS_ERROR_FAILURE as we want to detect these kind of errors
+  // in the frontend
+  nsresult rv = NS_ERROR_SOCKET_FAIL;
 
   fd = PR_OpenTCPSocket(PR_AF_LOCAL);
   if (!fd)
@@ -479,7 +481,9 @@ IPC_Connect(const char *daemonPath)
   rv = TryConnect(&fd);
   if (NS_FAILED(rv))
   {
-    rv = IPC_SpawnDaemon(daemonPath);
+    nsresult rv1 = IPC_SpawnDaemon(daemonPath);
+    if (NS_SUCCEEDED(rv1) || rv != NS_ERROR_SOCKET_FAIL)
+      rv = rv1; 
     if (NS_SUCCEEDED(rv))
       rv = TryConnect(&fd);
   }

@@ -214,6 +214,9 @@
 /* Returned when a factory already is registered */
 #define NS_ERROR_FACTORY_EXISTS            (NS_ERROR_BASE + 0x100)
 
+/* Socket failures */
+#define NS_ERROR_SOCKET_FAIL               (NS_ERROR_BASE + 0x200)
+
 
 /* For COM compatibility reasons, we want to use exact error code numbers
    for NS_ERROR_PROXY_INVALID_IN_PARAMETER and NS_ERROR_PROXY_INVALID_OUT_PARAMETER.

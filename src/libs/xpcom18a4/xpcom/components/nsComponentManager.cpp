@@ -1961,7 +1961,8 @@ nsComponentManagerImpl::CreateInstanceByContractID(const char *aContractID,
     else
     {
         // Translate error values
-        rv = NS_ERROR_FACTORY_NOT_REGISTERED;
+        if (rv != NS_ERROR_SOCKET_FAIL)
+            rv = NS_ERROR_FACTORY_NOT_REGISTERED;
     }
 
     PR_LOG(nsComponentManagerLog, PR_LOG_WARNING,
