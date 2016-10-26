@@ -56,22 +56,19 @@
 
 
 /** QTreeWidgetItem extension representing Medium Manager item. */
-class UIMediumItem : public QTreeWidgetItem
+class UIMediumItem : public QITreeWidgetItem
 {
 public:
 
-    /** UIMediumItem type for rtti needs. */
-    enum { Type = QTreeWidgetItem::UserType + 1 };
-
     /** Constructor for top-level item. */
-    UIMediumItem(const UIMedium &medium, QTreeWidget *pParent)
-        : QTreeWidgetItem(pParent, Type)
+    UIMediumItem(const UIMedium &medium, QITreeWidget *pParent)
+        : QITreeWidgetItem(pParent)
         , m_medium(medium)
     { refresh(); }
 
     /** Constructor for child item. */
     UIMediumItem(const UIMedium &medium, UIMediumItem *pParent)
-        : QTreeWidgetItem(pParent, Type)
+        : QITreeWidgetItem(pParent)
         , m_medium(medium)
     { refresh(); }
 
@@ -225,7 +222,7 @@ class UIMediumItemHD : public UIMediumItem
 public:
 
     /** Constructor for top-level item. */
-    UIMediumItemHD(const UIMedium &medium, QTreeWidget *pParent)
+    UIMediumItemHD(const UIMedium &medium, QITreeWidget *pParent)
         : UIMediumItem(medium, pParent)
     {}
 
@@ -400,7 +397,7 @@ class UIMediumItemCD : public UIMediumItem
 public:
 
     /** Constructor for top-level item. */
-    UIMediumItemCD(const UIMedium &medium, QTreeWidget *pParent)
+    UIMediumItemCD(const UIMedium &medium, QITreeWidget *pParent)
         : UIMediumItem(medium, pParent)
     {}
 
@@ -483,7 +480,7 @@ class UIMediumItemFD : public UIMediumItem
 public:
 
     /** Constructor for top-level item. */
-    UIMediumItemFD(const UIMedium &medium, QTreeWidget *pParent)
+    UIMediumItemFD(const UIMedium &medium, QITreeWidget *pParent)
         : UIMediumItem(medium, pParent)
     {}
 
@@ -867,12 +864,12 @@ void UIMediumManager::sltRefreshAll()
 void UIMediumManager::sltHandleCurrentTabChanged()
 {
     /* Get current tree-widget: */
-    QTreeWidget *pTreeWidget = currentTreeWidget();
+    QITreeWidget *pTreeWidget = currentTreeWidget();
     if (pTreeWidget)
     {
         /* If another tree-widget was focused before,
          * move focus to current tree-widget: */
-        if (qobject_cast<QTreeWidget*>(focusWidget()))
+        if (qobject_cast<QITreeWidget*>(focusWidget()))
             pTreeWidget->setFocus();
     }
 
@@ -886,7 +883,7 @@ void UIMediumManager::sltHandleCurrentTabChanged()
 void UIMediumManager::sltHandleCurrentItemChanged()
 {
     /* Get sender() tree-widget: */
-    QTreeWidget *pTreeWidget = qobject_cast<QTreeWidget*>(sender());
+    QITreeWidget *pTreeWidget = qobject_cast<QITreeWidget*>(sender());
     AssertMsgReturnVoid(pTreeWidget, ("This slot should be called by tree-widget only!\n"));
 
     /* Re-fetch current medium-item of required type: */
@@ -906,7 +903,7 @@ void UIMediumManager::sltHandleDoubleClick()
 void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 {
     /* Get current tree-widget: */
-    QTreeWidget *pTreeWidget = currentTreeWidget();
+    QITreeWidget *pTreeWidget = currentTreeWidget();
     AssertPtrReturnVoid(pTreeWidget);
 
     /* Make sure underlaying item was found: */
@@ -925,11 +922,11 @@ void UIMediumManager::sltHandleContextMenuCall(const QPoint &position)
 void UIMediumManager::sltPerformTablesAdjustment()
 {
     /* Get all the tree-widgets: */
-    const QList<QTreeWidget*> trees = m_trees.values();
+    const QList<QITreeWidget*> trees = m_trees.values();
 
     /* Calculate deduction for every header: */
     QList<int> deductions;
-    foreach (QTreeWidget *pTreeWidget, trees)
+    foreach (QITreeWidget *pTreeWidget, trees)
     {
         int iDeduction = 0;
         for (int iHeaderIndex = 1; iHeaderIndex < pTreeWidget->header()->count(); ++iHeaderIndex)
@@ -940,7 +937,7 @@ void UIMediumManager::sltPerformTablesAdjustment()
     /* Adjust the table's first column: */
     for (int iTreeIndex = 0; iTreeIndex < trees.size(); ++iTreeIndex)
     {
-        QTreeWidget *pTreeWidget = trees[iTreeIndex];
+        QITreeWidget *pTreeWidget = trees[iTreeIndex];
         int iSize0 = pTreeWidget->viewport()->width() - deductions[iTreeIndex];
         if (pTreeWidget->header()->sectionSize(0) != iSize0)
             pTreeWidget->header()->resizeSection(0, iSize0);
@@ -1218,7 +1215,7 @@ void UIMediumManager::prepareTreeWidget(UIMediumType type, int iColumns)
 {
     /* Create tree-widget: */
     m_trees.insert(tabIndex(type), new QITreeWidget);
-    QTreeWidget *pTreeWidget = treeWidget(type);
+    QITreeWidget *pTreeWidget = treeWidget(type);
     AssertPtrReturnVoid(pTreeWidget);
     {
         /* Configure tree-widget: */
@@ -1352,19 +1349,19 @@ void UIMediumManager::repopulateTreeWidgets()
         m_strCurrentIdFD = pMediumItem->id();
 
     /* Clear tree-widgets: */
-    QTreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
     if (pTreeWidgetHD)
     {
         setCurrentItem(pTreeWidgetHD, 0);
         pTreeWidgetHD->clear();
     }
-    QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
     if (pTreeWidgetCD)
     {
         setCurrentItem(pTreeWidgetCD, 0);
         pTreeWidgetCD->clear();
     }
-    QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
     if (pTreeWidgetFD)
     {
         setCurrentItem(pTreeWidgetFD, 0);
@@ -1563,7 +1560,7 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, Action action)
                 /* Find the first KMediumState_Inaccessible item to be in charge: */
                 CheckIfSuitableByState lookForState(KMediumState_Inaccessible);
                 CheckIfSuitableByID ignoreID(pMediumItem->id());
-                UIMediumItem *pInaccessibleMediumItem = searchItem(pMediumItem->treeWidget(), lookForState, &ignoreID);
+                UIMediumItem *pInaccessibleMediumItem = searchItem(pMediumItem->parentTree(), lookForState, &ignoreID);
                 *pfInaccessible = !!pInaccessibleMediumItem;
             }
 
@@ -1794,7 +1791,7 @@ void UIMediumManager::retranslateUi()
     }
 
     /* Translate HD tree-widget: */
-    QTreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumType_HardDisk);
     if (pTreeWidgetHD)
     {
         pTreeWidgetHD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
@@ -1819,7 +1816,7 @@ void UIMediumManager::retranslateUi()
         infoLabel(UIMediumType_HardDisk, 6)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate CD tree-widget: */
-    QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
+    QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
     if (pTreeWidgetCD)
     {
         pTreeWidgetCD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
@@ -1835,7 +1832,7 @@ void UIMediumManager::retranslateUi()
         infoLabel(UIMediumType_DVD, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate FD tree-widget: */
-    QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
+    QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
     if (pTreeWidgetFD)
     {
         pTreeWidgetFD->headerItem()->setText(0, QApplication::translate("VBoxMediaManagerDlg", "Name"));
@@ -1884,7 +1881,7 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         case UIMediumType_HardDisk:
         {
             /* Make sure corresponding tree-widget exists: */
-            QTreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
             if (pTreeWidget)
             {
                 /* Recursively create hard-drive item: */
@@ -1904,7 +1901,7 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         case UIMediumType_DVD:
         {
             /* Make sure corresponding tree-widget exists: */
-            QTreeWidget *pTreeWidget = treeWidget(UIMediumType_DVD);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_DVD);
             if (pTreeWidget)
             {
                 /* Create optical-disk item: */
@@ -1925,7 +1922,7 @@ UIMediumItem* UIMediumManager::createMediumItem(const UIMedium &medium)
         case UIMediumType_Floppy:
         {
             /* Make sure corresponding tree-widget exists: */
-            QTreeWidget *pTreeWidget = treeWidget(UIMediumType_Floppy);
+            QITreeWidget *pTreeWidget = treeWidget(UIMediumType_Floppy);
             if (pTreeWidget)
             {
                 /* Create floppy-disk item: */
@@ -1966,7 +1963,7 @@ UIMediumItem* UIMediumManager::createHardDiskItem(const UIMedium &medium)
     AssertReturn(!medium.medium().isNull(), 0);
 
     /* Make sure corresponding tree-widget exists: */
-    QTreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
+    QITreeWidget *pTreeWidget = treeWidget(UIMediumType_HardDisk);
     if (pTreeWidget)
     {
         /* Search for existing medium-item: */
@@ -2047,7 +2044,7 @@ void UIMediumManager::deleteMediumItem(const QString &strMediumID)
     /* Search for corresponding tree-widget: */
     QList<UIMediumType> types;
     types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
-    QTreeWidget *pTreeWidget = 0;
+    QITreeWidget *pTreeWidget = 0;
     UIMediumItem *pMediumItem = 0;
     foreach (UIMediumType type, types)
     {
@@ -2089,7 +2086,7 @@ QWidget* UIMediumManager::tab(UIMediumType type) const
     return 0;
 }
 
-QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
+QITreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
 {
     /* Determine tab index for passed medium type: */
     int iIndex = tabIndex(type);
@@ -2105,7 +2102,7 @@ QTreeWidget* UIMediumManager::treeWidget(UIMediumType type) const
 UIMediumItem* UIMediumManager::mediumItem(UIMediumType type) const
 {
     /* Get corresponding tree-widget: */
-    QTreeWidget *pTreeWidget = treeWidget(type);
+    QITreeWidget *pTreeWidget = treeWidget(type);
     /* Return corresponding medium-item: */
     return pTreeWidget ? toMediumItem(pTreeWidget->currentItem()) : 0;
 }
@@ -2159,7 +2156,7 @@ QILabel* UIMediumManager::infoField(UIMediumType type, int iFieldIndex) const
     return 0;
 }
 
-UIMediumType UIMediumManager::mediumType(QTreeWidget *pTreeWidget) const
+UIMediumType UIMediumManager::mediumType(QITreeWidget *pTreeWidget) const
 {
     /* Determine tab index of passed tree-widget: */
     int iIndex = m_trees.key(pTreeWidget, -1);
@@ -2182,7 +2179,7 @@ UIMediumType UIMediumManager::currentMediumType() const
     return mediumType(m_pTabWidget->currentIndex());
 }
 
-QTreeWidget* UIMediumManager::currentTreeWidget() const
+QITreeWidget* UIMediumManager::currentTreeWidget() const
 {
     /* Return current tree-widget: */
     return treeWidget(currentMediumType());
@@ -2194,7 +2191,7 @@ UIMediumItem* UIMediumManager::currentMediumItem() const
     return mediumItem(currentMediumType());
 }
 
-void UIMediumManager::setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem)
+void UIMediumManager::setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidgetItem *pItem)
 {
     /* Make sure passed tree-widget is valid: */
     AssertPtrReturnVoid(pTreeWidget);
@@ -2247,7 +2244,7 @@ UIMediumType UIMediumManager::mediumType(int iIndex)
 }
 
 /* static */
-UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTreeWidget, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException)
+UIMediumItem* UIMediumManager::searchItem(QITreeWidget *pTreeWidget, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException)
 {
     /* Make sure argument is valid: */
     if (!pTreeWidget)
@@ -2335,7 +2332,7 @@ bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
 UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem)
 {
     /* Cast passed QTreeWidgetItem to UIMediumItem if possible: */
-    return pItem && pItem->type() == UIMediumItem::Type ? static_cast<UIMediumItem*>(pItem) : 0;
+    return pItem && pItem->type() == QITreeWidgetItem::ItemType ? static_cast<UIMediumItem*>(pItem) : 0;
 }
 
 /* static */

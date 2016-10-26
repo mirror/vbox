@@ -31,7 +31,7 @@ class UIMediumItem;
 class UIToolBar;
 class UIEnumerationProgressBar;
 class QTabWidget;
-class QTreeWidget;
+class QITreeWidget;
 class QTreeWidgetItem;
 class QFrame;
 class QLabel;
@@ -181,7 +181,7 @@ private:
     /** Returns tab for passed medium @a type. */
     QWidget* tab(UIMediumType type) const;
     /** Returns tree-widget for passed medium @a type. */
-    QTreeWidget* treeWidget(UIMediumType type) const;
+    QITreeWidget* treeWidget(UIMediumType type) const;
     /** Returns item for passed medium @a type. */
     UIMediumItem* mediumItem(UIMediumType type) const;
     /** Returns information-container for passed medium @a type. */
@@ -192,17 +192,17 @@ private:
     QILabel* infoField(UIMediumType type, int iFieldIndex) const;
 
     /** Returns medium type for passed @a pTreeWidget. */
-    UIMediumType mediumType(QTreeWidget *pTreeWidget) const;
+    UIMediumType mediumType(QITreeWidget *pTreeWidget) const;
 
     /** Returns current medium type. */
     UIMediumType currentMediumType() const;
     /** Returns current tree-widget. */
-    QTreeWidget* currentTreeWidget() const;
+    QITreeWidget* currentTreeWidget() const;
     /** Returns current item. */
     UIMediumItem* currentMediumItem() const;
 
     /** Defines current item for passed @a pTreeWidget as @a pItem. */
-    void setCurrentItem(QTreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
+    void setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
 
     /** Returns tab index for passed UIMediumType. */
     static int tabIndex(UIMediumType type);
@@ -210,7 +210,7 @@ private:
     static UIMediumType mediumType(int iIndex);
 
     /** Performs search for the @a pTree child which corresponds to the @a condition but not @a pException. */
-    static UIMediumItem* searchItem(QTreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
+    static UIMediumItem* searchItem(QITreeWidget *pTree, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
     /** Performs search for the @a pParentItem child which corresponds to the @a condition but not @a pException. */
     static UIMediumItem* searchItem(QTreeWidgetItem *pParentItem, const CheckIfSuitableBy &condition, CheckIfSuitableBy *pException = 0);
 
@@ -243,7 +243,7 @@ private:
     /** Tab-widget tab-count. */
     const int m_iTabCount;
     /** Tree-widgets. */
-    QMap<int, QTreeWidget*> m_trees;
+    QMap<int, QITreeWidget*> m_trees;
     /** Information-containers. */
     QMap<int, QFrame*> m_containers;
     /** Information-container labels. */
