@@ -440,10 +440,15 @@ void UIMessageCenter::cannotCreateVirtualBoxClient(const CVirtualBoxClient &clie
 
 void UIMessageCenter::cannotAcquireVirtualBox(const CVirtualBoxClient &client) const
 {
-    error(0, MessageType_Critical,
-          tr("<p>Failed to acquire the VirtualBox COM object.</p>"
-             "<p>The application will now terminate.</p>"),
-          formatErrorInfo(client));
+    QString err = tr("<p>Failed to acquire the VirtualBox COM object.</p>"
+                     "<p>The application will now terminate.</p>");
+#if defined(VBOX_WS_X11) || defined(VBOX_WS_MAC)
+    if (client.lastRC() == NS_ERROR_SOCKET_FAIL)
+        err += tr("<p>The reason for this error are most likely wrong permissions of the IPC "
+                  "daemon socket due to an installation problem. Please check the permissions of "
+                  "<font color=blue>'/tmp'</font> and <font color=blue>'/tmp/.vbox-*-ipc/'</font></p>");
+#endif
+    error(0, MessageType_Critical, err, formatErrorInfo(client));
 }
 
 void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
