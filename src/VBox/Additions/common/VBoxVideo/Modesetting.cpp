@@ -24,6 +24,12 @@
 # include <iprt/string.h>
 #endif
 
+#ifndef LINUX_VERSION_CODE
+# define VBVOAssertPtr AssertPtr
+#else
+# define VBVOAssertPtr(a) do {} while(0)
+#endif
+
 /**
  * Gets the count of virtual monitors attached to the guest via an HGSMI
  * command
@@ -329,7 +335,9 @@ DECLHIDDEN(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                       unsigned cScreens, VBVAMODEHINT *paHints)
 {
     int rc;
-    AssertPtrReturn(paHints, VERR_INVALID_POINTER);
+    VBVOAssertPtr(paHints);
+    if (!VALID_PTR(paHints))
+        return VERR_INVALID_POINTER;
     void *p = VBoxHGSMIBufferAlloc(pCtx,   sizeof(VBVAQUERYMODEHINTS)
                                          + cScreens * sizeof(VBVAMODEHINT),
                                    HGSMI_CH_VBVA, VBVA_QUERY_MODE_HINTS);

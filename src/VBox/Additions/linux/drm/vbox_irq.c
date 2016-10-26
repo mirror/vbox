@@ -100,7 +100,10 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
 
     rc = VBoxHGSMIGetModeHints(&vbox->submit_info, vbox->num_crtcs,
                                vbox->last_mode_hints);
-    AssertMsgRCReturnVoid(rc, ("VBoxHGSMIGetModeHints failed, rc=%Rrc.\n", rc));
+    if RT_FAILURE(rc) {
+        printk("vboxvideo: VBoxHGSMIGetModeHints failed, rc=%i.\n", rc);
+        return;
+    }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_modeset_lock_all(dev);
 #else

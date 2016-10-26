@@ -78,8 +78,11 @@ void vbox_enable_accel(struct vbox_private *vbox)
             vbva = (struct VBVABUFFER *) (  ((uint8_t *)vbox->mapped_vram)
                                            + vram_map_offset
                                            + i * VBVA_MIN_BUFFER_SIZE);
-            if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i))
-                AssertReleaseMsgFailed(("VBoxVBVAEnable failed - heap allocation error, very old host or driver error.\n"));
+            if (!VBoxVBVAEnable(&vbox->vbva_info[i], &vbox->submit_info, vbva, i)) {
+                /* very old host or driver error. */
+                printk(KERN_ERR "vboxvideo: VBoxVBVAEnable failed - heap allocation error.\n");
+                return;
+            }
         }
     }
 }
