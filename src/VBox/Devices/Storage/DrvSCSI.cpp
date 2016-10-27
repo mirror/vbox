@@ -782,9 +782,10 @@ static DECLCALLBACK(int) drvscsiIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOR
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryResidual} */
 static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual)
 {
-    RT_NOREF2(pInterface, hIoReq);
+    RT_NOREF1(pInterface);
+    PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
 
-    *pcbResidual = 0; /** @todo: Implement. */
+    *pcbResidual = *pReq->pu8ScsiSts == SCSI_STATUS_OK ? 0 : pReq->cbBuf; /** @todo: Implement properly. */
     return VINF_SUCCESS;
 }
 
