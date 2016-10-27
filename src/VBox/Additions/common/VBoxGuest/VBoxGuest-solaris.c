@@ -78,6 +78,7 @@ static int vgdrvSolarisQuiesce(dev_info_t *pDip);
 
 static int vgdrvSolarisAddIRQ(dev_info_t *pDip);
 static void vgdrvSolarisRemoveIRQ(dev_info_t *pDip);
+static uint_t vgdrvSolarisHighLevelISR(caddr_t Arg);
 static uint_t vgdrvSolarisISR(caddr_t Arg);
 
 
@@ -177,20 +178,24 @@ static uint16_t             g_uIOPortBase;
 static caddr_t              g_pMMIOBase;
 /** Size of the MMIO region. */
 static off_t                g_cbMMIO;
-/** Pointer to the interrupt handle vector */
-static ddi_intr_handle_t   *g_pIntr;
-/** Number of actually allocated interrupt handles */
-static size_t               g_cIntrAllocated;
+/** Pointer to an array of interrupt handles. */
+static ddi_intr_handle_t   *g_pahIntrs;
+/** Handle to the soft interrupt. */
+static ddi_softint_handle_t g_hSoftIntr;
 /** The pollhead structure */
 static pollhead_t           g_PollHead;
 /** The IRQ Mutex */
 static kmutex_t             g_IrqMtx;
+/** The IRQ high-level Mutex. */
+static kmutex_t             g_HighLevelIrqMtx;
 /** Layered device handle for kernel keep-attached opens */
 static ldi_handle_t         g_LdiHandle = NULL;
 /** Ref counting for IDCOpen calls */
 static uint64_t             g_cLdiOpens = 0;
 /** The Mutex protecting the LDI handle in IDC opens */
 static kmutex_t             g_LdiMtx;
+/** Whether soft-ints are setup. */
+static bool                 g_fSoftIntRegistered = false;
 
 /**
  * Kernel entry points
@@ -352,6 +357,7 @@ static int vgdrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                 }
                                 else
                                     LogRel((DEVICE_NAME "::Attach: VGDrvCommonInitDevExt failed.\n"));
+
                                 vgdrvSolarisRemoveIRQ(pDip);
                             }
                             else
@@ -432,12 +438,9 @@ static int vgdrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  */
 static int vgdrvSolarisQuiesce(dev_info_t *pDip)
 {
-    for (int i = 0; i < g_cIntrAllocated; i++)
-    {
-        int rc = ddi_intr_disable(g_pIntr[i]);
-        if (rc != DDI_SUCCESS)
-            return DDI_FAILURE;
-    }
+    int rc = ddi_intr_disable(g_pahIntrs[0]);
+    if (rc != DDI_SUCCESS)
+        return DDI_FAILURE;
 
     /** @todo What about HGCM/HGSMI touching guest-memory? */
 
@@ -602,6 +605,43 @@ static int vgdrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 
 
 /**
+ * Converts a VBox status code to a Solaris error code.
+ *
+ * @returns corresponding Solaris errno.
+ * @param   rcVBox        VirtualBox error code to convert.
+ */
+static int vgdrvSolarisConvertToErrno(int rcVBox)
+{
+    /* RTErrConvertToErrno() below will ring-0 debug assert if we don't do such stuff. */
+    if (rcVBox == VERR_PERMISSION_DENIED)
+        rcVBox = VERR_ACCESS_DENIED;
+
+    if (   rcVBox > -1000
+        && rcVBox < 1000)
+        return RTErrConvertToErrno(rcVBox);
+
+    switch (rcVBox)
+    {
+        case VERR_HGCM_SERVICE_NOT_FOUND:      return ESRCH;
+        case VINF_HGCM_CLIENT_REJECTED:        return 0;
+        case VERR_HGCM_INVALID_CMD_ADDRESS:    return EFAULT;
+        case VINF_HGCM_ASYNC_EXECUTE:          return 0;
+        case VERR_HGCM_INTERNAL:               return EPROTO;
+        case VERR_HGCM_INVALID_CLIENT_ID:      return EINVAL;
+        case VINF_HGCM_SAVE_STATE:             return 0;
+        /* No reason to return this to a guest. */
+        /* case VERR_HGCM_SERVICE_EXISTS:      return EEXIST; */
+
+        default:
+        {
+            AssertMsgFailed(("Unhandled error code %Rrc\n", rcVBox));
+            return EINVAL;
+        }
+    }
+}
+
+
+/**
  * Driver ioctl, an alternate entry point for this character driver.
  *
  * @param   Dev             Device number
@@ -723,9 +763,7 @@ static int vgdrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t
          * which are not really failures that require logging.
          */
         Log(("vgdrvSolarisIOCtl: VGDrvCommonIoCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
-        if (rc == VERR_PERMISSION_DENIED)   /* RTErrConvertToErrno() below will ring-0 debug assert if we don't do this. */
-            rc = VERR_ACCESS_DENIED;
-        rc = RTErrConvertToErrno(rc);
+        rc = vgdrvSolarisConvertToErrno(rc);
     }
     *pVal = rc;
     if (pvBuf)
@@ -775,88 +813,119 @@ static int vgdrvSolarisAddIRQ(dev_info_t *pDip)
 {
     LogFlow(("vgdrvSolarisAddIRQ: pDip=%p\n", pDip));
 
-    int IntrType = 0;
-    int rc = ddi_intr_get_supported_types(pDip, &IntrType);
+    /* Get the types of interrupt supported for this hardware. */
+    int fIntrType = 0;
+    int rc = ddi_intr_get_supported_types(pDip, &fIntrType);
     if (rc == DDI_SUCCESS)
     {
-        /* We won't need to bother about MSIs. */
-        if (IntrType & DDI_INTR_TYPE_FIXED)
+        /* We only support fixed interrupts at this point, not MSIs. */
+        if (fIntrType & DDI_INTR_TYPE_FIXED)
         {
-            int IntrCount = 0;
-            rc = ddi_intr_get_nintrs(pDip, IntrType, &IntrCount);
+            /* Verify the number of interrupts supported by this device. There can only be one fixed interrupt. */
+            int cIntrCount = 0;
+            rc = ddi_intr_get_nintrs(pDip, fIntrType, &cIntrCount);
             if (   rc == DDI_SUCCESS
-                && IntrCount > 0)
+                && cIntrCount == 1)
             {
-                int IntrAvail = 0;
-                rc = ddi_intr_get_navail(pDip, IntrType, &IntrAvail);
-                if (   rc == DDI_SUCCESS
-                    && IntrAvail > 0)
+                /* Allocated kernel memory for the interrupt handle. The allocation size is stored internally. */
+                g_pahIntrs = RTMemAllocZ(cIntrCount * sizeof(ddi_intr_handle_t));
+                if (g_pahIntrs)
                 {
-                    /* Allocated kernel memory for the interrupt handles. The allocation size is stored internally. */
-                    g_pIntr = RTMemAlloc(IntrCount * sizeof(ddi_intr_handle_t));
-                    if (g_pIntr)
+                    /* Allocate the interrupt for this device and verify the allocation. */
+                    int cIntrAllocated;
+                    rc = ddi_intr_alloc(pDip, g_pahIntrs, fIntrType, 0 /* interrupt number */, cIntrCount, &cIntrAllocated,
+                                        DDI_INTR_ALLOC_NORMAL);
+                    if (   rc == DDI_SUCCESS
+                        && cIntrAllocated == 1)
                     {
-                        int IntrAllocated;
-                        rc = ddi_intr_alloc(pDip, g_pIntr, IntrType, 0, IntrCount, &IntrAllocated, DDI_INTR_ALLOC_NORMAL);
-                        if (   rc == DDI_SUCCESS
-                            && IntrAllocated > 0)
+                        /* Get the interrupt priority assigned by the system. */
+                        uint_t uIntrPriority;
+                        rc = ddi_intr_get_pri(g_pahIntrs[0], &uIntrPriority);
+                        if (rc == DDI_SUCCESS)
                         {
-                            g_cIntrAllocated = IntrAllocated;
-                            uint_t uIntrPriority;
-                            rc = ddi_intr_get_pri(g_pIntr[0], &uIntrPriority);
-                            if (rc == DDI_SUCCESS)
+                            /* Check if the interrupt priority is scheduler level or above, if so we need to use a high-level
+                               and low-level interrupt handlers with corresponding mutexes. */
+                            cmn_err(CE_NOTE,  "vboxguest: uIntrPriority=%d hilevel_pri=%d\n", uIntrPriority, ddi_intr_get_hilevel_pri());
+                            if (uIntrPriority >= ddi_intr_get_hilevel_pri())
                             {
-                                /* Initialize the mutex. */
-                                mutex_init(&g_IrqMtx, NULL /* pszDesc */, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
+                                /* Initialize the high-level mutex. */
+                                mutex_init(&g_HighLevelIrqMtx, NULL /* pszDesc */, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
 
-                                /* Assign interrupt handler functions and enable interrupts. */
-                                for (int i = 0; i < IntrAllocated; i++)
-                                {
-                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)vgdrvSolarisISR,
-                                                              NULL /* pvArg1 */, NULL /* pvArg2 */);
-                                    if (rc == DDI_SUCCESS)
-                                        rc = ddi_intr_enable(g_pIntr[i]);
-                                    if (rc != DDI_SUCCESS)
-                                    {
-                                        /* Changing local IntrAllocated to hold so-far allocated handles for freeing. */
-                                        IntrAllocated = i;
-                                        break;
-                                    }
-                                }
+                                /* Assign interrupt handler function to the interrupt handle. */
+                                rc = ddi_intr_add_handler(g_pahIntrs[0], (ddi_intr_handler_t *)&vgdrvSolarisHighLevelISR,
+                                                          NULL /* pvArg1 */, NULL /* pvArg2 */);
+
                                 if (rc == DDI_SUCCESS)
-                                    return rc;
+                                {
+                                    /* Add the low-level interrupt handler. */
+                                    rc = ddi_intr_add_softint(pDip, &g_hSoftIntr, DDI_INTR_SOFTPRI_MAX,
+                                                              (ddi_intr_handler_t *)&vgdrvSolarisISR, NULL /* pvArg1 */);
+                                    if (rc == DDI_SUCCESS)
+                                    {
+                                        /* Initialize the low-level mutex at the corresponding level. */
+                                        mutex_init(&g_IrqMtx, NULL /* pszDesc */,  MUTEX_DRIVER,
+                                                   DDI_INTR_PRI(DDI_INTR_SOFTPRI_MAX));
 
-                                /* Remove any assigned handlers */
-                                LogRel((DEVICE_NAME ":failed to assign IRQs allocated=%d\n", IntrAllocated));
-                                for (int x = 0; x < IntrAllocated; x++)
-                                    ddi_intr_remove_handler(g_pIntr[x]);
+                                        g_fSoftIntRegistered = true;
+                                        /* Enable the high-level interrupt. */
+                                        rc = ddi_intr_enable(g_pahIntrs[0]);
+                                        if (rc == DDI_SUCCESS)
+                                            return rc;
+
+                                        LogRel((DEVICE_NAME "::AddIRQ: failed to enable interrupt. rc=%d\n", rc));
+                                        mutex_destroy(&g_IrqMtx);
+                                    }
+                                    else
+                                        LogRel((DEVICE_NAME "::AddIRQ: failed to add soft interrupt handler. rc=%d\n", rc));
+
+                                    ddi_intr_remove_handler(g_pahIntrs[0]);
+                                }
+                                else
+                                    LogRel((DEVICE_NAME "::AddIRQ: failed to add high-level interrupt handler. rc=%d\n", rc));
+
+                                mutex_destroy(&g_HighLevelIrqMtx);
                             }
                             else
-                                LogRel((DEVICE_NAME "::AddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
+                            {
+                                /* Interrupt handler runs at reschedulable level, initialize the mutex at the given priority. */
+                                mutex_init(&g_IrqMtx, NULL /* pszDesc */, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
 
-                            /* Remove allocated IRQs, too bad we can free only one handle at a time. */
-                            for (int k = 0; k < g_cIntrAllocated; k++)
-                                ddi_intr_free(g_pIntr[k]);
-                            g_cIntrAllocated = 0;
+                                /* Assign interrupt handler function to the interrupt handle. */
+                                rc = ddi_intr_add_handler(g_pahIntrs[0], (ddi_intr_handler_t *)vgdrvSolarisISR,
+                                                          NULL /* pvArg1 */, NULL /* pvArg2 */);
+                                if (rc == DDI_SUCCESS)
+                                {
+                                    /* Enable the interrupt. */
+                                    rc = ddi_intr_enable(g_pahIntrs[0]);
+                                    if (rc == DDI_SUCCESS)
+                                        return rc;
+
+                                    LogRel((DEVICE_NAME "::AddIRQ: failed to enable interrupt. rc=%d\n", rc));
+                                    mutex_destroy(&g_IrqMtx);
+                                }
+                            }
                         }
                         else
-                            LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
-                        RTMemFree(g_pIntr);
+                            LogRel((DEVICE_NAME "::AddIRQ: failed to get priority of interrupt. rc=%d\n", rc));
+
+                        Assert(cIntrAllocated == 1);
+                        ddi_intr_free(g_pahIntrs[0]);
                     }
                     else
-                        LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", IntrCount));
+                        LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", cIntrCount));
+                    RTMemFree(g_pahIntrs);
                 }
                 else
-                    LogRel((DEVICE_NAME "::AddIRQ: failed to get or insufficient available IRQs. rc=%d IntrAvail=%d\n", rc, IntrAvail));
+                    LogRel((DEVICE_NAME "::AddIRQ: failed to allocated IRQs. count=%d\n", cIntrCount));
             }
             else
-                LogRel((DEVICE_NAME "::AddIRQ: failed to get or insufficient number of IRQs. rc=%d IntrCount=%d\n", rc, IntrCount));
+                LogRel((DEVICE_NAME "::AddIRQ: failed to get or insufficient number of IRQs. rc=%d cIntrCount=%d\n", rc, cIntrCount));
         }
         else
-            LogRel((DEVICE_NAME "::AddIRQ: invalid irq type. IntrType=%#x\n", IntrType));
+            LogRel((DEVICE_NAME "::AddIRQ: fixed-type interrupts not supported. IntrType=%#x\n", fIntrType));
     }
     else
-        LogRel((DEVICE_NAME "::AddIRQ: failed to get supported interrupt types\n"));
+        LogRel((DEVICE_NAME "::AddIRQ: failed to get supported interrupt types. rc=%d\n", rc));
     return rc;
 }
 
@@ -870,19 +939,45 @@ static void vgdrvSolarisRemoveIRQ(dev_info_t *pDip)
 {
     LogFlow(("vgdrvSolarisRemoveIRQ:\n"));
 
-    for (int i = 0; i < g_cIntrAllocated; i++)
+    int rc = ddi_intr_disable(g_pahIntrs[0]);
+    if (rc == DDI_SUCCESS)
     {
-        int rc = ddi_intr_disable(g_pIntr[i]);
+        rc = ddi_intr_remove_handler(g_pahIntrs[0]);
         if (rc == DDI_SUCCESS)
-        {
-            rc = ddi_intr_remove_handler(g_pIntr[i]);
-            if (rc == DDI_SUCCESS)
-                ddi_intr_free(g_pIntr[i]);
-        }
+            ddi_intr_free(g_pahIntrs[0]);
     }
-    g_cIntrAllocated = 0;
-    RTMemFree(g_pIntr);
+
+    if (g_fSoftIntRegistered)
+    {
+        ddi_intr_remove_softint(g_hSoftIntr);
+        mutex_destroy(&g_HighLevelIrqMtx);
+        g_fSoftIntRegistered = false;
+    }
+
     mutex_destroy(&g_IrqMtx);
+    RTMemFree(g_pahIntrs);
+}
+
+
+/**
+ * High-level Interrupt Service Routine for VMMDev.
+ *
+ * This routine simply dispatches a soft-interrupt at an acceptable IPL as
+ * VGDrvCommonISR() cannot be called at a high IPL (scheduler level or higher)
+ * due to pollwakeup() in VGDrvNativeISRMousePollEvent().
+ *
+ * @param   Arg     Private data (unused, will be NULL).
+ * @returns DDI_INTR_CLAIMED if it's our interrupt, DDI_INTR_UNCLAIMED if it isn't.
+ */
+static uint_t vgdrvSolarisHighLevelISR(caddr_t Arg)
+{
+    bool const fOurIrq = VGDrvCommonIsOurISR(&g_DevExt);
+    if (fOurIrq)
+    {
+        ddi_intr_trigger_softint(g_hSoftIntr, NULL /* Arg */);
+        return DDI_INTR_CLAIMED;
+    }
+    return DDI_INTR_UNCLAIMED;
 }
 
 
@@ -896,6 +991,8 @@ static uint_t vgdrvSolarisISR(caddr_t Arg)
 {
     LogFlow(("vgdrvSolarisISR:\n"));
 
+    /* The mutex is required to protect against parallel executions (if possible?) and also the
+       mouse notify registeration race between VGDrvNativeSetMouseNotifyCallback() and VGDrvCommonISR(). */
     mutex_enter(&g_IrqMtx);
     bool fOurIRQ = VGDrvCommonISR(&g_DevExt);
     mutex_exit(&g_IrqMtx);
@@ -904,6 +1001,13 @@ static uint_t vgdrvSolarisISR(caddr_t Arg)
 }
 
 
+/**
+ * Poll notifier for mouse poll events.
+ *
+ * @param   pDevExt   Pointer to the device extension.
+ *
+ * @remarks This must be called without holding any spinlocks.
+ */
 void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     LogFlow(("VGDrvNativeISRMousePollEvent:\n"));
@@ -912,6 +1016,23 @@ void VGDrvNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
      * Wake up poll waiters.
      */
     pollwakeup(&g_PollHead, POLLIN | POLLRDNORM);
+}
+
+
+/**
+ * Sets the mouse notification callback.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt   Pointer to the device extension.
+ * @param   pNotify   Pointer to the mouse notify struct.
+ */
+int VGDrvNativeSetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGuestMouseSetNotifyCallback *pNotify)
+{
+    /* Take the mutex here so as to not race with VGDrvCommonISR() which invokes the mouse notify callback. */
+    mutex_enter(&g_IrqMtx);
+    pDevExt->MouseNotifyCallback = *pNotify;
+    mutex_exit(&g_IrqMtx);
+    return VINF_SUCCESS;
 }
 
 

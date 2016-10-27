@@ -1559,9 +1559,13 @@ int vgdrvIoCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGuestMouseSe
 {
     LogFlow(("VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK: pfnNotify=%p pvUser=%p\n", pNotify->pfnNotify, pNotify->pvUser));
 
+#ifdef VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT
+    VGDrvNativeSetMouseNotifyCallback(pDevExt, pNotify);
+#else
     RTSpinlockAcquire(pDevExt->EventSpinlock);
     pDevExt->MouseNotifyCallback = *pNotify;
     RTSpinlockRelease(pDevExt->EventSpinlock);
+#endif
     return VINF_SUCCESS;
 }
 #endif
@@ -3639,6 +3643,23 @@ static int vgdrvDispatchEventsLocked(PVBOXGUESTDEVEXT pDevExt, uint32_t fEvents)
 
 
 /**
+ * Simply checks whether the IRQ is ours or not, does not do any interrupt
+ * procesing.
+ *
+ * @returns true if it was our interrupt, false if it wasn't.
+ * @param   pDevExt     The VBoxGuest device extension.
+ */
+bool VGDrvCommonIsOurISR(PVBOXGUESTDEVEXT pDevExt)
+{
+    RTSpinlockAcquire(pDevExt->EventSpinlock);
+    bool const fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
+    RTSpinlockRelease(pDevExt->EventSpinlock);
+
+    return fOurIrq;
+}
+
+
+/**
  * Common interrupt service routine.
  *
  * This deals with events and with waking up thread waiting for those events.
@@ -3688,7 +3709,7 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
             {
                 fMousePositionChanged = true;
                 fEvents &= ~VMMDEV_EVENT_MOUSE_POSITION_CHANGED;
-#ifndef RT_OS_WINDOWS
+#if !defined(RT_OS_WINDOWS) && !defined(VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT)
                 if (pDevExt->MouseNotifyCallback.pfnNotify)
                     pDevExt->MouseNotifyCallback.pfnNotify(pDevExt->MouseNotifyCallback.pvUser);
 #endif
@@ -3733,6 +3754,16 @@ bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt)
         Log3(("VGDrvCommonISR: not ours\n"));
 
     RTSpinlockRelease(pDevExt->EventSpinlock);
+
+    /*
+     * Execute the mouse notification callback here if it cannot be executed while
+     * holding the interrupt safe spinlock, see @bugref{8639}.
+     */
+#if defined(VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT)
+    if (   fMousePositionChanged
+        && pDevExt->MouseNotifyCallback.pfnNotify)
+        pDevExt->MouseNotifyCallback.pfnNotify(pDevExt->MouseNotifyCallback.pvUser);
+#endif
 
 #if defined(VBOXGUEST_USE_DEFERRED_WAKE_UP) && !defined(RT_OS_DARWIN) && !defined(RT_OS_WINDOWS)
     /*
