@@ -300,7 +300,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCou
 
 #else /* QT_VERSION >= 0x050000 */
 
-void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
+void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen * /* pHostScreen */)
 {
 //    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());
 
@@ -313,7 +313,7 @@ void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
     emit sigHostScreenCountChanged(screenCount());
 }
 
-void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
+void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen * /* pHostScreen */)
 {
 //    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", screenCount());
 
