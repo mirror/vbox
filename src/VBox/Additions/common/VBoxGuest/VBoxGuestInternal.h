@@ -46,7 +46,7 @@
  * The mouse notification callback can cause preemption and must not be invoked
  * while holding a high-level spinlock.
  */
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS) || defined(DOXYGEN_RUNNING)
 # define VBOXGUEST_MOUSE_NOTIFY_CAN_PREEMPT
 #endif
 
