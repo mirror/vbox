@@ -364,7 +364,7 @@ void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
     emit sigHostScreenCountChanged(screenCount());
 }
 
-void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect &geometry)
+void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect & /* geometry */)
 {
     /* Get the screen: */
     QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
@@ -384,7 +384,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect &geometry)
     emit sigHostScreenResized(iHostScreenIndex);
 }
 
-void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry)
+void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect & /* availableGeometry */)
 {
     /* Get the screen: */
     QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
