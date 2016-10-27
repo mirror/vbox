@@ -2876,9 +2876,11 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
          * to avoid that the guest submits a new request with the same ID as the still
          * allocated one.
          */
+#ifdef LOG_ENABLED
+        bool fIs24Bit = pReq->fIs24Bit;
+#endif
         uint8_t u8ScsiSts = pReq->u8ScsiSts;
         RTGCPHYS GCPhysAddrCCB = pReq->GCPhysAddrCCB;
-        bool fIs24Bit = pReq->fIs24Bit;
         CCBU CCBGuest;
         memcpy(&CCBGuest, &pReq->CCBGuest, sizeof(CCBU));
 
