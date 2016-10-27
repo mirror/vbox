@@ -2861,7 +2861,9 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
 
     if (pReq->fBIOS)
     {
-        int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, pReq->u8ScsiSts);
+        uint8_t u8ScsiSts = pReq->u8ScsiSts;
+        pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
+        int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, u8ScsiSts);
         AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
     }
     else
@@ -2869,23 +2871,35 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
         if (pReq->pbSenseBuffer)
             buslogicR3SenseBufferFree(pReq, (pReq->u8ScsiSts != SCSI_STATUS_OK));
 
-        if (pReq->u8ScsiSts == SCSI_STATUS_OK)
-            buslogicR3SendIncomingMailbox(pThis, pReq->GCPhysAddrCCB, &pReq->CCBGuest,
+        /*
+         * Save vital things from the request and free it before posting completion
+         * to avoid that the guest submits a new request with the same ID as the still
+         * allocated one.
+         */
+        uint8_t u8ScsiSts = pReq->u8ScsiSts;
+        RTGCPHYS GCPhysAddrCCB = pReq->GCPhysAddrCCB;
+        bool fIs24Bit = pReq->fIs24Bit;
+        CCBU CCBGuest;
+        memcpy(&CCBGuest, &pReq->CCBGuest, sizeof(CCBU));
+
+        pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
+        if (u8ScsiSts == SCSI_STATUS_OK)
+            buslogicR3SendIncomingMailbox(pThis, GCPhysAddrCCB, &CCBGuest,
                                         BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
                                         BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                         BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
-        else if (pReq->u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
-            buslogicR3SendIncomingMailbox(pThis, pReq->GCPhysAddrCCB, &pReq->CCBGuest,
+        else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
+            buslogicR3SendIncomingMailbox(pThis, GCPhysAddrCCB, &CCBGuest,
                                         BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
                                         BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION,
                                         BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
         else
-            AssertMsgFailed(("invalid completion status %d\n", pReq->u8ScsiSts));
-    }
+            AssertMsgFailed(("invalid completion status %u\n", u8ScsiSts));
 
 #ifdef LOG_ENABLED
-    buslogicR3DumpCCBInfo(&pReq->CCBGuest, pReq->fIs24Bit);
+        buslogicR3DumpCCBInfo(&CCBGuest, fIs24Bit);
 #endif
+    }
 
     if (pTgtDev->cOutstandingRequests == 0 && pThis->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pThis->pDevInsR3);
