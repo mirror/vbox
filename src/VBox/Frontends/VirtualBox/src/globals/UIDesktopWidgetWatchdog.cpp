@@ -298,44 +298,14 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenCountChanged(int cHostScreenCou
     emit sigHostScreenCountChanged(cHostScreenCount);
 }
 
-#else /* QT_VERSION >= 0x050000 */
-
-void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen * /* pHostScreen */)
-{
-//    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());
-
-# ifdef VBOX_WS_X11
-    /* Update host-screen configuration: */
-    updateHostScreenConfiguration();
-# endif /* VBOX_WS_X11 */
-
-    /* Notify listeners: */
-    emit sigHostScreenCountChanged(screenCount());
-}
-
-void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen * /* pHostScreen */)
-{
-//    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", screenCount());
-
-# ifdef VBOX_WS_X11
-    /* Update host-screen configuration: */
-    updateHostScreenConfiguration();
-# endif /* VBOX_WS_X11 */
-
-    /* Notify listeners: */
-    emit sigHostScreenCountChanged(screenCount());
-}
-
-#endif /* QT_VERSION >= 0x050000 */
-
 void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(int iHostScreenIndex)
 {
 //    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenResized(%d)\n", iHostScreenIndex);
 
-#ifdef VBOX_WS_X11
+# ifdef VBOX_WS_X11
     /* Update host-screen available-geometry: */
     updateHostScreenAvailableGeometry(iHostScreenIndex);
-#endif /* VBOX_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
     /* Notify listeners: */
     emit sigHostScreenResized(iHostScreenIndex);
@@ -345,14 +315,96 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(int iHostScreen
 {
 //    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(%d)\n", iHostScreenIndex);
 
-#ifdef VBOX_WS_X11
+# ifdef VBOX_WS_X11
     /* Update host-screen available-geometry: */
     updateHostScreenAvailableGeometry(iHostScreenIndex);
-#endif /* VBOX_WS_X11 */
+# endif /* VBOX_WS_X11 */
 
     /* Notify listeners: */
     emit sigHostScreenWorkAreaResized(iHostScreenIndex);
 }
+
+#else /* QT_VERSION >= 0x050000 */
+
+void UIDesktopWidgetWatchdog::sltHostScreenAdded(QScreen *pHostScreen)
+{
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenAdded(%d)\n", screenCount());
+
+    /* Listen for screen signals: */
+    connect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
+            this, SLOT(sltHandleHostScreenResized(const QRect &)));
+    connect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
+            this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+
+# ifdef VBOX_WS_X11
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration();
+# endif /* VBOX_WS_X11 */
+
+    /* Notify listeners: */
+    emit sigHostScreenCountChanged(screenCount());
+}
+
+void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
+{
+//    printf("UIDesktopWidgetWatchdog::sltHostScreenRemoved(%d)\n", screenCount());
+
+    /* Forget about screen signals: */
+    disconnect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
+               this, SLOT(sltHandleHostScreenResized(const QRect &)));
+    disconnect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
+               this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+
+# ifdef VBOX_WS_X11
+    /* Update host-screen configuration: */
+    updateHostScreenConfiguration();
+# endif /* VBOX_WS_X11 */
+
+    /* Notify listeners: */
+    emit sigHostScreenCountChanged(screenCount());
+}
+
+void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect &geometry)
+{
+    /* Get the screen: */
+    QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
+    AssertPtrReturnVoid(pScreen);
+
+    /* Determine screen index: */
+    const int iHostScreenIndex = qApp->screens().indexOf(pScreen);
+    AssertReturnVoid(iHostScreenIndex != -1);
+//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenResized(%d)\n", iHostScreenIndex);
+
+# ifdef VBOX_WS_X11
+    /* Update host-screen available-geometry: */
+    updateHostScreenAvailableGeometry(iHostScreenIndex);
+# endif /* VBOX_WS_X11 */
+
+    /* Notify listeners: */
+    emit sigHostScreenResized(iHostScreenIndex);
+}
+
+void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry)
+{
+    /* Get the screen: */
+    QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
+    AssertPtrReturnVoid(pScreen);
+
+    /* Determine screen index: */
+    const int iHostScreenIndex = qApp->screens().indexOf(pScreen);
+    AssertReturnVoid(iHostScreenIndex != -1);
+//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(%d)\n", iHostScreenIndex);
+
+# ifdef VBOX_WS_X11
+    /* Update host-screen available-geometry: */
+    updateHostScreenAvailableGeometry(iHostScreenIndex);
+# endif /* VBOX_WS_X11 */
+
+    /* Notify listeners: */
+    emit sigHostScreenWorkAreaResized(iHostScreenIndex);
+}
+
+#endif /* QT_VERSION >= 0x050000 */
 
 #ifdef VBOX_WS_X11
 void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry)
@@ -380,12 +432,19 @@ void UIDesktopWidgetWatchdog::prepare()
     /* Prepare connections: */
 #if QT_VERSION < 0x050000
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
+    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
 #else /* QT_VERSION >= 0x050000 */
     connect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
     connect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+    foreach (QScreen *pHostScreen, qApp->screens())
+    {
+        connect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
+                this, SLOT(sltHandleHostScreenResized(const QRect &)));
+        connect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
+                this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+    }
 #endif /* QT_VERSION >= 0x050000 */
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
-    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
 
 #ifdef VBOX_WS_X11
     /* Update host-screen configuration: */
@@ -398,12 +457,19 @@ void UIDesktopWidgetWatchdog::cleanup()
     /* Cleanup connections: */
 #if QT_VERSION < 0x050000
     disconnect(QApplication::desktop(), SIGNAL(screenCountChanged(int)), this, SLOT(sltHandleHostScreenCountChanged(int)));
+    disconnect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
+    disconnect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
 #else /* QT_VERSION >= 0x050000 */
     disconnect(qApp, SIGNAL(screenAdded(QScreen *)), this, SLOT(sltHostScreenAdded(QScreen *)));
     disconnect(qApp, SIGNAL(screenRemoved(QScreen *)), this, SLOT(sltHostScreenRemoved(QScreen *)));
+    foreach (QScreen *pHostScreen, qApp->screens())
+    {
+        disconnect(pHostScreen, SIGNAL(geometryChanged(const QRect &)),
+                   this, SLOT(sltHandleHostScreenResized(const QRect &)));
+        disconnect(pHostScreen, SIGNAL(availableGeometryChanged(const QRect &)),
+                   this, SLOT(sltHandleHostScreenWorkAreaResized(const QRect &)));
+    }
 #endif /* QT_VERSION >= 0x050000 */
-    disconnect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltHandleHostScreenResized(int)));
-    disconnect(QApplication::desktop(), SIGNAL(workAreaResized(int)), this, SLOT(sltHandleHostScreenWorkAreaResized(int)));
 
 #ifdef VBOX_WS_X11
     /* Cleanup existing workers finally: */
