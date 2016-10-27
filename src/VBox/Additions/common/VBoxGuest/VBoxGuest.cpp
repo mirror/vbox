@@ -3649,7 +3649,7 @@ static int vgdrvDispatchEventsLocked(PVBOXGUESTDEVEXT pDevExt, uint32_t fEvents)
  * @returns true if it was our interrupt, false if it wasn't.
  * @param   pDevExt     The VBoxGuest device extension.
  */
-bool VGDrvCommonIsOurISR(PVBOXGUESTDEVEXT pDevExt)
+bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt)
 {
     RTSpinlockAcquire(pDevExt->EventSpinlock);
     bool const fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;

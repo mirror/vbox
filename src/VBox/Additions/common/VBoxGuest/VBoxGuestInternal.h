@@ -322,7 +322,7 @@ RT_C_DECLS_BEGIN
 
 int  VGDrvCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
                            VBOXOSTYPE enmOSType, uint32_t fEvents);
-bool VGDrvCommonIsOurISR(PVBOXGUESTDEVEXT pDevExt);
+bool VGDrvCommonIsOurIRQ(PVBOXGUESTDEVEXT pDevExt);
 bool VGDrvCommonISR(PVBOXGUESTDEVEXT pDevExt);
 void VGDrvCommonDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
 int  VGDrvCommonReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
