@@ -3749,7 +3749,8 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
                              fMask, values);
         xcb_size_hints_t hints;
         hints.flags =   1 /* XCB_ICCCM_SIZE_HINT_US_POSITION */
-                      | 2 /* XCB_ICCCM_SIZE_HINT_US_SIZE */;
+                      | 2 /* XCB_ICCCM_SIZE_HINT_US_SIZE */
+                      | 512 /* XCB_ICCCM_SIZE_P_WIN_GRAVITY */;
         hints.x           = x;
         hints.y           = y;
         hints.width       = w;
@@ -3762,6 +3763,7 @@ void VBoxGlobal::setTopLevelGeometry(QWidget *pWidget, int x, int y, int w, int 
         hints.height_inc  = pWidget->sizeIncrement().height();
         hints.base_width  = pWidget->baseSize().width();
         hints.base_height = pWidget->baseSize().height();
+        hints.win_gravity = XCB_GRAVITY_STATIC;
         if (hints.min_width > 0 || hints.min_height > 0)
             hints.flags |= 16 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */;
         if (hints.max_width < QWINDOWSIZE_MAX || hints.max_height < QWINDOWSIZE_MAX)
