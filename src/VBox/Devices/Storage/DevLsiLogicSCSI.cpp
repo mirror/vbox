@@ -2129,8 +2129,9 @@ static void lsilogicR3ReqComplete(PLSILOGICSCSI pThis, PLSILOGICREQ pReq, int rc
 
     if (RT_UNLIKELY(pReq->fBIOS))
     {
+        uint8_t u8ScsiSts = pReq->u8ScsiSts;
         pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
-        int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, rcReq);
+        int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, u8ScsiSts);
         AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
     }
     else
