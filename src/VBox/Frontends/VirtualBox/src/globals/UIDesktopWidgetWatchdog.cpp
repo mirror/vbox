@@ -351,6 +351,11 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(int iHostScreen
 {
 //    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(%d)\n", iHostScreenIndex);
 
+#ifdef VBOX_WS_X11
+    /* Update host-screen available-geometry: */
+    updateHostScreenAvailableGeometry(iHostScreenIndex);
+#endif /* VBOX_WS_X11 */
+
     /* Notify listeners: */
     emit sigHostScreenWorkAreaResized(iHostScreenIndex);
 }
