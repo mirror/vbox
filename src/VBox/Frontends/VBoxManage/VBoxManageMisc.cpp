@@ -495,11 +495,25 @@ RTEXITCODE handleStartVM(HandlerArg *a)
     HRESULT rc = S_OK;
     std::list<const char *> VMs;
     Bstr sessionType;
+    Utf8Str strEnv;
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+    /* make sure the VM process will by default start on the same display as VBoxManage */
+    {
+        const char *pszDisplay = RTEnvGet("DISPLAY");
+        if (pszDisplay)
+            strEnv = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
+        const char *pszXAuth = RTEnvGet("XAUTHORITY");
+        if (pszXAuth)
+            strEnv.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
+    }
+#endif
 
     static const RTGETOPTDEF s_aStartVMOptions[] =
     {
         { "--type",         't', RTGETOPT_REQ_STRING },
         { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
+        { "--putenv",       'E', RTGETOPT_REQ_STRING },
     };
     int c;
     RTGETOPTUNION ValueUnion;
@@ -534,6 +548,13 @@ RTEXITCODE handleStartVM(HandlerArg *a)
 #endif
                 else
                     sessionType = ValueUnion.psz;
+                break;
+
+            case 'E':   // --putenv
+                if (!RTStrStr(ValueUnion.psz, "\n"))
+                    strEnv.append(Utf8StrFmt("%s\n", ValueUnion.psz));
+                else
+                    return errorSyntax(USAGE_STARTVM, "Parameter to option --putenv must not contain any newline character");
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -572,21 +593,9 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                                                machine.asOutParam()));
         if (machine)
         {
-            Bstr env;
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-            /* make sure the VM process will start on the same display as VBoxManage */
-            Utf8Str str;
-            const char *pszDisplay = RTEnvGet("DISPLAY");
-            if (pszDisplay)
-                str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
-            const char *pszXAuth = RTEnvGet("XAUTHORITY");
-            if (pszXAuth)
-                str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
-            env = str;
-#endif
             ComPtr<IProgress> progress;
             CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
-                                                 env.raw(), progress.asOutParam()));
+                                                 Bstr(strEnv).raw(), progress.asOutParam()));
             if (SUCCEEDED(rc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM \"%s\" to power on...\n", pszVM);

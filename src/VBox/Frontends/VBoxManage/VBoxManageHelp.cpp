@@ -949,6 +949,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
             RTStrmPrintf(pStrm, "|sdl");
         RTStrmPrintf(pStrm, "|headless|separate]\n");
         RTStrmPrintf(pStrm,
+                     "                            [-E|--putenv <NAME>[=<VALUE>]]\n"
                      "\n");
     }
 
