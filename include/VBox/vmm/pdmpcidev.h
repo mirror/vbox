@@ -42,7 +42,7 @@
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   Address         The configuration space register address. [0..4096]
+ * @param   uAddress        The configuration space register address. [0..4096]
  * @param   cb              The register size. [1,2,4]
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
@@ -50,7 +50,7 @@
  *
  * @todo add pDevIns parameter.
  */
-typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address, unsigned cb);
+typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb);
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
@@ -62,7 +62,7 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   Address         The configuration space register address. [0..4096]
+ * @param   uAddress        The configuration space register address. [0..4096]
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  * @param   cb              The register size. [1,2,4]
@@ -72,7 +72,7 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  *
  * @todo add pDevIns parameter and fix iRegion type.
  */
-typedef DECLCALLBACK(void) FNPCICONFIGWRITE(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb);
+typedef DECLCALLBACK(void) FNPCICONFIGWRITE(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, uint32_t u32Value, unsigned cb);
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */

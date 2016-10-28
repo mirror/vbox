@@ -700,8 +700,8 @@ DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus)
         PPDMPCIDEV pBridge = pBus->papBridgesR3[iBridge];
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
-        uint32_t uSecondary   = PCIDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
-        uint32_t uSubordinate = PCIDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
+        uint32_t uSecondary   = PDMPciDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
+        uint32_t uSubordinate = PDMPciDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
         Log3(("ich9pciFindBridge on bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, iBus, uSecondary, uSubordinate));
         if (iBus >= uSecondary && iBus <= uSubordinate)
             return pBridge;
@@ -1053,7 +1053,7 @@ static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t
     LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != PCIDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
         PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -1083,7 +1083,7 @@ static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint
     LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != PCIDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
         PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -1778,7 +1778,7 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uD
                     Assert(false);
                     break;
                 }
-                if (uBus == PCIDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS))
+                if (uBus == PDMPciDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS))
                 {
                     /* OK, found bus this device attached to. */
                     break;
@@ -1837,9 +1837,9 @@ static void ich9pciInitBridgeTopology(PDEVPCIROOT pGlobals, PDEVPCIBUS pBus, uns
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pGlobals->uPciBiosBus);
     Log2(("ich9pciInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
           pBus,
-          PCIDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
-          PCIDevGetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS),
-          PCIDevGetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS)
+          PDMPciDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
+          PDMPciDevGetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS),
+          PDMPciDevGetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS)
           ));
 }
 
@@ -1883,52 +1883,53 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 }
 
 
-/*
- * Configuration space read callback (PCIDEVICEINT::pfnConfigRead) for
- * connected devices.
+/**
+ * @callback_method_impl{PFNPCICONFIGREAD, Default config space read callback.}
  */
-static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t u32Address, unsigned len)
+static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
 {
     NOREF(pDevIns);
-    if ((u32Address + len) > 256 && (u32Address + len) < 4096)
-    {
-        LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
-                pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, u32Address));
-        return 0;
-    }
+    uint32_t uValue;
 
-    AssertMsgReturn(u32Address + len <= 256, ("Read after the end of PCI config space\n"),
-                    0);
-    if (   pciDevIsMsiCapable(pPciDev)
-        && (u32Address >= pPciDev->Int.s.u8MsiCapOffset)
-        && (u32Address < (unsigned)(pPciDev->Int.s.u8MsiCapOffset + pPciDev->Int.s.u8MsiCapSize))
-       )
+    if (uAddress + cb <= 256)
     {
-        return MsiPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, u32Address, len);
-    }
+        /* Check for MSI capabilities - not really necessary, MsiPciConfigRead does the same as below! */
+        if (   pciDevIsMsiCapable(pPciDev)
+            && uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset < (uint32_t)pPciDev->Int.s.u8MsiCapSize )
+            return MsiPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, uAddress, cb);
 
-    if (   pciDevIsMsixCapable(pPciDev)
-        && (u32Address >= pPciDev->Int.s.u8MsixCapOffset)
-        && (u32Address < (unsigned)(pPciDev->Int.s.u8MsixCapOffset + pPciDev->Int.s.u8MsixCapSize))
-       )
-    {
-        return MsixPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, u32Address, len);
-    }
+        /* Check for MSI-X capabilities - not really necessary, MsixPciConfigRead does the same as below! */
+        if (   pciDevIsMsixCapable(pPciDev)
+            && uAddress - (uint32_t)pPciDev->Int.s.u8MsixCapOffset < (uint32_t)pPciDev->Int.s.u8MsixCapSize)
+            return MsixPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, uAddress, cb);
 
-    AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
-                    0);
-    switch (len)
-    {
-        case 1:
-            return PCIDevGetByte(pPciDev,  u32Address);
-        case 2:
-            return PCIDevGetWord(pPciDev,  u32Address);
-        case 4:
-            return PCIDevGetDWord(pPciDev, u32Address);
-        default:
-            Assert(false);
-            return 0;
+        switch (cb)
+        {
+            case 1:
+                uValue = PDMPciDevGetByte(pPciDev,  uAddress);
+                break;
+            case 2:
+                uValue = PDMPciDevGetWord(pPciDev,  uAddress);
+                break;
+            case 4:
+                uValue = PDMPciDevGetDWord(pPciDev, uAddress);
+                break;
+            default:
+                AssertFailed();
+                uValue = 0;
+                break;
+        }
     }
+    else
+    {
+        if (uAddress + cb < 4096)
+            LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
+                    pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
+        else
+            AssertFailed();
+        uValue = 0;
+    }
+    return uValue;
 }
 
 
@@ -1967,7 +1968,7 @@ DECLINLINE(void) ich9pciWriteBarByte(PPDMPCIDEV pPciDev, int iRegion, int iOffse
 
     }
 
-    uint8_t u8Old = PCIDevGetByte(pPciDev, uAddr) & uMask;
+    uint8_t u8Old = PDMPciDevGetByte(pPciDev, uAddr) & uMask;
     u8Val = (u8Old & uMask) | (u8Val & ~uMask);
 
     Log3(("ich9pciWriteBarByte: was %x writing %x\n", u8Old, u8Val));
