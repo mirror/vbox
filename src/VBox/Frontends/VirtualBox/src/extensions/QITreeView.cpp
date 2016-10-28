@@ -33,6 +33,54 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** QAccessibleObject extension used as an accessibility interface for QITreeViewItem. */
+class QIAccessibilityInterfaceForQITreeViewItem : public QAccessibleObject
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITreeViewItem accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITreeViewItem"))
+            return new QIAccessibilityInterfaceForQITreeViewItem(pObject);
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pObject to the base-class. */
+    QIAccessibilityInterfaceForQITreeViewItem(QObject *pObject)
+        : QAccessibleObject(pObject)
+    {}
+
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */;
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */;
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */;
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */;
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */;
+
+private:
+
+    /** Returns corresponding QITreeViewItem. */
+    QITreeViewItem *item() const { return qobject_cast<QITreeViewItem*>(object()); }
+};
+
+
 /** QAccessibleWidget extension used as an accessibility interface for QITreeView. */
 class QIAccessibilityInterfaceForQITreeView : public QAccessibleWidget
 {
@@ -69,6 +117,99 @@ private:
     /** Returns corresponding QITreeView. */
     QITreeView *tree() const { return qobject_cast<QITreeView*>(widget()); }
 };
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITreeViewItem implementation.                                                              *
+*********************************************************************************************************************************/
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::parent() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+
+    /* Return the parent: */
+    return item()->parentItem() ?
+           QAccessible::queryAccessibleInterface(item()->parentItem()) :
+           QAccessible::queryAccessibleInterface(item()->parentTree());
+}
+
+int QIAccessibilityInterfaceForQITreeViewItem::childCount() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+
+    /* Return the number of children: */
+    return item()->childCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::child(int iIndex) const /* override */
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(item()->childItem(iIndex));
+}
+
+int QIAccessibilityInterfaceForQITreeViewItem::indexOfChild(const QAccessibleInterface *pChild) const /* override */
+{
+    /* Search for corresponding child: */
+    for (int i = 0; i < childCount(); ++i)
+        if (child(i) == pChild)
+            return i;
+
+    /* -1 by default: */
+    return -1;
+}
+
+QRect QIAccessibilityInterfaceForQITreeViewItem::rect() const
+{
+    /* Make sure item still alive: */
+    AssertPtrReturn(item(), QRect());
+    AssertPtrReturn(item()->parentTree(), QRect());
+    AssertPtrReturn(item()->parentTree()->viewport(), QRect());
+
+    /* Get the local rect: */
+    const QRect  itemRectInViewport = item()->rect();
+    const QSize  itemSize           = itemRectInViewport.size();
+    const QPoint itemPosInViewport  = itemRectInViewport.topLeft();
+    const QPoint itemPosInScreen    = item()->parentTree()->viewport()->mapToGlobal(itemPosInViewport);
+    const QRect  itemRectInScreen   = QRect(itemPosInScreen, itemSize);
+
+    /* Return the rect: */
+    return itemRectInScreen;
+}
+
+QString QIAccessibilityInterfaceForQITreeViewItem::text(QAccessible::Text enmTextRole) const
+{
+    /* Make sure row still alive: */
+    AssertPtrReturn(item(), QString());
+
+    /* Return a text for the passed enmTextRole: */
+    switch (enmTextRole)
+    {
+        case QAccessible::Name: return item()->text();
+        default: break;
+    }
+
+    /* Null-string by default: */
+    return QString();
+}
+
+QAccessible::Role QIAccessibilityInterfaceForQITreeViewItem::role() const
+{
+    /* List if there are children, ListItem by default: */
+    return childCount() ? QAccessible::List : QAccessible::ListItem;
+}
+
+QAccessible::State QIAccessibilityInterfaceForQITreeViewItem::state() const
+{
+    /* Empty state by default: */
+    return QAccessible::State();
+}
 
 
 /*********************************************************************************************************************************
@@ -226,6 +367,8 @@ void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
 
 void QITreeView::prepare()
 {
+    /* Install QITreeViewItem accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeViewItem::pFactory);
     /* Install QITreeView accessibility interface factory: */
     QAccessible::installFactory(QIAccessibilityInterfaceForQITreeView::pFactory);
 
