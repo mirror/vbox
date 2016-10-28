@@ -32,10 +32,8 @@
 QITreeView::QITreeView(QWidget *pParent)
     : QTreeView(pParent)
 {
-    /* Mark header hidden: */
-    setHeaderHidden(true);
-    /* Mark root hidden: */
-    setRootIsDecorated(false);
+    /* Prepare all: */
+    prepare();
 }
 
 void QITreeView::currentChanged(const QModelIndex &current, const QModelIndex &previous)
@@ -85,5 +83,13 @@ void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
     /* Call to base-class only if event was not yet accepted: */
     if (!pEvent->isAccepted())
         QTreeView::mouseDoubleClickEvent(pEvent);
+}
+
+void QITreeView::prepare()
+{
+    /* Mark header hidden: */
+    setHeaderHidden(true);
+    /* Mark root hidden: */
+    setRootIsDecorated(false);
 }
 
