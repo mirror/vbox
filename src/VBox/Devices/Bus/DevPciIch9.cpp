@@ -1847,83 +1847,84 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
 {
     uint64_t uLast, uNew;
 
-    int iCmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
-    for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+    uint16_t const u16Cmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
+    for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
-        PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
-        uint32_t uConfigReg  = ich9pciGetRegionReg(iRegion);
-        int64_t  iRegionSize =  pRegion->size;
-        int rc;
-
-        if (iRegionSize == 0)
-            continue;
-
-        bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
-                      == PCI_ADDRESS_SPACE_BAR64;
-
-        if (pRegion->type & PCI_ADDRESS_SPACE_IO)
+        PCIIORegion   *pRegion  = &pDev->Int.s.aIORegions[iRegion];
+        uint64_t const cbRegion = pRegion->size;
+        if (cbRegion != 0)
         {
-            /* port IO region */
-            if (iCmd & PCI_COMMAND_IOACCESS)
-            {
-                /* IO access allowed */
-                uNew = ich9pciGetDWord(pDev, uConfigReg);
-                uNew &= ~(iRegionSize - 1);
-                uLast = uNew + iRegionSize - 1;
-                /* only 64K ioports on PC */
-                if (uLast <= uNew || uNew == 0 || uLast >= 0x10000)
-                    uNew = INVALID_PCI_ADDRESS;
-            } else
-                uNew = INVALID_PCI_ADDRESS;
-        }
-        else
-        {
-            /* MMIO region */
-            if (iCmd & PCI_COMMAND_MEMACCESS)
-            {
-                uNew = ich9pciGetDWord(pDev, uConfigReg);
-                if (f64Bit)
-                    uNew |= (uint64_t)ich9pciGetDWord(pDev, uConfigReg + 4) << 32;
+            uint32_t const offCfgReg = ich9pciGetRegionReg(iRegion);
+            int rc;
 
-                /* the ROM slot has a specific enable bit */
-                if (iRegion == PCI_ROM_SLOT && !(uNew & 1))
-                    uNew = INVALID_PCI_ADDRESS;
-                else
+            bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                          == PCI_ADDRESS_SPACE_BAR64;
+
+            if (pRegion->type & PCI_ADDRESS_SPACE_IO)
+            {
+                /* port IO region */
+                if (u16Cmd & PCI_COMMAND_IOACCESS)
                 {
-                    uNew &= ~(iRegionSize - 1);
-                    uLast = uNew + iRegionSize - 1;
-                    /* NOTE: we do not support wrapping */
-                    /* XXX: as we cannot support really dynamic
-                       mappings, we handle specific values as invalid
-                       mappings. */
-                    /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                    if (uLast <= uNew || uNew == 0 || (uNew <= UINT32_C(0xffffffff) && uLast >= UINT32_C(0xfec00000)))
+                    /* IO access allowed */
+                    uNew = ich9pciGetDWord(pDev, offCfgReg);
+                    uNew &= ~(cbRegion - 1);
+                    uLast = uNew + cbRegion - 1;
+                    /* only 64K ioports on PC */
+                    if (uLast <= uNew || uNew == 0 || uLast >= 0x10000)
                         uNew = INVALID_PCI_ADDRESS;
-                }
-            } else
-                uNew = INVALID_PCI_ADDRESS;
-        }
-        LogRel2(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", pDev->uDevFn >> 3, pDev->uDevFn & 7, iRegion, pRegion->addr, uNew, pRegion->size));
-        /* now do the real mapping */
-        if (uNew != pRegion->addr)
-        {
-            if (pRegion->addr != INVALID_PCI_ADDRESS)
-                ich9pciUnmapRegion(pDev, iRegion);
-
-            pRegion->addr = uNew;
-            if (pRegion->addr != INVALID_PCI_ADDRESS)
-            {
-
-                /* finally, map the region */
-                rc = pRegion->map_func(pDev->Int.s.pDevInsR3, pDev, iRegion,
-                                       pRegion->addr, pRegion->size,
-                                       (PCIADDRESSSPACE)(pRegion->type));
-                AssertRC(rc);
+                } else
+                    uNew = INVALID_PCI_ADDRESS;
             }
-        }
+            else
+            {
+                /* MMIO region */
+                if (u16Cmd & PCI_COMMAND_MEMACCESS)
+                {
+                    uNew = ich9pciGetDWord(pDev, offCfgReg);
+                    if (f64Bit)
+                        uNew |= (uint64_t)ich9pciGetDWord(pDev, offCfgReg + 4) << 32;
 
-        if (f64Bit)
-            iRegion++;
+                    /* the ROM slot has a specific enable bit */
+                    if (iRegion == PCI_ROM_SLOT && !(uNew & 1))
+                        uNew = INVALID_PCI_ADDRESS;
+                    else
+                    {
+                        uNew &= ~(cbRegion - 1);
+                        uLast = uNew + cbRegion - 1;
+                        /* NOTE: we do not support wrapping */
+                        /* XXX: as we cannot support really dynamic
+                           mappings, we handle specific values as invalid
+                           mappings. */
+                        /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
+                        if (uLast <= uNew || uNew == 0 || (uNew <= UINT32_C(0xffffffff) && uLast >= UINT32_C(0xfec00000)))
+                            uNew = INVALID_PCI_ADDRESS;
+                    }
+                } else
+                    uNew = INVALID_PCI_ADDRESS;
+            }
+            LogRel2(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", pDev->uDevFn >> 3, pDev->uDevFn & 7, iRegion, pRegion->addr, uNew, pRegion->size));
+            /* now do the real mapping */
+            if (uNew != pRegion->addr)
+            {
+                if (pRegion->addr != INVALID_PCI_ADDRESS)
+                    ich9pciUnmapRegion(pDev, iRegion);
+
+                pRegion->addr = uNew;
+                if (pRegion->addr != INVALID_PCI_ADDRESS)
+                {
+
+                    /* finally, map the region */
+                    rc = pRegion->map_func(pDev->Int.s.pDevInsR3, pDev, iRegion,
+                                           pRegion->addr, pRegion->size,
+                                           (PCIADDRESSSPACE)(pRegion->type));
+                    AssertRC(rc);
+                }
+            }
+
+            if (f64Bit)
+                iRegion++;
+        }
+        /* else: size == 0: unused region */
     }
 }
 
