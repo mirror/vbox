@@ -70,7 +70,8 @@ typedef struct
 #define VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI   2
 #define VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI
 
-#define INVALID_PCI_ADDRESS ~0U
+/** Invalid PCI region mapping address. */
+#define INVALID_PCI_ADDRESS     UINT32_MAX
 
 
 /*********************************************************************************************************************************
@@ -1806,15 +1807,22 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
     return uValue;
 }
 
-static int  ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
+/**
+ * Worker for ich9pciResetDevice and devpciR3UpdateMappings that unmaps a region.
+ *
+ * @returns VBox status code.
+ * @param   pDev                The PCI device.
+ * @param   iRegion             The region to unmap.
+ */
+static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
 {
-    PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
-    int rc = VINF_SUCCESS;
-    PDEVPCIBUS pBus = pDev->Int.s.CTX_SUFF(pBus);
+    PCIIORegion *pRegion = &pDev->Int.s.aIORegions[iRegion];
+    AssertReturn(pRegion->size != 0, VINF_SUCCESS);
 
-    Assert (pRegion->size != 0);
-
-    if (pRegion->addr != INVALID_PCI_ADDRESS)
+    int rc;
+    if (pRegion->addr == INVALID_PCI_ADDRESS)
+        rc = VINF_SUCCESS;
+    else
     {
         if (pRegion->type & PCI_ADDRESS_SPACE_IO)
         {
@@ -1824,7 +1832,8 @@ static int  ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
         }
         else
         {
-            RTGCPHYS GCPhysBase = pRegion->addr;
+            PDEVPCIBUS pBus       = pDev->Int.s.CTX_SUFF(pBus);
+            RTGCPHYS   GCPhysBase = pRegion->addr;
             if (pBus->pPciHlpR3->pfnIsMMIOExBase(pBus->pDevInsR3, pDev->Int.s.pDevInsR3, GCPhysBase))
             {
                 /* unmap it. */
@@ -1836,14 +1845,12 @@ static int  ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
             else
                 rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
         }
-
         pRegion->addr = INVALID_PCI_ADDRESS;
     }
-
     return rc;
 }
 
-static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
+static void devpciR3UpdateMappings(PDMPCIDEV* pDev)
 {
     uint16_t const u16Cmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
@@ -1853,70 +1860,71 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
         if (cbRegion != 0)
         {
             uint32_t const offCfgReg = ich9pciGetRegionReg(iRegion);
-            int rc;
+            bool const     f64Bit    =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                                       == PCI_ADDRESS_SPACE_BAR64;
+            uint64_t       uNew      = INVALID_PCI_ADDRESS;
 
-            bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
-                          == PCI_ADDRESS_SPACE_BAR64;
-
-            uint64_t uNew = INVALID_PCI_ADDRESS;
+            /*
+             * Port I/O region. Check if mapped and within 1..65535 range.
+             */
             if (pRegion->type & PCI_ADDRESS_SPACE_IO)
             {
-                /*
-                 * Port I/O region. Check if mapped and within 0..65535 range.
-                 */
                 if (u16Cmd & PCI_COMMAND_IOACCESS)
                 {
-                    uint32_t uBase = ich9pciGetDWord(pDev, offCfgReg);
-                    uBase &= ~(uint32_t)(cbRegion - 1);
-                    uint64_t uLast = cbRegion - 1 + uBase;
+                    uint32_t uIoBase = ich9pciGetDWord(pDev, offCfgReg);
+                    uIoBase &= ~(uint32_t)(cbRegion - 1);
+
+                    uint64_t uLast = cbRegion - 1 + uIoBase;
                     if (   uLast < _64K
-                        && uBase <= uLast
-                        && uBase > 0)
-                        uNew = uBase;
+                        && uIoBase < uLast
+                        && uIoBase > 0)
+                        uNew = uIoBase;
                 }
             }
-            else
+            /*
+             * MMIO or ROM.  Check ROM enable bit and range.
+             *
+             * Note! We exclude the I/O-APIC/HPET/ROM area at the end of the first 4GB to
+             *       prevent the (fake) PCI BIOS and others from making a mess.  Pure paranoia.
+             */
+            else if (u16Cmd & PCI_COMMAND_MEMACCESS)
             {
-                /* MMIO region */
-                if (u16Cmd & PCI_COMMAND_MEMACCESS)
+                uint64_t uMemBase = ich9pciGetDWord(pDev, offCfgReg);
+                if (f64Bit)
                 {
-                    uNew = ich9pciGetDWord(pDev, offCfgReg);
-                    if (f64Bit)
-                        uNew |= (uint64_t)ich9pciGetDWord(pDev, offCfgReg + 4) << 32;
+                    Assert(iRegion < VBOX_PCI_ROM_SLOT);
+                    uMemBase |= (uint64_t)ich9pciGetDWord(pDev, offCfgReg + 4) << 32;
+                }
+                if (   iRegion != PCI_ROM_SLOT
+                    || (uMemBase & RT_BIT_32(0))) /* ROM enable bit. */
+                {
+                    uMemBase &= ~(cbRegion - 1);
 
-                    /* the ROM slot has a specific enable bit */
-                    if (iRegion == PCI_ROM_SLOT && !(uNew & 1))
-                        uNew = INVALID_PCI_ADDRESS;
-                    else
-                    {
-                        uNew &= ~(cbRegion - 1);
-                        uint64_t uLast = uNew + cbRegion - 1;
-                        /* NOTE: we do not support wrapping */
-                        /* XXX: as we cannot support really dynamic
-                           mappings, we handle specific values as invalid
-                           mappings. */
-                        /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
-                        if (uLast <= uNew || uNew == 0 || (uNew <= UINT32_C(0xffffffff) && uLast >= UINT32_C(0xfec00000)))
-                            uNew = INVALID_PCI_ADDRESS;
-                    }
-                } else
-                    uNew = INVALID_PCI_ADDRESS;
+                    uint64_t uLast = uNew + cbRegion - 1;
+                    if (   uMemBase < uLast
+                        && uMemBase > 0
+                        && !(   uNew  <= UINT32_C(0xffffffff)
+                             && uLast >= UINT32_C(0xfec00000)) )
+                        uNew = uMemBase;
+                }
             }
-            LogRel2(("PCI: config dev %u/%u BAR%i uOld=%#018llx uNew=%#018llx size=%llu\n", pDev->uDevFn >> 3, pDev->uDevFn & 7, iRegion, pRegion->addr, uNew, pRegion->size));
-            /* now do the real mapping */
+
+            /*
+             * Do real unmapping and/or mapping if the address change.
+             */
             if (uNew != pRegion->addr)
             {
-                if (pRegion->addr != INVALID_PCI_ADDRESS)
-                    ich9pciUnmapRegion(pDev, iRegion);
+                LogRel2(("PCI: config dev %u/%u (%s) BAR%i: %#RX64 -> %#RX64 (LB %RX64 (%RU64))\n",
+                         pDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK, pDev->pszNameR3,
+                         iRegion, pRegion->addr, uNew, cbRegion, cbRegion));
 
+                ich9pciUnmapRegion(pDev, iRegion);
                 pRegion->addr = uNew;
-                if (pRegion->addr != INVALID_PCI_ADDRESS)
+                if (uNew != INVALID_PCI_ADDRESS)
                 {
-
-                    /* finally, map the region */
-                    rc = pRegion->map_func(pDev->Int.s.pDevInsR3, pDev, iRegion,
-                                           pRegion->addr, pRegion->size,
-                                           (PCIADDRESSSPACE)(pRegion->type));
+                    int rc = pRegion->map_func(pDev->Int.s.pDevInsR3, pDev, iRegion,
+                                               pRegion->addr, pRegion->size,
+                                               (PCIADDRESSSPACE)(pRegion->type));
                     AssertRC(rc);
                 }
             }
@@ -2155,7 +2163,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
              * Update the region mappings if anything changed related to them (command, BARs, ROM).
              */
             if (fUpdateMappings)
-                ich9pciUpdateMappings(pPciDev);
+                devpciR3UpdateMappings(pPciDev);
         }
     }
     else if (uAddress + cb <= 4096)
