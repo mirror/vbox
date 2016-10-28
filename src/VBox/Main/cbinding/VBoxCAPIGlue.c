@@ -41,6 +41,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#ifdef WIN32
+# define _INTPTR 2 /* on Windows stdint.h compares this in #if, causing warnings if not defined */
+#endif /* WIN32 */
 #include <stdint.h>
 #ifndef WIN32
 # include <dlfcn.h>
