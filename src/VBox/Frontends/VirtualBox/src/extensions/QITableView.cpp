@@ -396,7 +396,7 @@ QString QIAccessibilityInterfaceForQITableView::text(QAccessible::Text /* enmTex
     /* Make sure table still alive: */
     AssertPtrReturn(table(), QString());
 
-    /* Return tree whats-this: */
+    /* Return table whats-this: */
     return table()->whatsThis();
 }
 

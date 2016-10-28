@@ -101,7 +101,7 @@ public:
     /** Returns the number of children. */
     virtual int childCount() const { return 0; }
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const { Q_UNUSED(iIndex); return 0; }
+    virtual QITableViewRow *childItem(int /* iIndex */) const { return 0; }
 
     /** Makes sure current editor data committed. */
     void makeSureEditorDataCommitted();

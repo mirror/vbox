@@ -260,7 +260,7 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex)
     {
         // WORKAROUND:
         // Normally I would assert here, but Qt5 accessibility code has
-        // a hard-coded architecture for a tree-views which we do not like
+        // a hard-coded architecture for a tree-widgets which we do not like
         // but have to live with and this architecture enumerates children
         // of all levels as children of level 0, so Qt5 can try to address
         // our interface with index which surely out of bounds by our laws.
@@ -268,22 +268,28 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeWidget::child(int iIndex)
         // visible children like they are a part of the list, not tree.
         // printf("Invalid index: %d\n", iIndex);
 
-        // Do some sanity check as well, enough?
-        AssertReturn(iIndex >= tree()->columnCount(), 0);
+        // Take into account we also have header with 'column count' indexes,
+        // so we should start enumerating tree indexes since 'column count'.
+        const int iColumnCount = tree()->columnCount();
+        int iCurrentIndex = iColumnCount;
 
-        // The enumeration step is column count:
-        int iCurrentIndex = tree()->columnCount();
+        // Do some sanity check as well, enough?
+        AssertReturn(iIndex >= iColumnCount, 0);
+
+        // Search for sibling with corresponding index:
         QTreeWidgetItem *pItem = tree()->topLevelItem(0);
         while (pItem && iCurrentIndex < iIndex)
         {
             ++iCurrentIndex;
-            if (iCurrentIndex % tree()->columnCount() == 0)
+            if (iCurrentIndex % iColumnCount == 0)
                 pItem = tree()->itemBelow(pItem);
         }
 
         // Return what we found:
         // if (pItem)
-        //     printf("Item found: [%s]\n", pItem->defaultText().toUtf8().constData());
+        //     printf("Item found: [%s]\n", pItem->text(0).toUtf8().constData());
+        // else
+        //     printf("Item not found\n");
         return pItem ? QAccessible::queryAccessibleInterface(QITreeWidgetItem::toItem(pItem)) : 0;
     }
 

@@ -230,7 +230,47 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
     /* Make sure tree still alive: */
     AssertPtrReturn(tree(), 0);
     /* Make sure index is valid: */
-    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+    AssertReturn(iIndex >= 0, 0);
+    if (iIndex >= childCount())
+    {
+        // WORKAROUND:
+        // Normally I would assert here, but Qt5 accessibility code has
+        // a hard-coded architecture for a tree-views which we do not like
+        // but have to live with and this architecture enumerates children
+        // of all levels as children of level 0, so Qt5 can try to address
+        // our interface with index which surely out of bounds by our laws.
+        // So let's assume that's exactly such case and try to enumerate
+        // visible children like they are a part of the list, not tree.
+        // printf("Invalid index: %d\n", iIndex);
+
+        // Take into account we also have header with 'column count' indexes,
+        // so we should start enumerating tree indexes since 'column count'.
+        const int iColumnCount = tree()->model()->columnCount();
+        int iCurrentIndex = iColumnCount;
+
+        // Set iterator to root-index initially:
+        const QModelIndex root = tree()->rootIndex();
+        QModelIndex index = root;
+
+        // But if root-index has child, go deeper:
+        if (index.child(0, 0).isValid())
+            index = index.child(0, 0);
+
+        // Search for sibling with corresponding index:
+        while (index.isValid() && iCurrentIndex < iIndex)
+        {
+            ++iCurrentIndex;
+            if (iCurrentIndex % iColumnCount == 0)
+                index = tree()->indexBelow(index);
+        }
+
+        // Return what we found:
+        // if (index.isValid())
+        //     printf("Item found: [%s]\n", ((QITreeViewItem*)index.internalPointer())->text().toUtf8().constData());
+        // else
+        //     printf("Item not found\n");
+        return index.isValid() ? QAccessible::queryAccessibleInterface((QITreeViewItem*)index.internalPointer()) : 0;
+    }
 
     /* Return the child with the passed iIndex: */
     return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));

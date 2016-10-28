@@ -58,6 +58,7 @@ public:
     QITreeWidget *parentTree() const;
     /** Returns the parent tree-widget item. */
     QITreeWidgetItem *parentItem() const;
+
     /** Returns the child tree-widget item with @a iIndex. */
     QITreeWidgetItem *childItem(int iIndex) const;
 
