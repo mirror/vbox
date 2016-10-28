@@ -47,8 +47,6 @@
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
- *
- * @todo add pDevIns parameter.
  */
 typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb);
 /** Pointer to a FNPCICONFIGREAD() function. */
@@ -69,8 +67,6 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
- *
- * @todo add pDevIns parameter and fix iRegion type.
  */
 typedef DECLCALLBACK(void) FNPCICONFIGWRITE(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, uint32_t u32Value, unsigned cb);
 /** Pointer to a FNPCICONFIGWRITE() function. */
@@ -98,8 +94,6 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
- *
- * @todo add pDevIns parameter and fix iRegion type.
  */
 typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
