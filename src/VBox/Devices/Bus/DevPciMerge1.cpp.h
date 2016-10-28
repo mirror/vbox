@@ -223,7 +223,7 @@ static DECLCALLBACK(int) pciR3MergedRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPci
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     AssertCompileMemberOffset(DEVPCIROOT, PciBus, 0);
     return pciR3MergedRegisterDeviceOnBus(pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
-                                          devpciR3CommonDefaultConfigRead, pciR3UnmergedConfigWriteDev);
+                                          devpciR3CommonDefaultConfigRead, devpciR3CommonDefaultConfigWrite);
 }
 
 
@@ -235,6 +235,6 @@ static DECLCALLBACK(int) pcibridgeR3MergedRegisterDevice(PPDMDEVINS pDevIns, PPD
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     return pciR3MergedRegisterDeviceOnBus(pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
-                                          devpciR3CommonDefaultConfigRead, pciR3UnmergedConfigWriteDev);
+                                          devpciR3CommonDefaultConfigRead, devpciR3CommonDefaultConfigWrite);
 }
 

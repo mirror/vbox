@@ -203,131 +203,6 @@ static void pci_update_mappings(PDMPCIDEV *d)
     }
 }
 
-
-static DECLCALLBACK(void) pci_default_write_config(PPDMDEVINS pDevIns, PDMPCIDEV *d, uint32_t address, uint32_t val, unsigned len)
-{
-    NOREF(pDevIns);
-    int can_write;
-    unsigned i;
-    uint32_t end, addr;
-
-    if (len == 4 && ((address >= 0x10 && address < 0x10 + 4 * 6) ||
-                     (address >= 0x30 && address < 0x34))) {
-        PCIIORegion *r;
-        int reg;
-
-        if ( address >= 0x30 ) {
-            reg = PCI_ROM_SLOT;
-        }else{
-            reg = (address - 0x10) >> 2;
-        }
-        r = &d->Int.s.aIORegions[reg];
-        if (r->size == 0)
-            goto default_config;
-        /* compute the stored value */
-        if (reg == PCI_ROM_SLOT) {
-            /* keep ROM enable bit */
-            val &= (~(r->size - 1)) | 1;
-        } else {
-            val &= ~(r->size - 1);
-            val |= r->type;
-        }
-        *(uint32_t *)(d->abConfig + address) = RT_H2LE_U32(val);
-        pci_update_mappings(d);
-        return;
-    }
- default_config:
-    /* not efficient, but simple */
-    addr = address;
-    for(i = 0; i < len; i++) {
-        /* default read/write accesses */
-        switch(d->abConfig[0x0e]) {
-        case 0x00: /* normal device */
-        case 0x80: /* multi-function device */
-            switch(addr) {
-            case 0x00:
-            case 0x01:
-            case 0x02:
-            case 0x03:
-            case 0x08:
-            case 0x09:
-            case 0x0a:
-            case 0x0b:
-            case 0x0e:
-            case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17: /* base */
-            case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
-            case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
-            case 0x2c: case 0x2d:                                                                   /* subsystem ID */
-            case 0x2e: case 0x2f:                                                                   /* vendor ID */
-            case 0x30: case 0x31: case 0x32: case 0x33:                                             /* rom */
-            case 0x34:                                                                              /* Capabilities pointer. */
-            case 0x3d:                                                                              /* Interrupt pin. */
-                can_write = 0;
-                break;
-            default:
-                can_write = 1;
-                break;
-            }
-            break;
-        default:
-        case 0x01: /* bridge */
-            switch(addr) {
-            case 0x00:
-            case 0x01:
-            case 0x02:
-            case 0x03:
-            case 0x08:
-            case 0x09:
-            case 0x0a:
-            case 0x0b:
-            case 0x0e:
-            case 0x38: case 0x39: case 0x3a: case 0x3b: /* rom */
-            case 0x3d:
-                can_write = 0;
-                break;
-            default:
-                can_write = 1;
-                break;
-            }
-            break;
-        }
-#ifdef VBOX
-        if (addr == 0x05)       /* Command register, bits 8-15. */
-        {
-            /* don't change reserved bits (11-15) */
-            val &= ~UINT32_C(0xf8);
-            d->abConfig[addr] = val;
-        }
-        else if (addr == 0x06)  /* Status register, bits 0-7. */
-        {
-            /* don't change read-only bits => actually all lower bits are read-only */
-            val &= ~UINT32_C(0xff);
-            /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-            d->abConfig[addr] &= ~val;
-        }
-        else if (addr == 0x07)  /* Status register, bits 8-15. */
-        {
-            /* don't change read-only bits */
-            val &= ~UINT32_C(0x06);
-            /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-            d->abConfig[addr] &= ~val;
-        }
-        else
-#endif
-        if (can_write) {
-            d->abConfig[addr] = val;
-        }
-        addr++;
-        val >>= 8;
-    }
-
-    end = address + len;
-    if (end > PCI_COMMAND && address < (PCI_COMMAND + 2)) {
-        /* if the command register is modified, we must modify the mappings */
-        pci_update_mappings(d);
-    }
-}
-
 #endif /* IN_RING3 */
 
 static int pci_data_write(PDEVPCIROOT pGlobals, uint32_t addr, uint32_t val, int len)
@@ -1085,7 +960,6 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  *       completely merge these files!  File #1 contains code we write, where
  *       as a possible file #2 contains external code if there's any left.
  */
-# define pciR3UnmergedConfigWriteDev pci_default_write_config
 # include "DevPciMerge1.cpp.h"
 
 
