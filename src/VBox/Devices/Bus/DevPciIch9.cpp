@@ -1921,7 +1921,7 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev)
                 {
                     uMemBase &= ~(cbRegion - 1);
 
-                    uint64_t uLast = uNew + cbRegion - 1;
+                    uint64_t uLast = uMemBase + cbRegion - 1;
                     if (   uMemBase < uLast
                         && uMemBase > 0
                         && !(   uNew  <= UINT32_C(0xffffffff)
