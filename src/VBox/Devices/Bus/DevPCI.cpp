@@ -1510,25 +1510,6 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 /* -=-=-=-=-=- PCI Bus Interface Methods (PDMPCIBUSREG) -=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnSetConfigCallbacksR3}
- */
-static DECLCALLBACK(void)
-pciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                              PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
-{
-    NOREF(pDevIns);
-
-    if (ppfnReadOld)
-        *ppfnReadOld = pPciDev->Int.s.pfnConfigRead;
-    pPciDev->Int.s.pfnConfigRead  = pfnRead;
-
-    if (ppfnWriteOld)
-        *ppfnWriteOld = pPciDev->Int.s.pfnConfigWrite;
-    pPciDev->Int.s.pfnConfigWrite = pfnWrite;
-}
-
-
-/**
  * @interface_method_impl{PDMPCIBUSREG,pfnFakePCIBIOSR3}
  */
 static DECLCALLBACK(int) pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
@@ -1694,7 +1675,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PciBusReg.pfnRegisterR3           = pciR3MergedRegister;
     PciBusReg.pfnRegisterMsiR3        = NULL;
     PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
-    PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
+    PciBusReg.pfnSetConfigCallbacksR3 = devpciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pciSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = pciR3FakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
@@ -2031,7 +2012,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     PciBusReg.pfnRegisterR3           = pcibridgeR3MergedRegisterDevice;
     PciBusReg.pfnRegisterMsiR3        = NULL;
     PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
-    PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
+    PciBusReg.pfnSetConfigCallbacksR3 = devpciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pcibridgeSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pcibridgeSetIrq" : NULL;
