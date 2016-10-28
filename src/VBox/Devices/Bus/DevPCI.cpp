@@ -1175,172 +1175,6 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * Common routine for restoring the config registers of a PCI device.
- *
- * @param   pDev                The PCI device.
- * @param   pbSrcConfig         The configuration register values to be loaded.
- * @param   fIsBridge           Whether this is a bridge device or not.
- */
-static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
-{
-    /*
-     * This table defines the fields for normal devices and bridge devices, and
-     * the order in which they need to be restored.
-     */
-    static const struct PciField
-    {
-        uint8_t     off;
-        uint8_t     cb;
-        uint8_t     fWritable;
-        uint8_t     fBridge;
-        const char *pszName;
-    } s_aFields[] =
-    {
-        /* off,cb,fW,fB, pszName */
-        { 0x00, 2, 0, 3, "VENDOR_ID" },
-        { 0x02, 2, 0, 3, "DEVICE_ID" },
-        { 0x06, 2, 1, 3, "STATUS" },
-        { 0x08, 1, 0, 3, "REVISION_ID" },
-        { 0x09, 1, 0, 3, "CLASS_PROG" },
-        { 0x0a, 1, 0, 3, "CLASS_SUB" },
-        { 0x0b, 1, 0, 3, "CLASS_BASE" },
-        { 0x0c, 1, 1, 3, "CACHE_LINE_SIZE" },
-        { 0x0d, 1, 1, 3, "LATENCY_TIMER" },
-        { 0x0e, 1, 0, 3, "HEADER_TYPE" },
-        { 0x0f, 1, 1, 3, "BIST" },
-        { 0x10, 4, 1, 3, "BASE_ADDRESS_0" },
-        { 0x14, 4, 1, 3, "BASE_ADDRESS_1" },
-        { 0x18, 4, 1, 1, "BASE_ADDRESS_2" },
-        { 0x18, 1, 1, 2, "PRIMARY_BUS" },       // fWritable = ??
-        { 0x19, 1, 1, 2, "SECONDARY_BUS" },     // fWritable = ??
-        { 0x1a, 1, 1, 2, "SUBORDINATE_BUS" },   // fWritable = ??
-        { 0x1b, 1, 1, 2, "SEC_LATENCY_TIMER" }, // fWritable = ??
-        { 0x1c, 4, 1, 1, "BASE_ADDRESS_3" },
-        { 0x1c, 1, 1, 2, "IO_BASE" },           // fWritable = ??
-        { 0x1d, 1, 1, 2, "IO_LIMIT" },          // fWritable = ??
-        { 0x1e, 2, 1, 2, "SEC_STATUS" },        // fWritable = ??
-        { 0x20, 4, 1, 1, "BASE_ADDRESS_4" },
-        { 0x20, 2, 1, 2, "MEMORY_BASE" },       // fWritable = ??
-        { 0x22, 2, 1, 2, "MEMORY_LIMIT" },      // fWritable = ??
-        { 0x24, 4, 1, 1, "BASE_ADDRESS_5" },
-        { 0x24, 2, 1, 2, "PREF_MEMORY_BASE" },  // fWritable = ??
-        { 0x26, 2, 1, 2, "PREF_MEMORY_LIMIT" }, // fWritable = ??
-        { 0x28, 4, 1, 1, "CARDBUS_CIS" },       // fWritable = ??
-        { 0x28, 4, 1, 2, "PREF_BASE_UPPER32" }, // fWritable = ??
-        { 0x2c, 2, 0, 1, "SUBSYSTEM_VENDOR_ID" },// fWritable = !?
-        { 0x2c, 4, 1, 2, "PREF_LIMIT_UPPER32" },// fWritable = ??
-        { 0x2e, 2, 0, 1, "SUBSYSTEM_ID" },      // fWritable = !?
-        { 0x30, 4, 1, 1, "ROM_ADDRESS" },       // fWritable = ?!
-        { 0x30, 2, 1, 2, "IO_BASE_UPPER16" },   // fWritable = ?!
-        { 0x32, 2, 1, 2, "IO_LIMIT_UPPER16" },  // fWritable = ?!
-        { 0x34, 4, 0, 3, "CAPABILITY_LIST" },   // fWritable = !? cb=!?
-        { 0x38, 4, 1, 1, "RESERVED_38" },       // ???
-        { 0x38, 4, 1, 2, "ROM_ADDRESS_BR" },    // fWritable = !? cb=!? fBridge=!?
-        { 0x3c, 1, 1, 3, "INTERRUPT_LINE" },    // fBridge=??
-        { 0x3d, 1, 0, 3, "INTERRUPT_PIN" },     // fBridge=??
-        { 0x3e, 1, 0, 1, "MIN_GNT" },
-        { 0x3e, 2, 1, 2, "BRIDGE_CONTROL" },    // fWritable = !?
-        { 0x3f, 1, 0, 1, "MAX_LAT" },
-        /* The COMMAND register must come last as it requires the *ADDRESS*
-           registers to be restored before we pretent to change it from 0 to
-           whatever value the guest assigned it. */
-        { 0x04, 2, 1, 3, "COMMAND" },
-    };
-
-#ifdef RT_STRICT
-    /* Check that we've got full register coverage. */
-    uint32_t bmDevice[0x40 / 32];
-    uint32_t bmBridge[0x40 / 32];
-    RT_ZERO(bmDevice);
-    RT_ZERO(bmBridge);
-    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
-    {
-        uint8_t off = s_aFields[i].off;
-        uint8_t cb  = s_aFields[i].cb;
-        uint8_t f   = s_aFields[i].fBridge;
-        while (cb-- > 0)
-        {
-            if (f & 1) AssertMsg(!ASMBitTest(bmDevice, off), ("%#x\n", off));
-            if (f & 2) AssertMsg(!ASMBitTest(bmBridge, off), ("%#x\n", off));
-            if (f & 1) ASMBitSet(bmDevice, off);
-            if (f & 2) ASMBitSet(bmBridge, off);
-            off++;
-        }
-    }
-    for (uint32_t off = 0; off < 0x40; off++)
-    {
-        AssertMsg(ASMBitTest(bmDevice, off), ("%#x\n", off));
-        AssertMsg(ASMBitTest(bmBridge, off), ("%#x\n", off));
-    }
-#endif
-
-    /*
-     * Loop thru the fields covering the 64 bytes of standard registers.
-     */
-    uint8_t const fBridge = fIsBridge ? 2 : 1;
-    uint8_t *pbDstConfig = &pDev->abConfig[0];
-    for (uint32_t i = 0; i < RT_ELEMENTS(s_aFields); i++)
-        if (s_aFields[i].fBridge & fBridge)
-        {
-            uint8_t const   off = s_aFields[i].off;
-            uint8_t const   cb  = s_aFields[i].cb;
-            uint32_t        u32Src;
-            uint32_t        u32Dst;
-            switch (cb)
-            {
-                case 1:
-                    u32Src = pbSrcConfig[off];
-                    u32Dst = pbDstConfig[off];
-                    break;
-                case 2:
-                    u32Src = *(uint16_t const *)&pbSrcConfig[off];
-                    u32Dst = *(uint16_t const *)&pbDstConfig[off];
-                    break;
-                case 4:
-                    u32Src = *(uint32_t const *)&pbSrcConfig[off];
-                    u32Dst = *(uint32_t const *)&pbDstConfig[off];
-                    break;
-                default:
-                    AssertFailed();
-                    continue;
-            }
-
-            if (    u32Src != u32Dst
-                ||  off == VBOX_PCI_COMMAND)
-            {
-                if (u32Src != u32Dst)
-                {
-                    if (!s_aFields[i].fWritable)
-                        LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x - !READ ONLY!\n",
-                                pDev->pszNameR3, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
-                    else
-                        LogRel(("PCI: %8s/%u: %2u-bit field %s: %x -> %x\n",
-                                pDev->pszNameR3, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, cb*8, s_aFields[i].pszName, u32Dst, u32Src));
-                }
-                if (off == VBOX_PCI_COMMAND)
-                    PCIDevSetCommand(pDev, 0); /* For remapping, see pciR3CommonLoadExec. */
-                pDev->Int.s.pfnConfigWrite(pDev->Int.s.CTX_SUFF(pDevIns), pDev, off, u32Src, cb);
-            }
-        }
-
-    /*
-     * The device dependent registers.
-     *
-     * We will not use ConfigWrite here as we have no clue about the size
-     * of the registers, so the device is responsible for correctly
-     * restoring functionality governed by these registers.
-     */
-    for (uint32_t off = 0x40; off < sizeof(pDev->abConfig); off++)
-        if (pbDstConfig[off] != pbSrcConfig[off])
-        {
-            LogRel(("PCI: %8s/%u: register %02x: %02x -> %02x\n",
-                    pDev->pszNameR3, pDev->Int.s.CTX_SUFF(pDevIns)->iInstance, off, pbDstConfig[off], pbSrcConfig[off])); /** @todo make this Log() later. */
-            pbDstConfig[off] = pbSrcConfig[off];
-        }
-}
-
-
-/**
  * Common worker for pciR3LoadExec and pcibridgeR3LoadExec.
  *
  * @returns VBox status code.
@@ -1363,7 +1197,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
      * mapping locations.
      *
      * The register value is restored afterwards so we can do proper
-     * LogRels in pciR3CommonRestoreConfig.
+     * LogRels in devpciR3CommonRestoreConfig.
      */
     for (i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
@@ -1448,7 +1282,7 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
                                     i, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
-        pciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
+        devpciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
     }

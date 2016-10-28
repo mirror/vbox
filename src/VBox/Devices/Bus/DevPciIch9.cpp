@@ -1119,7 +1119,7 @@ static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint
  * @param   pbSrcConfig         The configuration register values to be loaded.
  * @param   fIsBridge           Whether this is a bridge device or not.
  */
-static void pciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
+void devpciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig, bool fIsBridge)
 {
     /*
      * This table defines the fields for normal devices and bridge devices, and
@@ -1304,7 +1304,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
      * mapping locations.
      *
      * The register value is restored afterwards so we can do proper
-     * LogRels in pciR3CommonRestoreConfig.
+     * LogRels in devpciR3CommonRestoreConfig.
      */
     for (i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
@@ -1408,7 +1408,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
 
         /* commit the loaded device config. */
         Assert(!pciDevIsPassthrough(pDev));
-        pciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
+        devpciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
         pDev->Int.s.u8MsiCapOffset  = DevTmp.Int.s.u8MsiCapOffset;
