@@ -2096,7 +2096,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
                         if (fWritable)
                         {
                             /* don't change reserved bits (11-15) */
-                            bVal &= ~UINT32_C(0xf8);
+                            bVal &= ~UINT8_C(0xf8);
                             PCIDevSetByte(pPciDev, uAddress, bVal);
                             fUpdateMappings = true;
                         }
@@ -2104,14 +2104,14 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
 
                     case VBOX_PCI_STATUS:  /* Status register, bits 0-7. */
                         /* don't change read-only bits => actually all lower bits are read-only */
-                        bVal &= ~UINT32_C(0xff);
+                        bVal &= ~UINT8_C(0xff);
                         /* status register, low part: clear bits by writing a '1' to the corresponding bit */
                         pPciDev->abConfig[uAddress] &= ~bVal;
                         break;
 
                     case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                         /* don't change read-only bits */
-                        bVal &= ~UINT32_C(0x06);
+                        bVal &= ~UINT8_C(0x06);
                         /* status register, high part: clear bits by writing a '1' to the corresponding bit */
                         pPciDev->abConfig[uAddress] &= ~bVal;
                         break;
