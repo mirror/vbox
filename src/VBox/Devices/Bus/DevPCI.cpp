@@ -107,6 +107,7 @@ RT_C_DECLS_END
 
 #ifdef IN_RING3
 
+#if 0
 static void pci_update_mappings(PDMPCIDEV *d)
 {
     PDEVPCIBUS pBus = d->Int.s.CTX_SUFF(pBus);
@@ -202,6 +203,7 @@ static void pci_update_mappings(PDMPCIDEV *d)
         }
     }
 }
+#endif
 
 #endif /* IN_RING3 */
 
