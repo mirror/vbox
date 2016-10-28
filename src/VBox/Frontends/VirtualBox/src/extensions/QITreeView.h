@@ -21,6 +21,57 @@
 /* Qt includes: */
 #include <QTreeView>
 
+/* Forward declarations: */
+class QITreeViewItem;
+class QITreeView;
+
+
+/** OObject subclass used as item for the QITreeView. */
+class QITreeViewItem : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs tree-view item for passed @a pParent. */
+    QITreeViewItem(QITreeView *pParent)
+        : m_pParentTree(pParent)
+        , m_pParentItem(0)
+    {}
+
+    /** Constructs tree-view item for passed @a pParent. */
+    QITreeViewItem(QITreeViewItem *pParentItem)
+        : m_pParentTree(pParentItem->parentTree())
+        , m_pParentItem(pParentItem)
+    {}
+
+    /** Returns the parent tree-view. */
+    QITreeView *parentTree() const { return m_pParentTree; }
+    /** Returns the parent tree-view item. */
+    QITreeViewItem *parentItem() const { return m_pParentItem; }
+
+    /** Returns the number of children. */
+    virtual int childCount() const = 0;
+    /** Returns the child item with @a iIndex. */
+    virtual QITreeViewItem *childItem(int iIndex) const = 0;
+
+    /** Returns the item text. */
+    virtual QString text() const = 0;
+
+    /** Returns the rectangle. */
+    QRect rect() const;
+
+private:
+
+    /** Returns the model-index: */
+    QModelIndex modelIndex() const;
+
+    /** Holds the parent tree reference. */
+    QITreeView *m_pParentTree;
+    /** Holds the parent item reference. */
+    QITreeViewItem *m_pParentItem;
+};
+
 
 /** QTreeView subclass extending standard functionality. */
 class QITreeView : public QTreeView
@@ -49,6 +100,11 @@ public:
 
     /** Constructs table-view passing @a pParent to the base-class. */
     QITreeView(QWidget *pParent = 0);
+
+    /** Returns the number of children. */
+    virtual int childCount() const { return 0; }
+    /** Returns the child item with @a iIndex. */
+    virtual QITreeViewItem *childItem(int /* iIndex */) const { return 0; }
 
     /** Returns child rectangle. */
     QRect visualRect(const QModelIndex &index) const { return QTreeView::visualRect(index); }

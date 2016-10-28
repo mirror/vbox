@@ -29,6 +29,58 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class QITreeViewItem implementation.                                                                                         *
+*********************************************************************************************************************************/
+
+QRect QITreeViewItem::rect() const
+{
+    /* Redirect call to parent-tree: */
+    return parentTree() ? parentTree()->visualRect(modelIndex()) : QRect();
+}
+
+QModelIndex QITreeViewItem::modelIndex() const
+{
+    /* Make sure it's not root model-index: */
+    if (   parentTree()->rootIndex().internalPointer()
+        && parentTree()->rootIndex().internalPointer() == this)
+        return parentTree()->rootIndex();
+
+    /* Determine our index inside parent: */
+    int iIndexInParent = -1;
+    if (parentItem())
+    {
+        for (int i = 0; i < parentItem()->childCount(); ++i)
+            if (parentItem()->childItem(i) == this)
+            {
+                iIndexInParent = i;
+                break;
+            }
+    }
+    else
+    {
+        for (int i = 0; i < parentTree()->childCount(); ++i)
+            if (parentTree()->childItem(i) == this)
+            {
+                iIndexInParent = i;
+                break;
+            }
+    }
+    if (iIndexInParent == -1)
+        return QModelIndex();
+
+    /* Get parent model-index: */
+    QModelIndex parentModelIndex = parentItem() ? parentItem()->modelIndex() : parentTree()->rootIndex();
+
+    /* Return model-index as child of parent model-index: */
+    return parentModelIndex.child(iIndexInParent, 0);
+}
+
+
+/*********************************************************************************************************************************
+*   Class QITreeView implementation.                                                                                             *
+*********************************************************************************************************************************/
+
 QITreeView::QITreeView(QWidget *pParent)
     : QTreeView(pParent)
 {
