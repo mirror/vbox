@@ -1889,20 +1889,10 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
 {
     NOREF(pDevIns);
-    uint32_t uValue;
 
+    uint32_t uValue;
     if (uAddress + cb <= 256)
     {
-        /* Check for MSI capabilities - not really necessary, MsiPciConfigRead does the same as below! */
-        if (   pciDevIsMsiCapable(pPciDev)
-            && uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset < (uint32_t)pPciDev->Int.s.u8MsiCapSize )
-            return MsiPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, uAddress, cb);
-
-        /* Check for MSI-X capabilities - not really necessary, MsixPciConfigRead does the same as below! */
-        if (   pciDevIsMsixCapable(pPciDev)
-            && uAddress - (uint32_t)pPciDev->Int.s.u8MsixCapOffset < (uint32_t)pPciDev->Int.s.u8MsixCapSize)
-            return MsixPciConfigRead(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), pPciDev, uAddress, cb);
-
         switch (cb)
         {
             case 1:
@@ -1919,6 +1909,15 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDE
                 uValue = 0;
                 break;
         }
+
+#ifdef LOG_ENABLED
+        if (   pciDevIsMsiCapable(pPciDev)
+            && uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset < (uint32_t)pPciDev->Int.s.u8MsiCapSize )
+            Log2(("ich9pciConfigReadDev: MSI CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
+        else if (   pciDevIsMsixCapable(pPciDev)
+                 && uAddress - (uint32_t)pPciDev->Int.s.u8MsixCapOffset < (uint32_t)pPciDev->Int.s.u8MsixCapSize)
+            Log2(("ich9pciConfigReadDev: MSI-X CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
+#endif
     }
     else
     {
