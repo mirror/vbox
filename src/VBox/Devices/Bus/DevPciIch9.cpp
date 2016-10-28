@@ -1759,6 +1759,9 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 }
 
 
+/* -=-=-=-=-=- PCI Config Space -=-=-=-=-=- */
+
+
 /**
  * @callback_method_impl{PFNPCICONFIGREAD, Default config space read callback.}
  */
@@ -1807,6 +1810,7 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
     return uValue;
 }
 
+
 /**
  * Worker for ich9pciResetDevice and devpciR3UpdateMappings that unmaps a region.
  *
@@ -1851,12 +1855,18 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
     return rc;
 }
 
-static void devpciR3UpdateMappings(PDMPCIDEV* pDev)
+
+/**
+ * Worker for devpciR3IsConfigByteWritable that update BAR and ROM mappings.
+ *
+ * @param   pDev                The PCI device to update the mappings for.
+ */
+static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev)
 {
-    uint16_t const u16Cmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
+    uint16_t const u16Cmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
-        PCIIORegion   *pRegion  = &pDev->Int.s.aIORegions[iRegion];
+        PCIIORegion   *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
         uint64_t const cbRegion = pRegion->size;
         if (cbRegion != 0)
         {
@@ -1872,7 +1882,7 @@ static void devpciR3UpdateMappings(PDMPCIDEV* pDev)
             {
                 if (u16Cmd & PCI_COMMAND_IOACCESS)
                 {
-                    uint32_t uIoBase = ich9pciGetDWord(pDev, offCfgReg);
+                    uint32_t uIoBase = ich9pciGetDWord(pPciDev, offCfgReg);
                     uIoBase &= ~(uint32_t)(cbRegion - 1);
 
                     uint64_t uLast = cbRegion - 1 + uIoBase;
@@ -1890,11 +1900,11 @@ static void devpciR3UpdateMappings(PDMPCIDEV* pDev)
              */
             else if (u16Cmd & PCI_COMMAND_MEMACCESS)
             {
-                uint64_t uMemBase = ich9pciGetDWord(pDev, offCfgReg);
+                uint64_t uMemBase = ich9pciGetDWord(pPciDev, offCfgReg);
                 if (f64Bit)
                 {
                     Assert(iRegion < VBOX_PCI_ROM_SLOT);
-                    uMemBase |= (uint64_t)ich9pciGetDWord(pDev, offCfgReg + 4) << 32;
+                    uMemBase |= (uint64_t)ich9pciGetDWord(pPciDev, offCfgReg + 4) << 32;
                 }
                 if (   iRegion != PCI_ROM_SLOT
                     || (uMemBase & RT_BIT_32(0))) /* ROM enable bit. */
@@ -1916,15 +1926,15 @@ static void devpciR3UpdateMappings(PDMPCIDEV* pDev)
             if (uNew != pRegion->addr)
             {
                 LogRel2(("PCI: config dev %u/%u (%s) BAR%i: %#RX64 -> %#RX64 (LB %RX64 (%RU64))\n",
-                         pDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK, pDev->pszNameR3,
-                         iRegion, pRegion->addr, uNew, cbRegion, cbRegion));
+                         pPciDev->uDevFn >> VBOX_PCI_DEVFN_DEV_SHIFT, pPciDev->uDevFn & VBOX_PCI_DEVFN_FUN_MASK,
+                         pPciDev->pszNameR3, iRegion, pRegion->addr, uNew, cbRegion, cbRegion));
 
-                ich9pciUnmapRegion(pDev, iRegion);
+                ich9pciUnmapRegion(pPciDev, iRegion);
                 pRegion->addr = uNew;
                 if (uNew != INVALID_PCI_ADDRESS)
                 {
-                    int rc;
-                    rc = pRegion->map_func(pDev->Int.s.pDevInsR3, pDev, iRegion, uNew, cbRegion, (PCIADDRESSSPACE)(pRegion->type));
+                    int rc = pRegion->map_func(pPciDev->Int.s.pDevInsR3, pPciDev, iRegion, uNew, cbRegion,
+                                               (PCIADDRESSSPACE)(pRegion->type));
                     AssertRC(rc);
                 }
             }
