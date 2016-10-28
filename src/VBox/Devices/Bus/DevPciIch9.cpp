@@ -1934,32 +1934,35 @@ DECLINLINE(void) ich9pciWriteBarByte(PPDMPCIDEV pPciDev, uint32_t iRegion, uint3
 {
     PCIIORegion *pRegion = &pPciDev->Int.s.aIORegions[iRegion];
     Log3(("ich9pciWriteBarByte: region=%d off=%d val=%#x size=%#llx\n", iRegion, off, bVal, pRegion->size));
+    Assert(off <= 3);
 
     /* Check if we're writing to upper part of 64-bit BAR. */
     if (pRegion->type == 0xff)
-        ich9pciWriteBarByte(pPciDev, iRegion - 1, off + 4, bVal);
-    else
     {
-        Assert(off <= 3 || (pRegion->type & PCI_ADDRESS_SPACE_BAR64));
-        if (pRegion->size != 0)
-        {
+        AssertLogRelReturnVoid(iRegion > 0 && iRegion < VBOX_PCI_ROM_SLOT);
+        pRegion--;
+        iRegion--;
+        off += 4;
+        Assert(pRegion->type & PCI_ADDRESS_SPACE_BAR64);
+    }
 
-            uint32_t uAddr = ich9pciGetRegionReg(iRegion) + off;
-            Assert((pRegion->size & (pRegion->size - 1)) == 0); /* Region size must be power of two. */
-            uint8_t bMask = ( (pRegion->size - 1) >> (off * 8) ) & 0xff;
-            if (off == 0)
-                bMask |= (pRegion->type & PCI_ADDRESS_SPACE_IO)
-                       ? (1 << 2) - 1 /* 2 lowest bits for IO region */ :
-                         (1 << 4) - 1 /* 4 lowest bits for memory region, also ROM enable bit for ROM region */;
+    /* Ignore zero sized regions (they don't exist). */
+    if (pRegion->size != 0)
+    {
+        uint32_t uAddr = ich9pciGetRegionReg(iRegion) + off;
+        Assert((pRegion->size & (pRegion->size - 1)) == 0); /* Region size must be power of two. */
+        uint8_t bMask = ( (pRegion->size - 1) >> (off * 8) ) & 0xff;
+        if (off == 0)
+            bMask |= (pRegion->type & PCI_ADDRESS_SPACE_IO)
+                   ? (1 << 2) - 1 /* 2 lowest bits for IO region */ :
+                     (1 << 4) - 1 /* 4 lowest bits for memory region, also ROM enable bit for ROM region */;
 
-            uint8_t bOld = PDMPciDevGetByte(pPciDev, uAddr) & bMask;
-            bVal = (bOld & bMask) | (bVal & ~bMask);
+        uint8_t bOld = PDMPciDevGetByte(pPciDev, uAddr) & bMask;
+        bVal = (bOld & bMask) | (bVal & ~bMask);
 
-            Log3(("ich9pciWriteBarByte: %x changed to  %x\n", bOld, bVal));
+        Log3(("ich9pciWriteBarByte: %x changed to  %x\n", bOld, bVal));
 
-            PCIDevSetByte(pPciDev, uAddr, bVal);
-        }
-        /* else: Region doesn't exist */
+        PCIDevSetByte(pPciDev, uAddr, bVal);
     }
 }
 
