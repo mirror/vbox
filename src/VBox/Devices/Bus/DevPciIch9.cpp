@@ -1845,8 +1845,6 @@ static int  ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
 
 static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
 {
-    uint64_t uLast, uNew;
-
     uint16_t const u16Cmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
@@ -1860,20 +1858,22 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
             bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                           == PCI_ADDRESS_SPACE_BAR64;
 
+            uint64_t uNew = INVALID_PCI_ADDRESS;
             if (pRegion->type & PCI_ADDRESS_SPACE_IO)
             {
-                /* port IO region */
+                /*
+                 * Port I/O region. Check if mapped and within 0..65535 range.
+                 */
                 if (u16Cmd & PCI_COMMAND_IOACCESS)
                 {
-                    /* IO access allowed */
-                    uNew = ich9pciGetDWord(pDev, offCfgReg);
-                    uNew &= ~(cbRegion - 1);
-                    uLast = uNew + cbRegion - 1;
-                    /* only 64K ioports on PC */
-                    if (uLast <= uNew || uNew == 0 || uLast >= 0x10000)
-                        uNew = INVALID_PCI_ADDRESS;
-                } else
-                    uNew = INVALID_PCI_ADDRESS;
+                    uint32_t uBase = ich9pciGetDWord(pDev, offCfgReg);
+                    uBase &= ~(uint32_t)(cbRegion - 1);
+                    uint64_t uLast = cbRegion - 1 + uBase;
+                    if (   uLast < _64K
+                        && uBase <= uLast
+                        && uBase > 0)
+                        uNew = uBase;
+                }
             }
             else
             {
@@ -1890,7 +1890,7 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
                     else
                     {
                         uNew &= ~(cbRegion - 1);
-                        uLast = uNew + cbRegion - 1;
+                        uint64_t uLast = uNew + cbRegion - 1;
                         /* NOTE: we do not support wrapping */
                         /* XXX: as we cannot support really dynamic
                            mappings, we handle specific values as invalid
