@@ -1696,8 +1696,7 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
  * @param   uBusPrimary      The primary bus number the bus is connected to.
  * @param   uBusSecondary    The secondary bus number, i.e. the bus number behind the bridge.
  */
-static void ich9pciInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, unsigned uBusPrimary,
-                                      unsigned uBusSecondary)
+static void ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, unsigned uBusPrimary, unsigned uBusSecondary)
 {
     PPDMPCIDEV pBridgeDev = &pBus->PciDev;
 
@@ -1715,10 +1714,10 @@ static void ich9pciInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, uns
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PDEVPCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
         pPciRoot->uPciBiosBus++;
-        ich9pciInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pPciRoot->uPciBiosBus);
+        ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pPciRoot->uPciBiosBus);
     }
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pPciRoot->uPciBiosBus);
-    Log2(("ich9pciInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
+    Log2(("ich9pciBiosInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
           pBus,
           PDMPciDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
           PDMPciDevGetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS),
@@ -1727,9 +1726,12 @@ static void ich9pciInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, uns
 }
 
 
+/**
+ * @interface_method_impl{PDMPCIBUSREG,pfnFakePCIBIOSR3}
+ */
 static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
-    PDEVPCIROOT pPciRoot   = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PDEVPCIROOT     pPciRoot   = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     PVM             pVM        = PDMDevHlpGetVM(pDevIns);
     uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
     uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
@@ -1742,24 +1744,25 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     pPciRoot->uPciBiosMmio   = cbBelow4GB;
     pPciRoot->uPciBiosMmio64 = cbAbove4GB + _4G;
 
-    /* NB: Assume that if MMIO range is enabled, it is at the bottom of the memory hole. */
+    /* NB: Assume that if PCI controller MMIO range is enabled, it is at the bottom of the memory hole. */
     if (pPciRoot->u64PciConfigMMioAddress)
     {
         AssertRelease(pPciRoot->u64PciConfigMMioAddress >= cbBelow4GB);
         pPciRoot->uPciBiosMmio = pPciRoot->u64PciConfigMMioAddress + pPciRoot->u64PciConfigMMioLength;
     }
-    Log(("cbBelow4GB: %lX, uPciBiosMmio: %lX, cbAbove4GB: %llX\n", cbBelow4GB, pPciRoot->uPciBiosMmio, cbAbove4GB));
+    Log(("cbBelow4GB: %#RX32, uPciBiosMmio: %#RX64, cbAbove4GB: %#RX64, uPciBiosMmio64=%#RX64\n",
+         cbBelow4GB, pPciRoot->uPciBiosMmio, cbAbove4GB, pPciRoot->uPciBiosMmio64));
 
     /*
      * Assign bridge topology, for further routing to work.
      */
     PDEVPCIBUS pBus = &pPciRoot->PciBus;
-    ich9pciInitBridgeTopology(pPciRoot, pBus, 0, 0);
+    ich9pciBiosInitBridgeTopology(pPciRoot, pBus, 0, 0);
 
     /*
      * Init the devices.
      */
-    for (int i = 0; i < 256; i++)
+    for (uint32_t i = 0; i < 256; i++)
         ich9pciBiosInitDevice(pPciRoot, 0, i);
 
     return VINF_SUCCESS;
