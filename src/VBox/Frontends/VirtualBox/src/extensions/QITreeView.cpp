@@ -20,13 +20,100 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QMouseEvent>
 # include <QPainter>
 
 /* GUI includes: */
 # include "QITreeView.h"
 
+/* Other VBox includes: */
+# include "iprt/assert.h"
+
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+
+/** QAccessibleWidget extension used as an accessibility interface for QITreeView. */
+class QIAccessibilityInterfaceForQITreeView : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QITreeView accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QITreeView"))
+            return new QIAccessibilityInterfaceForQITreeView(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    QIAccessibilityInterfaceForQITreeView(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::List)
+    {}
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */;
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+private:
+
+    /** Returns corresponding QITreeView. */
+    QITreeView *tree() const { return qobject_cast<QITreeView*>(widget()); }
+};
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQITreeView implementation.                                                                  *
+*********************************************************************************************************************************/
+
+int QIAccessibilityInterfaceForQITreeView::childCount() const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+
+    /* Return the number of children: */
+    return tree()->childCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));
+}
+
+int QIAccessibilityInterfaceForQITreeView::indexOfChild(const QAccessibleInterface *pChild) const
+{
+    /* Search for corresponding child: */
+    for (int i = 0; i < childCount(); ++i)
+        if (child(i) == pChild)
+            return i;
+
+    /* -1 by default: */
+    return -1;
+}
+
+QString QIAccessibilityInterfaceForQITreeView::text(QAccessible::Text /* enmTextRole */) const
+{
+    /* Make sure tree still alive: */
+    AssertPtrReturn(tree(), QString());
+
+    /* Return tree whats-this: */
+    return tree()->whatsThis();
+}
 
 
 /*********************************************************************************************************************************
@@ -139,6 +226,9 @@ void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
 
 void QITreeView::prepare()
 {
+    /* Install QITreeView accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeView::pFactory);
+
     /* Mark header hidden: */
     setHeaderHidden(true);
     /* Mark root hidden: */
