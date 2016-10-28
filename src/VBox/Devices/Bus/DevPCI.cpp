@@ -1509,51 +1509,6 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
 /* -=-=-=-=-=- PCI Bus Interface Methods (PDMPCIBUSREG) -=-=-=-=-=- */
 
-
-/**
- * @interface_method_impl{PDMPCIBUSREG,pfnIORegionRegisterR3}
- */
-static DECLCALLBACK(int) pciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
-                                                     PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
-{
-    NOREF(pDevIns);
-
-    /*
-     * Validate.
-     */
-    AssertMsgReturn(   enmType == PCI_ADDRESS_SPACE_MEM
-                    || enmType == PCI_ADDRESS_SPACE_IO
-                    || enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH,
-                    ("Invalid enmType=%#x? Or was this a bitmask after all...\n", enmType),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn((unsigned)iRegion < PCI_NUM_REGIONS,
-                    ("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS),
-                    VERR_INVALID_PARAMETER);
-    int iLastSet = ASMBitLastSetU64(cbRegion);
-    AssertMsgReturn(    iLastSet != 0
-                    &&  RT_BIT_64(iLastSet - 1) == cbRegion,
-                    ("Invalid cbRegion=%RGp iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
-                    VERR_INVALID_PARAMETER);
-
-    /*
-     * Register the I/O region.
-     */
-    PPCIIOREGION pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-    pRegion->addr        = ~0U;
-    pRegion->size        = cbRegion;
-    pRegion->type        = enmType;
-    pRegion->map_func    = pfnCallback;
-
-    /* Set type in the config space. */
-    AssertCompile(PCI_ADDRESS_SPACE_MEM          == 0);
-    AssertCompile(PCI_ADDRESS_SPACE_IO           == 1);
-    AssertCompile(PCI_ADDRESS_SPACE_MEM_PREFETCH == RT_BIT_32(3));
-    PCIDevSetDWord(pPciDev, 0x10 + iRegion * 4, enmType);
-
-    return VINF_SUCCESS;
-}
-
-
 /**
  * @interface_method_impl{PDMPCIBUSREG,pfnSetConfigCallbacksR3}
  */
@@ -1738,7 +1693,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = pciR3MergedRegister;
     PciBusReg.pfnRegisterMsiR3        = NULL;
-    PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
+    PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pciSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = pciR3FakePCIBIOS;
@@ -2075,7 +2030,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = pcibridgeR3MergedRegisterDevice;
     PciBusReg.pfnRegisterMsiR3        = NULL;
-    PciBusReg.pfnIORegionRegisterR3   = pciR3CommonIORegionRegister;
+    PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = pciR3CommonSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = pcibridgeSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */

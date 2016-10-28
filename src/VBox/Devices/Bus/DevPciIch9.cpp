@@ -781,7 +781,7 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
     uint64_t uLast, uNew;
 
     int iCmd = ich9pciGetWord(pDev, VBOX_PCI_COMMAND);
-    for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+    for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
         PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
         uint32_t uConfigReg  = ich9pciGetRegionReg(iRegion);
@@ -861,6 +861,9 @@ static void ich9pciUpdateMappings(PDMPCIDEV* pDev)
 }
 
 
+/* -=-=-=-=-=- PCI Bus Interface Methods (PDMPCIBUSREG) -=-=-=-=-=- */
+
+
 static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg)
 {
     NOREF(pDevIns);
@@ -878,7 +881,10 @@ static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPDMPCIDEV pPciD
 }
 
 
-static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
+/**
+ * @interface_method_impl{PDMPCIBUSREG,pfnIORegionRegisterR3}
+ */
+DECLCALLBACK(int) devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
                                                  PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     NOREF(pDevIns);
@@ -894,8 +900,8 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                     ,
                     ("Invalid enmType=%#x? Or was this a bitmask after all...\n", enmType),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn((unsigned)iRegion < PCI_NUM_REGIONS,
-                    ("Invalid iRegion=%d PCI_NUM_REGIONS=%d\n", iRegion, PCI_NUM_REGIONS),
+    AssertMsgReturn((unsigned)iRegion < VBOX_PCI_NUM_REGIONS,
+                    ("Invalid iRegion=%d VBOX_PCI_NUM_REGIONS=%d\n", iRegion, VBOX_PCI_NUM_REGIONS),
                     VERR_INVALID_PARAMETER);
     int iLastSet = ASMBitLastSetU64(cbRegion);
     AssertMsgReturn(    iLastSet != 0
@@ -903,7 +909,7 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                     ("Invalid cbRegion=%RGp iLastSet=%#x (not a power of 2 or 0)\n", cbRegion, iLastSet),
                     VERR_INVALID_PARAMETER);
 
-    Log(("ich9pciIORegionRegister: %s region %d size %RGp type %x\n",
+    Log(("devpciR3CommonIORegionRegister: %s region %d size %RGp type %x\n",
          pPciDev->pszNameR3, iRegion, cbRegion, enmType));
 
     /* Make sure that we haven't marked this region as continuation of 64-bit region. */
@@ -921,7 +927,7 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     if ((enmType & PCI_ADDRESS_SPACE_BAR64) != 0)
     {
         /* VBOX_PCI_BASE_ADDRESS_5 and VBOX_PCI_ROM_ADDRESS are excluded. */
-        AssertMsgReturn(iRegion < PCI_NUM_REGIONS - 2,
+        AssertMsgReturn(iRegion < VBOX_PCI_NUM_REGIONS - 2,
                         ("Region %d cannot be 64-bit\n", iRegion),
                         VERR_INVALID_PARAMETER);
         /* Mark next region as continuation of this one. */
@@ -929,6 +935,10 @@ static DECLCALLBACK(int) ich9pciIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     }
 
     /* Set type in the PCI config space. */
+    AssertCompile(PCI_ADDRESS_SPACE_MEM          == 0);
+    AssertCompile(PCI_ADDRESS_SPACE_IO           == 1);
+    AssertCompile(PCI_ADDRESS_SPACE_BAR64        == RT_BIT_32(2));
+    AssertCompile(PCI_ADDRESS_SPACE_MEM_PREFETCH == RT_BIT_32(3));
     uint32_t u32Value   = (uint32_t)enmType & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH);
     PCIDevSetDWord(pPciDev, ich9pciGetRegionReg(iRegion), u32Value);
 
@@ -1629,7 +1639,7 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uD
             /*
              * We ignore ROM region here.
              */
-            for (int iRegion = 0; iRegion < (PCI_NUM_REGIONS-1); iRegion++)
+            for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS - 1; iRegion++)
             {
                 uint32_t u32Address = ich9pciGetRegionReg(iRegion);
 
@@ -2197,7 +2207,7 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
             uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
             {
-                for (unsigned iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+                for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
                 {
                     PCIIORegion const *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
                     uint64_t const     cbRegion = pRegion->size;
@@ -2388,7 +2398,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = pciR3MergedRegister;
     PciBusReg.pfnRegisterMsiR3        = ich9pciRegisterMsi;
-    PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
+    PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = ich9pciSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = ich9pciFakePCIBIOS;
@@ -2503,7 +2513,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 static void ich9pciResetDevice(PPDMPCIDEV pDev)
 {
     /* Clear regions */
-    for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+    for (int iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
         PCIIORegion* pRegion = &pDev->Int.s.aIORegions[iRegion];
         if (pRegion->size == 0)
@@ -2660,7 +2670,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     PciBusReg.u32Version              = PDM_PCIBUSREG_VERSION;
     PciBusReg.pfnRegisterR3           = pcibridgeR3MergedRegisterDevice;
     PciBusReg.pfnRegisterMsiR3        = ich9pciRegisterMsi;
-    PciBusReg.pfnIORegionRegisterR3   = ich9pciIORegionRegister;
+    PciBusReg.pfnIORegionRegisterR3   = devpciR3CommonIORegionRegister;
     PciBusReg.pfnSetConfigCallbacksR3 = ich9pciSetConfigCallbacks;
     PciBusReg.pfnSetIrqR3             = ich9pcibridgeSetIrq;
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
