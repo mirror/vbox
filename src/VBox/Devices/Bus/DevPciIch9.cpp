@@ -80,7 +80,6 @@ static void ich9pciSetIrqInternal(PDEVPCIROOT pGlobals, uint8_t uDevFn, PPDMPCID
 #ifdef IN_RING3
 static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
 static void ich9pciUpdateMappings(PDMPCIDEV *pDev);
-static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t u32Address, unsigned len);
 static DECLCALLBACK(void)     ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t u32Address, uint32_t val, unsigned len);
 DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus);
 static void ich9pciBiosInitDevice(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDevFn);
@@ -683,7 +682,6 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPH
  *       completely merge these files!  File #1 contains code we write, where
  *       as a possible file #2 contains external code if there's any left.
  */
-# define pciR3UnmergedConfigReadDev  ich9pciConfigReadDev
 # define pciR3UnmergedConfigWriteDev ich9pciConfigWriteDev
 # include "DevPciMerge1.cpp.h"
 
@@ -1886,7 +1884,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 /**
  * @callback_method_impl{PFNPCICONFIGREAD, Default config space read callback.}
  */
-static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
+DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
 {
     NOREF(pDevIns);
 
@@ -1913,10 +1911,10 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PPDMDEVINS pDevIns, PPDMPCIDE
 #ifdef LOG_ENABLED
         if (   pciDevIsMsiCapable(pPciDev)
             && uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset < (uint32_t)pPciDev->Int.s.u8MsiCapSize )
-            Log2(("ich9pciConfigReadDev: MSI CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
+            Log2(("devpciR3CommonDefaultConfigRead: MSI CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
         else if (   pciDevIsMsixCapable(pPciDev)
                  && uAddress - (uint32_t)pPciDev->Int.s.u8MsixCapOffset < (uint32_t)pPciDev->Int.s.u8MsixCapSize)
-            Log2(("ich9pciConfigReadDev: MSI-X CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
+            Log2(("devpciR3CommonDefaultConfigRead: MSI-X CAP: %#x LB %u -> %#x\n", uAddress - (uint32_t)pPciDev->Int.s.u8MsiCapOffset, cb, uValue));
 #endif
     }
     else
@@ -1977,76 +1975,79 @@ DECLINLINE(void) ich9pciWriteBarByte(PPDMPCIDEV pPciDev, int iRegion, int iOffse
 
 
 /**
- * Configuration space write callback (PCIDEVICEINT::pfnConfigWrite)
- * for connected devices.
+ * @callback_method_impl{PFNPCICONFIGWRITE,
+ *      Default config space write callback.}
  *
  * See paragraph 7.5 of PCI Express specification (p. 349) for
  * definition of registers and their writability policy.
  */
 static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                uint32_t u32Address, uint32_t val, unsigned len)
+                                                uint32_t uAddress, uint32_t u32Value, unsigned cb)
 {
     NOREF(pDevIns);
-    Assert(len <= 4);
+    Assert(cb <= 4);
 
-    if ((u32Address + len) > 256 && (u32Address + len) < 4096)
+    if ((uAddress + cb) > 256 && (uAddress + cb) < 4096)
     {
         LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
-                pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, u32Address));
+                pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
         return;
     }
 
-    AssertMsgReturnVoid(u32Address + len <= 256, ("Write after end of PCI config space\n"));
+    AssertMsgReturnVoid(uAddress + cb <= 256, ("Write after end of PCI config space\n"));
 
     if (   pciDevIsMsiCapable(pPciDev)
-        && (u32Address >= pPciDev->Int.s.u8MsiCapOffset)
-        && (u32Address < (unsigned)(pPciDev->Int.s.u8MsiCapOffset + pPciDev->Int.s.u8MsiCapSize))
+        && (uAddress >= pPciDev->Int.s.u8MsiCapOffset)
+        && (uAddress < (unsigned)(pPciDev->Int.s.u8MsiCapOffset + pPciDev->Int.s.u8MsiCapSize))
        )
     {
         MsiPciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
                           pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
-                          pPciDev, u32Address, val, len);
+                          pPciDev, uAddress, u32Value, cb);
         return;
     }
 
     if (   pciDevIsMsixCapable(pPciDev)
-        && (u32Address >= pPciDev->Int.s.u8MsixCapOffset)
-        && (u32Address < (unsigned)(pPciDev->Int.s.u8MsixCapOffset + pPciDev->Int.s.u8MsixCapSize))
+        && (uAddress >= pPciDev->Int.s.u8MsixCapOffset)
+        && (uAddress < (unsigned)(pPciDev->Int.s.u8MsixCapOffset + pPciDev->Int.s.u8MsixCapSize))
        )
     {
         MsixPciConfigWrite(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
                            pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
-                           pPciDev, u32Address, val, len);
+                           pPciDev, uAddress, u32Value, cb);
         return;
     }
 
-    uint32_t addr = u32Address;
     bool     fUpdateMappings = false;
-    bool     fP2PBridge = false;
-    /*bool     fPassthrough = pciDevIsPassthrough(pPciDev);*/
-    uint8_t  u8HeaderType = ich9pciGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
-
-    for (uint32_t i = 0; i < len; i++)
+    bool     fP2PBridge      = false;
+    uint8_t  bHeaderType     = ich9pciGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
+    while (cb-- > 0)
     {
         bool fWritable = false;
-        bool fRom = false;
-        switch (u8HeaderType)
+        switch (bHeaderType)
         {
             case 0x00: /* normal device */
             case 0x80: /* multi-function device */
-                switch (addr)
+                switch (uAddress)
                 {
                     /* Read-only registers  */
-                    case VBOX_PCI_VENDOR_ID: case VBOX_PCI_VENDOR_ID+1:
-                    case VBOX_PCI_DEVICE_ID: case VBOX_PCI_DEVICE_ID+1:
+                    case VBOX_PCI_VENDOR_ID:
+                    case VBOX_PCI_VENDOR_ID+1:
+                    case VBOX_PCI_DEVICE_ID:
+                    case VBOX_PCI_DEVICE_ID+1:
                     case VBOX_PCI_REVISION_ID:
                     case VBOX_PCI_CLASS_PROG:
                     case VBOX_PCI_CLASS_SUB:
                     case VBOX_PCI_CLASS_BASE:
                     case VBOX_PCI_HEADER_TYPE:
-                    case VBOX_PCI_SUBSYSTEM_VENDOR_ID: case VBOX_PCI_SUBSYSTEM_VENDOR_ID+1:
-                    case VBOX_PCI_SUBSYSTEM_ID: case VBOX_PCI_SUBSYSTEM_ID+1:
-                    case VBOX_PCI_ROM_ADDRESS: case VBOX_PCI_ROM_ADDRESS+1: case VBOX_PCI_ROM_ADDRESS+2: case VBOX_PCI_ROM_ADDRESS+3:
+                    case VBOX_PCI_SUBSYSTEM_VENDOR_ID:
+                    case VBOX_PCI_SUBSYSTEM_VENDOR_ID+1:
+                    case VBOX_PCI_SUBSYSTEM_ID:
+                    case VBOX_PCI_SUBSYSTEM_ID+1:
+                    case VBOX_PCI_ROM_ADDRESS:
+                    case VBOX_PCI_ROM_ADDRESS+1:
+                    case VBOX_PCI_ROM_ADDRESS+2:
+                    case VBOX_PCI_ROM_ADDRESS+3:
                     case VBOX_PCI_CAPABILITY_LIST:
                     case VBOX_PCI_INTERRUPT_PIN:
                         fWritable = false;
@@ -2059,17 +2060,22 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
                 break;
             case 0x01: /* PCI-PCI bridge */
                 fP2PBridge = true;
-                switch (addr)
+                switch (uAddress)
                 {
                     /* Read-only registers */
-                    case VBOX_PCI_VENDOR_ID: case VBOX_PCI_VENDOR_ID+1:
-                    case VBOX_PCI_DEVICE_ID: case VBOX_PCI_DEVICE_ID+1:
+                    case VBOX_PCI_VENDOR_ID:
+                    case VBOX_PCI_VENDOR_ID+1:
+                    case VBOX_PCI_DEVICE_ID:
+                    case VBOX_PCI_DEVICE_ID+1:
                     case VBOX_PCI_REVISION_ID:
                     case VBOX_PCI_CLASS_PROG:
                     case VBOX_PCI_CLASS_SUB:
                     case VBOX_PCI_CLASS_BASE:
                     case VBOX_PCI_HEADER_TYPE:
-                    case VBOX_PCI_ROM_ADDRESS_BR: case VBOX_PCI_ROM_ADDRESS_BR+1: case VBOX_PCI_ROM_ADDRESS_BR+2: case VBOX_PCI_ROM_ADDRESS_BR+3:
+                    case VBOX_PCI_ROM_ADDRESS_BR:
+                    case VBOX_PCI_ROM_ADDRESS_BR+1:
+                    case VBOX_PCI_ROM_ADDRESS_BR+2:
+                    case VBOX_PCI_ROM_ADDRESS_BR+3:
                     case VBOX_PCI_INTERRUPT_PIN:
                         fWritable = false;
                         break;
@@ -2084,28 +2090,29 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
                 break;
         }
 
-        uint8_t u8Val = (uint8_t)val;
-        switch (addr)
+        bool    fRom = false;
+        uint8_t bVal = (uint8_t)u32Value;
+        switch (uAddress)
         {
             case VBOX_PCI_COMMAND: /* Command register, bits 0-7. */
                 fUpdateMappings = true;
-                goto default_case;
+                goto l_default_case;
             case VBOX_PCI_COMMAND+1: /* Command register, bits 8-15. */
                 /* don't change reserved bits (11-15) */
-                u8Val &= ~UINT32_C(0xf8);
+                bVal &= ~UINT32_C(0xf8);
                 fUpdateMappings = true;
-                goto default_case;
+                goto l_default_case;
             case VBOX_PCI_STATUS:  /* Status register, bits 0-7. */
                 /* don't change read-only bits => actually all lower bits are read-only */
-                u8Val &= ~UINT32_C(0xff);
+                bVal &= ~UINT32_C(0xff);
                 /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-                pPciDev->abConfig[addr] &= ~u8Val;
+                pPciDev->abConfig[uAddress] &= ~bVal;
                 break;
             case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                 /* don't change read-only bits */
-                u8Val &= ~UINT32_C(0x06);
+                bVal &= ~UINT32_C(0x06);
                 /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-                pPciDev->abConfig[addr] &= ~u8Val;
+                pPciDev->abConfig[uAddress] &= ~bVal;
                 break;
             case VBOX_PCI_ROM_ADDRESS:    case VBOX_PCI_ROM_ADDRESS   +1: case VBOX_PCI_ROM_ADDRESS   +2: case VBOX_PCI_ROM_ADDRESS   +3:
                 fRom = true;
@@ -2115,26 +2122,25 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PPDMDEVINS pDevIns, PPDMPCIDEV p
             case VBOX_PCI_BASE_ADDRESS_3: case VBOX_PCI_BASE_ADDRESS_3+1: case VBOX_PCI_BASE_ADDRESS_3+2: case VBOX_PCI_BASE_ADDRESS_3+3:
             case VBOX_PCI_BASE_ADDRESS_4: case VBOX_PCI_BASE_ADDRESS_4+1: case VBOX_PCI_BASE_ADDRESS_4+2: case VBOX_PCI_BASE_ADDRESS_4+3:
             case VBOX_PCI_BASE_ADDRESS_5: case VBOX_PCI_BASE_ADDRESS_5+1: case VBOX_PCI_BASE_ADDRESS_5+2: case VBOX_PCI_BASE_ADDRESS_5+3:
-            {
                 /* We check that, as same PCI register numbers as BARs may mean different registers for bridges */
-                if (fP2PBridge)
-                    goto default_case;
-                else
+                if (!fP2PBridge)
                 {
-                    int iRegion = fRom ? VBOX_PCI_ROM_SLOT : (addr - VBOX_PCI_BASE_ADDRESS_0) >> 2;
-                    int iOffset = addr & 0x3;
-                    ich9pciWriteBarByte(pPciDev, iRegion, iOffset, u8Val);
+
+                    uint32_t iRegion = fRom ? VBOX_PCI_ROM_SLOT : (uAddress - VBOX_PCI_BASE_ADDRESS_0) >> 2;
+                    uint32_t off     = uAddress & 0x3;
+                    ich9pciWriteBarByte(pPciDev, iRegion, off, bVal);
                     fUpdateMappings = true;
+                    break;
                 }
-                break;
-            }
+                /* fall thru (bridge) */
             default:
-            default_case:
+            l_default_case:
                 if (fWritable)
-                    PCIDevSetByte(pPciDev, addr, u8Val);
+                    PCIDevSetByte(pPciDev, uAddress, bVal);
+                break;
         }
-        addr++;
-        val >>= 8;
+        uAddress++;
+        u32Value >>= 8;
     }
 
     if (fUpdateMappings)

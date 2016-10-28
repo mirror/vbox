@@ -204,25 +204,6 @@ static void pci_update_mappings(PDMPCIDEV *d)
 }
 
 
-static DECLCALLBACK(uint32_t) pci_default_read_config(PPDMDEVINS pDevIns, PDMPCIDEV *d, uint32_t address, unsigned len)
-{
-    NOREF(pDevIns);
-    uint32_t val;
-    switch(len) {
-    case 1:
-        val = d->abConfig[address];
-        break;
-    case 2:
-        val = RT_LE2H_U16(*(uint16_t *)(d->abConfig + address));
-        break;
-    default:
-    case 4:
-        val = RT_LE2H_U32(*(uint32_t *)(d->abConfig + address));
-        break;
-    }
-    return val;
-}
-
 static DECLCALLBACK(void) pci_default_write_config(PPDMDEVINS pDevIns, PDMPCIDEV *d, uint32_t address, uint32_t val, unsigned len)
 {
     NOREF(pDevIns);
@@ -1104,7 +1085,6 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  *       completely merge these files!  File #1 contains code we write, where
  *       as a possible file #2 contains external code if there's any left.
  */
-# define pciR3UnmergedConfigReadDev  pci_default_read_config
 # define pciR3UnmergedConfigWriteDev pci_default_write_config
 # include "DevPciMerge1.cpp.h"
 
