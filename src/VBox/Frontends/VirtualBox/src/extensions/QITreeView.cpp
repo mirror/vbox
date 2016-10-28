@@ -407,10 +407,10 @@ void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
 
 void QITreeView::prepare()
 {
-    /* Install QITreeViewItem accessibility interface factory: */
-    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeViewItem::pFactory);
-    /* Install QITreeView accessibility interface factory: */
-    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeView::pFactory);
+//    /* Install QITreeViewItem accessibility interface factory: */
+//    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeViewItem::pFactory);
+//    /* Install QITreeView accessibility interface factory: */
+//    QAccessible::installFactory(QIAccessibilityInterfaceForQITreeView::pFactory);
 
     /* Mark header hidden: */
     setHeaderHidden(true);
