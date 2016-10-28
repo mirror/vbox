@@ -1929,10 +1929,18 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
 }
 
 
-DECLINLINE(void) ich9pciWriteBarByte(PPDMPCIDEV pPciDev, uint32_t iRegion, uint32_t off, uint8_t bVal)
+/**
+ * Worker for devpciR3CommonDefaultConfigWrite that write a byte to a BAR.
+ *
+ * @param   pPciDev             The PCI device.
+ * @param   iRegion             The region.
+ * @param   off                 The BAR offset.
+ * @param   bVal                The byte to write.
+ */
+DECLINLINE(void) devpciR3WriteBarByte(PPDMPCIDEV pPciDev, uint32_t iRegion, uint32_t off, uint8_t bVal)
 {
     PCIIORegion *pRegion = &pPciDev->Int.s.aIORegions[iRegion];
-    Log3(("ich9pciWriteBarByte: region=%d off=%d val=%#x size=%#llx\n", iRegion, off, bVal, pRegion->size));
+    Log3(("devpciR3WriteBarByte: region=%d off=%d val=%#x size=%#llx\n", iRegion, off, bVal, pRegion->size));
     Assert(off <= 3);
 
     /* Check if we're writing to upper part of 64-bit BAR. */
@@ -1959,9 +1967,81 @@ DECLINLINE(void) ich9pciWriteBarByte(PPDMPCIDEV pPciDev, uint32_t iRegion, uint3
         uint8_t bOld = PDMPciDevGetByte(pPciDev, uAddr) & bMask;
         bVal = (bOld & bMask) | (bVal & ~bMask);
 
-        Log3(("ich9pciWriteBarByte: %x changed to  %x\n", bOld, bVal));
+        Log3(("devpciR3WriteBarByte: %x changed to  %x\n", bOld, bVal));
 
         PCIDevSetByte(pPciDev, uAddr, bVal);
+    }
+}
+
+
+/**
+ * Checks if the given configuration byte is writable.
+ *
+ * @returns true if writable, false if not
+ * @param   uAddress            The config space byte byte.
+ * @param   bHeaderType         The device header byte.
+ */
+DECLINLINE(bool) devpciR3IsConfigByteWritable(uint32_t uAddress, uint8_t bHeaderType)
+{
+    switch (bHeaderType)
+    {
+        case 0x00: /* normal device */
+        case 0x80: /* multi-function device */
+            switch (uAddress)
+            {
+                /* Read-only registers. */
+                case VBOX_PCI_VENDOR_ID:
+                case VBOX_PCI_VENDOR_ID+1:
+                case VBOX_PCI_DEVICE_ID:
+                case VBOX_PCI_DEVICE_ID+1:
+                case VBOX_PCI_REVISION_ID:
+                case VBOX_PCI_CLASS_PROG:
+                case VBOX_PCI_CLASS_SUB:
+                case VBOX_PCI_CLASS_BASE:
+                case VBOX_PCI_HEADER_TYPE:
+                case VBOX_PCI_SUBSYSTEM_VENDOR_ID:
+                case VBOX_PCI_SUBSYSTEM_VENDOR_ID+1:
+                case VBOX_PCI_SUBSYSTEM_ID:
+                case VBOX_PCI_SUBSYSTEM_ID+1:
+                case VBOX_PCI_ROM_ADDRESS:
+                case VBOX_PCI_ROM_ADDRESS+1:
+                case VBOX_PCI_ROM_ADDRESS+2:
+                case VBOX_PCI_ROM_ADDRESS+3:
+                case VBOX_PCI_CAPABILITY_LIST:
+                case VBOX_PCI_INTERRUPT_PIN:
+                    return false;
+                /* Other registers can be written. */
+                default:
+                    return true;
+            }
+            break;
+        case 0x01: /* PCI-PCI bridge */
+            switch (uAddress)
+            {
+                /* Read-only registers. */
+                case VBOX_PCI_VENDOR_ID:
+                case VBOX_PCI_VENDOR_ID+1:
+                case VBOX_PCI_DEVICE_ID:
+                case VBOX_PCI_DEVICE_ID+1:
+                case VBOX_PCI_REVISION_ID:
+                case VBOX_PCI_CLASS_PROG:
+                case VBOX_PCI_CLASS_SUB:
+                case VBOX_PCI_CLASS_BASE:
+                case VBOX_PCI_HEADER_TYPE:
+                case VBOX_PCI_ROM_ADDRESS_BR:
+                case VBOX_PCI_ROM_ADDRESS_BR+1:
+                case VBOX_PCI_ROM_ADDRESS_BR+2:
+                case VBOX_PCI_ROM_ADDRESS_BR+3:
+                case VBOX_PCI_INTERRUPT_PIN:
+                    return false;
+                /* Other registers can be written. */
+                default:
+                    return true;
+            }
+            break;
+        default:
+            AssertMsgFailed(("Unknown header type %#x\n", bHeaderType));
+            return false;
     }
 }
 
@@ -2003,84 +2083,14 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
              *       we do here and even produce erratic behavior.  We don't (yet)
              *       try emulate that.
              */
-            bool     fUpdateMappings = false;
-            bool     fP2PBridge      = false;
-            uint8_t  bHeaderType     = ich9pciGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
+            uint8_t const   bHeaderType     = ich9pciGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
+            bool const      fP2PBridge      = bHeaderType == 0x01; /* PCI-PCI bridge */
+            bool            fUpdateMappings = false;
             while (cb-- > 0)
             {
-                /*
-                 * Check writability first.
-                 */
-                bool fWritable = false;
-                switch (bHeaderType)
-                {
-                    case 0x00: /* normal device */
-                    case 0x80: /* multi-function device */
-                        switch (uAddress)
-                        {
-                            /* Read-only registers. */
-                            case VBOX_PCI_VENDOR_ID:
-                            case VBOX_PCI_VENDOR_ID+1:
-                            case VBOX_PCI_DEVICE_ID:
-                            case VBOX_PCI_DEVICE_ID+1:
-                            case VBOX_PCI_REVISION_ID:
-                            case VBOX_PCI_CLASS_PROG:
-                            case VBOX_PCI_CLASS_SUB:
-                            case VBOX_PCI_CLASS_BASE:
-                            case VBOX_PCI_HEADER_TYPE:
-                            case VBOX_PCI_SUBSYSTEM_VENDOR_ID:
-                            case VBOX_PCI_SUBSYSTEM_VENDOR_ID+1:
-                            case VBOX_PCI_SUBSYSTEM_ID:
-                            case VBOX_PCI_SUBSYSTEM_ID+1:
-                            case VBOX_PCI_ROM_ADDRESS:
-                            case VBOX_PCI_ROM_ADDRESS+1:
-                            case VBOX_PCI_ROM_ADDRESS+2:
-                            case VBOX_PCI_ROM_ADDRESS+3:
-                            case VBOX_PCI_CAPABILITY_LIST:
-                            case VBOX_PCI_INTERRUPT_PIN:
-                                fWritable = false;
-                                break;
-                            /* Other registers can be written. */
-                            default:
-                                fWritable = true;
-                                break;
-                        }
-                        break;
-                    case 0x01: /* PCI-PCI bridge */
-                        fP2PBridge = true;
-                        switch (uAddress)
-                        {
-                            /* Read-only registers. */
-                            case VBOX_PCI_VENDOR_ID:
-                            case VBOX_PCI_VENDOR_ID+1:
-                            case VBOX_PCI_DEVICE_ID:
-                            case VBOX_PCI_DEVICE_ID+1:
-                            case VBOX_PCI_REVISION_ID:
-                            case VBOX_PCI_CLASS_PROG:
-                            case VBOX_PCI_CLASS_SUB:
-                            case VBOX_PCI_CLASS_BASE:
-                            case VBOX_PCI_HEADER_TYPE:
-                            case VBOX_PCI_ROM_ADDRESS_BR:
-                            case VBOX_PCI_ROM_ADDRESS_BR+1:
-                            case VBOX_PCI_ROM_ADDRESS_BR+2:
-                            case VBOX_PCI_ROM_ADDRESS_BR+3:
-                            case VBOX_PCI_INTERRUPT_PIN:
-                                fWritable = false;
-                                break;
-                            /* Other registers can be written. */
-                            default:
-                                fWritable = true;
-                                break;
-                        }
-                        break;
-                    default:
-                        AssertMsgFailed(("Unknown header type %#x\n", bHeaderType));
-                        fWritable = false;
-                        break;
-                }
-
-                bool    fRom = false;
+                bool    fWritable = devpciR3IsConfigByteWritable(uAddress, bHeaderType);
                 uint8_t bVal = (uint8_t)u32Value;
+                bool    fRom = false;
                 switch (uAddress)
                 {
                     case VBOX_PCI_COMMAND: /* Command register, bits 0-7. */
@@ -2127,7 +2137,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                         if (!fP2PBridge)
                         {
                             uint32_t iRegion = fRom ? VBOX_PCI_ROM_SLOT : (uAddress - VBOX_PCI_BASE_ADDRESS_0) >> 2;
-                            ich9pciWriteBarByte(pPciDev, iRegion, uAddress & 0x3, bVal);
+                            devpciR3WriteBarByte(pPciDev, iRegion, uAddress & 0x3, bVal);
                             fUpdateMappings = true;
                             break;
                         }
