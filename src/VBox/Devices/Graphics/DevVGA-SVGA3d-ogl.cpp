@@ -1847,6 +1847,7 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
         AssertFailed(); /** @todo destroy SVGA3D_SURFACE_CUBEMAP */
         break;
 
+    case SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
         if (pSurface->oglId.buffer != OPENGL_INVALID_ID)
@@ -2455,6 +2456,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         AssertFailed(); /** @todo DMA SVGA3D_SURFACE_HINT_DEPTHSTENCIL */
         break;
 
+    case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
     {
@@ -2480,7 +2482,9 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                 if (RT_LIKELY(   offDst + pBox->w * pSurface->cbBlock  + (pBox->h - 1) * pMipLevel->cbSurfacePitch
                               <= pMipLevel->cbSurface))
                 {
-                    Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n", (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_VERTEXBUFFER ? "vertex" : "index",
+                    Log(("Lock %s memory for rectangle (%d,%d)(%d,%d)\n",
+                         (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_VERTEXBUFFER ? "vertex" :
+                           (pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK) == SVGA3D_SURFACE_HINT_INDEXBUFFER ? "index" : "buffer",
                          pBox->x, pBox->y, pBox->x + pBox->w, pBox->y + pBox->h));
 
                     rc = vmsvgaGMRTransfer(pThis,

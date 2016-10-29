@@ -1102,14 +1102,21 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
         AssertFailed(); /** @todo */
         break;
 
+    case SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER:
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
-        if (pSurface->u.pIndexBuffer)
-            pSurface->u.pIndexBuffer->Release();
-        break;
-
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-        if (pSurface->u.pVertexBuffer)
-            pSurface->u.pVertexBuffer->Release();
+        if (pSurface->fu32ActualUsageFlags == SVGA3D_SURFACE_HINT_VERTEXBUFFER)
+        {
+            if (pSurface->u.pVertexBuffer)
+                pSurface->u.pVertexBuffer->Release();
+        }
+        else if (pSurface->fu32ActualUsageFlags == SVGA3D_SURFACE_HINT_INDEXBUFFER)
+        {
+            if (pSurface->u.pIndexBuffer)
+                pSurface->u.pIndexBuffer->Release();
+        }
+        else
+            AssertMsg(pSurface->u.pVertexBuffer == NULL, ("fu32ActualUsageFlags %x\n", pSurface->fu32ActualUsageFlags));
         break;
 
     case SVGA3D_SURFACE_HINT_TEXTURE:
@@ -1929,8 +1936,9 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         break;
     }
 
+    case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
     case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-        fVertex = true;
+        fVertex = RT_BOOL(pSurface->fu32ActualUsageFlags & SVGA3D_SURFACE_HINT_VERTEXBUFFER);
         /* no break */
 
     case SVGA3D_SURFACE_HINT_INDEXBUFFER:
@@ -1972,7 +1980,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     }
 
     default:
-        AssertFailed();
+        AssertMsgFailed(("Unsupported surface hint 0x%08X\n", pSurface->flags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK));
         break;
     }
 
@@ -4832,6 +4840,7 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                 pVertexSurface->fDirty = false;
             }
             pVertexSurface->flags |= SVGA3D_SURFACE_HINT_VERTEXBUFFER;
+            pVertexSurface->fu32ActualUsageFlags |= SVGA3D_SURFACE_HINT_VERTEXBUFFER;
         }
         else
             Assert(pVertexSurface->fDirty == false);
@@ -5037,6 +5046,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                     pIndexSurface->fDirty = false;
                 }
                 pIndexSurface->flags |= SVGA3D_SURFACE_HINT_INDEXBUFFER;
+                pIndexSurface->fu32ActualUsageFlags |= SVGA3D_SURFACE_HINT_INDEXBUFFER;
             }
             else
                 Assert(pIndexSurface->fDirty == false);

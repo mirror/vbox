@@ -555,6 +555,7 @@ typedef struct VMSVGA3DSURFACE
     /** AVL tree containing VMSVGA3DSHAREDSURFACE structures. */
     AVLU32TREE              pSharedObjectTree;
     bool                    fStencilAsTexture;
+    uint32_t                fu32ActualUsageFlags;
 #endif
 } VMSVGA3DSURFACE;
 /** Pointer to a 3d surface. */

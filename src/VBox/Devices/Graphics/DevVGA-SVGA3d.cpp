@@ -216,6 +216,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
         pSurface->fUsageD3D |= D3DUSAGE_WRITEONLY;
     if (surfaceFlags & SVGA3D_SURFACE_AUTOGENMIPMAPS)
         pSurface->fUsageD3D |= D3DUSAGE_AUTOGENMIPMAP;
+    pSurface->fu32ActualUsageFlags = 0;
 #else
     vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif
@@ -442,14 +443,14 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
     AssertReturn(pSurface && pSurface->id == sid, VERR_INVALID_PARAMETER);
 
-    AssertMsg(host.face == 0, ("host.face=%#x\n", host.face));
-    AssertReturn(pSurface->faces[0].numMipLevels > host.mipmap, VERR_INVALID_PARAMETER);
-    PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[host.mipmap];
-
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
         Log(("vmsvga3dSurfaceDMA TEXTURE guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
     else
         Log(("vmsvga3dSurfaceDMA guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
+
+    AssertMsg(host.face == 0, ("host.face=%#x\n", host.face));
+    AssertMsgReturn(pSurface->faces[0].numMipLevels > host.mipmap, ("numMipLevels %d, host.mipmap %d", pSurface->faces[0].numMipLevels, host.mipmap), VERR_INVALID_PARAMETER);
+    PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->pMipmapLevels[host.mipmap];
 
     if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
     {
