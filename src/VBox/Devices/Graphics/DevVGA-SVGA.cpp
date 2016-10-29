@@ -54,13 +54,6 @@
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"
 
-#ifdef DEBUG
-/* Enable to log FIFO register accesses. */
-//# define DEBUG_FIFO_ACCESS
-/* Enable to log GMR page accesses. */
-//# define DEBUG_GMR_ACCESS
-#endif
-
 #include "DevVGA-SVGA.h"
 #include "vmsvga/svga_reg.h"
 #include "vmsvga/svga_escape.h"
@@ -1588,6 +1581,7 @@ PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
  */
 static int vmsvgaFIFOAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bool fWriteAccess)
 {
+    RT_NOREF(pVM);
     RTGCPHYS GCPhysOffset = GCPhys - pThis->svga.GCPhysFIFO;
     uint32_t *pFIFO = pThis->svga.pFIFOR3;
 
@@ -1932,13 +1926,13 @@ static int vmsvgaFIFOAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bool fWri
  * @param   pvUser          User argument.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                           PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     int         rc;
     Assert(pThis);
-    Assert(GCPhys >= pThis->GCPhysVRAM);
+    Assert(GCPhys >= pThis->svga.GCPhysFIFO);
     NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin);
 
     rc = vmsvgaFIFOAccess(pVM, pThis, GCPhys, enmAccessType == PGMACCESSTYPE_WRITE);
@@ -1952,6 +1946,8 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu RTGCPHYS GCPhys, void *pvPhys, v
 #endif /* DEBUG_FIFO_ACCESS */
 
 #ifdef DEBUG_GMR_ACCESS
+# ifdef IN_RING3
+
 /**
  * HC access handler for the FIFO.
  *
@@ -1974,7 +1970,7 @@ vmsvgaR3GMRAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     Assert(pThis);
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
-    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmAccessType); NOREF(enmOrigin);
 
     Log(("vmsvgaR3GMRAccessHandler: GMR access to page %RGp\n", GCPhys));
 
@@ -1994,6 +1990,7 @@ vmsvgaR3GMRAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
                      * Then return telling the caller to restart the guest instruction.
                      */
                     int rc = PGMHandlerPhysicalPageTempOff(pVM, pGMR->paDesc[j].GCPhys, GCPhys);
+                    AssertRC(rc);
                     goto end;
                 }
             }
@@ -2003,9 +2000,7 @@ end:
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
-# ifdef IN_RING3
-
-/* Callback handler for VMR3ReqCallWait */
+/* Callback handler for VMR3ReqCallWaitU */
 static DECLCALLBACK(int) vmsvgaRegisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
 {
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
@@ -2023,7 +2018,7 @@ static DECLCALLBACK(int) vmsvgaRegisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
     return VINF_SUCCESS;
 }
 
-/* Callback handler for VMR3ReqCallWait */
+/* Callback handler for VMR3ReqCallWaitU */
 static DECLCALLBACK(int) vmsvgaDeregisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
 {
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
@@ -2038,7 +2033,7 @@ static DECLCALLBACK(int) vmsvgaDeregisterGMR(PPDMDEVINS pDevIns, uint32_t gmrId)
     return VINF_SUCCESS;
 }
 
-/* Callback handler for VMR3ReqCallWait */
+/* Callback handler for VMR3ReqCallWaitU */
 static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 {
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
@@ -2970,7 +2965,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     RTMemFree(paNewPage64);
 
 #  ifdef DEBUG_GMR_ACCESS
-                VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaRegisterGMR, 2, pThis->pDevInsR3, pCmd->gmrId);
+                VMR3ReqCallWaitU(PDMDevHlpGetUVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaRegisterGMR, 2, pThis->pDevInsR3, pCmd->gmrId);
 #  endif
                 break;
             }
@@ -3133,7 +3128,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         rc = vmsvga3dSurfaceDefine(pThis, pCmd->sid, (uint32_t)pCmd->surfaceFlags, pCmd->format, pCmd->face, 0,
                                                    SVGA3D_TEX_FILTER_NONE, cMipLevels, (SVGA3dSize *)(pCmd + 1));
 #  ifdef DEBUG_GMR_ACCESS
-                        VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaResetGMRHandlers, 1, pThis);
+                        VMR3ReqCallWaitU(PDMDevHlpGetUVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaResetGMRHandlers, 1, pThis);
 #  endif
                         break;
                     }
@@ -3485,7 +3480,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             if (   u32IrqStatus
                 || (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS))
             {
-                PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+                int rc2 = PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
+                AssertRC(rc2);
 
                 /* FIFO progress might trigger an interrupt. */
                 if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)
@@ -3537,7 +3533,7 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
     {
         PGMR pGMR = &pSVGAState->aGMR[idGMR];
 # ifdef DEBUG_GMR_ACCESS
-        VMR3ReqCallWait(PDMDevHlpGetVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaDeregisterGMR, 2, pThis->pDevInsR3, idGMR);
+        VMR3ReqCallWaitU(PDMDevHlpGetUVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaDeregisterGMR, 2, pThis->pDevInsR3, idGMR);
 # endif
 
         Assert(pGMR->paDesc);

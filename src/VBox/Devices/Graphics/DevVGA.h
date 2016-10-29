@@ -213,6 +213,13 @@ typedef struct _VBOX_VHWA_PENDINGCMD
 
 #ifdef VBOX_WITH_VMSVGA
 
+#ifdef DEBUG
+/* Enable to log FIFO register accesses. */
+//# define DEBUG_FIFO_ACCESS
+/* Enable to log GMR page accesses. */
+//# define DEBUG_GMR_ACCESS
+#endif
+
 #define VMSVGA_FIFO_EXTCMD_NONE                         0
 #define VMSVGA_FIFO_EXTCMD_TERMINATE                    1
 #define VMSVGA_FIFO_EXTCMD_SAVESTATE                    2
