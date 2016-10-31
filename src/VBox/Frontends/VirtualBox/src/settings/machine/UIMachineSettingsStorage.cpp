@@ -446,21 +446,24 @@ uint NVMeStorageControllerType::size() const
 }
 
 /* Abstract Item */
-AbstractItem::AbstractItem (AbstractItem *aParent)
-    : mParent (aParent)
-    , mId (QUuid::createUuid())
+AbstractItem::AbstractItem(AbstractItem *pParentItem)
+    : QITreeViewItem(pParentItem)
+    , m_pParentItem(pParentItem)
+    , mId(QUuid::createUuid())
 {
-    if (mParent) mParent->addChild (this);
+    if (m_pParentItem)
+        m_pParentItem->addChild(this);
 }
 
 AbstractItem::~AbstractItem()
 {
-    if (mParent) mParent->delChild (this);
+    if (m_pParentItem)
+        m_pParentItem->delChild(this);
 }
 
 AbstractItem* AbstractItem::parent() const
 {
-    return mParent;
+    return m_pParentItem;
 }
 
 QUuid AbstractItem::id() const
@@ -565,7 +568,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     , mUseIoCache (false)
 {
     /* Check for proper parent type */
-    AssertMsg (mParent->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
+    AssertMsg(m_pParentItem->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
 
     /* Select default type */
     switch (aBusType)
@@ -762,7 +765,7 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     , m_fIsHotPluggable(false)
 {
     /* Check for proper parent type */
-    AssertMsg (mParent->rtti() == AbstractItem::Type_ControllerItem, ("Incorrect parent type!\n"));
+    AssertMsg(m_pParentItem->rtti() == AbstractItem::Type_ControllerItem, ("Incorrect parent type!\n"));
 
     /* Select default slot */
     AssertMsg (!attSlots().isEmpty(), ("There should be at least one available slot!\n"));
@@ -776,7 +779,7 @@ StorageSlot AttachmentItem::attSlot() const
 
 SlotsList AttachmentItem::attSlots() const
 {
-    ControllerItem *ctr = static_cast <ControllerItem*> (mParent);
+    ControllerItem *ctr = static_cast<ControllerItem*>(m_pParentItem);
 
     /* Filter list from used slots */
     SlotsList allSlots (ctr->ctrAllSlots());
@@ -795,7 +798,7 @@ KDeviceType AttachmentItem::attDeviceType() const
 
 DeviceTypeList AttachmentItem::attDeviceTypes() const
 {
-    return static_cast <ControllerItem*> (mParent)->ctrDeviceTypeList();
+    return static_cast<ControllerItem*>(m_pParentItem)->ctrDeviceTypeList();
 }
 
 QString AttachmentItem::attMediumId() const
