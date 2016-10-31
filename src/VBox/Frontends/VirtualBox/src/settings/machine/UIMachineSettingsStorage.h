@@ -267,8 +267,8 @@ public:
     void setMachineId (const QString &aMchineId);
 
     virtual ItemType rtti() const = 0;
-    virtual AbstractItem* childByPos (int aIndex) = 0;
-    virtual AbstractItem* childById (const QUuid &aId) = 0;
+    virtual AbstractItem* childItem (int aIndex) const = 0;
+    virtual AbstractItem* childItemById (const QUuid &aId) const = 0;
     virtual int posOfChild (AbstractItem *aItem) const = 0;
     virtual int childCount() const = 0;
     virtual QString text() const = 0;
@@ -299,8 +299,8 @@ public:
 private:
 
     ItemType rtti() const;
-    AbstractItem* childByPos (int aIndex);
-    AbstractItem* childById (const QUuid &aId);
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &aId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;
@@ -343,8 +343,8 @@ public:
 private:
 
     ItemType rtti() const;
-    AbstractItem* childByPos (int aIndex);
-    AbstractItem* childById (const QUuid &aId);
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &aId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;
@@ -399,8 +399,8 @@ private:
     void cache();
 
     ItemType rtti() const;
-    AbstractItem* childByPos (int aIndex);
-    AbstractItem* childById (const QUuid &aId);
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &aId) const;
     int posOfChild (AbstractItem *aItem) const;
     int childCount() const;
     QString text() const;

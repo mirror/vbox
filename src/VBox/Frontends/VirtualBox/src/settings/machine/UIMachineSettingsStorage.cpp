@@ -507,12 +507,12 @@ AbstractItem::ItemType RootItem::rtti() const
     return Type_RootItem;
 }
 
-AbstractItem* RootItem::childByPos (int aIndex)
+AbstractItem* RootItem::childItem (int aIndex) const
 {
     return mControllers [aIndex];
 }
 
-AbstractItem* RootItem::childById (const QUuid &aId)
+AbstractItem* RootItem::childItemById (const QUuid &aId) const
 {
     for (int i = 0; i < childCount(); ++ i)
         if (mControllers [i]->id() == aId)
@@ -698,12 +698,12 @@ AbstractItem::ItemType ControllerItem::rtti() const
     return Type_ControllerItem;
 }
 
-AbstractItem* ControllerItem::childByPos (int aIndex)
+AbstractItem* ControllerItem::childItem (int aIndex) const
 {
     return mAttachments [aIndex];
 }
 
-AbstractItem* ControllerItem::childById (const QUuid &aId)
+AbstractItem* ControllerItem::childItemById (const QUuid &aId) const
 {
     for (int i = 0; i < childCount(); ++ i)
         if (mAttachments [i]->id() == aId)
@@ -954,12 +954,12 @@ AbstractItem::ItemType AttachmentItem::rtti() const
     return Type_AttachmentItem;
 }
 
-AbstractItem* AttachmentItem::childByPos (int /* aIndex */)
+AbstractItem* AttachmentItem::childItem (int /* aIndex */) const
 {
     return 0;
 }
 
-AbstractItem* AttachmentItem::childById (const QUuid& /* aId */)
+AbstractItem* AttachmentItem::childItemById (const QUuid& /* aId */) const
 {
     return 0;
 }
@@ -1051,7 +1051,7 @@ QModelIndex StorageModel::index (int aRow, int aColumn, const QModelIndex &aPare
         return QModelIndex();
 
     AbstractItem *item = !aParent.isValid() ? mRootItem :
-                         static_cast <AbstractItem*> (aParent.internalPointer())->childByPos (aRow);
+                         static_cast <AbstractItem*> (aParent.internalPointer())->childItem (aRow);
 
     return item ? createIndex (aRow, aColumn, item) : QModelIndex();
 }
@@ -1672,7 +1672,7 @@ QModelIndex StorageModel::addController (const QString &aCtrName, KStorageBus aB
 
 void StorageModel::delController (const QUuid &aCtrId)
 {
-    if (AbstractItem *item = mRootItem->childById (aCtrId))
+    if (AbstractItem *item = mRootItem->childItemById (aCtrId))
     {
         int itemPosition = mRootItem->posOfChild (item);
         beginRemoveRows (root(), itemPosition, itemPosition);
@@ -1683,7 +1683,7 @@ void StorageModel::delController (const QUuid &aCtrId)
 
 QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QString &strMediumId)
 {
-    if (AbstractItem *parent = mRootItem->childById (aCtrId))
+    if (AbstractItem *parent = mRootItem->childItemById (aCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
@@ -1699,10 +1699,10 @@ QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDevic
 
 void StorageModel::delAttachment (const QUuid &aCtrId, const QUuid &aAttId)
 {
-    if (AbstractItem *parent = mRootItem->childById (aCtrId))
+    if (AbstractItem *parent = mRootItem->childItemById (aCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
-        if (AbstractItem *item = parent->childById (aAttId))
+        if (AbstractItem *item = parent->childItemById (aAttId))
         {
             int itemPosition = parent->posOfChild (item);
             beginRemoveRows (index (parentPosition, 0, root()), itemPosition, itemPosition);
@@ -1725,7 +1725,7 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
     for (int iItemLevel1Pos = 0; iItemLevel1Pos < iItemLevel1Count; ++iItemLevel1Pos)
     {
         /* Get iterated controller item: */
-        AbstractItem *pItemLevel1 = mRootItem->childByPos(iItemLevel1Pos);
+        AbstractItem *pItemLevel1 = mRootItem->childItem(iItemLevel1Pos);
         ControllerItem *pControllerItem = static_cast<ControllerItem*>(pItemLevel1);
         /* Count of attachment items: */
         int iItemLevel2Count = pItemLevel1->childCount();
@@ -1735,7 +1735,7 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
         for (int iItemLevel2Pos = 0; iItemLevel2Pos < iItemLevel2Count; ++iItemLevel2Pos)
         {
             /* Get iterated attachment item: */
-            AbstractItem *pItemLevel2 = pItemLevel1->childByPos(iItemLevel2Pos);
+            AbstractItem *pItemLevel2 = pItemLevel1->childItem(iItemLevel2Pos);
             AttachmentItem *pAttachmentItem = static_cast<AttachmentItem*>(pItemLevel2);
             /* Get iterated attachment storage slot: */
             StorageSlot attachmentSlot = pAttachmentItem->attSlot();
@@ -1812,7 +1812,7 @@ void StorageModel::clear()
     while (mRootItem->childCount())
     {
         beginRemoveRows(root(), 0, 0);
-        delete mRootItem->childByPos(0);
+        delete mRootItem->childItem(0);
         endRemoveRows();
     }
 }
