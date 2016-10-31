@@ -581,6 +581,13 @@ public:
 
     /** Constructs storage-view passing @a pParent to the base-class. */
     StorageView(QWidget *pParent) : QITreeView(pParent) {}
+
+protected:
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child item with @a iIndex. */
+    virtual QITreeViewItem *childItem(int iIndex) const /* override */;
 };
 
 /* Storage Delegate */
