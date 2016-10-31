@@ -259,6 +259,7 @@ public:
         Type_AttachmentItem = 3
     };
 
+    AbstractItem(QITreeView *pParent = 0);
     AbstractItem(AbstractItem *pParentItem = 0);
     virtual ~AbstractItem();
 
@@ -291,7 +292,7 @@ class RootItem : public AbstractItem
 {
 public:
 
-    RootItem();
+    RootItem(QITreeView *pParent);
    ~RootItem();
 
     ULONG childCount (KStorageBus aBus) const;
@@ -515,7 +516,7 @@ public:
         FDAdderToolTip  = 4
     };
 
-    StorageModel (QObject *aParent);
+    StorageModel(QITreeView *pParent);
    ~StorageModel();
 
     int rowCount (const QModelIndex &aParent = QModelIndex()) const;
