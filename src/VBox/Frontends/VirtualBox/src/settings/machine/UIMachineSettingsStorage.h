@@ -30,6 +30,7 @@
 #include <QPointer>
 
 /* GUI includes: */
+#include "QITreeView.h"
 #include "UISettingsPage.h"
 #include "UIMachineSettingsStorage.gen.h"
 
@@ -570,6 +571,17 @@ private:
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
+/** QITreeView subclass used as Storage-view. */
+class StorageView : public QITreeView
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs storage-view passing @a pParent to the base-class. */
+    StorageView(QWidget *pParent) : QITreeView(pParent) {}
+};
+
 /* Storage Delegate */
 class StorageDelegate : public QItemDelegate
 {
@@ -797,6 +809,9 @@ private:
     QString m_strMachineSettingsFilePath;
     QString m_strMachineGuestOSTypeId;
 
+    /** Holds the storage-tree instance. */
+    QITreeView *mTwStorageTree;
+    /** Holds the storage-model instance. */
     StorageModel *mStorageModel;
 
     QAction *mAddCtrAction;

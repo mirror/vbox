@@ -50,9 +50,6 @@
          <property name="text" >
           <string>&amp;Storage Tree</string>
          </property>
-         <property name="buddy" >
-          <cstring>mTwStorageTree</cstring>
-         </property>
         </widget>
        </item>
        <item>
@@ -63,13 +60,6 @@
          <property name="margin" >
           <number>0</number>
          </property>
-         <item>
-          <widget class="QITreeView" native="1" name="mTwStorageTree" >
-           <property name="whatsThis" >
-            <string>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</string>
-           </property>
-          </widget>
-         </item>
          <item>
           <layout class="QHBoxLayout" name="mLtStorageBar" >
            <item>
@@ -621,12 +611,6 @@
    <class>QILabelSeparator</class>
    <extends>QLabel</extends>
    <header>QILabelSeparator.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>QITreeView</class>
-   <extends>QTreeView</extends>
-   <header>QITreeView.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

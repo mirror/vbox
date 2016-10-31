@@ -2053,7 +2053,16 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mDelAttAction = new QAction (this);
     mDelAttAction->setIcon(iconPool()->icon(AttachmentDelEn, AttachmentDelDis));
 
-    /* Storage Model/View */
+    /* Create storage-view: */
+    mTwStorageTree = new StorageView(this);
+    {
+        /* Configure storage-view: */
+        mLsLeftPane->setBuddy(mTwStorageTree);
+        /* Add storage-view into layout: */
+        mLtStorage->insertWidget(0, mTwStorageTree);
+    }
+
+    /* Create storage-model: */
     mStorageModel = new StorageModel (mTwStorageTree);
     StorageDelegate *storageDelegate = new StorageDelegate (mTwStorageTree);
     mTwStorageTree->setMouseTracking (true);
@@ -2480,6 +2489,11 @@ void UIMachineSettingsStorage::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsStorage::retranslateUi(this);
 
+    /* Translate storage-view: */
+    mTwStorageTree->setWhatsThis(tr("Lists all storage controllers for this machine and "
+                                    "the virtual images and host drives attached to them."));
+
+    /* Translate tool-bar: */
     mAddCtrAction->setShortcut(QKeySequence("Ins"));
     mDelCtrAction->setShortcut(QKeySequence("Del"));
     mAddAttAction->setShortcut(QKeySequence("+"));
