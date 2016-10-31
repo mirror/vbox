@@ -41,7 +41,7 @@ public:
 
     /** Constructs tree-view item for passed @a pParent. */
     QITreeViewItem(QITreeViewItem *pParentItem)
-        : m_pParentTree(pParentItem->parentTree())
+        : m_pParentTree(pParentItem ? pParentItem->parentTree() : 0)
         , m_pParentItem(pParentItem)
     {}
 
