@@ -259,8 +259,8 @@ public:
         Type_AttachmentItem = 3
     };
 
-    AbstractItem(QITreeView *pParent = 0);
-    AbstractItem(AbstractItem *pParentItem = 0);
+    AbstractItem(QITreeView *pParent);
+    AbstractItem(AbstractItem *pParentItem);
     virtual ~AbstractItem();
 
     AbstractItem* parent() const;
