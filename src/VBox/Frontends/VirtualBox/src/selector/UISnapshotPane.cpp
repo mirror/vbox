@@ -61,6 +61,11 @@ class UISnapshotItem : public QObject, public QTreeWidgetItem
 
 public:
 
+    /** Casts QTreeWidgetItem* to UISnapshotItem* if possible. */
+    static UISnapshotItem *toSnapshotItem(QTreeWidgetItem *pItem);
+    /** Casts const QTreeWidgetItem* to const UISnapshotItem* if possible. */
+    static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
+
     /** Item type for UISnapshotItem. */
     enum { ItemType = QTreeWidgetItem::UserType + 1 };
 
@@ -181,6 +186,28 @@ public:
 *   Class UISnapshotItem implementation.                                                                                         *
 *********************************************************************************************************************************/
 
+/* static */
+UISnapshotItem *UISnapshotItem::toSnapshotItem(QTreeWidgetItem *pItem)
+{
+    /* Make sure alive UISnapshotItem passed: */
+    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
+        return 0;
+
+    /* Return casted UISnapshotItem then: */
+    return static_cast<UISnapshotItem*>(pItem);
+}
+
+/* static */
+const UISnapshotItem *UISnapshotItem::toSnapshotItem(const QTreeWidgetItem *pItem)
+{
+    /* Make sure alive UISnapshotItem passed: */
+    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
+        return 0;
+
+    /* Return casted UISnapshotItem then: */
+    return static_cast<const UISnapshotItem*>(pItem);
+}
+
 UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
     : QTreeWidgetItem(pTreeWidget, ItemType)
     , m_pSnapshotWidget(pSnapshotWidget)
@@ -226,13 +253,13 @@ UISnapshotTree *UISnapshotItem::parentSnapshotTree() const
 UISnapshotItem *UISnapshotItem::parentSnapshotItem() const
 {
     /* Return the parent snapshot item if any: */
-    return QTreeWidgetItem::parent() ? UISnapshotPane::toSnapshotItem(QTreeWidgetItem::parent()) : 0;
+    return QTreeWidgetItem::parent() ? toSnapshotItem(QTreeWidgetItem::parent()) : 0;
 }
 
 UISnapshotItem *UISnapshotItem::childSnapshotItem(int iIndex) const
 {
     /* Return the child snapshot item with iIndex if any: */
-    return QTreeWidgetItem::child(iIndex) ? UISnapshotPane::toSnapshotItem(QTreeWidgetItem::child(iIndex)) : 0;
+    return QTreeWidgetItem::child(iIndex) ? toSnapshotItem(QTreeWidgetItem::child(iIndex)) : 0;
 }
 
 QVariant UISnapshotItem::data(int iColumn, int iRole) const
@@ -538,35 +565,13 @@ int UISnapshotTree::childCount() const
 UISnapshotItem *UISnapshotTree::childSnapshotItem(int iIndex) const
 {
     /* Return the child snapshot item with iIndex if any: */
-    return invisibleRootItem()->child(iIndex) ? UISnapshotPane::toSnapshotItem(invisibleRootItem()->child(iIndex)) : 0;
+    return invisibleRootItem()->child(iIndex) ? UISnapshotItem::toSnapshotItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
 
 /*********************************************************************************************************************************
 *   Class UISnapshotPane implementation.                                                                                         *
 *********************************************************************************************************************************/
-
-/* static  */
-UISnapshotItem *UISnapshotPane::toSnapshotItem(QTreeWidgetItem *pItem)
-{
-    /* Make sure alive UISnapshotItem passed: */
-    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
-        return 0;
-
-    /* Return casted UISnapshotItem then: */
-    return static_cast<UISnapshotItem*>(pItem);
-}
-
-/* static */
-const UISnapshotItem *UISnapshotPane::toSnapshotItem(const QTreeWidgetItem *pItem)
-{
-    /* Make sure alive UISnapshotItem passed: */
-    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
-        return 0;
-
-    /* Return casted UISnapshotItem then: */
-    return static_cast<const UISnapshotItem*>(pItem);
-}
 
 UISnapshotPane::UISnapshotPane(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
@@ -722,7 +727,7 @@ void UISnapshotPane::retranslateUi()
 void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
 {
     /* Acquire corresponding snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(pItem);
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
 
     /* Make the selected item visible: */
     if (pSnapshotItem)
@@ -790,7 +795,7 @@ void UISnapshotPane::sltContextMenuRequested(const QPoint &point)
         return;
 
     /* Acquire corresponding snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(pItem);
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
     AssertReturnVoid(pSnapshotItem);
 
     /* Prepare menu: */
@@ -823,7 +828,7 @@ void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
         return;
 
     /* Acquire corresponding snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(pItem);
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
     AssertReturnVoid(pSnapshotItem);
 
     /* Rename corresponding snapshot: */
@@ -838,7 +843,7 @@ void UISnapshotPane::sltItemChanged(QTreeWidgetItem *pItem)
 void UISnapshotPane::sltItemDoubleClicked(QTreeWidgetItem *pItem)
 {
     /* Acquire corresponding snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(pItem);
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
     AssertReturnVoid(pSnapshotItem);
 
     /* Handle Ctrl+DoubleClick: */
@@ -1011,7 +1016,7 @@ bool UISnapshotPane::restoreSnapshot(bool fSuppressNonCriticalWarnings /* = fals
     do
     {
         /* Acquire currently chosen snapshot item: */
-        const UISnapshotItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
+        const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
             break;
@@ -1086,7 +1091,7 @@ bool UISnapshotPane::deleteSnapshot()
     do
     {
         /* Acquire currently chosen snapshot item: */
-        const UISnapshotItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
+        const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
         AssertPtr(pSnapshotItem);
         if (!pSnapshotItem)
             break;
@@ -1156,7 +1161,7 @@ bool UISnapshotPane::deleteSnapshot()
 void UISnapshotPane::showSnapshotDetails()
 {
     /* Acquire currently chosen snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 
     /* Get corresponding snapshot: */
@@ -1175,7 +1180,7 @@ void UISnapshotPane::showSnapshotDetails()
 void UISnapshotPane::cloneSnapshot()
 {
     /* Acquire currently chosen snapshot item: */
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     AssertReturnVoid(pSnapshotItem);
 
     /* Get desired machine/snapshot: */
@@ -1213,12 +1218,12 @@ void UISnapshotPane::refreshAll()
 
     /* Remember the selected item and it's first child: */
     QString strSelectedItem, strFirstChildOfSelectedItem;
-    const UISnapshotItem *pSnapshotItem = toSnapshotItem(m_pSnapshotTree->currentItem());
+    const UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(m_pSnapshotTree->currentItem());
     if (pSnapshotItem)
     {
         strSelectedItem = pSnapshotItem->snapshotID();
         if (pSnapshotItem->child(0))
-            strFirstChildOfSelectedItem = toSnapshotItem(pSnapshotItem->child(0))->snapshotID();
+            strFirstChildOfSelectedItem = UISnapshotItem::toSnapshotItem(pSnapshotItem->child(0))->snapshotID();
     }
 
     /* Clear the tree: */
@@ -1307,7 +1312,7 @@ UISnapshotItem *UISnapshotPane::findItem(const QString &strSnapshotID) const
     QTreeWidgetItemIterator it(m_pSnapshotTree);
     while (*it)
     {
-        UISnapshotItem *pSnapshotItem = toSnapshotItem(*it);
+        UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(*it);
         if (pSnapshotItem->snapshotID() == strSnapshotID)
             return pSnapshotItem;
         ++it;
@@ -1329,7 +1334,7 @@ UISnapshotItem *UISnapshotPane::currentStateItem() const
 SnapshotAgeFormat UISnapshotPane::traverseSnapshotAge(QTreeWidgetItem *pItem) const
 {
     /* Acquire corresponding snapshot item: */
-    UISnapshotItem *pSnapshotItem = toSnapshotItem(pItem);
+    UISnapshotItem *pSnapshotItem = UISnapshotItem::toSnapshotItem(pItem);
 
     /* Fetch the snapshot age of the root if it's valid: */
     SnapshotAgeFormat age = pSnapshotItem ? pSnapshotItem->updateAge() : SnapshotAgeFormat_Max;
