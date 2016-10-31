@@ -27,10 +27,10 @@
 # include <QMenu>
 # include <QPointer>
 # include <QScrollBar>
-# include <QTreeWidget>
 # include <QWriteLocker>
 
 /* GUI includes: */
+# include "QITreeWidget.h"
 # include "UIConverter.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
@@ -54,8 +54,8 @@
 #endif /* QT_VERSION < 0x050000 */
 
 
-/** QTreeWidgetItem subclass for snapshots items. */
-class UISnapshotItem : public QObject, public QTreeWidgetItem
+/** QITreeWidgetItem subclass for snapshots items. */
+class UISnapshotItem : public QITreeWidgetItem
 {
     Q_OBJECT;
 
@@ -66,18 +66,15 @@ public:
     /** Casts const QTreeWidgetItem* to const UISnapshotItem* if possible. */
     static const UISnapshotItem *toSnapshotItem(const QTreeWidgetItem *pItem);
 
-    /** Item type for UISnapshotItem. */
-    enum { ItemType = QTreeWidgetItem::UserType + 1 };
-
     /** Constructs normal snapshot item (child of tree-widget). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CSnapshot &comSnapshot);
     /** Constructs normal snapshot item (child of tree-widget-item). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CSnapshot &comSnapshot);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CSnapshot &comSnapshot);
 
     /** Constructs "current state" item (child of tree-widget). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CMachine &comMachine);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CMachine &comMachine);
     /** Constructs "current state" item (child of tree-widget-item). */
-    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CMachine &comMachine);
+    UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CMachine &comMachine);
 
     /** Returns item machine. */
     CMachine machine() const { return m_comMachine; }
@@ -85,13 +82,6 @@ public:
     CSnapshot snapshot() const { return m_comSnapshot; }
     /** Returns item snapshot ID. */
     QString snapshotID() const { return m_strSnapshotID; }
-
-    /** Returns the parent snapshot tree. */
-    UISnapshotTree *parentSnapshotTree() const;
-    /** Returns the parent snapshot item. */
-    UISnapshotItem *parentSnapshotItem() const;
-    /** Returns the child snapshot item with @a iIndex. */
-    UISnapshotItem *childSnapshotItem(int iIndex) const;
 
     /** Returns item data for corresponding @a iColumn and @a iRole. */
     QVariant data(int iColumn, int iRole) const;
@@ -165,8 +155,8 @@ private:
 };
 
 
-/** QTreeWidget subclass for snapshots items. */
-class UISnapshotTree : public QTreeWidget
+/** QITreeWidget subclass for snapshots items. */
+class UISnapshotTree : public QITreeWidget
 {
     Q_OBJECT;
 
@@ -174,11 +164,6 @@ public:
 
     /** Constructs snapshot tree passing @a pParent to the base-class. */
     UISnapshotTree(QWidget *pParent);
-
-    /** Returns the number of children. */
-    int childCount() const;
-    /** Returns the child snapshot item with @a iIndex. */
-    UISnapshotItem *childSnapshotItem(int iIndex) const;
 };
 
 
@@ -189,43 +174,45 @@ public:
 /* static */
 UISnapshotItem *UISnapshotItem::toSnapshotItem(QTreeWidgetItem *pItem)
 {
-    /* Make sure alive UISnapshotItem passed: */
-    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
+    /* Get QITreeWidgetItem item first: */
+    QITreeWidgetItem *pIItem = QITreeWidgetItem::toItem(pItem);
+    if (!pIItem)
         return 0;
 
     /* Return casted UISnapshotItem then: */
-    return static_cast<UISnapshotItem*>(pItem);
+    return qobject_cast<UISnapshotItem*>(pIItem);
 }
 
 /* static */
 const UISnapshotItem *UISnapshotItem::toSnapshotItem(const QTreeWidgetItem *pItem)
 {
-    /* Make sure alive UISnapshotItem passed: */
-    if (!pItem || pItem->type() != UISnapshotItem::ItemType)
+    /* Get QITreeWidgetItem item first: */
+    const QITreeWidgetItem *pIItem = QITreeWidgetItem::toItem(pItem);
+    if (!pIItem)
         return 0;
 
     /* Return casted UISnapshotItem then: */
-    return static_cast<const UISnapshotItem*>(pItem);
+    return qobject_cast<const UISnapshotItem*>(pIItem);
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
-    : QTreeWidgetItem(pTreeWidget, ItemType)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CSnapshot &comSnapshot)
+    : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentState(false)
     , m_comSnapshot(comSnapshot)
 {
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
-    : QTreeWidgetItem(pRootItem, ItemType)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CSnapshot &comSnapshot)
+    : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentState(false)
     , m_comSnapshot(comSnapshot)
 {
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTreeWidget, const CMachine &comMachine)
-    : QTreeWidgetItem(pTreeWidget, ItemType)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidget *pTreeWidget, const CMachine &comMachine)
+    : QITreeWidgetItem(pTreeWidget)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentState(true)
     , m_comMachine(comMachine)
@@ -234,32 +221,14 @@ UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidget *pTr
     updateCurrentState(m_comMachine.GetState());
 }
 
-UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QTreeWidgetItem *pRootItem, const CMachine &comMachine)
-    : QTreeWidgetItem(pRootItem, ItemType)
+UISnapshotItem::UISnapshotItem(UISnapshotPane *pSnapshotWidget, QITreeWidgetItem *pRootItem, const CMachine &comMachine)
+    : QITreeWidgetItem(pRootItem)
     , m_pSnapshotWidget(pSnapshotWidget)
     , m_fCurrentState(true)
     , m_comMachine(comMachine)
 {
     /* Fetch current machine state: */
     updateCurrentState(m_comMachine.GetState());
-}
-
-UISnapshotTree *UISnapshotItem::parentSnapshotTree() const
-{
-    /* Return the parent snapshot tree if any: */
-    return treeWidget() ? qobject_cast<UISnapshotTree*>(treeWidget()) : 0;
-}
-
-UISnapshotItem *UISnapshotItem::parentSnapshotItem() const
-{
-    /* Return the parent snapshot item if any: */
-    return QTreeWidgetItem::parent() ? toSnapshotItem(QTreeWidgetItem::parent()) : 0;
-}
-
-UISnapshotItem *UISnapshotItem::childSnapshotItem(int iIndex) const
-{
-    /* Return the child snapshot item with iIndex if any: */
-    return QTreeWidgetItem::child(iIndex) ? toSnapshotItem(QTreeWidgetItem::child(iIndex)) : 0;
 }
 
 QVariant UISnapshotItem::data(int iColumn, int iRole) const
@@ -530,7 +499,7 @@ void UISnapshotItem::recacheToolTip()
 *********************************************************************************************************************************/
 
 UISnapshotTree::UISnapshotTree(QWidget *pParent)
-    : QTreeWidget(pParent)
+    : QITreeWidget(pParent)
 {
     /* No header: */
     header()->hide();
@@ -554,18 +523,6 @@ UISnapshotTree::UISnapshotTree(QWidget *pParent)
     connect(this, SIGNAL(destroyed(QObject *)), pTreeWidgetStyle, SLOT(deleteLater()));
 // #endif
 #endif /* QT_VERSION < 0x050000 */
-}
-
-int UISnapshotTree::childCount() const
-{
-    /* Return the number of children: */
-    return invisibleRootItem()->childCount();
-}
-
-UISnapshotItem *UISnapshotTree::childSnapshotItem(int iIndex) const
-{
-    /* Return the child snapshot item with iIndex if any: */
-    return invisibleRootItem()->child(iIndex) ? UISnapshotItem::toSnapshotItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
 
@@ -708,7 +665,7 @@ void UISnapshotPane::setMachine(const CMachine &comMachine)
 void UISnapshotPane::retranslateUi()
 {
     /* Translate snapshot tree: */
-    m_pSnapshotTree->setToolTip(tr("Contains snapshot tree of current virtual machine"));
+    m_pSnapshotTree->setWhatsThis(tr("Contains snapshot tree of current virtual machine"));
 
     /* Translate actions names: */
     m_pActionTakeSnapshot->setText(tr("Take &Snapshot"));
@@ -1280,7 +1237,7 @@ void UISnapshotPane::refreshAll()
     m_pSnapshotTree->resizeColumnToContents(0);
 }
 
-void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QTreeWidgetItem *pItem)
+void UISnapshotPane::populateSnapshots(const CSnapshot &comSnapshot, QITreeWidgetItem *pItem)
 {
     /* Create a child of passed item: */
     UISnapshotItem *pSnapshotItem = pItem ? new UISnapshotItem(this, pItem, comSnapshot) :
