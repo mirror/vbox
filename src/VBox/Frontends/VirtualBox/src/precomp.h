@@ -301,7 +301,6 @@
  * VirtualBox Qt GUI - QI* headers.
  */
 #include "QIAdvancedSlider.h"
-//#include "QIAdvancedToolBar.h" - only used once / not used at all
 #include "QIArrowButtonPress.h"
 #include "QIArrowButtonSwitch.h"
 #include "QIArrowSplitter.h"
@@ -312,7 +311,6 @@
 #include "QILabel.h"
 #include "QILabelSeparator.h"
 #include "QILineEdit.h"
-//#include "QIListView.h" - only used once / not used at all
 #include "QIMainDialog.h"
 #include "QIMenu.h"
 #include "QIMessageBox.h"

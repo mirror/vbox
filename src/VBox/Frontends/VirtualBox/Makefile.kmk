@@ -306,7 +306,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QIFileDialog.h \
 	src/extensions/QILabel.h \
 	src/extensions/QILabelSeparator.h \
-	src/extensions/QIListView.h \
 	src/extensions/QIMainDialog.h \
 	src/extensions/QIMainWindow.h \
 	src/extensions/QIMenu.h \
@@ -324,7 +323,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
-	src/extensions/QIAdvancedToolBar.h \
 	src/extensions/graphics/QIGraphicsView.h \
 	src/extensions/graphics/QIGraphicsWidget.h \
 	src/extradata/UIExtraDataDefs.h \
@@ -537,7 +535,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/UIVMLogViewer.cpp \
 	src/extensions/QIArrowSplitter.cpp \
 	src/extensions/QISplitter.cpp \
-	src/extensions/QIAdvancedToolBar.cpp \
 	src/extradata/UIExtraDataManager.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIMainEventListener.cpp \
@@ -607,7 +604,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QILabel.cpp \
 	src/extensions/QILabelSeparator.cpp \
 	src/extensions/QILineEdit.cpp \
-	src/extensions/QIListView.cpp \
 	src/extensions/QIMainDialog.cpp \
 	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIMenu.cpp \
@@ -622,7 +618,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
-	src/extensions/QIAdvancedToolBar.cpp \
 	src/extensions/graphics/QIGraphicsView.cpp \
 	src/extensions/graphics/QIGraphicsWidget.cpp \
 	src/extradata/UIExtraDataDefs.cpp \
