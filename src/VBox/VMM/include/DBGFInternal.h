@@ -19,6 +19,9 @@
 #define ___DBGFInternal_h
 
 #include <VBox/cdefs.h>
+#ifdef IN_RING3
+# include <VBox/dis.h>
+#endif
 #include <VBox/types.h>
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
@@ -459,6 +462,26 @@ void dbgfR3PlugInTerm(PUVM pUVM);
 
 
 #ifdef IN_RING3
+/**
+ * DBGF disassembler state (substate of DISSTATE).
+ */
+typedef struct DBGFDISSTATE
+{
+    /** Pointer to the current instruction. */
+    PCDISOPCODE     pCurInstr;
+    /** Size of the instruction in bytes. */
+    uint32_t        cbInstr;
+    /** Parameters.  */
+    DISOPPARAM      Param1;
+    DISOPPARAM      Param2;
+    DISOPPARAM      Param3;
+    DISOPPARAM      Param4;
+} DBGFDISSTATE;
+/** Pointer to a DBGF disassembler state. */
+typedef DBGFDISSTATE *PDBGFDISSTATE;
+
+DECLHIDDEN(int) dbgfR3DisasInstrStateEx(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr, uint32_t fFlags,
+                                        char *pszOutput, uint32_t cbOutput, PDBGFDISSTATE pDisState);
 
 #endif
 
