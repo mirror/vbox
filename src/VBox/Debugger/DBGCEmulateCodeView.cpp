@@ -80,6 +80,7 @@ static FNDBGCCMD dbgcCmdEventCtrlReset;
 static FNDBGCCMD dbgcCmdStack;
 static FNDBGCCMD dbgcCmdTrace;
 static FNDBGCCMD dbgcCmdUnassemble;
+static FNDBGCCMD dbgcCmdUnassembleCfg;
 
 
 /*********************************************************************************************************************************
@@ -325,6 +326,13 @@ static const DBGCVARDESC    g_aArgUnassemble[] =
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start disassembling." },
 };
 
+/** 'ucfg' arguments. */
+static const DBGCVARDESC    g_aArgUnassembleCfg[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start disassembling." },
+};
+
 
 /** Command descriptors for the CodeView / WinDbg emulation.
  * The emulation isn't attempting to be identical, only somewhat similar.
@@ -416,6 +424,7 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "u32",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 32-bit code." },
     { "u16",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 16-bit code." },
     { "uv86",       0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 16-bit code with v8086/real mode addressing." },
+    { "ucfg",       0,        1,        &g_aArgUnassembleCfg[0], RT_ELEMENTS(g_aArgUnassembleCfg), 0, dbgcCmdUnassembleCfg,  "[addr]",               "Unassemble creating a control flow graph." },
 };
 
 /** The number of commands in the CodeView/WinDbg emulation. */
@@ -1364,6 +1373,170 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
     NOREF(pCmd);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGFR3CFGDUMP}
+ */
+static DECLCALLBACK(int) dbgcCmdUnassembleCfgDump(const char *psz, void *pvUser)
+{
+    PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
+    return DBGCCmdHlpPrintf(pCmdHlp, "%s\n", psz);
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'ucfg' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Validate input.
+     */
+    DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs <= 1);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 0 || DBGCVAR_ISPOINTER(paArgs[0].enmType));
+
+    if (!cArgs && !DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
+        return DBGCCmdHlpFail(pCmdHlp, pCmd, "Don't know where to start disassembling");
+
+    /*
+     * Check the desired mode.
+     */
+    unsigned fFlags =  DBGF_DISAS_FLAGS_UNPATCHED_BYTES | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED;
+    switch (pCmd->pszCmd[4])
+    {
+        default: AssertFailed();
+        case '\0':  fFlags |= DBGF_DISAS_FLAGS_DEFAULT_MODE;    break;
+        case '6':   fFlags |= DBGF_DISAS_FLAGS_64BIT_MODE;      break;
+        case '3':   fFlags |= DBGF_DISAS_FLAGS_32BIT_MODE;      break;
+        case '1':   fFlags |= DBGF_DISAS_FLAGS_16BIT_MODE;      break;
+        case 'v':   fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE; break;
+    }
+
+    /** @todo should use DBGFADDRESS for everything */
+
+    /*
+     * Find address.
+     */
+    if (!cArgs)
+    {
+        if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
+        {
+            /** @todo Batch query CS, RIP, CPU mode and flags. */
+            PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
+            if (    pDbgc->fRegCtxGuest
+                &&  CPUMIsGuestIn64BitCode(pVCpu))
+            {
+                pDbgc->DisasmPos.enmType    = DBGCVAR_TYPE_GC_FLAT;
+                pDbgc->SourcePos.u.GCFlat   = CPUMGetGuestRIP(pVCpu);
+            }
+            else
+            {
+                pDbgc->DisasmPos.enmType     = DBGCVAR_TYPE_GC_FAR;
+                pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
+                pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
+                if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE
+                    && pDbgc->fRegCtxGuest
+                    && (CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM))
+                {
+                    fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+                    fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
+                }
+            }
+
+            if (pDbgc->fRegCtxGuest)
+                fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
+            else
+                fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_HYPER;
+        }
+        else if ((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE && pDbgc->fDisasm)
+        {
+            fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+            fFlags |= pDbgc->fDisasm & (DBGF_DISAS_FLAGS_MODE_MASK | DBGF_DISAS_FLAGS_HYPER);
+        }
+        pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
+    }
+    else
+        pDbgc->DisasmPos = paArgs[0];
+    pDbgc->pLastPos = &pDbgc->DisasmPos;
+
+    /*
+     * Range.
+     */
+    switch (pDbgc->DisasmPos.enmRangeType)
+    {
+        case DBGCVAR_RANGE_NONE:
+            pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_ELEMENTS;
+            pDbgc->DisasmPos.u64Range     = 10;
+            break;
+
+        case DBGCVAR_RANGE_ELEMENTS:
+            if (pDbgc->DisasmPos.u64Range > 2048)
+                return DBGCCmdHlpFail(pCmdHlp, pCmd, "Too many lines requested. Max is 2048 lines");
+            break;
+
+        case DBGCVAR_RANGE_BYTES:
+            if (pDbgc->DisasmPos.u64Range > 65536)
+                return DBGCCmdHlpFail(pCmdHlp, pCmd, "The requested range is too big. Max is 64KB");
+            break;
+
+        default:
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Unknown range type %d", pDbgc->DisasmPos.enmRangeType);
+    }
+
+    /*
+     * Convert physical and host addresses to guest addresses.
+     */
+    RTDBGAS hDbgAs = pDbgc->hDbgAs;
+    int rc;
+    switch (pDbgc->DisasmPos.enmType)
+    {
+        case DBGCVAR_TYPE_GC_FLAT:
+        case DBGCVAR_TYPE_GC_FAR:
+            break;
+        case DBGCVAR_TYPE_GC_PHYS:
+            hDbgAs = DBGF_AS_PHYS;
+        case DBGCVAR_TYPE_HC_FLAT:
+        case DBGCVAR_TYPE_HC_PHYS:
+        {
+            DBGCVAR VarTmp;
+            rc = DBGCCmdHlpEval(pCmdHlp, &VarTmp, "%%(%Dv)", &pDbgc->DisasmPos);
+            if (RT_FAILURE(rc))
+                return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "failed to evaluate '%%(%Dv)'", &pDbgc->DisasmPos);
+            pDbgc->DisasmPos = VarTmp;
+            break;
+        }
+        default: AssertFailed(); break;
+    }
+
+    DBGFADDRESS CurAddr;
+    if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
+        && pDbgc->DisasmPos.enmType == DBGCVAR_TYPE_GC_FAR)
+        DBGFR3AddrFromFlat(pUVM, &CurAddr, ((uint32_t)pDbgc->DisasmPos.u.GCFar.sel << 4) + pDbgc->DisasmPos.u.GCFar.off);
+    else
+    {
+        rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
+    }
+
+    DBGFCFG hCfg;
+    rc = DBGFR3CfgCreate(pUVM, pDbgc->idCpu, &CurAddr, 0 /*cbDisasmMax*/, fFlags, &hCfg);
+    if (RT_SUCCESS(rc))
+    {
+        /* Dump the graph. */
+        rc = DBGFR3CfgDump(hCfg, dbgcCmdUnassembleCfgDump, pCmdHlp);
+        DBGFR3CfgRelease(hCfg);
+    }
+    else
+        rc = DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3CfgCreate failed on '%Dv'", &pDbgc->DisasmPos);
+
+    NOREF(pCmd);
+    return rc;
 }
 
 
