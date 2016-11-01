@@ -1858,7 +1858,7 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
             }
             else
                 rc = PDMDevHlpMMIODeregister(pDev->Int.s.pDevInsR3, GCPhysBase, pRegion->size);
-            Assert(rc);
+            AssertRC(rc);
         }
         pRegion->addr = INVALID_PCI_ADDRESS;
     }
