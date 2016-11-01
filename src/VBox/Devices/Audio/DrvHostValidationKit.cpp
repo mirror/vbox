@@ -437,7 +437,7 @@ const PDMDRVREG g_DrvHostValidationKitAudio =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szName */
-    "ValidationKit",
+    "ValidationKitAudio",
     /* szRCMod */
     "",
     /* szR0Mod */
