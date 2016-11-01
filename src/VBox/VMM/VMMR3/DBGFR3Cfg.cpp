@@ -1010,11 +1010,11 @@ static void dbgfR3CfgDumpBbCalcSizes(PDBGFCFGBBINT pCfgBb, PDBGFCFGDUMPBB pDumpB
         && pCfgBb->pszErr)
     {
         pDumpBb->cchHeight++;
-        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, strlen(pCfgBb->pszErr));
+        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pCfgBb->pszErr));
     }
     pDumpBb->cchWidth = 0;
     for (unsigned i = 0; i < pCfgBb->cInstr; i++)
-        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, strlen(pCfgBb->aInstr[i].pszInstr));
+        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pCfgBb->aInstr[i].pszInstr));
     pDumpBb->cchWidth += 4; /* Include spacing and border left and right. */
 }
 
