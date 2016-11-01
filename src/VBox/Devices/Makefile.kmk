@@ -566,8 +566,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # Enable backend callback support.
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
 
- VBOX_WITH_AUDIO_VALIDATIONKIT := 1
-
  # Enable Audio Queues implementation for macOS hosts (Core Audio backend).
  VBoxDD_DEFS.darwin += VBOX_WITH_AUDIO_CA_QUEUES
 

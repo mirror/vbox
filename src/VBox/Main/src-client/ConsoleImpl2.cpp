@@ -3088,7 +3088,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 )
             {
                 BOOL fSupports3D = VBoxOglIs3DAccelerationSupported();
-                fSupports3D = true;
                 if (!fSupports3D)
                     return VMR3SetError(pUVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
                             N_("This VM was configured to use 3D acceleration. However, the "
