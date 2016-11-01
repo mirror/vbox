@@ -424,16 +424,20 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         rc = CFGMR3GetName(pCurTrans, szCurTransNm, sizeof(szCurTransNm));
         AssertLogRelRCReturn(rc, rc);
 
-        /* Match against the driver multi pattern. */
+        /** @cfgm{/PDM/DriverTransformations/<name>/Device,string,*}
+         * One or more simple wildcard patters separated by '|' for matching
+         * the devices this transformation rule applies to. */
         char *pszMultiPat;
-        rc = CFGMR3QueryStringAllocDef(pCurTrans, "Driver", &pszMultiPat, "*");
+        rc = CFGMR3QueryStringAllocDef(pCurTrans, "Device", &pszMultiPat, "*");
         AssertLogRelRCReturn(rc, rc);
         bool fMatch = RTStrSimplePatternMultiMatch(pszMultiPat, RTSTR_MAX, pszDevice, RTSTR_MAX, NULL);
         MMR3HeapFree(pszMultiPat);
         if (!fMatch)
             continue;
 
-        /* Match against the lun multi pattern. */
+        /** @cfgm{/PDM/DriverTransformations/<name>/LUN,string,*}
+         * One or more simple wildcard patters separated by '|' for matching
+         * the LUNs this transformation rule applies to. */
         rc = CFGMR3QueryStringAllocDef(pCurTrans, "LUN", &pszMultiPat, "*");
         AssertLogRelRCReturn(rc, rc);
         fMatch = RTStrSimplePatternMultiMatch(pszMultiPat, RTSTR_MAX, szLun, RTSTR_MAX, NULL);
@@ -441,7 +445,12 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         if (!fMatch)
             continue;
 
-        /* Match against the below-driver multi pattern. */
+        /** @cfgm{/PDM/DriverTransformations/<name>/BelowDriver,string,*}
+         * One or more simple wildcard patters separated by '|' for matching the
+         * drivers the transformation should be applied below.  This means, that
+         * when the drivers matched here attached another driver below them, the
+         * transformation will be applied.  To represent the device, '<top>' is
+         * used. */
         rc = CFGMR3QueryStringAllocDef(pCurTrans, "BelowDriver", &pszMultiPat, "*");
         AssertLogRelRCReturn(rc, rc);
         fMatch = RTStrSimplePatternMultiMatch(pszMultiPat, RTSTR_MAX, pszAbove, RTSTR_MAX, NULL);
@@ -449,7 +458,12 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         if (!fMatch)
             continue;
 
-        /* Match against the above-driver multi pattern. */
+        /** @cfgm{/PDM/DriverTransformations/<name>/AboveDriver,string,*}
+         * One or more simple wildcard patters separated by '|' for matching the
+         * drivers the transformation should be applie above or at (depending on
+         * the action).  The value being matched against here is the driver that
+         * is in the process of being attached, so for mergeconfig actions this is
+         * usually what you need to match on. */
         rc = CFGMR3QueryStringAlloc(pCurTrans, "AboveDriver", &pszMultiPat);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
             rc = VINF_SUCCESS;
@@ -466,6 +480,17 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
 
         /*
          * We've got a match! Now, what are we supposed to do?
+         */
+        /** @cfgm{/PDM/DriverTransformations/<name>/Action,string,inject}
+         * The action that the the transformation takes.  Possible values are:
+         *      - inject
+         *      - mergeconfig: This merges and the content of the 'Config' key under the
+         *        transformation into the driver's own 'Config' key, replacing any
+         *        duplicates.
+         *      - remove
+         *      - removetree
+         *      - replace
+         *      - replacetree
          */
         char szAction[16];
         rc = CFGMR3QueryStringDef(pCurTrans, "Action", szAction, sizeof(szAction), "inject");
