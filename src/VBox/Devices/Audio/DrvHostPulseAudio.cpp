@@ -771,7 +771,7 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
         cbAvail += (pStrm->cbPeekBuf - pStrm->offPeekBuf);
     }
 
-    LogFlowFunc(("cbAvail=%zu\n", cbAvail));
+    Log3Func(("cbAvail=%zu\n", cbAvail));
 
     if (!cbAvail) /* No data? Bail out. */
     {
@@ -784,8 +784,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 
     size_t cbToRead = RT_MIN(cbAvail, AudioMixBufFreeBytes(&pStream->MixBuf));
 
-    LogFlowFunc(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
-                 cbToRead, cbAvail, pStrm->offPeekBuf, pStrm->cbPeekBuf));
+    Log3Func(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
+              cbToRead, cbAvail, pStrm->offPeekBuf, pStrm->cbPeekBuf));
 
     uint32_t cWrittenTotal = 0;
 
@@ -814,9 +814,9 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
         Assert(pStrm->cbPeekBuf >= pStrm->offPeekBuf);
         size_t cbToWrite = RT_MIN(pStrm->cbPeekBuf - pStrm->offPeekBuf, cbToRead);
 
-        LogFlowFunc(("cbToRead=%zu, cbToWrite=%zu, offPeekBuf=%zu, cbPeekBuf=%zu, pu8PeekBuf=%p\n",
-                     cbToRead, cbToWrite,
-                     pStrm->offPeekBuf, pStrm->cbPeekBuf, pStrm->pu8PeekBuf));
+        Log3Func(("cbToRead=%zu, cbToWrite=%zu, offPeekBuf=%zu, cbPeekBuf=%zu, pu8PeekBuf=%p\n",
+                  cbToRead, cbToWrite,
+                  pStrm->offPeekBuf, pStrm->cbPeekBuf, pStrm->pu8PeekBuf));
 
         if (cbToWrite)
         {
@@ -859,11 +859,13 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
         if (pcbRead)
             *pcbRead = cWrittenTotal;
 
-        LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 processed), rc=%Rrc\n",
-                     cWrittenTotal, cProcessed, rc));
+        Log3Func(("cWrittenTotal=%RU32 (%RU32 processed), rc=%Rrc\n",
+                  cWrittenTotal, cProcessed, rc));
     }
 
-    LogFlowFuncLeaveRC(rc);
+    if (RT_FAILURE(rc))
+        LogFunc(("Failed with %Rrc\n", rc));
+
     return rc;
 }
 
@@ -871,7 +873,9 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamCapture(PPDMIHOSTAUDIO pInterfac
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
+static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
+                                                     PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
+                                                     uint32_t *pcbWritten)
 {
     RT_NOREF(pvBuf, cbBuf);
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -887,7 +891,7 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
     uint32_t cLive = AudioMixBufUsed(&pStream->MixBuf);
     if (!cLive)
     {
-        LogFlowFunc(("No live samples, skipping\n"));
+        Log3Func(("No live samples, skipping\n"));
         if (pcbWritten)
             *pcbWritten = 0;
         return VINF_SUCCESS;
@@ -907,8 +911,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
         size_t cbLive   = AUDIOMIXBUF_S2B(&pStream->MixBuf, cLive);
         size_t cbToRead = RT_MIN(cbWriteable, cbLive);
 
-        LogFlowFunc(("cbToRead=%zu, cbWriteable=%zu, cbLive=%zu\n",
-                     cbToRead, cbWriteable, cbLive));
+        Log3Func(("cbToRead=%zu, cbWriteable=%zu, cbLive=%zu\n",
+                  cbToRead, cbWriteable, cbLive));
 
         uint32_t cRead, cbRead;
         while (cbToRead)
@@ -933,8 +937,8 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
             cbToRead    -= cbRead;
             cbReadTotal += cbRead;
 
-            LogFlowFunc(("\tcRead=%RU32 (%zu bytes) cbReadTotal=%RU32, cbToRead=%RU32\n",
-                         cRead, AUDIOMIXBUF_S2B(&pStream->MixBuf, cRead), cbReadTotal, cbToRead));
+            Log3Func(("\tcRead=%RU32 (%zu bytes) cbReadTotal=%RU32, cbToRead=%RU32\n",
+                      cRead, AUDIOMIXBUF_S2B(&pStream->MixBuf, cRead), cbReadTotal, cbToRead));
         }
 
     } while (0);
@@ -950,10 +954,12 @@ static DECLCALLBACK(int) drvHostPulseAudioStreamPlay(PPDMIHOSTAUDIO pInterface, 
         if (pcbWritten)
             *pcbWritten = cReadTotal;
 
-        LogFlowFunc(("cReadTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", cReadTotal, cbReadTotal, rc));
+        Log3Func(("cReadTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", cReadTotal, cbReadTotal, rc));
     }
 
-    LogFlowFuncLeaveRC(rc);
+    if (RT_FAILURE(rc))
+        LogFunc(("Failed with %Rrc\n", rc));
+
     return rc;
 }
 
