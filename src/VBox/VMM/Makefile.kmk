@@ -162,6 +162,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/DBGFR3PlugIn.cpp \
 	VMMR3/DBGFReg.cpp \
 	VMMR3/DBGFStack.cpp \
+	VMMR3/DBGFR3Cfg.cpp \
 	VMMR3/DBGFR3Trace.cpp \
 	VMMR3/DBGFR3Type.cpp \
 	VMMR3/EM.cpp \

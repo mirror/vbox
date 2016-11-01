@@ -2486,6 +2486,88 @@ VMMR3DECL(int)  DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const cha
 
 /** @} */
 
+
+/** @defgroup grp_dbgf_cfg       The DBGF control flow graph Interface.
+ * @{
+ */
+
+/** A DBGF control flow graph handle. */
+typedef struct DBGFCFGINT *DBGFCFG;
+/** Pointer to a DBGF control flow graph handle. */
+typedef DBGFCFG *PDBGFCFG;
+/** A DBGF control flow graph basic block handle. */
+typedef struct DBGFCFGBBINT *DBGFCFGBB;
+/** Pointer to a DBGF control flow graph basic block handle. */
+typedef DBGFCFGBB *PDBGFCFGBB;
+
+/** @name DBGFCFGBB Flags.
+ * @{ */
+/** The basic block is the entry into the owning control flow graph. */
+#define DBGF_CFG_BB_F_ENTRY             RT_BIT_32(0)
+/** The basic block was not populated because the limit was reached. */
+#define DBGF_CFG_BB_F_EMPTY             RT_BIT_32(1)
+/** The basic block is not complete because an error happened during disassembly. */
+#define DBGF_CFG_BB_F_INCOMPLETE_ERR    RT_BIT_32(2)
+/** @} */
+
+/**
+ * DBGF control graph basic block end type.
+ */
+typedef enum DBGFCFGBBENDTYPE
+{
+    /** Invalid type. */
+    DBGFCFGBBENDTYPE_INVALID = 0,
+    /** Basic block is the exit block and has no successor. */
+    DBGFCFGBBENDTYPE_EXIT,
+    /** Basic block is the last disassembled block because the
+     * maximum amount to disassemble was reached but is not an
+     * exit block - no successors.
+     */
+    DBGFCFGBBENDTYPE_LAST_DISASSEMBLED,
+    /** Unconditional control flow change because the successor is referenced by multiple
+     * basic blocks. - 1 successor. */
+    DBGFCFGBBENDTYPE_UNCOND,
+    /** Unconditional control flow change because of a jump instruction - 1 successor. */
+    DBGFCFGBBENDTYPE_UNCOND_JMP,
+    /** Conditional control flow change - 2 successors. */
+    DBGFCFGBBENDTYPE_COND,
+    /** 32bit hack. */
+    DBGFCFGBBENDTYPE_32BIT_HACK = 0x7fffffff
+} DBGFCFGBBENDTYPE;
+
+/**
+ * DBGF control flow graph dumper callback.
+ *
+ * @returns VBox status code. Any non VINF_SUCCESS status code will abort the dumping.
+ *
+ * @param   psz             The string to dump
+ * @param   pvUser          Opaque user data.
+ */
+typedef DECLCALLBACK(int) FNDBGFR3CFGDUMP(const char *psz, void *pvUser);
+/** Pointer to a FNDBGFR3TYPEDUMP. */
+typedef FNDBGFR3CFGDUMP *PFNDBGFR3CFGDUMP;
+
+VMMR3DECL(int)              DBGFR3CfgCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
+                                            uint32_t fFlags, PDBGFCFG phCfg);
+VMMR3DECL(uint32_t)         DBGFR3CfgRetain(DBGFCFG hCfg);
+VMMR3DECL(uint32_t)         DBGFR3CfgRelease(DBGFCFG hCfg);
+VMMR3DECL(int)              DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb);
+VMMR3DECL(int)              DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUser);
+VMMR3DECL(uint32_t)         DBGFR3CfgBbRetain(DBGFCFGBB hCfgBb);
+VMMR3DECL(uint32_t)         DBGFR3CfgBbRelease(DBGFCFGBB hCfgBb);
+VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetStartAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrStart);
+VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetEndAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrEnd);
+VMMR3DECL(DBGFCFGBBENDTYPE) DBGFR3CfgBbGetType(DBGFCFGBB hCfgBb);
+VMMR3DECL(uint32_t)         DBGFR3CfgBbGetInstrCount(DBGFCFGBB hCfgBb);
+VMMR3DECL(uint32_t)         DBGFR3CfgBbGetFlags(DBGFCFGBB hCfgBb);
+VMMR3DECL(int)              DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
+                                                  uint32_t *pcbInstr, char *pszOutput, uint32_t cbOutput);
+VMMR3DECL(int)              DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbSucc, uint32_t cSucc);
+VMMR3DECL(uint32_t)         DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb);
+VMMR3DECL(int)              DBGFR3CfgBbGetRefBb(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbRef, uint32_t cRef);
+
+/** @} */
+
 #endif /* IN_RING3 */
 
 /** @} */
