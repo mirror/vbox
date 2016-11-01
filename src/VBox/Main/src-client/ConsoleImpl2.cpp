@@ -2851,8 +2851,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigString(pCfgAudioSettings, strKey.c_str(), bstrValue);
             }
 
-            /* The audio driver. */
-            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+            /*
+             * The audio driver.
+             */
+            uint8_t u8AudioLUN = 0;
+
+            CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%RU8", u8AudioLUN++);
             InsertConfigString(pLunL0, "Driver", "AUDIO");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
 
@@ -2931,10 +2935,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
 #ifdef VBOX_WITH_VRDE_AUDIO
             /*
-             * The VRDE audio backend driver. This one always is there
-             * and therefore is hardcoded here.
+             * The VRDE audio backend driver.
              */
-            InsertConfigNode(pInst, "LUN#1", &pLunL1);
+            CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
             InsertConfigString(pLunL1, "Driver", "AUDIO");
 
             InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
@@ -2945,10 +2948,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pCfg, "StreamName", bstr);
             InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVRDE);
             InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
-#endif
+#endif /* VBOX_WITH_VRDE_AUDIO */
 
 #ifdef VBOX_WITH_AUDIO_DEBUG
-            InsertConfigNode(pInst, "LUN#2", &pLunL1);
+            /*
+             * The audio debug backend. Only can be used in debug builds.
+             */
+            CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
             InsertConfigString(pLunL1, "Driver", "AUDIO");
 
             InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
@@ -2957,7 +2963,26 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pLunL1, "Config", &pCfg);
             InsertConfigString(pCfg, "AudioDriver", "DebugAudio");
             InsertConfigString(pCfg, "StreamName", bstr);
-#endif
+#endif /* VBOX_WITH_AUDIO_DEBUG */
+
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+
+            /** @todo Make this a runtime-configurable entry! */
+
+            /*
+             * The ValidationKit backend.
+             */
+            CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
+            InsertConfigString(pLunL1, "Driver", "AUDIO");
+
+            InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "ValidationKit");
+
+            InsertConfigNode(pLunL1, "Config", &pCfg);
+            InsertConfigString(pCfg, "AudioDriver", "ValidationKit");
+            InsertConfigString(pCfg, "StreamName", bstr);
+#endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
+
             /** @todo Add audio video recording driver here. */
         }
 
@@ -3063,6 +3088,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 )
             {
                 BOOL fSupports3D = VBoxOglIs3DAccelerationSupported();
+                fSupports3D = true;
                 if (!fSupports3D)
                     return VMR3SetError(pUVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
                             N_("This VM was configured to use 3D acceleration. However, the "

@@ -120,6 +120,9 @@ extern const PDMDRVREG g_DrvAUDIO;
 #ifdef VBOX_WITH_AUDIO_DEBUG
 extern const PDMDRVREG g_DrvHostDebugAudio;
 #endif
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+extern const PDMDRVREG g_DrvHostValidationKitAudio;
+#endif
 extern const PDMDRVREG g_DrvHostNullAudio;
 #if defined(RT_OS_WINDOWS)
 extern const PDMDRVREG g_DrvHostDSound;

@@ -279,6 +279,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 #endif
+#ifdef VBOX_WITH_AUDIO_VALIDATIONKIT
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostValidationKitAudio);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostNullAudio);
     if (RT_FAILURE(rc))
         return rc;
