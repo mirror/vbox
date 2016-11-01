@@ -24,17 +24,34 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-GENERATED_FILES = AutomaticTestingRevamp.html VBoxValidationKitReadMe.html
-RST2HTML := $(firstword $(which $(foreach pyver, 3.2 3.1 3.0 2.8 2.7 2.6 2.5 2.4 ,rst2html-$(pyver).py) ) rst2html.py)
+DEPTH = ../../../..
+include $(KBUILD_PATH)/header.kmk
+
+# Figure out where rst2html.py is.
+ifndef VBOX_RST2HTML
+ VBOX_RST2HTML := $(firstword $(which $(foreach pyver, 3.2 3.1 3.0 2.8 2.7 2.6 2.5 2.4 ,rst2html-$(pyver).py) ) )
+ ifeq ($(VBOX_RST2HTML),)
+  if $(KBUILD_HOST) == "win" && $(VBOX_BLD_PYTHON) != "" && $(dir $(VBOX_BLD_PYTHON)) != "./"
+   VBOX_RST2HTML := $(dir $(VBOX_BLD_PYTHON))Scripts/rst2html.py
+  else
+   VBOX_RST2HTML := rst2html.py
+  endif
+ endif
+ if1of ($(KBUILD_HOST),win)
+  VBOX_RST2HTML := $(VBOX_BLD_PYTHON) $(VBOX_RST2HTML)
+ endif
+endif
+
+GENERATED_FILES = AutomaticTestingRevamp.html VBoxValidationKitReadMe.html TestBoxImaging.html
 
 all: $(GENERATED_FILES)
+
+$(foreach html,$(GENERATED_FILES) \
+,$(eval $(html): $(basename $(html)).txt ; $$(REDIRECT) -E LC_ALL=C -- $$(VBOX_RST2HTML) --no-generator $$< $$@))
+
+$(foreach html,$(GENERATED_FILES), $(eval $(basename $(html)).o:: $(html)))  # editor compile aliases
 
 clean:
 	kmk_builtin_rm -f -- $(GENERATED_FILES)
 
-AutomaticTestingRevamp.html: AutomaticTestingRevamp.txt
-	LC_ALL=C $(RST2HTML) --no-generator AutomaticTestingRevamp.txt AutomaticTestingRevamp.html
-
-VBoxValidationKitReadMe.html: VBoxValidationKitReadMe.txt
-	LC_ALL=C $(RST2HTML) --no-generator VBoxValidationKitReadMe.txt VBoxValidationKitReadMe.html
 
