@@ -463,16 +463,24 @@ static int dbgfR3CfgBbSplit(PDBGFCFGINT pThis, PDBGFCFGBBINT pCfgBb, PDBGFADDRES
         if (pCfgBbNew)
         {
             /* Move instructions over. */
-            pCfgBbNew->cInstr = cInstrNew;
-            pCfgBbNew->AddrEnd = pCfgBb->AddrEnd;
+            pCfgBbNew->cInstr     = cInstrNew;
+            pCfgBbNew->AddrEnd    = pCfgBb->AddrEnd;
             pCfgBbNew->enmEndType = pCfgBb->enmEndType;
+            pCfgBbNew->fFlags     = pCfgBb->fFlags & ~DBGF_CFG_BB_F_ENTRY;
+
+            /* Move any error to the new basic block and clear them in the old basic block. */
+            pCfgBbNew->rcError    = pCfgBb->rcError;
+            pCfgBbNew->pszErr     = pCfgBb->pszErr;
+            pCfgBb->rcError       = VINF_SUCCESS;
+            pCfgBb->pszErr        = NULL;
+            pCfgBb->fFlags       &= ~DBGF_CFG_BB_F_INCOMPLETE_ERR;
 
             memcpy(&pCfgBbNew->aInstr[0], &pCfgBb->aInstr[idxInstrSplit], cInstrNew * sizeof(DBGFCFGBBINSTR));
             pCfgBb->cInstr     = idxInstrSplit;
             pCfgBb->enmEndType = DBGFCFGBBENDTYPE_UNCOND;
-            pCfgBb->AddrEnd    = pCfgBb->aInstr[idxInstrSplit].AddrInstr;
+            pCfgBb->AddrEnd    = pCfgBb->aInstr[idxInstrSplit-1].AddrInstr;
             pCfgBb->AddrTarget = pCfgBbNew->AddrStart;
-            DBGFR3AddrAdd(&pCfgBb->AddrEnd, pCfgBb->aInstr[idxInstrSplit].cbInstr - 1);
+            DBGFR3AddrAdd(&pCfgBb->AddrEnd, pCfgBb->aInstr[idxInstrSplit-1].cbInstr - 1);
             RT_BZERO(&pCfgBb->aInstr[idxInstrSplit], cInstrNew * sizeof(DBGFCFGBBINSTR));
 
             dbgfR3CfgLink(pThis, pCfgBbNew);
@@ -584,6 +592,8 @@ static int dbgfR3CfgBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFCFGINT pThis, PDBGF
             break;
         }
 
+        pCfgBb->fFlags &= ~DBGF_CFG_BB_F_EMPTY;
+
         rc = dbgfR3DisasInstrStateEx(pUVM, idCpu, &AddrDisasm, fFlags,
                                      &szOutput[0], sizeof(szOutput), &DisState);
         if (RT_SUCCESS(rc))
@@ -609,15 +619,13 @@ static int dbgfR3CfgBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFCFGINT pThis, PDBGF
             {
                 PDBGFCFGBBINSTR pInstr = &pCfgBb->aInstr[pCfgBb->cInstr];
 
-                pCfgBb->fFlags &= ~DBGF_CFG_BB_F_EMPTY;
-
                 pInstr->AddrInstr = AddrDisasm;
                 pInstr->cbInstr   = DisState.cbInstr;
                 pInstr->pszInstr  = RTStrCacheEnter(pThis->hStrCacheInstr, &szOutput[0]);
                 pCfgBb->cInstr++;
 
                 pCfgBb->AddrEnd = AddrDisasm;
-                DBGFR3AddrSub(&pCfgBb->AddrEnd, 1);
+                DBGFR3AddrAdd(&pCfgBb->AddrEnd, pInstr->cbInstr - 1);
                 DBGFR3AddrAdd(&AddrDisasm, pInstr->cbInstr);
 
                 /*
@@ -1006,13 +1014,13 @@ static void dbgfR3CfgDumpBbCalcSizes(PDBGFCFGBBINT pCfgBb, PDBGFCFGDUMPBB pDumpB
 {
     pDumpBb->pCfgBb = pCfgBb;
     pDumpBb->cchHeight = pCfgBb->cInstr + 4; /* Include spacing and border top and bottom. */
+    pDumpBb->cchWidth = 0;
     if (   RT_FAILURE(pCfgBb->rcError)
         && pCfgBb->pszErr)
     {
         pDumpBb->cchHeight++;
         pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pCfgBb->pszErr));
     }
-    pDumpBb->cchWidth = 0;
     for (unsigned i = 0; i < pCfgBb->cInstr; i++)
         pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pCfgBb->aInstr[i].pszInstr));
     pDumpBb->cchWidth += 4; /* Include spacing and border left and right. */
@@ -1177,6 +1185,11 @@ VMMR3DECL(int) DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUse
             PDBGFCFGDUMPBB pDumpBb = &paDumpBb[i];
             cchWidth = RT_MAX(cchWidth, pDumpBb->cchWidth);
             cchHeight += pDumpBb->cchHeight;
+
+            /* Incomplete blocks don't have a successor. */
+            if (pDumpBb->pCfgBb->fFlags & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                continue;
+
             switch (pDumpBb->pCfgBb->enmEndType)
             {
                 case DBGFCFGBBENDTYPE_EXIT:
@@ -1221,6 +1234,10 @@ VMMR3DECL(int) DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUse
                 dbgfR3CfgDumpBb(&paDumpBb[i], pScreen);
                 uY += paDumpBb[i].cchHeight;
 
+                /* Incomplete blocks don't have a successor. */
+                if (paDumpBb[i].pCfgBb->fFlags & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                    continue;
+
                 switch (paDumpBb[i].pCfgBb->enmEndType)
                 {
                     case DBGFCFGBBENDTYPE_EXIT:
@@ -1246,6 +1263,10 @@ VMMR3DECL(int) DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUse
             for (unsigned i = 0; i < pThis->cBbs; i++)
             {
                 PDBGFCFGDUMPBB pDumpBb = &paDumpBb[i];
+
+                /* Incomplete blocks don't have a successor. */
+                if (pDumpBb->pCfgBb->fFlags & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                    continue;
 
                 switch (pDumpBb->pCfgBb->enmEndType)
                 {
