@@ -2484,119 +2484,121 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
         uint64_t cbBlockspaceNew = cBlocksNew * sizeof(VDIIMAGEBLOCKPOINTER); /** < Required space for the block array after the resize. */
         uint64_t offStartDataNew = RT_ALIGN_32(pImage->offStartBlocks + cbBlockspaceNew, VDI_DATA_ALIGN); /** < New start offset for block data after the resize */
 
-        if (   pImage->offStartData < offStartDataNew
-            && cBlocksAllocated > 0)
+        if (pImage->offStartData < offStartDataNew)
         {
-            /* Calculate how many sectors need to be relocated. */
-            uint64_t cbOverlapping = offStartDataNew - pImage->offStartData;
-            unsigned cBlocksReloc = cbOverlapping / getImageBlockSize(&pImage->Header);
-            if (cbOverlapping % getImageBlockSize(&pImage->Header))
-                cBlocksReloc++;
-
-            /* Since only full blocks can be relocated the new data start is
-             * determined by moving it block by block. */
-            cBlocksReloc = RT_MIN(cBlocksReloc, cBlocksAllocated);
-            offStartDataNew = pImage->offStartData;
-
-            /* Do the relocation. */
-            LogFlow(("Relocating %u blocks\n", cBlocksReloc));
-
-            /*
-             * Get the blocks we need to relocate first, they are appended to the end
-             * of the image.
-             */
-            void *pvBuf = NULL, *pvZero = NULL;
-            do
+            if (cBlocksAllocated > 0)
             {
-                /* Allocate data buffer. */
-                pvBuf = RTMemAllocZ(pImage->cbTotalBlockData);
-                if (!pvBuf)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
+                /* Calculate how many sectors need to be relocated. */
+                uint64_t cbOverlapping = offStartDataNew - pImage->offStartData;
+                unsigned cBlocksReloc = cbOverlapping / getImageBlockSize(&pImage->Header);
+                if (cbOverlapping % getImageBlockSize(&pImage->Header))
+                    cBlocksReloc++;
 
-                /* Allocate buffer for overwriting with zeroes. */
-                pvZero = RTMemAllocZ(pImage->cbTotalBlockData);
-                if (!pvZero)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
+                /* Since only full blocks can be relocated the new data start is
+                 * determined by moving it block by block. */
+                cBlocksReloc = RT_MIN(cBlocksReloc, cBlocksAllocated);
+                offStartDataNew = pImage->offStartData;
 
-                for (unsigned i = 0; i < cBlocksReloc; i++)
+                /* Do the relocation. */
+                LogFlow(("Relocating %u blocks\n", cBlocksReloc));
+
+                /*
+                 * Get the blocks we need to relocate first, they are appended to the end
+                 * of the image.
+                 */
+                void *pvBuf = NULL, *pvZero = NULL;
+                do
                 {
-                    /* Search the index in the block table. */
-                    for (unsigned idxBlock = 0; idxBlock < cBlocksOld; idxBlock++)
+                    /* Allocate data buffer. */
+                    pvBuf = RTMemAllocZ(pImage->cbTotalBlockData);
+                    if (!pvBuf)
                     {
-                        if (!pImage->paBlocks[idxBlock])
-                        {
-                            /* Read data and append to the end of the image. */
-                            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
-                                                       offStartDataNew, pvBuf,
-                                                       pImage->cbTotalBlockData);
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            uint64_t offBlockAppend;
-                            rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &offBlockAppend);
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                        offBlockAppend, pvBuf,
-                                                        pImage->cbTotalBlockData);
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            /* Zero out the old block area. */
-                            rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
-                                                        offStartDataNew, pvZero,
-                                                        pImage->cbTotalBlockData);
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            /* Update block counter. */
-                            pImage->paBlocks[idxBlock] = cBlocksAllocated - 1;
-
-                            /*
-                             * Decrease the block number of all other entries in the array.
-                             * They were moved one block to the front.
-                             * Doing it as a separate step iterating over the array again
-                             * because an error while relocating the block might end up
-                             * in a corrupted image otherwise.
-                             */
-                            for (unsigned idxBlock2 = 0; idxBlock2 < cBlocksOld; idxBlock2++)
-                            {
-                                if (   idxBlock2 != idxBlock
-                                    && IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[idxBlock2]))
-                                    pImage->paBlocks[idxBlock2]--;
-                            }
-
-                            /* Continue with the next block. */
-                            break;
-                        }
+                        rc = VERR_NO_MEMORY;
+                        break;
                     }
 
-                    if (RT_FAILURE(rc))
+                    /* Allocate buffer for overwriting with zeroes. */
+                    pvZero = RTMemAllocZ(pImage->cbTotalBlockData);
+                    if (!pvZero)
+                    {
+                        rc = VERR_NO_MEMORY;
                         break;
+                    }
 
-                    offStartDataNew += pImage->cbTotalBlockData;
-                }
-            } while (0);
+                    for (unsigned i = 0; i < cBlocksReloc; i++)
+                    {
+                        /* Search the index in the block table. */
+                        for (unsigned idxBlock = 0; idxBlock < cBlocksOld; idxBlock++)
+                        {
+                            if (!pImage->paBlocks[idxBlock])
+                            {
+                                /* Read data and append to the end of the image. */
+                                rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
+                                                           offStartDataNew, pvBuf,
+                                                           pImage->cbTotalBlockData);
+                                if (RT_FAILURE(rc))
+                                    break;
 
-            if (pvBuf)
-                RTMemFree(pvBuf);
-            if (pvZero)
-                RTMemFree(pvZero);
+                                uint64_t offBlockAppend;
+                                rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &offBlockAppend);
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                            offBlockAppend, pvBuf,
+                                                            pImage->cbTotalBlockData);
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                /* Zero out the old block area. */
+                                rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pImage->pStorage,
+                                                            offStartDataNew, pvZero,
+                                                            pImage->cbTotalBlockData);
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                /* Update block counter. */
+                                pImage->paBlocks[idxBlock] = cBlocksAllocated - 1;
+
+                                /*
+                                 * Decrease the block number of all other entries in the array.
+                                 * They were moved one block to the front.
+                                 * Doing it as a separate step iterating over the array again
+                                 * because an error while relocating the block might end up
+                                 * in a corrupted image otherwise.
+                                 */
+                                for (unsigned idxBlock2 = 0; idxBlock2 < cBlocksOld; idxBlock2++)
+                                {
+                                    if (   idxBlock2 != idxBlock
+                                        && IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[idxBlock2]))
+                                        pImage->paBlocks[idxBlock2]--;
+                                }
+
+                                /* Continue with the next block. */
+                                break;
+                            }
+                        }
+
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        offStartDataNew += pImage->cbTotalBlockData;
+                    }
+                } while (0);
+
+                if (pvBuf)
+                    RTMemFree(pvBuf);
+                if (pvZero)
+                    RTMemFree(pvZero);
+            }
+
+            /*
+             * We need to update the new offsets for the image data in the out of memory
+             * case too because we relocated the blocks already.
+             */
+            pImage->offStartData = offStartDataNew;
+            setImageDataOffset(&pImage->Header, offStartDataNew);
         }
-
-        /*
-         * We need to update the new offsets for the image data in the out of memory
-         * case too because we relocated the blocks already.
-         */
-        pImage->offStartData = offStartDataNew;
-        setImageDataOffset(&pImage->Header, offStartDataNew);
 
         /*
          * Relocation done, expand the block array and update the header with
