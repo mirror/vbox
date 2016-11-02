@@ -3439,21 +3439,25 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
     {
         enmAttachmentType = NetworkAttachmentType_Bridged;
 
-        elmMode.getAttributeValue("name", nic.strBridgedName);  // optional bridged interface name
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strBridgedName);
     }
     else if (elmMode.nameEquals("InternalNetwork"))
     {
         enmAttachmentType = NetworkAttachmentType_Internal;
 
-        if (!elmMode.getAttributeValue("name", nic.strInternalNetworkName))    // required network name
-            throw ConfigFileError(this, &elmMode, N_("Required InternalNetwork/@name element is missing"));
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strInternalNetworkName);
     }
     else if (elmMode.nameEquals("HostOnlyInterface"))
     {
         enmAttachmentType = NetworkAttachmentType_HostOnly;
 
-        if (!elmMode.getAttributeValue("name", nic.strHostOnlyName))    // required network name
-            throw ConfigFileError(this, &elmMode, N_("Required HostOnlyInterface/@name element is missing"));
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strHostOnlyName);
     }
     else if (elmMode.nameEquals("GenericInterface"))
     {
@@ -3481,11 +3485,14 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
     {
         enmAttachmentType = NetworkAttachmentType_NATNetwork;
 
-        if (!elmMode.getAttributeValue("name", nic.strNATNetworkName))    // required network name
-            throw ConfigFileError(this, &elmMode, N_("Required NATNetwork/@name element is missing"));
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strNATNetworkName);
     }
     else if (elmMode.nameEquals("VDE"))
     {
+        // inofficial hack (VDE networking was never part of the official
+        // settings, so it's not mentioned in VirtualBox-settings.xsd)
         enmAttachmentType = NetworkAttachmentType_Generic;
 
         com::Utf8Str strVDEName;

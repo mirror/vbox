@@ -936,19 +936,19 @@
 </xsd:complexType>
 
 <xsd:complexType name="TNetNATNetwork">
-  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="name" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TNetBridged">
-  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="name" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TNetInternal">
-  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="name" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TNetHostOnly">
-  <xsd:attribute name="name" type="xsd:string" use="required"/>
+  <xsd:attribute name="name" type="xsd:string"/>
 </xsd:complexType>
 
 <xsd:complexType name="TNetGeneric">
