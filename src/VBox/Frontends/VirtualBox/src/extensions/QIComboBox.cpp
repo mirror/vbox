@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QHBoxLayout>
 # include <QLineEdit>
 
@@ -31,6 +32,90 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
+/** QAccessibleWidget extension used as an accessibility interface for QIComboBox. */
+class QIAccessibilityInterfaceForQIComboBox : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating QIComboBox accessibility interface: */
+        if (pObject && strClassname == QLatin1String("QIComboBox"))
+            return new QIAccessibilityInterfaceForQIComboBox(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    QIAccessibilityInterfaceForQIComboBox(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::ToolBar)
+    {}
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */;
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+private:
+
+    /** Returns corresponding QIComboBox. */
+    QIComboBox *combo() const { return qobject_cast<QIComboBox*>(widget()); }
+};
+
+
+/*********************************************************************************************************************************
+*   Class QIAccessibilityInterfaceForQIComboBox implementation.                                                                  *
+*********************************************************************************************************************************/
+
+int QIAccessibilityInterfaceForQIComboBox::childCount() const
+{
+    /* Make sure combo still alive: */
+    AssertPtrReturn(combo(), 0);
+
+    /* Return the number of children: */
+    return combo()->subElementCount();
+}
+
+QAccessibleInterface *QIAccessibilityInterfaceForQIComboBox::child(int iIndex) const
+{
+    /* Make sure combo still alive: */
+    AssertPtrReturn(combo(), 0);
+    /* Make sure index is valid: */
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex: */
+    return QAccessible::queryAccessibleInterface(combo()->subElement(iIndex));
+}
+
+int QIAccessibilityInterfaceForQIComboBox::indexOfChild(const QAccessibleInterface *pChild) const
+{
+    /* Search for corresponding child: */
+    for (int i = 0; i < childCount(); ++i)
+        if (child(i) == pChild)
+            return i;
+
+    /* -1 by default: */
+    return -1;
+}
+
+QString QIAccessibilityInterfaceForQIComboBox::text(QAccessible::Text /* enmTextRole */) const
+{
+    /* Return empty string: */
+    return QString();
+}
+
+
+/*********************************************************************************************************************************
+*   Class QIComboBox implementation.                                                                                             *
+*********************************************************************************************************************************/
 
 QIComboBox::QIComboBox(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
@@ -203,6 +288,9 @@ void QIComboBox::setItemText(int iIndex, const QString &strText) const
 
 void QIComboBox::prepare()
 {
+    /* Install QIComboBox accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForQIComboBox::pFactory);
+
     /* Create layout: */
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     AssertPtrReturnVoid(pLayout);
