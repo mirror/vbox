@@ -43,7 +43,7 @@ QIComboBox::QIComboBox(QWidget *pParent /* = 0 */)
 int QIComboBox::subElementCount() const
 {
     /* Depending on 'editable' property: */
-    return !isEditable() ? SubElement_Max : SubElementEditable_Max;
+    return !isEditable() ? (int)SubElement_Max : (int)SubElementEditable_Max;
 }
 
 QWidget *QIComboBox::subElement(int iIndex) const
