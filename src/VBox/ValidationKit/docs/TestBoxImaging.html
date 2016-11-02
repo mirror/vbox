@@ -385,13 +385,19 @@ and reboots the system.</li>
 <dt>Maintenance actions are:</dt>
 <dd><ul class="first last simple">
 <li>backup</li>
-<li>redo-backup</li>
+<li>backup-again</li>
 <li>restore</li>
+<li>refresh-info</li>
+<li>rescue</li>
 </ul>
 </dd>
 </dl>
 <p>Possible modifier that indicates a subset of disk on testboxes with other OSes
 installed.  Support for partition level backup/restore is not explored here.</p>
+<div class="section" id="how-to-use">
+<h2>How to use</h2>
+<p>To perform one of the above maintenance actions on a testbox copy the</p>
+</div>
 </div>
 <div class="section" id="storage-server">
 <h1>Storage Server</h1>
@@ -399,14 +405,14 @@ installed.  Support for partition level backup/restore is not explored here.</p>
 avoids extra work getting CIFS sharing right too (NFS is already a pain).</p>
 <blockquote>
 <ol class="arabic simple">
-<li>/exports/testbox-tftp    - TFTP config area.  Read-write.</li>
-<li>/exports/testbox-backup  - Images and logs.  Read-write.</li>
-<li>/exports/testbox-nfsroot - Custom debian.  Read-only, no root squash.</li>
+<li>/export/testbox-tftp    - TFTP config area.  Read-write.</li>
+<li>/export/testbox-backup  - Images and logs.  Read-write.</li>
+<li>/export/testbox-nfsroot - Custom debian.  Read-only, no root squash.</li>
 </ol>
 </blockquote>
 </div>
-<div class="section" id="tftp-exports-testbox-tftp">
-<h1>TFTP (/exports/testbox-tftp)</h1>
+<div class="section" id="tftp-export-testbox-tftp">
+<h1>TFTP (/export/testbox-tftp)</h1>
 <p>The testbox-tftp share needs to be writable, root squashing is okay.</p>
 <p>We need files from both PXELINUX and SYSLINUX to make this work now.  On a
 debian system, the <tt class="docutils literal">pxelinux</tt> and <tt class="docutils literal">syslinux</tt> packages needs to be
@@ -418,11 +424,11 @@ SYSLINUX ones in <tt class="docutils literal">/usr/lib/syslinux</tt>.</p>
 BIOS, 32-bit EFI and 64-bit EFI.  We'll only need the BIOS one for now.
 Perform the following copy operations:</p>
 <pre class="literal-block">
-cp /usr/lib/PXELINUX/pxelinux.0 testbox-tftp/
-cp /usr/lib/syslinux/modules/*/ldlinux.* testbox-tftp/
-cp /usr/lib/syslinux/modules/bios  testbox-tftp/
-cp /usr/lib/syslinux/modules/efi32 testbox-tftp/
-cp /usr/lib/syslinux/modules/efi64 testbox-tftp/
+cp /usr/lib/PXELINUX/pxelinux.0 /mnt/testbox-tftp/
+cp /usr/lib/syslinux/modules/*/ldlinux.* /mnt/testbox-tftp/
+cp -R /usr/lib/syslinux/modules/bios  /mnt/testbox-tftp/
+cp -R /usr/lib/syslinux/modules/efi32 /mnt/testbox-tftp/
+cp -R /usr/lib/syslinux/modules/efi64 /mnt/testbox-tftp/
 </pre>
 <p>For simplicitly, all the testboxes boot using good old fashioned BIOS, no EFI.
 However, it doesn't really hurt to be prepared.</p>
@@ -444,13 +450,35 @@ LABEL local-boot
 LOCALBOOT
 </pre>
 <p>This will make the default behavior to boot the local disk system.</p>
+<p>Create <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-backup</span></tt>, <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-backup-again</span></tt>,
+<tt class="docutils literal"><span class="pre">pxelinux.cfg/do-restore</span></tt>, <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-refresh-info</span></tt>, and
+<tt class="docutils literal"><span class="pre">pxelinux.cfg/do-rescue</span></tt> configuration files on the form:</p>
+<pre class="literal-block">
+PATH bios
+DEFAULT maintenance
+LABEL maintenance
+  MENU LABEL Maintenance (NFS)
+  KERNEL maintenance-boot/vmlinuz-3.16.0-4-amd64
+  APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 testbox-action-backup ro ip=dhcp aufs=tmpfs boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/export/testbox-nfsroot,ro nfsvers=3 nfsrootdebug
+LABEL local-boot
+LOCALBOOT
+</pre>
+<p>When you want to preform an action on a testbox, copy the <tt class="docutils literal"><span class="pre">do-&lt;action&gt;</span></tt> to
+<tt class="docutils literal"><span class="pre">pxeclient.cfg/&lt;HEX-ip-addr&gt;</span></tt> and trigger a boot of the testbox.  The machine
+config will be removed automatically once the action has been successfully
+completed.</p>
 </div>
-<div class="section" id="images-and-logs-exports-testbox-backup">
-<h1>Images and logs (/exports/testbox-backup)</h1>
+<div class="section" id="images-and-logs-export-testbox-backup">
+<h1>Images and logs (/export/testbox-backup)</h1>
 <p>The testbox-backup share needs to be writable, root squashing is okay.</p>
+<p>In the root there must be a file <tt class="docutils literal"><span class="pre">testbox-backup</span></tt> so we can easily tell
+whether we've actually mounted the share or are just staring at an empty mount
+point directory.</p>
+<p>The <tt class="docutils literal"><span class="pre">testbox-maintenance.sh</span></tt> script maintains a global log in the root
+directory that's called <tt class="docutils literal">maintenance.log</tt>.  Errors will be logged there as
+well as a ping and the action.</p>
 <p>We use a directory layout based on dotted decimal IP addresses here, so for a
-server with the IP 10.40.41.42 all its file will be under <tt class="docutils literal">10.40.41.42/</tt>.</p>
-<p>Files found under <tt class="docutils literal">10.40.41.42/</tt>:</p>
+server with the IP 10.40.41.42 all its file will be under <tt class="docutils literal">10.40.41.42/</tt>:</p>
 <dl class="docutils">
 <dt><tt class="docutils literal">&lt;hostname&gt;</tt></dt>
 <dd>The name of the testbox (empty file).  Help finding a testbox by name.</dd>
@@ -472,8 +500,8 @@ and are disks/SSDs.</dd>
 <dd>switch to use the hostname as the directory name instead of the IP.</dd>
 </dl>
 </div>
-<div class="section" id="debian-nfs-root-exports-testbox-nfsroot">
-<h1>Debian NFS root (/exports/testbox-nfsroot)</h1>
+<div class="section" id="debian-nfs-root-export-testbox-nfsroot">
+<h1>Debian NFS root (/export/testbox-nfsroot)</h1>
 <p>The testbox-nfsroot share should be read-only and must <strong>not</strong> have root
 squashing enabled.</p>
 <p>There are several ways of creating a debian nfsroot, but since we've got a
@@ -483,8 +511,8 @@ and copied it onto the NFS server share.</p>
 done in a VM.  After installation the following modifications was done:</p>
 <blockquote>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">apt-get</span> install pxelinux syslinux <span class="pre">initramfs-tools</span> gddrescue joe</tt> and
-optionally <tt class="docutils literal"><span class="pre">apt-get</span> install smbclient <span class="pre">cifs-utils</span></tt>.</p>
+<li><p class="first"><tt class="docutils literal"><span class="pre">apt-get</span> install pxelinux syslinux <span class="pre">initramfs-tools</span> zip gddrescue joe</tt>
+and optionally <tt class="docutils literal"><span class="pre">apt-get</span> install smbclient <span class="pre">cifs-utils</span></tt>.</p>
 </li>
 <li><p class="first"><tt class="docutils literal">/etc/default/grub</tt> was modified to set <tt class="docutils literal">GRUB_CMDLINE_LINUX_DEFAULT</tt> to
 <tt class="docutils literal">&quot;&quot;</tt> instead of <tt class="docutils literal">&quot;quiet&quot;</tt>.  This allows us to see messages during boot
@@ -492,7 +520,7 @@ and perhaps spot why something doesn't work on a testbox.  Regenerate the
 grub configuration file by running <tt class="docutils literal"><span class="pre">update-grub</span></tt> afterwards.</p>
 </li>
 <li><p class="first">Create the directory <tt class="docutils literal">/etc/systemd/system/getty&#64;tty1.service.d</tt> and create
-the file noclear.conf in it with the following content:</p>
+the file <tt class="docutils literal">noclear.conf</tt> in it with the following content:</p>
 <pre class="literal-block">
 [Service]
 TTYVTDisallocate=no
@@ -500,37 +528,12 @@ TTYVTDisallocate=no
 <p>This stops getty from clearing VT1 and let us see the tail of the boot up
 messages, which includes messages from the testbox-maintenance service.</p>
 </li>
-<li><p class="first">Copy the <tt class="docutils literal"><span class="pre">testbox-maintenance.sh</span></tt> file found in the same directory as this
-document to <tt class="docutils literal">/root/scripts/</tt> (need to create the dir) and make it
-executable.</p>
-</li>
-<li><p class="first">Create the systemd service file for the maintenance service as
-<tt class="docutils literal"><span class="pre">/etc/systemd/system/textbox-maintenance.service</span></tt> with the content:</p>
-<pre class="literal-block">
-[Unit]
-Description=Testbox Maintenance
-After=network.target
-Before=getty&#64;tty1.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=True
-ExecStart=/root/scripts/testbox-maintenance.sh
-ExecStartPre=/bin/echo -e \033%G
-ExecReload=/bin/kill -HUP $MAINPID
-WorkingDirectory=/tmp
-Environment=TERM=xterm
-StandardOutput=journal+console
-
-[Install]
-WantedBy=multi-user.target
-</pre>
-</li>
 <li><p class="first">Mount the testbox-nfsroot under <tt class="docutils literal">/mnt/</tt> with write privileges.  (The write
 privileges are temporary - don't forget to remove them later on.):</p>
 <pre class="literal-block">
-mount -t nfs myserver.com:/exports/testbox-nfsroot
+mount -t nfs myserver.com:/export/testbox-nfsroot
 </pre>
+<p>Note! Adding <tt class="docutils literal"><span class="pre">-o</span> nfsvers=3</tt> may help with some NTFv4 servers.</p>
 </li>
 <li><p class="first">Copy the debian root and dev file system onto nfsroot.  If you have ssh
 access to the NFS server, the quickest way to do it is to use <tt class="docutils literal">tar</tt>:</p>
@@ -543,7 +546,23 @@ is quite a bit slower, obviously.</p>
 <li><p class="first">chroot into the nfsroot: <tt class="docutils literal">chroot /mnt/</tt></p>
 <blockquote>
 <ul>
-<li><p class="first">Enable our service: <tt class="docutils literal">systemctl enable <span class="pre">testbox-maintenance.service</span></tt></p>
+<li><p class="first"><tt class="docutils literal">mount <span class="pre">-o</span> proc proc /proc</tt></p>
+</li>
+<li><p class="first"><tt class="docutils literal">mount <span class="pre">-o</span> sysfs sysfs /sys</tt></p>
+</li>
+<li><p class="first"><tt class="docutils literal">mkdir <span class="pre">/mnt/testbox-tftp</span> <span class="pre">/mnt/testbox-backup</span></tt></p>
+</li>
+<li><p class="first">Recreate <tt class="docutils literal">/etc/fstab</tt> with:</p>
+<pre class="literal-block">
+proc                             /proc               proc  defaults   0 0
+/dev/nfs                         /                   nfs   defaults   1 1
+10.42.1.1:/export/testbox-tftp   /mnt/testbox-tftp   nfs   nfsvers=3  2 2
+10.42.1.1:/export/testbox-backup /mnt/testbox-backup nfs   nfsvers=3  3 3
+</pre>
+</li>
+<li><p class="first">Do <tt class="docutils literal">mount <span class="pre">/mnt/testbox-tftp</span> &amp;&amp; mount <span class="pre">/mnt/testbox-backup</span></tt> to mount the
+two shares.  This may be a good time to execute the instructions in the
+sections above relating to these two shares.</p>
 </li>
 <li><p class="first">Edit <tt class="docutils literal"><span class="pre">/etc/initramfs-tools/initramfs.conf</span></tt> and change the <tt class="docutils literal">MODULES</tt>
 value from <tt class="docutils literal">most</tt> to <tt class="docutils literal">netboot</tt>.</p>
@@ -555,6 +574,7 @@ read-only NFS root. <a class="footnote-reference" href="#id8" id="id3">[3]</a> <
 <li><p class="first">Create <tt class="docutils literal"><span class="pre">/etc/initramfs-tools/scripts/init-bottom/00_aufs_init</span></tt> as
 an executable file with the following content:</p>
 <pre class="literal-block">
+#!/bin/sh
 # Don't run during update-initramfs:
 case &quot;$1&quot; in
     prereqs)
@@ -575,27 +595,53 @@ exit 0
 </pre>
 </li>
 <li><p class="first">Update the init ramdisk: <tt class="docutils literal"><span class="pre">update-initramfs</span> <span class="pre">-u</span> <span class="pre">-k</span> all</tt></p>
+<dl class="docutils">
+<dt>Note! It may be necessary to do <tt class="docutils literal">mount <span class="pre">-t</span> tmpfs tmpfs /var/tmp</tt> to help</dt>
+<dd><p class="first last">this operation succeed.</p>
+</dd>
+</dl>
 </li>
-<li><p class="first">Either copy the initrd.img and corresponding kernel to the
-<tt class="docutils literal"><span class="pre">testbox-tftp/maintenance-boot/</span></tt> directory, or create
-<tt class="docutils literal"><span class="pre">testbox-tftp/maintenance-boot</span></tt> as a symbolic link to
-<tt class="docutils literal"><span class="pre">testbox-nfsroot/boot/</span></tt>.</p>
+<li><p class="first">Copy <tt class="docutils literal">/boot</tt> to <tt class="docutils literal"><span class="pre">/mnt/testbox-tftp/maintenance-boot/</span></tt>.</p>
 </li>
-<li><p class="first">Recreate <tt class="docutils literal">/etc/fstab</tt> with:</p>
+<li><p class="first">Copy the <tt class="docutils literal"><span class="pre">testbox-maintenance.sh</span></tt> file found in the same directory as this
+document to <tt class="docutils literal">/root/scripts/</tt> (need to create the dir) and make it
+executable.</p>
+</li>
+<li><p class="first">Create the systemd service file for the maintenance service as
+<tt class="docutils literal"><span class="pre">/etc/systemd/system/testbox-maintenance.service</span></tt> with the content:</p>
 <pre class="literal-block">
-proc          /proc    proc    defaults        0 0
-/dev/nfs      /        nfs     defaults        1 1
-# Mount tftp and backup too.
+[Unit]
+Description=Testbox Maintenance
+After=network.target
+Before=getty&#64;tty1.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=True
+ExecStart=/root/scripts/testbox-maintenance.sh
+ExecStartPre=/bin/echo -e \033%G
+ExecReload=/bin/kill -HUP $MAINPID
+WorkingDirectory=/tmp
+Environment=TERM=xterm
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target
 </pre>
 </li>
-<li><p class="first">xxx</p>
+<li><p class="first">Enable our service: <tt class="docutils literal">systemctl enable <span class="pre">/etc/systemd/system/testbox-maintenance.service</span></tt></p>
+</li>
+<li><p class="first">xxxx ... more ???</p>
+</li>
+<li><p class="first">Before leaving the chroot, do <tt class="docutils literal">mount /proc /sys <span class="pre">/mnt/testbox-*</span></tt>.</p>
 </li>
 </ul>
 </blockquote>
 </li>
-<li><dl class="first docutils">
-<dt>Testing the setup from a VM is kind of useful:</dt>
-<dd><ul class="first last">
+<li><p class="first">Testing the setup from a VM is kind of useful (if the nfs server can be
+convinced to accept root nfs mounts from non-privileged clinet ports):</p>
+<blockquote>
+<ul>
 <li><p class="first">Create a VM using the 64-bit debian profile.  Let's call it &quot;pxe-vm&quot;.</p>
 </li>
 <li><p class="first">Mount the TFTP share somewhere, like M: or /mnt/testbox-tftp.</p>
@@ -616,14 +662,13 @@ LABEL maintenance
   MENU LABEL Maintenance (NFS)
   KERNEL maintenance-boot/vmlinuz-3.16.0-4-amd64
   APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 ro ip=dhcp aufs=tmpfs \
-         boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/exports/testbox-nfsroot
+         boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/export/testbox-nfsroot
 LABEL local-boot
 LOCALBOOT
 </pre>
 </li>
 </ul>
-</dd>
-</dl>
+</blockquote>
 </li>
 </ul>
 </blockquote>
