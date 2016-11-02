@@ -40,6 +40,41 @@ QIComboBox::QIComboBox(QWidget *pParent /* = 0 */)
     prepare();
 }
 
+int QIComboBox::subElementCount() const
+{
+    /* Depending on 'editable' property: */
+    return !isEditable() ? SubElement_Max : SubElementEditable_Max;
+}
+
+QWidget *QIComboBox::subElement(int iIndex) const
+{
+    /* Make sure index is inside the bounds: */
+    AssertReturn(iIndex >= 0 && iIndex < subElementCount(), 0);
+
+    /* For 'non-editable' case: */
+    if (!isEditable())
+    {
+        switch (iIndex)
+        {
+            case SubElement_Selector: return m_pComboBox;
+            default: break;
+        }
+    }
+    /* For 'editable' case: */
+    else
+    {
+        switch (iIndex)
+        {
+            case SubElementEditable_Editor: return lineEdit();
+            case SubElementEditable_Selector: return m_pComboBox;
+            default: break;
+        }
+    }
+
+    /* Null otherwise: */
+    return 0;
+}
+
 QLineEdit *QIComboBox::lineEdit() const
 {
     /* Redirect to combo-box: */
