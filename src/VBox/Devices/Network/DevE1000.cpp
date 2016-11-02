@@ -2532,6 +2532,7 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
 }
 
 
+#ifdef IN_RING3
 /**
  * Bring the link up after the configured delay, 5 seconds by default.
  *
@@ -2545,7 +2546,6 @@ DECLINLINE(void) e1kBringLinkUpDelayed(PE1KSTATE pThis)
     e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), pThis->cMsLinkUpDelay * 1000);
 }
 
-#ifdef IN_RING3
 /**
  * Bring up the link immediately.
  *
