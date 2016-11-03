@@ -376,7 +376,7 @@ soread(PNATState pData, struct socket *so)
                 tcp_sockclosed(pData, sototcpcb(so));
             else
             {
-                LogRel(("NAT: sockerr %d, shuterr %d - %R[natsock]\n", sockerr, shuterr, so));
+                LogRel2(("NAT: sockerr %d, shuterr %d - %R[natsock]\n", sockerr, shuterr, so));
                 tcp_drop(pData, sototcpcb(so), sockerr);
             }
             SOCKET_UNLOCK(so);
