@@ -66,6 +66,8 @@ public:
 
     /** Returns the embedded line-editor reference. */
     QLineEdit *lineEdit() const;
+    /** Returns the embedded list-view reference. */
+    QAbstractItemView *view() const;
 
     /** Returns the size of the icons shown in the combo-box. */
     QSize iconSize() const;

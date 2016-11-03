@@ -167,6 +167,13 @@ QLineEdit *QIComboBox::lineEdit() const
     return m_pComboBox->lineEdit();
 }
 
+QAbstractItemView *QIComboBox::view() const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, 0);
+    return m_pComboBox->view();
+}
+
 QSize QIComboBox::iconSize() const
 {
     /* Redirect to combo-box: */

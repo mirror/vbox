@@ -98,7 +98,7 @@ signals:
 
 public:
 
-    /** Constructs table-view passing @a pParent to the base-class. */
+    /** Constructs tree-view passing @a pParent to the base-class. */
     QITreeView(QWidget *pParent = 0);
 
     /** Returns the number of children. */
