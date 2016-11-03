@@ -376,7 +376,7 @@ soread(PNATState pData, struct socket *so)
                 tcp_sockclosed(pData, sototcpcb(so));
             else
             {
-                LogRel2(("NAT: sockerr %d, shuterr %d - %R[natsock]\n", sockerr, shuterr, so));
+                LogRel(("NAT: sockerr %d, shuterr %d - %R[natsock]\n", sockerr, shuterr, so));
                 tcp_drop(pData, sototcpcb(so), sockerr);
             }
             SOCKET_UNLOCK(so);
@@ -1117,16 +1117,26 @@ sofcantrcvmore(struct  socket *so)
         /*
          * If remote closes first and then sends an RST, the recv() in
          * soread() will keep reporting EOF without any error
-         * indication, so we must also check if shutdown() succeeds
-         * here.
+         * indication.  As far as I can tell the only way to detect
+         * this on Linux is to check if shutdown() succeeds here (but
+         * see below).
+         * 
+         * OTOH on OS X shutdown() "helpfully" checks if remote has
+         * already closed and then always returns ENOTCONN
+         * immediately.
          */
-        int status = shutdown(so->s, 0);
+        int status = shutdown(so->s, SHUT_RD);
+#if defined(RT_OS_LINUX)
         if (status < 0)
             err = errno;
+#else
+        RT_NOREF(status);
+#endif
     }
     so->so_state &= ~(SS_ISFCONNECTING);
     if (so->so_state & SS_FCANTSENDMORE)
     {
+#if defined(RT_OS_LINUX)
         /*
          * If we have closed first, and remote closes, shutdown will
          * return ENOTCONN, but this is expected.  Don't tell the
@@ -1134,6 +1144,7 @@ sofcantrcvmore(struct  socket *so)
          */
         if (err == ENOTCONN)
             err = 0;
+#endif
         so->so_state = SS_NOFDREF; /* Don't select it */
                                    /* XXX close() here as well? */
     }
