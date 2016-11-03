@@ -1619,20 +1619,6 @@ static size_t buslogicR3SgBufWalker(PBUSLOGIC pThis, PBUSLOGICREQ pReq,
         }
     }
 
-    /* Update residual data length. */
-    if (   (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
-        || (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
-    {
-        uint32_t    cbResidual;
-
-        /** @todo we need to get the actual transfer length from the VSCSI layer?! */
-        cbResidual = 0; //LEN_TO_U32(pTaskState->CCBGuest.acbData) - ???;
-        if (pReq->fIs24Bit)
-            U32_TO_LEN(pReq->CCBGuest.o.acbData, cbResidual);
-        else
-            pReq->CCBGuest.n.cbData = cbResidual;
-    }
-
     return cbCopied - RT_MIN(cbSkip, cbCopied);
 }
 
@@ -2870,6 +2856,20 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
     {
         if (pReq->pbSenseBuffer)
             buslogicR3SenseBufferFree(pReq, (pReq->u8ScsiSts != SCSI_STATUS_OK));
+
+        /* Update residual data length. */
+        if (   (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_DATA_LENGTH)
+            || (pReq->CCBGuest.c.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB_RESIDUAL_SCATTER_GATHER))
+        {
+            size_t cbResidual = 0;
+            int rc = pTgtDev->pDrvMediaEx->pfnIoReqQueryResidual(pTgtDev->pDrvMediaEx, pReq->hIoReq, &cbResidual);
+            AssertRC(rc); Assert(cbResidual == (uint32_t)cbResidual);
+
+            if (pReq->fIs24Bit)
+                U32_TO_LEN(pReq->CCBGuest.o.acbData, (uint32_t)cbResidual);
+            else
+                pReq->CCBGuest.n.cbData = (uint32_t)cbResidual;
+        }
 
         /*
          * Save vital things from the request and free it before posting completion
