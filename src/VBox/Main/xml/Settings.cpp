@@ -104,6 +104,16 @@ using namespace settings;
 /** VirtualBox XML settings version number substring ("x.y")  */
 #define VBOX_XML_VERSION        "1.12"
 
+/** VirtualBox OVF settings import default version number substring ("x.y").
+ *
+ * Think twice before changing this, as all VirtualBox versions before 5.1
+ * wrote the settings version when exporting, but totally ignored it on
+ * importing (while it should have been a mandatory attribute), so 3rd party
+ * software out there creates OVF files with the VirtualBox specific settings
+ * but lacking the version attribute. This shouldn't happen any more, but
+ * breaking existing OVF files isn't nice. */
+#define VBOX_XML_IMPORT_VERSION "1.15"
+
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
 #   define VBOX_XML_PLATFORM     "macosx"
@@ -127,6 +137,9 @@ using namespace settings;
 
 /** VirtualBox XML settings full version string ("x.y-platform") */
 #define VBOX_XML_VERSION_FULL   VBOX_XML_VERSION "-" VBOX_XML_PLATFORM
+
+/** VirtualBox OVF import default settings full version string ("x.y-platform") */
+#define VBOX_XML_IMPORT_VERSION_FULL   VBOX_XML_IMPORT_VERSION "-" VBOX_XML_PLATFORM
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -247,14 +260,14 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
 
         m->pelmRoot = m->pDoc->getRootElement();
         if (!m->pelmRoot || !m->pelmRoot->nameEquals("VirtualBox"))
-            throw ConfigFileError(this, NULL, N_("Root element in VirtualBox settings files must be \"VirtualBox\"."));
+            throw ConfigFileError(this, m->pelmRoot, N_("Root element in VirtualBox settings files must be \"VirtualBox\""));
 
         if (!(m->pelmRoot->getAttributeValue("version", m->strSettingsVersionFull)))
             throw ConfigFileError(this, m->pelmRoot, N_("Required VirtualBox/@version attribute is missing"));
 
         LogRel(("Loading settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
 
-        m->sv = parseVersion(m->strSettingsVersionFull);
+        m->sv = parseVersion(m->strSettingsVersionFull, m->pelmRoot);
 
         // remember the settings version we read in case it gets upgraded later,
         // so we know when to make backups
@@ -315,8 +328,9 @@ const char *ConfigFileBase::stringifyMediaType(MediaType t)
  * Allow future versions but fail if file is older than 1.6. Throws on errors.
  * @returns settings version
  * @param strVersion
+ * @param pElm
  */
-SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion)
+SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const xml::ElementNode *pElm)
 {
     SettingsVersion_T sv = SettingsVersion_Null;
     if (strVersion.length() > 3)
@@ -388,7 +402,7 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion)
     }
 
     if (sv == SettingsVersion_Null)
-        throw ConfigFileError(this, NULL, N_("Cannot handle settings version '%s'"), strVersion.c_str());
+        throw ConfigFileError(this, pElm, N_("Cannot handle settings version '%s'"), strVersion.c_str());
 
     return sv;
 }
@@ -399,15 +413,17 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion)
  * "{}" brackets. Throws on errors.
  * @param guid
  * @param strUUID
+ * @param pElm
  */
 void ConfigFileBase::parseUUID(Guid &guid,
-                               const Utf8Str &strUUID) const
+                               const Utf8Str &strUUID,
+                               const xml::ElementNode *pElm) const
 {
     guid = strUUID.c_str();
     if (guid.isZero())
-        throw ConfigFileError(this, NULL, N_("UUID \"%s\" has zero format"), strUUID.c_str());
+        throw ConfigFileError(this, pElm, N_("UUID \"%s\" has zero format"), strUUID.c_str());
     else if (!guid.isValid())
-        throw ConfigFileError(this, NULL, N_("UUID \"%s\" has invalid format"), strUUID.c_str());
+        throw ConfigFileError(this, pElm, N_("UUID \"%s\" has invalid format"), strUUID.c_str());
 }
 
 /**
@@ -415,9 +431,11 @@ void ConfigFileBase::parseUUID(Guid &guid,
  * date/time stamp to put into timestamp. Throws on errors.
  * @param timestamp
  * @param str
+ * @param pElm
  */
 void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
-                                    const com::Utf8Str &str) const
+                                    const com::Utf8Str &str,
+                                    const xml::ElementNode *pElm) const
 {
     const char *pcsz = str.c_str();
         //  yyyy-mm-ddThh:mm:ss
@@ -430,7 +448,7 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
         if (    (pcsz[19])
              && (pcsz[19] != 'Z')
            )
-            throw ConfigFileError(this, NULL, N_("Cannot handle ISO timestamp '%s': is not UTC date"), str.c_str());
+            throw ConfigFileError(this, pElm, N_("Cannot handle ISO timestamp '%s': is not UTC date"), str.c_str());
 
         int32_t yyyy;
         uint32_t mm, dd, hh, min, secs;
@@ -471,28 +489,30 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
                         return;
             }
 
-            throw ConfigFileError(this, NULL, N_("Cannot parse ISO timestamp '%s': runtime error, %Rra"), str.c_str(), rc);
+            throw ConfigFileError(this, pElm, N_("Cannot parse ISO timestamp '%s': runtime error, %Rra"), str.c_str(), rc);
         }
 
-        throw ConfigFileError(this, NULL, N_("Cannot parse ISO timestamp '%s': invalid format"), str.c_str());
+        throw ConfigFileError(this, pElm, N_("Cannot parse ISO timestamp '%s': invalid format"), str.c_str());
     }
 }
 
 /**
  * Helper function that parses a Base64 formatted string into a binary blob.
- * @param guid
- * @param strUUID
+ * @param binary
+ * @param str
+ * @param pElm
  */
 void ConfigFileBase::parseBase64(IconBlob &binary,
-                                 const Utf8Str &str) const
+                                 const Utf8Str &str,
+                                 const xml::ElementNode *pElm) const
 {
 #define DECODE_STR_MAX _1M
     const char* psz = str.c_str();
     ssize_t cbOut = RTBase64DecodedSize(psz, NULL);
     if (cbOut > DECODE_STR_MAX)
-        throw ConfigFileError(this, NULL, N_("Base64 encoded data too long (%d > %d)"), cbOut, DECODE_STR_MAX);
+        throw ConfigFileError(this, pElm, N_("Base64 encoded data too long (%d > %d)"), cbOut, DECODE_STR_MAX);
     else if (cbOut < 0)
-        throw ConfigFileError(this, NULL, N_("Base64 encoded data '%s' invalid"), psz);
+        throw ConfigFileError(this, pElm, N_("Base64 encoded data '%s' invalid"), psz);
     binary.resize(cbOut);
     int vrc = VINF_SUCCESS;
     if (cbOut)
@@ -500,7 +520,7 @@ void ConfigFileBase::parseBase64(IconBlob &binary,
     if (RT_FAILURE(vrc))
     {
         binary.resize(0);
-        throw ConfigFileError(this, NULL, N_("Base64 encoded data could not be decoded (%Rrc)"), vrc);
+        throw ConfigFileError(this, pElm, N_("Base64 encoded data could not be decoded (%Rrc)"), vrc);
     }
 }
 
@@ -642,7 +662,7 @@ void ConfigFileBase::readMediumOne(MediaType t,
     if (!elmMedium.getAttributeValue("uuid", strUUID))
         throw ConfigFileError(this, &elmMedium, N_("Required %s/@uuid attribute is missing"), elmMedium.getName());
 
-    parseUUID(med.uuid, strUUID);
+    parseUUID(med.uuid, strUUID, &elmMedium);
 
     bool fNeedsLocation = true;
 
@@ -1017,50 +1037,25 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             break;
     }
 
-    elm.setAttribute("version", Utf8StrFmt("%s-%s",
+    m->strSettingsVersionFull = Utf8StrFmt("%s-%s",
                                            pcszVersion,
-                                           VBOX_XML_PLATFORM));       // e.g. "linux"
+                                           VBOX_XML_PLATFORM);  // e.g. "linux"
+    elm.setAttribute("version", m->strSettingsVersionFull);
 }
 
+
 /**
- * Creates a new stub xml::Document in the m->pDoc member with the
- * root "VirtualBox" element set up. This is used by both
- * MainConfigFile and MachineConfigFile at the beginning of writing
- * out their XML.
- *
- * Before calling this, it is the responsibility of the caller to
- * set the "sv" member to the required settings version that is to
- * be written. For newly created files, the settings version will be
- * the latest (1.12); for files read in from disk earlier, it will be
- * the settings version indicated in the file. However, this method
- * will silently make sure that the settings version is always
- * at least 1.7 and change it if necessary, since there is no write
- * support for earlier settings versions.
+ * Creates a special backup file in case there is a version
+ * bump, so that it is possible to go back to the previous
+ * state. This is done only once (not for every settings
+ * version bump), when the settings version is newer than
+ * the version read from the config file. Must be called
+ * before ConfigFileBase::createStubDocument, because that
+ * method may alter information which this method needs.
  */
-void ConfigFileBase::createStubDocument()
+void ConfigFileBase::specialBackupIfFirstBump()
 {
-    Assert(m->pDoc == NULL);
-    m->pDoc = new xml::Document;
-
-    m->pelmRoot = m->pDoc->createRootElement("VirtualBox",
-                                             "\n"
-                                             "** DO NOT EDIT THIS FILE.\n"
-                                             "** If you make changes to this file while any VirtualBox related application\n"
-                                             "** is running, your changes will be overwritten later, without taking effect.\n"
-                                             "** Use VBoxManage or the VirtualBox Manager GUI to make changes.\n"
-);
-    m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
-    // Have the code for producing a proper schema reference. Not used by most
-    // tools, so don't bother doing it. The schema is not on the server anyway.
-#ifdef VBOX_WITH_SETTINGS_SCHEMA
-    m->pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-    m->pelmRoot->setAttribute("xsi:schemaLocation", VBOX_XML_NAMESPACE " " VBOX_XML_SCHEMA);
-#endif
-
-    // add settings version attribute to root element
-    setVersionAttribute(*m->pelmRoot);
-
-    // since this gets called before the XML document is actually written out,
+    // Since this gets called before the XML document is actually written out,
     // this is where we must check whether we're upgrading the settings version
     // and need to make a backup, so the user can go back to an earlier
     // VirtualBox version and recover his old settings files.
@@ -1084,13 +1079,60 @@ void ConfigFileBase::createStubDocument()
         strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
         strFilenameNew.append(strExt);                          // .xml for main config, .vbox for machine config
 
-        RTFileMove(m->strFilename.c_str(),
-                   strFilenameNew.c_str(),
-                   0);      // no RTFILEMOVE_FLAGS_REPLACE
+        // Copying the file cannot be avoided, as doing tricks with renaming
+        // causes trouble on OS X with aliases (which follow the rename), and
+        // on all platforms there is a risk of "losing" the VM config when
+        // running out of space, as a rename here couldn't be rolled back.
+        // Ignoring all errors besides running out of space is intentional, as
+        // we don't want to do anything if the file already exists.
+        int vrc = RTFileCopy(m->strFilename.c_str(), strFilenameNew.c_str());
+        if (RT_UNLIKELY(vrc == VERR_DISK_FULL))
+            throw ConfigFileError(this, NULL, N_("Cannot create settings backup file when upgrading to a newer settings format"));
 
         // do this only once
         m->svRead = SettingsVersion_Null;
     }
+}
+
+/**
+ * Creates a new stub xml::Document in the m->pDoc member with the
+ * root "VirtualBox" element set up. This is used by both
+ * MainConfigFile and MachineConfigFile at the beginning of writing
+ * out their XML.
+ *
+ * Before calling this, it is the responsibility of the caller to
+ * set the "sv" member to the required settings version that is to
+ * be written. For newly created files, the settings version will be
+ * recent (1.12 or later if necessary); for files read in from disk
+ * earlier, it will be the settings version indicated in the file.
+ * However, this method will silently make sure that the settings
+ * version is always at least 1.7 and change it if necessary, since
+ * there is no write support for earlier settings versions.
+ */
+void ConfigFileBase::createStubDocument()
+{
+    Assert(m->pDoc == NULL);
+    m->pDoc = new xml::Document;
+
+    m->pelmRoot = m->pDoc->createRootElement("VirtualBox",
+                                             "\n"
+                                             "** DO NOT EDIT THIS FILE.\n"
+                                             "** If you make changes to this file while any VirtualBox related application\n"
+                                             "** is running, your changes will be overwritten later, without taking effect.\n"
+                                             "** Use VBoxManage or the VirtualBox Manager GUI to make changes.\n"
+);
+    m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
+    // Have the code for producing a proper schema reference. Not used by most
+    // tools, so don't bother doing it. The schema is not on the server anyway.
+#ifdef VBOX_WITH_SETTINGS_SCHEMA
+    m->pelmRoot->setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    m->pelmRoot->setAttribute("xsi:schemaLocation", VBOX_XML_NAMESPACE " " VBOX_XML_SCHEMA);
+#endif
+
+    // add settings version attribute to root element, update m->strSettingsVersionFull
+    setVersionAttribute(*m->pelmRoot);
+
+    LogRel(("Saving settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
 }
 
 /**
@@ -1615,7 +1657,7 @@ void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegis
             if (   pelmChild1->getAttributeValue("uuid", strUUID)
                 && pelmChild1->getAttributeValue("src", mre.strSettingsFile) )
             {
-                parseUUID(mre.uuid, strUUID);
+                parseUUID(mre.uuid, strUUID, pelmChild1);
                 llMachines.push_back(mre);
             }
             else
@@ -1939,6 +1981,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     bumpSettingsVersionIfNeeded();
 
     m->strFilename = strFilename;
+    specialBackupIfFirstBump();
     createStubDocument();
 
     xml::ElementNode *pelmGlobal = m->pelmRoot->createChild("Global");
@@ -3204,11 +3247,11 @@ void MachineConfigFile::importMachineXML(const xml::ElementNode &elmMachine)
     // which lack this information. Let's hope that they learn to add the
     // version when they switch to the newer settings style/defaults of 5.1.
     if (!(elmMachine.getAttributeValue("version", m->strSettingsVersionFull)))
-        m->strSettingsVersionFull = "1.15";
+        m->strSettingsVersionFull = VBOX_XML_IMPORT_VERSION_FULL;
 
     LogRel(("Import settings with version \"%s\"\n", m->strSettingsVersionFull.c_str()));
 
-    m->sv = parseVersion(m->strSettingsVersionFull);
+    m->sv = parseVersion(m->strSettingsVersionFull, &elmMachine);
 
     // remember the settings version we read in case it gets upgraded later,
     // so we know when to make backups
@@ -3777,7 +3820,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     }
     Utf8Str strUUID;
     if (elmHardware.getAttributeValue("uuid", strUUID))
-        parseUUID(hw.uuid, strUUID);
+        parseUUID(hw.uuid, strUUID, &elmHardware);
 
     xml::NodesLoop nl1(elmHardware);
     const xml::ElementNode *pelmHwChild;
@@ -4490,7 +4533,7 @@ void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &e
 
         if (!pelmAttachment->getAttributeValue("hardDisk", strUUID))
             throw ConfigFileError(this, pelmAttachment, N_("Required HardDiskAttachment/@hardDisk attribute is missing"));
-        parseUUID(att.uuid, strUUID);
+        parseUUID(att.uuid, strUUID, pelmAttachment);
 
         if (!pelmAttachment->getAttributeValue("bus", strBus))
             throw ConfigFileError(this, pelmAttachment, N_("Required HardDiskAttachment/@bus attribute is missing"));
@@ -4674,7 +4717,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 {
                     if (!pelmImage->getAttributeValue("uuid", strTemp))
                         throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/Image/@uuid attribute is missing"));
-                    parseUUID(att.uuid, strTemp);
+                    parseUUID(att.uuid, strTemp, pelmImage);
                 }
 
                 if (!pelmAttached->getAttributeValue("port", att.lPort))
@@ -4731,7 +4774,7 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
             Utf8Str strTmp;
             if (   (pDriveChild = pelmHwChild->findChildElement("Image")) != NULL
                 && pDriveChild->getAttributeValue("uuid", strTmp))
-                parseUUID(att.uuid, strTmp);
+                parseUUID(att.uuid, strTmp, pDriveChild);
             else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
                 pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
 
@@ -4777,7 +4820,7 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
                 Utf8Str strTmp;
                 if (   (pDriveChild = pelmHwChild->findChildElement("Image"))
                     && pDriveChild->getAttributeValue("uuid", strTmp) )
-                    parseUUID(att.uuid, strTmp);
+                    parseUUID(att.uuid, strTmp, pDriveChild);
                 else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
                     pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
 
@@ -4900,7 +4943,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
 
     if (!elmSnapshot.getAttributeValue("uuid", strTemp))
         throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@uuid attribute is missing"));
-    parseUUID(snap.uuid, strTemp);
+    parseUUID(snap.uuid, strTemp, &elmSnapshot);
     bool foundCurrentSnapshot = (snap.uuid == curSnapshotUuid);
 
     if (!elmSnapshot.getAttributeValue("name", snap.strName))
@@ -4911,7 +4954,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
 
     if (!elmSnapshot.getAttributeValue("timeStamp", strTemp))
         throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@timeStamp attribute is missing"));
-    parseTimestamp(snap.timestamp, strTemp);
+    parseTimestamp(snap.timestamp, strTemp, &elmSnapshot);
 
     elmSnapshot.getAttributeValuePath("stateFile", snap.strStateFile);      // online snapshots only
 
@@ -5031,7 +5074,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
     if (   elmMachine.getAttributeValue("uuid", strUUID)
         && elmMachine.getAttributeValue("name", machineUserData.strName))
     {
-        parseUUID(uuid, strUUID);
+        parseUUID(uuid, strUUID, &elmMachine);
 
         elmMachine.getAttributeValue("directoryIncludesUUID", machineUserData.fDirectoryIncludesUUID);
         elmMachine.getAttributeValue("nameSync", machineUserData.fNameSync);
@@ -5045,14 +5088,14 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         elmMachine.getAttributeValuePath("stateFile", strStateFile);
 
         if (elmMachine.getAttributeValue("currentSnapshot", str))
-            parseUUID(uuidCurrentSnapshot, str);
+            parseUUID(uuidCurrentSnapshot, str, &elmMachine);
 
         elmMachine.getAttributeValuePath("snapshotFolder", machineUserData.strSnapshotFolder);
 
         if (!elmMachine.getAttributeValue("currentStateModified", fCurrentStateModified))
             fCurrentStateModified = true;
         if (elmMachine.getAttributeValue("lastStateChange", str))
-            parseTimestamp(timeLastStateChange, str);
+            parseTimestamp(timeLastStateChange, str, &elmMachine);
             // constructor has called RTTimeNow(&timeLastStateChange) before
         if (elmMachine.getAttributeValue("aborted", fAborted))
             fAborted = true;
@@ -5061,7 +5104,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 
         str.setNull();
         elmMachine.getAttributeValue("icon", str);
-        parseBase64(machineUserData.ovIcon, str);
+        parseBase64(machineUserData.ovIcon, str, &elmMachine);
 
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
@@ -6622,8 +6665,11 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                         std::list<xml::ElementNode*> *pllElementsWithUuidAttributes)
 {
     if (fl & BuildMachineXML_WriteVBoxVersionAttribute)
+    {
         // add settings version attribute to machine element
         setVersionAttribute(elmMachine);
+        LogRel(("Exporting settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
+    }
 
     elmMachine.setAttribute("uuid", uuid.toStringCurly());
     elmMachine.setAttribute("name", machineUserData.strName);
@@ -7355,6 +7401,7 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         bumpSettingsVersionIfNeeded();
 
         m->strFilename = strFilename;
+        specialBackupIfFirstBump();
         createStubDocument();
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");

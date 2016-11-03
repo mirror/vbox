@@ -232,13 +232,17 @@ protected:
     typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
 
     static const char *stringifyMediaType(MediaType t);
-    SettingsVersion_T parseVersion(const com::Utf8Str &strVersion);
+    SettingsVersion_T parseVersion(const com::Utf8Str &strVersion,
+                                   const xml::ElementNode *pElm);
     void parseUUID(com::Guid &guid,
-                   const com::Utf8Str &strUUID) const;
+                   const com::Utf8Str &strUUID,
+                   const xml::ElementNode *pElm) const;
     void parseTimestamp(RTTIMESPEC &timestamp,
-                        const com::Utf8Str &str) const;
+                        const com::Utf8Str &str,
+                        const xml::ElementNode *pElm) const;
     void parseBase64(IconBlob &binary,
-                     const com::Utf8Str &str) const;
+                     const com::Utf8Str &str,
+                     const xml::ElementNode *pElm) const;
     com::Utf8Str stringifyTimestamp(const RTTIMESPEC &tm) const;
     void toBase64(com::Utf8Str &str,
                   const IconBlob &binary) const;
@@ -254,6 +258,7 @@ protected:
     void readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopBacks);
 
     void setVersionAttribute(xml::ElementNode &elm);
+    void specialBackupIfFirstBump();
     void createStubDocument();
 
     void buildExtraData(xml::ElementNode &elmParent, const StringsMap &me);
