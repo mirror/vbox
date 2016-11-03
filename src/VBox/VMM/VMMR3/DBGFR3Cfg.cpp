@@ -438,7 +438,7 @@ static int dbgfR3CfgBbSplit(PDBGFCFGINT pThis, PDBGFCFGBBINT pCfgBb, PDBGFADDRES
     uint32_t idxInstrSplit;
 
     /* If the block is empty it will get populated later so there is nothing to split,
-     * same if the the start address equals. */
+     * same if the start address equals. */
     if (   pCfgBb->fFlags & DBGF_CFG_BB_F_EMPTY
         || dbgfR3CfgBbAddrEqual(&pCfgBb->AddrStart, pAddr))
         return VINF_SUCCESS;

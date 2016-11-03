@@ -1567,7 +1567,7 @@ static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache
  * @param   pBlkCache    The endpoint cache.
  * @param   off          The offset.
  * @param   ppEntryAbove Where to store the pointer to the best fit entry above
- *                       the the given offset. NULL if not required.
+ *                       the given offset. NULL if not required.
  */
 static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off, PPDMBLKCACHEENTRY *ppEntryAbove)
 {

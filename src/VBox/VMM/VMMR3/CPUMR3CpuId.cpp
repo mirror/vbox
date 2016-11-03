@@ -674,7 +674,7 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves,
  *
  * @returns VINF_SUCCESS or VERR_NO_MEMORY.  On error, *ppaLeaves is freed, so
  *          the caller need do no more work.
- * @param   ppaLeaves       Pointer to the the pointer to the array of sorted
+ * @param   ppaLeaves       Pointer to the pointer to the array of sorted
  *                          CPUID leaves and sub-leaves.
  * @param   pcLeaves        Where we keep the leaf count for *ppaLeaves.
  * @param   uLeaf           The leaf we're adding.
@@ -755,7 +755,7 @@ static void cpumR3CpuIdAssertOrder(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves)
  * @returns VBox status code.
  * @param   pVM         The cross context VM structure.  If NULL, use
  *                      the process heap, otherwise the VM's hyper heap.
- * @param   ppaLeaves   Pointer to the the pointer to the array of sorted
+ * @param   ppaLeaves   Pointer to the pointer to the array of sorted
  *                      CPUID leaves and sub-leaves. Must be NULL if using
  *                      the hyper heap.
  * @param   pcLeaves    Where we keep the leaf count for *ppaLeaves. Must
