@@ -61,7 +61,7 @@ static int differFrom(const QString &str1, const QString &str2)
 }
 
 UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<QComboBox>(pParent)
+    : QIWithRetranslateUI<QIComboBox>(pParent)
     , m_enmMode(Mode_Folder)
     , m_strHomeDir(QDir::current().absolutePath())
     , m_fEditable(true)
@@ -124,7 +124,7 @@ void UIFilePathSelector::setEditable(bool fEditable)
 
     if (m_fEditable)
     {
-        QComboBox::setEditable(true);
+        QIComboBox::setEditable(true);
         Assert(lineEdit());
         connect(lineEdit(), SIGNAL(textEdited(const QString &)),
                 this, SLOT(onTextEdited(const QString &)));
@@ -141,7 +141,7 @@ void UIFilePathSelector::setEditable(bool fEditable)
             disconnect(lineEdit(), SIGNAL(textEdited(const QString &)),
                        this, SLOT(onTextEdited(const QString &)));
         }
-        QComboBox::setEditable(false);
+        QIComboBox::setEditable(false);
     }
 }
 
@@ -160,7 +160,7 @@ void UIFilePathSelector::setResetEnabled(bool fEnabled)
 void UIFilePathSelector::setToolTip(const QString &strToolTip)
 {
     /* Call to base-class: */
-    QComboBox::setToolTip(strToolTip);
+    QIComboBox::setToolTip(strToolTip);
 
     /* Remember if the tool-tip overriden: */
     m_fToolTipOverriden = !toolTip().isEmpty();
@@ -179,12 +179,12 @@ bool UIFilePathSelector::eventFilter(QObject *pObject, QEvent *pEvent)
     if (m_fMouseAwaited && (pEvent->type() == QEvent::MouseButtonPress))
         QMetaObject::invokeMethod(this, "refreshText", Qt::QueuedConnection);
 
-    return QIWithRetranslateUI<QComboBox>::eventFilter(pObject, pEvent);
+    return QIWithRetranslateUI<QIComboBox>::eventFilter(pObject, pEvent);
 }
 
 void UIFilePathSelector::resizeEvent(QResizeEvent *pEvent)
 {
-    QIWithRetranslateUI<QComboBox>::resizeEvent(pEvent);
+    QIWithRetranslateUI<QIComboBox>::resizeEvent(pEvent);
     refreshText();
 }
 
@@ -199,7 +199,7 @@ void UIFilePathSelector::focusInEvent(QFocusEvent *pEvent)
         else
             refreshText();
     }
-    QIWithRetranslateUI<QComboBox>::focusInEvent(pEvent);
+    QIWithRetranslateUI<QIComboBox>::focusInEvent(pEvent);
 }
 
 void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
@@ -209,7 +209,7 @@ void UIFilePathSelector::focusOutEvent(QFocusEvent *pEvent)
         m_fEditableMode = false;
         refreshText();
     }
-    QIWithRetranslateUI<QComboBox>::focusOutEvent(pEvent);
+    QIWithRetranslateUI<QIComboBox>::focusOutEvent(pEvent);
 }
 
 void UIFilePathSelector::retranslateUi()
@@ -486,7 +486,7 @@ void UIFilePathSelector::refreshText()
 
         /* Set the tool-tip: */
         if (!m_fToolTipOverriden)
-            QComboBox::setToolTip(m_strNoneToolTipFocused);
+            QIComboBox::setToolTip(m_strNoneToolTipFocused);
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
 
         if (m_fMouseAwaited)
@@ -516,7 +516,7 @@ void UIFilePathSelector::refreshText()
 
             /* Set the tool-tip: */
             if (!m_fToolTipOverriden)
-                QComboBox::setToolTip(m_strNoneToolTip);
+                QIComboBox::setToolTip(m_strNoneToolTip);
             setItemData(PathId, toolTip(), Qt::ToolTipRole);
         }
     }
@@ -536,7 +536,7 @@ void UIFilePathSelector::refreshText()
 
         /* Set the tool-tip: */
         if (!m_fToolTipOverriden)
-            QComboBox::setToolTip(fullPath());
+            QIComboBox::setToolTip(fullPath());
         setItemData(PathId, toolTip(), Qt::ToolTipRole);
     }
 }
