@@ -733,7 +733,7 @@ class WuiMain(WuiDispatcherBase):
         #
         # Fetch the group members.
         #
-        # If no grouping is selected, we'll fill the the grouping combo with
+        # If no grouping is selected, we'll fill the grouping combo with
         # testboxes just to avoid having completely useless combo box.
         #
         oTrLogic = TestResultLogic(self._oDb);

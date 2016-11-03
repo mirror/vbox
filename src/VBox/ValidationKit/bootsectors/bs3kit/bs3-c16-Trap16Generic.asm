@@ -158,7 +158,7 @@ CPU 386
 .stack_fine:
         movzx   esp, sp
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
 .more_zeroed_space:
         push    0
@@ -215,7 +215,7 @@ CPU 286
         pushf
         cld
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
 .more_zeroed_space:
         push    0
@@ -527,7 +527,7 @@ CPU 386
         mov     bp, sp
         pushfd                          ; Handler flags.
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 15) / 16
 .more_zeroed_space:
         push    dword 0
@@ -676,7 +676,7 @@ CPU 286
         mov     bp, sp
         pushf                           ; Handler flags.
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
 .more_zeroed_space:
         push    0

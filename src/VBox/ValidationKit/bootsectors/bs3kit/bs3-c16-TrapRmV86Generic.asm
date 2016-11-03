@@ -125,7 +125,7 @@ CPU 386
         push    ss                      ; BP - 0eh
         push    esp                     ; BP - 12h
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
 .more_zeroed_space:
         push    0
@@ -181,7 +181,7 @@ CPU 8086
         push    ax                      ; BP - 6
         cld
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     bx, (BS3TRAPFRAME_size + 7) / 8
         xor     ax, ax
 .more_zeroed_space:

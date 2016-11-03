@@ -118,7 +118,7 @@ BS3_PROC_BEGIN Bs3Trap64GenericTrapOrInt
         cld
         push    rdi
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     edi, (BS3TRAPFRAME_size + 15) / 16
 .more_zeroed_space:
         push    qword 0
@@ -155,7 +155,7 @@ BS3_PROC_BEGIN Bs3Trap64GenericTrapErrCode
         cld
         push    rdi
 
-        ; Reserve space for the the register and trap frame.
+        ; Reserve space for the register and trap frame.
         mov     edi, (BS3TRAPFRAME_size + 15) / 16
 .more_zeroed_space:
         push    qword 0

@@ -797,7 +797,7 @@ static void bs3CpuBasic2_RaiseXcpt1Common(uint16_t const uSysR0Cs, uint16_t cons
                     paIdt[0x83 << cIdteShift].Gate.u2Dpl = 3;
                     g_usBs3TestStep++;
 
-                    /* +2: Check the the CS.DPL check is done before the SS ones. Restoring the
+                    /* +2: Check the CS.DPL check is done before the SS ones. Restoring the
                            ring-0 INT 83 context triggers the CS.DPL < CPL check. */
                     Bs3TrapSetJmpAndRestore(&Ctx83, &TrapCtx);
                     bs3CpuBasic2_CompareGpCtx(&TrapCtx, &Ctx83, BS3_SEL_TEST_PAGE_02);

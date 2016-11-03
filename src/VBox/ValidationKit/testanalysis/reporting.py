@@ -238,7 +238,7 @@ def produceTextReport(oTest):
     ## @todo later
 
     #
-    # Tabelize the the results and display the tables.
+    # Tabelize the results and display the tables.
     #
     aoTables = tabelizeTestResults(oTest, True)
     for oTable in aoTables:

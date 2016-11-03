@@ -31,7 +31,7 @@ __all__     = ['BaselineDiff', ];
 
 
 def _findBaselineTest(oBaseline, oTest):
-    """ Recursively finds the the test in oBaseline corresponding to oTest. """
+    """ Recursively finds the test in oBaseline corresponding to oTest. """
     if oTest.oParent is None:
         return oBaseline;
     oBaseline = _findBaselineTest(oBaseline, oTest.oParent);

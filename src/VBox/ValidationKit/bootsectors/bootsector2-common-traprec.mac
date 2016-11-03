@@ -124,7 +124,7 @@ g_aTrapRecsEnd:
 ;;
 ; Macro for installing the trap records.
 ;
-; This must be invoked prior the the traps.
+; This must be invoked prior to the traps.
 ;
 ; @uses Stack
 ;
