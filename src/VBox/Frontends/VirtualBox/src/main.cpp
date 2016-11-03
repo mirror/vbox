@@ -275,7 +275,7 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
 /** Qt4 message handler, function that prints out
   * debug, warning, critical, fatal and system error messages.
   * @param  type  Holds the type of the message.
-  * @param  pMsg  Holds the the message body. */
+  * @param  pMsg  Holds the message body. */
 static void QtMessageOutput(QtMsgType type, const char *pMsg)
 {
 # ifndef VBOX_WS_X11

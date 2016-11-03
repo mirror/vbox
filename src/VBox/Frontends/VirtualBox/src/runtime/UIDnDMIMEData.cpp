@@ -84,7 +84,7 @@ bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
  * data in case of a successful drag'n drop operation.
  *
  * @param strMIMEType           MIME type string.
- * @param vaType                Variant containing the actual data based on the the MIME type.
+ * @param vaType                Variant containing the actual data based on the MIME type.
  *
  * @return QVariant
  */
