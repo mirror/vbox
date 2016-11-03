@@ -195,7 +195,7 @@ int QIComboBox::count() const
     return m_pComboBox->count();
 }
 
-int	QIComboBox::currentIndex() const
+int QIComboBox::currentIndex() const
 {
     /* Redirect to combo-box: */
     AssertPtrReturn(m_pComboBox, -1);
@@ -303,6 +303,15 @@ void QIComboBox::prepare()
         m_pComboBox = new QComboBox;
         AssertPtrReturnVoid(m_pComboBox);
         {
+            /* Configure combo-box: */
+            connect(m_pComboBox, SIGNAL(activated(int)), this, SIGNAL(activated(int)));
+            connect(m_pComboBox, SIGNAL(activated(const QString &)), this, SIGNAL(activated(const QString &)));
+            connect(m_pComboBox, SIGNAL(currentIndexChanged(int)), this, SIGNAL(currentIndexChanged(int)));
+            connect(m_pComboBox, SIGNAL(currentIndexChanged(const QString &)), this, SIGNAL(currentIndexChanged(const QString &)));
+            connect(m_pComboBox, SIGNAL(currentTextChanged(const QString &)), this, SIGNAL(currentTextChanged(const QString &)));
+            connect(m_pComboBox, SIGNAL(editTextChanged(const QString &)), this, SIGNAL(editTextChanged(const QString &)));
+            connect(m_pComboBox, SIGNAL(highlighted(int)), this, SIGNAL(highlighted(int)));
+            connect(m_pComboBox, SIGNAL(highlighted(const QString &)), this, SIGNAL(highlighted(const QString &)));
             /* Add combo-box into layout: */
             pLayout->addWidget(m_pComboBox);
         }
