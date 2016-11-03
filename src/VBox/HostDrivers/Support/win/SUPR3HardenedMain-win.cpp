@@ -141,7 +141,7 @@ typedef struct VERIFIERCACHEENTRY
     /** The verification result. */
     int                     rc;
     /** Used for shutting up load and error messages after a while so they don't
-     * flood the the log file and fill up the disk. */
+     * flood the log file and fill up the disk. */
     uint32_t volatile       cHits;
     /** The validation flags (for WinVerifyTrust retry). */
     uint32_t                fFlags;

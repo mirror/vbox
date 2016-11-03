@@ -2254,7 +2254,7 @@ int GuestProcessTool::i_waitEx(uint32_t fFlags, GuestProcessStreamBlock *pStrmBl
         vrc = i_getCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStrmBlkOut);
         if (RT_SUCCESS(vrc))
             return vrc;
-        /* else do the the waiting below. */
+        /* else do the waiting below. */
     }
 
     /* Do the waiting. */

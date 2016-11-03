@@ -523,7 +523,7 @@ int AudioMixerSinkAddStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
  * @param   pConn               Audio connector interface to use.
  * @param   pCfg                Audio stream configuration to use.
  * @param   fFlags              Stream creation flags. Currently unused, set to 0.
- * @param   ppStream            Pointer which receives the the newly created audio stream.
+ * @param   ppStream            Pointer which receives the newly created audio stream.
  */
 int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
                                PPDMIAUDIOCONNECTOR pConn, PPDMAUDIOSTREAMCFG pCfg, uint32_t fFlags, PAUDMIXSTREAM *ppStream)

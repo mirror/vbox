@@ -368,7 +368,7 @@ DECLINLINE(int) vdScriptInterpreterPushForCtrlEntry(PVDSCRIPTINTERPCTX pThis, PV
         pCtrl->Ctrl.pAstNode    = &pStmt->Core;
         vdScriptStackPush(&pThis->StackCtrl);
 
-        /* Push the conditional first and the the initializer .*/
+        /* Push the conditional first and the initializer .*/
         rc = vdScriptInterpreterPushAstEntry(pThis, &pStmt->For.pExprCond->Core);
         if (RT_SUCCESS(rc))
         {

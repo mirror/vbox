@@ -14872,7 +14872,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the properties of this medium or contents of the storage unit
         will return an error (unless explicitly stated otherwise). That
         includes an attempt to start a virtual machine that wants to
-        write to the the medium.
+        write to the medium.
 
         When the virtual machine is started up, it locks for reading all
         media it uses in read-only mode. If some medium cannot be locked
