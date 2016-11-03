@@ -711,12 +711,6 @@ if 1
 				) \
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(f)$(NLTAB) )
 endif
-ifdef VBOX_WITH_QTGUI_V5
-	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "[Paths]"
-	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/qt.conf "Prefix =" /Applications/VirtualBox.app/Contents
-	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/Resources/qt.conf "[Paths]"
-	$(QUIET)$(APPEND) $(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app/Contents/Resources/qt.conf "Prefix =" /Applications/VirtualBox.app/Contents
-endif # VBOX_WITH_QTGUI_V5
 ifdef VBOX_WITH_DTRACE
 	@# DTrace library, testcases and scripts.
 	$(MKDIR) -p -m 0755 -- \
