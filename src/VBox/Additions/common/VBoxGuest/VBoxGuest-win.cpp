@@ -107,8 +107,7 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     LogFunc(("Driver built: %s %s\n", __DATE__, __TIME__));
 
     /*
-     * Check if the the NT version is supported and initializing
-     * g_enmVGDrvNtVer in the process.
+     * Check if the NT version is supported and initialize g_enmVGDrvNtVer.
      */
     ULONG ulMajorVer;
     ULONG ulMinorVer;

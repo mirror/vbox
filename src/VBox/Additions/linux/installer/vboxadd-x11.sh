@@ -409,7 +409,7 @@ $generated
 
 EOF
         tty >/dev/null && cat << EOF
-You may need to restart the the Window System (or just restart the guest system)
+You may need to restart the Window System (or just restart the guest system)
 to enable the Guest Additions.
 
 EOF

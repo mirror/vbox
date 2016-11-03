@@ -103,7 +103,7 @@ static int vbglR3WinCloseRegKey(HKEY hKey, int rc)
  *
  * @return  IPRT status code.
  * @param   hKey                Handle of registry key to use.
- * @param   pwszValueName       The the name of the value to query.
+ * @param   pwszValueName       The name of the value to query.
  * @param   cbHint              Size hint.
  * @param   ppszValue           Where to return value string on success. Free
  *                              with RTStrFree.

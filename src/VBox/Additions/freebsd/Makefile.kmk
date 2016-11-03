@@ -86,7 +86,7 @@ VBOX_FBSD_ADD_DBG_SYM_FILES := $(addsuffix .dbgsym,$(VBOX_FBSD_ADD_STRIP_BIN))
 VBOX_FBSD_ADD_INS_FILES := $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/,$(VBOX_FBSD_ADD_STRIP_BIN) $(VBOX_FBSD_ADD_STRIP_OBJ) $(VBOX_FBSD_ADD_DBG_SYM_FILES))
 VBOX_FBSD_ADD_INS_MODULES := $(addprefix $(VBOX_FBSD_ADD_INS_OUT_DIR)/module/,$(VBOX_FBSD_ADD_MODULES))
 
-# Cleanup of the the installer directory files
+# Cleanup of the installer directory files
 OTHER_CLEAN += $(VBOX_FBSD_ADD_INS_FILES)) $(VBOX_FBSD_ADD_INS_MODULES)
 
 # pattern rule for copying the debug info from the VBOX_FBSD_ADD_STRIP_BIN files to the installation directory

@@ -189,7 +189,7 @@ VBOX_LNX_ADD_INST_FILES += \
 	$(addprefix $(VBOX_LNX_ADD_INST_SBIN_DIR),vbox-greeter)
 endif
 
-# Cleanup of the the installer directory files
+# Cleanup of the installer directory files
 OTHER_CLEAN += $(VBOX_LNX_ADD_INST_FILES) $(VBOX_LNX_ADD_DBG_FILES)
 
 # pattern rules for copying the debug info from the VBOX_LNX_ADD_STRIP_* files to the installation directory
