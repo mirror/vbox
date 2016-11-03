@@ -175,7 +175,7 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
     /*
      * Query group information, partitioning CPU IDs and CPU set indexes.
      *
-     * We ASSUME the the GroupInfo index is the same as the group number.
+     * We ASSUME the GroupInfo index is the same as the group number.
      *
      * We CANNOT ASSUME that the kernel CPU indexes are assigned in any given
      * way, though they usually are in group order by active processor.  So,

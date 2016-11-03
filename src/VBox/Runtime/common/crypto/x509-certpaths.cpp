@@ -2487,7 +2487,7 @@ static bool rtCrX509CpvWrapUp(PRTCRX509CERTPATHSINT pThis, PRTCRX509CERTPATHNODE
 /**
  * Worker that validates one path.
  *
- * This implements the the algorithm in RFC-5280, section 6.1, with exception of
+ * This implements the algorithm in RFC-5280, section 6.1, with exception of
  * the CRL checks in 6.1.3.a.3.
  *
  * @returns success indicator.

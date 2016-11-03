@@ -295,7 +295,7 @@ static int rtCrPkcs7VerifySignerInfoAuthAttribs(PCRTCRPKCS7SIGNERINFO pSignerInf
                             "Missing authenticated message-digest attribute.");
 
     /*
-     * Calculate the digest of the the authenticated attributes for use in the
+     * Calculate the digest of the authenticated attributes for use in the
      * signature validation.
      */
     if (   pSignerInfo->DigestAlgorithm.Parameters.enmType != RTASN1TYPE_NULL
