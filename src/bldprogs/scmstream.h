@@ -69,7 +69,7 @@ typedef struct SCMSTREAM
     size_t          iLine;
     /** The current stream size given in lines.   */
     size_t          cLines;
-    /** The sizeof the the memory backing paLines.   */
+    /** The sizeof the memory backing paLines.   */
     size_t          cLinesAllocated;
 
     /** Set if write-only, clear if read-only. */

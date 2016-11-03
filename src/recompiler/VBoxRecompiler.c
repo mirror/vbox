@@ -2555,7 +2555,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Syncs back changes in the REM state to the the VM state.
+ * Syncs back changes in the REM state to the VM state.
  *
  * This must be called after invoking REMR3Run().
  * Calling it several times in a row is not permitted.
