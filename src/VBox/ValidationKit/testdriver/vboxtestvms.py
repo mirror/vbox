@@ -184,6 +184,8 @@ class TestVm(object):
         self.acCpusSup               = acCpusSup;
         self.asVirtModesSup          = asVirtModesSup;
         self.asParavirtModesSup      = asParavirtModesSup;
+        self.asParavirtModesSupOrg   = asParavirtModesSup; # HACK ALERT! Trick to make the 'effing random mess not get in the
+                                                           # way of actively selecting virtualization modes.
         self.sKind                   = sKind;
         self.sGuestOsType            = None;
         self.sDvdImage               = None;         # Relative to the testrsrc root.
@@ -291,6 +293,7 @@ class TestVm(object):
             self.asParavirtModesSup = g_kdaParavirtProvidersSupported[self.sGuestOsType];
             ## @todo Remove this hack as soon as we've got around to explictly configure test variations
             ## on the server side. Client side random is interesting but not the best option.
+            self.asParavirtModesSupOrg = self.asParavirtModesSup;
             if fRandomPvPMode:
                 random.seed();
                 self.asParavirtModesSup = (random.choice(self.asParavirtModesSup),);
@@ -599,6 +602,10 @@ class TestVmSet(object):
                                              % (sPvMode, ', '.join(g_kasParavirtProviders),));
             if len(self.asParavirtModes) == 0:
                 self.asParavirtModes = None;
+
+            # HACK ALERT! Reset the random paravirt selection for members.
+            for oTestVm in self.aoTestVms:
+                oTestVm.asParavirtModesSup = oTestVm.asParavirtModesSupOrg;
 
         else:
             return iArg;
