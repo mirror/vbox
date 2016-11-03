@@ -1807,7 +1807,7 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 	--persistent=n \
 	--rcfile=$(PATH_ROOT)/tools/pylintrc \
 	--max-line-length=130 \
-	--max-attributes=20 \
+	--max-attributes=32 \
 	--max-branch$(if-expr $(VBOX_PYLINT_VERSION) >= 10000,e,)s=50 \
 	--max-statements=100 \
 	--max-returns=100 \
