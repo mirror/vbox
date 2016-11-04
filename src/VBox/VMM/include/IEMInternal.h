@@ -67,7 +67,7 @@ RT_C_DECLS_BEGIN
 //#define IEM_WITH_CODE_TLB// - work in progress
 
 
-#ifndef IN_TSTVMSTRUCT
+#if !defined(IN_TSTVMSTRUCT) && !defined(DOXYGEN_RUNNING)
 /** Instruction statistics.   */
 typedef struct IEMINSTRSTATS
 {
