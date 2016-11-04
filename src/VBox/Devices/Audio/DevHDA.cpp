@@ -4475,7 +4475,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
 
     while (cbToProcess >= pStream->u16FIFOS)
     {
-        uint32_t cbProcessed;
+        uint32_t cbProcessed = 0;
         int rc2;
 
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
