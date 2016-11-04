@@ -135,7 +135,6 @@ EXPORTS
     DBGFR3CfgQueryStartBb
     DBGFR3CfgQueryBbByAddress
     DBGFR3CfgGetBbCount
-    DBGFR3CfgDump
     DBGFR3CfgBbRetain
     DBGFR3CfgBbRelease
     DBGFR3CfgBbGetStartAddress

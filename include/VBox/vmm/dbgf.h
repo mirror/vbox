@@ -2579,7 +2579,6 @@ VMMR3DECL(uint32_t)         DBGFR3CfgRelease(DBGFCFG hCfg);
 VMMR3DECL(int)              DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb);
 VMMR3DECL(int)              DBGFR3CfgQueryBbByAddress(DBGFCFG hCfg, PDBGFADDRESS pAddr, PDBGFCFGBB phCfgBb);
 VMMR3DECL(uint32_t)         DBGFR3CfgGetBbCount(DBGFCFG hCfg);
-VMMR3DECL(int)              DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUser);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbRetain(DBGFCFGBB hCfgBb);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbRelease(DBGFCFGBB hCfgBb);
 VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetStartAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrStart);
