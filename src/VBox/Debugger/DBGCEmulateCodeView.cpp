@@ -1508,15 +1508,17 @@ static void dbgcCmdUnassembleCfgDumpBbSpacing(DBGCSCREEN hScreen, uint32_t uStar
  * @param   uStartY             Y coordinate.
  * @param   cchWidth            Maximum width of the text.
  * @param   pszText             The text to write.
- * @param   enmColor            The color to use for drawing.
+ * @param   enmTextColor        The color to use for drawing the text.
+ * @param   enmBorderColor      The color to use for drawing the border.
  */
 static void dbgcCmdUnassembleCfgDumpBbText(DBGCSCREEN hScreen, uint32_t uStartX, uint32_t uStartY,
-                                           uint32_t cchWidth, const char *pszText, DBGCSCREENCOLOR enmColor)
+                                           uint32_t cchWidth, const char *pszText,
+                                           DBGCSCREENCOLOR enmTextColor, DBGCSCREENCOLOR enmBorderColor)
 {
-    dbgcScreenAsciiDrawCharacter(hScreen, uStartX, uStartY, '|', enmColor);
-    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + 1, uStartY, ' ', enmColor);
-    dbgcScreenAsciiDrawString(hScreen, uStartX + 2, uStartY, pszText, enmColor);
-    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + cchWidth - 1, uStartY, '|', enmColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX, uStartY, '|', enmBorderColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + 1, uStartY, ' ', enmTextColor);
+    dbgcScreenAsciiDrawString(hScreen, uStartX + 2, uStartY, pszText, enmTextColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + cchWidth - 1, uStartY, '|', enmBorderColor);
 }
 
 
@@ -1544,7 +1546,8 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
         const char *pszInstr = NULL;
         DBGFR3FlowBbQueryInstr(pDumpBb->hFlowBb, i, NULL, NULL, &pszInstr);
         dbgcCmdUnassembleCfgDumpBbText(hScreen, pDumpBb->uStartX, uStartY + i,
-                                       pDumpBb->cchWidth, pszInstr, DBGCSCREENCOLOR_DEFAULT);
+                                       pDumpBb->cchWidth, pszInstr, DBGCSCREENCOLOR_DEFAULT,
+                                       enmColor);
     }
     uStartY += cInstr;
 
@@ -1554,7 +1557,8 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
         DBGFR3FlowBbQueryError(pDumpBb->hFlowBb, &pszErr);
         if (pszErr)
             dbgcCmdUnassembleCfgDumpBbText(hScreen, pDumpBb->uStartX, uStartY,
-                                           pDumpBb->cchWidth, pszErr, enmColor);
+                                           pDumpBb->cchWidth, pszErr, enmColor,
+                                           enmColor);
         uStartY++;
     }
 
@@ -1691,12 +1695,13 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
                 for (unsigned i = 0; i < cBbs; i++)
                 {
                     PDBGCFLOWBBDUMP pDumpBb = &paDumpBb[i];
+                    DBGFFLOWBBENDTYPE enmEndType = DBGFR3FlowBbGetType(pDumpBb->hFlowBb);
 
                     /* Incomplete blocks don't have a successor. */
                     if (DBGFR3FlowBbGetFlags(pDumpBb->hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
                         continue;
 
-                    switch (DBGFR3FlowBbGetType(pDumpBb->hFlowBb))
+                    switch (enmEndType)
                     {
                         case DBGFFLOWBBENDTYPE_EXIT:
                         case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
@@ -1714,6 +1719,10 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
                                     break;
                             }
 
+                            DBGCSCREENCOLOR enmColor =   enmEndType == DBGFFLOWBBENDTYPE_UNCOND_JMP
+                                                       ? DBGCSCREENCOLOR_YELLOW_BRIGHT
+                                                       : DBGCSCREENCOLOR_GREEN_BRIGHT;
+
                             /*
                              * Use the right side for targets with higher addresses,
                              * left when jumping backwards.
@@ -1728,19 +1737,19 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
 
                                 /* Draw the arrow pointing to the target block. */
                                 dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX - 1, pDumpBbTgt->uStartY,
-                                                             '>', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                             '>', enmColor);
                                 /* Draw the horizontal line. */
                                 dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBbTgt->uStartX - 2,
-                                                                  pDumpBbTgt->uStartY, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                  pDumpBbTgt->uStartY, '-', enmColor);
                                 dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
-                                                             DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                             enmColor);
                                 /* Draw the vertical line down to the source block. */
                                 dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, pDumpBbTgt->uStartY + 1, uYHorLine - 1,
-                                                                '|', DBGCSCREENCOLOR_GREEN_BRIGHT);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                '|', enmColor);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
                                 /* Draw the horizontal connection between the source block and vertical part. */
                                 dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBb->uStartX - 1,
-                                                                  uYHorLine, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                  uYHorLine, '-', enmColor);
 
                             }
                             else
@@ -1752,19 +1761,19 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
 
                                 /* Draw the horizontal line. */
                                 dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBb->uStartX + pDumpBb->cchWidth,
-                                                                  uXVerLine - 1, uYHorLine, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                  uXVerLine - 1, uYHorLine, '-', enmColor);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
                                 /* Draw the vertical line down to the target block. */
                                 dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, uYHorLine + 1, pDumpBbTgt->uStartY - 1,
-                                                                '|', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                '|', enmColor);
                                 /* Draw the horizontal connection between the target block and vertical part. */
                                 dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
-                                                                  uXVerLine, pDumpBbTgt->uStartY, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                                  uXVerLine, pDumpBbTgt->uStartY, '-', enmColor);
                                 dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
-                                                             DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                             enmColor);
                                 /* Draw the arrow pointing to the target block. */
                                 dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
-                                                             pDumpBbTgt->uStartY, '<', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                                             pDumpBbTgt->uStartY, '<', enmColor);
                             }
                             break;
                         }
