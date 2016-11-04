@@ -107,6 +107,25 @@
 #endif
 
 
+/** @name Macros for preserving EFLAGS.AC (despair / paranoid)
+ * @remarks We have to restore it unconditionally on darwin.
+ * @{ */
+#if defined(RT_OS_DARWIN) \
+ || (    defined(RT_OS_LINUX) \
+     && (defined(CONFIG_X86_SMAP) || defined(RT_STRICT) || defined(IPRT_WITH_EFLAGS_AC_PRESERVING) ) )
+# include <iprt/asm-amd64-x86.h>
+# include <iprt/x86.h>
+# define SUPDRV_SAVE_EFL_AC()          RTCCUINTREG const fSavedEfl = ASMGetFlags();
+# define SUPDRV_RESTORE_EFL_AC()       ASMSetFlags(fSavedEfl)
+# define SUPDRV_RESTORE_EFL_ONLY_AC()  ASMChangeFlags(~X86_EFL_AC, fSavedEfl & X86_EFL_AC)
+#else
+# define SUPDRV_SAVE_EFL_AC()          do { } while (0)
+# define SUPDRV_RESTORE_EFL_AC()       do { } while (0)
+# define SUPDRV_RESTORE_EFL_ONLY_AC()  do { } while (0)
+#endif
+/** @} */
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -772,6 +791,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
     AssertPtrReturnVoid(pVtgProbeLoc->pProbe);
     AssertPtrReturnVoid(pVtgProbeLoc->pszFunction);
 
+    SUPDRV_SAVE_EFL_AC();
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_ProbeFireKernel);
 
     pStackData->u.ProbeFireKernel.pauStackArgs  = &uArg4 + 1;
@@ -815,6 +835,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgPro
 #endif
 
     VBDT_CLEAR_STACK_DATA();
+    SUPDRV_RESTORE_EFL_AC();
     LOG_DTRACE(("%s: returns\n", __FUNCTION__));
 }
 
@@ -830,6 +851,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PSUP
     AssertPtrReturnVoid(pProbeLocRO);
     AssertPtrReturnVoid(pVtgHdr);
 
+    SUPDRV_SAVE_EFL_AC();
     VBDT_SETUP_STACK_DATA(kVBoxDtCaller_ProbeFireUser);
 
     if (pCtx->cBits == 32)
@@ -899,6 +921,7 @@ static DECLCALLBACK(void) vboxDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PSUP
         AssertFailed();
 
     VBDT_CLEAR_STACK_DATA();
+    SUPDRV_RESTORE_EFL_AC();
     LOG_DTRACE(("%s: returns\n", __FUNCTION__));
 }
 
@@ -957,6 +980,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PS
     /* Note! DTrace may call us back before dtrace_register returns, so we
              have to point it to pCore->TracerData.DTrace.idProvider. */
     AssertCompile(sizeof(dtrace_provider_id_t) == sizeof(pCore->TracerData.DTrace.idProvider));
+    SUPDRV_SAVE_EFL_AC();
     int rc = dtrace_register(pCore->pszName,
                              &DtAttrs,
                              DTRACE_PRIV_KERNEL,
@@ -964,6 +988,7 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderRegister(PCSUPDRVTRACERREG pThis, PS
                              &g_vboxDtVtgProvOps,
                              pCore,
                              &pCore->TracerData.DTrace.idProvider);
+    SUPDRV_RESTORE_EFL_AC();
     if (!rc)
     {
         LOG_DTRACE(("%s: idProvider=%p\n", __FUNCTION__, pCore->TracerData.DTrace.idProvider));
@@ -991,8 +1016,10 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderDeregister(PCSUPDRVTRACERREG pThis, 
     LOG_DTRACE(("%s: %p / %p\n", __FUNCTION__, pThis, idProvider));
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
 
+    SUPDRV_SAVE_EFL_AC();
     dtrace_invalidate(idProvider);
     int rc = dtrace_unregister(idProvider);
+    SUPDRV_RESTORE_EFL_AC();
     if (!rc)
     {
         pCore->TracerData.DTrace.idProvider = 0;
@@ -1021,7 +1048,9 @@ static DECLCALLBACK(int) vboxDtTOps_ProviderDeregisterZombie(PCSUPDRVTRACERREG p
     AssertPtrReturn(idProvider, VERR_INTERNAL_ERROR_3);
     Assert(pCore->TracerData.DTrace.fZombie);
 
+    SUPDRV_SAVE_EFL_AC();
     int rc = dtrace_unregister(idProvider);
+    SUPDRV_RESTORE_EFL_AC();
     if (!rc)
     {
         pCore->TracerData.DTrace.idProvider = 0;
