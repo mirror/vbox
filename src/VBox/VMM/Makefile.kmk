@@ -606,7 +606,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   VMMRC_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
 
- VMMRC_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/IEMInstructionStatisticsTmpl.h
+ VMMRC_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 
  if "$(KBUILD_TARGET)" == "win"
   # Debug type info hack for VMCPU, VM and similar.  See VBoxVMM for details.
@@ -766,7 +766,7 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
 
- VMMR0_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/IEMInstructionStatisticsTmpl.h
+ VMMR0_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 
  if "$(KBUILD_TARGET)" == "win"
   # Debug type info hack for VMCPU, VM and similar.  See VBoxVMM for details.
