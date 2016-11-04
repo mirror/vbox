@@ -30,7 +30,7 @@
 # Global Variables (config first).
 #
 MY_REBOOT_WHEN_DONE="yes"
-#MY_REBOOT_WHEN_DONE=""
+#MY_REBOOT_WHEN_DONE="" # enable this for debugging the script
 
 MY_TFTP_ROOT="/mnt/testbox-tftp"
 MY_BACKUP_ROOT="/mnt/testbox-backup"
@@ -108,8 +108,17 @@ fi
 MY_BACKUP_DIR="${MY_BACKUP_ROOT}/${MY_IP}"
 MY_LOG_FILE="${MY_BACKUP_DIR}/maintenance.log"
 mkdir -p "${MY_BACKUP_DIR}"
-InfoMsg "MY_IP=${MY_IP}<eol>"
+echo "================ `date -uIsec`: ${MY_IP}: ${MY_HOSTNAME} starts a new session ================" >> "${MY_LOG_FILE}"
 echo "`date -uIsec`: ${MY_IP}: ${MY_HOSTNAME} says hi." >> "${MY_GLOBAL_LOG_FILE}"
+InfoMsg "MY_IP=${MY_IP}<eol>"
+
+#
+# Redirect stderr+stdout thru tee and to a log file on the server.
+#
+MY_OUTPUT_LOG_FILE="${MY_BACKUP_DIR}/maintenance-output.log"
+echo "" >> "${MY_OUTPUT_LOG_FILE}"
+echo "================ `date -uIsec`: ${MY_IP}: ${MY_HOSTNAME} starts a new session ================" >> "${MY_OUTPUT_LOG_FILE}"
+exec &> >(tee -a "${MY_OUTPUT_LOG_FILE}")
 
 #
 # Convert the IP address to PXELINUX hex format, then check that we've got
@@ -133,8 +142,12 @@ fi
 #
 # Dig the action out of from the kernel command line.
 #
-InfoMsg "/proc/cmdline: `cat /proc/cmdline`"
-set `cat /proc/cmdline`
+if test -n "${MY_REBOOT_WHEN_DONE}"; then
+    InfoMsg "/proc/cmdline: `cat /proc/cmdline`"
+    set `cat /proc/cmdline`
+else
+    InfoMsg "Using script command line: $*"
+fi
 MY_ACTION=not-found
 while test $# -ge 1; do
     case "$1" in
@@ -210,12 +223,23 @@ then
     echo "**** fdisk -l ****" >> ${MY_INFO_FILE};
     echo "**** fdisk -l ****" >> ${MY_INFO_FILE};
     fdisk -l >> ${MY_INFO_FILE} 2>&1;
+    echo "" >> ${MY_INFO_FILE};
+    echo "**** dmesg ****" >> ${MY_INFO_FILE};
+    echo "**** dmesg ****" >> ${MY_INFO_FILE};
+    echo "**** dmesg ****" >> ${MY_INFO_FILE};
+    dmesg >> ${MY_INFO_FILE} 2>&1;
 
+    #
     # Get the raw ACPI tables and whatnot since we can.  Use zip as tar will
     # zero pad virtual files due to wrong misleading size returned by stat (4K).
-    zip -r9 "${MY_BACKUP_DIR}/testbox-info.zip" \
+    #
+    # Note! /sys/firmware/dmi/entries/15-0/system_event_log/raw_event_log has been
+    #       see causing fatal I/O errors, so skip all raw_event_log files.
+    #
+    zip -qr9 "${MY_BACKUP_DIR}/testbox-info.zip" \
+        /proc/cpuinfo \
         /sys/firmware/ \
-        /proc/cpuinfo
+        -x "*/raw_event_log"
 fi
 
 if test '!' -f "${MY_BACKUP_DIR}/${MY_HOSTNAME}" -a "${MY_HOSTNAME}" != "unknown"; then
@@ -281,7 +305,7 @@ case "${MY_ACTION}" in
             fi
             if test -b "${MY_SRC}"; then
                 InfoMsg "Backing up ${MY_SRC} to ${MY_DST}...";
-                dd if="${MY_SRC}" bs=2M count=1024 | gzip -c > "${MY_DST}";
+                dd if="${MY_SRC}" bs=2M | gzip -c > "${MY_DST}";
                 MY_RCS=("${PIPESTATUS[@]}");
                 if test "${MY_RCS[0]}" -eq 0 -a "${MY_RCS[1]}" -eq 0; then
                     InfoMsg "Successfully backed up ${MY_SRC} to ${MY_DST}";
