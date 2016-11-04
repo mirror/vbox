@@ -623,6 +623,8 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   VMMRCPdbTypeHack_DEFS.win.x86   = $(VMMRC_DEFS.win.x86)
   VMMRCPdbTypeHack_DEFS.win.amd64 = $(VMMRC_DEFS.win.amd64)
   VMMRCPdbTypeHack_INCS           = $(VMMRC_INCS)
+ 
+  VMMRCPdbTypeHack_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
  endif
 
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
