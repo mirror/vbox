@@ -276,6 +276,9 @@ case "${MY_ACTION}" in
         for MY_DEV in ${MY_BLOCK_DEVS}; do
             MY_SRC="/dev/${MY_DEV}"
             MY_DST="${MY_BACKUP_DIR}/${MY_DEV}.gz"
+            if test -f "${MY_SRC}"; then
+                mv -f "${MY_SRC}" "${MY_SRC}.old";
+            fi
             if test -b "${MY_SRC}"; then
                 InfoMsg "Backing up ${MY_SRC} to ${MY_DST}...";
                 dd if="${MY_SRC}" bs=2M count=1024 | gzip -c > "${MY_DST}";
