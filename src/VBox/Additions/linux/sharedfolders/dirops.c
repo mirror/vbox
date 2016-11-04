@@ -748,12 +748,24 @@ static int sf_rmdir(struct inode *parent, struct dentry *dentry)
  * @returns 0 on success, Linux error code otherwise
  */
 static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
-                     struct inode *new_parent, struct dentry *new_dentry)
+                     struct inode *new_parent, struct dentry *new_dentry
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+                     , unsigned flags
+#endif
+                     )
 {
     int err = 0, rc = VINF_SUCCESS;
     struct sf_glob_info *sf_g = GET_GLOB_INFO(old_parent->i_sb);
 
     TRACE();
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    if (flags)
+    {
+        LogFunc(("rename with flags=%x\n", flags));
+        return -EINVAL;
+    }
+#endif
 
     if (sf_g != GET_GLOB_INFO(new_parent->i_sb))
     {
