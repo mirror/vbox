@@ -4486,7 +4486,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 RTCircBufAcquireWriteBlock(pCircBuf, pStream->u16FIFOS, &pvDst, &cbDst);
 
                 /* Do one DMA transfer with FIFOS size at a time. */
-                rc2 = hdaStreamDoDMA(pThis, pStream, pvDst, cbDst, cbDst /* cbToProcess */, &cbProcessed);
+                rc2 = hdaStreamDoDMA(pThis, pStream, pvDst, (uint32_t)cbDst, (uint32_t)cbDst /* cbToProcess */, &cbProcessed);
                 AssertRC(rc2);
 
                 RTCircBufReleaseWriteBlock(pCircBuf, cbProcessed);
@@ -4500,7 +4500,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 RTCircBufAcquireReadBlock(pCircBuf, RTCircBufUsed(pCircBuf), &pvSrc, &cbSrc);
                 Assert(cbDst);
 
-                rc2 = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, cbSrc, &cbProcessed);
+                rc2 = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbProcessed);
                 AssertRC(rc2);
 
                 RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
@@ -4514,7 +4514,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 RTCircBufAcquireReadBlock(pCircBuf, pStream->u16FIFOS, &pvSrc, &cbSrc);
 
                 /* Do one DMA transfer with FIFOS size at a time. */
-                rc2 = hdaStreamDoDMA(pThis, pStream, pvSrc, cbSrc, cbSrc /* cbToProcess */, &cbProcessed);
+                rc2 = hdaStreamDoDMA(pThis, pStream, pvSrc, (uint32_t)cbSrc, (uint32_t)cbSrc /* cbToProcess */, &cbProcessed);
                 AssertRC(rc2);
 
                 RTCircBufReleaseReadBlock(pCircBuf, cbSrc);
@@ -4528,7 +4528,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 RTCircBufAcquireWriteBlock(pCircBuf, pStream->u16FIFOS, &pvDst, &cbDst);
                 Assert(cbDst);
 
-                rc2 = AudioMixerSinkRead(pSink->pMixSink, AUDMIXOP_COPY, pvDst, cbDst, &cbProcessed);
+                rc2 = AudioMixerSinkRead(pSink->pMixSink, AUDMIXOP_COPY, pvDst, (uint32_t)cbDst, &cbProcessed);
                 AssertRC(rc2);
 
                 RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
