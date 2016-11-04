@@ -384,8 +384,7 @@ if "$(KBUILD_TARGET)" == "win" && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  VBoxVMMPdbTypeHack_DEFS.win.x86   = $(VBoxVMM_DEFS.win.x86)
  VBoxVMMPdbTypeHack_DEFS.win.amd64 = $(VBoxVMM_DEFS.win.amd64)
  VBoxVMMPdbTypeHack_INCS           = $(VBoxVMM_INCS)
-  
- VBoxVMMPdbTypeHack_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
+ VBoxVMMPdbTypeHack_INTERMEDIATES  = $(VBoxVMM_INTERMEDIATES)
 endif
 
 
@@ -623,8 +622,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
   VMMRCPdbTypeHack_DEFS.win.x86   = $(VMMRC_DEFS.win.x86)
   VMMRCPdbTypeHack_DEFS.win.amd64 = $(VMMRC_DEFS.win.amd64)
   VMMRCPdbTypeHack_INCS           = $(VMMRC_INCS)
- 
-  VMMRCPdbTypeHack_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
+  VMMRCPdbTypeHack_INTERMEDIATES  = $(VMMRC_INTERMEDIATES)
  endif
 
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
@@ -785,8 +783,7 @@ ifndef VBOX_ONLY_EXTPACKS
   VMMR0PdbTypeHack_DEFS.win.x86   = $(VMMR0_DEFS.win.x86)
   VMMR0PdbTypeHack_DEFS.win.amd64 = $(VMMR0_DEFS.win.amd64)
   VMMR0PdbTypeHack_INCS           = $(VMMR0_INCS)
- 
-  VMMR0PdbTypeHack_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
+  VMMR0PdbTypeHack_INTERMEDIATES  = $(VMMR0_INTERMEDIATES)
  endif
 
 endif # !VBOX_ONLY_EXTPACKS
