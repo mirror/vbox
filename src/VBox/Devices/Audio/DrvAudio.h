@@ -81,10 +81,18 @@ typedef struct DRVAUDIOSTATS
 {
     STAMCOUNTER TotalStreamsActive;
     STAMCOUNTER TotalStreamsCreated;
+    STAMCOUNTER TotalSamplesRead;
+    STAMCOUNTER TotalSamplesWritten;
+    STAMCOUNTER TotalSamplesMixed;
+    STAMCOUNTER TotalSamplesLost;
     STAMCOUNTER TotalSamplesPlayed;
     STAMCOUNTER TotalSamplesCaptured;
     STAMCOUNTER TotalBytesRead;
     STAMCOUNTER TotalBytesWritten;
+    /** How much delay (in ms) for input processing. */
+    STAMPROFILEADV DelayIn;
+    /** How much delay (in ms) for output processing. */
+    STAMPROFILEADV DelayOut;
 } DRVAUDIOSTATS, *PDRVAUDIOSTATS;
 #endif
 
