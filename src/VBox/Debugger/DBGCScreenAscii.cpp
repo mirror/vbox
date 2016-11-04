@@ -185,22 +185,22 @@ DECLHIDDEN(int) dbgcScreenAsciiCreate(PDBGCSCREEN phScreen, uint32_t cchWidth, u
         pThis->pszScreen = RTStrAlloc((cchWidth + 1) * cchHeight * sizeof(char));
         if (RT_LIKELY(pThis->pszScreen))
         {
-        	pThis->paColors  = (PDBGCSCREENCOLOR)RTMemAllocZ(cchWidth * cchHeight * sizeof(DBGCSCREENCOLOR));
-        	if (RT_LIKELY(pThis->paColors))
-	        {
+            pThis->paColors  = (PDBGCSCREENCOLOR)RTMemAllocZ(cchWidth * cchHeight * sizeof(DBGCSCREENCOLOR));
+            if (RT_LIKELY(pThis->paColors))
+            {
                 memset(pThis->pszScreen, 0, (cchWidth + 1) * cchHeight * sizeof(char));
                 /* Initialize the screen with spaces. */
                 for (uint32_t i = 0; i < cchHeight; i++)
                     dbgcScreenAsciiDrawLineHorizontal(pThis, 0, cchWidth - 1, i, ' ',
                                                       DBGCSCREENCOLOR_DEFAULT);
                 *phScreen = pThis;
-	        }
+            }
             else
                 rc = VERR_NO_MEMORY;
 
             if (RT_FAILURE(rc))
                 RTStrFree(pThis->pszScreen);
-	    }
+        }
         else
             rc = VERR_NO_STR_MEMORY;
 
