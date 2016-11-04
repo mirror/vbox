@@ -1565,7 +1565,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
             pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
         }
 
-        Log3Func(("\t%s: cbProcessed=%RU32\n", pMixStream->pszName, cbBuf, cbProcessed));
+        Log3Func(("\t%s: cbProcessed=%RU32\n", pMixStream->pszName, cbProcessed));
 
         /*
          * Return the maximum bytes processed by all connected streams.
