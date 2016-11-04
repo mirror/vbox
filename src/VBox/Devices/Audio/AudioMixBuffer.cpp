@@ -225,6 +225,7 @@ void AudioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear)
                        pIter->pszName, pIter->cMixed, pIter->cMixed - cSamplesToClear));
 
         pIter->cMixed -= RT_MIN(pIter->cMixed, cSamplesToClear);
+        pIter->cUsed  -= RT_MIN(pIter->cUsed,  AUDIOMIXBUF_S2S_RATIO(pMixBuf, cSamplesToClear));
     }
 
     Assert(cSamplesToClear <= pMixBuf->cSamples);
@@ -973,6 +974,10 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
  * Mixes audio samples from a source mixing buffer to a destination mixing buffer.
  *
  * @return  IPRT status code.
+ *          VERR_NO_DATA if the source does not have any audio data.
+ *          VERR_BUFFER_UNDERFLOW if the source did not have enough audio data.
+ *          VERR_BUFFER_OVERFLOW if the destination did not have enough space to store the converted source audio data.
+ *
  * @param   pDst                    Destination mixing buffer.
  * @param   pSrc                    Source mixing buffer.
  * @param   cSrcSamples             Number of source audio samples to mix.
@@ -995,7 +1000,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
                        pDst->pszName, pDst->cSamples, pSrc->cMixed));
         if (pcProcessed)
             *pcProcessed = 0;
-        return VINF_SUCCESS;
+        return VERR_BUFFER_OVERFLOW;
     }
 
     Assert(pSrc->cUsed >= pDst->cMixed);
@@ -1008,13 +1013,8 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     uint32_t cDstAvail    = pDst->cSamples - pDst->cUsed;
     uint32_t offDstWrite  = pDst->offWrite;
 
-    if (   !cSrcAvail
-        || !cDstAvail)
-    {
-        if (pcProcessed)
-            *pcProcessed = 0;
-        return VINF_SUCCESS;
-    }
+    if (!cSrcAvail)
+        return VERR_NO_DATA;
 
     AUDMIXBUF_LOG(("cSrcSamples=%RU32, cSrcAvail=%RU32 -> cDstAvail=%RU32\n", cSrcSamples,  cSrcAvail, cDstAvail));
 
@@ -1090,7 +1090,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
      * actually processing the destination buffer in between. */
     if (pDst->cUsed > pDst->cSamples)
     {
-        LogFlowFunc(("Warning: Destination buffer used %RU32 / %RU32 samples\n", pDst->cUsed, pDst->cSamples));
+        LogFunc(("Warning: Destination buffer used %RU32 / %RU32 samples\n", pDst->cUsed, pDst->cSamples));
         pDst->offWrite     = 0;
         pDst->cUsed        = pDst->cSamples;
 
@@ -1098,12 +1098,12 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     }
     else if (!cSrcToRead && cDstAvail)
     {
-        AUDMIXBUF_LOG(("Warning: Source buffer '%s' ran out of data\n", pSrc->pszName));
+        LogFunc(("Warning: Source buffer '%s' ran out of data\n", pSrc->pszName));
         rc = VERR_BUFFER_UNDERFLOW;
     }
     else if (cSrcAvail && !cDstAvail)
     {
-        AUDMIXBUF_LOG(("Warning: Destination buffer '%s' full (%RU32 source samples left)\n", pDst->pszName, cSrcAvail));
+        LogFunc(("Warning: Destination buffer '%s' full (%RU32 source samples left)\n", pDst->pszName, cSrcAvail));
         rc = VERR_BUFFER_OVERFLOW;
     }
 
@@ -1123,7 +1123,7 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
 /**
  * Mixes audio samples down to the parent mixing buffer.
  *
- * @return  IPRT status code.
+ * @return  IPRT status code. See audioMixBufMixTo() for a more detailed explanation.
  * @param   pMixBuf                 Mixing buffer to mix samples down to parent.
  * @param   cSamples                Number of audio samples of specified mixing buffer to to mix
  *                                  to its attached parent mixing buffer (if any).
@@ -1152,9 +1152,9 @@ int AudioMixBufMixToParent(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
  */
 DECL_FORCE_INLINE(void) audioMixBufDbgPrintSingle(PPDMAUDIOMIXBUF pMixBuf, bool fIsParent, uint16_t uIdtLvl)
 {
-    AUDMIXBUF_LOG(("%*s[%s] %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
-                   uIdtLvl * 4, "", fIsParent ? "PARENT" : "CHILD",
-                   pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cSamples));
+    LogFunc(("%*s[%s] %s: offRead=%RU32, offWrite=%RU32, cMixed=%RU32 -> %RU32/%RU32\n",
+             uIdtLvl * 4, "", fIsParent ? "PARENT" : "CHILD",
+             pMixBuf->pszName, pMixBuf->offRead, pMixBuf->offWrite, pMixBuf->cMixed, pMixBuf->cUsed, pMixBuf->cSamples));
 }
 
 /**
@@ -1221,7 +1221,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf)
     if (pMixBuf->pParent)
         pParent = pMixBuf->pParent;
 
-    AUDMIXBUF_LOG(("***************************************************************************************\n"));
+    LogFunc(("***************************************************************************************\n"));
 
     audioMixBufDbgPrintSingle(pMixBuf, pParent == pMixBuf /* fIsParent */, 0 /* iIdtLevel */);
 
@@ -1233,7 +1233,7 @@ DECL_FORCE_INLINE(void) audioMixBufDbgPrintInternal(PPDMAUDIOMIXBUF pMixBuf)
         audioMixBufDbgPrintSingle(pIter, false /* fIsParent */, 1 /* iIdtLevel */);
     }
 
-    AUDMIXBUF_LOG(("***************************************************************************************\n"));
+    LogFunc(("***************************************************************************************\n"));
 }
 
 /**
@@ -1259,8 +1259,6 @@ void AudioMixBufDbgPrint(PPDMAUDIOMIXBUF pMixBuf)
 uint32_t AudioMixBufUsed(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
-
-    AUDMIXBUF_LOG(("%s: cUsed=%RU32\n", pMixBuf->pszName, pMixBuf->cUsed));
     return pMixBuf->cUsed;
 }
 
@@ -1745,7 +1743,7 @@ int AudioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
  *
  * The sample format being written must match the format of the mixing buffer.
  *
- * @return  IPRT status code, or VINF_BUFFER_OVERFLOW if samples which not have
+ * @return  IPRT status code, or VERR_BUFFER_OVERFLOW if samples which not have
  *          been processed yet have been overwritten (due to cyclic buffer).
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   pvBuf                   Pointer to audio buffer to be written.
@@ -1762,7 +1760,7 @@ int AudioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf,
 /**
  * Writes audio samples of a specific format.
  *
- * @return  IPRT status code, or VINF_BUFFER_OVERFLOW if samples which not have
+ * @return  IPRT status code, or VERR_BUFFER_OVERFLOW if samples which not have
  *          been processed yet have been overwritten (due to cyclic buffer).
  * @param   pMixBuf                 Pointer to mixing buffer to write to.
  * @param   enmFmt                  Audio format supplied in the buffer.
@@ -1798,7 +1796,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         AUDMIXBUF_LOG(("%s: Parent buffer '%s' is full\n",
                        pMixBuf->pszName, pMixBuf->pParent->pszName));
 
-        return VINF_BUFFER_OVERFLOW;
+        return VERR_BUFFER_OVERFLOW;
     }
 
     PFNPDMAUDIOMIXBUFCONVFROM pfnConvFrom = NULL;
@@ -1904,7 +1902,7 @@ int AudioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         AUDMIXBUF_LOG(("Warning: %RU32 unprocessed samples overwritten\n", pMixBuf->cUsed - pMixBuf->cSamples));
         pMixBuf->cUsed = pMixBuf->cSamples;
 
-        rc = VINF_BUFFER_OVERFLOW;
+        rc = VERR_BUFFER_OVERFLOW;
     }
 
     if (pcWritten)
