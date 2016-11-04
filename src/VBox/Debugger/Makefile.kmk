@@ -48,7 +48,8 @@ Debugger_SOURCES   = \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
 	DBGCGdbRemoteStub.cpp \
-	DBGCTcp.cpp
+	DBGCTcp.cpp \
+	DBGCScreenAscii.cpp
 
 #
 # The diggers plug-in.
