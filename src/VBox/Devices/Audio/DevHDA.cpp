@@ -1180,6 +1180,7 @@ static uint32_t const g_afMasks[5] =
 };
 
 
+#ifdef IN_RING3
 /**
  * Retrieves the number of bytes of a FIFOS register.
  *
@@ -1233,7 +1234,6 @@ DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
 }
 
 
-#ifdef IN_RING3
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB)
 {
     AssertPtrReturn(pThis,   0);
@@ -1347,27 +1347,6 @@ DECLINLINE(PHDASTREAM) hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink)
     return hdaStreamFromSD(pThis, pSink->uSD);
 }
 
-/**
- * Retrieves the minimum number of bytes accumulated/free in the
- * FIFO before the controller will start a fetch/eviction of data.
- *
- * Uses SDFIFOW (FIFO Watermark Register).
- *
- * @return Number of bytes accumulated/free in the FIFO.
- */
-DECLINLINE(uint8_t) hdaStreamGetFIFOW(PHDASTATE pThis, PHDASTREAM pStream)
-{
-    AssertPtrReturn(pThis, 0);
-    AssertPtrReturn(pStream, 0);
-
-# ifdef VBOX_HDA_WITH_FIFO
-    return hdaSDFIFOWToBytes(HDA_STREAM_REG(pThis, FIFOW, pStream->u8SD));
-# else
-    return 0;
-# endif
-}
-
-#endif /* IN_RING3 */
 
 /**
  * Returns the audio direction of a specified stream descriptor.
@@ -1390,6 +1369,8 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
 
     return PDMAUDIODIR_OUT;
 }
+#endif /* IN_RING3 */
+
 
 static void hdaUpdateINTSTS(PHDASTATE pThis)
 {
