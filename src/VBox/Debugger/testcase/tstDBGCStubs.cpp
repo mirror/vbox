@@ -380,105 +380,101 @@ VMMR3DECL(int)  DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const cha
     return VERR_INTERNAL_ERROR;
 }
 
-VMMR3DECL(int) DBGFR3CfgCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
-                               uint32_t fFlags, PDBGFCFG phCfg)
+VMMR3DECL(int) DBGFR3FlowCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
+                               uint32_t fFlags, PDBGFFLOW phFlow)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgRetain(DBGFCFG hCfg)
+VMMR3DECL(uint32_t) DBGFR3FlowRetain(DBGFFLOW hFlow)
 {
     return 0;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgRelease(DBGFCFG hCfg)
+VMMR3DECL(uint32_t) DBGFR3FlowRelease(DBGFFLOW hFlow)
 {
     return 0;
 }
-VMMR3DECL(int) DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb)
+VMMR3DECL(int) DBGFR3FlowQueryStartBb(DBGFFLOW hFlow, PDBGFFLOWBB phFlowBb)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3CfgQueryBbByAddress(DBGFCFG hCfg, PDBGFADDRESS pAddr, PDBGFCFGBB phCfgBb)
+VMMR3DECL(int) DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBB phFlowBb)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgGetBbCount(DBGFCFG hCfg)
+VMMR3DECL(uint32_t) DBGFR3FlowGetBbCount(DBGFFLOW hFlow)
 {
     return 0;
 }
-VMMR3DECL(int) DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUser)
-{
-    return VERR_INTERNAL_ERROR;
-}
-VMMR3DECL(uint32_t) DBGFR3CfgBbRetain(DBGFCFGBB hCfgBb)
+VMMR3DECL(uint32_t) DBGFR3FlowBbRetain(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgBbRelease(DBGFCFGBB hCfgBb)
+VMMR3DECL(uint32_t) DBGFR3FlowBbRelease(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
-VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetStartAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrStart)
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetStartAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrStart)
 {
     return NULL;
 }
-VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetEndAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrEnd)
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetEndAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrEnd)
 {
     return NULL;
 }
-VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetBranchAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrTarget)
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetBranchAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrTarget)
 {
     return NULL;
 }
-VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetFollowingAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrFollow)
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetFollowingAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrFollow)
 {
     return NULL;
 }
-VMMR3DECL(DBGFCFGBBENDTYPE) DBGFR3CfgBbGetType(DBGFCFGBB hCfgBb)
+VMMR3DECL(DBGFFLOWBBENDTYPE) DBGFR3FlowBbGetType(DBGFFLOWBB hFlowBb)
 {
-    return DBGFCFGBBENDTYPE_INVALID;
+    return DBGFFLOWBBENDTYPE_INVALID;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgBbGetInstrCount(DBGFCFGBB hCfgBb)
+VMMR3DECL(uint32_t) DBGFR3FlowBbGetInstrCount(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgBbGetFlags(DBGFCFGBB hCfgBb)
+VMMR3DECL(uint32_t) DBGFR3FlowBbGetFlags(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
-VMMR3DECL(int) DBGFR3CfgBbQueryError(DBGFCFGBB hCfgBb, const char **ppszErr)
+VMMR3DECL(int) DBGFR3FlowBbQueryError(DBGFFLOWBB hFlowBb, const char **ppszErr)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
-                                     uint32_t *pcbInstr, const char **ppszInstr)
+VMMR3DECL(int) DBGFR3FlowBbQueryInstr(DBGFFLOWBB hFlowBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
+                                      uint32_t *pcbInstr, const char **ppszInstr)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB phCfgBbFollow,
-                                          PDBGFCFGBB phCfgBbTarget)
+VMMR3DECL(int) DBGFR3FlowBbQuerySuccessors(DBGFFLOWBB hFlowBb, PDBGFFLOWBB phFlowBbFollow,
+                                           PDBGFFLOWBB phFlowBbTarget)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(uint32_t) DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb)
+VMMR3DECL(uint32_t) DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
-VMMR3DECL(int) DBGFR3CfgBbGetRefBb(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbRef, uint32_t cRef)
+VMMR3DECL(int) DBGFR3FlowBbGetRefBb(DBGFFLOWBB hFlowBb, PDBGFFLOWBB pahFlowBbRef, uint32_t cRef)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3CfgItCreate(DBGFCFG hCfg, DBGFCFGITORDER enmOrder, PDBGFCFGIT phCfgIt)
+VMMR3DECL(int) DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWIT phFlowIt)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(void) DBGFR3CfgItDestroy(DBGFCFGIT hCfgIt)
+VMMR3DECL(void) DBGFR3FlowItDestroy(DBGFFLOWIT hFlowIt)
 {
 }
-VMMR3DECL(DBGFCFGBB) DBGFR3CfgItNext(DBGFCFGIT hCfgIt)
+VMMR3DECL(DBGFFLOWBB) DBGFR3FlowItNext(DBGFFLOWIT hFlowIt)
 {
     return NULL;
 }
-VMMR3DECL(int) DBGFR3CfgItReset(DBGFCFGIT hCfgIt)
+VMMR3DECL(int) DBGFR3FlowItReset(DBGFFLOWIT hFlowIt)
 {
     return VERR_INTERNAL_ERROR;
 }
