@@ -446,6 +446,7 @@ static int dbgfR3FlowBbSplit(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFAD
             pFlowBbNew->cInstr     = cInstrNew;
             pFlowBbNew->AddrEnd    = pFlowBb->AddrEnd;
             pFlowBbNew->enmEndType = pFlowBb->enmEndType;
+            pFlowBbNew->AddrTarget = pFlowBb->AddrTarget;
             pFlowBbNew->fFlags     = pFlowBb->fFlags & ~DBGF_FLOW_BB_F_ENTRY;
 
             /* Move any error to the new basic block and clear them in the old basic block. */
