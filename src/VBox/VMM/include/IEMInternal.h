@@ -67,6 +67,21 @@ RT_C_DECLS_BEGIN
 //#define IEM_WITH_CODE_TLB// - work in progress
 
 
+#ifndef IN_TSTVMSTRUCT
+/** Instruction statistics.   */
+typedef struct IEMINSTRSTATS
+{
+# define IEM_DO_INSTR_STAT(a_Name, a_szDesc) uint32_t a_Name;
+# include "IEMInstructionStatisticsTmpl.h"
+# undef IEM_DO_INSTR_STAT
+} IEMINSTRSTATS;
+#else
+struct IEMINSTRSTATS;
+typedef struct IEMINSTRSTATS IEMINSTRSTATS;
+#endif
+/** Pointer to IEM instruction statistics. */
+typedef IEMINSTRSTATS *PIEMINSTRSTATS;
+
 /** Finish and move to types.h */
 typedef union
 {
@@ -680,8 +695,15 @@ typedef struct IEMCPU
     R0PTRTYPE(PCPUMCTX)     pCtxR0;
     /** Pointer to the CPU context - raw-mode context. */
     RCPTRTYPE(PCPUMCTX)     pCtxRC;
-    /** Alignment padding. */
-    RTRCPTR                 uAlignment9;
+
+    /** Pointer to instruction statistics for raw-mode context (same as R0). */
+    RCPTRTYPE(PIEMINSTRSTATS) pStatsRC;
+    /** Pointer to instruction statistics for ring-0 context (same as RC). */
+    R0PTRTYPE(PIEMINSTRSTATS) pStatsR0;
+    /** Pointer to instruction statistics for non-ring-3 code. */
+    R3PTRTYPE(PIEMINSTRSTATS) pStatsCCR3;
+    /** Pointer to instruction statistics for ring-3 context. */
+    R3PTRTYPE(PIEMINSTRSTATS) pStatsR3;
 
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */

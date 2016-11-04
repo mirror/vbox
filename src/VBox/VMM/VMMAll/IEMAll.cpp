@@ -11389,16 +11389,21 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 /** @name   Opcode Debug Helpers.
  * @{
  */
-#ifdef DEBUG
-# define IEMOP_MNEMONIC(a_szMnemonic) \
-    Log4(("decode - %04x:%RGv %s%s [#%u]\n", IEM_GET_CTX(pVCpu)->cs.Sel, IEM_GET_CTX(pVCpu)->rip, \
-          pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, pVCpu->iem.s.cInstructions))
-# define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) \
-    Log4(("decode - %04x:%RGv %s%s %s [#%u]\n", IEM_GET_CTX(pVCpu)->cs.Sel, IEM_GET_CTX(pVCpu)->rip, \
-          pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, a_szOps, pVCpu->iem.s.cInstructions))
+#ifdef VBOX_WITH_STATISTICS
+# define IEMOP_INC_STATS(a_Stats) do { pVCpu->iem.s.CTX_SUFF(pStats)->a_Stats += 1; } while (0)
 #else
-# define IEMOP_MNEMONIC(a_szMnemonic) do { } while (0)
-# define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) do { } while (0)
+# define IEMOP_INC_STATS(a_Stats) do { } while (0)
+#endif
+
+#ifdef DEBUG
+# define IEMOP_MNEMONIC(a_Stats, a_szMnemonic) \
+    do { \
+        IEMOP_INC_STATS(a_Stats); \
+        Log4(("decode - %04x:%RGv %s%s [#%u]\n", IEM_GET_CTX(pVCpu)->cs.Sel, IEM_GET_CTX(pVCpu)->rip, \
+              pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, pVCpu->iem.s.cInstructions)); \
+    } while (0)
+#else
+# define IEMOP_MNEMONIC(a_Stats, a_szMnemonic) IEMOP_INC_STATS(a_Stats)
 #endif
 
 /** @} */

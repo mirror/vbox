@@ -589,6 +589,8 @@ const char *mmGetTagName(MMTAG enmTag)
 
         TAG2STR(EM);
 
+        TAG2STR(IEM);
+
         TAG2STR(IOM);
         TAG2STR(IOM_STATS);
 

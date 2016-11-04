@@ -78,6 +78,8 @@ typedef enum MMTAG
 
     MM_TAG_EM,
 
+    MM_TAG_IEM,
+
     MM_TAG_IOM,
     MM_TAG_IOM_STATS,
 

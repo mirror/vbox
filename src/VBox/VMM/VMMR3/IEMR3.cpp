@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/mm.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -113,6 +114,22 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
 
+#ifdef VBOX_WITH_STATISTICS
+        /* Allocate instruction statistics and register them. */
+        pVCpu->iem.s.pStatsR3 = (PIEMINSTRSTATS)MMR3HeapAllocZ(pVM, MM_TAG_IEM, sizeof(IEMINSTRSTATS));
+        AssertLogRelReturn(pVCpu->iem.s.pStatsR3, VERR_NO_MEMORY);
+        int rc = MMHyperAlloc(pVM, sizeof(IEMINSTRSTATS), sizeof(uint64_t), MM_TAG_IEM, (void **)&pVCpu->iem.s.pStatsCCR3);
+        AssertLogRelRCReturn(rc, rc);
+        pVCpu->iem.s.pStatsR0 = MMHyperR3ToR0(pVM, pVCpu->iem.s.pStatsCCR3);
+        pVCpu->iem.s.pStatsRC = MMHyperR3ToR0(pVM, pVCpu->iem.s.pStatsCCR3);
+# define IEM_DO_INSTR_STAT(a_Name, a_szDesc) \
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.pStatsCCR3->a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/r0-rc-Instr/" #a_Name, idCpu); \
+            STAMR3RegisterF(pVM, &pVCpu->iem.s.pStatsR3->a_Name, STAMTYPE_U32_RESET, STAMVISIBILITY_USED, \
+                            STAMUNIT_COUNT, a_szDesc, "/IEM/CPU%u/r3-Instr/" #a_Name, idCpu);
+# include "IEMInstructionStatisticsTmpl.h"
+# undef IEM_DO_INSTR_STAT
+#endif
 
         /*
          * Host and guest CPU information.
@@ -168,6 +185,10 @@ VMMR3DECL(int)      IEMR3Term(PVM pVM)
 VMMR3DECL(void)     IEMR3Relocate(PVM pVM)
 {
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
         pVM->aCpus[idCpu].iem.s.pCtxRC = VM_RC_ADDR(pVM, pVM->aCpus[idCpu].iem.s.pCtxR3);
+        if (pVM->aCpus[idCpu].iem.s.pStatsRC)
+            pVM->aCpus[idCpu].iem.s.pStatsRC = MMHyperR3ToRC(pVM, pVM->aCpus[idCpu].iem.s.pStatsCCR3);
+    }
 }
 
