@@ -114,7 +114,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, (void *)&pVCpu->iem.s.DataTlb.uTlbPhysRev, STAMTYPE_X64,       STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
                         "Data TLB physical revision",               "/IEM/CPU%u/DataTlb-PhysRev", idCpu);
 
-#ifdef VBOX_WITH_STATISTICS
+#if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
         /* Allocate instruction statistics and register them. */
         pVCpu->iem.s.pStatsR3 = (PIEMINSTRSTATS)MMR3HeapAllocZ(pVM, MM_TAG_IEM, sizeof(IEMINSTRSTATS));
         AssertLogRelReturn(pVCpu->iem.s.pStatsR3, VERR_NO_MEMORY);
