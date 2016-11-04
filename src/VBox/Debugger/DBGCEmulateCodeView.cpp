@@ -425,6 +425,7 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "u16",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 16-bit code." },
     { "uv86",       0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 16-bit code with v8086/real mode addressing." },
     { "ucfg",       0,        1,        &g_aArgUnassembleCfg[0], RT_ELEMENTS(g_aArgUnassembleCfg), 0, dbgcCmdUnassembleCfg,  "[addr]",               "Unassemble creating a control flow graph." },
+    { "ucfgc",      0,        1,        &g_aArgUnassembleCfg[0], RT_ELEMENTS(g_aArgUnassembleCfg), 0, dbgcCmdUnassembleCfg,  "[addr]",               "Unassemble creating a control flow graph with colors." },
 };
 
 /** The number of commands in the CodeView/WinDbg emulation. */
@@ -1377,12 +1378,416 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
 
 /**
- * @callback_method_impl{FNDBGFR3CFGDUMP}
+ * @callback_method_impl{FNDGCSCREENBLIT}
  */
-static DECLCALLBACK(int) dbgcCmdUnassembleCfgDump(const char *psz, void *pvUser)
+static DECLCALLBACK(int) dbgcCmdUnassembleCfgBlit(const char *psz, void *pvUser)
 {
     PDBGCCMDHLP pCmdHlp = (PDBGCCMDHLP)pvUser;
-    return DBGCCmdHlpPrintf(pCmdHlp, "%s\n", psz);
+    return DBGCCmdHlpPrintf(pCmdHlp, "%s", psz);
+}
+
+
+/**
+ * Checks whether both addresses are equal.
+ *
+ * @returns true if both addresses point to the same location, false otherwise.
+ * @param   pAddr1              First address.
+ * @param   pAddr2              Second address.
+ */
+static bool dbgcCmdUnassembleCfgAddrEqual(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+{
+    return    pAddr1->Sel == pAddr2->Sel
+           && pAddr1->off == pAddr2->off;
+}
+
+
+/**
+ * Checks whether the first given address is lower than the second one.
+ *
+ * @returns true if both addresses point to the same location, false otherwise.
+ * @param   pAddr1              First address.
+ * @param   pAddr2              Second address.
+ */
+static bool dbgcCmdUnassembleCfgAddrLower(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+{
+    return    pAddr1->Sel == pAddr2->Sel
+           && pAddr1->off < pAddr2->off;
+}
+
+
+/**
+ * Calculates the size required for the given basic block including the
+ * border and spacing on the edges.
+ *
+ * @returns nothing.
+ * @param   hCfgBb              The basic block handle.
+ * @param   pDumpBb             The dumper state to fill in for the basic block.
+ */
+static void dbgcCmdUnassembleCfgDumpCalcBbSize(DBGFCFGBB hCfgBb, PDBGCCFGBBDUMP pDumpBb)
+{
+    uint32_t fFlags = DBGFR3CfgBbGetFlags(hCfgBb);
+    uint32_t cInstr = DBGFR3CfgBbGetInstrCount(hCfgBb);
+
+    pDumpBb->hCfgBb = hCfgBb;
+    pDumpBb->cchHeight = cInstr + 4; /* Include spacing and border top and bottom. */
+    pDumpBb->cchWidth = 0;
+    DBGFR3CfgBbGetStartAddress(hCfgBb, &pDumpBb->AddrStart);
+
+    DBGFCFGBBENDTYPE enmType = DBGFR3CfgBbGetType(hCfgBb);
+    if (   enmType == DBGFCFGBBENDTYPE_COND
+        || enmType == DBGFCFGBBENDTYPE_UNCOND_JMP)
+        DBGFR3CfgBbGetBranchAddress(hCfgBb, &pDumpBb->AddrTarget);
+
+    if (fFlags & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+    {
+        const char *pszErr = NULL;
+        DBGFR3CfgBbQueryError(hCfgBb, &pszErr);
+        if (pszErr)
+        {
+            pDumpBb->cchHeight++;
+            pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pszErr));
+        }
+    }
+    for (unsigned i = 0; i < cInstr; i++)
+    {
+        const char *pszInstr = NULL;
+        int rc = DBGFR3CfgBbQueryInstr(hCfgBb, i, NULL, NULL, &pszInstr);
+        AssertRC(rc);
+        pDumpBb->cchWidth = RT_MAX(pDumpBb->cchWidth, (uint32_t)strlen(pszInstr));
+    }
+    pDumpBb->cchWidth += 4; /* Include spacing and border left and right. */
+}
+
+
+/**
+ * Dumps a top or bottom boundary line.
+ *
+ * @returns nothing.
+ * @param   hScreen             The screen to draw to.
+ * @param   uStartX             Where to start drawing the boundary.
+ * @param   uStartY             Y coordinate.
+ * @param   cchWidth            Width of the boundary.
+ * @param   enmColor            The color to use for drawing.
+ */
+static void dbgcCmdUnassembleCfgDumpBbBoundary(DBGCSCREEN hScreen, uint32_t uStartX, uint32_t uStartY, uint32_t cchWidth,
+                                               DBGCSCREENCOLOR enmColor)
+{
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX, uStartY, '+', enmColor);
+    dbgcScreenAsciiDrawLineHorizontal(hScreen, uStartX + 1, uStartX + 1 + cchWidth - 2,
+                                      uStartY, '-', enmColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + cchWidth - 1, uStartY, '+', enmColor);
+}
+
+
+/**
+ * Dumps a spacing line between the top or bottom boundary and the actual disassembly.
+ *
+ * @returns nothing.
+ * @param   hScreen             The screen to draw to.
+ * @param   uStartX             Where to start drawing the spacing.
+ * @param   uStartY             Y coordinate.
+ * @param   cchWidth            Width of the spacing.
+ * @param   enmColor            The color to use for drawing.
+ */
+static void dbgcCmdUnassembleCfgDumpBbSpacing(DBGCSCREEN hScreen, uint32_t uStartX, uint32_t uStartY, uint32_t cchWidth,
+                                              DBGCSCREENCOLOR enmColor)
+{
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX, uStartY, '|', enmColor);
+    dbgcScreenAsciiDrawLineHorizontal(hScreen, uStartX + 1, uStartX + 1 + cchWidth - 2,
+                                      uStartY, ' ', enmColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + cchWidth - 1, uStartY, '|', enmColor);
+}
+
+
+/**
+ * Writes a given text to the screen.
+ *
+ * @returns nothing.
+ * @param   hScreen             The screen to draw to.
+ * @param   uStartX             Where to start drawing the line.
+ * @param   uStartY             Y coordinate.
+ * @param   cchWidth            Maximum width of the text.
+ * @param   pszText             The text to write.
+ * @param   enmColor            The color to use for drawing.
+ */
+static void dbgcCmdUnassembleCfgDumpBbText(DBGCSCREEN hScreen, uint32_t uStartX, uint32_t uStartY,
+                                           uint32_t cchWidth, const char *pszText, DBGCSCREENCOLOR enmColor)
+{
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX, uStartY, '|', enmColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + 1, uStartY, ' ', enmColor);
+    dbgcScreenAsciiDrawString(hScreen, uStartX + 2, uStartY, pszText, enmColor);
+    dbgcScreenAsciiDrawCharacter(hScreen, uStartX + cchWidth - 1, uStartY, '|', enmColor);
+}
+
+
+/**
+ * Dumps one basic block using the dumper callback.
+ *
+ * @returns nothing.
+ * @param   pDumpBb             The basic block dump state to dump.
+ * @param   hScreen             The screen to draw to.
+ */
+static void dbgcCmdUnassembleCfgDumpBb(PDBGCCFGBBDUMP pDumpBb, DBGCSCREEN hScreen)
+{
+    uint32_t uStartY = pDumpBb->uStartY;
+    bool fError = RT_BOOL(DBGFR3CfgBbGetFlags(pDumpBb->hCfgBb) & DBGF_CFG_BB_F_INCOMPLETE_ERR);
+    DBGCSCREENCOLOR enmColor = fError ? DBGCSCREENCOLOR_RED_BRIGHT : DBGCSCREENCOLOR_DEFAULT;
+
+    dbgcCmdUnassembleCfgDumpBbBoundary(hScreen, pDumpBb->uStartX, uStartY, pDumpBb->cchWidth, enmColor);
+    uStartY++;
+    dbgcCmdUnassembleCfgDumpBbSpacing(hScreen, pDumpBb->uStartX, uStartY, pDumpBb->cchWidth, enmColor);
+    uStartY++;
+
+    uint32_t cInstr = DBGFR3CfgBbGetInstrCount(pDumpBb->hCfgBb);
+    for (unsigned i = 0; i < cInstr; i++)
+    {
+        const char *pszInstr = NULL;
+        DBGFR3CfgBbQueryInstr(pDumpBb->hCfgBb, i, NULL, NULL, &pszInstr);
+        dbgcCmdUnassembleCfgDumpBbText(hScreen, pDumpBb->uStartX, uStartY + i,
+                                       pDumpBb->cchWidth, pszInstr, DBGCSCREENCOLOR_DEFAULT);
+    }
+    uStartY += cInstr;
+
+    if (fError)
+    {
+        const char *pszErr = NULL;
+        DBGFR3CfgBbQueryError(pDumpBb->hCfgBb, &pszErr);
+        if (pszErr)
+            dbgcCmdUnassembleCfgDumpBbText(hScreen, pDumpBb->uStartX, uStartY,
+                                           pDumpBb->cchWidth, pszErr, enmColor);
+        uStartY++;
+    }
+
+    dbgcCmdUnassembleCfgDumpBbSpacing(hScreen, pDumpBb->uStartX, uStartY, pDumpBb->cchWidth, enmColor);
+    uStartY++;
+    dbgcCmdUnassembleCfgDumpBbBoundary(hScreen, pDumpBb->uStartX, uStartY, pDumpBb->cchWidth, enmColor);
+    uStartY++;
+}
+
+
+/**
+ * Dumps the given control flow graph to the output.
+ *
+ * @returns VBox status code.
+ * @param   hCfg                The control flow graph handle.
+ * @param   fUseColor           Flag whether the output should be colorized.
+ * @param   pCmdHlp             The command helper callback table.
+ */
+static int dbgcCmdUnassembleCfgDump(DBGFCFG hCfg, bool fUseColor, PDBGCCMDHLP pCmdHlp)
+{
+    DBGFCFGIT hCfgIt;
+    int rc = DBGFR3CfgItCreate(hCfg, DBGFCFGITORDER_BY_ADDR_LOWEST_FIRST, &hCfgIt);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cBbs = DBGFR3CfgGetBbCount(hCfg);
+        PDBGCCFGBBDUMP paDumpBb = (PDBGCCFGBBDUMP)RTMemTmpAllocZ(cBbs * sizeof(DBGCCFGBBDUMP));
+        if (paDumpBb)
+        {
+            /* Calculate the sizes of each basic block first. */
+            DBGFCFGBB hCfgBb = DBGFR3CfgItNext(hCfgIt);
+            uint32_t idxDumpBb = 0;
+            while (hCfgBb)
+            {
+                dbgcCmdUnassembleCfgDumpCalcBbSize(hCfgBb, &paDumpBb[idxDumpBb]);
+                idxDumpBb++;
+                hCfgBb = DBGFR3CfgItNext(hCfgIt);
+            }
+
+            /* Calculate the ASCII screen dimensions and create one. */
+            uint32_t cchWidth = 0;
+            uint32_t cchLeftExtra = 5;
+            uint32_t cchRightExtra = 5;
+            uint32_t cchHeight = 0;
+            for (unsigned i = 0; i < cBbs; i++)
+            {
+                PDBGCCFGBBDUMP pDumpBb = &paDumpBb[i];
+                cchWidth = RT_MAX(cchWidth, pDumpBb->cchWidth);
+                cchHeight += pDumpBb->cchHeight;
+
+                /* Incomplete blocks don't have a successor. */
+                if (DBGFR3CfgBbGetFlags(pDumpBb->hCfgBb) & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                    continue;
+
+                switch (DBGFR3CfgBbGetType(pDumpBb->hCfgBb))
+                {
+                    case DBGFCFGBBENDTYPE_EXIT:
+                    case DBGFCFGBBENDTYPE_LAST_DISASSEMBLED:
+                        break;
+                    case DBGFCFGBBENDTYPE_UNCOND_JMP:
+                        if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
+                            || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
+                            cchLeftExtra++;
+                        else
+                            cchRightExtra++;
+                        break;
+                    case DBGFCFGBBENDTYPE_UNCOND:
+                        cchHeight += 2; /* For the arrow down to the next basic block. */
+                        break;
+                    case DBGFCFGBBENDTYPE_COND:
+                        cchHeight += 2; /* For the arrow down to the next basic block. */
+                        if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
+                            || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
+                            cchLeftExtra++;
+                        else
+                            cchRightExtra++;
+                        break;
+                    default:
+                        AssertFailed();
+                }
+            }
+
+            cchWidth += 2;
+
+            DBGCSCREEN hScreen = NULL;
+            rc = dbgcScreenAsciiCreate(&hScreen, cchWidth + cchLeftExtra + cchRightExtra, cchHeight);
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t uY = 0;
+
+                /* Dump the basic blocks and connections to the immediate successor. */
+                for (unsigned i = 0; i < cBbs; i++)
+                {
+                    paDumpBb[i].uStartX = cchLeftExtra + (cchWidth - paDumpBb[i].cchWidth) / 2;
+                    paDumpBb[i].uStartY = uY;
+                    dbgcCmdUnassembleCfgDumpBb(&paDumpBb[i], hScreen);
+                    uY += paDumpBb[i].cchHeight;
+
+                    /* Incomplete blocks don't have a successor. */
+                    if (DBGFR3CfgBbGetFlags(paDumpBb[i].hCfgBb) & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                        continue;
+
+                    switch (DBGFR3CfgBbGetType(paDumpBb[i].hCfgBb))
+                    {
+                        case DBGFCFGBBENDTYPE_EXIT:
+                        case DBGFCFGBBENDTYPE_LAST_DISASSEMBLED:
+                        case DBGFCFGBBENDTYPE_UNCOND_JMP:
+                            break;
+                        case DBGFCFGBBENDTYPE_UNCOND:
+                            /* Draw the arrow down to the next block. */
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                         '|', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                            uY++;
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                         'V', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                            uY++;
+                            break;
+                        case DBGFCFGBBENDTYPE_COND:
+                            /* Draw the arrow down to the next block. */
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                         '|', DBGCSCREENCOLOR_RED_BRIGHT);
+                            uY++;
+                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                         'V', DBGCSCREENCOLOR_RED_BRIGHT);
+                            uY++;
+                            break;
+                        default:
+                            AssertFailed();
+                    }
+                }
+
+                /* Last pass, connect all remaining branches. */
+                uint32_t uBackConns = 0;
+                uint32_t uFwdConns = 0;
+                for (unsigned i = 0; i < cBbs; i++)
+                {
+                    PDBGCCFGBBDUMP pDumpBb = &paDumpBb[i];
+
+                    /* Incomplete blocks don't have a successor. */
+                    if (DBGFR3CfgBbGetFlags(pDumpBb->hCfgBb) & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+                        continue;
+
+                    switch (DBGFR3CfgBbGetType(pDumpBb->hCfgBb))
+                    {
+                        case DBGFCFGBBENDTYPE_EXIT:
+                        case DBGFCFGBBENDTYPE_LAST_DISASSEMBLED:
+                        case DBGFCFGBBENDTYPE_UNCOND:
+                            break;
+                        case DBGFCFGBBENDTYPE_COND:
+                        case DBGFCFGBBENDTYPE_UNCOND_JMP:
+                        {
+                            /* Find the target first to get the coordinates. */
+                            PDBGCCFGBBDUMP pDumpBbTgt = NULL;
+                            for (idxDumpBb = 0; idxDumpBb < cBbs; idxDumpBb++)
+                            {
+                                pDumpBbTgt = &paDumpBb[idxDumpBb];
+                                if (dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBbTgt->AddrStart))
+                                    break;
+                            }
+
+                            /*
+                             * Use the right side for targets with higher addresses,
+                             * left when jumping backwards.
+                             */
+                            if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
+                                || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
+                            {
+                                /* Going backwards. */
+                                uint32_t uXVerLine = /*cchLeftExtra - 1 -*/ uBackConns + 1;
+                                uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
+                                uBackConns++;
+
+                                /* Draw the arrow pointing to the target block. */
+                                dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX - 1, pDumpBbTgt->uStartY,
+                                                             '>', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the horizontal line. */
+                                dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBbTgt->uStartX - 2,
+                                                                  pDumpBbTgt->uStartY, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
+                                                             DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the vertical line down to the source block. */
+                                dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, pDumpBbTgt->uStartY + 1, uYHorLine - 1,
+                                                                '|', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the horizontal connection between the source block and vertical part. */
+                                dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBb->uStartX - 1,
+                                                                  uYHorLine, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+
+                            }
+                            else
+                            {
+                                /* Going forward. */
+                                uint32_t uXVerLine = cchWidth + cchLeftExtra + (cchRightExtra - uFwdConns) - 1;
+                                uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
+                                uFwdConns++;
+
+                                /* Draw the horizontal line. */
+                                dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBb->uStartX + pDumpBb->cchWidth,
+                                                                  uXVerLine - 1, uYHorLine, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the vertical line down to the target block. */
+                                dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, uYHorLine + 1, pDumpBbTgt->uStartY - 1,
+                                                                '|', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the horizontal connection between the target block and vertical part. */
+                                dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
+                                                                  uXVerLine, pDumpBbTgt->uStartY, '-', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
+                                                             DBGCSCREENCOLOR_GREEN_BRIGHT);
+                                /* Draw the arrow pointing to the target block. */
+                                dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
+                                                             pDumpBbTgt->uStartY, '<', DBGCSCREENCOLOR_GREEN_BRIGHT);
+                            }
+                            break;
+                        }
+                        default:
+                            AssertFailed();
+                    }
+                }
+
+                rc = dbgcScreenAsciiBlit(hScreen, dbgcCmdUnassembleCfgBlit, pCmdHlp, fUseColor);
+                dbgcScreenAsciiDestroy(hScreen);
+            }
+
+            for (unsigned i = 0; i < cBbs; i++)
+                DBGFR3CfgBbRelease(paDumpBb[i].hCfgBb);
+            RTMemTmpFree(paDumpBb);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        DBGFR3CfgItDestroy(hCfgIt);
+    }
+
+    return rc;
 }
 
 
@@ -1407,6 +1812,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
      * Check the desired mode.
      */
     unsigned fFlags =  DBGF_DISAS_FLAGS_UNPATCHED_BYTES | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED;
+    bool fUseColor = false;
     switch (pCmd->pszCmd[4])
     {
         default: AssertFailed();
@@ -1415,6 +1821,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
         case '3':   fFlags |= DBGF_DISAS_FLAGS_32BIT_MODE;      break;
         case '1':   fFlags |= DBGF_DISAS_FLAGS_16BIT_MODE;      break;
         case 'v':   fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE; break;
+        case 'c':   fUseColor = true; break;
     }
 
     /** @todo should use DBGFADDRESS for everything */
@@ -1529,7 +1936,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     if (RT_SUCCESS(rc))
     {
         /* Dump the graph. */
-        rc = DBGFR3CfgDump(hCfg, dbgcCmdUnassembleCfgDump, pCmdHlp);
+        rc = dbgcCmdUnassembleCfgDump(hCfg, fUseColor, pCmdHlp);
         DBGFR3CfgRelease(hCfg);
     }
     else
