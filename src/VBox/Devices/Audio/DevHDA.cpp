@@ -4498,7 +4498,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
             if (RTCircBufUsed(pCircBuf))
             {
                 RTCircBufAcquireReadBlock(pCircBuf, RTCircBufUsed(pCircBuf), &pvSrc, &cbSrc);
-                Assert(cbDst);
+                Assert(cbSrc);
 
                 rc2 = AudioMixerSinkWrite(pSink->pMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbProcessed);
                 AssertRC(rc2);
