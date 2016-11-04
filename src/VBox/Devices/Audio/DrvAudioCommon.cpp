@@ -911,6 +911,7 @@ int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOPCMPROPS pProp
         pProps->fSigned     = fSigned;
         pProps->cShift      = (pCfg->cChannels == 2) + cShift;
         pProps->cChannels   = pCfg->cChannels;
+        pProps->cbBitrate   = DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels) / 8 /* Convert to bytes */;
         pProps->uAlign      = (1 << pProps->cShift) - 1;
         pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANNESS;
     }
