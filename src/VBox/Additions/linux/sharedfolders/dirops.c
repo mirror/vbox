@@ -745,6 +745,7 @@ static int sf_rmdir(struct inode *parent, struct dentry *dentry)
  * @param old_dentry    old directory cache entry
  * @param new_parent    inode of the new parent directory
  * @param new_dentry    new directory cache entry
+ * @param flags         flags
  * @returns 0 on success, Linux error code otherwise
  */
 static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
