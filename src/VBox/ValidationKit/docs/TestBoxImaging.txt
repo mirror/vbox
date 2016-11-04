@@ -134,7 +134,7 @@ Create ``pxelinux.cfg/do-backup``, ``pxelinux.cfg/do-backup-again``,
   LABEL maintenance
     MENU LABEL Maintenance (NFS)
     KERNEL maintenance-boot/vmlinuz-3.16.0-4-amd64
-    APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 testbox-action-backup ro ip=dhcp aufs=tmpfs boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/export/testbox-nfsroot,ro nfsvers=3 nfsrootdebug
+    APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 testbox-action-backup ro ip=any aufs=tmpfs boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/export/testbox-nfsroot,ro,tcp nfsvers=3 nfsrootdebug
   LABEL local-boot
   LOCALBOOT
 
@@ -143,6 +143,8 @@ When you want to preform an action on a testbox, copy the ``do-<action>`` to
 config will be removed automatically once the action has been successfully
 completed.
 
+Note! We use ``ip=any`` and not ``ip=dhcp`` as the former seems to work more
+      reliably in our lab.
 
 
 Images and logs (/export/testbox-backup)
