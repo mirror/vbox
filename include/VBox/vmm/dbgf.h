@@ -2499,6 +2499,10 @@ typedef DBGFCFG *PDBGFCFG;
 typedef struct DBGFCFGBBINT *DBGFCFGBB;
 /** Pointer to a DBGF control flow graph basic block handle. */
 typedef DBGFCFGBB *PDBGFCFGBB;
+/** A DBGF control flow graph iterator. */
+typedef struct DBGFCFGITINT *DBGFCFGIT;
+/** Pointer to a control flow graph iterator. */
+typedef DBGFCFGIT *PDBGFCFGIT;
 
 /** @name DBGFCFGBB Flags.
  * @{ */
@@ -2536,6 +2540,27 @@ typedef enum DBGFCFGBBENDTYPE
 } DBGFCFGBBENDTYPE;
 
 /**
+ * DBGF control flow graph iteration order.
+ */
+typedef enum DBGFCFGITORDER
+{
+    /** Invalid order. */
+    DBGFCFGITORDER_INVALID = 0,
+    /** From lowest to highest basic block start address. */
+    DBGFCFGITORDER_BY_ADDR_LOWEST_FIRST,
+    /** From highest to lowest basic block start address. */
+    DBGFCFGITORDER_BY_ADDR_HIGHEST_FIRST,
+    /** Depth first traversing starting from the entry block. */
+    DBGFCFGITORDER_DEPTH_FRIST,
+    /** Breadth first traversing starting from the entry block. */
+    DBGFCFGITORDER_BREADTH_FIRST,
+    /** Usual 32bit hack. */
+    DBGFCFGITORDER_32BIT_HACK = 0x7fffffff
+} DBGFCFGITORDER;
+/** POinter to a iteration order enum. */
+typedef DBGFCFGITORDER *PDBGFCFGITORDER;
+
+/**
  * DBGF control flow graph dumper callback.
  *
  * @returns VBox status code. Any non VINF_SUCCESS status code will abort the dumping.
@@ -2552,19 +2577,29 @@ VMMR3DECL(int)              DBGFR3CfgCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRE
 VMMR3DECL(uint32_t)         DBGFR3CfgRetain(DBGFCFG hCfg);
 VMMR3DECL(uint32_t)         DBGFR3CfgRelease(DBGFCFG hCfg);
 VMMR3DECL(int)              DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb);
+VMMR3DECL(int)              DBGFR3CfgQueryBbByAddress(DBGFCFG hCfg, PDBGFADDRESS pAddr, PDBGFCFGBB phCfgBb);
+VMMR3DECL(uint32_t)         DBGFR3CfgGetBbCount(DBGFCFG hCfg);
 VMMR3DECL(int)              DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUser);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbRetain(DBGFCFGBB hCfgBb);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbRelease(DBGFCFGBB hCfgBb);
 VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetStartAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrStart);
 VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetEndAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrEnd);
+VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetBranchAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrTarget);
+VMMR3DECL(PDBGFADDRESS)     DBGFR3CfgBbGetFollowingAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrFollow);
 VMMR3DECL(DBGFCFGBBENDTYPE) DBGFR3CfgBbGetType(DBGFCFGBB hCfgBb);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbGetInstrCount(DBGFCFGBB hCfgBb);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbGetFlags(DBGFCFGBB hCfgBb);
+VMMR3DECL(int)              DBGFR3CfgBbQueryError(DBGFCFGBB hCfgBb, const char **ppszErr);
 VMMR3DECL(int)              DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
-                                                  uint32_t *pcbInstr, char *pszOutput, uint32_t cbOutput);
-VMMR3DECL(int)              DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbSucc, uint32_t cSucc);
+                                                  uint32_t *pcbInstr, const char **ppszInstr);
+VMMR3DECL(int)              DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB phCfgBbFollow,
+                                                       PDBGFCFGBB phCfgBbTarget);
 VMMR3DECL(uint32_t)         DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb);
 VMMR3DECL(int)              DBGFR3CfgBbGetRefBb(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbRef, uint32_t cRef);
+VMMR3DECL(int)              DBGFR3CfgItCreate(DBGFCFG hCfg, DBGFCFGITORDER enmOrder, PDBGFCFGIT phCfgIt);
+VMMR3DECL(void)             DBGFR3CfgItDestroy(DBGFCFGIT hCfgIt);
+VMMR3DECL(DBGFCFGBB)        DBGFR3CfgItNext(DBGFCFGIT hCfgIt);
+VMMR3DECL(int)              DBGFR3CfgItReset(DBGFCFGIT hCfgIt);
 
 /** @} */
 

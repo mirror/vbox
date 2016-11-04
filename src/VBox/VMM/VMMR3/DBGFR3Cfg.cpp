@@ -131,6 +131,21 @@ typedef struct DBGFCFGBBINT
 typedef DBGFCFGBBINT *PDBGFCFGBBINT;
 
 /**
+ * Control flow graph iterator state.
+ */
+typedef struct DBGFCFGITINT
+{
+    /** Pointer to the control flow graph (holding a reference). */
+    PDBGFCFGINT             pCfg;
+    /** Next basic block to return. */
+    uint32_t                idxBbNext;
+    /** Array of basic blocks sorted by the specified order - variable in size. */
+    PDBGFCFGBBINT           apBb[1];
+} DBGFCFGITINT;
+/** Pointer to the internal control flow graph iterator state. */
+typedef DBGFCFGITINT *PDBGFCFGITINT;
+
+/**
  * Dumper state for a basic block.
  */
 typedef struct DBGFCFGDUMPBB
@@ -849,6 +864,52 @@ VMMR3DECL(int) DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb)
 
 
 /**
+ * Queries a basic block in the given control flow graph which covers the given
+ * address.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if there is no basic block intersecting with the address.
+ * @param   hCfg                The control flow graph handle.
+ * @param   pAddr               The address to look for.
+ * @param   phCfgBb             Where to store the basic block handle on success.
+ */
+VMMR3DECL(int) DBGFR3CfgQueryBbByAddress(DBGFCFG hCfg, PDBGFADDRESS pAddr, PDBGFCFGBB phCfgBb)
+{
+    PDBGFCFGINT pThis = hCfg;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(phCfgBb, VERR_INVALID_POINTER);
+
+    PDBGFCFGBBINT pCfgBb = NULL;
+    RTListForEach(&pThis->LstCfgBb, pCfgBb, DBGFCFGBBINT, NdCfgBb)
+    {
+        if (dbgfR3CfgBbAddrIntersect(pCfgBb, pAddr))
+        {
+            DBGFR3CfgBbRetain(pCfgBb);
+            *phCfgBb = pCfgBb;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Returns the number of basic blcoks inside the control flow graph.
+ *
+ * @returns Number of basic blocks.
+ * @param   hCfg                The control flow graph handle.
+ */
+VMMR3DECL(uint32_t) DBGFR3CfgGetBbCount(DBGFCFG hCfg)
+{
+    PDBGFCFGINT pThis = hCfg;
+    AssertPtrReturn(pThis, 0);
+
+    return pThis->cBbs;
+}
+
+
+/**
  * Returns the buffer starting at the given position.
  *
  * @returns Pointer to the ASCII buffer.
@@ -1422,6 +1483,57 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetEndAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS 
 
 
 /**
+ * Returns the address the last instruction in the basic block branches to.
+ *
+ * @returns Pointer to DBGF adress containing the branch address of the basic block.
+ * @param   hCfgBb              The basic block handle.
+ * @param   pAddrTarget         Where to store the branch address of the basic block.
+ *
+ * @note This is only valid for unconditional or conditional branches and will assert
+ *       for every other basic block type.
+ */
+VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetBranchAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrTarget)
+{
+    PDBGFCFGBBINT pCfgBb = hCfgBb;
+    AssertPtrReturn(pCfgBb, NULL);
+    AssertPtrReturn(pAddrTarget, NULL);
+    AssertReturn(   pCfgBb->enmEndType == DBGFCFGBBENDTYPE_UNCOND_JMP
+                 || pCfgBb->enmEndType == DBGFCFGBBENDTYPE_COND,
+                 NULL);
+
+    *pAddrTarget = pCfgBb->AddrTarget;
+    return pAddrTarget;
+}
+
+
+/**
+ * Returns the address of the next block following this one in the instruction stream.
+ * (usually end address + 1).
+ *
+ * @returns Pointer to DBGF adress containing the following address of the basic block.
+ * @param   hCfgBb              The basic block handle.
+ * @param   pAddrFollow         Where to store the following address of the basic block.
+ *
+ * @note This is only valid for conditional branches and if the last instruction in the
+ *       given basic block doesn't change the control flow but the blocks were split
+ *       because the successor is referenced by multiple other blocks as an entry point.
+ */
+VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetFollowingAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrFollow)
+{
+    PDBGFCFGBBINT pCfgBb = hCfgBb;
+    AssertPtrReturn(pCfgBb, NULL);
+    AssertPtrReturn(pAddrFollow, NULL);
+    AssertReturn(   pCfgBb->enmEndType == DBGFCFGBBENDTYPE_UNCOND
+                 || pCfgBb->enmEndType == DBGFCFGBBENDTYPE_COND,
+                 NULL);
+
+    *pAddrFollow = pCfgBb->AddrEnd;
+    DBGFR3AddrAdd(pAddrFollow, 1);
+    return pAddrFollow;
+}
+
+
+/**
  * Returns the type of the last instruction in the basic block.
  *
  * @returns Last instruction type.
@@ -1467,35 +1579,49 @@ VMMR3DECL(uint32_t) DBGFR3CfgBbGetFlags(DBGFCFGBB hCfgBb)
 
 
 /**
+ * Returns the error status and message if the given basic block has an error.
+ *
+ * @returns VBox status code of the error for the basic block.
+ * @param   hCfgBb              The basic block handle.
+ * @param   ppszErr             Where to store the pointer to the error message - optional.
+ */
+VMMR3DECL(int) DBGFR3CfgBbQueryError(DBGFCFGBB hCfgBb, const char **ppszErr)
+{
+    PDBGFCFGBBINT pCfgBb = hCfgBb;
+    AssertPtrReturn(pCfgBb, VERR_INVALID_HANDLE);
+
+    if (ppszErr)
+        *ppszErr = pCfgBb->pszErr;
+
+    return pCfgBb->rcError;
+}
+
+
+/**
  * Store the disassembled instruction as a string in the given output buffer.
  *
  * @returns VBox status code.
- * @retval VERR_BUFFER_OVERFLOW if the size of the output buffer can't hold the complete string.
  * @param   hCfgBb              The basic block handle.
  * @param   idxInstr            The instruction to query.
  * @param   pAddrInstr          Where to store the guest instruction address on success, optional.
  * @param   pcbInstr            Where to store the instruction size on success, optional.
- * @param   pszOutput           Where to store the disassembled instruction, optional.
- * @param   cbOutput            Size of the output buffer.
+ * @param   ppszInstr           Where to store the pointer to the disassembled instruction string, optional.
  */
 VMMR3DECL(int) DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
-                                     uint32_t *pcbInstr, char *pszOutput, uint32_t cbOutput)
+                                     uint32_t *pcbInstr, const char **ppszInstr)
 {
-    int rc = VINF_SUCCESS;
     PDBGFCFGBBINT pCfgBb = hCfgBb;
     AssertPtrReturn(pCfgBb, VERR_INVALID_POINTER);
     AssertReturn(idxInstr < pCfgBb->cInstr, VERR_INVALID_PARAMETER);
-    AssertReturn(   (VALID_PTR(pszOutput) && cbOutput > 0)
-                 || (!pszOutput && !cbOutput), VERR_INVALID_PARAMETER);
 
     if (pAddrInstr)
         *pAddrInstr = pCfgBb->aInstr[idxInstr].AddrInstr;
     if (pcbInstr)
         *pcbInstr = pCfgBb->aInstr[idxInstr].cbInstr;
-    if (cbOutput)
-        rc = RTStrCopy(pszOutput, cbOutput, pCfgBb->aInstr[idxInstr].pszInstr);
+    if (ppszInstr)
+        *ppszInstr = pCfgBb->aInstr[idxInstr].pszInstr;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1504,13 +1630,35 @@ VMMR3DECL(int) DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFA
  *
  * @returns VBox status code.
  * @param   hCfgBb              The basic block handle.
- * @param   pahCfgBbSucc        Where to store the handles to the basic blocks succeeding the given one.
- * @param   cSucc               Number of entries the handle array can hold.
+ * @param   phCfgBbFollow       Where to store the handle to the basic block following
+ *                              this one (optional).
+ * @param   phCfgBbTarget       Where to store the handle to the basic block being the
+ *                              branch target for this one (optional).
  */
-VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbSucc, uint32_t cSucc)
+VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB phCfgBbFollow, PDBGFCFGBB phCfgBbTarget)
 {
-    RT_NOREF3(hCfgBb, pahCfgBbSucc, cSucc);
-    return VERR_NOT_IMPLEMENTED;
+    PDBGFCFGBBINT pCfgBb = hCfgBb;
+    AssertPtrReturn(pCfgBb, VERR_INVALID_POINTER);
+
+    if (   phCfgBbFollow
+        && (   pCfgBb->enmEndType == DBGFCFGBBENDTYPE_UNCOND
+            || pCfgBb->enmEndType == DBGFCFGBBENDTYPE_COND))
+    {
+        DBGFADDRESS AddrStart = pCfgBb->AddrEnd;
+        DBGFR3AddrAdd(&AddrStart, 1);
+        int rc = DBGFR3CfgQueryBbByAddress(pCfgBb->pCfg, &AddrStart, phCfgBbFollow);
+        AssertRC(rc);
+    }
+
+    if (   phCfgBbTarget
+        && (   pCfgBb->enmEndType == DBGFCFGBBENDTYPE_UNCOND_JMP
+            || pCfgBb->enmEndType == DBGFCFGBBENDTYPE_COND))
+    {
+        int rc = DBGFR3CfgQueryBbByAddress(pCfgBb->pCfg, &pCfgBb->AddrTarget, phCfgBbTarget);
+        AssertRC(rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1519,11 +1667,36 @@ VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbS
  *
  * @returns Number of other basic blocks referencing this one.
  * @param   hCfgBb              The basic block handle.
+ *
+ * @note If the given basic block references itself (loop, etc.) this will be counted as well.
  */
 VMMR3DECL(uint32_t) DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb)
 {
-    RT_NOREF1(hCfgBb);
-    return 0;
+    PDBGFCFGBBINT pCfgBb = hCfgBb;
+    AssertPtrReturn(pCfgBb, 0);
+
+    uint32_t cRefsBb = 0;
+    PDBGFCFGBBINT pCfgBbCur = NULL;
+    RTListForEach(&pCfgBb->pCfg->LstCfgBb, pCfgBbCur, DBGFCFGBBINT, NdCfgBb)
+    {
+        if (pCfgBbCur->fFlags & DBGF_CFG_BB_F_INCOMPLETE_ERR)
+            continue;
+
+        if (   pCfgBbCur->enmEndType == DBGFCFGBBENDTYPE_UNCOND
+            || pCfgBbCur->enmEndType == DBGFCFGBBENDTYPE_COND)
+        {
+            DBGFADDRESS AddrStart = pCfgBb->AddrEnd;
+            DBGFR3AddrAdd(&AddrStart, 1);
+            if (dbgfR3CfgBbAddrEqual(&pCfgBbCur->AddrStart, &AddrStart))
+                cRefsBb++;
+        }
+
+        if (   (   pCfgBbCur->enmEndType == DBGFCFGBBENDTYPE_UNCOND_JMP
+                || pCfgBbCur->enmEndType == DBGFCFGBBENDTYPE_COND)
+            && dbgfR3CfgBbAddrEqual(&pCfgBbCur->AddrStart, &pCfgBb->AddrTarget))
+            cRefsBb++;
+    }
+    return cRefsBb;
 }
 
 
@@ -1531,6 +1704,7 @@ VMMR3DECL(uint32_t) DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb)
  * Returns the basic block handles referencing the given basic block.
  *
  * @returns VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the array can't hold all the basic blocks.
  * @param   hCfgBb              The basic block handle.
  * @param   paCfgBbRef          Pointer to the array containing the referencing basic block handles on success.
  * @param   cRef                Number of entries in the given array.
@@ -1541,3 +1715,140 @@ VMMR3DECL(int) DBGFR3CfgBbGetRefBb(DBGFCFGBB hCfgBb, PDBGFCFGBB paCfgBbRef, uint
     return VERR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * @callback_method_impl{FNRTSORTCMP}
+ */
+static DECLCALLBACK(int) dbgfR3CfgItSortCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    PDBGFCFGITORDER penmOrder = (PDBGFCFGITORDER)pvUser;
+    PDBGFCFGBBINT pCfgBb1 = *(PDBGFCFGBBINT *)pvElement1;
+    PDBGFCFGBBINT pCfgBb2 = *(PDBGFCFGBBINT *)pvElement2;
+
+    if (dbgfR3CfgBbAddrEqual(&pCfgBb1->AddrStart, &pCfgBb2->AddrStart))
+        return 0;
+
+    if (*penmOrder == DBGFCFGITORDER_BY_ADDR_LOWEST_FIRST)
+    {
+        if (dbgfR3CfgBbAddrLower(&pCfgBb1->AddrStart, &pCfgBb2->AddrStart))
+            return -1;
+        else
+            return 1;
+    }
+    else
+    {
+        if (dbgfR3CfgBbAddrLower(&pCfgBb1->AddrStart, &pCfgBb2->AddrStart))
+            return 1;
+        else
+            return -1;
+    }
+
+    AssertFailed();
+}
+
+
+/**
+ * Creates a new iterator for the given control flow graph.
+ *
+ * @returns VBox status code.
+ * @param   hCfg                The control flow graph handle.
+ * @param   enmOrder            The order in which the basic blocks are enumerated.
+ * @param   phCfgIt             Where to store the handle to the iterator on success.
+ */
+VMMR3DECL(int) DBGFR3CfgItCreate(DBGFCFG hCfg, DBGFCFGITORDER enmOrder, PDBGFCFGIT phCfgIt)
+{
+    int rc = VINF_SUCCESS;
+    PDBGFCFGINT pCfg = hCfg;
+    AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(phCfgIt, VERR_INVALID_POINTER);
+    AssertReturn(enmOrder > DBGFCFGITORDER_INVALID && enmOrder < DBGFCFGITORDER_BREADTH_FIRST,
+                 VERR_INVALID_PARAMETER);
+    AssertReturn(enmOrder < DBGFCFGITORDER_DEPTH_FRIST, VERR_NOT_IMPLEMENTED); /** @todo */
+
+    PDBGFCFGITINT pIt = (PDBGFCFGITINT)RTMemAllocZ(RT_OFFSETOF(DBGFCFGITINT, apBb[pCfg->cBbs]));
+    if (RT_LIKELY(pIt))
+    {
+        DBGFR3CfgRetain(hCfg);
+        pIt->pCfg      = pCfg;
+        pIt->idxBbNext = 0;
+        /* Fill the list and then sort. */
+        PDBGFCFGBBINT pCfgBb;
+        uint32_t idxBb = 0;
+        RTListForEach(&pCfg->LstCfgBb, pCfgBb, DBGFCFGBBINT, NdCfgBb)
+        {
+            DBGFR3CfgBbRetain(pCfgBb);
+            pIt->apBb[idxBb++] = pCfgBb;
+        }
+
+        /* Sort the blocks by address. */
+        RTSortShell(&pIt->apBb[0], pCfg->cBbs, sizeof(PDBGFCFGBBINT), dbgfR3CfgItSortCmp, &enmOrder);
+
+        *phCfgIt = pIt;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+
+/**
+ * Destroys a given control flow graph iterator.
+ *
+ * @returns nothing.
+ * @param   hCfgIt              The control flow graph iterator handle.
+ */
+VMMR3DECL(void) DBGFR3CfgItDestroy(DBGFCFGIT hCfgIt)
+{
+    PDBGFCFGITINT pIt = hCfgIt;
+    AssertPtrReturnVoid(pIt);
+
+    for (unsigned i = 0; i < pIt->pCfg->cBbs; i++)
+        DBGFR3CfgBbRelease(pIt->apBb[i]);
+
+    DBGFR3CfgRelease(pIt->pCfg);
+    RTMemFree(pIt);
+}
+
+
+/**
+ * Returns the next basic block in the iterator or NULL if there is no
+ * basic block left.
+ *
+ * @returns Handle to the next basic block in the iterator or NULL if the end
+ *          was reached.
+ * @param   hCfgIt              The iterator handle.
+ *
+ * @note If a valid handle is returned it must be release with DBGFR3CfgBbRelease()
+ *       when not required anymore.
+ */
+VMMR3DECL(DBGFCFGBB) DBGFR3CfgItNext(DBGFCFGIT hCfgIt)
+{
+    PDBGFCFGITINT pIt = hCfgIt;
+    AssertPtrReturn(pIt, NULL);
+
+    PDBGFCFGBBINT pCfgBb = NULL;
+    if (pIt->idxBbNext < pIt->pCfg->cBbs)
+    {
+        pCfgBb = pIt->apBb[pIt->idxBbNext++];
+        DBGFR3CfgBbRetain(pCfgBb);
+    }
+
+    return pCfgBb;
+}
+
+
+/**
+ * Resets the given iterator to the beginning.
+ *
+ * @returns VBox status code.
+ * @param   hCfgIt              The iterator handle.
+ */
+VMMR3DECL(int) DBGFR3CfgItReset(DBGFCFGIT hCfgIt)
+{
+    PDBGFCFGITINT pIt = hCfgIt;
+    AssertPtrReturn(pIt, VERR_INVALID_HANDLE);
+
+    pIt->idxBbNext = 0;
+    return VINF_SUCCESS;
+}

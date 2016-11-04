@@ -133,18 +133,27 @@ EXPORTS
     DBGFR3CfgRetain
     DBGFR3CfgRelease
     DBGFR3CfgQueryStartBb
+    DBGFR3CfgQueryBbByAddress
+    DBGFR3CfgGetBbCount
     DBGFR3CfgDump
     DBGFR3CfgBbRetain
     DBGFR3CfgBbRelease
     DBGFR3CfgBbGetStartAddress
     DBGFR3CfgBbGetEndAddress
+    DBGFR3CfgBbGetBranchAddress
+    DBGFR3CfgBbGetFollowingAddress
     DBGFR3CfgBbGetType
     DBGFR3CfgBbGetInstrCount
     DBGFR3CfgBbGetFlags
+    DBGFR3CfgBbQueryError
     DBGFR3CfgBbQueryInstr
     DBGFR3CfgBbQuerySuccessors
     DBGFR3CfgBbGetRefBbCount
     DBGFR3CfgBbGetRefBb
+    DBGFR3CfgItCreate
+    DBGFR3CfgItDestroy
+    DBGFR3CfgItNext
+    DBGFR3CfgItReset
     DBGFR3PlugInLoad
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll
