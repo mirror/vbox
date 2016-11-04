@@ -129,30 +129,30 @@ EXPORTS
     DBGFR3AsGetConfig
     DBGFR3CpuGetMode
     DBGFR3AddrFromSelOff
-    DBGFR3CfgCreate
-    DBGFR3CfgRetain
-    DBGFR3CfgRelease
-    DBGFR3CfgQueryStartBb
-    DBGFR3CfgQueryBbByAddress
-    DBGFR3CfgGetBbCount
-    DBGFR3CfgBbRetain
-    DBGFR3CfgBbRelease
-    DBGFR3CfgBbGetStartAddress
-    DBGFR3CfgBbGetEndAddress
-    DBGFR3CfgBbGetBranchAddress
-    DBGFR3CfgBbGetFollowingAddress
-    DBGFR3CfgBbGetType
-    DBGFR3CfgBbGetInstrCount
-    DBGFR3CfgBbGetFlags
-    DBGFR3CfgBbQueryError
-    DBGFR3CfgBbQueryInstr
-    DBGFR3CfgBbQuerySuccessors
-    DBGFR3CfgBbGetRefBbCount
-    DBGFR3CfgBbGetRefBb
-    DBGFR3CfgItCreate
-    DBGFR3CfgItDestroy
-    DBGFR3CfgItNext
-    DBGFR3CfgItReset
+    DBGFR3FlowCreate
+    DBGFR3FlowRetain
+    DBGFR3FlowRelease
+    DBGFR3FlowQueryStartBb
+    DBGFR3FlowQueryBbByAddress
+    DBGFR3FlowGetBbCount
+    DBGFR3FlowBbRetain
+    DBGFR3FlowBbRelease
+    DBGFR3FlowBbGetStartAddress
+    DBGFR3FlowBbGetEndAddress
+    DBGFR3FlowBbGetBranchAddress
+    DBGFR3FlowBbGetFollowingAddress
+    DBGFR3FlowBbGetType
+    DBGFR3FlowBbGetInstrCount
+    DBGFR3FlowBbGetFlags
+    DBGFR3FlowBbQueryError
+    DBGFR3FlowBbQueryInstr
+    DBGFR3FlowBbQuerySuccessors
+    DBGFR3FlowBbGetRefBbCount
+    DBGFR3FlowBbGetRefBb
+    DBGFR3FlowItCreate
+    DBGFR3FlowItDestroy
+    DBGFR3FlowItNext
+    DBGFR3FlowItReset
     DBGFR3PlugInLoad
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll
