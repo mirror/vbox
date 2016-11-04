@@ -1461,7 +1461,7 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbTo
 
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
 {
-    if (pThis->cStreamsActive == 0) /* Only start the timer if there are no active streams. */
+    if (pThis->cStreamsActive == 0) /* Only start the timer if there at least is one active streams. */
         return;
 
     if (!pThis->pTimer)
@@ -1517,7 +1517,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
         pThis->uTimerTS = cTicksNow;
 
         /* Flag indicating whether to kick the timer again for the next DMA transfer or sink processing. */
-        bool fDoNextTransfer = false;
+        bool fKickTimer = false;
 
         uint32_t cbToProcess;
 
@@ -1529,7 +1529,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
                 rc = ichac97TransferAudio(pThis, &pThis->StreamLineIn, cbToProcess, NULL /* pcbProcessed */);
 
             if (AudioMixerSinkGetStatus(pThis->pSinkLineIn) & AUDMIXSINK_STS_DIRTY)
-                fDoNextTransfer = true;
+                fKickTimer = true;
         }
 
         rc = AudioMixerSinkUpdate(pThis->pSinkMicIn);
@@ -1540,7 +1540,7 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
                 rc = ichac97TransferAudio(pThis, &pThis->StreamMicIn, cbToProcess, NULL /* pcbProcessed */);
 
             if (AudioMixerSinkGetStatus(pThis->pSinkMicIn) & AUDMIXSINK_STS_DIRTY)
-                fDoNextTransfer = true;
+                fKickTimer = true;
         }
 
         rc = AudioMixerSinkUpdate(pThis->pSinkOut);
@@ -1551,10 +1551,10 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
                 rc = ichac97TransferAudio(pThis, &pThis->StreamOut, cbToProcess, NULL /* pcbProcessed */);
 
             if (AudioMixerSinkGetStatus(pThis->pSinkOut) & AUDMIXSINK_STS_DIRTY)
-                fDoNextTransfer = true;
+                fKickTimer = true;
         }
 
-        if (fDoNextTransfer)
+        if (fKickTimer)
         {
             /* Kick the timer again. */
             uint64_t cTicks = pThis->cTimerTicks;
@@ -3009,7 +3009,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = RTCritSectInit(&pThis->csTimer);
         if (RT_SUCCESS(rc))
         {
-            /* Start the emulation timer. */
+            /* Create the emulation timer. */
             rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ichac97Timer, pThis,
                                         TMTIMER_FLAGS_NO_CRIT_SECT, "DevIchAc97", &pThis->pTimer);
             AssertRCReturn(rc, rc);
