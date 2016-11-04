@@ -397,6 +397,14 @@ VMMR3DECL(int) DBGFR3CfgQueryStartBb(DBGFCFG hCfg, PDBGFCFGBB phCfgBb)
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3CfgQueryBbByAddress(DBGFCFG hCfg, PDBGFADDRESS pAddr, PDBGFCFGBB phCfgBb)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(uint32_t) DBGFR3CfgGetBbCount(DBGFCFG hCfg)
+{
+    return 0;
+}
 VMMR3DECL(int) DBGFR3CfgDump(DBGFCFG hCfg, PFNDBGFR3CFGDUMP pfnDump, void *pvUser)
 {
     return VERR_INTERNAL_ERROR;
@@ -417,6 +425,14 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetEndAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS 
 {
     return NULL;
 }
+VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetBranchAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrTarget)
+{
+    return NULL;
+}
+VMMR3DECL(PDBGFADDRESS) DBGFR3CfgBbGetFollowingAddress(DBGFCFGBB hCfgBb, PDBGFADDRESS pAddrFollow)
+{
+    return NULL;
+}
 VMMR3DECL(DBGFCFGBBENDTYPE) DBGFR3CfgBbGetType(DBGFCFGBB hCfgBb)
 {
     return DBGFCFGBBENDTYPE_INVALID;
@@ -429,12 +445,17 @@ VMMR3DECL(uint32_t) DBGFR3CfgBbGetFlags(DBGFCFGBB hCfgBb)
 {
     return 0;
 }
-VMMR3DECL(int) DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
-                                     uint32_t *pcbInstr, char *pszOutput, uint32_t cbOutput)
+VMMR3DECL(int) DBGFR3CfgBbQueryError(DBGFCFGBB hCfgBb, const char **ppszErr)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbSucc, uint32_t cSucc)
+VMMR3DECL(int) DBGFR3CfgBbQueryInstr(DBGFCFGBB hCfgBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
+                                     uint32_t *pcbInstr, const char **ppszInstr)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int) DBGFR3CfgBbQuerySuccessors(DBGFCFGBB hCfgBb, PDBGFCFGBB phCfgBbFollow,
+                                          PDBGFCFGBB phCfgBbTarget)
 {
     return VERR_INTERNAL_ERROR;
 }
@@ -443,6 +464,21 @@ VMMR3DECL(uint32_t) DBGFR3CfgBbGetRefBbCount(DBGFCFGBB hCfgBb)
     return 0;
 }
 VMMR3DECL(int) DBGFR3CfgBbGetRefBb(DBGFCFGBB hCfgBb, PDBGFCFGBB pahCfgBbRef, uint32_t cRef)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int) DBGFR3CfgItCreate(DBGFCFG hCfg, DBGFCFGITORDER enmOrder, PDBGFCFGIT phCfgIt)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(void) DBGFR3CfgItDestroy(DBGFCFGIT hCfgIt)
+{
+}
+VMMR3DECL(DBGFCFGBB) DBGFR3CfgItNext(DBGFCFGIT hCfgIt)
+{
+    return NULL;
+}
+VMMR3DECL(int) DBGFR3CfgItReset(DBGFCFGIT hCfgIt)
 {
     return VERR_INTERNAL_ERROR;
 }
