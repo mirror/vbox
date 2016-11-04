@@ -1836,16 +1836,12 @@ static int hdaStreamSetActive(PHDASTATE pThis, PHDASTREAM pStream, bool fActive)
     /* Second, see if we need to start or stop the timer. */
     if (!fActive)
     {
-        if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
-            pThis->cStreamsActive--;
-
 # ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStop(pThis);
 # endif
     }
     else
     {
-        pThis->cStreamsActive++;
 # ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStart(pThis);
 # endif
@@ -4069,38 +4065,51 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 #ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
 static void hdaTimerMaybeStart(PHDASTATE pThis)
 {
-    if (pThis->cStreamsActive == 0) /* Only start the timer if there at least is one active streams. */
-        return;
-
-    if (!pThis->pTimer)
-        return;
-
     LogFlowFuncEnter();
 
-    LogRel2(("HDA: Starting transfers\n"));
-
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, true);
-
-    /* Update current time timestamp. */
-    pThis->uTimerTS = TMTimerGet(pThis->pTimer);
-
-    /* Start transfers. */
-    hdaDoTransfers(pThis);
-}
-
-static void hdaTimerMaybeStop(PHDASTATE pThis)
-{
-    if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
-        return;
-
     if (!pThis->pTimer)
         return;
+
+    pThis->cStreamsActive++;
+
+    /* Only start the timer at the first active stream. */
+    if (pThis->cStreamsActive == 1)
+    {
+        LogRel2(("HDA: Starting transfers\n"));
+
+        /* Set timer flag. */
+        ASMAtomicXchgBool(&pThis->fTimerActive, true);
+
+        /* Update current time timestamp. */
+        pThis->uTimerTS = TMTimerGet(pThis->pTimer);
+
+        /* Start transfers. */
+        hdaDoTransfers(pThis);
+    }
+}
+
+static void hdaTimerStop(PHDASTATE pThis)
+{
+    LogFlowFuncEnter();
 
     LogRel2(("HDA: Stopping transfers\n"));
 
     /* Set timer flag. */
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
+}
+
+static void hdaTimerMaybeStop(PHDASTATE pThis)
+{
+    LogFlowFuncEnter();
+
+    if (!pThis->pTimer)
+        return;
+
+    if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
+        pThis->cStreamsActive--;
+
+    if (pThis->cStreamsActive == 0)
+        hdaTimerStop(pThis);
 }
 
 static void hdaDoTransfers(PHDASTATE pThis)
@@ -5523,7 +5532,9 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
     /*
      * Stop the timer, if any.
      */
-    hdaTimerMaybeStop(pThis);
+    hdaTimerStop(pThis);
+
+    pThis->cStreamsActive = 0;
 # endif
 
     /* See 6.2.1. */
@@ -5615,10 +5626,6 @@ static DECLCALLBACK(void) hdaReset(PPDMDEVINS pDevIns)
 
     /* Emulation of codec "wake up" (HDA spec 5.5.1 and 6.5). */
     HDA_REG(pThis, STATESTS) = 0x1;
-
-# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
-    hdaTimerMaybeStart(pThis);
-# endif
 
     LogFlowFuncLeave();
     LogRel(("HDA: Reset\n"));
