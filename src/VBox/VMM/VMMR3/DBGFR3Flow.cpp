@@ -146,7 +146,7 @@ typedef struct DBGFFLOWBBINT
      * if we can't infer the jump target (jmp *eax for example). */
     DBGFADDRESS              AddrTarget;
     /** The indirect branch table identified for indirect branches. */
-    PDBGFFLOWBRANCHTBLINT       pFlowBranchTbl;
+    PDBGFFLOWBRANCHTBLINT    pFlowBranchTbl;
     /** Last status error code if DBGF_FLOW_BB_F_INCOMPLETE_ERR is set. */
     int                      rcError;
     /** Error message if DBGF_FLOW_BB_F_INCOMPLETE_ERR is set. */
@@ -722,7 +722,7 @@ static CPUMMODE dbgfR3FlowGetDisasCpuMode(PUVM pUVM, VMCPUID idCpu, uint32_t fFl
         enmMode = CPUMMODE_REAL;
     else if (fDisasMode == DBGF_DISAS_FLAGS_32BIT_MODE)
         enmMode = CPUMMODE_PROTECTED;
-    else if (fDisasMode == DBGF_DISAS_FLAGS_32BIT_MODE)
+    else if (fDisasMode == DBGF_DISAS_FLAGS_64BIT_MODE)
         enmMode = CPUMMODE_LONG;
     else
         AssertFailed();
@@ -801,7 +801,7 @@ static bool dbgfR3FlowSearchMovWithConstantPtrSizeBackwards(PDBGFFLOWBBINT pFlow
  * Verifies the given branch table candidate and adds it to the control flow graph on success.
  *
  * @returns VBox status code.
- * @param   pThis               The flow control graph.
+ * @param   pThis               The flow control graph.
  * @param   pFlowBb             The basic block causing the indirect branch.
  * @param   pAddrBranchTbl      Address of the branch table location.
  * @param   idxGenRegBase       The general register holding the base address.
@@ -889,7 +889,7 @@ static int dbgfR3FlowBranchTblVerifyAdd(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlow
  * Checks whether the location for the branch target candidate contains a valid code address.
  *
  * @returns VBox status code.
- * @param   pThis               The flow control graph.
+ * @param   pThis               The flow control graph.
  * @param   pFlowBb             The basic block causing the indirect branch.
  * @param   pAddrBranchTgt      Address of the branch target location.
  * @param   idxGenRegBase       The general register holding the address of the location.
@@ -945,7 +945,7 @@ static int dbgfR3FlowCheckBranchTargetLocation(PDBGFFLOWINT pThis, PDBGFFLOWBBIN
  * Tries to resolve the indirect branch.
  *
  * @returns VBox status code.
- * @param   pThis               The flow control graph.
+ * @param   pThis               The flow control graph.
  * @param   pFlowBb             The basic block causing the indirect branch.
  * @param   pUVM                The user mode VM handle.
  * @param   idCpu               CPU id for disassembling.
@@ -1030,7 +1030,7 @@ static int dbgfR3FlowTryResolveIndirectBranch(PDBGFFLOWINT pThis, PDBGFFLOWBBINT
  * Tries to resolve the indirect branch.
  *
  * @returns VBox status code.
- * @param   pThis               The flow control graph.
+ * @param   pThis               The flow control graph.
  * @param   pFlowBb             The basic block causing the indirect branch.
  * @param   pUVM                The user mode VM handle.
  * @param   idCpu               CPU id for disassembling.
