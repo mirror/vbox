@@ -1523,6 +1523,21 @@ VMMR3DECL(uint32_t) DBGFR3FlowGetBbCount(DBGFFLOW hFlow)
 
 
 /**
+ * Returns the number of branch tables inside the control flow graph.
+ *
+ * @returns Number of basic blocks.
+ * @param   hFlow                The control flow graph handle.
+ */
+VMMR3DECL(uint32_t) DBGFR3FlowGetBranchTblCount(DBGFFLOW hFlow)
+{
+    PDBGFFLOWINT pThis = hFlow;
+    AssertPtrReturn(pThis, 0);
+
+    return pThis->cBranchTbls;
+}
+
+
+/**
  * Retains the basic block handle.
  *
  * @returns Current reference count.
@@ -1595,11 +1610,13 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetEndAddress(DBGFFLOWBB hFlowBb, PDBGFADDRE
  * Returns the address the last instruction in the basic block branches to.
  *
  * @returns Pointer to DBGF adress containing the branch address of the basic block.
- * @param   hFlowBb              The basic block handle.
+ * @param   hFlowBb             The basic block handle.
  * @param   pAddrTarget         Where to store the branch address of the basic block.
  *
  * @note This is only valid for unconditional or conditional branches and will assert
  *       for every other basic block type.
+ * @note For indirect unconditional branches using a branch table this will return the start address
+ *       of the branch table. 
  */
 VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetBranchAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrTarget)
 {
@@ -1607,10 +1624,15 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetBranchAddress(DBGFFLOWBB hFlowBb, PDBGFAD
     AssertPtrReturn(pFlowBb, NULL);
     AssertPtrReturn(pAddrTarget, NULL);
     AssertReturn(   pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_UNCOND_JMP
-                 || pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_COND,
+                 || pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_COND
+                 || pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP,
                  NULL);
 
-    *pAddrTarget = pFlowBb->AddrTarget;
+    if (   pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP
+        && pFlowBb->pFlowBranchTbl)
+        *pAddrTarget = pFlowBb->pFlowBranchTbl->AddrStart;
+    else
+        *pAddrTarget = pFlowBb->AddrTarget;
     return pAddrTarget;
 }
 
@@ -1918,6 +1940,26 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBranchTblGetStartAddress(DBGFFLOWBRANCHTBL hFl
 
     *pAddrStart = pFlowBranchTbl->AddrStart;
     return pAddrStart;
+}
+
+
+/**
+ * Returns one address in the branch table at the given slot index.
+ *
+ * @return Pointer to the address at the given slot in the given branch table.
+ * @param  hFlowBranchTbl       The branch table handle.
+ * @param  idxSlot              The slot the address should be returned from.
+ * @param  pAddrSlot            Where to store the address.
+ */
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBranchTblGetAddrAtSlot(DBGFFLOWBRANCHTBL hFlowBranchTbl, uint32_t idxSlot, PDBGFADDRESS pAddrSlot)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    AssertPtrReturn(pFlowBranchTbl, NULL);
+    AssertPtrReturn(pAddrSlot, NULL);
+    AssertReturn(idxSlot < pFlowBranchTbl->cSlots, NULL);
+
+    *pAddrSlot = pFlowBranchTbl->aAddresses[idxSlot];
+    return pAddrSlot;
 }
 
 

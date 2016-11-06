@@ -156,6 +156,7 @@ EXPORTS
     DBGFR3FlowBranchTblRelease
     DBGFR3FlowBranchTblGetSlots
     DBGFR3FlowBranchTblGetStartAddress
+    DBGFR3FlowBranchTblGetAddrAtSlot
     DBGFR3FlowBranchTblQueryAddresses
     DBGFR3FlowItCreate
     DBGFR3FlowItDestroy

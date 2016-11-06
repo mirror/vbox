@@ -2614,6 +2614,7 @@ VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblRetain(DBGFFLOWBRANCHTBL hFlowBr
 VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblRelease(DBGFFLOWBRANCHTBL hFlowBranchTbl);
 VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblGetSlots(DBGFFLOWBRANCHTBL hFlowBranchTbl);
 VMMR3DECL(PDBGFADDRESS)      DBGFR3FlowBranchTblGetStartAddress(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS pAddrStart);
+VMMR3DECL(PDBGFADDRESS)      DBGFR3FlowBranchTblGetAddrAtSlot(DBGFFLOWBRANCHTBL hFlowBranchTbl, uint32_t idxSlot, PDBGFADDRESS pAddrSlot);
 VMMR3DECL(int)               DBGFR3FlowBranchTblQueryAddresses(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS paAddrs, uint32_t cAddrs);
 
 VMMR3DECL(int)               DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWIT phFlowIt);
