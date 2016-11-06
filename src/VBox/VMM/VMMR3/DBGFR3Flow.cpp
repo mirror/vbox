@@ -180,6 +180,21 @@ typedef struct DBGFFLOWITINT
 typedef DBGFFLOWITINT *PDBGFFLOWITINT;
 
 
+/**
+ * Control flow graph branch table iterator state.
+ */
+typedef struct DBGFFLOWBRANCHTBLITINT
+{
+    /** Pointer to the control flow graph (holding a reference). */
+    PDBGFFLOWINT             pFlow;
+    /** Next branch table to return. */
+    uint32_t                 idxTblNext;
+    /** Array of branch table pointers sorted by the specified order - variable in size. */
+    PDBGFFLOWBRANCHTBLINT    apBranchTbl[1];
+} DBGFFLOWBRANCHTBLITINT;
+/** Pointer to the internal control flow graph branch table iterator state. */
+typedef DBGFFLOWBRANCHTBLITINT *PDBGFFLOWBRANCHTBLITINT;
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -1963,9 +1978,9 @@ static DECLCALLBACK(int) dbgfR3FlowItSortCmp(void const *pvElement1, void const 
  * Creates a new iterator for the given control flow graph.
  *
  * @returns VBox status code.
- * @param   hFlow                The control flow graph handle.
+ * @param   hFlow               The control flow graph handle.
  * @param   enmOrder            The order in which the basic blocks are enumerated.
- * @param   phFlowIt             Where to store the handle to the iterator on success.
+ * @param   phFlowIt            Where to store the handle to the iterator on success.
  */
 VMMR3DECL(int) DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWIT phFlowIt)
 {
@@ -2062,5 +2077,142 @@ VMMR3DECL(int) DBGFR3FlowItReset(DBGFFLOWIT hFlowIt)
     AssertPtrReturn(pIt, VERR_INVALID_HANDLE);
 
     pIt->idxBbNext = 0;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSORTCMP}
+ */
+static DECLCALLBACK(int) dbgfR3FlowBranchTblItSortCmp(void const *pvElement1, void const *pvElement2, void *pvUser)
+{
+    PDBGFFLOWITORDER penmOrder = (PDBGFFLOWITORDER)pvUser;
+    PDBGFFLOWBRANCHTBLINT pTbl1 = *(PDBGFFLOWBRANCHTBLINT *)pvElement1;
+    PDBGFFLOWBRANCHTBLINT pTbl2 = *(PDBGFFLOWBRANCHTBLINT *)pvElement2;
+
+    if (dbgfR3FlowAddrEqual(&pTbl1->AddrStart, &pTbl2->AddrStart))
+        return 0;
+
+    if (*penmOrder == DBGFFLOWITORDER_BY_ADDR_LOWEST_FIRST)
+    {
+        if (dbgfR3FlowAddrLower(&pTbl1->AddrStart, &pTbl2->AddrStart))
+            return -1;
+        else
+            return 1;
+    }
+    else
+    {
+        if (dbgfR3FlowAddrLower(&pTbl1->AddrStart, &pTbl2->AddrStart))
+            return 1;
+        else
+            return -1;
+    }
+}
+
+
+/**
+ * Creates a new branch table iterator for the given control flow graph.
+ *
+ * @returns VBox status code.
+ * @param   hFlow               The control flow graph handle.
+ * @param   enmOrder            The order in which the basic blocks are enumerated.
+ * @param   phFlowBranchTblIt   Where to store the handle to the iterator on success.
+ */
+VMMR3DECL(int) DBGFR3FlowBranchTblItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder,
+                                           PDBGFFLOWBRANCHTBLIT phFlowBranchTblIt)
+{
+    int rc = VINF_SUCCESS;
+    PDBGFFLOWINT pFlow = hFlow;
+    AssertPtrReturn(pFlow, VERR_INVALID_POINTER);
+    AssertPtrReturn(phFlowBranchTblIt, VERR_INVALID_POINTER);
+    AssertReturn(enmOrder > DBGFFLOWITORDER_INVALID && enmOrder < DBGFFLOWITORDER_BREADTH_FIRST,
+                 VERR_INVALID_PARAMETER);
+    AssertReturn(enmOrder < DBGFFLOWITORDER_DEPTH_FRIST, VERR_NOT_SUPPORTED);
+
+    PDBGFFLOWBRANCHTBLITINT pIt = (PDBGFFLOWBRANCHTBLITINT)RTMemAllocZ(RT_OFFSETOF(DBGFFLOWBRANCHTBLITINT, apBranchTbl[pFlow->cBranchTbls]));
+    if (RT_LIKELY(pIt))
+    {
+        DBGFR3FlowRetain(hFlow);
+        pIt->pFlow      = pFlow;
+        pIt->idxTblNext = 0;
+        /* Fill the list and then sort. */
+        PDBGFFLOWBRANCHTBLINT pFlowBranchTbl;
+        uint32_t idxTbl = 0;
+        RTListForEach(&pFlow->LstBranchTbl, pFlowBranchTbl, DBGFFLOWBRANCHTBLINT, NdBranchTbl)
+        {
+            DBGFR3FlowBranchTblRetain(pFlowBranchTbl);
+            pIt->apBranchTbl[idxTbl++] = pFlowBranchTbl;
+        }
+
+        /* Sort the blocks by address. */
+        RTSortShell(&pIt->apBranchTbl[0], pFlow->cBranchTbls, sizeof(PDBGFFLOWBRANCHTBLINT), dbgfR3FlowBranchTblItSortCmp, &enmOrder);
+
+        *phFlowBranchTblIt = pIt;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+
+/**
+ * Destroys a given control flow graph branch table iterator.
+ *
+ * @returns nothing.
+ * @param   hFlowBranchTblIt              The control flow graph branch table iterator handle.
+ */
+VMMR3DECL(void) DBGFR3FlowBranchTblItDestroy(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+    PDBGFFLOWBRANCHTBLITINT pIt = hFlowBranchTblIt;
+    AssertPtrReturnVoid(pIt);
+
+    for (unsigned i = 0; i < pIt->pFlow->cBranchTbls; i++)
+        DBGFR3FlowBranchTblRelease(pIt->apBranchTbl[i]);
+
+    DBGFR3FlowRelease(pIt->pFlow);
+    RTMemFree(pIt);
+}
+
+
+/**
+ * Returns the next branch table in the iterator or NULL if there is no
+ * branch table left.
+ *
+ * @returns Handle to the next basic block in the iterator or NULL if the end
+ *          was reached.
+ * @param   hFlowBranchTblIt    The iterator handle.
+ *
+ * @note If a valid handle is returned it must be release with DBGFR3FlowBranchTblRelease()
+ *       when not required anymore.
+ */
+VMMR3DECL(DBGFFLOWBRANCHTBL) DBGFR3FlowBranchTblItNext(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+    PDBGFFLOWBRANCHTBLITINT pIt = hFlowBranchTblIt;
+    AssertPtrReturn(pIt, NULL);
+
+    PDBGFFLOWBRANCHTBLINT pTbl = NULL;
+    if (pIt->idxTblNext < pIt->pFlow->cBranchTbls)
+    {
+        pTbl = pIt->apBranchTbl[pIt->idxTblNext++];
+        DBGFR3FlowBranchTblRetain(pTbl);
+    }
+
+    return pTbl;
+}
+
+
+/**
+ * Resets the given iterator to the beginning.
+ *
+ * @returns VBox status code.
+ * @param   hFlowBranchTblIt    The iterator handle.
+ */
+VMMR3DECL(int) DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+    PDBGFFLOWBRANCHTBLITINT pIt = hFlowBranchTblIt;
+    AssertPtrReturn(pIt, VERR_INVALID_HANDLE);
+
+    pIt->idxTblNext = 0;
     return VINF_SUCCESS;
 }

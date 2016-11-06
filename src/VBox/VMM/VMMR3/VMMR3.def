@@ -161,6 +161,10 @@ EXPORTS
     DBGFR3FlowItDestroy
     DBGFR3FlowItNext
     DBGFR3FlowItReset
+    DBGFR3FlowBranchTblItCreate
+    DBGFR3FlowBranchTblItDestroy
+    DBGFR3FlowBranchTblItNext
+    DBGFR3FlowBranchTblItReset
     DBGFR3PlugInLoad
     DBGFR3PlugInUnload
     DBGFR3PlugInLoadAll

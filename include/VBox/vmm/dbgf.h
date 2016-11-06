@@ -2507,6 +2507,10 @@ typedef DBGFFLOWBRANCHTBL *PDBGFFLOWBRANCHTBL;
 typedef struct DBGFFLOWITINT *DBGFFLOWIT;
 /** Pointer to a control flow graph iterator. */
 typedef DBGFFLOWIT *PDBGFFLOWIT;
+/** A DBGF control flow graph branch table iterator. */
+typedef struct DBGFFLOWBRANCHTBLITINT *DBGFFLOWBRANCHTBLIT;
+/** Pointer to a control flow graph branch table iterator. */
+typedef DBGFFLOWBRANCHTBLIT *PDBGFFLOWBRANCHTBLIT;
 
 /** @name DBGFFLOWBB Flags.
  * @{ */
@@ -2603,7 +2607,6 @@ VMMR3DECL(int)               DBGFR3FlowBbQueryInstr(DBGFFLOWBB hFlowBb, uint32_t
                                                     uint32_t *pcbInstr, const char **ppszInstr);
 VMMR3DECL(int)               DBGFR3FlowBbQuerySuccessors(DBGFFLOWBB hFlowBb, PDBGFFLOWBB phFlowBbFollow,
                                                          PDBGFFLOWBB phFlowBbTarget);
-
 VMMR3DECL(uint32_t)          DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb);
 VMMR3DECL(int)               DBGFR3FlowBbGetRefBb(DBGFFLOWBB hFlowBb, PDBGFFLOWBB pahFlowBbRef, uint32_t cRef);
 
@@ -2617,6 +2620,11 @@ VMMR3DECL(int)               DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER 
 VMMR3DECL(void)              DBGFR3FlowItDestroy(DBGFFLOWIT hFlowIt);
 VMMR3DECL(DBGFFLOWBB)        DBGFR3FlowItNext(DBGFFLOWIT hFlowIt);
 VMMR3DECL(int)               DBGFR3FlowItReset(DBGFFLOWIT hFlowIt);
+
+VMMR3DECL(int)               DBGFR3FlowBranchTblItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWBRANCHTBLIT phFlowBranchTblIt);
+VMMR3DECL(void)              DBGFR3FlowBranchTblItDestroy(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt);
+VMMR3DECL(DBGFFLOWBRANCHTBL) DBGFR3FlowBranchTblItNext(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt);
+VMMR3DECL(int)               DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt);
 
 /** @} */
 

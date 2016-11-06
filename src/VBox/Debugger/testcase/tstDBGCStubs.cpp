@@ -510,6 +510,21 @@ VMMR3DECL(int) DBGFR3FlowItReset(DBGFFLOWIT hFlowIt)
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3FlowBranchTblItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWBRANCHTBLIT phFlowBranchTblIt)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(void) DBGFR3FlowBranchTblItDestroy(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+}
+VMMR3DECL(DBGFFLOWBRANCHTBL) DBGFR3FlowBranchTblItNext(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+    return NULL;
+}
+VMMR3DECL(int) DBGFR3FlowBranchTblItReset(DBGFFLOWBRANCHTBLIT hFlowBranchTblIt)
+{
+    return VERR_INTERNAL_ERROR;
+}
 
 #include <VBox/vmm/cfgm.h>
 VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
