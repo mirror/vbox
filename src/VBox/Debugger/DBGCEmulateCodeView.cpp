@@ -1641,15 +1641,18 @@ static int dbgcCmdUnassembleCfgDumpCalcDimensions(DBGFFLOWIT hFlowIt, DBGFFLOWBR
         hFlowBb = DBGFR3FlowItNext(hFlowIt);
     }
 
-    idx = 0;
-    DBGFFLOWBRANCHTBL hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
-    while (hFlowBranchTbl)
+    if (paDumpBranchTbl)
     {
-        paDumpBranchTbl[idx].hFlowBranchTbl = hFlowBranchTbl;
-        paDumpBranchTbl[idx].cchHeight      = DBGFR3FlowBranchTblGetSlots(hFlowBranchTbl) + 4; /* Spacing and border. */
-        paDumpBranchTbl[idx].cchWidth       = 25 + 4; /* Spacing and border. */
-        idx++;
-        hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
+        idx = 0;
+        DBGFFLOWBRANCHTBL hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
+        while (hFlowBranchTbl)
+        {
+            paDumpBranchTbl[idx].hFlowBranchTbl = hFlowBranchTbl;
+            paDumpBranchTbl[idx].cchHeight      = DBGFR3FlowBranchTblGetSlots(hFlowBranchTbl) + 4; /* Spacing and border. */
+            paDumpBranchTbl[idx].cchWidth       = 25 + 4; /* Spacing and border. */
+            idx++;
+            hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
+        }
     }
 
     return VINF_SUCCESS;
