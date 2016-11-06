@@ -737,6 +737,7 @@ static CPUMMODE dbgfR3FlowGetDisasCpuMode(PUVM pUVM, VMCPUID idCpu, uint32_t fFl
  * a pointer.
  *
  * @returns Flag whether a candidate was found.
+ * @param   pFlowBb             The basic block containing the indirect branch.
  * @param   idxRegTgt           The general register the mov targets.
  * @param   cbPtr               The pointer size to look for.
  * @param   pUVM                The user mode VM handle.
