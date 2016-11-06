@@ -134,7 +134,9 @@ EXPORTS
     DBGFR3FlowRelease
     DBGFR3FlowQueryStartBb
     DBGFR3FlowQueryBbByAddress
+    DBGFR3FlowQueryBranchTblByAddress
     DBGFR3FlowGetBbCount
+    DBGFR3FlowGetBranchTblCount
     DBGFR3FlowBbRetain
     DBGFR3FlowBbRelease
     DBGFR3FlowBbGetStartAddress
@@ -144,11 +146,17 @@ EXPORTS
     DBGFR3FlowBbGetType
     DBGFR3FlowBbGetInstrCount
     DBGFR3FlowBbGetFlags
+    DBGFR3FlowBbQueryBranchTbl
     DBGFR3FlowBbQueryError
     DBGFR3FlowBbQueryInstr
     DBGFR3FlowBbQuerySuccessors
     DBGFR3FlowBbGetRefBbCount
     DBGFR3FlowBbGetRefBb
+    DBGFR3FlowBranchTblRetain
+    DBGFR3FlowBranchTblRelease
+    DBGFR3FlowBranchTblGetSlots
+    DBGFR3FlowBranchTblGetStartAddress
+    DBGFR3FlowBranchTblQueryAddresses
     DBGFR3FlowItCreate
     DBGFR3FlowItDestroy
     DBGFR3FlowItNext

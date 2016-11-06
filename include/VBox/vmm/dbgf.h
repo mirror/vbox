@@ -2499,6 +2499,10 @@ typedef DBGFFLOW *PDBGFFLOW;
 typedef struct DBGFFLOWBBINT *DBGFFLOWBB;
 /** Pointer to a DBGF control flow graph basic block handle. */
 typedef DBGFFLOWBB *PDBGFFLOWBB;
+/** A DBGF control flow graph branch table handle. */
+typedef struct DBGFFLOWBRANCHTBLINT *DBGFFLOWBRANCHTBL;
+/** Pointer to a DBGF flow control graph branch table handle. */
+typedef DBGFFLOWBRANCHTBL *PDBGFFLOWBRANCHTBL;
 /** A DBGF control flow graph iterator. */
 typedef struct DBGFFLOWITINT *DBGFFLOWIT;
 /** Pointer to a control flow graph iterator. */
@@ -2512,6 +2516,17 @@ typedef DBGFFLOWIT *PDBGFFLOWIT;
 #define DBGF_FLOW_BB_F_EMPTY             RT_BIT_32(1)
 /** The basic block is not complete because an error happened during disassembly. */
 #define DBGF_FLOW_BB_F_INCOMPLETE_ERR    RT_BIT_32(2)
+/** The basic block is reached through a branch table. */
+#define DBGF_FLOW_BB_F_BRANCH_TABLE      RT_BIT_32(3)
+/** @} */
+
+/** @name Flags controlling the creating of a control flow graph.
+ * @{ */
+/** Default options. */
+#define DBGF_FLOW_CREATE_F_DEFAULT                       0
+/** Tries to resolve indirect branches, useful for code using
+ * jump tables generated for large switch statements by some compilers. */
+#define DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES RT_BIT_32(0)
 /** @} */
 
 /**
@@ -2531,8 +2546,10 @@ typedef enum DBGFFLOWBBENDTYPE
     /** Unconditional control flow change because the successor is referenced by multiple
      * basic blocks. - 1 successor. */
     DBGFFLOWBBENDTYPE_UNCOND,
-    /** Unconditional control flow change because of a jump instruction - 1 successor. */
+    /** Unconditional control flow change because of an direct branch - 1 successor. */
     DBGFFLOWBBENDTYPE_UNCOND_JMP,
+    /** Unconditional control flow change because of an indirect branch - n successors. */
+    DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP,
     /** Conditional control flow change - 2 successors. */
     DBGFFLOWBBENDTYPE_COND,
     /** 32bit hack. */
@@ -2557,17 +2574,20 @@ typedef enum DBGFFLOWITORDER
     /** Usual 32bit hack. */
     DBGFFLOWITORDER_32BIT_HACK = 0x7fffffff
 } DBGFFLOWITORDER;
-/** POinter to a iteration order enum. */
+/** Pointer to a iteration order enum. */
 typedef DBGFFLOWITORDER *PDBGFFLOWITORDER;
 
 
 VMMR3DECL(int)               DBGFR3FlowCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
-                                             uint32_t fFlags, PDBGFFLOW phFlow);
+                                              uint32_t fFlagsFlow, uint32_t fFlagsDisasm, PDBGFFLOW phFlow);
 VMMR3DECL(uint32_t)          DBGFR3FlowRetain(DBGFFLOW hFlow);
 VMMR3DECL(uint32_t)          DBGFR3FlowRelease(DBGFFLOW hFlow);
 VMMR3DECL(int)               DBGFR3FlowQueryStartBb(DBGFFLOW hFlow, PDBGFFLOWBB phFlowBb);
 VMMR3DECL(int)               DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBB phFlowBb);
+VMMR3DECL(int)               DBGFR3FlowQueryBranchTblByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBRANCHTBL phFlowBranchTbl);
 VMMR3DECL(uint32_t)          DBGFR3FlowGetBbCount(DBGFFLOW hFlow);
+VMMR3DECL(uint32_t)          DBGFR3FlowGetBranchTblCount(DBGFFLOW hFlow);
+
 VMMR3DECL(uint32_t)          DBGFR3FlowBbRetain(DBGFFLOWBB hFlowBb);
 VMMR3DECL(uint32_t)          DBGFR3FlowBbRelease(DBGFFLOWBB hFlowBb);
 VMMR3DECL(PDBGFADDRESS)      DBGFR3FlowBbGetStartAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrStart);
@@ -2577,13 +2597,22 @@ VMMR3DECL(PDBGFADDRESS)      DBGFR3FlowBbGetFollowingAddress(DBGFFLOWBB hFlowBb,
 VMMR3DECL(DBGFFLOWBBENDTYPE) DBGFR3FlowBbGetType(DBGFFLOWBB hFlowBb);
 VMMR3DECL(uint32_t)          DBGFR3FlowBbGetInstrCount(DBGFFLOWBB hFlowBb);
 VMMR3DECL(uint32_t)          DBGFR3FlowBbGetFlags(DBGFFLOWBB hFlowBb);
+VMMR3DECL(int)               DBGFR3FlowBbQueryBranchTbl(DBGFFLOWBB hFlowBb, PDBGFFLOWBRANCHTBL phBranchTbl);
 VMMR3DECL(int)               DBGFR3FlowBbQueryError(DBGFFLOWBB hFlowBb, const char **ppszErr);
 VMMR3DECL(int)               DBGFR3FlowBbQueryInstr(DBGFFLOWBB hFlowBb, uint32_t idxInstr, PDBGFADDRESS pAddrInstr,
                                                     uint32_t *pcbInstr, const char **ppszInstr);
 VMMR3DECL(int)               DBGFR3FlowBbQuerySuccessors(DBGFFLOWBB hFlowBb, PDBGFFLOWBB phFlowBbFollow,
                                                          PDBGFFLOWBB phFlowBbTarget);
+
 VMMR3DECL(uint32_t)          DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb);
 VMMR3DECL(int)               DBGFR3FlowBbGetRefBb(DBGFFLOWBB hFlowBb, PDBGFFLOWBB pahFlowBbRef, uint32_t cRef);
+
+VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblRetain(DBGFFLOWBRANCHTBL hFlowBranchTbl);
+VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblRelease(DBGFFLOWBRANCHTBL hFlowBranchTbl);
+VMMR3DECL(uint32_t)          DBGFR3FlowBranchTblGetSlots(DBGFFLOWBRANCHTBL hFlowBranchTbl);
+VMMR3DECL(PDBGFADDRESS)      DBGFR3FlowBranchTblGetStartAddress(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS pAddrStart);
+VMMR3DECL(int)               DBGFR3FlowBranchTblQueryAddresses(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS paAddrs, uint32_t cAddrs);
+
 VMMR3DECL(int)               DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBGFFLOWIT phFlowIt);
 VMMR3DECL(void)              DBGFR3FlowItDestroy(DBGFFLOWIT hFlowIt);
 VMMR3DECL(DBGFFLOWBB)        DBGFR3FlowItNext(DBGFFLOWIT hFlowIt);

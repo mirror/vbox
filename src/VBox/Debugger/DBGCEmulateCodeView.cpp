@@ -1635,6 +1635,7 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
                         else
                             cchRightExtra++;
                         break;
+                    case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
                     default:
                         AssertFailed();
                 }
@@ -1665,6 +1666,7 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
                         case DBGFFLOWBBENDTYPE_EXIT:
                         case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
                         case DBGFFLOWBBENDTYPE_UNCOND_JMP:
+                        case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
                             break;
                         case DBGFFLOWBBENDTYPE_UNCOND:
                             /* Draw the arrow down to the next block. */
@@ -1777,6 +1779,7 @@ static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP p
                             }
                             break;
                         }
+                        case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
                         default:
                             AssertFailed();
                     }
@@ -1941,7 +1944,8 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     }
 
     DBGFFLOW hCfg;
-    rc = DBGFR3FlowCreate(pUVM, pDbgc->idCpu, &CurAddr, 0 /*cbDisasmMax*/, fFlags, &hCfg);
+    rc = DBGFR3FlowCreate(pUVM, pDbgc->idCpu, &CurAddr, 0 /*cbDisasmMax*/,
+                          DBGF_FLOW_CREATE_F_DEFAULT, fFlags, &hCfg);
     if (RT_SUCCESS(rc))
     {
         /* Dump the graph. */

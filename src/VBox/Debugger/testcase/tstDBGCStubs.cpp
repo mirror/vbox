@@ -381,7 +381,7 @@ VMMR3DECL(int)  DBGFR3TypeValDumpEx(PUVM pUVM, PCDBGFADDRESS pAddress, const cha
 }
 
 VMMR3DECL(int) DBGFR3FlowCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
-                               uint32_t fFlags, PDBGFFLOW phFlow)
+                                uint32_t fFlagsFlow, uint32_t fFlagsDisasm, PDBGFFLOW phFlow)
 {
     return VERR_INTERNAL_ERROR;
 }
@@ -401,7 +401,15 @@ VMMR3DECL(int) DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PD
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3FlowQueryBranchTblByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBRANCHTBL phFlowBranchTbl)
+{
+    return VERR_INTERNAL_ERROR;
+}
 VMMR3DECL(uint32_t) DBGFR3FlowGetBbCount(DBGFFLOW hFlow)
+{
+    return 0;
+}
+VMMR3DECL(uint32_t) DBGFR3FlowGetBranchTblCount(DBGFFLOW hFlow)
 {
     return 0;
 }
@@ -441,6 +449,10 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetFlags(DBGFFLOWBB hFlowBb)
 {
     return 0;
 }
+VMMR3DECL(int) DBGFR3FlowBbQueryBranchTbl(DBGFFLOWBB hFlowBb, PDBGFFLOWBRANCHTBL phBranchTbl)
+{
+    return VERR_INTERNAL_ERROR;
+}
 VMMR3DECL(int) DBGFR3FlowBbQueryError(DBGFFLOWBB hFlowBb, const char **ppszErr)
 {
     return VERR_INTERNAL_ERROR;
@@ -460,6 +472,26 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb)
     return 0;
 }
 VMMR3DECL(int) DBGFR3FlowBbGetRefBb(DBGFFLOWBB hFlowBb, PDBGFFLOWBB pahFlowBbRef, uint32_t cRef)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblRetain(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    return 0;
+}
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblRelease(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    return 0;
+}
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblGetSlots(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    return 0;
+}
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBranchTblGetStartAddress(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS pAddrStart)
+{
+    return NULL;
+}
+VMMR3DECL(int) DBGFR3FlowBranchTblQueryAddresses(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS paAddrs, uint32_t cAddrs)
 {
     return VERR_INTERNAL_ERROR;
 }

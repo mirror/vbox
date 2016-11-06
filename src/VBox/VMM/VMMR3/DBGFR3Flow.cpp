@@ -62,10 +62,16 @@ typedef struct DBGFFLOWINT
     uint32_t volatile       cRefs;
     /** Internal reference counter for basic blocks. */
     uint32_t volatile       cRefsBb;
+    /** Flags during creation. */
+    uint32_t                fFlags;
     /** List of all basic blocks. */
     RTLISTANCHOR            LstFlowBb;
+    /** List of identified branch tables. */
+    RTLISTANCHOR            LstBranchTbl;
     /** Number of basic blocks in this control flow graph. */
     uint32_t                cBbs;
+    /** Number of branch tables in this control flow graph. */
+    uint32_t                cBranchTbls;
     /** The lowest addres of a basic block. */
     DBGFADDRESS             AddrLowest;
     /** The highest address of a basic block. */
@@ -91,6 +97,31 @@ typedef struct DBGFFLOWBBINSTR
 /** Pointer to an instruction record. */
 typedef DBGFFLOWBBINSTR *PDBGFFLOWBBINSTR;
 
+
+/**
+ * A branch table identified by the graph processor.
+ */
+typedef struct DBGFFLOWBRANCHTBLINT
+{
+    /** Node for the list of branch tables. */
+    RTLISTNODE              NdBranchTbl;
+    /** The owning control flow graph. */
+    PDBGFFLOWINT            pFlow;
+    /** Reference counter. */
+    uint32_t volatile       cRefs;
+    /** The general register index holding the bracnh table base. */
+    uint8_t                 idxGenRegBase;
+    /** Start address of the branch table. */
+    DBGFADDRESS             AddrStart;
+    /** Number of valid entries in the branch table. */
+    uint32_t                cSlots;
+    /** The addresses contained in the branch table - variable in size. */
+    DBGFADDRESS             aAddresses[1];
+} DBGFFLOWBRANCHTBLINT;
+/** Pointer to a branch table structure. */
+typedef DBGFFLOWBRANCHTBLINT *PDBGFFLOWBRANCHTBLINT;
+
+
 /**
  * Internal control flow graph basic block state.
  */
@@ -114,6 +145,8 @@ typedef struct DBGFFLOWBBINT
      * unconditional jumps (not ret, iret, etc.) except
      * if we can't infer the jump target (jmp *eax for example). */
     DBGFADDRESS              AddrTarget;
+    /** The indirect branch table identified for indirect branches. */
+    PDBGFFLOWBRANCHTBLINT       pFlowBranchTbl;
     /** Last status error code if DBGF_FLOW_BB_F_INCOMPLETE_ERR is set. */
     int                      rcError;
     /** Error message if DBGF_FLOW_BB_F_INCOMPLETE_ERR is set. */
@@ -129,6 +162,7 @@ typedef struct DBGFFLOWBBINT
 } DBGFFLOWBBINT;
 /** Pointer to an internal control flow graph basic block state. */
 typedef DBGFFLOWBBINT *PDBGFFLOWBBINT;
+
 
 /**
  * Control flow graph iterator state.
@@ -151,6 +185,74 @@ typedef DBGFFLOWITINT *PDBGFFLOWITINT;
 *********************************************************************************************************************************/
 
 static uint32_t dbgfR3FlowBbReleaseInt(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyFlow);
+static void dbgfR3FlowBranchTblDestroy(PDBGFFLOWBRANCHTBLINT pFlowBranchTbl);
+
+
+/**
+ * Checks whether both addresses are equal.
+ *
+ * @returns true if both addresses point to the same location, false otherwise.
+ * @param   pAddr1              First address.
+ * @param   pAddr2              Second address.
+ */
+static bool dbgfR3FlowAddrEqual(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+{
+    return    pAddr1->Sel == pAddr2->Sel
+           && pAddr1->off == pAddr2->off;
+}
+
+
+/**
+ * Checks whether the first given address is lower than the second one.
+ *
+ * @returns true if both addresses point to the same location, false otherwise.
+ * @param   pAddr1              First address.
+ * @param   pAddr2              Second address.
+ */
+static bool dbgfR3FlowAddrLower(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+{
+    return    pAddr1->Sel == pAddr2->Sel
+           && pAddr1->off < pAddr2->off;
+}
+
+
+/**
+ * Checks whether the given basic block and address intersect.
+ *
+ * @returns true if they intersect, false otherwise.
+ * @param   pFlowBb             The basic block to check.
+ * @param   pAddr               The address to check for.
+ */
+static bool dbgfR3FlowAddrIntersect(PDBGFFLOWBBINT pFlowBb, PDBGFADDRESS pAddr)
+{
+    return    (pFlowBb->AddrStart.Sel == pAddr->Sel)
+           && (pFlowBb->AddrStart.off <= pAddr->off)
+           && (pFlowBb->AddrEnd.off >= pAddr->off);
+}
+
+
+/**
+ * Returns the distance of the two given addresses.
+ *
+ * @returns Distance of the addresses.
+ * @param   pAddr1              The first address.
+ * @param   pAddr2              The second address.
+ */
+static RTGCUINTPTR dbgfR3FlowAddrGetDistance(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+{
+    if (pAddr1->Sel == pAddr2->Sel)
+    {
+        if (pAddr1->off >= pAddr2->off)
+            return pAddr1->off - pAddr2->off;
+        else
+            return pAddr2->off - pAddr1->off;
+    }
+    else
+        AssertFailed();
+
+    return 0;
+}
+
 
 /**
  * Creates a new basic block.
@@ -158,28 +260,57 @@ static uint32_t dbgfR3FlowBbReleaseInt(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyF
  * @returns Pointer to the basic block on success or NULL if out of memory.
  * @param   pThis               The control flow graph.
  * @param   pAddrStart          The start of the basic block.
+ * @param   fFlowBbFlags        Additional flags for this bascic block.
  * @param   cInstrMax           Maximum number of instructions this block can hold initially.
  */
-static PDBGFFLOWBBINT dbgfR3FlowBbCreate(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrStart, uint32_t cInstrMax)
+static PDBGFFLOWBBINT dbgfR3FlowBbCreate(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrStart, uint32_t fFlowBbFlags,
+                                         uint32_t cInstrMax)
 {
     PDBGFFLOWBBINT pFlowBb = (PDBGFFLOWBBINT)RTMemAllocZ(RT_OFFSETOF(DBGFFLOWBBINT, aInstr[cInstrMax]));
     if (RT_LIKELY(pFlowBb))
     {
         RTListInit(&pFlowBb->NdFlowBb);
-        pFlowBb->cRefs      = 1;
-        pFlowBb->enmEndType = DBGFFLOWBBENDTYPE_INVALID;
-        pFlowBb->pFlow       = pThis;
-        pFlowBb->fFlags     = DBGF_FLOW_BB_F_EMPTY;
-        pFlowBb->AddrStart  = *pAddrStart;
-        pFlowBb->AddrEnd    = *pAddrStart;
-        pFlowBb->rcError    = VINF_SUCCESS;
-        pFlowBb->pszErr     = NULL;
-        pFlowBb->cInstr     = 0;
-        pFlowBb->cInstrMax  = cInstrMax;
+        pFlowBb->cRefs          = 1;
+        pFlowBb->enmEndType     = DBGFFLOWBBENDTYPE_INVALID;
+        pFlowBb->pFlow          = pThis;
+        pFlowBb->fFlags         = DBGF_FLOW_BB_F_EMPTY | fFlowBbFlags;
+        pFlowBb->AddrStart      = *pAddrStart;
+        pFlowBb->AddrEnd        = *pAddrStart;
+        pFlowBb->rcError        = VINF_SUCCESS;
+        pFlowBb->pszErr         = NULL;
+        pFlowBb->cInstr         = 0;
+        pFlowBb->cInstrMax      = cInstrMax;
+        pFlowBb->pFlowBranchTbl = NULL;
         ASMAtomicIncU32(&pThis->cRefsBb);
     }
 
     return pFlowBb;
+}
+
+
+/**
+ * Creates an empty branch table with the given size.
+ *
+ * @returns Pointer to the empty branch table on success or NULL if out of memory.
+ * @param   pThis               The control flow graph.
+ * @param   pAddrStart          The start of the branch table.
+ * @param   idxGenRegBase       The general register index holding the base address.
+ * @param   cSlots              Number of slots the table has.
+ */
+static PDBGFFLOWBRANCHTBLINT dbgfR3FlowBranchTblCreate(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrStart, uint8_t idxGenRegBase, uint32_t cSlots)
+{
+    PDBGFFLOWBRANCHTBLINT pBranchTbl = (PDBGFFLOWBRANCHTBLINT)RTMemAllocZ(RT_OFFSETOF(DBGFFLOWBRANCHTBLINT, aAddresses[cSlots]));
+    if (RT_LIKELY(pBranchTbl))
+    {
+        RTListInit(&pBranchTbl->NdBranchTbl);
+        pBranchTbl->pFlow         = pThis;
+        pBranchTbl->idxGenRegBase = idxGenRegBase;
+        pBranchTbl->AddrStart     = *pAddrStart;
+        pBranchTbl->cSlots        = cSlots;
+        pBranchTbl->cRefs         = 1;
+    }
+
+    return pBranchTbl;
 }
 
 
@@ -202,6 +333,14 @@ static void dbgfR3FlowDestroy(PDBGFFLOWINT pThis)
     Assert(!pThis->cRefs);
     if (!pThis->cRefsBb)
     {
+        /* Destroy the branch tables. */
+        PDBGFFLOWBRANCHTBLINT pTbl = NULL;
+        PDBGFFLOWBRANCHTBLINT pTblNext = NULL;
+        RTListForEachSafe(&pThis->LstBranchTbl, pTbl, pTblNext, DBGFFLOWBRANCHTBLINT, NdBranchTbl)
+        {
+            dbgfR3FlowBranchTblDestroy(pTbl);
+        }
+
         RTStrCacheDestroy(pThis->hStrCacheInstr);
         RTMemFree(pThis);
     }
@@ -233,6 +372,19 @@ static void dbgfR3FlowBbDestroy(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyFlow)
 
 
 /**
+ * Destroys a given branch table.
+ *
+ * @returns nothing.
+ * @param   pFlowBranchTbl      The flow branch table to destroy.
+ */
+static void dbgfR3FlowBranchTblDestroy(PDBGFFLOWBRANCHTBLINT pFlowBranchTbl)
+{
+    RTListNodeRemove(&pFlowBranchTbl->NdBranchTbl);
+    RTMemFree(pFlowBranchTbl);
+}
+
+
+/**
  * Internal basic block release worker.
  *
  * @returns New reference count of the released basic block, on 0
@@ -256,12 +408,26 @@ static uint32_t dbgfR3FlowBbReleaseInt(PDBGFFLOWBBINT pFlowBb, bool fMayDestroyF
  *
  * @returns nothing.
  * @param   pThis               The control flow graph to link into.
- * @param   pFlowBb              The basic block to link.
+ * @param   pFlowBb             The basic block to link.
  */
 DECLINLINE(void) dbgfR3FlowLink(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb)
 {
     RTListAppend(&pThis->LstFlowBb, &pFlowBb->NdFlowBb);
     pThis->cBbs++;
+}
+
+
+/**
+ * Links the given branch table into the control flow graph.
+ *
+ * @returns nothing.
+ * @param   pThis               The control flow graph to link into.
+ * @param   pBranchTbl          The branch table to link.
+ */
+DECLINLINE(void) dbgfR3FlowBranchTblLink(PDBGFFLOWINT pThis, PDBGFFLOWBRANCHTBLINT pBranchTbl)
+{
+    RTListAppend(&pThis->LstBranchTbl, &pBranchTbl->NdBranchTbl);
+    pThis->cBranchTbls++;
 }
 
 
@@ -285,103 +451,45 @@ DECLINLINE(PDBGFFLOWBBINT) dbgfR3FlowGetUnpopulatedBb(PDBGFFLOWINT pThis)
 
 
 /**
- * Resolves the jump target address if possible from the given instruction address
- * and instruction parameter.
+ * Returns the branch table with the given address if it exists.
  *
- * @returns VBox status code.
- * @param   pUVM                The usermode VM handle.
- * @param   idCpu               CPU id for resolving the address.
- * @param   pDisParam           The parmeter from the disassembler.
- * @param   pAddrInstr          The instruction address.
- * @param   cbInstr             Size of instruction in bytes.
- * @param   fRelJmp             Flag whether this is a reltive jump.
- * @param   pAddrJmpTarget      Where to store the address to the jump target on success.
+ * @returns Pointer to the branch table record or NULL if not found.
+ * @param   pThis               The control flow graph.
+ * @param   pAddrTbl            The branch table address.
  */
-static int dbgfR3FlowQueryJmpTarget(PUVM pUVM, VMCPUID idCpu, PDISOPPARAM pDisParam, PDBGFADDRESS pAddrInstr,
-                                   uint32_t cbInstr, bool fRelJmp, PDBGFADDRESS pAddrJmpTarget)
+DECLINLINE(PDBGFFLOWBRANCHTBLINT) dbgfR3FlowBranchTblFindByAddr(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrTbl)
 {
-    int rc = VINF_SUCCESS;
-
-    /* Relative jumps are always from the beginning of the next instruction. */
-    *pAddrJmpTarget = *pAddrInstr;
-    DBGFR3AddrAdd(pAddrJmpTarget, cbInstr);
-
-    if (fRelJmp)
+    PDBGFFLOWBRANCHTBLINT pTbl = NULL;
+    RTListForEach(&pThis->LstBranchTbl, pTbl, DBGFFLOWBRANCHTBLINT, NdBranchTbl)
     {
-        RTGCINTPTR iRel = 0;
-        if (pDisParam->fUse & DISUSE_IMMEDIATE8_REL)
-            iRel = (int8_t)pDisParam->uValue;
-        else if (pDisParam->fUse & DISUSE_IMMEDIATE16_REL)
-            iRel = (int16_t)pDisParam->uValue;
-        else if (pDisParam->fUse & DISUSE_IMMEDIATE32_REL)
-            iRel = (int32_t)pDisParam->uValue;
-        else if (pDisParam->fUse & DISUSE_IMMEDIATE64_REL)
-            iRel = (int64_t)pDisParam->uValue;
-        else
-            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
-
-        if (iRel < 0)
-            DBGFR3AddrSub(pAddrJmpTarget, -iRel);
-        else
-            DBGFR3AddrAdd(pAddrJmpTarget, iRel);
-    }
-    else
-    {
-        if (pDisParam->fUse & (DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64))
-        {
-            if (DBGFADDRESS_IS_FLAT(pAddrInstr))
-                DBGFR3AddrFromFlat(pUVM, pAddrJmpTarget, pDisParam->uValue);
-            else
-                DBGFR3AddrFromSelOff(pUVM, idCpu, pAddrJmpTarget, pAddrInstr->Sel, pDisParam->uValue);
-        }
-        else
-            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+        if (dbgfR3FlowAddrEqual(&pTbl->AddrStart, pAddrTbl))
+            return pTbl;
     }
 
-    return rc;
+    return NULL;
 }
 
 
 /**
- * Checks whether both addresses are equal.
+ * Sets the given error status for the basic block.
  *
- * @returns true if both addresses point to the same location, false otherwise.
- * @param   pAddr1              First address.
- * @param   pAddr2              Second address.
+ * @returns nothing.
+ * @param   pFlowBb              The basic block causing the error.
+ * @param   rcError             The error to set.
+ * @param   pszFmt              Format string of the error description.
+ * @param   ...                 Arguments for the format string.
  */
-static bool dbgfR3FlowBbAddrEqual(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
+static void dbgfR3FlowBbSetError(PDBGFFLOWBBINT pFlowBb, int rcError, const char *pszFmt, ...)
 {
-    return    pAddr1->Sel == pAddr2->Sel
-           && pAddr1->off == pAddr2->off;
-}
+    va_list va;
+    va_start(va, pszFmt);
 
-
-/**
- * Checks whether the first given address is lower than the second one.
- *
- * @returns true if both addresses point to the same location, false otherwise.
- * @param   pAddr1              First address.
- * @param   pAddr2              Second address.
- */
-static bool dbgfR3FlowBbAddrLower(PDBGFADDRESS pAddr1, PDBGFADDRESS pAddr2)
-{
-    return    pAddr1->Sel == pAddr2->Sel
-           && pAddr1->off < pAddr2->off;
-}
-
-
-/**
- * Checks whether the given basic block and address intersect.
- *
- * @returns true if they intersect, false otherwise.
- * @param   pFlowBb              The basic block to check.
- * @param   pAddr               The address to check for.
- */
-static bool dbgfR3FlowBbAddrIntersect(PDBGFFLOWBBINT pFlowBb, PDBGFADDRESS pAddr)
-{
-    return    (pFlowBb->AddrStart.Sel == pAddr->Sel)
-           && (pFlowBb->AddrStart.off <= pAddr->off)
-           && (pFlowBb->AddrEnd.off >= pAddr->off);
+    Assert(!(pFlowBb->fFlags & DBGF_FLOW_BB_F_INCOMPLETE_ERR));
+    pFlowBb->fFlags |= DBGF_FLOW_BB_F_INCOMPLETE_ERR;
+    pFlowBb->fFlags &= ~DBGF_FLOW_BB_F_EMPTY;
+    pFlowBb->rcError = rcError;
+    pFlowBb->pszErr = RTStrAPrintf2V(pszFmt, va);
+    va_end(va);
 }
 
 
@@ -398,11 +506,12 @@ static bool dbgfR3FlowHasBbWithStartAddr(PDBGFFLOWINT pThis, PDBGFADDRESS pAddr)
     PDBGFFLOWBBINT pFlowBb = NULL;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
-        if (dbgfR3FlowBbAddrEqual(&pFlowBb->AddrStart, pAddr))
+        if (dbgfR3FlowAddrEqual(&pFlowBb->AddrStart, pAddr))
             return true;
     }
     return false;
 }
+
 
 /**
  * Splits a given basic block into two at the given address.
@@ -420,12 +529,12 @@ static int dbgfR3FlowBbSplit(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFAD
     /* If the block is empty it will get populated later so there is nothing to split,
      * same if the start address equals. */
     if (   pFlowBb->fFlags & DBGF_FLOW_BB_F_EMPTY
-        || dbgfR3FlowBbAddrEqual(&pFlowBb->AddrStart, pAddr))
+        || dbgfR3FlowAddrEqual(&pFlowBb->AddrStart, pAddr))
         return VINF_SUCCESS;
 
     /* Find the instruction to split at. */
     for (idxInstrSplit = 1; idxInstrSplit < pFlowBb->cInstr; idxInstrSplit++)
-        if (dbgfR3FlowBbAddrEqual(&pFlowBb->aInstr[idxInstrSplit].AddrInstr, pAddr))
+        if (dbgfR3FlowAddrEqual(&pFlowBb->aInstr[idxInstrSplit].AddrInstr, pAddr))
             break;
 
     Assert(idxInstrSplit > 0);
@@ -439,15 +548,17 @@ static int dbgfR3FlowBbSplit(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFAD
         /* Create new basic block. */
         uint32_t cInstrNew = pFlowBb->cInstr - idxInstrSplit;
         PDBGFFLOWBBINT pFlowBbNew = dbgfR3FlowBbCreate(pThis, &pFlowBb->aInstr[idxInstrSplit].AddrInstr,
-                                                    cInstrNew);
+                                                       0 /*fFlowBbFlags*/, cInstrNew);
         if (pFlowBbNew)
         {
             /* Move instructions over. */
-            pFlowBbNew->cInstr     = cInstrNew;
-            pFlowBbNew->AddrEnd    = pFlowBb->AddrEnd;
-            pFlowBbNew->enmEndType = pFlowBb->enmEndType;
-            pFlowBbNew->AddrTarget = pFlowBb->AddrTarget;
-            pFlowBbNew->fFlags     = pFlowBb->fFlags & ~DBGF_FLOW_BB_F_ENTRY;
+            pFlowBbNew->cInstr         = cInstrNew;
+            pFlowBbNew->AddrEnd        = pFlowBb->AddrEnd;
+            pFlowBbNew->enmEndType     = pFlowBb->enmEndType;
+            pFlowBbNew->AddrTarget     = pFlowBb->AddrTarget;
+            pFlowBbNew->fFlags         = pFlowBb->fFlags & ~DBGF_FLOW_BB_F_ENTRY;
+            pFlowBbNew->pFlowBranchTbl = pFlowBb->pFlowBranchTbl;
+            pFlowBb->pFlowBranchTbl    = NULL;
 
             /* Move any error to the new basic block and clear them in the old basic block. */
             pFlowBbNew->rcError    = pFlowBb->rcError;
@@ -483,8 +594,11 @@ static int dbgfR3FlowBbSplit(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFAD
  * @returns VBox status code.
  * @param   pThis               The control flow graph.
  * @param   pAddrSucc           The guest address the new successor should start at.
+ * @param   fNewBbFlags         Flags for the new basic block.
+ * @param   pBranchTbl          Branch table candidate for this basic block.
  */
-static int dbgfR3FlowBbSuccessorAdd(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrSucc)
+static int dbgfR3FlowBbSuccessorAdd(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrSucc,
+                                    uint32_t fNewBbFlags, PDBGFFLOWBRANCHTBLINT pBranchTbl)
 {
     PDBGFFLOWBBINT pFlowBb = NULL;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
@@ -493,14 +607,17 @@ static int dbgfR3FlowBbSuccessorAdd(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrSucc)
          * The basic block must be split if it intersects with the given address
          * and the start address does not equal the given one.
          */
-        if (dbgfR3FlowBbAddrIntersect(pFlowBb, pAddrSucc))
+        if (dbgfR3FlowAddrIntersect(pFlowBb, pAddrSucc))
             return dbgfR3FlowBbSplit(pThis, pFlowBb, pAddrSucc);
     }
 
     int rc = VINF_SUCCESS;
-    pFlowBb = dbgfR3FlowBbCreate(pThis, pAddrSucc, 10);
+    pFlowBb = dbgfR3FlowBbCreate(pThis, pAddrSucc, fNewBbFlags, 10);
     if (pFlowBb)
+    {
+        pFlowBb->pFlowBranchTbl = pBranchTbl;
         dbgfR3FlowLink(pThis, pFlowBb);
+    }
     else
         rc = VERR_NO_MEMORY;
 
@@ -509,25 +626,468 @@ static int dbgfR3FlowBbSuccessorAdd(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrSucc)
 
 
 /**
- * Sets the given error status for the basic block.
+ * Returns whether the parameter indicates an indirect branch.
  *
- * @returns nothing.
- * @param   pFlowBb              The basic block causing the error.
- * @param   rcError             The error to set.
- * @param   pszFmt              Format string of the error description.
- * @param   ...                 Arguments for the format string.
+ * @returns Flag whether this is an indirect branch.
+ * @param   pDisParam           The parameter from the disassembler.
  */
-static void dbgfR3FlowBbSetError(PDBGFFLOWBBINT pFlowBb, int rcError, const char *pszFmt, ...)
+DECLINLINE(bool) dbgfR3FlowBranchTargetIsIndirect(PDISOPPARAM pDisParam)
 {
-    va_list va;
-    va_start(va, pszFmt);
+    bool fIndirect = true;
 
-    Assert(!(pFlowBb->fFlags & DBGF_FLOW_BB_F_INCOMPLETE_ERR));
-    pFlowBb->fFlags |= DBGF_FLOW_BB_F_INCOMPLETE_ERR;
-    pFlowBb->fFlags &= ~DBGF_FLOW_BB_F_EMPTY;
-    pFlowBb->rcError = rcError;
-    pFlowBb->pszErr = RTStrAPrintf2V(pszFmt, va);
-    va_end(va);
+    if (   pDisParam->fUse & (DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64)
+        || pDisParam->fUse & (DISUSE_IMMEDIATE8_REL | DISUSE_IMMEDIATE16_REL | DISUSE_IMMEDIATE32_REL | DISUSE_IMMEDIATE64_REL))
+        fIndirect = false;
+
+    return fIndirect;
+}
+
+
+/**
+ * Resolves the direct branch target address if possible from the given instruction address
+ * and instruction parameter.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The usermode VM handle.
+ * @param   idCpu               CPU id for resolving the address.
+ * @param   pDisParam           The parameter from the disassembler.
+ * @param   pAddrInstr          The instruction address.
+ * @param   cbInstr             Size of instruction in bytes.
+ * @param   fRelJmp             Flag whether this is a reltive jump.
+ * @param   pAddrJmpTarget      Where to store the address to the jump target on success.
+ */
+static int dbgfR3FlowQueryDirectBranchTarget(PUVM pUVM, VMCPUID idCpu, PDISOPPARAM pDisParam, PDBGFADDRESS pAddrInstr,
+                                             uint32_t cbInstr, bool fRelJmp, PDBGFADDRESS pAddrJmpTarget)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(!dbgfR3FlowBranchTargetIsIndirect(pDisParam));
+
+    /* Relative jumps are always from the beginning of the next instruction. */
+    *pAddrJmpTarget = *pAddrInstr;
+    DBGFR3AddrAdd(pAddrJmpTarget, cbInstr);
+
+    if (fRelJmp)
+    {
+        RTGCINTPTR iRel = 0;
+        if (pDisParam->fUse & DISUSE_IMMEDIATE8_REL)
+            iRel = (int8_t)pDisParam->uValue;
+        else if (pDisParam->fUse & DISUSE_IMMEDIATE16_REL)
+            iRel = (int16_t)pDisParam->uValue;
+        else if (pDisParam->fUse & DISUSE_IMMEDIATE32_REL)
+            iRel = (int32_t)pDisParam->uValue;
+        else if (pDisParam->fUse & DISUSE_IMMEDIATE64_REL)
+            iRel = (int64_t)pDisParam->uValue;
+        else
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+
+        if (iRel < 0)
+            DBGFR3AddrSub(pAddrJmpTarget, -iRel);
+        else
+            DBGFR3AddrAdd(pAddrJmpTarget, iRel);
+    }
+    else
+    {
+        if (pDisParam->fUse & (DISUSE_IMMEDIATE8 | DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64))
+        {
+            if (DBGFADDRESS_IS_FLAT(pAddrInstr))
+                DBGFR3AddrFromFlat(pUVM, pAddrJmpTarget, pDisParam->uValue);
+            else
+                DBGFR3AddrFromSelOff(pUVM, idCpu, pAddrJmpTarget, pAddrInstr->Sel, pDisParam->uValue);
+        }
+        else
+            AssertFailedStmt(rc = VERR_INVALID_STATE);
+    }
+
+    return rc;
+}
+
+
+/**
+ * Returns the CPU mode based on the given assembler flags.
+ *
+ * @returns CPU mode.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   fFlagsDisasm        The flags used for disassembling.
+ */
+static CPUMMODE dbgfR3FlowGetDisasCpuMode(PUVM pUVM, VMCPUID idCpu, uint32_t fFlagsDisasm)
+{
+    CPUMMODE enmMode = CPUMMODE_INVALID;
+    uint32_t fDisasMode = fFlagsDisasm & DBGF_DISAS_FLAGS_MODE_MASK;
+    if (fDisasMode == DBGF_DISAS_FLAGS_DEFAULT_MODE)
+        enmMode = DBGFR3CpuGetMode(pUVM, idCpu);
+    else if (   fDisasMode == DBGF_DISAS_FLAGS_16BIT_MODE
+             || fDisasMode == DBGF_DISAS_FLAGS_16BIT_REAL_MODE)
+        enmMode = CPUMMODE_REAL;
+    else if (fDisasMode == DBGF_DISAS_FLAGS_32BIT_MODE)
+        enmMode = CPUMMODE_PROTECTED;
+    else if (fDisasMode == DBGF_DISAS_FLAGS_32BIT_MODE)
+        enmMode = CPUMMODE_LONG;
+    else
+        AssertFailed();
+
+    return enmMode;
+}
+
+
+/**
+ * Searches backwards in the given basic block starting the given instruction index for
+ * a mov instruction with the given register as the target where the constant looks like
+ * a pointer.
+ *
+ * @returns Flag whether a candidate was found.
+ * @param   idxRegTgt           The general register the mov targets.
+ * @param   cbPtr               The pointer size to look for.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   fFlagsDisasm        The flags to use for disassembling.
+ * @param   pidxInstrStart      The instruction index to start searching for on input,
+ *                              The last instruction evaluated on output.
+ * @param   pAddrDest           Where to store the candidate address on success.
+ */
+static bool dbgfR3FlowSearchMovWithConstantPtrSizeBackwards(PDBGFFLOWBBINT pFlowBb, uint8_t idxRegTgt, uint32_t cbPtr,
+                                                            PUVM pUVM, VMCPUID idCpu, uint32_t fFlagsDisasm,
+                                                            uint32_t *pidxInstrStart, PDBGFADDRESS pAddrDest)
+{
+    bool fFound = false;
+    uint32_t idxInstrCur = *pidxInstrStart;
+    uint32_t cInstrCheck = idxInstrCur + 1;
+
+    for (;;)
+    {
+        /** @todo: Avoid to disassemble again. */
+        PDBGFFLOWBBINSTR pInstr = &pFlowBb->aInstr[idxInstrCur];
+        DBGFDISSTATE DisState;
+        char szOutput[_4K];
+
+        int rc = dbgfR3DisasInstrStateEx(pUVM, idCpu, &pInstr->AddrInstr, fFlagsDisasm,
+                                         &szOutput[0], sizeof(szOutput), &DisState);
+        if (RT_SUCCESS(rc))
+        {
+            if (   DisState.pCurInstr->uOpcode == OP_MOV
+                && (DisState.Param1.fUse & (DISUSE_REG_GEN16 | DISUSE_REG_GEN32 | DISUSE_REG_GEN64))
+                && DisState.Param1.Base.idxGenReg == idxRegTgt
+                /*&& DisState.Param1.cb == cbPtr*/
+                && DisState.Param2.cb == cbPtr
+                && (DisState.Param2.fUse & (DISUSE_IMMEDIATE16 | DISUSE_IMMEDIATE32 | DISUSE_IMMEDIATE64)))
+            {
+                /* Found possible candidate. */
+                fFound = true;
+                if (DBGFADDRESS_IS_FLAT(&pInstr->AddrInstr))
+                    DBGFR3AddrFromFlat(pUVM, pAddrDest, DisState.Param2.uValue);
+                else
+                    DBGFR3AddrFromSelOff(pUVM, idCpu, pAddrDest, pInstr->AddrInstr.Sel, DisState.Param2.uValue);
+                break;
+            }
+        }
+        else
+            break;
+
+        cInstrCheck--;
+        if (!cInstrCheck)
+            break;
+
+        idxInstrCur--;
+    }
+
+    *pidxInstrStart = idxInstrCur;
+    return fFound;
+}
+
+
+/**
+ * Verifies the given branch table candidate and adds it to the control flow graph on success.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flow control graph.
+ * @param   pFlowBb             The basic block causing the indirect branch.
+ * @param   pAddrBranchTbl      Address of the branch table location.
+ * @param   idxGenRegBase       The general register holding the base address.
+ * @param   cbPtr               Guest pointer size.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ *
+ * @todo Handle branch tables greater than 4KB (lazy coder).
+ */
+static int dbgfR3FlowBranchTblVerifyAdd(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFADDRESS pAddrBranchTbl,
+                                        uint8_t idxGenRegBase, uint32_t cbPtr, PUVM pUVM, VMCPUID idCpu)
+{
+    int rc = VINF_SUCCESS;
+    PDBGFFLOWBRANCHTBLINT pBranchTbl = dbgfR3FlowBranchTblFindByAddr(pThis, pAddrBranchTbl);
+
+    if (!pBranchTbl)
+    {
+        uint32_t cSlots = 0;
+        uint8_t abBuf[_4K];
+
+        rc = DBGFR3MemRead(pUVM, idCpu, pAddrBranchTbl, &abBuf[0], sizeof(abBuf));
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t *pbBuf = &abBuf[0];
+            while (pbBuf < &abBuf[0] + sizeof(abBuf))
+            {
+                DBGFADDRESS AddrDest;
+                RTGCUINTPTR GCPtr =   cbPtr == sizeof(uint64_t)
+                                    ? *(uint64_t *)pbBuf
+                                    : cbPtr == sizeof(uint32_t)
+                                    ? *(uint32_t *)pbBuf
+                                    : *(uint16_t *)pbBuf;
+                pbBuf += cbPtr;
+
+                if (DBGFADDRESS_IS_FLAT(pAddrBranchTbl))
+                    DBGFR3AddrFromFlat(pUVM, &AddrDest, GCPtr);
+                else
+                    DBGFR3AddrFromSelOff(pUVM, idCpu, &AddrDest, pAddrBranchTbl->Sel, GCPtr);
+
+                if (dbgfR3FlowAddrGetDistance(&AddrDest, &pFlowBb->AddrEnd) > _512K)
+                    break;
+
+                cSlots++;
+            }
+
+            /* If there are any slots use it. */
+            if (cSlots)
+            {
+                pBranchTbl = dbgfR3FlowBranchTblCreate(pThis, pAddrBranchTbl, idxGenRegBase, cSlots);
+                if (pBranchTbl)
+                {
+                    /* Get the addresses. */
+                    for (unsigned i = 0; i < cSlots && RT_SUCCESS(rc); i++)
+                    {
+                        RTGCUINTPTR GCPtr =   cbPtr == sizeof(uint64_t)
+                                            ? *(uint64_t *)&abBuf[i * cbPtr]
+                                            : cbPtr == sizeof(uint32_t)
+                                            ? *(uint32_t *)&abBuf[i * cbPtr]
+                                            : *(uint16_t *)&abBuf[i * cbPtr];
+
+                        if (DBGFADDRESS_IS_FLAT(pAddrBranchTbl))
+                            DBGFR3AddrFromFlat(pUVM, &pBranchTbl->aAddresses[i], GCPtr);
+                        else
+                            DBGFR3AddrFromSelOff(pUVM, idCpu, &pBranchTbl->aAddresses[i],
+                                                 pAddrBranchTbl->Sel, GCPtr);
+                        rc = dbgfR3FlowBbSuccessorAdd(pThis, &pBranchTbl->aAddresses[i], DBGF_FLOW_BB_F_BRANCH_TABLE,
+                                                      pBranchTbl);
+                    }
+                    dbgfR3FlowBranchTblLink(pThis, pBranchTbl);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+    }
+
+    if (pBranchTbl)
+        pFlowBb->pFlowBranchTbl = pBranchTbl;
+
+    return rc;
+}
+
+
+/**
+ * Checks whether the location for the branch target candidate contains a valid code address.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flow control graph.
+ * @param   pFlowBb             The basic block causing the indirect branch.
+ * @param   pAddrBranchTgt      Address of the branch target location.
+ * @param   idxGenRegBase       The general register holding the address of the location.
+ * @param   cbPtr               Guest pointer size.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   fBranchTbl          Flag whether this is a possible branch table containing multiple
+ *                              targets.
+ */
+static int dbgfR3FlowCheckBranchTargetLocation(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFADDRESS pAddrBranchTgt,
+                                               uint8_t idxGenRegBase, uint32_t cbPtr, PUVM pUVM, VMCPUID idCpu, bool fBranchTbl)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!fBranchTbl)
+    {
+        union { uint16_t u16Val; uint32_t u32Val; uint64_t u64Val; } uVal;
+        rc = DBGFR3MemRead(pUVM, idCpu, pAddrBranchTgt, &uVal, cbPtr);
+        if (RT_SUCCESS(rc))
+        {
+            DBGFADDRESS AddrTgt;
+            RTGCUINTPTR GCPtr =   cbPtr == sizeof(uint64_t)
+                                ? uVal.u64Val
+                                : cbPtr == sizeof(uint32_t)
+                                ? uVal.u32Val
+                                : uVal.u16Val;
+            if (DBGFADDRESS_IS_FLAT(pAddrBranchTgt))
+                DBGFR3AddrFromFlat(pUVM, &AddrTgt, GCPtr);
+            else
+                DBGFR3AddrFromSelOff(pUVM, idCpu, &AddrTgt, pAddrBranchTgt->Sel, GCPtr);
+
+            if (dbgfR3FlowAddrGetDistance(&AddrTgt, &pFlowBb->AddrEnd) <= _128K)
+            {
+                /* Finish the basic block. */
+                pFlowBb->AddrTarget = AddrTgt;
+                rc = dbgfR3FlowBbSuccessorAdd(pThis, &AddrTgt,
+                                              (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE),
+                                              pFlowBb->pFlowBranchTbl);
+            }
+            else
+                rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+        rc = dbgfR3FlowBranchTblVerifyAdd(pThis, pFlowBb, pAddrBranchTgt,
+                                          idxGenRegBase, cbPtr, pUVM, idCpu);
+
+    return rc;
+}
+
+
+/**
+ * Tries to resolve the indirect branch.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flow control graph.
+ * @param   pFlowBb             The basic block causing the indirect branch.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   pDisParam           The parameter from the disassembler.
+ * @param   fFlagsDisasm        Flags for the disassembler.
+ */
+static int dbgfR3FlowTryResolveIndirectBranch(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PUVM pUVM,
+                                              VMCPUID idCpu, PDISOPPARAM pDisParam, uint32_t fFlagsDisasm)
+{
+    Assert(dbgfR3FlowBranchTargetIsIndirect(pDisParam));
+
+    uint32_t cbPtr = 0;
+    CPUMMODE enmMode = dbgfR3FlowGetDisasCpuMode(pUVM, idCpu, fFlagsDisasm);
+
+    switch (enmMode)
+    {
+        case CPUMMODE_REAL:
+            cbPtr = sizeof(uint16_t);
+            break;
+        case CPUMMODE_PROTECTED:
+            cbPtr = sizeof(uint32_t);
+            break;
+        case CPUMMODE_LONG:
+            cbPtr = sizeof(uint64_t);
+            break;
+        default:
+            AssertMsgFailed(("Invalid CPU mode %u\n", enmMode));
+    }
+
+    if (pDisParam->fUse & DISUSE_BASE)
+    {
+        uint8_t idxRegBase = pDisParam->Base.idxGenReg;
+
+        /* Check that the used register size and the pointer size match. */
+        if (   ((pDisParam->fUse & DISUSE_REG_GEN16) && cbPtr == sizeof(uint16_t))
+            || ((pDisParam->fUse & DISUSE_REG_GEN32) && cbPtr == sizeof(uint32_t))
+            || ((pDisParam->fUse & DISUSE_REG_GEN64) && cbPtr == sizeof(uint64_t)))
+        {
+            /*
+             * Search all instructions backwards until a move to the used general register
+             * is detected with a constant using the pointer size.
+             */
+            uint32_t idxInstrStart = pFlowBb->cInstr - 1 - 1; /* Don't look at the branch. */
+            bool fCandidateFound = false;
+            bool fBranchTbl = RT_BOOL(pDisParam->fUse & DISUSE_INDEX);
+            DBGFADDRESS AddrBranchTgt;
+            do
+            {
+                fCandidateFound = dbgfR3FlowSearchMovWithConstantPtrSizeBackwards(pFlowBb, idxRegBase, cbPtr,
+                                                                                  pUVM, idCpu, fFlagsDisasm,
+                                                                                  &idxInstrStart, &AddrBranchTgt);
+                if (fCandidateFound)
+                {
+                    /* Check that the address is not too far away from the instruction address. */
+                    RTGCUINTPTR offPtr = dbgfR3FlowAddrGetDistance(&AddrBranchTgt, &pFlowBb->AddrEnd);
+                    if (offPtr <= 20 * _1M)
+                    {
+                        /* Read the content at the address and check that it is near this basic block too. */
+                        int rc = dbgfR3FlowCheckBranchTargetLocation(pThis, pFlowBb, &AddrBranchTgt, idxRegBase,
+                                                                     cbPtr, pUVM, idCpu, fBranchTbl);
+                        if (RT_SUCCESS(rc))
+                            break;
+                        fCandidateFound = false;
+                    }
+
+                    if (idxInstrStart > 0)
+                        idxInstrStart--;
+                }
+            } while (idxInstrStart > 0 && !fCandidateFound);
+        }
+        else
+            dbgfR3FlowBbSetError(pFlowBb, VERR_INVALID_STATE,
+                                 "The base register size and selected pointer size do not match (fUse=%#x cbPtr=%u)",
+                                 pDisParam->fUse, cbPtr);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Tries to resolve the indirect branch.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flow control graph.
+ * @param   pFlowBb             The basic block causing the indirect branch.
+ * @param   pUVM                The user mode VM handle.
+ * @param   idCpu               CPU id for disassembling.
+ * @param   pDisParam           The parameter from the disassembler.
+ * @param   fFlagsDisasm        Flags for the disassembler.
+ */
+static int dbgfR3FlowBbCheckBranchTblCandidate(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PUVM pUVM,
+                                               VMCPUID idCpu, PDISOPPARAM pDisParam, uint32_t fFlagsDisasm)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE && pFlowBb->pFlowBranchTbl);
+
+    uint32_t cbPtr = 0;
+    CPUMMODE enmMode = dbgfR3FlowGetDisasCpuMode(pUVM, idCpu, fFlagsDisasm);
+
+    switch (enmMode)
+    {
+        case CPUMMODE_REAL:
+            cbPtr = sizeof(uint16_t);
+            break;
+        case CPUMMODE_PROTECTED:
+            cbPtr = sizeof(uint32_t);
+            break;
+        case CPUMMODE_LONG:
+            cbPtr = sizeof(uint64_t);
+            break;
+        default:
+            AssertMsgFailed(("Invalid CPU mode %u\n", enmMode));
+    }
+
+    if (pDisParam->fUse & DISUSE_BASE)
+    {
+        uint8_t idxRegBase = pDisParam->Base.idxGenReg;
+
+        /* Check that the used register size and the pointer size match. */
+        if (   ((pDisParam->fUse & DISUSE_REG_GEN16) && cbPtr == sizeof(uint16_t))
+            || ((pDisParam->fUse & DISUSE_REG_GEN32) && cbPtr == sizeof(uint32_t))
+            || ((pDisParam->fUse & DISUSE_REG_GEN64) && cbPtr == sizeof(uint64_t)))
+        {
+            if (idxRegBase != pFlowBb->pFlowBranchTbl->idxGenRegBase)
+            {
+                /* Try to find the new branch table. */
+                pFlowBb->pFlowBranchTbl = NULL;
+                rc = dbgfR3FlowTryResolveIndirectBranch(pThis, pFlowBb, pUVM, idCpu, pDisParam, fFlagsDisasm);
+            }
+            /** @todo: else check that the base register is not modified in this basic block. */
+        }
+        else
+            dbgfR3FlowBbSetError(pFlowBb, VERR_INVALID_STATE,
+                                 "The base register size and selected pointer size do not match (fUse=%#x cbPtr=%u)",
+                                 pDisParam->fUse, cbPtr);
+    }
+    else
+        dbgfR3FlowBbSetError(pFlowBb, VERR_INVALID_STATE,
+                             "The instruction does not use a register");
+
+    return rc;
 }
 
 
@@ -538,7 +1098,7 @@ static void dbgfR3FlowBbSetError(PDBGFFLOWBBINT pFlowBb, int rcError, const char
  * @param   pUVM                The user mode VM handle.
  * @param   idCpu               CPU id for disassembling.
  * @param   pThis               The control flow graph to populate.
- * @param   pFlowBb              The basic block to fill.
+ * @param   pFlowBb             The basic block to fill.
  * @param   cbDisasmMax         The maximum amount to disassemble.
  * @param   fFlags              Combination of DBGF_DISAS_FLAGS_*.
  */
@@ -623,14 +1183,46 @@ static int dbgfR3FlowBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDB
                     else if (uOpc == OP_JMP)
                     {
                         Assert(DisState.pCurInstr->fOpType & DISOPTYPE_UNCOND_CONTROLFLOW);
-                        pFlowBb->enmEndType = DBGFFLOWBBENDTYPE_UNCOND_JMP;
 
-                        /* Create one new basic block with the jump target address. */
-                        rc = dbgfR3FlowQueryJmpTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr,
-                                                     RT_BOOL(DisState.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW),
-                                                     &pFlowBb->AddrTarget);
-                        if (RT_SUCCESS(rc))
-                            rc = dbgfR3FlowBbSuccessorAdd(pThis, &pFlowBb->AddrTarget);
+                        if (dbgfR3FlowBranchTargetIsIndirect(&DisState.Param1))
+                        {
+                            pFlowBb->enmEndType = DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP;
+
+                            if (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE)
+                            {
+                                Assert(pThis->fFlags & DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES);
+
+                                /*
+                                 * This basic block was already discovered by parsing a jump table and
+                                 * there should be a candidate for the branch table. Check whether it uses the
+                                 * same branch table.
+                                 */
+                                rc = dbgfR3FlowBbCheckBranchTblCandidate(pThis, pFlowBb, pUVM, idCpu,
+                                                                         &DisState.Param1, fFlags);
+                            }
+                            else
+                            {
+                                if (pThis->fFlags & DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES)
+                                    rc = dbgfR3FlowTryResolveIndirectBranch(pThis, pFlowBb, pUVM, idCpu,
+                                                                            &DisState.Param1, fFlags);
+                                else
+                                    dbgfR3FlowBbSetError(pFlowBb, VERR_NOT_SUPPORTED,
+                                                         "Detected indirect branch and resolving it not being enabled");
+                            }
+                        }
+                        else
+                        {
+                            pFlowBb->enmEndType = DBGFFLOWBBENDTYPE_UNCOND_JMP;
+
+                            /* Create one new basic block with the jump target address. */
+                            rc = dbgfR3FlowQueryDirectBranchTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr,
+                                                                   RT_BOOL(DisState.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW),
+                                                                   &pFlowBb->AddrTarget);
+                            if (RT_SUCCESS(rc))
+                                rc = dbgfR3FlowBbSuccessorAdd(pThis, &pFlowBb->AddrTarget,
+                                                              (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE),
+                                                              pFlowBb->pFlowBranchTbl);
+                        }
                     }
                     else if (uOpc != OP_CALL)
                     {
@@ -641,14 +1233,18 @@ static int dbgfR3FlowBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDB
                          * Create two new basic blocks, one with the jump target address
                          * and one starting after the current instruction.
                          */
-                        rc = dbgfR3FlowBbSuccessorAdd(pThis, &AddrDisasm);
+                        rc = dbgfR3FlowBbSuccessorAdd(pThis, &AddrDisasm,
+                                                      (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE),
+                                                      pFlowBb->pFlowBranchTbl);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = dbgfR3FlowQueryJmpTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr, 
-                                                         RT_BOOL(DisState.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW),
-                                                         &pFlowBb->AddrTarget);
+                            rc = dbgfR3FlowQueryDirectBranchTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr, 
+                                                                   RT_BOOL(DisState.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW),
+                                                                   &pFlowBb->AddrTarget);
                             if (RT_SUCCESS(rc))
-                                rc = dbgfR3FlowBbSuccessorAdd(pThis, &pFlowBb->AddrTarget);
+                                rc = dbgfR3FlowBbSuccessorAdd(pThis, &pFlowBb->AddrTarget,
+                                                              (pFlowBb->fFlags & DBGF_FLOW_BB_F_BRANCH_TABLE),
+                                                              pFlowBb->pFlowBranchTbl);
                         }
                     }
 
@@ -710,19 +1306,21 @@ static int dbgfR3FlowPopulate(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDBG
  * @param   idCpu               CPU id for disassembling.
  * @param   pAddressStart       Where to start creating the control flow graph.
  * @param   cbDisasmMax         Limit the amount of bytes to disassemble, 0 for no limit.
- * @param   fFlags              Combination of DBGF_DISAS_FLAGS_*.
+ * @param   fFlagsFlow          Combination of DBGF_FLOW_CREATE_F_* to control the creation of the flow graph.
+ * @param   fFlagsDisasm        Combination of DBGF_DISAS_FLAGS_* controlling the style of the disassembled
+ *                              instructions.
  * @param   phFlow              Where to store the handle to the control flow graph on success.
  */
 VMMR3DECL(int) DBGFR3FlowCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressStart, uint32_t cbDisasmMax,
-                               uint32_t fFlags, PDBGFFLOW phFlow)
+                                uint32_t fFlagsFlow, uint32_t fFlagsDisasm, PDBGFFLOW phFlow)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pUVM->cCpus, VERR_INVALID_CPU_ID);
     AssertPtrReturn(pAddressStart, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~DBGF_DISAS_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) <= DBGF_DISAS_FLAGS_64BIT_MODE, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlagsDisasm & ~DBGF_DISAS_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn((fFlagsDisasm & DBGF_DISAS_FLAGS_MODE_MASK) <= DBGF_DISAS_FLAGS_64BIT_MODE, VERR_INVALID_PARAMETER);
 
     /* Create the control flow graph container. */
     int rc = VINF_SUCCESS;
@@ -732,18 +1330,20 @@ VMMR3DECL(int) DBGFR3FlowCreate(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddressS
         rc = RTStrCacheCreate(&pThis->hStrCacheInstr, "DBGFFLOW");
         if (RT_SUCCESS(rc))
         {
-            pThis->cRefs   = 1;
-            pThis->cRefsBb = 0;
-            pThis->cBbs    = 0;
+            pThis->cRefs       = 1;
+            pThis->cRefsBb     = 0;
+            pThis->cBbs        = 0;
+            pThis->cBranchTbls = 0;
+            pThis->fFlags      = fFlagsFlow;
             RTListInit(&pThis->LstFlowBb);
+            RTListInit(&pThis->LstBranchTbl);
             /* Create the entry basic block and start the work. */
 
-            PDBGFFLOWBBINT pFlowBb = dbgfR3FlowBbCreate(pThis, pAddressStart, 10);
+            PDBGFFLOWBBINT pFlowBb = dbgfR3FlowBbCreate(pThis, pAddressStart, DBGF_FLOW_BB_F_ENTRY, 10);
             if (RT_LIKELY(pFlowBb))
             {
-                pFlowBb->fFlags |= DBGF_FLOW_BB_F_ENTRY;
                 dbgfR3FlowLink(pThis, pFlowBb);
-                rc = dbgfR3FlowPopulate(pUVM, idCpu, pThis, pAddressStart, cbDisasmMax, fFlags);
+                rc = dbgfR3FlowPopulate(pUVM, idCpu, pThis, pAddressStart, cbDisasmMax, fFlagsDisasm);
                 if (RT_SUCCESS(rc))
                 {
                     *phFlow = pThis;
@@ -835,25 +1435,56 @@ VMMR3DECL(int) DBGFR3FlowQueryStartBb(DBGFFLOW hFlow, PDBGFFLOWBB phFlowBb)
  *
  * @returns VBox status code.
  * @retval  VERR_NOT_FOUND if there is no basic block intersecting with the address.
- * @param   hFlow                The control flow graph handle.
+ * @param   hFlow               The control flow graph handle.
  * @param   pAddr               The address to look for.
- * @param   phFlowBb             Where to store the basic block handle on success.
+ * @param   phFlowBb            Where to store the basic block handle on success.
  */
 VMMR3DECL(int) DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBB phFlowBb)
 {
     PDBGFFLOWINT pThis = hFlow;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pAddr, VERR_INVALID_POINTER);
     AssertPtrReturn(phFlowBb, VERR_INVALID_POINTER);
 
     PDBGFFLOWBBINT pFlowBb = NULL;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
-        if (dbgfR3FlowBbAddrIntersect(pFlowBb, pAddr))
+        if (dbgfR3FlowAddrIntersect(pFlowBb, pAddr))
         {
             DBGFR3FlowBbRetain(pFlowBb);
             *phFlowBb = pFlowBb;
             return VINF_SUCCESS;
         }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Queries a branch table in the given control flow graph by the given address.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if there is no branch table with the given address.
+ * @param   hFlow               The control flow graph handle.
+ * @param   pAddr               The address of the branch table.
+ * @param   phFlowBranchTbl     Where to store the handle to branch table on success.
+ *
+ * @note Call DBGFR3FlowBranchTblRelease() when the handle is not required anymore.
+ */
+VMMR3DECL(int) DBGFR3FlowQueryBranchTblByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PDBGFFLOWBRANCHTBL phFlowBranchTbl)
+{
+    PDBGFFLOWINT pThis = hFlow;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pAddr, VERR_INVALID_POINTER);
+    AssertPtrReturn(phFlowBranchTbl, VERR_INVALID_POINTER);
+
+    PDBGFFLOWBRANCHTBLINT pBranchTbl = dbgfR3FlowBranchTblFindByAddr(pThis, pAddr);
+    if (pBranchTbl)
+    {
+        DBGFR3FlowBranchTblRetain(pBranchTbl);
+        *phFlowBranchTbl = pBranchTbl;
+        return VINF_SUCCESS;
     }
 
     return VERR_NOT_FOUND;
@@ -1041,6 +1672,31 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetFlags(DBGFFLOWBB hFlowBb)
 
 
 /**
+ * Queries the branch table used if the given basic block ends with an indirect branch
+ * and has a branch table referenced.
+ *
+ * @returns VBox status code.
+ * @param   hFlowBb              The basic block handle.
+ * @param   phBranchTbl          Where to store the branch table handle on success.
+ *
+ * @note Release the branch table reference with DBGFR3FlowBranchTblRelease() when not required
+ *       anymore.
+ */
+VMMR3DECL(int) DBGFR3FlowBbQueryBranchTbl(DBGFFLOWBB hFlowBb, PDBGFFLOWBRANCHTBL phBranchTbl)
+{
+    PDBGFFLOWBBINT pFlowBb = hFlowBb;
+    AssertPtrReturn(pFlowBb, VERR_INVALID_HANDLE);
+    AssertReturn(pFlowBb->enmEndType == DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP, VERR_INVALID_STATE);
+    AssertPtrReturn(pFlowBb->pFlowBranchTbl, VERR_INVALID_STATE);
+    AssertPtrReturn(phBranchTbl, VERR_INVALID_POINTER);
+
+    DBGFR3FlowBranchTblRetain(pFlowBb->pFlowBranchTbl);
+    *phBranchTbl = pFlowBb->pFlowBranchTbl;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Returns the error status and message if the given basic block has an error.
  *
  * @returns VBox status code of the error for the basic block.
@@ -1149,13 +1805,13 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb)
         {
             DBGFADDRESS AddrStart = pFlowBb->AddrEnd;
             DBGFR3AddrAdd(&AddrStart, 1);
-            if (dbgfR3FlowBbAddrEqual(&pFlowBbCur->AddrStart, &AddrStart))
+            if (dbgfR3FlowAddrEqual(&pFlowBbCur->AddrStart, &AddrStart))
                 cRefsBb++;
         }
 
         if (   (   pFlowBbCur->enmEndType == DBGFFLOWBBENDTYPE_UNCOND_JMP
                 || pFlowBbCur->enmEndType == DBGFFLOWBBENDTYPE_COND)
-            && dbgfR3FlowBbAddrEqual(&pFlowBbCur->AddrStart, &pFlowBb->AddrTarget))
+            && dbgfR3FlowAddrEqual(&pFlowBbCur->AddrStart, &pFlowBb->AddrTarget))
             cRefsBb++;
     }
     return cRefsBb;
@@ -1167,14 +1823,109 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb)
  *
  * @returns VBox status code.
  * @retval  VERR_BUFFER_OVERFLOW if the array can't hold all the basic blocks.
- * @param   hFlowBb              The basic block handle.
- * @param   paFlowBbRef          Pointer to the array containing the referencing basic block handles on success.
+ * @param   hFlowBb             The basic block handle.
+ * @param   paFlowBbRef         Pointer to the array containing the referencing basic block handles on success.
  * @param   cRef                Number of entries in the given array.
  */
 VMMR3DECL(int) DBGFR3FlowBbGetRefBb(DBGFFLOWBB hFlowBb, PDBGFFLOWBB paFlowBbRef, uint32_t cRef)
 {
     RT_NOREF3(hFlowBb, paFlowBbRef, cRef);
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Retains a reference for the given control flow graph branch table.
+ *
+ * @returns new reference count.
+ * @param   hFlowBranchTbl      The branch table handle.
+ */
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblRetain(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    AssertPtrReturn(pFlowBranchTbl, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pFlowBranchTbl->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pFlowBranchTbl));
+    return cRefs;
+}
+
+
+/**
+ * Releases a given branch table handle.
+ *
+ * @returns the new reference count of the given branch table, on 0 it is destroyed.
+ * @param   hFlowBranchTbl      The branch table handle.
+ */
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblRelease(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    if (!pFlowBranchTbl)
+        return 0;
+    AssertPtrReturn(pFlowBranchTbl, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pFlowBranchTbl->cRefs);
+    AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pFlowBranchTbl));
+    if (cRefs == 0)
+        dbgfR3FlowBranchTblDestroy(pFlowBranchTbl);
+    return cRefs;
+}
+
+
+/**
+ * Return the number of slots the branch table has.
+ *
+ * @returns Number of slots in the branch table.
+ * @param   hFlowBranchTbl      The branch table handle.
+ */
+VMMR3DECL(uint32_t) DBGFR3FlowBranchTblGetSlots(DBGFFLOWBRANCHTBL hFlowBranchTbl)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    AssertPtrReturn(pFlowBranchTbl, 0);
+
+    return pFlowBranchTbl->cSlots;
+}
+
+
+/**
+ * Returns the start address of the branch table in the guest.
+ *
+ * @returns Pointer to start address of the branch table (pAddrStart).
+ * @param   hFlowBranchTbl      The branch table handle.
+ * @param   pAddrStart          Where to store the branch table address.
+ */
+VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBranchTblGetStartAddress(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS pAddrStart)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    AssertPtrReturn(pFlowBranchTbl, NULL);
+    AssertPtrReturn(pAddrStart, NULL);
+
+    *pAddrStart = pFlowBranchTbl->AddrStart;
+    return pAddrStart;
+}
+
+
+/**
+ * Query all addresses contained in the given branch table.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_BUFFER_OVERFLOW if there is not enough space in the array to hold all addresses.
+ * @param   hFlowBranchTbl      The branch table handle.
+ * @param   paAddrs             Where to store the addresses on success.
+ * @param   cAddrs              Number of entries the array can hold.
+ */
+VMMR3DECL(int) DBGFR3FlowBranchTblQueryAddresses(DBGFFLOWBRANCHTBL hFlowBranchTbl, PDBGFADDRESS paAddrs, uint32_t cAddrs)
+{
+    PDBGFFLOWBRANCHTBLINT pFlowBranchTbl = hFlowBranchTbl;
+    AssertPtrReturn(pFlowBranchTbl, VERR_INVALID_HANDLE);
+    AssertPtrReturn(paAddrs, VERR_INVALID_POINTER);
+    AssertReturn(cAddrs > 0, VERR_INVALID_PARAMETER);
+
+    if (cAddrs < pFlowBranchTbl->cSlots)
+        return VERR_BUFFER_OVERFLOW;
+
+    memcpy(paAddrs, &pFlowBranchTbl->aAddresses[0], pFlowBranchTbl->cSlots * sizeof(DBGFADDRESS));
+    return VINF_SUCCESS;
 }
 
 
@@ -1187,19 +1938,19 @@ static DECLCALLBACK(int) dbgfR3FlowItSortCmp(void const *pvElement1, void const 
     PDBGFFLOWBBINT pFlowBb1 = *(PDBGFFLOWBBINT *)pvElement1;
     PDBGFFLOWBBINT pFlowBb2 = *(PDBGFFLOWBBINT *)pvElement2;
 
-    if (dbgfR3FlowBbAddrEqual(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
+    if (dbgfR3FlowAddrEqual(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
         return 0;
 
     if (*penmOrder == DBGFFLOWITORDER_BY_ADDR_LOWEST_FIRST)
     {
-        if (dbgfR3FlowBbAddrLower(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
+        if (dbgfR3FlowAddrLower(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
             return -1;
         else
             return 1;
     }
     else
     {
-        if (dbgfR3FlowBbAddrLower(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
+        if (dbgfR3FlowAddrLower(&pFlowBb1->AddrStart, &pFlowBb2->AddrStart))
             return 1;
         else
             return -1;
