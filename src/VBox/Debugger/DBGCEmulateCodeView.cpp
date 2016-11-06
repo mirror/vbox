@@ -1435,7 +1435,8 @@ static void dbgcCmdUnassembleCfgDumpCalcBbSize(DBGFFLOWBB hFlowBb, PDBGCFLOWBBDU
 
     DBGFFLOWBBENDTYPE enmType = DBGFR3FlowBbGetType(hFlowBb);
     if (   enmType == DBGFFLOWBBENDTYPE_COND
-        || enmType == DBGFFLOWBBENDTYPE_UNCOND_JMP)
+        || enmType == DBGFFLOWBBENDTYPE_UNCOND_JMP
+        || enmType == DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP)
         DBGFR3FlowBbGetBranchAddress(hFlowBb, &pDumpBb->AddrTarget);
 
     if (fFlags & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
@@ -1570,6 +1571,91 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
 
 
 /**
+ * Dumps one branch table using the dumper callback.
+ *
+ * @returns nothing.
+ * @param   pDumpBb             The basic block dump state to dump.
+ * @param   hScreen             The screen to draw to.
+ */
+static void dbgcCmdUnassembleCfgDumpBranchTbl(PDBGCFLOWBRANCHTBLDUMP pDumpBranchTbl, DBGCSCREEN hScreen)
+{
+    uint32_t uStartY = pDumpBranchTbl->uStartY;
+    DBGCSCREENCOLOR enmColor = DBGCSCREENCOLOR_CYAN_BRIGHT;
+
+    dbgcCmdUnassembleCfgDumpBbBoundary(hScreen, pDumpBranchTbl->uStartX, uStartY, pDumpBranchTbl->cchWidth, enmColor);
+    uStartY++;
+    dbgcCmdUnassembleCfgDumpBbSpacing(hScreen, pDumpBranchTbl->uStartX, uStartY, pDumpBranchTbl->cchWidth, enmColor);
+    uStartY++;
+
+    uint32_t cSlots = DBGFR3FlowBranchTblGetSlots(pDumpBranchTbl->hFlowBranchTbl);
+    for (unsigned i = 0; i < cSlots; i++)
+    {
+        DBGFADDRESS Addr;
+        char szAddr[128];
+
+        RT_ZERO(szAddr);
+        DBGFR3FlowBranchTblGetAddrAtSlot(pDumpBranchTbl->hFlowBranchTbl, i, &Addr);
+
+        if (Addr.Sel == DBGF_SEL_FLAT)
+            RTStrPrintf(&szAddr[0], sizeof(szAddr), "%RGv", Addr.FlatPtr);
+        else
+            RTStrPrintf(&szAddr[0], sizeof(szAddr), "%04x:%RGv", Addr.Sel, Addr.off);
+
+        dbgcCmdUnassembleCfgDumpBbText(hScreen, pDumpBranchTbl->uStartX, uStartY + i,
+                                       pDumpBranchTbl->cchWidth, &szAddr[0], DBGCSCREENCOLOR_DEFAULT,
+                                       enmColor);
+    }
+    uStartY += cSlots;
+
+    dbgcCmdUnassembleCfgDumpBbSpacing(hScreen, pDumpBranchTbl->uStartX, uStartY, pDumpBranchTbl->cchWidth, enmColor);
+    uStartY++;
+    dbgcCmdUnassembleCfgDumpBbBoundary(hScreen, pDumpBranchTbl->uStartX, uStartY, pDumpBranchTbl->cchWidth, enmColor);
+    uStartY++;
+}
+
+
+/**
+ * Fills in the dump states for the basic blocks and branch tables.
+ *
+ * @returns VBox status code.
+ * @param   hFlowIt             The control flow graph iterator handle.
+ * @param   hFlowBranchTblIt    The control flow graph branch table iterator handle.
+ * @param   paDumpBb            The array of basic block dump states.
+ * @param   paDumpBranchTbl     The array of branch table dump states.
+ * @param   cBbs                Number of basic blocks.
+ * @param   cBranchTbls         Number of branch tables.
+ */
+static int dbgcCmdUnassembleCfgDumpCalcDimensions(DBGFFLOWIT hFlowIt, DBGFFLOWBRANCHTBLIT hFlowBranchTblIt,
+                                                  PDBGCFLOWBBDUMP paDumpBb, PDBGCFLOWBRANCHTBLDUMP paDumpBranchTbl,
+                                                  uint32_t cBbs, uint32_t cBranchTbls)
+{
+    RT_NOREF2(cBbs, cBranchTbls);
+
+    /* Calculate the sizes of each basic block first. */
+    DBGFFLOWBB hFlowBb = DBGFR3FlowItNext(hFlowIt);
+    uint32_t idx = 0;
+    while (hFlowBb)
+    {
+        dbgcCmdUnassembleCfgDumpCalcBbSize(hFlowBb, &paDumpBb[idx]);
+        idx++;
+        hFlowBb = DBGFR3FlowItNext(hFlowIt);
+    }
+
+    idx = 0;
+    DBGFFLOWBRANCHTBL hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
+    while (hFlowBranchTbl)
+    {
+        paDumpBranchTbl[idx].hFlowBranchTbl = hFlowBranchTbl;
+        paDumpBranchTbl[idx].cchHeight      = DBGFR3FlowBranchTblGetSlots(hFlowBranchTbl) + 4; /* Spacing and border. */
+        paDumpBranchTbl[idx].cchWidth       = 25 + 4; /* Spacing and border. */
+        idx++;
+        hFlowBranchTbl = DBGFR3FlowBranchTblItNext(hFlowBranchTblIt);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Dumps the given control flow graph to the output.
  *
  * @returns VBox status code.
@@ -1579,225 +1665,256 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
  */
 static int dbgcCmdUnassembleCfgDump(DBGFFLOW hCfg, bool fUseColor, PDBGCCMDHLP pCmdHlp)
 {
-    DBGFFLOWIT hCfgIt;
-    int rc = DBGFR3FlowItCreate(hCfg, DBGFFLOWITORDER_BY_ADDR_LOWEST_FIRST, &hCfgIt);
+    int rc = VINF_SUCCESS;
+    DBGFFLOWIT hCfgIt = NULL;
+    DBGFFLOWBRANCHTBLIT hFlowBranchTblIt = NULL;
+    uint32_t cBbs = DBGFR3FlowGetBbCount(hCfg);
+    uint32_t cBranchTbls = DBGFR3FlowGetBranchTblCount(hCfg);
+    PDBGCFLOWBBDUMP paDumpBb = (PDBGCFLOWBBDUMP)RTMemTmpAllocZ(cBbs * sizeof(DBGCFLOWBBDUMP));
+    PDBGCFLOWBRANCHTBLDUMP paDumpBranchTbl = NULL;
+
+    if (cBranchTbls)
+        paDumpBranchTbl = (PDBGCFLOWBRANCHTBLDUMP)RTMemAllocZ(cBranchTbls * sizeof(DBGCFLOWBRANCHTBLDUMP));
+
+    if (RT_UNLIKELY(!paDumpBb || (!paDumpBranchTbl && cBranchTbls > 0)))
+        rc = VERR_NO_MEMORY;
+    if (RT_SUCCESS(rc))
+        rc = DBGFR3FlowItCreate(hCfg, DBGFFLOWITORDER_BY_ADDR_LOWEST_FIRST, &hCfgIt);
+    if (RT_SUCCESS(rc) && cBranchTbls > 0)
+        rc = DBGFR3FlowBranchTblItCreate(hCfg, DBGFFLOWITORDER_BY_ADDR_LOWEST_FIRST, &hFlowBranchTblIt);
+
     if (RT_SUCCESS(rc))
     {
-        uint32_t cBbs = DBGFR3FlowGetBbCount(hCfg);
-        PDBGCFLOWBBDUMP paDumpBb = (PDBGCFLOWBBDUMP)RTMemTmpAllocZ(cBbs * sizeof(DBGCFLOWBBDUMP));
-        if (paDumpBb)
+        rc = dbgcCmdUnassembleCfgDumpCalcDimensions(hCfgIt, hFlowBranchTblIt, paDumpBb, paDumpBranchTbl,
+                                                    cBbs, cBranchTbls);
+
+        /* Calculate the ASCII screen dimensions and create one. */
+        uint32_t cchWidth = 0;
+        uint32_t cchLeftExtra = 5;
+        uint32_t cchRightExtra = 5;
+        uint32_t cchHeight = 0;
+        for (unsigned i = 0; i < cBbs; i++)
         {
-            /* Calculate the sizes of each basic block first. */
-            DBGFFLOWBB hFlowBb = DBGFR3FlowItNext(hCfgIt);
-            uint32_t idxDumpBb = 0;
-            while (hFlowBb)
+            PDBGCFLOWBBDUMP pDumpBb = &paDumpBb[i];
+            cchWidth = RT_MAX(cchWidth, pDumpBb->cchWidth);
+            cchHeight += pDumpBb->cchHeight;
+
+            /* Incomplete blocks don't have a successor. */
+            if (DBGFR3FlowBbGetFlags(pDumpBb->hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
+                continue;
+
+            switch (DBGFR3FlowBbGetType(pDumpBb->hFlowBb))
             {
-                dbgcCmdUnassembleCfgDumpCalcBbSize(hFlowBb, &paDumpBb[idxDumpBb]);
-                idxDumpBb++;
-                hFlowBb = DBGFR3FlowItNext(hCfgIt);
+                case DBGFFLOWBBENDTYPE_EXIT:
+                case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
+                    break;
+                case DBGFFLOWBBENDTYPE_UNCOND_JMP:
+                    if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
+                        || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
+                        cchLeftExtra++;
+                    else
+                        cchRightExtra++;
+                    break;
+                case DBGFFLOWBBENDTYPE_UNCOND:
+                    cchHeight += 2; /* For the arrow down to the next basic block. */
+                    break;
+                case DBGFFLOWBBENDTYPE_COND:
+                    cchHeight += 2; /* For the arrow down to the next basic block. */
+                    if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
+                        || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
+                        cchLeftExtra++;
+                    else
+                        cchRightExtra++;
+                    break;
+                case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
+                default:
+                    AssertFailed();
+            }
+        }
+
+        for (unsigned i = 0; i < cBranchTbls; i++)
+        {
+            PDBGCFLOWBRANCHTBLDUMP pDumpBranchTbl = &paDumpBranchTbl[i];
+            cchWidth = RT_MAX(cchWidth, pDumpBranchTbl->cchWidth);
+            cchHeight += pDumpBranchTbl->cchHeight;
+        }
+
+        cchWidth += 2;
+
+        DBGCSCREEN hScreen = NULL;
+        rc = dbgcScreenAsciiCreate(&hScreen, cchWidth + cchLeftExtra + cchRightExtra, cchHeight);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t uY = 0;
+
+            /* Dump the branch tables first. */
+            for (unsigned i = 0; i < cBranchTbls; i++)
+            {
+                paDumpBranchTbl[i].uStartX = cchLeftExtra + (cchWidth - paDumpBranchTbl[i].cchWidth) / 2;
+                paDumpBranchTbl[i].uStartY = uY;
+                dbgcCmdUnassembleCfgDumpBranchTbl(&paDumpBranchTbl[i], hScreen);
+                uY += paDumpBranchTbl[i].cchHeight;
             }
 
-            /* Calculate the ASCII screen dimensions and create one. */
-            uint32_t cchWidth = 0;
-            uint32_t cchLeftExtra = 5;
-            uint32_t cchRightExtra = 5;
-            uint32_t cchHeight = 0;
+            /* Dump the basic blocks and connections to the immediate successor. */
+            for (unsigned i = 0; i < cBbs; i++)
+            {
+                paDumpBb[i].uStartX = cchLeftExtra + (cchWidth - paDumpBb[i].cchWidth) / 2;
+                paDumpBb[i].uStartY = uY;
+                dbgcCmdUnassembleCfgDumpBb(&paDumpBb[i], hScreen);
+                uY += paDumpBb[i].cchHeight;
+
+                /* Incomplete blocks don't have a successor. */
+                if (DBGFR3FlowBbGetFlags(paDumpBb[i].hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
+                    continue;
+
+                switch (DBGFR3FlowBbGetType(paDumpBb[i].hFlowBb))
+                {
+                    case DBGFFLOWBBENDTYPE_EXIT:
+                    case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
+                    case DBGFFLOWBBENDTYPE_UNCOND_JMP:
+                    case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
+                        break;
+                    case DBGFFLOWBBENDTYPE_UNCOND:
+                        /* Draw the arrow down to the next block. */
+                        dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                     '|', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                        uY++;
+                        dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                     'V', DBGCSCREENCOLOR_BLUE_BRIGHT);
+                        uY++;
+                        break;
+                    case DBGFFLOWBBENDTYPE_COND:
+                        /* Draw the arrow down to the next block. */
+                        dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                     '|', DBGCSCREENCOLOR_RED_BRIGHT);
+                        uY++;
+                        dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
+                                                     'V', DBGCSCREENCOLOR_RED_BRIGHT);
+                        uY++;
+                        break;
+                    default:
+                        AssertFailed();
+                }
+            }
+
+            /* Last pass, connect all remaining branches. */
+            uint32_t uBackConns = 0;
+            uint32_t uFwdConns = 0;
             for (unsigned i = 0; i < cBbs; i++)
             {
                 PDBGCFLOWBBDUMP pDumpBb = &paDumpBb[i];
-                cchWidth = RT_MAX(cchWidth, pDumpBb->cchWidth);
-                cchHeight += pDumpBb->cchHeight;
+                DBGFFLOWBBENDTYPE enmEndType = DBGFR3FlowBbGetType(pDumpBb->hFlowBb);
 
                 /* Incomplete blocks don't have a successor. */
                 if (DBGFR3FlowBbGetFlags(pDumpBb->hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
                     continue;
 
-                switch (DBGFR3FlowBbGetType(pDumpBb->hFlowBb))
+                switch (enmEndType)
                 {
                     case DBGFFLOWBBENDTYPE_EXIT:
                     case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
-                        break;
-                    case DBGFFLOWBBENDTYPE_UNCOND_JMP:
-                        if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
-                            || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
-                            cchLeftExtra++;
-                        else
-                            cchRightExtra++;
-                        break;
                     case DBGFFLOWBBENDTYPE_UNCOND:
-                        cchHeight += 2; /* For the arrow down to the next basic block. */
                         break;
                     case DBGFFLOWBBENDTYPE_COND:
-                        cchHeight += 2; /* For the arrow down to the next basic block. */
+                    case DBGFFLOWBBENDTYPE_UNCOND_JMP:
+                    {
+                        /* Find the target first to get the coordinates. */
+                        PDBGCFLOWBBDUMP pDumpBbTgt = NULL;
+                        for (unsigned idxDumpBb = 0; idxDumpBb < cBbs; idxDumpBb++)
+                        {
+                            pDumpBbTgt = &paDumpBb[idxDumpBb];
+                            if (dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBbTgt->AddrStart))
+                                break;
+                        }
+
+                        DBGCSCREENCOLOR enmColor =   enmEndType == DBGFFLOWBBENDTYPE_UNCOND_JMP
+                                                   ? DBGCSCREENCOLOR_YELLOW_BRIGHT
+                                                   : DBGCSCREENCOLOR_GREEN_BRIGHT;
+
+                        /*
+                         * Use the right side for targets with higher addresses,
+                         * left when jumping backwards.
+                         */
                         if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
                             || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
-                            cchLeftExtra++;
+                        {
+                            /* Going backwards. */
+                            uint32_t uXVerLine = /*cchLeftExtra - 1 -*/ uBackConns + 1;
+                            uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
+                            uBackConns++;
+
+                            /* Draw the arrow pointing to the target block. */
+                            dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX - 1, pDumpBbTgt->uStartY,
+                                                         '>', enmColor);
+                            /* Draw the horizontal line. */
+                            dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBbTgt->uStartX - 2,
+                                                              pDumpBbTgt->uStartY, '-', enmColor);
+                            dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
+                                                         enmColor);
+                            /* Draw the vertical line down to the source block. */
+                            dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, pDumpBbTgt->uStartY + 1, uYHorLine - 1,
+                                                            '|', enmColor);
+                            dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
+                            /* Draw the horizontal connection between the source block and vertical part. */
+                            dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBb->uStartX - 1,
+                                                              uYHorLine, '-', enmColor);
+
+                        }
                         else
-                            cchRightExtra++;
+                        {
+                            /* Going forward. */
+                            uint32_t uXVerLine = cchWidth + cchLeftExtra + (cchRightExtra - uFwdConns) - 1;
+                            uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
+                            uFwdConns++;
+
+                            /* Draw the horizontal line. */
+                            dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBb->uStartX + pDumpBb->cchWidth,
+                                                              uXVerLine - 1, uYHorLine, '-', enmColor);
+                            dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
+                            /* Draw the vertical line down to the target block. */
+                            dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, uYHorLine + 1, pDumpBbTgt->uStartY - 1,
+                                                            '|', enmColor);
+                            /* Draw the horizontal connection between the target block and vertical part. */
+                            dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
+                                                              uXVerLine, pDumpBbTgt->uStartY, '-', enmColor);
+                            dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
+                                                         enmColor);
+                            /* Draw the arrow pointing to the target block. */
+                            dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
+                                                         pDumpBbTgt->uStartY, '<', enmColor);
+                        }
                         break;
+                    }
                     case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
                     default:
                         AssertFailed();
                 }
             }
 
-            cchWidth += 2;
-
-            DBGCSCREEN hScreen = NULL;
-            rc = dbgcScreenAsciiCreate(&hScreen, cchWidth + cchLeftExtra + cchRightExtra, cchHeight);
-            if (RT_SUCCESS(rc))
-            {
-                uint32_t uY = 0;
-
-                /* Dump the basic blocks and connections to the immediate successor. */
-                for (unsigned i = 0; i < cBbs; i++)
-                {
-                    paDumpBb[i].uStartX = cchLeftExtra + (cchWidth - paDumpBb[i].cchWidth) / 2;
-                    paDumpBb[i].uStartY = uY;
-                    dbgcCmdUnassembleCfgDumpBb(&paDumpBb[i], hScreen);
-                    uY += paDumpBb[i].cchHeight;
-
-                    /* Incomplete blocks don't have a successor. */
-                    if (DBGFR3FlowBbGetFlags(paDumpBb[i].hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
-                        continue;
-
-                    switch (DBGFR3FlowBbGetType(paDumpBb[i].hFlowBb))
-                    {
-                        case DBGFFLOWBBENDTYPE_EXIT:
-                        case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
-                        case DBGFFLOWBBENDTYPE_UNCOND_JMP:
-                        case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
-                            break;
-                        case DBGFFLOWBBENDTYPE_UNCOND:
-                            /* Draw the arrow down to the next block. */
-                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
-                                                         '|', DBGCSCREENCOLOR_BLUE_BRIGHT);
-                            uY++;
-                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
-                                                         'V', DBGCSCREENCOLOR_BLUE_BRIGHT);
-                            uY++;
-                            break;
-                        case DBGFFLOWBBENDTYPE_COND:
-                            /* Draw the arrow down to the next block. */
-                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
-                                                         '|', DBGCSCREENCOLOR_RED_BRIGHT);
-                            uY++;
-                            dbgcScreenAsciiDrawCharacter(hScreen, cchLeftExtra + cchWidth / 2, uY,
-                                                         'V', DBGCSCREENCOLOR_RED_BRIGHT);
-                            uY++;
-                            break;
-                        default:
-                            AssertFailed();
-                    }
-                }
-
-                /* Last pass, connect all remaining branches. */
-                uint32_t uBackConns = 0;
-                uint32_t uFwdConns = 0;
-                for (unsigned i = 0; i < cBbs; i++)
-                {
-                    PDBGCFLOWBBDUMP pDumpBb = &paDumpBb[i];
-                    DBGFFLOWBBENDTYPE enmEndType = DBGFR3FlowBbGetType(pDumpBb->hFlowBb);
-
-                    /* Incomplete blocks don't have a successor. */
-                    if (DBGFR3FlowBbGetFlags(pDumpBb->hFlowBb) & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
-                        continue;
-
-                    switch (enmEndType)
-                    {
-                        case DBGFFLOWBBENDTYPE_EXIT:
-                        case DBGFFLOWBBENDTYPE_LAST_DISASSEMBLED:
-                        case DBGFFLOWBBENDTYPE_UNCOND:
-                            break;
-                        case DBGFFLOWBBENDTYPE_COND:
-                        case DBGFFLOWBBENDTYPE_UNCOND_JMP:
-                        {
-                            /* Find the target first to get the coordinates. */
-                            PDBGCFLOWBBDUMP pDumpBbTgt = NULL;
-                            for (idxDumpBb = 0; idxDumpBb < cBbs; idxDumpBb++)
-                            {
-                                pDumpBbTgt = &paDumpBb[idxDumpBb];
-                                if (dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBbTgt->AddrStart))
-                                    break;
-                            }
-
-                            DBGCSCREENCOLOR enmColor =   enmEndType == DBGFFLOWBBENDTYPE_UNCOND_JMP
-                                                       ? DBGCSCREENCOLOR_YELLOW_BRIGHT
-                                                       : DBGCSCREENCOLOR_GREEN_BRIGHT;
-
-                            /*
-                             * Use the right side for targets with higher addresses,
-                             * left when jumping backwards.
-                             */
-                            if (   dbgcCmdUnassembleCfgAddrLower(&pDumpBb->AddrTarget, &pDumpBb->AddrStart)
-                                || dbgcCmdUnassembleCfgAddrEqual(&pDumpBb->AddrTarget, &pDumpBb->AddrStart))
-                            {
-                                /* Going backwards. */
-                                uint32_t uXVerLine = /*cchLeftExtra - 1 -*/ uBackConns + 1;
-                                uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
-                                uBackConns++;
-
-                                /* Draw the arrow pointing to the target block. */
-                                dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX - 1, pDumpBbTgt->uStartY,
-                                                             '>', enmColor);
-                                /* Draw the horizontal line. */
-                                dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBbTgt->uStartX - 2,
-                                                                  pDumpBbTgt->uStartY, '-', enmColor);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
-                                                             enmColor);
-                                /* Draw the vertical line down to the source block. */
-                                dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, pDumpBbTgt->uStartY + 1, uYHorLine - 1,
-                                                                '|', enmColor);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
-                                /* Draw the horizontal connection between the source block and vertical part. */
-                                dbgcScreenAsciiDrawLineHorizontal(hScreen, uXVerLine + 1, pDumpBb->uStartX - 1,
-                                                                  uYHorLine, '-', enmColor);
-
-                            }
-                            else
-                            {
-                                /* Going forward. */
-                                uint32_t uXVerLine = cchWidth + cchLeftExtra + (cchRightExtra - uFwdConns) - 1;
-                                uint32_t uYHorLine = pDumpBb->uStartY + pDumpBb->cchHeight - 1 - 2;
-                                uFwdConns++;
-
-                                /* Draw the horizontal line. */
-                                dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBb->uStartX + pDumpBb->cchWidth,
-                                                                  uXVerLine - 1, uYHorLine, '-', enmColor);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, uYHorLine, '+', enmColor);
-                                /* Draw the vertical line down to the target block. */
-                                dbgcScreenAsciiDrawLineVertical(hScreen, uXVerLine, uYHorLine + 1, pDumpBbTgt->uStartY - 1,
-                                                                '|', enmColor);
-                                /* Draw the horizontal connection between the target block and vertical part. */
-                                dbgcScreenAsciiDrawLineHorizontal(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
-                                                                  uXVerLine, pDumpBbTgt->uStartY, '-', enmColor);
-                                dbgcScreenAsciiDrawCharacter(hScreen, uXVerLine, pDumpBbTgt->uStartY, '+',
-                                                             enmColor);
-                                /* Draw the arrow pointing to the target block. */
-                                dbgcScreenAsciiDrawCharacter(hScreen, pDumpBbTgt->uStartX + pDumpBbTgt->cchWidth,
-                                                             pDumpBbTgt->uStartY, '<', enmColor);
-                            }
-                            break;
-                        }
-                        case DBGFFLOWBBENDTYPE_UNCOND_INDIRECT_JMP:
-                        default:
-                            AssertFailed();
-                    }
-                }
-
-                rc = dbgcScreenAsciiBlit(hScreen, dbgcCmdUnassembleCfgBlit, pCmdHlp, fUseColor);
-                dbgcScreenAsciiDestroy(hScreen);
-            }
-
-            for (unsigned i = 0; i < cBbs; i++)
-                DBGFR3FlowBbRelease(paDumpBb[i].hFlowBb);
-            RTMemTmpFree(paDumpBb);
+            rc = dbgcScreenAsciiBlit(hScreen, dbgcCmdUnassembleCfgBlit, pCmdHlp, fUseColor);
+            dbgcScreenAsciiDestroy(hScreen);
         }
-        else
-            rc = VERR_NO_MEMORY;
-
-        DBGFR3FlowItDestroy(hCfgIt);
     }
+
+    if (paDumpBb)
+    {
+        for (unsigned i = 0; i < cBbs; i++)
+            DBGFR3FlowBbRelease(paDumpBb[i].hFlowBb);
+        RTMemTmpFree(paDumpBb);
+    }
+
+    if (paDumpBranchTbl)
+    {
+        for (unsigned i = 0; i < cBranchTbls; i++)
+            DBGFR3FlowBranchTblRelease(paDumpBranchTbl[i].hFlowBranchTbl);
+        RTMemTmpFree(paDumpBranchTbl);
+    }
+
+    if (hCfgIt)
+        DBGFR3FlowItDestroy(hCfgIt);
+    if (hFlowBranchTblIt)
+        DBGFR3FlowBranchTblItDestroy(hFlowBranchTblIt);
 
     return rc;
 }
@@ -1945,7 +2062,7 @@ static DECLCALLBACK(int) dbgcCmdUnassembleCfg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
     DBGFFLOW hCfg;
     rc = DBGFR3FlowCreate(pUVM, pDbgc->idCpu, &CurAddr, 0 /*cbDisasmMax*/,
-                          DBGF_FLOW_CREATE_F_DEFAULT, fFlags, &hCfg);
+                          DBGF_FLOW_CREATE_F_TRY_RESOLVE_INDIRECT_BRANCHES, fFlags, &hCfg);
     if (RT_SUCCESS(rc))
     {
         /* Dump the graph. */

@@ -444,8 +444,30 @@ typedef struct DBGCFLOWBBDUMP
     /** Y coordinate of the start. */
     uint32_t                uStartY;
 } DBGCFLOWBBDUMP;
-/** Pointer to the CFG basic block dump state. */
+/** Pointer to the control flow graph basic block dump state. */
 typedef DBGCFLOWBBDUMP *PDBGCFLOWBBDUMP;
+
+
+/**
+ * Control flow graph branch table dumper state.
+ */
+typedef struct DBGCFLOWBRANCHTBLDUMP
+{
+    /** The branch table referenced. */
+    DBGFFLOWBRANCHTBL       hFlowBranchTbl;
+    /** Cached start address. */
+    DBGFADDRESS             AddrStart;
+    /** Width of the branch table in chars. */
+    uint32_t                cchWidth;
+    /** Height of the branch table in chars. */
+    uint32_t                cchHeight;
+    /** X coordinate of the start. */
+    uint32_t                uStartX;
+    /** Y coordinate of the start. */
+    uint32_t                uStartY;
+} DBGCFLOWBRANCHTBLDUMP;
+/** Pointer to control flow graph branch table state. */
+typedef DBGCFLOWBRANCHTBLDUMP *PDBGCFLOWBRANCHTBLDUMP;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
