@@ -1380,9 +1380,17 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 
 #ifdef VBOX_WS_MAC
 # if QT_VERSION >= 0x050000
+    /* On OSX for Qt5 we need to erase backing store first: */
+    QRect eraseRect = paintRect;
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        eraseRect.moveTo(eraseRect.topLeft() / backingScaleFactor());
+        eraseRect.setSize(eraseRect.size() / backingScaleFactor());
+    }
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(paintRect, QColor(Qt::black));
+    painter.fillRect(eraseRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 # endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_MAC */
@@ -1458,9 +1466,17 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
 # if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11) || QT_VERSION >= 0x050000
+    /* On OSX for Qt5 we need to erase backing store first: */
+    QRect eraseRect = paintRect;
+    /* Take the backing-scale-factor into account: */
+    if (useUnscaledHiDPIOutput() && backingScaleFactor() > 1.0)
+    {
+        eraseRect.moveTo(eraseRect.topLeft() / backingScaleFactor());
+        eraseRect.setSize(eraseRect.size() / backingScaleFactor());
+    }
     /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
-    painter.fillRect(paintRect, QColor(Qt::black));
+    painter.fillRect(eraseRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
 # endif /* VBOX_WS_WIN || VBOX_WS_X11 || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
