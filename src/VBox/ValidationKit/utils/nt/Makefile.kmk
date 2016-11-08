@@ -41,5 +41,12 @@ PROGRAMS.win += ntTimeSources
 ntTimeSources_TEMPLATE = VBoxValidationKitR3
 ntTimeSources_SOURCES  = nttimesources.cpp
 
+#
+# Test NtFlushVirtualMemory.
+#
+PROGRAMS.win += ntFlushVirtualMemory
+ntFlushVirtualMemory_TEMPLATE = VBoxValidationKitR3
+ntFlushVirtualMemory_SOURCES  = ntFlushVirtualMemory.cpp
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
