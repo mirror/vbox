@@ -103,7 +103,15 @@ fi
 
 # Derive the backup dir and log file name from it.
 if test ! -f "${MY_BACKUP_MNT_TEST_FILE}"; then
-    ErrorMsgExit 11 "Backup directory is not mounted."
+    mount "${MY_BACKUP_ROOT}"
+    if test ! -f "${MY_BACKUP_MNT_TEST_FILE}"; then
+        echo "Retrying mounting '${MY_BACKUP_ROOT}' in 15 seconds..." >&2
+        sleep 15
+        mount "${MY_BACKUP_ROOT}"
+    fi
+    if test ! -f "${MY_BACKUP_MNT_TEST_FILE}"; then
+        ErrorMsgExit 11 "Backup directory is not mounted."
+    fi
 fi
 MY_BACKUP_DIR="${MY_BACKUP_ROOT}/${MY_IP}"
 MY_LOG_FILE="${MY_BACKUP_DIR}/maintenance.log"
@@ -131,7 +139,15 @@ MY_IP_HEX=`printf "%02X%02X%02X%02X" ${MY_TMP}`
 InfoMsg "MY_IP_HEX=${MY_IP_HEX}<eol>"
 
 if test ! -f "${MY_TFTP_ROOT}/pxelinux.0"; then
-    ErrorMsgExit 12 "TFTP share mounted or mixxing pxelinux.0 in the root."
+    mount "${MY_TFTP_ROOT}"
+    if test ! -f "${MY_TFTP_ROOT}/pxelinux.0"; then
+        echo "Retrying mounting '${MY_TFTP_ROOT}' in 15 seconds..." >&2
+        sleep 15
+        mount "${MY_BACKUP_ROOT}"
+    fi
+    if test ! -f "${MY_TFTP_ROOT}/pxelinux.0"; then
+        ErrorMsgExit 12 "TFTP share mounted or mixxing pxelinux.0 in the root."
+    fi
 fi
 
 MY_PXELINUX_CFG_FILE="${MY_TFTP_ROOT}/pxelinux.cfg/${MY_IP_HEX}"
