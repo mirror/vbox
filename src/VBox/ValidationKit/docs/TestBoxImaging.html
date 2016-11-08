@@ -396,7 +396,14 @@ and reboots the system.</li>
 installed.  Support for partition level backup/restore is not explored here.</p>
 <div class="section" id="how-to-use">
 <h2>How to use</h2>
-<p>To perform one of the above maintenance actions on a testbox copy the</p>
+<p>To perform one of the above maintenance actions on a testbox, run the
+<tt class="docutils literal"><span class="pre">testbox-pxe-conf.sh</span></tt> script:</p>
+<pre class="literal-block">
+/mnt/testbox-tftp/pxeclient.cfg/testbox-pxe-conf.sh 10.165.98.220 rescue
+</pre>
+<p>Then trigger a reboot.  The box will then boot the NFS rooted debian image and
+execute the maintenance action.  On success, it will remove the testbox hex-IP
+config file and reboot again.</p>
 </div>
 </div>
 <div class="section" id="storage-server">
@@ -450,23 +457,11 @@ LABEL local-boot
 LOCALBOOT
 </pre>
 <p>This will make the default behavior to boot the local disk system.</p>
-<p>Create <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-backup</span></tt>, <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-backup-again</span></tt>,
-<tt class="docutils literal"><span class="pre">pxelinux.cfg/do-restore</span></tt>, <tt class="docutils literal"><span class="pre">pxelinux.cfg/do-refresh-info</span></tt>, and
-<tt class="docutils literal"><span class="pre">pxelinux.cfg/do-rescue</span></tt> configuration files on the form:</p>
-<pre class="literal-block">
-PATH bios
-DEFAULT maintenance
-LABEL maintenance
-  MENU LABEL Maintenance (NFS)
-  KERNEL maintenance-boot/vmlinuz-3.16.0-4-amd64
-  APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 testbox-action-backup ro ip=dhcp aufs=tmpfs boot=nfs root=/dev/nfs nfsroot=10.42.1.1:/export/testbox-nfsroot,ro nfsvers=3 nfsrootdebug
-LABEL local-boot
-LOCALBOOT
-</pre>
-<p>When you want to preform an action on a testbox, copy the <tt class="docutils literal"><span class="pre">do-&lt;action&gt;</span></tt> to
-<tt class="docutils literal"><span class="pre">pxeclient.cfg/&lt;HEX-ip-addr&gt;</span></tt> and trigger a boot of the testbox.  The machine
-config will be removed automatically once the action has been successfully
-completed.</p>
+<p>Copy the <tt class="docutils literal"><span class="pre">testbox-pxe-conf.sh</span></tt> script file found in the same directory as
+this document to <tt class="docutils literal"><span class="pre">/mnt/testbox-tftp/pxelinux.cfg/</span></tt>.  Edit the copy to correct
+the IP addresses near the top, as well as any linux, TFTP and PXE details near
+the bottom of the file.   This script will generate the PXE configuration file
+when performing maintenance on a testbox.</p>
 </div>
 <div class="section" id="images-and-logs-export-testbox-backup">
 <h1>Images and logs (/export/testbox-backup)</h1>
@@ -503,7 +498,8 @@ and are disks/SSDs.</dd>
 <div class="section" id="debian-nfs-root-export-testbox-nfsroot">
 <h1>Debian NFS root (/export/testbox-nfsroot)</h1>
 <p>The testbox-nfsroot share should be read-only and must <strong>not</strong> have root
-squashing enabled.</p>
+squashing enabled.  Also, make sure setting the set-uid-bit is allowed by the
+server, or <tt class="docutils literal">su` and ``sudo</tt> won't work</p>
 <p>There are several ways of creating a debian nfsroot, but since we've got a
 tool like VirtualBox around we've just installed it in a VM, prepared it,
 and copied it onto the NFS server share.</p>
@@ -511,13 +507,16 @@ and copied it onto the NFS server share.</p>
 done in a VM.  After installation the following modifications was done:</p>
 <blockquote>
 <ul>
-<li><p class="first"><tt class="docutils literal"><span class="pre">apt-get</span> install pxelinux syslinux <span class="pre">initramfs-tools</span> zip gddrescue joe</tt>
+<li><p class="first"><tt class="docutils literal"><span class="pre">apt-get</span> install pxelinux syslinux <span class="pre">initramfs-tools</span> zip gddrescue sudo joe</tt>
 and optionally <tt class="docutils literal"><span class="pre">apt-get</span> install smbclient <span class="pre">cifs-utils</span></tt>.</p>
 </li>
 <li><p class="first"><tt class="docutils literal">/etc/default/grub</tt> was modified to set <tt class="docutils literal">GRUB_CMDLINE_LINUX_DEFAULT</tt> to
 <tt class="docutils literal">&quot;&quot;</tt> instead of <tt class="docutils literal">&quot;quiet&quot;</tt>.  This allows us to see messages during boot
 and perhaps spot why something doesn't work on a testbox.  Regenerate the
 grub configuration file by running <tt class="docutils literal"><span class="pre">update-grub</span></tt> afterwards.</p>
+</li>
+<li><p class="first"><tt class="docutils literal">/etc/sudoers</tt> was modified to allow the <tt class="docutils literal">vbox</tt> user use sudo without
+requring any password.</p>
 </li>
 <li><p class="first">Create the directory <tt class="docutils literal">/etc/systemd/system/getty&#64;tty1.service.d</tt> and create
 the file <tt class="docutils literal">noclear.conf</tt> in it with the following content:</p>
@@ -543,6 +542,9 @@ tar -cz --one-file-system -f /mnt/testbox-maintenance-nfsroot.tar.gz . dev/
 <p>An alternative is <tt class="docutils literal">cp <span class="pre">-ax</span> . /mnt/. &amp;&amp;&nbsp; cp <span class="pre">-ax</span> dev/. /mnt/dev/.</tt> but this
 is quite a bit slower, obviously.</p>
 </li>
+<li><p class="first">Edit <tt class="docutils literal">/etc/ssh/sshd_config</tt> setting <tt class="docutils literal">PermitRootLogin</tt> to <tt class="docutils literal">yes</tt> so we can ssh
+in as root later on.</p>
+</li>
 <li><p class="first">chroot into the nfsroot: <tt class="docutils literal">chroot /mnt/</tt></p>
 <blockquote>
 <ul>
@@ -556,9 +558,12 @@ is quite a bit slower, obviously.</p>
 <pre class="literal-block">
 proc                             /proc               proc  defaults   0 0
 /dev/nfs                         /                   nfs   defaults   1 1
-10.42.1.1:/export/testbox-tftp   /mnt/testbox-tftp   nfs   nfsvers=3  2 2
-10.42.1.1:/export/testbox-backup /mnt/testbox-backup nfs   nfsvers=3  3 3
+10.42.1.1:/export/testbox-tftp   /mnt/testbox-tftp   nfs   tcp,nfsvers=3,noauto  2 2
+10.42.1.1:/export/testbox-backup /mnt/testbox-backup nfs   tcp,nfsvers=3,noauto  3 3
 </pre>
+<p>We use NFS version 3 as that works better for our NFS server and client,
+remove if not necessary.  The <tt class="docutils literal">noauto</tt> option is to work around mount
+trouble during early bootup on some of our boxes.</p>
 </li>
 <li><p class="first">Do <tt class="docutils literal">mount <span class="pre">/mnt/testbox-tftp</span> &amp;&amp; mount <span class="pre">/mnt/testbox-backup</span></tt> to mount the
 two shares.  This may be a good time to execute the instructions in the

@@ -187,14 +187,16 @@ and copied it onto the NFS server share.
 As of writing debian 8.6.0 is current, so a minimal 64-bit install of it was
 done in a VM.  After installation the following modifications was done:
 
- - ``apt-get install pxelinux syslinux initramfs-tools zip gddrescue joe``
+ - ``apt-get install pxelinux syslinux initramfs-tools zip gddrescue sudo joe``
    and optionally ``apt-get install smbclient cifs-utils``.
-
 
  - ``/etc/default/grub`` was modified to set ``GRUB_CMDLINE_LINUX_DEFAULT`` to
    ``""`` instead of ``"quiet"``.  This allows us to see messages during boot
    and perhaps spot why something doesn't work on a testbox.  Regenerate the
    grub configuration file by running ``update-grub`` afterwards.
+
+ - ``/etc/sudoers`` was modified to allow the ``vbox`` user use sudo without
+   requring any password.
 
  - Create the directory ``/etc/systemd/system/getty@tty1.service.d`` and create
    the file ``noclear.conf`` in it with the following content::
