@@ -30,12 +30,10 @@
 # Global Variables (config first).
 #
 MY_NFS_SERVER_IP="10.165.98.50"
-MY_GATEWAY_IP="10.165.98.0"
+MY_GATEWAY_IP="10.165.98.1"
 MY_NETMASK="255.255.128.0"
 MY_ETH_DEV="eth0"
-MY_AUTO_CFG="any"
-MY_DNS0_IP="10.165.246.33"
-MY_DNS1_IP="192.135.82.44"
+MY_AUTO_CFG="none"
 
 # options
 MY_PXELINUX_CFG_DIR="/mnt/testbox-tftp/pxeclient.cfg"
@@ -74,14 +72,23 @@ while test "$#" -ge 1; do
                 exit 2;
             fi
             if test -z "${MY_IP}"; then
+                # Split up the IP if possible, if not do gethostbyname on the argument.
                 MY_TMP=`echo "${MY_ARG}" | sed -e 's/\./ /g'`
-                if printf "%02X%02X%02X%02X" ${MY_TMP} > /dev/null; then
-                    MY_IP_HEX=`printf "%02X%02X%02X%02X" ${MY_TMP}`;
-                    MY_IP="${MY_ARG}";
-                else
-                    echo "syntax error: Invalid IP: ${MY_ARG}" >&2;
-                    exit 2;
+                if   test `echo "${MY_TMP}" | wc -w` -ne 4 \
+                  || ! printf "%02X%02X%02X%02X" ${MY_TMP} > /dev/null 2>&1; then
+                    MY_TMP2=`getent hosts "${MY_ARG}" | head -1 | cut -d' ' -f1`;
+                    MY_TMP=`echo "${MY_TMP2}" | sed -e 's/\./ /g'`
+                    if   test `echo "${MY_TMP}" | wc -w` -eq 4 \
+                      && printf "%02X%02X%02X%02X" ${MY_TMP} > /dev/null 2>&1; then
+                        echo "info: resolved '${MY_ARG}' as '${MY_TMP2}'";
+                        MY_ARG="${MY_TMP2}";
+                    else
+                        echo "syntax error: Invalid IP: ${MY_ARG}" >&2;
+                        exit 2;
+                    fi
                 fi
+                MY_IP_HEX=`printf "%02X%02X%02X%02X" ${MY_TMP}`;
+                MY_IP="${MY_ARG}";
             else
                 if test -z "${MY_ACTION}"; then
                     case "${MY_ARG}" in
@@ -131,10 +138,15 @@ echo -n "  APPEND initrd=maintenance-boot/initrd.img-3.16.0-4-amd64 testbox-acti
 echo -n " ro aufs=tmpfs boot=nfs root=/dev/nfs" >> "${MY_CFG_FILE}";
 echo -n " nfsroot=${MY_NFS_SERVER_IP}:/export/testbox-nfsroot,ro,tcp" >> "${MY_CFG_FILE}";
 echo -n " nfsvers=3 nfsrootdebug" >> "${MY_CFG_FILE}";
-echo -n " ip=${MY_IP}:${MY_NFS_SERVER_IP}:${MY_GATEWAY_IP}:${MY_NETMASK}:maintenance:${MY_ETH_DEV}:${MY_AUTO_CFG}:${MY_DNS0_IP}:${MY_DNS1_IP}" >> "${MY_CFG_FILE}";
+if test "${MY_AUTO_CFG}" = "none"; then
+    # Note! Only 6 arguments to ip! Userland ipconfig utility barfs if autoconf and dns options are given.
+    echo -n " ip=${MY_IP}:${MY_NFS_SERVER_IP}:${MY_GATEWAY_IP}:${MY_NETMASK}:maintenance:${MY_ETH_DEV}" >> "${MY_CFG_FILE}";
+else
+    echo -n " ip=${MY_AUTO_CFG}" >> "${MY_CFG_FILE}";
+fi
 echo "" >> "${MY_CFG_FILE}";
 echo "LABEL local-boot" >> "${MY_CFG_FILE}";
 echo "LOCALBOOT" >> "${MY_CFG_FILE}";
-echo "Successfully generated ${MY_CFG_FILE}."
+echo "Successfully generated '${MY_CFG_FILE}'."
 exit 0;
 
