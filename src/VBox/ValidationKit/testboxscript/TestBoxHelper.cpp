@@ -221,7 +221,8 @@ static RTEXITCODE handlerWipeFreeSpace(int argc, char **argv)
                          "    Changes the meaning of the filenames  "
                          "    This is not yet implemented\n"
                          "  -p, --filler <32-bit value>\n"
-                         "    What to fill the blocks we write with.  Default: 0xf6f6f6f6\n"
+                         "    What to fill the blocks we write with.\n"
+                         "    Default: 0xf6f6f6f6\n"
                          "  -m, --min-free <64-bit byte count>\n"
                          "    Specifies when to stop in terms of free disk space (in bytes).\n"
                          "    Default: 32MB\n"
@@ -231,7 +232,9 @@ static RTEXITCODE handlerWipeFreeSpace(int argc, char **argv)
                          "the volume they will live on.  However, when --all is in effect the files are\n"
                          "appended to the volume mountpoints and only the first that can be created will\n"
                          "be used.  Files (used ones) will be removed when done.\n"
-                         );
+                         "\n"
+                         "If no filename is given, the default is: %s\n"
+                         , apszDefFiles[0]);
                 return RTEXITCODE_SUCCESS;
 
             default:
