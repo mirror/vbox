@@ -211,7 +211,7 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
  * Broadcasts an EOI to the I/O APICs.
  *
  * @return VBox status code (incl. scheduling status codes).
- * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVM             The cross context VM structure.
  * @param   uVector         The interrupt vector corresponding to the EOI.
  */
 VMM_INT_DECL(int) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
