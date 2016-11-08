@@ -152,7 +152,7 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Flush failed at %'RU64 bytes: %Rrc\n", pszFilename, cbWritten, rc);
 
             uint64_t cbReduced = cbWritten > _512M ? cbWritten - _512M : cbWritten / 2;
-            rc = RTFileSetAllocationSize(hFile, cbReduced, RTFILE_ALLOC_SIZE_F_DEFAULT);
+            rc = RTFileSetSize(hFile, cbReduced);
             if (RT_FAILURE(rc))
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to reduce file size from %'RU64 to %'RU64 bytes: %Rrc\n",
                                         pszFilename, cbWritten, cbReduced, rc);
