@@ -30,7 +30,11 @@
 *********************************************************************************************************************************/
 #include <iprt/buildconfig.h>
 #include <iprt/env.h>
+#include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/mp.h>
 #include <iprt/string.h>
@@ -46,6 +50,241 @@
 # include <sys/types.h>
 # include <sys/sysctl.h>
 #endif
+
+
+
+/**
+ * Does one free space wipe, using the given filename.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE on failure (fully
+ *          bitched).
+ * @param   pszFilename     The filename to use for wiping free space.  Will be
+ *                          replaced and afterwards deleted.
+ * @param   pvFiller        The filler block buffer.
+ * @param   cbFiller        The size of the filler block buffer.
+ * @param   cbMinLeftOpt    When to stop wiping.
+ */
+static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFiller, size_t cbFiller, uint64_t cbMinLeftOpt)
+{
+    /*
+     * Open the file.
+     */
+    RTEXITCODE  rcExit = RTEXITCODE_SUCCESS;
+    RTFILE      hFile  = NIL_RTFILE;
+    int rc = RTFileOpen(&hFile, pszFilename,
+                        RTFILE_O_WRITE | RTFILE_O_DENY_NONE | RTFILE_O_CREATE_REPLACE | (0775 << RTFILE_O_CREATE_MODE_SHIFT));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Query the amount of available free space.  Figure out which API we should use.
+         */
+        RTFOFF cbTotal = 0;
+        RTFOFF cbFree = 0;
+        rc = RTFileQueryFsSizes(hFile, &cbTotal, &cbFree, NULL, NULL);
+        bool const fFileHandleApiSupported = rc != VERR_NOT_SUPPORTED && rc != VERR_NOT_IMPLEMENTED;
+        if (!fFileHandleApiSupported)
+            rc = RTFsQuerySizes(pszFilename, &cbTotal, &cbFree, NULL, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            RTPrintf("%s: %'RTfoff bytes out of  %'RTfoff are free\n", pszFilename, cbFree, cbTotal);
+
+            /*
+             * Start filling up the free space, down to the last 32MB.
+             */
+            RTFOFF const    cbMinLeft     = RT_MAX(cbMinLeftOpt, cbFiller * 2);
+            RTFOFF          cbLeftToWrite = cbFree - cbMinLeft;
+            uint64_t        cbWritten     = 0;
+            uint32_t        iLoop         = 0;
+            while (cbLeftToWrite >= (RTFOFF)cbFiller)
+            {
+                rc = RTFileWrite(hFile, pvFiller, cbFiller, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    if (rc == VERR_DISK_FULL)
+                        RTPrintf("%s: Disk full after writing %'RU64 bytes\n", pszFilename, cbWritten);
+                    else
+                        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Write error after %'RU64 bytes: %Rrc\n",
+                                                pszFilename, cbWritten, rc);
+                    break;
+                }
+
+                /* Flush every now and then as we approach a completely full disk. */
+                if (cbLeftToWrite <= _1G && (iLoop & (cbLeftToWrite  > _128M ? 15 : 3)) == 0)
+                    RTFileFlush(hFile);
+
+                /*
+                 * Advance and maybe recheck the amount of free space.
+                 */
+                cbWritten     += cbFiller;
+                cbLeftToWrite -= (ssize_t)cbFiller;
+                iLoop++;
+                if ((iLoop & (16 - 1)) == 0 || cbLeftToWrite < _256M)
+                {
+                    RTFOFF cbFreeUpdated;
+                    if (fFileHandleApiSupported)
+                        rc = RTFsQuerySizes(pszFilename, NULL, &cbFreeUpdated, NULL, NULL);
+                    else
+                        rc = RTFileQueryFsSizes(hFile, NULL, &cbFreeUpdated, NULL, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        cbFree = cbFreeUpdated;
+                        cbLeftToWrite = cbFree - cbMinLeft;
+                    }
+                    else
+                    {
+                        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to query free space after %'RU64 bytes: %Rrc\n",
+                                                pszFilename, cbWritten, rc);
+                        break;
+                    }
+                    if ((iLoop & (512 - 1)) == 0)
+                        RTPrintf("%s: %'RTfoff bytes out of  %'RTfoff are free after writing  %'RU64 bytes\n",
+                                 pszFilename, cbFree, cbTotal, cbWritten);
+                }
+            }
+
+            /*
+             * Now flush the file and then reduce the size a little before closing
+             * it so the system won't entirely run out of space.  The flush should
+             * ensure the data has actually hit the disk.
+             */
+            rc = RTFileFlush(hFile);
+            if (RT_FAILURE(rc))
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Flush failed at %'RU64 bytes: %Rrc\n", pszFilename, cbWritten, rc);
+
+            uint64_t cbReduced = cbWritten > _512M ? cbWritten - _512M : cbWritten / 2;
+            rc = RTFileSetAllocationSize(hFile, cbReduced, RTFILE_ALLOC_SIZE_F_DEFAULT);
+            if (RT_FAILURE(rc))
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to reduce file size from %'RU64 to %'RU64 bytes: %Rrc\n",
+                                        pszFilename, cbWritten, cbReduced, rc);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Initial free space query failed: %Rrc \n", pszFilename, rc);
+
+        RTFileClose(hFile);
+
+        /*
+         * Delete the file.
+         */
+        rc = RTFileDelete(pszFilename);
+        if (RT_FAILURE(rc))
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Delete failed: %Rrc !!\n", pszFilename, rc);
+    }
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Open failed: %Rrc\n", pszFilename, rc);
+    return rcExit;
+}
+
+
+/**
+ * Wipes free space on one or more volumes by creating large files.
+ */
+static RTEXITCODE handlerWipeFreeSpace(int argc, char **argv)
+{
+    /*
+     * Parse arguments.
+     */
+    const char *apszDefFiles[2] = { "./wipefree.spc", NULL };
+    bool        fAll            = false;
+    uint32_t    u32Filler       = UINT32_C(0xf6f6f6f6);
+    uint64_t    cbMinLeftOpt    = _32M;
+
+    static RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--all",      'a', RTGETOPT_REQ_NOTHING },
+        { "--filler",   'f', RTGETOPT_REQ_UINT32 },
+        { "--min-free", 'm', RTGETOPT_REQ_UINT64 },
+    };
+    RTGETOPTSTATE State;
+    RTGetOptInit(&State, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGETOPTUNION ValueUnion;
+    int chOpt;
+    while (  (chOpt = RTGetOpt(&State, &ValueUnion)) != 0
+           && chOpt != VINF_GETOPT_NOT_OPTION)
+    {
+        switch (chOpt)
+        {
+            case 'a':
+                fAll = true;
+                break;
+            case 'f':
+                u32Filler = ValueUnion.u32;
+                break;
+            case 'm':
+                cbMinLeftOpt = ValueUnion.u64;
+                break;
+            case 'h':
+                RTPrintf("usage: wipefrespace [options] [filename1 [..]]\n",
+                         "\n"
+                         "Options:\n"
+                         "  -a, --all\n"
+                         "    Try do the free space wiping on all seemingly relevant file systems.\n"
+                         "    Changes the meaning of the filenames  "
+                         "    This is not yet implemented\n"
+                         "  -p, --filler <32-bit value>\n"
+                         "    What to fill the blocks we write with.  Default: 0xf6f6f6f6\n"
+                         "  -m, --min-free <64-bit byte count>\n"
+                         "    Specifies when to stop in terms of free disk space (in bytes).\n"
+                         "    Default: 32MB\n"
+                         "\n"
+                         "Zero or more names of files to do the free space wiping thru can be given.\n"
+                         "When --all is NOT used, each of the files are used to do free space wiping on\n"
+                         "the volume they will live on.  However, when --all is in effect the files are\n"
+                         "appended to the volume mountpoints and only the first that can be created will\n"
+                         "be used.  Files (used ones) will be removed when done.\n"
+                         );
+                return RTEXITCODE_SUCCESS;
+
+            default:
+                return RTGetOptPrintError(chOpt, &ValueUnion);
+        }
+    }
+
+    char **papszFiles;
+    if (chOpt == 0)
+        papszFiles = (char **)apszDefFiles;
+    else
+        papszFiles = RTGetOptNonOptionArrayPtr(&State);
+
+    /*
+     * Allocate and prep a memory which we'll write over and over again.
+     */
+    uint32_t  cbFiller   = _2M;
+    uint32_t *pu32Filler = (uint32_t *)RTMemPageAlloc(cbFiller);
+    while (!pu32Filler)
+    {
+        cbFiller <<= 1;
+        if (cbFiller >= _4K)
+            pu32Filler = (uint32_t *)RTMemPageAlloc(cbFiller);
+        else
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTMemPageAlloc failed for sizes between 4KB and 2MB!\n");
+    }
+    for (uint32_t i = 0; i < cbFiller / sizeof(pu32Filler[0]); i++)
+        pu32Filler[i] = u32Filler;
+
+    /*
+     * Do the requested work.
+     */
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    if (!fAll)
+    {
+        for (uint32_t iFile = 0; papszFiles[iFile] != NULL; iFile++)
+        {
+            RTEXITCODE rcExit2 = doOneFreeSpaceWipe(papszFiles[iFile], pu32Filler, cbFiller, cbMinLeftOpt);
+            if (rcExit2 != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
+                rcExit = rcExit2;
+        }
+    }
+    else
+    {
+        /*
+         * Reject --all for now.
+         */
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,  "The --all option is not yet implemented!\n");
+    }
+
+    RTMemPageFree(pu32Filler, cbFiller);
+    return rcExit;
+}
 
 
 /**
@@ -394,7 +633,8 @@ int main(int argc, char **argv)
         { "nestedpaging",   handlerCpuNestedPaging, true },
         { "longmode",       handlerCpuLongMode,     true },
         { "memsize",        handlerMemSize,         true },
-        { "report",         handlerReport,          true }
+        { "report",         handlerReport,          true },
+        { "wipefreespace",  handlerWipeFreeSpace,   false }
     };
 
     if (argc < 2)
