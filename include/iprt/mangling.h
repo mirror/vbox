@@ -917,6 +917,7 @@
 # define RTGetOptArgvToUtf16String                      RT_MANGLER(RTGetOptArgvToUtf16String)
 # define RTGetOptFetchValue                             RT_MANGLER(RTGetOptFetchValue)
 # define RTGetOptInit                                   RT_MANGLER(RTGetOptInit)
+# define RTGetOptNonOptionArrayPtr                      RT_MANGLER(RTGetOptNonOptionArrayPtr)
 # define RTGetOptPrintError                             RT_MANGLER(RTGetOptPrintError)
 # define RTHandleClose                                  RT_MANGLER(RTHandleClose)
 # define RTHandleGetStandard                            RT_MANGLER(RTHandleGetStandard)

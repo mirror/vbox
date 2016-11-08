@@ -376,6 +376,19 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion);
 RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion, uint32_t fFlags);
 
 /**
+ * Gets the pointer to the argv entry of the current non-option argument.
+ *
+ * This function ASSUMES the previous RTGetOpt() call returned
+ * VINF_GETOPT_NOT_OPTION and require RTGETOPTINIT_FLAGS_OPTS_FIRST to be
+ * specified to RTGetOptInit().
+ *
+ * @returns Pointer to the argv entry of the current non-option.  NULL if
+ *          (detectable) precondition isn't fullfilled (asserted)
+ * @param   pState      The state previously initialized with RTGetOptInit.
+ */
+RTDECL(char **) RTGetOptGetNonOptionArrayPtr(PRTGETOPTSTATE pState);
+
+/**
  * Print error messages for a RTGetOpt default case.
  *
  * Uses RTMsgError.

@@ -727,6 +727,14 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
 RT_EXPORT_SYMBOL(RTGetOptFetchValue);
 
 
+RTDECL(char **) RTGetOptNonOptionArrayPtr(PRTGETOPTSTATE pState)
+{
+    AssertReturn(pState->fFlags & RTGETOPTINIT_FLAGS_OPTS_FIRST, NULL);
+    return &pState->argv[pState->iNext - 1];
+}
+RT_EXPORT_SYMBOL(RTGetOptNonOptionArrayPtr);
+
+
 RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
 {
     if (ch == VINF_GETOPT_NOT_OPTION)
