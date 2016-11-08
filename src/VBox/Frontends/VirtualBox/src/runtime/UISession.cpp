@@ -591,27 +591,30 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     /* Make sure GA medium ID is valid: */
     AssertReturnVoid(!strMediumID.isNull());
 
-    /* Searching for the first suitable controller/slot: */
-    QString strControllerName;
-    LONG iCntPort = -1, iCntDevice = -1;
+    /* Search for a suitable storage slots: */
+    QList<ExactStorageSlot> freeStorageSlots;
+    QList<ExactStorageSlot> busyStorageSlots;
     foreach (const CStorageController &controller, machine().GetStorageControllers())
     {
         foreach (const CMediumAttachment &attachment, machine().GetMediumAttachmentsOfController(controller.GetName()))
         {
+            /* Look for an optical device: */
             if (attachment.GetType() == KDeviceType_DVD)
             {
-                strControllerName = controller.GetName();
-                iCntPort = attachment.GetPort();
-                iCntDevice = attachment.GetDevice();
-                break;
+                /* Append storage slot to corresponding list: */
+                if (attachment.GetMedium().isNull())
+                    freeStorageSlots << ExactStorageSlot(controller.GetName(), controller.GetBus(),
+                                                         attachment.GetPort(), attachment.GetDevice());
+                else
+                    busyStorageSlots << ExactStorageSlot(controller.GetName(), controller.GetBus(),
+                                                         attachment.GetPort(), attachment.GetDevice());
             }
         }
-        if (!strControllerName.isNull())
-            break;
     }
 
-    /* Make sure suitable controller/slot were found: */
-    if (strControllerName.isNull())
+    /* Make sure at least one storage slot found: */
+    QList<ExactStorageSlot> storageSlots = freeStorageSlots + busyStorageSlots;
+    if (storageSlots.isEmpty())
     {
         msgCenter().cannotMountGuestAdditions(machineName());
         return;
@@ -626,20 +629,19 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
         vboxGlobal().createMedium(medium);
     }
 
-    /* Mount medium to corresponding controller/slot: */
-    machine().MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), false /* force */);
+    /* Try to mount medium to first storage slot: */
+    bool fMounted = false;
+    while (!storageSlots.isEmpty() && !fMounted)
+    {
+        const ExactStorageSlot storageSlot = storageSlots.takeFirst();
+        machine().MountMedium(storageSlot.controller, storageSlot.port, storageSlot.device, medium.medium(), false /* force */);
+        if (machine().isOk())
+            fMounted = true;
+    }
     if (!machine().isOk())
     {
-        /* Ask for force mounting: */
-        if (msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
-                                            true /* retry? */, mainMachineWindow()))
-        {
-            /* Force mount medium to the predefined port/device: */
-            machine().MountMedium(strControllerName, iCntPort, iCntDevice, medium.medium(), true /* force */);
-            if (!machine().isOk())
-                msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
-                                                false /* retry? */, mainMachineWindow());
-        }
+        msgCenter().cannotRemountMedium(machine(), medium, true /* mount? */,
+                                        false /* retry? */, mainMachineWindow());
     }
 }
 

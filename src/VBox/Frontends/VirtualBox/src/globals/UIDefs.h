@@ -136,4 +136,15 @@ struct StorageSlot
 };
 Q_DECLARE_METATYPE(StorageSlot);
 
+/** Common UI: Storage-slot struct extension with exact controller name. */
+struct ExactStorageSlot : public StorageSlot
+{
+    ExactStorageSlot(const QString &strController,
+                     KStorageBus enmBus, LONG iPort, LONG iDevice)
+        : StorageSlot(enmBus, iPort, iDevice)
+        , controller(strController)
+    {}
+    QString controller;
+};
+
 #endif /* !___UIDefs_h___ */
