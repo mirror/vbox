@@ -386,7 +386,7 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
  *          (detectable) precondition isn't fullfilled (asserted)
  * @param   pState      The state previously initialized with RTGetOptInit.
  */
-RTDECL(char **) RTGetOptGetNonOptionArrayPtr(PRTGETOPTSTATE pState);
+RTDECL(char **) RTGetOptNonOptionArrayPtr(PRTGETOPTSTATE pState);
 
 /**
  * Print error messages for a RTGetOpt default case.
