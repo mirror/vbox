@@ -22,7 +22,10 @@
 #define LOG_GROUP LOG_GROUP_DEV_APIC
 #include "APICInternal.h"
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/rem.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vmcpuset.h>
 
 
@@ -470,20 +473,6 @@ DECLINLINE(void) apicWriteRaw32(PXAPICPAGE pXApicPage, uint16_t offReg, uint32_t
     Assert(offReg < sizeof(*pXApicPage) - sizeof(uint32_t));
     uint8_t *pbXApic = (uint8_t *)pXApicPage;
     *(uint32_t *)(pbXApic + offReg) = uReg;
-}
-
-
-/**
- * Broadcasts the EOI to the I/O APICs.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uVector         The interrupt vector corresponding to the EOI.
- */
-DECLINLINE(int) apicBusBroadcastEoi(PVMCPU pVCpu, uint8_t uVector)
-{
-    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
-    PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
-    return pApicDev->CTX_SUFF(pApicHlp)->pfnBusBroadcastEoi(pApicDev->CTX_SUFF(pDevIns), uVector);
 }
 
 
@@ -1264,7 +1253,7 @@ static VBOXSTRICTRC apicSetEoi(PVMCPU pVCpu, uint32_t uEoi, int rcBusy, bool fFo
         bool const fLevelTriggered = apicTestVectorInReg(&pXApicPage->tmr, uVector);
         if (fLevelTriggered)
         {
-            int rc = apicBusBroadcastEoi(pVCpu, uVector);
+            int rc = PDMIoApicBroadcastEoi(pVCpu->CTX_SUFF(pVM), uVector);
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else
@@ -2681,9 +2670,51 @@ APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
  */
 VMM_INT_DECL(void) apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
-    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
-    PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
-    CTX_SUFF(pApicDev->pApicHlp)->pfnSetInterruptFF(pApicDev->CTX_SUFF(pDevIns), enmType, pVCpu->idCpu);
+    switch (enmType)
+    {
+        case PDMAPICIRQ_HARDWARE:
+            VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            break;
+        case PDMAPICIRQ_UPDATE_PENDING: VMCPU_FF_SET(pVCpu, VMCPU_FF_UPDATE_APIC);    break;
+        case PDMAPICIRQ_NMI:            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);  break;
+        case PDMAPICIRQ_SMI:            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);  break;
+        case PDMAPICIRQ_EXTINT:         VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);  break;
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
+    }
+
+    /*
+     * We need to wake up the target CPU if we're not on EMT.
+     */
+#if defined(IN_RING0)
+    PVM     pVM   = pVCpu->CTX_SUFF(pVM);
+    VMCPUID idCpu = pVCpu->idCpu;
+    if (   enmType != PDMAPICIRQ_HARDWARE
+        && VMMGetCpuId(pVM) != idCpu)
+    {
+        switch (VMCPU_GET_STATE(pVCpu))
+        {
+            case VMCPUSTATE_STARTED_EXEC:
+                GVMMR0SchedPokeEx(pVM, idCpu, false /* fTakeUsedLock */);
+                break;
+
+            case VMCPUSTATE_STARTED_HALTED:
+                GVMMR0SchedWakeUpEx(pVM, idCpu, false /* fTakeUsedLock */);
+                break;
+
+            default:
+                break; /* nothing to do in other states. */
+        }
+    }
+#elif defined(IN_RING3)
+# ifdef VBOX_WITH_REM
+    REMR3NotifyInterruptSet(pVCpu->CTX_SUFF(pVM), pVCpu);
+# endif
+    if (enmType != PDMAPICIRQ_HARDWARE)
+        VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
+#endif
 }
 
 
@@ -2695,9 +2726,19 @@ VMM_INT_DECL(void) apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  */
 VMM_INT_DECL(void) apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
-    PVM      pVM      = pVCpu->CTX_SUFF(pVM);
-    PAPICDEV pApicDev = VM_TO_APICDEV(pVM);
-    pApicDev->CTX_SUFF(pApicHlp)->pfnClearInterruptFF(pApicDev->CTX_SUFF(pDevIns), enmType, pVCpu->idCpu);
+    /* NMI/SMI can't be cleared. */
+    switch (enmType)
+    {
+        case PDMAPICIRQ_HARDWARE:   VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC); break;
+        case PDMAPICIRQ_EXTINT:     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);  break;
+        default:
+            AssertMsgFailed(("enmType=%d\n", enmType));
+            break;
+    }
+
+#if defined(IN_RING3) && defined(VBOX_WITH_REM)
+    REMR3NotifyInterruptClear(pVCpu->CTX_SUFF(pVM), pVCpu);
+#endif
 }
 
 

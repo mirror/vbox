@@ -1150,30 +1150,16 @@ typedef struct APICDEV
 {
     /** The device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;
-    /** The APIC helpers - R3 Ptr. */
-    PCPDMAPICHLPR3              pApicHlpR3;
-    /** The PDM critical section - R3 Ptr. */
-    R3PTRTYPE(PPDMCRITSECT)     pCritSectR3;
     /** Alignment padding. */
     R3PTRTYPE(void *)           pvAlignment0;
 
     /** The device instance - R0 Ptr. */
     PPDMDEVINSR0                pDevInsR0;
-    /** The APIC helpers - R0 Ptr. */
-    PCPDMAPICHLPR0              pApicHlpR0;
-    /** The PDM critical section - R0 Ptr. */
-    R0PTRTYPE(PPDMCRITSECT)     pCritSectR0;
     /** Alignment padding. */
     R0PTRTYPE(void *)           pvAlignment1;
 
     /** The device instance - RC Ptr. */
     PPDMDEVINSRC                pDevInsRC;
-    /** The APIC helpers - RC Ptr. */
-    PCPDMAPICHLPRC              pApicHlpRC;
-    /** The PDM critical section - RC Ptr. */
-    RCPTRTYPE(PPDMCRITSECT)     pCritSectRC;
-    /** Alignment padding. */
-    RCPTRTYPE(void *)           pvAlignment2;
 } APICDEV;
 /** Pointer to an APIC device. */
 typedef APICDEV *PAPICDEV;

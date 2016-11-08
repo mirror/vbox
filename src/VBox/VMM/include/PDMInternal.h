@@ -1249,7 +1249,6 @@ extern const PDMDRVHLPR3    g_pdmR3DrvHlp;
 extern const PDMDEVHLPR3    g_pdmR3DevHlpTrusted;
 extern const PDMDEVHLPR3    g_pdmR3DevHlpUnTrusted;
 extern const PDMPICHLPR3    g_pdmR3DevPicHlp;
-extern const PDMAPICHLPR3   g_pdmR3DevApicHlp;
 extern const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp;
 extern const PDMFWHLPR3     g_pdmR3DevFirmwareHlp;
 extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;

@@ -249,6 +249,37 @@ static void apicR3InitIpi(PVMCPU pVCpu)
 
 
 /**
+ * Sets the CPUID feature bits for the APIC mode.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   enmMode         The APIC mode.
+ */
+static void apicR3SetCpuIdFeatureLevel(PVM pVM, PDMAPICMODE enmMode)
+{
+    switch (enmMode)
+    {
+        case PDMAPICMODE_NONE:
+            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
+            break;
+
+        case PDMAPICMODE_APIC:
+            CPUMR3ClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
+            break;
+
+        case PDMAPICMODE_X2APIC:
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_APIC);
+            CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_X2APIC);
+            break;
+
+        default:
+            AssertMsgFailed(("Unknown/invalid APIC mode: %d\n", (int)enmMode));
+    }
+}
+
+
+/**
  * Resets the APIC base MSR.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -1075,23 +1106,6 @@ static int apicR3LoadLegacyVCpuData(PVMCPU pVCpu, PSSMHANDLE pSSM, uint32_t uVer
     return rc;
 }
 
-#if 0 /** @todo not referenced and will cause assertion in apicR3LoadExec (VERR_WRONG_ORDER). */
-/**
- * @copydoc FNSSMDEVLIVEEXEC
- */
-static DECLCALLBACK(int) apicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
-{
-    PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
-    PVM      pVM      = PDMDevHlpGetVM(pApicDev->pDevInsR3);
-    RT_NOREF1(uPass);
-
-    LogFlow(("APIC: apicR3LiveExec: uPass=%u\n", uPass));
-
-    int rc = apicR3SaveVMData(pVM, pSSM);
-    AssertRCReturn(rc, rc);
-    return VINF_SSM_DONT_CALL_AGAIN;
-}
-#endif
 
 /**
  * @copydoc FNSSMDEVSAVEEXEC
@@ -1344,9 +1358,7 @@ static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
     LogFlow(("APIC: apicR3Relocate: pVM=%p pDevIns=%p offDelta=%RGi\n", pVM, pDevIns, offDelta));
 
-    pApicDev->pDevInsRC   = PDMDEVINS_2_RCPTR(pDevIns);
-    pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
-    pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
+    pApicDev->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     pApic->pApicDevRC   = PDMINS_2_DATA_RCPTR(pDevIns);
     pApic->pvApicPibRC += offDelta;
@@ -1653,12 +1665,10 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     switch ((PDMAPICMODE)uMaxMode)
     {
         case PDMAPICMODE_NONE:
-#if 1
             /** @todo permanently disabling the APIC won't really work (needs
              *        fixing in HM, CPUM, PDM and possibly other places). See
              *        @bugref{8353}. */
             return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode 'none' is not supported yet.");
-#endif
         case PDMAPICMODE_APIC:
         case PDMAPICMODE_X2APIC:
             break;
@@ -1719,9 +1729,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         ApicReg.pszGetTimerFreqR0   = "apicGetTimerFreq";
     }
 
-    rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pApicDev->pApicHlpR3);
+    rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg);
     AssertLogRelRCReturn(rc, rc);
-    pApicDev->pCritSectR3 = pApicDev->pApicHlpR3->pfnGetR3CritSect(pDevIns);
 
     /*
      * Initialize the APIC state.
@@ -1740,7 +1749,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
-    pApicDev->pApicHlpR3->pfnSetFeatureLevel(pDevIns, pApic->enmMaxMode);
+    apicR3SetCpuIdFeatureLevel(pVM, pApic->enmMaxMode);
 
     /* Initialize the state. */
     rc = apicR3InitState(pVM);
@@ -1760,15 +1769,11 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     if (pApic->fRZEnabled)
     {
-        pApicDev->pApicHlpRC  = pApicDev->pApicHlpR3->pfnGetRCHelpers(pDevIns);
-        pApicDev->pCritSectRC = pApicDev->pApicHlpR3->pfnGetRCCritSect(pDevIns);
         rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NIL_RTRCPTR /*pvUser*/,
                                      "apicWriteMmio", "apicReadMmio");
         if (RT_FAILURE(rc))
             return rc;
 
-        pApicDev->pApicHlpR0  = pApicDev->pApicHlpR3->pfnGetR0Helpers(pDevIns);
-        pApicDev->pCritSectR0 = pApicDev->pApicHlpR3->pfnGetR0CritSect(pDevIns);
         rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysApicBase, sizeof(XAPICPAGE), NIL_RTR0PTR /*pvUser*/,
                                      "apicWriteMmio", "apicReadMmio");
         if (RT_FAILURE(rc))

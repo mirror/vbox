@@ -48,6 +48,7 @@ VMMDECL(int)            PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
 VMMDECL(int)            PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMM_INT_DECL(int)       PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector);
 VMM_INT_DECL(int)       PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
 VMMDECL(VBOXSTRICTRC)   PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base);

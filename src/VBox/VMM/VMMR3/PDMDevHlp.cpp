@@ -2844,18 +2844,18 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
-static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
+static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
     LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: pApicReg=%p:{.u32Version=%#x, .pfnGetInterruptR3=%p, .pfnSetBaseMsrR3=%p, .pfnGetBaseMsrR3=%p, "
              ".pfnSetTprR3=%p, .pfnGetTprR3=%p, .pfnWriteMsr3=%p, .pfnReadMsr3=%p, .pfnBusDeliverR3=%p, .pfnLocalInterruptR3=%p .pfnGetTimerFreqR3=%p, pszGetInterruptRC=%p:{%s}, pszSetBaseMsrRC=%p:{%s}, pszGetBaseMsrRC=%p:{%s}, "
-             ".pszSetTprRC=%p:{%s}, .pszGetTprRC=%p:{%s}, .pszWriteMsrRC=%p:{%s}, .pszReadMsrRC=%p:{%s}, .pszBusDeliverRC=%p:{%s}, .pszLocalInterruptRC=%p:{%s}, .pszGetTimerFreqRC=%p:{%s}} ppApicHlpR3=%p\n",
+             ".pszSetTprRC=%p:{%s}, .pszGetTprRC=%p:{%s}, .pszWriteMsrRC=%p:{%s}, .pszReadMsrRC=%p:{%s}, .pszBusDeliverRC=%p:{%s}, .pszLocalInterruptRC=%p:{%s}, .pszGetTimerFreqRC=%p:{%s}}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pApicReg, pApicReg->u32Version, pApicReg->pfnGetInterruptR3, pApicReg->pfnSetBaseMsrR3,
              pApicReg->pfnGetBaseMsrR3, pApicReg->pfnSetTprR3, pApicReg->pfnGetTprR3, pApicReg->pfnWriteMsrR3, pApicReg->pfnReadMsrR3, pApicReg->pfnBusDeliverR3, pApicReg->pfnLocalInterruptR3, pApicReg->pfnGetTimerFreqR3, pApicReg->pszGetInterruptRC,
              pApicReg->pszGetInterruptRC, pApicReg->pszSetBaseMsrRC, pApicReg->pszSetBaseMsrRC, pApicReg->pszGetBaseMsrRC, pApicReg->pszGetBaseMsrRC,
              pApicReg->pszSetTprRC, pApicReg->pszSetTprRC, pApicReg->pszGetTprRC, pApicReg->pszGetTprRC, pApicReg->pszWriteMsrRC, pApicReg->pszWriteMsrRC, pApicReg->pszReadMsrRC, pApicReg->pszReadMsrRC, pApicReg->pszBusDeliverRC,
-             pApicReg->pszBusDeliverRC, pApicReg->pszLocalInterruptRC, pApicReg->pszLocalInterruptRC, pApicReg->pszGetTimerFreqRC, pApicReg->pszGetTimerFreqRC, ppApicHlpR3));
+             pApicReg->pszBusDeliverRC, pApicReg->pszLocalInterruptRC, pApicReg->pszLocalInterruptRC, pApicReg->pszGetTimerFreqRC, pApicReg->pszGetTimerFreqRC));
 
     /*
      * Validate input.
@@ -2958,12 +2958,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
         Assert(VALID_PTR(pApicReg->pszLocalInterruptR0));
         Assert(VALID_PTR(pApicReg->pszGetTimerFreqR0));
         LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (R0 callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!ppApicHlpR3)
-    {
-        Assert(ppApicHlpR3);
-        LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -3144,8 +3138,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
     pVM->pdm.s.Apic.pfnGetTimerFreqR3   = pApicReg->pfnGetTimerFreqR3;
     Log(("PDM: Registered APIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
-    /* set the helper pointer and return. */
-    *ppApicHlpR3 = &g_pdmR3DevApicHlp;
     LogFlow(("pdmR3DevHlp_APICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
@@ -3426,7 +3418,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PciRawRegister(PPDMDEVINS pDevIns, PPDMPCIR
     if (!ppPciRawHlpR3)
     {
         Assert(ppPciRawHlpR3);
-        LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        LogFlow(("pdmR3DevHlp_PciRawRegister: caller='%s'/%d: returns %Rrc (ppPciRawHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
 

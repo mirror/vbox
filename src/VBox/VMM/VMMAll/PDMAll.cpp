@@ -206,6 +206,29 @@ VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint3
     return VERR_PDM_NO_PIC_INSTANCE;
 }
 
+
+/**
+ * Broadcasts an EOI to the I/O APICs.
+ *
+ * @return VBox status code (incl. scheduling status codes).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uVector         The interrupt vector corresponding to the EOI.
+ */
+VMM_INT_DECL(int) PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector)
+{
+    /* At present, we support only a maximum of one I/O APIC per-VM. If we ever implement having
+       multiple I/O APICs per-VM, we'll have to broadcast this EOI to all of the I/O APICs. */
+    if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
+    {
+        Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi));
+        return pVM->pdm.s.IoApic.CTX_SUFF(pfnSetEoi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), uVector);
+    }
+
+    /* We shouldn't return failure if no I/O APIC is present. */
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Send a MSI to an I/O APIC.
  *
