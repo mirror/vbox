@@ -213,7 +213,7 @@ static RTEXITCODE handlerWipeFreeSpace(int argc, char **argv)
                 cbMinLeftOpt = ValueUnion.u64;
                 break;
             case 'h':
-                RTPrintf("usage: wipefrespace [options] [filename1 [..]]\n",
+                RTPrintf("usage: wipefrespace [options] [filename1 [..]]\n"
                          "\n"
                          "Options:\n"
                          "  -a, --all\n"
