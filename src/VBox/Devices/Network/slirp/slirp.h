@@ -81,27 +81,27 @@ typedef int socklen_t;
 /* We don't want the errno.h versions of these error defines. */
 # if defined(_MSC_VER) && _MSC_VER >= 1600
 #  include <errno.h>
-#  undef EWOULDBLOCK
-#  undef EINPROGRESS
-#  undef ENOTCONN
-#  undef ESHUTDOWN
-#  undef EHOSTUNREACH
-#  undef ENETUNREACH
 #  undef ECONNREFUSED
 #  undef ECONNRESET
 #  undef EHOSTDOWN
+#  undef EHOSTUNREACH
+#  undef EINPROGRESS
 #  undef ENETDOWN
+#  undef ENETUNREACH
+#  undef ENOTCONN
+#  undef ESHUTDOWN
+#  undef EWOULDBLOCK
 # endif
-# define EWOULDBLOCK WSAEWOULDBLOCK
-# define EINPROGRESS WSAEINPROGRESS
-# define ENOTCONN WSAENOTCONN
-# define ESHUTDOWN WSAESHUTDOWN
-# define EHOSTUNREACH WSAEHOSTUNREACH
-# define ENETUNREACH WSAENETUNREACH
 # define ECONNREFUSED WSAECONNREFUSED
 # define ECONNRESET WSAECONNRESET
 # define EHOSTDOWN WSAEHOSTDOWN
+# define EHOSTUNREACH WSAEHOSTUNREACH
+# define EINPROGRESS WSAEINPROGRESS
 # define ENETDOWN WSAENETDOWN
+# define ENETUNREACH WSAENETUNREACH
+# define ENOTCONN WSAENOTCONN
+# define ESHUTDOWN WSAESHUTDOWN
+# define EWOULDBLOCK WSAEWOULDBLOCK
 
 /* standard names for the shutdown() "how" argument */
 #define SHUT_RD SD_RECEIVE
