@@ -1003,14 +1003,7 @@ RTR3DECL(int) RTFileSetMode(RTFILE hFile, RTFMODE fMode)
 }
 
 
-RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree,
-                                 uint32_t *pcbBlock, uint32_t *pcbSector)
-{
-    /** @todo implement this using NtQueryVolumeInformationFile(hFile,,,,
-     *        FileFsSizeInformation). */
-    RT_NOREF_PV(hFile); RT_NOREF_PV(pcbTotal); RT_NOREF_PV(pcbFree); RT_NOREF_PV(pcbBlock); RT_NOREF_PV(pcbSector);
-    return VERR_NOT_SUPPORTED;
-}
+/* RTFileQueryFsSizes is implemented by ../nt/RTFileQueryFsSizes-nt.cpp */
 
 
 RTR3DECL(int)  RTFileDelete(const char *pszFilename)

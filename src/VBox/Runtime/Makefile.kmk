@@ -791,6 +791,7 @@ RuntimeR3_SOURCES.win = \
  	nt/RTNtPathFindPossible8dot3Name.cpp \
  	r3/nt/fs-nt.cpp \
  	r3/nt/pathint-nt.cpp \
+ 	r3/nt/RTFileQueryFsSizes-nt.cpp \
  	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \

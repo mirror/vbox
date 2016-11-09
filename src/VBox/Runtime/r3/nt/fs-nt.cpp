@@ -32,6 +32,7 @@
 #include "internal-r3-nt.h"
 
 #include <iprt/fs.h>
+#include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
@@ -63,49 +64,11 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
                           NULL);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Get the volume information.
-         */
-        FILE_FS_SIZE_INFORMATION FsSizeInfo;
-        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
-        NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios, &FsSizeInfo, sizeof(FsSizeInfo), FileFsSizeInformation);
-        if (NT_SUCCESS(rcNt))
-        {
-            /*
-             * Calculate the return values.
-             */
-            if (pcbTotal)
-            {
-                *pcbTotal = FsSizeInfo.TotalAllocationUnits.QuadPart
-                          * FsSizeInfo.SectorsPerAllocationUnit
-                          * FsSizeInfo.BytesPerSector;
-                if (   *pcbTotal / FsSizeInfo.SectorsPerAllocationUnit / FsSizeInfo.BytesPerSector
-                    != FsSizeInfo.TotalAllocationUnits.QuadPart)
-                    *pcbTotal = UINT64_MAX;
-            }
-
-            if (pcbFree)
-            {
-                *pcbFree = FsSizeInfo.AvailableAllocationUnits.QuadPart
-                         * FsSizeInfo.SectorsPerAllocationUnit
-                         * FsSizeInfo.BytesPerSector;
-                if (   *pcbFree / FsSizeInfo.SectorsPerAllocationUnit / FsSizeInfo.BytesPerSector
-                    != FsSizeInfo.AvailableAllocationUnits.QuadPart)
-                    *pcbFree = UINT64_MAX;
-            }
-
-            if (pcbBlock)
-            {
-                *pcbBlock  = FsSizeInfo.SectorsPerAllocationUnit * FsSizeInfo.BytesPerSector;
-                if (*pcbBlock / FsSizeInfo.BytesPerSector != FsSizeInfo.SectorsPerAllocationUnit)
-                    rc = VERR_OUT_OF_RANGE;
-            }
-
-            if (pcbSector)
-                *pcbSector = FsSizeInfo.BytesPerSector;
-        }
-        else
-            rc = RTErrConvertFromNtStatus(rcNt);
+        RTFILE hIprtFile = NIL_RTFILE;
+        rc = RTFileFromNative(&hIprtFile, (RTHCINTPTR)hFile);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            rc = RTFileQueryFsSizes(hIprtFile, pcbTotal, pcbFree, pcbBlock, pcbSector);
 
         RTNtPathClose(hFile);
     }
