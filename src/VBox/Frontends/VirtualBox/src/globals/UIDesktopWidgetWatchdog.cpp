@@ -34,6 +34,7 @@
 
 /* Other VBox includes: */
 # include <iprt/assert.h>
+# include <VBox/log.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
