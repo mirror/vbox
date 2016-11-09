@@ -339,7 +339,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
     pDirEntry->Info.ChangeTime  = pDirEntry->Info.ModificationTime;
 
     pDirEntry->Info.Attr.fMode  = rtFsModeFromDos((pDir->Data.dwFileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT,
-                                                   pszName, cchName);
+                                                   pszName, cchName, pDir->Data.dwReserved0);
 
     /*
      * Requested attributes (we cannot provide anything actually).

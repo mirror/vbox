@@ -891,7 +891,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
     RTTimeSpecSetNtTime(&pObjInfo->ModificationTime,  *(uint64_t *)&Data.ftLastWriteTime);
     pObjInfo->ChangeTime  = pObjInfo->ModificationTime;
 
-    pObjInfo->Attr.fMode  = rtFsModeFromDos((Data.dwFileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT, "", 0);
+    pObjInfo->Attr.fMode  = rtFsModeFromDos((Data.dwFileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT, "", 0,
+                                            RTFSMODE_SYMLINK_REPARSE_TAG /* (symlink or not, doesn't usually matter here) */);
 
     /*
      * Requested attributes (we cannot provide anything actually).

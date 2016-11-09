@@ -579,7 +579,9 @@ RTDECL(int) RTDirRead(PRTDIR pDir, PRTDIRENTRY pDirEntry, size_t *pcbDirEntry)
 
             case FILE_ATTRIBUTE_REPARSE_POINT:
             case FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY:
-                pDirEntry->enmType = RTDIRENTRYTYPE_SYMLINK;
+                /* EaSize is here reused for returning the repharse tag value. */
+                if (pDir->uCurData.pBoth->EaSize == IO_REPARSE_TAG_SYMLINK)
+                    pDirEntry->enmType = RTDIRENTRYTYPE_SYMLINK;
                 break;
         }
     }
@@ -685,7 +687,7 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
         RTTimeSpecSetNtTime(&pDirEntry->Info.ChangeTime,        pBoth->ChangeTime.QuadPart);
 
         pDirEntry->Info.Attr.fMode  = rtFsModeFromDos((pBoth->FileAttributes << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT,
-                                                       pszName, cchName);
+                                                       pszName, cchName, pBoth->EaSize);
     }
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
     else
