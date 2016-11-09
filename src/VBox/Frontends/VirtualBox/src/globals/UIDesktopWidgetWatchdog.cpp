@@ -364,7 +364,7 @@ void UIDesktopWidgetWatchdog::sltHostScreenRemoved(QScreen *pHostScreen)
     emit sigHostScreenCountChanged(screenCount());
 }
 
-void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect & /* geometry */)
+void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect &geometry)
 {
     /* Get the screen: */
     QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
@@ -373,7 +373,10 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect & /* geomet
     /* Determine screen index: */
     const int iHostScreenIndex = qApp->screens().indexOf(pScreen);
     AssertReturnVoid(iHostScreenIndex != -1);
-//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenResized(%d)\n", iHostScreenIndex);
+    LogRel(("GUI: UIDesktopWidgetWatchdog::sltHandleHostScreenResized: "
+            "Screen %d is formally resized to: %dx%d x %dx%d\n",
+            iHostScreenIndex, geometry.x(), geometry.y(),
+            geometry.width(), geometry.height()));
 
 # ifdef VBOX_WS_X11
     /* Update host-screen available-geometry: */
@@ -384,7 +387,7 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenResized(const QRect & /* geomet
     emit sigHostScreenResized(iHostScreenIndex);
 }
 
-void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect & /* availableGeometry */)
+void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect &availableGeometry)
 {
     /* Get the screen: */
     QScreen *pScreen = sender() ? qobject_cast<QScreen*>(sender()) : 0;
@@ -393,7 +396,10 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect & /
     /* Determine screen index: */
     const int iHostScreenIndex = qApp->screens().indexOf(pScreen);
     AssertReturnVoid(iHostScreenIndex != -1);
-//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(%d)\n", iHostScreenIndex);
+    LogRel(("GUI: UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized: "
+            "Screen %d work area is formally resized to: %dx%d x %dx%d\n",
+            iHostScreenIndex, availableGeometry.x(), availableGeometry.y(),
+            availableGeometry.width(), availableGeometry.height()));
 
 # ifdef VBOX_WS_X11
     /* Update host-screen available-geometry: */
@@ -409,8 +415,10 @@ void UIDesktopWidgetWatchdog::sltHandleHostScreenWorkAreaResized(const QRect & /
 #ifdef VBOX_WS_X11
 void UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(int iHostScreenIndex, QRect availableGeometry)
 {
-//    printf("UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated(%d): %dx%d x %dx%d\n",
-//           iHostScreenIndex, availableGeometry.x(), availableGeometry.y(), availableGeometry.width(), availableGeometry.height());
+    LogRel(("GUI: UIDesktopWidgetWatchdog::sltHandleHostScreenAvailableGeometryCalculated: "
+            "Screen %d work area is actually resized to: %dx%d x %dx%d\n",
+            iHostScreenIndex, availableGeometry.x(), availableGeometry.y(),
+            availableGeometry.width(), availableGeometry.height()));
 
     /* Apply received data: */
     const bool fSendSignal = m_availableGeometryData.value(iHostScreenIndex).isValid();
