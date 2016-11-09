@@ -86,11 +86,14 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
             rc = RTFsQuerySizes(pszFilename, &cbTotal, &cbFree, NULL, NULL);
         if (RT_SUCCESS(rc))
         {
-            RTPrintf("%s: %'RTfoff bytes out of  %'RTfoff are free\n", pszFilename, cbFree, cbTotal);
+            RTPrintf("%s: %'9RTfoff MiB out of %'9RTfoff are free\n", pszFilename, cbFree / _1M, cbTotal / _1M);
 
             /*
              * Start filling up the free space, down to the last 32MB.
              */
+            uint64_t const  nsStart       = RTTimeNanoTS();     /* for speed calcs */
+            uint64_t        nsStat        = nsStart;            /* for speed calcs */
+            uint64_t        cbStatWritten = 0;                  /* for speed calcs */
             RTFOFF const    cbMinLeft     = RT_MAX(cbMinLeftOpt, cbFiller * 2);
             RTFOFF          cbLeftToWrite = cbFree - cbMinLeft;
             uint64_t        cbWritten     = 0;
@@ -101,7 +104,7 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
                 if (RT_FAILURE(rc))
                 {
                     if (rc == VERR_DISK_FULL)
-                        RTPrintf("%s: Disk full after writing %'RU64 bytes\n", pszFilename, cbWritten);
+                        RTPrintf("%s: Disk full after writing %'9RU64 MiB\n", pszFilename, cbWritten / _1M);
                     else
                         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Write error after %'RU64 bytes: %Rrc\n",
                                                 pszFilename, cbWritten, rc);
@@ -122,9 +125,9 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
                 {
                     RTFOFF cbFreeUpdated;
                     if (fFileHandleApiSupported)
-                        rc = RTFsQuerySizes(pszFilename, NULL, &cbFreeUpdated, NULL, NULL);
-                    else
                         rc = RTFileQueryFsSizes(hFile, NULL, &cbFreeUpdated, NULL, NULL);
+                    else
+                        rc = RTFsQuerySizes(pszFilename, NULL, &cbFreeUpdated, NULL, NULL);
                     if (RT_SUCCESS(rc))
                     {
                         cbFree = cbFreeUpdated;
@@ -137,8 +140,17 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
                         break;
                     }
                     if ((iLoop & (512 - 1)) == 0)
-                        RTPrintf("%s: %'RTfoff bytes out of  %'RTfoff are free after writing  %'RU64 bytes\n",
-                                 pszFilename, cbFree, cbTotal, cbWritten);
+                    {
+                        uint64_t const nsNow = RTTimeNanoTS();
+                        uint64_t cNsInterval = nsNow - nsStat;
+                        uint64_t cbInterval  = cbWritten - cbStatWritten;
+                        uint64_t cbIntervalPerSec = cbInterval ? (uint64_t)(cbInterval / (cNsInterval / (double)RT_NS_1SEC)) : 0;
+
+                        RTPrintf("%s: %'9RTfoff MiB out of %'9RTfoff are free after writing %'9RU64 MiB (%'5RU64 MiB/s)\n",
+                                 pszFilename, cbFree / _1M, cbTotal  / _1M, cbWritten  / _1M, cbIntervalPerSec / _1M);
+                        nsStat        = nsNow;
+                        cbStatWritten = cbWritten;
+                    }
                 }
             }
 
@@ -156,6 +168,12 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
             if (RT_FAILURE(rc))
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to reduce file size from %'RU64 to %'RU64 bytes: %Rrc\n",
                                         pszFilename, cbWritten, cbReduced, rc);
+
+            /* Issue a summary statements. */
+            uint64_t cNsElapsed = RTTimeNanoTS() - nsStart;
+            uint64_t cbPerSec   = cbWritten ? (uint64_t)(cbWritten / (cNsElapsed / (double)RT_NS_1SEC)) : 0;
+            RTPrintf("%s: Wrote %'RU64 MiB in %'RU64 s, avg %'RU64 MiB/s.\n",
+                     pszFilename, cbWritten / _1M, cNsElapsed / RT_NS_1SEC, cbPerSec / _1M);
         }
         else
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Initial free space query failed: %Rrc \n", pszFilename, rc);
