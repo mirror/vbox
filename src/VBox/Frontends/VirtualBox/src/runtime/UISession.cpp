@@ -1132,12 +1132,13 @@ void UISession::prepareConnections()
             this, SLOT(sltHandleHostScreenCountChange()));
     connect(gpDesktop, SIGNAL(sigHostScreenResized(int)),
             this, SLOT(sltHandleHostScreenGeometryChange()));
-    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)),
-            this, SLOT(sltHandleHostScreenAvailableAreaChange()));
 # ifdef VBOX_WS_X11
     connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaRecalculated(int)),
             this, SLOT(sltHandleHostScreenAvailableAreaChange()));
-# endif /* VBOX_WS_X11 */
+# else /* !VBOX_WS_X11 */
+    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)),
+            this, SLOT(sltHandleHostScreenAvailableAreaChange()));
+# endif /* !VBOX_WS_X11 */
 #endif /* !VBOX_WS_MAC */
 }
 
