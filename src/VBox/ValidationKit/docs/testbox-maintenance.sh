@@ -36,6 +36,7 @@ MY_TFTP_ROOT="/mnt/testbox-tftp"
 MY_BACKUP_ROOT="/mnt/testbox-backup"
 MY_BACKUP_MNT_TEST_FILE="/mnt/testbox-backup/testbox-backup"
 MY_GLOBAL_LOG_FILE="${MY_BACKUP_ROOT}/maintenance.log"
+MY_DD_BLOCK_SIZE=256K
 
 MY_IP=""
 MY_BACKUP_DIR=""
@@ -321,7 +322,7 @@ case "${MY_ACTION}" in
             fi
             if test -b "${MY_SRC}"; then
                 InfoMsg "Backing up ${MY_SRC} to ${MY_DST}...";
-                dd if="${MY_SRC}" bs=2M | gzip -c > "${MY_DST}";
+                dd if="${MY_SRC}" bs=${MY_DD_BLOCK_SIZE} | gzip -c > "${MY_DST}";
                 MY_RCS=("${PIPESTATUS[@]}");
                 if test "${MY_RCS[0]}" -eq 0 -a "${MY_RCS[1]}" -eq 0; then
                     InfoMsg "Successfully backed up ${MY_SRC} to ${MY_DST}";
@@ -345,7 +346,7 @@ case "${MY_ACTION}" in
             if test -b "${MY_DST}"; then
                 if test -f "${MY_SRC}"; then
                     InfoMsg "Restoring ${MY_SRC} onto ${MY_DST}...";
-                    gunzip -c "${MY_SRC}" | dd of="${MY_DST}" bs=64K;
+                    gunzip -c "${MY_SRC}" | dd of="${MY_DST}" bs=${MY_DD_BLOCK_SIZE} iflag=fullblock;
                     MY_RCS=("${PIPESTATUS[@]}");
                     if test ${MY_RCS[0]} -eq 0 -a ${MY_RCS[1]} -eq 0; then
                         InfoMsg "Successfully restored ${MY_SRC} onto ${MY_DST}";
