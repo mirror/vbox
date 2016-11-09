@@ -122,6 +122,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
          * Init data.
          */
         pDir->fDataUnread = false; /* spelling it out */
+        pDir->uDirDev     = 0;
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
         if (fObjDir)
             pDir->enmInfoClass = FileMaximumInformation; /* object directory. */
@@ -294,6 +295,22 @@ static int rtDirNtFetchMore(PRTDIR pThis)
             if (!pThis->pabBuffer)
                 return VERR_NO_MEMORY;
         }
+
+        /*
+         * Also try determining the device number.
+         */
+        PFILE_FS_VOLUME_INFORMATION pVolInfo = (PFILE_FS_VOLUME_INFORMATION)pThis->pabBuffer;
+        pVolInfo->VolumeSerialNumber = 0;
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NTSTATUS rcNt = NtQueryVolumeInformationFile(pThis->hDir, &Ios,
+                                                     pVolInfo, RT_MIN(_2K, pThis->cbBufferAlloc),
+                                                     FileFsVolumeInformation);
+        if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+            pThis->uDirDev = pVolInfo->VolumeSerialNumber;
+        else
+            pThis->uDirDev = 0;
+        AssertCompile(sizeof(pThis->uDirDev) == sizeof(pVolInfo->VolumeSerialNumber));
+        /** @todo Grow RTDEV to 64-bit and add low dword of VolumeCreationTime to the top of uDirDev. */
     }
 
     /*
@@ -734,8 +751,11 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
             pDirEntry->Info.Attr.u.Unix.uid             = ~0U;
             pDirEntry->Info.Attr.u.Unix.gid             = ~0U;
             pDirEntry->Info.Attr.u.Unix.cHardlinks      = 1;
-            pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = 0; /** @todo Use the volume serial number (see GetFileInformationByHandle). */
-            pDirEntry->Info.Attr.u.Unix.INodeId         = 0; /** @todo Use the fileid (see GetFileInformationByHandle). */
+            pDirEntry->Info.Attr.u.Unix.INodeIdDevice   = pDir->uDirDev;
+            pDirEntry->Info.Attr.u.Unix.INodeId         = 0;
+            if (   pDir->enmInfoClass == FileIdBothDirectoryInformation
+                && pDir->uCurData.pBothId->FileId.QuadPart != UINT64_MAX)
+                pDirEntry->Info.Attr.u.Unix.INodeId     = pDir->uCurData.pBothId->FileId.QuadPart;
             pDirEntry->Info.Attr.u.Unix.fFlags          = 0;
             pDirEntry->Info.Attr.u.Unix.GenerationId    = 0;
             pDirEntry->Info.Attr.u.Unix.Device          = 0;

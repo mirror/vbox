@@ -40,6 +40,8 @@ int main(int argc, char **argv)
      * Iterate arguments.
      */
     bool fLong      = false;
+    bool fTimes     = false;
+    bool fInode     = false;
     bool fShortName = false;
     bool fFiltered  = false;
     bool fQuiet     = false;
@@ -54,8 +56,14 @@ int main(int argc, char **argv)
                     case 'l':
                         fLong = true;
                         break;
+                    case 'i':
+                        fLong = fInode = true;
+                        break;
+                    case 't':
+                        fLong = fTimes = true;
+                        break;
                     case 's':
-                        fShortName = true;
+                        fLong = fShortName = true;
                         break;
                     case 'f':
                         fFiltered = true;
@@ -167,16 +175,22 @@ int main(int argc, char **argv)
                                      fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
                                      fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
                                      fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
-                            RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
+                            RTPrintf(" %d %4d %4d %10lld %10lld",
                                      DirEntry.Info.Attr.u.Unix.cHardlinks,
                                      DirEntry.Info.Attr.u.Unix.uid,
                                      DirEntry.Info.Attr.u.Unix.gid,
                                      DirEntry.Info.cbObject,
-                                     DirEntry.Info.cbAllocated,
-                                     DirEntry.Info.BirthTime,
-                                     DirEntry.Info.ChangeTime,
-                                     DirEntry.Info.ModificationTime,
-                                     DirEntry.Info.AccessTime);
+                                     DirEntry.Info.cbAllocated);
+                            if (fTimes)
+                                RTPrintf(" %#llx %#llx %#llx %#llx",
+                                         DirEntry.Info.BirthTime,
+                                         DirEntry.Info.ChangeTime,
+                                         DirEntry.Info.ModificationTime,
+                                         DirEntry.Info.AccessTime);
+
+                            if (fInode)
+                                RTPrintf(" %#x:%#018llx",
+                                         DirEntry.Info.Attr.u.Unix.INodeIdDevice, DirEntry.Info.Attr.u.Unix.INodeId);
                             if (fShortName)
                                 RTPrintf(" %2d %-12ls ", DirEntry.cwcShortName, DirEntry.wszShortName);
                             RTPrintf(" %2d %s\n", DirEntry.cbName, DirEntry.szName);

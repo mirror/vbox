@@ -124,6 +124,8 @@ typedef struct RTDIR
     /** Find data buffer containing multiple directory entries.
      * fDataUnread indicates valid data. */
     uint8_t            *pabBuffer;
+    /** The device number for the directory (serial number). */
+    RTDEV               uDirDev;
 #  endif
 # else /* 'POSIX': */
     /** What opendir() returned. */
