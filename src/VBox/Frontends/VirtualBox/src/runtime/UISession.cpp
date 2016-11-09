@@ -1934,7 +1934,11 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     const double dBackingScaleFactor = frameBuffer(uScreenID)->backingScaleFactor();
     /* Adjust backing-scale-factor if necessary: */
     if (dBackingScaleFactor > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
+    {
+        uXHot /= dBackingScaleFactor;
+        uYHot /= dBackingScaleFactor;
         cursorPixmap.setDevicePixelRatio(dBackingScaleFactor);
+    }
 #  endif /* VBOX_GUI_WITH_HIDPI */
 # endif /* VBOX_WS_MAC */
     /* Set the new cursor: */
