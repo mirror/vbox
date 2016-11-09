@@ -321,7 +321,9 @@ typedef struct RTFSOBJATTRUNIX
     /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
      * Together with INodeIdDevice, this field can be used as a OS wide unique id
      * when both their values are not 0.
-     * This field is 0 if the information is not available. */
+     * This field is 0 if the information is not available.
+     *
+     * @remarks  The special '..' dir always shows up with 0 on NTFS/Windows. */
     RTINODE         INodeId;
 
     /** User flags (st_flags).
