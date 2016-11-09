@@ -330,6 +330,18 @@ soread(PNATState pData, struct socket *so)
     Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
     if (nn <= 0)
     {
+#ifdef RT_OS_WINDOWS
+        /*
+         * Windows reports ESHUTDOWN after SHUT_RD (SD_RECEIVE)
+         * instead of just returning EOF indication.
+         */
+        if (nn < 0 && sockerr == ESHUTDOWN)
+        {
+            nn = 0;
+            sockerr = 0;
+        }
+#endif
+
         if (nn == 0) /* XXX: should this be inside #if defined(RT_OS_WINDOWS)? */
         {
             /*
