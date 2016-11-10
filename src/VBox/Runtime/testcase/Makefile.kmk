@@ -98,6 +98,7 @@ PROGRAMS += \
 	tstOnce \
 	tstRTPath \
 	tstRTPathGlob \
+	tstRTPathQueryInfo \
 	tstRTPipe \
 	tstRTPoll \
 	tstRTPrfIO \
@@ -538,6 +539,9 @@ tstRTPath_SOURCES = tstRTPath.cpp
 
 tstRTPathGlob_TEMPLATE = VBOXR3TSTEXE
 tstRTPathGlob_SOURCES = tstRTPathGlob.cpp
+
+tstRTPathQueryInfo_TEMPLATE = VBOXR3TSTEXE
+tstRTPathQueryInfo_SOURCES = tstRTPathQueryInfo.cpp
 
 tstRTPipe_TEMPLATE = VBOXR3TSTEXE
 tstRTPipe_SOURCES = tstRTPipe.cpp
