@@ -55,7 +55,7 @@
 #endif
 
 
-/* ASSUMES FileID comes after ShortName and the structus are identical up to that point. */
+/* ASSUMES FileID comes after ShortName and the structs are identical up to that point. */
 AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, NextEntryOffset, FILE_ID_BOTH_DIR_INFORMATION, NextEntryOffset);
 AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, FileIndex      , FILE_ID_BOTH_DIR_INFORMATION, FileIndex      );
 AssertCompileMembersSameSizeAndOffset(FILE_BOTH_DIR_INFORMATION, CreationTime   , FILE_ID_BOTH_DIR_INFORMATION, CreationTime   );
@@ -105,7 +105,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
     bool fObjDir;
 #endif
     rc = RTNtPathOpenDir(pszPathBuf,
-                         FILE_READ_DATA | SYNCHRONIZE,
+                         FILE_LIST_DIRECTORY | FILE_TRAVERSE | SYNCHRONIZE,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                          OBJ_CASE_INSENSITIVE,
