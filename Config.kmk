@@ -2903,6 +2903,16 @@ ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
  $(info build debug: VBOX_WITH_NO_GCC_WARNING_POLICY is enabled)
 endif
 
+#
+# We compile the kernel driver/module and related runtime libraries with C++.
+# This does not work for g++-4.8 and recent Linux kernels.
+#
+ifeq ($(BUILD_TARGET),linux)
+ ifeq ($(int-div $(VBOX_GCC_VERSION_CXX),100), 408)
+  VBOX_WITH_VBOXDRV =
+  VBOX_WITH_ADDITION_DRIVERS =
+ endif
+endif
 
 #
 # Misc stuff that should be after including DynamicConfig.kmk.
