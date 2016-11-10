@@ -290,7 +290,8 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
      */
     for (;;)
     {
-        if (   pszCur[0] == '.'
+        char const chFirst = pszCur[0];
+        if (   chFirst == '.'
             && pszCur[1] == '.'
             && (!pszCur[2] || pszCur[2] == RTPATH_SLASH))
         {
@@ -314,6 +315,21 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
             Assert(pszPrev[-1] == RTPATH_SLASH);
             memmove(pszPrev, pszCur + 3, strlen(pszCur + 3) + 1);
             pszCur = pszPrev - 1;
+        }
+        else if (   chFirst == '.'
+                 && (!pszCur[1] || pszCur[1] == RTPATH_SLASH))
+        {
+            /* remove unnecessary '.' */
+            if (!pszCur[1])
+            {
+                if (pszCur != pszTop)
+                    pszCur[-1] = '\0';
+                else
+                    *pszCur = '\0';
+                break;
+            }
+            memmove(pszCur, pszCur + 2, strlen(pszCur + 2) + 1);
+            continue;
         }
         else
         {
