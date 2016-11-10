@@ -392,6 +392,16 @@ void UIMiniToolBarPrivate::rebuildShape()
 /* static */
 Qt::WindowFlags UIMiniToolBar::defaultWindowFlags()
 {
+#ifdef VBOX_WS_X11
+    /* Depending on current WM: */
+    switch (vboxGlobal().typeOfWindowManager())
+    {
+        /* Frameless top-level window for Unity, issues with tool window there.. */
+        case X11WMType_Compiz: return Qt::Window | Qt::FramelessWindowHint;
+        default: break;
+    }
+#endif /* VBOX_WS_X11 */
+
     /* Frameless tool window by default: */
     return Qt::Tool | Qt::FramelessWindowHint;
 }
