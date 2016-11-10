@@ -49,9 +49,7 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
@@ -1932,13 +1930,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
-#ifdef VBOX_WITH_NEW_APIC
         /*
          * Pick up asynchronously posted interrupts into the APIC.
          */
         if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
             APICUpdatePendingInterrupts(pVCpu);
-#endif
 
         /*
          * The instruction following an emulated STI should *always* be executed!
@@ -2601,10 +2597,9 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
                         if (rc == VINF_SUCCESS)
                         {
-#ifdef VBOX_WITH_NEW_APIC
                             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                                 APICUpdatePendingInterrupts(pVCpu);
-#endif
+
                             if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                                          | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                             {

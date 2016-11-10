@@ -1381,7 +1381,6 @@
     GEN_CHECK_OFF(PATMPATCHPAGE, papPatch);
 #endif
 
-#ifdef VBOX_WITH_NEW_APIC
     GEN_CHECK_SIZE(APIC);
     GEN_CHECK_OFF(APIC, pApicDevR0);
     GEN_CHECK_OFF(APIC, pApicDevR3);
@@ -1404,7 +1403,6 @@
     GEN_CHECK_OFF(APICCPU, pTimerR3);
     GEN_CHECK_OFF(APICCPU, pTimerRC);
     GEN_CHECK_OFF(APICCPU, TimerCritSect);
-#endif
 
     GEN_CHECK_SIZE(VM);
     GEN_CHECK_OFF(VM, enmVMState);
@@ -1473,9 +1471,7 @@
     GEN_CHECK_OFF(VM, gim);
     GEN_CHECK_OFF(VM, vm);
     GEN_CHECK_OFF(VM, cfgm);
-#ifdef VBOX_WITH_NEW_APIC
     GEN_CHECK_OFF(VM, apic);
-#endif
     GEN_CHECK_OFF(VM, aCpus);
 
 
@@ -1503,9 +1499,7 @@
     GEN_CHECK_OFF(VMCPU, iom);
     GEN_CHECK_OFF(VMCPU, dbgf);
     GEN_CHECK_OFF(VMCPU, gim);
-#ifdef VBOX_WITH_NEW_APIC
     GEN_CHECK_OFF(VMCPU, apic);
-#endif
     GEN_CHECK_OFF(VMCPU, pgm);
     GEN_CHECK_OFF(VMCPU, cpum);
 

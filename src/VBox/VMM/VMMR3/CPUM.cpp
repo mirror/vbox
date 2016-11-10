@@ -1158,9 +1158,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
      */
     PDMApicGetBaseMsr(pVCpu, &pCtx->msrApicBase, true /* fIgnoreErrors */);
-#ifdef VBOX_WITH_NEW_APIC
     LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", pVCpu->idCpu, pVCpu->cpum.s.Guest.msrApicBase));
-#endif
 }
 
 
@@ -1610,9 +1608,7 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 
         /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
         PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
-#ifdef VBOX_WITH_NEW_APIC
         LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", idCpu, pVCpu->cpum.s.Guest.msrApicBase));
-#endif
 
         /* During init. this is done in CPUMR3InitCompleted(). */
         if (fSupportsLongMode)
@@ -2534,9 +2530,7 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             {
                 PVMCPU pVCpu = &pVM->aCpus[i];
                 PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
-#ifdef VBOX_WITH_NEW_APIC
                 LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", i, pVCpu->cpum.s.Guest.msrApicBase));
-#endif
             }
             break;
         }

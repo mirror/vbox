@@ -46,9 +46,7 @@
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
 #include "GIMInternal.h"
-#ifdef VBOX_WITH_NEW_APIC
-# include "APICInternal.h"
-#endif
+#include "APICInternal.h"
 #include "STAMInternal.h"
 #include "VMInternal.h"
 #include "EMInternal.h"
@@ -238,9 +236,7 @@ int main()
 #endif
     CHECK_PADDING_VM(8, vm);
     CHECK_PADDING_VM(8, cfgm);
-#ifdef VBOX_WITH_NEW_APIC
     CHECK_PADDING_VM(8, apic);
-#endif
 
     PRINT_OFFSET(VMCPU, cpum);
     CHECK_PADDING_VMCPU(64, iem);
@@ -253,9 +249,8 @@ int main()
     CHECK_PADDING_VMCPU(64, iom);
     CHECK_PADDING_VMCPU(64, dbgf);
     CHECK_PADDING_VMCPU(64, gim);
-#ifdef VBOX_WITH_NEW_APIC
     CHECK_PADDING_VMCPU(64, apic);
-#endif
+
     PRINT_OFFSET(VMCPU, pgm);
     CHECK_PADDING_VMCPU(4096, pgm);
     CHECK_PADDING_VMCPU(4096, cpum);

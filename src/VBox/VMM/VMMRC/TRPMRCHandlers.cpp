@@ -27,9 +27,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/gim.h>
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/mm.h>
@@ -228,11 +226,10 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             rc = VINF_EM_NO_MEMORY;
         else
         {
-#ifdef VBOX_WITH_NEW_APIC
             /* APIC needs updating. */
             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
                 APICUpdatePendingInterrupts(pVCpu);
-#endif
+
             if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_CPUM))
                 CPUMRCProcessForceFlag(pVCpu);
 

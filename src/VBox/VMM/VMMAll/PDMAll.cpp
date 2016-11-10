@@ -25,9 +25,7 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -56,10 +54,6 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-#ifndef VBOX_WITH_NEW_APIC
-    pdmLock(pVM);
-#endif
-
     /*
      * The local APIC has a higher priority than the PIC.
      */
@@ -77,18 +71,13 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
             *pu8Interrupt = uVector;
             if (rc == VINF_SUCCESS)
                 VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), uVector);
-#ifndef VBOX_WITH_NEW_APIC
-            pdmUnlock(pVM);
-#endif
             return rc;
         }
         /* else if it's masked by TPR/PPR/whatever, go ahead checking the PIC. Such masked
            interrupts shouldn't prevent ExtINT from being delivered. */
     }
 
-#ifdef VBOX_WITH_NEW_APIC
     pdmLock(pVM);
-#endif
 
     /*
      * Check the PIC.
@@ -294,9 +283,6 @@ VMMDECL(VBOXSTRICTRC) PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base)
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetBaseMsr));
-#ifndef VBOX_WITH_NEW_APIC
-        pdmLock(pVM);
-#endif
         VBOXSTRICTRC rcStrict = pVM->pdm.s.Apic.CTX_SUFF(pfnSetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u64Base);
 
         /* Update CPUM's copy of the APIC base. */
@@ -304,9 +290,6 @@ VMMDECL(VBOXSTRICTRC) PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base)
         Assert(pCtx);
         pCtx->msrApicBase = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu);
 
-#ifndef VBOX_WITH_NEW_APIC
-        pdmUnlock(pVM);
-#endif
         return rcStrict;
     }
 
@@ -335,14 +318,8 @@ VMMDECL(VBOXSTRICTRC) PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base, bool f
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr));
-#ifdef VBOX_WITH_NEW_APIC
         VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
         *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu);
-#else
-        pdmLock(pVM);
-        *pu64Base = pVM->pdm.s.Apic.CTX_SUFF(pfnGetBaseMsr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu);
-        pdmUnlock(pVM);
-#endif
         return VINF_SUCCESS;
     }
 
@@ -373,13 +350,7 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr));
-#ifdef VBOX_WITH_NEW_APIC
         pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u8TPR);
-#else
-        pdmLock(pVM);
-        pVM->pdm.s.Apic.CTX_SUFF(pfnSetTpr)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu, u8TPR);
-        pdmUnlock(pVM);
-#endif
         return VINF_SUCCESS;
     }
     return VERR_PDM_NO_APIC_INSTANCE;

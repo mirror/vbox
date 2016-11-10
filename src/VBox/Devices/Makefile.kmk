@@ -1042,7 +1042,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_DEFS            = \
 	IN_VBOXDD2 \
 	$(if $(VBOX_WITH_PXE_ROM),VBOX_WITH_PXE_ROM,) \
-	$(if $(VBOX_WITH_NEW_APIC),VBOX_WITH_NEW_APIC,) \
 	$(if $(VBOX_WITH_NEW_IOAPIC),VBOX_WITH_NEW_IOAPIC,)
  VBoxDD2_INCS           := \
 	build \
@@ -1050,8 +1049,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2_SOURCES         = \
  	build/VBoxDD2.cpp  \
  	PC/DevLPC.cpp \
-	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp) \
-	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic_Old.cpp)
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic_Old.cpp)
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -1212,7 +1210,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD2RC_INCS           = build
   VBoxDD2RC_SOURCES        = \
  	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic_Old.cpp) \
-   	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp) \
  	build/VBoxDD2R0.cpp # Dummy to prevent linking errors.
   if1of ($(VBOX_LDR_FMT32), pe lx)
    VBoxDD2RC_LIBS          = \
@@ -1231,8 +1228,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD2R0_INCS           = build
  VBoxDD2R0_SOURCES        = \
  	build/VBoxDD2R0.cpp \
- 	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic_Old.cpp) \
- 	$(if $(VBOX_WITH_NEW_APIC),,PC/DevAPIC.cpp)
+ 	$(if $(VBOX_WITH_NEW_IOAPIC),,PC/DevIoApic_Old.cpp)
  if1of ($(VBOX_LDR_FMT), pe lx)
   VBoxDD2R0_LIBS          = \
   	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \

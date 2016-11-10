@@ -33,9 +33,7 @@
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 # include <VBox/vmm/pdmpci.h>
 #endif
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>

@@ -31,11 +31,9 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
+#include <VBox/vmm/apic.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
-#endif
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
 #endif
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -2328,7 +2326,6 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
         val |= VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER;
     }
 
-#ifdef VBOX_WITH_NEW_APIC
 #if 0
     /* Enable posted-interrupt processing. */
     if (pVM->hm.s.fPostedIntrs)
@@ -2337,7 +2334,6 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
         Assert(pVM->hm.s.vmx.Msrs.VmxExit.n.allowed1 & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT);
         val |= VMX_VMCS_CTRL_PIN_EXEC_POSTED_INTR;
     }
-#endif
 #endif
 
     if ((val & zap) != val)
@@ -2507,7 +2503,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST;         /* Enable Unrestricted Execution. */
 
-#ifdef VBOX_WITH_NEW_APIC
 #if 0
         if (pVM->hm.s.fVirtApicRegs)
         {
@@ -2517,7 +2512,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
             Assert(pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY);
             val |= VMX_VMCS_CTRL_PROC_EXEC2_VIRT_INTR_DELIVERY;         /* Enable virtual-interrupt delivery. */
         }
-#endif
 #endif
 
         /* Enable Virtual-APIC page accesses if supported by the CPU. This is essentially where the TPR shadow resides. */
@@ -7540,10 +7534,8 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
 
-#ifdef VBOX_WITH_NEW_APIC
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
         APICUpdatePendingInterrupts(pVCpu);
-#endif
 
     /*
      * Toggling of interrupt force-flags here is safe since we update TRPM on premature exits

@@ -50,9 +50,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/dbg.h>
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
@@ -2534,10 +2532,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
      * (See @remark for why we don't check for other FFs.)
      */
     pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
-#ifdef VBOX_WITH_NEW_APIC
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
         APICUpdatePendingInterrupts(pVCpu);
-#endif
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
 
@@ -4500,10 +4496,8 @@ int cpu_get_pic_interrupt(CPUX86State *env)
     uint8_t u8Interrupt;
     int     rc;
 
-#ifdef VBOX_WITH_NEW_APIC
     if (VMCPU_FF_TEST_AND_CLEAR(env->pVCpu, VMCPU_FF_UPDATE_APIC))
         APICUpdatePendingInterrupts(env->pVCpu);
-#endif
 
     /* When we fail to forward interrupts directly in raw mode, we fall back to the recompiler.
      * In that case we can't call PDMGetInterrupt anymore, because it has already cleared the interrupt

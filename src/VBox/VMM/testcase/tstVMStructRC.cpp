@@ -71,9 +71,7 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "IOMInternal.h"
 #include "REMInternal.h"
 #include "HMInternal.h"
-#ifdef VBOX_WITH_NEW_APIC
-# include "APICInternal.h"
-#endif
+#include "APICInternal.h"
 #include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"

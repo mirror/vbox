@@ -87,9 +87,6 @@ endif
 ifeq ($(KBUILD_TARGET),amd64)
  VMM_COMMON_DEFS += VBOX_WITH_MORE_RING0_MEM_MAPPINGS
 endif
-ifdef VBOX_WITH_NEW_APIC
- VMM_COMMON_DEFS += VBOX_WITH_NEW_APIC
-endif
 ifdef VBOX_WITH_NEW_IOAPIC
  VMM_COMMON_DEFS += VBOX_WITH_NEW_IOAPIC
 endif
@@ -144,6 +141,7 @@ VBoxVMM_ASINCS   = .
 
 VBoxVMM_SOURCES  = \
 	VBoxVMM.d \
+	VMMR3/APIC.cpp \
 	VMMR3/CFGM.cpp \
 	VMMR3/CPUM.cpp \
 	VMMR3/CPUMR3CpuId.cpp \
@@ -224,6 +222,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PATMSSM.cpp \
 	VMMR3/PATMR3Dbg.cpp \
        ,) \
+	VMMAll/APICAll.cpp \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMAllMsrs.cpp \
 	VMMAll/CPUMStack.cpp \
@@ -280,11 +279,6 @@ ifdef VBOX_WITH_NETSHAPER
  VBoxVMM_SOURCES += \
  	VMMR3/PDMNetShaper.cpp \
  	VMMAll/PDMAllNetShaper.cpp
-endif
-ifdef VBOX_WITH_NEW_APIC
- VBoxVMM_SOURCES += \
- 	VMMR3/APIC.cpp \
- 	VMMAll/APICAll.cpp
 endif
 ifdef VBOX_WITH_REM
  VBoxVMM_SOURCES += \
@@ -541,6 +535,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
+ 	VMMAll/APICAll.cpp \
  	VMMAll/CPUMAllRegs.cpp \
  	VMMAll/CPUMAllMsrs.cpp \
  	VMMAll/DBGFAll.cpp \
@@ -585,10 +580,6 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  endif
  ifeq ($(VBOX_LDR_FMT32),lx)
   VMMRC_SOURCES += $(VMMRCImp_0_OUTDIR)/VMMRC.def
- endif
- ifdef VBOX_WITH_NEW_APIC
-  VMMRC_SOURCES += \
-  	VMMAll/APICAll.cpp
  endif
  ifdef VBOX_WITH_REM
   VMMRC_SOURCES += \
@@ -690,6 +681,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMRZ/CPUMRZA.asm \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/VMMRZ.cpp \
+ 	VMMAll/APICAll.cpp \
  	VMMAll/CPUMAllRegs.cpp \
  	VMMAll/CPUMAllMsrs.cpp \
  	VMMAll/CPUMStack.cpp \
@@ -739,10 +731,6 @@ ifndef VBOX_ONLY_EXTPACKS
  ifdef VBOX_WITH_NETSHAPER
   VMMR0_SOURCES += \
  	VMMAll/PDMAllNetShaper.cpp
- endif
- ifdef VBOX_WITH_NEW_APIC
-  VMMR0_SOURCES += \
- 	VMMAll/APICAll.cpp
  endif
  ifdef VBOX_WITH_REM
   VMMR0_SOURCES += \

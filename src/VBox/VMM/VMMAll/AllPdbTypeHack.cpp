@@ -45,9 +45,7 @@
 #include "../include/VMMInternal.h"
 #include "../include/DBGFInternal.h"
 #include "../include/GIMInternal.h"
-#ifdef VBOX_WITH_NEW_APIC
-# include "../include/APICInternal.h"
-#endif
+#include "../include/APICInternal.h"
 #include "../include/STAMInternal.h"
 #include "../include/VMInternal.h"
 #include "../include/EMInternal.h"

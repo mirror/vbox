@@ -58,11 +58,7 @@
 #undef LOG_GROUP
 #include "../PC/DevRTC.cpp"
 # undef LOG_GROUP
-#ifdef VBOX_WITH_NEW_APIC
 # include "../../VMM/VMMR3/APIC.cpp"
-#else
-# include "../PC/DevAPIC.cpp"
-#endif
 #undef LOG_GROUP
 #ifdef VBOX_WITH_NEW_IOAPIC
 # include "../PC/DevIoApic.cpp"
@@ -692,7 +688,6 @@ int main()
     GEN_CHECK_OFF(RTCSTATE, CurLogPeriod);
     GEN_CHECK_OFF(RTCSTATE, CurHintPeriod);
 
-#ifdef VBOX_WITH_NEW_APIC
     GEN_CHECK_SIZE(APIC);
     GEN_CHECK_OFF(APIC, pApicDevR0);
     GEN_CHECK_OFF(APIC, pApicDevR3);
@@ -751,66 +746,6 @@ int main()
     GEN_CHECK_OFF(APICCPU, StatIcrHiWrite);
     GEN_CHECK_OFF(APICCPU, StatIcrFullWrite);
 # endif /* VBOX_WITH_STATISTICS */
-#else
-    /* PC/DevAPIC.cpp */
-    GEN_CHECK_SIZE(APICState);
-    GEN_CHECK_OFF(APICState, apicbase);
-    GEN_CHECK_OFF(APICState, id);
-    GEN_CHECK_OFF(APICState, arb_id);
-    GEN_CHECK_OFF(APICState, tpr);
-    GEN_CHECK_OFF(APICState, spurious_vec);
-    GEN_CHECK_OFF(APICState, log_dest);
-    GEN_CHECK_OFF(APICState, dest_mode);
-    GEN_CHECK_OFF(APICState, isr);
-    GEN_CHECK_OFF(APICState, isr.au32Bitmap[1]);
-    GEN_CHECK_OFF(APICState, tmr);
-    GEN_CHECK_OFF(APICState, tmr.au32Bitmap[1]);
-    GEN_CHECK_OFF(APICState, irr);
-    GEN_CHECK_OFF(APICState, irr.au32Bitmap[1]);
-    GEN_CHECK_OFF(APICState, lvt);
-    GEN_CHECK_OFF(APICState, lvt[1]);
-    GEN_CHECK_OFF(APICState, lvt[APIC_LVT_NB - 1]);
-    GEN_CHECK_OFF(APICState, esr);
-    GEN_CHECK_OFF(APICState, icr);
-    GEN_CHECK_OFF(APICState, icr[1]);
-    GEN_CHECK_OFF(APICState, divide_conf);
-    GEN_CHECK_OFF(APICState, count_shift);
-    GEN_CHECK_OFF(APICState, initial_count);
-    GEN_CHECK_OFF(APICState, initial_count_load_time);
-    GEN_CHECK_OFF(APICState, next_time);
-    GEN_CHECK_OFF(APICState, pTimerR3);
-    GEN_CHECK_OFF(APICState, pTimerR0);
-    GEN_CHECK_OFF(APICState, pTimerRC);
-    GEN_CHECK_OFF(APICState, fTimerArmed);
-    GEN_CHECK_OFF(APICState, uHintedInitialCount);
-    GEN_CHECK_OFF(APICState, uHintedCountShift);
-    GEN_CHECK_OFF(APICState, pszDesc);
-# ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(APICState, StatTimerSetInitialCount);
-    GEN_CHECK_OFF(APICState, StatTimerSetLvtNoRelevantChange);
-# endif
-
-    GEN_CHECK_SIZE(APICDeviceInfo);
-    GEN_CHECK_OFF(APICDeviceInfo, pDevInsR3);
-    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpR3);
-    GEN_CHECK_OFF(APICDeviceInfo, paLapicsR3);
-    GEN_CHECK_OFF(APICDeviceInfo, pCritSectR3);
-    GEN_CHECK_OFF(APICDeviceInfo, pDevInsR0);
-    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpR0);
-    GEN_CHECK_OFF(APICDeviceInfo, paLapicsR0);
-    GEN_CHECK_OFF(APICDeviceInfo, pCritSectR0);
-    GEN_CHECK_OFF(APICDeviceInfo, pDevInsRC);
-    GEN_CHECK_OFF(APICDeviceInfo, pApicHlpRC);
-    GEN_CHECK_OFF(APICDeviceInfo, paLapicsRC);
-    GEN_CHECK_OFF(APICDeviceInfo, pCritSectRC);
-    GEN_CHECK_OFF(APICDeviceInfo, enmMode);
-    GEN_CHECK_OFF(APICDeviceInfo, cTPRPatchAttempts);
-    GEN_CHECK_OFF(APICDeviceInfo, cCpus);
-# ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(APICDeviceInfo, StatMMIOReadGC);
-    GEN_CHECK_OFF(APICDeviceInfo, StatMMIOWriteHC);
-# endif
-#endif  /* VBOX_WITH_NEW_APIC */
 
 #ifdef VBOX_WITH_NEW_IOAPIC
     /* PC/DevIoApic.cpp */

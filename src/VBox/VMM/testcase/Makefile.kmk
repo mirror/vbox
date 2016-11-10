@@ -150,9 +150,6 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
   tstVMStructRC_DEFS    += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  endif
- ifdef VBOX_WITH_NEW_APIC
-  tstVMStructRC_DEFS    += VBOX_WITH_NEW_APIC
- endif
  tstVMStructRC_SOURCES   = tstVMStructRC.cpp
  tstVMStructRC_INCS      = \
 	$(VBOX_PATH_VMM_SRC)/include \
@@ -178,9 +175,6 @@ endif
 ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  tstVMStructSize_DEFS  += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 endif
-ifdef VBOX_WITH_NEW_APIC
- tstVMStructSize_DEFS  += VBOX_WITH_NEW_APIC
-endif
 
 tstAsmStructs_TEMPLATE  = VBOXR3AUTOTST
 tstAsmStructs_DEFS      = IN_VMM_R3 IN_DIS
@@ -192,9 +186,6 @@ ifdef VBOX_WITH_R0_LOGGING
 endif
 ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  tstAsmStructs_DEFS    += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-endif
-ifdef VBOX_WITH_NEW_APIC
- tstAsmStructs_DEFS    += VBOX_WITH_NEW_APIC
 endif
 tstAsmStructs_INCS      = \
 	$(VBOX_PATH_VMM_SRC)/include \
@@ -210,9 +201,6 @@ ifdef VBOX_WITH_RAW_MODE
  endif
  ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
   tstAsmStructsRC_DEFS  += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
- endif
- ifdef VBOX_WITH_NEW_APIC
-  tstAsmStructsRC_DEFS  += VBOX_WITH_NEW_APIC
  endif
  tstAsmStructsRC_INCS    = \
 	$(VBOX_PATH_VMM_SRC)/include \
@@ -495,9 +483,6 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
   tstVMStructDTrace_DEFS  += VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
  endif
- ifdef VBOX_WITH_NEW_APIC
-  tstVMStructDTrace_DEFS  += VBOX_WITH_NEW_APIC
- endif
 
 
  VMMLibDTraceStructTest_INST = $(VBOX_INST_DTRACE_TST)$(KBUILD_TARGET_ARCH)/
@@ -539,7 +524,6 @@ MY_ASA_ASM_STUFF = \
 			$(DEFS.$(KBUILD_TARGET_ARCH)) \
 			$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 			$(if $(VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI),VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI,) \
-			$(if $(VBOX_WITH_NEW_APIC),VBOX_WITH_NEW_APIC,) \
 		) \
 		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR)\

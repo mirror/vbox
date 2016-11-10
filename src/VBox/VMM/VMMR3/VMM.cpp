@@ -119,9 +119,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
-#ifdef VBOX_WITH_NEW_APIC
-# include <VBox/vmm/apic.h>
-#endif
+#include <VBox/vmm/apic.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -1485,9 +1483,7 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 
     PGMR3ResetCpu(pVM, pVCpu);
     PDMR3ResetCpu(pVCpu);   /* Only clears pending interrupts force flags */
-#ifdef VBOX_WITH_NEW_APIC
     APICR3InitIpi(pVCpu);
-#endif
     TRPMR3ResetCpu(pVCpu);
     CPUMR3ResetCpu(pVM, pVCpu);
     EMR3ResetCpu(pVCpu);
