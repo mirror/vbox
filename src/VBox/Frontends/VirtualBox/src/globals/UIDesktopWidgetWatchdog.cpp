@@ -62,11 +62,18 @@ public:
 
 private:
 
+    /** Move @a pEvent handler. */
+    void moveEvent(QMoveEvent *pEvent);
     /** Resize @a pEvent handler. */
     void resizeEvent(QResizeEvent *pEvent);
 
     /** Holds the index of the host-screen this window created for. */
-    int m_iHostScreenIndex;
+    const int m_iHostScreenIndex;
+
+    /** Holds whether the move event came. */
+    bool m_fMoveCame;
+    /** Holds whether the resize event came. */
+    bool m_fResizeCame;
 };
 
 
@@ -77,6 +84,8 @@ private:
 UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     : QWidget(0, Qt::Window | Qt::FramelessWindowHint)
     , m_iHostScreenIndex(iHostScreenIndex)
+    , m_fMoveCame(false)
+    , m_fResizeCame(false)
 {
     /* Resize to minimum size of 1 pixel: */
     resize(1, 1);
@@ -87,8 +96,38 @@ UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
         setAttribute(Qt::WA_TranslucentBackground);
 }
 
+void UIInvisibleWindow::moveEvent(QMoveEvent *pEvent)
+{
+    /* We do have both move and resize events,
+     * with no idea who will come first, but we need
+     * to send a final signal after last of events arrived. */
+
+    /* Call to base-class: */
+    QWidget::moveEvent(pEvent);
+
+    /* Ignore 'not-yet-shown' case: */
+    if (!isVisible())
+        return;
+
+    /* Mark move event as received: */
+    m_fMoveCame = true;
+
+    /* If the resize event already came: */
+    if (m_fResizeCame)
+    {
+        /* Notify listeners about host-screen available-geometry was calulated: */
+        LogRel2(("GUI: UIInvisibleWindow::moveEvent: Screen: %d, work area: %dx%d x %dx%d\n", m_iHostScreenIndex,
+                 x(), y(), width(), height()));
+        emit sigHostScreenAvailableGeometryCalculated(m_iHostScreenIndex, QRect(x(), y(), width(), height()));
+    }
+}
+
 void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
 {
+    /* We do have both move and resize events,
+     * with no idea who will come first, but we need
+     * to send a final signal after last of events arrived. */
+
     /* Call to base-class: */
     QWidget::resizeEvent(pEvent);
 
@@ -96,8 +135,17 @@ void UIInvisibleWindow::resizeEvent(QResizeEvent *pEvent)
     if (!isVisible())
         return;
 
-    /* Notify listeners about host-screen available-geometry was calulated: */
-    emit sigHostScreenAvailableGeometryCalculated(m_iHostScreenIndex, QRect(x(), y(), width(), height()));
+    /* Mark resize event as received: */
+    m_fResizeCame = true;
+
+    /* If the move event already came: */
+    if (m_fMoveCame)
+    {
+        /* Notify listeners about host-screen available-geometry was calulated: */
+        LogRel2(("GUI: UIInvisibleWindow::resizeEvent: Screen: %d, work area: %dx%d x %dx%d\n", m_iHostScreenIndex,
+                 x(), y(), width(), height()));
+        emit sigHostScreenAvailableGeometryCalculated(m_iHostScreenIndex, QRect(x(), y(), width(), height()));
+    }
 }
 
 #endif /* VBOX_WS_X11 */
@@ -529,7 +577,7 @@ void UIDesktopWidgetWatchdog::updateHostScreenAvailableGeometry(int iHostScreenI
                 this, SLOT(sltHandleHostScreenAvailableGeometryCalculated(int, QRect)));
 
         /* Place worker to corresponding host-screen: */
-        pWorker->move(hostScreenGeometry.topLeft());
+        pWorker->move(hostScreenGeometry.center());
         /* And finally, maximize it: */
         pWorker->showMaximized();
     }
