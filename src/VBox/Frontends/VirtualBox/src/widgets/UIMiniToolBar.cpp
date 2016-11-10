@@ -812,6 +812,19 @@ void UIMiniToolBar::enterEvent(QEvent*)
 
 void UIMiniToolBar::leaveEvent(QEvent*)
 {
+    // WORKAROUND:
+    // No idea why, but GUI receives mouse leave event
+    // when the mouse cursor is on the border of screen
+    // even if underlying widget is on the border of
+    // screen as well, we should detect and ignore that.
+    // Besides that, this is a good way to keep the
+    // tool-bar visible when the mouse moving through
+    // the desktop strut till the real screen border.
+    const QPoint cursorPosition = QCursor::pos();
+    if (   cursorPosition.y() <= y() + 1
+        || cursorPosition.y() >= y() + height() - 1)
+        return;
+
     /* Stop the hover-enter timer if necessary: */
     if (m_pHoverEnterTimer && m_pHoverEnterTimer->isActive())
         m_pHoverEnterTimer->stop();
