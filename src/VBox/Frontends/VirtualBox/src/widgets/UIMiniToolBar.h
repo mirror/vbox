@@ -66,7 +66,7 @@ signals:
 public:
 
     /** Proposes default set of window flags for particular platform. */
-    static Qt::WindowFlags defaultWindowFlags();
+    static Qt::WindowFlags defaultWindowFlags(GeometryType geometryType);
 
     /** Constructor, passes @a pParent to the QWidget constructor.
       * @param geometryType determines the geometry type,

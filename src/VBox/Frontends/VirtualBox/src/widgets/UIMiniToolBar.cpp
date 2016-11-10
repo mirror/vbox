@@ -390,14 +390,23 @@ void UIMiniToolBarPrivate::rebuildShape()
 }
 
 /* static */
-Qt::WindowFlags UIMiniToolBar::defaultWindowFlags()
+Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
 {
+    /* Not everywhere: */
+    Q_UNUSED(geometryType);
+
 #ifdef VBOX_WS_X11
     /* Depending on current WM: */
     switch (vboxGlobal().typeOfWindowManager())
     {
-        /* Frameless top-level window for Unity, issues with tool window there.. */
-        case X11WMType_Compiz: return Qt::Window | Qt::FramelessWindowHint;
+        // WORKAROUND:
+        // Frameless top-level window for Unity(Compiz) full-screen mode,
+        // otherwise we have Unity panel and menu-bar visible in full-screen mode.
+        // Frameless top-level tool-window for Unity(Compiz) seamless mode,
+        // otherwise we have Unity panel and menu-bar hidden in seamless mode.
+        case X11WMType_Compiz: return geometryType == GeometryType_Full ?
+                                      Qt::Window | Qt::FramelessWindowHint :
+                                      Qt::Tool | Qt::FramelessWindowHint;
         default: break;
     }
 #endif /* VBOX_WS_X11 */
@@ -410,7 +419,7 @@ UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              GeometryType geometryType,
                              Qt::Alignment alignment,
                              bool fAutoHide /* = true */)
-    : QWidget(pParent, defaultWindowFlags())
+    : QWidget(pParent, defaultWindowFlags(geometryType))
     /* Variables: General stuff: */
     , m_geometryType(geometryType)
     , m_alignment(alignment)
