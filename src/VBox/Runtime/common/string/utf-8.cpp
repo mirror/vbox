@@ -195,11 +195,15 @@ static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps
     {
         /* read the next char and check for terminator. */
         const unsigned char uch = *puch;
-        if (!uch)
+        if (uch)
+        { /* we only break once, so consider this the likely branch. */ }
+        else
             break;
 
         /* check for output overflow */
-        if (RT_UNLIKELY(cCps < 1))
+        if (RT_LIKELY(cCps >= 1))
+        { /* likely */ }
+        else
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
@@ -538,27 +542,35 @@ RT_EXPORT_SYMBOL(RTStrToUniEx);
  * @returns IPRT status code.
  * @param   psz     Pointer to the UTF-8 string.
  * @param   cch     The max length of the string. (btw cch = cb)
- *                  Use RTSTR_MAX if all of the string is to be examined.
- * @param   pcwc    Where to store the length of the UTF-16 string as a number of RTUTF16 characters.
+ * @param   pcwc    Where to store the length of the UTF-16 string as a number
+ *                  of RTUTF16 characters.
+ * @sa      rtUtf8CalcUtf16Length
  */
-static int rtUtf8CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
+static int rtUtf8CalcUtf16LengthN(const char *psz, size_t cch, size_t *pcwc)
 {
     const unsigned char *puch = (const unsigned char *)psz;
     size_t cwc = 0;
     while (cch > 0)
     {
         const unsigned char uch = *puch;
-        if (!uch)
-            break;
         if (!(uch & RT_BIT(7)))
         {
-             /* one ASCII byte */
-            cwc++;
-            puch++;
-            cch--;
+            /* one ASCII byte */
+            if (uch)
+            {
+                cwc++;
+                puch++;
+                cch--;
+            }
+            else
+                break;
         }
         else
         {
+            /*
+             * Multibyte sequence is more complicated when we have length
+             * restrictions on the input.
+             */
             /* figure sequence length and validate the first byte */
             unsigned cb;
             if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5))) == (RT_BIT(7) | RT_BIT(6)))
@@ -668,6 +680,136 @@ static int rtUtf8CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
 
 
 /**
+ * Calculates the UTF-16 length of a string, validating the encoding while doing so.
+ *
+ * @returns IPRT status code.
+ * @param   psz     Pointer to the UTF-8 string.
+ * @param   pcwc    Where to store the length of the UTF-16 string as a number
+ *                  of RTUTF16 characters.
+ * @sa      rtUtf8CalcUtf16LengthN
+ */
+static int rtUtf8CalcUtf16Length(const char *psz, size_t *pcwc)
+{
+    const unsigned char *puch = (const unsigned char *)psz;
+    size_t cwc = 0;
+    for (;;)
+    {
+        const unsigned char uch = *puch;
+        if (!(uch & RT_BIT(7)))
+        {
+            /* one ASCII byte */
+            if (uch)
+            {
+                cwc++;
+                puch++;
+            }
+            else
+                break;
+        }
+        else
+        {
+            /*
+             * Figure sequence length, implicitly validate the first byte.
+             * Then validate the additional bytes.
+             * Finally validate the code point.
+             */
+            unsigned cb;
+            RTUNICP uc;
+            if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5))) == (RT_BIT(7) | RT_BIT(6)))
+            {
+                RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                uc =            (puch[1] & 0x3f)
+                    | ((RTUNICP)(uch     & 0x1f) << 6);
+                RTStrAssertMsgReturn(uc >= 0x00000080 && uc <= 0x000007ff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                cb = 2;
+            }
+            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5)))
+            {
+                RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                uc =            (puch[2] & 0x3f)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 6)
+                    | ((RTUNICP)(uch     & 0x0f) << 12);
+                RTStrAssertMsgReturn(uc >= 0x00000800 && uc <= 0x0000fffd,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch),
+                                     uc == 0xffff || uc == 0xfffe ? VERR_CODE_POINT_ENDIAN_INDICATOR : VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn(uc < 0xd800 || uc > 0xdfff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_CODE_POINT_SURROGATE);
+                cb = 3;
+            }
+            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4)))
+            {
+                RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                uc =            (puch[3] & 0x3f)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 12)
+                    | ((RTUNICP)(uch     & 0x07) << 18);
+                RTStrAssertMsgReturn(uc >= 0x00010000 && uc <= 0x001fffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn(uc <= 0x0010ffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_CANT_RECODE_AS_UTF16);
+                cwc++;
+                cb = 4;
+            }
+            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3)))
+            {
+                RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[4] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                uc =            (puch[4] & 0x3f)
+                    | ((RTUNICP)(puch[3] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 12)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 18)
+                    | ((RTUNICP)(uch     & 0x03) << 24);
+                RTStrAssertMsgReturn(uc >= 0x00200000 && uc <= 0x03ffffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgFailed(("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch));
+                return VERR_CANT_RECODE_AS_UTF16;
+                //cb = 5;
+            }
+            else if ((uch & (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2) | RT_BIT(1))) == (RT_BIT(7) | RT_BIT(6) | RT_BIT(5) | RT_BIT(4) | RT_BIT(3) | RT_BIT(2)))
+            {
+                RTStrAssertMsgReturn((puch[1] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("2/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[2] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("3/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[3] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("4/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[4] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("5/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgReturn((puch[5] & (RT_BIT(7) | RT_BIT(6))) == RT_BIT(7), ("6/%u: %.*Rhxs\n", cb, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                uc =            (puch[5] & 0x3f)
+                    | ((RTUNICP)(puch[4] & 0x3f) << 6)
+                    | ((RTUNICP)(puch[3] & 0x3f) << 12)
+                    | ((RTUNICP)(puch[2] & 0x3f) << 18)
+                    | ((RTUNICP)(puch[1] & 0x3f) << 24)
+                    | ((RTUNICP)(uch     & 0x01) << 30);
+                RTStrAssertMsgReturn(uc >= 0x04000000 && uc <= 0x7fffffff,
+                                     ("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch), VERR_INVALID_UTF8_ENCODING);
+                RTStrAssertMsgFailed(("%u: cp=%#010RX32: %.*Rhxs\n", cb, uc, RT_MIN(cb + 10, cch), puch));
+                return VERR_CANT_RECODE_AS_UTF16;
+                //cb = 6;
+            }
+            else
+            {
+                RTStrAssertMsgFailed(("Invalid UTF-8 first byte: %.*Rhxs\n", RT_MIN(cch, 10), puch));
+                return VERR_INVALID_UTF8_ENCODING;
+            }
+
+            /* advance */
+            puch += cb;
+            cwc++;
+        }
+    }
+
+    /* done */
+    *pcwc = cwc;
+    return VINF_SUCCESS;
+}
+
+
+
+/**
  * Recodes a valid UTF-8 string as UTF-16.
  *
  * Since we know the input is valid, we do *not* perform encoding or length checks.
@@ -688,11 +830,15 @@ static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_
     {
         /* read the next char and check for terminator. */
         const unsigned char uch = *puch;
-        if (!uch)
+        if (uch)
+        { /* we only break once, so consider this the likely branch. */ }
+        else
             break;
 
         /* check for output overflow */
-        if (RT_UNLIKELY(cwc < 1))
+        if (RT_LIKELY(cwc >= 1))
+        { /* likely */ }
+        else
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
@@ -765,7 +911,7 @@ RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const 
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.
      */
     size_t cwc;
-    int rc = rtUtf8CalcUtf16Length(pszString, RTSTR_MAX, &cwc);
+    int rc = rtUtf8CalcUtf16Length(pszString, &cwc);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -807,7 +953,11 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.
      */
     size_t cwcResult;
-    int rc = rtUtf8CalcUtf16Length(pszString, cchString, &cwcResult);
+    int rc;
+    if (cchString != RTSTR_MAX)
+        rc = rtUtf8CalcUtf16LengthN(pszString, cchString, &cwcResult);
+    else
+        rc = rtUtf8CalcUtf16Length(pszString, &cwcResult);
     if (RT_SUCCESS(rc))
     {
         if (pcwc)
@@ -857,7 +1007,7 @@ RT_EXPORT_SYMBOL(RTStrToUtf16ExTag);
 RTDECL(size_t) RTStrCalcUtf16Len(const char *psz)
 {
     size_t cwc;
-    int rc = rtUtf8CalcUtf16Length(psz, RTSTR_MAX, &cwc);
+    int rc = rtUtf8CalcUtf16Length(psz, &cwc);
     return RT_SUCCESS(rc) ? cwc : 0;
 }
 RT_EXPORT_SYMBOL(RTStrCalcUtf16Len);
@@ -866,7 +1016,11 @@ RT_EXPORT_SYMBOL(RTStrCalcUtf16Len);
 RTDECL(int) RTStrCalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc)
 {
     size_t cwc;
-    int rc = rtUtf8CalcUtf16Length(psz, cch, &cwc);
+    int rc;
+    if (cch != RTSTR_MAX)
+        rc = rtUtf8CalcUtf16LengthN(psz, cch, &cwc);
+    else
+        rc = rtUtf8CalcUtf16Length(psz, &cwc);
     if (pcwc)
         *pcwc = RT_SUCCESS(rc) ? cwc : ~(size_t)0;
     return rc;
