@@ -22,6 +22,9 @@
 /* Qt includes: */
 # include <QApplication>
 # include <QDesktopWidget>
+# ifdef VBOX_WS_X11
+#  include <QTimer>
+# endif
 # if QT_VERSION >= 0x050000
 #  include <QScreen>
 # endif /* QT_VERSION >= 0x050000 */
@@ -60,6 +63,11 @@ public:
     /** Constructs invisible window for the host-screen with @a iHostScreenIndex. */
     UIInvisibleWindow(int iHostScreenIndex);
 
+private slots:
+
+    /** Performs fallback drop. */
+    void sltFallback();
+
 private:
 
     /** Move @a pEvent handler. */
@@ -94,6 +102,17 @@ UIInvisibleWindow::UIInvisibleWindow(int iHostScreenIndex)
     /* For composite WMs make this 1 pixel transparent: */
     if (vboxGlobal().isCompositingManagerRunning())
         setAttribute(Qt::WA_TranslucentBackground);
+    /* Install fallback handler: */
+    QTimer::singleShot(5000, this, SLOT(sltFallback()));
+}
+
+void UIInvisibleWindow::sltFallback()
+{
+    LogRel(("GUI: UIInvisibleWindow::sltFallback: %s event haven't came. "
+            "Screen: %d, work area: %dx%d x %dx%d\n",
+            !m_fMoveCame ? "Move" : !m_fResizeCame ? "Resize" : "Some",
+            m_iHostScreenIndex, x(), y(), width(), height()));
+    emit sigHostScreenAvailableGeometryCalculated(m_iHostScreenIndex, QRect(x(), y(), width(), height()));
 }
 
 void UIInvisibleWindow::moveEvent(QMoveEvent *pEvent)
