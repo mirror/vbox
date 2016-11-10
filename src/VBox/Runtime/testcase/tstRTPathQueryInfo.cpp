@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         else
         {
             RTFSOBJINFO ObjInfo;
-            int rc = RTPathQueryInfoEx(argv[i], &ObjInfo, enmAdditionalAttribs, fFlags);
+            rc = RTPathQueryInfoEx(argv[i], &ObjInfo, enmAdditionalAttribs, fFlags);
             if (RT_SUCCESS(rc))
             {
                 RTPrintf("  File: '%s'\n", argv[i]);
