@@ -3384,10 +3384,54 @@ void VBoxGlobal::setFullScreenFlag(QWidget *pWidget)
     Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
     Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
 
-    /* Append resultNetWmState with full-screen flag if necessary: */
+    /* Append resultNetWmState with fullscreen flag if necessary: */
     if (!resultNetWmState.contains(net_wm_state_fullscreen))
     {
         resultNetWmState.append(net_wm_state_fullscreen);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
+
+/* static */
+void VBoxGlobal::setSkipTaskBarFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_skip_taskbar = XInternAtom(pDisplay, "_NET_WM_STATE_SKIP_TASKBAR", True /* only if exists */);
+
+    /* Append resultNetWmState with skip-taskbar flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_skip_taskbar))
+    {
+        resultNetWmState.append(net_wm_state_skip_taskbar);
+        /* Apply property to widget again: */
+        XChangeProperty(pDisplay, pWidget->window()->winId(),
+                        net_wm_state, XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)resultNetWmState.data(), resultNetWmState.size());
+    }
+}
+
+/* static */
+void VBoxGlobal::setSkipPagerFlag(QWidget *pWidget)
+{
+    /* Get display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Prepare atoms: */
+    QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
+    Atom net_wm_state = XInternAtom(pDisplay, "_NET_WM_STATE", True /* only if exists */);
+    Atom net_wm_state_skip_pager = XInternAtom(pDisplay, "_NET_WM_STATE_SKIP_PAGER", True /* only if exists */);
+
+    /* Append resultNetWmState with skip-pager flag if necessary: */
+    if (!resultNetWmState.contains(net_wm_state_skip_pager))
+    {
+        resultNetWmState.append(net_wm_state_skip_pager);
         /* Apply property to widget again: */
         XChangeProperty(pDisplay, pWidget->window()->winId(),
                         net_wm_state, XA_ATOM, 32, PropModeReplace,
