@@ -83,7 +83,7 @@ void DemangleSymbol(const char * aSymbol,
 }
 
 
-#if defined(linux) && defined(__GLIBC__) && (defined(__i386) || defined(PPC)) // i386 or PPC Linux stackwalking code
+#if defined(linux) && !defined(VBOX) && defined(__GLIBC__) && (defined(__i386) || defined(PPC)) // i386 or PPC Linux stackwalking code
 
 #include <setjmp.h>
 //
