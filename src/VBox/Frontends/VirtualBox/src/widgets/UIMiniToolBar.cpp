@@ -800,9 +800,11 @@ void UIMiniToolBar::prepare()
     /* Adjust geometry first time: */
     adjustGeometry();
 
+#ifdef VBOX_WS_X11
     /* Hide mini-toolbar from taskbar and pager: */
     vboxGlobal().setSkipTaskBarFlag(this);
     vboxGlobal().setSkipPagerFlag(this);
+#endif
 }
 
 void UIMiniToolBar::cleanup()
