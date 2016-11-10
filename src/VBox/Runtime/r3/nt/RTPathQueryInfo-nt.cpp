@@ -260,6 +260,7 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
                 NtDirName.Length = (USHORT)(off * sizeof(NtName.Buffer[0]));
             else
             {
+                AssertFailed(); /* This is impossible and won't work (NT doesn't know '.' or '..').  */
                 NtDirName.Buffer = L".";
                 NtDirName.Length = sizeof(NtName.Buffer[0]);
                 NtDirName.MaximumLength = 2 * sizeof(NtName.Buffer[0]);
