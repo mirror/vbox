@@ -148,14 +148,15 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
         {
             InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, hRootDir, NULL);
             rcNt = NtCreateFile(&hFile,
-                                FILE_READ_ATTRIBUTES,
+                                FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                 &ObjAttr,
                                 &Ios,
                                 NULL /*pcbFile*/,
                                 FILE_ATTRIBUTE_NORMAL,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                 FILE_OPEN,
-                                FILE_OPEN_FOR_BACKUP_INTENT | (fFlags & RTPATH_F_FOLLOW_LINK ? 0 : FILE_OPEN_REPARSE_POINT),
+                                FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT
+                                | (fFlags & RTPATH_F_FOLLOW_LINK ? 0 : FILE_OPEN_REPARSE_POINT),
                                 NULL /*pvEaBuffer*/,
                                 0 /*cbEa*/);
             if (NT_SUCCESS(rcNt))
@@ -175,14 +176,14 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
                     HANDLE hFile2;
                     RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
                     rcNt = NtCreateFile(&hFile2,
-                                        FILE_READ_ATTRIBUTES,
+                                        FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                                         &ObjAttr,
                                         &Ios,
                                         NULL /*pcbFile*/,
                                         FILE_ATTRIBUTE_NORMAL,
                                         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                         FILE_OPEN,
-                                        FILE_OPEN_FOR_BACKUP_INTENT | 0,
+                                        FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                                         NULL /*pvEaBuffer*/,
                                         0 /*cbEa*/);
                     if (NT_SUCCESS(rcNt))
@@ -281,7 +282,7 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
                                 FILE_ATTRIBUTE_NORMAL,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                 FILE_OPEN,
-                                FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT,
+                                FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
                                 NULL /*pvEaBuffer*/,
                                 0 /*cbEa*/);
             if (NT_SUCCESS(rcNt))
