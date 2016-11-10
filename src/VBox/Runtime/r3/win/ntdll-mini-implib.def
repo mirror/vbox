@@ -56,8 +56,10 @@ EXPORTS
     NtOpenThread                          ;;= _NtOpenThread@16
     NtOpenThreadToken                     ;;= _NtOpenThreadToken@16
     NtProtectVirtualMemory                ;;= _NtProtectVirtualMemory@20
+    NtQueryAttributesFile                 ;;= _NtQueryAttributesFile@8
     NtQueryDirectoryFile                  ;;= _NtQueryDirectoryFile@44
     NtQueryDirectoryObject                ;;= _NtQueryDirectoryObject@28
+    NtQueryFullAttributesFile             ;;= _NtQueryFullAttributesFile@8
     NtQueryEvent                          ;;= _NtQueryEvent@20
     NtQueryInformationFile                ;;= _NtQueryInformationFile@20
     NtQueryInformationProcess             ;;= _NtQueryInformationProcess@20

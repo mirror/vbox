@@ -39,6 +39,7 @@
 # define NtQueryInformationFile         ZwQueryInformationFile
 # define NtQueryInformationProcess      ZwQueryInformationProcess
 # define NtQueryInformationThread       ZwQueryInformationThread
+# define NtQueryFullAttributesFile      ZwQueryFullAttributesFile
 # define NtQuerySystemInformation       ZwQuerySystemInformation
 # define NtQuerySecurityObject          ZwQuerySecurityObject
 # define NtSetInformationFile           ZwSetInformationFile
@@ -1538,6 +1539,17 @@ typedef struct _FILE_NAME_INFORMATION
     WCHAR           FileName[1];
 } FILE_NAME_INFORMATION;
 typedef FILE_NAME_INFORMATION *PFILE_NAME_INFORMATION;
+typedef struct _FILE_NETWORK_OPEN_INFORMATION
+{
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   AllocationSize;
+    LARGE_INTEGER   EndOfFile;
+    ULONG           FileAttributes;
+} FILE_NETWORK_OPEN_INFORMATION;
+typedef FILE_NETWORK_OPEN_INFORMATION *PFILE_NETWORK_OPEN_INFORMATION;
 typedef enum _FILE_INFORMATION_CLASS
 {
     FileDirectoryInformation = 1,
@@ -1609,7 +1621,11 @@ NTSYSAPI NTSTATUS NTAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, 
 NTSYSAPI NTSTATUS NTAPI NtQueryDirectoryFile(HANDLE, HANDLE, PIO_APC_ROUTINE, PVOID, PIO_STATUS_BLOCK, PVOID, ULONG,
                                              FILE_INFORMATION_CLASS, BOOLEAN, PUNICODE_STRING, BOOLEAN);
 NTSYSAPI NTSTATUS NTAPI NtSetInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FILE_INFORMATION_CLASS);
+#endif /* IPRT_NT_USE_WINTERNL */
+NTSYSAPI NTSTATUS NTAPI NtQueryAttributesFile(POBJECT_ATTRIBUTES, PFILE_BASIC_INFORMATION);
+NTSYSAPI NTSTATUS NTAPI NtQueryFullAttributesFile(POBJECT_ATTRIBUTES, PFILE_NETWORK_OPEN_INFORMATION);
 
+#ifdef IPRT_NT_USE_WINTERNL
 
 /** For use with KeyBasicInformation. */
 typedef struct _KEY_BASIC_INFORMATION
