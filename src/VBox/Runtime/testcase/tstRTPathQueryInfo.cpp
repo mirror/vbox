@@ -144,7 +144,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                RTPrintf("RTPathQueryInfoEx(%s,,%d,%#x) -> %Rrc\n", argv[i], enmAdditionalAttribs, fFlags);
+                RTPrintf("RTPathQueryInfoEx(%s,,%d,%#x) -> %Rrc\n", argv[i], enmAdditionalAttribs, fFlags, rc);
                 rcExit = RTEXITCODE_FAILURE;
             }
         }
