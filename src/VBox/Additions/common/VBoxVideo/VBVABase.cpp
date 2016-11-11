@@ -20,12 +20,6 @@
 #include <VBox/VBoxVideo.h>
 #include <VBox/err.h>
 // #include <VBox/log.h>
-#ifndef LINUX_VERSION_CODE
-# include <iprt/assert.h>
-# define VBVOAssert Assert
-#else
-# define VBVOAssert(a) do {} while(0)
-#endif
 #include <iprt/string.h>
 
 /*

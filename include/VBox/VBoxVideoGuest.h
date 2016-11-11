@@ -53,6 +53,22 @@
 # define HGSMIGUESTCMDHEAP_GET(_p) (_p)
 #endif
 
+#if defined(IN_RING0) && defined(RT_OS_LINUX)
+# define VBVOAssert(a) do {} while(0)
+# define VBVOAssertPtr(a) do {} while(0)
+# define VBVOAssertReturnVoid(a) if (!(a)) return
+# define VBVOAssertRC(a) do {} while(0)
+# define VBVOAssertPtrNullReturnVoid(a) do {} while(0)
+# define VBVOAssertPtrReturnVoid(a) if (!(a)) return
+#else
+# define VBVOAssert Assert
+# define VBVOAssertPtr AssertPtr
+# define VBVOAssertReturnVoid AssertReturnVoid
+# define VBVOAssertRC AssertRC
+# define VBVOAssertPtrNullReturnVoid AssertPtrNullReturnVoid
+# define VBVOAssertPtrReturnVoid AssertPtrReturnVoid
+#endif
+
 RT_C_DECLS_BEGIN
 
 /**

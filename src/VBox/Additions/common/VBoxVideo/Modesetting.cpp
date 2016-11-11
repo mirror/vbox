@@ -24,12 +24,6 @@
 # include <iprt/string.h>
 #endif
 
-#ifndef LINUX_VERSION_CODE
-# define VBVOAssertPtr AssertPtr
-#else
-# define VBVOAssertPtr(a) do {} while(0)
-#endif
-
 /**
  * Gets the count of virtual monitors attached to the guest via an HGSMI
  * command

@@ -91,7 +91,9 @@ DECLINLINE(HGSMISIZE) HGSMIMAOrder2Size(HGSMIOFFSET order)
 DECLINLINE(HGSMIOFFSET) HGSMIMASize2Order(HGSMISIZE cb)
 {
     HGSMIOFFSET order = HGSMIPopCnt32(cb - 1) - HGSMI_MA_DESC_ORDER_BASE;
+#ifdef HGSMI_STRICT
     Assert(HGSMIMAOrder2Size(order) == cb);
+#endif
     return order;
 }
 

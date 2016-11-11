@@ -42,6 +42,15 @@
 #define HGSMI_STRICT_ASSERT(expr) do {} while (0)
 #endif /* !HGSMI_STRICT */
 
+/*
+ * We do not want assertions in Linux kernel code to reduce symbol dependencies.
+ */
+#if defined(IN_RING0) && defined(RT_OS_LINUX)
+# define HGSMI_ASSERT_PTR_RETURN(a, b) if (!(a)) return (b)
+#else
+# define HGSMI_ASSERT_PTR_RETURN(a, b) if (!(a)) return (b)
+#endif /* !IN_RING0 && RT_OS_LINUX */
+
 /* One-at-a-Time Hash from
  * http://www.burtleburtle.net/bob/hash/doobs.html
  *
@@ -188,8 +197,8 @@ int HGSMIHeapSetup(HGSMIHEAP *pHeap,
                    HGSMIOFFSET offBase,
                    const HGSMIENV *pEnv)
 {
-    AssertPtrReturn(pHeap, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pvBase, VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_PTR_RETURN(pHeap, VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_PTR_RETURN(pvBase, VERR_INVALID_PARAMETER);
 
     int rc = HGSMIAreaInitialize(&pHeap->area, pvBase, cbArea, offBase);
     if (RT_SUCCESS(rc))
@@ -367,8 +376,8 @@ int HGSMIBufferProcess(const HGSMIAREA *pArea,
 {
     // LogFlowFunc(("pArea %p, offBuffer 0x%x\n", pArea, offBuffer));
 
-    AssertPtrReturn(pArea, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pChannelInfo, VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_PTR_RETURN(pArea, VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_PTR_RETURN(pChannelInfo, VERR_INVALID_PARAMETER);
 
     /* Guest has prepared a command description at 'offBuffer'. */
     HGSMIBUFFERCONTEXT bufferContext = { NULL, NULL, 0 }; /* Makes old GCC happier. */

@@ -58,6 +58,18 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 
+/*
+ * We do not want assertions in Linux kernel code to reduce symbol dependencies.
+ */
+#if defined(IN_RING0) && defined(RT_OS_LINUX)
+# define HGSMI_ASSERT_RETURN(a, b) if (!(a)) return (b)
+# define HGSMI_ASSERT_FAILED() do {} while (0)
+# define HGSMI_ASSERT(expr) do {} while (0)
+#else
+# define HGSMI_ASSERT_RETURN(a, b) AssertReturn(a, b)
+# define HGSMI_ASSERT_FAILED() AssertFailed()
+# define HGSMI_ASSERT(expr) Assert(expr)
+#endif /* !IN_RING0 && RT_OS_LINUX */
 
 DECLINLINE(HGSMIOFFSET) hgsmiMADescriptor(HGSMIOFFSET off, bool fFree, HGSMIOFFSET order)
 {
@@ -221,7 +233,7 @@ static HGSMIMABLOCK *hgsmiMAGetFreeBlock(HGSMIMADATA *pMA, HGSMIOFFSET order)
 
     if (pBlock)
     {
-        AssertReturn(HGSMI_MA_DESC_IS_FREE(pBlock->descriptor), NULL);
+        HGSMI_ASSERT_RETURN(HGSMI_MA_DESC_IS_FREE(pBlock->descriptor), NULL);
 
         /* Where the block starts. */
         HGSMIOFFSET off = HGSMI_MA_DESC_OFFSET(pBlock->descriptor);
@@ -297,7 +309,7 @@ static void hgsmiMAReformatFreeBlocks(HGSMIMADATA *pMA, HGSMIOFFSET maxId,
                 if (pBlock == pEnd)
                 {
                     /* Should never happen because the new set of blocks is supposed to be smaller. */
-                    AssertFailed();
+                    HGSMI_ASSERT_FAILED();
                     rc = VERR_OUT_OF_RESOURCES;
                     break;
                 }
@@ -324,7 +336,7 @@ static void hgsmiMAReformatFreeBlocks(HGSMIMADATA *pMA, HGSMIOFFSET maxId,
         u32BlockSize /= 2;
     }
 
-    Assert(cbRemaining == 0);
+    HGSMI_ASSERT(cbRemaining == 0);
 
     if (RT_SUCCESS(rc))
     {
@@ -353,7 +365,7 @@ static void hgsmiMAReformatFreeBlocks(HGSMIMADATA *pMA, HGSMIOFFSET maxId,
 static void hgsmiMAQueryFreeRange(HGSMIMADATA *pMA, HGSMIMABLOCK *pBlock, HGSMISIZE cbRequired,
                                   HGSMIMABLOCK **ppStart, HGSMIMABLOCK **ppEnd, HGSMISIZE *pcbBlocks)
 {
-    Assert(HGSMI_MA_DESC_IS_FREE(pBlock->descriptor));
+    HGSMI_ASSERT(HGSMI_MA_DESC_IS_FREE(pBlock->descriptor));
 
     *pcbBlocks = HGSMIMAOrder2Size(HGSMI_MA_DESC_ORDER(pBlock->descriptor));
     *ppStart = pBlock;
@@ -417,14 +429,14 @@ static void hgsmiMAMergeFreeBlocks(HGSMIMADATA *pMA, HGSMIOFFSET order)
         HGSMIMABLOCK *pIter;
         RTListForEach(&pMA->aListFreeBlocks[i], pIter, HGSMIMABLOCK, nodeFree)
         {
-            Assert(HGSMI_MA_DESC_ORDER(pIter->descriptor) == i);
+            HGSMI_ASSERT(HGSMI_MA_DESC_ORDER(pIter->descriptor) == i);
 
             HGSMISIZE cbBlocks;
             HGSMIMABLOCK *pFreeStart;
             HGSMIMABLOCK *pFreeEnd;
             hgsmiMAQueryFreeRange(pMA, pIter, cbRequired, &pFreeStart, &pFreeEnd, &cbBlocks);
 
-            Assert((cbBlocks / HGSMI_MA_BLOCK_SIZE_MIN) * HGSMI_MA_BLOCK_SIZE_MIN == cbBlocks);
+            HGSMI_ASSERT((cbBlocks / HGSMI_MA_BLOCK_SIZE_MIN) * HGSMI_MA_BLOCK_SIZE_MIN == cbBlocks);
 
             /* Verify whether cbBlocks is enough for the requested block. */
             if (cbBlocks >= cbRequired)
@@ -459,8 +471,8 @@ static HGSMIOFFSET hgsmiMAAlloc(HGSMIMADATA *pMA, HGSMISIZE cb)
 
     HGSMIOFFSET order = HGSMIPopCnt32(cb - 1) - HGSMI_MA_DESC_ORDER_BASE;
 
-    AssertReturn(HGSMIMAOrder2Size(order) >= cb, HGSMIOFFSET_VOID);
-    AssertReturn(order < RT_ELEMENTS(pMA->aListFreeBlocks), HGSMIOFFSET_VOID);
+    HGSMI_ASSERT_RETURN(HGSMIMAOrder2Size(order) >= cb, HGSMIOFFSET_VOID);
+    HGSMI_ASSERT_RETURN(order < RT_ELEMENTS(pMA->aListFreeBlocks), HGSMIOFFSET_VOID);
 
     HGSMIMABLOCK *pBlock = hgsmiMAGetFreeBlock(pMA, order);
     if (RT_UNLIKELY(pBlock == NULL))
@@ -488,7 +500,7 @@ static void hgsmiMAFree(HGSMIMADATA *pMA, HGSMIOFFSET off)
     }
 
     /* Find the block corresponding to the offset. */
-    Assert((off / HGSMI_MA_BLOCK_SIZE_MIN) * HGSMI_MA_BLOCK_SIZE_MIN == off);
+    HGSMI_ASSERT((off / HGSMI_MA_BLOCK_SIZE_MIN) * HGSMI_MA_BLOCK_SIZE_MIN == off);
 
     HGSMIMABLOCK *pBlock = HGSMIMASearchOffset(pMA, off);
     if (pBlock)
@@ -502,15 +514,15 @@ static void hgsmiMAFree(HGSMIMADATA *pMA, HGSMIOFFSET off)
         }
     }
 
-    AssertFailed();
+    HGSMI_ASSERT_FAILED();
 }
 
 int HGSMIMAInit(HGSMIMADATA *pMA, const HGSMIAREA *pArea,
                 HGSMIOFFSET *paDescriptors, uint32_t cDescriptors, HGSMISIZE cbMaxBlock,
                 const HGSMIENV *pEnv)
 {
-    AssertReturn(pArea->cbArea < UINT32_C(0x80000000), VERR_INVALID_PARAMETER);
-    AssertReturn(pArea->cbArea >= HGSMI_MA_BLOCK_SIZE_MIN, VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_RETURN(pArea->cbArea < UINT32_C(0x80000000), VERR_INVALID_PARAMETER);
+    HGSMI_ASSERT_RETURN(pArea->cbArea >= HGSMI_MA_BLOCK_SIZE_MIN, VERR_INVALID_PARAMETER);
 
     RT_ZERO(*pMA);
 
@@ -567,7 +579,7 @@ HGSMIOFFSET HGSMIMAPointerToOffset(const HGSMIMADATA *pMA, const void *pv)
         return HGSMIPointerToOffset(&pMA->area, pv);
     }
 
-    AssertFailed();
+    HGSMI_ASSERT_FAILED();
     return HGSMIOFFSET_VOID;
 }
 
@@ -578,7 +590,7 @@ void *HGSMIMAOffsetToPointer(const HGSMIMADATA *pMA, HGSMIOFFSET off)
         return HGSMIOffsetToPointer(&pMA->area, off);
     }
 
-    AssertFailed();
+    HGSMI_ASSERT_FAILED();
     return NULL;
 }
 
@@ -597,7 +609,7 @@ void HGSMIMAFree(HGSMIMADATA *pMA, void *pv)
     }
     else
     {
-        AssertFailed();
+        HGSMI_ASSERT_FAILED();
     }
 }
 
