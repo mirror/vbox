@@ -341,6 +341,18 @@ done in a VM.  After installation the following modifications was done:
          LOCALBOOT
 
 
+Troubleshooting
+===============
+
+``PXE-E11`` or something like ``No ARP reply``
+  You probably got the TFTP and DHCP on different machines.  Try move the TFTP
+  to the same machine as the DHCP, then the PXE stack won't have to do any
+  additional ARP resolving.  Google results suggest that a congested network
+  could use the ARP reply to get lost. Our suspicion is that it might also be
+  related to the PXE stack shipping with the NIC.
+
+
+
 -----
 
 .. [1] See http://www.syslinux.org/wiki/index.php?title=Category:Modules

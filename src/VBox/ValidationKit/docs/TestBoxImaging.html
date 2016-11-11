@@ -677,6 +677,17 @@ LOCALBOOT
 </li>
 </ul>
 </blockquote>
+</div>
+<div class="section" id="troubleshooting">
+<h1>Troubleshooting</h1>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">PXE-E11</span></tt> or something like <tt class="docutils literal">No ARP reply</tt></dt>
+<dd>You probably got the TFTP and DHCP on different machines.  Try move the TFTP
+to the same machine as the DHCP, then the PXE stack won't have to do any
+additional ARP resolving.  Google results suggest that a congested network
+could use the ARP reply to get lost. Our suspicion is that it might also be
+related to the PXE stack shipping with the NIC.</dd>
+</dl>
 <hr class="docutils" />
 <table class="docutils footnote" frame="void" id="id6" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
