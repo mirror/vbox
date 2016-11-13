@@ -66,6 +66,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 size_t cbData;
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[3]));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
                 ScsiInquiryReply.cbAdditional = 31;
                 ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
@@ -84,7 +85,8 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
              * If allocation length is less than 16 bytes SPC compliant devices have
              * to return an error.
              */
-            if (vscsiBE2HU32(&pVScsiReq->pbCDB[6]) < 16)
+            vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU32(&pVScsiReq->pbCDB[6]));
+            if (pVScsiReq->cbXfer < 16)
                 *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             else
             {
@@ -112,6 +114,8 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REQUEST_SENSE:
         {
+            vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
+
             /* Descriptor format sense data is not supported and results in an error. */
             if ((pVScsiReq->pbCDB[1] & 0x1) != 0)
                 *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
@@ -178,7 +182,7 @@ void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq
 {
     pVScsiDevice->pfnVScsiReqCompleted(pVScsiDevice, pVScsiDevice->pvVScsiDeviceUser,
                                        pVScsiReq->pvVScsiReqUser, rcScsiCode, fRedoPossible,
-                                       rcReq);
+                                       rcReq, pVScsiReq->cbXfer);
 
     RTMemCacheFree(pVScsiDevice->hCacheReq, pVScsiReq);
 }
@@ -390,6 +394,7 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
     pVScsiReq->pbSense        = pbSense;
     pVScsiReq->cbSense        = cbSense;
     pVScsiReq->pvVScsiReqUser = pvVScsiReqUser;
+    pVScsiReq->cbXfer         = 0;
     RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
 
     *phVScsiReq = pVScsiReq;

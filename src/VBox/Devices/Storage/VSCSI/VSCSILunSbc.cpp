@@ -202,6 +202,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     {
         case SCSI_INQUIRY:
         {
+            vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[3]));
+
             /* Check for EVPD bit. */
             if (pVScsiReq->pbCDB[1] & 0x1)
             {
@@ -244,6 +246,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             uint8_t aReply[8];
             memset(aReply, 0, sizeof(aReply));
 
+            vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
+
             /*
              * If sector size exceeds the maximum value that is
              * able to be stored in 4 bytes return 0xffffffff in this field
@@ -264,6 +268,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             uint8_t *pu8ReplyPos;
             bool    fValid = false;
 
+            vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
             memset(aReply, 0, sizeof(aReply));
             aReply[0] = 4; /* Reply length 4. */
             aReply[1] = 0; /* Default media type. */
@@ -300,6 +305,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             uint8_t abParms[12];
             size_t  cbCopied;
             size_t  cbList = pVScsiReq->pbCDB[4];
+
+            vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
 
             /* Copy the parameters. */
             cbCopied = RTSgBufCopyToBuf(&pVScsiReq->SgBuf, &abParms[0], sizeof(abParms));
@@ -392,6 +399,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         {
             uint8_t uDataMode = pVScsiReq->pbCDB[1] & 0x1f;
 
+            vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[6]));
+
             switch (uDataMode)
             {
                 case 0x00:
@@ -422,6 +431,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         case SCSI_VERIFY_10:
         case SCSI_START_STOP_UNIT:
         {
+            vscsiReqSetXferSize(pVScsiReq, 0);
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
         }
@@ -429,6 +439,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         {
             uint8_t uPageCode = pVScsiReq->pbCDB[2] & 0x3f;
             uint8_t uSubPageCode = pVScsiReq->pbCDB[3];
+
+            vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[7]));
 
             switch (uPageCode)
             {
@@ -467,6 +479,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                         aReply[14] = 0x80; /* LPME enabled */
                     /* Leave the rest 0 */
 
+                    vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
                     RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                     rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                     break;
@@ -485,6 +498,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 size_t cbList = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
 
                 /* Copy the header. */
+                vscsiReqSetXferSize(pVScsiReq, cbList);
                 cbCopied = RTSgBufCopyToBuf(&pVScsiReq->SgBuf, &abHdr[0], sizeof(abHdr));
 
                 /* Using the anchor bit is not supported. */
@@ -545,6 +559,8 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         LogFlow(("%s: uLbaStart=%llu cSectorTransfer=%u\n",
                  __FUNCTION__, uLbaStart, cSectorTransfer));
 
+        vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * 512);
+
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunSbc->cSectors))
         {
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
@@ -568,9 +584,10 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                                                uLbaStart * 512, cSectorTransfer * 512);
         }
     }
-    else if (pVScsiReq->pbCDB[0] ==  SCSI_SYNCHRONIZE_CACHE)
+    else if (pVScsiReq->pbCDB[0] == SCSI_SYNCHRONIZE_CACHE)
     {
         /* Enqueue flush */
+        vscsiReqSetXferSize(pVScsiReq, 0);
         rc = vscsiIoReqFlushEnqueue(pVScsiLun, pVScsiReq);
     }
     else if (pVScsiReq->pbCDB[0] !=  SCSI_UNMAP) /* Request completed */

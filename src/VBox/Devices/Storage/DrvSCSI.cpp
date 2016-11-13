@@ -72,6 +72,8 @@ typedef struct DRVSCSIREQ
     VSCSIREQ                 hVScsiReq;
     /** Where to store the SCSI status code. */
     uint8_t                  *pu8ScsiSts;
+    /** Transfer size determined by the VSCSI layer. */
+    size_t                   cbXfer;
     /** Start of the request data for the device above us. */
     uint8_t                  abAlloc[1];
 } DRVSCSIREQ;
@@ -785,7 +787,10 @@ static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMM
     RT_NOREF1(pInterface);
     PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
 
-    *pcbResidual = *pReq->pu8ScsiSts == SCSI_STATUS_OK ? 0 : pReq->cbBuf; /** @todo: Implement properly. */
+    if (pReq->cbXfer <= pReq->cbBuf)
+        *pcbResidual = pReq->cbBuf - pReq->cbXfer;
+    else
+        *pcbResidual = 0; /* Overflow/Underrun error. */
     return VINF_SUCCESS;
 }
 
@@ -795,7 +800,7 @@ static DECLCALLBACK(int) drvscsiIoReqQueryXferSize(PPDMIMEDIAEX pInterface, PDMM
     RT_NOREF1(pInterface);
     PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
 
-    *pcbXfer = pReq->cbBuf; /** @todo: Implement properly. */
+    *pcbXfer = pReq->cbXfer;
     return VINF_SUCCESS;
 }
 
@@ -949,7 +954,8 @@ static DECLCALLBACK(int) drvscsiIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSM
 
 
 static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
-                                                        void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible, int rcReq)
+                                                        void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible,
+                                                        int rcReq, size_t cbXfer)
 {
     RT_NOREF2(hVScsiDevice, fRedoPossible);
     PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
@@ -978,6 +984,7 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
     }
 
     *pReq->pu8ScsiSts = (uint8_t)rcScsiCode;
+    pReq->cbXfer      = cbXfer;
     int rc = pThis->pDevMediaExPort->pfnIoReqCompleteNotify(pThis->pDevMediaExPort, (PDMMEDIAEXIOREQ)pReq,
                                                             &pReq->abAlloc[0], rcReq);
     AssertRC(rc); RT_NOREF(rc);

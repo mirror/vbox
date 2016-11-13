@@ -230,7 +230,8 @@ typedef DECLCALLBACK(void) FNVSCSIREQCOMPLETED(VSCSIDEVICE hVScsiDevice,
                                                void *pvVScsiReqUser,
                                                int rcScsiCode,
                                                bool fRedoPossible,
-                                               int rcReq);
+                                               int rcReq,
+                                               size_t cbXfer);
 /** Pointer to a virtual SCSI request completed callback. */
 typedef FNVSCSIREQCOMPLETED *PFNVSCSIREQCOMPLETED;
 

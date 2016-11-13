@@ -118,6 +118,8 @@ typedef struct VSCSIREQINT
     size_t               cbSense;
     /** Opaque user data associated with this request */
     void                *pvVScsiReqUser;
+    /** Transfer size determined from the CDB. */
+    size_t               cbXfer;
 } VSCSIREQINT;
 
 /**
@@ -148,7 +150,7 @@ typedef struct VSCSIIOREQINT
             /** Segment array. */
             PCRTSGSEG      paSeg;
         } Io;
-        /** Unmape request. */
+        /** Unmap request. */
         struct
         {
             /** Array of ranges to unmap. */
@@ -439,6 +441,18 @@ int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
  * @param   pVScsiLun   The LUN to check.
  */
 uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun);
+
+/**
+ * Sets the transfer size for the given request.
+ *
+ * @returns nothing.
+ * @param   pVScsiReq     The SCSI request.
+ * @param   cbXfer        The transfer size for the request.
+ */
+DECLINLINE(void) vscsiReqSetXferSize(PVSCSIREQINT pVScsiReq, size_t cbXfer)
+{
+    pVScsiReq->cbXfer = cbXfer;
+}
 
 /**
  * Wrapper for the set I/O request allocation size I/O callback.

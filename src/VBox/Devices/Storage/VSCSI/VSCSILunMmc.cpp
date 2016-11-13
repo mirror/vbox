@@ -886,6 +886,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[3]));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
                 ScsiInquiryReply.cbAdditional           = 31;
@@ -907,6 +908,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 uint8_t aReply[8];
                 memset(aReply, 0, sizeof(aReply));
+                vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
 
                 /*
                  * If sector size exceeds the maximum value that is
@@ -928,6 +930,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t *pu8ReplyPos;
                 bool    fValid = false;
 
+                vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
                 memset(aReply, 0, sizeof(aReply));
                 aReply[0] = 4; /* Reply length 4. */
                 aReply[1] = 0; /* Default media type. */
@@ -958,7 +961,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             }
             case SCSI_MODE_SENSE_10:
             {
-                size_t cbMax = vscsiBE2HU32(&pVScsiReq->pbCDB[7]);
+                size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcModeSense10(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
             }
@@ -975,6 +979,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_MODE_SELECT_6:
             {
                 /** @todo implement!! */
+                vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
                 rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                 break;
             }
@@ -1011,6 +1016,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_READ_BUFFER:
             {
                 uint8_t uDataMode = pVScsiReq->pbCDB[1] & 0x1f;
+
+                vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[6]));
 
                 switch (uDataMode)
                 {
@@ -1064,6 +1071,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t uPageCode = pVScsiReq->pbCDB[2] & 0x3f;
                 uint8_t uSubPageCode = pVScsiReq->pbCDB[3];
 
+                vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[7]));
+
                 switch (uPageCode)
                 {
                     case 0x00:
@@ -1099,6 +1108,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                         vscsiH2BEU64(aReply, pVScsiLunMmc->cSectors - 1);
                         vscsiH2BEU32(&aReply[8], pVScsiLunMmc->cbSector);
                         /* Leave the rest 0 */
+
+                        vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
                         RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                         rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                         break;
@@ -1125,6 +1136,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 format = pVScsiReq->pbCDB[2] & 0x0f;
                 cbMax  = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
                 fMSF   = (pVScsiReq->pbCDB[1] >> 1) & 1;
+
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 switch (format)
                 {
                     case 0x00:
@@ -1144,11 +1157,11 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_GET_EVENT_STATUS_NOTIFICATION:
             {
                 /* Only supporting polled mode at the moment. */
+                size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 if (pVScsiReq->pbCDB[1] & 0x1)
-                {
-                    size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
                     rcReq = vscsiLunMmcGetEventStatusNotification(pVScsiLunMmc, pVScsiReq, cbMax);
-                }
                 else
                     rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
                 break;
@@ -1158,6 +1171,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[8]);
                 uint8_t aReply[8];
 
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 vscsiH2BEU16(&aReply[0], 0);
                 /* no current LBA */
                 aReply[2] = 0;
@@ -1174,6 +1188,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t aReply[34];
                 size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
 
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 memset(aReply, '\0', sizeof(aReply));
                 vscsiH2BEU16(&aReply[0], 32);
                 aReply[2] = (0 << 4) | (3 << 2) | (2 << 0); /* not erasable, complete session, complete disc */
@@ -1194,13 +1209,15 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             }
             case SCSI_READ_TRACK_INFORMATION:
             {
+                size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 /* Accept address/number type of 1 only, and only track 1 exists. */
                 if ((pVScsiReq->pbCDB[1] & 0x03) != 1 || vscsiBE2HU32(&pVScsiReq->pbCDB[2]) != 1)
                     rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
                                                      SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
                 else
                 {
-                    size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
                     uint8_t aReply[36];
                     RT_ZERO(aReply);
 
@@ -1223,12 +1240,14 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_GET_CONFIGURATION:
             {
                 size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcGetConfiguration(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
             }
             case SCSI_READ_DVD_STRUCTURE:
             {
                 size_t cbMax = vscsiBE2HU16(&pVScsiReq->pbCDB[8]);
+                vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcReadDvdStructure(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
             }
@@ -1243,6 +1262,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         LogFlow(("%s: uLbaStart=%llu cSectorTransfer=%u\n",
                  __FUNCTION__, uLbaStart, cSectorTransfer));
 
+        vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * pVScsiLunMmc->cbSector);
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunMmc->cSectors))
         {
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
