@@ -29,7 +29,6 @@ Preparations:
      - "No auto-restart with logged on users for scheduled automatic
        updates installations": Enabled.
 
-
 6. Go to the group policy editor (gpedit.msc) and change "Computer Configuration"
    -> "Windows Settings" -> "Security Settings" -> "Local Policies"
    -> "Security Options" -> "Network security: LAN Manager authentication level"
