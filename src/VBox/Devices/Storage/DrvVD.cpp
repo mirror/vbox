@@ -203,8 +203,25 @@ typedef struct PDMMEDIAEXIOREQINT
             size_t                        cbReqLeft;
             /** Size of the allocated I/O buffer. */
             size_t                        cbIoBuf;
-            /** I/O buffer descriptor. */
-            IOBUFDESC                     IoBuf;
+            /** Pointer to the S/G buffer. */
+            PRTSGBUF                      pSgBuf;
+            /** Flag whether the pointer is a direct buffer or
+             *  was allocated by us. */
+            bool                          fDirectBuf;
+            /** Buffer management data based on the fDirectBuf flag. */
+            union
+            {
+                /** Direct buffer. */
+                struct
+                {
+                    /** Segment for the data buffer. */
+                    RTSGSEG               Seg;
+                    /** S/G buffer structure. */
+                    RTSGBUF               SgBuf;
+                } Direct;
+                /** I/O buffer descriptor. */
+                IOBUFDESC                 IoBuf;
+            };
         } ReadWrite;
         /** Discard specific data. */
         struct
@@ -2625,21 +2642,24 @@ DECLINLINE(int) drvvdMediaExIoReqBufSync(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
     Assert(pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE);
     Assert(pIoReq->ReadWrite.cbIoBuf > 0);
 
-    /* Make sure the buffer is reset. */
-    RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
+    if (!pIoReq->ReadWrite.fDirectBuf)
+    {
+        /* Make sure the buffer is reset. */
+        RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
 
-    size_t const offSrc = pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft;
-    Assert((uint32_t)offSrc == offSrc);
-    if (fToIoBuf)
-        rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0], (uint32_t)offSrc,
-                                                       &pIoReq->ReadWrite.IoBuf.SgBuf,
-                                                       RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
-    else
-        rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0], (uint32_t)offSrc,
-                                                         &pIoReq->ReadWrite.IoBuf.SgBuf,
-                                                         (uint32_t)RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
+        size_t const offSrc = pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft;
+        Assert((uint32_t)offSrc == offSrc);
+        if (fToIoBuf)
+            rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0], (uint32_t)offSrc,
+                                                           &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                                           RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
+        else
+            rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0], (uint32_t)offSrc,
+                                                             &pIoReq->ReadWrite.IoBuf.SgBuf,
+                                                             (uint32_t)RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
 
-    RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
+        RTSgBufReset(&pIoReq->ReadWrite.IoBuf.SgBuf);
+    }
     return rc;
 }
 
@@ -2899,22 +2919,47 @@ static int drvvdMediaExIoReqCompleteWorker(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
  */
 DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq, size_t cb)
 {
+    int rc = VERR_NOT_SUPPORTED;
     LogFlowFunc(("pThis=%#p pIoReq=%#p cb=%zu\n", pThis, pIoReq, cb));
 
-    int rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, cb, &pIoReq->ReadWrite.cbIoBuf);
-    if (rc == VERR_NO_MEMORY)
+    if (   cb == _4K
+        && pThis->pDrvMediaExPort->pfnIoReqQueryBuf)
     {
-        LogFlowFunc(("Could not allocate memory for request, deferring\n"));
-        RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
-        RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
-        RTCritSectLeave(&pThis->CritSectIoReqsIoBufWait);
-        ASMAtomicIncU32(&pThis->cIoReqsWaiting);
-        rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
+        /* Try to get a direct pointer to the buffer first. */
+        void *pvBuf = NULL;
+        size_t cbBuf = 0;
+        rc = pThis->pDrvMediaExPort->pfnIoReqQueryBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
+                                                      &pvBuf, &cbBuf);
+        if (RT_SUCCESS(rc))
+        {
+            pIoReq->ReadWrite.cbIoBuf           = cbBuf;
+            pIoReq->ReadWrite.fDirectBuf        = true;
+            pIoReq->ReadWrite.Direct.Seg.pvSeg  = pvBuf;
+            pIoReq->ReadWrite.Direct.Seg.cbSeg  = cbBuf;
+            RTSgBufInit(&pIoReq->ReadWrite.Direct.SgBuf, &pIoReq->ReadWrite.Direct.Seg, 1);
+            pIoReq->ReadWrite.pSgBuf = &pIoReq->ReadWrite.Direct.SgBuf;
+        }
     }
-    else
+
+    if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Allocated %zu bytes of memory\n", pIoReq->ReadWrite.cbIoBuf));
-        Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+        rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, cb, &pIoReq->ReadWrite.cbIoBuf);
+        if (rc == VERR_NO_MEMORY)
+        {
+            LogFlowFunc(("Could not allocate memory for request, deferring\n"));
+            RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
+            RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
+            RTCritSectLeave(&pThis->CritSectIoReqsIoBufWait);
+            ASMAtomicIncU32(&pThis->cIoReqsWaiting);
+            rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
+        }
+        else
+        {
+            LogFlowFunc(("Allocated %zu bytes of memory\n", pIoReq->ReadWrite.cbIoBuf));
+            Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+            pIoReq->ReadWrite.fDirectBuf = false;
+            pIoReq->ReadWrite.pSgBuf = &pIoReq->ReadWrite.IoBuf.SgBuf;
+        }
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2944,19 +2989,19 @@ static int drvvdMediaExIoReqReadWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIo
         if (pThis->pBlkCache)
         {
             rc = PDMR3BlkCacheRead(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
-                                   &pIoReq->ReadWrite.IoBuf.SgBuf, cbReqIo, pIoReq);
+                                   pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
             if (rc == VINF_SUCCESS)
                 rc = VINF_VD_ASYNC_IO_FINISHED;
             else if (rc == VINF_AIO_TASK_PENDING)
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
         }
         else
-            rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
+            rc = VDAsyncRead(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, pIoReq->ReadWrite.pSgBuf,
                              drvvdMediaExIoReqComplete, pThis, pIoReq);
     }
     else
     {
-        void *pvBuf = RTSgBufGetNextSegment(&pIoReq->ReadWrite.IoBuf.SgBuf, &cbReqIo);
+        void *pvBuf = RTSgBufGetNextSegment(pIoReq->ReadWrite.pSgBuf, &cbReqIo);
 
         Assert(cbReqIo > 0 && VALID_PTR(pvBuf));
         rc = VDRead(pThis->pDisk, pIoReq->ReadWrite.offStart, pvBuf, cbReqIo);
@@ -2993,19 +3038,19 @@ static int drvvdMediaExIoReqWriteWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pI
         if (pThis->pBlkCache)
         {
             rc = PDMR3BlkCacheWrite(pThis->pBlkCache, pIoReq->ReadWrite.offStart,
-                                    &pIoReq->ReadWrite.IoBuf.SgBuf, cbReqIo, pIoReq);
+                                    pIoReq->ReadWrite.pSgBuf, cbReqIo, pIoReq);
             if (rc == VINF_SUCCESS)
                 rc = VINF_VD_ASYNC_IO_FINISHED;
             else if (rc == VINF_AIO_TASK_PENDING)
                 rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
         }
         else
-            rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, &pIoReq->ReadWrite.IoBuf.SgBuf,
+            rc = VDAsyncWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, cbReqIo, pIoReq->ReadWrite.pSgBuf,
                               drvvdMediaExIoReqComplete, pThis, pIoReq);
     }
     else
     {
-        void *pvBuf = RTSgBufGetNextSegment(&pIoReq->ReadWrite.IoBuf.SgBuf, &cbReqIo);
+        void *pvBuf = RTSgBufGetNextSegment(pIoReq->ReadWrite.pSgBuf, &cbReqIo);
 
         Assert(cbReqIo > 0 && VALID_PTR(pvBuf));
         rc = VDWrite(pThis->pDisk, pIoReq->ReadWrite.offStart, pvBuf, cbReqIo);
@@ -3166,8 +3211,9 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 {
     LogFlowFunc(("pThis=%#p pIoReq=%#p{.cbIoBuf=%zu}\n", pThis, pIoReq, pIoReq->ReadWrite.cbIoBuf));
 
-    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
-        || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+    if (   (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+            || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+        && !pIoReq->ReadWrite.fDirectBuf)
     {
         IOBUFMgrFreeBuf(&pIoReq->ReadWrite.IoBuf);
 
@@ -3188,16 +3234,19 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
                                           &pIoReqCur->ReadWrite.cbIoBuf);
                 if (rc == VINF_SUCCESS)
                 {
-                    Assert(pIoReq->ReadWrite.cbIoBuf > 0);
+                    Assert(pIoReqCur->ReadWrite.cbIoBuf > 0);
 
                     cIoReqsWaiting--;
                     RTListNodeRemove(&pIoReqCur->NdLstWait);
+
+                    pIoReqCur->ReadWrite.fDirectBuf = false;
+                    pIoReqCur->ReadWrite.pSgBuf     = &pIoReqCur->ReadWrite.IoBuf.SgBuf;
 
                     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReqCur->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
                     if (RT_UNLIKELY(!fXchg))
                     {
                         /* Must have been canceled inbetween. */
-                        Assert(pIoReq->enmState == VDIOREQSTATE_CANCELED);
+                        Assert(pIoReqCur->enmState == VDIOREQSTATE_CANCELED);
                         drvvdMediaExIoReqCompleteWorker(pThis, pIoReqCur, VERR_PDM_MEDIAEX_IOREQ_CANCELED, true /* fUpNotify */);
                     }
                     ASMAtomicIncU32(&pThis->cIoReqsActive);
@@ -3830,7 +3879,7 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
 
             /*
              * Try to allocate enough I/O buffer, if this fails for some reason put it onto the
-             * waitign list instead of the redo list.
+             * waiting list instead of the redo list.
              */
             pIoReq->ReadWrite.cbIoBuf = 0;
             rc = IOBUFMgrAllocBuf(pThis->hIoBufMgr, &pIoReq->ReadWrite.IoBuf, pIoReq->ReadWrite.cbReqLeft,
@@ -3842,6 +3891,11 @@ static DECLCALLBACK(int) drvvdIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSMHA
                 RTListAppend(&pThis->LstIoReqIoBufWait, &pIoReq->NdLstWait);
                 fPlaceOnRedoList = false;
                 rc = VINF_SUCCESS;
+            }
+            else
+            {
+                pIoReq->ReadWrite.fDirectBuf = false;
+                pIoReq->ReadWrite.pSgBuf     = &pIoReq->ReadWrite.IoBuf.SgBuf;
             }
         }
         else if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
