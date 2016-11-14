@@ -23,7 +23,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
@@ -1058,14 +1058,14 @@ VMMDECL(int) CPUMGetGuestCRx(PVMCPU pVCpu, unsigned iReg, uint64_t *pValue)
         case DISCREG_CR8:
         {
             uint8_t u8Tpr;
-            int rc = PDMApicGetTPR(pVCpu, &u8Tpr, NULL /* pfPending */, NULL /* pu8PendingIrq */);
+            int rc = APICGetTpr(pVCpu, &u8Tpr, NULL /* pfPending */, NULL /* pu8PendingIrq */);
             if (RT_FAILURE(rc))
             {
                 AssertMsg(rc == VERR_PDM_NO_APIC_INSTANCE, ("%Rrc\n", rc));
                 *pValue = 0;
                 return rc;
             }
-            *pValue = u8Tpr >> 4; /* bits 7-4 contain the task priority that go in cr8, bits 3-0*/
+            *pValue = u8Tpr >> 4; /* bits 7-4 contain the task priority that go in cr8, bits 3-0 */
             break;
         }
 

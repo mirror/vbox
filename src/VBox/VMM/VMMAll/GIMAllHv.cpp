@@ -559,7 +559,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 
         case MSR_GIM_HV_APIC_FREQ:
         {
-            int rc = PDMApicGetTimerFreq(pVM, puValue);
+            int rc = APICGetTimerFreq(pVM, puValue);
             if (RT_FAILURE(rc))
                 return VERR_CPUM_RAISE_GP_0;
             return VINF_SUCCESS;

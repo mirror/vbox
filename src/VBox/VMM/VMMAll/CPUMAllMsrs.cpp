@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_CPUM
 #include <VBox/vmm/cpum.h>
-#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
@@ -216,7 +216,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32PlatformId(PVMCPU pVCpu, uint32_
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    return PDMApicGetBaseMsr(pVCpu, puValue, false /* fIgnoreErrors */);
+    return APICGetBaseMsr(pVCpu, puValue);
 }
 
 
@@ -224,7 +224,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32ApicBase(PVMCPU pVCpu, uint32_t 
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32ApicBase(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
-    return PDMApicSetBaseMsr(pVCpu, uValue);
+    return APICSetBaseMsr(pVCpu, uValue);
 }
 
 
@@ -1214,7 +1214,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32TscDeadline(PVMCPU pVCpu, uint32
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pRange);
-    return PDMApicReadMsr(pVCpu, idMsr, puValue);
+    return APICReadMsr(pVCpu, idMsr, puValue);
 }
 
 
@@ -1222,7 +1222,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPU pVCpu, uint32_t i
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
     RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
-    return PDMApicWriteMsr(pVCpu, idMsr, uValue);
+    return APICWriteMsr(pVCpu, idMsr, uValue);
 }
 
 

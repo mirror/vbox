@@ -110,7 +110,7 @@
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/vmm/cpumctx-v1_6.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/vmm/pdmapi.h>
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/selm.h>
@@ -1157,7 +1157,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
      * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
      */
-    PDMApicGetBaseMsr(pVCpu, &pCtx->msrApicBase, true /* fIgnoreErrors */);
+    pCtx->msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
     LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", pVCpu->idCpu, pVCpu->cpum.s.Guest.msrApicBase));
 }
 
@@ -1607,7 +1607,7 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
         PGMNotifyNxeChanged(pVCpu, RT_BOOL(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
 
         /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
-        PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
+        pVCpu->cpum.s.Guest.msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
         LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", idCpu, pVCpu->cpum.s.Guest.msrApicBase));
 
         /* During init. this is done in CPUMR3InitCompleted(). */
@@ -2529,7 +2529,7 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
                 PVMCPU pVCpu = &pVM->aCpus[i];
-                PDMApicGetBaseMsr(pVCpu, &pVCpu->cpum.s.Guest.msrApicBase, true /* fIgnoreErrors */);
+                pVCpu->cpum.s.Guest.msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
                 LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", i, pVCpu->cpum.s.Guest.msrApicBase));
             }
             break;

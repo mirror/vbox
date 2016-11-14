@@ -1609,7 +1609,7 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
 
     bool    fPendingIntr;
     uint8_t u8Tpr;
-    int rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
+    int rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
     AssertRCReturn(rc, rc);
 
     /* Assume that we need to trap all TPR accesses and thus need not check on
@@ -3289,13 +3289,13 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
             if (   pVM->hm.s.fTPRPatchingActive
                 && (pMixedCtx->msrLSTAR & 0xff) != pSvmTransient->u8GuestTpr)
             {
-                int rc = PDMApicSetTPR(pVCpu, pMixedCtx->msrLSTAR & 0xff);
+                int rc = APICSetTpr(pVCpu, pMixedCtx->msrLSTAR & 0xff);
                 AssertRC(rc);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
             }
             else if (pSvmTransient->u8GuestTpr != pVmcb->ctrl.IntCtrl.n.u8VTPR)
             {
-                int rc = PDMApicSetTPR(pVCpu, pVmcb->ctrl.IntCtrl.n.u8VTPR << 4);
+                int rc = APICSetTpr(pVCpu, pVmcb->ctrl.IntCtrl.n.u8VTPR << 4);
                 AssertRC(rc);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
             }
@@ -4003,7 +4003,7 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             case HMTPRINSTR_READ:
             {
-                int rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
+                int rc = APICGetTpr(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
                 AssertRC(rc);
 
                 rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
@@ -4025,7 +4025,7 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 else
                     u8Tpr = (uint8_t)pPatch->uSrcOperand;
 
-                int rc2 = PDMApicSetTPR(pVCpu, u8Tpr);
+                int rc2 = APICSetTpr(pVCpu, u8Tpr);
                 AssertRC(rc2);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
 
@@ -4656,7 +4656,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
             if ((pCtx->eax & 0xff) != pSvmTransient->u8GuestTpr)
             {
                 /* Our patch code uses LSTAR for TPR caching for 32-bit guests. */
-                int rc2 = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
+                int rc2 = APICSetTpr(pVCpu, pCtx->eax & 0xff);
                 AssertRC(rc2);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
             }

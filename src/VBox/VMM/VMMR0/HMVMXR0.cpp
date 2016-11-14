@@ -3416,7 +3416,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             bool    fPendingIntr  = false;
             uint8_t u8Tpr         = 0;
             uint8_t u8PendingIntr = 0;
-            rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
+            rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
             AssertRCReturn(rc, rc);
 
             /*
@@ -8961,14 +8961,20 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 
         /*
          * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
-         * we eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3 and which is
-         * why it's done here as it's easier and no less efficient to deal with it here than making hmR0VmxSaveGuestState()
-         * cope with longjmps safely (see VMCPU_FF_HM_UPDATE_CR3 handling).
+         * we eventually get a VM-exit for any reason.
+         *
+         * This maybe expensive as PDMApicSetTPR() can longjmp to ring-3 and which is why it's done here as it's easier and
+         * no less efficient to deal with it here than making hmR0VmxSaveGuestState() cope with longjmps safely
+         * (see VMCPU_FF_HM_UPDATE_CR3 handling).
          */
+        /** @todo r=ramshankar: The 2nd para in the above comment is
+         *        outdated, we no longer longjmp to ring-3 on setting
+         *        the TPR, but regardless we can probably rework this
+         *        portion of the code a bit. */
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
             && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
         {
-            rc = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
+            rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
             AssertRC(rc);
             HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
         }

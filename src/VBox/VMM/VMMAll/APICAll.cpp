@@ -227,7 +227,8 @@ static VBOXSTRICTRC apicMsrAccessError(PVMCPU pVCpu, uint32_t u32Reg, APICMSRACC
         /* 6 */     { "read reserved bits of MSR",     "",                            VINF_CPUM_R3_MSR_READ  },
         /* 7 */     { "write reserved bits of MSR",    "",                            VINF_CPUM_R3_MSR_WRITE },
         /* 8 */     { "write an invalid value to MSR", "",                            VINF_CPUM_R3_MSR_WRITE },
-        /* 9 */     { "write MSR",                     "disallowed by configuration", VINF_CPUM_R3_MSR_WRITE }
+        /* 9 */     { "write MSR",                     "disallowed by configuration", VINF_CPUM_R3_MSR_WRITE },
+        /* 10 */    { "read MSR",                      "disallowed by configuration", VINF_CPUM_R3_MSR_READ }
     };
     AssertCompile(RT_ELEMENTS(s_aAccess) == APICMSRACCESS_COUNT);
 
@@ -1857,9 +1858,14 @@ DECLINLINE(VBOXSTRICTRC) apicWriteRegister(PAPICDEV pApicDev, PVMCPU pVCpu, uint
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnReadMsrR3}
+ * Reads an APIC MSR.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u32Reg          The MSR being read.
+ * @param   pu64Value       Where to store the read value.
  */
-APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
+VMM_INT_DECL(VBOXSTRICTRC) APICReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value)
 {
     /*
      * Validate.
@@ -1867,9 +1873,19 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(u32Reg >= MSR_IA32_X2APIC_ID && u32Reg <= MSR_IA32_X2APIC_SELF_IPI);
     Assert(pu64Value);
-    RT_NOREF_PV(pDevIns);
 
+    /*
+     * Is the APIC enabled?
+     */
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    if (apicIsEnabled(pVCpu))
+    { /* likely */ }
+    else
+    {
+        return apicMsrAccessError(pVCpu, u32Reg, pApic->enmMaxMode == PDMAPICMODE_NONE ?
+                                                 APICMSRACCESS_READ_DISALLOWED_CONFIG : APICMSRACCESS_READ_RSVD_OR_UNKNOWN);
+    }
+
 #ifndef IN_RING3
     if (pApic->fRZEnabled)
     { /* likely */}
@@ -1961,18 +1977,33 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicReadMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint3
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnWriteMsrR3}
+ * Writes an APIC MSR.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u32Reg          The MSR being written.
+ * @param   pu64Value       The value to write.
  */
-APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
+VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value)
 {
     /*
      * Validate.
      */
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(u32Reg >= MSR_IA32_X2APIC_ID && u32Reg <= MSR_IA32_X2APIC_SELF_IPI);
-    RT_NOREF_PV(pDevIns);
 
+    /*
+     * Is the APIC enabled?
+     */
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    if (apicIsEnabled(pVCpu))
+    { /* likely */ }
+    else
+    {
+        return apicMsrAccessError(pVCpu, u32Reg, pApic->enmMaxMode == PDMAPICMODE_NONE ?
+                                                 APICMSRACCESS_WRITE_DISALLOWED_CONFIG : APICMSRACCESS_WRITE_RSVD_OR_UNKNOWN);
+    }
+
 #ifndef IN_RING3
     if (pApic->fRZEnabled)
     { /* likely */ }
@@ -2122,12 +2153,15 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnSetBaseMsrR3}
+ * Sets the APIC base MSR.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   u64BaseMsr  The value to set.
  */
-APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint64_t u64BaseMsr)
+VMM_INT_DECL(VBOXSTRICTRC) APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr)
 {
     Assert(pVCpu);
-    NOREF(pDevIns);
 
 #ifdef IN_RING3
     PAPICCPU pApicCpu   = VMCPU_TO_APICCPU(pVCpu);
@@ -2254,7 +2288,6 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, ui
     return VINF_SUCCESS;
 
 #else  /* !IN_RING3 */
-    RT_NOREF_PV(pDevIns);
     RT_NOREF_PV(pVCpu);
     RT_NOREF_PV(u64BaseMsr);
     return VINF_CPUM_R3_MSR_WRITE;
@@ -2263,25 +2296,59 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicSetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, ui
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnGetBaseMsrR3}
+ * Gets the APIC base MSR (no checks are performed wrt APIC hardware or its
+ * state).
+ *
+ * @returns The base MSR value.
+ * @param   pVCpu       The cross context virtual CPU structure.
  */
-APICBOTHCBDECL(uint64_t) apicGetBaseMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) APICGetBaseMsrNoCheck(PVMCPU pVCpu)
 {
-    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
-
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     return pApicCpu->uApicBaseMsr;
 }
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnSetTprR3}
+ * Gets the APIC base MSR.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pu64Value   Where to store the MSR value.
  */
-APICBOTHCBDECL(void) apicSetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Tpr)
+VMM_INT_DECL(VBOXSTRICTRC) APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value)
 {
-    RT_NOREF_PV(pDevIns);
-    apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */);
+    VMCPU_ASSERT_EMT_OR_NOT_RUNNING(pVCpu);
+
+    PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
+    if (pApic->enmMaxMode != PDMAPICMODE_NONE)
+    {
+        *pu64Value = APICGetBaseMsrNoCheck(pVCpu);
+        return VINF_SUCCESS;
+    }
+
+#ifdef IN_RING3
+    LogRelMax(5, ("APIC%u: Reading APIC base MSR (%#x) when there is no APIC -> #GP(0)\n", pVCpu->idCpu, MSR_IA32_APICBASE));
+    return VERR_CPUM_RAISE_GP_0;
+#else
+    return VINF_CPUM_R3_MSR_WRITE;
+#endif
+}
+
+
+/**
+ * Sets the TPR (Task Priority Register).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   u8Tpr       The TPR value to set.
+ */
+VMMDECL(int) APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr)
+{
+    if (apicIsEnabled(pVCpu))
+        return VBOXSTRICTRC_VAL(apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */));
+    return VERR_PDM_NO_APIC_INSTANCE;
 }
 
 
@@ -2309,50 +2376,91 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnGetTprR3}
+ * Gets the APIC TPR (Task Priority Register).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pu8Tpr          Where to store the TPR.
+ * @param   pfPending       Where to store whether there is a pending interrupt
+ *                          (optional, can be NULL).
+ * @param   pu8PendingIntr  Where to store the highest-priority pending
+ *                          interrupt (optional, can be NULL).
  */
-APICBOTHCBDECL(uint8_t) apicGetTpr(PPDMDEVINS pDevIns, PVMCPU pVCpu, bool *pfPending, uint8_t *pu8PendingIntr)
+VMMDECL(int) APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr)
 {
-    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT(pVCpu);
-    PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
-
-    if (pfPending)
+    if (apicIsEnabled(pVCpu))
     {
-        /*
-         * Just return whatever the highest pending interrupt is in the IRR.
-         * The caller is responsible for figuring out if it's masked by the TPR etc.
-         */
-        *pfPending = apicGetHighestPendingInterrupt(pVCpu, pu8PendingIntr);
+        PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
+        if (pfPending)
+        {
+            /*
+             * Just return whatever the highest pending interrupt is in the IRR.
+             * The caller is responsible for figuring out if it's masked by the TPR etc.
+             */
+            *pfPending = apicGetHighestPendingInterrupt(pVCpu, pu8PendingIntr);
+        }
+
+        *pu8Tpr = pXApicPage->tpr.u8Tpr;
+        return VINF_SUCCESS;
     }
 
-    return pXApicPage->tpr.u8Tpr;
+    *pu8Tpr = 0;
+    return VERR_PDM_NO_APIC_INSTANCE;
 }
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnGetTimerFreqR3}
+ * Gets the APIC timer frequency.
+ *
+ * @returns Strict VBox status code.
+ * @param
  */
-APICBOTHCBDECL(uint64_t) apicGetTimerFreq(PPDMDEVINS pDevIns)
+VMM_INT_DECL(int) APICGetTimerFreq(PVM pVM, uint64_t *pu64Value)
 {
-    PVM      pVM      = PDMDevHlpGetVM(pDevIns);
-    PVMCPU   pVCpu    = &pVM->aCpus[0];
-    PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
-    uint64_t uTimer   = TMTimerGetFreq(pApicCpu->CTX_SUFF(pTimer));
-    return uTimer;
+    /*
+     * Validate.
+     */
+    Assert(pVM);
+    AssertPtrReturn(pu64Value, VERR_INVALID_PARAMETER);
+
+    PVMCPU pVCpu = &pVM->aCpus[0];
+    if (apicIsEnabled(pVCpu))
+    {
+        PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+        *pu64Value = TMTimerGetFreq(pApicCpu->CTX_SUFF(pTimer));
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_NO_APIC_INSTANCE;
 }
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnBusDeliverR3}
- * @remarks This is a private interface between the IOAPIC and the APIC.
+ * Delivers an interrupt message via the system bus.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   uDest           The destination mask.
+ * @param   uDestMode       The destination mode.
+ * @param   uDeliveryMode   The delivery mode.
+ * @param   uVector         The interrupt vector.
+ * @param   uPolarity       The interrupt line polarity.
+ * @param   uTriggerMode    The trigger mode.
+ * @param   uTagSrc         The interrupt tag (debugging).
  */
-APICBOTHCBDECL(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
-                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
+VMM_INT_DECL(int) APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
+                                 uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
 {
     NOREF(uPolarity);
     NOREF(uTagSrc);
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
+
+    /*
+     * If the APIC isn't enabled, do nothing and pretend success.
+     */
+    if (apicIsEnabled(&pVM->aCpus[0]))
+    { /* likely */ }
+    else
+        return VINF_SUCCESS;
 
     /*
      * The destination field (mask) in the IO APIC redirectable table entry is 8-bits.
@@ -2381,12 +2489,17 @@ APICBOTHCBDECL(int) apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uD
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnLocalInterruptR3}
- * @remarks This is a private interface between the PIC and the APIC.
+ * Assert/de-assert the local APIC's LINT0/LINT1 interrupt pins.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   u8Pin       The interrupt pin (0 for LINT0 or 1 for LINT1).
+ * @param   u8Level     The level (0 for low or 1 for high).
+ * @param   rcRZ        The return code if the operation cannot be performed in
+ *                      the current context.
  */
-APICBOTHCBDECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
+VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ)
 {
-    NOREF(pDevIns);
     AssertReturn(u8Pin <= 1, VERR_INVALID_PARAMETER);
     AssertReturn(u8Level <= 1, VERR_INVALID_PARAMETER);
 
@@ -2543,11 +2656,16 @@ APICBOTHCBDECL(VBOXSTRICTRC) apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu
 
 
 /**
- * @interface_method_impl{PDMAPICREG,pfnGetInterruptR3}
+ * Gets the next highest-priority interrupt from the APIC, marking it as an
+ * "in-service" interrupt.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pu8Vector   Where to store the vector.
+ * @param   pu32TagSrc  The source tag (debugging).
  */
-APICBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
+VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
 {
-    RT_NOREF_PV(pDevIns);
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
     NOREF(pu32TagSrc);
@@ -2904,7 +3022,7 @@ VMM_INT_DECL(void) apicStopTimer(PVMCPU pVCpu)
  *          is ready to take actually service the interrupt (TPR,
  *          interrupt shadow etc.)
  */
-VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
+VMM_INT_DECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -2936,7 +3054,7 @@ VMMDECL(bool) APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr)
  * @param   u8PendingIntr       The pending interrupt to de-queue from
  *                              in-service.
  */
-VMMDECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr)
+VMM_INT_DECL(void) APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -3043,7 +3161,7 @@ VMMDECL(void) APICUpdatePendingInterrupts(PVMCPU pVCpu)
  * @param   pu8PendingIntr      Where to store the interrupt vector if the
  *                              interrupt is pending.
  */
-VMMDECL(bool) APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
+VMM_INT_DECL(bool) APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     return apicGetHighestPendingInterrupt(pVCpu, pu8PendingIntr);

@@ -50,15 +50,6 @@ VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(int)       PDMIoApicBroadcastEoi(PVM pVM, uint8_t uVector);
 VMM_INT_DECL(int)       PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
-VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
-VMMDECL(VBOXSTRICTRC)   PDMApicSetBaseMsr(PVMCPU pVCpu, uint64_t u64Base);
-VMMDECL(VBOXSTRICTRC)   PDMApicGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Base, bool fIgnoreErrors);
-VMMDECL(void)           PDMApicUpdateInterrupts(PVMCPU pVCpu);
-VMMDECL(int)            PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
-VMMDECL(int)            PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIntr);
-VMM_INT_DECL(VBOXSTRICTRC) PDMApicWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value);
-VMM_INT_DECL(VBOXSTRICTRC) PDMApicReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value);
-VMM_INT_DECL(int)       PDMApicGetTimerFreq(PVM pVM, uint64_t *pu64Value);
 VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
 VMM_INT_DECL(bool)      PDMVmmDevHeapIsEnabled(PVM pVM);
 

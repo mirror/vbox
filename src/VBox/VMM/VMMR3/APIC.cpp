@@ -1686,56 +1686,12 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the APIC with PDM.
      */
-    PDMAPICREG ApicReg;
-    RT_ZERO(ApicReg);
-    ApicReg.u32Version              = PDM_APICREG_VERSION;
-    ApicReg.pfnGetInterruptR3       = apicGetInterrupt;
-    ApicReg.pfnSetBaseMsrR3         = apicSetBaseMsr;
-    ApicReg.pfnGetBaseMsrR3         = apicGetBaseMsr;
-    ApicReg.pfnSetTprR3             = apicSetTpr;
-    ApicReg.pfnGetTprR3             = apicGetTpr;
-    ApicReg.pfnWriteMsrR3           = apicWriteMsr;
-    ApicReg.pfnReadMsrR3            = apicReadMsr;
-    ApicReg.pfnBusDeliverR3         = apicBusDeliver;
-    ApicReg.pfnLocalInterruptR3     = apicLocalInterrupt;
-    ApicReg.pfnGetTimerFreqR3       = apicGetTimerFreq;
-
-    /*
-     * We always require R0 functionality (e.g. apicGetTpr() called by HMR0 VT-x/AMD-V code).
-     * Hence, 'fRZEnabled' strictly only applies to MMIO and MSR read/write handlers returning
-     * to ring-3. We still need other handlers like apicGetTpr() in ring-0 for now.
-     */
-    {
-        ApicReg.pszGetInterruptRC   = "apicGetInterrupt";
-        ApicReg.pszSetBaseMsrRC     = "apicSetBaseMsr";
-        ApicReg.pszGetBaseMsrRC     = "apicGetBaseMsr";
-        ApicReg.pszSetTprRC         = "apicSetTpr";
-        ApicReg.pszGetTprRC         = "apicGetTpr";
-        ApicReg.pszWriteMsrRC       = "apicWriteMsr";
-        ApicReg.pszReadMsrRC        = "apicReadMsr";
-        ApicReg.pszBusDeliverRC     = "apicBusDeliver";
-        ApicReg.pszLocalInterruptRC = "apicLocalInterrupt";
-        ApicReg.pszGetTimerFreqRC   = "apicGetTimerFreq";
-
-        ApicReg.pszGetInterruptR0   = "apicGetInterrupt";
-        ApicReg.pszSetBaseMsrR0     = "apicSetBaseMsr";
-        ApicReg.pszGetBaseMsrR0     = "apicGetBaseMsr";
-        ApicReg.pszSetTprR0         = "apicSetTpr";
-        ApicReg.pszGetTprR0         = "apicGetTpr";
-        ApicReg.pszWriteMsrR0       = "apicWriteMsr";
-        ApicReg.pszReadMsrR0        = "apicReadMsr";
-        ApicReg.pszBusDeliverR0     = "apicBusDeliver";
-        ApicReg.pszLocalInterruptR0 = "apicLocalInterrupt";
-        ApicReg.pszGetTimerFreqR0   = "apicGetTimerFreq";
-    }
-
-    rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg);
+    rc = PDMDevHlpAPICRegister(pDevIns);
     AssertLogRelRCReturn(rc, rc);
 
     /*
      * Initialize the APIC state.
      */
-    /* First insert/remove the MSR range of the x2APIC. */
     if (pApic->enmMaxMode == PDMAPICMODE_X2APIC)
     {
         rc = CPUMR3MsrRangesInsert(pVM, &g_MsrRange_x2Apic);
@@ -1750,8 +1706,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /* Tell CPUM about the APIC feature level so it can adjust APICBASE MSR GP mask and CPUID bits. */
     apicR3SetCpuIdFeatureLevel(pVM, pApic->enmMaxMode);
-
-    /* Initialize the state. */
+    /* Finally, initialize the state. */
     rc = apicR3InitState(pVM);
     AssertRCReturn(rc, rc);
 

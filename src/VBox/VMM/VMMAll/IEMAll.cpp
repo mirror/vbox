@@ -95,6 +95,7 @@
 #define VMCPU_INCL_CPUM_GST_CTX
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>

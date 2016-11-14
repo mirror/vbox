@@ -29,6 +29,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/apic.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -446,22 +447,8 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
-
-    if (pVM->pdm.s.Apic.pfnLocalInterruptR0)
-    {
-        LogFlow(("pdmR0PicHlp_SetInterruptFF: caller='%p'/%d: Setting local interrupt on LAPIC\n",
-                 pDevIns, pDevIns->iInstance));
-        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
-        /** @todo rcRZ propagation to pfnLocalInterrupt from caller. */
-        pVM->pdm.s.Apic.pfnLocalInterruptR0(pVM->pdm.s.Apic.pDevInsR0, pVCpu, 0 /* u8Pin */, 1 /* u8Level */,
-                                            VINF_SUCCESS /* rcRZ */);
-        return;
-    }
-
-    LogFlow(("pdmR0PicHlp_SetInterruptFF: caller=%p/%d: VMCPU_FF_INTERRUPT_PIC %d -> 1\n",
-             pDevIns, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
+    APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 1 /* u8Level */, VINF_SUCCESS /* rcRZ */);
 }
 
 
@@ -471,23 +458,8 @@ static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
-
-    if (pVM->pdm.s.Apic.pfnLocalInterruptR0)
-    {
-        /* Raise the LAPIC's LINT0 line instead of signaling the CPU directly. */
-        LogFlow(("pdmR0PicHlp_ClearInterruptFF: caller='%s'/%d: Clearing local interrupt on LAPIC\n",
-                 pDevIns, pDevIns->iInstance));
-        /* Lower the LAPIC's LINT0 line instead of signaling the CPU directly. */
-        /** @todo rcRZ propagation to pfnLocalInterrupt from caller. */
-        pVM->pdm.s.Apic.pfnLocalInterruptR0(pVM->pdm.s.Apic.pDevInsR0, pVCpu, 0 /* u8Pin */, 0 /* u8Level */,
-                                            VINF_SUCCESS /* rcRZ */);
-        return;
-    }
-
-    LogFlow(("pdmR0PicHlp_ClearInterruptFF: caller=%p/%d: VMCPU_FF_INTERRUPT_PIC %d -> 0\n",
-             pDevIns, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
-
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+    /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
+    APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 0 /* u8Level */, VINF_SUCCESS /* rcRZ */);
 }
 
 
@@ -528,18 +500,15 @@ extern DECLEXPORT(const PDMPICHLPR0) g_pdmR0PicHlp =
  */
 
 /** @interface_method_impl{PDMIOAPICHLPR0,pfnApicBusDeliver} */
-static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                       uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode, uint32_t uTagSrc)
+static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
+                                                       uint8_t u8DeliveryMode, uint8_t uVector, uint8_t u8Polarity,
+                                                       uint8_t u8TriggerMode, uint32_t uTagSrc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR0;
-    LogFlow(("pdmR0IoApicHlp_ApicBusDeliver: caller=%p/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 iVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8 uTagSrc=%#x\n",
-             pDevIns, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode, uTagSrc));
-    Assert(pVM->pdm.s.Apic.pDevInsR0);
-    if (pVM->pdm.s.Apic.pfnBusDeliverR0)
-        return pVM->pdm.s.Apic.pfnBusDeliverR0(pVM->pdm.s.Apic.pDevInsR0, u8Dest, u8DestMode, u8DeliveryMode, iVector,
-                                               u8Polarity, u8TriggerMode, uTagSrc);
-    return VINF_SUCCESS;
+    LogFlow(("pdmR0IoApicHlp_ApicBusDeliver: caller=%p/%d: u8Dest=%RX8 u8DestMode=%RX8 u8DeliveryMode=%RX8 uVector=%RX8 u8Polarity=%RX8 u8TriggerMode=%RX8 uTagSrc=%#x\n",
+             pDevIns, pDevIns->iInstance, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc));
+    return APICBusDeliver(pVM, u8Dest, u8DestMode, u8DeliveryMode, uVector, u8Polarity, u8TriggerMode, uTagSrc);
 }
 
 

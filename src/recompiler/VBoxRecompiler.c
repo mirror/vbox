@@ -4542,14 +4542,14 @@ uint64_t cpu_get_apic_base(CPUX86State *env)
 
 void cpu_set_apic_tpr(CPUX86State *env, uint8_t val)
 {
-    int rc = PDMApicSetTPR(env->pVCpu, val << 4);       /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+    int rc = APICSetTpr(env->pVCpu, val << 4);       /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
     LogFlow(("cpu_set_apic_tpr: val=%#x rc=%Rrc\n", val, rc)); NOREF(rc);
 }
 
 uint8_t cpu_get_apic_tpr(CPUX86State *env)
 {
     uint8_t u8;
-    int rc = PDMApicGetTPR(env->pVCpu, &u8, NULL, NULL);
+    int rc = APICGetTpr(env->pVCpu, &u8, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
         LogFlow(("cpu_get_apic_tpr: returns %#x\n", u8));

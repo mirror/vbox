@@ -169,10 +169,25 @@ VMMR0_INT_DECL(int)         APICR0TermVM(PVM pVM);
 /** @} */
 #endif /* IN_RING0 */
 
-VMMDECL(bool)               APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr);
-VMMDECL(void)               APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr);
+/* These functions are exported as they are called from external modules (recompiler). */
 VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPU pVCpu);
-VMMDECL(bool)               APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr);
+VMMDECL(int)                APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr);
+VMMDECL(int)                APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr);
+
+/* These functions are VMM internal. */
+VMM_INT_DECL(bool)          APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr);
+VMM_INT_DECL(bool)          APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr);
+VMM_INT_DECL(void)          APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr);
+VMM_INT_DECL(VBOXSTRICTRC)  APICReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *pu64Value);
+VMM_INT_DECL(VBOXSTRICTRC)  APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t u64Value);
+VMM_INT_DECL(int)           APICGetTimerFreq(PVM pVM, uint64_t *pu64Value);
+VMM_INT_DECL(VBOXSTRICTRC)  APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
+VMM_INT_DECL(uint64_t)      APICGetBaseMsrNoCheck(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value);
+VMM_INT_DECL(VBOXSTRICTRC)  APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
+VMM_INT_DECL(int)           APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
+VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
+                                           uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
 
 /** @name Hyper-V interface (Ring-3 and all-context API).
  * @{ */
