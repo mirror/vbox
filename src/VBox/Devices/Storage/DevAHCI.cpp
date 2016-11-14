@@ -3768,15 +3768,12 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
 
             /* Write updated command header into memory of the guest. */
             uint32_t u32PRDBC = 0;
-            if (pAhciReq->enmType!= PDMMEDIAEXIOREQTYPE_INVALID)
+            if (pAhciReq->enmType != PDMMEDIAEXIOREQTYPE_INVALID)
             {
                 size_t cbXfer = 0;
-                size_t cbResidual = 0;
                 int rc = pAhciPort->pDrvMediaEx->pfnIoReqQueryXferSize(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq, &cbXfer);
                 AssertRC(rc);
-                rc = pAhciPort->pDrvMediaEx->pfnIoReqQueryResidual(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq, &cbResidual);
-                AssertRC(rc); Assert(cbXfer >= cbResidual);
-                u32PRDBC = (uint32_t)(cbXfer - cbResidual);
+                u32PRDBC = (uint32_t)RT_MIN(cbXfer, pAhciReq->cbTransfer);
             }
             else
                 u32PRDBC = (uint32_t)pAhciReq->cbTransfer;
@@ -3895,9 +3892,6 @@ static DECLCALLBACK(int) ahciR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDM
 
     if (pIoReq->fFlags & AHCI_REQ_OVERFLOW)
         rc = VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
-
-    if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_SCSI)
-        pIoReq->cbTransfer += cbCopy;
 
     return rc;
 }
