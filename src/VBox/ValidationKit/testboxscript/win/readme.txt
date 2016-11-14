@@ -17,6 +17,14 @@ Preparations:
 
 5. Disable Automatic updates. (No rebooting during tests, thank you!)
 
+   Ideally we would prevent windows from even checking for updates to avoid
+   influencing benchmarks and such, however the microsofties aren't keen on it.
+   So, disable it as much as possible.
+
+   W10: gpedit.msc -> "Administrative Templates" -> "Windows Components"
+   -> "Windows Update" -> "Configure Automatic Updates":  Enable and select
+   "2 - Notify for download and notiy for install".
+
 6. Go to the group policy editor (gpedit.msc) and change "Computer Configuration"
    -> "Windows Settings" -> "Security Settings" -> "Local Policies"
    -> "Security Options" -> "Network security: LAN Manager authentication level"
