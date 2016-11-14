@@ -264,6 +264,8 @@ private slots:
 #endif /* VBOX_WS_X11 */
     void sltTypeCtrlBreak();
     void sltTypeInsert();
+    void sltTypePrintScreen();
+    void sltTypeAltPrintScreen();
     void sltTakeSnapshot();
     void sltShowInformationDialog();
     void sltReset();

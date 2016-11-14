@@ -87,6 +87,8 @@ enum UIActionIndexRT
 #endif /* VBOX_WS_X11 */
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert,
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen,
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen,
     UIActionIndexRT_M_Input_M_Mouse,
     UIActionIndexRT_M_Input_M_Mouse_T_Integration,
 

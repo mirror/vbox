@@ -1190,6 +1190,66 @@ protected:
     }
 };
 
+class UIActionSimplePerformTypePrintScreen : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformTypePrintScreen(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("TypePrintScreen");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Print Screen"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Print Screen"));
+    }
+};
+
+class UIActionSimplePerformTypeAltPrintScreen : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformTypeAltPrintScreen(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("TypeAltPrintScreen");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Alt Print Screen"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Alt Print Screen"));
+    }
+};
+
 class UIActionMenuMouse : public UIActionMenu
 {
     Q_OBJECT;
@@ -2144,6 +2204,8 @@ void UIActionPoolRuntime::preparePool()
 #endif /* VBOX_WS_X11 */
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak] = new UIActionSimplePerformTypeCtrlBreak(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimplePerformTypeInsert(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen] = new UIActionSimplePerformTypePrintScreen(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen] = new UIActionSimplePerformTypeAltPrintScreen(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse] = new UIActionMenuMouse(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse_T_Integration] = new UIActionToggleMouseIntegration(this);
 
@@ -2867,6 +2929,10 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak)) || fSeparator;
     /* 'Type Insert' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert)) || fSeparator;
+    /* 'Type Print Screen' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen)) || fSeparator;
+    /* 'Type Alt Print Screen' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Input_M_Keyboard);

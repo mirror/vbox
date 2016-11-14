@@ -425,18 +425,20 @@ public:
     /** Runtime UI: Menu "Input": Action types. */
     enum RuntimeMenuInputActionType
     {
-        RuntimeMenuInputActionType_Invalid           = 0,
-        RuntimeMenuInputActionType_Keyboard          = RT_BIT(0),
-        RuntimeMenuInputActionType_KeyboardSettings  = RT_BIT(1),
-        RuntimeMenuInputActionType_TypeCAD           = RT_BIT(2),
+        RuntimeMenuInputActionType_Invalid            = 0,
+        RuntimeMenuInputActionType_Keyboard           = RT_BIT(0),
+        RuntimeMenuInputActionType_KeyboardSettings   = RT_BIT(1),
+        RuntimeMenuInputActionType_TypeCAD            = RT_BIT(2),
 #ifdef VBOX_WS_X11
-        RuntimeMenuInputActionType_TypeCABS          = RT_BIT(3),
+        RuntimeMenuInputActionType_TypeCABS           = RT_BIT(3),
 #endif /* VBOX_WS_X11 */
-        RuntimeMenuInputActionType_TypeCtrlBreak     = RT_BIT(4),
-        RuntimeMenuInputActionType_TypeInsert        = RT_BIT(5),
-        RuntimeMenuInputActionType_Mouse             = RT_BIT(6),
-        RuntimeMenuInputActionType_MouseIntegration  = RT_BIT(7),
-        RuntimeMenuInputActionType_All               = 0xFFFF
+        RuntimeMenuInputActionType_TypeCtrlBreak      = RT_BIT(4),
+        RuntimeMenuInputActionType_TypeInsert         = RT_BIT(5),
+        RuntimeMenuInputActionType_TypePrintScreen    = RT_BIT(6),
+        RuntimeMenuInputActionType_TypeAltPrintScreen = RT_BIT(7),
+        RuntimeMenuInputActionType_Mouse              = RT_BIT(8),
+        RuntimeMenuInputActionType_MouseIntegration   = RT_BIT(9),
+        RuntimeMenuInputActionType_All                = 0xFFFF
     };
 
     /** Runtime UI: Menu "Devices": Action types. */

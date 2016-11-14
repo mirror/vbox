@@ -1018,6 +1018,8 @@ void UIMachineLogic::prepareActionGroups()
 #endif /* VBOX_WS_X11 */
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen));
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach));
@@ -1130,6 +1132,10 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltTypeCtrlBreak()));
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert), SIGNAL(triggered()),
             this, SLOT(sltTypeInsert()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen), SIGNAL(triggered()),
+            this, SLOT(sltTypePrintScreen()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen), SIGNAL(triggered()),
+            this, SLOT(sltTypeAltPrintScreen()));
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleMouseIntegration(bool)));
 
@@ -1500,6 +1506,38 @@ void UIMachineLogic::sltTypeInsert()
     sequence[1] = 0x52;        /* Insert down */
     sequence[2] = 0xE0;        /* Extended flag */
     sequence[3] = 0x52 | 0x80; /* Insert up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypePrintScreen()
+{
+    static QVector<LONG> sequence(8);
+    sequence[0] = 0xE0;        /* Extended flag */
+    sequence[1] = 0x2A;        /* Print.. down */
+    sequence[2] = 0xE0;        /* Extended flag */
+    sequence[3] = 0x37;        /* ..Screen down */
+    sequence[4] = 0xE0;        /* Extended flag */
+    sequence[5] = 0x37 | 0x80; /* ..Screen up */
+    sequence[6] = 0xE0;        /* Extended flag */
+    sequence[7] = 0x2A | 0x80; /* Print.. up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeAltPrintScreen()
+{
+    static QVector<LONG> sequence(10);
+    sequence[0] = 0x38;        /* Alt down */
+    sequence[1] = 0xE0;        /* Extended flag */
+    sequence[2] = 0x2A;        /* Print.. down */
+    sequence[3] = 0xE0;        /* Extended flag */
+    sequence[4] = 0x37;        /* ..Screen down */
+    sequence[5] = 0xE0;        /* Extended flag */
+    sequence[6] = 0x37 | 0x80; /* ..Screen up */
+    sequence[7] = 0xE0;        /* Extended flag */
+    sequence[8] = 0x2A | 0x80; /* Print.. up */
+    sequence[9] = 0x38 | 0x80; /* Alt up */
     keyboard().PutScancodes(sequence);
     AssertWrapperOk(keyboard());
 }

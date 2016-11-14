@@ -668,17 +668,19 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputA
     QString strResult;
     switch (runtimeMenuInputActionType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard:          strResult = "Keyboard"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings:  strResult = "KeyboardSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD:           strResult = "TypeCAD"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard:           strResult = "Keyboard"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings:   strResult = "KeyboardSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD:            strResult = "TypeCAD"; break;
 #ifdef VBOX_WS_X11
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:          strResult = "TypeCABS"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:           strResult = "TypeCABS"; break;
 #endif /* VBOX_WS_X11 */
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak:     strResult = "TypeCtrlBreak"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert:        strResult = "TypeInsert"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse:             strResult = "Mouse"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration:  strResult = "MouseIntegration"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_All:               strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak:      strResult = "TypeCtrlBreak"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert:         strResult = "TypeInsert"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen:    strResult = "TypePrintScreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen: strResult = "TypeAltPrintScreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse:              strResult = "Mouse"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration:   strResult = "MouseIntegration"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_All:                strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuInputActionType));
@@ -693,18 +695,20 @@ template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UI
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuInputActionType> values;
-    keys << "Keyboard";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
-    keys << "KeyboardSettings";  values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
-    keys << "TypeCAD";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
+    QStringList keys;             QList<UIExtraDataMetaDefs::RuntimeMenuInputActionType> values;
+    keys << "Keyboard";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
+    keys << "KeyboardSettings";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
+    keys << "TypeCAD";            values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
 #ifdef VBOX_WS_X11
-    keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
+    keys << "TypeCABS";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
 #endif /* VBOX_WS_X11 */
-    keys << "TypeCtrlBreak";     values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
-    keys << "TypeInsert";        values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
-    keys << "Mouse";             values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
-    keys << "MouseIntegration";  values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
-    keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
+    keys << "TypeCtrlBreak";      values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
+    keys << "TypeInsert";         values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
+    keys << "TypePrintScreen";    values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen;
+    keys << "TypeAltPrintScreen"; values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen;
+    keys << "Mouse";              values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
+    keys << "MouseIntegration";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
+    keys << "All";                values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuInputActionType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid;
