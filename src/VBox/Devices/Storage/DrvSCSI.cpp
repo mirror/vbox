@@ -1326,6 +1326,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IPortEx.pfnIoReqCompleteNotify       = drvscsiIoReqCompleteNotify;
     pThis->IPortEx.pfnIoReqCopyFromBuf          = drvscsiIoReqCopyFromBuf;
     pThis->IPortEx.pfnIoReqCopyToBuf            = drvscsiIoReqCopyToBuf;
+    pThis->IPortEx.pfnIoReqQueryBuf             = NULL;
     pThis->IPortEx.pfnIoReqQueryDiscardRanges   = drvscsiIoReqQueryDiscardRanges;
     pThis->IPortEx.pfnIoReqStateChanged         = drvscsiIoReqStateChanged;
 

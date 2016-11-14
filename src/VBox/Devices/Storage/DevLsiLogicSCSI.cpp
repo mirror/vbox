@@ -5579,6 +5579,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pDevice->IMediaExPort.pfnIoReqCompleteNotify     = lsilogicR3IoReqCompleteNotify;
         pDevice->IMediaExPort.pfnIoReqCopyFromBuf        = lsilogicR3IoReqCopyFromBuf;
         pDevice->IMediaExPort.pfnIoReqCopyToBuf          = lsilogicR3IoReqCopyToBuf;
+        pDevice->IMediaExPort.pfnIoReqQueryBuf           = NULL;
         pDevice->IMediaExPort.pfnIoReqQueryDiscardRanges = NULL;
         pDevice->IMediaExPort.pfnIoReqStateChanged       = lsilogicR3IoReqStateChanged;
         pDevice->IMediaExPort.pfnMediumEjected           = lsilogicR3MediumEjected;

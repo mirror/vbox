@@ -4156,6 +4156,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pDevice->IMediaExPort.pfnIoReqCompleteNotify     = buslogicR3IoReqCompleteNotify;
         pDevice->IMediaExPort.pfnIoReqCopyFromBuf        = buslogicR3IoReqCopyFromBuf;
         pDevice->IMediaExPort.pfnIoReqCopyToBuf          = buslogicR3IoReqCopyToBuf;
+        pDevice->IMediaExPort.pfnIoReqQueryBuf           = NULL;
         pDevice->IMediaExPort.pfnIoReqQueryDiscardRanges = NULL;
         pDevice->IMediaExPort.pfnIoReqStateChanged       = buslogicR3IoReqStateChanged;
         pDevice->IMediaExPort.pfnMediumEjected           = buslogicR3MediumEjected;

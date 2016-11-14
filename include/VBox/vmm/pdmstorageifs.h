@@ -620,6 +620,28 @@ typedef struct PDMIMEDIAEXPORT
                                                   size_t cbCopy));
 
     /**
+     * Queries a pointer to the memory buffer for the request from the drive/device above.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if this is not supported for this request.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   hIoReq          The I/O request handle.
+     * @param   pvIoReqAlloc    The allocator specific memory for this request.
+     * @param   ppvBuf          Where to store the pointer to the guest buffer on success.
+     * @param   pcbBuf          Where to store the size of the buffer on success.
+     *
+     * @note This is an optional feature of the entity implementing this interface to avoid overhead
+     *       by copying the data between buffers. If NULL it is not supported at all and the caller
+     *       has to resort to PDMIMEDIAEXPORT::pfnIoReqCopyToBuf and PDMIMEDIAEXPORT::pfnIoReqCopyFromBuf.
+     *       The same holds when VERR_NOT_SUPPORTED is returned.
+     *
+     *       On the upside the caller of this interface might not call this method at all and just
+     *       use the before mentioned methods to copy the data between the buffers.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnIoReqQueryBuf, (PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                 void *pvIoReqAlloc, void **ppvBuf, size_t *pcbBuf));
+
+    /**
      * Queries the specified amount of ranges to discard from the callee for the given I/O request.
      *
      * @returns VBox status code.
@@ -659,7 +681,7 @@ typedef struct PDMIMEDIAEXPORT
 } PDMIMEDIAEXPORT;
 
 /** PDMIMEDIAAEXPORT interface ID. */
-#define PDMIMEDIAEXPORT_IID                  "e0a586a6-4186-40d0-8067-c754b6585b53"
+#define PDMIMEDIAEXPORT_IID                  "0ae2e534-6c28-41d6-9a88-7f88f2cb2ff8"
 
 
 /** Pointer to an extended media interface. */
