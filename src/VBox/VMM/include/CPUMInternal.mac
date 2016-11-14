@@ -218,7 +218,7 @@ struc CPUMCPU
     .Guest.msrCSTAR           resb    8
     .Guest.msrSFMASK          resb    8
     .Guest.msrKERNELGSBASE    resb    8
-    .Guest.msrApicBase        resb    8
+    .Guest.uMsrPadding0       resb    8
     .Guest.aXcr               resq    2
     .Guest.fXStateMask        resq    1
     .Guest.pXStateR0      RTR0PTR_RES 1
@@ -476,7 +476,7 @@ struc CPUMCPU
     .Hyper.msrCSTAR           resb    8
     .Hyper.msrSFMASK          resb    8
     .Hyper.msrKERNELGSBASE    resb    8
-    .Hyper.msrApicBase        resb    8
+    .Hyper.uMsrPadding0       resb    8
     .Hyper.aXcr               resq    2
     .Hyper.fXStateMask        resq    1
     .Hyper.pXStateR0      RTR0PTR_RES 1

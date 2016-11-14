@@ -261,7 +261,6 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, msrCSTAR),
     SSMFIELD_ENTRY(         CPUMCTX, msrSFMASK),
     SSMFIELD_ENTRY(         CPUMCTX, msrKERNELGSBASE),
-    /* msrApicBase is not included here, it resides in the APIC device state. */
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.Sel),
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.ValidSel),
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.fFlags),
@@ -1151,14 +1150,6 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 
     /* C-state control. Guesses. */
     pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl = 1 /*C1*/ | RT_BIT_32(25) | RT_BIT_32(26) | RT_BIT_32(27) | RT_BIT_32(28);
-
-
-    /*
-     * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
-     * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
-     */
-    pCtx->msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
-    LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", pVCpu->idCpu, pVCpu->cpum.s.Guest.msrApicBase));
 }
 
 
@@ -1605,10 +1596,6 @@ static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
 
         /* Notify PGM of the NXE states in case they've changed. */
         PGMNotifyNxeChanged(pVCpu, RT_BOOL(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_NXE));
-
-        /* Cache the local APIC base from the APIC device. During init. this is done in CPUMR3ResetCpu(). */
-        pVCpu->cpum.s.Guest.msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
-        LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", idCpu, pVCpu->cpum.s.Guest.msrApicBase));
 
         /* During init. this is done in CPUMR3InitCompleted(). */
         if (fSupportsLongMode)
@@ -2520,18 +2507,6 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             }
 
             cpumR3MsrRegStats(pVM);
-            break;
-        }
-
-        case VMINITCOMPLETED_RING0:
-        {
-            /* Cache the APIC base (from the APIC device) once it has been initialized. */
-            for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            {
-                PVMCPU pVCpu = &pVM->aCpus[i];
-                pVCpu->cpum.s.Guest.msrApicBase = APICGetBaseMsrNoCheck(pVCpu);
-                LogRel(("CPUM%u: Cached APIC base MSR = %#RX64\n", i, pVCpu->cpum.s.Guest.msrApicBase));
-            }
             break;
         }
 

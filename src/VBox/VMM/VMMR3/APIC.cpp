@@ -1665,10 +1665,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     switch ((PDMAPICMODE)uMaxMode)
     {
         case PDMAPICMODE_NONE:
-            /** @todo permanently disabling the APIC won't really work (needs
-             *        fixing in HM, CPUM, PDM and possibly other places). See
-             *        @bugref{8353}. */
-            return VMR3SetError(pVM->pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, "APIC mode 'none' is not supported yet.");
+            LogRel(("APIC: APIC maximum mode configured as 'None', effectively disabled/not-present!\n"));
         case PDMAPICMODE_APIC:
         case PDMAPICMODE_X2APIC:
             break;

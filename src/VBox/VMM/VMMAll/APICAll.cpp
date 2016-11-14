@@ -411,8 +411,9 @@ APICMODE apicGetMode(uint64_t uApicBaseMsr)
  * Returns whether the APIC is hardware enabled or not.
  *
  * @returns true if enabled, false otherwise.
+ * @param   pVCpu           The cross context virtual CPU structure.
  */
-DECLINLINE(bool) apicIsEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) APICIsEnabled(PVMCPU pVCpu)
 {
     PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
     return RT_BOOL(pApicCpu->uApicBaseMsr & MSR_IA32_APICBASE_EN);
@@ -615,7 +616,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
             {
                 if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
-                    && apicIsEnabled(&pVM->aCpus[idCpu]))
+                    && APICIsEnabled(&pVM->aCpus[idCpu]))
                     fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             }
             break;
@@ -625,7 +626,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
         {
             VMCPUID const idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
             if (   idCpu < pVM->cCpus
-                && apicIsEnabled(&pVM->aCpus[idCpu]))
+                && APICIsEnabled(&pVM->aCpus[idCpu]))
                 fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
             else
                 AssertMsgFailed(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode! idCpu=%u\n", idCpu));
@@ -651,7 +652,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
             {
                 if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
-                    && apicIsEnabled(&pVM->aCpus[idCpu]))
+                    && APICIsEnabled(&pVM->aCpus[idCpu]))
                 {
                     Log2(("APIC: apicSendIntr: Raising NMI on VCPU%u\n", idCpu));
                     apicSetInterruptFF(&pVM->aCpus[idCpu], PDMAPICIRQ_NMI);
@@ -1878,7 +1879,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICReadMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t *
      * Is the APIC enabled?
      */
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
     { /* likely */ }
     else
     {
@@ -1996,7 +1997,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
      * Is the APIC enabled?
      */
     PCAPIC pApic = VM_TO_APIC(pVCpu->CTX_SUFF(pVM));
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
     { /* likely */ }
     else
     {
@@ -2346,7 +2347,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICGetBaseMsr(PVMCPU pVCpu, uint64_t *pu64Value)
  */
 VMMDECL(int) APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr)
 {
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
         return VBOXSTRICTRC_VAL(apicSetTprEx(pVCpu, u8Tpr, false /* fForceX2ApicBehaviour */));
     return VERR_PDM_NO_APIC_INSTANCE;
 }
@@ -2389,7 +2390,7 @@ static bool apicGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr
 VMMDECL(int) APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
     {
         PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
         if (pfPending)
@@ -2426,7 +2427,7 @@ VMM_INT_DECL(int) APICGetTimerFreq(PVM pVM, uint64_t *pu64Value)
     AssertPtrReturn(pu64Value, VERR_INVALID_PARAMETER);
 
     PVMCPU pVCpu = &pVM->aCpus[0];
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
     {
         PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
         *pu64Value = TMTimerGetFreq(pApicCpu->CTX_SUFF(pTimer));
@@ -2458,7 +2459,7 @@ VMM_INT_DECL(int) APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint
     /*
      * If the APIC isn't enabled, do nothing and pretend success.
      */
-    if (apicIsEnabled(&pVM->aCpus[0]))
+    if (APICIsEnabled(&pVM->aCpus[0]))
     { /* likely */ }
     else
         return VINF_SUCCESS;
@@ -2507,7 +2508,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     /* If the APIC is enabled, the interrupt is subject to LVT programming. */
-    if (apicIsEnabled(pVCpu))
+    if (APICIsEnabled(pVCpu))
     {
         PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
 
@@ -2674,7 +2675,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
     LogFlow(("APIC%u: apicGetInterrupt:\n", pVCpu->idCpu));
 
     PXAPICPAGE pXApicPage = VMCPU_TO_XAPICPAGE(pVCpu);
-    bool const fApicHwEnabled = apicIsEnabled(pVCpu);
+    bool const fApicHwEnabled = APICIsEnabled(pVCpu);
     if (   fApicHwEnabled
         && pXApicPage->svr.u.fApicSoftwareEnable)
     {

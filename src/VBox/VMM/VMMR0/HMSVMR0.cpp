@@ -1607,45 +1607,51 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
     if (!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE))
         return VINF_SUCCESS;
 
-    bool    fPendingIntr;
-    uint8_t u8Tpr;
-    int rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
-    AssertRCReturn(rc, rc);
-
-    /* Assume that we need to trap all TPR accesses and thus need not check on
-       every #VMEXIT if we should update the TPR. */
-    Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqMasking);
-    pVCpu->hm.s.svm.fSyncVTpr = false;
-
-    /* 32-bit guests uses LSTAR MSR for patching guest code which touches the TPR. */
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
+    int rc = VINF_SUCCESS;
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (   PDMHasApic(pVM)
+        && APICIsEnabled(pVCpu))
     {
-        pCtx->msrLSTAR = u8Tpr;
+        bool    fPendingIntr;
+        uint8_t u8Tpr;
+        rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
+        AssertRCReturn(rc, rc);
 
-        /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
-        if (fPendingIntr)
-            hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        /* Assume that we need to trap all TPR accesses and thus need not check on
+           every #VMEXIT if we should update the TPR. */
+        Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqMasking);
+        pVCpu->hm.s.svm.fSyncVTpr = false;
+
+        /* 32-bit guests uses LSTAR MSR for patching guest code which touches the TPR. */
+        if (pVM->hm.s.fTPRPatchingActive)
+        {
+            pCtx->msrLSTAR = u8Tpr;
+
+            /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
+            if (fPendingIntr)
+                hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_INTERCEPT_WRITE);
+            else
+            {
+                hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+                pVCpu->hm.s.svm.fSyncVTpr = true;
+            }
+        }
         else
         {
-            hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-            pVCpu->hm.s.svm.fSyncVTpr = true;
-        }
-    }
-    else
-    {
-        /* Bits 3-0 of the VTPR field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
-        pVmcb->ctrl.IntCtrl.n.u8VTPR = (u8Tpr >> 4);
+            /* Bits 3-0 of the VTPR field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
+            pVmcb->ctrl.IntCtrl.n.u8VTPR = (u8Tpr >> 4);
 
-        /* If there are interrupts pending, intercept CR8 writes to evaluate ASAP if we can deliver the interrupt to the guest. */
-        if (fPendingIntr)
-            pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(8);
-        else
-        {
-            pVmcb->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
-            pVCpu->hm.s.svm.fSyncVTpr = true;
-        }
+            /* If there are interrupts pending, intercept CR8 writes to evaluate ASAP if we can deliver the interrupt to the guest. */
+            if (fPendingIntr)
+                pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(8);
+            else
+            {
+                pVmcb->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
+                pVCpu->hm.s.svm.fSyncVTpr = true;
+            }
 
-        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+            pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+        }
     }
 
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
@@ -5088,7 +5094,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         && !CPUMGetGuestCPL(pVCpu)
         && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
     {
-        RTGCPHYS GCPhysApicBase = pCtx->msrApicBase;
+        RTGCPHYS GCPhysApicBase = APICGetBaseMsrNoCheck(pVCpu);
         GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
         if (GCPhysFaultAddr == GCPhysApicBase + 0x80)
@@ -5352,7 +5358,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
     {
         RTGCPHYS GCPhysApicBase;
-        GCPhysApicBase  = pCtx->msrApicBase;
+        GCPhysApicBase  = APICGetBaseMsrNoCheck(pVCpu);
         GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
         /* Check if the page at the fault-address is the APIC base. */

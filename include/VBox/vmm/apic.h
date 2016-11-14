@@ -175,6 +175,7 @@ VMMDECL(int)                APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPe
 VMMDECL(int)                APICSetTpr(PVMCPU pVCpu, uint8_t u8Tpr);
 
 /* These functions are VMM internal. */
+VMM_INT_DECL(bool)          APICIsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(bool)          APICGetHighestPendingInterrupt(PVMCPU pVCpu, uint8_t *pu8PendingIntr);
 VMM_INT_DECL(bool)          APICQueueInterruptToService(PVMCPU pVCpu, uint8_t u8PendingIntr);
 VMM_INT_DECL(void)          APICDequeueInterruptFromService(PVMCPU pVCpu, uint8_t u8PendingIntr);

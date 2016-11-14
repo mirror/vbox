@@ -244,7 +244,7 @@ struc CPUMCTX
     .msrCSTAR           resb    8
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
-    .msrApicBase        resb    8
+    .uMsrPadding0       resb    8
     alignb 8
     .aXcr               resq    2
     .fXStateMask        resq    1

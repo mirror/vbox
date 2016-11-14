@@ -412,7 +412,7 @@ typedef struct CPUMCTX
     uint64_t        msrCSTAR;           /**< Compatibility mode syscall rip. */
     uint64_t        msrSFMASK;          /**< syscall flag mask. */
     uint64_t        msrKERNELGSBASE;    /**< swapgs exchange value. */
-    uint64_t        msrApicBase;        /**< The local APIC base (IA32_APIC_BASE MSR). */
+    uint64_t        uMsrPadding0;       /**< no longer used (used to hold a copy of APIC base MSR). */
     /** @} */
 
     /** The XCR0..XCR1 registers. */
@@ -478,7 +478,6 @@ AssertCompileMemberOffset(CPUMCTX,                   msrLSTAR, 512);
 AssertCompileMemberOffset(CPUMCTX,                   msrCSTAR, 520);
 AssertCompileMemberOffset(CPUMCTX,                  msrSFMASK, 528);
 AssertCompileMemberOffset(CPUMCTX,            msrKERNELGSBASE, 536);
-AssertCompileMemberOffset(CPUMCTX,                msrApicBase, 544);
 AssertCompileMemberOffset(CPUMCTX,                       aXcr, 552);
 AssertCompileMemberOffset(CPUMCTX,                fXStateMask, 568);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);

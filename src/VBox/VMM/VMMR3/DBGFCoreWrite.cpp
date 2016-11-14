@@ -57,6 +57,7 @@
 
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/apic.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgfcorefmt.h>
 #include <VBox/vmm/mm.h>
@@ -313,11 +314,10 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
 /**
  * Gets the guest-CPU context suitable for dumping into the core file.
  *
- * @param   pVM         The cross context VM structure.
- * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pDbgfCpu    Where to dump the guest-CPU data.
  */
-static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
+static void dbgfR3GetCoreCpu(PVMCPU pVCpu, PDBGFCORECPU pDbgfCpu)
 {
 #define DBGFCOPYSEL(a_dbgfsel, a_cpumselreg) \
     do { \
@@ -327,6 +327,8 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
         (a_dbgfsel).uSel   = (a_cpumselreg).Sel; \
     } while (0)
 
+    PVM       pVM  = pVCpu->CTX_SUFF(pVM);
+    PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     pDbgfCpu->rax             = pCtx->rax;
     pDbgfCpu->rbx             = pCtx->rbx;
     pDbgfCpu->rcx             = pCtx->rcx;
@@ -374,7 +376,7 @@ static void dbgfR3GetCoreCpu(PVM pVM, PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
     pDbgfCpu->msrCSTAR        = pCtx->msrCSTAR;
     pDbgfCpu->msrSFMASK       = pCtx->msrSFMASK;
     pDbgfCpu->msrKernelGSBase = pCtx->msrKERNELGSBASE;
-    pDbgfCpu->msrApicBase     = pCtx->msrApicBase;
+    pDbgfCpu->msrApicBase     = APICGetBaseMsrNoCheck(pVCpu);
     pDbgfCpu->aXcr[0]         = pCtx->aXcr[0];
     pDbgfCpu->aXcr[1]         = pCtx->aXcr[1];
     AssertCompile(sizeof(pDbgfCpu->ext) == sizeof(*pCtx->pXStateR3));
@@ -505,6 +507,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
 
     /*
      * Write the CPU context note headers and data.
+     * We allocate the DBGFCORECPU struct. rather than using the stack as it can be pretty large due to X86XSAVEAREA.
      */
     Assert(RTFileTell(hFile) == offCpuDumps);
     PDBGFCORECPU pDbgfCoreCpu = (PDBGFCORECPU)RTMemAlloc(sizeof(*pDbgfCoreCpu));
@@ -516,17 +519,10 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
 
     for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
-        PVMCPU      pVCpu = &pVM->aCpus[iCpu];
-        PCPUMCTX    pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
-        if (RT_UNLIKELY(!pCtx))
-        {
-            LogRel((DBGFLOG_NAME ": CPUMQueryGuestCtxPtr failed for vCPU[%u]\n", iCpu));
-            RTMemFree(pDbgfCoreCpu);
-            return VERR_INVALID_POINTER;
-        }
-
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
         RT_BZERO(pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
-        dbgfR3GetCoreCpu(pVM, pCtx, pDbgfCoreCpu);
+        dbgfR3GetCoreCpu(pVCpu, pDbgfCoreCpu);
+
         rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, g_pcszCoreVBoxCpu, pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
         if (RT_FAILURE(rc))
         {

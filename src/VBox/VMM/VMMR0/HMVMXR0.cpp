@@ -3408,42 +3408,74 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE))
     {
-        /* Setup TPR shadowing. Also setup TPR patching for 32-bit guests. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
+        if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
+            && APICIsEnabled(pVCpu))
         {
-            Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
-
-            bool    fPendingIntr  = false;
-            uint8_t u8Tpr         = 0;
-            uint8_t u8PendingIntr = 0;
-            rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
-            AssertRCReturn(rc, rc);
-
-            /*
-             * If there are external interrupts pending but masked by the TPR value, instruct VT-x to cause a VM-exit when
-             * the guest lowers its TPR below the highest-priority pending interrupt and we can deliver the interrupt.
-             * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
-             * the interrupt when we VM-exit for other reasons.
-             */
-            pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8Tpr;            /* Offset 0x80 is TPR in the APIC MMIO range. */
-            uint32_t u32TprThreshold = 0;
-            if (fPendingIntr)
+            /* Setup TPR shadowing. Also setup TPR patching for 32-bit guests. */
+            if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
             {
-                /* Bits 3:0 of the TPR threshold field correspond to bits 7:4 of the TPR (which is the Task-Priority Class). */
-                const uint8_t u8PendingPriority = (u8PendingIntr >> 4) & 0xf;
-                const uint8_t u8TprPriority     = (u8Tpr >> 4) & 0xf;
-                if (u8PendingPriority <= u8TprPriority)
-                    u32TprThreshold = u8PendingPriority;
-                else
-                    u32TprThreshold = u8TprPriority;             /* Required for Vista 64-bit guest, see @bugref{6398}. */
+                Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
+
+                bool    fPendingIntr  = false;
+                uint8_t u8Tpr         = 0;
+                uint8_t u8PendingIntr = 0;
+                rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
+                AssertRCReturn(rc, rc);
+
+                /*
+                 * If there are external interrupts pending but masked by the TPR value, instruct VT-x to cause a VM-exit when
+                 * the guest lowers its TPR below the highest-priority pending interrupt and we can deliver the interrupt.
+                 * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
+                 * the interrupt when we VM-exit for other reasons.
+                 */
+                pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8Tpr;            /* Offset 0x80 is TPR in the APIC MMIO range. */
+                uint32_t u32TprThreshold = 0;
+                if (fPendingIntr)
+                {
+                    /* Bits 3:0 of the TPR threshold field correspond to bits 7:4 of the TPR (which is the Task-Priority Class). */
+                    const uint8_t u8PendingPriority = (u8PendingIntr >> 4) & 0xf;
+                    const uint8_t u8TprPriority     = (u8Tpr >> 4) & 0xf;
+                    if (u8PendingPriority <= u8TprPriority)
+                        u32TprThreshold = u8PendingPriority;
+                    else
+                        u32TprThreshold = u8TprPriority;             /* Required for Vista 64-bit guest, see @bugref{6398}. */
+                }
+
+                rc = hmR0VmxApicSetTprThreshold(pVCpu, u32TprThreshold);
+                AssertRCReturn(rc, rc);
             }
 
-            rc = hmR0VmxApicSetTprThreshold(pVCpu, u32TprThreshold);
-            AssertRCReturn(rc, rc);
-        }
+#ifndef IEM_VERIFICATION_MODE_FULL
+            /* Setup the Virtualized APIC accesses. */
+            if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+            {
+                uint64_t u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
+                if (u64MsrApicBase != pVCpu->hm.s.vmx.u64MsrApicBase)
+                {
+                    PVM pVM = pVCpu->CTX_SUFF(pVM);
+                    Assert(pVM->hm.s.vmx.HCPhysApicAccess);
+                    RTGCPHYS GCPhysApicBase;
+                    GCPhysApicBase  = u64MsrApicBase;
+                    GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
+                    /* Unalias any existing mapping. */
+                    rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
+                    AssertRCReturn(rc, rc);
+
+                    /* Map the HC APIC-access page into the GC space, this also updates the shadow page tables if necessary. */
+                    Log4(("Mapped HC APIC-access page into GC: GCPhysApicBase=%#RGp\n", GCPhysApicBase));
+                    rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+                    AssertRCReturn(rc, rc);
+
+                    /* Update VMX's cache of the APIC base. */
+                    pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
+                }
+            }
+#endif /* !IEM_VERIFICATION_MODE_FULL */
+        }
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
     }
+
     return rc;
 }
 
@@ -8602,33 +8634,6 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     else
         return rcStrict;
 
-    /** @todo r=ramshankar: Why can't we do this when the APIC base changes
-     *        in hmR0VmxLoadGuestApicState()? Also we can stop caching the
-     *        APIC base in several places just for HM usage and just take the
-     *        function call hit in load-guest state. */
-#ifndef IEM_VERIFICATION_MODE_FULL
-    /* Setup the Virtualized APIC accesses. pMixedCtx->msrApicBase is always up-to-date. It's not part of the VMCS. */
-    if (   pVCpu->hm.s.vmx.u64MsrApicBase != pMixedCtx->msrApicBase
-        && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
-    {
-        Assert(pVM->hm.s.vmx.HCPhysApicAccess);
-        RTGCPHYS GCPhysApicBase;
-        GCPhysApicBase  = pMixedCtx->msrApicBase;
-        GCPhysApicBase &= PAGE_BASE_GC_MASK;
-
-        /* Unalias any existing mapping. */
-        int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
-        AssertRCReturn(rc, rc);
-
-        /* Map the HC APIC-access page into the GC space, this also updates the shadow page tables if necessary. */
-        Log4(("Mapped HC APIC-access page into GC: GCPhysApicBase=%#RGp\n", GCPhysApicBase));
-        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
-        AssertRCReturn(rc, rc);
-
-        pVCpu->hm.s.vmx.u64MsrApicBase = pMixedCtx->msrApicBase;
-    }
-#endif /* !IEM_VERIFICATION_MODE_FULL */
-
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
     uint32_t uIntrState = hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
@@ -12092,8 +12097,9 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
 
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
-        if (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
-            && pMixedCtx->ecx <= MSR_IA32_X2APIC_END)
+        if (    pMixedCtx->ecx == MSR_IA32_APICBASE
+            || (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
+                && pMixedCtx->ecx <= MSR_IA32_X2APIC_END))
         {
             /* We've already saved the APIC related guest-state (TPR) in hmR0VmxPostRunGuest(). When full APIC register
              * virtualization is implemented we'll have to make sure APIC state is saved from the VMCS before
@@ -12697,7 +12703,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                       || VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification) != 0x80,
                       ("hmR0VmxExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
 
-            RTGCPHYS GCPhys = pMixedCtx->msrApicBase;   /* Always up-to-date, msrApicBase is not part of the VMCS. */
+            RTGCPHYS GCPhys = pVCpu->hm.s.vmx.u64MsrApicBase;   /* Always up-to-date, u64MsrApicBase is not part of the VMCS. */
             GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification);
             PVM pVM = pVCpu->CTX_SUFF(pVM);
