@@ -787,10 +787,10 @@ static DECLCALLBACK(int) drvscsiIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMM
     RT_NOREF1(pInterface);
     PDRVSCSIREQ pReq = (PDRVSCSIREQ)hIoReq;
 
-    if (pReq->cbXfer <= pReq->cbBuf)
+    if (pReq->cbXfer && pReq->cbXfer <= pReq->cbBuf)
         *pcbResidual = pReq->cbBuf - pReq->cbXfer;
     else
-        *pcbResidual = 0; /* Overflow/Underrun error. */
+        *pcbResidual = 0; /* Overflow/Underrun error or no data transfers. */
     return VINF_SUCCESS;
 }
 
