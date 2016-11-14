@@ -22,8 +22,13 @@ Preparations:
    So, disable it as much as possible.
 
    W10: gpedit.msc -> "Administrative Templates" -> "Windows Components"
-   -> "Windows Update" -> "Configure Automatic Updates":  Enable and select
-   "2 - Notify for download and notiy for install".
+   -> "Windows Update":
+     - "Configure Automatic Updates": Enable and select "2 - Notify for
+       download and notiy for install".
+     - "Allow Automatic Updates immediate installation": Disable.
+     - "No auto-restart with logged on users for scheduled automatic
+       updates installations": Enabled.
+
 
 6. Go to the group policy editor (gpedit.msc) and change "Computer Configuration"
    -> "Windows Settings" -> "Security Settings" -> "Local Policies"
