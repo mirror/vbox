@@ -2414,7 +2414,8 @@ VMMDECL(int) APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t 
  * Gets the APIC timer frequency.
  *
  * @returns Strict VBox status code.
- * @param
+ * @param   pVM             The cross context VM structure.
+ * @param   pu64Value       Where to store the timer frequency.
  */
 VMM_INT_DECL(int) APICGetTimerFreq(PVM pVM, uint64_t *pu64Value)
 {
