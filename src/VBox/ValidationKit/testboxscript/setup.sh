@@ -215,7 +215,8 @@ check_testboxscript_install() {
     chmod a+x \
         "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript.py" \
         "${TESTBOXSCRIPT_DIR}/testboxscript/testboxscript_real.py" \
-        "${TESTBOXSCRIPT_DIR}/${HOST_OS}/${HOST_ARCH}/TestBoxHelper"
+        "${TESTBOXSCRIPT_DIR}/${HOST_OS}/${HOST_ARCH}/TestBoxHelper" \
+        "${TESTBOXSCRIPT_DIR}/linux/testboxscript-service.sh"
 
 
     # Check that the scripts work.
