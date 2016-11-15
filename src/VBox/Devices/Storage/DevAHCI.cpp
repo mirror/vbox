@@ -260,6 +260,10 @@ typedef struct AHCIREQ
     uint32_t                   fFlags;
     /** SCSI status code. */
     uint8_t                    u8ScsiSts;
+    /** Flag when the buffer is mapped. */
+    bool                       fMapped;
+    /** Page lock when the buffer is mapped. */
+    PGMPAGEMAPLOCK             PgLck;
 } AHCIREQ;
 
 /**
@@ -3651,7 +3655,10 @@ static PAHCIREQ ahciR3ReqAlloc(PAHCIPort pAhciPort, uint32_t uTag)
     int rc = pAhciPort->pDrvMediaEx->pfnIoReqAlloc(pAhciPort->pDrvMediaEx, &hIoReq, (void **)&pAhciReq,
                                                    uTag, PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
     if (RT_SUCCESS(rc))
-        pAhciReq->hIoReq = hIoReq;
+    {
+        pAhciReq->hIoReq  = hIoReq;
+        pAhciReq->fMapped = false;
+    }
     else
         pAhciReq = NULL;
     return pAhciReq;
@@ -3692,6 +3699,10 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                  pAhciPort, pAhciReq, rcReq));
 
     VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, pAhciReq->uOffset, pAhciReq->cbTransfer);
+
+    if (pAhciReq->fMapped)
+        PDMDevHlpPhysReleasePageMappingLock(pAhciPort->CTX_SUFF(pAhci)->CTX_SUFF(pDevIns),
+                                            &pAhciReq->PgLck);
 
     if (rcReq != VERR_PDM_MEDIAEX_IOREQ_CANCELED)
     {
@@ -3913,6 +3924,48 @@ static DECLCALLBACK(int) ahciR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMME
     ahciR3CopySgBufFromPrdtl(pAhciPort->CTX_SUFF(pAhci), pIoReq, pSgBuf, offSrc, cbCopy);
     if (pIoReq->fFlags & AHCI_REQ_OVERFLOW)
         rc = VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
+
+    return rc;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqQueryBuf}
+ */
+static DECLCALLBACK(int) ahciR3IoReqQueryBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                             void *pvIoReqAlloc, void **ppvBuf, size_t *pcbBuf)
+{
+    RT_NOREF(hIoReq);
+    int rc              = VERR_NOT_SUPPORTED;
+    PAHCIPort pAhciPort = RT_FROM_MEMBER(pInterface, AHCIPort, IMediaExPort);
+    PAHCIREQ pIoReq     = (PAHCIREQ)pvIoReqAlloc;
+    PAHCI pThis         = pAhciPort->CTX_SUFF(pAhci);
+
+    /* Only allow single 4KB page aligned buffers at the moment. */
+    if (   pIoReq->cPrdtlEntries == 1
+        && pIoReq->cbTransfer    == _4K)
+    {
+        RTGCPHYS GCPhysPrdt = pIoReq->GCPhysPrdtl;
+        SGLEntry PrdtEntry;
+
+        PDMDevHlpPhysRead(pThis->pDevInsR3, GCPhysPrdt, &PrdtEntry, sizeof(SGLEntry));
+
+        RTGCPHYS GCPhysAddrDataBase = AHCI_RTGCPHYS_FROM_U32(PrdtEntry.u32DBAUp, PrdtEntry.u32DBA);
+        uint32_t cbData = (PrdtEntry.u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
+
+        if (   cbData >= _4K
+            && !(GCPhysAddrDataBase & (_4K - 1)))
+        {
+            rc = PDMDevHlpPhysGCPhys2CCPtr(pThis->pDevInsR3, GCPhysAddrDataBase,
+                                           0, ppvBuf, &pIoReq->PgLck);
+            if (RT_SUCCESS(rc))
+            {
+                pIoReq->fMapped = true;
+                *pcbBuf = cbData;
+            }
+            else
+                rc = VERR_NOT_SUPPORTED;
+        }
+    }
 
     return rc;
 }
@@ -6012,7 +6065,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pAhciPort->IMediaExPort.pfnIoReqCompleteNotify     = ahciR3IoReqCompleteNotify;
         pAhciPort->IMediaExPort.pfnIoReqCopyFromBuf        = ahciR3IoReqCopyFromBuf;
         pAhciPort->IMediaExPort.pfnIoReqCopyToBuf          = ahciR3IoReqCopyToBuf;
-        pAhciPort->IMediaExPort.pfnIoReqQueryBuf           = NULL;
+        pAhciPort->IMediaExPort.pfnIoReqQueryBuf           = ahciR3IoReqQueryBuf;
         pAhciPort->IMediaExPort.pfnIoReqQueryDiscardRanges = ahciR3IoReqQueryDiscardRanges;
         pAhciPort->IMediaExPort.pfnIoReqStateChanged       = ahciR3IoReqStateChanged;
         pAhciPort->IMediaExPort.pfnMediumEjected           = ahciR3MediumEjected;
