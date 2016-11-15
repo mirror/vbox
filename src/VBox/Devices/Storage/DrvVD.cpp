@@ -410,6 +410,15 @@ typedef struct VBOXDISK
     /** Number of errors logged so far. */
     unsigned                 cErrors;
     /** @} */
+
+    /** @name Statistics.
+     * @{ */
+    /** how many attempts were made to query a direct buffer pointer from the
+     * device/driver above. */
+    STAMCOUNTER              StatQueryBufAttempts;
+    /** How many attempts to query a direct buffer pointer succeeded. */
+    STAMCOUNTER              StatQueryBufSuccess;
+    /** @} */
 } VBOXDISK;
 
 
@@ -2928,10 +2937,13 @@ DECLINLINE(int) drvvdMediaExIoReqBufAlloc(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
         /* Try to get a direct pointer to the buffer first. */
         void *pvBuf = NULL;
         size_t cbBuf = 0;
+
+        STAM_COUNTER_INC(&pThis->StatQueryBufAttempts);
         rc = pThis->pDrvMediaExPort->pfnIoReqQueryBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
                                                       &pvBuf, &cbBuf);
         if (RT_SUCCESS(rc))
         {
+            STAM_COUNTER_INC(&pThis->StatQueryBufSuccess);
             pIoReq->ReadWrite.cbIoBuf           = cbBuf;
             pIoReq->ReadWrite.fDirectBuf        = true;
             pIoReq->ReadWrite.Direct.Seg.pvSeg  = pvBuf;
@@ -4390,6 +4402,9 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aIoReqAllocBins); i++)
         if (pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc != NIL_RTSEMFASTMUTEX)
             RTSemFastMutexDestroy(pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc);
+
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufAttempts);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufSuccess);
 }
 
 /**
@@ -5380,6 +5395,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                         drvvdGetTypeName(enmCfgType), drvvdGetTypeName(pThis->enmType), cbFloppyImg));
         }
     } /* !fEmptyDrive */
+
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->StatQueryBufAttempts, "QueryBufAttempts",
+                              STAMUNIT_COUNT, "Number of attempts to query a direct buffer.");
+    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->StatQueryBufSuccess, "QueryBufSuccess",
+                              STAMUNIT_COUNT, "Number of succeeded attempts to query a direct buffer.");
 
     if (RT_FAILURE(rc))
     {
