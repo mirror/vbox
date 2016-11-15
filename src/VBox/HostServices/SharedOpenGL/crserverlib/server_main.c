@@ -223,8 +223,10 @@ static void crServerTearDown( void )
     crFreeHashtable(cr_server.barriers, DeleteBarrierCallback);
     cr_server.barriers = NULL;
 
+#if 0 /** @todo @bugref{8662} -- can trigger SEGFAULTs during savestate */
     /* Free all context info */
     crFreeHashtable(cr_server.contextTable, deleteContextInfoCallback);
+#endif
 
     /* synchronize with reality */
     if (!fContextsDeleted)
