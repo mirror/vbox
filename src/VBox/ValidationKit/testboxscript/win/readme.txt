@@ -8,7 +8,7 @@ Preparations:
 
 2. Install the win32 extension for python.
 
-3. Append C:\Python27 to the system PATH.
+3. Append C:\Python27 to the system PATH (tail).
 
 4. Disable UAC.
 
@@ -80,6 +80,8 @@ Preparations:
         DumpType        [dword] = 1  (minidump)
         CustomDumpFlags [dword] = 0
 
+   mkdir C:\CrashDumps
+
    See also http://msdn.microsoft.com/en-us/library/windows/desktop/bb787181%28v=vs.85%29.aspx
 
 7c. Enable verbose driver installation logging (C:\Windows\setupapi.dev.log):
@@ -87,6 +89,8 @@ Preparations:
    Create the following value under the key
    HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Setup\
         LogLevel        [dword] = 0xFF (255)
+
+   If it already exists (typical on W10), just OR 0xff into the existing value.
 
 8. Install firefox or chrome, download the latest testboxscript*.zip from
    the build box.
@@ -125,6 +129,12 @@ The install:
 
 26. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
     and append '--nested-paging'
+
+27. Enable RDP access by opening "System Properties" and selecting "Allow
+    remote connections to this computer" in the "Remote" tab.  Ensure that
+    "Allow connections only from computers running Remote Desktop with Network
+    Level Authentication" is not checked or rdesktop can't access it.
+
 
 That's currently it.
 
