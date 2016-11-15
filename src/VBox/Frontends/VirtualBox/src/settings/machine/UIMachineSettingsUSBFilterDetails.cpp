@@ -39,7 +39,7 @@ UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(QWidget *pP
     mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
     mLeVendorID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
     mLeProductID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
-    mLeRevision->setValidator (new QRegExpValidator (QRegExp ("[0-9]{0,4}"), this));
+    mLeRevision->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
     mLePort->setValidator (new QRegExpValidator (QRegExp ("[0-9]*"), this));
 
     /* Applying language settings */
