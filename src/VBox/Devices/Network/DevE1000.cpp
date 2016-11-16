@@ -70,6 +70,11 @@
  * in init (see @bugref{8624}).
  */
 #define E1K_INIT_LINKUP_DELAY (500 * 1000)
+/** @def E1K_IMS_INT_DELAY_NS
+ * E1K_IMS_INT_DELAY_NS prevents interrupt storms in Windows guests on enabling
+ * interrupts (see @bugref{8624}).
+ */
+#define E1K_IMS_INT_DELAY_NS 100
 /** @def E1K_TX_DELAY
  * E1K_TX_DELAY aims to improve guest-host transfer rate for TCP streams by
  * preventing packets to be sent immediately. It allows to send several
@@ -101,7 +106,7 @@
  * E1K_INT_STATS enables collection of internal statistics used for
  * debugging of delayed interrupts, etc.
  */
-//#define E1K_INT_STATS
+#define E1K_INT_STATS
 /** @def E1K_WITH_MSI
  * E1K_WITH_MSI enables rudimentary MSI support. Not implemented.
  */
@@ -1254,10 +1259,10 @@ struct E1kState_st
     uint32_t    uStatInt;
     uint32_t    uStatIntTry;
     uint32_t    uStatIntLower;
-    uint32_t    uStatIntDly;
+    uint32_t    uStatNoIntICR;
     int32_t     iStatIntLost;
     int32_t     iStatIntLostOne;
-    uint32_t    uStatDisDly;
+    uint32_t    uStatIntIMS;
     uint32_t    uStatIntSkip;
     uint32_t    uStatIntLate;
     uint32_t    uStatIntMasked;
@@ -2918,6 +2923,8 @@ static int e1kRegReadICR(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint3
     {
         if (value)
         {
+            if (!pThis->fIntRaised)
+                E1K_INC_ISTAT_CNT(pThis->uStatNoIntICR);
             /*
              * Not clearing ICR causes QNX to hang as it reads ICR in a loop
              * with disabled interrupts.
@@ -2995,7 +3002,15 @@ static int e1kRegWriteIMS(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
     IMS |= value;
     E1kLogRel(("E1000: irq enabled, RDH=%x RDT=%x TDH=%x TDT=%x\n", RDH, RDT, TDH, TDT));
     E1kLog(("%s e1kRegWriteIMS: IRQ enabled\n", pThis->szPrf));
-    e1kRaiseInterrupt(pThis, VINF_IOM_R3_MMIO_WRITE, 0);
+    /*
+     * We cannot raise an interrupt here as it will occasionally cause an interrupt storm
+     * in Windows guests (see @bugref{8624}, @bugref{5023}).
+     */
+    if ((ICR & IMS) && !pThis->fLocked)
+    {
+        E1K_INC_ISTAT_CNT(pThis->uStatIntIMS);
+        e1kPostponeInterrupt(pThis, E1K_IMS_INT_DELAY_NS);
+    }
 
     return VINF_SUCCESS;
 }
@@ -6068,8 +6083,8 @@ static void e1kDumpState(PE1KSTATE pThis)
     LogRel(("%s Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
     LogRel(("%s Interrupts raised : %d\n", pThis->szPrf, pThis->uStatInt));
     LogRel(("%s Interrupts lowered: %d\n", pThis->szPrf, pThis->uStatIntLower));
-    LogRel(("%s Interrupts delayed: %d\n", pThis->szPrf, pThis->uStatIntDly));
-    LogRel(("%s Disabled delayed:   %d\n", pThis->szPrf, pThis->uStatDisDly));
+    LogRel(("%s ICR outside ISR   : %d\n", pThis->szPrf, pThis->uStatNoIntICR));
+    LogRel(("%s IMS raised ints   : %d\n", pThis->szPrf, pThis->uStatIntIMS));
     LogRel(("%s Interrupts skipped: %d\n", pThis->szPrf, pThis->uStatIntSkip));
     LogRel(("%s Masked interrupts : %d\n", pThis->szPrf, pThis->uStatIntMasked));
     LogRel(("%s Early interrupts  : %d\n", pThis->szPrf, pThis->uStatIntEarly));
@@ -7156,8 +7171,8 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     pHlp->pfnPrintf(pHlp, "Interrupt attempts: %d\n", pThis->uStatIntTry);
     pHlp->pfnPrintf(pHlp, "Interrupts raised : %d\n", pThis->uStatInt);
     pHlp->pfnPrintf(pHlp, "Interrupts lowered: %d\n", pThis->uStatIntLower);
-    pHlp->pfnPrintf(pHlp, "Interrupts delayed: %d\n", pThis->uStatIntDly);
-    pHlp->pfnPrintf(pHlp, "Disabled delayed:   %d\n", pThis->uStatDisDly);
+    pHlp->pfnPrintf(pHlp, "ICR outside ISR   : %d\n", pThis->uStatNoIntICR);
+    pHlp->pfnPrintf(pHlp, "IMS raised ints   : %d\n", pThis->uStatIntIMS);
     pHlp->pfnPrintf(pHlp, "Interrupts skipped: %d\n", pThis->uStatIntSkip);
     pHlp->pfnPrintf(pHlp, "Masked interrupts : %d\n", pThis->uStatIntMasked);
     pHlp->pfnPrintf(pHlp, "Early interrupts  : %d\n", pThis->uStatIntEarly);
@@ -7888,10 +7903,10 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatInt,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatInt",                           "/Devices/E1k%d/uStatInt", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTry,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTry",                        "/Devices/E1k%d/uStatIntTry", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLower,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLower",                      "/Devices/E1k%d/uStatIntLower", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntDly,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntDly",                        "/Devices/E1k%d/uStatIntDly", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatNoIntICR,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatNoIntICR",                      "/Devices/E1k%d/uStatNoIntICR", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLost,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLost",                       "/Devices/E1k%d/iStatIntLost", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLostOne,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLostOne",                    "/Devices/E1k%d/iStatIntLostOne", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDisDly,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDisDly",                        "/Devices/E1k%d/uStatDisDly", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntIMS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntIMS",                        "/Devices/E1k%d/uStatIntIMS", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntSkip,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntSkip",                       "/Devices/E1k%d/uStatIntSkip", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLate,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLate",                       "/Devices/E1k%d/uStatIntLate", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntMasked,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntMasked",                     "/Devices/E1k%d/uStatIntMasked", iInstance);
