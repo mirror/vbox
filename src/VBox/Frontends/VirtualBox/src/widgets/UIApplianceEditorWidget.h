@@ -23,7 +23,6 @@
 #include <QItemDelegate>
 
 /* GUI includes: */
-#include "UIApplianceEditorWidget.gen.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -32,6 +31,11 @@
 
 /* Forward declarations: */
 class ModelItem;
+class QWidget;
+class QTreeView;
+class QCheckBox;
+class QLabel;
+class QTextEdit;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Globals
@@ -250,8 +254,7 @@ protected:
 ////////////////////////////////////////////////////////////////////////////////
 // UIApplianceEditorWidget
 
-class UIApplianceEditorWidget: public QIWithRetranslateUI<QWidget>,
-                               public Ui::UIApplianceEditorWidget
+class UIApplianceEditorWidget: public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -275,6 +278,20 @@ protected:
     /* Protected member vars */
     CAppliance         *m_pAppliance;
     VirtualSystemModel *m_pModel;
+
+    /** Holds the information pane instance. */
+    QWidget *m_pPaneInformation;
+    /** Holds the settings tree-view instance. */
+    QTreeView *m_pTreeViewSettings;
+    /** Holds the 'reinit MACs' check-box instance. */
+    QCheckBox *m_pCheckBoxReinitMACs;
+
+    /** Holds the warning pane instance. */
+    QWidget *m_pPaneWarning;
+    /** Holds the warning label instance. */
+    QLabel *m_pLabelWarning;
+    /** Holds the warning browser instance. */
+    QTextEdit *m_pTextEditWarning;
 
 private:
     static void initSystemSettings();

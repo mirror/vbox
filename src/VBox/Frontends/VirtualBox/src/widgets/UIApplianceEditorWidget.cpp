@@ -24,10 +24,13 @@
 # include <QSortFilterProxyModel>
 # include <QHeaderView>
 # include <QLineEdit>
-# include <QTextEdit>
 # include <QSpinBox>
 # include <QComboBox>
 # include <QDir>
+# include <QTreeView>
+# include <QCheckBox>
+# include <QLabel>
+# include <QTextEdit>
 
 /* GUI includes: */
 # include "UIApplianceEditorWidget.h"
@@ -1118,24 +1121,94 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = NULL */)
     /* Make sure all static content is properly initialized */
     initSystemSettings();
 
-    /* Apply UI decorations */
-    Ui::UIApplianceEditorWidget::setupUi(this);
+    /* Create layout: */
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    {
+        /* Configure information layout: */
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
-    /* Make the tree looking nicer */
-    m_pTvSettings->setRootIsDecorated(false);
-    m_pTvSettings->setAlternatingRowColors(true);
-    m_pTvSettings->setAllColumnsShowFocus(true);
-    m_pTvSettings->header()->setStretchLastSection(true);
-#if QT_VERSION >= 0x050000
-    m_pTvSettings->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#else /* QT_VERSION < 0x050000 */
-    m_pTvSettings->header()->setResizeMode(QHeaderView::ResizeToContents);
-#endif /* QT_VERSION < 0x050000 */
+        /* Create information pane: */
+        m_pPaneInformation = new QWidget;
+        {
+            /* Create information layout: */
+            QVBoxLayout *pLayoutInformation = new QVBoxLayout(m_pPaneInformation);
+            {
+                /* Configure information layout: */
+                pLayoutInformation->setContentsMargins(0, 0, 0, 0);
 
-    /* Hidden by default */
-    m_pReinitMACsCheckBox->setHidden(true);
+                /* Create tree-view: */
+                m_pTreeViewSettings = new QTreeView;
+                {
+                    /* Configure tree-view: */
+                    m_pTreeViewSettings->setRootIsDecorated(false);
+                    m_pTreeViewSettings->setAlternatingRowColors(true);
+                    m_pTreeViewSettings->setAllColumnsShowFocus(true);
+                    m_pTreeViewSettings->header()->setStretchLastSection(true);
+                    m_pTreeViewSettings->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::MinimumExpanding);
+#if QT_VERSION < 0x050000
+                    m_pTreeViewSettings->header()->setResizeMode(QHeaderView::ResizeToContents);
+#else
+                    m_pTreeViewSettings->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+#endif
 
-    /* Applying language settings */
+                    /* Add tree-view into information layout: */
+                    pLayoutInformation->addWidget(m_pTreeViewSettings);
+                }
+
+                /* Create check-box: */
+                m_pCheckBoxReinitMACs = new QCheckBox;
+                {
+                    /* Configure check-box: */
+                    m_pCheckBoxReinitMACs->setHidden(true);
+
+                    /* Add tree-view into information layout: */
+                    pLayoutInformation->addWidget(m_pCheckBoxReinitMACs);
+                }
+            }
+
+            /* Add information pane into layout: */
+            pLayout->addWidget(m_pPaneInformation);
+        }
+
+        /* Create warning pane: */
+        m_pPaneWarning  = new QWidget;
+        {
+            /* Configure warning pane: */
+            m_pPaneWarning->hide();
+            m_pPaneWarning->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+            /* Create warning layout: */
+            QVBoxLayout *pLayoutWarning = new QVBoxLayout(m_pPaneWarning);
+            {
+                /* Configure warning layout: */
+                pLayoutWarning->setContentsMargins(0, 0, 0, 0);
+
+                /* Create label: */
+                m_pLabelWarning = new QLabel;
+                {
+                    /* Add label into warning layout: */
+                    pLayoutWarning->addWidget(m_pLabelWarning);
+                }
+
+                /* Create text-edit: */
+                m_pTextEditWarning = new QTextEdit;
+                {
+                    /* Configure text-edit: */
+                    m_pTextEditWarning->setReadOnly(true);
+                    m_pTextEditWarning->setMaximumHeight(50);
+                    m_pTextEditWarning->setAutoFormatting(QTextEdit::AutoBulletList);
+
+                    /* Add text-edit into warning layout: */
+                    pLayoutWarning->addWidget(m_pTextEditWarning);
+                }
+            }
+
+            /* Add warning pane into layout: */
+            pLayout->addWidget(m_pPaneWarning);
+        }
+    }
+
+    /* Translate finally: */
     retranslateUi();
 }
 
@@ -1146,8 +1219,12 @@ void UIApplianceEditorWidget::restoreDefaults()
 
 void UIApplianceEditorWidget::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIApplianceEditorWidget::retranslateUi(this);
+    /* Translate information pane check-box: */
+    m_pCheckBoxReinitMACs->setText(tr("&Reinitialize the MAC address of all network cards"));
+    m_pCheckBoxReinitMACs->setToolTip(tr("When checked a new unique MAC address will assigned to all configured network cards."));
+
+    /* Translate warning pane label: */
+    m_pLabelWarning->setText(tr("Warnings:"));
 }
 
 /* static */

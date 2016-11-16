@@ -24,6 +24,7 @@
 # include <QTextBrowser>
 # include <QPushButton>
 # include <QPointer>
+# include <QLabel>
 
 /* Local includes: */
 # include "UIWizardImportAppPageBasic2.h"

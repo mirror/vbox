@@ -19,6 +19,11 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Qt includes: */
+# include <QCheckBox>
+# include <QTextEdit>
+# include <QTreeView>
+
 /* GUI includes: */
 # include "UIApplianceImportEditorWidget.h"
 # include "VBoxGlobal.h"
@@ -50,7 +55,7 @@ UIApplianceImportEditorWidget::UIApplianceImportEditorWidget(QWidget *pParent)
     : UIApplianceEditorWidget(pParent)
 {
     /* Show the MAC check box */
-    m_pReinitMACsCheckBox->setHidden(false);
+    m_pCheckBoxReinitMACs->setHidden(false);
 }
 
 bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
@@ -95,13 +100,13 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
                         VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
 
                         /* Set our own model */
-                        m_pTvSettings->setModel(pProxy);
+                        m_pTreeViewSettings->setModel(pProxy);
                         /* Set our own delegate */
-                        m_pTvSettings->setItemDelegate(pDelegate);
+                        m_pTreeViewSettings->setItemDelegate(pDelegate);
                         /* For now we hide the original column. This data is displayed as tooltip
                            also. */
-                        m_pTvSettings->setColumnHidden(OriginalValueSection, true);
-                        m_pTvSettings->expandAll();
+                        m_pTreeViewSettings->setColumnHidden(OriginalValueSection, true);
+                        m_pTreeViewSettings->expandAll();
 
                         /* Check for warnings & if there are one display them. */
                         bool fWarningsEnabled = false;
@@ -109,10 +114,10 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
                         if (warnings.size() > 0)
                         {
                             foreach (const QString& text, warnings)
-                                mWarningTextEdit->append("- " + text);
+                                m_pTextEditWarning->append("- " + text);
                             fWarningsEnabled = true;
                         }
-                        m_pWarningWidget->setVisible(fWarningsEnabled);
+                        m_pPaneWarning->setVisible(fWarningsEnabled);
                     }
                 }
             }
@@ -144,7 +149,7 @@ bool UIApplianceImportEditorWidget::import()
         /* Start the import asynchronously */
         CProgress progress;
         QVector<KImportOptions> options;
-        if (!m_pReinitMACsCheckBox->isChecked())
+        if (!m_pCheckBoxReinitMACs->isChecked())
             options.append(KImportOptions_KeepAllMACs);
         progress = m_pAppliance->ImportMachines(options);
         bool fResult = m_pAppliance->isOk();

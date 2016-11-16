@@ -21,7 +21,9 @@
 
 /* Global includes: */
 # include <QDialogButtonBox>
+# include <QLabel>
 # include <QPushButton>
+# include <QTextEdit>
 # include <QTextStream>
 
 /* Local includes: */
