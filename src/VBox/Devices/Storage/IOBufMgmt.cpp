@@ -188,8 +188,8 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
 
     /* Round to the next power of two and get the bin to try first. */
     uint32_t u32Order = ASMBitLastSetU32((uint32_t)cb) - 1;
-    if (cbAlloc & ~RT_BIT_32(u32Order))
-        u32Order <<= 1;
+    if (cb & (RT_BIT_32(u32Order) - 1))
+        u32Order++;
 
     u32Order = RT_CLAMP(u32Order, pThis->u32OrderMin, pThis->u32OrderMax);
     unsigned iBin = u32Order - pThis->u32OrderMin;
@@ -373,6 +373,7 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
     {
         unsigned iSeg = 0;
         size_t   cbLeft = cbIoBuf;
+        size_t   cbIoBufAlloc = 0;
         PRTSGSEG pSeg = &pIoBufDesc->Int.aSegs[0];
 
         while (   iSeg < RT_ELEMENTS(pIoBufDesc->Int.aSegs)
@@ -385,6 +386,7 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
             iSeg++;
             pSeg++;
             cbLeft -= RT_MIN(cbAlloc, cbLeft);
+            cbIoBufAlloc += cbAlloc;
         }
 
         if (iSeg)
@@ -394,11 +396,11 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
 
         pIoBufDesc->Int.cSegsUsed = iSeg;
         pIoBufDesc->Int.pIoBufMgr = pThis;
-        *pcbIoBufAllocated = cbIoBuf - cbLeft;
+        *pcbIoBufAllocated = cbIoBufAlloc;
         Assert(   (RT_SUCCESS(rc) && *pcbIoBufAllocated > 0)
                || RT_FAILURE(rc));
 
-        pThis->cbFree -= cbIoBuf - cbLeft;
+        pThis->cbFree -= cbIoBufAlloc;
 
         RTCritSectLeave(&pThis->CritSectAlloc);
     }
@@ -428,7 +430,7 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc)
             PIOBUFMGRBIN pBin = &pThis->paBins[iBin];
             pBin->papvFree[pBin->iFree] = pSeg->pvSeg;
             pBin->iFree++;
-            pThis->cbFree += (size_t)RT_BIT_32(u32Order);
+            pThis->cbFree += pSeg->cbSeg;
         }
 
         if (   pThis->cbFree == pThis->cbMax
