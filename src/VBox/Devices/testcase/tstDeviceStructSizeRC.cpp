@@ -1984,6 +1984,10 @@ int main()
     GEN_CHECK_OFF(NVME, paQueuesCompR0);
     GEN_CHECK_OFF(NVME, paQueuesSubmRC);
     GEN_CHECK_OFF(NVME, paQueuesCompRC);
+    GEN_CHECK_OFF(NVME, pvCtrlMemBufR3);
+    GEN_CHECK_OFF(NVME, GCPhysCtrlMemBuf);
+    GEN_CHECK_OFF(NVME, cbCtrlMemBuf);
+    GEN_CHECK_OFF(NVME, u32CtrlMemBufSz);
     GEN_CHECK_OFF(NVME, pWakeQueueR3);
     GEN_CHECK_OFF(NVME, pWakeQueueR0);
     GEN_CHECK_OFF(NVME, pWakeQueueRC);
@@ -1996,6 +2000,10 @@ int main()
     GEN_CHECK_OFF(NVME, LstWrkThrds);
     GEN_CHECK_OFF(NVME, CritSectWrkThrds);
     GEN_CHECK_OFF(NVME, fSignalIdle);
+# ifdef VBOX_WITH_STATISTICS
+    GEN_CHECK_OFF(NVME, aStatMemXfer[0]);
+    GEN_CHECK_OFF(NVME, aStatMemXfer[NVME_CMBSZ_SUPP_BIT_IDX_MAX]);
+# endif
 #endif
 
     return (0);
