@@ -47,8 +47,122 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-////////////////////////////////////////////////////////////////////////////////
-// ModelItem
+/* This & the following derived classes represent the data items of a Virtual
+   System. All access/manipulation is done with the help of virtual functions
+   to keep the interface clean. ModelItem is able to handle tree structures
+   with a parent & several children's. */
+class ModelItem
+{
+public:
+
+    ModelItem(int number, ApplianceModelItemType type, ModelItem *pParent = NULL);
+
+    virtual ~ModelItem();
+
+    ModelItem *parent() const { return m_pParentItem; }
+
+    void appendChild(ModelItem *pChild);
+    ModelItem *child(int row) const;
+
+    int row() const;
+
+    int childCount() const;
+    int columnCount() const { return 3; }
+
+    virtual Qt::ItemFlags itemFlags(int /* column */) const { return 0; }
+    virtual bool setData(int /* column */, const QVariant & /* value */, int /* role */) { return false; }
+    virtual QVariant data(int /* column */, int /* role */) const { return QVariant(); }
+    virtual QWidget *createEditor(QWidget * /* pParent */, const QStyleOptionViewItem & /* styleOption */, const QModelIndex & /* idx */) const { return NULL; }
+    virtual bool setEditorData(QWidget * /* pEditor */, const QModelIndex & /* idx */) const { return false; }
+    virtual bool setModelData(QWidget * /* pEditor */, QAbstractItemModel * /* pModel */, const QModelIndex & /* idx */) { return false; }
+
+    virtual void restoreDefaults() {}
+    virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
+
+    ApplianceModelItemType type() const { return m_type; }
+
+protected:
+
+    /* Protected member vars */
+    int                     m_number;
+    ApplianceModelItemType  m_type;
+
+    ModelItem              *m_pParentItem;
+    QList<ModelItem*>       m_childItems;
+};
+
+
+/* This class represent a Virtual System with an index. */
+class VirtualSystemItem: public ModelItem
+{
+public:
+    VirtualSystemItem(int number, CVirtualSystemDescription aDesc, ModelItem *pParent);
+
+    virtual QVariant data(int column, int role) const;
+
+    virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
+
+private:
+    CVirtualSystemDescription m_desc;
+};
+
+
+/* This class represent an hardware item of a Virtual System. All values of
+   KVirtualSystemDescriptionType are supported & handled differently. */
+class HardwareItem: public ModelItem
+{
+    friend class VirtualSystemSortProxyModel;
+public:
+
+    enum
+    {
+        TypeRole = Qt::UserRole,
+        ModifiedRole
+    };
+
+    HardwareItem(int number,
+                 KVirtualSystemDescriptionType type,
+                 const QString &strRef,
+                 const QString &strOrigValue,
+                 const QString &strConfigValue,
+                 const QString &strExtraConfigValue,
+                 ModelItem *pParent);
+
+    virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
+
+    virtual bool setData(int column, const QVariant &value, int role);
+    virtual QVariant data(int column, int role) const;
+
+    virtual Qt::ItemFlags itemFlags(int column) const;
+
+    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const;
+    virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const;
+
+    virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx);
+
+    virtual void restoreDefaults()
+    {
+        m_strConfigValue = m_strConfigDefaultValue;
+        m_checkState = Qt::Checked;
+    }
+
+private:
+
+    /* Private member vars */
+    KVirtualSystemDescriptionType m_type;
+    QString                       m_strRef;
+    QString                       m_strOrigValue;
+    QString                       m_strConfigValue;
+    QString                       m_strConfigDefaultValue;
+    QString                       m_strExtraConfigValue;
+    Qt::CheckState                m_checkState;
+    bool                          m_fModified;
+};
+
+
+/*********************************************************************************************************************************
+*   Class ModelItem implementation.                                                                                              *
+*********************************************************************************************************************************/
 
 /* This & the following derived classes represent the data items of a Virtual
    System. All access/manipulation is done with the help of virtual functions
@@ -95,8 +209,10 @@ void ModelItem::putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValue
         child(i)->putBack(finalStates, finalValues, finalExtraValues);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// VirtualSystemItem
+
+/*********************************************************************************************************************************
+*   Class VirtualSystemItem implementation.                                                                                      *
+*********************************************************************************************************************************/
 
 VirtualSystemItem::VirtualSystemItem(int number, CVirtualSystemDescription aDesc, ModelItem *pParent)
   : ModelItem(number, ApplianceModelItemType_VirtualSystem, pParent)
@@ -125,8 +241,10 @@ void VirtualSystemItem::putBack(QVector<BOOL>& finalStates, QVector<QString>& fi
     m_desc.SetFinalValues(finalStates, finalValues, finalExtraValues);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// HardwareItem
+
+/*********************************************************************************************************************************
+*   Class HardwareItem implementation.                                                                                           *
+*********************************************************************************************************************************/
 
 HardwareItem::HardwareItem(int number,
                            KVirtualSystemDescriptionType type,
@@ -722,8 +840,10 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
     return fDone;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// VirtualSystemModel
+
+/*********************************************************************************************************************************
+*   Class VirtualSystemModel implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 /* This class is a wrapper model for our ModelItem. It could be used with any
    TreeView & forward mostly all calls to the methods of ModelItem. The
@@ -930,8 +1050,10 @@ void VirtualSystemModel::putBack()
     m_pRootItem->putBack(v1, v2, v3);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// VirtualSystemDelegate
+
+/*********************************************************************************************************************************
+*   Class VirtualSystemDelegate implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 /* The delegate is used for creating/handling the different editors for the
    various types we support. This class forward the requests to the virtual
@@ -1022,8 +1144,10 @@ bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 #endif /* VBOX_WS_MAC */
 
-////////////////////////////////////////////////////////////////////////////////
-// VirtualSystemSortProxyModel
+
+/*********************************************************************************************************************************
+*   Class VirtualSystemSortProxyModel implementation.                                                                            *
+*********************************************************************************************************************************/
 
 /* How to sort the items in the tree view */
 KVirtualSystemDescriptionType VirtualSystemSortProxyModel::m_sortList[] =
@@ -1105,8 +1229,10 @@ bool VirtualSystemSortProxyModel::lessThan(const QModelIndex &leftIdx, const QMo
     return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// UIApplianceEditorWidget
+
+/*********************************************************************************************************************************
+*   Class UIApplianceEditorWidget implementation.                                                                                *
+*********************************************************************************************************************************/
 
 int UIApplianceEditorWidget::m_minGuestRAM      = -1;
 int UIApplianceEditorWidget::m_maxGuestRAM      = -1;
