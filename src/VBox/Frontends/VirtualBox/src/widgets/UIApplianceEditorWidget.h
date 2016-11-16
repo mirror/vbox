@@ -37,15 +37,23 @@ class QCheckBox;
 class QLabel;
 class QTextEdit;
 
-////////////////////////////////////////////////////////////////////////////////
-// Globals
 
-enum TreeViewSection { DescriptionSection = 0, OriginalValueSection, ConfigValueSection };
+/** Appliance tree-view section types. */
+enum ApplianceViewSection
+{
+    ApplianceViewSection_Description = 0,
+    ApplianceViewSection_OriginalValue,
+    ApplianceViewSection_ConfigValue
+};
 
-////////////////////////////////////////////////////////////////////////////////
-// ModelItem
+/** Appliance model item types. */
+enum ApplianceModelItemType
+{
+    ApplianceModelItemType_Root,
+    ApplianceModelItemType_VirtualSystem,
+    ApplianceModelItemType_Hardware
+};
 
-enum ModelItem_type { RootType, VirtualSystem_type, HardwareType };
 
 /* This & the following derived classes represent the data items of a Virtual
    System. All access/manipulation is done with the help of virtual functions
@@ -54,7 +62,7 @@ enum ModelItem_type { RootType, VirtualSystem_type, HardwareType };
 class ModelItem
 {
 public:
-    ModelItem(int number, ModelItem_type type, ModelItem *pParent = NULL);
+    ModelItem(int number, ApplianceModelItemType type, ModelItem *pParent = NULL);
 
     virtual ~ModelItem();
 
@@ -78,15 +86,15 @@ public:
     virtual void restoreDefaults() {}
     virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
 
-    ModelItem_type type() const { return m_type; }
+    ApplianceModelItemType type() const { return m_type; }
 
 protected:
     /* Protected member vars */
-    int                m_number;
-    ModelItem_type     m_type;
+    int                     m_number;
+    ApplianceModelItemType  m_type;
 
-    ModelItem         *m_pParentItem;
-    QList<ModelItem*>  m_childItems;
+    ModelItem              *m_pParentItem;
+    QList<ModelItem*>       m_childItems;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

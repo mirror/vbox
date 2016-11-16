@@ -89,7 +89,7 @@ void UIApplianceExportEditorWidget::populate()
 
     ExportSortProxyModel *pProxy = new ExportSortProxyModel(this);
     pProxy->setSourceModel(m_pModel);
-    pProxy->sort(DescriptionSection, Qt::DescendingOrder);
+    pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
 
     VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
 
@@ -99,7 +99,7 @@ void UIApplianceExportEditorWidget::populate()
     m_pTreeViewSettings->setItemDelegate(pDelegate);
     /* For now we hide the original column. This data is displayed as tooltip
        also. */
-    m_pTreeViewSettings->setColumnHidden(OriginalValueSection, true);
+    m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
     m_pTreeViewSettings->expandAll();
 
     /* Check for warnings & if there are one display them. */

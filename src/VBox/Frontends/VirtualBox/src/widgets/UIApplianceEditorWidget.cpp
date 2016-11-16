@@ -54,7 +54,7 @@
    System. All access/manipulation is done with the help of virtual functions
    to keep the interface clean. ModelItem is able to handle tree structures
    with a parent & several children's. */
-ModelItem::ModelItem(int number, ModelItem_type type, ModelItem *pParent /* = NULL */)
+ModelItem::ModelItem(int number, ApplianceModelItemType type, ModelItem *pParent /* = NULL */)
   : m_number(number)
   , m_type(type)
   , m_pParentItem(pParent)
@@ -99,14 +99,14 @@ void ModelItem::putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValue
 // VirtualSystemItem
 
 VirtualSystemItem::VirtualSystemItem(int number, CVirtualSystemDescription aDesc, ModelItem *pParent)
-  : ModelItem(number, VirtualSystem_type, pParent)
+  : ModelItem(number, ApplianceModelItemType_VirtualSystem, pParent)
   , m_desc(aDesc)
 {}
 
 QVariant VirtualSystemItem::data(int column, int role) const
 {
     QVariant v;
-    if (column == DescriptionSection &&
+    if (column == ApplianceViewSection_Description &&
         role == Qt::DisplayRole)
         v = UIApplianceEditorWidget::tr("Virtual System %1").arg(m_number + 1);
     return v;
@@ -135,7 +135,7 @@ HardwareItem::HardwareItem(int number,
                            const QString &strConfigValue,
                            const QString &strExtraConfigValue,
                            ModelItem *pParent)
-  : ModelItem(number, HardwareType, pParent)
+  : ModelItem(number, ApplianceModelItemType_Hardware, pParent)
   , m_type(type)
   , m_strRef(strRef)
   , m_strOrigValue(aOrigValue)
@@ -161,7 +161,7 @@ bool HardwareItem::setData(int column, const QVariant &value, int role)
     {
         case Qt::CheckStateRole:
         {
-            if (column == ConfigValueSection &&
+            if (column == ApplianceViewSection_ConfigValue &&
                 (m_type == KVirtualSystemDescriptionType_Floppy ||
                  m_type == KVirtualSystemDescriptionType_CDROM ||
                  m_type == KVirtualSystemDescriptionType_USBController ||
@@ -175,9 +175,9 @@ bool HardwareItem::setData(int column, const QVariant &value, int role)
         }
         case Qt::EditRole:
         {
-            if (column == OriginalValueSection)
+            if (column == ApplianceViewSection_OriginalValue)
                 m_strOrigValue = value.toString();
-            else if (column == ConfigValueSection)
+            else if (column == ApplianceViewSection_ConfigValue)
                 m_strConfigValue = value.toString();
             break;
         }
@@ -193,15 +193,15 @@ QVariant HardwareItem::data(int column, int role) const
     {
         case Qt::EditRole:
         {
-            if (column == OriginalValueSection)
+            if (column == ApplianceViewSection_OriginalValue)
                 v = m_strOrigValue;
-            else if (column == ConfigValueSection)
+            else if (column == ApplianceViewSection_ConfigValue)
                 v = m_strConfigValue;
             break;
         }
         case Qt::DisplayRole:
         {
-            if (column == DescriptionSection)
+            if (column == ApplianceViewSection_Description)
             {
                 switch (m_type)
                 {
@@ -229,9 +229,9 @@ QVariant HardwareItem::data(int column, int role) const
                     default:                                                   v = UIApplianceEditorWidget::tr("Unknown Hardware Item"); break;
                 }
             }
-            else if (column == OriginalValueSection)
+            else if (column == ApplianceViewSection_OriginalValue)
                 v = m_strOrigValue;
-            else if (column == ConfigValueSection)
+            else if (column == ApplianceViewSection_ConfigValue)
             {
                 switch (m_type)
                 {
@@ -257,7 +257,7 @@ QVariant HardwareItem::data(int column, int role) const
         }
         case Qt::ToolTipRole:
         {
-            if (column == ConfigValueSection)
+            if (column == ApplianceViewSection_ConfigValue)
             {
                 if (!m_strOrigValue.isEmpty())
                     v = UIApplianceEditorWidget::tr("<b>Original Value:</b> %1").arg(m_strOrigValue);
@@ -266,7 +266,7 @@ QVariant HardwareItem::data(int column, int role) const
         }
         case Qt::DecorationRole:
         {
-            if (column == DescriptionSection)
+            if (column == ApplianceViewSection_Description)
             {
                 switch (m_type)
                 {
@@ -294,7 +294,7 @@ QVariant HardwareItem::data(int column, int role) const
                     default: break;
                 }
             }
-            else if (column == ConfigValueSection &&
+            else if (column == ApplianceViewSection_ConfigValue &&
                      m_type == KVirtualSystemDescriptionType_OS)
             {
                 const QStyle *pStyle = QApplication::style();
@@ -306,7 +306,7 @@ QVariant HardwareItem::data(int column, int role) const
         case Qt::FontRole:
         {
             /* If the item is unchecked mark it with italic text. */
-            if (column == ConfigValueSection &&
+            if (column == ApplianceViewSection_ConfigValue &&
                 m_checkState == Qt::Unchecked)
             {
                 QFont font = qApp->font();
@@ -318,7 +318,7 @@ QVariant HardwareItem::data(int column, int role) const
         case Qt::ForegroundRole:
         {
             /* If the item is unchecked mark it with gray text. */
-            if (column == ConfigValueSection &&
+            if (column == ApplianceViewSection_ConfigValue &&
                 m_checkState == Qt::Unchecked)
             {
                 QPalette pal = qApp->palette();
@@ -328,7 +328,7 @@ QVariant HardwareItem::data(int column, int role) const
         }
         case Qt::CheckStateRole:
         {
-            if (column == ConfigValueSection &&
+            if (column == ApplianceViewSection_ConfigValue &&
                 (m_type == KVirtualSystemDescriptionType_Floppy ||
                  m_type == KVirtualSystemDescriptionType_CDROM ||
                  m_type == KVirtualSystemDescriptionType_USBController ||
@@ -344,7 +344,7 @@ QVariant HardwareItem::data(int column, int role) const
         }
         case HardwareItem::ModifiedRole:
         {
-            if (column == ConfigValueSection)
+            if (column == ApplianceViewSection_ConfigValue)
                 v = m_fModified;
             break;
         }
@@ -355,7 +355,7 @@ QVariant HardwareItem::data(int column, int role) const
 Qt::ItemFlags HardwareItem::itemFlags(int column) const
 {
     Qt::ItemFlags flags = 0;
-    if (column == ConfigValueSection)
+    if (column == ApplianceViewSection_ConfigValue)
     {
         /* Some items are checkable */
         if (m_type == KVirtualSystemDescriptionType_Floppy ||
@@ -389,7 +389,7 @@ Qt::ItemFlags HardwareItem::itemFlags(int column) const
 QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem & /* styleOption */, const QModelIndex &idx) const
 {
     QWidget *editor = NULL;
-    if (idx.column() == ConfigValueSection)
+    if (idx.column() == ApplianceViewSection_ConfigValue)
     {
         switch (m_type)
         {
@@ -640,7 +640,7 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
                 for (int i = 0; i < list.count(); ++i)
                 {
                     /* Get the index for the config value column. */
-                    QModelIndex hdIndex = pModel->index(list.at(i).row(), ConfigValueSection, list.at(i).parent());
+                    QModelIndex hdIndex = pModel->index(list.at(i).row(), ApplianceViewSection_ConfigValue, list.at(i).parent());
                     /* Ignore it if was already modified by the user. */
                     if (!hdIndex.data(ModifiedRole).toBool())
                         /* Replace any occurrence of the old VM name with
@@ -731,7 +731,7 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
 VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent /* = NULL */)
    : QAbstractItemModel(pParent)
 {
-    m_pRootItem = new ModelItem(0, RootType);
+    m_pRootItem = new ModelItem(0, ApplianceModelItemType_Root);
     for (int a = 0; a < aVSDs.size(); ++a)
     {
         CVirtualSystemDescription vs = aVSDs[a];
@@ -888,8 +888,8 @@ QVariant VirtualSystemModel::headerData(int section, Qt::Orientation orientation
     QString title;
     switch (section)
     {
-        case DescriptionSection: title = UIApplianceEditorWidget::tr("Description"); break;
-        case ConfigValueSection: title = UIApplianceEditorWidget::tr("Configuration"); break;
+        case ApplianceViewSection_Description: title = UIApplianceEditorWidget::tr("Description"); break;
+        case ApplianceViewSection_ConfigValue: title = UIApplianceEditorWidget::tr("Configuration"); break;
     }
     return title;
 }
@@ -899,10 +899,10 @@ QModelIndex VirtualSystemModel::buddy(const QModelIndex &idx) const
     if (!idx.isValid())
         return QModelIndex();
 
-    if (idx.column() == ConfigValueSection)
+    if (idx.column() == ApplianceViewSection_ConfigValue)
         return idx;
     else
-        return index(idx.row(), ConfigValueSection, idx.parent());
+        return index(idx.row(), ApplianceViewSection_ConfigValue, idx.parent());
 }
 
 void VirtualSystemModel::restoreDefaults(const QModelIndex &parentIdx /* = QModelIndex() */)
@@ -1064,7 +1064,7 @@ bool VirtualSystemSortProxyModel::filterAcceptsRow(int srcRow, const QModelIndex
         {
             ModelItem *item = static_cast<ModelItem*>(i.internalPointer());
             /* We filter hardware types only */
-            if (item->type() == HardwareType)
+            if (item->type() == ApplianceModelItemType_Hardware)
             {
                 HardwareItem *hwItem = static_cast<HardwareItem*>(item);
                 /* The license type shouldn't be displayed */
@@ -1086,8 +1086,8 @@ bool VirtualSystemSortProxyModel::lessThan(const QModelIndex &leftIdx, const QMo
     ModelItem *pRightItem = static_cast<ModelItem*>(rightIdx.internalPointer());
 
     /* We sort hardware types only */
-    if (!(pLeftItem->type() == HardwareType &&
-          pRightItem->type() == HardwareType))
+    if (!(pLeftItem->type() == ApplianceModelItemType_Hardware &&
+          pRightItem->type() == ApplianceModelItemType_Hardware))
         return false;
 
     HardwareItem *pHwLeft = static_cast<HardwareItem*>(pLeftItem);
