@@ -45,27 +45,27 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/** Describes the interface of Virtual System item.
+/** Describes the interface of Appliance item.
   * Represented as a tree structure with a parent & multiple children. */
-class ModelItem
+class UIApplianceModelItem
 {
 public:
 
     /** Constructs item with specified @a iNumber, @a enmType and @a pParentItem. */
-    ModelItem(int iNumber, ApplianceModelItemType enmType, ModelItem *pParentItem = 0);
+    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem = 0);
     /** Destructs item. */
-    virtual ~ModelItem();
+    virtual ~UIApplianceModelItem();
 
     /** Returns the item type. */
     ApplianceModelItemType type() const { return m_enmType; }
 
     /** Returns the parent of the item. */
-    ModelItem *parent() const { return m_pParentItem; }
+    UIApplianceModelItem *parent() const { return m_pParentItem; }
 
     /** Appends the passed @a pChildItem to the item's list of children. */
-    void appendChild(ModelItem *pChildItem);
+    void appendChild(UIApplianceModelItem *pChildItem);
     /** Returns the child specified by the @a iRow. */
-    ModelItem *child(int iRow) const;
+    UIApplianceModelItem *child(int iRow) const;
 
     /** Returns the row of the item in the parent. */
     int row() const;
@@ -107,20 +107,20 @@ protected:
     ApplianceModelItemType  m_enmType;
 
     /** Holds the parent item reference. */
-    ModelItem              *m_pParentItem;
+    UIApplianceModelItem         *m_pParentItem;
     /** Holds the list of children item instances. */
-    QList<ModelItem*>       m_childItems;
+    QList<UIApplianceModelItem*>  m_childItems;
 };
 
 
-/** ModelItem subclass representing Virtual System. */
-class VirtualSystemItem : public ModelItem
+/** UIApplianceModelItem subclass representing Appliance Virtual System item. */
+class UIVirtualSystemItem : public UIApplianceModelItem
 {
 public:
 
     /** Constructs item passing @a iNumber and @a pParentItem to the base-class.
-      * @param  enmDescription  Brings the Virtual System Description. */
-    VirtualSystemItem(int iNumber, CVirtualSystemDescription enmDescription, ModelItem *pParentItem);
+      * @param  comDescription  Brings the Virtual System Description. */
+    UIVirtualSystemItem(int iNumber, CVirtualSystemDescription comDescription, UIApplianceModelItem *pParentItem);
 
     /** Returns the data stored under the given @a iRole for the item referred to by the @a iColumn. */
     virtual QVariant data(int iColumn, int iRole) const;
@@ -131,14 +131,14 @@ public:
 private:
 
     /** Holds the Virtual System Description. */
-    CVirtualSystemDescription m_enmDescription;
+    CVirtualSystemDescription m_comDescription;
 };
 
 
-/** ModelItem subclass representing Virtual System item. */
-class HardwareItem : public ModelItem
+/** UIApplianceModelItem subclass representing Appliance Virtual Hardware item. */
+class UIVirtualHardwareItem : public UIApplianceModelItem
 {
-    friend class VirtualSystemSortProxyModel;
+    friend class UIApplianceSortProxyModel;
 
     /** Data roles. */
     enum
@@ -155,13 +155,13 @@ public:
       * @param  strOrigValue         Brings the original value.
       * @param  strConfigValue       Brings the configuration value.
       * @param  strExtraConfigValue  Brings the extra configuration value. */
-    HardwareItem(int iNumber,
-                 KVirtualSystemDescriptionType enmType,
-                 const QString &strRef,
-                 const QString &strOrigValue,
-                 const QString &strConfigValue,
-                 const QString &strExtraConfigValue,
-                 ModelItem *pParentItem);
+    UIVirtualHardwareItem(int iNumber,
+                          KVirtualSystemDescriptionType enmType,
+                          const QString &strRef,
+                          const QString &strOrigValue,
+                          const QString &strConfigValue,
+                          const QString &strExtraConfigValue,
+                          UIApplianceModelItem *pParentItem);
 
     /** Returns the item flags for the given @a iColumn. */
     virtual Qt::ItemFlags itemFlags(int iColumn) const;
@@ -189,7 +189,7 @@ public:
 
 private:
 
-    /** Holds the Virtual System description type. */
+    /** Holds the Virtual System Description type. */
     KVirtualSystemDescriptionType m_enmType;
     /** Holds something totally useless. */
     QString                       m_strRef;
@@ -209,46 +209,46 @@ private:
 
 
 /*********************************************************************************************************************************
-*   Class ModelItem implementation.                                                                                              *
+*   Class UIApplianceModelItem implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-ModelItem::ModelItem(int iNumber, ApplianceModelItemType enmType, ModelItem *pParentItem /* = 0 */)
+UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem /* = 0 */)
     : m_iNumber(iNumber)
     , m_enmType(enmType)
     , m_pParentItem(pParentItem)
 {
 }
 
-ModelItem::~ModelItem()
+UIApplianceModelItem::~UIApplianceModelItem()
 {
     qDeleteAll(m_childItems);
 }
 
-void ModelItem::appendChild(ModelItem *pChildItem)
+void UIApplianceModelItem::appendChild(UIApplianceModelItem *pChildItem)
 {
     AssertPtr(pChildItem);
     m_childItems << pChildItem;
 }
 
-ModelItem *ModelItem::child(int iRow) const
+UIApplianceModelItem *UIApplianceModelItem::child(int iRow) const
 {
     return m_childItems.value(iRow);
 }
 
-int ModelItem::row() const
+int UIApplianceModelItem::row() const
 {
     if (m_pParentItem)
-        return m_pParentItem->m_childItems.indexOf(const_cast<ModelItem*>(this));
+        return m_pParentItem->m_childItems.indexOf(const_cast<UIApplianceModelItem*>(this));
 
     return 0;
 }
 
-int ModelItem::childCount() const
+int UIApplianceModelItem::childCount() const
 {
     return m_childItems.count();
 }
 
-void ModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
+void UIApplianceModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
 {
     for (int i = 0; i < childCount(); ++i)
         child(i)->putBack(finalStates, finalValues, finalExtraValues);
@@ -256,16 +256,16 @@ void ModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValue
 
 
 /*********************************************************************************************************************************
-*   Class VirtualSystemItem implementation.                                                                                      *
+*   Class UIVirtualSystemItem implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-VirtualSystemItem::VirtualSystemItem(int iNumber, CVirtualSystemDescription enmDescription, ModelItem *pParentItem)
-    : ModelItem(iNumber, ApplianceModelItemType_VirtualSystem, pParentItem)
-    , m_enmDescription(enmDescription)
+UIVirtualSystemItem::UIVirtualSystemItem(int iNumber, CVirtualSystemDescription comDescription, UIApplianceModelItem *pParentItem)
+    : UIApplianceModelItem(iNumber, ApplianceModelItemType_VirtualSystem, pParentItem)
+    , m_comDescription(comDescription)
 {
 }
 
-QVariant VirtualSystemItem::data(int iColumn, int iRole) const
+QVariant UIVirtualSystemItem::data(int iColumn, int iRole) const
 {
     QVariant value;
     if (iColumn == ApplianceViewSection_Description &&
@@ -274,32 +274,32 @@ QVariant VirtualSystemItem::data(int iColumn, int iRole) const
     return value;
 }
 
-void VirtualSystemItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
+void UIVirtualSystemItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
 {
     /* Resize the vectors */
-    unsigned long iCount = m_enmDescription.GetCount();
+    unsigned long iCount = m_comDescription.GetCount();
     finalStates.resize(iCount);
     finalValues.resize(iCount);
     finalExtraValues.resize(iCount);
     /* Recursively fill the vectors */
-    ModelItem::putBack(finalStates, finalValues, finalExtraValues);
+    UIApplianceModelItem::putBack(finalStates, finalValues, finalExtraValues);
     /* Set all final values at once */
-    m_enmDescription.SetFinalValues(finalStates, finalValues, finalExtraValues);
+    m_comDescription.SetFinalValues(finalStates, finalValues, finalExtraValues);
 }
 
 
 /*********************************************************************************************************************************
-*   Class HardwareItem implementation.                                                                                           *
+*   Class UIVirtualHardwareItem implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-HardwareItem::HardwareItem(int iNumber,
-                           KVirtualSystemDescriptionType enmType,
-                           const QString &strRef,
-                           const QString &aOrigValue,
-                           const QString &strConfigValue,
-                           const QString &strExtraConfigValue,
-                           ModelItem *pParentItem)
-    : ModelItem(iNumber, ApplianceModelItemType_Hardware, pParentItem)
+UIVirtualHardwareItem::UIVirtualHardwareItem(int iNumber,
+                                             KVirtualSystemDescriptionType enmType,
+                                             const QString &strRef,
+                                             const QString &aOrigValue,
+                                             const QString &strConfigValue,
+                                             const QString &strExtraConfigValue,
+                                             UIApplianceModelItem *pParentItem)
+    : UIApplianceModelItem(iNumber, ApplianceModelItemType_VirtualHardware, pParentItem)
     , m_enmType(enmType)
     , m_strRef(strRef)
     , m_strOrigValue(aOrigValue)
@@ -311,7 +311,7 @@ HardwareItem::HardwareItem(int iNumber,
 {
 }
 
-Qt::ItemFlags HardwareItem::itemFlags(int iColumn) const
+Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
 {
     Qt::ItemFlags enmFlags = 0;
     if (iColumn == ApplianceViewSection_ConfigValue)
@@ -345,7 +345,7 @@ Qt::ItemFlags HardwareItem::itemFlags(int iColumn) const
     return enmFlags;
 }
 
-bool HardwareItem::setData(int iColumn, const QVariant &value, int iRole)
+bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRole)
 {
     bool fDone = false;
     switch (iRole)
@@ -377,7 +377,7 @@ bool HardwareItem::setData(int iColumn, const QVariant &value, int iRole)
     return fDone;
 }
 
-QVariant HardwareItem::data(int iColumn, int iRole) const
+QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
 {
     QVariant value;
     switch (iRole)
@@ -528,12 +528,12 @@ QVariant HardwareItem::data(int iColumn, int iRole) const
                 value = m_checkState;
             break;
         }
-        case HardwareItem::TypeRole:
+        case UIVirtualHardwareItem::TypeRole:
         {
             value = m_enmType;
             break;
         }
-        case HardwareItem::ModifiedRole:
+        case UIVirtualHardwareItem::ModifiedRole:
         {
             if (iColumn == ApplianceViewSection_ConfigValue)
                 value = m_fModified;
@@ -543,7 +543,7 @@ QVariant HardwareItem::data(int iColumn, int iRole) const
     return value;
 }
 
-QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem & /* styleOption */, const QModelIndex &idx) const
+QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem & /* styleOption */, const QModelIndex &idx) const
 {
     QWidget *pEditor = 0;
     if (idx.column() == ApplianceViewSection_ConfigValue)
@@ -652,7 +652,7 @@ QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem
     return pEditor;
 }
 
-bool HardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & /* idx */) const
+bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & /* idx */) const
 {
     bool fDone = false;
     switch (m_enmType)
@@ -743,7 +743,7 @@ bool HardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & /* idx */
     return fDone;
 }
 
-bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex & idx)
+bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex & idx)
 {
     bool fDone = false;
     switch (m_enmType)
@@ -790,7 +790,7 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
                 /* Query all items with the type HardDiskImage and which
                  * are child's of this item. */
                 QModelIndexList list = pModel->match(c0Index,
-                                                     HardwareItem::TypeRole,
+                                                     UIVirtualHardwareItem::TypeRole,
                                                      KVirtualSystemDescriptionType_HardDiskImage,
                                                      -1,
                                                      Qt::MatchExactly | Qt::MatchWrap | Qt::MatchRecursive);
@@ -879,34 +879,34 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
     return fDone;
 }
 
-void HardwareItem::restoreDefaults()
+void UIVirtualHardwareItem::restoreDefaults()
 {
     m_strConfigValue = m_strConfigDefaultValue;
     m_checkState = Qt::Checked;
 }
 
-void HardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
+void UIVirtualHardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
 {
     finalStates[m_iNumber] = m_checkState == Qt::Checked;
     finalValues[m_iNumber] = m_strConfigValue;
     finalExtraValues[m_iNumber] = m_strExtraConfigValue;
-    ModelItem::putBack(finalStates, finalValues, finalExtraValues);
+    UIApplianceModelItem::putBack(finalStates, finalValues, finalExtraValues);
 }
 
 
 /*********************************************************************************************************************************
-*   Class VirtualSystemModel implementation.                                                                                     *
+*   Class UIApplianceModel implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent /* = 0 */)
+UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent /* = 0 */)
     : QAbstractItemModel(pParent)
 {
-    m_pRootItem = new ModelItem(0, ApplianceModelItemType_Root);
+    m_pRootItem = new UIApplianceModelItem(0, ApplianceModelItemType_Root);
     for (int iVSDIndex = 0; iVSDIndex < aVSDs.size(); ++iVSDIndex)
     {
         CVirtualSystemDescription vsd = aVSDs[iVSDIndex];
 
-        VirtualSystemItem *pVirtualSystemItem = new VirtualSystemItem(iVSDIndex, vsd, m_pRootItem);
+        UIVirtualSystemItem *pVirtualSystemItem = new UIVirtualSystemItem(iVSDIndex, vsd, m_pRootItem);
         m_pRootItem->appendChild(pVirtualSystemItem);
 
         /** @todo ask Dmitry about include/COMDefs.h:232 */
@@ -917,7 +917,7 @@ VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs
         QVector<QString> extraConfigValues;
 
         QList<int> hdIndexes;
-        QMap<int, HardwareItem*> controllerMap;
+        QMap<int, UIVirtualHardwareItem*> controllerMap;
         vsd.GetDescription(types, refs, origValues, configValues, extraConfigValues);
         for (int i = 0; i < types.size(); ++i)
         {
@@ -927,7 +927,7 @@ VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs
                 hdIndexes << i;
             else
             {
-                HardwareItem *pHardwareItem = new HardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pVirtualSystemItem);
+                UIVirtualHardwareItem *pHardwareItem = new UIVirtualHardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pVirtualSystemItem);
                 pVirtualSystemItem->appendChild(pHardwareItem);
                 /* Save the hard disk controller types in an extra map */
                 if (types[i] == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
@@ -946,11 +946,11 @@ VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs
             if (rx.indexIn(ecnf) != -1)
             {
                 /* Get the controller */
-                HardwareItem *pControllerItem = controllerMap[rx.cap(1).toInt()];
+                UIVirtualHardwareItem *pControllerItem = controllerMap[rx.cap(1).toInt()];
                 if (pControllerItem)
                 {
                     /* New hardware item as child of the controller */
-                    HardwareItem *pStorageItem = new HardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pControllerItem);
+                    UIVirtualHardwareItem *pStorageItem = new UIVirtualHardwareItem(i, types[i], refs[i], origValues[i], configValues[i], extraConfigValues[i], pControllerItem);
                     pControllerItem->appendChild(pStorageItem);
                 }
             }
@@ -958,38 +958,38 @@ VirtualSystemModel::VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs
     }
 }
 
-VirtualSystemModel::~VirtualSystemModel()
+UIApplianceModel::~UIApplianceModel()
 {
     if (m_pRootItem)
         delete m_pRootItem;
 }
 
-QModelIndex VirtualSystemModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
+QModelIndex UIApplianceModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
     if (!hasIndex(iRow, iColumn, parentIdx))
         return QModelIndex();
 
-    ModelItem *pParentItem;
+    UIApplianceModelItem *pParentItem;
 
     if (!parentIdx.isValid())
         pParentItem = m_pRootItem;
     else
-        pParentItem = static_cast<ModelItem*>(parentIdx.internalPointer());
+        pParentItem = static_cast<UIApplianceModelItem*>(parentIdx.internalPointer());
 
-    ModelItem *pChildItem = pParentItem->child(iRow);
+    UIApplianceModelItem *pChildItem = pParentItem->child(iRow);
     if (pChildItem)
         return createIndex(iRow, iColumn, pChildItem);
     else
         return QModelIndex();
 }
 
-QModelIndex VirtualSystemModel::parent(const QModelIndex &idx) const
+QModelIndex UIApplianceModel::parent(const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return QModelIndex();
 
-    ModelItem *pChildItem = static_cast<ModelItem*>(idx.internalPointer());
-    ModelItem *pParentItem = pChildItem->parent();
+    UIApplianceModelItem *pChildItem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
+    UIApplianceModelItem *pParentItem = pChildItem->parent();
 
     if (pParentItem == m_pRootItem)
         return QModelIndex();
@@ -997,39 +997,39 @@ QModelIndex VirtualSystemModel::parent(const QModelIndex &idx) const
     return createIndex(pParentItem->row(), 0, pParentItem);
 }
 
-int VirtualSystemModel::rowCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
+int UIApplianceModel::rowCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
-    ModelItem *pParentItem;
+    UIApplianceModelItem *pParentItem;
     if (parentIdx.column() > 0)
         return 0;
 
     if (!parentIdx.isValid())
         pParentItem = m_pRootItem;
     else
-        pParentItem = static_cast<ModelItem*>(parentIdx.internalPointer());
+        pParentItem = static_cast<UIApplianceModelItem*>(parentIdx.internalPointer());
 
     return pParentItem->childCount();
 }
 
-int VirtualSystemModel::columnCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
+int UIApplianceModel::columnCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
     if (parentIdx.isValid())
-        return static_cast<ModelItem*>(parentIdx.internalPointer())->columnCount();
+        return static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->columnCount();
     else
         return m_pRootItem->columnCount();
 }
 
-Qt::ItemFlags VirtualSystemModel::flags(const QModelIndex &idx) const
+Qt::ItemFlags UIApplianceModel::flags(const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return 0;
 
-    ModelItem *pItem = static_cast<ModelItem*>(idx.internalPointer());
+    UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
 
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | pItem->itemFlags(idx.column());
 }
 
-QVariant VirtualSystemModel::headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const
+QVariant UIApplianceModel::headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const
 {
     if (iRole != Qt::DisplayRole ||
         enmOrientation != Qt::Horizontal)
@@ -1044,27 +1044,27 @@ QVariant VirtualSystemModel::headerData(int iSection, Qt::Orientation enmOrienta
     return strTitle;
 }
 
-bool VirtualSystemModel::setData(const QModelIndex &idx, const QVariant &value, int iRole)
+bool UIApplianceModel::setData(const QModelIndex &idx, const QVariant &value, int iRole)
 {
     if (!idx.isValid())
         return false;
 
-    ModelItem *pTtem = static_cast<ModelItem*>(idx.internalPointer());
+    UIApplianceModelItem *pTtem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
 
     return pTtem->setData(idx.column(), value, iRole);
 }
 
-QVariant VirtualSystemModel::data(const QModelIndex &idx, int iRole /* = Qt::DisplayRole */) const
+QVariant UIApplianceModel::data(const QModelIndex &idx, int iRole /* = Qt::DisplayRole */) const
 {
     if (!idx.isValid())
         return QVariant();
 
-    ModelItem *pTtem = static_cast<ModelItem*>(idx.internalPointer());
+    UIApplianceModelItem *pTtem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
 
     return pTtem->data(idx.column(), iRole);
 }
 
-QModelIndex VirtualSystemModel::buddy(const QModelIndex &idx) const
+QModelIndex UIApplianceModel::buddy(const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return QModelIndex();
@@ -1075,14 +1075,14 @@ QModelIndex VirtualSystemModel::buddy(const QModelIndex &idx) const
         return index(idx.row(), ApplianceViewSection_ConfigValue, idx.parent());
 }
 
-void VirtualSystemModel::restoreDefaults(const QModelIndex &parentIdx /* = QModelIndex() */)
+void UIApplianceModel::restoreDefaults(const QModelIndex &parentIdx /* = QModelIndex() */)
 {
-    ModelItem *pParentItem;
+    UIApplianceModelItem *pParentItem;
 
     if (!parentIdx.isValid())
         pParentItem = m_pRootItem;
     else
-        pParentItem = static_cast<ModelItem*>(parentIdx.internalPointer());
+        pParentItem = static_cast<UIApplianceModelItem*>(parentIdx.internalPointer());
 
     for (int i = 0; i < pParentItem->childCount(); ++i)
     {
@@ -1092,7 +1092,7 @@ void VirtualSystemModel::restoreDefaults(const QModelIndex &parentIdx /* = QMode
     emit dataChanged(index(0, 0, parentIdx), index(pParentItem->childCount()-1, 0, parentIdx));
 }
 
-void VirtualSystemModel::putBack()
+void UIApplianceModel::putBack()
 {
     QVector<BOOL> v1;
     QVector<QString> v2;
@@ -1102,16 +1102,16 @@ void VirtualSystemModel::putBack()
 
 
 /*********************************************************************************************************************************
-*   Class VirtualSystemDelegate implementation.                                                                                  *
+*   Class UIApplianceDelegate implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-VirtualSystemDelegate::VirtualSystemDelegate(QAbstractProxyModel *pProxy, QObject *pParent /* = 0 */)
+UIApplianceDelegate::UIApplianceDelegate(QAbstractProxyModel *pProxy, QObject *pParent /* = 0 */)
     : QItemDelegate(pParent)
     , m_pProxy(pProxy)
 {
 }
 
-QWidget *VirtualSystemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
+QWidget *UIApplianceDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return QItemDelegate::createEditor(pParent, styleOption, idx);
@@ -1120,7 +1120,7 @@ QWidget *VirtualSystemDelegate::createEditor(QWidget *pParent, const QStyleOptio
     if (m_pProxy)
         index = m_pProxy->mapToSource(idx);
 
-    ModelItem *pItem = static_cast<ModelItem*>(index.internalPointer());
+    UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(index.internalPointer());
     QWidget *pEditor = pItem->createEditor(pParent, styleOption, index);
 
     /* Allow UILineTextEdit to commit data early: */
@@ -1133,7 +1133,7 @@ QWidget *VirtualSystemDelegate::createEditor(QWidget *pParent, const QStyleOptio
         return pEditor;
 }
 
-void VirtualSystemDelegate::setEditorData(QWidget *pEditor, const QModelIndex &idx) const
+void UIApplianceDelegate::setEditorData(QWidget *pEditor, const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return QItemDelegate::setEditorData(pEditor, idx);
@@ -1142,13 +1142,13 @@ void VirtualSystemDelegate::setEditorData(QWidget *pEditor, const QModelIndex &i
     if (m_pProxy)
         index = m_pProxy->mapToSource(idx);
 
-    ModelItem *pItem = static_cast<ModelItem*>(index.internalPointer());
+    UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(index.internalPointer());
 
     if (!pItem->setEditorData(pEditor, index))
         QItemDelegate::setEditorData(pEditor, index);
 }
 
-void VirtualSystemDelegate::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) const
+void UIApplianceDelegate::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) const
 {
     if (!idx.isValid())
         return QItemDelegate::setModelData(pEditor, pModel, idx);
@@ -1157,18 +1157,18 @@ void VirtualSystemDelegate::setModelData(QWidget *pEditor, QAbstractItemModel *p
     if (m_pProxy)
         index = m_pProxy->mapToSource(idx);
 
-    ModelItem *pItem = static_cast<ModelItem*>(index.internalPointer());
+    UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(index.internalPointer());
     if (!pItem->setModelData(pEditor, pModel, idx))
         QItemDelegate::setModelData(pEditor, pModel, idx);
 }
 
-void VirtualSystemDelegate::updateEditorGeometry(QWidget *pEditor, const QStyleOptionViewItem &styleOption, const QModelIndex & /* idx */) const
+void UIApplianceDelegate::updateEditorGeometry(QWidget *pEditor, const QStyleOptionViewItem &styleOption, const QModelIndex & /* idx */) const
 {
     if (pEditor)
         pEditor->setGeometry(styleOption.rect);
 }
 
-QSize VirtualSystemDelegate::sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
+QSize UIApplianceDelegate::sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
 {
     QSize size = QItemDelegate::sizeHint(styleOption, idx);
 #ifdef VBOX_WS_MAC
@@ -1181,7 +1181,7 @@ QSize VirtualSystemDelegate::sizeHint(const QStyleOptionViewItem &styleOption, c
 }
 
 #ifdef VBOX_WS_MAC
-bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIApplianceDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::FocusOut)
     {
@@ -1203,11 +1203,11 @@ bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 
 
 /*********************************************************************************************************************************
-*   Class VirtualSystemSortProxyModel implementation.                                                                            *
+*   Class UIApplianceSortProxyModel implementation.                                                                              *
 *********************************************************************************************************************************/
 
 /* static */
-KVirtualSystemDescriptionType VirtualSystemSortProxyModel::s_aSortList[] =
+KVirtualSystemDescriptionType UIApplianceSortProxyModel::s_aSortList[] =
 {
     KVirtualSystemDescriptionType_Name,
     KVirtualSystemDescriptionType_Product,
@@ -1231,12 +1231,12 @@ KVirtualSystemDescriptionType VirtualSystemSortProxyModel::s_aSortList[] =
     KVirtualSystemDescriptionType_HardDiskControllerSAS
 };
 
-VirtualSystemSortProxyModel::VirtualSystemSortProxyModel(QObject *pParent)
+UIApplianceSortProxyModel::UIApplianceSortProxyModel(QObject *pParent)
     : QSortFilterProxyModel(pParent)
 {
 }
 
-bool VirtualSystemSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const
+bool UIApplianceSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const
 {
     /* By default enable all, we will explicitly filter out below */
     if (srcParenIdx.isValid())
@@ -1244,11 +1244,11 @@ bool VirtualSystemSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
         QModelIndex i = srcParenIdx.child(iSourceRow, 0);
         if (i.isValid())
         {
-            ModelItem *pItem = static_cast<ModelItem*>(i.internalPointer());
+            UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(i.internalPointer());
             /* We filter hardware types only */
-            if (pItem->type() == ApplianceModelItemType_Hardware)
+            if (pItem->type() == ApplianceModelItemType_VirtualHardware)
             {
-                HardwareItem *hwItem = static_cast<HardwareItem*>(pItem);
+                UIVirtualHardwareItem *hwItem = static_cast<UIVirtualHardwareItem*>(pItem);
                 /* The license type shouldn't be displayed */
                 if (m_aFilteredList.contains(hwItem->m_enmType))
                     return false;
@@ -1258,22 +1258,22 @@ bool VirtualSystemSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
     return true;
 }
 
-bool VirtualSystemSortProxyModel::lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const
+bool UIApplianceSortProxyModel::lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const
 {
     if (!leftIdx.isValid() ||
         !rightIdx.isValid())
         return false;
 
-    ModelItem *pLeftItem = static_cast<ModelItem*>(leftIdx.internalPointer());
-    ModelItem *pRightItem = static_cast<ModelItem*>(rightIdx.internalPointer());
+    UIApplianceModelItem *pLeftItem = static_cast<UIApplianceModelItem*>(leftIdx.internalPointer());
+    UIApplianceModelItem *pRightItem = static_cast<UIApplianceModelItem*>(rightIdx.internalPointer());
 
     /* We sort hardware types only */
-    if (!(pLeftItem->type() == ApplianceModelItemType_Hardware &&
-          pRightItem->type() == ApplianceModelItemType_Hardware))
+    if (!(pLeftItem->type() == ApplianceModelItemType_VirtualHardware &&
+          pRightItem->type() == ApplianceModelItemType_VirtualHardware))
         return false;
 
-    HardwareItem *pHwLeft = static_cast<HardwareItem*>(pLeftItem);
-    HardwareItem *pHwRight = static_cast<HardwareItem*>(pRightItem);
+    UIVirtualHardwareItem *pHwLeft = static_cast<UIVirtualHardwareItem*>(pLeftItem);
+    UIVirtualHardwareItem *pHwRight = static_cast<UIVirtualHardwareItem*>(pRightItem);
 
     for (unsigned int i = 0; i < RT_ELEMENTS(s_aSortList); ++i)
         if (pHwLeft->m_enmType == s_aSortList[i])

@@ -37,11 +37,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // ExportSortProxyModel
 
-class ExportSortProxyModel: public VirtualSystemSortProxyModel
+class ExportSortProxyModel: public UIApplianceSortProxyModel
 {
 public:
     ExportSortProxyModel(QObject *pParent = NULL)
-      : VirtualSystemSortProxyModel(pParent)
+      : UIApplianceSortProxyModel(pParent)
     {
         m_aFilteredList
             << KVirtualSystemDescriptionType_OS
@@ -85,13 +85,13 @@ void UIApplianceExportEditorWidget::populate()
 
     QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-    m_pModel = new VirtualSystemModel(vsds, this);
+    m_pModel = new UIApplianceModel(vsds, this);
 
     ExportSortProxyModel *pProxy = new ExportSortProxyModel(this);
     pProxy->setSourceModel(m_pModel);
     pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
 
-    VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
+    UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy, this);
 
     /* Set our own model */
     m_pTreeViewSettings->setModel(pProxy);

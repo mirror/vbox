@@ -32,7 +32,7 @@
 #include "CVirtualSystemDescription.h"
 
 /* Forward declarations: */
-class ModelItem;
+class UIApplianceModelItem;
 class QCheckBox;
 class QLabel;
 class QTextEdit;
@@ -53,20 +53,20 @@ enum ApplianceModelItemType
 {
     ApplianceModelItemType_Root,
     ApplianceModelItemType_VirtualSystem,
-    ApplianceModelItemType_Hardware
+    ApplianceModelItemType_VirtualHardware
 };
 
 
-/** QAbstractItemModel subclass used as Virtual System model. */
-class VirtualSystemModel : public QAbstractItemModel
+/** QAbstractItemModel subclass used as Appliance model. */
+class UIApplianceModel : public QAbstractItemModel
 {
 public:
 
-    /** Constructs the Virtual System model passing @a pParent to the base-class.
+    /** Constructs the Appliance model passing @a pParent to the base-class.
       * @param  aVSDs  Brings the Virtual System descriptions. */
-    VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent = 0);
-    /** Destructs the Virtual System model. */
-    ~VirtualSystemModel();
+    UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent = 0);
+    /** Destructs the Appliance model. */
+    ~UIApplianceModel();
 
     /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
     QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const;
@@ -100,18 +100,18 @@ public:
 private:
 
     /** Holds the root item reference. */
-    ModelItem *m_pRootItem;
+    UIApplianceModelItem *m_pRootItem;
 };
 
 
-/** QItemDelegate subclass used to create various Virtual System model editors. */
-class VirtualSystemDelegate : public QItemDelegate
+/** QItemDelegate subclass used to create various Appliance model editors. */
+class UIApplianceDelegate : public QItemDelegate
 {
 public:
 
-    /** Constructs the Virtual System Delegate passing @a pParent to the base-class.
+    /** Constructs the Appliance Delegate passing @a pParent to the base-class.
       * @param  pProxy  Brings the proxy model reference used to redirect requests to. */
-    VirtualSystemDelegate(QAbstractProxyModel *pProxy, QObject *pParent = 0);
+    UIApplianceDelegate(QAbstractProxyModel *pProxy, QObject *pParent = 0);
 
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
@@ -143,13 +143,13 @@ private:
 };
 
 
-/** QSortFilterProxyModel subclass used as the Virtual System Sorting model. */
-class VirtualSystemSortProxyModel : public QSortFilterProxyModel
+/** QSortFilterProxyModel subclass used as the Appliance Sorting Proxy model. */
+class UIApplianceSortProxyModel : public QSortFilterProxyModel
 {
 public:
 
-    /** Constructs the Virtual System Sorting model passing @a pParent to the base-class. */
-    VirtualSystemSortProxyModel(QObject *pParent = 0);
+    /** Constructs the Appliance Sorting Proxy model passing @a pParent to the base-class. */
+    UIApplianceSortProxyModel(QObject *pParent = 0);
 
 protected:
 
@@ -204,8 +204,8 @@ protected:
 
     /** Holds the currently set appliance reference. */
     CAppliance         *m_pAppliance;
-    /** Holds the Virtual System model reference. */
-    VirtualSystemModel *m_pModel;
+    /** Holds the Appliance model reference. */
+    UIApplianceModel *m_pModel;
 
     /** Holds the information pane instance. */
     QWidget   *m_pPaneInformation;
@@ -223,7 +223,7 @@ protected:
 
 private:
 
-    /** Performs Virtual System settings initialization. */
+    /** Performs Appliance settings initialization. */
     static void initSystemSettings();
 
     /** Holds the minimum guest RAM. */

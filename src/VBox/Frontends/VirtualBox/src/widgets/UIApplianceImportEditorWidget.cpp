@@ -38,11 +38,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // ImportSortProxyModel
 
-class ImportSortProxyModel: public VirtualSystemSortProxyModel
+class ImportSortProxyModel: public UIApplianceSortProxyModel
 {
 public:
     ImportSortProxyModel(QObject *pParent = NULL)
-      : VirtualSystemSortProxyModel(pParent)
+      : UIApplianceSortProxyModel(pParent)
     {
         m_aFilteredList << KVirtualSystemDescriptionType_License;
     }
@@ -91,13 +91,13 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
 
                         QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-                        m_pModel = new VirtualSystemModel(vsds, this);
+                        m_pModel = new UIApplianceModel(vsds, this);
 
                         ImportSortProxyModel *pProxy = new ImportSortProxyModel(this);
                         pProxy->setSourceModel(m_pModel);
                         pProxy->sort(ApplianceViewSection_Description, Qt::DescendingOrder);
 
-                        VirtualSystemDelegate *pDelegate = new VirtualSystemDelegate(pProxy, this);
+                        UIApplianceDelegate *pDelegate = new UIApplianceDelegate(pProxy, this);
 
                         /* Set our own model */
                         m_pTreeViewSettings->setModel(pProxy);
