@@ -1516,7 +1516,6 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
             break;
         case 0x0604:
             /* PCI-to-PCI bridge. */
-            AssertMsg(pPciRoot->uPciBiosBus < 255, ("Too many bridges on the bus\n"));
             ich9pciBiosInitBridge(pPciRoot, uBus, uDevFn);
             break;
         default:
@@ -1713,8 +1712,7 @@ static void ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus,
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PDEVPCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
-        pPciRoot->uPciBiosBus++;
-        ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pPciRoot->uPciBiosBus);
+        ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pChildBus->iBus);
     }
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, pPciRoot->uPciBiosBus);
     Log2(("ich9pciBiosInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
@@ -1757,7 +1755,8 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      * Assign bridge topology, for further routing to work.
      */
     PDEVPCIBUS pBus = &pPciRoot->PciBus;
-    ich9pciBiosInitBridgeTopology(pPciRoot, pBus, 0, 0);
+    AssertLogRel(pBus->iBus == 0);
+    ich9pciBiosInitBridgeTopology(pPciRoot, pBus, 0, pBus->iBus);
 
     /*
      * Init the devices.
