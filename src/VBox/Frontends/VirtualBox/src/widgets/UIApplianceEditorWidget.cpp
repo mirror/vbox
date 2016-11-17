@@ -123,15 +123,15 @@ public:
     UIVirtualSystemItem(int iNumber, CVirtualSystemDescription comDescription, UIApplianceModelItem *pParentItem);
 
     /** Returns the data stored under the given @a iRole for the item referred to by the @a iColumn. */
-    virtual QVariant data(int iColumn, int iRole) const;
+    virtual QVariant data(int iColumn, int iRole) const /* override */;
 
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
-    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues);
+    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) /* override */;
 
 private:
 
     /** Holds the Virtual System Description. */
-    CVirtualSystemDescription m_comDescription;
+    CVirtualSystemDescription  m_comDescription;
 };
 
 
@@ -164,47 +164,47 @@ public:
                           UIApplianceModelItem *pParentItem);
 
     /** Returns the item flags for the given @a iColumn. */
-    virtual Qt::ItemFlags itemFlags(int iColumn) const;
+    virtual Qt::ItemFlags itemFlags(int iColumn) const /* override */;
 
     /** Defines the @a iRole data for the item at @a iColumn to @a value. */
-    virtual bool setData(int iColumn, const QVariant &value, int iRole);
+    virtual bool setData(int iColumn, const QVariant &value, int iRole) /* override */;
     /** Returns the data stored under the given @a iRole for the item referred to by the @a iColumn. */
-    virtual QVariant data(int iColumn, int iRole) const;
+    virtual QVariant data(int iColumn, int iRole) const /* override */;
 
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
       * @param  styleOption  Bring the style option set for the newly created editor. */
-    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const;
+    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const /* override */;
 
     /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
-    virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const;
+    virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const /* override */;
     /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
-    virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx);
+    virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) /* override */;
 
     /** Restores the default values. */
-    virtual void restoreDefaults();
+    virtual void restoreDefaults() /* override */;
 
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
-    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues);
+    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) /* override */;
 
 private:
 
     /** Holds the Virtual System Description type. */
-    KVirtualSystemDescriptionType m_enmType;
+    KVirtualSystemDescriptionType  m_enmType;
     /** Holds something totally useless. */
-    QString                       m_strRef;
+    QString                        m_strRef;
     /** Holds the original value. */
-    QString                       m_strOrigValue;
+    QString                        m_strOrigValue;
     /** Holds the configuration value. */
-    QString                       m_strConfigValue;
+    QString                        m_strConfigValue;
     /** Holds the default configuration value. */
-    QString                       m_strConfigDefaultValue;
+    QString                        m_strConfigDefaultValue;
     /** Holds the extra configuration value. */
-    QString                       m_strExtraConfigValue;
+    QString                        m_strExtraConfigValue;
     /** Holds the item check state. */
-    Qt::CheckState                m_checkState;
+    Qt::CheckState                 m_checkState;
     /** Holds whether item was modified. */
-    bool                          m_fModified;
+    bool                           m_fModified;
 };
 
 
@@ -1293,8 +1293,8 @@ bool UIApplianceSortProxyModel::lessThan(const QModelIndex &leftIdx, const QMode
 *********************************************************************************************************************************/
 
 /* static */
-int UIApplianceEditorWidget::m_minGuestRAM      = -1;
-int UIApplianceEditorWidget::m_maxGuestRAM      = -1;
+int UIApplianceEditorWidget::m_minGuestRAM = -1;
+int UIApplianceEditorWidget::m_maxGuestRAM = -1;
 int UIApplianceEditorWidget::m_minGuestCPUCount = -1;
 int UIApplianceEditorWidget::m_maxGuestCPUCount = -1;
 
