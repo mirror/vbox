@@ -2462,6 +2462,13 @@ static DECLCALLBACK(int) vdiResize(void *pBackendData, uint64_t cbSize,
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
 
+    /* Check size. Maximum 4PB-3M. No tricks with adjusting the 1M block size
+     * so far, which would extend the size. */
+    if (   !cbSize
+        || cbSize >= _1P * 4 - _1M * 3
+        || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE)
+        return VERR_VD_INVALID_SIZE;
+
     /*
      * Making the image smaller is not supported at the moment.
      * Resizing is also not supported for fixed size images and
