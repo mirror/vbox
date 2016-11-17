@@ -47,79 +47,112 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* This & the following derived classes represent the data items of a Virtual
-   System. All access/manipulation is done with the help of virtual functions
-   to keep the interface clean. ModelItem is able to handle tree structures
-   with a parent & several children's. */
+/** Describes the interface of Virtual System item.
+  * Represented as a tree structure with a parent & multiple children. */
 class ModelItem
 {
 public:
 
+    /** Constructs item with specified @a number, @a type and @a pParent. */
     ModelItem(int number, ApplianceModelItemType type, ModelItem *pParent = NULL);
-
+    /** Destructs item. */
     virtual ~ModelItem();
 
+    /** Returns the parent of the item. */
     ModelItem *parent() const { return m_pParentItem; }
 
+    /** Appends the passed @a pChild to the item's list of children. */
     void appendChild(ModelItem *pChild);
+    /** Returns the child specified by the @a row. */
     ModelItem *child(int row) const;
 
+    /** Returns the row of the item in the parent. */
     int row() const;
 
+    /** Returns the number of children. */
     int childCount() const;
+    /** Returns the number of columns. */
     int columnCount() const { return 3; }
 
+    /** Returns the item flags for the given @a column. */
     virtual Qt::ItemFlags itemFlags(int /* column */) const { return 0; }
+    /** Defines the @a role data for the item at @a column to @a value. */
     virtual bool setData(int /* column */, const QVariant & /* value */, int /* role */) { return false; }
+    /** Returns the data stored under the given @a role for the item referred to by the @a column. */
     virtual QVariant data(int /* column */, int /* role */) const { return QVariant(); }
+    /** Returns the widget used to edit the item specified by @a idx for editing.
+      * @param  pParent      Brings the parent to be assigned for newly created editor.
+      * @param  styleOption  Bring the style option set for the newly created editor. */
     virtual QWidget *createEditor(QWidget * /* pParent */, const QStyleOptionViewItem & /* styleOption */, const QModelIndex & /* idx */) const { return NULL; }
+    /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
     virtual bool setEditorData(QWidget * /* pEditor */, const QModelIndex & /* idx */) const { return false; }
+    /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
     virtual bool setModelData(QWidget * /* pEditor */, QAbstractItemModel * /* pModel */, const QModelIndex & /* idx */) { return false; }
 
+    /** Restores the default values. */
     virtual void restoreDefaults() {}
+    /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
     virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
 
+    /** Returns the item type. */
     ApplianceModelItemType type() const { return m_type; }
 
 protected:
 
-    /* Protected member vars */
+    /** Holds the item number. */
     int                     m_number;
+    /** Holds the item type. */
     ApplianceModelItemType  m_type;
 
+    /** Holds the parent item reference. */
     ModelItem              *m_pParentItem;
+    /** Holds the list of children item instances. */
     QList<ModelItem*>       m_childItems;
 };
 
 
-/* This class represent a Virtual System with an index. */
-class VirtualSystemItem: public ModelItem
+/** ModelItem subclass representing Virtual System. */
+class VirtualSystemItem : public ModelItem
 {
 public:
+
+    /** Constructs item passing @a number and @a pParent to the base-class.
+      * @param  aDesc  Brings the Virtual System Description. */
     VirtualSystemItem(int number, CVirtualSystemDescription aDesc, ModelItem *pParent);
 
+    /** Returns the data stored under the given @a role for the item referred to by the @a column. */
     virtual QVariant data(int column, int role) const;
 
+    /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
     virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
 
 private:
+
+    /** Holds the Virtual System Description. */
     CVirtualSystemDescription m_desc;
 };
 
 
-/* This class represent an hardware item of a Virtual System. All values of
-   KVirtualSystemDescriptionType are supported & handled differently. */
-class HardwareItem: public ModelItem
+/** ModelItem subclass representing Virtual System item. */
+class HardwareItem : public ModelItem
 {
     friend class VirtualSystemSortProxyModel;
+
 public:
 
+    /** Data roles. */
     enum
     {
         TypeRole = Qt::UserRole,
         ModifiedRole
     };
 
+    /** Constructs item passing @a number and @a pParent to the base-class.
+      * @param  type                 Brings the Virtual System Description type.
+      * @param  strRef               Brings something totally useless.
+      * @param  strOrigValue         Brings the original value.
+      * @param  strConfigValue       Brings the configuration value.
+      * @param  strExtraConfigValue  Brings the extra configuration value. */
     HardwareItem(int number,
                  KVirtualSystemDescriptionType type,
                  const QString &strRef,
@@ -128,18 +161,27 @@ public:
                  const QString &strExtraConfigValue,
                  ModelItem *pParent);
 
+    /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
     virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
 
+    /** Defines the @a role data for the item at @a column to @a value. */
     virtual bool setData(int column, const QVariant &value, int role);
+    /** Returns the data stored under the given @a role for the item referred to by the @a column. */
     virtual QVariant data(int column, int role) const;
 
+    /** Returns the item flags for the given @a column. */
     virtual Qt::ItemFlags itemFlags(int column) const;
 
+    /** Returns the widget used to edit the item specified by @a idx for editing.
+      * @param  pParent      Brings the parent to be assigned for newly created editor.
+      * @param  styleOption  Bring the style option set for the newly created editor. */
     virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const;
+    /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
     virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const;
-
+    /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
     virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx);
 
+    /** Restores the default values. */
     virtual void restoreDefaults()
     {
         m_strConfigValue = m_strConfigDefaultValue;
@@ -148,14 +190,21 @@ public:
 
 private:
 
-    /* Private member vars */
+    /** Holds the Virtual System description type. */
     KVirtualSystemDescriptionType m_type;
+    /** Holds something totally useless. */
     QString                       m_strRef;
+    /** Holds the original value. */
     QString                       m_strOrigValue;
+    /** Holds the configuration value. */
     QString                       m_strConfigValue;
+    /** Holds the default configuration value. */
     QString                       m_strConfigDefaultValue;
+    /** Holds the extra configuration value. */
     QString                       m_strExtraConfigValue;
+    /** Holds the item check state. */
     Qt::CheckState                m_checkState;
+    /** Holds whether item was modified. */
     bool                          m_fModified;
 };
 
