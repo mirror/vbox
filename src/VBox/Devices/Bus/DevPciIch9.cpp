@@ -1689,13 +1689,13 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
 /**
  * Initializes bridges registers used for routing.
  *
- * @returns nothing.
+ * @returns Max subordinate bus number.
  * @param   pPciRoot         Global device instance data used to generate unique bus numbers.
  * @param   pBus             The PCI bus to initialize.
  * @param   uBusPrimary      The primary bus number the bus is connected to.
  * @param   uBusSecondary    The secondary bus number, i.e. the bus number behind the bridge.
  */
-static void ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, unsigned uBusPrimary, unsigned uBusSecondary)
+static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, unsigned uBusPrimary, unsigned uBusSecondary)
 {
     PPDMPCIDEV pBridgeDev = &pBus->PciDev;
 
@@ -1706,15 +1706,15 @@ static void ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus,
         PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, uBusSecondary);
     }
 
-    uint32_t uMaxSubNum = 0;
+    uint8_t uMaxSubNum = 0;
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
     {
         PPDMPCIDEV pBridge = pBus->papBridgesR3[iBridge];
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PDEVPCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
-        ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pChildBus->iBus);
-        uMaxSubNum = RT_MAX(uMaxSubNum, pChildBus->iBus);
+        uint8_t uMaxChildSubBus = ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pChildBus->iBus);
+        uMaxSubNum = RT_MAX(uMaxSubNum, RT_MAX(uMaxChildSubBus, pChildBus->iBus));
     }
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, uMaxSubNum);
     Log2(("ich9pciBiosInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
@@ -1723,6 +1723,8 @@ static void ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus,
           PDMPciDevGetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS),
           PDMPciDevGetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS)
           ));
+
+    return uMaxSubNum;
 }
 
 
