@@ -822,6 +822,34 @@ VBoxDbgConsole::event(QEvent *pGenEvent)
 
 
 void
+VBoxDbgConsole::keyReleaseEvent(QKeyEvent *pEvent)
+{
+    //RTAssertMsg2("VBoxDbgConsole::keyReleaseEvent: %d (%#x); mod=%#x\n", pEvent->key(), pEvent->key(), pEvent->modifiers());
+    switch (pEvent->key())
+    {
+        case Qt::Key_F5:
+            if (pEvent->modifiers() == 0)
+                commandSubmitted("g");
+            break;
+
+        case Qt::Key_F11:
+            if (pEvent->modifiers() == 0)
+                commandSubmitted("t");
+            break;
+
+        case Qt::Key_Cancel: /* == break */
+            if (pEvent->modifiers() == Qt::ControlModifier)
+                commandSubmitted("stop");
+            break;
+        case Qt::Key_Delete:
+            if (pEvent->modifiers() == Qt::AltModifier)
+                commandSubmitted("stop");
+            break;
+    }
+}
+
+
+void
 VBoxDbgConsole::closeEvent(QCloseEvent *a_pCloseEvt)
 {
     if (m_fThreadTerminated)

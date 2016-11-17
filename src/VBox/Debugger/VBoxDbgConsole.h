@@ -297,6 +297,13 @@ protected:
      */
     bool event(QEvent *pEvent);
 
+    /**
+     * For implementing keyboard shortcuts.
+     *
+     * @param   pEvent      The key event.
+     */
+    void keyReleaseEvent(QKeyEvent *pEvent);
+
 protected:
     /** The output widget. */
     VBoxDbgConsoleOutput *m_pOutput;
