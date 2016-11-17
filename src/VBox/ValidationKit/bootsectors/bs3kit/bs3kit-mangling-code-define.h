@@ -49,6 +49,8 @@
 #define Bs3MemZero BS3_CMN_MANGLER(Bs3MemZero)
 #define Bs3PagingAlias BS3_CMN_MANGLER(Bs3PagingAlias)
 #define bs3PagingGetLegacyPte BS3_CMN_MANGLER(bs3PagingGetLegacyPte)
+#define Bs3PagingGetPde BS3_CMN_MANGLER(Bs3PagingGetPde)
+#define Bs3PagingGetPte BS3_CMN_MANGLER(Bs3PagingGetPte)
 #define bs3PagingGetPte BS3_CMN_MANGLER(bs3PagingGetPte)
 #define Bs3PagingInitRootForLM BS3_CMN_MANGLER(Bs3PagingInitRootForLM)
 #define Bs3PagingInitRootForPAE BS3_CMN_MANGLER(Bs3PagingInitRootForPAE)
@@ -152,6 +154,7 @@
 #define Bs3UtilSetFullIdtr BS3_CMN_MANGLER(Bs3UtilSetFullIdtr)
 #ifndef BS3_CMN_ONLY
 # define Bs3CpuDetect BS3_MODE_MANGLER(Bs3CpuDetect)
+# define Bs3SwitchTo32BitAndCallC BS3_MODE_MANGLER(Bs3SwitchTo32BitAndCallC)
 # define Bs3TestDoModes BS3_MODE_MANGLER(Bs3TestDoModes)
 # define Bs3TestDoModesByOne BS3_MODE_MANGLER(Bs3TestDoModesByOne)
 # define Bs3TrapInit BS3_MODE_MANGLER(Bs3TrapInit)

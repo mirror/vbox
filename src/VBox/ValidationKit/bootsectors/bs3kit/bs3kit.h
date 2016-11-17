@@ -2201,6 +2201,23 @@ BS3_CMN_PROTO_STUB(int, Bs3PagingAlias,(uint64_t uDst, uint64_t uPhysToAlias, ui
  */
 BS3_CMN_PROTO_STUB(int, Bs3PagingUnalias,(uint64_t uDst, uint32_t cbHowMuch));
 
+/**
+ * Get the pointer to the PTE for the given address.
+ *
+ * @returns Pointer to the PTE.
+ * @param   uFlat               The flat address of the page which PTE we want.
+ * @param   prc                 Where to return additional error info. Optional.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingGetPte,(uint64_t uFlat, int *prc));
+
+/**
+ * Get the pointer to the PDE for the given address.
+ *
+ * @returns Pointer to the PDE.
+ * @param   uFlat               The flat address of the page which PDE we want.
+ */
+BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingGetPde,(uint64_t uFlat));
+
 
 /** The physical / flat address of the buffer backing the canonical traps.
  * This buffer is spread equally on each side of the 64-bit non-canonical
@@ -3098,10 +3115,17 @@ typedef struct BS3TESTMODEBYONEENTRY
 {
     const char * BS3_FAR    pszSubTest;
     PFNBS3TESTDOMODE        pfnWorker;
-    uint32_t                u32Reserved;
+    /** BS3TESTMODEBYONEENTRY_F_XXX. */
+    uint32_t                fFlags;
 } BS3TESTMODEBYONEENTRY;
 /** Pointer to a mode-by-one sub-test entry. */
 typedef BS3TESTMODEBYONEENTRY const *PCBS3TESTMODEBYONEENTRY;
+
+/** @name BS3TESTMODEBYONEENTRY_F_XXX - flags.
+ * @{ */
+/** Only test modes that has paging enabled. */
+#define BS3TESTMODEBYONEENTRY_F_ONLY_PAGING     RT_BIT_32(0)
+/** @} */
 
 
 /**

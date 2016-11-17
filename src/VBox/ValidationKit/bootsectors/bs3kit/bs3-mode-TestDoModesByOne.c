@@ -150,8 +150,9 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
      */
     for (i = 0; i < cEntries; i++)
     {
-        const char *pszFmtStr = "Error #%u (%#x) in %s!\n";
-        bool        fSkipped  = true;
+        const char *pszFmtStr   = "Error #%u (%#x) in %s!\n";
+        bool        fSkipped    = true;
+        bool const  fOnlyPaging = RT_BOOL(paEntries[i].fFlags & BS3TESTMODEBYONEENTRY_F_ONLY_PAGING);
         uint8_t     bErrNo;
         Bs3TestSub(paEntries[i].pszSubTest);
 
@@ -172,7 +173,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
 #if ARCH_BITS != 64
 
 # if ARCH_BITS == 16
-        if (true)
+        if (!fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_rm);
             bErrNo = TMPL_NM(Bs3TestCallDoerInRM)(CONV_TO_RM_FAR16(paEntries[i].pfnWorker));
@@ -190,7 +191,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
         /*
          * Unpaged prot mode.
          */
-        if (true)
+        if (!fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe16);
 # if ARCH_BITS == 16
@@ -207,7 +208,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
             continue;
         }
 
-        if (true)
+        if (!fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe16_32);
 # if ARCH_BITS == 32
@@ -218,7 +219,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
             CHECK_RESULT(g_szBs3ModeName_pe16_32);
         }
 
-        if (fDoWeirdV86Modes)
+        if (fDoWeirdV86Modes && !fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe16_v86);
 # if ARCH_BITS == 16
@@ -229,7 +230,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
             CHECK_RESULT(g_szBs3ModeName_pe16_v86);
         }
 
-        if (true)
+        if (!fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe32);
 # if ARCH_BITS == 32
@@ -240,7 +241,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
             CHECK_RESULT(g_szBs3ModeName_pe32);
         }
 
-        if (true)
+        if (!fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pe32_16);
 # if ARCH_BITS == 16
@@ -251,7 +252,7 @@ BS3_MODE_DEF(void, Bs3TestDoModesByOne,(PCBS3TESTMODEBYONEENTRY paEntries, size_
             CHECK_RESULT(g_szBs3ModeName_pe32_16);
         }
 
-        if (fDoV86Modes)
+        if (fDoV86Modes && !fOnlyPaging)
         {
             PRE_DO_CALL(g_szBs3ModeName_pev86);
 # if ARCH_BITS == 16

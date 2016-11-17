@@ -49,6 +49,8 @@
 #undef Bs3MemZero
 #undef Bs3PagingAlias
 #undef bs3PagingGetLegacyPte
+#undef Bs3PagingGetPde
+#undef Bs3PagingGetPte
 #undef bs3PagingGetPte
 #undef Bs3PagingInitRootForLM
 #undef Bs3PagingInitRootForPAE
@@ -152,6 +154,7 @@
 #undef Bs3UtilSetFullIdtr
 #ifndef BS3_CMN_ONLY
 # undef Bs3CpuDetect
+# undef Bs3SwitchTo32BitAndCallC
 # undef Bs3TestDoModes
 # undef Bs3TestDoModesByOne
 # undef Bs3TrapInit

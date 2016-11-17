@@ -165,7 +165,7 @@ BS3_CMN_DEF(int, Bs3PagingAlias,(uint64_t uDst, uint64_t uPhysToAlias, uint32_t 
     }
 #if ARCH_BITS == 16
     /*
-     * We can do this stuff in v8086 mode.
+     * We can't do this stuff in v8086 mode, so switch to 16-bit prot mode and do it there.
      */
     else
         return Bs3SwitchFromV86To16BitAndCallC((FPFNBS3FAR)Bs3PagingAlias_f16, sizeof(uint64_t)*3 + sizeof(uint32_t),

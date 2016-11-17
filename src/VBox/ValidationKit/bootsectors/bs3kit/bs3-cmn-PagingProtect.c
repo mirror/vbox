@@ -361,3 +361,22 @@ BS3_CMN_DEF(int, Bs3PagingProtectPtr,(void *pv, size_t cb, uint64_t fSet, uint64
 #endif
 }
 
+
+#undef Bs3PagingGetPte
+BS3_CMN_DEF(void BS3_FAR *, Bs3PagingGetPte,(uint64_t uFlat, int *prc))
+{
+    RTCCUINTXREG const  cr3        = ASMGetCR3();
+    RTCCUINTXREG const  cr4        = g_uBs3CpuDetected & BS3CPU_F_CPUID ? ASMGetCR4() : 0;
+    bool const          fLegacyPTs = !(cr4 & X86_CR4_PAE);
+    bool const          fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486;
+    int                 rc;
+    if (!prc)
+        prc = &rc;
+    if (!fLegacyPTs)
+        return BS3_CMN_FAR_NM(bs3PagingGetPte)(cr3,  g_bBs3CurrentMode, uFlat, fUseInvlPg, prc);
+    if (uFlat < _4G)
+        return BS3_CMN_FAR_NM(bs3PagingGetLegacyPte)(cr3, (uint32_t)uFlat, fUseInvlPg, prc);
+    *prc = VERR_OUT_OF_RANGE;
+    return NULL;
+}
+
