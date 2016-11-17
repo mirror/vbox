@@ -409,7 +409,6 @@ TOOL_Bs3Ow32_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_OPENWATCOM_COMPILE_C_OUTPUT_MAYBE
 define TOOL_Bs3Ow32_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM_COMPILE_C_CMDS)
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
 TOOL_Bs3Ow32_C32OBJSUFF                 = $(TOOL_Bs3Ow32_COBJSUFF)
@@ -443,7 +442,6 @@ TOOL_Bs3Ow32_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_OPENWATCOM_COMPILE_CXX_OUTPUT_MAY
 define TOOL_Bs3Ow32_COMPILE_CXX_CMDS
 $(TOOL_OPENWATCOM_COMPILE_CXX_CMDS)
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
 
@@ -469,7 +467,6 @@ TOOL_Bs3Ow16_COMPILE_C_OUTPUT_MAYBE   = $(TOOL_OPENWATCOM-16_COMPILE_C_OUTPUT_MA
 define TOOL_Bs3Ow16_COMPILE_C_CMDS
 $(TOOL_OPENWATCOM-16_COMPILE_C_CMDS)
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
 TOOL_Bs3Ow16_C16OBJSUFF                 = $(TOOL_Bs3Ow16_C16OBJSUFF)
@@ -503,7 +500,6 @@ TOOL_Bs3Ow16_COMPILE_CXX_OUTPUT_MAYBE = $(TOOL_OPENWATCOM-16_COMPILE_CXX_OUTPUT_
 define TOOL_Bs3Ow16_COMPILE_CXX_CMDS
 $(TOOL_OPENWATCOM-16_COMPILE_CXX_CMDS)
 	$(QUIET)$(VBOX_BS3KIT_KSUBMIT_OBJ_CONV) $(VBoxBs3ObjConverter_1_TARGET) "$(obj)"
-	$(QUIET)$(REDIRECT) -wo /dev/null -- $(KBUILD_BIN_PATH)/kDepObj$(HOSTSUFF_EXE) -s -f -q -o "$(dep)" -t "$(obj)" "$(obj)"
 endef
 
 # Debug info format depends on what we use for 64-bit.
