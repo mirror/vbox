@@ -20,26 +20,24 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QItemDelegate>
-# include <QSortFilterProxyModel>
-# include <QHeaderView>
-# include <QLineEdit>
-# include <QSpinBox>
 # include <QComboBox>
 # include <QDir>
-# include <QTreeView>
 # include <QCheckBox>
+# include <QHeaderView>
 # include <QLabel>
+# include <QLineEdit>
+# include <QSpinBox>
 # include <QTextEdit>
+# include <QTreeView>
 
 /* GUI includes: */
-# include "UIApplianceEditorWidget.h"
 # include "VBoxGlobal.h"
-# include "UIMessageCenter.h"
 # include "VBoxOSTypeSelectorButton.h"
-# include "UILineTextEdit.h"
+# include "UIApplianceEditorWidget.h"
 # include "UIConverter.h"
 # include "UIIconPool.h"
+# include "UILineTextEdit.h"
+# include "UIMessageCenter.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -57,6 +55,9 @@ public:
     ModelItem(int number, ApplianceModelItemType type, ModelItem *pParent = NULL);
     /** Destructs item. */
     virtual ~ModelItem();
+
+    /** Returns the item type. */
+    ApplianceModelItemType type() const { return m_type; }
 
     /** Returns the parent of the item. */
     ModelItem *parent() const { return m_pParentItem; }
@@ -76,14 +77,17 @@ public:
 
     /** Returns the item flags for the given @a column. */
     virtual Qt::ItemFlags itemFlags(int /* column */) const { return 0; }
+
     /** Defines the @a role data for the item at @a column to @a value. */
     virtual bool setData(int /* column */, const QVariant & /* value */, int /* role */) { return false; }
     /** Returns the data stored under the given @a role for the item referred to by the @a column. */
     virtual QVariant data(int /* column */, int /* role */) const { return QVariant(); }
+
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
       * @param  styleOption  Bring the style option set for the newly created editor. */
     virtual QWidget *createEditor(QWidget * /* pParent */, const QStyleOptionViewItem & /* styleOption */, const QModelIndex & /* idx */) const { return NULL; }
+
     /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
     virtual bool setEditorData(QWidget * /* pEditor */, const QModelIndex & /* idx */) const { return false; }
     /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
@@ -91,11 +95,9 @@ public:
 
     /** Restores the default values. */
     virtual void restoreDefaults() {}
+
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
     virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
-
-    /** Returns the item type. */
-    ApplianceModelItemType type() const { return m_type; }
 
 protected:
 
@@ -138,14 +140,14 @@ class HardwareItem : public ModelItem
 {
     friend class VirtualSystemSortProxyModel;
 
-public:
-
     /** Data roles. */
     enum
     {
         TypeRole = Qt::UserRole,
         ModifiedRole
     };
+
+public:
 
     /** Constructs item passing @a number and @a pParent to the base-class.
       * @param  type                 Brings the Virtual System Description type.
@@ -161,32 +163,29 @@ public:
                  const QString &strExtraConfigValue,
                  ModelItem *pParent);
 
-    /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
-    virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
+    /** Returns the item flags for the given @a column. */
+    virtual Qt::ItemFlags itemFlags(int column) const;
 
     /** Defines the @a role data for the item at @a column to @a value. */
     virtual bool setData(int column, const QVariant &value, int role);
     /** Returns the data stored under the given @a role for the item referred to by the @a column. */
     virtual QVariant data(int column, int role) const;
 
-    /** Returns the item flags for the given @a column. */
-    virtual Qt::ItemFlags itemFlags(int column) const;
-
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
       * @param  styleOption  Bring the style option set for the newly created editor. */
     virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const;
+
     /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
     virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const;
     /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
     virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx);
 
     /** Restores the default values. */
-    virtual void restoreDefaults()
-    {
-        m_strConfigValue = m_strConfigDefaultValue;
-        m_checkState = Qt::Checked;
-    }
+    virtual void restoreDefaults();
+
+    /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
+    virtual void putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues);
 
 private:
 
@@ -311,14 +310,41 @@ HardwareItem::HardwareItem(int number,
   , m_strExtraConfigValue(strExtraConfigValue)
   , m_checkState(Qt::Checked)
   , m_fModified(false)
-{}
-
-void HardwareItem::putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues)
 {
-    finalStates[m_number]      = m_checkState == Qt::Checked;
-    finalValues[m_number]      = m_strConfigValue;
-    finalExtraValues[m_number] = m_strExtraConfigValue;
-    ModelItem::putBack(finalStates, finalValues, finalExtraValues);
+}
+
+Qt::ItemFlags HardwareItem::itemFlags(int column) const
+{
+    Qt::ItemFlags flags = 0;
+    if (column == ApplianceViewSection_ConfigValue)
+    {
+        /* Some items are checkable */
+        if (m_type == KVirtualSystemDescriptionType_Floppy ||
+            m_type == KVirtualSystemDescriptionType_CDROM ||
+            m_type == KVirtualSystemDescriptionType_USBController ||
+            m_type == KVirtualSystemDescriptionType_SoundCard ||
+            m_type == KVirtualSystemDescriptionType_NetworkAdapter)
+            flags |= Qt::ItemIsUserCheckable;
+        /* Some items are editable */
+        if ((m_type == KVirtualSystemDescriptionType_Name ||
+             m_type == KVirtualSystemDescriptionType_Product ||
+             m_type == KVirtualSystemDescriptionType_ProductUrl ||
+             m_type == KVirtualSystemDescriptionType_Vendor ||
+             m_type == KVirtualSystemDescriptionType_VendorUrl ||
+             m_type == KVirtualSystemDescriptionType_Version ||
+             m_type == KVirtualSystemDescriptionType_Description ||
+             m_type == KVirtualSystemDescriptionType_License ||
+             m_type == KVirtualSystemDescriptionType_OS ||
+             m_type == KVirtualSystemDescriptionType_CPU ||
+             m_type == KVirtualSystemDescriptionType_Memory ||
+             m_type == KVirtualSystemDescriptionType_SoundCard ||
+             m_type == KVirtualSystemDescriptionType_NetworkAdapter ||
+             m_type == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
+             m_type == KVirtualSystemDescriptionType_HardDiskImage) &&
+            m_checkState == Qt::Checked) /* Item has to be enabled */
+            flags |= Qt::ItemIsEditable;
+    }
+    return flags;
 }
 
 bool HardwareItem::setData(int column, const QVariant &value, int role)
@@ -517,40 +543,6 @@ QVariant HardwareItem::data(int column, int role) const
         }
     }
     return v;
-}
-
-Qt::ItemFlags HardwareItem::itemFlags(int column) const
-{
-    Qt::ItemFlags flags = 0;
-    if (column == ApplianceViewSection_ConfigValue)
-    {
-        /* Some items are checkable */
-        if (m_type == KVirtualSystemDescriptionType_Floppy ||
-            m_type == KVirtualSystemDescriptionType_CDROM ||
-            m_type == KVirtualSystemDescriptionType_USBController ||
-            m_type == KVirtualSystemDescriptionType_SoundCard ||
-            m_type == KVirtualSystemDescriptionType_NetworkAdapter)
-            flags |= Qt::ItemIsUserCheckable;
-        /* Some items are editable */
-        if ((m_type == KVirtualSystemDescriptionType_Name ||
-             m_type == KVirtualSystemDescriptionType_Product ||
-             m_type == KVirtualSystemDescriptionType_ProductUrl ||
-             m_type == KVirtualSystemDescriptionType_Vendor ||
-             m_type == KVirtualSystemDescriptionType_VendorUrl ||
-             m_type == KVirtualSystemDescriptionType_Version ||
-             m_type == KVirtualSystemDescriptionType_Description ||
-             m_type == KVirtualSystemDescriptionType_License ||
-             m_type == KVirtualSystemDescriptionType_OS ||
-             m_type == KVirtualSystemDescriptionType_CPU ||
-             m_type == KVirtualSystemDescriptionType_Memory ||
-             m_type == KVirtualSystemDescriptionType_SoundCard ||
-             m_type == KVirtualSystemDescriptionType_NetworkAdapter ||
-             m_type == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
-             m_type == KVirtualSystemDescriptionType_HardDiskImage) &&
-            m_checkState == Qt::Checked) /* Item has to be enabled */
-            flags |= Qt::ItemIsEditable;
-    }
-    return flags;
 }
 
 QWidget *HardwareItem::createEditor(QWidget *pParent, const QStyleOptionViewItem & /* styleOption */, const QModelIndex &idx) const
@@ -889,6 +881,20 @@ bool HardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, co
     return fDone;
 }
 
+void HardwareItem::restoreDefaults()
+{
+    m_strConfigValue = m_strConfigDefaultValue;
+    m_checkState = Qt::Checked;
+}
+
+void HardwareItem::putBack(QVector<BOOL>& finalStates, QVector<QString>& finalValues, QVector<QString>& finalExtraValues)
+{
+    finalStates[m_number]      = m_checkState == Qt::Checked;
+    finalValues[m_number]      = m_strConfigValue;
+    finalExtraValues[m_number] = m_strExtraConfigValue;
+    ModelItem::putBack(finalStates, finalValues, finalExtraValues);
+}
+
 
 /*********************************************************************************************************************************
 *   Class VirtualSystemModel implementation.                                                                                     *
@@ -1018,26 +1024,6 @@ int VirtualSystemModel::columnCount(const QModelIndex &parentIdx /* = QModelInde
         return m_pRootItem->columnCount();
 }
 
-bool VirtualSystemModel::setData(const QModelIndex &idx, const QVariant &value, int role)
-{
-    if (!idx.isValid())
-        return false;
-
-    ModelItem *item = static_cast<ModelItem*>(idx.internalPointer());
-
-    return item->setData(idx.column(), value, role);
-}
-
-QVariant VirtualSystemModel::data(const QModelIndex &idx, int role /* = Qt::DisplayRole */) const
-{
-    if (!idx.isValid())
-        return QVariant();
-
-    ModelItem *item = static_cast<ModelItem*>(idx.internalPointer());
-
-    return item->data(idx.column(), role);
-}
-
 Qt::ItemFlags VirtualSystemModel::flags(const QModelIndex &idx) const
 {
     if (!idx.isValid())
@@ -1061,6 +1047,26 @@ QVariant VirtualSystemModel::headerData(int section, Qt::Orientation orientation
         case ApplianceViewSection_ConfigValue: title = UIApplianceEditorWidget::tr("Configuration"); break;
     }
     return title;
+}
+
+bool VirtualSystemModel::setData(const QModelIndex &idx, const QVariant &value, int role)
+{
+    if (!idx.isValid())
+        return false;
+
+    ModelItem *item = static_cast<ModelItem*>(idx.internalPointer());
+
+    return item->setData(idx.column(), value, role);
+}
+
+QVariant VirtualSystemModel::data(const QModelIndex &idx, int role /* = Qt::DisplayRole */) const
+{
+    if (!idx.isValid())
+        return QVariant();
+
+    ModelItem *item = static_cast<ModelItem*>(idx.internalPointer());
+
+    return item->data(idx.column(), role);
 }
 
 QModelIndex VirtualSystemModel::buddy(const QModelIndex &idx) const
@@ -1172,6 +1178,18 @@ void VirtualSystemDelegate::updateEditorGeometry(QWidget *pEditor, const QStyleO
         pEditor->setGeometry(styleOption.rect);
 }
 
+QSize VirtualSystemDelegate::sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const
+{
+    QSize size = QItemDelegate::sizeHint(styleOption, idx);
+#ifdef VBOX_WS_MAC
+    int h = 28;
+#else
+    int h = 24;
+#endif
+    size.setHeight(RT_MAX(h, size.height()));
+    return size;
+}
+
 #ifdef VBOX_WS_MAC
 bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 {
@@ -1198,7 +1216,7 @@ bool VirtualSystemDelegate::eventFilter(QObject *pObject, QEvent *pEvent)
 *   Class VirtualSystemSortProxyModel implementation.                                                                            *
 *********************************************************************************************************************************/
 
-/* How to sort the items in the tree view */
+/* static */
 KVirtualSystemDescriptionType VirtualSystemSortProxyModel::m_sortList[] =
 {
     KVirtualSystemDescriptionType_Name,
@@ -1283,6 +1301,7 @@ bool VirtualSystemSortProxyModel::lessThan(const QModelIndex &leftIdx, const QMo
 *   Class UIApplianceEditorWidget implementation.                                                                                *
 *********************************************************************************************************************************/
 
+/* static */
 int UIApplianceEditorWidget::m_minGuestRAM      = -1;
 int UIApplianceEditorWidget::m_maxGuestRAM      = -1;
 int UIApplianceEditorWidget::m_minGuestCPUCount = -1;
