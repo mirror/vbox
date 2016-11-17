@@ -78,7 +78,7 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToLM32, BS3_PBC_NEAR
  %if TMPL_BITS == 16
         jmp     .thirty_two_bit_segment
 BS3_BEGIN_TEXT32
-.thirty_two_bit_segment:
+BS3_GLOBAL_LOCAL_LABEL .thirty_two_bit_segment
  %endif
 
         push    eax

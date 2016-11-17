@@ -282,6 +282,7 @@ VBOX_BS3KIT_MODE_SOURCES = \
 	bs3-mode-SwitchToLM64.asm \
 	bs3-mode-SwitchToLM32.asm \
 	bs3-mode-SwitchToLM16.asm \
+	bs3-mode-SwitchTo32BitAndCallC.asm \
 	bs3-mode-EnteredMode.asm \
 	bs3-mode-PagingGetRootForPP16.asm \
 	bs3-mode-PagingGetRootForPP32.asm \

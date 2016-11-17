@@ -24,15 +24,24 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %include "bs3kit-template-header.mac"
 
+
+;*********************************************************************************************************************************
+;*  External Symbols                                                                                                             *
+;*********************************************************************************************************************************
 %ifndef TMPL_PAE16
+BS3_BEGIN_TEXT16
 extern  NAME(Bs3EnteredMode_pae16)
  %ifdef TMPL_PAE32
  BS3_EXTERN_CMN Bs3SwitchTo16Bit
- %else
  %endif
+TMPL_BEGIN_TEXT
 %endif
+
 
 ;;
 ; Switch to 16-bit paged protected mode from any other mode.
@@ -74,14 +83,14 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPAE16, BS3_PBC_NEAR
         ; Switch to 16-bit text segment and prepare for returning in 16-bit mode.
         ;
  %if TMPL_BITS != 16
-        shl     xPRE [xSP + xCB], TMPL_BITS - 16    ; Adjust the return address.
+        shl     xPRE [xSP], TMPL_BITS - 16  ; Adjust the return address.
         add     xSP, xCB - 2
 
         ; Must be in 16-bit segment when calling Bs3SwitchToRM and Bs3SwitchTo16Bit.
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
+BS3_GLOBAL_LOCAL_LABEL .sixteen_bit_segment
  %endif
 
  %ifdef TMPL_PAE32

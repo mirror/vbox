@@ -86,7 +86,7 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo16_c32
         push    ax                                                  ; Worker bMode argument.
 
         ; Assuming real mode far pointer, convert protected mode before calling it.
-        push    word [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent) + 2]
+        push    word [2 + BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]
         call    _Bs3SelRealModeCodeToProtMode_c16
         add     sp, 2
 
@@ -94,7 +94,7 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo16_c32
         push    word .return                                        ; return address
 
         push    ax                                                  ; call converted selector
-        push    word [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent)]  ; call offset
+        push    word [BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]  ; call offset
         retf
 
 .return:
@@ -129,14 +129,14 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo16_c64
         push    ax                                                  ; Worker bMode argument.
 
         ; Assuming real mode far pointer, convert protected mode before calling it.
-        push    word [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent) + 2]
+        push    word [2 + BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]
         call    _Bs3SelRealModeCodeToProtMode_c16
         add     sp, 2
 
         push    cs                                                  ; return selector
         push    word .return                                        ; return address
         push    ax                                                  ; call converted selector
-        push    word [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent)]  ; call offset
+        push    word [BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))] ; call offset
         retf
 
 .return:
@@ -156,7 +156,7 @@ BS3_PROC_END   _Bs3TestCallDoerTo16_c64
         ;
 
 BS3_BEGIN_TEXT16
-BS3_SET_BITS 32
+BS3_SET_BITS 16
 BS3_PROC_BEGIN _Bs3TestCallDoerTo32_f16
         push    xBP
         mov     xBP, xSP
@@ -179,7 +179,7 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo32_f16
         test    al, BS3_MODE_CODE_V86
         jnz     .return_to_v86          ; Need to figure this while we still have the mode value.
 
-        call    [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent)]
+        call    [BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]
 
         ; Switch back to 16-bit mode.
         extern  _Bs3SwitchTo16Bit_c32
@@ -191,7 +191,7 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo32_f16
 
         BS3_SET_BITS 32
 .return_to_v86:
-        call    [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent)]
+        call    [BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]
 
         ; Switch back to v8086 mode.
         extern  _Bs3SwitchTo16BitV86_c32
@@ -221,7 +221,7 @@ BS3_PROC_BEGIN _Bs3TestCallDoerTo32_c64
         BS3_SET_BITS 32
 
         push    eax                     ; Worker bMode argument.
-        call    [BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent)]
+        call    [BS3_DATA16_WRT(BS3_CMN_NM(g_pfnBs3TestDoModesByOneCurrent))]
 
         ; Switch back to 64-bit mode.
         extern  _Bs3SwitchTo64Bit_c32

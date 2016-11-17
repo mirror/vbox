@@ -74,7 +74,7 @@ BS3_PROC_BEGIN_CMN Bs3SwitchTo16Bit, BS3_PBC_NEAR
         xRETF
 
 BS3_BEGIN_TEXT16
-.sixteen_bit:
+BS3_GLOBAL_LOCAL_LABEL .sixteen_bit
 
         ; Load 16-bit segment registers.
         add     ax, BS3_SEL_R0_SS16 - BS3_SEL_R0_CS16

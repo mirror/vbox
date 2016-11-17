@@ -67,14 +67,14 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPE16, BS3_PBC_NEAR
         ; Switch to 16-bit mode and prepare for returning in 16-bit mode.
         ;
  %if TMPL_BITS != 16
-        shl     xPRE [xSP + xCB], TMPL_BITS - 16    ; Adjust the return address.
+        shl     xPRE [xSP], TMPL_BITS - 16    ; Adjust the return address.
         add     xSP, xCB - 2
 
         ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
+BS3_GLOBAL_LOCAL_LABEL .sixteen_bit_segment
  %endif
 
         ;

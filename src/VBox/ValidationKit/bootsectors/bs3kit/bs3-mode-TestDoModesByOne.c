@@ -111,6 +111,7 @@ BS3_DECL_FAR(uint8_t) Bs3TestCallDoerTo64_c64(uint8_t bMode);
 #endif
 extern PFNBS3TESTDOMODE g_pfnBs3TestDoModesByOneCurrent;
 
+#include <iprt/asm-amd64-x86.h>
 
 
 #undef Bs3TestDoModesByOne

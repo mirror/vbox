@@ -241,7 +241,7 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToRM, BS3_PBC_NEAR
         jmp     .sixteen_bit_segment wrt FLAT
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
+BS3_GLOBAL_LOCAL_LABEL .sixteen_bit_segment
 
         extern  BS3_CMN_NM(Bs3SwitchTo16Bit)
         call    BS3_CMN_NM(Bs3SwitchTo16Bit)

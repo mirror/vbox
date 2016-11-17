@@ -212,6 +212,18 @@
   %define BS3_DATA16_WRT(a_Var)     BS3_WRT_RIP(a_Var) wrt FLAT
  %endif
 
+ ;; @def BS3_TEXT16_WRT
+ ; For accessing BS3DATA16 correctly.
+ ; @param a_Label The BS3TEXT16 label.
+ %undef BS3_TEXT16_WRT
+ %if %1 == 16
+  %define BS3_TEXT16_WRT(a_Label)   a_Label wrt CGROUP16
+ %elif %1 == 32
+  %define BS3_TEXT16_WRT(a_Label)   a_Label wrt FLAT
+ %else
+  %define BS3_TEXT16_WRT(a_Label)   BS3_WRT_RIP(a_Label) wrt FLAT
+ %endif
+
  %undef   BS3_IF_16BIT_OTHERWISE
  %if %1 == 16
   %define BS3_IF_16BIT_OTHERWISE(a_16BitExpr, a_OtherwiseExpr) a_16BitExpr
@@ -621,6 +633,19 @@ GROUP FLAT BS3FLAT
 ;
 %macro BS3_GLOBAL_NAME_EX 3
 global %1
+%1:
+%undef  BS3_LAST_LABEL
+%xdefine BS3_LAST_LABEL %1
+%endmacro
+
+;;
+; Global local label.
+;
+; This should be used when switching segments and jumping to it via a local lable.
+; It makes the lable visible to the debugger and map file.
+;
+%macro BS3_GLOBAL_LOCAL_LABEL 1
+global RT_CONCAT(BS3_LAST_LABEL,%1)
 %1:
 %endmacro
 

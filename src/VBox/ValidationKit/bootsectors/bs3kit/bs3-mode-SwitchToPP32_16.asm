@@ -47,8 +47,8 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPP32_16, BS3_PBC_NEAR
         ret
 
 %elif TMPL_MODE == BS3_MODE_PP32
-        extern  BS3_CMN_NM(Bs3SwitchTo32Bit)
-        jmp     BS3_CMN_NM(Bs3SwitchTo32Bit)
+        extern  BS3_CMN_NM(Bs3SwitchTo16Bit)
+        jmp     BS3_CMN_NM(Bs3SwitchTo16Bit)
 
 %else
         ;

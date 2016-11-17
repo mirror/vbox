@@ -61,16 +61,18 @@ BS3_PROC_BEGIN_MODE Bs3SwitchToPAE32, BS3_PBC_NEAR
         ;
  %if TMPL_BITS != 32
   %if TMPL_BITS > 32
-        shl     xPRE [xSP + xCB], 32    ; Adjust the return address from 64-bit to 32-bit.
+        shl     xPRE [xSP], 32          ; Adjust the return address from 64-bit to 32-bit.
         add     rsp, xCB - 4
   %else
         push    word 0                  ; Reserve space to expand the return address.
   %endif
+ %endif
+ %if TMPL_BITS != 16
         ; Must be in 16-bit segment when calling Bs3SwitchTo16Bit.
         jmp     .sixteen_bit_segment
 BS3_BEGIN_TEXT16
         BS3_SET_BITS TMPL_BITS
-.sixteen_bit_segment:
+BS3_GLOBAL_LOCAL_LABEL .sixteen_bit_segment
  %endif
 
         ;
@@ -120,7 +122,7 @@ BS3_BEGIN_TEXT16
         mov     cr0, eax
         jmp     BS3_SEL_R0_CS32:dword .thirty_two_bit wrt FLAT
 BS3_BEGIN_TEXT32
-.thirty_two_bit:
+BS3_GLOBAL_LOCAL_LABEL .thirty_two_bit
 
         ;
         ; Convert the (now) real mode stack pointer to 32-bit flat.

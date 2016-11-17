@@ -469,6 +469,30 @@
  %endmacro
 %endif
 
+;; @def TNOT16
+; Version of BNOT16 that follows the code template.
+; Like BNOT16 this normally goes in column 1.
+%if TMPL_BITS == 16
+ %macro TNOT16 1+
+ %endmacro
+%else
+ %macro TNOT16 1+
+        %1
+ %endmacro
+%endif
+
+;; @def TNOT32
+; Version of BNOT32 that follows the code template.
+; Like BNOT32 this normally goes in column 1.
+%if TMPL_BITS == 32
+ %macro TNOT32 1+
+ %endmacro
+%else
+ %macro TNOT32 1+
+        %1
+ %endmacro
+%endif
+
 ;; @def TNOT64
 ; Version of BNOT64 that follows the code template.
 ; Like BNOT64 this normally goes in column 1.
@@ -480,6 +504,7 @@
         %1
  %endmacro
 %endif
+
 
 ;
 ; Default code segment (changes BITS too).

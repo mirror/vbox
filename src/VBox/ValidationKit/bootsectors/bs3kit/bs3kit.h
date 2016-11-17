@@ -2312,10 +2312,11 @@ extern uint16_t             g_cBs3PitIntervalHz;
  * @a fpfnCall with @a cbParams bytes of parameters pushed on the stack.
  * Afterwards it switches back to v8086 mode and returns a 16-bit status code.
  *
- * @returns     16-bit status code if the function returned anything.
- * @param       fpfnCall        Far real mode pointer to the function to call.
- * @param       cbParams        The size of the parameter list, in bytes.
- * @param       ...             The parameters.
+ * @returns 16-bit status code if the function returned anything.
+ * @param   fpfnCall        Far real mode pointer to the function to call.
+ * @param   cbParams        The size of the parameter list, in bytes.
+ * @param   ...             The parameters.
+ * @sa Bs3SwitchTo32BitAndCallC
  */
 BS3_CMN_PROTO_STUB(int, Bs3SwitchFromV86To16BitAndCallC,(FPFNBS3FAR fpfnCall, unsigned cbParams, ...));
 
@@ -3303,6 +3304,26 @@ BS3_MODE_PROTO_NOSB(uint8_t, Bs3CpuDetect,(void));
 extern uint16_t g_uBs3CpuDetected;
 
 /**
+ * Call 32-bit prot mode C function.
+ *
+ * This switches from the current mode and calls the 32-bit @a fpfnCall C code
+ * with @a cbParams on the stack, then returns.
+ *
+ * @returns 32-bit status code if the function returned anything.
+ * @param   fpfnCall        Address of the 32-bit C function to call.  When
+ *                          called from 16-bit code, this is a far real mode
+ *                          function pointer, i.e. as fixed up by the linker.
+ *                          In 32-bit and 64-bit code, this is a flat address.
+ * @param   cbParams        The size of the parameter list, in bytes.
+ * @param   ...             The parameters.
+ * @sa      Bs3SwitchFromV86To16BitAndCallC
+ *
+ * @remarks     WARNING! This probably doesn't work in 64-bit mode yet.
+ *                       Only tested for 16-bit real mode.
+ */
+BS3_MODE_PROTO_STUB(int32_t, Bs3SwitchTo32BitAndCallC,(FPFNBS3FAR fpfnCall, unsigned cbParams, ...));
+
+/**
  * Initializes trap handling for the current system.
  *
  * Calls the appropriate Bs3Trap16Init, Bs3Trap32Init or Bs3Trap64Init function.
@@ -3318,7 +3339,7 @@ BS3_MODE_PROTO_STUB(void, Bs3TrapInit,(void));
 BS3_MODE_PROTO_NOSB(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries));
 
 /**
- * Executes the array of tests in every possibly mode, unitifed driver.
+ * Executes the array of tests in every possibly mode, unified driver.
  *
  * This requires much less code space than Bs3TestDoModes as there is only one
  * instace of each sub-test driver code, instead of 3 (cmn) or 22 (per-mode)
