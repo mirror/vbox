@@ -1689,21 +1689,32 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
 /**
  * Initializes bridges registers used for routing.
  *
+ * We ASSUME PDM bus assignments are the same as the PCI bus assignments and
+ * will complain if we find any conflicts.  This because it is just soo much
+ * simpler to have the two numbers match one another by default.
+ *
  * @returns Max subordinate bus number.
  * @param   pPciRoot         Global device instance data used to generate unique bus numbers.
  * @param   pBus             The PCI bus to initialize.
+ * @param   pbmUsed          Pointer to a 32-bit bitmap tracking which device
+ *                           (ranges) has been used.
  * @param   uBusPrimary      The primary bus number the bus is connected to.
- * @param   uBusSecondary    The secondary bus number, i.e. the bus number behind the bridge.
  */
-static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, unsigned uBusPrimary, unsigned uBusSecondary)
+static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, uint32_t *pbmUsed, unsigned uBusPrimary)
 {
     PPDMPCIDEV pBridgeDev = &pBus->PciDev;
 
+    /* Check if the PDM bus assignment makes sense.    */
+    AssertLogRelMsg(!(*pbmUsed & RT_BIT_32(pBus->iBus)),
+                    ("PCIBIOS: Bad PCI bridge config! Conflict for bus %#x. Make sure to instantiate bridges for a sub-trees in sequence!\n",
+                     pBus->iBus));
+    *pbmUsed |= RT_BIT_32(pBus->iBus);
+
     /* Set only if we are not on the root bus, it has no primary bus attached. */
-    if (uBusSecondary != 0)
+    if (pBus->iBus != 0)
     {
         PCIDevSetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS, uBusPrimary);
-        PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, uBusSecondary);
+        PCIDevSetByte(pBridgeDev, VBOX_PCI_SECONDARY_BUS, pBus->iBus);
     }
 
     uint8_t uMaxSubNum = pBus->iBus;
@@ -1713,10 +1724,14 @@ static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pB
         AssertMsg(pBridge && pciDevIsPci2PciBridge(pBridge),
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         PDEVPCIBUS pChildBus = PDMINS_2_DATA(pBridge->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
-        uint8_t uMaxChildSubBus = ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, uBusSecondary, pChildBus->iBus);
+        uint8_t uMaxChildSubBus = ich9pciBiosInitBridgeTopology(pPciRoot, pChildBus, pbmUsed, pBus->iBus);
         uMaxSubNum = RT_MAX(uMaxSubNum, uMaxChildSubBus);
     }
+
     PCIDevSetByte(pBridgeDev, VBOX_PCI_SUBORDINATE_BUS, uMaxSubNum);
+    for (uint32_t i = pBus->iBus; i <= uMaxSubNum; i++)
+        *pbmUsed |= RT_BIT_32(i);
+
     Log2(("ich9pciBiosInitBridgeTopology: for bus %p: primary=%d secondary=%d subordinate=%d\n",
           pBus,
           PDMPciDevGetByte(pBridgeDev, VBOX_PCI_PRIMARY_BUS),
@@ -1760,7 +1775,8 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
      */
     PDEVPCIBUS pBus = &pPciRoot->PciBus;
     AssertLogRel(pBus->iBus == 0);
-    ich9pciBiosInitBridgeTopology(pPciRoot, pBus, 0, pBus->iBus);
+    uint32_t bmUsed = 0;
+    ich9pciBiosInitBridgeTopology(pPciRoot, pBus, &bmUsed, 0);
 
     /*
      * Init the devices.
@@ -2759,6 +2775,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
 
     pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
     pBus->pPciHlpR0 = pBus->pPciHlpR3->pfnGetR0Helpers(pDevIns);
+    LogRel(("PCI: Registered bridge instance #%u as PDM bus no %u.\n", iInstance, pBus->iBus));
 
 
     /* Disable default device locking. */
