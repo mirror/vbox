@@ -3306,8 +3306,9 @@ extern uint16_t g_uBs3CpuDetected;
 /**
  * Call 32-bit prot mode C function.
  *
- * This switches from the current mode and calls the 32-bit @a fpfnCall C code
- * with @a cbParams on the stack, then returns.
+ * This switches to 32-bit mode and calls the 32-bit @a fpfnCall C code with @a
+ * cbParams on the stack, then returns in the original mode.  When called in
+ * real mode, this will switch to PE32.
  *
  * @returns 32-bit status code if the function returned anything.
  * @param   fpfnCall        Address of the 32-bit C function to call.  When

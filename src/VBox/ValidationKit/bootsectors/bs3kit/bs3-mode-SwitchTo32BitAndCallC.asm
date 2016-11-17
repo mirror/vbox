@@ -51,7 +51,7 @@ extern              NAME(Bs3SwitchToRM_pe32)
 BS3_EXTERN_CMN      Bs3SwitchTo32Bit
  %if BS3_MODE_IS_16BIT_CODE_NO_V86(TMPL_MODE)
 extern              _Bs3SwitchTo16Bit_c32
- %elif BS3_MODE_IS_32BIT_CODE_NO_V86(TMPL_MODE)
+ %elif BS3_MODE_IS_V86(TMPL_MODE)
 extern              _Bs3SwitchTo16BitV86_c32
  %elif !BS3_MODE_IS_32BIT_CODE(TMPL_MODE)
 extern              _Bs3SwitchTo64_c32
@@ -136,7 +136,7 @@ TNOT16  mov     esi, [xBP + xCB + cbCurRetAddr + sCB]
         call    NAME(Bs3SwitchToRM_pe32)
 %elif BS3_MODE_IS_16BIT_CODE_NO_V86(TMPL_MODE)
         call    _Bs3SwitchTo16Bit_c32
-%elif BS3_MODE_IS_32BIT_CODE_NO_V86(TMPL_MODE)
+%elif BS3_MODE_IS_V86(TMPL_MODE)
         call    _Bs3SwitchTo16BitV86_c32
 %elif !BS3_MODE_IS_32BIT_CODE(TMPL_MODE)
         call    _Bs3SwitchTo64_c32
