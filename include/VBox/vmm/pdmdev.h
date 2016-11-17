@@ -1875,6 +1875,11 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 # define PDMPCIDEVREG_F_VALID_MASK          UINT32_C(0x00000003)
 /** @}   */
 
+/** Current PDMDEVHLPR3 version number.
+ * @todo Next major revision should add piBus to pfnPCIBusRegister.  */
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 19, 1)
+//#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+
 /**
  * PDM Device API.
  */
@@ -2969,16 +2974,33 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnRTCRegister,(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PCPDMRTCHLP *ppRtcHlp));
 
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
     /**
-     * Register the PCI Bus.
+     * Register a PCI Bus.
      *
-     * @returns VBox status code.
+     * @returns VBox status code, but the positive values 0..31 are used to indicate
+     *          bus number rather than informational status codes.
+     * @param   pDevIns             The device instance.
+     * @param   pPciBusReg          Pointer to PCI bus registration structure.
+     * @param   ppPciHlpR3          Where to store the pointer to the PCI Bus
+     *                              helpers.
+     * @param   piBus               Where to return the PDM bus number. Optional.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPCIBusRegister,(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg,
+                                                 PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus));
+#else
+    /**
+     * Register a PCI Bus.
+     *
+     * @returns VBox status code, but the positive values 0..31 are used to indicate
+     *          bus number rather than informational status codes.
      * @param   pDevIns             The device instance.
      * @param   pPciBusReg          Pointer to PCI bus registration structure.
      * @param   ppPciHlpR3          Where to store the pointer to the PCI Bus
      *                              helpers.
      */
     DECLR3CALLBACKMEMBER(int, pfnPCIBusRegister,(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3));
+#endif
 
     /**
      * Register the PIC device.
@@ -3451,9 +3473,6 @@ typedef struct PDMDEVHLPR3
 typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 /** Pointer to the R3 PDM Device API, const variant. */
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
-
-/** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 19, 0)
 
 
 /**
@@ -5009,10 +5028,17 @@ DECLINLINE(int) PDMDevHlpRTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PC
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIBusRegister
  */
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus)
+{
+    return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlpR3, piBus);
+}
+#else
 DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
 {
     return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlpR3);
 }
+#endif
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPICRegister

@@ -2575,16 +2575,30 @@ static DECLCALLBACK(VMCPUID) pdmR3DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIBusRegister} */
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg,
+                                                    PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus)
+#else
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
+#endif
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterR3=%p, .pfnIORegionRegisterR3=%p, "
+             ".pfnSetIrqR3=%p, .pfnFakePCIBIOSR3=%p, .pszSetIrqRC=%p:{%s}, .pszSetIrqR0=%p:{%s}} ppPciHlpR3=%p piBus=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterR3,
+             pPciBusReg->pfnIORegionRegisterR3, pPciBusReg->pfnSetIrqR3, pPciBusReg->pfnFakePCIBIOSR3,
+             pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqR0, pPciBusReg->pszSetIrqR0,
+             ppPciHlpR3, piBus));
+#else
     LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: pPciBusReg=%p:{.u32Version=%#x, .pfnRegisterR3=%p, .pfnIORegionRegisterR3=%p, "
              ".pfnSetIrqR3=%p, .pfnFakePCIBIOSR3=%p, .pszSetIrqRC=%p:{%s}, .pszSetIrqR0=%p:{%s}} ppPciHlpR3=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->pfnRegisterR3,
              pPciBusReg->pfnIORegionRegisterR3, pPciBusReg->pfnSetIrqR3, pPciBusReg->pfnFakePCIBIOSR3,
              pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqRC, pPciBusReg->pszSetIrqR0, pPciBusReg->pszSetIrqR0, ppPciHlpR3));
+#endif
 
     /*
      * Validate the structure.
@@ -2621,12 +2635,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
         LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-     if (!ppPciHlpR3)
+    if (!ppPciHlpR3)
     {
         Assert(ppPciHlpR3);
         LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc (ppPciHlpR3)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+    AssertLogRelMsgReturn(RT_VALID_PTR(piBus) || !piBus,
+                          ("caller='%s'/%d: piBus=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, piBus),
+                          VERR_INVALID_POINTER);
+#endif
 
     /*
      * Find free PCI bus entry.
@@ -2699,8 +2718,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 
     /* set the helper pointer and return. */
     *ppPciHlpR3 = &g_pdmR3DevPciHlp;
-    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+    if (piBus)
+        *piBus = iBus;
+    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %Rrc *piBus=%u\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS, iBus));
     return VINF_SUCCESS;
+#else
+    LogFlow(("pdmR3DevHlp_PCIBusRegister: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, iBus));
+    return (int)iBus;
+#endif
 }
 
 

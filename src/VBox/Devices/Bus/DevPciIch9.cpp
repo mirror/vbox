@@ -2461,10 +2461,16 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     PciBusReg.pfnFakePCIBIOSR3        = ich9pciFakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "ich9pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "ich9pciSetIrq" : NULL;
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3, &pBus->iBus);
+#else
     rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
+    pBus->iBus = rc;
+#endif
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
+    Assert(pBus->iBus == 0);
     if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("PCI helper version mismatch; got %#x expected %#x"),
@@ -2733,10 +2739,16 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "ich9pcibridgeSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "ich9pcibridgeSetIrq" : NULL;
+#if PDM_DEVHLPR3_VERSION >= PDM_VERSION_MAKE_PP(0xffe7, 20, 0)
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3, &pBus->iBus);
+#else
     rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
+    pBus->iBus = rc;
+#endif
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
+    Assert(pBus->iBus == (uint32_t)iInstance + 1); /* Can be removed when adding support for multiple bridge implementations. */
     if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("PCI helper version mismatch; got %#x expected %#x"),
@@ -2744,6 +2756,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
 
     pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
     pBus->pPciHlpR0 = pBus->pPciHlpR3->pfnGetR0Helpers(pDevIns);
+
 
     /* Disable default device locking. */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
@@ -2778,16 +2791,6 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
         return rc;
     pBus->PciDev.Int.s.pfnBridgeConfigRead  = ich9pcibridgeConfigRead;
     pBus->PciDev.Int.s.pfnBridgeConfigWrite = ich9pcibridgeConfigWrite;
-
-    /*
-     * The iBus property doesn't really represent the bus number
-     * because the guest and the BIOS can choose different bus numbers
-     * for them.
-     * The bus number is mainly for the setIrq function to indicate
-     * when the host bus is reached which will have iBus = 0.
-     * That's why the + 1.
-     */
-    pBus->iBus = iInstance + 1;
 
     /*
      * Register SSM handlers. We use the same saved state version as for the host bridge

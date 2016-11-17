@@ -53,6 +53,21 @@
 #define PDM_VERSION_MAKE(uMagic, uMajor, uMinor) \
     ( ((uint32_t)(uMagic) << 16) | ((uint32_t)((uMajor) & 0xff) << 4) | ((uint32_t)((uMinor) & 0xf) << 0) )
 
+/**
+ * Version of PDM_VERSION_MAKE that's compatible with the preprocessor.
+ *
+ * @returns 32-bit structure version number.
+ *
+ * @param   uMagic      16-bit magic value, no suffix.  This must be unique.
+ * @param   uMajor      12-bit major version number, no suffix.  Structures with
+ *                      different major numbers are not compatible.
+ * @param   uMinor      4-bit minor version number, no suffix.  When only the
+ *                      minor version differs, the structures will be 100%
+ *                      backwards compatible.
+ */
+#define PDM_VERSION_MAKE_PP(uMagic, uMajor, uMinor) \
+    ( (UINT32_C(uMagic) << 16) | ((UINT32_C(uMajor) & UINT32_C(0xff)) << 4) | ((UINT32_C(uMinor) & UINT32_C(0xf)) << 0) )
+
 /** Checks if @a uVerMagic1 is compatible with @a uVerMagic2.
  *
  * @returns true / false.

@@ -30,7 +30,7 @@
 typedef struct DEVPCIBUS
 {
     /** Bus number. */
-    int32_t                 iBus;
+    uint32_t                iBus;
     /** Number of bridges attached to the bus. */
     uint32_t                cBridges;
     /** Start device number - always zero (only for DevPCI source compat). */
