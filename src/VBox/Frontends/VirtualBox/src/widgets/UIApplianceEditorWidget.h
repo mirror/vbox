@@ -64,12 +64,12 @@ public:
 
     /** Constructs the Virtual System model passing @a pParent to the base-class.
       * @param  aVSDs  Brings the Virtual System descriptions. */
-    VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent = NULL);
+    VirtualSystemModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent = 0);
     /** Destructs the Virtual System model. */
     ~VirtualSystemModel();
 
-    /** Returns the index of the item in the model specified by the given @a row, @a column and @a parentIdx. */
-    QModelIndex index(int row, int column, const QModelIndex &parentIdx = QModelIndex()) const;
+    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
+    QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const;
     /** Returns the parent of the model item with the given @a idx. */
     QModelIndex parent(const QModelIndex &idx) const;
 
@@ -80,13 +80,13 @@ public:
 
     /** Returns the item flags for the given @a idx. */
     Qt::ItemFlags flags(const QModelIndex &idx) const;
-    /** Returns the data for the given @a role and @a section in the header with the specified @a orientation. */
-    QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    /** Returns the data for the given @a iRole and @a iSection in the header with the specified @a enmOrientation. */
+    QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const;
 
-    /** Defines the @a role data for the item at @a idx to @a value. */
-    bool setData(const QModelIndex &idx, const QVariant &value, int role);
-    /** Returns the data stored under the given @a role for the item referred to by the @a idx. */
-    QVariant data(const QModelIndex &idx, int role = Qt::DisplayRole) const;
+    /** Defines the @a iRole data for the item at @a idx to @a value. */
+    bool setData(const QModelIndex &idx, const QVariant &value, int iRole);
+    /** Returns the data stored under the given @a iRole for the item referred to by the @a idx. */
+    QVariant data(const QModelIndex &idx, int iRole = Qt::DisplayRole) const;
 
     /** Returns a model index for the buddy of the item represented by @a idx. */
     QModelIndex buddy(const QModelIndex &idx) const;
@@ -111,7 +111,7 @@ public:
 
     /** Constructs the Virtual System Delegate passing @a pParent to the base-class.
       * @param  pProxy  Brings the proxy model reference used to redirect requests to. */
-    VirtualSystemDelegate(QAbstractProxyModel *pProxy, QObject *pParent = NULL);
+    VirtualSystemDelegate(QAbstractProxyModel *pProxy, QObject *pParent = 0);
 
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
@@ -139,7 +139,7 @@ protected:
 private:
 
     /** Holds the proxy model reference used to redirect requests to. */
-    QAbstractProxyModel *mProxy;
+    QAbstractProxyModel *m_pProxy;
 };
 
 
@@ -149,22 +149,22 @@ class VirtualSystemSortProxyModel : public QSortFilterProxyModel
 public:
 
     /** Constructs the Virtual System Sorting model passing @a pParent to the base-class. */
-    VirtualSystemSortProxyModel(QObject *pParent = NULL);
+    VirtualSystemSortProxyModel(QObject *pParent = 0);
 
 protected:
 
-    /** Returns whether item in the row indicated by the given @a srcRow and @a srcParenIdx should be included in the model. */
-    bool filterAcceptsRow(int srcRow, const QModelIndex & srcParenIdx) const;
+    /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
+    bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const;
 
     /** Returns whether value of the item referred to by the given index @a leftIdx is less
       * than the value of the item referred to by the given index @a rightIdx. */
     bool lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const;
 
     /** Holds the array of sorted Virtual System Description types. */
-    static KVirtualSystemDescriptionType m_sortList[];
+    static KVirtualSystemDescriptionType s_aSortList[];
 
     /** Holds the filtered list of Virtual System Description types. */
-    QList<KVirtualSystemDescriptionType> m_filterList;
+    QList<KVirtualSystemDescriptionType> m_aFilteredList;
 };
 
 
@@ -176,12 +176,12 @@ class UIApplianceEditorWidget : public QIWithRetranslateUI<QWidget>
 public:
 
     /** Constructs the Appliance Editor widget passing @a pParent to the base-class. */
-    UIApplianceEditorWidget(QWidget *pParent = NULL);
+    UIApplianceEditorWidget(QWidget *pParent = 0);
 
     /** Returns whether the Appliance Editor has valid state. */
-    bool isValid() const { return m_pAppliance != NULL; }
+    bool isValid() const { return m_pAppliance != 0; }
     /** Returns the currently set appliance reference. */
-    CAppliance* appliance() const { return m_pAppliance; }
+    CAppliance *appliance() const { return m_pAppliance; }
 
     /** Returns the minimum guest RAM. */
     static int minGuestRAM() { return m_minGuestRAM; }
@@ -208,16 +208,16 @@ protected:
     VirtualSystemModel *m_pModel;
 
     /** Holds the information pane instance. */
-    QWidget *m_pPaneInformation;
+    QWidget   *m_pPaneInformation;
     /** Holds the settings tree-view instance. */
     QTreeView *m_pTreeViewSettings;
     /** Holds the 'reinit MACs' check-box instance. */
     QCheckBox *m_pCheckBoxReinitMACs;
 
     /** Holds the warning pane instance. */
-    QWidget *m_pPaneWarning;
+    QWidget   *m_pPaneWarning;
     /** Holds the warning label instance. */
-    QLabel *m_pLabelWarning;
+    QLabel    *m_pLabelWarning;
     /** Holds the warning browser instance. */
     QTextEdit *m_pTextEditWarning;
 

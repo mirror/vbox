@@ -44,7 +44,7 @@ public:
     ImportSortProxyModel(QObject *pParent = NULL)
       : VirtualSystemSortProxyModel(pParent)
     {
-        m_filterList << KVirtualSystemDescriptionType_License;
+        m_aFilteredList << KVirtualSystemDescriptionType_License;
     }
 };
 

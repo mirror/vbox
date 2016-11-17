@@ -43,7 +43,7 @@ public:
     ExportSortProxyModel(QObject *pParent = NULL)
       : VirtualSystemSortProxyModel(pParent)
     {
-        m_filterList
+        m_aFilteredList
             << KVirtualSystemDescriptionType_OS
             << KVirtualSystemDescriptionType_CPU
             << KVirtualSystemDescriptionType_Memory
