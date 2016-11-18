@@ -87,7 +87,7 @@ typedef struct DRVHOSTPULSEAUDIO
     */
     pa_context           *pContext;
     /** Shutdown indicator. */
-    bool                  fLoopWait;
+    volatile bool         fAbortLoop;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO         IHostAudio;
     /** Error count for not flooding the release log.
@@ -180,8 +180,8 @@ static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
         return;
     }
 
-    LogRel(("DEBUG: paSignalWaiter set fLoopWait=true and calling pa_threaded_mainloop_signal()\n"));
-    pThis->fLoopWait = true;
+    LogRel(("DEBUG: paSignalWaiter set fAbortLoop=true and calling pa_threaded_mainloop_signal()\n"));
+    pThis->fAbortLoop = true;
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
 
@@ -266,14 +266,14 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
     LogRel(("DEBUG: entering paWaitForEx\n"));
     while (pa_operation_get_state(pOP) == PA_OPERATION_RUNNING)
     {
-        if (!pThis->fLoopWait)
+        if (!pThis->fAbortLoop)
         {
             AssertPtr(pThis->pMainLoop);
             LogRel(("DEBUG: entering pa_threaded_mainloop_wait()\n"));
             pa_threaded_mainloop_wait(pThis->pMainLoop);
             LogRel(("DEBUG: leaving pa_threaded_mainloop_wait()\n"));
         }
-        pThis->fLoopWait = false;
+        pThis->fAbortLoop = false;
 
         uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
         if (u64ElapsedMs >= cMsTimeout)
@@ -475,9 +475,9 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
         /* Wait until the stream is ready. */
         for (;;)
         {
-            if (!pThis->fLoopWait)
+            if (!pThis->fAbortLoop)
                 pa_threaded_mainloop_wait(pThis->pMainLoop);
-            pThis->fLoopWait = false;
+            pThis->fAbortLoop = false;
 
             pa_stream_state_t streamSt = pa_stream_get_state(pStream);
             if (streamSt == PA_STREAM_READY)
@@ -545,7 +545,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         return rc;
     }
 
-    pThis->fLoopWait = false;
+    pThis->fAbortLoop = false;
     pThis->pMainLoop = NULL;
 
     bool fLocked = false;
@@ -594,9 +594,9 @@ static DECLCALLBACK(int) drvHostPulseAudioInit(PPDMIHOSTAUDIO pInterface)
         /* Wait until the pThis->pContext is ready. */
         for (;;)
         {
-            if (!pThis->fLoopWait)
+            if (!pThis->fAbortLoop)
                 pa_threaded_mainloop_wait(pThis->pMainLoop);
-            pThis->fLoopWait = false;
+            pThis->fAbortLoop = false;
 
             pa_context_state_t cstate = pa_context_get_state(pThis->pContext);
             if (cstate == PA_CONTEXT_READY)
