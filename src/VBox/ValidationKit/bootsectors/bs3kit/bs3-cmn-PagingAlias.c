@@ -124,7 +124,7 @@ BS3_CMN_DEF(int, Bs3PagingAlias,(uint64_t uDst, uint64_t uPhysToAlias, uint32_t 
              */
             while (cPages > 0)
             {
-                pPtePae = bs3PagingGetPte(cr3, g_bBs3CurrentMode, uDst, false, &rc);
+                pPtePae = bs3PagingGetPaePte(cr3, g_bBs3CurrentMode, uDst, false, &rc);
                 if (pPtePae)
                 {
                     uint32_t cLeftInPt = X86_PG_PAE_ENTRIES - ((uDst >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
@@ -148,7 +148,7 @@ BS3_CMN_DEF(int, Bs3PagingAlias,(uint64_t uDst, uint64_t uPhysToAlias, uint32_t 
             while (cPages > 0)
             {
                 uint32_t cLeftInPt = X86_PG_PAE_ENTRIES - ((uDst >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
-                pPtePae = bs3PagingGetPte(cr3, g_bBs3CurrentMode, uDst, false, &rc);
+                pPtePae = bs3PagingGetPaePte(cr3, g_bBs3CurrentMode, uDst, false, &rc);
                 while (cLeftInPt > 0 && cPages > 0)
                 {
                     pPtePae->u = uPhysToAlias | fPte;

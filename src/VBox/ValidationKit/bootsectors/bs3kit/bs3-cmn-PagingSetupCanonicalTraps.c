@@ -62,8 +62,8 @@ BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingSetupCanonicalTraps,(void))
             /*
              * Get the page table entries first to avoid having to unmap things.
              */
-            paLoPtes = bs3PagingGetPte(g_PhysPagingRootLM, BS3_MODE_LM64, UINT64_C(0x00007fffffffe000), false, &rc);
-            paHiPtes = bs3PagingGetPte(g_PhysPagingRootLM, BS3_MODE_LM64, UINT64_C(0xffff800000000000), false, &rc);
+            paLoPtes = bs3PagingGetPaePte(g_PhysPagingRootLM, BS3_MODE_LM64, UINT64_C(0x00007fffffffe000), false, &rc);
+            paHiPtes = bs3PagingGetPaePte(g_PhysPagingRootLM, BS3_MODE_LM64, UINT64_C(0xffff800000000000), false, &rc);
             if (!paHiPtes || !paLoPtes)
             {
                 Bs3TestPrintf("warning: Bs3PagingSetupCanonicalTraps - failed to get PTEs!\n");

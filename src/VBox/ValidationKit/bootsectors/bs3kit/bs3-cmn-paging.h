@@ -44,9 +44,9 @@ extern uint32_t g_PhysPagingRootLM;
 
 #undef bs3PagingGetLegacyPte
 BS3_CMN_PROTO_STUB(X86PTE BS3_FAR *, bs3PagingGetLegacyPte,(RTCCUINTXREG cr3, uint32_t uFlat, bool fUseInvlPg, int *prc));
-#undef bs3PagingGetPte
-BS3_CMN_PROTO_STUB(X86PTEPAE BS3_FAR *, bs3PagingGetPte,(RTCCUINTXREG cr3, uint8_t bMode, uint64_t uFlat,
-                                                         bool fUseInvlPg, int *prc));
+#undef bs3PagingGetPaePte
+BS3_CMN_PROTO_STUB(X86PTEPAE BS3_FAR *, bs3PagingGetPaePte,(RTCCUINTXREG cr3, uint8_t bMode, uint64_t uFlat,
+                                                            bool fUseInvlPg, int *prc));
 
 RT_C_DECLS_END
 
