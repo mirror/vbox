@@ -33,7 +33,7 @@ class UIAbstractDockIconPreview
 {
 public:
     UIAbstractDockIconPreview(UISession *pSession, const QPixmap& overlayImage);
-    virtual ~UIAbstractDockIconPreview() {};
+    virtual ~UIAbstractDockIconPreview() {}
 
     virtual void updateDockOverlay() = 0;
     virtual void updateDockPreview(CGImageRef VMImage) = 0;

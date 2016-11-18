@@ -188,7 +188,7 @@ public:
 
     /** Retranslates action. */
     virtual void retranslateUi() = 0;
-    virtual ~UIAction() { delete menu(); };
+    virtual ~UIAction() { delete menu(); }
 
 protected:
 

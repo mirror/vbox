@@ -80,10 +80,10 @@ public:
 protected:
 
     /** Icon-pool constructor. */
-    UIIconPool() {};
+    UIIconPool() {}
 
     /** Icon-pool destructor. */
-    virtual ~UIIconPool() {};
+    virtual ~UIIconPool() {}
 
 private:
 
