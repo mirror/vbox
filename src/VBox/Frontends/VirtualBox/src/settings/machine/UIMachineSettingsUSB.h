@@ -42,6 +42,7 @@ struct UIDataSettingsMachineUSBFilter
         , m_strPort(QString())
         , m_strRemote(QString())
         , m_action(KUSBDeviceFilterAction_Null)
+        , m_fHostUSBDevice(false)
         , m_hostUSBDeviceState(KUSBDeviceState_NotSupported) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineUSBFilter &other) const
