@@ -324,6 +324,7 @@ RTDECL(int) RTCrPemFreeSections(PCRTCRPEMSECTION pSectionHead)
             pFree->pszPreamble = NULL;
             pFree->cchPreamble = 0;
         }
+        RTMemFree(pFree);
     }
     return VINF_SUCCESS;
 }
