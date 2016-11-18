@@ -1414,7 +1414,8 @@ static DECLCALLBACK(int) vdiCreate(const char *pszFilename, uint64_t cbSize,
      * so far, which would extend the size. */
     if (   !cbSize
         || cbSize >= _1P * 4 - _1M * 3
-        || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE)
+        || cbSize < VDI_IMAGE_DEFAULT_BLOCK_SIZE
+        || (cbSize % 512))
         return VERR_VD_INVALID_SIZE;
 
     /* Check open flags. All valid flags are supported. */

@@ -7012,6 +7012,9 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         AssertMsgBreakStmt(cbSize,
                            ("cbSize=%llu\n", cbSize),
                            rc = VERR_INVALID_PARAMETER);
+        AssertMsgBreakStmt(!(cbSize % 512),
+                           ("cbSize=%llu\n", cbSize),
+                           rc = VERR_VD_INVALID_SIZE);
         AssertMsgBreakStmt(   ((uImageFlags & ~VD_IMAGE_FLAGS_MASK) == 0)
                            || ((uImageFlags & (VD_IMAGE_FLAGS_FIXED | VD_IMAGE_FLAGS_DIFF)) != VD_IMAGE_FLAGS_FIXED),
                            ("uImageFlags=%#x\n", uImageFlags),
