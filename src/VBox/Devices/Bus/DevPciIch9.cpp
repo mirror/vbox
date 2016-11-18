@@ -82,7 +82,7 @@ static void ich9pciSetIrqInternal(PDEVPCIROOT pPciRoot, uint8_t uDevFn, PPDMPCID
                                   int iIrq, int iLevel, uint32_t uTagSrc);
 #ifdef IN_RING3
 static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
-DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus);
+DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus);
 static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn);
 #endif
 
@@ -686,7 +686,7 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCPH
 # include "DevPciMerge1.cpp.h"
 
 
-DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus)
+DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus)
 {
     /* Search for a fitting bridge. */
     for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
@@ -700,8 +700,8 @@ DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t iBus)
                   ("Device is not a PCI bridge but on the list of PCI bridges\n"));
         uint32_t uSecondary   = PDMPciDevGetByte(pBridge, VBOX_PCI_SECONDARY_BUS);
         uint32_t uSubordinate = PDMPciDevGetByte(pBridge, VBOX_PCI_SUBORDINATE_BUS);
-        Log3(("ich9pciFindBridge on bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, iBus, uSecondary, uSubordinate));
-        if (iBus >= uSecondary && iBus <= uSubordinate)
+        Log3(("ich9pciFindBridge on bus %p, bridge %d: %d in %d..%d\n", pBus, iBridge, uBus, uSecondary, uSubordinate));
+        if (uBus >= uSecondary && uBus <= uSubordinate)
             return pBridge;
     }
 
@@ -921,27 +921,27 @@ static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE 
 }
 
 
-static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t uBus, uint8_t uDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb)
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
 
-    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, u32Value, cb));
+    LogFlowFunc((": pDevIns=%p uBus=%d uDevice=%d u32Address=%u u32Value=%u cb=%d\n", pDevIns, uBus, uDevice, u32Address, u32Value, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (uBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, uBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), uBus, uDevice,
                                                       u32Address, u32Value, cb);
         }
     }
     else
     {
         /* This is the target bus, pass the write to the device. */
-        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[uDevice];
         if (pPciDev)
         {
             Log(("%s: %s: addr=%02x val=%08x len=%d\n", __FUNCTION__, pPciDev->pszNameR3, u32Address, u32Value, cb));
@@ -950,21 +950,21 @@ static DECLCALLBACK(void) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t
     }
 }
 
-static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb)
+static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t uBus, uint8_t uDevice, uint32_t u32Address, unsigned cb)
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     uint32_t u32Value;
 
-    LogFlowFunc((": pDevIns=%p iBus=%d iDevice=%d u32Address=%u cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
+    LogFlowFunc((": pDevIns=%p uBus=%d uDevice=%d u32Address=%u cb=%d\n", pDevIns, uBus, uDevice, u32Address, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (uBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
+        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, uBus);
         if (pBridgeDevice)
         {
             AssertPtr( pBridgeDevice->Int.s.pfnBridgeConfigRead);
-            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
+            u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), uBus, uDevice,
                                                                 u32Address, cb);
         }
         else
@@ -973,7 +973,7 @@ static DECLCALLBACK(uint32_t) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint
     else
     {
         /* This is the target bus, pass the read to the device. */
-        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[uDevice];
         if (pPciDev)
         {
             u32Value = pPciDev->Int.s.pfnConfigRead(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, u32Address, cb);
@@ -1700,7 +1700,7 @@ static void ich9pciBiosInitDevice(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
  *                           (ranges) has been used.
  * @param   uBusPrimary      The primary bus number the bus is connected to.
  */
-static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, uint32_t *pbmUsed, unsigned uBusPrimary)
+static uint8_t ich9pciBiosInitBridgeTopology(PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus, uint32_t *pbmUsed, uint8_t uBusPrimary)
 {
     PPDMPCIDEV pBridgeDev = &pBus->PciDev;
 
@@ -2356,6 +2356,11 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
             PDEVPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
+            devpciR3InfoIndent(pHlp, iIndentLvl);
+            pHlp->pfnPrintf(pHlp, "bridge topology: primary=%d secondary=%d subordinate=%d\n",
+                            PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_PRIMARY_BUS),
+                            PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SECONDARY_BUS),
+                            PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS));
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
     }
