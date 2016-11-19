@@ -302,7 +302,8 @@ lnx_add_inst-exec_INST     = $(VBOX_LNX_ADD_INST_OTHER_DIR)
 lnx_add_inst-exec_INSTTYPE = stage
 lnx_add_inst-exec_EXEC_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient \
-	$(VBOX_REL_X11_ADD_INST)x11config.sh
+	$(VBOX_REL_X11_ADD_INST)x11config.sh \
+	$(VBOX_REL_LNX_INST_SRC)check_module_dependencies.sh
 
 
 INSTALLS += lnx_add_inst-noexec

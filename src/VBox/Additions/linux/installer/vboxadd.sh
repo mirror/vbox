@@ -315,7 +315,9 @@ setup_modules()
         --save-module-symvers /tmp/vboxguest-Module.symvers \
         --module-source $MODULE_SRC/vboxguest \
         --no-print-directory install >> $LOG 2>&1; then
-        info "Look at $LOG to find out what went wrong"
+        # If check_module_dependencies.sh fails it prints a message itself.
+        "${INSTALL_DIR}"/other/check_module_dependencies.sh 2>&1 &&
+            info "Look at $LOG to find out what went wrong"
         return 1
     fi
     log "Building the shared folder support module"
@@ -433,7 +435,6 @@ setup()
         mod_succ=0
     else
         mod_succ=1
-        info "Please check that you have gcc, make, the header files for your Linux kernel and possibly perl installed."
     fi
     test -n "${QUICKSETUP}" && return "${mod_succ}"
     extra_setup
