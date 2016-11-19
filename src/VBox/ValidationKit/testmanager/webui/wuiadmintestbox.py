@@ -176,6 +176,9 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         TestBoxData.kaoTestBoxCmdDescs[5],
     ];
 
+    ## Boxes which doesn't report in for more than 15 min are considered dead.
+    kcSecMaxStatusDeltaAlive = 15*60
+
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
         # type: (list[TestBoxDataForListing], int, int, datetime.datetime, ignore, WuiAdmin) -> None
         WuiListContentWithActionBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
@@ -191,6 +194,27 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         self._aoActions     = list(self.kasTestBoxActionDescs);
         self._sAction       = oDisp.ksActionTestBoxListPost;
         self._sCheckboxName = TestBoxData.ksParam_idTestBox;
+
+    def show(self, fShowNavigation = True):
+        """ Adds some stats at the bottom of the page """
+        (sTitle, sBody) = super(WuiTestBoxList, self).show(fShowNavigation);
+
+        # Count boxes in interesting states.
+        if len(self._aoEntries) > 0:
+            cActive = 0;
+            cDead   = 0;
+            for oTestBox in self._aoEntries:
+                oDelta = oTestBox.tsCurrent - oTestBox.oStatus.tsUpdated;
+                if oDelta.days <= 0 and oDelta.seconds <= self.kcSecMaxStatusDeltaAlive:
+                    if oTestBox.fEnabled:
+                        cActive += 1;
+                else:
+                    cDead += 1;
+            sBody += '<div id="testboxsummary"><p>\n' \
+                     '%s testboxes of which %s are active and %s dead' \
+                     '</p></div>\n' \
+                     % (len(self._aoEntries), cActive, cDead,)
+        return (sTitle, sBody);
 
     def _formatListEntry(self, iEntry): # pylint: disable=R0914
         from testmanager.webui.wuiadmin import WuiAdmin;
@@ -218,7 +242,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
             oState = '';
         else:
             oDelta = oEntry.tsCurrent - oEntry.oStatus.tsUpdated;
-            if oDelta.days <= 0 and oDelta.seconds <= 15*60: # 15 mins and we consider you dead.
+            if oDelta.days <= 0 and oDelta.seconds <= self.kcSecMaxStatusDeltaAlive:
                 oSeen = WuiSpanText('tmspan-online',  u'%s\u00a0s\u00a0ago' % (oDelta.days * 24 * 3600 + oDelta.seconds,));
             else:
                 oSeen = WuiSpanText('tmspan-offline', u'%s' % (self.formatTsShort(oEntry.oStatus.tsUpdated),));
