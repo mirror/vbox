@@ -169,11 +169,11 @@ case "${UNIT_TEST}${BASE_EXPECTED}" in "")
     test -n "${HAVE_TOOLS}" ||
         echo "Please install the ${TOOLS} packages from your distribution." >&2
     test -n "${HAVE_HEADERS}" && exit 1
-    echo "You will also need to install the right \"header\" files for adding hardware" >&2
-    echo "support to the running Linux kernel." >&2
+    echo "Please install the Linux kernel \"header\" files matching the current kernel" >&2
+    echo "for adding new hardware support to the system." >&2
     if test -n "${BASE_PACKAGE}${VERSIONED_PACKAGE}"; then
         echo "The distribution packages containing the headers are probably:" >&2
-        echo "    ${BASE_PACKAGE} ${VERSIONED_PACKAGE}"
+        echo "    ${BASE_PACKAGE} ${VERSIONED_PACKAGE}" >&2
     fi
     test -z "${TEST}" && exit 1
     exit 0
