@@ -960,6 +960,13 @@ static DECLCALLBACK(int) drvdiskintReadPcBios(PPDMIMEDIA pInterface,
     return pThis->pDrvMedia->pfnReadPcBios(pThis->pDrvMedia, off, pvBuf, cbRead);
 }
 
+/** @interface_method_impl{PDMIMEDIA,pfnIsNonRotational} */
+static DECLCALLBACK(bool) drvdiskintIsNonRotational(PPDMIMEDIA pInterface)
+{
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    return pThis->pDrvMedia->pfnIsNonRotational(pThis->pDrvMedia);
+}
+
 /* -=-=-=-=- IMediaPort -=-=-=-=- */
 
 /** Makes a PDRVBLOCK out of a PPDMIMEDIAPORT. */
@@ -1184,6 +1191,15 @@ static DECLCALLBACK(void) drvdiskintIoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
 /* -=-=-=-=- IMediaEx -=-=-=-=- */
 
 /**
+ * @interface_method_impl{PDMIMEDIAEX,pfnQueryFeatures}
+ */
+static DECLCALLBACK(int) drvdiskintQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t *pfFeatures)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnQueryFeatures(pThis->pDrvMediaEx, pfFeatures);
+}
+
+/**
  * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet}
  */
 static DECLCALLBACK(int) drvdiskintIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
@@ -1252,6 +1268,33 @@ static DECLCALLBACK(int) drvdiskintIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEX
         RTMemFree(pIoReq->IoSeg.pvSeg);
 
     return pThis->pDrvMediaEx->pfnIoReqFree(pThis->pDrvMediaEx, hIoReq);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryResidual}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqQueryResidual(pThis->pDrvMediaEx, hIoReq, pcbResidual);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryXferSize}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqQueryXferSize(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbXfer)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqQueryXferSize(pThis->pDrvMediaEx, hIoReq, pcbXfer);
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancelAll}
+ */
+static DECLCALLBACK(int) drvdiskintIoReqCancelAll(PPDMIMEDIAEX pInterface)
+{
+    PDRVDISKINTEGRITY pThis = RT_FROM_MEMBER(pInterface, DRVDISKINTEGRITY, IMediaEx);
+    return pThis->pDrvMediaEx->pfnIoReqCancelAll(pThis->pDrvMediaEx);
 }
 
 /**
@@ -1643,11 +1686,16 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnGetSectorSize       = drvdiskintGetSectorSize;
     pThis->IMedia.pfnGetType             = drvdiskintGetType;
     pThis->IMedia.pfnReadPcBios          = drvdiskintReadPcBios;
+    pThis->IMedia.pfnIsNonRotational     = drvdiskintIsNonRotational;
 
     /* IMediaEx. */
+    pThis->IMediaEx.pfnQueryFeatures            = drvdiskintQueryFeatures;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvdiskintIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvdiskintIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvdiskintIoReqFree;
+    pThis->IMediaEx.pfnIoReqQueryResidual       = drvdiskintIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqQueryXferSize       = drvdiskintIoReqQueryXferSize;
+    pThis->IMediaEx.pfnIoReqCancelAll           = drvdiskintIoReqCancelAll;
     pThis->IMediaEx.pfnIoReqCancel              = drvdiskintIoReqCancel;
     pThis->IMediaEx.pfnIoReqRead                = drvdiskintIoReqRead;
     pThis->IMediaEx.pfnIoReqWrite               = drvdiskintIoReqWrite;
