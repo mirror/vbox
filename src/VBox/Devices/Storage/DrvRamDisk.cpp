@@ -176,6 +176,8 @@ typedef struct DRVRAMDISK
 
     /** Flag whether the RAM disk was pre allocated. */
     bool                    fPreallocRamDisk;
+    /** Flag whether to report a non totating medium. */
+    bool                    fNonRotational;
     /** AVL tree containing the disk blocks to check. */
     PAVLRFOFFTREE           pTreeSegments;
     /** Size of the disk. */
@@ -635,6 +637,13 @@ static DECLCALLBACK(int) drvramdiskReadPcBios(PPDMIMEDIA pInterface,
     Seg.pvSeg = pvBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
     return drvramdiskReadWorker(pThis, &SgBuf, off, cbRead);
+}
+
+/** @interface_method_impl{PDMIMEDIA,pfnIsNonRotational} */
+static DECLCALLBACK(bool) drvramdiskIsNonRotational(PPDMIMEDIA pInterface)
+{
+    PDRVRAMDISK pThis = RT_FROM_MEMBER(pInterface, DRVRAMDISK, IMedia);
+    return pThis->fNonRotational;
 }
 
 
@@ -1131,6 +1140,17 @@ static DECLCALLBACK(int) drvramdiskIoReqDiscardWorker(PDRVRAMDISK pThis, PPDMMED
 }
 
 /**
+ * @interface_method_impl{PDMIMEDIAEX,pfnQueryFeatures}
+ */
+static DECLCALLBACK(int) drvramdiskQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t *pfFeatures)
+{
+    RT_NOREF1(pInterface)
+    *pfFeatures = PDMIMEDIAEX_FEATURE_F_ASYNC | PDMIMEDIAEX_FEATURE_F_DISCARD;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIMEDIAEX,pfnIoReqAllocSizeSet}
  */
 static DECLCALLBACK(int) drvramdiskIoReqAllocSizeSet(PPDMIMEDIAEX pInterface, size_t cbIoReqAlloc)
@@ -1208,6 +1228,43 @@ static DECLCALLBACK(int) drvramdiskIoReqFree(PPDMIMEDIAEX pInterface, PDMMEDIAEX
     pIoReq->enmState = VDIOREQSTATE_FREE;
     RTMemCacheFree(pThis->hIoReqCache, pIoReq);
     return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryResidual}
+ */
+static DECLCALLBACK(int) drvramdiskIoReqQueryResidual(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbResidual)
+{
+    RT_NOREF2(pInterface, hIoReq);
+
+    *pcbResidual = 0;
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqQueryXferSize}
+ */
+static DECLCALLBACK(int) drvramdiskIoReqQueryXferSize(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, size_t *pcbXfer)
+{
+    RT_NOREF1(pInterface);
+    PPDMMEDIAEXIOREQINT pIoReq = hIoReq;
+
+    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+        || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+        *pcbXfer = pIoReq->ReadWrite.cbReq;
+    else
+        *pcbXfer = 0;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEX,pfnIoReqCancelAll}
+ */
+static DECLCALLBACK(int) drvramdiskIoReqCancelAll(PPDMIMEDIAEX pInterface)
+{
+    RT_NOREF1(pInterface);
+    return VINF_SUCCESS; /** @todo */
 }
 
 /**
@@ -1599,7 +1656,8 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (!CFGMR3AreValuesValid(pCfg, "Size\0"
                                     "PreAlloc\0"
                                     "IoBufMax\0"
-                                    "SectorSize\0"))
+                                    "SectorSize\0"
+                                    "NonRotational\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryU64(pCfg, "Size", &pThis->cbDisk);
@@ -1607,7 +1665,13 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("RamDisk: Error querying the media size"));
     rc = CFGMR3QueryBoolDef(pCfg, "PreAlloc", &pThis->fPreallocRamDisk, false);
-    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("RamDisk: Error querying \"PreAlloc\""));
+    rc = CFGMR3QueryBoolDef(pCfg, "NonRotational", &pThis->fNonRotational, true);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("RamDisk: Error querying \"NonRotational\""));
     rc = CFGMR3QueryU32Def(pCfg, "IoBufMax", &cbIoBufMax, 5 * _1M);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IoBufMax\" from the config"));
@@ -1639,11 +1703,16 @@ static DECLCALLBACK(int) drvramdiskConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     pThis->IMedia.pfnGetSectorSize       = drvramdiskGetSectorSize;
     pThis->IMedia.pfnReadPcBios          = drvramdiskReadPcBios;
     pThis->IMedia.pfnDiscard             = drvramdiskDiscard;
+    pThis->IMedia.pfnIsNonRotational     = drvramdiskIsNonRotational;
 
     /* IMediaEx */
+    pThis->IMediaEx.pfnQueryFeatures            = drvramdiskQueryFeatures;
     pThis->IMediaEx.pfnIoReqAllocSizeSet        = drvramdiskIoReqAllocSizeSet;
     pThis->IMediaEx.pfnIoReqAlloc               = drvramdiskIoReqAlloc;
     pThis->IMediaEx.pfnIoReqFree                = drvramdiskIoReqFree;
+    pThis->IMediaEx.pfnIoReqQueryResidual       = drvramdiskIoReqQueryResidual;
+    pThis->IMediaEx.pfnIoReqQueryXferSize       = drvramdiskIoReqQueryXferSize;
+    pThis->IMediaEx.pfnIoReqCancelAll           = drvramdiskIoReqCancelAll;
     pThis->IMediaEx.pfnIoReqCancel              = drvramdiskIoReqCancel;
     pThis->IMediaEx.pfnIoReqRead                = drvramdiskIoReqRead;
     pThis->IMediaEx.pfnIoReqWrite               = drvramdiskIoReqWrite;
