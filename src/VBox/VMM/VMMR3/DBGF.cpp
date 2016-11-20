@@ -1581,7 +1581,7 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
  *                          that the API allows @a pStopPopAddr and @a cbStopPop
  *                          to form an area that wraps around and it will
  *                          consider the part starting at 0 as included.
- * @param   cMaxStep        The maximum number of steps to take.  This is to
+ * @param   cMaxSteps       The maximum number of steps to take.  This is to
  *                          prevent stepping for ever, so passing UINT32_MAX is
  *                          not recommended.
  *
