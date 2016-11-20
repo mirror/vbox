@@ -1453,7 +1453,7 @@ static bool dbgfStepAreWeThereYet(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Check PC and SP address filtering.
                  */
-                if (pVM->dbgf.s.SteppingFilter.fFlags & (DBGF_STEP_F_STOP_ON_ADDRESS || DBGF_STEP_F_STOP_ON_STACK_POP))
+                if (pVM->dbgf.s.SteppingFilter.fFlags & (DBGF_STEP_F_STOP_ON_ADDRESS | DBGF_STEP_F_STOP_ON_STACK_POP))
                 {
                     bool fIsHyper = dbgfR3FigureEventCtx(pVM) == DBGFEVENTCTX_HYPER;
                     if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_ADDRESS)
