@@ -685,7 +685,7 @@ typedef struct DBGCCMDHLP
 #define DBGCCMDHLP_MAGIC    UINT32_C(18211111)
 
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_SLICKEDIT)
 
 /**
  * Command helper for writing formatted text to the debug console.

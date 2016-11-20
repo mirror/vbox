@@ -64,6 +64,7 @@ static FNDBGCCMD dbgcCmdDumpTypeInfo;
 static FNDBGCCMD dbgcCmdDumpTypedVal;
 static FNDBGCCMD dbgcCmdEditMem;
 static FNDBGCCMD dbgcCmdGo;
+static FNDBGCCMD dbgcCmdGoUp;
 static FNDBGCCMD dbgcCmdListModules;
 static FNDBGCCMD dbgcCmdListNear;
 static FNDBGCCMD dbgcCmdListSource;
@@ -74,11 +75,13 @@ static FNDBGCCMD dbgcCmdRegHyper;
 static FNDBGCCMD dbgcCmdRegTerse;
 static FNDBGCCMD dbgcCmdSearchMem;
 static FNDBGCCMD dbgcCmdSearchMemType;
+static FNDBGCCMD dbgcCmdStepTrace;
+static FNDBGCCMD dbgcCmdStepTraceTo;
+static FNDBGCCMD dbgcCmdStepTraceToggle;
 static FNDBGCCMD dbgcCmdEventCtrl;
 static FNDBGCCMD dbgcCmdEventCtrlList;
 static FNDBGCCMD dbgcCmdEventCtrlReset;
 static FNDBGCCMD dbgcCmdStack;
-static FNDBGCCMD dbgcCmdTrace;
 static FNDBGCCMD dbgcCmdUnassemble;
 static FNDBGCCMD dbgcCmdUnassembleCfg;
 
@@ -268,6 +271,24 @@ static const DBGCVARDESC    g_aArgMemoryInfo[] =
 };
 
 
+/** 'p', 'pc', 'pt', 't', 'tc' and 'tt' arguments. */
+static const DBGCVARDESC    g_aArgStepTrace[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "count",        "Number of instructions or source lines to step." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed afterwards. Quote it!" },
+};
+
+
+/** 'pa' and 'ta' arguments. */
+static const DBGCVARDESC    g_aArgStepTraceTo[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Where to stop" },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "cmds",         "String of commands to be executed afterwards. Quote it!" },
+};
+
+
 /** 'r' arguments. */
 static const DBGCVARDESC    g_aArgReg[] =
 {
@@ -389,6 +410,7 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "ed",         2,        2,        &g_aArgEditMem[0],  RT_ELEMENTS(g_aArgEditMem),     0,       dbgcCmdEditMem,     "<addr> <value>",       "Write a 4-byte value to memory." },
     { "eq",         2,        2,        &g_aArgEditMem[0],  RT_ELEMENTS(g_aArgEditMem),     0,       dbgcCmdEditMem,     "<addr> <value>",       "Write a 8-byte value to memory." },
     { "g",          0,        0,        NULL,               0,                              0,       dbgcCmdGo,          "",                     "Continue execution." },
+    { "gu",         0,        0,        NULL,               0,                              0,       dbgcCmdGoUp,        "",                     "Go up - continue execution till after return." },
     { "k",          0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack." },
     { "kg",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - guest." },
     { "kh",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - hypervisor." },
@@ -399,6 +421,11 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "ln",         0,        ~0U,      &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),    0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
     { "ls",         0,        1,        &g_aArgListSource[0],RT_ELEMENTS(g_aArgListSource), 0,       dbgcCmdListSource,  "[addr]",               "Source." },
     { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo), 0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
+    { "p",          0,        2,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Step over." },
+    { "pr",         0,        0,        NULL,               0,                              0,       dbgcCmdStepTraceToggle, "",                 "Toggle displaying registers for tracing & stepping (no code executed)." },
+    { "pa",         1,        1,        &g_aArgStepTraceTo[0], RT_ELEMENTS(g_aArgStepTraceTo), 0,    dbgcCmdStepTraceTo, "<addr> [count] [cmds]","Step to the given address." },
+    { "pc",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Step to the next call instruction." },
+    { "pt",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Step to the next return instruction." },
     { "r",          0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [[=] newval]]",   "Show or set register(s) - active reg set." },
     { "rg",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [[=] newval]]",   "Show or set register(s) - guest reg set." },
     { "rg32",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 32-bit guest registers." },
@@ -418,7 +445,11 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "sxn",        1,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Notify: Display info in the debugger and continue on the specified exceptions, exits and other events. 'all' addresses all." },
     { "sxi",        1,       ~0U,       &g_aArgEventCtrl[0], RT_ELEMENTS(g_aArgEventCtrl),  0,       dbgcCmdEventCtrl,      "[-c <cmd>] <event> [..]", "Ignore: Ignore the specified exceptions, exits and other events ('all' = all of them).  Without the -c option, the guest runs like normal." },
     { "sxr",        0,        0,        &g_aArgEventCtrlOpt[0], RT_ELEMENTS(g_aArgEventCtrlOpt), 0,  dbgcCmdEventCtrlReset, "",                    "Reset the settings to default for exceptions, exits and other events. All if no filter is specified." },
-    { "t",          0,        0,        NULL,               0,                              0,       dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
+    { "t",          0,        2,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Trace ." },
+    { "tr",         0,        0,        NULL,               0,                              0,       dbgcCmdStepTraceToggle, "",                 "Toggle displaying registers for tracing & stepping (no code executed)." },
+    { "ta",         1,        1,        &g_aArgStepTraceTo[0], RT_ELEMENTS(g_aArgStepTraceTo), 0,    dbgcCmdStepTraceTo, "<addr> [count] [cmds]","Trace to the given address." },
+    { "tc",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Trace to the next call instruction." },
+    { "tt",         0,        0,        &g_aArgStepTrace[0], RT_ELEMENTS(g_aArgStepTrace),  0,       dbgcCmdStepTrace,   "[count] [cmds]",       "Trace to the next return instruction." },
     { "u",          0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble." },
     { "u64",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 64-bit code." },
     { "u32",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 32-bit code." },
@@ -594,7 +625,7 @@ const uint32_t   g_cDbgcSxEvents = RT_ELEMENTS(g_aDbgcSxEvents);
 
 
 /**
- * @callback_method_impl{FNDBGCCMD, The 'go' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'g' command.}
  */
 static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -612,6 +643,26 @@ static DECLCALLBACK(int) dbgcCmdGo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUV
 
     NOREF(paArgs); NOREF(cArgs);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'gu' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdGoUp(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    RT_NOREF(pCmd, paArgs, cArgs);
+
+    /* The simple way out. */
+    PDBGFADDRESS pStackPop  = NULL; /** @todo try set up some stack limitations */
+    RTGCPTR      cbStackPop = 0;
+    int rc = DBGFR3StepEx(pUVM, pDbgc->idCpu, DBGF_STEP_F_OVER | DBGF_STEP_F_STOP_AFTER_RET, NULL, pStackPop, cbStackPop, _512K);
+    if (RT_SUCCESS(rc))
+        pDbgc->fReady = false;
+    else
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3StepEx(,,DBGF_STEP_F_OVER | DBGF_STEP_F_STOP_AFTER_RET,) failed");
+    return rc;
 }
 
 
@@ -2482,7 +2533,7 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
         /*
          * Disassemble one instruction at cs:[r|e]ip.
          */
-        if (!f64BitMode && strstr(pszRegs, " vm ")) /* a big ugly... */
+        if (!f64BitMode && strstr(pszRegs, " vm ")) /* a bit ugly... */
             return pCmdHlp->pfnExec(pCmdHlp, "uv86 %s", szDisAndRegs + 2);
         return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
     }
@@ -2554,19 +2605,86 @@ static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
 
 /**
- * @callback_method_impl{FNDBGCCMD, The 't' command.}
+ * @callback_method_impl{FNDBGCCMD, The 'pr' and 'tr' commands.}
  */
-static DECLCALLBACK(int) dbgcCmdTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+static DECLCALLBACK(int) dbgcCmdStepTraceToggle(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    Assert(cArgs == 0); NOREF(pCmd); NOREF(pUVM); NOREF(paArgs); NOREF(cArgs);
+
+    /* Note! windbg accepts 'r' as a flag to 'p', 'pa', 'pc', 'pt', 't',
+             'ta', 'tc' and 'tt'.  We've simplified it.  */
+    pDbgc->fStepTraceRegs = !pDbgc->fStepTraceRegs;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD,
+ *      The 'p', 'pc', 'pt', 't', 'tc', and 'tt' commands.}
+ */
+static DECLCALLBACK(int) dbgcCmdStepTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    if (cArgs != 0)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd,
+                              "Sorry, but the '%s' command does not currently implement any arguments.\n", pCmd->pszCmd);
 
-    int rc = DBGFR3Step(pUVM, pDbgc->idCpu);
+    /* The 'count' has to be implemented by DBGC, whereas the
+       filtering is taken care of by DBGF. */
+
+    /*
+     * Convert the command to DBGF_STEP_F_XXX and other API input.
+     */
+    //DBGFADDRESS StackPop;
+    PDBGFADDRESS pStackPop  = NULL;
+    RTGCPTR      cbStackPop = 0;
+    uint32_t     cMaxSteps  = pCmd->pszCmd[0] == 'p' ? _512K : _64K;
+    uint32_t     fFlags     = pCmd->pszCmd[0] == 'p' ? DBGF_STEP_F_OVER : DBGF_STEP_F_INTO;
+    if (pCmd->pszCmd[1] == 'c')
+        fFlags |= DBGF_STEP_F_STOP_ON_CALL;
+    else if (pCmd->pszCmd[1] == 't')
+        fFlags |= DBGF_STEP_F_STOP_ON_RET;
+    else if (pCmd->pszCmd[0] != 'p')
+        cMaxSteps = 1;
+    else
+    {
+        /** @todo consider passing RSP + 1 in for 'p' and something else sensible for
+         *        the 'pt' command. */
+    }
+
+    int rc = DBGFR3StepEx(pUVM, pDbgc->idCpu, fFlags, NULL, pStackPop, cbStackPop, cMaxSteps);
     if (RT_SUCCESS(rc))
         pDbgc->fReady = false;
     else
-        rc = pDbgc->CmdHlp.pfnVBoxError(&pDbgc->CmdHlp, rc, "When trying to single step VM %p\n", pDbgc->pVM);
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3StepEx(,,%#x,) failed", fFlags);
 
     NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'pa' and 'ta' commands.}
+ */
+static DECLCALLBACK(int) dbgcCmdStepTraceTo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+    if (cArgs != 1)
+        return DBGCCmdHlpFail(pCmdHlp, pCmd,
+                              "Sorry, but the '%s' command only implements a single argument at present.\n", pCmd->pszCmd);
+    DBGFADDRESS Address;
+    int rc = pCmdHlp->pfnVarToDbgfAddr(pCmdHlp, &paArgs[0], &Address);
+    if (RT_FAILURE(rc))
+        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "VarToDbgfAddr(,%Dv,)\n", &paArgs[0]);
+
+    uint32_t cMaxSteps = pCmd->pszCmd[0] == 'p' ? _512K : 1;
+    uint32_t fFlags    = pCmd->pszCmd[0] == 'p' ? DBGF_STEP_F_OVER : DBGF_STEP_F_INTO;
+    rc = DBGFR3StepEx(pUVM, pDbgc->idCpu, fFlags, &Address, NULL, 0, cMaxSteps);
+    if (RT_SUCCESS(rc))
+        pDbgc->fReady = false;
+    else
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGFR3StepEx(,,%#x,) failed", fFlags);
     return rc;
 }
 

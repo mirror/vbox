@@ -717,7 +717,25 @@ static int dbgcProcessEvent(PDBGC pDbgc, PCDBGFEVENT pEvent)
 
             rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\ndbgf event: Single step! (%s)\n", dbgcGetEventCtx(pEvent->enmCtx));
             if (RT_SUCCESS(rc))
-                rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+            {
+                if (pDbgc->fStepTraceRegs)
+                    rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "r");
+                else
+                {
+                    char szCmd[80];
+                    if (!pDbgc->fRegCtxGuest)
+                        rc = DBGFR3RegPrintf(pDbgc->pUVM, pDbgc->idCpu | DBGFREG_HYPER_VMCPUID, szCmd, sizeof(szCmd),
+                                             "u %VR{cs}:%VR{eip} L 0");
+                    else if (DBGFR3CpuIsIn64BitCode(pDbgc->pUVM, pDbgc->idCpu))
+                        rc = DBGFR3RegPrintf(pDbgc->pUVM, pDbgc->idCpu, szCmd, sizeof(szCmd), "u %016VR{rip} L 0");
+                    else if (DBGFR3CpuIsInV86Code(pDbgc->pUVM, pDbgc->idCpu))
+                        rc = DBGFR3RegPrintf(pDbgc->pUVM, pDbgc->idCpu, szCmd, sizeof(szCmd), "uv86 %04VR{cs}:%08VR{eip} L 0");
+                    else
+                        rc = DBGFR3RegPrintf(pDbgc->pUVM, pDbgc->idCpu, szCmd, sizeof(szCmd), "u %04VR{cs}:%08VR{eip} L 0");
+                    if (RT_SUCCESS(rc))
+                        rc = pDbgc->CmdHlp.pfnExec(&pDbgc->CmdHlp, "%s", szCmd);
+                }
+            }
             break;
         }
 
@@ -1077,6 +1095,7 @@ int dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags)
     //pDbgc->fLog             = false;
     pDbgc->fRegCtxGuest     = true;
     pDbgc->fRegTerse        = true;
+    pDbgc->fStepTraceRegs   = true;
     //pDbgc->cPagingHierarchyDumps = 0;
     //pDbgc->DisasmPos        = {0};
     //pDbgc->SourcePos        = {0};

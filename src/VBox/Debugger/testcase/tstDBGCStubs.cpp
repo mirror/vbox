@@ -175,7 +175,8 @@ VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent)
 VMMR3DECL(void) DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame)
 {
 }
-VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
+VMMR3DECL(int) DBGFR3StepEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, PCDBGFADDRESS pStopPcAddr,
+                            PCDBGFADDRESS pStopPopAddr, RTGCUINTPTR cbStopPop, uint32_t cMaxSteps)
 {
     return VERR_INTERNAL_ERROR;
 }
@@ -321,6 +322,10 @@ VMMR3DECL(VMCPUID) DBGFR3CpuGetCount(PUVM pUVM)
     return 1;
 }
 VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
+{
+    return false;
+}
+VMMR3DECL(bool) DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu)
 {
     return false;
 }
