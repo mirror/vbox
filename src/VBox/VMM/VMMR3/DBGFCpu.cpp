@@ -108,6 +108,44 @@ VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
 
 
 /**
+ * Wrapper around CPUMIsGuestInV86Code.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           The current CPU ID.
+ * @param   pfInV86Code     Where to return the result.
+ */
+static DECLCALLBACK(int) dbgfR3CpuInV86Code(PVM pVM, VMCPUID idCpu, bool *pfInV86Code)
+{
+    Assert(idCpu == VMMGetCpuId(pVM));
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    *pfInV86Code = CPUMIsGuestInV86ModeEx(CPUMQueryGuestCtxPtr(pVCpu));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the given CPU is executing V8086 code or not.
+ *
+ * @returns true / false accordingly.
+ * @param   pUVM        The user mode VM handle.
+ * @param   idCpu       The target CPU ID.
+ */
+VMMR3DECL(bool) DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, false);
+    AssertReturn(idCpu < pUVM->pVM->cCpus, false);
+
+    bool fInV86Code;
+    int rc = VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3CpuInV86Code, 3, pUVM->pVM, idCpu, &fInV86Code);
+    if (RT_FAILURE(rc))
+        return false;
+    return fInV86Code;
+}
+
+
+/**
  * Get the number of CPUs (or threads if you insist).
  *
  * @returns The number of CPUs

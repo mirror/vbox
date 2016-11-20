@@ -93,11 +93,30 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * Instruction type returned by dbgfStepGetCurInstrType.
+ */
+typedef enum DBGFSTEPINSTRTYPE
+{
+    DBGFSTEPINSTRTYPE_INVALID = 0,
+    DBGFSTEPINSTRTYPE_OTHER,
+    DBGFSTEPINSTRTYPE_RET,
+    DBGFSTEPINSTRTYPE_CALL,
+    DBGFSTEPINSTRTYPE_END,
+    DBGFSTEPINSTRTYPE_32BIT_HACK = 0x7fffffff
+} DBGFSTEPINSTRTYPE;
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static int dbgfR3VMMWait(PVM pVM);
 static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pfResumeExecution);
 static DECLCALLBACK(int) dbgfR3Attach(PVM pVM);
+static DBGFSTEPINSTRTYPE dbgfStepGetCurInstrType(PVM pVM, PVMCPU pVCpu);
+static bool dbgfStepAreWeThereYet(PVM pVM,  PVMCPU pVCpu);
 
 
 /**
@@ -139,6 +158,8 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
     PUVM pUVM = pVM->pUVM;
     AssertCompile(sizeof(pUVM->dbgf.s)          <= sizeof(pUVM->dbgf.padding));
     AssertCompile(sizeof(pUVM->aCpus[0].dbgf.s) <= sizeof(pUVM->aCpus[0].dbgf.padding));
+
+    pVM->dbgf.s.SteppingFilter.idCpu = NIL_VMCPUID;
 
     /*
      * The usual sideways mountain climbing style of init:
@@ -549,6 +570,8 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
  */
 static int dbgfR3SendEvent(PVM pVM)
 {
+    pVM->dbgf.s.SteppingFilter.idCpu = NIL_VMCPUID;
+
     int rc = RTSemPing(&pVM->dbgf.s.PingPong);
     if (RT_SUCCESS(rc))
         rc = dbgfR3VMMWait(pVM);
@@ -612,6 +635,18 @@ VMMR3_INT_DECL(VBOXSTRICTRC) DBGFR3EventHandlePending(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(int) DBGFR3Event(PVM pVM, DBGFEVENTTYPE enmEvent)
 {
+    /*
+     * Do stepping filtering.
+     */
+    /** @todo Would be better if we did some of this inside the execution
+     *        engines. */
+    if (   enmEvent == DBGFEVENT_STEPPED
+        || enmEvent == DBGFEVENT_STEPPED_HYPER)
+    {
+        if (!dbgfStepAreWeThereYet(pVM, VMMGetCpu(pVM)))
+            return VINF_EM_DBG_STEP;
+    }
+
     int rc = dbgfR3EventPrologue(pVM, enmEvent);
     if (RT_FAILURE(rc))
         return rc;
@@ -890,6 +925,7 @@ static int dbgfR3VMMWait(PVM pVM)
 
 /**
  * Executes command from debugger.
+ *
  * The caller is responsible for waiting or resuming execution based on the
  * value returned in the *pfResumeExecution indicator.
  *
@@ -946,6 +982,7 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
             ASMAtomicWriteBool(&pVM->dbgf.s.fAttached, false);
             pVM->dbgf.s.DbgEvent.enmType = DBGFEVENT_DETACH_DONE;
             pVM->dbgf.s.DbgEvent.enmCtx  = DBGFEVENTCTX_OTHER;
+            pVM->dbgf.s.SteppingFilter.idCpu = NIL_VMCPUID;
             fSendEvent = true;
             fResume = true;
             break;
@@ -968,12 +1005,30 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
         case DBGFCMD_SINGLE_STEP:
         {
             Log2(("Single step\n"));
-            rc = VINF_EM_DBG_STEP;
             /** @todo SMP */
             PVMCPU pVCpu = VMMGetCpu0(pVM);
-            pVCpu->dbgf.s.fSingleSteppingRaw = true;
-            fSendEvent = false;
-            fResume = true;
+            if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_OVER)
+            {
+                if (dbgfStepGetCurInstrType(pVM, pVCpu) == DBGFSTEPINSTRTYPE_CALL)
+                    pVM->dbgf.s.SteppingFilter.uCallDepth++;
+            }
+            if (pVM->dbgf.s.SteppingFilter.cMaxSteps > 0)
+            {
+                pVCpu->dbgf.s.fSingleSteppingRaw = true;
+                fSendEvent = false;
+                fResume = true;
+                rc = VINF_EM_DBG_STEP;
+            }
+            else
+            {
+                /* Stop after zero steps. Nonsense, but whatever. */
+                pVM->dbgf.s.SteppingFilter.idCpu = NIL_VMCPUID;
+                pVM->dbgf.s.DbgEvent.enmCtx  = dbgfR3FigureEventCtx(pVM);
+                pVM->dbgf.s.DbgEvent.enmType = pVM->dbgf.s.DbgEvent.enmCtx != DBGFEVENTCTX_HYPER
+                                             ? DBGFEVENT_STEPPED : DBGFEVENT_STEPPED_HYPER;
+                fSendEvent = false;
+                fResume = false;
+            }
             break;
         }
 
@@ -1278,6 +1333,207 @@ VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
 
 
 /**
+ * Classifies the current instruction.
+ *
+ * @returns Type of instruction.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pVCpu               The current CPU.
+ * @thread  EMT(pVCpu)
+ */
+static DBGFSTEPINSTRTYPE dbgfStepGetCurInstrType(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Read the instruction.
+     */
+    bool     fIsHyper = dbgfR3FigureEventCtx(pVM) == DBGFEVENTCTX_HYPER;
+    size_t   cbRead   = 0;
+    uint8_t  abOpcode[16] = { 0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0 };
+    int rc = PGMR3DbgReadGCPtr(pVM, abOpcode, !fIsHyper ? CPUMGetGuestFlatPC(pVCpu) : CPUMGetHyperRIP(pVCpu),
+                               sizeof(abOpcode) - 1, 0 /*fFlags*/, &cbRead);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do minimal parsing.  No real need to involve the disassembler here.
+         */
+        uint8_t *pb = abOpcode;
+        for (;;)
+        {
+            switch (*pb++)
+            {
+                default:
+                    return DBGFSTEPINSTRTYPE_OTHER;
+
+                case 0xe8: /* call rel16/32 */
+                case 0x9a: /* call farptr */
+                case 0xcc: /* int3 */
+                case 0xcd: /* int xx */
+                // case 0xce: /* into */
+                    return DBGFSTEPINSTRTYPE_CALL;
+
+                case 0xc2: /* ret xx */
+                case 0xc3: /* ret */
+                case 0xca: /* retf xx */
+                case 0xcb: /* retf */
+                case 0xcf: /* iret */
+                    return DBGFSTEPINSTRTYPE_RET;
+
+                case 0xff:
+                    if (   ((*pb >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) == 2  /* call indir */
+                        || ((*pb >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) == 3) /* call indir-farptr */
+                        return DBGFSTEPINSTRTYPE_CALL;
+                    return DBGFSTEPINSTRTYPE_OTHER;
+
+                case 0x0f:
+                    switch (*pb++)
+                    {
+                        case 0x05: /* syscall */
+                        case 0x34: /* sysenter */
+                            return DBGFSTEPINSTRTYPE_CALL;
+                        case 0x07: /* sysret */
+                        case 0x35: /* sysexit */
+                            return DBGFSTEPINSTRTYPE_RET;
+                    }
+                    break;
+
+                /* Must handle some REX prefixes. So we do all normal prefixes. */
+                case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47:
+                case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
+                    if (fIsHyper) /* ASSUMES 32-bit raw-mode! */
+                        return DBGFSTEPINSTRTYPE_OTHER;
+                    if (!CPUMIsGuestIn64BitCode(pVCpu))
+                        return DBGFSTEPINSTRTYPE_OTHER;
+                    break;
+
+                case 0x2e: /* CS */
+                case 0x36: /* SS */
+                case 0x3e: /* DS */
+                case 0x26: /* ES */
+                case 0x64: /* FS */
+                case 0x65: /* GS */
+                case 0x66: /* op size */
+                case 0x67: /* addr size */
+                case 0xf0: /* lock */
+                case 0xf2: /* REPNZ */
+                case 0xf3: /* REPZ */
+                    break;
+            }
+        }
+    }
+
+    return DBGFSTEPINSTRTYPE_INVALID;
+}
+
+
+/**
+ * Checks if the stepping has reached a stop point.
+ *
+ * Called when raising a stepped event.
+ *
+ * @returns true if the event should be raised, false if we should take one more
+ *          step first.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context per CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+static bool dbgfStepAreWeThereYet(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Check valid pVCpu and that it matches the CPU one stepping.
+     */
+    if (pVCpu)
+    {
+        if (pVCpu->idCpu == pVM->dbgf.s.SteppingFilter.idCpu)
+        {
+            /*
+             * Increase the number of steps and see if we've reached the max.
+             */
+            pVM->dbgf.s.SteppingFilter.cSteps++;
+            if (pVM->dbgf.s.SteppingFilter.cSteps < pVM->dbgf.s.SteppingFilter.cMaxSteps)
+            {
+                /*
+                 * Check PC and SP address filtering.
+                 */
+                if (pVM->dbgf.s.SteppingFilter.fFlags & (DBGF_STEP_F_STOP_ON_ADDRESS || DBGF_STEP_F_STOP_ON_STACK_POP))
+                {
+                    bool fIsHyper = dbgfR3FigureEventCtx(pVM) == DBGFEVENTCTX_HYPER;
+                    if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_ADDRESS)
+                        && pVM->dbgf.s.SteppingFilter.AddrPc == (!fIsHyper ? CPUMGetGuestFlatPC(pVCpu) : CPUMGetHyperRIP(pVCpu)))
+                        return true;
+                    if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_STACK_POP)
+                        &&     (!fIsHyper ? CPUMGetGuestFlatSP(pVCpu) : (uint64_t)CPUMGetHyperESP(pVCpu))
+                             - pVM->dbgf.s.SteppingFilter.AddrStackPop
+                           < pVM->dbgf.s.SteppingFilter.cbStackPop)
+                        return true;
+                }
+
+                /*
+                 * Do step-over filtering separate from the step-into one.
+                 */
+                if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_OVER)
+                {
+                    DBGFSTEPINSTRTYPE enmType = dbgfStepGetCurInstrType(pVM, pVCpu);
+                    switch (enmType)
+                    {
+                        default:
+                            if (   pVM->dbgf.s.SteppingFilter.uCallDepth != 0
+                                || (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_FILTER_MASK))
+                                break;
+                            return true;
+                        case DBGFSTEPINSTRTYPE_CALL:
+                            if (   (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_CALL)
+                                && pVM->dbgf.s.SteppingFilter.uCallDepth == 0)
+                                return true;
+                            pVM->dbgf.s.SteppingFilter.uCallDepth++;
+                            break;
+                        case DBGFSTEPINSTRTYPE_RET:
+                            if (pVM->dbgf.s.SteppingFilter.uCallDepth == 0)
+                            {
+                                if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_RET)
+                                    return true;
+                                /* If after return, we use the cMaxStep limit to stop the next time. */
+                                if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_AFTER_RET)
+                                    pVM->dbgf.s.SteppingFilter.cMaxSteps = pVM->dbgf.s.SteppingFilter.cSteps + 1;
+                            }
+                            else if (pVM->dbgf.s.SteppingFilter.uCallDepth > 0)
+                                pVM->dbgf.s.SteppingFilter.uCallDepth--;
+                            break;
+                    }
+                    return false;
+                }
+                /*
+                 * Filtered step-into.
+                 */
+                else if (  pVM->dbgf.s.SteppingFilter.fFlags
+                         & (DBGF_STEP_F_STOP_ON_CALL | DBGF_STEP_F_STOP_ON_RET | DBGF_STEP_F_STOP_AFTER_RET))
+                {
+                    DBGFSTEPINSTRTYPE enmType = dbgfStepGetCurInstrType(pVM, pVCpu);
+                    switch (enmType)
+                    {
+                        default:
+                            break;
+                        case DBGFSTEPINSTRTYPE_CALL:
+                            if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_CALL)
+                                return true;
+                            break;
+                        case DBGFSTEPINSTRTYPE_RET:
+                            if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_ON_RET)
+                                return true;
+                            /* If after return, we use the cMaxStep limit to stop the next time. */
+                            if (pVM->dbgf.s.SteppingFilter.fFlags & DBGF_STEP_F_STOP_AFTER_RET)
+                                pVM->dbgf.s.SteppingFilter.cMaxSteps = pVM->dbgf.s.SteppingFilter.cSteps + 1;
+                            break;
+                    }
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+
+/**
  * Step Into.
  *
  * A single step event is generated from this command.
@@ -1289,6 +1545,52 @@ VMMR3DECL(int) DBGFR3Resume(PUVM pUVM)
  */
 VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
 {
+    return DBGFR3StepEx(pUVM, idCpu, DBGF_STEP_F_INTO, NULL, NULL, 0, 1);
+}
+
+
+/**
+ * Full fleged step.
+ *
+ * This extended stepping API allows for doing multiple steps before raising an
+ * event, helping implementing step over, step out and other more advanced
+ * features.
+ *
+ * Like the DBGFR3Step() API, this will normally generate a DBGFEVENT_STEPPED or
+ * DBGFEVENT_STEPPED_EVENT.  However the stepping may be interrupted by other
+ * events, which will abort the stepping.
+ *
+ * The stop on pop area feature is for safeguarding step out.
+ *
+ * Please note though, that it will always use stepping and never breakpoints.
+ * While this allows for a much greater flexibility it can at times be rather
+ * slow.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   idCpu           The ID of the CPU to single step on.
+ * @param   fFlags          Flags controlling the stepping, DBGF_STEP_F_XXX.
+ *                          Either DBGF_STEP_F_INTO or DBGF_STEP_F_OVER must
+ *                          always be specified.
+ * @param   pStopPcAddr     Address to stop executing at.  Completely ignored
+ *                          unless DBGF_STEP_F_STOP_ON_ADDRESS is specified.
+ * @param   pStopPopAddr    Stack address that SP must be lower than when
+ *                          performing DBGF_STEP_F_STOP_ON_STACK_POP filtering.
+ * @param   cbStopPop       The range starting at @a pStopPopAddr which is
+ *                          considered to be within the same thread stack. Note
+ *                          that the API allows @a pStopPopAddr and @a cbStopPop
+ *                          to form an area that wraps around and it will
+ *                          consider the part starting at 0 as included.
+ * @param   cMaxStep        The maximum number of steps to take.  This is to
+ *                          prevent stepping for ever, so passing UINT32_MAX is
+ *                          not recommended.
+ *
+ * @remarks The two address arguments must be guest context virtual addresses,
+ *          or HMA.  The code doesn't make much of a point of out HMA, though.
+ */
+VMMR3DECL(int) DBGFR3StepEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, PCDBGFADDRESS pStopPcAddr,
+                            PCDBGFADDRESS pStopPopAddr, RTGCUINTPTR cbStopPop, uint32_t cMaxSteps)
+{
     /*
      * Check state.
      */
@@ -1296,15 +1598,57 @@ VMMR3DECL(int) DBGFR3Step(PUVM pUVM, VMCPUID idCpu)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~DBGF_STEP_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(RT_BOOL(fFlags & DBGF_STEP_F_INTO) != RT_BOOL(fFlags & DBGF_STEP_F_OVER), VERR_INVALID_FLAGS);
+    if (fFlags & DBGF_STEP_F_STOP_ON_ADDRESS)
+    {
+        AssertReturn(RT_VALID_PTR(pStopPcAddr), VERR_INVALID_POINTER);
+        AssertReturn(DBGFADDRESS_IS_VALID(pStopPcAddr), VERR_INVALID_PARAMETER);
+        AssertReturn(DBGFADDRESS_IS_VIRT_GC(pStopPcAddr), VERR_INVALID_PARAMETER);
+    }
+    AssertReturn(!(fFlags & DBGF_STEP_F_STOP_ON_STACK_POP) || RT_VALID_PTR(pStopPopAddr), VERR_INVALID_POINTER);
+    if (fFlags & DBGF_STEP_F_STOP_ON_STACK_POP)
+    {
+        AssertReturn(RT_VALID_PTR(pStopPopAddr), VERR_INVALID_POINTER);
+        AssertReturn(DBGFADDRESS_IS_VALID(pStopPopAddr), VERR_INVALID_PARAMETER);
+        AssertReturn(DBGFADDRESS_IS_VIRT_GC(pStopPopAddr), VERR_INVALID_PARAMETER);
+        AssertReturn(cbStopPop > 0, VERR_INVALID_PARAMETER);
+    }
+
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
     if (RT_LIKELY(RTSemPongIsSpeaker(&pVM->dbgf.s.PingPong)))
     { /* likely */ }
     else
         return VERR_SEM_OUT_OF_TURN;
+    Assert(pVM->dbgf.s.SteppingFilter.idCpu == NIL_VMCPUID);
 
     /*
      * Send the ping back to the emulation thread telling it to run.
      */
+    if (fFlags == DBGF_STEP_F_INTO)
+        pVM->dbgf.s.SteppingFilter.idCpu = NIL_VMCPUID;
+    else
+        pVM->dbgf.s.SteppingFilter.idCpu = idCpu;
+    pVM->dbgf.s.SteppingFilter.fFlags = fFlags;
+    if (fFlags & DBGF_STEP_F_STOP_ON_ADDRESS)
+        pVM->dbgf.s.SteppingFilter.AddrPc = pStopPcAddr->FlatPtr;
+    else
+        pVM->dbgf.s.SteppingFilter.AddrPc = 0;
+    if (fFlags & DBGF_STEP_F_STOP_ON_STACK_POP)
+    {
+        pVM->dbgf.s.SteppingFilter.AddrStackPop = pStopPopAddr->FlatPtr;
+        pVM->dbgf.s.SteppingFilter.cbStackPop   = cbStopPop;
+    }
+    else
+    {
+        pVM->dbgf.s.SteppingFilter.AddrStackPop = 0;
+        pVM->dbgf.s.SteppingFilter.cbStackPop   = RTGCPTR_MAX;
+    }
+
+    pVM->dbgf.s.SteppingFilter.cMaxSteps    = cMaxSteps;
+    pVM->dbgf.s.SteppingFilter.cSteps       = 0;
+    pVM->dbgf.s.SteppingFilter.uCallDepth   = 0;
+
 /** @todo SMP (idCpu) */
     dbgfR3SetCmd(pVM, DBGFCMD_SINGLE_STEP);
     int rc = RTSemPong(&pVM->dbgf.s.PingPong);

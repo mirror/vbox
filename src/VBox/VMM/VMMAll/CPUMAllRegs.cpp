@@ -915,6 +915,26 @@ VMMDECL(RTSEL) CPUMGetGuestSS(PVMCPU pVCpu)
 }
 
 
+VMMDECL(uint64_t)   CPUMGetGuestFlatPC(PVMCPU pVCpu)
+{
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.cs);
+    if (   !CPUMIsGuestInLongMode(pVCpu)
+        || pVCpu->cpum.s.Guest.cs.Attr.n.u1Long)
+        return pVCpu->cpum.s.Guest.eip + (uint32_t)pVCpu->cpum.s.Guest.cs.u64Base;
+    return pVCpu->cpum.s.Guest.rip + pVCpu->cpum.s.Guest.cs.u64Base;
+}
+
+
+VMMDECL(uint64_t)   CPUMGetGuestFlatSP(PVMCPU pVCpu)
+{
+    CPUMSELREG_LAZY_LOAD_HIDDEN_PARTS(pVCpu, &pVCpu->cpum.s.Guest.ss);
+    if (   !CPUMIsGuestInLongMode(pVCpu)
+        || pVCpu->cpum.s.Guest.ss.Attr.n.u1Long)
+        return pVCpu->cpum.s.Guest.eip + (uint32_t)pVCpu->cpum.s.Guest.ss.u64Base;
+    return pVCpu->cpum.s.Guest.rip + pVCpu->cpum.s.Guest.ss.u64Base;
+}
+
+
 VMMDECL(RTSEL) CPUMGetGuestLDTR(PVMCPU pVCpu)
 {
     return pVCpu->cpum.s.Guest.ldtr.Sel;

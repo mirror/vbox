@@ -86,7 +86,7 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_FLAGS_FLAT          3
 /** A physical address. */
 #define DBGFADDRESS_FLAGS_PHYS          4
-/** A physical address. */
+/** A ring-0 host address (internal use only). */
 #define DBGFADDRESS_FLAGS_RING0         5
 /** The address type mask. */
 #define DBGFADDRESS_FLAGS_TYPE_MASK     7
@@ -108,10 +108,14 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 #define DBGFADDRESS_IS_FAR32(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR32 )
 /** Checks if the mixed address is far 16:64 or not. */
 #define DBGFADDRESS_IS_FAR64(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_FAR64 )
+/** Checks if the mixed address host context ring-0 (special). */
+#define DBGFADDRESS_IS_R0_HC(pAddress)   ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_RING0 )
+/** Checks if the mixed address a virtual guest context address (incl HMA). */
+#define DBGFADDRESS_IS_VIRT_GC(pAddress) ( ((pAddress)->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) <= DBGFADDRESS_FLAGS_FLAT )
 /** Checks if the mixed address is valid. */
-#define DBGFADDRESS_IS_VALID(pAddress)   ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_VALID) )
+#define DBGFADDRESS_IS_VALID(pAddress)   RT_BOOL((pAddress)->fFlags & DBGFADDRESS_FLAGS_VALID)
 /** Checks if the address is flagged as within the HMA. */
-#define DBGFADDRESS_IS_HMA(pAddress)     ( !!((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA) )
+#define DBGFADDRESS_IS_HMA(pAddress)     RT_BOOL((pAddress)->fFlags & DBGFADDRESS_FLAGS_HMA)
 /** @} */
 
 VMMR3DECL(int)          DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
@@ -545,8 +549,40 @@ VMMR3DECL(int)          DBGFR3Halt(PUVM pUVM);
 VMMR3DECL(bool)         DBGFR3IsHalted(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3QueryWaitable(PUVM pUVM);
 VMMR3DECL(int)          DBGFR3Resume(PUVM pUVM);
-VMMR3DECL(int)          DBGFR3Step(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(int)          DBGFR3InjectNMI(PUVM pUVM, VMCPUID idCpu);
+VMMR3DECL(int)          DBGFR3Step(PUVM pUVM, VMCPUID idCpu);
+VMMR3DECL(int)          DBGFR3StepEx(PUVM pUVM, VMCPUID idCpu, uint32_t fFlags, PCDBGFADDRESS pStopPcAddr,
+                                     PCDBGFADDRESS pStopPopAddr, RTGCUINTPTR cbStopPop, uint32_t cMaxSteps);
+
+/** @name DBGF_STEP_F_XXX - Flags for DBGFR3StepEx.
+ *
+ * @note The stop filters are not applied to the starting instruction.
+ *
+ * @{ */
+/** Step into CALL, INT, SYSCALL and SYSENTER instructions. */
+#define DBGF_STEP_F_INTO                RT_BIT_32(0)
+/** Step over CALL, INT, SYSCALL and SYSENTER instruction when considering
+ *  what's "next". */
+#define DBGF_STEP_F_OVER                RT_BIT_32(1)
+
+/** Stop on the next CALL, INT, SYSCALL, SYSENTER instruction. */
+#define DBGF_STEP_F_STOP_ON_CALL        RT_BIT_32(8)
+/** Stop on the next RET, IRET, SYSRET, SYSEXIT instruction. */
+#define DBGF_STEP_F_STOP_ON_RET         RT_BIT_32(9)
+/** Stop after the next RET, IRET, SYSRET, SYSEXIT instruction. */
+#define DBGF_STEP_F_STOP_AFTER_RET      RT_BIT_32(10)
+/** Stop on the given address.
+ * The comparison will be made using effective (flat) addresses.  */
+#define DBGF_STEP_F_STOP_ON_ADDRESS     RT_BIT_32(11)
+/** Stop when the stack pointer pops to or past the given address.
+ * The comparison will be made using effective (flat) addresses.  */
+#define DBGF_STEP_F_STOP_ON_STACK_POP   RT_BIT_32(12)
+/** Mask of stop filter flags. */
+#define DBGF_STEP_F_STOP_FILTER_MASK    UINT32_C(0x00001f00)
+
+/** Mask of valid flags. */
+#define DBGF_STEP_F_VALID_MASK          UINT32_C(0x00001f03)
+/** @} */
 
 /**
  * Event configuration array element, see DBGFR3EventConfigEx.
@@ -852,6 +888,7 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFE
 VMMR3DECL(CPUMMODE)         DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(VMCPUID)          DBGFR3CpuGetCount(PUVM pUVM);
 VMMR3DECL(bool)             DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu);
+VMMR3DECL(bool)             DBGFR3CpuIsInV86Code(PUVM pUVM, VMCPUID idCpu);
 #endif
 
 
