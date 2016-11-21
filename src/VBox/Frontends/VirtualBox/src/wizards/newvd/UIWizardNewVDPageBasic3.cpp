@@ -201,8 +201,8 @@ int UIWizardNewVDPage3::calculateSliderScale(qulonglong uMaximumMediumSize)
         // Slider tick count (maximum - minimum) is limited with some
         // "magical number" - 588351, having it more than that brings
         // unpredictable results like slider token jumping and disappearing,
-        // so we are limiting tick count by lowering slider-scale 100 times.
-        iSliderScale /= 100;
+        // so we are limiting tick count by lowering slider-scale 128 times.
+        iSliderScale /= 128;
 #endif /* VBOX_WS_MAC */
     }
     return qMax(iSliderScale, 8);
