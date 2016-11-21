@@ -34,20 +34,31 @@
 
       <itemizedlist>
         <listitem>
-          <para>On Windows, this is
-          <computeroutput>%HOMEDRIVE%%HOMEPATH%</computeroutput>; typically
-          something like <computeroutput>C:\Documents and
-          Settings\Username\</computeroutput>.</para>
+          <para>On Windows, this is the location returned by the
+          <computeroutput>SHGetFolderPath</computeroutput> function of the
+          Windows system library Shell32.dll, asking for the user profile. Only
+          on very old Windows versions which don't have this function
+          or where it unexpectedly returns an error, there is a fallback based
+          on environment variables: first 
+          <computeroutput>%USERPROFILE%</computeroutput> is checked, if it
+          doesn't exist then an attempt with
+          <computeroutput>%HOMEDRIVE%%HOMEPATH%</computeroutput> is made.
+          Typical value is
+          <computeroutput>C:\Users\username</computeroutput>.</para>
         </listitem>
 
         <listitem>
-          <para>On Mac OS X, this is
+          <para>On Linux, Mac OS X and Solaris, this is generally taken from
+          the environment variable <computeroutput>$HOME</computeroutput>,
+          except for the user
+          <computeroutput>root</computeroutput> for which it's taken from the
+          account database (as a workaround for the frequent trouble caused
+          by users using VirtualBox in combination with the tool
+          <computeroutput>sudo</computeroutput> which by default doesn't reset
+          the environment variable <computeroutput>$HOME</computeroutput>).
+          Typical value on Linux and Solaris is 
+          <computeroutput>/home/username</computeroutput> and on Mac OS X
           <computeroutput>/Users/username</computeroutput>.</para>
-        </listitem>
-
-        <listitem>
-          <para>On Linux and Solaris, this is
-          <computeroutput>/home/username</computeroutput>.</para>
         </listitem>
       </itemizedlist>
 
