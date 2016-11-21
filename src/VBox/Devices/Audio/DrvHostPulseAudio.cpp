@@ -175,8 +175,12 @@ static void paStreamCbSuccess(pa_stream *pStream, int fSuccess, void *pvContext)
 static void paSignalWaiter(PDRVHOSTPULSEAUDIO pThis)
 {
     if (!pThis)
+    {
+        LogRel(("DEBUG: paSignalWaiter return because of !pThis\n"));
         return;
+    }
 
+    LogRel(("DEBUG: paSignalWaiter set fLoopWait=true and calling pa_threaded_mainloop_signal()\n"));
     pThis->fAbortLoop = true;
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
@@ -274,6 +278,7 @@ static int paWaitForEx(PDRVHOSTPULSEAUDIO pThis, pa_operation *pOP, RTMSINTERVAL
             rc = VERR_TIMEOUT;
             break;
         }
+        LogRel(("DEBUG: paWaitForEx next turn (elapsed=%RU64ms)\n", u64ElapsedMs));
     }
 
     pa_operation_unref(pOP);
@@ -984,13 +989,23 @@ static int paError(PDRVHOSTPULSEAUDIO pThis, const char *szMsg)
 static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, void *pvUserData)
 {
     if (eol != 0)
+    {
+        LogRel(("DEBUG: paEnumSinkCb return EOL=1\n"));
         return;
-
+    }
+    if (!pCtx)
+        LogRel(("DEBUG: paEnumSinkCb return because of !pCtx\n"));
     AssertPtrReturnVoid(pCtx);
+    if (!pInfo)
+        LogRel(("DEBUG: paEnumSinkCb return because of !pInfo\n"));
     AssertPtrReturnVoid(pInfo);
 
     PPULSEAUDIOENUMCBCTX pCbCtx = (PPULSEAUDIOENUMCBCTX)pvUserData;
+    if (!pCbCtx)
+        LogRel(("DEBUG: paEnumSinkCb return because of !pCbCtx\n"));
     AssertPtrReturnVoid(pCbCtx);
+    if (!pCbCtx->pDrv)
+        LogRel(("DEBUG: paEnumSinkCb return because of !pCbCtx->pDrv\n"));
     AssertPtrReturnVoid(pCbCtx->pDrv);
 
     LogRel2(("PulseAudio: Using output sink '%s'\n", pInfo->name));
@@ -998,6 +1013,7 @@ static void paEnumSinkCb(pa_context *pCtx, const pa_sink_info *pInfo, int eol, v
     /** @todo Store sinks + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevOut++;
 
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSinkCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
@@ -1019,6 +1035,7 @@ static void paEnumSourceCb(pa_context *pCtx, const pa_source_info *pInfo, int eo
     /** @todo Store sources + channel mapping in callback context as soon as we have surround support. */
     pCbCtx->cDevIn++;
 
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumSourceCb\n"));
     pa_threaded_mainloop_signal(pCbCtx->pDrv->pMainLoop, 0);
 }
 
@@ -1046,6 +1063,7 @@ static void paEnumServerCb(pa_context *pCtx, const pa_server_info *pInfo, void *
         pCbCtx->pszDefaultSource = RTStrDup(pInfo->default_source_name);
     }
 
+    LogRel(("DEBUG: pa_threaded_mainloop_signal() from paEnumServerCb\n"));
     pa_threaded_mainloop_signal(pThis->pMainLoop, 0);
 }
 
