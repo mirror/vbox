@@ -1094,6 +1094,38 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
 
 
 /**
+ * RTTimeNow equivaltent that handles ring-3 where we cannot use it.
+ *
+ * @returns pNow
+ * @param   pNow                Where to return the current time.
+ */
+static PRTTIMESPEC supHardNtTimeNow(PRTTIMESPEC pNow)
+{
+#ifdef IN_RING3
+    /*
+     * Just read system time.
+     */
+    KUSER_SHARED_DATA volatile *pUserSharedData = (KUSER_SHARED_DATA volatile *)MM_SHARED_USER_DATA_VA;
+# ifdef RT_ARCH_AMD64
+    uint64_t uRet = *(uint64_t volatile *)&pUserSharedData->SystemTime; /* This is what KeQuerySystemTime does (missaligned). */
+    return RTTimeSpecSetNtTime(pNow, uRet);
+# else
+
+    LARGE_INTEGER NtTime;
+    do
+    {
+        NtTime.HighPart = pUserSharedData->SystemTime.High1Time;
+        NtTime.LowPart  = pUserSharedData->SystemTime.LowPart;
+    } while (pUserSharedData->SystemTime.High2Time != NtTime.HighPart);
+    return RTTimeSpecSetNtTime(pNow, NtTime.QuadPart);
+# endif
+#else  /* IN_RING0 */
+    return RTTimeNow(pNow);
+#endif /* IN_RING0 */
+}
+
+
+/**
  * Verifies the given loader image.
  *
  * @returns IPRT status code.
@@ -1172,6 +1204,10 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
      *         use this as a minimum timestamp for further build cert
      *         validations.  This works around issues with old DLLs that
      *         we sign against with our certificate (crt, sdl, qt).
+     *
+     * Update: If the validation fails, retry with the current timestamp. This
+     *         is a workaround for NTDLL.DLL in build 14971 having a weird
+     *         timestamp: 0xDF1E957E (Sat Aug 14 14:05:18 2088).
      */
     int rc = RTLdrQueryProp(hLdrMod, RTLDRPROP_TIMESTAMP_SECONDS, &pNtViRdr->uTimestamp, sizeof(pNtViRdr->uTimestamp));
     if (RT_SUCCESS(rc))
@@ -1189,6 +1225,16 @@ DECLHIDDEN(int) supHardenedWinVerifyImageByLdrMod(RTLDRMOD hLdrMod, PCRTUTF16 pw
         if ((pNtViRdr->fFlags & SUPHNTVI_F_REQUIRE_BUILD_CERT) && g_uBuildTimestampHack == 0 && RT_SUCCESS(rc))
             g_uBuildTimestampHack = pNtViRdr->uTimestamp;
 #endif
+
+        if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME)
+        {
+            RTTIMESPEC Now;
+            uint64_t uOld = pNtViRdr->uTimestamp;
+            pNtViRdr->uTimestamp = RTTimeSpecGetSeconds(supHardNtTimeNow(&Now));
+            SUP_DPRINTF(("%ls: VERR_CR_X509_CPV_NOT_VALID_AT_TIME for %#RX64; retrying against current time: %#RX64.\n",
+                         pwszName, uOld, pNtViRdr->uTimestamp)); NOREF(uOld);
+            rc = RTLdrVerifySignature(hLdrMod, supHardNtViCallback, pNtViRdr, pErrInfo);
+        }
 
         /*
          * Microsoft doesn't sign a whole bunch of DLLs, so we have to

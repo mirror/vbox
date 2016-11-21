@@ -436,7 +436,15 @@ static RTEXITCODE HandleVerifyExeWorker(VERIFYEXESTATE *pState, const char *pszF
         rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
         if (RT_SUCCESS(rc))
             RTMsgInfo("'%s' is valid.\n", pszFilename);
-        else
+        else if (rc == VERR_CR_X509_CPV_NOT_VALID_AT_TIME)
+        {
+            RTTIMESPEC Now;
+            pState->uTimestamp = RTTimeSpecGetSeconds(RTTimeNow(&Now));
+            rc = RTLdrVerifySignature(hLdrMod, VerifyExeCallback, pState, RTErrInfoInitStatic(pStaticErrInfo));
+            if (RT_SUCCESS(rc))
+                RTMsgInfo("'%s' is valid now, but not at link time.\n", pszFilename);
+        }
+        if (RT_FAILURE(rc))
             RTMsgError("RTLdrVerifySignature failed on '%s': %Rrc - %s\n", pszFilename, rc, pStaticErrInfo->szMsg);
     }
     else
