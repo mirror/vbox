@@ -1144,7 +1144,7 @@ static DECLCALLBACK(int) drvramdiskIoReqDiscardWorker(PDRVRAMDISK pThis, PPDMMED
  */
 static DECLCALLBACK(int) drvramdiskQueryFeatures(PPDMIMEDIAEX pInterface, uint32_t *pfFeatures)
 {
-    RT_NOREF1(pInterface)
+    RT_NOREF1(pInterface);
     *pfFeatures = PDMIMEDIAEX_FEATURE_F_ASYNC | PDMIMEDIAEX_FEATURE_F_DISCARD;
     return VINF_SUCCESS;
 }
