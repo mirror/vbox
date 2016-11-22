@@ -2211,12 +2211,53 @@ BS3_CMN_PROTO_STUB(int, Bs3PagingUnalias,(uint64_t uDst, uint32_t cbHowMuch));
 BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingGetPte,(uint64_t uFlat, int *prc));
 
 /**
- * Get the pointer to the PDE for the given address.
- *
- * @returns Pointer to the PDE.
- * @param   uFlat               The flat address of the page which PDE we want.
+ * Paging information for an address.
  */
-BS3_CMN_PROTO_STUB(void BS3_FAR *, Bs3PagingGetPde,(uint64_t uFlat));
+typedef struct BS3PAGINGINFO4ADDR
+{
+    /** The depth of the system's paging mode.
+     * This is always 2 for legacy, 3 for PAE and 4 for long mode. */
+    uint8_t             cEntries;
+    /** The size of the page structures (the entires). */
+    uint8_t             cbEntry;
+    /** Flags defined for future fun, currently zero. */
+    uint16_t            fFlags;
+    /** Union display different view on the entry pointers. */
+    union
+    {
+        /** Pointer to the page structure entries, starting with the PTE as 0.
+         * If large pages are involved, the first entry will be NULL (first two if 1GB
+         * page).  Same if the address is invalid on a higher level. */
+        uint8_t BS3_FAR    *apbEntries[4];
+        /** Alternative view for legacy mode. */
+        struct
+        {
+            X86PTE BS3_FAR *pPte;
+            X86PDE BS3_FAR *pPde;
+            void           *pvUnused2;
+            void           *pvUnused3;
+        } Legacy;
+        /** Alternative view for PAE and Long mode. */
+        struct
+        {
+            X86PTEPAE BS3_FAR *pPte;
+            X86PDEPAE BS3_FAR *pPde;
+            X86PDPE   BS3_FAR *pPdpe;
+            X86PML4E  BS3_FAR *pPml4e;
+        } Pae;
+    } u;
+} BS3PAGINGINFO4ADDR;
+/** Pointer to paging information for and address.   */
+typedef BS3PAGINGINFO4ADDR BS3_FAR *PBS3PAGINGINFO4ADDR;
+
+/**
+ * Queries paging information about the given virtual address.
+ *
+ * @returns VBox status code.
+ * @param   uFlat               The flat address to query information about.
+ * @param   pPgInfo             Where to return the information.
+ */
+BS3_CMN_PROTO_STUB(int, Bs3PagingQueryAddressInfo,(uint64_t uFlat, PBS3PAGINGINFO4ADDR pPgInfo));
 
 
 /** The physical / flat address of the buffer backing the canonical traps.

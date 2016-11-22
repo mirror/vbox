@@ -50,13 +50,13 @@
 #undef Bs3PagingAlias
 #undef bs3PagingGetLegacyPte
 #undef bs3PagingGetPaePte
-#undef Bs3PagingGetPde
 #undef Bs3PagingGetPte
 #undef Bs3PagingInitRootForLM
 #undef Bs3PagingInitRootForPAE
 #undef Bs3PagingInitRootForPP
 #undef Bs3PagingProtect
 #undef Bs3PagingProtectPtr
+#undef Bs3PagingQueryAddressInfo
 #undef Bs3PagingSetupCanonicalTraps
 #undef Bs3PagingUnalias
 #undef Bs3Panic
@@ -145,8 +145,8 @@
 #undef Bs3TrapRmV86SetGate
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapSetJmp
+#undef Bs3TrapSetJmpAndRestore
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
