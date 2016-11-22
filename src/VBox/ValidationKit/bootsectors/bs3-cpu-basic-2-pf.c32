@@ -29,7 +29,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <bs3kit.h>
-#include <iprt/asm-amd64-x86.h>
 
 
 /*********************************************************************************************************************************
@@ -38,6 +37,30 @@
 FNBS3TESTDOMODE bs3CpuBasic2_RaiseXcpt0e_c32;
 
 
+/**
+ * Worker for bs3CpuBasic2_RaiseXcpt0e_c32 that does the actual testing.
+ *
+ * Caller does all the cleaning up.
+ *
+ * @returns Error count.
+ * @param   bMode               The mode to test.
+ * @param   pbTestOrg           Pointer to the actual memory allocation (low
+ *                              memory) where it is identity mapped (virtual
+ *                              address == physical address).  This function
+ *                              will not touch paging structures here.
+ * @param   pbTest              Pointer to the aliased allocation in high
+ *                              memory.  This is aligned on a gigabyte boundrary
+ *                              so that 1GB pages can be tested (later).
+ * @param   cbTest              The size of the memory allocated for testing.
+ * @param   pPgInfo             The paging info for @a pbTest.
+ */
+static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(uint8_t bMode, uint8_t *pbTestOrg, uint8_t *pbTest, uint32_t cbTest,
+                                              PBS3PAGINGINFO4ADDR pPgInfo)
+{
+
+
+    return 0;
+}
 
 
 BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
@@ -47,6 +70,7 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
     uint32_t    cbTest;
     uint8_t    *pbTest;
     uint8_t    *pbAlias;
+    uint8_t     bRet = 1;
     int         rc;
 
     /*
@@ -57,7 +81,7 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
     while ((pvTestUnaligned = Bs3MemAlloc(BS3MEMKIND_FLAT32, cbTestUnaligned)) == NULL)
     {
         cbTestUnaligned >>= 1;
-        if (cbTestUnaligned < _8K)
+        if (cbTestUnaligned <= _8K)
         {
             Bs3TestFailed("Failed to allocate memory to play around with\n");
             return 1;
@@ -78,25 +102,31 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
     /*
      * Alias this memory far away from where our code and data lives.
      */
-    pbAlias = (uint8_t *)UINT32_C(0xa0000000);
+    pbAlias = (uint8_t *)UINT32_C(0x80000000);
     rc = Bs3PagingAlias((uintptr_t)pbAlias, (uintptr_t)pbTest, cbTest, X86_PTE_P | X86_PTE_RW | X86_PTE_US);
     if (RT_SUCCESS(rc))
     {
-        void *pvPte = Bs3PagingGetPte((uintptr_t)pbAlias, NULL);
-        if (pvPte)
+        BS3PAGINGINFO4ADDR PgInfo;
+        rc = Bs3PagingQueryAddressInfo((uintptr_t)pbTest, &PgInfo);
+        if (RT_SUCCESS(rc))
         {
-            Bs3TestPrintf("RaiseXcpt0e_c32:  bMode=%#x/%#x cbTest=%#x pbTest=%p pbAlias=%p pvPte=%p\n",
-                          bMode, g_bBs3CurrentMode, cbTest, pbTest, pbAlias, pvPte);
+            /*
+             * Setup a 16-bit selector for accessing the alias.
+             */
+            // ==> office //
+
+            Bs3TestPrintf("RaiseXcpt0e_c32:  bMode=%#x/%#x cbTest=%#x pbTest=%p pbAlias=%p\n",
+                          bMode, g_bBs3CurrentMode, cbTest, pbTest, pbAlias);
+            bRet = bs3CpuBasic2_RaiseXcpt0eWorker(bMode, pbTest, pbAlias, cbTest, &PgInfo);
 
         }
         else
-            Bs3TestFailed("Bs3PagingGetPte failed!\n");
+            Bs3TestFailedF("Bs3PagingQueryAddressInfo failed: %d\n", rc);
         Bs3PagingUnalias((uintptr_t)pbAlias, cbTest);
     }
     else
         Bs3TestFailedF("Bs3PagingAlias failed! rc=%d\n", rc);
     Bs3MemFree(pvTestUnaligned, cbTestUnaligned);
-    return 0;
+    return bRet;
 }
-
 
