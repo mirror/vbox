@@ -6598,7 +6598,6 @@ DxgkDdiPresentLegacy(
         UINT cbHead = RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_BLT, Blt.DstRects.UpdateRects.aRects[0]);
         Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
         UINT cbRects = (pPresent->SubRectCnt - pPresent->MultipassOffset) * sizeof (RECT);
-        pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
         pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
         Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
         cbCmd -= cbHead;
@@ -6607,18 +6606,22 @@ DxgkDdiPresentLegacy(
         if (cbCmd >= cbRects)
         {
             cbCmd -= cbRects;
-            memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbRects);
+            memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[0], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbRects);
             pBlt->Blt.DstRects.UpdateRects.cRects += cbRects/sizeof (RECT);
+
+            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
         }
         else
         {
             UINT cbFitingRects = (cbCmd/sizeof (RECT)) * sizeof (RECT);
             Assert(cbFitingRects);
-            memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbFitingRects);
+            memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[0], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbFitingRects);
             cbCmd -= cbFitingRects;
             pPresent->MultipassOffset += cbFitingRects/sizeof (RECT);
             pBlt->Blt.DstRects.UpdateRects.cRects += cbFitingRects/sizeof (RECT);
             Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
+
+            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbFitingRects;
             Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
         }
 
