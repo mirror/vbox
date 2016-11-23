@@ -1186,6 +1186,7 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
      * If the filename or path contains short names, we have to get the long
      * path so that we will recognize the DLLs and their location.
      */
+    int rc83Exp = VERR_IGNORED;
     PUNICODE_STRING pLongName = &pImage->Name.UniStr;
     if (RTNtPathFindPossible8dot3Name(pLongName->Buffer))
     {
@@ -1196,8 +1197,12 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
         pTmp->Buffer = (PRTUTF16)(pTmp + 1);
         memcpy(pTmp->Buffer, pLongName->Buffer, pLongName->Length + sizeof(RTUTF16));
 
-        RTNtPathExpand8dot3Path(pTmp, false /*fPathOnly*/);
+        rc83Exp = RTNtPathExpand8dot3Path(pTmp, false /*fPathOnly*/);
+        Assert(rc83Exp == VINF_SUCCESS);
         Assert(pTmp->Buffer[pTmp->Length / sizeof(RTUTF16)] == '\0');
+        if (rc83Exp != VINF_SUCCESS)
+            SUP_DPRINTF(("supHardNtVpNewImage: RTNtPathExpand8dot3Path returns %Rrc for '%ls' (-> '%ls')\n",
+                         rc83Exp, pLongName->Buffer, pTmp->Buffer));
 
         pLongName = pTmp;
     }
@@ -1312,7 +1317,8 @@ static int supHardNtVpNewImage(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PMEM
             return pThis->rcResult = VERR_SUP_VP_SYSFER_DLL; /* Try make sure this is what the user sees first! */
         }
         return supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NOT_KNOWN_DLL_OR_EXE,
-                                   "Unknown image file %ls at %p.", pLongName->Buffer, pMemInfo->BaseAddress);
+                                   "Unknown image file %ls at %p. (rc83Exp=%Rrc)",
+                                   pLongName->Buffer, pMemInfo->BaseAddress, rc83Exp);
     }
 
     /*
