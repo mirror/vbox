@@ -198,8 +198,8 @@ int main()
         memcpy(This.szShortPath, This.szLongPath, cch + 1);
 
         tstTraverse8dot3(&This, cch, cch, 0);
-
-
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "info: cEntries=%u cHits=%u cFirstClassHits=%u\n",
+                      This.cEntries, This.cHits, This.cFirstClassHits);
     }
     else
         RTTestSkipped(hTest, "failed to resolve %SystemDrive%: %Rrc",  rc);
