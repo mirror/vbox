@@ -108,7 +108,7 @@ RTDECL(int) RTNtPathExpand8dot3Path(PUNICODE_STRING pUniStr, bool fPathOnly)
 #endif
 
         NTSTATUS rcNt = NtCreateFile(&hDir,
-                                     FILE_READ_DATA | SYNCHRONIZE,
+                                     FILE_LIST_DIRECTORY | SYNCHRONIZE,
                                      &ObjAttr,
                                      &Ios,
                                      NULL /* Allocation Size*/,
