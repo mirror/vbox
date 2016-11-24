@@ -64,8 +64,8 @@ public:
 
     /** Appends the passed @a pChildItem to the item's list of children. */
     void appendChild(UIApplianceModelItem *pChildItem);
-    /** Returns the child specified by the @a iRow. */
-    UIApplianceModelItem *child(int iRow) const;
+    /** Returns the child specified by the @a iIndex. */
+    UIApplianceModelItem *childItem(int iIndex) const;
 
     /** Returns the row of the item in the parent. */
     int row() const;
@@ -230,9 +230,9 @@ void UIApplianceModelItem::appendChild(UIApplianceModelItem *pChildItem)
     m_childItems << pChildItem;
 }
 
-UIApplianceModelItem *UIApplianceModelItem::child(int iRow) const
+UIApplianceModelItem *UIApplianceModelItem::childItem(int iIndex) const
 {
-    return m_childItems.value(iRow);
+    return m_childItems.value(iIndex);
 }
 
 int UIApplianceModelItem::row() const
@@ -251,7 +251,7 @@ int UIApplianceModelItem::childCount() const
 void UIApplianceModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
 {
     for (int i = 0; i < childCount(); ++i)
-        child(i)->putBack(finalStates, finalValues, finalExtraValues);
+        childItem(i)->putBack(finalStates, finalValues, finalExtraValues);
 }
 
 
@@ -975,7 +975,7 @@ QModelIndex UIApplianceModel::index(int iRow, int iColumn, const QModelIndex &pa
         return QModelIndex();
 
     UIApplianceModelItem *pItem = !parentIdx.isValid() ? m_pRootItem :
-                                  static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->child(iRow);
+                                  static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->childItem(iRow);
 
     return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
@@ -1073,7 +1073,7 @@ void UIApplianceModel::restoreDefaults(const QModelIndex &parentIdx /* = QModelI
 
     for (int i = 0; i < pParentItem->childCount(); ++i)
     {
-        pParentItem->child(i)->restoreDefaults();
+        pParentItem->childItem(i)->restoreDefaults();
         restoreDefaults(index(i, 0, parentIdx));
     }
     emit dataChanged(index(0, 0, parentIdx), index(pParentItem->childCount()-1, 0, parentIdx));
