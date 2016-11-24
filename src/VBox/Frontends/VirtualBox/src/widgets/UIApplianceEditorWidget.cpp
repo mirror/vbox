@@ -51,8 +51,10 @@ class UIApplianceModelItem
 {
 public:
 
-    /** Constructs item with specified @a iNumber, @a enmType and @a pParentItem. */
-    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem = 0);
+    /** Constructs root item with specified @a iNumber, @a enmType and @a pParent. */
+    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QTreeView *pParent);
+    /** Constructs non-root item with specified @a iNumber, @a enmType and @a pParentItem. */
+    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem);
     /** Destructs item. */
     virtual ~UIApplianceModelItem();
 
@@ -212,7 +214,14 @@ private:
 *   Class UIApplianceModelItem implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem /* = 0 */)
+UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QTreeView *pParent)
+    : m_iNumber(iNumber)
+    , m_enmType(enmType)
+    , m_pParentItem(0)
+{
+}
+
+UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem)
     : m_iNumber(iNumber)
     , m_enmType(enmType)
     , m_pParentItem(pParentItem)
@@ -898,10 +907,10 @@ void UIVirtualHardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString>
 *   Class UIApplianceModel implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent /* = 0 */)
+UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QTreeView *pParent)
     : QAbstractItemModel(pParent)
+    , m_pRootItem(new UIApplianceModelItem(0, ApplianceModelItemType_Root, pParent))
 {
-    m_pRootItem = new UIApplianceModelItem(0, ApplianceModelItemType_Root);
     for (int iVSDIndex = 0; iVSDIndex < aVSDs.size(); ++iVSDIndex)
     {
         CVirtualSystemDescription vsd = aVSDs[iVSDIndex];

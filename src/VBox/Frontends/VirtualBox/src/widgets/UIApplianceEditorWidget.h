@@ -66,7 +66,7 @@ public:
 
     /** Constructs the Appliance model passing @a pParent to the base-class.
       * @param  aVSDs  Brings the Virtual System descriptions. */
-    UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QObject *pParent = 0);
+    UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QTreeView *pParent);
     /** Destructs the Appliance model. */
     ~UIApplianceModel();
 

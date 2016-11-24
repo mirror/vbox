@@ -85,7 +85,7 @@ void UIApplianceExportEditorWidget::populate()
 
     QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-    m_pModel = new UIApplianceModel(vsds, this);
+    m_pModel = new UIApplianceModel(vsds, m_pTreeViewSettings);
 
     ExportSortProxyModel *pProxy = new ExportSortProxyModel(this);
     pProxy->setSourceModel(m_pModel);

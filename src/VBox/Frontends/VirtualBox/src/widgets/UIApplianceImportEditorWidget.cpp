@@ -91,7 +91,7 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
 
                         QVector<CVirtualSystemDescription> vsds = m_pAppliance->GetVirtualSystemDescriptions();
 
-                        m_pModel = new UIApplianceModel(vsds, this);
+                        m_pModel = new UIApplianceModel(vsds, m_pTreeViewSettings);
 
                         ImportSortProxyModel *pProxy = new ImportSortProxyModel(this);
                         pProxy->setSourceModel(m_pModel);
