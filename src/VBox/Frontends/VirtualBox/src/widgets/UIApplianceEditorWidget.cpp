@@ -964,23 +964,20 @@ UIApplianceModel::~UIApplianceModel()
         delete m_pRootItem;
 }
 
+QModelIndex UIApplianceModel::root() const
+{
+    return index(0, 0);
+}
+
 QModelIndex UIApplianceModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
     if (!hasIndex(iRow, iColumn, parentIdx))
         return QModelIndex();
 
-    UIApplianceModelItem *pParentItem;
+    UIApplianceModelItem *pItem = !parentIdx.isValid() ? m_pRootItem :
+                                  static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->child(iRow);
 
-    if (!parentIdx.isValid())
-        pParentItem = m_pRootItem;
-    else
-        pParentItem = static_cast<UIApplianceModelItem*>(parentIdx.internalPointer());
-
-    UIApplianceModelItem *pChildItem = pParentItem->child(iRow);
-    if (pChildItem)
-        return createIndex(iRow, iColumn, pChildItem);
-    else
-        return QModelIndex();
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
 
 QModelIndex UIApplianceModel::parent(const QModelIndex &idx) const
@@ -988,35 +985,25 @@ QModelIndex UIApplianceModel::parent(const QModelIndex &idx) const
     if (!idx.isValid())
         return QModelIndex();
 
-    UIApplianceModelItem *pChildItem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
-    UIApplianceModelItem *pParentItem = pChildItem->parent();
+    UIApplianceModelItem *pItem = static_cast<UIApplianceModelItem*>(idx.internalPointer());
+    UIApplianceModelItem *pParentItem = pItem->parent();
 
-    if (pParentItem == m_pRootItem)
+    if (pParentItem)
+        return createIndex(pParentItem->row(), 0, pParentItem);
+    else
         return QModelIndex();
-
-    return createIndex(pParentItem->row(), 0, pParentItem);
 }
 
 int UIApplianceModel::rowCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
-    UIApplianceModelItem *pParentItem;
-    if (parentIdx.column() > 0)
-        return 0;
-
-    if (!parentIdx.isValid())
-        pParentItem = m_pRootItem;
-    else
-        pParentItem = static_cast<UIApplianceModelItem*>(parentIdx.internalPointer());
-
-    return pParentItem->childCount();
+    return !parentIdx.isValid() ? 1 /* only root item has invalid parent */ :
+           static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->childCount();
 }
 
 int UIApplianceModel::columnCount(const QModelIndex &parentIdx /* = QModelIndex() */) const
 {
-    if (parentIdx.isValid())
-        return static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->columnCount();
-    else
-        return m_pRootItem->columnCount();
+    return !parentIdx.isValid() ? m_pRootItem->columnCount() :
+           static_cast<UIApplianceModelItem*>(parentIdx.internalPointer())->columnCount();
 }
 
 Qt::ItemFlags UIApplianceModel::flags(const QModelIndex &idx) const
@@ -1325,7 +1312,6 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                 m_pTreeViewSettings = new QTreeView;
                 {
                     /* Configure tree-view: */
-                    m_pTreeViewSettings->setRootIsDecorated(false);
                     m_pTreeViewSettings->setAlternatingRowColors(true);
                     m_pTreeViewSettings->setAllColumnsShowFocus(true);
                     m_pTreeViewSettings->header()->setStretchLastSection(true);

@@ -70,6 +70,8 @@ public:
     /** Destructs the Appliance model. */
     ~UIApplianceModel();
 
+    /** Returns the root index in the model. */
+    virtual QModelIndex root() const;
     /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
     virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const /* override */;
     /** Returns the parent of the model item with the given @a idx. */

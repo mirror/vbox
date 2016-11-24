@@ -107,6 +107,9 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
                            also. */
                         m_pTreeViewSettings->setColumnHidden(ApplianceViewSection_OriginalValue, true);
                         m_pTreeViewSettings->expandAll();
+                        /* Set model root index and make it current: */
+                        m_pTreeViewSettings->setRootIndex(pProxy->mapFromSource(m_pModel->root()));
+                        m_pTreeViewSettings->setCurrentIndex(pProxy->mapFromSource(m_pModel->root()));
 
                         /* Check for warnings & if there are one display them. */
                         bool fWarningsEnabled = false;
