@@ -23,6 +23,7 @@
 # include <QAccessibleWidget>
 # include <QMouseEvent>
 # include <QPainter>
+# include <QSortFilterProxyModel>
 
 /* GUI includes: */
 # include "QITreeView.h"
@@ -243,13 +244,20 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
         // visible children like they are a part of the list, not tree.
         // printf("Invalid index: %d\n", iIndex);
 
+        // Make sure model is alive:
+        AssertPtrReturn(tree()->model(), 0);
+
         // Take into account we also have header with 'column count' indexes,
         // so we should start enumerating tree indexes since 'column count'.
         const int iColumnCount = tree()->model()->columnCount();
         int iCurrentIndex = iColumnCount;
 
+        // Check whether we have proxy model set or usual one otherwise:
+        QSortFilterProxyModel *pProxyModel = qobject_cast<QSortFilterProxyModel*>(tree()->model());
+
         // Set iterator to root-index initially:
-        const QModelIndex root = tree()->rootIndex();
+        const QModelIndex root = pProxyModel ? pProxyModel->mapToSource(tree()->rootIndex()) :
+                                 tree()->rootIndex();
         QModelIndex index = root;
 
         // But if root-index has child, go deeper:
@@ -261,7 +269,10 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
         {
             ++iCurrentIndex;
             if (iCurrentIndex % iColumnCount == 0)
-                index = tree()->indexBelow(index);
+            {
+                index = pProxyModel ? pProxyModel->mapToSource(tree()->indexBelow(pProxyModel->mapFromSource(index))) :
+                                      tree()->indexBelow(index);
+            }
         }
 
         // Return what we found:
