@@ -555,6 +555,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/UIPortForwardingTable.cpp \
