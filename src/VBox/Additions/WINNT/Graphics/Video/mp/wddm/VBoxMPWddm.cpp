@@ -6690,7 +6690,6 @@ DxgkDdiPresentLegacy(
         UINT cbHead = RT_OFFSETOF(VBOXWDDM_DMA_PRIVATEDATA_CLRFILL, ClrFill.Rects.aRects[0]);
         Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
         UINT cbRects = (pPresent->SubRectCnt - pPresent->MultipassOffset) * sizeof (RECT);
-        pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
         pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + VBOXWDDM_DUMMY_DMABUFFER_SIZE;
         Assert(pPresent->DmaSize >= VBOXWDDM_DUMMY_DMABUFFER_SIZE);
         cbCmd -= cbHead;
@@ -6701,16 +6700,20 @@ DxgkDdiPresentLegacy(
             cbCmd -= cbRects;
             memcpy(&pCF->ClrFill.Rects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbRects);
             pCF->ClrFill.Rects.cRects += cbRects/sizeof (RECT);
+
+            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbRects;
         }
         else
         {
             UINT cbFitingRects = (cbCmd/sizeof (RECT)) * sizeof (RECT);
             Assert(cbFitingRects);
-            memcpy(&pCF->ClrFill.Rects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbFitingRects);
+            memcpy(&pCF->ClrFill.Rects.aRects[0], pPresent->pDstSubRects, cbFitingRects);
             cbCmd -= cbFitingRects;
             pPresent->MultipassOffset += cbFitingRects/sizeof (RECT);
             pCF->ClrFill.Rects.cRects += cbFitingRects/sizeof (RECT);
             Assert(pPresent->SubRectCnt > pPresent->MultipassOffset);
+
+            pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + cbHead + cbFitingRects;
             Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
         }
 
