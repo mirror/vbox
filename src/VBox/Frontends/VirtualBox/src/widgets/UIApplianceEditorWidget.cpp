@@ -47,7 +47,7 @@
 
 /** Describes the interface of Appliance item.
   * Represented as a tree structure with a parent & multiple children. */
-class UIApplianceModelItem
+class UIApplianceModelItem : public QITreeViewItem
 {
 public:
 
@@ -67,15 +67,18 @@ public:
     /** Appends the passed @a pChildItem to the item's list of children. */
     void appendChild(UIApplianceModelItem *pChildItem);
     /** Returns the child specified by the @a iIndex. */
-    UIApplianceModelItem *childItem(int iIndex) const;
+    virtual UIApplianceModelItem *childItem(int iIndex) const /* override */;
 
     /** Returns the row of the item in the parent. */
     int row() const;
 
     /** Returns the number of children. */
-    int childCount() const;
+    virtual int childCount() const /* override */;
     /** Returns the number of columns. */
     int columnCount() const { return 3; }
+
+    /** Returns the item text. */
+    virtual QString text() const /* override */;
 
     /** Returns the item flags for the given @a iColumn. */
     virtual Qt::ItemFlags itemFlags(int /* iColumn */) const { return 0; }
@@ -214,15 +217,17 @@ private:
 *   Class UIApplianceModelItem implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QITreeView * /* pParent */)
-    : m_iNumber(iNumber)
+UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QITreeView *pParent)
+    : QITreeViewItem(pParent)
+    , m_iNumber(iNumber)
     , m_enmType(enmType)
     , m_pParentItem(0)
 {
 }
 
 UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem)
-    : m_iNumber(iNumber)
+    : QITreeViewItem(pParentItem)
+    , m_iNumber(iNumber)
     , m_enmType(enmType)
     , m_pParentItem(pParentItem)
 {
@@ -255,6 +260,11 @@ int UIApplianceModelItem::row() const
 int UIApplianceModelItem::childCount() const
 {
     return m_childItems.count();
+}
+
+QString UIApplianceModelItem::text() const
+{
+    return data(ApplianceViewSection_Description, Qt::DisplayRole).toString();
 }
 
 void UIApplianceModelItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues)
