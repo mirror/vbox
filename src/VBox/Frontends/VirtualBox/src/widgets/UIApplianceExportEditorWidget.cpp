@@ -21,9 +21,9 @@
 
 /* Qt includes: */
 # include <QTextEdit>
-# include <QTreeView>
 
 /* GUI includes: */
+# include "QITreeView.h"
 # include "UIApplianceExportEditorWidget.h"
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"

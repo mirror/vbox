@@ -28,9 +28,9 @@
 # include <QLineEdit>
 # include <QSpinBox>
 # include <QTextEdit>
-# include <QTreeView>
 
 /* GUI includes: */
+# include "QITreeView.h"
 # include "VBoxGlobal.h"
 # include "VBoxOSTypeSelectorButton.h"
 # include "UIApplianceEditorWidget.h"
@@ -52,7 +52,7 @@ class UIApplianceModelItem
 public:
 
     /** Constructs root item with specified @a iNumber, @a enmType and @a pParent. */
-    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QTreeView *pParent);
+    UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QITreeView *pParent);
     /** Constructs non-root item with specified @a iNumber, @a enmType and @a pParentItem. */
     UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, UIApplianceModelItem *pParentItem);
     /** Destructs item. */
@@ -214,7 +214,7 @@ private:
 *   Class UIApplianceModelItem implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QTreeView *pParent)
+UIApplianceModelItem::UIApplianceModelItem(int iNumber, ApplianceModelItemType enmType, QITreeView * /* pParent */)
     : m_iNumber(iNumber)
     , m_enmType(enmType)
     , m_pParentItem(0)
@@ -907,7 +907,7 @@ void UIVirtualHardwareItem::putBack(QVector<BOOL> &finalStates, QVector<QString>
 *   Class UIApplianceModel implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QTreeView *pParent)
+UIApplianceModel::UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QITreeView *pParent)
     : QAbstractItemModel(pParent)
     , m_pRootItem(new UIApplianceModelItem(0, ApplianceModelItemType_Root, pParent))
 {
@@ -1318,7 +1318,7 @@ UIApplianceEditorWidget::UIApplianceEditorWidget(QWidget *pParent /* = 0 */)
                 pLayoutInformation->setContentsMargins(0, 0, 0, 0);
 
                 /* Create tree-view: */
-                m_pTreeViewSettings = new QTreeView;
+                m_pTreeViewSettings = new QITreeView;
                 {
                     /* Configure tree-view: */
                     m_pTreeViewSettings->setAlternatingRowColors(true);
@@ -1399,6 +1399,9 @@ void UIApplianceEditorWidget::restoreDefaults()
 
 void UIApplianceEditorWidget::retranslateUi()
 {
+    /* Translate information pane tree-view: */
+    m_pTreeViewSettings->setWhatsThis(tr("Lists all the Virtual Systems current Appliance have"));
+
     /* Translate information pane check-box: */
     m_pCheckBoxReinitMACs->setText(tr("&Reinitialize the MAC address of all network cards"));
     m_pCheckBoxReinitMACs->setToolTip(tr("When checked a new unique MAC address will assigned to all configured network cards."));

@@ -22,9 +22,9 @@
 /* Qt includes: */
 # include <QCheckBox>
 # include <QTextEdit>
-# include <QTreeView>
 
 /* GUI includes: */
+# include "QITreeView.h"
 # include "UIApplianceImportEditorWidget.h"
 # include "VBoxGlobal.h"
 # include "UIMessageCenter.h"

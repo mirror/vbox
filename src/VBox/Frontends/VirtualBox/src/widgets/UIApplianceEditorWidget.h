@@ -36,7 +36,7 @@ class UIApplianceModelItem;
 class QCheckBox;
 class QLabel;
 class QTextEdit;
-class QTreeView;
+class QITreeView;
 
 
 /** Appliance tree-view section types. */
@@ -66,7 +66,7 @@ public:
 
     /** Constructs the Appliance model passing @a pParent to the base-class.
       * @param  aVSDs  Brings the Virtual System descriptions. */
-    UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QTreeView *pParent);
+    UIApplianceModel(QVector<CVirtualSystemDescription>& aVSDs, QITreeView *pParent);
     /** Destructs the Appliance model. */
     ~UIApplianceModel();
 
@@ -218,7 +218,7 @@ protected:
     /** Holds the information pane instance. */
     QWidget   *m_pPaneInformation;
     /** Holds the settings tree-view instance. */
-    QTreeView *m_pTreeViewSettings;
+    QITreeView *m_pTreeViewSettings;
     /** Holds the 'reinit MACs' check-box instance. */
     QCheckBox *m_pCheckBoxReinitMACs;
 
