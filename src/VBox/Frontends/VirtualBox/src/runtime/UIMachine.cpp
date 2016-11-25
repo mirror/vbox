@@ -155,6 +155,7 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualState)
         {
             m_pMachineLogic->cleanup();
             UIMachineLogic::destroy(m_pMachineLogic);
+            m_pMachineLogic = 0;
         }
 
         /* Set the new machine-logic as current one: */
@@ -277,10 +278,11 @@ void UIMachine::cleanupMachineLogic()
     }
 
     /* Destroy machine-logic if exists: */
-    if (machineLogic())
+    if (m_pMachineLogic)
     {
         m_pMachineLogic->cleanup();
         UIMachineLogic::destroy(m_pMachineLogic);
+        m_pMachineLogic = 0;
     }
 }
 
