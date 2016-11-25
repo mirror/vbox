@@ -129,6 +129,9 @@ public:
         , m_iParentID(iParentID)
     {}
 
+    /** Destructs selector item. */
+    virtual ~UISelectorItem() {}
+
     /** Returns the item icon. */
     QIcon icon() const { return m_icon; }
     /** Returns the item text. */
