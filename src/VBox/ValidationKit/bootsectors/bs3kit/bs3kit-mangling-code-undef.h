@@ -97,6 +97,8 @@
 #undef Bs3SelRealModeCodeToProtMode
 #undef Bs3SelRealModeDataToFlat
 #undef Bs3SelRealModeDataToProtFar16
+#undef Bs3SelSetup16BitCode
+#undef Bs3SelSetup16BitData
 #undef Bs3Shutdown
 #undef Bs3SlabAlloc
 #undef Bs3SlabAllocEx

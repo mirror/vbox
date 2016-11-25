@@ -1847,6 +1847,23 @@ DECLINLINE(RTCCUINTXREG) Bs3SelPtrToFlat(void BS3_FAR *pv)
 #endif
 }
 
+/**
+ * Sets up a 16-bit read-write data selector with ring-3 access and 64KB limit.
+ *
+ * @param   pDesc       Pointer to the descriptor table entry.
+ * @param   uBaseAddr   The base address of the descriptor.
+ */
+BS3_CMN_PROTO_FARSTUB(8, void, Bs3SelSetup16BitData,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr));
+
+/**
+ * Sets up a 16-bit execute-read selector with a 64KB limit.
+ *
+ * @param   pDesc       Pointer to the descriptor table entry.
+ * @param   uBaseAddr   The base address of the descriptor.
+ * @param   bDpl        The descriptor privilege level.
+ */
+BS3_CMN_PROTO_FARSTUB(10, void, Bs3SelSetup16BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint8_t bDpl));
+
 
 /**
  * Slab control structure list head.
