@@ -32,9 +32,177 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+typedef void BS3_CALL FNBS3CPUBASIC2PFSNIPPET(void);
+
+typedef struct FNBS3CPUBASIC2PFTSTCODE
+{
+    FNBS3CPUBASIC2PFSNIPPET    *pfn;
+    uint8_t                     offUd2;
+    uint8_t                     cbTmpl;
+} FNBS3CPUBASIC2PFTSTCODE;
+
+typedef struct BS3CPUBASIC2PFTTSTCMNMODE
+{
+    uint8_t                 bMode;
+    FNBS3CPUBASIC2PFTSTCODE ExecTmpl;
+    FNBS3CPUBASIC2PFTSTCODE MovLoad;
+    FNBS3CPUBASIC2PFTSTCODE MovStore;
+    FNBS3CPUBASIC2PFTSTCODE Xchg;
+    FNBS3CPUBASIC2PFTSTCODE CmpXchg;
+} BS3CPUBASIC2PFTTSTCMNMODE;
+typedef BS3CPUBASIC2PFTTSTCMNMODE const *PCBS3CPUBASIC2PFTTSTCMNMODE;
+
+
+typedef struct BS3CPUBASIC2PFSTATE
+{
+    /** The mode we're currently testing. */
+    uint8_t                     bMode;
+    /** The common mode functions. */
+    PCBS3CPUBASIC2PFTTSTCMNMODE pCmnMode;
+    /** Pointer to the test area (alias). */
+    uint8_t                    *pbTest;
+    /** Pointer to the orignal test area mapping. */
+    uint8_t                    *pbOrgTest;
+    /** The size of the test area (at least two pages). */
+    uint32_t                    cbTest;
+    /** 16-bit data selector for pbTest. */
+    uint16_t                    uSel16TestData;
+    /** 16-bit code selector for pbTest. */
+    uint16_t                    uSel16TestCode;
+    /** Test paging information for pbTest. */
+    BS3PAGINGINFO4ADDR          PgInfo;
+
+    /** Set if we can use the INVLPG instruction. */
+    bool                        fUseInvlPg;
+
+    /** Trap context frame. */
+    BS3TRAPFRAME                TrapCtx;
+
+} BS3CPUBASIC2PFSTATE;
+/** Pointer to state for the \#PF test. */
+typedef BS3CPUBASIC2PFSTATE *PBS3CPUBASIC2PFSTATE;
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 FNBS3TESTDOMODE bs3CpuBasic2_RaiseXcpt0e_c32;
+
+/* bs3-cpu-basic-2-asm.asm: */
+void BS3_CALL bs3CpuBasic2_Store_mov_c32(void *pvDst, uint32_t uValue, uint32_t uOld);
+void BS3_CALL bs3CpuBasic2_Store_xchg_c32(void *pvDst, uint32_t uValue, uint32_t uOld);
+void BS3_CALL bs3CpuBasic2_Store_cmpxchg_c32(void *pvDst, uint32_t uValue, uint32_t uOld);
+
+
+/* bs3-cpu-basic-2-template.mac: */
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_RaisePF_ExecTmpl_c16;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c16;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c16;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16;
+
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_RaisePF_ExecTmpl_c32;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c32;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c32;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c32;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c32;
+
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_RaisePF_ExecTmpl_c64;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c64;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c64;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c64;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c64;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Page table access functions. */
+static const struct
+{
+    const char     *pszStore;
+    void (BS3_CALL *pfnStore)(void *pvDst, uint32_t uValue, uint32_t uOld);
+} g_aStoreMethods[] =
+{
+    { "mov",        bs3CpuBasic2_Store_mov_c32 },
+    { "xchg",       bs3CpuBasic2_Store_xchg_c32 },
+    { "cmpxchg",    bs3CpuBasic2_Store_cmpxchg_c32 },
+};
+
+
+static const BS3CPUBASIC2PFTTSTCMNMODE g_aCmnModes[] =
+{
+    {
+        BS3_MODE_CODE_16,
+        {   bs3CpuBasic2_RaisePF_ExecTmpl_c16,      0, 3 },
+        {   bs3CpuBasic2_mov_ax_ds_bx__ud2_c16,     2 },
+        {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c16,     2 },
+        {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16,    2 },
+        {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16, 3 },
+    },
+    {
+        BS3_MODE_CODE_32,
+        {   bs3CpuBasic2_RaisePF_ExecTmpl_c32,      0, 3  },
+        {   bs3CpuBasic2_mov_ax_ds_bx__ud2_c32,     2 },
+        {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c32,     2 },
+        {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c32,    2 },
+        {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c32, 3 },
+    },
+    {
+        BS3_MODE_CODE_64,
+        {   bs3CpuBasic2_RaisePF_ExecTmpl_c64,      0, 3  },
+        {   bs3CpuBasic2_mov_ax_ds_bx__ud2_c64,     2 + 1 },
+        {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c64,     2 + 1 },
+        {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c64,    2 + 1 },
+        {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c64, 3 + 1 },
+    },
+    {
+        BS3_MODE_CODE_V86,
+        {   bs3CpuBasic2_RaisePF_ExecTmpl_c16,      0, 3  },
+        {   bs3CpuBasic2_mov_ax_ds_bx__ud2_c16,     2 },
+        {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c16,     2 },
+        {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16,    2 },
+        {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16, 3 },
+    },
+};
+
+
+static void bs3CpuBasic2Pf_DoExecSubTest(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t uXcpt, uint8_t uPfErrCd,
+                                         unsigned iRing)
+{
+    uint8_t *pbOrgTest = pThis->pbOrgTest;
+    unsigned off;
+    for (off = X86_PAGE_SIZE - 2; off < X86_PAGE_SIZE + 2; off++)
+    {
+        pbOrgTest[off + 0] = X86_OP_PRF_SIZE_ADDR;
+        pbOrgTest[off + 1] = X86_OP_PRF_SIZE_OP;
+        pbOrgTest[off + 2] = 0x90; /* NOP */
+        pbOrgTest[off + 3] = 0x0f; /* UD2 */
+        pbOrgTest[off + 4] = 0x0b;
+        pbOrgTest[off + 5] = 0xeb; /* JMP $-4 */
+        pbOrgTest[off + 6] = 0xfc;
+        switch (pThis->bMode & BS3_MODE_CODE_MASK)
+        {
+            default:
+                pCtx->rip.u = (uintptr_t)&pThis->pbTest[off];
+                break;
+            case BS3_MODE_CODE_16:
+                Bs3SelSetup16BitCode(&Bs3GdteSpare01, (uintptr_t)pThis->pbTest, iRing);
+                pCtx->rip.u = off;
+                pCtx->cs    = BS3_SEL_SPARE_01;
+                break;
+            case BS3_MODE_CODE_V86:
+                /** @todo fix me.   */
+                return;
+        }
+
+        Bs3TrapSetJmpAndRestore(pCtx, &pThis->TrapCtx);
+        //bs3CpuBasic2_CompareUdCtx(&TrapCtx, &CtxUdExpected);
+
+    }
+}
 
 
 /**
@@ -43,20 +211,52 @@ FNBS3TESTDOMODE bs3CpuBasic2_RaiseXcpt0e_c32;
  * Caller does all the cleaning up.
  *
  * @returns Error count.
- * @param   bMode               The mode to test.
- * @param   pbTestOrg           Pointer to the actual memory allocation (low
- *                              memory) where it is identity mapped (virtual
- *                              address == physical address).  This function
- *                              will not touch paging structures here.
- * @param   pbTest              Pointer to the aliased allocation in high
- *                              memory.  This is aligned on a gigabyte boundrary
- *                              so that 1GB pages can be tested (later).
- * @param   cbTest              The size of the memory allocated for testing.
- * @param   pPgInfo             The paging info for @a pbTest.
+ * @param   pThis       Test state data.
  */
-static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(uint8_t bMode, uint8_t *pbTestOrg, uint8_t *pbTest, uint32_t cbTest,
-                                              PBS3PAGINGINFO4ADDR pPgInfo)
+static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThis)
 {
+    unsigned            iRing;
+    BS3REGCTX           aCtxts[4];
+
+    /* paranoia: Touch the various big stack structures to ensure the compiler has allocated stack for them. */
+    for (iRing = 0; iRing < RT_ELEMENTS(aCtxts); iRing++)
+        Bs3MemZero(&aCtxts[iRing], sizeof(aCtxts[iRing]));
+
+    /*
+     * Set up a few contexts for testing this stuff.
+     */
+    Bs3RegCtxSaveEx(&aCtxts[0], pThis->bMode, 2048);
+    for (iRing = 1; iRing < 4; iRing++)
+    {
+        aCtxts[iRing] = aCtxts[0];
+        Bs3RegCtxConvertToRingX(&aCtxts[iRing], iRing);
+    }
+
+    if (!BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+    {
+        for (iRing = 0; iRing < 4; iRing++)
+            aCtxts[iRing].rbx.u = (uintptr_t)pThis->pbTest;
+    }
+    else
+    {
+        for (iRing = 0; iRing < 4; iRing++)
+        {
+            aCtxts[iRing].ds    = pThis->uSel16TestData;
+            aCtxts[iRing].rbx.u = 0;
+        }
+    }
+
+
+    /*
+     * Check basic operation.
+     */
+    for (iRing = 0; iRing < 4; iRing++)
+    {
+        /* we can execute the test page. */
+        bs3CpuBasic2Pf_DoExecSubTest(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, iRing);
+    }
+
+
 
 
     return 0;
@@ -65,13 +265,21 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(uint8_t bMode, uint8_t *pbTestOrg,
 
 BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
 {
-    void       *pvTestUnaligned;
-    uint32_t    cbTestUnaligned = _8M;
-    uint32_t    cbTest;
-    uint8_t    *pbTest;
-    uint8_t    *pbAlias;
-    uint8_t     bRet = 1;
-    int         rc;
+    void               *pvTestUnaligned;
+    uint32_t            cbTestUnaligned = _8M;
+    uint8_t             bRet = 1;
+    int                 rc;
+    BS3CPUBASIC2PFSTATE State;
+
+    /*
+     * Initalize the state data.
+     */
+    Bs3MemZero(&State, sizeof(State));
+    State.bMode = bMode;
+    State.pCmnMode = &g_aCmnModes[0];
+    while (State.pCmnMode->bMode != (bMode & BS3_MODE_CODE_MASK))
+        State.pCmnMode++;
+    State.fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486;
 
     /*
      * Allocate a some memory we can play around with, then carve a size aligned
@@ -90,39 +298,39 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
 
     if ((uintptr_t)pvTestUnaligned & (cbTestUnaligned - 1))
     {
-        cbTest = cbTestUnaligned >> 1;
-        pbTest = (uint8_t *)(((uintptr_t)pvTestUnaligned + cbTest - 1) & ~(cbTest - 1));
+        State.cbTest    = cbTestUnaligned >> 1;
+        State.pbOrgTest = (uint8_t *)(((uintptr_t)pvTestUnaligned + State.cbTest - 1) & ~(State.cbTest - 1));
     }
     else
     {
-        pbTest = pvTestUnaligned;
-        cbTest = cbTestUnaligned;
+        State.pbOrgTest = pvTestUnaligned;
+        State.cbTest    = cbTestUnaligned;
     }
 
     /*
      * Alias this memory far away from where our code and data lives.
      */
-    pbAlias = (uint8_t *)UINT32_C(0x80000000);
-    rc = Bs3PagingAlias((uintptr_t)pbAlias, (uintptr_t)pbTest, cbTest, X86_PTE_P | X86_PTE_RW | X86_PTE_US);
+    State.pbTest = (uint8_t *)UINT32_C(0x80000000);
+    rc = Bs3PagingAlias((uintptr_t)State.pbTest, (uintptr_t)State.pbOrgTest, State.cbTest, X86_PTE_P | X86_PTE_RW | X86_PTE_US);
     if (RT_SUCCESS(rc))
     {
-        BS3PAGINGINFO4ADDR PgInfo;
-        rc = Bs3PagingQueryAddressInfo((uintptr_t)pbTest, &PgInfo);
+        rc = Bs3PagingQueryAddressInfo((uintptr_t)State.pbTest, &State.PgInfo);
         if (RT_SUCCESS(rc))
         {
             /*
              * Setup a 16-bit selector for accessing the alias.
              */
-            // ==> office //
+            Bs3SelSetup16BitData(&Bs3GdteSpare00, (uintptr_t)State.pbTest);
+            State.uSel16TestData = BS3_SEL_SPARE_00 | 3;
 
-            Bs3TestPrintf("RaiseXcpt0e_c32:  bMode=%#x/%#x cbTest=%#x pbTest=%p pbAlias=%p\n",
-                          bMode, g_bBs3CurrentMode, cbTest, pbTest, pbAlias);
-            bRet = bs3CpuBasic2_RaiseXcpt0eWorker(bMode, pbTest, pbAlias, cbTest, &PgInfo);
+            //Bs3TestPrintf("RaiseXcpt0e_c32:  bMode=%#x/%#x cbTest=%#x pbTest=%p pbAlias=%p\n",
+            //              bMode, g_bBs3CurrentMode, cbTest, pbTest, pbAlias);
 
+            bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State);
         }
         else
             Bs3TestFailedF("Bs3PagingQueryAddressInfo failed: %d\n", rc);
-        Bs3PagingUnalias((uintptr_t)pbAlias, cbTest);
+        Bs3PagingUnalias((uintptr_t)State.pbTest, State.cbTest);
     }
     else
         Bs3TestFailedF("Bs3PagingAlias failed! rc=%d\n", rc);
