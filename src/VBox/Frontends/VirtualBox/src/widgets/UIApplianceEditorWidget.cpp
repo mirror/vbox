@@ -158,13 +158,13 @@ class UIVirtualHardwareItem : public UIApplianceModelItem
 public:
 
     /** Constructs item passing @a iNumber and @a pParentItem to the base-class.
-      * @param  enmType              Brings the Virtual System Description type.
+      * @param  enmVSDType           Brings the Virtual System Description type.
       * @param  strRef               Brings something totally useless.
       * @param  strOrigValue         Brings the original value.
       * @param  strConfigValue       Brings the configuration value.
       * @param  strExtraConfigValue  Brings the extra configuration value. */
     UIVirtualHardwareItem(int iNumber,
-                          KVirtualSystemDescriptionType enmType,
+                          KVirtualSystemDescriptionType enmVSDType,
                           const QString &strRef,
                           const QString &strOrigValue,
                           const QString &strConfigValue,
@@ -198,7 +198,7 @@ public:
 private:
 
     /** Holds the Virtual System Description type. */
-    KVirtualSystemDescriptionType  m_enmType;
+    KVirtualSystemDescriptionType  m_enmVSDType;
     /** Holds something totally useless. */
     QString                        m_strRef;
     /** Holds the original value. */
@@ -334,14 +334,14 @@ void UIVirtualSystemItem::putBack(QVector<BOOL> &finalStates, QVector<QString> &
 *********************************************************************************************************************************/
 
 UIVirtualHardwareItem::UIVirtualHardwareItem(int iNumber,
-                                             KVirtualSystemDescriptionType enmType,
+                                             KVirtualSystemDescriptionType enmVSDType,
                                              const QString &strRef,
                                              const QString &aOrigValue,
                                              const QString &strConfigValue,
                                              const QString &strExtraConfigValue,
                                              UIApplianceModelItem *pParentItem)
     : UIApplianceModelItem(iNumber, ApplianceModelItemType_VirtualHardware, pParentItem)
-    , m_enmType(enmType)
+    , m_enmVSDType(enmVSDType)
     , m_strRef(strRef)
     , m_strOrigValue(aOrigValue)
     , m_strConfigValue(strConfigValue)
@@ -358,28 +358,28 @@ Qt::ItemFlags UIVirtualHardwareItem::itemFlags(int iColumn) const
     if (iColumn == ApplianceViewSection_ConfigValue)
     {
         /* Some items are checkable */
-        if (m_enmType == KVirtualSystemDescriptionType_Floppy ||
-            m_enmType == KVirtualSystemDescriptionType_CDROM ||
-            m_enmType == KVirtualSystemDescriptionType_USBController ||
-            m_enmType == KVirtualSystemDescriptionType_SoundCard ||
-            m_enmType == KVirtualSystemDescriptionType_NetworkAdapter)
+        if (m_enmVSDType == KVirtualSystemDescriptionType_Floppy ||
+            m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
+            m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
+            m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
+            m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter)
             enmFlags |= Qt::ItemIsUserCheckable;
         /* Some items are editable */
-        if ((m_enmType == KVirtualSystemDescriptionType_Name ||
-             m_enmType == KVirtualSystemDescriptionType_Product ||
-             m_enmType == KVirtualSystemDescriptionType_ProductUrl ||
-             m_enmType == KVirtualSystemDescriptionType_Vendor ||
-             m_enmType == KVirtualSystemDescriptionType_VendorUrl ||
-             m_enmType == KVirtualSystemDescriptionType_Version ||
-             m_enmType == KVirtualSystemDescriptionType_Description ||
-             m_enmType == KVirtualSystemDescriptionType_License ||
-             m_enmType == KVirtualSystemDescriptionType_OS ||
-             m_enmType == KVirtualSystemDescriptionType_CPU ||
-             m_enmType == KVirtualSystemDescriptionType_Memory ||
-             m_enmType == KVirtualSystemDescriptionType_SoundCard ||
-             m_enmType == KVirtualSystemDescriptionType_NetworkAdapter ||
-             m_enmType == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
-             m_enmType == KVirtualSystemDescriptionType_HardDiskImage) &&
+        if ((m_enmVSDType == KVirtualSystemDescriptionType_Name ||
+             m_enmVSDType == KVirtualSystemDescriptionType_Product ||
+             m_enmVSDType == KVirtualSystemDescriptionType_ProductUrl ||
+             m_enmVSDType == KVirtualSystemDescriptionType_Vendor ||
+             m_enmVSDType == KVirtualSystemDescriptionType_VendorUrl ||
+             m_enmVSDType == KVirtualSystemDescriptionType_Version ||
+             m_enmVSDType == KVirtualSystemDescriptionType_Description ||
+             m_enmVSDType == KVirtualSystemDescriptionType_License ||
+             m_enmVSDType == KVirtualSystemDescriptionType_OS ||
+             m_enmVSDType == KVirtualSystemDescriptionType_CPU ||
+             m_enmVSDType == KVirtualSystemDescriptionType_Memory ||
+             m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
+             m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter ||
+             m_enmVSDType == KVirtualSystemDescriptionType_HardDiskControllerIDE ||
+             m_enmVSDType == KVirtualSystemDescriptionType_HardDiskImage) &&
             m_checkState == Qt::Checked) /* Item has to be enabled */
             enmFlags |= Qt::ItemIsEditable;
     }
@@ -394,11 +394,11 @@ bool UIVirtualHardwareItem::setData(int iColumn, const QVariant &value, int iRol
         case Qt::CheckStateRole:
         {
             if (iColumn == ApplianceViewSection_ConfigValue &&
-                (m_enmType == KVirtualSystemDescriptionType_Floppy ||
-                 m_enmType == KVirtualSystemDescriptionType_CDROM ||
-                 m_enmType == KVirtualSystemDescriptionType_USBController ||
-                 m_enmType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmType == KVirtualSystemDescriptionType_NetworkAdapter))
+                (m_enmVSDType == KVirtualSystemDescriptionType_Floppy ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter))
             {
                 m_checkState = static_cast<Qt::CheckState>(value.toInt());
                 fDone = true;
@@ -435,7 +435,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
         {
             if (iColumn == ApplianceViewSection_Description)
             {
-                switch (m_enmType)
+                switch (m_enmVSDType)
                 {
                     case KVirtualSystemDescriptionType_Name:                   value = UIApplianceEditorWidget::tr("Name"); break;
                     case KVirtualSystemDescriptionType_Product:                value = UIApplianceEditorWidget::tr("Product"); break;
@@ -465,7 +465,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                 value = m_strOrigValue;
             else if (iColumn == ApplianceViewSection_ConfigValue)
             {
-                switch (m_enmType)
+                switch (m_enmVSDType)
                 {
                     case KVirtualSystemDescriptionType_Description:
                     case KVirtualSystemDescriptionType_License:
@@ -500,7 +500,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
         {
             if (iColumn == ApplianceViewSection_Description)
             {
-                switch (m_enmType)
+                switch (m_enmVSDType)
                 {
                     case KVirtualSystemDescriptionType_Name:                   value = UIIconPool::iconSet(":/name_16px.png"); break;
                     case KVirtualSystemDescriptionType_Product:
@@ -527,7 +527,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                 }
             }
             else if (iColumn == ApplianceViewSection_ConfigValue &&
-                     m_enmType == KVirtualSystemDescriptionType_OS)
+                     m_enmVSDType == KVirtualSystemDescriptionType_OS)
             {
                 const QStyle *pStyle = QApplication::style();
                 const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
@@ -561,17 +561,17 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
         case Qt::CheckStateRole:
         {
             if (iColumn == ApplianceViewSection_ConfigValue &&
-                (m_enmType == KVirtualSystemDescriptionType_Floppy ||
-                 m_enmType == KVirtualSystemDescriptionType_CDROM ||
-                 m_enmType == KVirtualSystemDescriptionType_USBController ||
-                 m_enmType == KVirtualSystemDescriptionType_SoundCard ||
-                 m_enmType == KVirtualSystemDescriptionType_NetworkAdapter))
+                (m_enmVSDType == KVirtualSystemDescriptionType_Floppy ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_CDROM ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_USBController ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_SoundCard ||
+                 m_enmVSDType == KVirtualSystemDescriptionType_NetworkAdapter))
                 value = m_checkState;
             break;
         }
         case UIVirtualHardwareItem::TypeRole:
         {
-            value = m_enmType;
+            value = m_enmVSDType;
             break;
         }
         case UIVirtualHardwareItem::ModifiedRole:
@@ -589,7 +589,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
     QWidget *pEditor = 0;
     if (idx.column() == ApplianceViewSection_ConfigValue)
     {
-        switch (m_enmType)
+        switch (m_enmVSDType)
         {
             case KVirtualSystemDescriptionType_OS:
             {
@@ -696,7 +696,7 @@ QWidget *UIVirtualHardwareItem::createEditor(QWidget *pParent, const QStyleOptio
 bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & /* idx */) const
 {
     bool fDone = false;
-    switch (m_enmType)
+    switch (m_enmVSDType)
     {
         case KVirtualSystemDescriptionType_OS:
         {
@@ -787,7 +787,7 @@ bool UIVirtualHardwareItem::setEditorData(QWidget *pEditor, const QModelIndex & 
 bool UIVirtualHardwareItem::setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex & idx)
 {
     bool fDone = false;
-    switch (m_enmType)
+    switch (m_enmVSDType)
     {
         case KVirtualSystemDescriptionType_OS:
         {
@@ -1278,7 +1278,7 @@ bool UIApplianceSortProxyModel::filterAcceptsRow(int iSourceRow, const QModelInd
             {
                 UIVirtualHardwareItem *hwItem = static_cast<UIVirtualHardwareItem*>(pItem);
                 /* The license type shouldn't be displayed */
-                if (m_aFilteredList.contains(hwItem->m_enmType))
+                if (m_aFilteredList.contains(hwItem->m_enmVSDType))
                     return false;
             }
         }
@@ -1304,10 +1304,10 @@ bool UIApplianceSortProxyModel::lessThan(const QModelIndex &leftIdx, const QMode
     UIVirtualHardwareItem *pHwRight = static_cast<UIVirtualHardwareItem*>(pRightItem);
 
     for (unsigned int i = 0; i < RT_ELEMENTS(s_aSortList); ++i)
-        if (pHwLeft->m_enmType == s_aSortList[i])
+        if (pHwLeft->m_enmVSDType == s_aSortList[i])
         {
             for (unsigned int a = 0; a <= i; ++a)
-                if (pHwRight->m_enmType == s_aSortList[a])
+                if (pHwRight->m_enmVSDType == s_aSortList[a])
                     return true;
             return false;
         }
