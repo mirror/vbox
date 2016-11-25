@@ -117,13 +117,16 @@ bool UIMachine::create()
 void UIMachine::destroy()
 {
     /* Make sure machine is created: */
-    AssertPtrReturnVoid(m_spInstance);
+    if (!m_spInstance)
+        return;
 
-    /* Cleanup machine UI: */
-    m_spInstance->cleanup();
-    /* Destroy machine UI: */
-    delete m_spInstance;
+    /* Protect versus recursive call: */
+    UIMachine *pInstance = m_spInstance;
     m_spInstance = 0;
+    /* Cleanup machine UI: */
+    pInstance->cleanup();
+    /* Destroy machine UI: */
+    delete pInstance;
 }
 
 QWidget* UIMachine::activeWindow() const
