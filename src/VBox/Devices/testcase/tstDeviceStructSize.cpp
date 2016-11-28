@@ -321,7 +321,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(XHCI, RootHub3, 8);
     CHECK_MEMBER_ALIGNMENT(XHCI, cmdr_dqp, 8);
 #  ifdef VBOX_WITH_STATISTICS
-    CHECK_MEMBER_ALIGNMENT(XHCI, StatCanceledIsocUrbs, 8);
+    CHECK_MEMBER_ALIGNMENT(XHCI, StatErrorIsocUrbs, 8);
     CHECK_MEMBER_ALIGNMENT(XHCI, StatIntrsCleared, 8);
 #  endif
 # endif

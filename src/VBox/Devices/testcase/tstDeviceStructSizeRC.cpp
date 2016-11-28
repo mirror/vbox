@@ -1182,9 +1182,8 @@ int main()
     GEN_CHECK_OFF(XHCI, aBellsRung);
     GEN_CHECK_OFF(XHCI, pLoad);
 #  ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(XHCI, StatCanceledIsocUrbs);
-    GEN_CHECK_OFF(XHCI, StatCanceledGenUrbs);
-    GEN_CHECK_OFF(XHCI, StatDroppedUrbs);
+    GEN_CHECK_OFF(XHCI, StatErrorIsocUrbs);
+    GEN_CHECK_OFF(XHCI, StatErrorIsocPkts);
     GEN_CHECK_OFF(XHCI, StatEventsWritten);
     GEN_CHECK_OFF(XHCI, StatEventsDropped);
     GEN_CHECK_OFF(XHCI, StatIntrsPending);
