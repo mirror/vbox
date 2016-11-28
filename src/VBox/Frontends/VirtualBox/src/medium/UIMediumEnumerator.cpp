@@ -158,6 +158,15 @@ void UIMediumEnumerator::enumerateMediums()
     m_fMediumEnumerationInProgress = true;
     emit sigMediumEnumerationStarted();
 
+    /* Make sure we really have more than one medium (which is Null): */
+    if (m_mediums.size() == 1)
+    {
+        /* Notify listener: */
+        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
+        m_fMediumEnumerationInProgress = false;
+        emit sigMediumEnumerationFinished();
+    }
+
     /* Start enumeration for UIMedium(s) with correct ID: */
     foreach (const QString &strMediumID, m_mediums.keys())
         if (!strMediumID.isNull() && strMediumID != UIMedium::nullID())
