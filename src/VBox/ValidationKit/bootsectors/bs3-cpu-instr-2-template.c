@@ -96,10 +96,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_mul)(uint8_t bMode)
             0, RTCCINTREG_MAX,                      X86_EFL_PF },
         {   2, RTCCINTREG_MAX,
             0, RTCCUINTREG_MAX - 1,                 X86_EFL_SF },
-        {   RTCCINTREG_MAX + 1, 2,
+        {   (RTCCUINTREG)RTCCINTREG_MAX + 1, 2,
             1, 0,                                   X86_EFL_PF | X86_EFL_CF | X86_EFL_OF },
-        {   RTCCINTREG_MAX / 2 + 1, 3,
-            0, (RTCCINTREG_MAX / 2 + 1) * 3,        X86_EFL_PF | X86_EFL_SF },
+        {   (RTCCUINTREG)RTCCINTREG_MAX / 2 + 1, 3,
+            0, ((RTCCUINTREG)RTCCINTREG_MAX / 2 + 1) * 3, X86_EFL_PF | X86_EFL_SF },
     };
 
     BS3REGCTX       Ctx;
@@ -190,7 +190,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_imul)(uint8_t bMode)
         {   2, RTCCINTREG_MAX / 2,
             0, RTCCINTREG_MAX - 1U,                 0 },
         {   2, (RTCCINTREG_MAX / 2 + 1),
-            0, RTCCINTREG_MAX + 1U,                 X86_EFL_CF | X86_EFL_OF | X86_EFL_SF | X86_EFL_PF },
+            0, (RTCCUINTREG)RTCCINTREG_MAX + 1U,    X86_EFL_CF | X86_EFL_OF | X86_EFL_SF | X86_EFL_PF },
         {   4, (RTCCINTREG_MAX / 2 + 1),
             1, 0,                                   X86_EFL_CF | X86_EFL_OF | X86_EFL_PF },
 
@@ -461,7 +461,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_idiv)(uint8_t bMode)
             -3,   1,                                                    X86_XCPT_UD },
         {   RTCCINTREG_MAX / 2 + 1, RTCCINTREG_MAX,         RTCCINTREG_MIN,
             RTCCINTREG_MIN,     RTCCINTREG_MAX,                         X86_XCPT_UD },
-        {   RTCCINTREG_MAX / 2 + 1, RTCCINTREG_MAX+1,       RTCCINTREG_MIN,
+        {   RTCCINTREG_MAX / 2 + 1, (RTCCUINTREG)RTCCINTREG_MAX+1, RTCCINTREG_MIN,
             0,    0,                                                    X86_XCPT_DE },
         /* negative dividend, negative divisor. */
         {   -1,  -7,                    -2,
