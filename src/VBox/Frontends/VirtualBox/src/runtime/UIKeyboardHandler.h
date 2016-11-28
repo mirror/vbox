@@ -19,7 +19,6 @@
 #define ___UIKeyboardHandler_h___
 
 /* Qt includes: */
-#include <QtGlobal>
 #include <QMap>
 #include <QObject>
 

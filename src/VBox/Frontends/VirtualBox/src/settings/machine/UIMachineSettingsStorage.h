@@ -19,7 +19,6 @@
 #define __UIMachineSettingsStorage_h__
 
 /* Qt includes: */
-#include <QtGlobal> /* for VBOX_WS_MAC */
 #ifdef VBOX_WS_MAC
 /* Somewhere Carbon.h includes AssertMacros.h which defines the macro "check".
  * In QItemDelegate a class method is called "check" also. As we not used the
