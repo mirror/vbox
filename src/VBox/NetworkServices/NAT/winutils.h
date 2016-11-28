@@ -165,6 +165,7 @@ RT_C_DECLS_END
 # else /* !RT_OS_WINDOWS */
 
 #  include <errno.h>
+#  include <unistd.h>
 
 #  define SOCKET int
 #  define INVALID_SOCKET (-1)

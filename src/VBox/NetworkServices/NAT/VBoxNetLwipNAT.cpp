@@ -1203,12 +1203,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             int vrc = com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome), false);
             if (RT_SUCCESS(vrc))
             {
+                closesocket(icmpsock4);
+                closesocket(icmpsock6);
                 return RTMsgErrorExit(RTEXITCODE_FAILURE,
                                       "Failed to initialize COM: %s: %Rhrf",
                                       szHome, hrc);
             }
         }
 #endif  // VBOX_WITH_XPCOM
+        closesocket(icmpsock4);
+        closesocket(icmpsock6);
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "Failed to initialize COM: %Rhrf", hrc);
     }
