@@ -642,7 +642,7 @@ VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * @param   pVM     The cross context VM structure.
  *
- * @thread  EMT(0).
+ * @thread  EMT(0)
  */
 VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
 {

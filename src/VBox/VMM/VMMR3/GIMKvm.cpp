@@ -236,7 +236,7 @@ VMMR3_INT_DECL(int) gimR3KvmTerm(PVM pVM)
  * This is called when the VM is being reset.
  *
  * @param   pVM     The cross context VM structure.
- * @thread EMT(0).
+ * @thread EMT(0)
  */
 VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
 {
