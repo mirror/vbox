@@ -107,7 +107,10 @@ public:
 
 private slots:
 
-#if QT_VERSION < 0x050000
+#if QT_VERSION == 0
+    /** Stupid moc does not warn if it cannot find headers! */
+    void QT_VERSION_NOT_DEFINED
+#elif QT_VERSION < 0x050000
     /** Handles host-screen count change to @a cHostScreenCount. */
     void sltHandleHostScreenCountChanged(int cHostScreenCount);
     /** Handles resize for the host-screen with @a iHostScreenIndex. */
