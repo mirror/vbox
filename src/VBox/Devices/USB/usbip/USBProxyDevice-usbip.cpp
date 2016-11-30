@@ -908,8 +908,8 @@ static int usbProxyUsbIpCtrlUrbExchangeSync(PUSBPROXYDEVUSBIP pProxyDevUsbIp, PV
 static PUSBPROXYURBUSBIP usbProxyUsbIpGetInFlightUrbFromSeqNum(PUSBPROXYDEVUSBIP pProxyDevUsbIp, uint32_t u32SeqNum)
 {
     bool fFound = false;
-    PUSBPROXYURBUSBIP pIt;
 
+    PUSBPROXYURBUSBIP pIt;
     RTListForEach(&pProxyDevUsbIp->ListUrbsInFlight, pIt, USBPROXYURBUSBIP, NodeList)
     {
         if (pIt->u32SeqNumUrb == u32SeqNum)
@@ -932,8 +932,8 @@ static PUSBPROXYURBUSBIP usbProxyUsbIpGetInFlightUrbFromSeqNum(PUSBPROXYDEVUSBIP
 static PUSBPROXYURBUSBIP usbProxyUsbIpGetCancelledUrbFromSeqNum(PUSBPROXYDEVUSBIP pProxyDevUsbIp, uint32_t u32SeqNum)
 {
     bool fFound = false;
-    PUSBPROXYURBUSBIP pIt;
 
+    PUSBPROXYURBUSBIP pIt;
     RTListForEach(&pProxyDevUsbIp->ListUrbsInFlight, pIt, USBPROXYURBUSBIP, NodeList)
     {
         if (   pIt->u32SeqNumUrbUnlink == u32SeqNum
@@ -1268,8 +1268,8 @@ static int usbProxyUsbIpUrbsQueuePending(PUSBPROXYDEVUSBIP pProxyDevUsbIp)
     RTListMove(&ListUrbsPending, &pProxyDevUsbIp->ListUrbsToQueue);
     RTSemFastMutexRelease(pProxyDevUsbIp->hMtxLists);
 
-    PUSBPROXYURBUSBIP pIter = NULL;
-    PUSBPROXYURBUSBIP pIterNext = NULL;
+    PUSBPROXYURBUSBIP pIter;
+    PUSBPROXYURBUSBIP pIterNext;
     RTListForEachSafe(&ListUrbsPending, pIter, pIterNext, USBPROXYURBUSBIP, NodeList)
     {
         RTListNodeRemove(&pIter->NodeList);
@@ -1424,8 +1424,8 @@ static DECLCALLBACK(void) usbProxyUsbIpClose(PUSBPROXYDEV pProxyDev)
     /* Clear the URB lists. */
     rc = RTSemFastMutexRequest(pDevUsbIp->hMtxLists);
     AssertRC(rc);
-    PUSBPROXYURBUSBIP pIter = NULL;
-    PUSBPROXYURBUSBIP pIterNext = NULL;
+    PUSBPROXYURBUSBIP pIter;
+    PUSBPROXYURBUSBIP pIterNext;
     RTListForEachSafe(&pDevUsbIp->ListUrbsInFlight, pIter, pIterNext, USBPROXYURBUSBIP, NodeList)
     {
         RTListNodeRemove(&pIter->NodeList);

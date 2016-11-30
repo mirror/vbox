@@ -3601,8 +3601,7 @@ static DECLCALLBACK(int) vdPluginRegisterFilter(void *pvUser, PCVDFILTERBACKEND 
  */
 static PVDPLUGIN vdPluginFind(const char *pszFilename)
 {
-    PVDPLUGIN pIt = NULL;
-
+    PVDPLUGIN pIt;
     RTListForEach(&g_ListPluginsLoaded, pIt, VDPLUGIN, NodePlugin)
     {
         if (!RTStrCmp(pIt->pszFilename, pszFilename))
@@ -5830,7 +5829,6 @@ VBOXDDU_DECL(int) VDShutdown(void)
 
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     PVDPLUGIN pPlugin, pPluginNext;
-
     RTListForEachSafe(&g_ListPluginsLoaded, pPlugin, pPluginNext, VDPLUGIN, NodePlugin)
     {
         RTLdrClose(pPlugin->hPlugin);

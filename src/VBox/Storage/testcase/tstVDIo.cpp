@@ -1716,8 +1716,8 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDSCRIPTARG paScriptArgs, void
     const char *pcszPathToDump = paScriptArgs[1].psz;
 
     /* Check for the file. */
-    PVDFILE pIt = NULL;
     bool fFound = false;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pcszFile))
@@ -1942,8 +1942,8 @@ static DECLCALLBACK(int) vdScriptHandlerShowStatistics(PVDSCRIPTARG paScriptArgs
     const char *pcszFile = paScriptArgs[0].psz;
 
     /* Check for the file. */
-    PVDFILE pIt = NULL;
     bool fFound = false;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pcszFile))
@@ -1975,8 +1975,8 @@ static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDSCRIPTARG paScriptArg
     const char *pcszFile = paScriptArgs[0].psz;
 
     /* Check for the file. */
-    PVDFILE pIt = NULL;
     bool fFound = false;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pcszFile))
@@ -2055,7 +2055,7 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
         pszLocation += 2;
 
     /* Check if the file exists. */
-    PVDFILE pIt = NULL;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pszLocation))
@@ -2150,7 +2150,7 @@ static DECLCALLBACK(int) tstVDIoFileDelete(void *pvUser, const char *pcszFilenam
         pcszFilename += 2;
 
     /* Check if the file exists. */
-    PVDFILE pIt = NULL;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pcszFilename))
@@ -2181,7 +2181,7 @@ static DECLCALLBACK(int) tstVDIoFileMove(void *pvUser, const char *pcszSrc, cons
     bool fFound = false;
 
     /* Check if the file exists. */
-    PVDFILE pIt = NULL;
+    PVDFILE pIt;
     RTListForEach(&pGlob->ListFiles, pIt, VDFILE, Node)
     {
         if (!RTStrCmp(pIt->pszName, pcszSrc))
@@ -2585,11 +2585,11 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
  */
 static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk)
 {
-    PVDDISK pIt = NULL;
     bool fFound = false;
 
     LogFlowFunc(("pGlob=%#p pcszDisk=%s\n", pGlob, pcszDisk));
 
+    PVDDISK pIt;
     RTListForEach(&pGlob->ListDisks, pIt, VDDISK, ListNode)
     {
         if (!RTStrCmp(pIt->pszName, pcszDisk))
@@ -2613,11 +2613,11 @@ static PVDDISK tstVDIoGetDiskByName(PVDTESTGLOB pGlob, const char *pcszDisk)
  */
 static PVDPATTERN tstVDIoGetPatternByName(PVDTESTGLOB pGlob, const char *pcszName)
 {
-    PVDPATTERN pIt = NULL;
     bool fFound = false;
 
     LogFlowFunc(("pGlob=%#p pcszName=%s\n", pGlob, pcszName));
 
+    PVDPATTERN pIt;
     RTListForEach(&pGlob->ListPatterns, pIt, VDPATTERN, ListNode)
     {
         if (!RTStrCmp(pIt->pszName, pcszName))

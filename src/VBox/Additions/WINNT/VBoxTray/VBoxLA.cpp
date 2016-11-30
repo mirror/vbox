@@ -198,8 +198,8 @@ static BOOL laGetRegistryDWORD(WCHAR *pwszRegKey, WCHAR *pwszName, DWORD *pdwVal
 
 static void ActionExecutorDeleteActions(RTLISTANCHOR *listActions)
 {
-    ACTIONENTRY *pIter = NULL;
-    ACTIONENTRY *pIterNext = NULL;
+    ACTIONENTRY *pIter;
+    ACTIONENTRY *pIterNext;
     RTListForEachSafe(listActions, pIter, pIterNext, ACTIONENTRY, nodeActionEntry)
     {
         RTListNodeRemove(&pIter->nodeActionEntry);
@@ -321,7 +321,7 @@ static BOOL ActionExecutorEnumerateRegistryKey(const WCHAR *pwszRegKey,
         else
         {
             bool fAdded = false;
-            ACTIONENTRY *pIter = NULL;
+            ACTIONENTRY *pIter;
             RTListForEach(listActions, pIter, ACTIONENTRY, nodeActionEntry)
             {
                 if (pIter->u32Index > nIndex)
@@ -344,7 +344,7 @@ static BOOL ActionExecutorEnumerateRegistryKey(const WCHAR *pwszRegKey,
     RegCloseKey(hKey);
 
 #ifdef LOG_ENABLED
-    ACTIONENTRY *pIter = NULL;
+    ACTIONENTRY *pIter;
     RTListForEach(listActions, pIter, ACTIONENTRY, nodeActionEntry)
     {
         LogFlowFunc(("[%u]: [%ls]\n",
@@ -357,8 +357,7 @@ static BOOL ActionExecutorEnumerateRegistryKey(const WCHAR *pwszRegKey,
         ActionExecutorDeleteActions(listActions);
     }
 
-    LogFlowFunc(("action enum %d\n",
-           bRet));
+    LogFlowFunc(("action enum %d\n", bRet));
 
     return bRet;
 }
@@ -367,7 +366,7 @@ static void ActionExecutorExecuteActions(RTLISTANCHOR *listActions)
 {
     LogFlowFunc(("ExecuteActions\n"));
 
-    ACTIONENTRY *pIter = NULL;
+    ACTIONENTRY *pIter;
     RTListForEach(listActions, pIter, ACTIONENTRY, nodeActionEntry)
     {
         LogFlowFunc(("[%u]: [%ls]\n",

@@ -44,9 +44,10 @@ static PVBOXSERVICEVEPROPCACHEENTRY vgsvcPropCacheFindInternal(PVBOXSERVICEVEPRO
      *  r=bird: Use a string space (RTstrSpace*). That is O(log n) in its current
      *        implementation (AVL tree). However, this is not important at the
      *        moment. */
-    PVBOXSERVICEVEPROPCACHEENTRY pNodeIt, pNode = NULL;
+    PVBOXSERVICEVEPROPCACHEENTRY pNode = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
+        PVBOXSERVICEVEPROPCACHEENTRY pNodeIt;
         RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
             if (strcmp(pNodeIt->pszName, pszName) == 0)
@@ -322,7 +323,6 @@ int VGSvcPropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszVa
     AssertPtrReturn(pszPathFormat, VERR_INVALID_POINTER);
 
     int rc = VERR_NOT_FOUND;
-    PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
         /*
@@ -340,6 +340,7 @@ int VGSvcPropCacheUpdateByPath(PVBOXSERVICEVEPROPCACHE pCache, const char *pszVa
         else
         {
             /* Iterate through all nodes and compare their paths. */
+            PVBOXSERVICEVEPROPCACHEENTRY pNodeIt;
             RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
             {
                 if (RTStrStr(pNodeIt->pszName, pszPath) == pNodeIt->pszName)
@@ -368,9 +369,9 @@ int VGSvcPropCacheFlush(PVBOXSERVICEVEPROPCACHE pCache)
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    PVBOXSERVICEVEPROPCACHEENTRY pNodeIt = NULL;
     if (RT_SUCCESS(RTCritSectEnter(&pCache->CritSect)))
     {
+        PVBOXSERVICEVEPROPCACHEENTRY pNodeIt;
         RTListForEach(&pCache->NodeHead, pNodeIt, VBOXSERVICEVEPROPCACHEENTRY, NodeSucc)
         {
             rc = vgsvcPropCacheWritePropF(pCache->uClientID, pNodeIt->pszName, pNodeIt->fFlags, pNodeIt->pszValue);

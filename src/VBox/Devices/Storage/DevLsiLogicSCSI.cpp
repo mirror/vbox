@@ -789,9 +789,9 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
  */
 static PLSILOGICMEMREGN lsilogicR3MemRegionFindByAddr(PLSILOGICSCSI pThis, uint32_t u32Addr)
 {
-    PLSILOGICMEMREGN pIt;
     PLSILOGICMEMREGN pRegion = NULL;
 
+    PLSILOGICMEMREGN pIt;
     RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
     {
         if (   u32Addr >= pIt->u32AddrStart
@@ -813,9 +813,9 @@ static PLSILOGICMEMREGN lsilogicR3MemRegionFindByAddr(PLSILOGICSCSI pThis, uint3
  */
 static void lsilogicR3MemRegionsFree(PLSILOGICSCSI pThis)
 {
-    PLSILOGICMEMREGN pIt;
     PLSILOGICMEMREGN pItNext;
 
+    PLSILOGICMEMREGN pIt;
     RTListForEachSafe(&pThis->ListMemRegns, pIt, pItNext, LSILOGICMEMREGN, NodeList)
     {
         RTListNodeRemove(&pIt->NodeList);
@@ -833,10 +833,10 @@ static void lsilogicR3MemRegionsFree(PLSILOGICSCSI pThis)
  */
 static void lsilogicR3MemRegionInsert(PLSILOGICSCSI pThis, PLSILOGICMEMREGN pRegion)
 {
-    PLSILOGICMEMREGN pIt;
     bool fInserted = false;
 
     /* Insert at the right position. */
+    PLSILOGICMEMREGN pIt;
     RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
     {
         if (pRegion->u32AddrEnd < pIt->u32AddrStart)
@@ -859,8 +859,8 @@ static void lsilogicR3MemRegionInsert(PLSILOGICSCSI pThis, PLSILOGICMEMREGN pReg
 static uint32_t lsilogicR3MemRegionsCount(PLSILOGICSCSI pThis)
 {
     uint32_t cRegions = 0;
-    PLSILOGICMEMREGN pIt;
 
+    PLSILOGICMEMREGN pIt;
     RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
     {
         cRegions++;
@@ -893,11 +893,10 @@ static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, uint32_t u32Data)
     }
     else
     {
-        PLSILOGICMEMREGN pIt;
-
         pRegion = NULL;
 
         /* Create new region, first check whether we can extend another region. */
+        PLSILOGICMEMREGN pIt;
         RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
         {
             if (pThis->u32DiagMemAddr == pIt->u32AddrEnd + sizeof(uint32_t))
@@ -4541,7 +4540,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32   (pSSM, pThis->u32DiagMemAddr);
     SSMR3PutU32   (pSSM, lsilogicR3MemRegionsCount(pThis));
 
-    PLSILOGICMEMREGN pIt = NULL;
+    PLSILOGICMEMREGN pIt;
     RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
     {
         SSMR3PutU32(pSSM, pIt->u32AddrStart);

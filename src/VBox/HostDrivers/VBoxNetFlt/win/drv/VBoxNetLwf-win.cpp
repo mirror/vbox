@@ -232,7 +232,7 @@ static void vboxNetLwfLogErrorEvent(NTSTATUS uErrCode, NTSTATUS uReturnedStatus,
     /* Figure out how many modules are attached and if they are going to fit into the dump data. */
     unsigned cMaxModules = (ERROR_LOG_MAXIMUM_SIZE - FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData)) / sizeof(RTMAC);
     unsigned cModules = 0;
-    PVBOXNETLWF_MODULE pModuleCtx = NULL;
+    PVBOXNETLWF_MODULE pModuleCtx;
     NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
     RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
         ++cModules;
@@ -2548,8 +2548,8 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     LogFlow(("==>vboxNetFltOsInitInstance: instance=%p context=%p\n", pThis, pvContext));
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
     Log(("vboxNetFltOsInitInstance: trunk name=%s\n", pThis->szName));
-    PVBOXNETLWF_MODULE pModuleCtx = NULL;
     NdisAcquireSpinLock(&g_VBoxNetLwfGlobals.Lock);
+    PVBOXNETLWF_MODULE pModuleCtx;
     RTListForEach(&g_VBoxNetLwfGlobals.listModules, pModuleCtx, VBOXNETLWF_MODULE, node)
     {
         DbgPrint("vboxNetFltOsInitInstance: evaluating module, name=%s\n", pModuleCtx->szMiniportName);

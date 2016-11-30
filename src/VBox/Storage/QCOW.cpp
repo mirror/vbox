@@ -474,9 +474,8 @@ static int qcowL2TblCacheCreate(PQCOWIMAGE pImage)
  */
 static void qcowL2TblCacheDestroy(PQCOWIMAGE pImage)
 {
-    PQCOWL2CACHEENTRY pL2Entry = NULL;
-    PQCOWL2CACHEENTRY pL2Next  = NULL;
-
+    PQCOWL2CACHEENTRY pL2Entry;
+    PQCOWL2CACHEENTRY pL2Next;
     RTListForEachSafe(&pImage->ListSearch, pL2Entry, pL2Next, QCOWL2CACHEENTRY, NodeSearch)
     {
         Assert(!pL2Entry->cRefs);
@@ -500,8 +499,7 @@ static void qcowL2TblCacheDestroy(PQCOWIMAGE pImage)
  */
 static PQCOWL2CACHEENTRY qcowL2TblCacheRetain(PQCOWIMAGE pImage, uint64_t offL2Tbl)
 {
-    PQCOWL2CACHEENTRY pL2Entry = NULL;
-
+    PQCOWL2CACHEENTRY pL2Entry;
     RTListForEach(&pImage->ListSearch, pL2Entry, QCOWL2CACHEENTRY, NodeSearch)
     {
         if (pL2Entry->offL2Tbl == offL2Tbl)
@@ -516,8 +514,8 @@ static PQCOWL2CACHEENTRY qcowL2TblCacheRetain(PQCOWIMAGE pImage, uint64_t offL2T
         pL2Entry->cRefs++;
         return pL2Entry;
     }
-    else
-        return NULL;
+
+    return NULL;
 }
 
 /**
@@ -611,8 +609,6 @@ static void qcowL2TblCacheEntryFree(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2Entr
  */
 static void qcowL2TblCacheEntryInsert(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2Entry)
 {
-    PQCOWL2CACHEENTRY pIt = NULL;
-
     Assert(pL2Entry->offL2Tbl > 0);
 
     /* Insert at the top of the LRU list. */
@@ -625,6 +621,7 @@ static void qcowL2TblCacheEntryInsert(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2En
     else
     {
         /* Insert into search list. */
+        PQCOWL2CACHEENTRY pIt;
         pIt = RTListGetFirst(&pImage->ListSearch, QCOWL2CACHEENTRY, NodeSearch);
         if (pIt->offL2Tbl > pL2Entry->offL2Tbl)
             RTListPrepend(&pImage->ListSearch, &pL2Entry->NodeSearch);
@@ -642,7 +639,7 @@ static void qcowL2TblCacheEntryInsert(PQCOWIMAGE pImage, PQCOWL2CACHEENTRY pL2En
                     break;
                 }
             }
-             Assert(fInserted);
+            Assert(fInserted);
         }
     }
 }

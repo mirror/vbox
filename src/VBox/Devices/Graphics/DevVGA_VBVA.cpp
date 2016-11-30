@@ -1095,10 +1095,9 @@ static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
     if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return true;
 
-    VBOX_VHWA_PENDINGCMD *pIter, *pNext;
-
     PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
 
+    VBOX_VHWA_PENDINGCMD *pIter, *pNext;
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         if (!vbvaVHWACommandSubmit(pVGAState, pIter->pCommand, true))

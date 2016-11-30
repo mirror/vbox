@@ -3372,8 +3372,8 @@ void vboxNetFltWinNotifyHostAddress(PTA_ADDRESS pAddress, bool fAdded)
     {
         NdisAcquireSpinLock(&g_VBoxNetFltGlobalsWin.lockFilters);
         /* At this point the list must contain at least one element. */
-        PVBOXNETFLTWIN pFilter   = NULL;
         PVBOXNETFLTINS pInstance = NULL;
+        PVBOXNETFLTWIN pFilter;
         RTListForEach(&g_VBoxNetFltGlobalsWin.listFilters, pFilter, VBOXNETFLTWIN, node)
         {
             pInstance = RT_FROM_MEMBER(pFilter, VBOXNETFLTINS, u.s.WinIf);

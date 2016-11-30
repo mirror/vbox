@@ -562,7 +562,6 @@ void HGSMIMAUninit(HGSMIMADATA *pMA)
 {
     HGSMIMABLOCK *pIter;
     HGSMIMABLOCK *pNext;
-
     RTListForEachSafe(&pMA->listBlocks, pIter, pNext, HGSMIMABLOCK, nodeBlock)
     {
         RTListNodeRemove(&pIter->nodeBlock);

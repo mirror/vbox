@@ -779,8 +779,8 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
 static PPDMBLKCACHE pdmR3BlkCacheFindById(PPDMBLKCACHEGLOBAL pBlkCacheGlobal, const char *pcszId)
 {
     bool fFound = false;
-    PPDMBLKCACHE pBlkCache = NULL;
 
+    PPDMBLKCACHE pBlkCache;
     RTListForEach(&pBlkCacheGlobal->ListUsers, pBlkCache, PDMBLKCACHE, NodeCacheUser)
     {
         if (!RTStrCmp(pBlkCache->pszId, pcszId))

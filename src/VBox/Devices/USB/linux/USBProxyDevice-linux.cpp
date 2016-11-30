@@ -237,7 +237,6 @@ static void usbProxLinuxUrbUnplugged(PUSBPROXYDEV pProxyDev)
 
     PUSBPROXYURBLNX pUrbLnx;
     PUSBPROXYURBLNX pUrbLnxNext;
-
     RTListForEachSafe(&pDevLnx->ListInFlight, pUrbLnx, pUrbLnxNext, USBPROXYURBLNX, NodeList)
     {
         RTListNodeRemove(&pUrbLnx->NodeList);

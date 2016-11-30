@@ -491,8 +491,8 @@ static RTEXITCODE vgsvcToolboxCat(int argc, char **argv)
         if (RT_SUCCESS(rc))
         {
             /* Process each input file. */
-            PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
             RTFILE hInput = NIL_RTFILE;
+            PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
             RTListForEach(&inputList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
             {
                 rc = RTFileOpen(&hInput, pNodeIt->pszName,

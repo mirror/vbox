@@ -819,7 +819,6 @@ static DECLCALLBACK(int) vusbRhCancelAllUrbsWorker(PVUSBDEV pDev)
      * moment.
      */
     PVUSBURBVUSB pVUsbUrb, pVUsbUrbNext;
-
     RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
     {
         PVUSBURB pUrb = pVUsbUrb->pUrb;
@@ -860,7 +859,6 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
      * Iterate the URBs, find ones corresponding to given EP, and cancel them.
      */
     PVUSBURBVUSB pVUsbUrb, pVUsbUrbNext;
-
     RTListForEachSafe(&pDev->LstAsyncUrbs, pVUsbUrb, pVUsbUrbNext, VUSBURBVUSBINT, NdLst)
     {
         PVUSBURB pUrb = pVUsbUrb->pUrb;

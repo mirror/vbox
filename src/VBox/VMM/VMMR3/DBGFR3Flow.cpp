@@ -338,8 +338,8 @@ static PDBGFFLOWBRANCHTBLINT dbgfR3FlowBranchTblCreate(PDBGFFLOWINT pThis, PDBGF
 static void dbgfR3FlowDestroy(PDBGFFLOWINT pThis)
 {
     /* Defer destruction if there are still basic blocks referencing us. */
-    PDBGFFLOWBBINT pFlowBb = NULL;
-    PDBGFFLOWBBINT pFlowBbNext = NULL;
+    PDBGFFLOWBBINT pFlowBb;
+    PDBGFFLOWBBINT pFlowBbNext;
     RTListForEachSafe(&pThis->LstFlowBb, pFlowBb, pFlowBbNext, DBGFFLOWBBINT, NdFlowBb)
     {
         dbgfR3FlowBbReleaseInt(pFlowBb, false /*fMayDestroyFlow*/);
@@ -454,7 +454,7 @@ DECLINLINE(void) dbgfR3FlowBranchTblLink(PDBGFFLOWINT pThis, PDBGFFLOWBRANCHTBLI
  */
 DECLINLINE(PDBGFFLOWBBINT) dbgfR3FlowGetUnpopulatedBb(PDBGFFLOWINT pThis)
 {
-    PDBGFFLOWBBINT pFlowBb = NULL;
+    PDBGFFLOWBBINT pFlowBb;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
         if (pFlowBb->fFlags & DBGF_FLOW_BB_F_EMPTY)
@@ -474,7 +474,7 @@ DECLINLINE(PDBGFFLOWBBINT) dbgfR3FlowGetUnpopulatedBb(PDBGFFLOWINT pThis)
  */
 DECLINLINE(PDBGFFLOWBRANCHTBLINT) dbgfR3FlowBranchTblFindByAddr(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrTbl)
 {
-    PDBGFFLOWBRANCHTBLINT pTbl = NULL;
+    PDBGFFLOWBRANCHTBLINT pTbl;
     RTListForEach(&pThis->LstBranchTbl, pTbl, DBGFFLOWBRANCHTBLINT, NdBranchTbl)
     {
         if (dbgfR3FlowAddrEqual(&pTbl->AddrStart, pAddrTbl))
@@ -518,7 +518,7 @@ static void dbgfR3FlowBbSetError(PDBGFFLOWBBINT pFlowBb, int rcError, const char
  */
 static bool dbgfR3FlowHasBbWithStartAddr(PDBGFFLOWINT pThis, PDBGFADDRESS pAddr)
 {
-    PDBGFFLOWBBINT pFlowBb = NULL;
+    PDBGFFLOWBBINT pFlowBb;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
         if (dbgfR3FlowAddrEqual(&pFlowBb->AddrStart, pAddr))
@@ -615,7 +615,7 @@ static int dbgfR3FlowBbSplit(PDBGFFLOWINT pThis, PDBGFFLOWBBINT pFlowBb, PDBGFAD
 static int dbgfR3FlowBbSuccessorAdd(PDBGFFLOWINT pThis, PDBGFADDRESS pAddrSucc,
                                     uint32_t fNewBbFlags, PDBGFFLOWBRANCHTBLINT pBranchTbl)
 {
-    PDBGFFLOWBBINT pFlowBb = NULL;
+    PDBGFFLOWBBINT pFlowBb;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
         /*
@@ -1430,7 +1430,7 @@ VMMR3DECL(int) DBGFR3FlowQueryStartBb(DBGFFLOW hFlow, PDBGFFLOWBB phFlowBb)
     PDBGFFLOWINT pThis = hFlow;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    PDBGFFLOWBBINT pFlowBb = NULL;
+    PDBGFFLOWBBINT pFlowBb;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
         if (pFlowBb->fFlags & DBGF_FLOW_BB_F_ENTRY)
@@ -1462,7 +1462,7 @@ VMMR3DECL(int) DBGFR3FlowQueryBbByAddress(DBGFFLOW hFlow, PDBGFADDRESS pAddr, PD
     AssertPtrReturn(pAddr, VERR_INVALID_POINTER);
     AssertPtrReturn(phFlowBb, VERR_INVALID_POINTER);
 
-    PDBGFFLOWBBINT pFlowBb = NULL;
+    PDBGFFLOWBBINT pFlowBb;
     RTListForEach(&pThis->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
     {
         if (dbgfR3FlowAddrIntersect(pFlowBb, pAddr))
@@ -1832,7 +1832,7 @@ VMMR3DECL(uint32_t) DBGFR3FlowBbGetRefBbCount(DBGFFLOWBB hFlowBb)
     AssertPtrReturn(pFlowBb, 0);
 
     uint32_t cRefsBb = 0;
-    PDBGFFLOWBBINT pFlowBbCur = NULL;
+    PDBGFFLOWBBINT pFlowBbCur;
     RTListForEach(&pFlowBb->pFlow->LstFlowBb, pFlowBbCur, DBGFFLOWBBINT, NdFlowBb)
     {
         if (pFlowBbCur->fFlags & DBGF_FLOW_BB_F_INCOMPLETE_ERR)
@@ -2041,8 +2041,8 @@ VMMR3DECL(int) DBGFR3FlowItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOrder, PDBG
         pIt->pFlow      = pFlow;
         pIt->idxBbNext = 0;
         /* Fill the list and then sort. */
-        PDBGFFLOWBBINT pFlowBb;
         uint32_t idxBb = 0;
+        PDBGFFLOWBBINT pFlowBb;
         RTListForEach(&pFlow->LstFlowBb, pFlowBb, DBGFFLOWBBINT, NdFlowBb)
         {
             DBGFR3FlowBbRetain(pFlowBb);
@@ -2178,8 +2178,8 @@ VMMR3DECL(int) DBGFR3FlowBranchTblItCreate(DBGFFLOW hFlow, DBGFFLOWITORDER enmOr
         pIt->pFlow      = pFlow;
         pIt->idxTblNext = 0;
         /* Fill the list and then sort. */
-        PDBGFFLOWBRANCHTBLINT pFlowBranchTbl;
         uint32_t idxTbl = 0;
+        PDBGFFLOWBRANCHTBLINT pFlowBranchTbl;
         RTListForEach(&pFlow->LstBranchTbl, pFlowBranchTbl, DBGFFLOWBRANCHTBLINT, NdBranchTbl)
         {
             DBGFR3FlowBranchTblRetain(pFlowBranchTbl);

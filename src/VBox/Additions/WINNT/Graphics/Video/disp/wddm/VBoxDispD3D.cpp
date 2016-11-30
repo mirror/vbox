@@ -338,8 +338,8 @@ static HRESULT vboxWddmDalNotifyChange(PVBOXWDDMDISP_DEVICE pDevice)
 #ifdef DEBUG_misha
             {
                 memset(aDbgAllocs, 0, sizeof (aDbgAllocs));
-                PVBOXWDDMDISP_ALLOCATION pAlloc;
                 uint32_t cAllocs = 0;
+                PVBOXWDDMDISP_ALLOCATION pAlloc;
                 RTListForEach(&pDevice->DirtyAllocList, pAlloc, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry)
                 {
                     Assert(pAlloc->fEverWritten || pAlloc->pRc->RcDesc.fFlags.SharedResource);

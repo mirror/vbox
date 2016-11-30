@@ -692,8 +692,8 @@ static int vboxVBVAExHSSaveStateLocked(struct VBVAEXHOSTCONTEXT *pCmdVbva, uint8
         return VERR_INVALID_STATE;
     }
 
-    VBVAEXHOSTCTL* pCtl;
     int rc;
+    VBVAEXHOSTCTL* pCtl;
     RTListForEach(&pCmdVbva->GuestCtlList, pCtl, VBVAEXHOSTCTL, Node)
     {
         rc = vboxVBVAExHSSaveGuestCtl(pCmdVbva, pCtl, pu8VramBase, pSSM);

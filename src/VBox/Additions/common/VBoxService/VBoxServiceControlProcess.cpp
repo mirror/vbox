@@ -1151,11 +1151,11 @@ static int vgsvcGstCtrlProcessAssignPID(PVBOXSERVICECTRLPROCESS pProcess, uint32
     {
         /* Search old threads using the desired PID and shut them down completely -- it's
          * not used anymore. */
-        PVBOXSERVICECTRLPROCESS pProcessCur;
         bool fTryAgain;
         do
         {
             fTryAgain = false;
+            PVBOXSERVICECTRLPROCESS pProcessCur;
             RTListForEach(&pProcess->pSession->lstProcesses, pProcessCur, VBOXSERVICECTRLPROCESS, Node)
             {
                 if (pProcessCur->uPID == uPID)

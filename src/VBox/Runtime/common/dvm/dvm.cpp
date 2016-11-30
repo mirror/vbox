@@ -347,9 +347,8 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr)
 
                     if (RT_FAILURE(rc))
                     {
-                        PRTDVMVOLUMEINTERNAL pItNext, pIt;
-
                         /* Remove all entries. */
+                        PRTDVMVOLUMEINTERNAL pItNext, pIt;
                         RTListForEachSafe(&pThis->VolumeList, pIt, pItNext, RTDVMVOLUMEINTERNAL, VolumeNode)
                         {
                             RTListNodeRemove(&pIt->VolumeNode);
@@ -490,7 +489,6 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
         while (   cb > 0
                && !fAllocated)
         {
-            PRTDVMVOLUMEINTERNAL pVol;
             bool fVolFound = false;
             uint64_t cbIntersect;
             uint64_t offVol;
@@ -502,6 +500,7 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
              * Linux LVM is one example, extents of logical volumes don't need to be
              * contigous on the medium.
              */
+            PRTDVMVOLUMEINTERNAL pVol;
             RTListForEach(&pThis->VolumeList, pVol, RTDVMVOLUMEINTERNAL, VolumeNode)
             {
                 bool fIntersect = pThis->pDvmFmtOps->pfnVolumeIsRangeIntersecting(pVol->hVolFmt, off,

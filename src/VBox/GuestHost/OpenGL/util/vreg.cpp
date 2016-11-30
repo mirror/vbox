@@ -136,7 +136,6 @@ static void vboxVrRegTerm(PVBOXVR_REG pReg)
 VBOXVREGDECL(void) VBoxVrListClear(PVBOXVR_LIST pList)
 {
     PVBOXVR_REG pReg, pRegNext;
-
     RTListForEachSafe(&pList->ListHead, pReg, pRegNext, VBOXVR_REG, ListEntry)
     {
         vboxVrRegTerm(pReg);
