@@ -123,7 +123,7 @@ VMMR3DECL(int)          DBGFR3AddrFromSelInfoOff(PUVM pUVM, PDBGFADDRESS pAddres
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PUVM pUVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromPhys(PUVM pUVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr);
 VMMR3DECL(bool)         DBGFR3AddrIsValid(PUVM pUVM, PCDBGFADDRESS pAddress);
-VMMR3DECL(int)          DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTGCPHYS pGCPhys);
+VMMR3DECL(int)          DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, PRTGCPHYS pGCPhys);
 VMMR3DECL(int)          DBGFR3AddrToHostPhys(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTHCPHYS pHCPhys);
 VMMR3DECL(int)          DBGFR3AddrToVolatileR3Ptr(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, bool fReadOnly, void **ppvR3Ptr);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrAdd(PDBGFADDRESS pAddress, RTGCUINTPTR uAddend);
@@ -790,11 +790,14 @@ typedef struct DBGFBP
             /** The access size. */
             uint8_t         cb;
         } Reg;
-        /** Recompiler breakpoint data. */
+
+        /** INT3 breakpoint data. */
         struct DBGFBPINT3
         {
             /** The flat GC address of the breakpoint. */
             RTGCUINTPTR     GCPtr;
+            /** The physical address of the breakpoint. */
+            RTGCPHYS        PhysAddr;
             /** The byte value we replaced by the INT 3 instruction. */
             uint8_t         bOrg;
         } Int3;
@@ -830,7 +833,7 @@ typedef struct DBGFBP
         } Mmio;
 
         /** Paddind to ensure that the size is identical on win32 and linux. */
-        uint64_t    u64Padding[2];
+        uint64_t    u64Padding[3];
     } u;
 } DBGFBP;
 AssertCompileMembersAtSameOffset(DBGFBP, u.GCPtr, DBGFBP, u.Reg.GCPtr);
@@ -843,7 +846,7 @@ typedef DBGFBP *PDBGFBP;
 typedef const DBGFBP *PCDBGFBP;
 
 #ifdef IN_RING3 /* The breakpoint management API is only available in ring-3. */
-VMMR3DECL(int)  DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
+VMMR3DECL(int)  DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetReg(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
                                uint8_t fType, uint8_t cb, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
@@ -878,6 +881,7 @@ VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR2(PVM pVM);
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR3(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsHwArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
+VMM_INT_DECL(bool)          DBGFBpIsInt3Armed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
 VMM_INT_DECL(VBOXSTRICTRC)  DBGFEventGenericWithArg(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent, uint64_t uEventArg,

@@ -41,11 +41,34 @@
 
 
 /*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+/**
+ * DBGF INT3-breakpoint set callback arguments.
+ */
+typedef struct DBGFBPINT3ARGS
+{
+    /** The source virtual CPU ID (used for breakpoint address resolution). */
+    VMCPUID         idSrcCpu;
+    /** The breakpoint address. */
+    PCDBGFADDRESS   pAddress;
+    /** The hit count at which the breakpoint starts triggering. */
+    uint64_t        iHitTrigger;
+    /** The hit count at which disables the breakpoint. */
+    uint64_t        iHitDisable;
+    /** Where to store the breakpoint Id (optional). */
+    uint32_t       *piBp;
+} DBGFBPINT3ARGS;
+/** Pointer to a DBGF INT3 breakpoint set callback argument. */
+typedef DBGFBPINT3ARGS *PDBGFBPINT3ARGS;
+
+
+/*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
 static int dbgfR3BpRegArm(PVM pVM, PDBGFBP pBp);
-static int dbgfR3BpInt3Arm(PUVM pUVM, PDBGFBP pBp);
+static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp);
 RT_C_DECLS_END
 
 
@@ -165,9 +188,10 @@ static PDBGFBP dbgfR3BpAlloc(PVM pVM, DBGFBPTYPE enmType)
 
 
 /**
- * Updates IOM on whether we've got any armed I/O port or MMIO breakpoints.
+ * Updates the search optimization structure for enabled breakpoints of the
+ * specified type.
  *
- * @returns VINF_SUCCESS
+ * @returns VINF_SUCCESS.
  * @param   pVM         The cross context VM structure.
  * @param   enmType     The breakpoint type.
  * @param   pOpt        The breakpoint optimization structure to update.
@@ -316,78 +340,120 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
 
 
 /**
- * Sets a breakpoint (int 3 based).
- *
- * @returns VBox status code.
- * @param   pUVM            The user mode VM handle.
- * @param   pAddress        The address of the breakpoint.
- * @param   piHitTrigger    The hit count at which the breakpoint start triggering.
- *                          Use 0 (or 1) if it's gonna trigger at once.
- * @param   piHitDisable    The hit count which disables the breakpoint.
- *                          Use ~(uint64_t) if it's never gonna be disabled.
- * @param   piBp            Where to store the breakpoint id. (optional)
- * @thread  Any thread.
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
  */
-static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t *piHitTrigger,
-                                         uint64_t *piHitDisable, uint32_t *piBp)
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpEnableInt3OnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     /*
      * Validate input.
      */
-    PVM pVM = pUVM->pVM;
+    PDBGFBP pBp = (PDBGFBP)pvUser;
+    AssertReturn(pBp, VERR_INVALID_PARAMETER);
+    Assert(pBp->enmType == DBGFBPTYPE_INT3);
+    VMCPU_ASSERT_EMT(pVCpu); RT_NOREF(pVCpu);
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    if (!DBGFR3AddrIsValid(pUVM, pAddress))
-        return VERR_INVALID_PARAMETER;
-    if (*piHitTrigger > *piHitDisable)
-        return VERR_INVALID_PARAMETER;
-    AssertMsgReturn(!piBp || VALID_PTR(piBp), ("piBp=%p\n", piBp), VERR_INVALID_POINTER);
-    if (piBp)
-        *piBp = UINT32_MAX;
 
     /*
-     * Check if the breakpoint already exists.
+     * Arm the breakpoint.
      */
-    PDBGFBP pBp = dbgfR3BpGetByAddr(pVM, DBGFBPTYPE_INT3, pAddress->FlatPtr);
-    if (pBp)
+    return dbgfR3BpInt3Arm(pVM, pBp);
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpSetInt3OnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    /*
+     * Validate input.
+     */
+    PDBGFBPINT3ARGS pBpArgs = (PDBGFBPINT3ARGS)pvUser;
+    AssertReturn(pBpArgs, VERR_INVALID_PARAMETER);
+    VMCPU_ASSERT_EMT(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    AssertMsgReturn(!pBpArgs->piBp || VALID_PTR(pBpArgs->piBp), ("piBp=%p\n", pBpArgs->piBp), VERR_INVALID_POINTER);
+    PCDBGFADDRESS pAddress = pBpArgs->pAddress;
+    if (!DBGFR3AddrIsValid(pVM->pUVM, pAddress))
+        return VERR_INVALID_PARAMETER;
+
+    if (pBpArgs->iHitTrigger > pBpArgs->iHitDisable)
+        return VERR_INVALID_PARAMETER;
+
+    /*
+     * Check if we're on the source CPU where we can resolve the breakpoint address.
+     */
+    if (pVCpu->idCpu == pBpArgs->idSrcCpu)
     {
-        int rc = VINF_SUCCESS;
-        if (!pBp->fEnabled)
-            rc = dbgfR3BpInt3Arm(pUVM, pBp);
+        if (pBpArgs->piBp)
+            *pBpArgs->piBp = UINT32_MAX;
+
+        /*
+         * Check if the breakpoint already exists.
+         */
+        PDBGFBP pBp = dbgfR3BpGetByAddr(pVM, DBGFBPTYPE_INT3, pAddress->FlatPtr);
+        if (pBp)
+        {
+            int rc = VINF_SUCCESS;
+            if (!pBp->fEnabled)
+                rc = dbgfR3BpInt3Arm(pVM, pBp);
+            if (RT_SUCCESS(rc))
+            {
+                if (pBpArgs->piBp)
+                    *pBpArgs->piBp = pBp->iBp;
+
+                /*
+                 * Returning VINF_DBGF_BP_ALREADY_EXIST here causes a VBOXSTRICTRC out-of-range assertion
+                 * in VMMR3EmtRendezvous(). Re-setting of an existing breakpoint shouldn't cause an assertion
+                 * killing the VM (and debugging session), so for now we'll pretend success.
+                 */
+#if 0
+                rc = VINF_DBGF_BP_ALREADY_EXIST;
+#endif
+            }
+            else
+                dbgfR3BpFree(pVM, pBp);
+            return rc;
+        }
+
+        /*
+         * Allocate the breakpoint.
+         */
+        pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_INT3);
+        if (!pBp)
+            return VERR_DBGF_NO_MORE_BP_SLOTS;
+
+        /*
+         * Translate & save the breakpoint address into a guest-physical address.
+         */
+        int rc = DBGFR3AddrToPhys(pVM->pUVM, pBpArgs->idSrcCpu, pAddress, &pBp->u.Int3.PhysAddr);
         if (RT_SUCCESS(rc))
         {
-            rc = VINF_DBGF_BP_ALREADY_EXIST;
-            if (piBp)
-                *piBp = pBp->iBp;
+            /* The physical address from DBGFR3AddrToPhys() is the start of the page,
+               we need the exact byte offset into the page while writing to it in dbgfR3BpInt3Arm(). */
+            pBp->u.Int3.PhysAddr |= (pAddress->FlatPtr & X86_PAGE_OFFSET_MASK);
+            pBp->u.Int3.GCPtr = pAddress->FlatPtr;
+            pBp->iHitTrigger  = pBpArgs->iHitTrigger;
+            pBp->iHitDisable  = pBpArgs->iHitDisable;
+
+            /*
+             * Now set the breakpoint in guest memory.
+             */
+            rc = dbgfR3BpInt3Arm(pVM, pBp);
+            if (RT_SUCCESS(rc))
+            {
+                if (pBpArgs->piBp)
+                    *pBpArgs->piBp = pBp->iBp;
+                return VINF_SUCCESS;
+            }
         }
+
+        dbgfR3BpFree(pVM, pBp);
         return rc;
     }
 
-    /*
-     * Allocate and initialize the bp.
-     */
-    pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_INT3);
-    if (!pBp)
-        return VERR_DBGF_NO_MORE_BP_SLOTS;
-    pBp->u.Int3.GCPtr   = pAddress->FlatPtr;
-    pBp->iHitTrigger    = *piHitTrigger;
-    pBp->iHitDisable    = *piHitDisable;
-    ASMCompilerBarrier();
-    pBp->fEnabled       = true;
-    dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
-
-    /*
-     * Now ask REM to set the breakpoint.
-     */
-    int rc = dbgfR3BpInt3Arm(pUVM, pBp);
-    if (RT_SUCCESS(rc))
-    {
-        if (piBp)
-            *piBp = pBp->iBp;
-    }
-    else
-        dbgfR3BpFree(pVM, pBp);
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -396,6 +462,8 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint
  *
  * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
+ * @param   idSrcCpu    The ID of the virtual CPU used for the
+ *                      breakpoint address resolution.
  * @param   pAddress    The address of the breakpoint.
  * @param   iHitTrigger The hit count at which the breakpoint start triggering.
  *                      Use 0 (or 1) if it's gonna trigger at once.
@@ -404,13 +472,20 @@ static DECLCALLBACK(int) dbgfR3BpSetInt3(PUVM pUVM, PCDBGFADDRESS pAddress, uint
  * @param   piBp        Where to store the breakpoint id. (optional)
  * @thread  Any thread.
  */
-VMMR3DECL(int) DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
+VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idSrcCpu, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
+                               uint32_t *piBp)
 {
-    /*
-     * This must be done on EMT.
-     */
-    int rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpSetInt3, 5,
-                              pUVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    AssertReturn(idSrcCpu <= pUVM->cCpus, VERR_INVALID_CPU_ID);
+
+    DBGFBPINT3ARGS BpArgs;
+    RT_ZERO(BpArgs);
+    BpArgs.idSrcCpu    = idSrcCpu;
+    BpArgs.iHitTrigger = iHitTrigger;
+    BpArgs.iHitDisable = iHitDisable;
+    BpArgs.pAddress    = pAddress;
+    BpArgs.piBp        = piBp;
+
+    int rc = VMMR3EmtRendezvous(pUVM->pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, dbgfR3BpSetInt3OnCpu, &BpArgs);
     LogFlow(("DBGFR3BpSet: returns %Rrc\n", rc));
     return rc;
 }
@@ -418,29 +493,34 @@ VMMR3DECL(int) DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigg
 
 /**
  * Arms an int 3 breakpoint.
- * This is used to implement both DBGFR3BpSetReg() and DBGFR3BpEnable().
+ *
+ * This is used to implement both DBGFR3BpSetInt3() and
+ * DBGFR3BpEnable().
  *
  * @returns VBox status code.
- * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
  */
-static int dbgfR3BpInt3Arm(PUVM pUVM, PDBGFBP pBp)
+static int dbgfR3BpInt3Arm(PVM pVM, PDBGFBP pBp)
 {
-    /** @todo should actually use physical address here! */
-
-    /** @todo SMP support! */
-    VMCPUID idCpu = 0;
+    VM_ASSERT_EMT(pVM);
 
     /*
-     * Save current byte and write int3 instruction.
+     * Save current byte and write the int3 instruction byte.
      */
-    DBGFADDRESS Addr;
-    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->u.Int3.GCPtr);
-    int rc = DBGFR3MemRead(pUVM, idCpu, &Addr, &pBp->u.Int3.bOrg, 1);
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &pBp->u.Int3.bOrg, pBp->u.Int3.PhysAddr, sizeof(pBp->u.Int3.bOrg));
     if (RT_SUCCESS(rc))
     {
         static const uint8_t s_bInt3 = 0xcc;
-        rc = DBGFR3MemWrite(pUVM, idCpu, &Addr, &s_bInt3, 1);
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pBp->u.Int3.PhysAddr, &s_bInt3, sizeof(s_bInt3));
+        if (RT_SUCCESS(rc))
+        {
+            pBp->fEnabled = true;
+            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
+            pVM->dbgf.s.cEnabledInt3Breakpoints = pVM->dbgf.s.Int3.cToSearch;
+            Log(("DBGF: Set breakpoint at %RGv (Phys %RGp) cEnabledInt3Breakpoints=%u\n", pBp->u.Int3.GCPtr,
+                 pBp->u.Int3.PhysAddr, pVM->dbgf.s.cEnabledInt3Breakpoints));
+        }
     }
     return rc;
 }
@@ -448,28 +528,58 @@ static int dbgfR3BpInt3Arm(PUVM pUVM, PDBGFBP pBp)
 
 /**
  * Disarms an int 3 breakpoint.
+ *
  * This is used to implement both DBGFR3BpClear() and DBGFR3BpDisable().
  *
  * @returns VBox status code.
- * @param   pUVM        The user mode VM handle.
+ * @param   pVM         The cross context VM structure.
  * @param   pBp         The breakpoint.
  */
-static int dbgfR3BpInt3Disarm(PUVM pUVM, PDBGFBP pBp)
+static int dbgfR3BpInt3Disarm(PVM pVM, PDBGFBP pBp)
 {
-    /** @todo SMP support! */
-    VMCPUID idCpu = 0;
+    VM_ASSERT_EMT(pVM);
 
     /*
      * Check that the current byte is the int3 instruction, and restore the original one.
      * We currently ignore invalid bytes.
      */
-    DBGFADDRESS     Addr;
-    DBGFR3AddrFromFlat(pUVM, &Addr, pBp->u.Int3.GCPtr);
-    uint8_t         bCurrent;
-    int rc = DBGFR3MemRead(pUVM, idCpu, &Addr, &bCurrent, 1);
-    if (bCurrent == 0xcc)
-        rc = DBGFR3MemWrite(pUVM, idCpu, &Addr, &pBp->u.Int3.bOrg, 1);
+    uint8_t bCurrent = 0;
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &bCurrent, pBp->u.Int3.PhysAddr, sizeof(bCurrent));
+    if (   RT_SUCCESS(rc)
+        && bCurrent == 0xcc)
+    {
+        rc = PGMPhysSimpleWriteGCPhys(pVM, pBp->u.Int3.PhysAddr, &pBp->u.Int3.bOrg, sizeof(pBp->u.Int3.bOrg));
+        if (RT_SUCCESS(rc))
+        {
+            pBp->fEnabled = false;
+            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
+            pVM->dbgf.s.cEnabledInt3Breakpoints = pVM->dbgf.s.Int3.cToSearch;
+            Log(("DBGF: Removed breakpoint at %RGv (Phys %RGp) cEnabledInt3Breakpoints=%u\n", pBp->u.Int3.GCPtr,
+                 pBp->u.Int3.PhysAddr, pVM->dbgf.s.cEnabledInt3Breakpoints));
+        }
+    }
     return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpDisableInt3OnCpu(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    /*
+     * Validate input.
+     */
+    PDBGFBP pBp = (PDBGFBP)pvUser;
+    AssertReturn(pBp, VERR_INVALID_PARAMETER);
+    Assert(pBp->enmType == DBGFBPTYPE_INT3);
+    VMCPU_ASSERT_EMT(pVCpu); RT_NOREF(pVCpu);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /*
+     * Disarm the breakpoint.
+     */
+    return dbgfR3BpInt3Disarm(pVM, pBp);
 }
 
 
@@ -965,7 +1075,7 @@ static DECLCALLBACK(int) dbgfR3BpSetMmio(PUVM pUVM, PCRTGCPHYS pGCPhys, uint32_t
     /*
      * Allocate and initialize the breakpoint.
      */
-    PDBGFBP pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_PORT_IO);
+    PDBGFBP pBp = dbgfR3BpAlloc(pVM, DBGFBPTYPE_MMIO);
     if (!pBp)
         return VERR_DBGF_NO_MORE_BP_SLOTS;
     pBp->iHitTrigger        = *piHitTrigger;
@@ -1040,6 +1150,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
      * Validate input.
      */
     PVM pVM = pUVM->pVM;
+    VM_ASSERT_EMT(pVM);
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     PDBGFBP pBp = dbgfR3BpGet(pVM, iBp);
     if (!pBp)
@@ -1059,8 +1170,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
                 break;
 
             case DBGFBPTYPE_INT3:
-                rc = dbgfR3BpInt3Disarm(pUVM, pBp);
-                dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
+                rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3BpDisableInt3OnCpu, pBp);
                 break;
 
             case DBGFBPTYPE_REM:
@@ -1136,7 +1246,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
         return VINF_DBGF_BP_ALREADY_ENABLED;
 
     /*
-     * Remove the breakpoint.
+     * Arm the breakpoint.
      */
     int rc;
     pBp->fEnabled = true;
@@ -1147,8 +1257,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_INT3:
-            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
-            rc = dbgfR3BpInt3Arm(pUVM, pBp);
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3BpEnableInt3OnCpu, pBp);
             break;
 
         case DBGFBPTYPE_REM:
@@ -1231,8 +1340,7 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PUVM pUVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_INT3:
-            rc = dbgfR3BpInt3Disarm(pUVM, pBp);
-            dbgfR3BpUpdateSearchOptimizations(pVM, DBGFBPTYPE_INT3, &pVM->dbgf.s.Int3);
+            rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, dbgfR3BpDisableInt3OnCpu, pBp);
             break;
 
         case DBGFBPTYPE_REM:
@@ -1336,7 +1444,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
      * This must be done on EMT.
      */
     int rc = VMR3ReqPriorityCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3BpEnum, 3, pUVM, pfnCallback, pvUser);
-    LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
+    LogFlow(("DBGFR3BpEnum: returns %Rrc\n", rc));
     return rc;
 }
 

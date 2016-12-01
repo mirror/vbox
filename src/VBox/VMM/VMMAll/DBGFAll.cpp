@@ -153,6 +153,19 @@ VMM_INT_DECL(bool) DBGFBpIsHwIoArmed(PVM pVM)
 
 
 /**
+ * Checks if any INT3 breakpoints are armed.
+ *
+ * @returns true if armed, false if not.
+ * @param   pVM        The cross context VM structure.
+ * @remarks Don't call this from CPUMRecalcHyperDRx!
+ */
+VMM_INT_DECL(bool) DBGFBpIsInt3Armed(PVM pVM)
+{
+    return pVM->dbgf.s.cEnabledInt3Breakpoints > 0;
+}
+
+
+/**
  * Checks I/O access for guest or hypervisor breakpoints.
  *
  * @returns Strict VBox status code

@@ -2649,6 +2649,8 @@ static int hmR0VmxInitXcptBitmap(PVM pVM, PVMCPU pVCpu)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
+    /** @todo r=ramshankar: Shouldn't setting up \#UD intercepts be handled by
+     *        hmR0VmxLoadGuestXcptIntercepts()? Why do we check it here? */
     uint32_t u32XcptBitmap = pVCpu->hm.s.fGIMTrapXcptUD ? RT_BIT(X86_XCPT_UD) : 0;
 
     /* Must always intercept #AC to prevent the guest from hanging the CPU. */
@@ -9106,7 +9108,7 @@ typedef struct VMXRUNDBGSTATE
     uint32_t    fCpe1Unwanted;
     /** Stuff we need in VMX_VMCS32_CTRL_PROC_EXEC2. */
     uint32_t    fCpe2Extra;
-    /** Extra stuff we need in    */
+    /** Extra stuff we need in VMX_VMCS32_CTRL_EXCEPTION_BITMAP. */
     uint32_t    bmXcptExtra;
     /** The sequence number of the Dtrace provider settings the state was
      *  configured against. */
@@ -9304,6 +9306,12 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     {
         ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_XCPT_OR_NMI);
     }
+
+    /*
+     * INT3 breakpoints - triggered by #BP exceptions.
+     */
+    if (pVM->dbgf.ro.cEnabledInt3Breakpoints > 0)
+        pDbgState->bmXcptExtra |= RT_BIT_32(X86_XCPT_BP);
 
     /*
      * Exception bitmap and XCPT events+probes.
@@ -10405,7 +10413,8 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VBOXSTRICTRC rcStrict;
     if (   !pVCpu->hm.s.fUseDebugLoop
         && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled())
-        && !DBGFIsStepping(pVCpu) )
+        && !DBGFIsStepping(pVCpu)
+        && !pVM->dbgf.ro.cEnabledInt3Breakpoints)
         rcStrict = hmR0VmxRunGuestCodeNormal(pVM, pVCpu, pCtx);
     else
         rcStrict = hmR0VmxRunGuestCodeDebug(pVM, pVCpu, pCtx);

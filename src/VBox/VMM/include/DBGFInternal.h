@@ -208,8 +208,17 @@ typedef struct DBGF
     /** Enabled software interrupt breakpoints. */
     uint32_t                    cSoftIntBreakpoints;
 
-    /** Number of selected events. */
+    /** The number of selected events. */
     uint32_t                    cSelectedEvents;
+
+    /** The number of enabled hardware breakpoints. */
+    uint8_t                     cEnabledHwBreakpoints;
+    /** The number of enabled hardware I/O breakpoints. */
+    uint8_t                     cEnabledHwIoBreakpoints;
+    /** The number of enabled INT3 breakpoints. */
+    uint8_t                     cEnabledInt3Breakpoints;
+    uint8_t                     abPadding; /**< Unused padding space up for grabs. */
+    uint32_t                    uPadding;
 
     /** Debugger Attached flag.
      * Set if a debugger is attached, elsewise it's clear.
@@ -275,13 +284,7 @@ typedef struct DBGF
 
     } SteppingFilter;
 
-    uint32_t                    u32Padding; /**< Alignment padding. */
-
-    /** The number of enabled hardware breakpoints. */
-    uint8_t                     cEnabledHwBreakpoints;
-    /** The number of enabled hardware I/O breakpoints. */
-    uint8_t                     cEnabledHwIoBreakpoints;
-    uint8_t                     abPadding[2]; /**< Unused padding space up for grabs. */
+    uint32_t                    u32Padding[2]; /**< Alignment padding. */
 
     /** Array of hardware breakpoints. (0..3)
      * This is shared among all the CPUs because life is much simpler that way. */

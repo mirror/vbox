@@ -1206,8 +1206,15 @@ typedef struct VM
             uint32_t                    cHardIntBreakpoints;
             /** Enabled software interrupt breakpoints. */
             uint32_t                    cSoftIntBreakpoints;
-            /** Number of selected events. */
+            /** The number of selected events. */
             uint32_t                    cSelectedEvents;
+            /** The number of enabled hardware breakpoints. */
+            uint8_t                     cEnabledHwBreakpoints;
+            /** The number of enabled hardware I/O breakpoints. */
+            uint8_t                     cEnabledHwIoBreakpoints;
+            /** The number of enabled INT3 breakpoints. */
+            uint8_t                     cEnabledInt3Breakpoints;
+            uint8_t                     abPadding[1]; /**< Unused padding space up for grabs. */
         } const     ro;
 #endif
         uint8_t     padding[2368];      /* multiple of 64 */

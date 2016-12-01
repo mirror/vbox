@@ -1669,18 +1669,24 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
  */
 static int hmR0SvmLoadGuestXcptIntercepts(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
-    int rc = VINF_SUCCESS;
-    NOREF(pCtx);
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
     {
-        /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmLoadSharedCR0(). */
+        /* Trap #UD for GIM provider (e.g. for hypercalls). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
             hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_UD);
         else
             hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_UD);
+
+        /* Trap #BP for INT3 debug breakpoints set by the VM debugger. */
+        if (pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
+            hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_BP);
+        else
+            hmR0SvmRemoveXcptIntercept(pVmcb, X86_XCPT_BP);
+
+        /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmLoadSharedCR0(). */
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

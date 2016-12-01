@@ -41,7 +41,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddr
     return VINF_SUCCESS;
 }
 
-VMMR3DECL(int)  DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PDBGFADDRESS pAddress, PRTGCPHYS pGCPhys)
+VMMR3DECL(int)  DBGFR3AddrToPhys(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, PRTGCPHYS pGCPhys)
 {
     return VERR_INTERNAL_ERROR;
 }
@@ -67,7 +67,7 @@ VMMR3DECL(int) DBGFR3BpEnum(PUVM pUVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3BpSet(PUVM pUVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp)
+VMMR3DECL(int) DBGFR3BpSetInt3(PUVM pUVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, PRTUINT piBp)
 {
     return VERR_INTERNAL_ERROR;
 }
