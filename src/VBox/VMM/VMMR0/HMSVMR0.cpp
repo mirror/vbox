@@ -306,6 +306,7 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptUD;
 static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmExitXcptAC;
+static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
 /** @} */
 
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
@@ -3571,6 +3572,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_EXCEPTION_11:  /* X86_XCPT_AC */
             return hmR0SvmExitXcptAC(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_EXCEPTION_3:  /* X86_XCPT_BP */
+            return hmR0SvmExitXcptBP(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_MONITOR:
             return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
 
@@ -3674,7 +3678,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
                 /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
                 case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
-                case SVM_EXIT_EXCEPTION_3:             /* X86_XCPT_BP */
+                /* case SVM_EXIT_EXCEPTION_3: */       /* X86_XCPT_BP - Handled above. */
                 case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
                 case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
                 /* case SVM_EXIT_EXCEPTION_6: */       /* X86_XCPT_UD - Handled above. */
@@ -3707,13 +3711,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                     {
                         case X86_XCPT_DE:
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                            break;
-
-                        case X86_XCPT_BP:
-                            /** Saves the wrong EIP on the stack (pointing to the int3) instead of the
-                             *  next instruction. */
-                            /** @todo Investigate this later. */
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
                             break;
 
                         case X86_XCPT_NP:
@@ -5640,6 +5637,33 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptAC(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Event.n.u1ErrorCodeValid = 1;
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * \#VMEXIT handler for breakpoint exceptions (SVM_EXIT_EXCEPTION_3).
+ * Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+    int rc = DBGFRZTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    if (rc == VINF_EM_RAW_GUEST_TRAP)
+    {
+        SVMEVENT Event;
+        Event.u          = 0;
+        Event.n.u1Valid  = 1;
+        Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+        Event.n.u8Vector = X86_XCPT_BP;
+        Event.n.u1ErrorCodeValid = 0;
+        hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+    }
+
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
+    return rc;
 }
 
 /** @} */
