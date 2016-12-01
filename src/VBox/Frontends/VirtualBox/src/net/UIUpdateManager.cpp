@@ -55,6 +55,11 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+#if 0
+/* enable to test the version update check */
+#define VBOX_NEW_VERSION_TEST "0.0.0_0 http://unknown.unknown.org/0.0.0/VirtualBox-0.0.0-0-unknown.pkg"
+#endif
+
 /* Forward declarations: */
 class UIUpdateStep;
 
@@ -227,6 +232,9 @@ private:
         /* Deserialize incoming data: */
         QString strResponseData(pReply->readAll());
 
+#ifdef VBOX_NEW_VERSION_TEST
+        strResponseData = VBOX_NEW_VERSION_TEST;
+#endif
         /* Newer version of necessary package found: */
         if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
         {
@@ -519,7 +527,11 @@ void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
     VBoxUpdateData currentData(gEDataManager->applicationUpdateData());
 
     /* If update is really necessary: */
-    if (fForceCall || currentData.isNeedToCheck())
+    if (
+#ifdef VBOX_NEW_VERSION_TEST
+        true ||
+#endif
+        fForceCall || currentData.isNeedToCheck())
     {
         /* Prepare update queue: */
         new UIUpdateStepVirtualBox(m_pQueue, fForceCall);
