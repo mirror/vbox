@@ -2326,7 +2326,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
 
 
 /**
- * Read from the ring 0 jump buffer stack
+ * Read from the ring 0 jump buffer stack.
  *
  * @returns VBox status code.
  *
