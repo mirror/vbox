@@ -96,12 +96,14 @@ public:
     /** Returns default text. */
     virtual QString defaultText() const /* override */
     {
-        return tr("%1, %2: %3, %4: %5, %6: %7",
+        return parentItem() ?
+               tr("%1, %2: %3, %4: %5, %6: %7",
                   "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text, col.4 name: col.4 text")
                  .arg(text(0))
                  .arg(parentTree()->headerItem()->text(1)).arg(text(1))
                  .arg(parentTree()->headerItem()->text(2)).arg(text(2))
-                 .arg(parentTree()->headerItem()->text(3)).arg(text(3));
+                 .arg(parentTree()->headerItem()->text(3)).arg(text(3)) :
+               text(0);
     }
 
 private:
