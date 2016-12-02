@@ -81,8 +81,14 @@ public:
     /** Returns default text. */
     virtual QString defaultText() const /* override */
     {
-        /* Return 2nd cell text as default: */
-        return text(1);
+        return m_data.m_fIsUsable ?
+               tr("%1, %2: %3, %4", "col.2 text, col.3 name: col.3 text, col.1 name")
+                 .arg(text(1))
+                 .arg(parentTree()->headerItem()->text(2)).arg(text(2))
+                 .arg(parentTree()->headerItem()->text(0)) :
+               tr("%1, %2: %3",     "col.2 text, col.3 name: col.3 text")
+                 .arg(text(1))
+                 .arg(parentTree()->headerItem()->text(2)).arg(text(2));
     }
 
 private:

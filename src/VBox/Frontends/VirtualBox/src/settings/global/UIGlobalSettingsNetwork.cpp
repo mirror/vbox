@@ -218,8 +218,12 @@ void UIItemNetworkNAT::updateData()
 
 QString UIItemNetworkNAT::defaultText() const
 {
-    /* Return 2nd cell text as default: */
-    return text(1);
+    return m_data.m_fEnabled ?
+           tr("%1, %2", "col.2 text, col.1 name")
+             .arg(text(1))
+             .arg(parentTree()->headerItem()->text(0)) :
+           tr("%1",     "col.2 text")
+             .arg(text(1));
 }
 
 

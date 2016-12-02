@@ -163,6 +163,15 @@ protected:
     /** Release UIMedium wrapped by <i>this</i> item from virtual @a machine. */
     virtual bool releaseFrom(CMachine machine) = 0;
 
+    /** Returns default text. */
+    virtual QString defaultText() const /* override */
+    {
+        return tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
+                 .arg(text(0))
+                 .arg(parentTree()->headerItem()->text(1)).arg(text(1))
+                 .arg(parentTree()->headerItem()->text(2)).arg(text(2));
+    }
+
 private:
 
     /** Refresh item information such as icon, text and tool-tip. */
