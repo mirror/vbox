@@ -3925,7 +3925,7 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
 #ifdef RT_OS_LINUX
         /*
          * Ext4 bug: Check if the host I/O cache is disabled and the disk image is located
-         *           on an ext4 partition. Later we have to check the Linux kernel version!
+         *           on an ext4 partition.
          * This bug apparently applies to the XFS file system as well.
          * Linux 2.6.36 is known to be fixed (tested with 2.6.36-rc4).
          */
@@ -3973,6 +3973,30 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
                 *pfUseHostIOCache = true;
                 mfSnapshotFolderExt4WarningShown = true;
             }
+        }
+        
+        /*
+         * 2.6.18 bug: Check if the host I/O cache is disabled and the host is running
+         *             Linux 2.6.18. See @bugref{8690}. Apparently the same problem as
+         *             documented in https://lkml.org/lkml/2007/2/1/14. We saw such
+         *             kernel oopses on Linux 2.6.18-416.el5. We don't know when this
+         *             was fixed but we _know_ that 2.6.18 EL5 kernels are affected.
+         */
+        bool fKernelAsyncUnreliable =    RT_FAILURE(rc)
+                                      || (RTStrVersionCompare(szOsRelease, "2.6.19") < 0);
+        if (   (uCaps & MediumFormatCapabilities_Asynchronous)
+            && !*pfUseHostIOCache
+            && fKernelAsyncUnreliable)
+        {
+            i_atVMRuntimeErrorCallbackF(0, "Linux2618TooOld",
+                    N_("The host I/O cache for at least one controller is disabled. "
+                       "There is a known Linux kernel bug which can lead to kernel "
+                       "oopses under heavy load. To our knowledge this bug affects "
+                       "all 2.6.18 kernels.\n"
+                       "Either enable the host I/O cache permanently in the VM "
+                       "settings or switch to a newer host kernel.\n"
+                       "The host I/O cache will now be enabled for this medium"));
+            *pfUseHostIOCache = true;
         }
 #endif
     }
