@@ -69,9 +69,9 @@ BS3_CMN_DEF(int, Bs3PagingQueryAddressInfo,(uint64_t uFlat, PBS3PAGINGINFO4ADDR 
                 pPgInfo->u.Pae.pPml4e += (uFlat >> X86_PML4_SHIFT) & X86_PML4_MASK;
                 if (!pPgInfo->u.Pae.pPml4e->n.u1Present)
                     rc = VERR_PAGE_NOT_PRESENT;
-                else if (pPgInfo->u.Pae.pPml4e->u <= uMaxAddr)
+                else if ((pPgInfo->u.Pae.pPml4e->u & X86_PML4E_PG_MASK) <= uMaxAddr)
                 {
-                    pPgInfo->u.Pae.pPdpe  = (X86PDPE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Pae.pPml4e->u & X86_PAGE_BASE_MASK);
+                    pPgInfo->u.Pae.pPdpe  = (X86PDPE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Pae.pPml4e->u & X86_PML4E_PG_MASK);
                     pPgInfo->u.Pae.pPdpe += (uFlat >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
                     if (!pPgInfo->u.Pae.pPdpe->n.u1Present)
                         rc = VERR_PAGE_NOT_PRESENT;
@@ -95,19 +95,19 @@ BS3_CMN_DEF(int, Bs3PagingQueryAddressInfo,(uint64_t uFlat, PBS3PAGINGINFO4ADDR 
 
             /* Common code for the PD and PT levels. */
             if (   rc == VINF_TRY_AGAIN
-                && pPgInfo->u.Pae.pPdpe->u <= uMaxAddr)
+                && (pPgInfo->u.Pae.pPdpe->u & X86_PDPE_PG_MASK) <= uMaxAddr)
             {
                 rc = VERR_OUT_OF_RANGE;
-                pPgInfo->u.Pae.pPde  = (X86PDEPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Pae.pPdpe->u & X86_PAGE_BASE_MASK);
+                pPgInfo->u.Pae.pPde  = (X86PDEPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Pae.pPdpe->u & X86_PDPE_PG_MASK);
                 pPgInfo->u.Pae.pPde += (uFlat >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK;
                 if (!pPgInfo->u.Pae.pPde->n.u1Present)
                     rc = VERR_PAGE_NOT_PRESENT;
                 else if (pPgInfo->u.Pae.pPde->b.u1Size)
                     rc = VINF_SUCCESS;
-                else if (pPgInfo->u.Pae.pPde->u <= uMaxAddr)
+                else if ((pPgInfo->u.Pae.pPde->u & X86_PDE_PAE_PG_MASK) <= uMaxAddr)
                 {
-                    pPgInfo->u.Pae.pPte  = (X86PTEPAE BS3_FAR *)Bs3XptrFlatToCurrent(  pPgInfo->u.Pae.pPde->u
-                                                                                     & X86_PAGE_BASE_MASK);
+                    pPgInfo->u.Pae.pPte = (X86PTEPAE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Pae.pPde->u & X86_PDE_PAE_PG_MASK);
+                    rc = VINF_SUCCESS;
                 }
             }
             else if (rc == VINF_TRY_AGAIN)
@@ -135,8 +135,7 @@ BS3_CMN_DEF(int, Bs3PagingQueryAddressInfo,(uint64_t uFlat, PBS3PAGINGINFO4ADDR 
                 rc = VINF_SUCCESS;
             else if (pPgInfo->u.Legacy.pPde->u <= uMaxAddr)
             {
-                pPgInfo->u.Legacy.pPte  = (X86PTE BS3_FAR *)Bs3XptrFlatToCurrent(  pPgInfo->u.Legacy.pPde->u
-                                                                                 & X86_PAGE_BASE_MASK_32);
+                pPgInfo->u.Legacy.pPte  = (X86PTE BS3_FAR *)Bs3XptrFlatToCurrent(pPgInfo->u.Legacy.pPde->u & X86_PDE_PG_MASK);
                 pPgInfo->u.Legacy.pPte += ((uint32_t)uFlat >> X86_PT_SHIFT) & X86_PT_MASK;
                 if (pPgInfo->u.Legacy.pPte->n.u1Present)
                     rc = VINF_SUCCESS;

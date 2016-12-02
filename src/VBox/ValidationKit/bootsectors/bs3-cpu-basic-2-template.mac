@@ -320,13 +320,6 @@ BS3_PROC_END_CMN   bs3CpuBasic2_lgdt_opsize_ss_bx__sgdt_es_di__lgdt_es_si__ud2
 ; #PF
 ;
 
-; For testing exec access.
-BS3_PROC_BEGIN_CMN bs3CpuBasic2_RaisePF_ExecTmpl, BS3_PBC_NEAR
-.again: ud2
-        jmp     .again
-BS3_PROC_END_CMN   bs3CpuBasic2_RaisePF_ExecTmpl
-
-
 ; For testing read access.
 BS3_PROC_BEGIN_CMN bs3CpuBasic2_mov_ax_ds_bx__ud2, BS3_PBC_NEAR
         mov     xAX, [xBX]
