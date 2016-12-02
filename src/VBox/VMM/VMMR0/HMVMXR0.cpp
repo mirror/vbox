@@ -3109,7 +3109,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Saves certain host MSRs in the VM-Exit MSR-load area and some in the
+ * Saves certain host MSRs in the VM-exit MSR-load area and some in the
  * host-state area of the VMCS. Theses MSRs will be automatically restored on
  * the host after every successful VM-exit.
  *
@@ -9084,6 +9084,10 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
  * @{
  */
 
+/**
+ * Transient per-VCPU debug state of VMCS and related info. we save/restore in
+ * the debug run loop.
+ */
 typedef struct VMXRUNDBGSTATE
 {
     /** The RIP we started executing at.  This is for detecting that we stepped.  */
@@ -9113,7 +9117,7 @@ typedef struct VMXRUNDBGSTATE
     /** The sequence number of the Dtrace provider settings the state was
      *  configured against. */
     uint32_t    uDtraceSettingsSeqNo;
-    /** Exits to check (one bit per exit). */
+    /** VM-exits to check (one bit per VM-exit). */
     uint32_t    bmExitsToCheck[3];
 
     /** The initial VMX_VMCS32_CTRL_PROC_EXEC value (helps with restore). */
@@ -9220,7 +9224,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE
 DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbgState, VBOXSTRICTRC rcStrict)
 {
     /*
-     * Restore exit control settings as we may not reenter this function the
+     * Restore VM-exit control settings as we may not reenter this function the
      * next time around.
      */
     /* We reload the initial value, trigger what we can of recalculations the
@@ -9269,7 +9273,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTAT
  * Configures VM-exit controls for current DBGF and DTrace settings.
  *
  * This updates @a pDbgState and the VMCS execution control fields to reflect
- * the necessary exits demanded by DBGF and DTrace.
+ * the necessary VM-exits demanded by DBGF and DTrace.
  *
  * @param   pVM             The cross context VM structure.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -9343,7 +9347,7 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
         ASMBitSet(pDbgState->bmExitsToCheck, VMX_EXIT_XCPT_OR_NMI);
 
     /*
-     * Process events and probes for VM exits, making sure we get the wanted exits.
+     * Process events and probes for VM-exits, making sure we get the wanted VM-exits.
      *
      * Note! This is the reverse of waft hmR0VmxHandleExitDtraceEvents does.
      *       So, when adding/changing/removing please don't forget to update it.
@@ -9560,11 +9564,12 @@ static void hmR0VmxPreRunGuestDebugStateUpdate(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
 
 
 /**
- * Fires off DBGF events and dtrace probes for an exit, when it's appropriate.
+ * Fires off DBGF events and dtrace probes for a VM-exit, when it's
+ * appropriate.
  *
- * The caller has checked exit against the VMXRUNDBGSTATE::bmExitsToCheck
- * bitmap. The caller has checked for NMIs already, so we don't have to do that
- * either.
+ * The caller has checked the VM-exit against the
+ * VMXRUNDBGSTATE::bmExitsToCheck bitmap. The caller has checked for NMIs
+ * already, so we don't have to do that either.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVM             The cross context VM structure.
@@ -9771,7 +9776,7 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
             break;
 
         default:
-            AssertMsgFailed(("Unexpected exit=%#x\n", uExitReason));
+            AssertMsgFailed(("Unexpected VM-exit=%#x\n", uExitReason));
             break;
     }
 #undef SET_BOTH
@@ -9949,9 +9954,9 @@ static VBOXSTRICTRC hmR0VmxHandleExitDtraceEvents(PVM pVM, PVMCPU pVCpu, PCPUMCT
 /**
  * Single-stepping VM-exit filtering.
  *
- * This is preprocessing the exits and deciding whether we've gotten far enough
- * to return VINF_EM_DBG_STEPPED already.  If not, normal VM-exit handling is
- * performed.
+ * This is preprocessing the VM-exits and deciding whether we've gotten far
+ * enough to return VINF_EM_DBG_STEPPED already.  If not, normal VM-exit
+ * handling is performed.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVM             The cross context VM structure.
@@ -9967,7 +9972,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMC
                                                    uint32_t uExitReason, PVMXRUNDBGSTATE pDbgState)
 {
     /*
-     * Expensive (saves context) generic dtrace exit probe.
+     * Expensive (saves context) generic dtrace VM-exit probe.
      */
     if (!VBOXVMM_R0_HMVMX_VMEXIT_ENABLED())
     { /* more likely */ }
@@ -10077,7 +10082,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxRunDebugHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMC
                 break;
 
             default:
-                AssertMsgFailed(("Unexpected exit=%#x\n", uExitReason));
+                AssertMsgFailed(("Unexpected VM-exit=%#x\n", uExitReason));
                 break;
         }
     }
@@ -10512,7 +10517,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         case VMX_EXIT_XRSTORS:
             return hmR0VmxExitSetPendingXcptUD(pVCpu, pMixedCtx, pVmxTransient);
         case VMX_EXIT_RESERVED_60:
-        case VMX_EXIT_RDSEED: /* only spurious exits, so undefined */
+        case VMX_EXIT_RDSEED: /* only spurious VM-exits, so undefined */
         case VMX_EXIT_RESERVED_62:
         default:
             return hmR0VmxExitErrUndefined(pVCpu, pMixedCtx, pVmxTransient);
@@ -13169,7 +13174,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     VMMRZCallRing3Disable(pVCpu);
     HM_DISABLE_PREEMPT();
 
-    /* If the guest FPU was active at the time of the #NM exit, then it's a guest fault. */
+    /* If the guest FPU was active at the time of the #NM VM-exit, then it's a guest fault. */
     if (pVmxTransient->fWasGuestFPUStateActive)
     {
         rc = VINF_EM_RAW_GUEST_TRAP;
