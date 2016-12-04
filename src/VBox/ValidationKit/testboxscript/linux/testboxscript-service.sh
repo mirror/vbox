@@ -395,22 +395,22 @@ start() {
         if [ "${TESTBOXSCRIPT_NESTED_PAGING}" = "no"  ]; then PARAMS="${PARAMS} --no-nested-paging"; fi
         if [ "${TESTBOXSCRIPT_IOMMU}"         = "yes" ]; then PARAMS="${PARAMS} --io-mmu"; fi
         if [ "${TESTBOXSCRIPT_IOMMU}"         = "no"  ]; then PARAMS="${PARAMS} --no-io-mmu"; fi
-        if [ -n "${TESTBOXSCRIPT_SYSTEM_UUID}"   ]; then PARAMS="${PARAMS} --system-uuid '${TESTBOXSCRIPT_SYSTEM_UUID}'"; fi
-        if [ -n "${TESTBOXSCRIPT_TEST_MANAGER}"  ]; then PARAMS="${PARAMS} --test-manager '${TESTBOXSCRIPT_TEST_MANAGER}'"; fi
-        if [ -n "${TESTBOXSCRIPT_SCRATCH_ROOT}"  ]; then PARAMS="${PARAMS} --scratch-root '${TESTBOXSCRIPT_SCRATCH_ROOT}'"; fi
+        if [ -n "${TESTBOXSCRIPT_SYSTEM_UUID}"     ]; then PARAMS="${PARAMS} --system-uuid '${TESTBOXSCRIPT_SYSTEM_UUID}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TEST_MANAGER}"    ]; then PARAMS="${PARAMS} --test-manager '${TESTBOXSCRIPT_TEST_MANAGER}'"; fi
+        if [ -n "${TESTBOXSCRIPT_SCRATCH_ROOT}"    ]; then PARAMS="${PARAMS} --scratch-root '${TESTBOXSCRIPT_SCRATCH_ROOT}'"; fi
 
-        if [ -n "${TESTBOXSCRIPT_BUILDS_PATH}"   ]; then PARAMS="${PARAMS} --builds-path '${TESTBOXSCRIPT_BUILDS_PATH}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_TYPE}"   ]; then PARAMS="${PARAMS} --builds-server-type   '${TESTBOXSCRIPT_BUILDS_TYPE}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_NAME}"   ]; then PARAMS="${PARAMS} --builds-server-name   '${TESTBOXSCRIPT_BUILDS_NAME}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"  ]; then PARAMS="${PARAMS} --builds-server-share  '${TESTBOXSCRIPT_BUILDS_SHARE}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"   ]; then PARAMS="${PARAMS} --builds-server-user   '${TESTBOXSCRIPT_BUILDS_USER}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}" ]; then PARAMS="${PARAMS} --builds-server-passwd '${TESTBOXSCRIPT_BUILDS_PASSWD}'"; fi
-        if [ -n "${TESTBOXSCRIPT_TESTRSRC_PATH}" ]; then PARAMS="${PARAMS} --testrsrc-path '${TESTBOXSCRIPT_PATH_TESTRSRC}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_TYPE}"   ]; then PARAMS="${PARAMS} --testrsrc-server-type   '${TESTBOXSCRIPT_TESTRSRC_TYPE}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_NAME}"   ]; then PARAMS="${PARAMS} --testrsrc-server-name   '${TESTBOXSCRIPT_TESTRSRC_NAME}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"  ]; then PARAMS="${PARAMS} --testrsrc-server-share  '${TESTBOXSCRIPT_TESTRSRC_SHARE}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"   ]; then PARAMS="${PARAMS} --testrsrc-server-user   '${TESTBOXSCRIPT_TESTRSRC_USER}'"; fi
-        if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}" ]; then PARAMS="${PARAMS} --testrsrc-server-passwd '${TESTBOXSCRIPT_TESTRSRC_PASSWD}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_PATH}"     ]; then PARAMS="${PARAMS} --builds-path '${TESTBOXSCRIPT_BUILDS_PATH}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_TYPE}"     ]; then PARAMS="${PARAMS} --builds-server-type   '${TESTBOXSCRIPT_BUILDS_TYPE}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_NAME}"     ]; then PARAMS="${PARAMS} --builds-server-name   '${TESTBOXSCRIPT_BUILDS_NAME}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_SHARE}"    ]; then PARAMS="${PARAMS} --builds-server-share  '${TESTBOXSCRIPT_BUILDS_SHARE}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_USER}"     ]; then PARAMS="${PARAMS} --builds-server-user   '${TESTBOXSCRIPT_BUILDS_USER}'"; fi
+        if [ -n "${TESTBOXSCRIPT_BUILDS_PASSWD}"   ]; then PARAMS="${PARAMS} --builds-server-passwd '${TESTBOXSCRIPT_BUILDS_PASSWD}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_PATH}"   ]; then PARAMS="${PARAMS} --testrsrc-path '${TESTBOXSCRIPT_TESTRSRC_PATH}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_TYPE}"   ]; then PARAMS="${PARAMS} --testrsrc-server-type   '${TESTBOXSCRIPT_TESTRSRC_TYPE}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_NAME}"   ]; then PARAMS="${PARAMS} --testrsrc-server-name   '${TESTBOXSCRIPT_TESTRSRC_NAME}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_SHARE}"  ]; then PARAMS="${PARAMS} --testrsrc-server-share  '${TESTBOXSCRIPT_TESTRSRC_SHARE}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_USER}"   ]; then PARAMS="${PARAMS} --testrsrc-server-user   '${TESTBOXSCRIPT_TESTRSRC_USER}'"; fi
+        if [ -n "${TESTBOXSCRIPT_TESTRSRC_PASSWD}" ]; then PARAMS="${PARAMS} --testrsrc-server-passwd '${TESTBOXSCRIPT_TESTRSRC_PASSWD}'"; fi
 
         if [ -n "${TESTBOXSCRIPT_PYTHON}" ]; then
             my_start_daemon "${TESTBOXSCRIPT_USER}" "${TESTBOXSCRIPT_PYTHON}" "${binary}" ${PARAMS}
