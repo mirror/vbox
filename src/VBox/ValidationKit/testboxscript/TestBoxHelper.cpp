@@ -515,6 +515,53 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
                 fSupported = 0;
         }
     }
+# if defined(RT_OS_LINUX)
+    else if (enmHwVirt == HWVIRTTYPE_VTX)
+    {
+        /*
+         * For Intel there is no generic way to query EPT support but on
+         * Linux we can resort to checking for the EPT flag in /proc/cpuinfo
+         */
+        RTFILE hFileCpu;
+        int rc = RTFileOpen(&hFileCpu, "/proc/cpuinfo", RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Read enough to fit the first CPU entry in, we only check the first
+             * CPU as all the others should have the same features.
+             */
+            char szBuf[_4K];
+            size_t cbRead = 0;
+
+            RT_ZERO(szBuf); /* Ensure proper termination. */
+            rc = RTFileRead(hFileCpu, &szBuf[0], sizeof(szBuf) - 1, &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                /* Look for the start of the flags section. */
+                char *pszStrFlags = RTStrStr(&szBuf[0], "flags");
+                if (pszStrFlags)
+                {
+                    /* Look for the end as indicated by new line. */
+                    char *pszEnd = pszStrFlags;
+                    while (   *pszEnd != '\0'
+                           && *pszEnd != '\n')
+                        pszEnd++;
+                    *pszEnd = '\0'; /* Cut off everything after the flags section. */
+
+                    /*
+                     * Search for the ept flag indicating support and the absence meaning
+                     * not supported.
+                     */
+                    if (RTStrStr(pszStrFlags, "ept"))
+                        fSupported = 1;
+                    else
+                        fSupported = 0;
+                }
+            }
+            RTFileClose(hFileCpu);
+        }
+    }
+# endif
 #endif
 
     int cch = RTPrintf(fSupported == 1 ? "true\n" : fSupported == 0 ? "false\n" : "dunno\n");
