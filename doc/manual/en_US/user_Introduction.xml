@@ -478,11 +478,11 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>Ubuntu 10.04 to 16.04</para>
+              <para>Ubuntu 12.04 to 16.10</para>
             </listitem>
 
             <listitem>
-              <para>Debian GNU/Linux 6.0 ("Squeeze") and 8.0 ("Jessie")</para>
+              <para>Debian GNU/Linux 7 ("Wheezy") and 8 ("Jessie")</para>
             </listitem>
 
             <listitem>
@@ -494,7 +494,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core / Fedora 6 to 24</para>
+              <para>Fedora Core / Fedora 6 to 25</para>
             </listitem>
 
             <listitem>
