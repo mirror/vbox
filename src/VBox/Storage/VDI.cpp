@@ -819,6 +819,25 @@ static int vdiImageReadHeader(PVDIIMAGEDESC pImage)
                     {
                         /* Setup image parameters by header. */
                         vdiSetupImageDesc(pImage);
+
+                        /*
+                         * Until revision r111992 there was no check that the size was sector aligned
+                         * when creating a new image and a bug in the VirtualBox GUI on OS X resulted
+                         * in such images being created which caused issues when writing to the
+                         * end of the image.
+                         *
+                         * Detect such images and repair the small damage by rounding down to the next
+                         * aligned size. This is no problem as the guest would see a sector count
+                         * only anyway from the device emulations so it already sees only the smaller
+                         * size as result of the integer division of the size and sector size.
+                         *
+                         * This might not be written to the image if it is opened readonly
+                         * which is not much of a problem because only writing to the last block
+                         * causes trouble.
+                         */
+                        uint64_t cbDisk = getImageDiskSize(&pImage->Header);
+                        if (cbDisk & 0x1ff)
+                            setImageDiskSize(&pImage->Header, cbDisk & ~UINT64_C(0x1ff));
                     }
                     else
                         rc = vdIfError(pImage->pIfError, VERR_VD_VDI_INVALID_HEADER, RT_SRC_POS,
@@ -2825,6 +2844,7 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
     do
     {
         bool fRepairBlockArray = false;
+        bool fRepairHdr = false;
 
         rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
                                VDOpenFlagsToFileOpenFlags(  fFlags & VD_REPAIR_DRY_RUN
@@ -2911,6 +2931,20 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
             }
         }
 
+        /*
+         * Check that the disk size is correctly aligned,
+         * see comment above the same check in vdiImageReadHeader().
+         */
+        uint64_t cbDisk = getImageDiskSize(&Hdr);
+        if (cbDisk & 0x1ff)
+        {
+            uint64_t cbDiskNew = cbDisk & ~UINT64_C(0x1ff);
+            vdIfErrorMessage(pIfError, "Disk size in the header is not sector aligned, rounding down (%llu -> %llu)\n",
+                             cbDisk, cbDiskNew);
+            setImageDiskSize(&Hdr, cbDiskNew);
+            fRepairHdr = true;
+        }
+
         /* Setup image parameters by header. */
         uint64_t offStartBlocks, offStartData;
         size_t cbTotalBlockData;
@@ -2977,21 +3011,59 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
         }
 
         /* Write repaired structures now. */
-        if (!fRepairBlockArray)
+        if (!fRepairBlockArray && !fRepairHdr)
             vdIfErrorMessage(pIfError, "VDI image is in a consistent state, no repair required\n");
         else if (!(fFlags & VD_REPAIR_DRY_RUN))
         {
-            vdIfErrorMessage(pIfError, "Writing repaired block allocation table...\n");
-
-            vdiConvBlocksEndianess(VDIECONV_H2F, paBlocks, getImageBlocks(&Hdr));
-            rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offStartBlocks, paBlocks,
-                                        getImageBlocks(&Hdr) * sizeof(VDIIMAGEBLOCKPOINTER));
-            if (RT_FAILURE(rc))
+            if (fRepairHdr)
             {
-                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
-                               "Could not write repaired block allocation table (at %llu), %Rrc",
-                               offStartBlocks, rc);
-                break;
+                switch (GET_MAJOR_HEADER_VERSION(&Hdr))
+                {
+                    case 0:
+                    {
+                        VDIHEADER0 Hdr0;
+                        vdiConvHeaderEndianessV0(VDIECONV_H2F, &Hdr0, &Hdr.u.v0);
+                        rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, sizeof(VDIPREHEADER),
+                                                    &Hdr0, sizeof(Hdr0));
+                        break;
+                    }
+                    case 1:
+                        if (Hdr.u.v1plus.cbHeader < sizeof(Hdr.u.v1plus))
+                        {
+                            VDIHEADER1 Hdr1;
+                            vdiConvHeaderEndianessV1(VDIECONV_H2F, &Hdr1, &Hdr.u.v1);
+                            rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, sizeof(VDIPREHEADER),
+                                                        &Hdr1, sizeof(Hdr1));
+                        }
+                        else
+                        {
+                            VDIHEADER1PLUS Hdr1plus;
+                            vdiConvHeaderEndianessV1p(VDIECONV_H2F, &Hdr1plus, &Hdr.u.v1plus);
+                            rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, sizeof(VDIPREHEADER),
+                                                        &Hdr1plus, sizeof(Hdr1plus));
+                        }
+                        break;
+                    default:
+                        AssertMsgFailed(("Header indicates unsupported version which should not happen here!\n"));
+                        rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
+                        break;
+                }
+            }
+
+            if (fRepairBlockArray)
+            {
+                vdIfErrorMessage(pIfError, "Writing repaired block allocation table...\n");
+
+                vdiConvBlocksEndianess(VDIECONV_H2F, paBlocks, getImageBlocks(&Hdr));
+                rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offStartBlocks, paBlocks,
+                                            getImageBlocks(&Hdr) * sizeof(VDIIMAGEBLOCKPOINTER));
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                                   "Could not write repaired block allocation table (at %llu), %Rrc",
+                                   offStartBlocks, rc);
+                    break;
+                }
             }
         }
 
