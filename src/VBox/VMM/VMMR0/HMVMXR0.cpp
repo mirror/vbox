@@ -325,7 +325,7 @@ typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
  * @param   pVmxTransient   Pointer to the VMX-transient structure.
  */
 #ifndef HMVMX_USE_FUNCTION_TABLE
-typedef DECLINLINE(VBOXSTRICTRC)    FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef VBOXSTRICTRC                FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 #else
 typedef DECLCALLBACK(VBOXSTRICTRC)  FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 /** Pointer to VM-exit handler. */
@@ -349,7 +349,7 @@ typedef FNVMXEXITHANDLER           *PFNVMXEXITHANDLER;
  *          later when switching over to IEM.
  */
 #ifndef HMVMX_USE_FUNCTION_TABLE
-typedef DECLINLINE(int)             FNVMXEXITHANDLERNSRC(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef int                         FNVMXEXITHANDLERNSRC(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 #else
 typedef FNVMXEXITHANDLER            FNVMXEXITHANDLERNSRC;
 #endif
