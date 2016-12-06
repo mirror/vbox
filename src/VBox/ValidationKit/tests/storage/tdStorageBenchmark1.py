@@ -1145,7 +1145,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     if not self.testStorage(sMountPoint):
                         fRc = False;
 
-                if not self.fRecreateStorCfg:
+                if not self.fRecreateStorCfg and not self.fUseScratch:
                     self.cleanupStorage(self.oStorCfg);
         else:
             fRc = False;
