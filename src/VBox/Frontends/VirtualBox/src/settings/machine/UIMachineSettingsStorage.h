@@ -571,24 +571,6 @@ private:
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
-/** QITreeView subclass used as Storage-view. */
-class StorageView : public QITreeView
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs storage-view passing @a pParent to the base-class. */
-    StorageView(QWidget *pParent) : QITreeView(pParent) {}
-
-protected:
-
-    /** Returns the number of children. */
-    virtual int childCount() const /* override */;
-    /** Returns the child item with @a iIndex. */
-    virtual QITreeViewItem *childItem(int iIndex) const /* override */;
-};
-
 /* Storage Delegate */
 class StorageDelegate : public QItemDelegate
 {
