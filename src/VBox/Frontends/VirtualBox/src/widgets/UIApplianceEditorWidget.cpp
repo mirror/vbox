@@ -1435,5 +1435,3 @@ void UIApplianceEditorWidget::initSystemSettings()
     }
 }
 
-#include "UIApplianceEditorWidget.moc"
-
