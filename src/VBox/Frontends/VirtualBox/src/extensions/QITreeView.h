@@ -61,10 +61,10 @@ public:
     /** Returns the rectangle. */
     QRect rect() const;
 
-private:
-
     /** Returns the model-index: */
     QModelIndex modelIndex() const;
+
+private:
 
     /** Holds the parent tree reference. */
     QITreeView *m_pParentTree;

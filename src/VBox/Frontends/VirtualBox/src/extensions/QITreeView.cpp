@@ -126,7 +126,7 @@ private:
 
 QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::parent() const
 {
-    /* Make sure item still alive: */
+    /* Sanity check: */
     AssertPtrReturn(item(), 0);
 
     /* Return the parent: */
@@ -137,22 +137,39 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::parent() const
 
 int QIAccessibilityInterfaceForQITreeViewItem::childCount() const
 {
-    /* Make sure item still alive: */
+    /* Sanity check: */
     AssertPtrReturn(item(), 0);
+    AssertPtrReturn(item()->parentTree(), 0);
+    AssertPtrReturn(item()->parentTree()->model(), 0);
+
+    /* Acquire item model-index: */
+    const QModelIndex itemIndex = item()->modelIndex();
 
     /* Return the number of children: */
-    return item()->childCount();
+    return item()->parentTree()->model()->rowCount(itemIndex);;
 }
 
 QAccessibleInterface *QIAccessibilityInterfaceForQITreeViewItem::child(int iIndex) const /* override */
 {
-    /* Make sure item still alive: */
+    /* Sanity check: */
     AssertPtrReturn(item(), 0);
-    /* Make sure index is valid: */
+    AssertPtrReturn(item()->parentTree(), 0);
+    AssertPtrReturn(item()->parentTree()->model(), 0);
     AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
 
+    /* Acquire item model-index: */
+    const QModelIndex itemIndex = item()->modelIndex();
+    /* Acquire child model-index: */
+    const QModelIndex childIndex = itemIndex.child(iIndex, 0);
+
+    /* Check whether we have proxy model set or source one otherwise: */
+    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(item()->parentTree()->model());
+    /* Acquire source child model-index, which can be the same as child model-index: */
+    const QModelIndex sourceChildIndex = pProxyModel ? pProxyModel->mapToSource(childIndex) : childIndex;
+    /* Acquire source child item: */
+    QITreeViewItem *pItem = reinterpret_cast<QITreeViewItem*>(sourceChildIndex.internalPointer());
     /* Return the child with the passed iIndex: */
-    return QAccessible::queryAccessibleInterface(item()->childItem(iIndex));
+    return QAccessible::queryAccessibleInterface(pItem);
 }
 
 int QIAccessibilityInterfaceForQITreeViewItem::indexOfChild(const QAccessibleInterface *pChild) const /* override */
@@ -168,7 +185,7 @@ int QIAccessibilityInterfaceForQITreeViewItem::indexOfChild(const QAccessibleInt
 
 QRect QIAccessibilityInterfaceForQITreeViewItem::rect() const
 {
-    /* Make sure item still alive: */
+    /* Sanity check: */
     AssertPtrReturn(item(), QRect());
     AssertPtrReturn(item()->parentTree(), QRect());
     AssertPtrReturn(item()->parentTree()->viewport(), QRect());
@@ -186,7 +203,7 @@ QRect QIAccessibilityInterfaceForQITreeViewItem::rect() const
 
 QString QIAccessibilityInterfaceForQITreeViewItem::text(QAccessible::Text enmTextRole) const
 {
-    /* Make sure row still alive: */
+    /* Sanity check: */
     AssertPtrReturn(item(), QString());
 
     /* Return a text for the passed enmTextRole: */
@@ -219,18 +236,21 @@ QAccessible::State QIAccessibilityInterfaceForQITreeViewItem::state() const
 
 int QIAccessibilityInterfaceForQITreeView::childCount() const
 {
-    /* Make sure tree still alive: */
+    /* Sanity check: */
     AssertPtrReturn(tree(), 0);
+    AssertPtrReturn(tree()->model(), 0);
+
+    /* Acquire root model-index: */
+    const QModelIndex rootIndex = tree()->rootIndex();
 
     /* Return the number of children: */
-    return tree()->childCount();
+    return tree()->model()->rowCount(rootIndex);
 }
 
 QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) const
 {
-    /* Make sure tree still alive: */
+    /* Sanity check: */
     AssertPtrReturn(tree(), 0);
-    /* Make sure index is valid: */
     AssertReturn(iIndex >= 0, 0);
     if (iIndex >= childCount())
     {
@@ -244,7 +264,7 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
         // visible children like they are a part of the list, not tree.
         // printf("Invalid index: %d\n", iIndex);
 
-        // Make sure model is alive:
+        // Sanity check:
         AssertPtrReturn(tree()->model(), 0);
 
         // Take into account we also have header with 'column count' indexes,
@@ -252,15 +272,9 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
         const int iColumnCount = tree()->model()->columnCount();
         int iCurrentIndex = iColumnCount;
 
-        // Check whether we have proxy model set or usual one otherwise:
-        QSortFilterProxyModel *pProxyModel = qobject_cast<QSortFilterProxyModel*>(tree()->model());
-
-        // Set iterator to root-index initially:
-        const QModelIndex root = pProxyModel ? pProxyModel->mapToSource(tree()->rootIndex()) :
-                                 tree()->rootIndex();
-        QModelIndex index = root;
-
-        // But if root-index has child, go deeper:
+        // Set iterator to root model-index initially:
+        QModelIndex index = tree()->rootIndex();
+        // But if it has child, go deeper:
         if (index.child(0, 0).isValid())
             index = index.child(0, 0);
 
@@ -269,22 +283,35 @@ QAccessibleInterface *QIAccessibilityInterfaceForQITreeView::child(int iIndex) c
         {
             ++iCurrentIndex;
             if (iCurrentIndex % iColumnCount == 0)
-            {
-                index = pProxyModel ? pProxyModel->mapToSource(tree()->indexBelow(pProxyModel->mapFromSource(index))) :
-                                      tree()->indexBelow(index);
-            }
+                index = tree()->indexBelow(index);
         }
 
+        // Check whether we have proxy model set or source one otherwise:
+        const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(tree()->model());
+        // Acquire source model-index, which can be the same as model-index:
+        const QModelIndex sourceIndex = pProxyModel ? pProxyModel->mapToSource(index) : index;
+
         // Return what we found:
-        // if (index.isValid())
-        //     printf("Item found: [%s]\n", ((QITreeViewItem*)index.internalPointer())->text().toUtf8().constData());
+        // if (sourceIndex.isValid())
+        //     printf("Item found: [%s]\n", ((QITreeViewItem*)sourceIndex.internalPointer())->text().toUtf8().constData());
         // else
         //     printf("Item not found\n");
-        return index.isValid() ? QAccessible::queryAccessibleInterface((QITreeViewItem*)index.internalPointer()) : 0;
+        return sourceIndex.isValid() ? QAccessible::queryAccessibleInterface((QITreeViewItem*)sourceIndex.internalPointer()) : 0;
     }
 
+    /* Acquire root model-index: */
+    const QModelIndex rootIndex = tree()->rootIndex();
+    /* Acquire child model-index: */
+    const QModelIndex childIndex = rootIndex.child(iIndex, 0);
+
+    /* Check whether we have proxy model set or source one otherwise: */
+    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(tree()->model());
+    /* Acquire source child model-index, which can be the same as child model-index: */
+    const QModelIndex sourceChildIndex = pProxyModel ? pProxyModel->mapToSource(childIndex) : childIndex;
+    /* Acquire source child item: */
+    QITreeViewItem *pItem = reinterpret_cast<QITreeViewItem*>(sourceChildIndex.internalPointer());
     /* Return the child with the passed iIndex: */
-    return QAccessible::queryAccessibleInterface(tree()->childItem(iIndex));
+    return QAccessible::queryAccessibleInterface(pItem);
 }
 
 int QIAccessibilityInterfaceForQITreeView::indexOfChild(const QAccessibleInterface *pChild) const
@@ -300,7 +327,7 @@ int QIAccessibilityInterfaceForQITreeView::indexOfChild(const QAccessibleInterfa
 
 QString QIAccessibilityInterfaceForQITreeView::text(QAccessible::Text /* enmTextRole */) const
 {
-    /* Make sure tree still alive: */
+    /* Sanity check: */
     AssertPtrReturn(tree(), QString());
 
     /* Return tree whats-this: */
@@ -320,46 +347,47 @@ QRect QITreeViewItem::rect() const
 
 QModelIndex QITreeViewItem::modelIndex() const
 {
+    /* Acquire model: */
+    const QAbstractItemModel *pModel = parentTree()->model();
     /* Check whether we have proxy model set or source one otherwise: */
-    QSortFilterProxyModel *pProxyModel = qobject_cast<QSortFilterProxyModel*>(parentTree()->model());
+    const QSortFilterProxyModel *pProxyModel = qobject_cast<const QSortFilterProxyModel*>(pModel);
 
-    /* Determine proxy and source root model-indexes, they can be equal: */
-    const QModelIndex rootInProxy = parentTree()->rootIndex();
-    const QModelIndex rootInSource = pProxyModel ? pProxyModel->mapToSource(rootInProxy) : rootInProxy;
+    /* Acquire root model-index: */
+    const QModelIndex rootIndex = parentTree()->rootIndex();
+    /* Acquire source root model-index, which can be the same as root model-index: */
+    const QModelIndex sourceRootModelIndex = pProxyModel ? pProxyModel->mapToSource(rootIndex) : rootIndex;
 
-    /* Make sure it's not root model-index: */
-    if (   rootInSource.internalPointer()
-        && rootInSource.internalPointer() == this)
-        return rootInProxy;
+    /* Check whether we have root model-index here: */
+    if (   sourceRootModelIndex.internalPointer()
+        && sourceRootModelIndex.internalPointer() == this)
+        return rootIndex;
 
-    /* Determine our index inside parent: */
-    int iIndexInParent = -1;
-    if (parentItem())
+    /* Determine our parent model-index: */
+    const QModelIndex parentIndex = parentItem() ? parentItem()->modelIndex() : rootIndex;
+
+    /* Determine our position inside parent: */
+    int iPositionInParent = -1;
+    for (int i = 0; i < pModel->rowCount(parentIndex); ++i)
     {
-        for (int i = 0; i < parentItem()->childCount(); ++i)
-            if (parentItem()->childItem(i) == this)
-            {
-                iIndexInParent = i;
-                break;
-            }
+        /* Acquire child model-index: */
+        const QModelIndex childIndex = parentIndex.child(i, 0);
+        /* Acquire source child model-index, which can be the same as child model-index: */
+        const QModelIndex sourceChildModelIndex = pProxyModel ? pProxyModel->mapToSource(childIndex) : childIndex;
+
+        /* Check whether we have child model-index here: */
+        if (   sourceChildModelIndex.internalPointer()
+            && sourceChildModelIndex.internalPointer() == this)
+        {
+            iPositionInParent = i;
+            break;
+        }
     }
-    else
-    {
-        for (int i = 0; i < parentTree()->childCount(); ++i)
-            if (parentTree()->childItem(i) == this)
-            {
-                iIndexInParent = i;
-                break;
-            }
-    }
-    if (iIndexInParent == -1)
+    /* Make sure we found something: */
+    if (iPositionInParent == -1)
         return QModelIndex();
 
-    /* Get parent model-index: */
-    QModelIndex parentModelIndex = parentItem() ? parentItem()->modelIndex() : rootInProxy;
-
     /* Return model-index as child of parent model-index: */
-    return parentModelIndex.child(iIndexInParent, 0);
+    return parentIndex.child(iPositionInParent, 0);
 }
 
 
