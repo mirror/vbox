@@ -201,6 +201,11 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
     Assert(iBin < pThis->cBins);
 
     PIOBUFMGRBIN pBin = &pThis->paBins[iBin];
+    /* Reset the bins if there is nothing in the current one but all the memory is marked as free. */
+    if (   pThis->cbFree == pThis->cbMax
+        && pBin->iFree == 0)
+        iobufMgrResetBins(pThis);
+
     if (pBin->iFree == 0)
     {
         unsigned iBinCur = iBin;
