@@ -1182,38 +1182,6 @@ static uint32_t const g_afMasks[5] =
 
 #ifdef IN_RING3
 /**
- * Retrieves the number of bytes of a FIFOS register.
- *
- * @return Number of bytes of a given FIFOS register.
- */
-DECLINLINE(uint16_t) hdaSDFIFOSToBytes(uint32_t u32RegFIFOS)
-{
-    uint16_t cb;
-    switch (u32RegFIFOS)
-    {
-        /* Input */
-        case HDA_SDIFIFO_120B: cb = 120; break;
-        case HDA_SDIFIFO_160B: cb = 160; break;
-
-        /* Output */
-        case HDA_SDOFIFO_16B:  cb = 16;  break;
-        case HDA_SDOFIFO_32B:  cb = 32;  break;
-        case HDA_SDOFIFO_64B:  cb = 64;  break;
-        case HDA_SDOFIFO_128B: cb = 128; break;
-        case HDA_SDOFIFO_192B: cb = 192; break;
-        case HDA_SDOFIFO_256B: cb = 256; break;
-        default:
-        {
-            cb = 0; /* Can happen on stream reset. */
-            break;
-        }
-    }
-
-    return cb;
-}
-
-
-/**
  * Retrieves the number of bytes of a FIFOW register.
  *
  * @return Number of bytes of a given FIFOW register.
@@ -1716,7 +1684,7 @@ static int hdaStreamInit(PHDASTATE pThis, PHDASTREAM pStream, uint8_t u8SD)
                                       HDA_STREAM_REG(pThis, BDPU, pStream->u8SD));
     pStream->u16LVI     = HDA_STREAM_REG(pThis, LVI, pStream->u8SD);
     pStream->u32CBL     = HDA_STREAM_REG(pThis, CBL, pStream->u8SD);
-    pStream->u16FIFOS   = hdaSDFIFOSToBytes(HDA_STREAM_REG(pThis, FIFOS, pStream->u8SD));
+    pStream->u16FIFOS   = HDA_STREAM_REG(pThis, FIFOS, pStream->u8SD) + 1;
 
     RT_ZERO(pStream->State.BDLE);
     pStream->State.uCurBDLE = 0;
@@ -2516,7 +2484,7 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 
         if (u32FIFOS)
         {
-            pStream->u16FIFOS = hdaSDFIFOSToBytes(u32FIFOS);
+            pStream->u16FIFOS = u32FIFOS + 1;
             LogFunc(("[SD%RU8]: Updating FIFOS to %RU32 bytes\n", uSD, pStream->u16FIFOS));
 
             rc2 = hdaRegWriteU16(pThis, iReg, u32FIFOS);
@@ -5281,7 +5249,7 @@ static DECLCALLBACK(size_t) hdaDbgFmtSDFIFOS(PFNRTSTROUTPUT pfnOutput, void *pvA
 {
     RT_NOREF(pszType, cchWidth,  cchPrecision, fFlags, pvUser);
     uint32_t uSDFIFOS = (uint32_t)(uintptr_t)pvValue;
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOS(raw:%#x, sdfifos:%RU8 B)", uSDFIFOS, hdaSDFIFOSToBytes(uSDFIFOS));
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SDFIFOS(raw:%#x, sdfifos:%RU8 B)", uSDFIFOS, uSDFIFOS ? uSDFIFOS + 1 : 0);
 }
 
 /**
