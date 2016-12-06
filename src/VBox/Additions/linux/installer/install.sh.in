@@ -527,3 +527,22 @@ chmod 0755 $INSTALLATION_DIR/$UNINSTALL
 echo $INSTALLATION_DIR/$UNINSTALL >> "$CONFIG_DIR/$CONFIG_FILES"
 test -n "$REMOVE_INSTALLATION_DIR" &&
   echo "$INSTALLATION_DIR/" >> "$CONFIG_DIR/$CONFIG_FILES"
+
+# Test for a problem with old Mesa versions which stopped our 3D libraries
+# from working.  Known to affect Debian 7.11, probably OL/RHEL 5.
+# The problem was that the system Mesa library had an ABI note, which caused
+# ldconfig to always prefer it to ours.
+if ldconfig -p | grep -q "libGL.so.1.*Linux 2.4"; then
+    gl_with_abi=`ldconfig -p | grep "libGL.so.1.*Linux 2.4" | sed 's/.*=> //'`
+    cat >&2 << EOF
+This system appears to be running a version of Mesa with a known problem
+which will prevent VirtualBox 3D pass-through from working.  See
+  https://bugs.freedesktop.org/show_bug.cgi?id=26663
+The following, run as root should fix this, though you will have to run it
+again if the system version of Mesa is updated:
+EOF
+    for i in ${gl_with_abi}; do
+        echo >&2 "  strip -R .note.ABI-tag ${i}"
+    done
+    echo >&2 "  ldconfig"
+fi
