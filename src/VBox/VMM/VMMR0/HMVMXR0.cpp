@@ -508,9 +508,9 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 57  VMX_EXIT_RDRAND                  */  hmR0VmxExitRdrand,
  /* 58  VMX_EXIT_INVPCID                 */  hmR0VmxExitInvpcid,
  /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitSetPendingXcptUD,
- /* 60  VMX_EXIT_RESERVED_60             */  hmR0VmxExitErrUndefined,
+ /* 60  VMX_EXIT_ENCLS                   */  hmR0VmxExitErrUndefined,
  /* 61  VMX_EXIT_RDSEED                  */  hmR0VmxExitErrUndefined, /* only spurious exits, so undefined */
- /* 62  VMX_EXIT_RESERVED_62             */  hmR0VmxExitErrUndefined,
+ /* 62  VMX_EXIT_PML_FULL                */  hmR0VmxExitErrUndefined,
  /* 63  VMX_EXIT_XSAVES                  */  hmR0VmxExitSetPendingXcptUD,
  /* 64  VMX_EXIT_XRSTORS                 */  hmR0VmxExitSetPendingXcptUD,
 };
@@ -10516,9 +10516,9 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         case VMX_EXIT_XSAVES:
         case VMX_EXIT_XRSTORS:
             return hmR0VmxExitSetPendingXcptUD(pVCpu, pMixedCtx, pVmxTransient);
-        case VMX_EXIT_RESERVED_60:
+        case VMX_EXIT_ENCLS:
         case VMX_EXIT_RDSEED: /* only spurious VM-exits, so undefined */
-        case VMX_EXIT_RESERVED_62:
+        case VMX_EXIT_PML_FULL:
         default:
             return hmR0VmxExitErrUndefined(pVCpu, pMixedCtx, pVmxTransient);
     }
