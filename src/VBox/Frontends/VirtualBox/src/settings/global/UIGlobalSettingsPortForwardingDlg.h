@@ -40,8 +40,8 @@ public:
                                       const UIPortForwardingDataList &ipv6rules);
 
     /* API: Rules stuff: */
-    const UIPortForwardingDataList& ipv4rules() const;
-    const UIPortForwardingDataList& ipv6rules() const;
+    const UIPortForwardingDataList ipv4rules() const;
+    const UIPortForwardingDataList ipv6rules() const;
 
 private slots:
 

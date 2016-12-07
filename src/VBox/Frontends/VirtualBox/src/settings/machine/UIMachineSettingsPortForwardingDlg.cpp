@@ -62,7 +62,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     retranslateUi();
 }
 
-const UIPortForwardingDataList& UIMachineSettingsPortForwardingDlg::rules() const
+const UIPortForwardingDataList UIMachineSettingsPortForwardingDlg::rules() const
 {
     return m_pTable->rules();
 }

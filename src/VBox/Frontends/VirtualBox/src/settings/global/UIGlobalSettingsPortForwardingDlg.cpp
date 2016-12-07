@@ -73,12 +73,12 @@ UIGlobalSettingsPortForwardingDlg::UIGlobalSettingsPortForwardingDlg(QWidget *pP
     retranslateUi();
 }
 
-const UIPortForwardingDataList& UIGlobalSettingsPortForwardingDlg::ipv4rules() const
+const UIPortForwardingDataList UIGlobalSettingsPortForwardingDlg::ipv4rules() const
 {
     return m_pIPv4Table->rules();
 }
 
-const UIPortForwardingDataList& UIGlobalSettingsPortForwardingDlg::ipv6rules() const
+const UIPortForwardingDataList UIGlobalSettingsPortForwardingDlg::ipv6rules() const
 {
     return m_pIPv6Table->rules();
 }

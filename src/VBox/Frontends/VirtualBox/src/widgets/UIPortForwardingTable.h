@@ -132,7 +132,7 @@ public:
     UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs);
 
     /* API: Rules stuff: */
-    const UIPortForwardingDataList& rules() const;
+    const UIPortForwardingDataList rules() const;
     bool validate() const;
 
     /** Returns whether the table data was changed. */

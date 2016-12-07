@@ -37,7 +37,7 @@ public:
     UIMachineSettingsPortForwardingDlg(QWidget *pParent, const UIPortForwardingDataList &rules);
 
     /* API: Rules stuff: */
-    const UIPortForwardingDataList& rules() const;
+    const UIPortForwardingDataList rules() const;
 
 private slots:
 
