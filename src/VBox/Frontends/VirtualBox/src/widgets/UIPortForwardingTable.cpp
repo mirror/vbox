@@ -103,6 +103,20 @@ public:
 };
 #endif /* Decided to not use it for now. */
 
+
+/** Port Forwarding data types. */
+enum UIPortForwardingDataType
+{
+    UIPortForwardingDataType_Name,
+    UIPortForwardingDataType_Protocol,
+    UIPortForwardingDataType_HostIp,
+    UIPortForwardingDataType_HostPort,
+    UIPortForwardingDataType_GuestIp,
+    UIPortForwardingDataType_GuestPort,
+    UIPortForwardingDataType_Max
+};
+
+
 /* Name editor: */
 class NameEditor : public QLineEdit
 {
@@ -133,6 +147,7 @@ private:
         return text();
     }
 };
+
 
 /* Protocol editor: */
 class ProtocolEditor : public QComboBox
@@ -171,6 +186,7 @@ private:
     }
 };
 
+
 /* IPv4 editor: */
 class IPv4Editor : public QLineEdit
 {
@@ -202,6 +218,7 @@ private:
         return text() == "..." ? QString() : text();
     }
 };
+
 
 /* IPv6 editor: */
 class IPv6Editor : public QLineEdit
@@ -235,6 +252,7 @@ private:
     }
 };
 
+
 /* Port editor: */
 class PortEditor : public QSpinBox
 {
@@ -265,24 +283,13 @@ private:
     }
 };
 
+
 /* Port forwarding data model: */
 class UIPortForwardingModel : public QAbstractTableModel
 {
     Q_OBJECT;
 
 public:
-
-    /* Enum: Column names: */
-    enum UIPortForwardingDataType
-    {
-        UIPortForwardingDataType_Name,
-        UIPortForwardingDataType_Protocol,
-        UIPortForwardingDataType_HostIp,
-        UIPortForwardingDataType_HostPort,
-        UIPortForwardingDataType_GuestIp,
-        UIPortForwardingDataType_GuestPort,
-        UIPortForwardingDataType_Max
-    };
 
     /* Constructor: */
     UIPortForwardingModel(QObject *pParent = 0, const UIPortForwardingDataList &rules = UIPortForwardingDataList())
@@ -315,6 +322,11 @@ private:
     /* Variable: Data stuff: */
     UIPortForwardingDataList m_dataList;
 };
+
+
+/*********************************************************************************************************************************
+*   Class UIPortForwardingModel implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 void UIPortForwardingModel::addRule(const QModelIndex &index)
 {
@@ -497,6 +509,10 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
 }
 
 
+/*********************************************************************************************************************************
+*   Class UIPortForwardingTable implementation.                                                                                  *
+*********************************************************************************************************************************/
+
 UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6, bool fAllowEmptyGuestIPs)
     : m_fAllowEmptyGuestIPs(fAllowEmptyGuestIPs)
     , m_fIsTableDataChanged(false)
@@ -644,12 +660,12 @@ bool UIPortForwardingTable::validate() const
     for (int i = 0; i < m_pModel->rowCount(); ++i)
     {
         /* Some of variables: */
-        const NameData name = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Name), Qt::EditRole).value<NameData>();
-        const KNATProtocol protocol = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_Protocol), Qt::EditRole).value<KNATProtocol>();
-        const PortData hostPort = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value();
-        const PortData guestPort = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value();
-        const IpData hostIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_HostIp), Qt::EditRole).value<IpData>();
-        const IpData guestIp = m_pModel->data(m_pModel->index(i, UIPortForwardingModel::UIPortForwardingDataType_GuestIp), Qt::EditRole).value<IpData>();
+        const NameData name = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_Name), Qt::EditRole).value<NameData>();
+        const KNATProtocol protocol = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_Protocol), Qt::EditRole).value<KNATProtocol>();
+        const PortData hostPort = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_HostPort), Qt::EditRole).value<PortData>().value();
+        const PortData guestPort = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_GuestPort), Qt::EditRole).value<PortData>().value();
+        const IpData hostIp = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_HostIp), Qt::EditRole).value<IpData>();
+        const IpData guestIp = m_pModel->data(m_pModel->index(i, UIPortForwardingDataType_GuestIp), Qt::EditRole).value<IpData>();
 
         /* If at least one port is 'zero': */
         if (hostPort.value() == 0 || guestPort.value() == 0)
@@ -756,17 +772,17 @@ void UIPortForwardingTable::sltAdjustTable()
         /* Resize table to contents size-hint and emit a spare place for first column: */
         m_pTableView->resizeColumnsToContents();
         uint uFullWidth = m_pTableView->viewport()->width();
-        for (uint u = 1; u < UIPortForwardingModel::UIPortForwardingDataType_Max; ++u)
+        for (uint u = 1; u < UIPortForwardingDataType_Max; ++u)
             uFullWidth -= m_pTableView->horizontalHeader()->sectionSize(u);
-        m_pTableView->horizontalHeader()->resizeSection(UIPortForwardingModel::UIPortForwardingDataType_Name, uFullWidth);
+        m_pTableView->horizontalHeader()->resizeSection(UIPortForwardingDataType_Name, uFullWidth);
     }
     /* If table is empty: */
     else
     {
         /* Resize table columns to be equal in size: */
         uint uFullWidth = m_pTableView->viewport()->width();
-        for (uint u = 0; u < UIPortForwardingModel::UIPortForwardingDataType_Max; ++u)
-            m_pTableView->horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingModel::UIPortForwardingDataType_Max);
+        for (uint u = 0; u < UIPortForwardingDataType_Max; ++u)
+            m_pTableView->horizontalHeader()->resizeSection(u, uFullWidth / UIPortForwardingDataType_Max);
     }
     m_pTableView->horizontalHeader()->setStretchLastSection(true);
 }
