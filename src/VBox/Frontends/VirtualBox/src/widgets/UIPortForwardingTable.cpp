@@ -291,8 +291,9 @@ class UIPortForwardingModel : public QAbstractTableModel
 
 public:
 
-    /* Constructor: */
-    UIPortForwardingModel(QObject *pParent = 0, const UIPortForwardingDataList &rules = UIPortForwardingDataList())
+    /** Constructs Port Forwarding model passing @a pParent to the base-class.
+      * @param  rules  Brings the list of port forwarding rules to load initially. */
+    UIPortForwardingModel(QITableView *pParent, const UIPortForwardingDataList &rules = UIPortForwardingDataList())
         : QAbstractTableModel(pParent)
         , m_dataList(rules) {}
 
@@ -318,6 +319,9 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole);
 
 private:
+
+    /** Return the parent table-view reference. */
+    QITableView *parentTable() const;
 
     /* Variable: Data stuff: */
     UIPortForwardingDataList m_dataList;
@@ -508,6 +512,11 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
     /* not reached! */
 }
 
+QITableView *UIPortForwardingModel::parentTable() const
+{
+    return qobject_cast<QITableView*>(parent());
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIPortForwardingTable implementation.                                                                                  *
@@ -533,25 +542,26 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
         pMainLayout->setContentsMargins(0, 0, 0, 0);
 #endif /* !VBOX_WS_WIN */
         pMainLayout->setSpacing(3);
-        /* Create model: */
-        m_pModel = new UIPortForwardingModel(this, rules);
-        {
-            /* Configure model: */
-            connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(sltTableDataChanged()));
-            connect(m_pModel, SIGNAL(rowsInserted(const QModelIndex&, int, int)), this, SLOT(sltTableDataChanged()));
-            connect(m_pModel, SIGNAL(rowsRemoved(const QModelIndex&, int, int)), this, SLOT(sltTableDataChanged()));
-        }
         /* Create table: */
         m_pTableView = new QITableView;
         {
             /* Configure table: */
-            m_pTableView->setModel(m_pModel);
             m_pTableView->setTabKeyNavigation(false);
             m_pTableView->verticalHeader()->hide();
             m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
             m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
             m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
             m_pTableView->installEventFilter(this);
+        }
+        /* Create model: */
+        m_pModel = new UIPortForwardingModel(m_pTableView, rules);
+        {
+            /* Configure model: */
+            connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(sltTableDataChanged()));
+            connect(m_pModel, SIGNAL(rowsInserted(const QModelIndex&, int, int)), this, SLOT(sltTableDataChanged()));
+            connect(m_pModel, SIGNAL(rowsRemoved(const QModelIndex&, int, int)), this, SLOT(sltTableDataChanged()));
+            /* Configure table (after model is configured): */
+            m_pTableView->setModel(m_pModel);
             connect(m_pTableView, SIGNAL(sigCurrentChanged(const QModelIndex &, const QModelIndex &)), this, SLOT(sltCurrentChanged()));
             connect(m_pTableView, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(sltShowTableContexMenu(const QPoint &)));
         }
