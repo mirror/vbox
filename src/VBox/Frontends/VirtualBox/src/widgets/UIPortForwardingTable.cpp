@@ -495,6 +495,11 @@ public:
     /** Destructs Port Forwarding model. */
     ~UIPortForwardingModel();
 
+    /** Returns the number of children. */
+    int childCount() const;
+    /** Returns the child item with @a iIndex. */
+    QITableViewRow *childItem(int iIndex) const;
+
     /* API: Rule stuff: */
     const UIPortForwardingDataList rules() const;
     void addRule(const QModelIndex &index);
@@ -526,6 +531,25 @@ private:
 };
 
 
+/** QITableView extension used as Port Forwarding table-view. */
+class UIPortForwardingView : public QITableView
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs Port Forwarding table-view. */
+    UIPortForwardingView() {}
+
+protected:
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child item with @a iIndex. */
+    virtual QITableViewRow *childItem(int iIndex) const /* override */;
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIPortForwardingModel implementation.                                                                                  *
 *********************************************************************************************************************************/
@@ -546,6 +570,20 @@ UIPortForwardingModel::~UIPortForwardingModel()
     /* Delete the cached data: */
     qDeleteAll(m_dataList);
     m_dataList.clear();
+}
+
+int UIPortForwardingModel::childCount() const
+{
+    /* Return row count: */
+    return rowCount();
+}
+
+QITableViewRow *UIPortForwardingModel::childItem(int iIndex) const
+{
+    /* Make sure index within the bounds: */
+    AssertReturn(iIndex >= 0 && iIndex < m_dataList.size(), 0);
+    /* Return corresponding row: */
+    return m_dataList[iIndex];
 }
 
 const UIPortForwardingDataList UIPortForwardingModel::rules() const
@@ -749,6 +787,23 @@ QITableView *UIPortForwardingModel::parentTable() const
 
 
 /*********************************************************************************************************************************
+*   Class UIPortForwardingView implementation.                                                                                   *
+*********************************************************************************************************************************/
+
+int UIPortForwardingView::childCount() const
+{
+    /* Redirect request to table model: */
+    return qobject_cast<UIPortForwardingModel*>(model())->childCount();
+}
+
+QITableViewRow *UIPortForwardingView::childItem(int iIndex) const
+{
+    /* Redirect request to table model: */
+    return qobject_cast<UIPortForwardingModel*>(model())->childItem(iIndex);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIPortForwardingTable implementation.                                                                                  *
 *********************************************************************************************************************************/
 
@@ -773,7 +828,7 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
 #endif /* !VBOX_WS_WIN */
         pMainLayout->setSpacing(3);
         /* Create table: */
-        m_pTableView = new QITableView;
+        m_pTableView = new UIPortForwardingView;
         {
             /* Configure table: */
             m_pTableView->setTabKeyNavigation(false);
@@ -1030,7 +1085,7 @@ void UIPortForwardingTable::sltAdjustTable()
 void UIPortForwardingTable::retranslateUi()
 {
     /* Table translations: */
-    m_pTableView->setToolTip(tr("Contains a list of port forwarding rules."));
+    m_pTableView->setWhatsThis(tr("Contains a list of port forwarding rules."));
 
     /* Set action's text: */
     m_pAddAction->setText(tr("Add New Rule"));
