@@ -546,6 +546,8 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_RMX_SD6BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 60)
 #define HDA_RMX_SD7BDPU             (HDA_STREAM_RMX_DEF(BDPU, 0) + 70)
 
+#define HDA_BDLE_FLAG_IOC           RT_BIT(0) /* Interrupt on completion (IOC). */
+
 #define HDA_CODEC_CAD_SHIFT         28
 /* Encodes the (required) LUN into a codec command. */
 #define HDA_CODEC_CMD(cmd, lun)     ((cmd) | (lun << HDA_CODEC_CAD_SHIFT))
@@ -574,21 +576,31 @@ typedef struct HDABDLESTATE
 } HDABDLESTATE, *PHDABDLESTATE;
 
 /**
- * Buffer Descriptor List Entry (BDLE) (3.6.3).
- *
- * Contains only register values which do *not* change until a
- * stream reset occurs.
+ * BDL description structure.
+ * Do not touch this, as this must match to the HDA specs.
  */
-typedef struct HDABDLE
+typedef struct HDABDLEDESC
 {
     /** Starting address of the actual buffer. Must be 128-bit aligned. */
     uint64_t     u64BufAdr;
     /** Size of the actual buffer (in bytes). */
     uint32_t     u32BufSize;
-    /** Interrupt on completion; the controller will generate
+    /** Bit 0: Interrupt on completion; the controller will generate
      *  an interrupt when the last byte of the buffer has been
-     *  fetched by the DMA engine. */
-    bool         fIntOnCompletion;
+     *  fetched by the DMA engine.
+     *
+     *  Rest is reserved for further use and must be 0. */
+    uint32_t     fFlags;
+} HDABDLEDESC, *PHDABDLEDESC;
+AssertCompileSize(HDABDLEDESC, 16); /* Always 16 byte. Also must be aligned on 128-byte boundary. */
+
+/**
+ * Buffer Descriptor List Entry (BDLE) (3.6.3).
+ */
+typedef struct HDABDLE
+{
+    /** The actual BDL description. */
+    HDABDLEDESC  Desc;
     /** Internal state of this BDLE.
      *  Not part of the actual BDLE registers. */
     HDABDLESTATE State;
@@ -1140,12 +1152,12 @@ static const struct
 };
 
 #ifdef IN_RING3
-/** HDABDLE field descriptors for the v6+ saved state. */
-static SSMFIELD const g_aSSMBDLEFields6[] =
+/** HDABDLEDESC field descriptors for the v6+ saved state. */
+static SSMFIELD const g_aSSMBDLEDescFields6[] =
 {
-    SSMFIELD_ENTRY(HDABDLE, u64BufAdr),
-    SSMFIELD_ENTRY(HDABDLE, u32BufSize),
-    SSMFIELD_ENTRY(HDABDLE, fIntOnCompletion),
+    SSMFIELD_ENTRY(HDABDLEDESC, u64BufAdr),
+    SSMFIELD_ENTRY(HDABDLEDESC, u32BufSize),
+    SSMFIELD_ENTRY(HDABDLEDESC, fFlags),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1254,7 +1266,7 @@ DECLINLINE(int) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStream, bool *
     PHDABDLE pBDLE       = &pStream->State.BDLE;
     bool     fWrapAround = false;
 
-    AssertMsg(pBDLE->State.u32BufOff == pBDLE->u32BufSize, ("BDLE not finished yet: %R[bdle]\n", pBDLE));
+    AssertMsg(pBDLE->State.u32BufOff == pBDLE->Desc.u32BufSize, ("BDLE not finished yet: %R[bdle]\n", pBDLE));
 
     /*
      * Switch to the next BDLE entry and do a wrap around
@@ -3138,21 +3150,15 @@ static int hdaBDLEFetch(PHDASTATE pThis, PHDABDLE pBDLE, uint64_t u64BaseDMA, ui
     }
     /** @todo Compare u16Entry with LVI. */
 
-    uint8_t uBundleEntry[16]; /** @todo Define a BDLE length. */
-    int rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BaseDMA + u16Entry * 16, /** @todo Define a BDLE length. */
-                               uBundleEntry, RT_ELEMENTS(uBundleEntry));
+    int rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BaseDMA + u16Entry * sizeof(HDABDLEDESC),
+                               &pBDLE->Desc, sizeof(pBDLE->Desc));
     if (RT_FAILURE(rc))
         return rc;
 
-    RT_BZERO(pBDLE, sizeof(HDABDLE));
+    /* Clear internal state. */
+    RT_BZERO(&pBDLE->State, sizeof(HDABDLESTATE));
 
     pBDLE->State.u32BDLIndex = u16Entry;
-    pBDLE->u64BufAdr         = *(uint64_t *) uBundleEntry;
-    pBDLE->u32BufSize        = *(uint32_t *)&uBundleEntry[8];
-    if (pBDLE->u32BufSize < sizeof(uint16_t)) /* Must be at least one word. */
-        return VERR_INVALID_STATE;
-
-    pBDLE->fIntOnCompletion  = (*(uint32_t *)&uBundleEntry[12]) & RT_BIT(0);
 
     return VINF_SUCCESS;
 }
@@ -3178,8 +3184,8 @@ DECLINLINE(uint32_t) hdaStreamGetTransferSize(PHDASTATE pThis, PHDASTREAM pStrea
     AssertMsg(cbData, ("No CBL space left (%RU32/%RU32): %R[bdle]\n", pStream->u32CBL, u32LPIB, pBDLE));
 
     /* Limit to the available free space of the current BDLE. */
-    cbData = RT_MIN(cbData, pBDLE->u32BufSize - pBDLE->State.u32BufOff);
-    AssertMsg(cbData, ("No BDLE space left (%RU32/%RU32): %R[bdle]\n", pBDLE->State.u32BufOff, pBDLE->u32BufSize, pBDLE));
+    cbData = RT_MIN(cbData, pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
+    AssertMsg(cbData, ("No BDLE space left (%RU32/%RU32): %R[bdle]\n", pBDLE->State.u32BufOff, pBDLE->Desc.u32BufSize, pBDLE));
 
     /* Make sure we only transfer as many bytes as requested. */
     cbData = RT_MIN(cbData, cbMax);
@@ -3212,7 +3218,7 @@ DECLINLINE(void) hdaBDLEUpdate(PHDABDLE pBDLE, uint32_t cbData, uint32_t cbProce
     if (!cbData || !cbProcessed)
         return;
 
-    Assert(pBDLE->u32BufSize >= cbProcessed);
+    Assert(pBDLE->Desc.u32BufSize >= cbProcessed);
 
     /* Fewer than cbBelowFIFOW bytes were copied.
      * Probably we need to move the buffer, but it is rather hard to imagine a situation
@@ -3226,7 +3232,7 @@ DECLINLINE(void) hdaBDLEUpdate(PHDABDLE pBDLE, uint32_t cbData, uint32_t cbProce
         && pBDLE->State.cbBelowFIFOW <= cbWritten)
     {
         LogFlowFunc(("BDLE(cbUnderFifoW:%RU32, off:%RU32, size:%RU32)\n",
-                     pBDLE->State.cbBelowFIFOW, pBDLE->State.u32BufOff, pBDLE->u32BufSize));
+                     pBDLE->State.cbBelowFIFOW, pBDLE->State.u32BufOff, pBDLE->Desc.u32BufSize));
     }
 #endif
 
@@ -3235,7 +3241,7 @@ DECLINLINE(void) hdaBDLEUpdate(PHDABDLE pBDLE, uint32_t cbData, uint32_t cbProce
 
     /* We always increment the position of DMA buffer counter because we're always reading
      * into an intermediate buffer. */
-    Assert(pBDLE->u32BufSize >= (pBDLE->State.u32BufOff + cbProcessed));
+    Assert(pBDLE->Desc.u32BufSize >= (pBDLE->State.u32BufOff + cbProcessed));
     pBDLE->State.u32BufOff += cbProcessed;
 
     LogFlowFunc(("cbData=%RU32, cbProcessed=%RU32, %R[bdle]\n", cbData, cbProcessed, pBDLE));
@@ -3364,10 +3370,10 @@ DECLINLINE(bool) hdaStreamNeedsNextBDLE(PHDASTATE pThis, PHDASTREAM pStream)
     /* Do we need to use the next BDLE entry? Either because we reached
      * the CBL limit or our internal DMA buffer is full. */
     bool fNeedsNextBDLE   = (   fCBLLimitReached
-                             || (pBDLE->State.u32BufOff >= pBDLE->u32BufSize));
+                             || (pBDLE->State.u32BufOff >= pBDLE->Desc.u32BufSize));
 
     Assert(u32LPIB                <= pStream->u32CBL);
-    Assert(pBDLE->State.u32BufOff <= pBDLE->u32BufSize);
+    Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
 
     LogFlowFunc(("[SD%RU8]: LPIB=%RU32, CBL=%RU32, fCBLLimitReached=%RTbool, fNeedsNextBDLE=%RTbool, %R[bdle]\n",
                  pStream->u8SD, u32LPIB, pStream->u32CBL, fCBLLimitReached, fNeedsNextBDLE, pBDLE));
@@ -3408,12 +3414,12 @@ static bool hdaBDLEIsComplete(PHDABDLE pBDLE, bool *pfInterrupt)
     bool fIsComplete = false;
 
     /* Check if the current BDLE entry is complete (full). */
-    if (pBDLE->State.u32BufOff >= pBDLE->u32BufSize)
+    if (pBDLE->State.u32BufOff >= pBDLE->Desc.u32BufSize)
     {
-        Assert(pBDLE->State.u32BufOff <= pBDLE->u32BufSize);
+        Assert(pBDLE->State.u32BufOff <= pBDLE->Desc.u32BufSize);
 
         if (/* IOC (Interrupt On Completion) bit set? */
-               pBDLE->fIntOnCompletion
+               pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC
             /* All data put into the DMA FIFO? */
             && pBDLE->State.cbBelowFIFOW == 0
            )
@@ -3472,13 +3478,13 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead, 
         /* Sanity checks. */
         Assert(cbRead <= cbToRead);
         Assert(cbRead <= sizeof(pBDLE->State.au8FIFO));
-        Assert(cbRead <= pBDLE->u32BufSize - pBDLE->State.u32BufOff);
+        Assert(cbRead <= pBDLE->Desc.u32BufSize - pBDLE->State.u32BufOff);
 
         /*
          * Write to the BDLE's DMA buffer.
          */
         rc = PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
-                                   pBDLE->u64BufAdr + pBDLE->State.u32BufOff,
+                                   pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff,
                                    pBDLE->State.au8FIFO, cbRead);
         AssertRC(rc);
 
@@ -3491,14 +3497,14 @@ static int hdaReadAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead, 
 #endif
         if (pBDLE->State.cbBelowFIFOW + cbRead > hdaStreamGetFIFOW(pThis, pStream))
         {
-            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->u32BufSize);
+            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->Desc.u32BufSize);
             pBDLE->State.u32BufOff    += cbRead;
             pBDLE->State.cbBelowFIFOW  = 0;
             //hdaBackendReadTransferReported(pBDLE, cbDMAData, cbRead, &cbRead, pcbAvail);
         }
         else
         {
-            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->u32BufSize);
+            Assert(pBDLE->State.u32BufOff + cbRead <= pBDLE->Desc.u32BufSize);
             pBDLE->State.u32BufOff    += cbRead;
             pBDLE->State.cbBelowFIFOW += cbRead;
             Assert(pBDLE->State.cbBelowFIFOW <= hdaStreamGetFIFOW(pThis, pStream));
@@ -3550,7 +3556,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
          * Read from the current BDLE's DMA buffer.
          */
         rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
-                               pBDLE->u64BufAdr + pBDLE->State.u32BufOff,
+                               pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff,
                                pvBuf, cbBuf);
         AssertRC(rc);
 
@@ -3648,7 +3654,7 @@ static int hdaWriteAudio(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToWrite
         {
             AssertFailed();
 
-            Assert(pBDLE->State.u32BufOff + cbWritten <= pBDLE->u32BufSize);
+            Assert(pBDLE->State.u32BufOff + cbWritten <= pBDLE->Desc.u32BufSize);
             pBDLE->State.u32BufOff    += cbWritten;
             pBDLE->State.cbBelowFIFOW += cbWritten;
             Assert(pBDLE->State.cbBelowFIFOW <= hdaStreamGetFIFOW(pThis, pStream));
@@ -4315,13 +4321,13 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
             if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
             {
                 PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
-                                  pBDLE->u64BufAdr + pBDLE->State.u32BufOff,
+                                  pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff,
                                   (uint8_t *)pvBuf + cbTotal, cbChunk);
             }
             else /* Input (SDI). */
             {
                 PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns),
-                                   pBDLE->u64BufAdr + pBDLE->State.u32BufOff,
+                                   pBDLE->Desc.u64BufAdr + pBDLE->State.u32BufOff,
                                    (uint8_t *)pvBuf + cbTotal, cbChunk);
             }
 
@@ -4339,7 +4345,7 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
         hdaBDLEUpdate(pBDLE, cbChunkProcessed, cbChunkProcessed);
 
         LogFunc(("DMA: Entry %RU32 Pos %RU32/%RU32 Chunk %RU32\n",
-                 pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->u32BufSize, cbChunk));
+                 pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->Desc.u32BufSize, cbChunk));
 
         Assert(cbLeft >= cbChunkProcessed);
         cbLeft  -= cbChunkProcessed;
@@ -4849,7 +4855,7 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
 #endif
 
     rc = SSMR3PutStructEx(pSSM, &pStrm->State.BDLE, sizeof(HDABDLE),
-                          0 /*fFlags*/, g_aSSMBDLEFields6, NULL);
+                          0 /*fFlags*/, g_aSSMBDLEDescFields6, NULL);
     AssertRCReturn(rc, rc);
 
     rc = SSMR3PutStructEx(pSSM, &pStrm->State.BDLE.State, sizeof(HDABDLESTATE),
@@ -4866,14 +4872,14 @@ static int hdaSaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStrm)
         rc = hdaBDLEFetch(pThis, &curBDLE, u64BaseDMA, pStrm->State.uCurBDLE);
         AssertRC(rc);
 
-        Assert(curBDLE.u32BufSize       == pBDLE->u32BufSize);
-        Assert(curBDLE.u64BufAdr        == pBDLE->u64BufAdr);
-        Assert(curBDLE.fIntOnCompletion == pBDLE->fIntOnCompletion);
+        Assert(curBDLE.Desc.u32BufSize == pBDLE->Desc.u32BufSize);
+        Assert(curBDLE.Desc.u64BufAdr  == pBDLE->Desc.u64BufAdr);
+        Assert(curBDLE.Desc.fFlags     == pBDLE->Desc.fFlags);
     }
     else
     {
-        Assert(pBDLE->u64BufAdr  == 0);
-        Assert(pBDLE->u32BufSize == 0);
+        Assert(pBDLE->Desc.u64BufAdr  == 0);
+        Assert(pBDLE->Desc.u32BufSize == 0);
     }
 #endif
     return rc;
@@ -4987,27 +4993,31 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
      *       there were more than one (and there are at least two entries,
      *       according to the spec).
      */
-#define HDA_SSM_LOAD_BDLE_STATE_PRE_V5(v, x)                            \
-    rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* Begin marker */   \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetU64(pSSM, &x.u64BufAdr);          /* u64BdleCviAddr */ \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* u32BdleMaxCvi */  \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetU32(pSSM, &x.State.u32BDLIndex);  /* u32BdleCvi */     \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetU32(pSSM, &x.u32BufSize);         /* u32BdleCviLen */  \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetU32(pSSM, &x.State.u32BufOff);    /* u32BdleCviPos */  \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetBool(pSSM, &x.fIntOnCompletion);  /* fBdleCviIoc */    \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3GetU32(pSSM, &x.State.cbBelowFIFOW); /* cbUnderFifoW */   \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3Skip(pSSM, sizeof(uint8_t) * 256);   /* FIFO */           \
-    AssertRCReturn(rc, rc);                                             \
-    rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* End marker */     \
-    AssertRCReturn(rc, rc);                                             \
+#define HDA_SSM_LOAD_BDLE_STATE_PRE_V5(v, x)                                \
+    {                                                                       \
+        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* Begin marker */   \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3GetU64(pSSM, &x.Desc.u64BufAdr);     /* u64BdleCviAddr */ \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* u32BdleMaxCvi */  \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3GetU32(pSSM, &x.State.u32BDLIndex);  /* u32BdleCvi */     \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3GetU32(pSSM, &x.Desc.u32BufSize);    /* u32BdleCviLen */  \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3GetU32(pSSM, &x.State.u32BufOff);    /* u32BdleCviPos */  \
+        AssertRCReturn(rc, rc);                                             \
+        bool fIOC;                                                          \
+        rc = SSMR3GetBool(pSSM, &fIOC);                /* fBdleCviIoc */    \
+        AssertRCReturn(rc, rc);                                             \
+        x.Desc.fFlags = fIOC ? HDA_BDLE_FLAG_IOC : 0;                       \
+        rc = SSMR3GetU32(pSSM, &x.State.cbBelowFIFOW); /* cbUnderFifoW */   \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3Skip(pSSM, sizeof(uint8_t) * 256);   /* FIFO */           \
+        AssertRCReturn(rc, rc);                                             \
+        rc = SSMR3Skip(pSSM, sizeof(uint32_t));        /* End marker */     \
+        AssertRCReturn(rc, rc);                                             \
+    }                                                                       \
 
     /*
      * Load BDLEs (Buffer Descriptor List Entries) and DMA counters.
@@ -5140,7 +5150,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                         break;
 
                     rc = SSMR3GetStructEx(pSSM, &pStrm->State.BDLE, sizeof(HDABDLE),
-                                          0 /* fFlags */, g_aSSMBDLEFields6, NULL);
+                                          0 /* fFlags */, g_aSSMBDLEDescFields6, NULL);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -5212,8 +5222,8 @@ static DECLCALLBACK(size_t) hdaDbgFmtBDLE(PFNRTSTROUTPUT pfnOutput, void *pvArgO
     PHDABDLE pBDLE = (PHDABDLE)pvValue;
     return RTStrFormat(pfnOutput,  pvArgOutput, NULL, 0,
                        "BDLE(idx:%RU32, off:%RU32, fifow:%RU32, IOC:%RTbool, DMA[%RU32 bytes @ 0x%x])",
-                       pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->State.cbBelowFIFOW,  pBDLE->fIntOnCompletion,
-                       pBDLE->u32BufSize, pBDLE->u64BufAdr);
+                       pBDLE->State.u32BDLIndex, pBDLE->State.u32BufOff, pBDLE->State.cbBelowFIFOW,
+                       pBDLE->Desc.fFlags & HDA_BDLE_FLAG_IOC, pBDLE->Desc.u32BufSize, pBDLE->Desc.u64BufAdr);
 }
 
 /**
