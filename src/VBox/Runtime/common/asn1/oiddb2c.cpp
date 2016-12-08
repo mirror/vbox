@@ -146,8 +146,8 @@ static void writeOidTree(PRAWOIDNODE pCurNode, FILE *pOut, bool fBigTable, PBLDP
             PRAWOIDNODE pChild = pCurNode->papChildren[i];
             fprintf(pOut,
                     fBigTable
-                    ? "    { %7u, %2u, %u, %2u, %4u, %5u }, /* "
-                    : "    { %2u, %2u, %u, %2u, %4u, %5u }, /* "
+                    ? "    { %7u, %2u, %u, %2u, %4u, %#06x }, /* "
+                    : "    { %2u, %2u, %u, %2u, %4u, %#06x }, /* "
                     ,
                     pChild->uKey,
                     (unsigned)pChild->StrTabEntry.cchString,
