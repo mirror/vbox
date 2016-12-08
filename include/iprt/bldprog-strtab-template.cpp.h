@@ -115,7 +115,6 @@ typedef struct BLDPROGSTRING
 typedef BLDPROGSTRING *PBLDPROGSTRING;
 
 
-
 /** String table data. */
 typedef struct BLDPROGSTRTAB
 {
@@ -226,8 +225,8 @@ static void BldProgStrTab_Delete(PBLDPROGSTRTAB pThis)
 }
 #endif
 
-
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
+
 DECLINLINE(size_t) bldProgStrTab_compressorFindNextWord(const char *pszSrc, char ch, const char **ppszSrc)
 {
     /*
@@ -273,6 +272,7 @@ DECLINLINE(size_t) bldProgStrTab_compressorFindNextWord(const char *pszSrc, char
     *ppszSrc = pszSrc;
     return 0;
 }
+
 
 /**
  * Analyzes a string.
@@ -341,8 +341,8 @@ static void bldProgStrTab_compressorAnalyzeString(PBLDPROGSTRTAB pThis, PBLDPROG
         abort();
     }
 }
-#endif /* BLDPROG_STRTAB_WITH_COMPRESSION */
 
+#endif /* BLDPROG_STRTAB_WITH_COMPRESSION */
 
 /**
  * Adds a string to the hash table.
@@ -393,7 +393,6 @@ static void bldProgStrTab_AddStringToHashTab(PBLDPROGSTRTAB pThis, PBLDPROGSTRIN
 }
 
 
-
 /**
  * Adds a string to the string table.
  *
@@ -413,9 +412,51 @@ static void BldProgStrTab_AddString(PBLDPROGSTRTAB pThis, PBLDPROGSTRING pStr)
 #endif
 }
 
-
-
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
+
+/**
+ * Copies @a cchSrc chars from @a pchSrc to @a pszDst, escaping special
+ * sequences.
+ *
+ * @returns New @a pszDst position, NULL if invalid source encoding.
+ * @param   pszDst              The destination buffer.
+ * @param   pszSrc              The source buffer.
+ * @param   cchSrc              How much to copy.
+ */
+static char *bldProgStrTab_compressorCopyAndEscape(char *pszDst, const char *pszSrc, size_t cchSrc)
+{
+    while (cchSrc-- > 0)
+    {
+        char ch = *pszSrc;
+        if (!((unsigned char)ch & 0x80))
+        {
+            *pszDst++ = ch;
+            pszSrc++;
+        }
+        else
+        {
+# ifdef BLDPROG_STRTAB_PURE_ASCII
+            fprintf(stderr, "error: unexpected char value %#x\n", ch);
+            return NULL;
+# else
+            RTUNICP uc;
+            int rc = RTStrGetCpEx(&pszSrc, &uc);
+            if (RT_SUCCESS(rc))
+            {
+                *pszDst++ = (unsigned char)0xff; /* escape single code point. */
+                pszDst = RTStrPutCp(pszDst, uc);
+            }
+            else
+            {
+                fprintf(stderr, "Error: RTStrGetCpEx failed with rc=%d\n", rc);
+                return NULL;
+            }
+# endif
+        }
+    }
+    return pszDst;
+}
+
 
 /**
  * Replaces the dictionary words and escapes non-ascii chars in a string.
@@ -433,7 +474,15 @@ static bool bldProgStrTab_compressorFixupString(PBLDPROGSTRTAB pThis, PBLDPROGST
     char ch;
     while ((ch = *pszSrc) != '\0')
     {
+        const char * const pszSrcUncompressed = pszSrc;
         size_t cchWord = bldProgStrTab_compressorFindNextWord(pszSrc, ch, &pszSrc);
+        size_t cchSrcUncompressed = pszSrc - pszSrcUncompressed;
+        if (cchSrcUncompressed > 0)
+        {
+            pszDst = bldProgStrTab_compressorCopyAndEscape(pszDst, pszSrcUncompressed, cchSrcUncompressed);
+            if (!pszDst)
+                return false;
+        }
         if (!cchWord)
             break;
 
@@ -456,35 +505,10 @@ static bool bldProgStrTab_compressorFixupString(PBLDPROGSTRTAB pThis, PBLDPROGST
         if (cchWord)
         {
             /* Copy the current word. */
-            ch = *pszSrc;
-            do
-            {
-                if (!((unsigned char)ch & 0x80))
-                {
-                    *pszDst++ = ch;
-                    pszSrc++;
-                }
-                else
-                {
-#ifdef BLDPROG_STRTAB_PURE_ASCII
-                    fprintf(stderr, "error: unexpected char value %#x\n", ch);
-                    return false;
-#else
-                    RTUNICP uc;
-                    int rc = RTStrGetCpEx(&pszSrc, &uc);
-                    if (RT_SUCCESS(rc))
-                    {
-                        *pszDst++ = (unsigned char)0xff; /* escape single code point. */
-                        pszDst = RTStrPutCp(pszDst, uc);
-                    }
-                    else
-                    {
-                        fprintf(stderr, "Error: RTStrGetCpEx failed with rc=%d\n", rc);
-                        return false;
-                    }
-#endif
-                }
-            } while ((ch = *pszSrc) != '\0' && ch != ' ');
+            pszDst = bldProgStrTab_compressorCopyAndEscape(pszDst, pszSrc, cchWord);
+            if (!pszDst)
+                return false;
+            pszSrc += cchWord;
         }
     }
 
@@ -629,7 +653,6 @@ static bool bldProgStrTab_compressorDoStringCompression(PBLDPROGSTRTAB pThis, bo
 }
 
 #endif /* BLDPROG_STRTAB_WITH_COMPRESSION */
-
 
 /**
  * Inserts a string into g_apUniqueStrings.
