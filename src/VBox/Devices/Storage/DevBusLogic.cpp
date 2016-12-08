@@ -1406,6 +1406,14 @@ static int buslogicR3QueryDataBufferSize(PPDMDEVINS pDevIns, PCCBU pCCBGuest, bo
         cbDataCCB       = pCCBGuest->n.cbData;
     }
 
+#if 1
+    /* Hack for NT 10/91: A CCB describes a 2K buffer, but TEST UNIT READY is executed. This command
+     * returns no data, hence the buffer must be left alone!
+     */
+    if (pCCBGuest->c.abCDB[0] == 0)
+        cbDataCCB = 0;
+#endif
+
     if (   (pCCBGuest->c.uDataDirection != BUSLOGIC_CCB_DIRECTION_NO_DATA)
         && cbDataCCB)
     {
