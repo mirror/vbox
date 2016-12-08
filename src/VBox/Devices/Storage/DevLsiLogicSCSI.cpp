@@ -286,6 +286,12 @@ typedef struct LSILOGICSCSI
     PDMCRITSECT           ReplyPostQueueCritSect;
     /** Critical section protecting the reply free queue. */
     PDMCRITSECT           ReplyFreeQueueCritSect;
+    /** Critical section protecting the request queue against
+     * concurrent access from the guest. */
+    PDMCRITSECT           RequestQueueCritSect;
+    /** Critical section protecting the reply free queue against
+     * concurrent write access from the guest. */
+    PDMCRITSECT           ReplyFreeQueueWriteCritSect;
 
     /** Pointer to the start of the reply free queue - R3. */
     R3PTRTYPE(volatile uint32_t *) pReplyFreeQueueBaseR3;
@@ -1275,14 +1281,22 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
+            int rc = PDMCritSectEnter(&pThis->ReplyFreeQueueWriteCritSect, VINF_IOM_R3_MMIO_WRITE);
+            if (rc != VINF_SUCCESS)
+                return rc;
             /* Add the entry to the reply free queue. */
             ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextEntryFreeWrite], u32);
             pThis->uReplyFreeQueueNextEntryFreeWrite++;
             pThis->uReplyFreeQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
+            PDMCritSectLeave(&pThis->ReplyFreeQueueWriteCritSect);
             break;
         }
         case LSILOGIC_REG_REQUEST_QUEUE:
         {
+            int rc = PDMCritSectEnter(&pThis->RequestQueueCritSect, VINF_IOM_R3_MMIO_WRITE);
+            if (rc != VINF_SUCCESS)
+                return rc;
+
             uint32_t uNextWrite = ASMAtomicReadU32(&pThis->uRequestQueueNextEntryFreeWrite);
 
             ASMAtomicWriteU32(&pThis->CTX_SUFF(pRequestQueueBase)[uNextWrite], u32);
@@ -1296,6 +1310,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             uNextWrite++;
             uNextWrite %= pThis->cRequestQueueEntries;
             ASMAtomicWriteU32(&pThis->uRequestQueueNextEntryFreeWrite, uNextWrite);
+            PDMCritSectLeave(&pThis->RequestQueueCritSect);
 
             /* Send notification to R3 if there is not one sent already. Do this
              * only if the worker thread is not sleeping or might go sleeping. */
@@ -1309,7 +1324,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                     PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), pNotificationItem);
 #else
                     LogFlowFunc(("Signal event semaphore\n"));
-                    int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+                    rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
                     AssertRC(rc);
 #endif
                 }
@@ -5304,6 +5319,8 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 
     PDMR3CritSectDelete(&pThis->ReplyFreeQueueCritSect);
     PDMR3CritSectDelete(&pThis->ReplyPostQueueCritSect);
+    PDMR3CritSectDelete(&pThis->RequestQueueCritSect);
+    PDMR3CritSectDelete(&pThis->ReplyFreeQueueWriteCritSect);
 
     RTMemFree(pThis->paDeviceStates);
     pThis->paDeviceStates = NULL;
@@ -5469,6 +5486,14 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS, "%sRPQ", szDevTag);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for reply post queue"));
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->RequestQueueCritSect, RT_SRC_POS, "%sRQ", szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for request queue"));
+
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueWriteCritSect, RT_SRC_POS, "%sRFQW", szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: cannot create critical section for reply free queue write access"));
 
     /*
      * Register the PCI device, it's I/O regions.

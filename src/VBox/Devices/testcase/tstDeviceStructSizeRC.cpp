@@ -1744,6 +1744,8 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, cRequestQueueEntries);
     GEN_CHECK_OFF(LSILOGICSCSI, ReplyPostQueueCritSect);
     GEN_CHECK_OFF(LSILOGICSCSI, ReplyFreeQueueCritSect);
+    GEN_CHECK_OFF(LSILOGICSCSI, RequestQueueCritSect);
+    GEN_CHECK_OFF(LSILOGICSCSI, ReplyFreeQueueWriteCritSect);
     GEN_CHECK_OFF(LSILOGICSCSI, pReplyFreeQueueBaseR3);
     GEN_CHECK_OFF(LSILOGICSCSI, pReplyPostQueueBaseR3);
     GEN_CHECK_OFF(LSILOGICSCSI, pRequestQueueBaseR3);
