@@ -65,7 +65,7 @@
  * to a file on the host. Be sure to adjust HDA_DEBUG_DUMP_PCM_DATA_PATH
  * to your needs before using this!
  */
-#define HDA_DEBUG_DUMP_PCM_DATA
+//#define HDA_DEBUG_DUMP_PCM_DATA
 #ifdef HDA_DEBUG_DUMP_PCM_DATA
 # ifdef RT_OS_WINDOWS
 #  define HDA_DEBUG_DUMP_PCM_DATA_PATH "c:\\temp\\"
