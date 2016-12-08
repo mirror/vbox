@@ -2083,6 +2083,23 @@ DECLINLINE(bool) RTAsn1CursorIsSetNext(PRTASN1CURSOR pCursor)
  */
 RTDECL(int) RTAsn1Dump(PCRTASN1CORE pAsn1Core, uint32_t fFlags, uint32_t uLevel, PFNRTDUMPPRINTFV pfnPrintfV, void *pvUser);
 
+/**
+ * Queries the name for an object identifier.
+ *
+ * This API is very simple due to how we store the data.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if not found.
+ * @retval  VERR_BUFFER_OVERFLOW if more buffer space is required.
+ *
+ * @param   pauComponents   The components making up the object ID.
+ * @param   cComponents     The number of components.
+ * @param   pszDst          Where to store the name if found.
+ * @param   cbDst           The size of the destination buffer.
+ */
+RTDECL(int) RTAsn1QueryObjIdName(PCRTASN1OBJID pObjId, char *pszDst, size_t cbDst);
+
 /** @} */
 
 /** @} */

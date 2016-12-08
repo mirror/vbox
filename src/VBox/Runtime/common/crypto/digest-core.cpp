@@ -397,3 +397,24 @@ RTDECL(const char *) RTCrDigestTypeToAlgorithmOid(RTDIGESTTYPE enmDigestType)
     }
 }
 
+
+RTDECL(const char *) RTCrDigestTypeToName(RTDIGESTTYPE enmDigestType)
+{
+    switch (enmDigestType)
+    {
+        case RTDIGESTTYPE_CRC32:        return "CRC32";
+        case RTDIGESTTYPE_CRC64:        return "CRC64";
+        case RTDIGESTTYPE_MD2:          return "MD2";
+        case RTDIGESTTYPE_MD4:          return "MD4";
+        case RTDIGESTTYPE_MD5:          return "MD5";
+        case RTDIGESTTYPE_SHA1:         return "SHA-1";
+        case RTDIGESTTYPE_SHA224:       return "SHA-224";
+        case RTDIGESTTYPE_SHA256:       return "SHA-256";
+        case RTDIGESTTYPE_SHA384:       return "SHA-384";
+        case RTDIGESTTYPE_SHA512:       return "SHA-512";
+        case RTDIGESTTYPE_SHA512T224:   return "SHA-512/224";
+        case RTDIGESTTYPE_SHA512T256:   return "SHA-512/256";
+        default:                        return NULL;
+    }
+}
+

@@ -141,25 +141,26 @@ DECLINLINE(PCRTOIDENTRYSMALL) rtOidDbLookupSmall(uint32_t iEntry, uint32_t cEntr
                     break;
             }
             else
-                return &g_aSmallOidTable[iEntry];
+                return &g_aSmallOidTable[i];
         }
     }
     return NULL;
 }
 
 
-
 /**
  * Queries the name for an object identifier.
  *
- * @returns true if found, false if not.
+ * @returns IPRT status code (VINF_SUCCESS, VERR_NOT_FOUND,
+ *          VERR_BUFFER_OVERFLOW)
  * @param   pauComponents   The components making up the object ID.
  * @param   cComponents     The number of components.
  * @param   pszDst          Where to store the name if found.
  * @param   cbDst           The size of the destination buffer.
  */
-static bool rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cComponents, char *pszDst, size_t cbDst)
+static int rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cComponents, char *pszDst, size_t cbDst)
 {
+    int rc = VERR_NOT_FOUND;
     if (cComponents > 0)
     {
         /*
@@ -180,7 +181,8 @@ static bool rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cCompon
                     {
                         if (RTBldProgStrTabQueryString(&g_OidDbStrTab, pSmallHit->offString,
                                                        pSmallHit->cchString, pszDst, cbDst) >= 0)
-                            return true;
+                            return VINF_SUCCESS;
+                        rc = VERR_BUFFER_OVERFLOW;
                         break;
                     }
                     cEntries = pSmallHit->cChildren;
@@ -201,7 +203,8 @@ static bool rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cCompon
                     {
                         if (RTBldProgStrTabQueryString(&g_OidDbStrTab, pBigHit->offString,
                                                        pBigHit->cchString, pszDst, cbDst) >= 0)
-                            return true;
+                            return VINF_SUCCESS;
+                        rc = VERR_BUFFER_OVERFLOW;
                         break;
                     }
                     cEntries = pBigHit->cChildren;
@@ -217,7 +220,28 @@ static bool rtOidDbQueryObjIdName(uint32_t const *pauComponents, uint8_t cCompon
         }
     }
 
-    return false;
+    return rc;
+}
+
+
+/**
+ * Queries the name for an object identifier.
+ *
+ * This API is simple and more or less requires a
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if not found.
+ * @retval  VERR_BUFFER_OVERFLOW if more buffer space is required.
+ *
+ * @param   pauComponents   The components making up the object ID.
+ * @param   cComponents     The number of components.
+ * @param   pszDst          Where to store the name if found.
+ * @param   cbDst           The size of the destination buffer.
+ */
+RTDECL(int) RTAsn1QueryObjIdName(PCRTASN1OBJID pObjId, char *pszDst, size_t cbDst)
+{
+    return rtOidDbQueryObjIdName(pObjId->pauComponents, pObjId->cComponents, pszDst, cbDst);
 }
 
 #endif /* !IN_SUP_HARDENED_R3 */
@@ -421,7 +445,7 @@ static bool rtAsn1DumpUniversalTypeAndValue(PRTASN1DUMPDATA pData, PCRTASN1CORE 
 #ifndef IN_SUP_HARDENED_R3
                 PCRTASN1OBJID pObjId = (PCRTASN1OBJID)pAsn1Core;
                 char szName[64];
-                if (rtOidDbQueryObjIdName(pObjId->pauComponents, pObjId->cComponents, szName, sizeof(szName)))
+                if (rtOidDbQueryObjIdName(pObjId->pauComponents, pObjId->cComponents, szName, sizeof(szName)) == VINF_SUCCESS)
                     rtAsn1DumpPrintf(pData, "OBJECT IDENTIFIER %s%s ('%s')\n",
                                      pszDefault, szName, ((PCRTASN1OBJID)pAsn1Core)->szObjId);
                 else

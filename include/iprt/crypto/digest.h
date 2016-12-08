@@ -204,6 +204,17 @@ RTDECL(const char *) RTCrDigestGetAlgorithmOid(RTCRDIGEST hDigest);
  */
 RTDECL(const char *) RTCrDigestTypeToAlgorithmOid(RTDIGESTTYPE enmDigestType);
 
+/**
+ * Translates an IPRT digest type value to a name/descriptive string.
+ *
+ * The purpose here is for human readable output rather than machine readable
+ * output, i.e. the names aren't set in stone.
+ *
+ * @returns Pointer to read-only string, NULL if unknown type.
+ * @param       enmDigestType       The IPRT digest type value to convert.
+ */
+RTDECL(const char *) RTCrDigestTypeToName(RTDIGESTTYPE enmDigestType);
+
 /** @} */
 
 RT_C_DECLS_END
