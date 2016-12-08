@@ -226,7 +226,7 @@ void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uL
           QUEUENAME(pState, pQueue), pElem->uIndex, uLen));
     for (i = uOffset = 0; i < pElem->nIn && uOffset < uLen - uReserved; i++)
     {
-        uint32_t cbSegLen = RT_MIN(uLen - cbReserved - uOffset, pElem->aSegsIn[i].cb - cbReserved);
+        uint32_t cbSegLen = RT_MIN(uLen - uReserved - uOffset, pElem->aSegsIn[i].cb - cbReserved);
         if (pElem->aSegsIn[i].pv)
         {
             Log2(("%s vqueuePut: %s used_idx=%u seg=%u addr=%p pv=%p cb=%u acb=%u\n", INSTANCE(pState),
