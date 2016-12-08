@@ -20,12 +20,14 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QHBoxLayout>
-# include <QPaintEvent>
-# include <QMetaEnum>
-# include <QMenuBar>
-# include <QPainter>
 # include <QMenu>
+# include <QMenuBar>
+# include <QMetaEnum>
+# include <QPainter>
+# include <QPaintEvent>
+# include <QStyleOptionToolButton>
 # ifndef VBOX_WS_MAC
 #  include <QCheckBox>
 # endif /* !VBOX_WS_MAC */
@@ -43,6 +45,267 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* Forward declarations: */
+class UIAccessibilityInterfaceForUIMenuBarEditorButton;
+
+
+/** Menu-bar editor button segment types. */
+enum UIMenuBarEditorSegment
+{
+    UIMenuBarEditorSegment_Button,
+    UIMenuBarEditorSegment_Menu,
+    UIMenuBarEditorSegment_Max,
+};
+
+
+/** QAccessibleWidget extension used as an accessibility interface for UIMenuBarEditor button segments. */
+class UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment : public QAccessibleInterface
+{
+public:
+
+    /** Constructs an accessibility interface.
+      * @param  pParent   Brings the parent interface we are linked to.
+      * @param  enmIndex  Brings the index of segment we are referring to. */
+    UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment(UIAccessibilityInterfaceForUIMenuBarEditorButton *pParent,
+                                                            UIMenuBarEditorSegment enmIndex);
+
+    /** Returns whether the interface is valid. */
+    virtual bool isValid() const /* override */ { return true; }
+
+    /** Returns the wrapped object. */
+    virtual QObject *object() const /* override */ { return 0; }
+    /** Returns the parent. */
+    virtual QAccessibleInterface *parent() const /* override */;
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */ { return 0; }
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int /* iIndex */) const /* override */ { return 0; }
+    /** Returns the child at position QPoint(@a x, @a y). */
+    virtual QAccessibleInterface *childAt(int /* x */, int /* y */) const /* override */ { return 0; }
+    /** Returns the index of the passed @a pChild. */
+    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const /* override */ { return -1; }
+
+    /** Returns the rect. */
+    virtual QRect rect() const /* override */;
+
+    /** Defines a @a strText for the passed @a enmTextRole. */
+    virtual void setText(QAccessible::Text /* enmTextRole */, const QString & /* strText */) /* override */ {}
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text /* enmTextRole */) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */ { return QAccessible::Button; }
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */ { return QAccessible::State(); }
+
+private:
+
+    /** Holds the parent interface we are linked to. */
+    UIAccessibilityInterfaceForUIMenuBarEditorButton *m_pParent;
+    /** Holds the index of segment we are referring to. */
+    const UIMenuBarEditorSegment m_enmIndex;
+};
+
+
+/** QAccessibleWidget extension used as an accessibility interface for UIMenuBarEditor buttons. */
+class UIAccessibilityInterfaceForUIMenuBarEditorButton : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject);
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUIMenuBarEditorButton(QWidget *pWidget);
+    /** Destructs an accessibility interface. */
+    ~UIAccessibilityInterfaceForUIMenuBarEditorButton();
+
+    /** Returns the number of children. */
+    virtual int childCount() const /* override */;
+    /** Returns the child with the passed @a iIndex. */
+    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+
+    /** Returns the role. */
+    virtual QAccessible::Role role() const /* override */;
+
+    /** Returns the rect of sub-element @a enmSegment. */
+    QRect subRect(UIMenuBarEditorSegment enmSegment) const;
+    /** Returns the text of sub-element @a enmSegment. */
+    QString subText(UIMenuBarEditorSegment enmSegment) const;
+
+private:
+
+    /** Returns corresponding toolbar button. */
+    QToolButton *button() const { return qobject_cast<QToolButton*>(widget()); }
+
+    /** Holds the map of instances of sub-element interfaces. */
+    QMap<UIMenuBarEditorSegment, UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment*> m_elements;
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment implementation.                                                *
+*********************************************************************************************************************************/
+
+UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment(
+        UIAccessibilityInterfaceForUIMenuBarEditorButton *pParent,
+        UIMenuBarEditorSegment enmIndex)
+    : m_pParent(pParent)
+    , m_enmIndex(enmIndex)
+{
+}
+
+QAccessibleInterface *UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::parent() const
+{
+    return m_pParent;
+}
+
+QRect UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::rect() const
+{
+    return m_pParent->subRect(m_enmIndex);
+}
+
+QString UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment::text(QAccessible::Text /* enmTextRole */) const
+{
+    return m_pParent->subText(m_enmIndex);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIAccessibilityInterfaceForUIMenuBarEditorButton implementation.                                                       *
+*********************************************************************************************************************************/
+
+/* static */
+QAccessibleInterface *UIAccessibilityInterfaceForUIMenuBarEditorButton::pFactory(const QString &strClassname, QObject *pObject)
+{
+    /* Creating toolbar button accessibility interface: */
+    if (   pObject
+        && strClassname == QLatin1String("QToolButton")
+        && pObject->property("Belongs to") == "UIMenuBarEditorWidget")
+        return new UIAccessibilityInterfaceForUIMenuBarEditorButton(qobject_cast<QWidget*>(pObject));
+
+    /* Null by default: */
+    return 0;
+}
+
+UIAccessibilityInterfaceForUIMenuBarEditorButton::UIAccessibilityInterfaceForUIMenuBarEditorButton(QWidget *pWidget)
+    : QAccessibleWidget(pWidget, QAccessible::Button)
+{
+    /* Prepare button with popup menu: */
+    if (button()->popupMode() == QToolButton::MenuButtonPopup)
+    {
+        for (int iIndex = 0; iIndex < (int)UIMenuBarEditorSegment_Max; ++iIndex)
+            m_elements[(UIMenuBarEditorSegment)iIndex] =
+                new UIAccessibilityInterfaceForUIMenuBarEditorButtonSegment(this, (UIMenuBarEditorSegment)iIndex);
+    }
+}
+
+UIAccessibilityInterfaceForUIMenuBarEditorButton::~UIAccessibilityInterfaceForUIMenuBarEditorButton()
+{
+    /* Cleanup button with popup menu: */
+    qDeleteAll(m_elements);
+    m_elements.clear();
+}
+
+int UIAccessibilityInterfaceForUIMenuBarEditorButton::childCount() const
+{
+    /* Sanity check: */
+    AssertPtrReturn(button(), 0);
+
+    /* Return child count for a button with popup menu: */
+    if (button()->popupMode() == QToolButton::MenuButtonPopup)
+        return UIMenuBarEditorSegment_Max;
+
+    /* Call to base-class: */
+    return QAccessibleWidget::childCount();
+}
+
+QAccessibleInterface *UIAccessibilityInterfaceForUIMenuBarEditorButton::child(int iIndex) const
+{
+    /* Sanity check: */
+    AssertPtrReturn(button(), 0);
+    AssertReturn(iIndex >= 0 && iIndex < childCount(), 0);
+
+    /* Return the child with the passed iIndex for a button with popup menu: */
+    if (button()->popupMode() == QToolButton::MenuButtonPopup)
+        return m_elements.value((UIMenuBarEditorSegment)iIndex);
+
+    /* Call to base-class: */
+    return QAccessibleWidget::child(iIndex);
+}
+
+QAccessible::Role UIAccessibilityInterfaceForUIMenuBarEditorButton::role() const
+{
+    /* Sanity check: */
+    AssertPtrReturn(button(), QAccessibleWidget::role());
+
+    /* Return role for button with popup menu: */
+    if (button()->popupMode() == QToolButton::MenuButtonPopup)
+        return QAccessible::ToolBar;
+
+    /* Call to base-class: */
+    return QAccessibleWidget::role();
+}
+
+QRect UIAccessibilityInterfaceForUIMenuBarEditorButton::subRect(UIMenuBarEditorSegment enmSegment) const
+{
+    /* Sanity check: */
+    AssertReturn(button()->popupMode() == QToolButton::MenuButtonPopup, QRect());
+
+    /* Return the rect of segment with the passed enmIndex for a button with popup menu: */
+    switch (enmSegment)
+    {
+        case UIMenuBarEditorSegment_Button:
+        {
+            QStyleOptionToolButton options;
+            options.initFrom(button());
+            options.features |= QStyleOptionToolButton::MenuButtonPopup;
+            QRect rect = button()->style()->subControlRect(QStyle::CC_ToolButton, &options, QStyle::SC_ToolButton);
+            rect.moveTo(button()->mapToGlobal(rect.topLeft()));
+            return rect;
+        }
+        case UIMenuBarEditorSegment_Menu:
+        {
+            QStyleOptionToolButton options;
+            options.initFrom(button());
+            options.features |= QStyleOptionToolButton::MenuButtonPopup;
+            QRect rect = button()->style()->subControlRect(QStyle::CC_ToolButton, &options, QStyle::SC_ToolButtonMenu);
+            rect.moveTo(button()->mapToGlobal(rect.topLeft()));
+            return rect;
+        }
+        default:
+            break;
+    }
+
+    /* Null rect by default: */
+    return QRect();
+}
+
+QString UIAccessibilityInterfaceForUIMenuBarEditorButton::subText(UIMenuBarEditorSegment enmSegment) const
+{
+    /* Sanity check: */
+    AssertReturn(button()->popupMode() == QToolButton::MenuButtonPopup, QString());
+
+    /* Return the text of segment with the passed enmIndex for a button with popup menu: */
+    switch (enmSegment)
+    {
+        case UIMenuBarEditorSegment_Button:
+            return UIMenuBarEditorWidget::tr("Toggle menu %1").arg(QAccessibleWidget::text(QAccessible::Description));
+        case UIMenuBarEditorSegment_Menu:
+            return UIMenuBarEditorWidget::tr("Popup menu %1").arg(QAccessibleWidget::text(QAccessible::Description));
+        default:
+            break;
+    }
+
+    /* Null string by default: */
+    return QString();
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIMenuBarEditorWidget implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
                                              bool fStartedFromVMSettings /* = true */,
@@ -600,6 +863,9 @@ void UIMenuBarEditorWidget::prepare()
     if (m_strMachineID.isEmpty() || !m_pActionPool)
         return;
 
+    /* Install tool-bar button accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIMenuBarEditorButton::pFactory);
+
     /* Create main-layout: */
     m_pMainLayout = new QHBoxLayout(this);
     AssertPtrReturnVoid(m_pMainLayout);
@@ -730,8 +996,16 @@ QMenu* UIMenuBarEditorWidget::prepareNamedMenu(const QString &strName)
             AssertPtrReturn(pNamedMenuToolButton, 0);
             {
                 /* Configure named menu tool-button: */
+                pNamedMenuToolButton->setProperty("Belongs to", "UIMenuBarEditorWidget");
                 pNamedMenuToolButton->setPopupMode(QToolButton::MenuButtonPopup);
                 pNamedMenuToolButton->setAutoRaise(true);
+                /* Update the accessibility interface to take "Belongs to" into account: */
+                QAccessibleInterface *pInterface = QAccessible::queryAccessibleInterface(pNamedMenuToolButton);
+                if (pInterface)
+                {
+                    QAccessible::deleteAccessibleInterface(QAccessible::uniqueId(pInterface));
+                    QAccessible::queryAccessibleInterface(pNamedMenuToolButton); // <= new one, proper..
+                }
                 /* Create spacing after named menu tool-button: */
                 QWidget *pSpacing = new QWidget;
                 AssertPtrReturn(pSpacing, 0);
@@ -774,8 +1048,16 @@ QMenu* UIMenuBarEditorWidget::prepareCopiedMenu(const UIAction *pAction)
             AssertPtrReturn(pCopiedMenuToolButton, 0);
             {
                 /* Configure copied menu tool-button: */
+                pCopiedMenuToolButton->setProperty("Belongs to", "UIMenuBarEditorWidget");
                 pCopiedMenuToolButton->setPopupMode(QToolButton::MenuButtonPopup);
                 pCopiedMenuToolButton->setAutoRaise(true);
+                /* Update the accessibility interface to take "Belongs to" into account: */
+                QAccessibleInterface *pInterface = QAccessible::queryAccessibleInterface(pCopiedMenuToolButton);
+                if (pInterface)
+                {
+                    QAccessible::deleteAccessibleInterface(QAccessible::uniqueId(pInterface));
+                    QAccessible::queryAccessibleInterface(pCopiedMenuToolButton); // <= new one, proper..
+                }
                 /* Create spacing after copied menu tool-button: */
                 QWidget *pSpacing = new QWidget;
                 AssertPtrReturn(pSpacing, 0);
