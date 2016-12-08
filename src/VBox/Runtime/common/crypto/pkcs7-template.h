@@ -60,6 +60,8 @@ RTASN1TMPL_MEMBER_DYN(          uValues,    pSigningTime,   RTASN1SETOFTIMES,   
     enmType, RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME,   RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_SIGNING_TIME_OID) == 0);
 RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
     enmType, RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,   RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_MS_TIMESTAMP) == 0);
+//RTASN1TMPL_MEMBER_DYN(          uValues,    pContentInfos,  RTCRPKCS7SETOFCONTENTINFOS, RTCrPkcs7SetOfContentInfos, Allocation,
+//    enmType, RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE, RTAsn1ObjId_CompareWithString(&pThis->Type, RTCR_PKCS9_ID_MS_NESTED_SIGNATURE) == 0);
 RTASN1TMPL_MEMBER_DYN_DEFAULT(  uValues,    pCores,         RTASN1SETOFCORES,           RTAsn1SetOfCores,           Allocation,
     enmType, RTCRPKCS7ATTRIBUTETYPE_UNKNOWN);
 RTASN1TMPL_MEMBER_DYN_END(RTCRPKCS7ATTRIBUTETYPE, enmType, Allocation);
