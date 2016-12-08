@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevSmc - Apple System Manaagement Controller.
+ * DevSmc - Apple System Management Controller.
  *
  * The SMC is controlling power, fans, take measurements (voltage, temperature,
  * fan speed, ++), and lock Mac OS X to Apple hardware.  For more details see:
