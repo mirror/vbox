@@ -2093,8 +2093,7 @@ RTDECL(int) RTAsn1Dump(PCRTASN1CORE pAsn1Core, uint32_t fFlags, uint32_t uLevel,
  * @retval  VERR_NOT_FOUND if not found.
  * @retval  VERR_BUFFER_OVERFLOW if more buffer space is required.
  *
- * @param   pauComponents   The components making up the object ID.
- * @param   cComponents     The number of components.
+ * @param   pObjId          The object ID to name.
  * @param   pszDst          Where to store the name if found.
  * @param   cbDst           The size of the destination buffer.
  */
