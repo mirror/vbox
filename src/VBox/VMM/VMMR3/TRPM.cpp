@@ -433,6 +433,7 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 *********************************************************************************************************************************/
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(void) trpmR3InfoEvent(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
 /**
@@ -528,6 +529,13 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
                                NULL, trpmR3Load, NULL);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register info handlers.
+     */
+    rc = DBGFR3InfoRegisterInternalEx(pVM, "trpmevent", "Dumps TRPM pending event.", trpmR3InfoEvent,
+                                      DBGFINFO_FLAGS_ALL_EMTS);
+    AssertRCReturn(rc, rc);
 
     /*
      * Statistics.
@@ -1580,5 +1588,52 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     return HMR3IsActive(pVCpu) ? VINF_EM_RESCHEDULE_HM : VINF_EM_RESCHEDULE_REM; /* (Heed the halted state if this is changed!) */
 #endif /* !TRPM_FORWARD_TRAPS_IN_GC || IEM_VERIFICATION_MODE */
 
+}
+
+
+/**
+ * Displays the pending TRPM event.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) trpmR3InfoEvent(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    uint8_t     uVector;
+    uint8_t     cbInstr;
+    TRPMEVENT   enmTrapEvent;
+    RTGCUINT    uErrorCode;
+    RTGCUINTPTR uCR2;
+    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrapEvent, &uErrorCode, &uCR2, &cbInstr);
+    if (RT_SUCCESS(rc))
+    {
+        pHlp->pfnPrintf(pHlp, "CPU[%u]: TRPM event\n", pVCpu->idCpu);
+        static const char * const s_apszTrpmEventType[] =
+        {
+            "Trap",
+            "Hardware Int",
+            "Software Int"
+        };
+        if (RT_LIKELY(enmTrapEvent < RT_ELEMENTS(s_apszTrpmEventType)))
+        {
+            pHlp->pfnPrintf(pHlp, " Type       = %s\n", s_apszTrpmEventType[enmTrapEvent]);
+            pHlp->pfnPrintf(pHlp, " uVector    = %#x\n", uVector);
+            pHlp->pfnPrintf(pHlp, " uErrorCode = %#RGu\n", uErrorCode);
+            pHlp->pfnPrintf(pHlp, " uCR2       = %#RGp\n", uCR2);
+            pHlp->pfnPrintf(pHlp, " cbInstr    = %u bytes\n", cbInstr);
+        }
+        else
+            pHlp->pfnPrintf(pHlp, " Type       = %#x (Invalid!)\n", enmTrapEvent);
+    }
+    else if (rc == VERR_TRPM_NO_ACTIVE_TRAP)
+        pHlp->pfnPrintf(pHlp, "CPU[%u]: TRPM event (None)\n", pVCpu->idCpu);
+    else
+        pHlp->pfnPrintf(pHlp, "CPU[%u]: TRPM event - Query failed! rc=%Rrc\n", pVCpu->idCpu, rc);
 }
 
