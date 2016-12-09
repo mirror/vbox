@@ -1704,8 +1704,13 @@ static int hdaStreamCreate(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
         {
             HDASTREAMTHREADCTX Ctx = { pThis, pStream };
 
+            char szThreadName[64];
+            RTStrPrintf2(szThreadName, sizeof(szThreadName), "hdaAIO%RU8", pStream->u8SD);
+
+            /** @todo Create threads on demand? */
+
             rc = RTThreadCreate(&pStream->State.AsyncIOThread, hdaStreamAsyncIOThread, &Ctx,
-                                0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "hdaAsyncIO");
+                                0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
             if (RT_SUCCESS(rc))
                 rc = RTThreadUserWait(pStream->State.AsyncIOThread, 10 * 1000 /* 10s timeout */);
         }
@@ -4614,11 +4619,13 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
 
     RTThreadUserSignal(hThreadSelf);
 
-    LogFunc(("Started\n"));
+    LogFunc(("[SD%RU8]: Started\n", pStream->u8SD));
 
     for (;;)
     {
         PHDAMIXERSINK pSink = pStream->pMixSink;
+
+        Log2Func(("[SD%RU8]: Waiting ...\n", pStream->u8SD));
 
         int rc2 = RTSemEventWait(pStream->State.AsyncIOEvent, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc2))
@@ -4662,7 +4669,7 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
         AssertRC(rc2);
     }
 
-    LogFunc(("Ended\n"));
+    LogFunc(("[SD%RU8]: Ended\n", pStream->u8SD));
 
     return VINF_SUCCESS;
 }
