@@ -755,7 +755,7 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
             p_text << UITextTableLine(tr("Unrestricted Execution", "details report"), strUnrestrictedExecution);
             p_text << UITextTableLine(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
             p_text << UITextTableLine(tr("Guest Additions"), strGAVersion);
-            p_text << UITextTableLine(tr("Guest OS Type", "details report"), strGuestOSType);
+            p_text << UITextTableLine(tr("Guest OS Type", "details report"), strOSType);
             p_text << UITextTableLine(tr("Remote Desktop Server Port", "details report (VRDE Server)"), strVRDEInfo);
 
             return QVariant::fromValue(p_text);
