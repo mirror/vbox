@@ -65,11 +65,11 @@
  * that requires it is Mac OS X (see @bugref{4657}).
  */
 #define E1K_LSC_ON_SLU
-/** @def E1K_INIT_LINKUP_DELAY_US
- * E1K_INIT_LINKUP_DELAY_US prevents the link going up while the driver is still
- * in init (see @bugref{8624}). The units are microseconds.
+/** @def E1K_INIT_LINKUP_DELAY
+ * E1K_INIT_LINKUP_DELAY prevents the link going up while the driver is still
+ * in init (see @bugref{8624}).
  */
-#define E1K_INIT_LINKUP_DELAY_US (500 * 1000)
+//#define E1K_INIT_LINKUP_DELAY (500 * 1000)
 /** @def E1K_IMS_INT_DELAY_NS
  * E1K_IMS_INT_DELAY_NS prevents interrupt storms in Windows guests on enabling
  * interrupts (see @bugref{8624}).
@@ -2677,26 +2677,15 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
             && pThis->fCableConnected
             && !(STATUS & STATUS_LU))
         {
+#ifdef E1K_INIT_LINKUP_DELAY
             /*
-             * Arch Linux guests urge us to bring up the link immediately or risk
-             * hitting Tx unit hang detection by the driver. The interrupt must
-             * be delayed though, to avoid interrupt storms in Windows guests.
-             * See @bugref{8624} for details. */
+             * The driver indicates that we should bring up the link. Our default 5-second delay is too long,
+             * as Linux guests detect Tx hang after 2 seconds. Let's use 500 ms delay instead. */
+            e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY);
+#else /* !E1K_INIT_LINKUP_DELAY */
+            /* Bring up the link immediately, no need for an interrupt though. */
             STATUS |= STATUS_LU;
             Phy::setLinkStatus(&pThis->phy, true);
-#ifdef E1K_INIT_LINKUP_DELAY
-            /* We need to deliver a link-up interrupt for macOS guests. */
-            e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY_US);
-#else /* !E1K_INIT_LINKUP_DELAY */
-            /*
-             * Raising an interrupt immediately may cause an interrupt storm in
-             * Windows guests when the guest's driver enables interrupts from
-             * e1000 during init. Usually the driver will have interrupts
-             * disabled when it sets CTRL_SLU, so we won't actually raise an
-             * interrupt here, but we will do it as soon as the guest enables
-             * interrupts via IMS. See @bugref{8624} for details.
-             */
-            e1kRaiseInterrupt(pThis, VERR_SEM_BUSY, ICR_LSC);
 #endif /* !E1K_INIT_LINKUP_DELAY */
         }
         if (value & CTRL_VME)
