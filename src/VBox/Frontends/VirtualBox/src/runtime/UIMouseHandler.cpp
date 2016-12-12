@@ -374,35 +374,30 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
             if (uisession()->isMouseCaptured())
                 break;
 
-            /* If we see a mouse press outside of our views while the mouse is not
-             * captured, release the keyboard before letting the event owner see it.
-             * This is because some owners cannot deal with failures to grab the
-             * keyboard themselves (e.g. window managers dragging windows).
-             * Only works if we have passively grabbed the mouse button. */
+            /* If we see a mouse press from a grab while the mouse is not captured,
+             * release the keyboard before letting the event owner see it. This is
+             * because some owners cannot deal with failures to grab the keyboard
+             * themselves (e.g. window managers dragging windows). */
 
             /* Cast to XCB button-event: */
             xcb_button_press_event_t *pButtonEvent = static_cast<xcb_button_press_event_t*>(pMessage);
 
-            /* Detect the widget which should receive the event actually: */
-            const QWidget *pWidget = qApp->widgetAt(pButtonEvent->root_x, pButtonEvent->root_y);
-            if (pWidget)
+            /* If this event is from our button grab then it will be reported relative to the root
+             * window and not to ours. In that case release the keyboard capture, re-capture it
+             * delayed, which will fail if we have lost the input focus in the mean-time, replay
+             * the button event for normal delivery (possibly straight back to us, but not relative
+             * to root this time) and tell Qt not to further process this event: */
+            if (pButtonEvent->event == pButtonEvent->root)
             {
-                /* Redirect the event to corresponding widget: */
-                const QPoint pos = pWidget->mapFromGlobal(QPoint(pButtonEvent->root_x, pButtonEvent->root_y));
-                pButtonEvent->event = pWidget->effectiveWinId();
-                pButtonEvent->event_x = pos.x();
-                pButtonEvent->event_y = pos.y();
-                xcb_ungrab_pointer_checked(QX11Info::connection(), pButtonEvent->time);
-                break;
+                machineLogic()->keyboardHandler()->releaseKeyboard();
+                /** @todo It would be nicer to do this in the normal Qt button event
+                  *       handler to avoid avoidable races if the event was not for us. */
+                machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
+                /* Re-send the event so that the window which it was meant for gets it: */
+                xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
+                /* Do not let Qt see the event: */
+                return true;
             }
-            /* Else if the event happened outside of our view areas then release the keyboard,
-             * but capture it again (delayed) immediately. If the event causes us to loose the
-             * focus then the delayed capture will not happen: */
-            machineLogic()->keyboardHandler()->releaseKeyboard();
-            machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
-            /* And re-send the event so that the window which it was meant for actually gets it: */
-            xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
-            break;
         }
         default:
             break;
@@ -760,6 +755,16 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 case QEvent::MouseButtonDblClick:
                 {
                     QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+                    /* When the keyboard is captured, we also capture mouse button
+                     * events, and release the keyboard and re-capture it delayed
+                     * on every mouse click. When the click is inside our window
+                     * area though the delay is not needed or wanted. Calling
+                     * finaliseCaptureKeyboard() skips the delay if a delayed
+                     * capture is in progress and has no effect if not: */
+                    if (pEvent->type() == QEvent::MouseButtonPress)
+                        machineLogic()->keyboardHandler()->finaliseCaptureKeyboard();
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
                     m_iLastMouseWheelDelta = 0;
                     if (mouseEvent(pMouseEvent->type(), uScreenId,
                                    pMouseEvent->pos(), pMouseEvent->globalPos(),
