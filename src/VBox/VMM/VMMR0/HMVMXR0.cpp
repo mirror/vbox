@@ -8945,9 +8945,6 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->uExitReason    = (uint16_t)VMX_EXIT_REASON_BASIC(uExitReason);
     pVmxTransient->fVMEntryFailed = VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uEntryIntInfo);
 
-    /* Update the VM-exit history array. */
-    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
-
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
     {
@@ -8955,6 +8952,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
               pVmxTransient->fVMEntryFailed));
         return;
     }
+
+    /* Update the VM-exit history array only if the world-switch was successful. */
+    HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
 
     if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
     {
