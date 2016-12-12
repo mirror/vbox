@@ -140,6 +140,8 @@ typedef struct fdrive_t {
 #ifndef VBOX
     BlockDriverState *bs;
 #else /* VBOX */
+    /** Pointer to the owning device instance. */
+    R3PTRTYPE(PPDMDEVINS)           pDevIns;
     /** Pointer to the attached driver's base interface. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached driver's block interface. */
@@ -2668,6 +2670,26 @@ static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface, const char *
 }
 
 
+/**
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
+ */
+static DECLCALLBACK(int) fdQueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
+                                               uint32_t *piInstance, uint32_t *piLUN)
+{
+    fdrive_t *pDrv = RT_FROM_MEMBER(pInterface, fdrive_t, IPort);
+    PPDMDEVINS pDevIns = pDrv->pDevIns;
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pDrv->iLUN;
+
+    return VINF_SUCCESS;
+}
+
 /* -=-=-=-=-=-=-=-=- Controller level interfaces -=-=-=-=-=-=-=-=- */
 
 /**
@@ -2926,12 +2948,14 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     {
         fdrive_t *pDrv = &pThis->drives[i];
 
-        pDrv->drive = FDRIVE_DRV_NONE;
-        pDrv->iLUN = i;
+        pDrv->drive   = FDRIVE_DRV_NONE;
+        pDrv->iLUN    = i;
+        pDrv->pDevIns = pDevIns;
 
         pDrv->IBase.pfnQueryInterface       = fdQueryInterface;
         pDrv->IMountNotify.pfnMountNotify   = fdMountNotify;
         pDrv->IMountNotify.pfnUnmountNotify = fdUnmountNotify;
+        pDrv->IPort.pfnQueryDeviceLocation  = fdQueryDeviceLocation;
         pDrv->Led.u32Magic = PDMLED_MAGIC;
     }
 
