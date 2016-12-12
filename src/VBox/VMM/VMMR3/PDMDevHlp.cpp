@@ -1296,10 +1296,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
      * PDMPCIDEVREG_DEV_NO_FIRST_UNUSED and PDMPCIDEVREG_FUN_NO_FIRST_UNUSED.
      */
     uint8_t const uPciDevNoRaw = uPciDevNo;
+    uint32_t      uDefPciBusNo = 0;
     if (uPciDevNo == PDMPCIDEVREG_DEV_NO_SAME_AS_PREV)
     {
         if (pPrevPciDev)
-            uPciDevNo = pPrevPciDev->uDevFn >> 3;
+        {
+            uPciDevNo    = pPrevPciDev->uDevFn >> 3;
+            uDefPciBusNo = pPrevPciDev->Int.s.pPdmBusR3->iBus;
+        }
         else
         {
             /* Look for PCI device registered with an earlier device instance so we can more
@@ -1319,7 +1323,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
 
             while (pOtherPciDev->Int.s.pNextR3)
                 pOtherPciDev = pOtherPciDev->Int.s.pNextR3;
-            uPciDevNo = pOtherPciDev->uDevFn >> 3;
+            uPciDevNo    = pOtherPciDev->uDevFn >> 3;
+            uDefPciBusNo = pOtherPciDev->Int.s.pPdmBusR3->iBus;
         }
     }
 
@@ -1330,10 +1335,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
      * configuration value will be set. If not the default bus is 0.
      */
     /** @cfgm{/Devices/NAME/XX/[PciCfgYY/]PCIBusNo, uint8_t, 0, 7, 0}
-     * Selects the PCI bus number of a device.
+     * Selects the PCI bus number of a device.  The default value isn't necessarily
+     * zero if the device is registered using PDMPCIDEVREG_DEV_NO_SAME_AS_PREV, it
+     * will then also inherit the bus number from the previously registered device.
      */
     uint8_t u8Bus;
-    int rc = CFGMR3QueryU8Def(pCfg, "PCIBusNo", &u8Bus, 0);
+    int rc = CFGMR3QueryU8Def(pCfg, "PCIBusNo", &u8Bus, (uint8_t)uDefPciBusNo);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: PCIBusNo query failed with rc=%Rrc (%s/%d)\n",
                                  rc, pDevIns->pReg->szName, pDevIns->iInstance), rc);
     AssertLogRelMsgReturn(u8Bus < RT_ELEMENTS(pVM->pdm.s.aPciBuses),
