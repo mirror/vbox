@@ -206,6 +206,10 @@ typedef struct QEDIMAGE
     /** Number of bits to shift to get the L2 index. */
     uint32_t            cL2Shift;
 
+    /** Pointer to the L2 table we are currently allocating
+     * (can be only one at a time). */
+    PQEDL2CACHEENTRY    pL2TblAlloc;
+
     /** Memory occupied by the L2 table cache. */
     size_t              cbL2Cache;
     /** The sorted L2 entry list used for searching. */
@@ -417,6 +421,13 @@ static void qedL2TblCacheDestroy(PQEDIMAGE pImage)
  */
 static PQEDL2CACHEENTRY qedL2TblCacheRetain(PQEDIMAGE pImage, uint64_t offL2Tbl)
 {
+    if (   pImage->pL2TblAlloc
+        && pImage->pL2TblAlloc->offL2Tbl == offL2Tbl)
+    {
+        pImage->pL2TblAlloc->cRefs++;
+        return pImage->pL2TblAlloc;
+    }
+
     PQEDL2CACHEENTRY pL2Entry;
     RTListForEach(&pImage->ListSearch, pL2Entry, QEDL2CACHEENTRY, NodeSearch)
     {
@@ -1327,10 +1338,12 @@ static int qedAsyncClusterAllocRollback(PQEDIMAGE pImage, PVDIOCTX pIoCtx, PQEDC
         {
             /* Revert the L1 table entry */
             pImage->paL1Table[pClusterAlloc->idxL1] = 0;
+            pImage->pL2TblAlloc = NULL;
 
             /* Assumption right now is that the L1 table is not modified on storage if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->cbImageOld);
             qedL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
+            Assert(!pClusterAlloc->pL2Entry->cRefs);
             qedL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
             break;
         }
@@ -1398,6 +1411,7 @@ static DECLCALLBACK(int) qedAsyncClusterAllocUpdate(void *pBackendData, PVDIOCTX
             /* L2 link updated in L1 , save L2 entry in cache and allocate new user data cluster. */
             uint64_t offData = qedClusterAllocate(pImage, 1);
 
+            pImage->pL2TblAlloc = NULL;
             qedL2TblCacheEntryInsert(pImage, pClusterAlloc->pL2Entry);
 
             pClusterAlloc->enmAllocState = QEDCLUSTERASYNCALLOCSTATE_USER_ALLOC;
@@ -1769,6 +1783,10 @@ static DECLCALLBACK(int) qedWrite(void *pBackendData, uint64_t uOffset, size_t c
                         pL2ClusterAlloc->cbToWrite     = cbToWrite;
                         pL2ClusterAlloc->pL2Entry      = pL2Entry;
 
+                        pImage->pL2TblAlloc = pL2Entry;
+
+                        LogFlowFunc(("Allocating new L2 table at cluster offset %llu\n", offL2Tbl));
+
                         /*
                          * Write the L2 table first and link to the L1 table afterwards.
                          * If something unexpected happens the worst case which can happen
@@ -1790,6 +1808,8 @@ static DECLCALLBACK(int) qedWrite(void *pBackendData, uint64_t uOffset, size_t c
                     }
                     else
                     {
+                        LogFlowFunc(("Fetching L2 table at cluster offset %llu\n", pImage->paL1Table[idxL1]));
+
                         rc = qedL2TblCacheFetchAsync(pImage, pIoCtx, pImage->paL1Table[idxL1],
                                                      &pL2Entry);
 
