@@ -131,7 +131,7 @@ void UIVMInfoDialog::retranslateUi()
     /* Storage statistics: */
     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
     CStorageControllerVector controllers = m_session.GetMachine().GetStorageControllers();
-    int iIDECount = 0, iSATACount = 0, iSCSICount = 0, iUSBCount = 0, iSASCount = 0;
+    int iIDECount = 0;
     foreach (const CStorageController &controller, controllers)
     {
         switch (controller.GetBus())
@@ -173,112 +173,39 @@ void UIVMInfoDialog::retranslateUi()
                 ++iIDECount;
                 break;
             }
-            case KStorageBus_SATA:
+            default:
             {
+                /* Common code for the non IDE controllers. */
+                uint32_t iInstance = controller.GetInstance();
+                const char *pszCtrl = storCtrlType2Str(controller.GetControllerType());
+
                 for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_SATA); ++i)
                 {
                     for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_SATA); ++j)
                     {
                         /* Names: */
-                        m_names[QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)]
-                            = tr("DMA Transfers");
-                        m_names[QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)]
+                        m_names[QString("/Devices/%1%2/Port%3/ReqsSubmitted").arg(pszCtrl).arg(iInstance).arg(i)]
+                            = tr("Requests");
+                        m_names[QString("/Devices/%1%2/Port%3/ReadBytes").arg(pszCtrl).arg(iInstance).arg(i)]
                             = tr("Data Read");
-                        m_names[QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i)]
+                        m_names[QString("/Devices/%1%2/Port%3/WrittenBytes").arg(pszCtrl).arg(iInstance).arg(i)]
                             = tr("Data Written");
 
                         /* Units: */
-                        m_units[QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)] = "[B]";
-                        m_units[QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)] = "B";
-                        m_units[QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i)] = "B";
+                        m_units[QString("/Devices/%1%2/Port%3/ReqsSubmitted").arg(pszCtrl).arg(iInstance).arg(i)] = "[B]";
+                        m_units[QString("/Devices/%1%2/Port%3/ReadBytes").arg(pszCtrl).arg(iInstance).arg(i)] = "B";
+                        m_units[QString("/Devices/%1%2/Port%3/WrittenBytes").arg(pszCtrl).arg(iInstance).arg(i)] = "B";
 
                         /* Belongs to: */
-                        m_links[QString("/Devices/SATA%1/Port%2").arg(iSATACount).arg(i)] = QStringList()
-                            << QString("/Devices/SATA%1/Port%2/DMA").arg(iSATACount).arg(i)
-                            << QString("/Devices/SATA%1/Port%2/ReadBytes").arg(iSATACount).arg(i)
-                            << QString("/Devices/SATA%1/Port%2/WrittenBytes").arg(iSATACount).arg(i);
+                        m_links[QString("/Devices/%1%2/Port%3").arg(pszCtrl).arg(iInstance).arg(i)] = QStringList()
+                            << QString("/Devices/%1%2/Port%3/ReqsSubmitted").arg(pszCtrl).arg(iInstance).arg(i)
+                            << QString("/Devices/%1%2/Port%3/ReadBytes").arg(pszCtrl).arg(iInstance).arg(i)
+                            << QString("/Devices/%1%2/Port%3/WrittenBytes").arg(pszCtrl).arg(iInstance).arg(i);
                     }
                 }
-                ++iSATACount;
+
                 break;
             }
-            case KStorageBus_SCSI:
-            {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_SCSI); ++i)
-                {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_SCSI); ++j)
-                    {
-                        /* Names: */
-                        m_names[QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)]
-                            = tr("Data Read");
-                        m_names[QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i)]
-                            = tr("Data Written");
-
-                        /* Units: */
-                        m_units[QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)] = "B";
-                        m_units[QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i)] = "B";
-
-                        /* Belongs to: */
-                        m_links[QString("/Devices/SCSI%1/%2").arg(iSCSICount).arg(i)] = QStringList()
-                            << QString("/Devices/SCSI%1/%2/ReadBytes").arg(iSCSICount).arg(i)
-                            << QString("/Devices/SCSI%1/%2/WrittenBytes").arg(iSCSICount).arg(i);
-                    }
-                }
-                ++iSCSICount;
-                break;
-            }
-            case KStorageBus_USB:
-            {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_USB); ++i)
-                {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_USB); ++j)
-                    {
-                        /* Names: */
-                        m_names[QString("/Devices/USB%1/%2/ReadBytes").arg(iUSBCount).arg(i)]
-                            = tr("Data Read");
-                        m_names[QString("/Devices/USB%1/%2/WrittenBytes").arg(iUSBCount).arg(i)]
-                            = tr("Data Written");
-
-                        /* Units: */
-                        m_units[QString("/Devices/USB%1/%2/ReadBytes").arg(iUSBCount).arg(i)] = "B";
-                        m_units[QString("/Devices/USB%1/%2/WrittenBytes").arg(iUSBCount).arg(i)] = "B";
-
-                        /* Belongs to: */
-                        m_links[QString("/Devices/USB%1/%2").arg(iUSBCount).arg(i)] = QStringList()
-                            << QString("/Devices/USB%1/%2/ReadBytes").arg(iUSBCount).arg(i)
-                            << QString("/Devices/USB%1/%2/WrittenBytes").arg(iUSBCount).arg(i);
-                    }
-                }
-                ++iUSBCount;
-                break;
-            }
-            case KStorageBus_SAS:
-            {
-                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus(KStorageBus_SAS); ++i)
-                {
-                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus(KStorageBus_SAS); ++j)
-                    {
-                        /* Names: */
-                        m_names[QString("/Devices/SAS%1/%2/ReadBytes").arg(iSASCount).arg(i)]
-                            = tr("Data Read");
-                        m_names[QString("/Devices/SAS%1/%2/WrittenBytes").arg(iSASCount).arg(i)]
-                            = tr("Data Written");
-
-                        /* Units: */
-                        m_units[QString("/Devices/SAS%1/%2/ReadBytes").arg(iSASCount).arg(i)] = "B";
-                        m_units[QString("/Devices/SAS%1/%2/WrittenBytes").arg(iSASCount).arg(i)] = "B";
-
-                        /* Belongs to: */
-                        m_links[QString("/Devices/SAS%1/%2").arg(iSASCount).arg(i)] = QStringList()
-                            << QString("/Devices/SAS%1/%2/ReadBytes").arg(iSASCount).arg(i)
-                            << QString("/Devices/SAS%1/%2/WrittenBytes").arg(iSASCount).arg(i);
-                    }
-                }
-                ++iSASCount;
-                break;
-            }
-            default:
-                break;
         }
     }
 
@@ -360,6 +287,46 @@ bool UIVMInfoDialog::event(QEvent *pEvent)
 
     /* Return result: */
     return fResult;
+}
+
+const char *UIVMInfoDialog::storCtrlType2Str(KStorageControllerType enmCtrlType)
+{
+    const char *pszCtrl = NULL;
+    switch (enmCtrlType)
+    {
+        case KStorageControllerType_LsiLogic:
+            pszCtrl = "LSILOGIC";
+            break;
+        case KStorageControllerType_BusLogic:
+            pszCtrl = "BUSLOGIC";
+            break;
+        case KStorageControllerType_IntelAhci:
+            pszCtrl = "AHCI";
+            break;
+        case KStorageControllerType_PIIX3:
+        case KStorageControllerType_PIIX4:
+        case KStorageControllerType_ICH6:
+            pszCtrl = "PIIX3IDE";
+            break;
+        case KStorageControllerType_I82078:
+            pszCtrl = "I82078";
+            break;
+        case KStorageControllerType_LsiLogicSas:
+            pszCtrl = "LSILOGICSAS";
+            break;
+        case KStorageControllerType_USB:
+            pszCtrl = "MSD";
+            break;
+        case KStorageControllerType_NVMe:
+            pszCtrl = "NVME";
+            break;
+        default:
+            AssertFailed();
+            pszCtrl = "<INVALID>";
+            break;
+    }
+
+    return pszCtrl;
 }
 
 void UIVMInfoDialog::sltUpdateDetails()
@@ -738,7 +705,7 @@ void UIVMInfoDialog::refreshStatistics()
 
         /* Enumerate storage-controllers: */
         CStorageControllerVector controllers = m.GetStorageControllers();
-        int iIDECount = 0, iSATACount = 0, iSCSICount = 0, iUSBCount = 0, iSASCount = 0;
+        int iIDECount = 0;
         foreach (const CStorageController &controller, controllers)
         {
             /* Get controller attributes: */
@@ -754,7 +721,6 @@ void UIVMInfoDialog::refreshStatistics()
                 QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
                 /* Append storage-statistics with controller name: */
                 strStorageStat += strHeaderStorage.arg(strControllerName.arg(controller.GetName()));
-                int iSCSIIndex = 0;
                 /* Enumerate storage-attachments: */
                 foreach (const CMediumAttachment &attachment, attachments)
                 {
@@ -770,41 +736,15 @@ void UIVMInfoDialog::refreshStatistics()
                                                                           .arg(iIDECount).arg(iPort).arg(iDevice));
                             break;
                         }
-                        case KStorageBus_SATA:
-                        {
-                            /* Append storage-statistics with SATA controller statistics: */
-                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
-                                                                   QString("/Devices/SATA%1/Port%2")
-                                                                          .arg(iSATACount).arg(iPort));
-                            break;
-                        }
-                        case KStorageBus_SCSI:
-                        {
-                            /* Append storage-statistics with SCSI controller statistics: */
-                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
-                                                                   QString("/Devices/SCSI%1/%2")
-                                                                          .arg(iSCSICount).arg(iSCSIIndex));
-                            ++iSCSIIndex;
-                            break;
-                        }
-                        case KStorageBus_USB:
-                        {
-                            /* Append storage-statistics with USB controller statistics: */
-                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
-                                                                   QString("/Devices/USB%1/%2")
-                                                                          .arg(iUSBCount).arg(iPort));
-                            break;
-                        }
-                        case KStorageBus_SAS:
-                        {
-                            /* Append storage-statistics with USB controller statistics: */
-                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
-                                                                   QString("/Devices/SAS%1/%2")
-                                                                          .arg(iSASCount).arg(iPort));
-                            break;
-                        }
                         default:
+                        {
+                            uint32_t iInstance = controller.GetInstance();
+                            const char *pszCtrl = storCtrlType2Str(controller.GetControllerType());
+                            strStorageStat += formatStorageElement(strName, iPort, iDevice,
+                                                                   QString("/Devices/%1%2/Port%3")
+                                                                          .arg(pszCtrl).arg(iInstance).arg(iPort));
                             break;
+                        }
                     }
                     strStorageStat += strParagraph;
                 }
@@ -813,10 +753,6 @@ void UIVMInfoDialog::refreshStatistics()
             switch (busType)
             {
                 case KStorageBus_IDE:  ++iIDECount; break;
-                case KStorageBus_SATA: ++iSATACount; break;
-                case KStorageBus_SCSI: ++iSCSICount; break;
-                case KStorageBus_USB:  ++iUSBCount; break;
-                case KStorageBus_SAS:  ++iSASCount; break;
                 default: break;
             }
         }

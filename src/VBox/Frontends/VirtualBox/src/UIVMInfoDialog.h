@@ -69,6 +69,10 @@ protected:
     /** Common event-handler. */
     bool event(QEvent *pEvent);
 
+    /** Converts a given storage controller type to the string representation used
+     * in statistics. */
+    const char *storCtrlType2Str(KStorageControllerType enmCtrlType);
+
 private slots:
 
     /** Slot to destroy dialog immediately. */

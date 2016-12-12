@@ -313,6 +313,10 @@ private:
     /** Returns parsed-data of statistics. */
     QString parseStatistics(const QString &strText);
 
+    /** Converts a given storage controller type to the string representation used
+     * in statistics. */
+    const char *storCtrlType2Str(const KStorageControllerType enmCtrlType) const;
+
     /** VM statistics counter data map. */
     typedef QMap <QString, QString> DataMapType;
     /** VM statistics counter links map. */
