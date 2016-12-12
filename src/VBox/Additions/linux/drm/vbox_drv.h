@@ -182,7 +182,6 @@ struct vbox_framebuffer {
 struct vbox_fbdev {
     struct drm_fb_helper helper;
     struct vbox_framebuffer afb;
-    void *sysram;
     int size;
     struct ttm_bo_kmap_obj mapping;
     int x1, y1, x2, y2; /* dirty rect */

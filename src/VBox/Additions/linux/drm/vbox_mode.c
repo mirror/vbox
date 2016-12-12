@@ -170,10 +170,9 @@ static bool vbox_crtc_mode_fixup(struct drm_crtc *crtc,
     return true;
 }
 
-/* We move buffers which are not in active use out of VRAM to save memory. */
 static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
-                struct drm_framebuffer *fb,
-                int x, int y, int atomic)
+                struct drm_framebuffer *old_fb,
+                int x, int y)
 {
     struct vbox_private *vbox = crtc->dev->dev_private;
     struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
@@ -183,15 +182,15 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
     int ret;
     u64 gpu_addr;
 
-    /* push the previous fb to system ram */
-    if (!atomic && fb) {
-        vbox_fb = to_vbox_framebuffer(fb);
+    /* Unpin the previous fb. */
+    if (old_fb) {
+        vbox_fb = to_vbox_framebuffer(old_fb);
         obj = vbox_fb->obj;
         bo = gem_to_vbox_bo(obj);
         ret = vbox_bo_reserve(bo, false);
         if (ret)
             return ret;
-        vbox_bo_push_sysram(bo);
+        vbox_bo_unpin(bo);
         vbox_bo_unreserve(bo);
     }
 
@@ -209,14 +208,8 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
         return ret;
     }
 
-    if (&vbox->fbdev->afb == vbox_fb) {
-        /* if pushing console in kmap it */
-        ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
-        if (ret)
-            DRM_ERROR("failed to kmap fbcon\n");
-        else
-            vbox_fbdev_set_base(vbox, gpu_addr);
-    }
+    if (&vbox->fbdev->afb == vbox_fb)
+        vbox_fbdev_set_base(vbox, gpu_addr);
     vbox_bo_unreserve(bo);
 
     /* vbox_set_start_address_crt1(crtc, (u32)gpu_addr); */
@@ -231,7 +224,7 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 static int vbox_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
                  struct drm_framebuffer *old_fb)
 {
-    return vbox_crtc_do_set_base(crtc, old_fb, x, y, 0);
+    return vbox_crtc_do_set_base(crtc, old_fb, x, y);
 }
 
 static int vbox_crtc_mode_set(struct drm_crtc *crtc,

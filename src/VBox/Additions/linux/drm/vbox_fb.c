@@ -74,14 +74,9 @@
 static void vbox_dirty_update(struct vbox_fbdev *fbdev,
                  int x, int y, int width, int height)
 {
-    int i;
-
     struct drm_gem_object *obj;
     struct vbox_bo *bo;
-    int src_offset, dst_offset;
-    int bpp = (fbdev->afb.base.bits_per_pixel + 7)/8;
     int ret = -EBUSY;
-    bool unmap = false;
     bool store_for_later = false;
     int x2, y2;
     unsigned long flags;
@@ -130,20 +125,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
     fbdev->x2 = fbdev->y2 = 0;
     spin_unlock_irqrestore(&fbdev->dirty_lock, flags);
 
-    if (!bo->kmap.virtual) {
-        ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
-        if (ret) {
-            DRM_ERROR("failed to kmap fb updates\n");
-            vbox_bo_unreserve(bo);
-            return;
-        }
-        unmap = true;
-    }
-    for (i = y; i <= y2; i++) {
-        /* assume equal stride for now */
-        src_offset = dst_offset = i * fbdev->afb.base.pitches[0] + (x * bpp);
-        memcpy_toio(bo->kmap.virtual + src_offset, (char *)fbdev->sysram + src_offset, (x2 - x + 1) * bpp);
-    }
     /* Not sure why the original code subtracted 1 here, but I will keep it that
      * way to avoid unnecessary differences. */
     rect.x1 = x;
@@ -151,8 +132,6 @@ static void vbox_dirty_update(struct vbox_fbdev *fbdev,
     rect.y1 = y;
     rect.y2 = y2 + 1;
     vbox_framebuffer_dirty_rectangles(&fbdev->afb.base, &rect, 1);
-    if (unmap)
-        ttm_bo_kunmap(&bo->kmap);
 
     vbox_bo_unreserve(bo);
 }
@@ -270,7 +249,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     __u32 pitch;
     int size, ret;
     struct device *device = &dev->pdev->dev;
-    void *sysram;
     struct drm_gem_object *gobj = NULL;
     struct vbox_bo *bo = NULL;
     mode_cmd.width = sizes->surface_width;
@@ -293,24 +271,35 @@ static int vboxfb_create(struct drm_fb_helper *helper,
         DRM_ERROR("failed to create fbcon backing object %d\n", ret);
         return ret;
     }
-    bo = gem_to_vbox_bo(gobj);
-
-    sysram = vmalloc(size);
-    if (!sysram)
-        return -ENOMEM;
-
-    info = framebuffer_alloc(0, device);
-    if (!info) {
-        ret = -ENOMEM;
-        goto out;
-    }
-    info->par = fbdev;
 
     ret = vbox_framebuffer_init(dev, &fbdev->afb, &mode_cmd, gobj);
     if (ret)
-        goto out;
+        return ret;
 
-    fbdev->sysram = sysram;
+    bo = gem_to_vbox_bo(gobj);
+
+    ret = vbox_bo_reserve(bo, false);
+    if (ret)
+        return ret;
+
+    ret = vbox_bo_pin(bo, TTM_PL_FLAG_VRAM, NULL);
+    if (ret) {
+        vbox_bo_unreserve(bo);
+        return ret;
+    }
+
+    ret = ttm_bo_kmap(&bo->bo, 0, bo->bo.num_pages, &bo->kmap);
+    vbox_bo_unreserve(bo);
+    if (ret) {
+        DRM_ERROR("failed to kmap fbcon\n");
+        return ret;
+    }
+
+    info = framebuffer_alloc(0, device);
+    if (!info)
+        return -ENOMEM;
+    info->par = fbdev;
+
     fbdev->size = size;
 
     fb = &fbdev->afb.base;
@@ -326,25 +315,21 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     info->fbops = &vboxfb_ops;
 
     ret = fb_alloc_cmap(&info->cmap, 256, 0);
-    if (ret) {
-        ret = -ENOMEM;
-        goto out;
-    }
+    if (ret)
+        return -ENOMEM;
 
     /* This seems to be done for safety checking that the framebuffer is not
      * registered twice by different drivers. */
     info->apertures = alloc_apertures(1);
-    if (!info->apertures) {
-        ret = -ENOMEM;
-        goto out;
-    }
+    if (!info->apertures)
+        return -ENOMEM;
     info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
     info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
     drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
     drm_fb_helper_fill_var(info, &fbdev->helper, sizes->fb_width, sizes->fb_height);
 
-    info->screen_base = sysram;
+    info->screen_base = bo->kmap.virtual;
     info->screen_size = size;
 
 #ifdef CONFIG_FB_DEFERRED_IO
@@ -358,8 +343,6 @@ static int vboxfb_create(struct drm_fb_helper *helper,
               fb->width, fb->height);
 
     return 0;
-out:
-    return ret;
 }
 
 static void vbox_fb_gamma_set(struct drm_crtc *crtc, u16 red, u16 green,
@@ -396,12 +379,20 @@ static void vbox_fbdev_destroy(struct drm_device *dev,
     }
 
     if (afb->obj) {
+        struct vbox_bo *bo = gem_to_vbox_bo(afb->obj);
+        if (!vbox_bo_reserve(bo, false)) {
+            if (bo->kmap.virtual)
+                ttm_bo_kunmap(&bo->kmap);
+            /* QXL does this, but is it really needed before freeing? */
+            if (bo->pin_count)
+                vbox_bo_unpin(bo);
+            vbox_bo_unreserve(bo);
+        }
         drm_gem_object_unreference_unlocked(afb->obj);
         afb->obj = NULL;
     }
     drm_fb_helper_fini(&fbdev->helper);
 
-    vfree(fbdev->sysram);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_framebuffer_unregister_private(&afb->base);
 #endif
