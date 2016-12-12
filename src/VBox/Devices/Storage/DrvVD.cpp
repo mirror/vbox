@@ -1950,6 +1950,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     if (RT_SUCCESS(rc))
     {
         STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbRead);
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d\n%.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
     }
@@ -2074,7 +2075,10 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
 #endif /* VBOX_PERIODIC_FLUSH */
 
     if (RT_SUCCESS(rc))
+    {
         STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbWrite);
+    }
     else
         STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
 
