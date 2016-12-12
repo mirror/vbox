@@ -247,6 +247,10 @@ typedef struct QCOWIMAGE
     /** Number of bits to shift to get the L2 index. */
     uint32_t            cL2Shift;
 
+    /** Pointer to the L2 table we are currently allocating
+     * (can be only one at a time). */
+    PQCOWL2CACHEENTRY   pL2TblAlloc;
+
 } QCOWIMAGE, *PQCOWIMAGE;
 
 /**
@@ -499,6 +503,13 @@ static void qcowL2TblCacheDestroy(PQCOWIMAGE pImage)
  */
 static PQCOWL2CACHEENTRY qcowL2TblCacheRetain(PQCOWIMAGE pImage, uint64_t offL2Tbl)
 {
+    if (   pImage->pL2TblAlloc
+        && pImage->pL2TblAlloc->offL2Tbl == offL2Tbl)
+    {
+        pImage->pL2TblAlloc->cRefs++;
+        return pImage->pL2TblAlloc;
+    }
+
     PQCOWL2CACHEENTRY pL2Entry;
     RTListForEach(&pImage->ListSearch, pL2Entry, QCOWL2CACHEENTRY, NodeSearch)
     {
@@ -1321,10 +1332,12 @@ static int qcowAsyncClusterAllocRollback(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, PQC
         {
             /* Revert the L1 table entry */
             pImage->paL1Table[pClusterAlloc->idxL1] = 0;
+            pImage->pL2TblAlloc = NULL;
 
             /* Assumption right now is that the L1 table is not modified on storage if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->offNextClusterOld);
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
+            Assert(!pClusterAlloc->pL2Entry->cRefs);
             qcowL2TblCacheEntryFree(pImage, pClusterAlloc->pL2Entry); /* Free it, it is not in the cache yet. */
             break;
         }
@@ -1393,6 +1406,7 @@ static DECLCALLBACK(int) qcowAsyncClusterAllocUpdate(void *pBackendData, PVDIOCT
             /* L2 link updated in L1 , save L2 entry in cache and allocate new user data cluster. */
             uint64_t offData = qcowClusterAllocate(pImage, 1);
 
+            pImage->pL2TblAlloc = NULL;
             qcowL2TblCacheEntryInsert(pImage, pClusterAlloc->pL2Entry);
 
             pClusterAlloc->enmAllocState     = QCOWCLUSTERASYNCALLOCSTATE_USER_ALLOC;
@@ -1763,6 +1777,10 @@ static DECLCALLBACK(int) qcowWrite(void *pBackendData, uint64_t uOffset, size_t 
                         pL2ClusterAlloc->cbToWrite         = cbToWrite;
                         pL2ClusterAlloc->pL2Entry          = pL2Entry;
 
+                        pImage->pL2TblAlloc = pL2Entry;
+
+                        LogFlowFunc(("Allocating new L2 table at cluster offset %llu\n", offL2Tbl));
+
                         /*
                          * Write the L2 table first and link to the L1 table afterwards.
                          * If something unexpected happens the worst case which can happen
@@ -1784,6 +1802,8 @@ static DECLCALLBACK(int) qcowWrite(void *pBackendData, uint64_t uOffset, size_t 
                     }
                     else
                     {
+                        LogFlowFunc(("Fetching L2 table at cluster offset %llu\n", pImage->paL1Table[idxL1]));
+
                         rc = qcowL2TblCacheFetch(pImage, pIoCtx, pImage->paL1Table[idxL1],
                                                  &pL2Entry);
                         if (RT_SUCCESS(rc))
