@@ -2781,11 +2781,11 @@ typedef struct PGMPTWALKCORE
     bool            fBigPage;
     /** Set if it involves a gigantic page (1 GB). */
     bool            fGigantPage;
-    /** The effect X86_PTE_US flag for the address. */
+    /** The effective X86_PTE_US flag for the address. */
     bool            fEffectiveUS;
-    /** The effect X86_PTE_RW flag for the address. */
+    /** The effective X86_PTE_RW flag for the address. */
     bool            fEffectiveRW;
-    /** The effect X86_PTE_NX flag for the address. */
+    /** The effective X86_PTE_NX flag for the address. */
     bool            fEffectiveNX;
 } PGMPTWALKCORE;
 
