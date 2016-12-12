@@ -491,26 +491,36 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     switch (Port)
     {
         case VPCI_GUEST_FEATURES:
-            /* Check if the guest negotiates properly, fall back to basics if it does not. */
-            if (VPCI_F_BAD_FEATURE & u32)
+        {
+            const uint32_t uHostFeatures = vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures);
+
+            if (RT_LIKELY((u32 & ~uHostFeatures) == 0))
             {
-                Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
-                     INSTANCE(pState), u32));
-                pState->uGuestFeatures = pCallbacks->pfnGetHostMinimalFeatures(pState);
-            }
-            /* The guest may potentially desire features we don't support! */
-            else if (~vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures) & u32)
-            {
-                Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
-                     INSTANCE(pState),
-                     vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures), u32));
-                pState->uGuestFeatures =
-                    vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures);
+                pState->uGuestFeatures = u32;
             }
             else
-                pState->uGuestFeatures = u32;
+            {
+                /*
+                 * Guest requests features we don't advertise.  Stick
+                 * to the minimum if negotiation looks completely
+                 * botched, otherwise restrict to advertised features.
+                 */
+                if (u32 & VPCI_F_BAD_FEATURE)
+                {
+                    Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
+                         INSTANCE(pState), u32));
+                    pState->uGuestFeatures = pCallbacks->pfnGetHostMinimalFeatures(pState);
+                }
+                else
+                {
+                    Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
+                         INSTANCE(pState), uHostFeatures, u32));
+                    pState->uGuestFeatures = u32 & uHostFeatures;
+                }
+            }
             pCallbacks->pfnSetHostFeatures(pState, pState->uGuestFeatures);
             break;
+        }
 
         case VPCI_QUEUE_PFN:
             /*
