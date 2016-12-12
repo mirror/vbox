@@ -132,11 +132,7 @@ typedef struct DRVSCSI
     /** Indicates whether PDMDrvHlpAsyncNotificationCompleted should be called by
      * any of the dummy functions. */
     bool volatile           fDummySignal;
-    /** Release statistics: number of bytes written. */
-    STAMCOUNTER             StatBytesWritten;
-    /** Release statistics: number of bytes read. */
-    STAMCOUNTER             StatBytesRead;
-    /** Release statistics: Current I/O depth. */
+    /** Current I/O depth. */
     volatile uint32_t       StatIoDepth;
     /** Errors printed in the release log. */
     unsigned                cErrors;
@@ -357,13 +353,11 @@ static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun, void *pvS
             {
                 pThis->pLed->Asserted.s.fReading = pThis->pLed->Actual.s.fReading = 1;
                 rc = pThis->pDrvMediaEx->pfnIoReqRead(pThis->pDrvMediaEx, hIoReq, uOffset, cbTransfer);
-                STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbTransfer);
             }
             else
             {
                 pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
                 rc = pThis->pDrvMediaEx->pfnIoReqWrite(pThis->pDrvMediaEx, hIoReq, uOffset, cbTransfer);
-                STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbTransfer);
             }
 
             if (   RT_FAILURE(rc)
@@ -1253,10 +1247,6 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
         pThis->hVScsiDevice = NULL;
         pThis->hVScsiLun    = NULL;
     }
-
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesRead);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesWritten);
-    PDMDrvHlpSTAMDeregister(pDrvIns, (void *)&pThis->StatIoDepth);
 }
 
 /**
@@ -1436,27 +1426,6 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
             AssertMsgReturn(RT_SUCCESS(rc), ("Failed to notify the LUN of media being unmounted\n"), rc);
         }
     }
-
-    const char *pszCtrl = NULL;
-    uint32_t iCtrlInstance = 0;
-    uint32_t iCtrlLun = 0;
-
-    rc = pThis->pDevMediaPort->pfnQueryDeviceLocation(pThis->pDevMediaPort, &pszCtrl, &iCtrlInstance, &iCtrlLun);
-    if (RT_SUCCESS(rc))
-    {
-        const char *pszCtrlId =   strcmp(pszCtrl, "Msd") == 0 ? "USB"
-                                : strcmp(pszCtrl, "lsilogicsas") == 0 ? "SAS"
-                                : "SCSI";
-        /* Register statistics counter. */
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                                "Amount of data read.", "/Devices/%s%u/%u/ReadBytes", pszCtrlId, iCtrlInstance, iCtrlLun);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                                "Amount of data written.", "/Devices/%s%u/%u/WrittenBytes", pszCtrlId, iCtrlInstance, iCtrlLun);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, (void *)&pThis->StatIoDepth, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                "Number of active tasks.", "/Devices/%s%u/%u/IoDepth", pszCtrlId, iCtrlInstance, iCtrlLun);
-    }
-
-    pThis->StatIoDepth = 0;
 
     uint32_t fFeatures = 0;
     rc = pThis->pDrvMediaEx->pfnQueryFeatures(pThis->pDrvMediaEx, &fFeatures);

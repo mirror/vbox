@@ -1323,14 +1323,6 @@ int main()
 
     GEN_CHECK_OFF(AHCIPort, pTaskErr);
     GEN_CHECK_OFF(AHCIPort, hEvtProcess);
-    GEN_CHECK_OFF(AHCIPort, StatDMA);
-    GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
-    GEN_CHECK_OFF(AHCIPort, StatBytesRead);
-    GEN_CHECK_OFF(AHCIPort, StatIORequestsPerSecond);
-#ifdef VBOX_WITH_STATISTICS
-    GEN_CHECK_OFF(AHCIPort, StatProfileProcessTime);
-    GEN_CHECK_OFF(AHCIPort, StatProfileReadWrite);
-#endif
     GEN_CHECK_OFF(AHCIPort, szSerialNumber);
     GEN_CHECK_OFF(AHCIPort, szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH]); /* One additional byte for the termination.*/
     GEN_CHECK_OFF(AHCIPort, szFirmwareRevision);

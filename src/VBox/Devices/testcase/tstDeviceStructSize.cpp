@@ -283,7 +283,7 @@ int main()
      * Misc alignment checks (keep this somewhat alphabetical).
      */
     CHECK_MEMBER_ALIGNMENT(AHCI, lock, 8);
-    CHECK_MEMBER_ALIGNMENT(AHCIPort, StatDMA, 8);
+    CHECK_MEMBER_ALIGNMENT(AHCI, ahciPort[0], 8);
 
     CHECK_MEMBER_ALIGNMENT(APICDEV, pDevInsR0, 8);
     CHECK_MEMBER_ALIGNMENT(APICDEV, pDevInsRC, 8);

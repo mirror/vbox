@@ -425,21 +425,6 @@ typedef struct AHCIPort
     /** The event semaphore the processing thread waits on. */
     SUPSEMEVENT                     hEvtProcess;
 
-    /** Release statistics: number of DMA commands. */
-    STAMCOUNTER                     StatDMA;
-    /** Release statistics: number of bytes written. */
-    STAMCOUNTER                     StatBytesWritten;
-    /** Release statistics: number of bytes read. */
-    STAMCOUNTER                     StatBytesRead;
-    /** Release statistics: Number of I/O requests processed per second. */
-    STAMCOUNTER                     StatIORequestsPerSecond;
-#ifdef VBOX_WITH_STATISTICS
-    /** Statistics: Time to complete one request. */
-    STAMPROFILE                     StatProfileProcessTime;
-    /** Statistics: Amount of time to read/write data. */
-    STAMPROFILE                     StatProfileReadWrite;
-#endif /* VBOX_WITH_STATISTICS */
-
     /** The serial numnber to use for IDENTIFY DEVICE commands. */
     char                            szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH+1]; /** < one extra byte for termination */
     /** The firmware revision to use for IDENTIFY DEVICE commands. */
@@ -455,7 +440,6 @@ typedef struct AHCIPort
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
 
-AssertCompileMemberAlignment(AHCIPort, StatDMA, 8);
 AssertCompileSizeAlignment(AHCIPort, 8);
 
 /**
@@ -3707,15 +3691,9 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     if (rcReq != VERR_PDM_MEDIAEX_IOREQ_CANCELED)
     {
         if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
-        {
-            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fReading = 0;
-        }
         else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
-        {
-            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciReq->cbTransfer);
             pAhciPort->Led.Actual.s.fWriting = 0;
-        }
         else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_DISCARD)
             pAhciPort->Led.Actual.s.fWriting = 0;
         else if (pAhciReq->enmType == PDMMEDIAEXIOREQTYPE_SCSI)
@@ -6031,26 +6009,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /* Initialize static members on every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
-    {
-        PAHCIPort pAhciPort = &pThis->ahciPort[i];
-
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatDMA, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                               "Number of DMA transfers.", "/Devices/SATA%d/Port%d/DMA", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Amount of data read.", "/Devices/SATA%d/Port%d/ReadBytes", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
-                               "Amount of data written.", "/Devices/SATA%d/Port%d/WrittenBytes", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatIORequestsPerSecond, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                               "Number of processed I/O requests per second.", "/Devices/SATA%d/Port%d/IORequestsPerSecond", iInstance, i);
-#ifdef VBOX_WITH_STATISTICS
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileProcessTime, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to process one request.", "/Devices/SATA%d/Port%d/ProfileProcessTime", iInstance, i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileReadWrite, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_NS_PER_CALL,
-                               "Amount of time for the read/write operation to complete.", "/Devices/SATA%d/Port%d/ProfileReadWrite", iInstance, i);
-#endif
-
-        ahciPortHwReset(pAhciPort);
-    }
+        ahciPortHwReset(&pThis->ahciPort[i]);
 
     /* Attach drivers to every available port. */
     for (i = 0; i < pThis->cPortsImpl; i++)
