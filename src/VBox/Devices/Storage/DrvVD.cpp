@@ -413,11 +413,31 @@ typedef struct VBOXDISK
 
     /** @name Statistics.
      * @{ */
-    /** how many attempts were made to query a direct buffer pointer from the
+    /** How many attempts were made to query a direct buffer pointer from the
      * device/driver above. */
     STAMCOUNTER              StatQueryBufAttempts;
     /** How many attempts to query a direct buffer pointer succeeded. */
     STAMCOUNTER              StatQueryBufSuccess;
+    /** Release statistics: number of bytes written. */
+    STAMCOUNTER              StatBytesWritten;
+    /** Release statistics: number of bytes read. */
+    STAMCOUNTER              StatBytesRead;
+    /** Release statistics: Number of requests submitted. */
+    STAMCOUNTER              StatReqsSubmitted;
+    /** Release statistics: Number of requests failed. */
+    STAMCOUNTER              StatReqsFailed;
+    /** Release statistics: Number of requests succeeded. */
+    STAMCOUNTER              StatReqsSucceeded;
+    /** Release statistics: Number of flush requests. */
+    STAMCOUNTER              StatReqsFlush;
+    /** Release statistics: Number of write requests. */
+    STAMCOUNTER              StatReqsWrite;
+    /** Release statistics: Number of read requests. */
+    STAMCOUNTER              StatReqsRead;
+    /** Release statistics: Number of discard requests. */
+    STAMCOUNTER              StatReqsDiscard;
+    /** Release statistics: Number of I/O requests processed per second. */
+    STAMCOUNTER              StatReqsPerSec;
     /** @} */
 } VBOXDISK;
 
@@ -1890,6 +1910,9 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsRead);
+
     if (!pThis->fBootAccelActive)
         rc = VDRead(pThis->pDisk, off, pvBuf, cbRead);
     else
@@ -1925,8 +1948,14 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     }
 
     if (RT_SUCCESS(rc))
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
         Log2(("%s: off=%#llx pvBuf=%p cbRead=%d\n%.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
+    }
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2028,6 +2057,9 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
         pThis->offDisk     = 0;
     }
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsWrite);
+
     rc = VDWrite(pThis->pDisk, off, pvBuf, cbWrite);
 #ifdef VBOX_PERIODIC_FLUSH
     if (pThis->cbFlushInterval)
@@ -2040,6 +2072,11 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
         }
     }
 #endif /* VBOX_PERIODIC_FLUSH */
+
+    if (RT_SUCCESS(rc))
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2065,7 +2102,15 @@ static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
         return VINF_SUCCESS;
 #endif /* VBOX_IGNORE_FLUSH */
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsFlush);
+
     int rc = VDFlush(pThis->pDisk);
+    if (RT_SUCCESS(rc))
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2406,7 +2451,15 @@ static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges,
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsDiscard);
+
     int rc = VDDiscardRanges(pThis->pDisk, paRanges, cRanges);
+    if (RT_SUCCESS(rc))
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2830,6 +2883,24 @@ static void drvvdMediaExIoReqRetire(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq,
                             : "Write",
                             pIoReq->ReadWrite.cbReqLeft, rcReq));
             }
+        }
+
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+    }
+    else
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+
+        switch (pIoReq->enmType)
+        {
+            case PDMMEDIAEXIOREQTYPE_READ:
+                STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, pIoReq->ReadWrite.cbReq);
+                break;
+            case PDMMEDIAEXIOREQTYPE_WRITE:
+                STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, pIoReq->ReadWrite.cbReq);
+                break;
+            default:
+                break;
         }
     }
 
@@ -3578,6 +3649,9 @@ static DECLCALLBACK(int) drvvdIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsRead);
+
     pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_READ;
     pIoReq->tsSubmit            = RTTimeMilliTS();
     pIoReq->ReadWrite.offStart  = off;
@@ -3616,6 +3690,9 @@ static DECLCALLBACK(int) drvvdIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
+
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsWrite);
 
     pIoReq->enmType             = PDMMEDIAEXIOREQTYPE_WRITE;
     pIoReq->tsSubmit            = RTTimeMilliTS();
@@ -3656,6 +3733,9 @@ static DECLCALLBACK(int) drvvdIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIAEXIORE
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsFlush);
+
     pIoReq->enmType  = PDMMEDIAEXIOREQTYPE_FLUSH;
     pIoReq->tsSubmit = RTTimeMilliTS();
     bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
@@ -3693,6 +3773,9 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
 
     if (RT_UNLIKELY(enmState != VDIOREQSTATE_ALLOCATED))
         return VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE;
+
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsDiscard);
 
     /* Copy the ranges over now, this can be optimized in the future. */
     pIoReq->Discard.paRanges = (PRTRANGE)RTMemAllocZ(cRangesMax * sizeof(RTRANGE));
@@ -4111,6 +4194,91 @@ static VDTYPE drvvdGetVDFromMediaType(PDMMEDIATYPE enmType)
     return VDTYPE_HDD;
 }
 
+/**
+ * Registers statistics associated with the given media driver.
+ *
+ * @returns VBox status code.
+ * @param   pThis      The media driver instance.
+ */
+static int drvvdStatsRegister(PVBOXDISK pThis)
+{
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
+    uint32_t iInstance, iLUN;
+    const char *pcszController;
+
+    int rc = pThis->pDrvMediaPort->pfnQueryDeviceLocation(pThis->pDrvMediaPort, &pcszController,
+                                                          &iInstance, &iLUN);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszCtrlUpper = RTStrDup(pcszController);
+        if (pszCtrlUpper)
+        {
+            RTStrToUpper(pszCtrlUpper);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufAttempts, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                   STAMUNIT_COUNT, "Number of attempts to query a direct buffer.",
+                                   "/Devices/%s%u/Port%u/QueryBufAttempts", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueryBufSuccess, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                   STAMUNIT_COUNT, "Number of succeeded attempts to query a direct buffer.",
+                                   "/Devices/%s%u/Port%u/QueryBufSuccess", pszCtrlUpper, iInstance, iLUN);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Amount of data read.", "/Devices/%s%u/Port%u/ReadBytes", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Amount of data written.", "/Devices/%s%u/Port%u/WrittenBytes", pszCtrlUpper, iInstance, iLUN);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSubmitted, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsSubmitted", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFailed, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests failed.", "/Devices/%s%u/Port%u/ReqsFailed", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSucceeded, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests succeeded.", "/Devices/%s%u/Port%u/ReqsSucceeded", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFlush, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of flush I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsFlush", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsWrite, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of write I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsWrite", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of read I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsRead", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsDiscard, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of discard I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsDiscard", pszCtrlUpper, iInstance, iLUN);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsPerSec, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                                   "Number of processed I/O requests per second.", "/Devices/%s%u/Port%u/ReqsPerSec",
+                                   pszCtrlUpper, iInstance, iLUN);
+
+            RTStrFree(pszCtrlUpper);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+
+    return rc;
+}
+
+/**
+ * Deregisters statistics associated with the given media driver.
+ *
+ * @returns nothing.
+ * @param   pThis      The media driver instance.
+ */
+static void drvvdStatsDeregister(PVBOXDISK pThis)
+{
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
+
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufAttempts);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufSuccess);
+
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsSubmitted);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsFailed);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsSucceeded);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsFlush);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsWrite);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsDiscard);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsPerSec);
+}
 
 /*********************************************************************************************************************************
 *   Base interface methods                                                                                                       *
@@ -4414,8 +4582,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         if (pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc != NIL_RTSEMFASTMUTEX)
             RTSemFastMutexDestroy(pThis->aIoReqAllocBins[i].hMtxLstIoReqAlloc);
 
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufAttempts);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueryBufSuccess);
+    drvvdStatsDeregister(pThis);
 }
 
 /**
@@ -5407,10 +5574,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         }
     } /* !fEmptyDrive */
 
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->StatQueryBufAttempts, "QueryBufAttempts",
-                              STAMUNIT_COUNT, "Number of attempts to query a direct buffer.");
-    PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->StatQueryBufSuccess, "QueryBufSuccess",
-                              STAMUNIT_COUNT, "Number of succeeded attempts to query a direct buffer.");
+    if (RT_SUCCESS(rc))
+        drvvdStatsRegister(pThis);
 
     if (RT_FAILURE(rc))
     {
