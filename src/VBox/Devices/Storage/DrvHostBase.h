@@ -106,6 +106,23 @@ typedef struct DRVHOSTBASE
     /** Size of the I/O request to allocate. */
     size_t                  cbIoReqAlloc;
 
+    /** Release statistics: number of bytes written. */
+    STAMCOUNTER              StatBytesWritten;
+    /** Release statistics: number of bytes read. */
+    STAMCOUNTER              StatBytesRead;
+    /** Release statistics: Number of requests submitted. */
+    STAMCOUNTER              StatReqsSubmitted;
+    /** Release statistics: Number of requests failed. */
+    STAMCOUNTER              StatReqsFailed;
+    /** Release statistics: Number of requests succeeded. */
+    STAMCOUNTER              StatReqsSucceeded;
+    /** Release statistics: Number of flush requests. */
+    STAMCOUNTER              StatReqsFlush;
+    /** Release statistics: Number of write requests. */
+    STAMCOUNTER              StatReqsWrite;
+    /** Release statistics: Number of read requests. */
+    STAMCOUNTER              StatReqsRead;
+
     /**
      * Performs the locking / unlocking of the device.
      *

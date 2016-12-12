@@ -50,6 +50,9 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, pvBuf, cbRead, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsRead);
+
     /*
      * Check the state.
      */
@@ -74,6 +77,14 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIMEDIA pInterface, uint64_t off, vo
     else
         rc = VERR_MEDIA_NOT_PRESENT;
 
+    if (RT_SUCCESS(rc))
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbRead);
+    }
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseRead: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
     return rc;
@@ -90,6 +101,9 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
           "%16.*Rhxd\n",
           pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, off, cbWrite, cbWrite, pvBuf));
     RTCritSectEnter(&pThis->CritSect);
+
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsWrite);
 
     /*
      * Check the state.
@@ -114,6 +128,14 @@ static DECLCALLBACK(int) drvHostBaseWrite(PPDMIMEDIA pInterface, uint64_t off, c
     else
         rc = VERR_WRITE_PROTECT;
 
+    if (RT_SUCCESS(rc))
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbWrite);
+    }
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseWrite: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
     return rc;
@@ -129,10 +151,18 @@ static DECLCALLBACK(int) drvHostBaseFlush(PPDMIMEDIA pInterface)
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsFlush);
+
     if (pThis->fMediaPresent)
         rc = drvHostBaseFlushOs(pThis);
     else
         rc = VERR_MEDIA_NOT_PRESENT;
+
+    if (RT_SUCCESS(rc))
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
 
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseFlush: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
@@ -460,6 +490,9 @@ static DECLCALLBACK(int) drvHostBaseIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAE
     pReq->cbReq = cbRead;
     pReq->cbResidual = cbRead;
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsRead);
+
     /*
      * Check the state.
      */
@@ -497,6 +530,14 @@ static DECLCALLBACK(int) drvHostBaseIoReqRead(PPDMIMEDIAEX pInterface, PDMMEDIAE
     else
         rc = VERR_MEDIA_NOT_PRESENT;
 
+    if (RT_SUCCESS(rc))
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_INC(&pThis->StatBytesRead);
+    }
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseIoReqRead: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
     return rc;
@@ -513,6 +554,9 @@ static DECLCALLBACK(int) drvHostBaseIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIA
 
     pReq->cbReq = cbWrite;
     pReq->cbResidual = cbWrite;
+
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsWrite);
 
     /*
      * Check the state.
@@ -549,6 +593,14 @@ static DECLCALLBACK(int) drvHostBaseIoReqWrite(PPDMIMEDIAEX pInterface, PDMMEDIA
     else
         rc = VERR_WRITE_PROTECT;
 
+    if (RT_SUCCESS(rc))
+    {
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+        STAM_REL_COUNTER_INC(&pThis->StatBytesWritten);
+    }
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
+
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseIoReqWrite: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
     return rc;
@@ -565,10 +617,18 @@ static DECLCALLBACK(int) drvHostBaseIoReqFlush(PPDMIMEDIAEX pInterface, PDMMEDIA
              pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, pThis->pszDevice));
     RTCritSectEnter(&pThis->CritSect);
 
+    STAM_REL_COUNTER_INC(&pThis->StatReqsSubmitted);
+    STAM_REL_COUNTER_INC(&pThis->StatReqsFlush);
+
     if (pThis->fMediaPresent)
         rc = drvHostBaseFlushOs(pThis);
     else
         rc = VERR_MEDIA_NOT_PRESENT;
+
+    if (RT_SUCCESS(rc))
+        STAM_REL_COUNTER_INC(&pThis->StatReqsSucceeded);
+    else
+        STAM_REL_COUNTER_INC(&pThis->StatReqsFailed);
 
     RTCritSectLeave(&pThis->CritSect);
     LogFlow(("%s-%d: drvHostBaseFlush: returns %Rrc\n", pThis->pDrvIns->pReg->szName, pThis->pDrvIns->iInstance, rc));
@@ -927,6 +987,74 @@ static DECLCALLBACK(int) drvHostBaseMediaThread(RTTHREAD ThreadSelf, void *pvUse
     return VINF_SUCCESS;
 }
 
+/**
+ * Registers statistics associated with the given media driver.
+ *
+ * @returns VBox status code.
+ * @param   pThis      The media driver instance.
+ */
+static int drvHostBaseStatsRegister(PDRVHOSTBASE pThis)
+{
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
+    uint32_t iInstance, iLUN;
+    const char *pcszController;
+
+    int rc = pThis->pDrvMediaPort->pfnQueryDeviceLocation(pThis->pDrvMediaPort, &pcszController,
+                                                          &iInstance, &iLUN);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszCtrlUpper = RTStrDup(pcszController);
+        if (pszCtrlUpper)
+        {
+            RTStrToUpper(pszCtrlUpper);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Amount of data read.", "/Devices/%s%u/Port%u/ReadBytes", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
+                                   "Amount of data written.", "/Devices/%s%u/Port%u/WrittenBytes", pszCtrlUpper, iInstance, iLUN);
+
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSubmitted, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsSubmitted", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFailed, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests failed.", "/Devices/%s%u/Port%u/ReqsFailed", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsSucceeded, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of I/O requests succeeded.", "/Devices/%s%u/Port%u/ReqsSucceeded", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsFlush, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of flush I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsFlush", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsWrite, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of write I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsWrite", pszCtrlUpper, iInstance, iLUN);
+            PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReqsRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_COUNT,
+                                   "Number of read I/O requests submitted.", "/Devices/%s%u/Port%u/ReqsRead", pszCtrlUpper, iInstance, iLUN);
+
+            RTStrFree(pszCtrlUpper);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+
+    return rc;
+}
+
+/**
+ * Deregisters statistics associated with the given media driver.
+ *
+ * @returns nothing.
+ * @param   pThis      The media driver instance.
+ */
+static void drvhostBaseStatsDeregister(PDRVHOSTBASE pThis)
+{
+    PPDMDRVINS pDrvIns = pThis->pDrvIns;
+
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesRead);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatBytesWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsSubmitted);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsFailed);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsSucceeded);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsFlush);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsWrite);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReqsRead);
+}
+
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 
@@ -1015,6 +1143,8 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
 
     /* Forget about the notifications. */
     pThis->pDrvMountNotify = NULL;
+
+    drvhostBaseStatsDeregister(pThis);
 
     /* Leave the instance operational if this is just a cleanup of the state
      * after an attach error happened. So don't destroy the critsect then. */
@@ -1314,6 +1444,9 @@ DECLHIDDEN(int) DRVHostBaseInit(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, const char *
         rc = RTThreadUserWait(pThis->ThreadPoller, 10000);
         AssertRC(rc);
     }
+
+    if (RT_SUCCESS(rc))
+        drvHostBaseStatsRegister(pThis);
 
     if (RT_FAILURE(rc))
     {
