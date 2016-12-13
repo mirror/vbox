@@ -249,9 +249,9 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
     pHlp->pfnPrintf(pHlp,
                     "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
                     "!!\n"
-                    "!!                 Guru Meditation %d (%Rrc)\n"
+                    "!!         VCPU%u: Guru Meditation %d (%Rrc)\n"
                     "!!\n",
-                    rcErr, rcErr);
+                    pVCpu->idCpu, rcErr, rcErr);
 
     /*
      * Continue according to context.
