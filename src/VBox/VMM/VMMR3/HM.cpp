@@ -379,6 +379,7 @@ DECLINLINE(const char *) hmSvmGetSpecialExitReasonDesc(uint16_t uExit)
 static DECLCALLBACK(int)  hmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static int                hmR3InitCPU(PVM pVM);
 static int                hmR3InitFinalizeR0(PVM pVM);
 static int                hmR3InitFinalizeR0Intel(PVM pVM);
@@ -428,6 +429,10 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Register info handlers.
      */
     rc = DBGFR3InfoRegisterInternalEx(pVM, "exithistory", "Dumps the HM VM-exit history.", hmR3InfoExitHistory,
+                                      DBGFINFO_FLAGS_ALL_EMTS);
+    AssertRCReturn(rc, rc);
+
+    rc = DBGFR3InfoRegisterInternalEx(pVM, "hmeventpending", "Dumps the pending HM event.", hmR3InfoEventPending,
                                       DBGFINFO_FLAGS_ALL_EMTS);
     AssertRCReturn(rc, rc);
 
@@ -3553,6 +3558,36 @@ static DECLCALLBACK(void) hmR3InfoExitHistory(PVM pVM, PCDBGFINFOHLP pHlp, const
                             idxLast == i ? "<-- Latest exit" : "");
         }
         pHlp->pfnPrintf(pHlp, "HM error = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
+    }
+    else
+        pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
+}
+
+
+/**
+ * Displays the HM pending event.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) hmR3InfoEventPending(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = &pVM->aCpus[0];
+
+    if (HMIsEnabled(pVM))
+    {
+        pHlp->pfnPrintf(pHlp, "CPU[%u]: HM event (fPending=%RTbool)\n", pVCpu->idCpu, pVCpu->hm.s.Event.fPending);
+        if (pVCpu->hm.s.Event.fPending)
+        {
+            pHlp->pfnPrintf(pHlp, "  u64IntInfo        = %#RX64\n", pVCpu->hm.s.Event.u64IntInfo);
+            pHlp->pfnPrintf(pHlp, "  u32ErrCode        = %#RX64\n", pVCpu->hm.s.Event.u32ErrCode);
+            pHlp->pfnPrintf(pHlp, "  cbInstr           = %u bytes\n", pVCpu->hm.s.Event.cbInstr);
+            pHlp->pfnPrintf(pHlp, "  GCPtrFaultAddress = %#RGp\n", pVCpu->hm.s.Event.GCPtrFaultAddress);
+        }
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
