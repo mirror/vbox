@@ -166,6 +166,9 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         PCIDevSetDeviceId( &pFun->PciDev, 0xde4e);
         PCIDevSetClassBase(&pFun->PciDev, 0x07);   /* communications device */
         PCIDevSetClassSub( &pFun->PciDev, 0x80);   /* other communications device */
+        if (iPciFun == 0)       /* only for the primary function */
+            PCIDevSetHeaderType(&pFun->PciDev, 0x80); /* normal, multifunction device */
+
         int rc = PDMDevHlpPCIRegisterEx(pDevIns, &pFun->PciDev, iPciFun, 0 /*fFlags*/, iPciDevNo, iPciFun,
                                         pThis->aPciFuns[iPciFun].szName);
         AssertLogRelRCReturn(rc, rc);
