@@ -8953,7 +8953,17 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
         return;
     }
 
-    /* Update the VM-exit history array only if the world-switch was successful. */
+    /*
+     * Update the VM-exit history array here even if the VM-entry failed due to:
+     *  - Invalid guest state.
+     *  - MSR loading.
+     *  - Machine-check event.
+     *
+     * In any of the above cases we will still have a "valid" VM-exit reason
+     * despite @a fVMEntryFailed being false.
+     *
+     * See Intel spec. 26.7 "VM-Entry failures during or after loading guest state".
+     */
     HMCPU_EXIT_HISTORY_ADD(pVCpu, pVmxTransient->uExitReason);
 
     if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
