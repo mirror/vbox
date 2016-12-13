@@ -721,11 +721,13 @@ typedef struct HDASTREAM
     HDASTREAMSTATE           State;
 } HDASTREAM, *PHDASTREAM;
 
+#ifdef VBOX_WITH_HDA_ASYNC_IO
 typedef struct HDASTREAMTHREADCTX
 {
     PHDASTATE  pThis;
     PHDASTREAM pStream;
 } HDASTREAMTHREADCTX, *PHDASTREAMTHREADCTX;
+#endif
 
 /**
  * Structure for mapping a stream tag to an HDA stream.
@@ -4513,9 +4515,9 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
  *
  * @returns IPRT status code.
  * @param   pThis               HDA state.
- * @param   pStream             HDA stream to write.
- * @param   cbToWrite           Number of bytes to write.
- * @param   pcbWritten          Number of bytes written. Optional.
+ * @param   pStream             HDA stream to read from.
+ * @param   cbToRead            Number of bytes to read.
+ * @param   pcbRead             Number of bytes read. Optional.
  */
 static int hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead, uint32_t *pcbRead)
 {
@@ -4565,7 +4567,7 @@ static int hdaStreamRead(PHDASTATE pThis, PHDASTREAM pStream, uint32_t cbToRead,
  *
  * @returns IPRT status code.
  * @param   pThis               HDA state.
- * @param   pStream             HDA stream to write.
+ * @param   pStream             HDA stream to write to.
  * @param   cbToWrite           Number of bytes to write.
  * @param   pcbWritten          Number of bytes written. Optional.
  */
