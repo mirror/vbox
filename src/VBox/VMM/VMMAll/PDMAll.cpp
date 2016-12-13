@@ -48,7 +48,7 @@
  *          or other reasons).
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pu8Interrupt    Where to store the interrupt on success.
+ * @param   pu8Interrupt    Where to store the interrupt.
  */
 VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
 {
