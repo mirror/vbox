@@ -717,7 +717,6 @@ static int HandleShowExeWorkerPkcs7Decode(PSHOWEXEPKCS7 pThis)
 
 static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7ATTRIBUTE pAttr)
 {
-    const char *pszType;
     int rc = RTAsn1QueryObjIdName(&pAttr->Type, pThis->szTmp, sizeof(pThis->szTmp));
     if (RT_SUCCESS(rc))
         RTPrintf("%s%s (%s)\n", pThis->szPrefix, pThis->szTmp, pAttr->Type.szObjId);
