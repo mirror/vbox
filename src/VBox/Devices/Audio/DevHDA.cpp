@@ -207,6 +207,7 @@ AssertCompile(HDA_MAX_SDI <= HDA_MAX_SDO);
 #define HDA_INTCTL_S6_SHIFT         6
 #define HDA_INTCTL_S7_SHIFT         7
 #define INTCTL_SX(pThis, X)         (HDA_REG_FLAG_VALUE((pThis), INTCTL, S##X))
+#define HDA_INTCTL_GIE_MASK         RT_BIT(31) /* Global Interrupt Enable (3.3.14). */
 
 #define HDA_REG_INTSTS              12 /* 0x24 */
 #define HDA_RMX_INTSTS              10
@@ -2175,9 +2176,26 @@ static int hdaRegWriteINTCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF(iReg);
 
+    int rc;
+
     HDA_REG(pThis, INTCTL) = u32Value;
 
-    return hdaProcessInterrupt(pThis);
+    /* Global Interrupt Enable (GIE) set? */
+    if (u32Value & HDA_INTCTL_GIE_MASK)
+    {
+        rc = hdaProcessInterrupt(pThis);
+    }
+    else
+    {
+        /** @todo Clear INTSTS's individual stream status bits as well? */
+
+        /* Make sure to lower interrupt line, as Global Interrupt Enable (GIE) is disabled. */
+        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0 /* iLevel */);
+
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
 static int hdaRegReadLPIB(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
