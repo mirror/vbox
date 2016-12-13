@@ -662,7 +662,7 @@ static int HandleShowExeWorkerPkcs7Decode(PSHOWEXEPKCS7 pThis)
 {
     RTERRINFOSTATIC     ErrInfo;
     RTASN1CURSORPRIMARY PrimaryCursor;
-    RTAsn1CursorInitPrimary(&PrimaryCursor, pThis->pbBuf, pThis->cbBuf, RTErrInfoInitStatic(&ErrInfo),
+    RTAsn1CursorInitPrimary(&PrimaryCursor, pThis->pbBuf, (uint32_t)pThis->cbBuf, RTErrInfoInitStatic(&ErrInfo),
                             &g_RTAsn1DefaultAllocator, 0, "WinCert");
 
     int rc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &pThis->ContentInfo, "CI");
