@@ -2731,6 +2731,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
     else
         Log2(("APIC%u: apicGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
 
+    *pu8Vector = 0;
     return VERR_APIC_INTR_NOT_PENDING;
 }
 
