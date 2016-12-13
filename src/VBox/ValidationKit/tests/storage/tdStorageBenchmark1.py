@@ -126,7 +126,7 @@ class FioTest(object):
     def run(self, cMsTimeout = 30000):
         """ Runs the testcase """
         _ = cMsTimeout
-        fRc, sOutput = self.oExecutor.execBinary('fio', (self.sCfgFileId,));
+        fRc, sOutput = self.oExecutor.execBinary('fio', (self.sCfgFileId,), cMsTimeout = cMsTimeout);
         # @todo: Parse output.
         _ = sOutput;
         return fRc;
@@ -181,7 +181,7 @@ class IozoneTest(object):
                    '-t', '1', '-T', '-F', self.sFilePath + '/iozone.tmp');
         if self.fDirectIo:
             tupArgs += ('-I',);
-        fRc, sOutput = self.oExecutor.execBinary('iozone', tupArgs);
+        fRc, sOutput = self.oExecutor.execBinary('iozone', tupArgs, cMsTimeout = cMsTimeout);
         if fRc:
             self.sResult = sOutput;
 
@@ -834,7 +834,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         """
         return self.kdHostIoCacheDescs[sHostIoCache];
 
-    def testBenchmark(self, sTargetOs, sBenchmark, sMountpoint, oExecutor, dTestSet):
+    def testBenchmark(self, sTargetOs, sBenchmark, sMountpoint, oExecutor, dTestSet, \
+                      cMsTimeout = 3600000):
         """
         Runs the given benchmark on the test host.
         """
@@ -851,7 +852,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         if oTst is not None:
             fRc = oTst.prepare();
             if fRc:
-                fRc = oTst.run();
+                fRc = oTst.run(cMsTimeout);
                 if fRc:
                     if self.fReportBenchmarkResults:
                         fRc = oTst.reportResult();
@@ -1008,7 +1009,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
                     sMountPoint = self.prepareStorage(oStorCfgVm);
                     if sMountPoint is not None:
-                        self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet);
+                        self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet, \
+                                           cMsTimeout = 2 * 3600 * 1000); # 2 hours max (Benchmark and QCOW takes some time)
                         self.cleanupStorage(oStorCfgVm);
                     else:
                         reporter.testFailure('Failed to prepare storage for the guest benchmark');

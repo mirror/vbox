@@ -138,7 +138,7 @@ class RemoteExecutor(object):
         reporter.log('Exit code [sudo]: %s (%s)' % (True, asArgs));
         return (True, str(sOutput));
 
-    def _execLocallyOrThroughTxs(self, sExec, asArgs, sInput):
+    def _execLocallyOrThroughTxs(self, sExec, asArgs, sInput, cMsTimeout):
         """
         Executes the given program locally or through TXS based on the
         current config.
@@ -153,13 +153,14 @@ class RemoteExecutor(object):
             else:
                 oStdIn = '/dev/null'; # pylint: disable=R0204
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
-                                              oStdIn = oStdIn, oStdOut = oStdOut);
+                                              oStdIn = oStdIn, oStdOut = oStdOut,
+                                              cMsTimeout = cMsTimeout);
             sOutput = oStdOut.getOutput();
         else:
             fRc, sOutput = self._sudoExecuteSync([sExec, ] + list(asArgs), sInput);
         return (fRc, sOutput);
 
-    def execBinary(self, sExec, asArgs, sInput = None):
+    def execBinary(self, sExec, asArgs, sInput = None, cMsTimeout = 3600000):
         """
         Executes the given binary with the given arguments
         providing some optional input through stdin and
@@ -171,7 +172,7 @@ class RemoteExecutor(object):
         sOutput = None;
         sBinary = self._getBinaryPath(sExec);
         if sBinary is not None:
-            fRc, sOutput = self._execLocallyOrThroughTxs(sBinary, asArgs, sInput);
+            fRc, sOutput = self._execLocallyOrThroughTxs(sBinary, asArgs, sInput, cMsTimeout);
         else:
             fRc = False;
         return (fRc, sOutput);

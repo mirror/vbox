@@ -391,11 +391,11 @@ class StorageCfg(object):
         """
 
         # Destroy all volumes first.
-        for sMountPoint in self.dVols.keys():
+        for sMountPoint in self.dVols.keys(): # pylint: disable=C0201
             self.destroyVolume(sMountPoint);
 
         # Destroy all pools.
-        for sPool in self.dPools.keys():
+        for sPool in self.dPools.keys(): # pylint: disable=C0201
             self.destroyStoragePool(sPool);
 
         self.dVols.clear();
