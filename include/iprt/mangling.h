@@ -2593,6 +2593,7 @@
 # define RTAsn1SeqOfObjIdSeqs_CheckSanity               RT_MANGLER(RTAsn1SeqOfObjIdSeqs_CheckSanity)
 # define RTAsn1SeqOfObjIdSeqs_Clone                     RT_MANGLER(RTAsn1SeqOfObjIdSeqs_Clone)
 # define RTAsn1SeqOfObjIdSeqs_Compare                   RT_MANGLER(RTAsn1SeqOfObjIdSeqs_Compare)
+# define RTAsn1SetOfObjIdSeqs_DecodeAsn1                RT_MANGLER(RTAsn1SetOfObjIdSeqs_DecodeAsn1)
 # define RTAsn1SeqOfObjIdSeqs_Delete                    RT_MANGLER(RTAsn1SeqOfObjIdSeqs_Delete)
 # define RTAsn1SeqOfObjIdSeqs_Enum                      RT_MANGLER(RTAsn1SeqOfObjIdSeqs_Enum)
 # define RTAsn1SeqOfObjIdSeqs_Init                      RT_MANGLER(RTAsn1SeqOfObjIdSeqs_Init)
