@@ -88,6 +88,8 @@ typedef enum RTCRPKCS7ATTRIBUTETYPE
     RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP,
     /** Microsoft nested PKCS\#7 signature (signtool /as). */
     RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE,
+    /** Microsoft statement type, use pObjIdSeqs. */
+    RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE,
     /** Blow the type up to 32-bits. */
     RTCRPKCS7ATTRIBUTETYPE_32BIT_HACK = 0x7fffffff
 } RTCRPKCS7ATTRIBUTETYPE;
@@ -112,6 +114,8 @@ typedef struct RTCRPKCS7ATTRIBUTE
         PRTASN1SETOFCORES               pCores;
         /** ASN.1 object identifiers (RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS). */
         PRTASN1SETOFOBJIDS              pObjIds;
+        /** Sequence of ASN.1 object identifiers (RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE). */
+        PRTASN1SETOFOBJIDSEQS           pObjIdSeqs;
         /** ASN.1 octet strings (RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS). */
         PRTASN1SETOFOCTETSTRINGS        pOctetStrings;
         /** Counter signatures RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES(). */
