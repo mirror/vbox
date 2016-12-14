@@ -65,9 +65,6 @@
 #           include <linux/modversions.h>
 #       endif
 #   endif
-#   if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 0)
-#       undef ALIGN
-#   endif
 #   ifndef KBUILD_STR
 #       if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 #            define KBUILD_STR(s) s
