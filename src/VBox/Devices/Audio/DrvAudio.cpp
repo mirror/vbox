@@ -767,7 +767,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
-    AssertReturn(cbBuf,         VERR_INVALID_POINTER);
+    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
@@ -804,6 +804,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         }
 
         PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
+        AssertPtr(pGstStream);
 
         AssertMsg(pGstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED,
                   ("Writing to disabled guest output stream \"%s\" not possible\n", pGstStream->szName));
@@ -814,7 +815,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         {
             LogRel2(("Audio: Guest stream '%s' full, expect stuttering audio output\n", pGstStream->szName));
 #ifdef DEBUG_andy
-            AssertMsgFailed(("%s: Guest stream full\n", pGstStream->szName));
+            AssertMsgFailed(("%s: Guest stream full: cbBuf=%RU32\n", pGstStream->szName, cbBuf));
 #endif
             break;
         }
@@ -847,7 +848,7 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
             if (RT_FAILURE(rc2))
             {
                 LogRel2(("Audio: Lost audio samples (%RU32) due to full host stream '%s', expect stuttering audio output\n",
-                         csWritten - csMixed, pGstStream->szName));
+                         csWritten - csMixed, pHstStream->szName));
             }
 
 #ifdef DEBUG_andy
