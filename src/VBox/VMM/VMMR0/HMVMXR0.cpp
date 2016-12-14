@@ -3430,7 +3430,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                  * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
                  * the interrupt when we VM-exit for other reasons.
                  */
-                pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8Tpr;            /* Offset 0x80 is TPR in the APIC MMIO range. */
+                pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR] = u8Tpr;
                 uint32_t u32TprThreshold = 0;
                 if (fPendingIntr)
                 {
@@ -8814,7 +8814,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
      * Cache the TPR-shadow for checking on every VM-exit if it might have changed.
      */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
-        pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[0x80];
+        pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR];
 
     PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
     RTCPUID  idCurrentCpu = pCpu->idCpu;
@@ -8995,9 +8995,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
          *        the TPR, but regardless we can probably rework this
          *        portion of the code a bit. */
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
-            && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
+            && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR])
         {
-            rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
+            rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR]);
             AssertRC(rc);
             HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
         }
@@ -12730,7 +12730,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
         case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
         {
             AssertMsg(   !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
-                      || VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification) != 0x80,
+                      || VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification) != XAPIC_OFF_TPR,
                       ("hmR0VmxExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
 
             RTGCPHYS GCPhys = pVCpu->hm.s.vmx.u64MsrApicBase;   /* Always up-to-date, u64MsrApicBase is not part of the VMCS. */
