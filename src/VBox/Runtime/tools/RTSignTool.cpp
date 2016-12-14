@@ -976,7 +976,6 @@ static int HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(PSHOWEXEPKCS7 pT
                                                      cPages, pPgHashes->RawData.Asn1Core.cb);
                                             if (pThis->cVerbosity > 0)
                                             {
-                                                uint32_t cbHash = RTCrDigestTypeToHashSize(enmDigestType);
                                                 PCRTCRSPCPEIMAGEPAGEHASHES pPg = pPgHashes->pData;
                                                 for (unsigned iPg = 0; iPg < cPages; iPg++)
                                                 {
