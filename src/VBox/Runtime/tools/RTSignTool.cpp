@@ -848,7 +848,7 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
                     }
                 }
                 else
-                    RTPrintf("%s: OctetString[%u]: %u bytes\n", i, pOctetString->Asn1Core.cb);
+                    RTPrintf("%s: OctetString[%u]: %u bytes\n", pThis->szPrefix, i, pOctetString->Asn1Core.cb);
             }
             break;
 
@@ -861,7 +861,7 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
         /* Signing time (PKCS \#9), use pSigningTime. */
         case RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME:
             RTPrintf("%sTODO: RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME! %u bytes\n",
-                     pThis->szPrefix, pThis->szPrefix,pAttr->uValues.pSigningTime->SetCore.Asn1Core.cb);
+                     pThis->szPrefix, pAttr->uValues.pSigningTime->SetCore.Asn1Core.cb);
             break;
 
         /* Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */
@@ -1017,7 +1017,7 @@ static int HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(PSHOWEXEPKCS7 pT
                                     pThis->szPrefix[offPrefix] = '\0';
                                 }
                             else
-                                RTPrintf("%s              pData is NULL!\n");
+                                RTPrintf("%s              pData is NULL!\n", pThis->szPrefix);
                         }
                         else
                             RTPrintf("%s     Moniker: Unknown UUID: %RTuuid\n",
