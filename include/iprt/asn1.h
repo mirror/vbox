@@ -186,17 +186,16 @@ RTDECL(void) RTAsn1MemFree(PRTASN1ALLOCATION pAllocation, void *pv);
  */
 RTDECL(PRTASN1ALLOCATION) RTAsn1MemInitAllocation(PRTASN1ALLOCATION pAllocation, PCRTASN1ALLOCATORVTABLE pAllocator);
 
+/** Pointer to a core ASN.1 encoding info structure. */
+typedef struct RTASN1CORE *PRTASN1CORE;
+/** Pointer to a const core ASN.1 encoding info structure. */
+typedef struct RTASN1CORE const *PCRTASN1CORE;
+
 RTDECL(int)  RTAsn1ContentAllocZ(struct RTASN1CORE *pAsn1Core, size_t cb, PCRTASN1ALLOCATORVTABLE pAllocator);
 RTDECL(int)  RTAsn1ContentDup(struct RTASN1CORE *pAsn1Core, void const *pvSrc, size_t cbSrc, PCRTASN1ALLOCATORVTABLE pAllocator);
 RTDECL(int)  RTAsn1ContentReallocZ(struct RTASN1CORE *pAsn1Core, size_t cb, PCRTASN1ALLOCATORVTABLE pAllocator);
 RTDECL(void) RTAsn1ContentFree(struct RTASN1CORE *pAsn1Core);
 
-
-
-/** Pointer to a core ASN.1 encoding info structure. */
-typedef struct RTASN1CORE *PRTASN1CORE;
-/** Pointer to a const core ASN.1 encoding info structure. */
-typedef struct RTASN1CORE const *PCRTASN1CORE;
 
 
 /**
@@ -1000,6 +999,7 @@ RTDECL(uint32_t) RTAsn1ObjIdGetLastComponentsAsUInt32(PCRTASN1OBJID pThis);
 
 RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQOFOBJIDS, RTASN1OBJID, RTDECL, RTAsn1SeqOfObjIds);
 RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFOBJIDS, RTASN1OBJID, RTDECL, RTAsn1SetOfObjIds);
+RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETOFOBJIDSEQS, RTASN1SEQOFOBJIDS, RTDECL, RTAsn1SetOfObjIdSeqs);
 
 
 /**
@@ -1063,10 +1063,12 @@ typedef struct RTASN1OCTETSTRING
 {
     /** Core ASN.1 encoding details. */
     RTASN1CORE          Asn1Core;
-    /** Pointer to user structure encapsulated in this string, if dynamically
-     * allocated the EncapsulatedAllocation member can be used to track it and
-     * trigger automatic cleanup on object destruction.  If EncapsulatedAllocation
-     * is zero, any object pointed to will only be deleted. */
+    /** Pointer to user structure encapsulated in this string.
+     *
+     * If dynamically allocated the EncapsulatedAllocation member can be used to
+     * track it and trigger automatic cleanup on object destruction.  If
+     * EncapsulatedAllocation is zero, any object pointed to will only be
+     * deleted. */
     PRTASN1CORE         pEncapsulated;
     /** Allocation tracking structure for pEncapsulated. */
     RTASN1ALLOCATION    EncapsulatedAllocation;

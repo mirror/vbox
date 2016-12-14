@@ -215,6 +215,14 @@ RTDECL(const char *) RTCrDigestTypeToAlgorithmOid(RTDIGESTTYPE enmDigestType);
  */
 RTDECL(const char *) RTCrDigestTypeToName(RTDIGESTTYPE enmDigestType);
 
+/**
+ * Translates an IPRT digest type value to a hash size.
+ *
+ * @returns Hash size (in bytes).
+ * @param       enmDigestType       The IPRT digest type value to convert.
+ */
+RTDECL(uint32_t) RTCrDigestTypeToHashSize(RTDIGESTTYPE enmDigestType);
+
 /** @} */
 
 RT_C_DECLS_END
