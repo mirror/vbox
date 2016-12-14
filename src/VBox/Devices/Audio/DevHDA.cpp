@@ -4425,7 +4425,9 @@ static int hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *pvBuf, uint
 
 #ifdef HDA_DEBUG_DUMP_PCM_DATA
             RTFILE fh;
-            RTFileOpen(&fh, HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMA.pcm",
+            RTFileOpen(&fh,
+                         hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT
+                       ? HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm" : HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm",
                        RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
             RTFileWrite(fh, (uint8_t *)pvBuf + cbTotal, cbChunk, NULL);
             RTFileClose(fh);
@@ -4738,7 +4740,6 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
 
     PRTCIRCBUF pCircBuf  = pStream->State.pCircBuf;
     AssertPtr(pCircBuf);
-
 
     int rc = VINF_SUCCESS;
 
@@ -6651,7 +6652,8 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 # endif
 
 #ifdef HDA_DEBUG_DUMP_PCM_DATA
-    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMA.pcm");
+    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMARead.pcm");
+    RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaDMAWrite.pcm");
     RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamRead.pcm");
     RTFileDelete(HDA_DEBUG_DUMP_PCM_DATA_PATH "hdaStreamWrite.pcm");
 #endif
