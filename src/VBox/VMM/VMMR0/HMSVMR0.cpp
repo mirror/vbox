@@ -5091,7 +5091,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     /* TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.  */
     if (   pVM->hm.s.fTprPatchingAllowed
-        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == 0x80                                                  /* TPR offset. */
+        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == XAPIC_OFF_TPR
         && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
             || (u32ErrCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD))  /* MMIO page. */
         && !CPUMIsGuestInLongModeEx(pCtx)
@@ -5101,7 +5101,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
         RTGCPHYS GCPhysApicBase = APICGetBaseMsrNoCheck(pVCpu);
         GCPhysApicBase &= PAGE_BASE_GC_MASK;
 
-        if (GCPhysFaultAddr == GCPhysApicBase + 0x80)
+        if (GCPhysFaultAddr == GCPhysApicBase + XAPIC_OFF_TPR)
         {
             /* Only attempt to patch the instruction once. */
             PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
@@ -5355,8 +5355,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     /* Shortcut for APIC TPR reads and writes; only applicable to 32-bit guests. */
     if (   pVM->hm.s.fTprPatchingAllowed
-        && (uFaultAddress & 0xfff) == 0x80  /* TPR offset. */
-        && !(u32ErrCode & X86_TRAP_PF_P)    /* Not present. */
+        && (uFaultAddress & 0xfff) == XAPIC_OFF_TPR
+        && !(u32ErrCode & X86_TRAP_PF_P)              /* Not present. */
         && !CPUMIsGuestInLongModeEx(pCtx)
         && !CPUMGetGuestCPL(pVCpu)
         && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
