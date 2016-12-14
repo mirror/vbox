@@ -40,6 +40,7 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include <iprt/crypto/digest.h>
 #include <iprt/crypto/x509.h>
 #include <iprt/crypto/pkcs7.h>
@@ -658,6 +659,12 @@ static RTEXITCODE HelpShowExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 }
 
 
+/**
+ * Decodes the PKCS #7 blob pointed to by pThis->pbBuf.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ */
 static int HandleShowExeWorkerPkcs7Decode(PSHOWEXEPKCS7 pThis)
 {
     RTERRINFOSTATIC     ErrInfo;
@@ -715,15 +722,66 @@ static int HandleShowExeWorkerPkcs7Decode(PSHOWEXEPKCS7 pThis)
 }
 
 
+/**
+ * Display an object ID.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   pObjId              The object ID to display.
+ * @param   pszLabel            The field label (prefixed by szPrefix).
+ * @param   pszPost             What to print after the ID (typically newline).
+ */
+static void HandleShowExeWorkerDisplayObjId(PSHOWEXEPKCS7 pThis, PCRTASN1OBJID pObjId, const char *pszLabel, const char *pszPost)
+{
+    int rc = RTAsn1QueryObjIdName(pObjId, pThis->szTmp, sizeof(pThis->szTmp));
+    if (RT_SUCCESS(rc))
+    {
+        if (pThis->cVerbosity > 1)
+            RTPrintf("%s%s%s (%s)%s", pThis->szPrefix, pszLabel, pThis->szTmp, pObjId->szObjId, pszPost);
+        else
+            RTPrintf("%s%s%s%s", pThis->szPrefix, pszLabel, pThis->szTmp, pszPost);
+    }
+    else
+        RTPrintf("%s%s%s%s", pThis->szPrefix, pszLabel, pObjId->szObjId, pszPost);
+}
+
+
+/**
+ * Display an object ID, without prefix and label
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   pObjId              The object ID to display.
+ * @param   pszPost             What to print after the ID (typically newline).
+ */
+static void HandleShowExeWorkerDisplayObjIdSimple(PSHOWEXEPKCS7 pThis, PCRTASN1OBJID pObjId, const char *pszPost)
+{
+    int rc = RTAsn1QueryObjIdName(pObjId, pThis->szTmp, sizeof(pThis->szTmp));
+    if (RT_SUCCESS(rc))
+    {
+        if (pThis->cVerbosity > 1)
+            RTPrintf("%s (%s)%s", pThis->szTmp, pObjId->szObjId, pszPost);
+        else
+            RTPrintf("%s%s", pThis->szTmp, pszPost);
+    }
+    else
+        RTPrintf("%s%s", pObjId->szObjId, pszPost);
+}
+
+
+/**
+ * Display a signer info attribute.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   offPrefix           The current prefix offset.
+ * @param   pAttr               The attribute to display.
+ */
 static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t offPrefix, PCRTCRPKCS7ATTRIBUTE pAttr)
 {
-    int rc = RTAsn1QueryObjIdName(&pAttr->Type, pThis->szTmp, sizeof(pThis->szTmp));
-    if (RT_SUCCESS(rc))
-        RTPrintf("%s%s (%s)\n", pThis->szPrefix, pThis->szTmp, pAttr->Type.szObjId);
-    else
-        RTPrintf("%s%s\n", pThis->szPrefix, pAttr->Type.szObjId);
+    HandleShowExeWorkerDisplayObjId(pThis, &pAttr->Type, "", ":\n");
 
-    rc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
     switch (pAttr->enmType)
     {
         case RTCRPKCS7ATTRIBUTETYPE_UNKNOWN:
@@ -731,21 +789,82 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
                 RTPrintf("%s %u bytes\n", pThis->szPrefix,pAttr->uValues.pCores->SetCore.Asn1Core.cb);
             else
                 RTPrintf("%s %u bytes divided by %u items\n", pThis->szPrefix, pAttr->uValues.pCores->SetCore.Asn1Core.cb, pAttr->uValues.pCores->cItems);
-            for (unsigned i = 0; i < pAttr->uValues.pCores->cItems; i++)
-            {
+            break;
 
+        /* Object IDs, use pObjIds. */
+        case RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS:
+            if (pAttr->uValues.pObjIds->cItems != 1)
+                RTPrintf("%s%u object IDs:", pThis->szPrefix, pAttr->uValues.pObjIds->cItems);
+            for (unsigned i = 0; i < pAttr->uValues.pObjIds->cItems; i++)
+            {
+                if (pAttr->uValues.pObjIds->cItems == 1)
+                    RTPrintf("%s ", pThis->szPrefix);
+                else
+                    RTPrintf("%s ObjId[%u]: ", pThis->szPrefix, i);
+                HandleShowExeWorkerDisplayObjIdSimple(pThis, &pAttr->uValues.pObjIds->paItems[i], "\n");
             }
             break;
 
-        /** Object IDs, use pObjIds. */
-        case RTCRPKCS7ATTRIBUTETYPE_OBJ_IDS:
-        /** Octet strings, use pOctetStrings. */
+        /* Sequence of object IDs, use pObjIdSeqs. */
+        case RTCRPKCS7ATTRIBUTETYPE_MS_STATEMENT_TYPE:
+            if (pAttr->uValues.pObjIdSeqs->cItems != 1)
+                RTPrintf("%s%u object IDs:", pThis->szPrefix, pAttr->uValues.pObjIdSeqs->cItems);
+            for (unsigned i = 0; i < pAttr->uValues.pObjIdSeqs->cItems; i++)
+            {
+                uint32_t const cObjIds = pAttr->uValues.pObjIdSeqs->paItems[i].cItems;
+                for (unsigned j = 0; j < cObjIds; j++)
+                {
+                    if (pAttr->uValues.pObjIdSeqs->cItems == 1)
+                        RTPrintf("%s ", pThis->szPrefix);
+                    else
+                        RTPrintf("%s ObjIdSeq[%u]: ", pThis->szPrefix, i);
+                    if (cObjIds != 1)
+                        RTPrintf(" ObjId[%u]: ", j);
+                    HandleShowExeWorkerDisplayObjIdSimple(pThis, &pAttr->uValues.pObjIdSeqs->paItems[i].paItems[i], "\n");
+                }
+            }
+            break;
+
+        /* Octet strings, use pOctetStrings. */
         case RTCRPKCS7ATTRIBUTETYPE_OCTET_STRINGS:
-        /** Counter signatures (PKCS \#9), use pCounterSignatures. */
+            if (pAttr->uValues.pOctetStrings->cItems != 1)
+                RTPrintf("%s%u octet strings:", pThis->szPrefix, pAttr->uValues.pOctetStrings->cItems);
+            for (unsigned i = 0; i < pAttr->uValues.pOctetStrings->cItems; i++)
+            {
+                PCRTASN1OCTETSTRING pOctetString = &pAttr->uValues.pOctetStrings->paItems[i];
+                uint32_t cbContent = pOctetString->Asn1Core.cb;
+                if (cbContent > 0 && (cbContent <= 128 || pThis->cVerbosity >= 2))
+                {
+                    uint8_t const *pbContent = pOctetString->Asn1Core.uData.pu8;
+                    uint32_t       off       = 0;
+                    while (off < cbContent)
+                    {
+                        uint32_t cbNow = RT_MIN(cbContent - off, 16);
+                        if (pAttr->uValues.pOctetStrings->cItems == 1)
+                            RTPrintf("%s %#06x: %.*Rhxs\n", pThis->szPrefix, off, cbNow, &pbContent[off]);
+                        else
+                            RTPrintf("%s OctetString[%u]: %#06x: %.*Rhxs\n", pThis->szPrefix, i, off, cbNow, &pbContent[off]);
+                        off += cbNow;
+                    }
+                }
+                else
+                    RTPrintf("%s: OctetString[%u]: %u bytes\n", i, pOctetString->Asn1Core.cb);
+            }
+            break;
+
+        /* Counter signatures (PKCS \#9), use pCounterSignatures. */
         case RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES:
-        /** Signing time (PKCS \#9), use pSigningTime. */
+            RTPrintf("%sTODO: RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES! %u bytes\n",
+                     pThis->szPrefix, pThis->szPrefix,pAttr->uValues.pCounterSignatures->SetCore.Asn1Core.cb);
+            break;
+
+        /* Signing time (PKCS \#9), use pSigningTime. */
         case RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME:
-        /** Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */
+            RTPrintf("%sTODO: RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME! %u bytes\n",
+                     pThis->szPrefix, pThis->szPrefix,pAttr->uValues.pSigningTime->SetCore.Asn1Core.cb);
+            break;
+
+        /* Microsoft timestamp info (RFC-3161) signed data, use pContentInfo. */
         case RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP:
         case RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE:
             if (pAttr->uValues.pContentInfos->cItems > 1)
@@ -761,7 +880,7 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
                 //    offPrefix2 += RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix, "NestedSig: ", i);
                 PCRTCRPKCS7CONTENTINFO pContentInfo = &pAttr->uValues.pContentInfos->paItems[i];
                 int rc2;
-                if (RTCrPkcs7ContentInfo_IsSignedData(&pThis->ContentInfo))
+                if (RTCrPkcs7ContentInfo_IsSignedData(pContentInfo))
                     rc2 = HandleShowExeWorkerPkcs7Display(pThis, pContentInfo->u.pSignedData, offPrefix2);
                 else
                     rc2 = RTMsgErrorRc(VERR_ASN1_UNEXPECTED_OBJ_ID, "%sPKCS#7 content in nested signature is not 'signedData': %s",
@@ -781,18 +900,202 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
             RTPrintf("%senmType=%d!\n", pThis->szPrefix, pAttr->enmType);
             break;
     }
-    //if (RTAsn1ObjId_CompareWithString(&pAttr->Type, ))
-    //{
-    //}
     return rc;
 }
 
 
+/**
+ * Displays a Microsoft SPC indirect data structure.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   offPrefix           The current prefix offset.
+ * @param   pIndData            The indirect data to display.
+ */
+static int HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(PSHOWEXEPKCS7 pThis, size_t offPrefix,
+                                                                PCRTCRSPCINDIRECTDATACONTENT pIndData)
+{
+
+    /*
+     * The image hash.
+     */
+    RTDIGESTTYPE const enmDigestType = RTCrX509AlgorithmIdentifier_QueryDigestType(&pIndData->DigestInfo.DigestAlgorithm);
+    const char        *pszDigestType = RTCrDigestTypeToName(enmDigestType);
+    RTPrintf("%s Digest Type: %s", pThis->szPrefix, pszDigestType);
+    if (pThis->cVerbosity > 1)
+        RTPrintf(" (%s)\n", pIndData->DigestInfo.DigestAlgorithm.Algorithm.szObjId);
+    else
+        RTPrintf("\n");
+    RTPrintf("%s      Digest: %.*Rhxs\n",
+             pThis->szPrefix, pIndData->DigestInfo.Digest.Asn1Core.cb, pIndData->DigestInfo.Digest.Asn1Core.uData.pu8);
+
+    /*
+     * The data/file/url.
+     */
+    switch (pIndData->Data.enmType)
+    {
+        case RTCRSPCAAOVTYPE_PE_IMAGE_DATA:
+        {
+            RTPrintf("%s   Data Type: PE Image Data\n", pThis->szPrefix);
+            PRTCRSPCPEIMAGEDATA pPeImage = pIndData->Data.uValue.pPeImage;
+            /** @todo display "Flags". */
+
+            switch (pPeImage->T0.File.enmChoice)
+            {
+                case RTCRSPCLINKCHOICE_MONIKER:
+                {
+                    PRTCRSPCSERIALIZEDOBJECT pMoniker = pPeImage->T0.File.u.pMoniker;
+                    if (RTCrSpcSerializedObject_IsPresent(pMoniker))
+                    {
+                        if (RTUuidCompareStr(pMoniker->Uuid.Asn1Core.uData.pUuid, RTCRSPCSERIALIZEDOBJECT_UUID_STR) == 0)
+                        {
+                            RTPrintf("%s     Moniker: SpcSerializedObject (%RTuuid)\n",
+                                     pThis->szPrefix, pMoniker->Uuid.Asn1Core.uData.pUuid);
+
+                            PCRTCRSPCSERIALIZEDOBJECTATTRIBUTES pData = pMoniker->u.pData;
+                            if (pData)
+                                for (uint32_t i = 0; i < pData->cItems; i++)
+                                {
+                                    RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix,
+                                                "MonikerAttrib[%u]: ", i);
+
+                                    switch (pData->paItems[i].enmType)
+                                    {
+                                        case RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V2:
+                                        case RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1:
+                                        {
+                                            PCRTCRSPCSERIALIZEDPAGEHASHES pPgHashes = pData->paItems[i].u.pPageHashes;
+                                            uint32_t const cbHash =    pData->paItems[i].enmType
+                                                                    == RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1
+                                                                  ? 160/8 /*SHA-1*/ : 256/8 /*SHA-256*/;
+                                            uint32_t const cPages = pPgHashes->RawData.Asn1Core.cb / (cbHash + sizeof(uint32_t));
+
+                                            RTPrintf("%sPage Hashes version %u - %u pages (%u bytes total)\n", pThis->szPrefix,
+                                                        pData->paItems[i].enmType
+                                                     == RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_PAGE_HASHES_V1 ? 1 : 2,
+                                                     cPages, pPgHashes->RawData.Asn1Core.cb);
+                                            if (pThis->cVerbosity > 0)
+                                            {
+                                                uint32_t cbHash = RTCrDigestTypeToHashSize(enmDigestType);
+                                                PCRTCRSPCPEIMAGEPAGEHASHES pPg = pPgHashes->pData;
+                                                for (unsigned iPg = 0; iPg < cPages; iPg++)
+                                                {
+                                                    uint32_t offHash = 0;
+                                                    do
+                                                    {
+                                                        if (offHash == 0)
+                                                            RTPrintf("%.*s  Page#%04u/%#08x: ",
+                                                                     offPrefix, pThis->szPrefix, iPg, pPg->Generic.offFile);
+                                                        else
+                                                            RTPrintf("%.*s                      ", offPrefix, pThis->szPrefix);
+                                                        uint32_t cbLeft = cbHash - offHash;
+                                                        if (cbLeft > 24)
+                                                            cbLeft = 16;
+                                                        RTPrintf("%.*Rhxs\n", cbLeft, &pPg->Generic.abHash[offHash]);
+                                                        offHash += cbLeft;
+                                                    } while (offHash < cbHash);
+                                                    pPg = (PCRTCRSPCPEIMAGEPAGEHASHES)&pPg->Generic.abHash[cbHash];
+                                                }
+
+                                                if (pThis->cVerbosity > 3)
+                                                    RTPrintf("%.*Rhxd\n",
+                                                             pPgHashes->RawData.Asn1Core.cb,
+                                                             pPgHashes->RawData.Asn1Core.uData.pu8);
+                                            }
+                                            break;
+                                        }
+
+                                        case RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_UNKNOWN:
+                                            HandleShowExeWorkerDisplayObjIdSimple(pThis, &pData->paItems[i].Type, "\n");
+                                            break;
+                                        case RTCRSPCSERIALIZEDOBJECTATTRIBUTETYPE_NOT_PRESENT:
+                                            RTPrintf("%sNot present!\n", pThis->szPrefix);
+                                            break;
+                                        default:
+                                            RTPrintf("%senmType=%d!\n", pThis->szPrefix, pData->paItems[i].enmType);
+                                            break;
+                                    }
+                                    pThis->szPrefix[offPrefix] = '\0';
+                                }
+                            else
+                                RTPrintf("%s              pData is NULL!\n");
+                        }
+                        else
+                            RTPrintf("%s     Moniker: Unknown UUID: %RTuuid\n",
+                                     pThis->szPrefix, pMoniker->Uuid.Asn1Core.uData.pUuid);
+                    }
+                    else
+                        RTPrintf("%s     Moniker: not present\n", pThis->szPrefix);
+                    break;
+                }
+
+                case RTCRSPCLINKCHOICE_URL:
+                {
+                    const char *pszUrl = NULL;
+                    int rc = pPeImage->T0.File.u.pUrl
+                           ? RTAsn1String_QueryUtf8(pPeImage->T0.File.u.pUrl, &pszUrl, NULL)
+                           : VERR_NOT_FOUND;
+                    if (RT_SUCCESS(rc))
+                        RTPrintf("%s         URL: '%s'\n", pThis->szPrefix, pszUrl);
+                    else
+                        RTPrintf("%s         URL: rc=%Rrc\n", pThis->szPrefix, rc);
+                    break;
+                }
+
+                case RTCRSPCLINKCHOICE_FILE:
+                {
+                    const char *pszFile = NULL;
+                    int rc = pPeImage->T0.File.u.pT2 && pPeImage->T0.File.u.pT2->File.u.pAscii
+                           ? RTAsn1String_QueryUtf8(pPeImage->T0.File.u.pT2->File.u.pAscii, &pszFile, NULL)
+                           : VERR_NOT_FOUND;
+                    if (RT_SUCCESS(rc))
+                        RTPrintf("%s        File: '%s'\n", pThis->szPrefix, pszFile);
+                    else
+                        RTPrintf("%s        File: rc=%Rrc\n", pThis->szPrefix, rc);
+                    break;
+                }
+
+                case RTCRSPCLINKCHOICE_NOT_PRESENT:
+                    RTPrintf("%s              File not present!\n", pThis->szPrefix);
+                    break;
+                default:
+                    RTPrintf("%s              enmChoice=%d!\n", pThis->szPrefix, pPeImage->T0.File.enmChoice);
+                    break;
+            }
+            break;
+        }
+
+        case RTCRSPCAAOVTYPE_UNKNOWN:
+            HandleShowExeWorkerDisplayObjId(pThis, &pIndData->Data.Type, "   Data Type: ", "\n");
+            break;
+        case RTCRSPCAAOVTYPE_NOT_PRESENT:
+            RTPrintf("%s   Data Type: Not present!\n", pThis->szPrefix);
+            break;
+        default:
+            RTPrintf("%s   Data Type: enmType=%d!\n", pThis->szPrefix, pIndData->Data.enmType);
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Display an PKCS#7 signed data instance.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The show exe instance data.
+ * @param   offPrefix           The current prefix offset.
+ * @param   pSignedData         The signed data to display.
+ */
 static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix)
 {
     pThis->szPrefix[offPrefix] = '\0';
 
-    /* Display list of signing algorithms. */
+    /*
+     * Display list of signing algorithms.
+     */
     RTPrintf("%sDigestAlgorithms: ", pThis->szPrefix);
     for (unsigned i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
     {
@@ -801,12 +1104,33 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
         if (!pszDigestType)
             pszDigestType = pAlgoId->Algorithm.szObjId;
         RTPrintf(i == 0 ? "%s" : ", %s", pszDigestType);
+        if (pThis->cVerbosity > 1)
+            RTPrintf(" (%s)", pAlgoId->Algorithm.szObjId);
     }
     RTPrintf("\n");
 
-    /* Display certificates (Certificates). */
+    /*
+     * Display the signed data content.
+     */
+    if (RTAsn1ObjId_CompareWithString(&pSignedData->ContentInfo.ContentType, RTCRSPCINDIRECTDATACONTENT_OID) == 0)
+    {
+        RTPrintf("%s     ContentType: SpcIndirectDataContent (" RTCRSPCINDIRECTDATACONTENT_OID ")\n", pThis->szPrefix);
+        size_t offPrefix2 = RTStrPrintf(&pThis->szPrefix[offPrefix], sizeof(pThis->szPrefix) - offPrefix, "    SPC Ind Data: ");
+        HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(pThis, offPrefix2 + offPrefix,
+                                                             pSignedData->ContentInfo.u.pIndirectDataContent);
+        pThis->szPrefix[offPrefix] = '\0';
+    }
+    else
+        RTPrintf("%s     ContentType: %s\n", pThis->szPrefix, pSignedData->ContentInfo.ContentType.szObjId);
 
-    /* Show signatures (SignerInfos). */
+    /*
+     * Display certificates (Certificates).
+     */
+
+    /*
+     * Show signatures (SignerInfos).
+     */
+    RTPrintf("%s     SignerInfos:\n", pThis->szPrefix);
     unsigned const cSigInfos = pSignedData->SignerInfos.cItems;
     for (unsigned i = 0; i < cSigInfos; i++)
     {
@@ -829,14 +1153,14 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
         const char *pszType = RTCrDigestTypeToName(RTCrX509AlgorithmIdentifier_QueryDigestType(&pSigInfo->DigestAlgorithm));
         if (!pszType)
             pszType = pSigInfo->DigestAlgorithm.Algorithm.szObjId;
-        RTPrintf("%s           Digest Algorithm: %s\n", pThis->szPrefix, pszType);
-
-        rc = RTAsn1QueryObjIdName(&pSigInfo->DigestEncryptionAlgorithm.Algorithm, pThis->szTmp, sizeof(pThis->szTmp));
-        if (RT_SUCCESS(rc))
-            pszType = pThis->szTmp;
+        RTPrintf("%s           Digest Algorithm: %s", pThis->szPrefix, pszType);
+        if (pThis->cVerbosity > 1)
+            RTPrintf(" (%s)\n", pSigInfo->DigestAlgorithm.Algorithm.szObjId);
         else
-            pszType = pSigInfo->DigestAlgorithm.Algorithm.szObjId;
-        RTPrintf("%sDigest Encryption Algorithm: %s\n", pThis->szPrefix, pszType);
+            RTPrintf("\n");
+
+        HandleShowExeWorkerDisplayObjId(pThis, &pSigInfo->DigestEncryptionAlgorithm.Algorithm,
+                                        "Digest Encryption Algorithm: ", "\n");
 
         if (pSigInfo->AuthenticatedAttributes.cItems == 0)
             RTPrintf("%s   Authenticated Attributes: none\n", pThis->szPrefix);
@@ -848,7 +1172,7 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
             {
                 PRTCRPKCS7ATTRIBUTE pAttr = &pSigInfo->AuthenticatedAttributes.paItems[j];
                 size_t offPrefix3 = offPrefix2 + RTStrPrintf(&pThis->szPrefix[offPrefix2], sizeof(pThis->szPrefix) - offPrefix2,
-                                                             "     AuthAttrib[%u]: ", j);
+                                                             "              AuthAttrib[%u]: ", j);
                 HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
             }
             pThis->szPrefix[offPrefix2] = '\0';
@@ -864,25 +1188,13 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
             {
                 PRTCRPKCS7ATTRIBUTE pAttr = &pSigInfo->UnauthenticatedAttributes.paItems[j];
                 size_t offPrefix3 = offPrefix2 + RTStrPrintf(&pThis->szPrefix[offPrefix2], sizeof(pThis->szPrefix) - offPrefix2,
-                                                             "   UnauthAttrib[%u]: ", j);
+                                                             "            UnauthAttrib[%u]: ", j);
                 HandleShowExeWorkerPkcs7DisplayAttrib(pThis, offPrefix3, pAttr);
             }
             pThis->szPrefix[offPrefix2] = '\0';
         }
 
-#if 0
-        /** Authenticated attributes, optional [0].
-         * @todo Check how other producers formats this. The microsoft one does not
-         *       have explicit tags, but combines it with the SET OF. */
-        RTCRPKCS7ATTRIBUTES                 AuthenticatedAttributes;
-
-        /** The encrypted digest. */
-        RTASN1OCTETSTRING                   EncryptedDigest;
-        /** Unauthenticated attributes, optional [1].
-         * @todo Check how other producers formats this. The microsoft one does not
-         *       have explicit tags, but combines it with the SET OF. */
-        RTCRPKCS7ATTRIBUTES                 UnauthenticatedAttributes;
-#endif
+        /** @todo show the encrypted stuff (EncryptedDigest)?   */
     }
     pThis->szPrefix[offPrefix] = '\0';
 
@@ -966,6 +1278,7 @@ static RTEXITCODE HandleShowExeWorker(const char *pszFilename, unsigned cVerbosi
     return RTEXITCODE_SUCCESS;
 }
 
+
 static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
 {
     /* Note! This code does not try to clean up the crypto stores on failure.
@@ -1007,12 +1320,15 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
     /*
      * Do it.
      */
+    unsigned   iFile  = 0;
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     do
     {
+        RTPrintf(iFile == 0 ? "%s:\n" : "\n%s:\n", ValueUnion.psz);
         RTEXITCODE rcExitThis = HandleShowExeWorker(ValueUnion.psz, cVerbose, enmLdrArch);
         if (rcExitThis != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
             rcExit = rcExitThis;
+        iFile++;
     } while ((ch = RTGetOpt(&GetState, &ValueUnion)) == VINF_GETOPT_NOT_OPTION);
     if (ch != 0)
         return RTGetOptPrintError(ch, &ValueUnion);
@@ -1021,7 +1337,6 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
 }
 
 #endif /* !IPRT_IN_BUILD_TOOL */
-////
 
 /*
  * The 'make-tainfo' command.

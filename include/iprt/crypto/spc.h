@@ -83,6 +83,15 @@ typedef union RTCRSPCPEIMAGEPAGEHASHES
         /** The hash. */
         uint8_t         abHash[RTSHA512_HASH_SIZE];
     } aSha512[1];
+
+    /** Generic view of ONE hash. */
+    struct
+    {
+        /** The file offset. */
+        uint32_t        offFile;
+        /** Variable length hash field. */
+        uint8_t         abHash[1];
+    } Generic;
 } RTCRSPCPEIMAGEPAGEHASHES;
 /** Pointer to a PE image page hash table union. */
 typedef RTCRSPCPEIMAGEPAGEHASHES *PRTCRSPCPEIMAGEPAGEHASHES;
