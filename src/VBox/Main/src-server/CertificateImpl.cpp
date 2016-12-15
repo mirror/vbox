@@ -221,10 +221,10 @@ HRESULT Certificate::getFriendlyName(com::Utf8Str &aFriendlyName)
     const char *pszEmail     = NULL;
     for (uint32_t i = 0; i < pName->cItems; i++)
     {
-        PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = &pName->paItems[i];
+        PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = pName->papItems[i];
         for (uint32_t j = 0; j < pRdn->cItems; j++)
         {
-            PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = &pRdn->paItems[j];
+            PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = pRdn->papItems[j];
             AssertContinue(pComponent->Value.enmType == RTASN1TYPE_STRING);
 
             /* Select interesting components based on the short RDN prefix
@@ -469,10 +469,10 @@ HRESULT Certificate::i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8
     {
         for (uint32_t i = 0; i < a_pName->cItems; i++)
         {
-            PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = &a_pName->paItems[i];
+            PCRTCRX509RELATIVEDISTINGUISHEDNAME pRdn = a_pName->papItems[i];
             for (uint32_t j = 0; j < pRdn->cItems; j++)
             {
-                PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = &pRdn->paItems[j];
+                PCRTCRX509ATTRIBUTETYPEANDVALUE pComponent = pRdn->papItems[j];
 
                 AssertReturn(pComponent->Value.enmType == RTASN1TYPE_STRING,
                              setErrorVrc(VERR_CR_X509_NAME_NOT_STRING, "VERR_CR_X509_NAME_NOT_STRING"));
