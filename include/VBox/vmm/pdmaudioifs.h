@@ -325,6 +325,17 @@ typedef struct PDMAUDIOSTREAMCHANNEL
 } PDMAUDIOSTREAMCHANNEL, *PPDMAUDIOSTREAMCHANNEL;
 
 /**
+ * Union for keeping an audio stream destination or source.
+ */
+typedef union PDMAUDIODESTSOURCE
+{
+    /** Desired playback destination (for an output stream). */
+    PDMAUDIOPLAYBACKDEST Dest;
+    /** Desired recording source (for an input stream). */
+    PDMAUDIORECSOURCE    Source;
+} PDMAUDIODESTSOURCE, *PPDMAUDIODESTSOURCE;
+
+/**
  * Structure for keeping an audio stream configuration.
  */
 typedef struct PDMAUDIOSTREAMCFG
@@ -333,13 +344,8 @@ typedef struct PDMAUDIOSTREAMCFG
     char                     szName[64];
     /** Direction of the stream. */
     PDMAUDIODIR              enmDir;
-    union
-    {
-        /** Desired playback destination (for an output stream). */
-        PDMAUDIOPLAYBACKDEST Dest;
-        /** Desired recording source (for an input stream). */
-        PDMAUDIORECSOURCE    Source;
-    } DestSource;
+    /** Destination / source indicator, depending on enmDir. */
+    PDMAUDIODESTSOURCE       DestSource;
     /** Frequency in Hertz (Hz). */
     uint32_t                 uHz;
     /** Number of audio channels (2 for stereo, 1 for mono). */
