@@ -161,6 +161,10 @@ typedef struct VBOXWDDM_TARGET
     bool fConnected;
     bool fConfigured;
     bool fBlankedByPowerOff;
+
+    /* Whether the host has disabled the virtual screen. */
+    /** @todo This should be merged with fConnected. */
+    bool fDisabled;
 } VBOXWDDM_TARGET, *PVBOXWDDM_TARGET;
 
 /* allocation */

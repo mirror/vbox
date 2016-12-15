@@ -1338,11 +1338,15 @@ NTSTATUS VBoxVidPnUpdateModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32TargetId, cons
         return STATUS_SUCCESS;
     }
 
-    /* modes have changed, need to replug */
-/*  The VBOXESC_UPDATEMODES is a hint for VBoxVideoW8.sys to use new display mode as soon as VidPn manager will ask for it.
-    Probably, some new interface is required to plug/unplug displays by calling VBoxWddmChildStatusReportReconnected.
-    But it is a bad idea to mix sending a display mode hint and (un)plug displays in VBOXESC_UPDATEMODES.
+#ifdef VBOX_WDDM_REPLUG_ON_MODE_CHANGE
+    /* The VBOXESC_UPDATEMODES is a hint for VBoxVideoW8.sys to use new display mode as soon as VidPn
+     * manager will ask for it.
+     * Probably, some new interface is required to plug/unplug displays by calling
+     * VBoxWddmChildStatusReportReconnected.
+     * But it is a bad idea to mix sending a display mode hint and (un)plug displays in VBOXESC_UPDATEMODES.
+     */
 
+    /* modes have changed, need to replug */
     NTSTATUS Status = VBoxWddmChildStatusReportReconnected(pDevExt, u32TargetId);
     LOG(("VBoxWddmChildStatusReportReconnected returned (%d)", Status));
     if (!NT_SUCCESS(Status))
@@ -1350,7 +1354,8 @@ NTSTATUS VBoxVidPnUpdateModes(PVBOXMP_DEVEXT pDevExt, uint32_t u32TargetId, cons
         WARN(("VBoxWddmChildStatusReportReconnected failed Status(%#x)", Status));
         return Status;
     }
-*/
+#endif
+
     LOGF(("LEAVE u32TargetId(%d)", u32TargetId));
     return STATUS_SUCCESS;
 }

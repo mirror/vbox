@@ -344,7 +344,7 @@ NTSTATUS vboxWddmGhDisplaySetMode(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
     return STATUS_SUCCESS;
 }
 
-static uint16_t vboxWddmCalcScreenFlags(PVBOXMP_DEVEXT pDevExt, bool fValidAlloc, bool fPowerOff)
+static uint16_t vboxWddmCalcScreenFlags(PVBOXMP_DEVEXT pDevExt, bool fValidAlloc, bool fPowerOff, bool fDisabled)
 {
     uint16_t u16Flags;
 
@@ -354,7 +354,8 @@ static uint16_t vboxWddmCalcScreenFlags(PVBOXMP_DEVEXT pDevExt, bool fValidAlloc
     }
     else
     {
-        if (   fPowerOff
+        if (   !fDisabled
+            && fPowerOff
             && RT_BOOL(VBoxCommonFromDeviceExt(pDevExt)->u16SupportedScreenFlags & VBVA_SCREEN_F_BLANK2))
         {
             u16Flags = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_BLANK2;
@@ -368,11 +369,11 @@ static uint16_t vboxWddmCalcScreenFlags(PVBOXMP_DEVEXT pDevExt, bool fValidAlloc
     return u16Flags;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfoLegacy(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint8_t u8CurCyncState, bool fPowerOff)
+NTSTATUS vboxWddmGhDisplaySetInfoLegacy(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos, uint8_t u8CurCyncState, bool fPowerOff, bool fDisabled)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     bool fValidAlloc = pAllocData->SurfDesc.width > 0 && pAllocData->SurfDesc.height > 0;
-    uint16_t fu16Flags = vboxWddmCalcScreenFlags(pDevExt, fValidAlloc, fPowerOff);
+    uint16_t fu16Flags = vboxWddmCalcScreenFlags(pDevExt, fValidAlloc, fPowerOff, fDisabled);
 
     if (fValidAlloc)
     {
@@ -419,11 +420,11 @@ NTSTATUS vboxWddmGhDisplaySetInfoLegacy(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_A
     return Status;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfoNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint8_t u8CurCyncState, bool fPowerOff)
+NTSTATUS vboxWddmGhDisplaySetInfoNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint8_t u8CurCyncState, bool fPowerOff, bool fDisabled)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     bool fValidAlloc = pAllocData->SurfDesc.width > 0 && pAllocData->SurfDesc.height > 0;
-    uint16_t fu16Flags = vboxWddmCalcScreenFlags(pDevExt, fValidAlloc, fPowerOff);
+    uint16_t fu16Flags = vboxWddmCalcScreenFlags(pDevExt, fValidAlloc, fPowerOff, fDisabled);
 
     if (fValidAlloc)
     {
@@ -492,7 +493,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSourceNew(PVBOXMP_DEVEXT pDevExt, PVBOXWDD
         pTargetMap = aTargetMap;
     }
 
-    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &pSource->AllocData, pTargetMap, &pSource->VScreenPos, pSource->u8SyncState, RT_BOOL(pSource->bBlankedByPowerOff));
+    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &pSource->AllocData, pTargetMap, &pSource->VScreenPos, pSource->u8SyncState, RT_BOOL(pSource->bBlankedByPowerOff), false);
     if (NT_SUCCESS(Status))
     {
         if (fReportTargets && (pSource->u8SyncState & VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY) != VBOXWDDM_HGSYNC_F_CHANGED_LOCATION_ONLY)
@@ -538,7 +539,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSourceLegacy(PVBOXMP_DEVEXT pDevExt, PVBOX
             pTarget = VBoxVidPnStTIterNext(&Iter))
     {
         AllocData.SurfDesc.VidPnSourceId = pTarget->u32Id;
-        NTSTATUS Status = vboxWddmGhDisplaySetInfoLegacy(pDevExt, &AllocData, &pSource->VScreenPos, pSource->u8SyncState | pTarget->u8SyncState, pTarget->fBlankedByPowerOff);
+        NTSTATUS Status = vboxWddmGhDisplaySetInfoLegacy(pDevExt, &AllocData, &pSource->VScreenPos, pSource->u8SyncState | pTarget->u8SyncState, pTarget->fBlankedByPowerOff, pTarget->fDisabled);
         if (NT_SUCCESS(Status))
             pTarget->u8SyncState = VBOXWDDM_HGSYNC_F_SYNCED_ALL;
         else
@@ -583,7 +584,8 @@ bool vboxWddmGhDisplayCheckSetInfoForDisabledTargetsNew(PVBOXMP_DEVEXT pDevExt)
             continue;
         }
 
-        if (pTarget->fBlankedByPowerOff)
+        /* Explicitely disabled targets must not be skipped. */
+        if (pTarget->fBlankedByPowerOff && !pTarget->fDisabled)
         {
             LOG(("Skip doing DISABLED request for PowerOff tgt %d", pTarget->u32Id));
             continue;
@@ -602,7 +604,7 @@ bool vboxWddmGhDisplayCheckSetInfoForDisabledTargetsNew(PVBOXMP_DEVEXT pDevExt)
     POINT VScreenPos = {0};
     VBOXWDDM_ALLOC_DATA AllocData;
     VBoxVidPnAllocDataInit(&AllocData, D3DDDI_ID_UNINITIALIZED);
-    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &AllocData, aTargetMap, &VScreenPos, 0, false);
+    NTSTATUS Status = vboxWddmGhDisplaySetInfoNew(pDevExt, &AllocData, aTargetMap, &VScreenPos, 0, false, true);
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxWddmGhDisplaySetInfoNew failed %#x", Status));
@@ -646,7 +648,7 @@ bool vboxWddmGhDisplayCheckSetInfoForDisabledTargetsLegacy(PVBOXMP_DEVEXT pDevEx
 
         fFound = true;
         AllocData.SurfDesc.VidPnSourceId = i;
-        NTSTATUS Status = vboxWddmGhDisplaySetInfoLegacy(pDevExt, &AllocData, &VScreenPos, 0, pTarget->fBlankedByPowerOff);
+        NTSTATUS Status = vboxWddmGhDisplaySetInfoLegacy(pDevExt, &AllocData, &VScreenPos, 0, pTarget->fBlankedByPowerOff, pTarget->fDisabled);
         if (NT_SUCCESS(Status))
             pTarget->u8SyncState = VBOXWDDM_HGSYNC_F_SYNCED_ALL;
         else
@@ -4956,6 +4958,38 @@ DxgkDdiEscape(
                     WARN(("VBoxVidPnUpdateModes failed Status(%#x)\n", Status));
                     return Status;
                 }
+
+                break;
+            }
+            case VBOXESC_TARGET_CONNECTIVITY:
+            {
+                if (!pEscape->Flags.HardwareAccess)
+                {
+                    WARN(("VBOXESC_TARGET_CONNECTIVITY called without HardwareAccess flag set, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscape->PrivateDriverDataSize != sizeof(VBOXDISPIFESCAPE_TARGETCONNECTIVITY))
+                {
+                    WARN(("VBOXESC_TARGET_CONNECTIVITY invalid private driver size %d", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                VBOXDISPIFESCAPE_TARGETCONNECTIVITY *pData = (VBOXDISPIFESCAPE_TARGETCONNECTIVITY *)pEscapeHdr;
+                LOG(("=> VBOXESC_TARGET_CONNECTIVITY[%d] 0x%08X", pData->u32TargetId, pData->fu32Connect));
+
+                if (pData->u32TargetId >= (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
+                {
+                    WARN(("VBOXESC_TARGET_CONNECTIVITY invalid screen index 0x%x", pData->u32TargetId));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[pData->u32TargetId];
+                pTarget->fDisabled = !RT_BOOL(pData->fu32Connect & 1);
+                pTarget->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_TOPOLOGY;
 
                 break;
             }

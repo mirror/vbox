@@ -44,6 +44,7 @@
 # define VBOXESC_CRHGSMICTLCON_GETHOSTCAPS  0xABCD9015
 # define VBOXESC_UPDATEMODES                0xABCD9016
 # define VBOXESC_GUEST_DISPLAYCHANGED       0xABCD9017
+# define VBOXESC_TARGET_CONNECTIVITY        0xABCD9018
 #endif /* #ifdef VBOX_WITH_WDDM */
 
 # define VBOXESC_ISANYX                     0xABCD9200
@@ -76,6 +77,11 @@ typedef struct VBOXDISPIFESCAPE_ISANYX
 
 #ifdef VBOX_WITH_WDDM
 
+/* Enables code which performs (un)plugging of virtual displays in VBOXESC_UPDATEMODES.
+ * The code has been disabled as part of #8244.
+ */
+//#define VBOX_WDDM_REPLUG_ON_MODE_CHANGE
+
 /* for VBOX_VIDEO_MAX_SCREENS definition */
 #include <VBox/Hardware/VBoxVideoVBE.h>
 
@@ -103,6 +109,13 @@ typedef struct VBOXDISPIFESCAPE_UPDATEMODES
     uint32_t u32TargetId;
     RTRECTSIZE Size;
 } VBOXDISPIFESCAPE_UPDATEMODES;
+
+typedef struct VBOXDISPIFESCAPE_TARGETCONNECTIVITY
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint32_t u32TargetId;
+    uint32_t fu32Connect;
+} VBOXDISPIFESCAPE_TARGETCONNECTIVITY;
 
 #endif /* VBOX_WITH_WDDM */
 

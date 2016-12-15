@@ -1368,12 +1368,38 @@ static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId,
         winEr = ERROR_GEN_FAILURE;
     }
 
-/*  The code below was commented out because VBOXESC_UPDATEMODES should not cause (un)plugging virtual displays.
+#ifdef VBOX_WDDM_REPLUG_ON_MODE_CHANGE
+    /* The code was disabled because VBOXESC_UPDATEMODES should not cause (un)plugging virtual displays. */
     winEr =  vboxDispIfWaitDisplayDataInited(pOp);
     if (winEr != NO_ERROR)
         WARN(("VBoxTray: (WDDM) Failed vboxDispIfWaitDisplayDataInited winEr %d\n", winEr));
-*/
+#endif
+
     return winEr;
+}
+
+static DWORD vboxDispIfTargetConnectivityWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId, uint32_t fu32Connect)
+{
+    VBOXDISPIFESCAPE_TARGETCONNECTIVITY PrivateData;
+    RT_ZERO(PrivateData);
+    PrivateData.EscapeHdr.escapeCode = VBOXESC_TARGET_CONNECTIVITY;
+    PrivateData.u32TargetId = u32TargetId;
+    PrivateData.fu32Connect = fu32Connect;
+
+    D3DKMT_ESCAPE EscapeData;
+    RT_ZERO(EscapeData);
+    EscapeData.hAdapter = pOp->Adapter.hAdapter;
+    EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    EscapeData.Flags.HardwareAccess = 1;
+    EscapeData.pPrivateDriverData = &PrivateData;
+    EscapeData.PrivateDriverDataSize = sizeof(PrivateData);
+
+    NTSTATUS Status = pOp->pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTEscape(&EscapeData);
+    if (NT_SUCCESS(Status))
+        return ERROR_SUCCESS;
+
+    WARN(("VBoxTray: pfnD3DKMTEscape VBOXESC_TARGETCONNECTIVITY failed Status 0x%x\n", Status));
+    return ERROR_GEN_FAILURE;
 }
 
 DWORD vboxDispIfCancelPendingResizeWDDM(PCVBOXDISPIF const pIf)
@@ -1478,6 +1504,8 @@ DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL 
         Status = Op.pIf->modeData.wddm.KmtCallbacks.pfnD3DKMTInvalidateActiveVidPn(&DdiData);
         LogFunc(("D3DKMTInvalidateActiveVidPn returned %d)\n", Status));
     }
+
+    vboxDispIfTargetConnectivityWDDM(&Op, iChangedMode, fEnable? 1: 0);
 
     /* Resize displays always to keep the display layout because
      * "the D3DKMTInvalidateActiveVidPn function always resets a multimonitor desktop to the default configuration".
