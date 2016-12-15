@@ -41,6 +41,10 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/zero.h>
+#ifndef RT_OS_WINDOWS
+# include <iprt/formats/pecoff.h>
+#endif
 #include <iprt/crypto/digest.h>
 #include <iprt/crypto/x509.h>
 #include <iprt/crypto/pkcs7.h>
@@ -48,6 +52,10 @@
 #include <iprt/crypto/spc.h>
 #ifdef VBOX
 # include <VBox/sup.h> /* Certificates */
+#endif
+#ifdef RT_OS_WINDOWS
+# include <iprt/win/windows.h>
+# include <ImageHlp.h>
 #endif
 
 
@@ -79,6 +87,13 @@ typedef struct SIGNTOOLPKCS7
     PRTCRPKCS7SIGNEDDATA        pSignedData;
     /** Pointer to the indirect data content. */
     PRTCRSPCINDIRECTDATACONTENT pIndData;
+
+    /** Newly encoded raw signature.
+     * @sa SignToolPkcs7_Encode()  */
+    uint8_t                    *pbNewBuf;
+    /** Size of newly encoded raw signature. */
+    size_t                      cbNewBuf;
+
 } SIGNTOOLPKCS7;
 typedef SIGNTOOLPKCS7 *PSIGNTOOLPKCS7;
 
@@ -116,7 +131,8 @@ static RTEXITCODE HandleHelp(int cArgs, char **papszArgs);
 static RTEXITCODE HelpHelp(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel);
 static RTEXITCODE HandleVersion(int cArgs, char **papszArgs);
 #ifndef IPRT_IN_BUILD_TOOL
-static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix);
+static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix,
+                                           PCRTCRPKCS7CONTENTINFO pContentInfo);
 #endif
 
 
@@ -134,6 +150,9 @@ static void SignToolPkcs7_Delete(PSIGNTOOLPKCS7 pThis)
     RTMemFree(pThis->pbBuf);
     pThis->pbBuf       = NULL;
     pThis->cbBuf       = 0;
+    RTMemFree(pThis->pbNewBuf);
+    pThis->pbNewBuf    = NULL;
+    pThis->cbNewBuf    = 0;
 }
 
 
@@ -216,6 +235,117 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis)
         RTMsgError("RTCrPkcs7ContentInfo_DecodeAsn1 failed on '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
     return rc;
 }
+
+
+/**
+ * Encodes the signature into the SIGNTOOLPKCS7::pbNewBuf and
+ * SIGNTOOLPKCS7::cbNewBuf members.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error message
+ *          on failure.
+ * @param   pThis               The signature to encode.
+ * @param   cVerbosity          The verbosity.
+ */
+static RTEXITCODE SignToolPkcs7_Encode(PSIGNTOOLPKCS7 pThis, unsigned cVerbosity)
+{
+    RTERRINFOSTATIC StaticErrInfo;
+    PRTASN1CORE pRoot = RTCrPkcs7ContentInfo_GetAsn1Core(&pThis->ContentInfo);
+    uint32_t cbEncoded;
+    int rc = RTAsn1EncodePrepare(pRoot, RTASN1ENCODE_F_DER, &cbEncoded, RTErrInfoInitStatic(&StaticErrInfo));
+    if (RT_SUCCESS(rc))
+    {
+        if (cVerbosity >= 4)
+            RTAsn1Dump(pRoot, 0, 0, RTStrmDumpPrintfV, g_pStdOut);
+
+        RTMemFree(pThis->pbNewBuf);
+        pThis->cbNewBuf = cbEncoded;
+        pThis->pbNewBuf = (uint8_t *)RTMemAllocZ(cbEncoded);
+        if (pThis->pbNewBuf)
+        {
+            rc = RTAsn1EncodeToBuffer(pRoot, RTASN1ENCODE_F_DER, pThis->pbNewBuf, pThis->cbNewBuf,
+                                      RTErrInfoInitStatic(&StaticErrInfo));
+            if (RT_SUCCESS(rc))
+            {
+                if (cVerbosity > 1)
+                    RTMsgInfo("Encoded signature to %u bytes", cbEncoded);
+                return RTEXITCODE_SUCCESS;
+            }
+            RTMsgError("RTAsn1EncodeToBuffer failed: %Rrc", rc);
+
+            RTMemFree(pThis->pbNewBuf);
+            pThis->pbNewBuf = NULL;
+        }
+        else
+            RTMsgError("Failed to allocate %u bytes!", cbEncoded);
+    }
+    else
+        RTMsgError("RTAsn1EncodePrepare failed: %Rrc - %s", rc, StaticErrInfo.szMsg);
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
+ * Adds the @a pSrc signature as a nested signature.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error message
+ *          on failure.
+ * @param   pThis               The signature to modify.
+ * @param   pSrc                The signature to add as nested.
+ * @param   cVerbosity          The verbosity.
+ */
+static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTOOLPKCS7 pSrc, unsigned cVerbosity)
+{
+    PRTCRPKCS7SIGNERINFO pSignerInfo = pThis->pSignedData->SignerInfos.papItems[0];
+    int32_t iPos = RTCrPkcs7Attributes_Append(&pSignerInfo->UnauthenticatedAttributes);
+    if (iPos >= 0)
+    {
+        PRTCRPKCS7ATTRIBUTE pAttr = pSignerInfo->UnauthenticatedAttributes.papItems[iPos];
+        int rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_MS_NESTED_SIGNATURE, pAttr->Allocation.pAllocator);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
+            Assert(pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_NOT_PRESENT);
+            Assert(pAttr->uValues.pContentInfos == NULL);
+            pAttr->enmType = RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE;
+            rc = RTAsn1MemAllocZ(&pAttr->Allocation, (void **)&pAttr->uValues.pContentInfos,
+                                 sizeof(*pAttr->uValues.pContentInfos));
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTCrPkcs7SetOfContentInfos_Init(pAttr->uValues.pContentInfos, pAttr->Allocation.pAllocator);
+                if (RT_SUCCESS(rc))
+                {
+                    iPos = RTCrPkcs7SetOfContentInfos_Append(pAttr->uValues.pContentInfos);
+                    if (iPos >= 0)
+                    {
+                        PRTCRPKCS7CONTENTINFO pCntInfo = pAttr->uValues.pContentInfos->papItems[iPos];
+                        rc = RTCrPkcs7ContentInfo_Clone(pCntInfo, &pSrc->ContentInfo, pAttr->Allocation.pAllocator);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (cVerbosity > 0)
+                                RTMsgInfo("Added nested signature");
+                            return RTEXITCODE_SUCCESS;
+                        }
+
+                        RTMsgError("RTCrPkcs7ContentInfo_Clone failed: %Rrc", iPos);
+                    }
+                    else
+                        RTMsgError("RTCrPkcs7ContentInfos_Append failed: %Rrc", iPos);
+                }
+                else
+                    RTMsgError("RTCrPkcs7ContentInfos_Init failed: %Rrc", rc);
+            }
+            else
+                RTMsgError("RTAsn1MemAllocZ failed: %Rrc", rc);
+        }
+        else
+            RTMsgError("RTAsn1ObjId_InitFromString failed: %Rrc", rc);
+    }
+    else
+        RTMsgError("RTCrPkcs7Attributes_Append failed: %Rrc", iPos);
+    NOREF(cVerbosity);
+    return RTEXITCODE_FAILURE;
+}
+
 
 
 /**
@@ -305,6 +435,228 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
     return RTEXITCODE_FAILURE;
 
 }
+
+
+/**
+ * Calculates the checksum of an executable.
+ *
+ * @returns Success indicator (errors are reported)
+ * @param   pThis               The exe file to checksum.
+ * @param   hFile               The file handle.
+ * @param   puCheckSum          Where to return the checksum.
+ */
+static bool SignToolPkcs7Exe_CalcPeCheckSum(PSIGNTOOLPKCS7EXE pThis, RTFILE hFile, uint32_t *puCheckSum)
+{
+#ifdef RT_OS_WINDOWS
+    /*
+     * Try use IMAGEHLP!MapFileAndCheckSumW first.
+     */
+    PRTUTF16 pwszPath;
+    int rc = RTStrToUtf16(pThis->pszFilename, &pwszPath);
+    if (RT_SUCCESS(rc))
+    {
+        decltype(MapFileAndCheckSumW) *pfnMapFileAndCheckSumW;
+        pfnMapFileAndCheckSumW = (decltype(MapFileAndCheckSumW) *)RTLdrGetSystemSymbol("IMAGEHLP.DLL", "MapFileAndCheckSumW");
+        if (pfnMapFileAndCheckSumW)
+        {
+            DWORD uHeaderSum = UINT32_MAX;
+            DWORD uCheckSum  = UINT32_MAX;
+            DWORD dwRc = pfnMapFileAndCheckSumW(pwszPath, &uHeaderSum, &uCheckSum);
+            if (dwRc == CHECKSUM_SUCCESS)
+            {
+                *puCheckSum = uCheckSum;
+                return true;
+            }
+        }
+    }
+#endif
+
+    RT_NOREF(pThis, hFile, puCheckSum);
+    RTMsgError("Implement check sum calcuation fallback!");
+    return false;
+}
+
+
+/**
+ * Writes the signature to the file.
+ *
+ * This has the side-effect of closing the hLdrMod member.  So, it can only be
+ * called once!
+ *
+ * Caller must have called SignToolPkcs7_Encode() prior to this function.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error
+ *          message on failure.
+ * @param   pThis               The file which to write.
+ * @param   cVerbosity          The verbosity.
+ */
+static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis, unsigned cVerbosity)
+{
+    AssertReturn(pThis->cbNewBuf && pThis->pbNewBuf, RTEXITCODE_FAILURE);
+
+    /*
+     * Get the file header offset and arch before closing the destination handle.
+     */
+    uint32_t offNtHdrs;
+    int rc = RTLdrQueryProp(pThis->hLdrMod, RTLDRPROP_FILE_OFF_HEADER, &offNtHdrs, sizeof(offNtHdrs));
+    if (RT_SUCCESS(rc))
+    {
+        RTLDRARCH enmLdrArch = RTLdrGetArch(pThis->hLdrMod);
+        if (enmLdrArch != RTLDRARCH_INVALID)
+        {
+            RTLdrClose(pThis->hLdrMod);
+            pThis->hLdrMod = NIL_RTLDRMOD;
+            unsigned cbNtHdrs = 0;
+            switch (enmLdrArch)
+            {
+                case RTLDRARCH_AMD64:
+                    cbNtHdrs = sizeof(IMAGE_NT_HEADERS64);
+                    break;
+                case RTLDRARCH_X86_32:
+                    cbNtHdrs = sizeof(IMAGE_NT_HEADERS32);
+                    break;
+                default:
+                    RTMsgError("Unknown image arch: %d", enmLdrArch);
+            }
+            if (cbNtHdrs > 0)
+            {
+                if (cVerbosity > 0)
+                    RTMsgInfo("offNtHdrs=%#x cbNtHdrs=%u\n", offNtHdrs, cbNtHdrs);
+
+                /*
+                 * Open the executable file for writing.
+                 */
+                RTFILE hFile;
+                rc = RTFileOpen(&hFile, pThis->pszFilename, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Read the file header and locate the security directory entry. */
+                    union
+                    {
+                        IMAGE_NT_HEADERS32 NtHdrs32;
+                        IMAGE_NT_HEADERS64 NtHdrs64;
+                    } uBuf;
+                    PIMAGE_DATA_DIRECTORY pSecDir = cbNtHdrs == sizeof(IMAGE_NT_HEADERS64)
+                                                  ? &uBuf.NtHdrs64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]
+                                                  : &uBuf.NtHdrs32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
+
+                    rc = RTFileReadAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                    if (   RT_SUCCESS(rc)
+                        && uBuf.NtHdrs32.Signature == IMAGE_NT_SIGNATURE)
+                    {
+                        /*
+                         * Drop any old signature by truncating the file.
+                         */
+                        if (   pSecDir->Size > 8
+                            && pSecDir->VirtualAddress > offNtHdrs + sizeof(IMAGE_NT_HEADERS32))
+                        {
+                            rc = RTFileSetSize(hFile, pSecDir->VirtualAddress);
+                            if (RT_FAILURE(rc))
+                                RTMsgError("Error truncating file to %#x bytes: %Rrc", pSecDir->VirtualAddress, rc);
+                        }
+                        else
+                            rc = RTMsgErrorRc(VERR_BAD_EXE_FORMAT, "Bad security directory entry: VA=%#x Size=%#x",
+                                              pSecDir->VirtualAddress, pSecDir->Size);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Sector align the signature portion.
+                             */
+                            uint32_t const  cbWinCert = RT_OFFSETOF(WIN_CERTIFICATE, bCertificate);
+                            uint64_t        offCur    = 0;
+                            rc = RTFileGetSize(hFile, &offCur);
+                            if (   RT_SUCCESS(rc)
+                                && offCur < _2G)
+                            {
+                                if (offCur & 0x1ff)
+                                {
+                                    uint32_t cbNeeded = 0x200 - ((uint32_t)offCur & 0x1ff);
+                                    rc = RTFileWriteAt(hFile, offCur, g_abRTZero4K, cbNeeded, NULL);
+                                    if (RT_SUCCESS(rc))
+                                        offCur += cbNeeded;
+                                }
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * Write the header followed by the signature data.
+                                     */
+                                    pSecDir->VirtualAddress  = (uint32_t)offCur;
+                                    pSecDir->Size            = cbWinCert + (uint32_t)pThis->cbNewBuf;
+                                    if (cVerbosity >= 2)
+                                        RTMsgInfo("Writing %u (%#x) bytes of signature at %#x (%u).\n",
+                                                  pSecDir->Size, pSecDir->Size, pSecDir->VirtualAddress, pSecDir->VirtualAddress);
+
+                                    WIN_CERTIFICATE WinCert;
+                                    WinCert.dwLength         = pSecDir->Size;
+                                    WinCert.wRevision        = WIN_CERT_REVISION_2_0;
+                                    WinCert.wCertificateType = WIN_CERT_TYPE_PKCS_SIGNED_DATA;
+
+                                    rc = RTFileWriteAt(hFile, offCur, &WinCert, cbWinCert, NULL);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        offCur += cbWinCert;
+                                        rc = RTFileWriteAt(hFile, offCur, pThis->pbNewBuf, pThis->cbNewBuf, NULL);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            /*
+                                             * Reset the checksum (sec dir updated already) and rewrite the header.
+                                             */
+                                            uBuf.NtHdrs32.OptionalHeader.CheckSum = 0;
+                                            offCur = offNtHdrs;
+                                            rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                                            if (RT_SUCCESS(rc))
+                                                rc = RTFileFlush(hFile);
+                                            if (RT_SUCCESS(rc))
+                                            {
+                                                /*
+                                                 * Calc checksum and write out the header again.
+                                                 */
+                                                uint32_t uCheckSum = UINT32_MAX;
+                                                if (SignToolPkcs7Exe_CalcPeCheckSum(pThis, hFile, &uCheckSum))
+                                                {
+                                                    rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                                                    if (RT_SUCCESS(rc))
+                                                        rc = RTFileFlush(hFile);
+                                                    if (RT_SUCCESS(rc))
+                                                    {
+                                                        rc = RTFileClose(hFile);
+                                                        if (RT_SUCCESS(rc))
+                                                            return RTEXITCODE_SUCCESS;
+                                                        RTMsgError("RTFileClose failed: %Rrc\n", rc);
+                                                        return RTEXITCODE_FAILURE;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (RT_FAILURE(rc))
+                                    RTMsgError("Write error at %#RX64: %Rrc", offCur, rc);
+                            }
+                            else if (RT_SUCCESS(rc))
+                                RTMsgError("File to big: %'RU64 bytes", offCur);
+                            else
+                                RTMsgError("RTFileGetSize failed: %Rrc", rc);
+                        }
+                    }
+                    else if (RT_SUCCESS(rc))
+                        RTMsgError("Not NT executable header!");
+                    else
+                        RTMsgError("Error reading NT headers (%#x bytes) at %#x: %Rrc", cbNtHdrs, offNtHdrs, rc);
+                    RTFileClose(hFile);
+                }
+                else
+                    RTMsgError("Failed to open '%s' for writing: %Rrc", pThis->pszFilename, rc);
+            }
+        }
+        else
+            RTMsgError("RTLdrGetArch failed!");
+    }
+    else
+        RTMsgError("RTLdrQueryProp/RTLDRPROP_FILE_OFF_HEADER failed: %Rrc", rc);
+    return RTEXITCODE_FAILURE;
+}
+
 
 
 /*
@@ -472,7 +824,7 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
         {
             case 'v':   cVerbosity++; break;
             case 'V':   return HandleVersion(cArgs, papszArgs);
-            case 'h':   return HelpExtractExeSignerCert(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            case 'h':   return HelpAddNestedExeSignature(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
             case VINF_GETOPT_NOT_OPTION:
                 if (!pszDst)
@@ -502,13 +854,17 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
     {
         /* Ditto for the destination PKCS#7 signature. */
         SIGNTOOLPKCS7EXE Dst;
-        rcExit = SignToolPkcs7Exe_InitFromFile(&Dst, pszSrc, cVerbosity);
+        rcExit = SignToolPkcs7Exe_InitFromFile(&Dst, pszDst, cVerbosity);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
-            /* Add the source to the destination as a nested signature. */
-            //Src.pSignedData->SignerInfos.paItems
+            /* Do the signature manipulation. */
+            rcExit = SignToolPkcs7_AddNestedSignature(&Dst, &Src, cVerbosity);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SignToolPkcs7_Encode(&Dst, cVerbosity);
 
-
+            /* Update the destination executable file. */
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SignToolPkcs7Exe_WriteSignatureToFile(&Dst, cVerbosity);
             SignToolPkcs7Exe_Delete(&Dst);
         }
         SignToolPkcs7Exe_Delete(&Src);
@@ -1070,7 +1426,7 @@ static int HandleShowExeWorkerPkcs7DisplayAttrib(PSHOWEXEPKCS7 pThis, size_t off
                 PCRTCRPKCS7CONTENTINFO pContentInfo = pAttr->uValues.pContentInfos->papItems[i];
                 int rc2;
                 if (RTCrPkcs7ContentInfo_IsSignedData(pContentInfo))
-                    rc2 = HandleShowExeWorkerPkcs7Display(pThis, pContentInfo->u.pSignedData, offPrefix2);
+                    rc2 = HandleShowExeWorkerPkcs7Display(pThis, pContentInfo->u.pSignedData, offPrefix2, pContentInfo);
                 else
                     rc2 = RTMsgErrorRc(VERR_ASN1_UNEXPECTED_OBJ_ID, "%sPKCS#7 content in nested signature is not 'signedData': %s",
                                        pThis->szPrefix, pContentInfo->ContentType.szObjId);
@@ -1274,12 +1630,17 @@ static int HandleShowExeWorkerPkcs7DisplaySpcIdirectDataContent(PSHOWEXEPKCS7 pT
  *
  * @returns IPRT status code.
  * @param   pThis               The show exe instance data.
- * @param   offPrefix           The current prefix offset.
  * @param   pSignedData         The signed data to display.
+ * @param   offPrefix           The current prefix offset.
+ * @param   pContentInfo        The content info structure (for the size).
  */
-static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix)
+static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNEDDATA pSignedData, size_t offPrefix,
+                                           PCRTCRPKCS7CONTENTINFO pContentInfo)
 {
     pThis->szPrefix[offPrefix] = '\0';
+    RTPrintf("%sPKCS#7 signature: %u (%#x) bytes\n", pThis->szPrefix,
+             RTASN1CORE_GET_RAW_ASN1_SIZE(&pContentInfo->SeqCore.Asn1Core),
+             RTASN1CORE_GET_RAW_ASN1_SIZE(&pContentInfo->SeqCore.Asn1Core));
 
     /*
      * Display list of signing algorithms.
@@ -1413,7 +1774,7 @@ static RTEXITCODE HandleShowExeWorker(const char *pszFilename, unsigned cVerbosi
     RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&This, pszFilename, cVerbosity, enmLdrArch);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0);
+        int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
         if (RT_FAILURE(rc))
             rcExit = RTEXITCODE_FAILURE;
         SignToolPkcs7Exe_Delete(&This);
