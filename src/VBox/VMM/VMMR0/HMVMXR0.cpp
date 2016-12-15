@@ -8979,17 +8979,8 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 #endif
 
         /*
-         * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
-         * we eventually get a VM-exit for any reason.
-         *
-         * This maybe expensive as PDMApicSetTPR() can longjmp to ring-3 and which is why it's done here as it's easier and
-         * no less efficient to deal with it here than making hmR0VmxSaveGuestState() cope with longjmps safely
-         * (see VMCPU_FF_HM_UPDATE_CR3 handling).
+         * Sync the TPR shadow with our APIC state.
          */
-        /** @todo r=ramshankar: The 2nd para in the above comment is
-         *        outdated, we no longer longjmp to ring-3 on setting
-         *        the TPR, but regardless we can probably rework this
-         *        portion of the code a bit. */
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
             && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR])
         {
@@ -12239,11 +12230,9 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMixedC
     Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW);
 
     /*
-     * The TPR has already been updated, see hmR0VMXPostRunGuest(). RIP is also updated as part of the VM-exit by VT-x. Update
-     * the threshold in the VMCS, deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectPendingEvent() and
-     * resume guest execution.
+     * The TPR shadow would've been synced with the APIC TPR in hmR0VmxPostRunGuest(). We'll re-evaluate
+     * pending interrupts and inject them before the next VM-entry so we can just continue execution here.
      */
-    HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTprBelowThreshold);
     return VINF_SUCCESS;
 }
