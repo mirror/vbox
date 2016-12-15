@@ -912,69 +912,6 @@ static RTEXITCODE HelpShowExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 
 
 /**
- * Decodes the PKCS #7 blob pointed to by pThis->pbBuf.
- *
- * @returns IPRT status code.
- * @param   pThis               The show exe instance data.
- */
-static int HandleShowExeWorkerPkcs7Decode(PSHOWEXEPKCS7 pThis)
-{
-    RTERRINFOSTATIC     ErrInfo;
-    RTASN1CURSORPRIMARY PrimaryCursor;
-    RTAsn1CursorInitPrimary(&PrimaryCursor, pThis->pbBuf, (uint32_t)pThis->cbBuf, RTErrInfoInitStatic(&ErrInfo),
-                            &g_RTAsn1DefaultAllocator, 0, "WinCert");
-
-    int rc = RTCrPkcs7ContentInfo_DecodeAsn1(&PrimaryCursor.Cursor, 0, &pThis->ContentInfo, "CI");
-    if (RT_SUCCESS(rc))
-    {
-        if (RTCrPkcs7ContentInfo_IsSignedData(&pThis->ContentInfo))
-        {
-            pThis->pSignedData = pThis->ContentInfo.u.pSignedData;
-
-            /*
-             * Decode the authenticode bits.
-             */
-            if (!strcmp(pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID))
-            {
-                pThis->pIndData = pThis->pSignedData->ContentInfo.u.pIndirectDataContent;
-                Assert(pThis->pIndData);
-
-                /*
-                 * Check that things add up.
-                 */
-                rc = RTCrPkcs7SignedData_CheckSanity(pThis->pSignedData,
-                                                     RTCRPKCS7SIGNEDDATA_SANITY_F_AUTHENTICODE
-                                                     | RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
-                                                     | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
-                                                     RTErrInfoInitStatic(&ErrInfo), "SD");
-                if (RT_FAILURE(rc))
-                    RTMsgError("PKCS#7 sanity check failed for '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = RTCrSpcIndirectDataContent_CheckSanityEx(pThis->pIndData,
-                                                                  pThis->pSignedData,
-                                                                  RTCRSPCINDIRECTDATACONTENT_SANITY_F_ONLY_KNOWN_HASH,
-                                                                  RTErrInfoInitStatic(&ErrInfo));
-                    if (RT_FAILURE(rc))
-                        RTMsgError("SPC indirect data content sanity check failed for '%s': %Rrc - %s\n",
-                                   pThis->pszFilename, rc, ErrInfo.szMsg);
-                }
-            }
-            else
-                RTMsgError("Unexpected the signed content in '%s': %s (expected %s)", pThis->pszFilename,
-                           pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID);
-        }
-        else
-            RTMsgError("PKCS#7 content is inside '%s' is not 'signedData': %s\n",
-                       pThis->pszFilename, pThis->ContentInfo.ContentType.szObjId);
-    }
-    else
-        RTMsgError("RTCrPkcs7ContentInfo_DecodeAsn1 failed on '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
-    return rc;
-}
-
-
-/**
  * Display an object ID.
  *
  * @returns IPRT status code.
