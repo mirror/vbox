@@ -502,7 +502,7 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
     {
         /* Ditto for the destination PKCS#7 signature. */
         SIGNTOOLPKCS7EXE Dst;
-        RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&Dst, pszSrc, cVerbosity);
+        rcExit = SignToolPkcs7Exe_InitFromFile(&Dst, pszSrc, cVerbosity);
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             /* Add the source to the destination as a nested signature. */
@@ -1805,8 +1805,8 @@ static struct
 const g_aCommands[] =
 {
     { "extract-exe-signer-cert",        HandleExtractExeSignerCert,         HelpExtractExeSignerCert },
-#ifndef IPRT_IN_BUILD_TOOL
     { "add-nested-exe-signature",       HandleAddNestedExeSignature,        HelpAddNestedExeSignature },
+#ifndef IPRT_IN_BUILD_TOOL
     { "verify-exe",                     HandleVerifyExe,                    HelpVerifyExe },
     { "show-exe",                       HandleShowExe,                      HelpShowExe },
 #endif
