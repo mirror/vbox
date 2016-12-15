@@ -3413,7 +3413,6 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
             && APICIsEnabled(pVCpu))
         {
-            /* Setup TPR shadowing. Also setup TPR patching for 32-bit guests. */
             if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
             {
                 Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
@@ -3425,18 +3424,17 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 AssertRCReturn(rc, rc);
 
                 /*
-                 * If there are external interrupts pending but masked by the TPR value, instruct VT-x to cause a VM-exit when
-                 * the guest lowers its TPR below the highest-priority pending interrupt and we can deliver the interrupt.
-                 * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
-                 * the interrupt when we VM-exit for other reasons.
+                 * If there are interrupts pending but masked by the TPR, instruct VT-x to cause a TPR-below-threshold VM-exit
+                 * when the guest lowers its TPR below the priority of the pending interrupt so we can deliver the interrupt.
+                 * If there are no interrupts pending, set threshold to 0 to not cause any TPR-below-threshold VM-exits.
                  */
                 pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR] = u8Tpr;
                 uint32_t u32TprThreshold = 0;
                 if (fPendingIntr)
                 {
                     /* Bits 3:0 of the TPR threshold field correspond to bits 7:4 of the TPR (which is the Task-Priority Class). */
-                    const uint8_t u8PendingPriority = (u8PendingIntr >> 4) & 0xf;
-                    const uint8_t u8TprPriority     = (u8Tpr >> 4) & 0xf;
+                    const uint8_t u8PendingPriority = u8PendingIntr >> 4;
+                    const uint8_t u8TprPriority     = u8Tpr >> 4;
                     if (u8PendingPriority <= u8TprPriority)
                         u32TprThreshold = u8PendingPriority;
                     else
