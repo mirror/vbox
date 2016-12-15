@@ -48,22 +48,23 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pT
      * Check the immediate level, unless we're continuing a previous search.
      * Note! We ASSUME a single signing time attribute, which simplifies the interface.
      */
-    uint32_t                cAttrsLeft;
-    PCRTCRPKCS7ATTRIBUTE    pAttr;
+    uint32_t                    cAttrsLeft;
+    PRTCRPKCS7ATTRIBUTE const  *ppAttr;
     if (!ppSignerInfo || *ppSignerInfo == NULL)
     {
         cAttrsLeft = pThis->AuthenticatedAttributes.cItems;
-        pAttr      = pThis->AuthenticatedAttributes.paItems;
+        ppAttr     = pThis->AuthenticatedAttributes.papItems;
         while (cAttrsLeft-- > 0)
         {
+            PCRTCRPKCS7ATTRIBUTE pAttr = *ppAttr;
             if (   pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME
                 && pAttr->uValues.pSigningTime->cItems > 0)
             {
                 if (ppSignerInfo)
                     *ppSignerInfo = pThis;
-                return &pAttr->uValues.pSigningTime->paItems[0];
+                return pAttr->uValues.pSigningTime->papItems[0];
             }
-            pAttr++;
+            ppAttr++;
         }
     }
     else if (*ppSignerInfo == pThis)
@@ -73,48 +74,51 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pT
      * Check counter signatures.
      */
     cAttrsLeft = pThis->UnauthenticatedAttributes.cItems;
-    pAttr      = pThis->UnauthenticatedAttributes.paItems;
+    ppAttr     = pThis->UnauthenticatedAttributes.papItems;
     while (cAttrsLeft-- > 0)
     {
+        PCRTCRPKCS7ATTRIBUTE pAttr = *ppAttr;
         if (pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_COUNTER_SIGNATURES)
         {
-            uint32_t              cSignatures = pAttr->uValues.pCounterSignatures->cItems;
-            PCRTCRPKCS7SIGNERINFO pSignature  = pAttr->uValues.pCounterSignatures->paItems;
+            uint32_t               cSignatures = pAttr->uValues.pCounterSignatures->cItems;
+            PRTCRPKCS7SIGNERINFO  *ppSignature = pAttr->uValues.pCounterSignatures->papItems;
 
             /* Skip past the previous counter signature. */
             if (ppSignerInfo && *ppSignerInfo != NULL)
                 while (cSignatures > 0)
                 {
                     cSignatures--;
-                    if (pSignature == *ppSignerInfo)
+                    if (*ppSignature == *ppSignerInfo)
                     {
                         *ppSignerInfo = NULL;
-                        pSignature++;
+                        ppSignature++;
                         break;
                     }
-                    pSignature++;
+                    ppSignature++;
                 }
 
             /* Search the counter signatures (if any remaining). */
             while (cSignatures-- > 0)
             {
-                uint32_t                cCounterAttrsLeft = pSignature->AuthenticatedAttributes.cItems;
-                PCRTCRPKCS7ATTRIBUTE    pCounterAttr      = pSignature->AuthenticatedAttributes.paItems;
+                PCRTCRPKCS7SIGNERINFO       pSignature        = *ppSignature;
+                uint32_t                    cCounterAttrsLeft = pSignature->AuthenticatedAttributes.cItems;
+                PRTCRPKCS7ATTRIBUTE const  *ppCounterAttr     = pSignature->AuthenticatedAttributes.papItems;
                 while (cCounterAttrsLeft-- > 0)
                 {
+                    PCRTCRPKCS7ATTRIBUTE pCounterAttr = *ppCounterAttr;
                     if (   pCounterAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_SIGNING_TIME
                         && pCounterAttr->uValues.pSigningTime->cItems > 0)
                     {
                         if (ppSignerInfo)
                             *ppSignerInfo = pSignature;
-                        return &pCounterAttr->uValues.pSigningTime->paItems[0];
+                        return pCounterAttr->uValues.pSigningTime->papItems[0];
                     }
-                    pCounterAttr++;
+                    ppCounterAttr++;
                 }
-                pSignature++;
+                ppSignature++;
             }
         }
-        pAttr++;
+        ppAttr++;
     }
 
     /*
@@ -127,28 +131,30 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pT
 }
 
 
-RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7CONTENTINFO *ppContentInfo)
+RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pThis, PCRTCRPKCS7CONTENTINFO *ppContentInfoRet)
 {
     /*
      * Assume there is only one, so no need to enumerate anything here.
      */
-    uint32_t             cAttrsLeft = pThis->UnauthenticatedAttributes.cItems;
-    PCRTCRPKCS7ATTRIBUTE pAttr      = pThis->UnauthenticatedAttributes.paItems;
+    uint32_t                    cAttrsLeft  = pThis->UnauthenticatedAttributes.cItems;
+    PRTCRPKCS7ATTRIBUTE const  *ppAttr      = pThis->UnauthenticatedAttributes.papItems;
     while (cAttrsLeft-- > 0)
     {
+        PCRTCRPKCS7ATTRIBUTE pAttr = *ppAttr;
         if (pAttr->enmType == RTCRPKCS7ATTRIBUTETYPE_MS_TIMESTAMP)
         {
-            uint32_t                cLeft        = pAttr->uValues.pContentInfos->cItems;
-            PCRTCRPKCS7CONTENTINFO  pContentInfo = &pAttr->uValues.pContentInfos->paItems[0];
+            uint32_t                     cLeft         = pAttr->uValues.pContentInfos->cItems;
+            PRTCRPKCS7CONTENTINFO const *ppContentInfo = pAttr->uValues.pContentInfos->papItems;
             while (cLeft-- > 0)
             {
+                PCRTCRPKCS7CONTENTINFO pContentInfo = *ppContentInfo;
                 if (RTAsn1ObjId_CompareWithString(&pContentInfo->ContentType, RTCRPKCS7SIGNEDDATA_OID) == 0)
                 {
                     if (RTAsn1ObjId_CompareWithString(&pContentInfo->u.pSignedData->ContentInfo.ContentType,
                                                       RTCRTSPTSTINFO_OID) == 0)
                     {
-                        if (ppContentInfo)
-                            *ppContentInfo = pContentInfo;
+                        if (ppContentInfoRet)
+                            *ppContentInfoRet = pContentInfo;
                         return &pContentInfo->u.pSignedData->ContentInfo.u.pTstInfo->GenTime;
                     }
                 }
@@ -156,14 +162,14 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pT
                 pContentInfo++;
             }
         }
-        pAttr++;
+        ppAttr++;
     }
 
     /*
      * No signature was found.
      */
-    if (ppContentInfo)
-        *ppContentInfo = NULL;
+    if (ppContentInfoRet)
+        *ppContentInfoRet = NULL;
 
     return NULL;
 }
@@ -188,9 +194,12 @@ RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(PCRTCRPKCS7SETOFCERTS pCerti
                                                     PCRTCRX509NAME pIssuer, PCRTASN1INTEGER pSerialNumber)
 {
     for (uint32_t i = 0; i < pCertificates->cItems; i++)
-        if (   pCertificates->paItems[i].enmChoice == RTCRPKCS7CERTCHOICE_X509
-            && RTCrX509Certificate_MatchIssuerAndSerialNumber(pCertificates->paItems[i].u.pX509Cert, pIssuer, pSerialNumber))
-            return pCertificates->paItems[i].u.pX509Cert;
+    {
+        PCRTCRPKCS7CERT pCert = pCertificates->papItems[i];
+        if (   pCert->enmChoice == RTCRPKCS7CERTCHOICE_X509
+            && RTCrX509Certificate_MatchIssuerAndSerialNumber(pCert->u.pX509Cert, pIssuer, pSerialNumber))
+            return pCert->u.pX509Cert;
+    }
     return NULL;
 }
 

@@ -79,11 +79,127 @@ static DECLCALLBACK(int)  rtAsn1EFenceAllocator_Realloc(PCRTASN1ALLOCATORVTABLE 
 }
 
 
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnFreeArray} */
+static DECLCALLBACK(void) rtAsn1EFenceAllocator_FreeArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
+                                                          void **papvArray)
+{
+    RT_NOREF_PV(pThis);
+    Assert(papvArray);
+    Assert(pAllocation->cbEntry);
+    Assert(pAllocation->cEntriesAllocated <= pAllocation->cPointersAllocated);
+
+    uint32_t i = pAllocation->cEntriesAllocated;
+    while (i-- > 0)
+    {
+        RTMemEfFreeNP(papvArray[i]);
+        papvArray[i] = NULL;
+    }
+    RTMemEfFreeNP(papvArray);
+
+    pAllocation->cEntriesAllocated  = 0;
+    pAllocation->cPointersAllocated = 0;
+}
+
+
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnGrowArray} */
+static DECLCALLBACK(int) rtAsn1EFenceAllocator_GrowArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
+                                                         void ***ppapvArray, uint32_t cMinEntries)
+{
+    RT_NOREF_PV(pThis);
+    Assert(pAllocation->cbEntry);
+    Assert(pAllocation->cEntriesAllocated <= pAllocation->cPointersAllocated);
+
+    /*
+     * Resize the pointer array.
+     */
+    void **papvArray = *ppapvArray;
+    void *pvPointers = RTMemEfReallocNP(papvArray, cMinEntries * sizeof(void *), RTMEM_TAG);
+    if (pvPointers)
+    {
+        *ppapvArray = papvArray = (void **)pvPointers;
+        if (cMinEntries > pAllocation->cPointersAllocated) /* possible on multiple shrink failures */
+            RT_BZERO(&papvArray[pAllocation->cPointersAllocated],
+                     (cMinEntries - pAllocation->cPointersAllocated) * sizeof(void *));
+        else
+            AssertFailed();
+        pAllocation->cPointersAllocated = cMinEntries;
+    }
+    else if (cMinEntries > pAllocation->cPointersAllocated)
+        return VERR_NO_MEMORY;
+    /* else: possible but unlikely */
+
+    /*
+     * Add more entries.
+     */
+    while (pAllocation->cEntriesAllocated < cMinEntries)
+    {
+        void *pv;
+        papvArray[pAllocation->cEntriesAllocated] = pv = RTMemEfAllocZNP(pAllocation->cbEntry, RTMEM_TAG);
+        if (pv)
+            pAllocation->cEntriesAllocated++;
+        else
+            return VERR_NO_MEMORY;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnShrinkArray} */
+static DECLCALLBACK(void) rtAsn1EFenceAllocator_ShrinkArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
+                                                            void ***ppapvArray, uint32_t cNew, uint32_t cCurrent)
+{
+    RT_NOREF_PV(pThis);
+    Assert(pAllocation->cbEntry);
+    Assert(pAllocation->cEntriesAllocated <= pAllocation->cPointersAllocated);
+
+    /*
+     * We always free and resize.
+     */
+    Assert(pAllocation->cEntriesAllocated == cCurrent);
+    Assert(cNew < cCurrent);
+
+    /* Free entries. */
+    void **papvArray = *ppapvArray;
+    while (cCurrent-- > cNew)
+    {
+        RTMemEfFreeNP(papvArray[cCurrent]);
+        papvArray[cCurrent] = NULL;
+    }
+    pAllocation->cEntriesAllocated = cNew;
+
+    /* Try resize pointer array.  Failure here is a genuine possibility since the
+       efence code will try allocate a new block.  This causes extra fun in the
+       grow method above. */
+    void *pvPointers = RTMemEfReallocNP(papvArray, cNew * sizeof(void *), RTMEM_TAG);
+    if (pvPointers)
+    {
+        *ppapvArray = (void **)pvPointers;
+        pAllocation->cPointersAllocated = cNew;
+    }
+}
+
+
 /** The Electric Fence ASN.1 allocator. */
 RT_DECL_DATA_CONST(RTASN1ALLOCATORVTABLE const) g_RTAsn1EFenceAllocator =
 {
     rtAsn1EFenceAllocator_Free,
     rtAsn1EFenceAllocator_Alloc,
-    rtAsn1EFenceAllocator_Realloc
+    rtAsn1EFenceAllocator_Realloc,
+    rtAsn1EFenceAllocator_FreeArray,
+    rtAsn1EFenceAllocator_GrowArray,
+    rtAsn1EFenceAllocator_ShrinkArray
 };
+
+#if 0 && defined(IN_RING3) /* for efence testing */
+RT_DECL_DATA_CONST(RTASN1ALLOCATORVTABLE const) g_RTAsn1DefaultAllocator =
+{
+    rtAsn1EFenceAllocator_Free,
+    rtAsn1EFenceAllocator_Alloc,
+    rtAsn1EFenceAllocator_Realloc,
+    rtAsn1EFenceAllocator_FreeArray,
+    rtAsn1EFenceAllocator_GrowArray,
+    rtAsn1EFenceAllocator_ShrinkArray
+};
+#endif
 

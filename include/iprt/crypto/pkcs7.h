@@ -224,11 +224,11 @@ RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetSigningTime(PCRTCRPKCS7SIGNERINFO pT
  *
  * @returns Pointer to the signing time if found, NULL if not.
  * @param   pThis               The SignerInfo to search.
- * @param   ppContentInfo       Where to return the pointer to the counter
+ * @param   ppContentInfoRet    Where to return the pointer to the counter
  *                              signature, optional.
  */
 RTDECL(PCRTASN1TIME) RTCrPkcs7SignerInfo_GetMsTimestamp(PCRTCRPKCS7SIGNERINFO pThis,
-                                                        struct RTCRPKCS7CONTENTINFO const **ppContentInfo);
+                                                        struct RTCRPKCS7CONTENTINFO const **ppContentInfoRet);
 
 
 

@@ -74,54 +74,46 @@ typedef RTASN1MEMCONTENT *PRTASN1MEMCONTENT;
 
 
 
-
-RTDECL(int) RTAsn1MemGrowArray(PRTASN1ALLOCATION pAllocation, void **ppvArray, size_t cbEntry,
-                               uint32_t cCurrent, uint32_t cNew)
+RTDECL(int) RTAsn1MemResizeArray(PRTASN1ARRAYALLOCATION pAllocation, void ***ppapvArray, uint32_t cCurrent, uint32_t cNew)
 {
     AssertReturn(pAllocation->pAllocator != NULL, VERR_WRONG_ORDER);
-    AssertReturn(cbEntry > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(cNew > cCurrent, VERR_INVALID_PARAMETER);
+    AssertReturn(pAllocation->cbEntry > 0, VERR_WRONG_ORDER);
+    AssertReturn(cCurrent <= pAllocation->cEntriesAllocated, VERR_INVALID_PARAMETER);
+    AssertReturn(cCurrent <= pAllocation->cPointersAllocated, VERR_INVALID_PARAMETER);
     AssertReturn(cNew < _1M, VERR_OUT_OF_RANGE);
+    Assert(pAllocation->cEntriesAllocated <= pAllocation->cPointersAllocated);
 
-    pAllocation->cReallocs++;
-
-    void *pvOld = *ppvArray;
-
-    /* Initial allocation? */
-    if (cCurrent == 0)
+    /*
+     * Is there sufficent space allocated already?
+     *
+     * We keep unused entires ZEROed, therefore we must always call the allocator
+     * when shrinking (this also helps with the electric fence allocator).
+     */
+    if (cNew <= pAllocation->cEntriesAllocated)
     {
-        AssertReturn(pvOld == NULL, VERR_INVALID_PARAMETER);
-        AssertReturn(cNew != 0, VERR_INVALID_PARAMETER);
-        return pAllocation->pAllocator->pfnAlloc(pAllocation->pAllocator, pAllocation, ppvArray, cNew * cbEntry);
+        if (cCurrent <= cNew)
+            return VINF_SUCCESS;
+        pAllocation->pAllocator->pfnShrinkArray(pAllocation->pAllocator, pAllocation, ppapvArray, cCurrent, cNew);
+        return VINF_SUCCESS;
     }
 
-    /* Do we need to grow the allocation or did we already allocate sufficient memory in a previous call? */
-    size_t cbNew = cNew * cbEntry;
-    if (pAllocation->cbAllocated < cbNew)
+    /*
+     * Must grow (or do initial alloc).
+     */
+    pAllocation->cResizeCalls++;
+    return pAllocation->pAllocator->pfnGrowArray(pAllocation->pAllocator, pAllocation, ppapvArray, cNew);
+}
+
+
+RTDECL(void) RTAsn1MemFreeArray(PRTASN1ARRAYALLOCATION pAllocation, void **papvArray)
+{
+    Assert(pAllocation->pAllocator != NULL);
+    if (papvArray)
     {
-        /* Need to grow.  Adjust the new size according to how many times we've been called. */
-        if (pAllocation->cReallocs > 2)
-        {
-            if (pAllocation->cReallocs > 8)
-                cNew += 8;
-            else if (pAllocation->cReallocs < 4)
-                cNew += 2;
-            else
-                cNew += 4;
-            cbNew += cNew * cbEntry;
-        }
-
-        int rc = pAllocation->pAllocator->pfnRealloc(pAllocation->pAllocator, pAllocation, pvOld, ppvArray, cbNew);
-        if (RT_FAILURE(rc))
-            return rc;
-        Assert(pAllocation->cbAllocated >= cbNew);
-
-        /* Clear the memory. */
-        size_t cbOld = cCurrent * cbEntry;
-        RT_BZERO((uint8_t *)*ppvArray + cbOld, pAllocation->cbAllocated - cbOld);
+        pAllocation->pAllocator->pfnFreeArray(pAllocation->pAllocator, pAllocation, papvArray);
+        Assert(pAllocation->cPointersAllocated == 0);
+        Assert(pAllocation->cEntriesAllocated == 0);
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -170,6 +162,22 @@ RTDECL(PRTASN1ALLOCATION) RTAsn1MemInitAllocation(PRTASN1ALLOCATION pAllocation,
     pAllocation->cReallocs   = 0;
     pAllocation->uReserved0  = 0;
     pAllocation->pAllocator  = pAllocator;
+    return pAllocation;
+}
+
+
+RTDECL(PRTASN1ARRAYALLOCATION) RTAsn1MemInitArrayAllocation(PRTASN1ARRAYALLOCATION pAllocation,
+                                                            PCRTASN1ALLOCATORVTABLE pAllocator, size_t cbEntry)
+{
+    Assert(cbEntry >= sizeof(RTASN1CORE));
+    Assert(cbEntry < _1M);
+    Assert(RT_ALIGN_Z(cbEntry, sizeof(void *)) == cbEntry);
+    pAllocation->cbEntry            = (uint32_t)cbEntry;
+    pAllocation->cPointersAllocated = 0;
+    pAllocation->cEntriesAllocated  = 0;
+    pAllocation->cResizeCalls       = 0;
+    pAllocation->uReserved0         = 0;
+    pAllocation->pAllocator         = pAllocator;
     return pAllocation;
 }
 

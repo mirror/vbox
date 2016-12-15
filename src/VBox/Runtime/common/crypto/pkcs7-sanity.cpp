@@ -67,14 +67,14 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
     if (fFlags & RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH)
         for (uint32_t i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
         {
-            if (RTCrX509AlgorithmIdentifier_QueryDigestType(&pSignedData->DigestAlgorithms.paItems[i]) == RTDIGESTTYPE_INVALID)
+            if (RTCrX509AlgorithmIdentifier_QueryDigestType(pSignedData->DigestAlgorithms.papItems[i]) == RTDIGESTTYPE_INVALID)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_UNKNOWN_DIGEST_ALGORITHM,
                                      "%s: SignedData.DigestAlgorithms[%i] is not known: %s",
-                                     pszErrorTag, i, pSignedData->DigestAlgorithms.paItems[i].Algorithm.szObjId);
-            if (pSignedData->DigestAlgorithms.paItems[i].Parameters.enmType != RTASN1TYPE_NULL)
+                                     pszErrorTag, i, pSignedData->DigestAlgorithms.papItems[i]->Algorithm.szObjId);
+            if (pSignedData->DigestAlgorithms.papItems[i]->Parameters.enmType != RTASN1TYPE_NULL)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_PARAMS_NOT_IMPL,
                                      "%s: SignedData.DigestAlgorithms[%i] has parameters: tag=%u",
-                                     pszErrorTag, i, pSignedData->DigestAlgorithms.paItems[i].Parameters.u.Core.uTag);
+                                     pszErrorTag, i, pSignedData->DigestAlgorithms.papItems[i]->Parameters.u.Core.uTag);
         }
 
     /*
@@ -105,7 +105,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
 
     for (uint32_t i = 0; i < pSignedData->SignerInfos.cItems; i++)
     {
-        PCRTCRPKCS7SIGNERINFO pSignerInfo = &pSignedData->SignerInfos.paItems[i];
+        PCRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[i];
 
         if (RTAsn1Integer_UnsignedCompareWithU32(&pSignerInfo->Version, RTCRPKCS7SIGNERINFO_V1) != 0)
             return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_SIGNER_INFO_VERSION,
@@ -135,7 +135,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
         /* DigestAlgorithm */
         uint32_t j = 0;
         while (   j < pSignedData->DigestAlgorithms.cItems
-               && RTCrX509AlgorithmIdentifier_Compare(&pSignedData->DigestAlgorithms.paItems[j],
+               && RTCrX509AlgorithmIdentifier_Compare(pSignedData->DigestAlgorithms.papItems[j],
                                                       &pSignerInfo->DigestAlgorithm) != 0)
             j++;
         if (j >= pSignedData->DigestAlgorithms.cItems)
@@ -161,7 +161,7 @@ static int rtCrPkcs7SignedData_CheckSanityExtra(PCRTCRPKCS7SIGNEDDATA pSignedDat
             bool fFoundMessageDigest = false;
             for (j = 0; j < pSignerInfo->AuthenticatedAttributes.cItems; j++)
             {
-                PCRTCRPKCS7ATTRIBUTE pAttrib = &pSignerInfo->AuthenticatedAttributes.paItems[j];
+                PCRTCRPKCS7ATTRIBUTE pAttrib = pSignerInfo->AuthenticatedAttributes.papItems[j];
                 if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_CONTENT_TYPE_OID) == 0)
                 {
                     if (fFoundContentInfo)

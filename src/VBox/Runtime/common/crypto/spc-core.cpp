@@ -68,8 +68,8 @@ RTCrSpcIndirectDataContent_GetPeImageObjAttrib(PCRTCRSPCINDIRECTDATACONTENT pThi
                 PCRTCRSPCSERIALIZEDOBJECTATTRIBUTES pData = pThis->Data.uValue.pPeImage->T0.File.u.pMoniker->u.pData;
                 if (pData)
                     for (uint32_t i = 0; i < pData->cItems; i++)
-                        if (pData->paItems[i].enmType == enmType)
-                            return &pData->paItems[i];
+                        if (pData->papItems[i]->enmType == enmType)
+                            return pData->papItems[i];
             }
         }
     }

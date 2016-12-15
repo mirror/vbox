@@ -58,20 +58,23 @@ static int rtCrX509Name_CheckSanityExtra(PCRTCRX509NAME pThis, uint32_t fFlags, 
 
     for (uint32_t i = 0; i < pThis->cItems; i++)
     {
-        if (pThis->cItems == 0)
+        PCRTCRX509RELATIVEDISTINGUISHEDNAME const pRdn = pThis->papItems[i];
+        if (pRdn->cItems == 0)
             return RTErrInfoSetF(pErrInfo, VERR_CR_X509_NAME_EMPTY_SUB_SET,
                                  "%s: Items[%u] has no sub components.", pszErrorTag, i);
 
-        for (uint32_t j = 0; j < pThis->paItems[i].cItems; j++)
+        for (uint32_t j = 0; j < pRdn->cItems; j++)
         {
-            if (pThis->paItems[i].paItems[j].Value.enmType != RTASN1TYPE_STRING)
+            PCRTCRX509ATTRIBUTETYPEANDVALUE const pAttr = pRdn->papItems[j];
+
+            if (pAttr->Value.enmType != RTASN1TYPE_STRING)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_X509_NAME_NOT_STRING,
                                      "%s: Items[%u].paItems[%u].enmType is %d instead of string (%d).",
-                                     pszErrorTag, i, j, pThis->paItems[i].paItems[j].Value.enmType, RTASN1TYPE_STRING);
-            if (pThis->paItems[i].paItems[j].Value.u.String.Asn1Core.cb == 0)
+                                     pszErrorTag, i, j, pAttr->Value.enmType, RTASN1TYPE_STRING);
+            if (pAttr->Value.u.String.Asn1Core.cb == 0)
                 return RTErrInfoSetF(pErrInfo, VERR_CR_X509_NAME_EMPTY_STRING,
                                      "%s: Items[%u].paItems[%u] is an empty string", pszErrorTag, i, j);
-            switch (pThis->paItems[i].paItems[j].Value.u.String.Asn1Core.uTag)
+            switch (pAttr->Value.u.String.Asn1Core.uTag)
             {
                 case ASN1_TAG_PRINTABLE_STRING:
                 case ASN1_TAG_UTF8_STRING:
@@ -85,7 +88,7 @@ static int rtCrX509Name_CheckSanityExtra(PCRTCRX509NAME pThis, uint32_t fFlags, 
                 default:
                     return RTErrInfoSetF(pErrInfo, VERR_CR_X509_INVALID_NAME_STRING_TAG,
                                          "%s: Items[%u].paItems[%u] invalid string type: %u",  pszErrorTag, i, j,
-                                         pThis->paItems[i].paItems[j].Value.u.String.Asn1Core.uTag);
+                                         pAttr->Value.u.String.Asn1Core.uTag);
             }
         }
     }

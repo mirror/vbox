@@ -74,8 +74,8 @@ static int rtCrPkcs7VerifySignedDataUsingOpenSsl(PCRTCRPKCS7CONTENTINFO pContent
         {
             PCRTCRPKCS7SETOFCERTS pCerts = &pContentInfo->u.pSignedData->Certificates;
             for (uint32_t i = 0; i < pCerts->cItems; i++)
-                if (pCerts->paItems[i].enmChoice == RTCRPKCS7CERTCHOICE_X509)
-                    rtCrOpenSslAddX509CertToStack(pAddCerts, pCerts->paItems[i].u.pX509Cert);
+                if (pCerts->papItems[i]->enmChoice == RTCRPKCS7CERTCHOICE_X509)
+                    rtCrOpenSslAddX509CertToStack(pAddCerts, pCerts->papItems[i]->u.pX509Cert);
 
 
             X509_STORE *pTrustedCerts = NULL;
@@ -237,7 +237,7 @@ static int rtCrPkcs7VerifySignerInfoAuthAttribs(PCRTCRPKCS7SIGNERINFO pSignerInf
     uint32_t    i               = pSignerInfo->AuthenticatedAttributes.cItems;
     while (i-- > 0)
     {
-        PCRTCRPKCS7ATTRIBUTE pAttrib = &pSignerInfo->AuthenticatedAttributes.paItems[i];
+        PCRTCRPKCS7ATTRIBUTE pAttrib = pSignerInfo->AuthenticatedAttributes.papItems[i];
 
         if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_CONTENT_TYPE_OID) == 0)
         {
@@ -246,10 +246,10 @@ static int rtCrPkcs7VerifySignerInfoAuthAttribs(PCRTCRPKCS7SIGNERINFO pSignerInf
             AssertReturn(pAttrib->uValues.pObjIds->cItems == 1, VERR_CR_PKCS7_INTERNAL_ERROR);
 
             if (   !(fFlags & RTCRPKCS7VERIFY_SD_F_COUNTER_SIGNATURE) /* See note about microsoft below. */
-                && RTAsn1ObjId_Compare(&pAttrib->uValues.pObjIds->paItems[0], &pSignedData->ContentInfo.ContentType) != 0)
+                && RTAsn1ObjId_Compare(pAttrib->uValues.pObjIds->papItems[0], &pSignedData->ContentInfo.ContentType) != 0)
                    return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_CONTENT_TYPE_ATTRIB_MISMATCH,
-                                        "Expected content-type %s, found %s",
-                                        &pAttrib->uValues.pObjIds->paItems[0], pSignedData->ContentInfo.ContentType.szObjId);
+                                        "Expected content-type %s, found %s", pAttrib->uValues.pObjIds->papItems[0]->szObjId,
+                                        pSignedData->ContentInfo.ContentType.szObjId);
             cContentTypes++;
         }
         else if (RTAsn1ObjId_CompareWithString(&pAttrib->Type, RTCR_PKCS9_ID_MESSAGE_DIGEST_OID) == 0)
@@ -259,20 +259,20 @@ static int rtCrPkcs7VerifySignerInfoAuthAttribs(PCRTCRPKCS7SIGNERINFO pSignerInf
             AssertReturn(pAttrib->uValues.pOctetStrings->cItems == 1, VERR_CR_PKCS7_INTERNAL_ERROR);
 
             if (!RTCrDigestMatch(*phDigest,
-                                 pAttrib->uValues.pOctetStrings->paItems[0].Asn1Core.uData.pv,
-                                 pAttrib->uValues.pOctetStrings->paItems[0].Asn1Core.cb))
+                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
+                                 pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb))
             {
                 size_t cbHash = RTCrDigestGetHashSize(*phDigest);
-                if (cbHash != pAttrib->uValues.pOctetStrings->paItems[0].Asn1Core.cb)
+                if (cbHash != pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb)
                     return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MESSAGE_DIGEST_ATTRIB_MISMATCH,
                                          "Authenticated message-digest attribute mismatch: cbHash=%#zx cbValue=%#x",
-                                         cbHash, pAttrib->uValues.pOctetStrings->paItems[0].Asn1Core.cb);
+                                         cbHash, pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.cb);
                 return RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_MESSAGE_DIGEST_ATTRIB_MISMATCH,
                                      "Authenticated message-digest attribute mismatch (cbHash=%#zx):\n"
                                      "signed: %.*Rhxs\n"
                                      "our:    %.*Rhxs\n",
                                      cbHash,
-                                     cbHash, pAttrib->uValues.pOctetStrings->paItems[0].Asn1Core.uData.pv,
+                                     cbHash, pAttrib->uValues.pOctetStrings->papItems[0]->Asn1Core.uData.pv,
                                      cbHash, RTCrDigestGetHash(*phDigest));
             }
             cMessageDigests++;
@@ -341,7 +341,7 @@ static int rtCrPkcs7VerifyFindDigest(PRTCRDIGEST phDigest, PCRTCRPKCS7SIGNEDDATA
 {
     uint32_t iDigest = pSignedData->DigestAlgorithms.cItems;
     while (iDigest-- > 0)
-        if (RTCrX509AlgorithmIdentifier_Compare(&pSignedData->DigestAlgorithms.paItems[iDigest],
+        if (RTCrX509AlgorithmIdentifier_Compare(pSignedData->DigestAlgorithms.papItems[iDigest],
                                                 &pSignerInfo->DigestAlgorithm) == 0)
         {
             RTCRDIGEST hDigest = pahDigests[iDigest];
@@ -619,11 +619,11 @@ RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint3
     uint32_t i;
     for (i = 0; i < cDigests; i++)
     {
-        rc = RTCrDigestCreateByObjId(&ahDigests[i], &pSignedData->DigestAlgorithms.paItems[i].Algorithm);
+        rc = RTCrDigestCreateByObjId(&ahDigests[i], &pSignedData->DigestAlgorithms.papItems[i]->Algorithm);
         if (RT_FAILURE(rc))
         {
             rc = RTErrInfoSetF(pErrInfo, VERR_CR_PKCS7_DIGEST_CREATE_ERROR, "Error creating digest for '%s': %Rrc",
-                               pSignedData->DigestAlgorithms.paItems[i].Algorithm.szObjId, rc);
+                               pSignedData->DigestAlgorithms.papItems[i]->Algorithm.szObjId, rc);
             break;
         }
     }
@@ -646,7 +646,7 @@ RTDECL(int) RTCrPkcs7VerifySignedData(PCRTCRPKCS7CONTENTINFO pContentInfo, uint3
             rc = VERR_CR_PKCS7_NO_SIGNER_INFOS;
             for (i = 0; i < pSignedData->SignerInfos.cItems; i++)
             {
-                PCRTCRPKCS7SIGNERINFO   pSignerInfo = &pSignedData->SignerInfos.paItems[i];
+                PCRTCRPKCS7SIGNERINFO   pSignerInfo = pSignedData->SignerInfos.papItems[i];
                 RTCRDIGEST              hThisDigest = NIL_RTCRDIGEST; /* (gcc maybe incredible stupid.) */
                 rc = rtCrPkcs7VerifyFindDigest(&hThisDigest, pSignedData, pSignerInfo, ahDigests, pErrInfo);
                 if (RT_FAILURE(rc))

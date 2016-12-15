@@ -56,18 +56,18 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
                              pSignedData->DigestAlgorithms.cItems);
 
     if (RTCrX509AlgorithmIdentifier_Compare(&pIndData->DigestInfo.DigestAlgorithm, /** @todo not entirely sure about this check... */
-                                            &pSignedData->SignerInfos.paItems[0].DigestAlgorithm) != 0)
+                                            &pSignedData->SignerInfos.papItems[0]->DigestAlgorithm) != 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_SIGNED_IND_DATA_DIGEST_ALGO_MISMATCH,
                              "SpcIndirectDataContent DigestInfo and SignerInfos algorithms mismatch: %s vs %s",
                              pIndData->DigestInfo.DigestAlgorithm.Algorithm.szObjId,
-                             pSignedData->SignerInfos.paItems[0].DigestAlgorithm.Algorithm.szObjId);
+                             pSignedData->SignerInfos.papItems[0]->DigestAlgorithm.Algorithm.szObjId);
 
     if (RTCrX509AlgorithmIdentifier_Compare(&pIndData->DigestInfo.DigestAlgorithm,
-                                            &pSignedData->DigestAlgorithms.paItems[0]) != 0)
+                                            pSignedData->DigestAlgorithms.papItems[0]) != 0)
         return RTErrInfoSetF(pErrInfo, VERR_CR_SPC_IND_DATA_DIGEST_ALGO_NOT_IN_DIGEST_ALGOS,
                              "SpcIndirectDataContent DigestInfo and SignedData.DigestAlgorithms[0] mismatch: %s vs %s",
                              pIndData->DigestInfo.DigestAlgorithm.Algorithm.szObjId,
-                             pSignedData->DigestAlgorithms.paItems[0].Algorithm.szObjId);
+                             pSignedData->DigestAlgorithms.papItems[0]->Algorithm.szObjId);
 
     if (fFlags & RTCRSPCINDIRECTDATACONTENT_SANITY_F_ONLY_KNOWN_HASH)
     {
@@ -125,7 +125,7 @@ RTDECL(int) RTCrSpcIndirectDataContent_CheckSanityEx(PCRTCRSPCINDIRECTDATACONTEN
             uint32_t cPageHashTabs = 0;
             for (uint32_t i = 0; i < pObj->u.pData->cItems; i++)
             {
-                PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttr = &pObj->u.pData->paItems[i];
+                PCRTCRSPCSERIALIZEDOBJECTATTRIBUTE pAttr = pObj->u.pData->papItems[i];
                 if (   RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V1_OID) == 0
                     || RTAsn1ObjId_CompareWithString(&pAttr->Type, RTCRSPC_PE_IMAGE_HASHES_V2_OID) == 0 )
                 {

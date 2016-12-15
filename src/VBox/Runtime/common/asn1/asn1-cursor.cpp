@@ -205,6 +205,22 @@ RTDECL(PRTASN1ALLOCATION) RTAsn1CursorInitAllocation(PRTASN1CURSOR pCursor, PRTA
 }
 
 
+RTDECL(PRTASN1ARRAYALLOCATION) RTAsn1CursorInitArrayAllocation(PRTASN1CURSOR pCursor, PRTASN1ARRAYALLOCATION pAllocation,
+                                                               size_t cbEntry)
+{
+    Assert(cbEntry >= sizeof(RTASN1CORE));
+    Assert(cbEntry < _1M);
+    Assert(RT_ALIGN_Z(cbEntry, sizeof(void *)) == cbEntry);
+    pAllocation->cbEntry            = (uint32_t)cbEntry;
+    pAllocation->cPointersAllocated = 0;
+    pAllocation->cEntriesAllocated  = 0;
+    pAllocation->cResizeCalls       = 0;
+    pAllocation->uReserved0         = 0;
+    pAllocation->pAllocator         = pCursor->pPrimary->pAllocator;
+    return pAllocation;
+}
+
+
 RTDECL(int) RTAsn1CursorReadHdr(PRTASN1CURSOR pCursor, PRTASN1CORE pAsn1Core, const char *pszErrorTag)
 {
     /*
