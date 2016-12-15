@@ -1013,6 +1013,9 @@ typedef enum RTLDRPROP
     RTLDRPROP_IMPORT_COUNT,
     /** Import module by index (32-bit) stored in the buffer. */
     RTLDRPROP_IMPORT_MODULE,
+    /** The file offset of the main executable header.
+     * This is mainly for PE, NE and LX headers, but also Mach-O FAT. */
+    RTLDRPROP_FILE_OFF_HEADER,
 
     /** End of valid properties.  */
     RTLDRPROP_END,

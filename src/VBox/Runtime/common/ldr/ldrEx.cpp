@@ -635,6 +635,10 @@ RTDECL(int) RTLdrQueryPropEx(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBits, 
             *pcbRet = sizeof(uint32_t);
             AssertReturn(cbBuf >= sizeof(uint32_t), VERR_INVALID_PARAMETER);
             break;
+        case RTLDRPROP_FILE_OFF_HEADER:
+            *pcbRet = sizeof(uint64_t);
+            AssertReturn(cbBuf == sizeof(uint32_t) || cbBuf == sizeof(uint64_t), VERR_INVALID_PARAMETER);
+            break;
 
         default:
             AssertFailedReturn(VERR_INVALID_FUNCTION);
