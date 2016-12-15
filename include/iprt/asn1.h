@@ -272,7 +272,7 @@ RTDECL(int) RTAsn1MemResizeArray(PRTASN1ARRAYALLOCATION pAllocation, void ***ppa
  *
  * @param   pAllocation The array allocation record (initialized by
  *                      RTAsn1CursorInitArrayAllocation or similar).
- * @param   pv          The memory block to free.  NULL will be ignored.
+ * @param   papvArray   The array to free.  NULL is ignored.
  */
 RTDECL(void) RTAsn1MemFreeArray(PRTASN1ARRAYALLOCATION pAllocation, void **papvArray);
 
