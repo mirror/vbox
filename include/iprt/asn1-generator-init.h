@@ -33,4 +33,6 @@
 #include <iprt/asn1-generator-pass.h>
 #define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_SETTERS_2
 #include <iprt/asn1-generator-pass.h>
+#define RTASN1TMPL_PASS                 RTASN1TMPL_PASS_ARRAY
+#include <iprt/asn1-generator-pass.h>
 

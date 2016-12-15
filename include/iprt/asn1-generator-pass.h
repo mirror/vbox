@@ -77,6 +77,7 @@
 #define RTASN1TMPL_PASS_CLONE          17
 #define RTASN1TMPL_PASS_SETTERS_1      18
 #define RTASN1TMPL_PASS_SETTERS_2      19
+#define RTASN1TMPL_PASS_ARRAY          20
 
 #define RTASN1TMPL_PASS_DECODE         24
 /** @} */
@@ -904,11 +905,111 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
     return rc; \
 } RTASN1TMPL_SEMICOLON_DUMMY()
 
-#define RTASN1TMPL_END_PCHOICE() RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_END_PCHOICE() RTASN1TMPL_SEMICOLON_DUMMY()
 
 
 # define RTASN1TMPL_SEQ_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_SEMICOLON_DUMMY()
 # define RTASN1TMPL_SET_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_SEMICOLON_DUMMY()
+
+
+#elif RTASN1TMPL_PASS == RTASN1TMPL_PASS_ARRAY
+/*
+ *
+ * Array operations.
+ *
+ */
+# define RTASN1TMPL_BEGIN_SEQCORE()                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_BEGIN_SETCORE()                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_EX(a_Name, a_Type, a_Api, a_Constraints)                     RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_DYN_BEGIN(a_enmType, a_enmMembNm, a_Allocation)              RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_MEMBER_DYN_END(a_enmType, a_enmMembNm, a_Allocation)                RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_END_SEQCORE()                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_END_SETCORE()                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_BEGIN_PCHOICE()                                                 RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_PCHOICE_ITAG_EX(a_uTag, a_enmChoice, a_PtrName, a_Name, a_Type, a_Api, a_fClue, a_Constraints) \
+                                                                                    RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_PCHOICE_XTAG_EX(a_uTag, a_enmChoice, a_PtrTnNm, a_CtxTagN, a_Name, a_Type, a_Api, a_Constraints) \
+                                                                                    RTASN1TMPL_SEMICOLON_DUMMY()
+# define RTASN1TMPL_END_PCHOICE()                                                   RTASN1TMPL_SEMICOLON_DUMMY()
+
+# define RTASN1TMPL_SET_SEQ_OF_COMMON(a_ItemType, a_ItemApi) \
+    RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Erase)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, uint32_t iPosition) \
+    { \
+        /* Check and adjust iPosition. */ \
+        uint32_t const cItems = pThis->cItems; \
+        if (iPosition < cItems) \
+        { /* likely */ } \
+        else \
+        { \
+            AssertReturn(iPosition == UINT32_MAX, VERR_OUT_OF_RANGE); \
+            AssertReturn(cItems > 0, VERR_OUT_OF_RANGE); \
+            iPosition = cItems - 1; \
+        } \
+        \
+        /* Delete the entry instance. */ \
+        RT_CONCAT(P, a_ItemType) pErased = pThis->papItems[iPosition]; \
+        if (RT_CONCAT(a_ItemApi,_IsPresent)(pErased)) \
+            RT_CONCAT(a_ItemApi,_Delete)(pErased); \
+        \
+        /* If not the final entry, shift the other entries up and place the erased on at the end. */ \
+        if (iPosition < cItems - 1) \
+        { \
+            memmove(&pThis->papItems[iPosition], &pThis->papItems[iPosition + 1], (cItems - iPosition - 1) * sizeof(void *)); \
+            pThis->papItems[cItems - 1] = pErased; \
+        } \
+        /* Commit the new array size. */ \
+        pThis->cItems = cItems - 1; \
+        \
+        /* Call the allocator to resize the array (ignore return). */ \
+        RTAsn1MemResizeArray(&pThis->Allocation, (void ***)&pThis->papItems, cItems - 1, cItems); \
+        return VINF_SUCCESS; \
+    } \
+    \
+    RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_InsertEx)(RT_CONCAT(P,RTASN1TMPL_TYPE) pThis, uint32_t iPosition, \
+                                                                  RT_CONCAT(PC, a_ItemType) pToClone, \
+                                                                  PCRTASN1ALLOCATORVTABLE pAllocator, uint32_t *piActualPos) \
+    { \
+        /* Check and adjust iPosition. */ \
+        uint32_t const cItems = pThis->cItems; \
+        if (iPosition <= cItems) \
+        { /* likely */ } \
+        else \
+        { \
+            AssertReturn(iPosition == UINT32_MAX, VERR_OUT_OF_RANGE); \
+            iPosition = cItems; \
+        } \
+        \
+        /* Ensure we've got space in the array. */ \
+        int rc = RTAsn1MemResizeArray(&pThis->Allocation, (void ***)&pThis->papItems, cItems, cItems + 1); \
+        if (RT_SUCCESS(rc)) \
+        { \
+            /* Initialize the new entry (which is currently at the end of the array) either with defaults or as a clone. */ \
+            RT_CONCAT(P,a_ItemType) pInserted = pThis->papItems[cItems]; \
+            if (RT_CONCAT(a_ItemApi,_IsPresent)(pToClone)) \
+                rc = RT_CONCAT(a_ItemApi,_Clone)(pInserted, pToClone, pAllocator); \
+            else \
+                rc = RT_CONCAT(a_ItemApi,_Init)(pInserted, pAllocator); \
+            if (RT_SUCCESS(rc)) \
+            { \
+                /* If not inserting at the end of the array, shift existing items out of the way and insert the new as req. */ \
+                if (iPosition != cItems) \
+                { \
+                    memmove(&pThis->papItems[iPosition + 1], &pThis->papItems[iPosition], (cItems - iPosition) * sizeof(void *)); \
+                    pThis->papItems[iPosition] = pInserted; \
+                } \
+                \
+                /* Done! */ \
+                if (piActualPos) \
+                    *piActualPos = iPosition; \
+                return VINF_SUCCESS; \
+            } \
+            RTAsn1MemResizeArray(&pThis->Allocation, (void ***)&pThis->papItems, cItems + 1, cItems); \
+        } \
+        return rc; \
+    } RTASN1TMPL_SEMICOLON_DUMMY()
+
+# define RTASN1TMPL_SEQ_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_SET_SEQ_OF_COMMON(a_ItemType, a_ItemApi)
+# define RTASN1TMPL_SET_OF(a_ItemType, a_ItemApi)   RTASN1TMPL_SET_SEQ_OF_COMMON(a_ItemType, a_ItemApi)
 
 
 #elif RTASN1TMPL_PASS == RTASN1TMPL_PASS_COMPARE

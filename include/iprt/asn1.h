@@ -737,22 +737,40 @@ RTDECL(int) RTAsn1SeqOfCore_Init(PRTASN1SEQOFCORE pThis, PCRTASN1COREVTABLE pVta
 RTDECL(int) RTAsn1SeqOfCore_Clone(PRTASN1SEQOFCORE pThis, PCRTASN1COREVTABLE pVtable, PCRTASN1SEQOFCORE pSrc);
 
 
-/** Defines the typedefs and prototypes for a generic sequence-of type. */
-#define RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(a_SeqOfType, a_ItemType, a_DeclMacro, a_ImplExtNm) \
-    typedef struct a_SeqOfType \
+/** Defines the typedefs and prototypes for a generic sequence-of/set-of type. */
+#define RTASN1_IMPL_GEN_SEQ_OR_SET_OF_TYPEDEFS_AND_PROTOS(a_CoreType, a_CoreMember, \
+                                                          a_ThisType, a_ItemType, a_DeclMacro, a_ImplExtNm) \
+    typedef struct a_ThisType \
     { \
-        /** Sequence core. */ \
-        RTASN1SEQUENCECORE          SeqCore; \
+        /** Sequence/set core. */ \
+        a_CoreType                  a_CoreMember; \
         /** The array allocation tracker. */ \
         RTASN1ARRAYALLOCATION       Allocation; \
         /** Items in the array. */ \
         uint32_t                    cItems; \
         /** Array. */ \
         RT_CONCAT(P,a_ItemType)    *papItems; \
-    } a_SeqOfType; \
-    typedef a_SeqOfType *RT_CONCAT(P,a_SeqOfType); \
-    typedef a_SeqOfType const *RT_CONCAT(PC,a_SeqOfType); \
-    RTASN1TYPE_STANDARD_PROTOTYPES(a_SeqOfType, a_DeclMacro, a_ImplExtNm, SeqCore.Asn1Core)
+    } a_ThisType; \
+    typedef a_ThisType *RT_CONCAT(P,a_ThisType); \
+    typedef a_ThisType const *RT_CONCAT(PC,a_ThisType); \
+    a_DeclMacro(int)  RT_CONCAT(a_ImplExtNm,_Erase)(RT_CONCAT(P,a_ThisType) pThis, uint32_t iPosition); \
+    a_DeclMacro(int)  RT_CONCAT(a_ImplExtNm,_InsertEx)(RT_CONCAT(P,a_ThisType) pThis, uint32_t iPosition, \
+                                                       RT_CONCAT(PC,a_ItemType) pToClone, \
+                                                       PCRTASN1ALLOCATORVTABLE pAllocator, uint32_t *piActualPos); \
+    /** Appends entry with default content, returns index or negative error code. */ \
+    DECLINLINE(int32_t) RT_CONCAT(a_ImplExtNm,_Append)(RT_CONCAT(P,a_ThisType) pThis) \
+    { \
+        uint32_t uPos = pThis->cItems; \
+        int rc = RT_CONCAT(a_ImplExtNm,_InsertEx)(pThis, uPos, NULL /*pToClone*/, pThis->Allocation.pAllocator, &uPos); \
+        if (RT_SUCCESS(rc)) \
+            return uPos; \
+        return rc; \
+    } \
+    RTASN1TYPE_STANDARD_PROTOTYPES(a_ThisType, a_DeclMacro, a_ImplExtNm, a_CoreMember.Asn1Core)
+
+/** Defines the typedefs and prototypes for a generic sequence-of type. */
+#define RTASN1_IMPL_GEN_SEQ_OF_TYPEDEFS_AND_PROTOS(a_SeqOfType, a_ItemType, a_DeclMacro, a_ImplExtNm) \
+    RTASN1_IMPL_GEN_SEQ_OR_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SEQUENCECORE, SeqCore, a_SeqOfType, a_ItemType, a_DeclMacro, a_ImplExtNm)
 
 
 /**
@@ -795,20 +813,7 @@ RTDECL(int) RTAsn1SetOfCore_Clone(PRTASN1SETOFCORE pThis, PCRTASN1COREVTABLE pVt
 
 /** Defines the typedefs and prototypes for a generic set-of type. */
 #define RTASN1_IMPL_GEN_SET_OF_TYPEDEFS_AND_PROTOS(a_SetOfType, a_ItemType, a_DeclMacro, a_ImplExtNm) \
-    typedef struct a_SetOfType \
-    { \
-        /** Set core. */ \
-        RTASN1SETCORE               SetCore; \
-        /** The array allocation tracker. */ \
-        RTASN1ARRAYALLOCATION       Allocation; \
-        /** Items in the array. */ \
-        uint32_t                    cItems; \
-        /** Array. */ \
-        RT_CONCAT(P,a_ItemType)    *papItems; \
-    } a_SetOfType; \
-    typedef a_SetOfType *RT_CONCAT(P,a_SetOfType); \
-    typedef a_SetOfType const *RT_CONCAT(PC,a_SetOfType); \
-    RTASN1TYPE_STANDARD_PROTOTYPES(a_SetOfType, a_DeclMacro, a_ImplExtNm, SetCore.Asn1Core)
+    RTASN1_IMPL_GEN_SEQ_OR_SET_OF_TYPEDEFS_AND_PROTOS(RTASN1SETCORE, SetCore, a_SetOfType, a_ItemType, a_DeclMacro, a_ImplExtNm)
 
 
 /*
