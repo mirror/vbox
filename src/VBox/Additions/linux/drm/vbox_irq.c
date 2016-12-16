@@ -84,8 +84,44 @@ irqreturn_t vbox_irq_handler(int irq, void *arg)
     return IRQ_HANDLED;
 }
 
+/** Check that the position hints provided by the host are suitable for GNOME
+ * shell (i.e. all screens disjoint and hints for all enabled screens) and if
+ * not replace them with default ones.  Providing valid hints improves the
+ * chances that we will get a known screen layout for pointer mapping. */
+static void validate_or_set_position_hints(struct vbox_private *vbox)
+{
+    int i, j;
+    uint16_t currentx = 0;
+    bool valid = true;
+
+    for (i = 0; i < vbox->num_crtcs; ++i) {
+        for (j = 0; j < i; ++j) {
+            struct VBVAMODEHINT *hintsi = &vbox->last_mode_hints[i];
+            struct VBVAMODEHINT *hintsj = &vbox->last_mode_hints[j];
+
+            if (hintsi->fEnabled && hintsj->fEnabled) {
+                if ((hintsi->dx >= 0xffff || hintsi->dy >= 0xffff ||
+                     hintsj->dx >= 0xffff || hintsj->dy >= 0xffff) ||
+                    (hintsi->dx < hintsj->dx + (hintsj->cx & 0x8fff) &&
+                     hintsi->dx + (hintsi->cx & 0x8fff) > hintsj->dx) ||
+                    (hintsi->dy < hintsj->dy + (hintsj->cy & 0x8fff) &&
+                     hintsi->dy + (hintsi->cy & 0x8fff) > hintsj->dy))
+                    valid = false;
+            }
+        }
+    }
+    if (!valid)
+        for (i = 0; i < vbox->num_crtcs; ++i) {
+            if (vbox->last_mode_hints[i].fEnabled) {
+                vbox->last_mode_hints[i].dx = currentx;
+                vbox->last_mode_hints[i].dy = 0;
+                currentx += vbox->last_mode_hints[i].cx & 0x8fff;
+            }
+        }
+}
+
 /**
- * Query the host for
+ * Query the host for the most recent video mode hints.
  */
 static void vbox_update_mode_hints(struct vbox_private *vbox)
 {
@@ -104,6 +140,7 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
         printk("vboxvideo: VBoxHGSMIGetModeHints failed, rc=%i.\n", rc);
         return;
     }
+    validate_or_set_position_hints(vbox);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
     drm_modeset_lock_all(dev);
 #else
@@ -119,6 +156,8 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
                     | (disconnected ? VBVA_SCREEN_F_DISABLED : VBVA_SCREEN_F_BLANK);
             vbox_connector->mode_hint.width = hints->cx & 0x8fff;
             vbox_connector->mode_hint.height = hints->cy & 0x8fff;
+            vbox_connector->vbox_crtc->x_hint = hints->dx;
+            vbox_connector->vbox_crtc->y_hint = hints->dy;
             vbox_connector->mode_hint.disconnected = disconnected;
             if (vbox_connector->vbox_crtc->disconnected != disconnected) {
                 VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, crtc_id,
@@ -126,14 +165,6 @@ static void vbox_update_mode_hints(struct vbox_private *vbox)
                                             hints->cy, 0, flags);
                 vbox_connector->vbox_crtc->disconnected = disconnected;
             }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
-            if ((hints->dx < 0xffff) && (hints->dy < 0xffff)) {
-                drm_object_property_set_value(&connector->base,
-                    dev->mode_config.suggested_x_property, hints->dx & 0x8fff);
-                drm_object_property_set_value(&connector->base,
-                    dev->mode_config.suggested_y_property, hints->dy & 0x8fff);
-            }
-#endif
         }
     }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)

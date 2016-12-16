@@ -96,7 +96,6 @@ struct vbox_private {
     struct VBVABUFFERCONTEXT *vbva_info;
     bool any_pitch;
     unsigned num_crtcs;
-    bool vga2_clone;
     /** Amount of available VRAM, including space used for buffers. */
     uint32_t full_vram_size;
     /** Amount of available VRAM, not including space used for buffers. */
@@ -128,6 +127,9 @@ struct vbox_private {
     struct work_struct hotplug_work;
     uint32_t input_mapping_width;
     uint32_t input_mapping_height;
+    /** Is user-space using an X.Org-style layout of one large frame-buffer
+     * encompassing all screen ones or is the fbdev console active? */
+    bool single_framebuffer;
     uint32_t cursor_width;
     uint32_t cursor_height;
     uint32_t cursor_hot_x;
@@ -168,6 +170,8 @@ struct vbox_crtc {
     unsigned crtc_id;
     uint32_t fb_offset;
     bool cursor_enabled;
+    uint16_t x_hint;
+    uint16_t y_hint;
 };
 
 struct vbox_encoder {

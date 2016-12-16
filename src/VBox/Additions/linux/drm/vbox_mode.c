@@ -73,6 +73,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     int width, height, bpp, pitch;
     unsigned crtc_id;
     uint16_t flags;
+    int32_t x_offset, y_offset;
 
     vbox = crtc->dev->dev_private;
     width = mode->hdisplay ? mode->hdisplay : 640;
@@ -84,6 +85,8 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
 #else
     pitch = crtc->enabled ? CRTC_FB(crtc)->pitches[0] : width * bpp / 8;
 #endif
+    x_offset = vbox->single_framebuffer ? crtc->x : vbox_crtc->x_hint;
+    y_offset = vbox->single_framebuffer ? crtc->y : vbox_crtc->y_hint;
     /* This is the old way of setting graphics modes.  It assumed one screen
      * and a frame-buffer at the start of video RAM.  On older versions of
      * VirtualBox, certain parts of the code still assume that the first
@@ -100,7 +103,7 @@ static void vbox_do_modeset(struct drm_crtc *crtc,
     flags |= (crtc->enabled && !vbox_crtc->blanked ? 0 : VBVA_SCREEN_F_BLANK);
     flags |= (vbox_crtc->disconnected ? VBVA_SCREEN_F_DISABLED : 0);
     VBoxHGSMIProcessDisplayInfo(&vbox->submit_info, vbox_crtc->crtc_id,
-                                crtc->x, crtc->y,
+                                x_offset, y_offset,
                                 crtc->x * bpp / 8 + crtc->y * pitch,
                                 pitch, width, height,
                                 vbox_crtc->blanked ? 0 : bpp, flags);
@@ -170,6 +173,56 @@ static bool vbox_crtc_mode_fixup(struct drm_crtc *crtc,
     return true;
 }
 
+/* Try to map the layout of virtual screens to the range of the input device.
+ * Return true if we need to re-set the crtc modes due to screen offset
+ * changes. */
+static bool vbox_set_up_input_mapping(struct vbox_private *vbox)
+{
+    struct drm_crtc *crtci;
+    struct drm_connector *connectori;
+    struct drm_framebuffer *fb1 = NULL;
+    bool single_framebuffer = true;
+    bool old_single_framebuffer = vbox->single_framebuffer;
+    uint16_t width = 0, height = 0;
+
+    /* Are we using an X.Org-style single large frame-buffer for all crtcs?
+     * If so then screen layout can be deduced from the crtc offsets.
+     * Same fall-back if this is the fbdev frame-buffer. */
+    list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list, head) {
+        if (fb1 == NULL) {
+            fb1 = CRTC_FB(crtci);
+            if (to_vbox_framebuffer(fb1) == &vbox->fbdev->afb)
+                break;
+        } else if (CRTC_FB(crtci) != NULL && fb1 != CRTC_FB(crtci))
+            single_framebuffer = false;
+    }
+    if (single_framebuffer) {
+        list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list, head) {
+            if (to_vbox_crtc(crtci)->crtc_id == 0) {
+                vbox->single_framebuffer = true;
+                vbox->input_mapping_width = CRTC_FB(crtci)->width;
+                vbox->input_mapping_height = CRTC_FB(crtci)->height;
+                return old_single_framebuffer != vbox->single_framebuffer;
+            }
+        }
+    }
+    /* Otherwise calculate the total span of all screens. */
+    list_for_each_entry(connectori, &vbox->dev->mode_config.connector_list,
+                        head) {
+        struct vbox_connector *vbox_connector = to_vbox_connector(connectori);
+        struct vbox_crtc *vbox_crtc = vbox_connector->vbox_crtc;
+
+        width = max(width, (uint16_t) (vbox_crtc->x_hint +
+                    vbox_connector->mode_hint.width));
+        height = max(height, (uint16_t) (vbox_crtc->y_hint +
+                    vbox_connector->mode_hint.height));
+    }
+    vbox->single_framebuffer = false;
+    vbox->input_mapping_width = width;
+    vbox->input_mapping_height = height;
+    return old_single_framebuffer != vbox->single_framebuffer;
+}
+
 static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
                 struct drm_framebuffer *old_fb,
                 int x, int y)
@@ -214,9 +267,13 @@ static int vbox_crtc_do_set_base(struct drm_crtc *crtc,
 
     /* vbox_set_start_address_crt1(crtc, (u32)gpu_addr); */
     vbox_crtc->fb_offset = gpu_addr;
-    if (vbox_crtc->crtc_id == 0) {
-        vbox->input_mapping_width = CRTC_FB(crtc)->width;
-        vbox->input_mapping_height = CRTC_FB(crtc)->height;
+    if (vbox_set_up_input_mapping(vbox)) {
+        struct drm_crtc *crtci;
+
+        list_for_each_entry(crtci, &vbox->dev->mode_config.crtc_list, head) {
+            vbox_set_view(crtc);
+            vbox_do_modeset(crtci, &crtci->mode);
+        }
     }
     return 0;
 }
@@ -241,7 +298,6 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
     rc = vbox_set_view(crtc);
     if (!rc)
         vbox_do_modeset(crtc, mode);
-    /* Note that the input mapping is always relative to the first screen. */
     VBoxHGSMIUpdateInputMapping(&vbox->submit_info, 0, 0,
                                 vbox->input_mapping_width,
                                 vbox->input_mapping_height);
@@ -504,6 +560,14 @@ static int vbox_get_modes(struct drm_connector *connector)
         ++num_modes;
     }
     vbox_set_edid(connector, preferred_width, preferred_height);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+    drm_object_property_set_value(&connector->base,
+        vbox->dev->mode_config.suggested_x_property,
+        vbox_connector->vbox_crtc->x_hint);
+    drm_object_property_set_value(&connector->base,
+        vbox->dev->mode_config.suggested_y_property,
+        vbox_connector->vbox_crtc->y_hint);
+#endif
     return num_modes;
 }
 
@@ -591,9 +655,9 @@ static int vbox_connector_init(struct drm_device *dev,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
     drm_mode_create_suggested_offset_properties(dev);
     drm_object_attach_property(&connector->base,
-                               dev->mode_config.suggested_x_property, 0);
+                               dev->mode_config.suggested_x_property, -1);
     drm_object_attach_property(&connector->base,
-                               dev->mode_config.suggested_y_property, 0);
+                               dev->mode_config.suggested_y_property, -1);
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_add(connector);
@@ -762,25 +826,27 @@ static int vbox_cursor_move(struct drm_crtc *crtc,
     uint32_t flags =   VBOX_MOUSE_POINTER_VISIBLE
                       | VBOX_MOUSE_POINTER_SHAPE
                       | VBOX_MOUSE_POINTER_ALPHA;
+    int32_t crtc_x = vbox->single_framebuffer ? crtc->x : to_vbox_crtc(crtc)->x_hint;
+    int32_t crtc_y = vbox->single_framebuffer ? crtc->y : to_vbox_crtc(crtc)->y_hint;
     uint32_t host_x, host_y;
     uint32_t hot_x = 0;
     uint32_t hot_y = 0;
     int rc;
 
     /* We compare these to unsigned later and don't need to handle negative. */
-    if (x + crtc->x < 0 || y + crtc->y < 0 || vbox->cursor_data_size == 0)
+    if (x + crtc_x < 0 || y + crtc_y < 0 || vbox->cursor_data_size == 0)
         return 0;
-    rc = VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc->x,
-                                 y + crtc->y, &host_x, &host_y);
+    rc = VBoxHGSMICursorPosition(&vbox->submit_info, true, x + crtc_x,
+                                 y + crtc_y, &host_x, &host_y);
     /* Work around a bug after save and restore in 5.0.20 and earlier. */
     if (RT_FAILURE(rc) || (host_x == 0 && host_y == 0))
         return   rc == VINF_SUCCESS ? 0
                : rc == VERR_NO_MEMORY ? -ENOMEM
                : -EINVAL;
-    if (x + crtc->x < host_x)
-        hot_x = min(host_x - x - crtc->x, vbox->cursor_width);
-    if (y + crtc->y < host_y)
-        hot_y = min(host_y - y - crtc->y, vbox->cursor_height);
+    if (x + crtc_x < host_x)
+        hot_x = min(host_x - x - crtc_x, vbox->cursor_width);
+    if (y + crtc_y < host_y)
+        hot_y = min(host_y - y - crtc_y, vbox->cursor_height);
     if (hot_x == vbox->cursor_hot_x && hot_y == vbox->cursor_hot_y)
         return 0;
     vbox->cursor_hot_x = hot_x;
