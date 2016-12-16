@@ -17,18 +17,19 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+#
+# Certificate utility.
+#
 PROGRAMS += VBoxCertUtil
 
 VBoxCertUtil_TEMPLATE = VBoxGuestR3Exe
 VBoxCertUtil_SOURCES = \
-    VBoxCertUtil.cpp \
-    VBoxCertUtil.rc
+	VBoxCertUtil.cpp \
+	VBoxCertUtil.rc
 VBoxCertUtil_LIBS = \
-    crypt32.lib
+	crypt32.lib
 
-#
 # The icon is configurable.
-#
 VBoxCertUtil.rc_INCS = $(VBoxCertUtil_0_OUTDIR)
 VBoxCertUtil.rc_DEPS = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
 VBoxCertUtil.rc_CLEAN = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
@@ -37,6 +38,34 @@ VBoxCertUtil.rc_CLEAN = $(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc
 $$(VBoxCertUtil_0_OUTDIR)/VBoxCertUtil-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_FILE) $$(VBoxCertUtil_DEFPATH)/Makefile.kmk | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
+
+
+#
+# Install all the certificates we use here.
+#
+INSTALLS += AdditionsInstCertFiles
+AdditionsInstCertFiles_TEMPLATE = VBoxGuestR3Exe
+AdditionsInstCertFiles_SOURCES  =
+AdditionsInstCertFiles_CLEAN    =
+ifdef VBOX_SIGNING_MODE
+ define def_VBoxAdditionsInstCertFiles
+  AdditionsInstCertFiles_SOURCES += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)=>$1
+  AdditionsInstCertFiles_CLEAN   += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)
+  $$$$(AdditionsInstCertFiles_0_OUTDIR)/$(1): $$(2) | $$$$(dir $$$$@)
+	$(QUIET)$(RM) -f -- "$$@"
+	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index $3 --exe "$$<" --output "$$@" --der
+ endef
+
+ if "$(VBOX_WITH_CORP_CODE_SIGNING)" == "all" || (!defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !defined(VBOX_WITH_CORP_CODE_SIGNING))
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,oracle-vbox.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,0)
+ else
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,oracle-vbox-sha1.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,0)
+  $(evalcall2 def_VBoxAdditionsInstCertFiles,oracle-vbox-sha256.cer,$(VBOX_PATH_ADDITIONS)/VBoxGuest.sys,1)
+  if defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && defined(VBOX_WITH_CORP_CODE_SIGNING)
+   $(evalcall2 def_VBoxAdditionsInstCertFiles,oracle-vbox-sha256-r3.cer,$(VBOX_PATH_ADDITIONS)/VBoxCertUtil.exe,1)
+  endif
+ endif
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
