@@ -3340,7 +3340,7 @@ ifdef VBOX_SIGNING_MODE
 	-e $(1)
 
   ## Commands for signing a driver image after link.
-  ifdef VBOX_USE_CORP_CODE_SIGNING
+  ifdef VBOX_WITH_CORP_CODE_SIGNING
    VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_CCS_SIGN_CMD,solaris_elf,$(out)))
   else
    VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_ELF_FN,$(out)))
