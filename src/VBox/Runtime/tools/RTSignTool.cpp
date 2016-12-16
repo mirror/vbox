@@ -299,6 +299,10 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
     int32_t iPos = RTCrPkcs7Attributes_Append(&pSignerInfo->UnauthenticatedAttributes);
     if (iPos >= 0)
     {
+        if (cVerbosity >= 3)
+            RTMsgInfo("Adding UnauthenticatedAttribute #%u...", iPos);
+        Assert((uint32_t)iPos < pSignerInfo->UnauthenticatedAttributes.cItems);
+
         PRTCRPKCS7ATTRIBUTE pAttr = pSignerInfo->UnauthenticatedAttributes.papItems[iPos];
         int rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_MS_NESTED_SIGNATURE, pAttr->Allocation.pAllocator);
         if (RT_SUCCESS(rc))
@@ -315,6 +319,7 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
                 if (RT_SUCCESS(rc))
                 {
                     iPos = RTCrPkcs7SetOfContentInfos_Append(pAttr->uValues.pContentInfos);
+                    Assert(iPos == 0);
                     if (iPos >= 0)
                     {
                         PRTCRPKCS7CONTENTINFO pCntInfo = pAttr->uValues.pContentInfos->papItems[iPos];
@@ -323,6 +328,12 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
                         {
                             if (cVerbosity > 0)
                                 RTMsgInfo("Added nested signature");
+                            if (cVerbosity >= 3)
+                            {
+                                RTMsgInfo("SingerInfo dump after change:");
+                                RTAsn1Dump(RTCrPkcs7SignerInfo_GetAsn1Core(pSignerInfo), 0, 2, RTStrmDumpPrintfV, g_pStdOut);
+                            }
+
                             return RTEXITCODE_SUCCESS;
                         }
 
@@ -580,8 +591,9 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                                     /*
                                      * Write the header followed by the signature data.
                                      */
+                                    uint32_t const cbZeroPad = (uint32_t)(RT_ALIGN_Z(pThis->cbNewBuf, 8) - pThis->cbNewBuf);
                                     pSecDir->VirtualAddress  = (uint32_t)offCur;
-                                    pSecDir->Size            = cbWinCert + (uint32_t)pThis->cbNewBuf;
+                                    pSecDir->Size            = cbWinCert + (uint32_t)pThis->cbNewBuf + cbZeroPad;
                                     if (cVerbosity >= 2)
                                         RTMsgInfo("Writing %u (%#x) bytes of signature at %#x (%u).\n",
                                                   pSecDir->Size, pSecDir->Size, pSecDir->VirtualAddress, pSecDir->VirtualAddress);
@@ -596,35 +608,40 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                                     {
                                         offCur += cbWinCert;
                                         rc = RTFileWriteAt(hFile, offCur, pThis->pbNewBuf, pThis->cbNewBuf, NULL);
+                                    }
+                                    if (RT_SUCCESS(rc) && cbZeroPad)
+                                    {
+                                        offCur += pThis->cbNewBuf;
+                                        rc = RTFileWriteAt(hFile, offCur, g_abRTZero4K, cbZeroPad, NULL);
+                                    }
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        /*
+                                         * Reset the checksum (sec dir updated already) and rewrite the header.
+                                         */
+                                        uBuf.NtHdrs32.OptionalHeader.CheckSum = 0;
+                                        offCur = offNtHdrs;
+                                        rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                                        if (RT_SUCCESS(rc))
+                                            rc = RTFileFlush(hFile);
                                         if (RT_SUCCESS(rc))
                                         {
                                             /*
-                                             * Reset the checksum (sec dir updated already) and rewrite the header.
+                                             * Calc checksum and write out the header again.
                                              */
-                                            uBuf.NtHdrs32.OptionalHeader.CheckSum = 0;
-                                            offCur = offNtHdrs;
-                                            rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
-                                            if (RT_SUCCESS(rc))
-                                                rc = RTFileFlush(hFile);
-                                            if (RT_SUCCESS(rc))
+                                            uint32_t uCheckSum = UINT32_MAX;
+                                            if (SignToolPkcs7Exe_CalcPeCheckSum(pThis, hFile, &uCheckSum))
                                             {
-                                                /*
-                                                 * Calc checksum and write out the header again.
-                                                 */
-                                                uint32_t uCheckSum = UINT32_MAX;
-                                                if (SignToolPkcs7Exe_CalcPeCheckSum(pThis, hFile, &uCheckSum))
+                                                rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                                                if (RT_SUCCESS(rc))
+                                                    rc = RTFileFlush(hFile);
+                                                if (RT_SUCCESS(rc))
                                                 {
-                                                    rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
+                                                    rc = RTFileClose(hFile);
                                                     if (RT_SUCCESS(rc))
-                                                        rc = RTFileFlush(hFile);
-                                                    if (RT_SUCCESS(rc))
-                                                    {
-                                                        rc = RTFileClose(hFile);
-                                                        if (RT_SUCCESS(rc))
-                                                            return RTEXITCODE_SUCCESS;
-                                                        RTMsgError("RTFileClose failed: %Rrc\n", rc);
-                                                        return RTEXITCODE_FAILURE;
-                                                    }
+                                                        return RTEXITCODE_SUCCESS;
+                                                    RTMsgError("RTFileClose failed: %Rrc\n", rc);
+                                                    return RTEXITCODE_FAILURE;
                                                 }
                                             }
                                         }
@@ -865,6 +882,7 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
             /* Update the destination executable file. */
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SignToolPkcs7Exe_WriteSignatureToFile(&Dst, cVerbosity);
+
             SignToolPkcs7Exe_Delete(&Dst);
         }
         SignToolPkcs7Exe_Delete(&Src);
@@ -1676,8 +1694,18 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
      * Display certificates (Certificates).
      */
     if (pSignedData->Certificates.cItems > 0)
+    {
         RTPrintf("%s    Certificates: %u\n", pThis->szPrefix, pSignedData->Certificates.cItems);
-        /** @todo display certificates. */
+        for (uint32_t i = 0; i < pSignedData->Certificates.cItems; i++)
+        {
+            if (i != 0)
+                RTPrintf("\n");
+            RTPrintf("%s      Certificate #%u:\n", pThis->szPrefix, i);
+            RTAsn1Dump(RTCrPkcs7Cert_GetAsn1Core(pSignedData->Certificates.papItems[i]), 0,
+                       ((uint32_t)offPrefix + 9) / 2, RTStrmDumpPrintfV, g_pStdOut);
+        }
+        /** @todo display certificates properly. */
+    }
 
     if (pSignedData->Crls.cb > 0)
         RTPrintf("%s            CRLs: %u bytes\n", pThis->szPrefix, pSignedData->Crls.cb);
