@@ -80,6 +80,292 @@ unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach)
     return 0;
 }
 
+#define KBDCHARDEF_MOD_NONE  0x00
+#define KBDCHARDEF_MOD_SHIFT 0x01
+
+typedef struct KBDCHARDEF
+{
+    uint8_t u8Scancode;
+    uint8_t u8Modifiers;
+} KBDCHARDEF;
+
+static const KBDCHARDEF g_aASCIIChars[0x80] =
+{
+    /* 0x00 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x01 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x02 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x03 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x04 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x05 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x06 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x07 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x08 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x09 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x0A ' ' */ {0x1c, KBDCHARDEF_MOD_NONE},
+    /* 0x0B ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x0C ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x0D ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x0E ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x0F ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x10 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x11 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x12 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x13 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x14 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x15 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x16 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x17 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x18 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x19 ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1A ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1B ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1C ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1D ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1E ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x1F ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+    /* 0x20 ' ' */ {0x39, KBDCHARDEF_MOD_NONE},
+    /* 0x21 '!' */ {0x02, KBDCHARDEF_MOD_NONE},
+    /* 0x22 '"' */ {0x28, KBDCHARDEF_MOD_SHIFT},
+    /* 0x23 '#' */ {0x04, KBDCHARDEF_MOD_SHIFT},
+    /* 0x24 '$' */ {0x05, KBDCHARDEF_MOD_SHIFT},
+    /* 0x25 '%' */ {0x06, KBDCHARDEF_MOD_SHIFT},
+    /* 0x26 '&' */ {0x08, KBDCHARDEF_MOD_SHIFT},
+    /* 0x27 ''' */ {0x28, KBDCHARDEF_MOD_NONE},
+    /* 0x28 '(' */ {0x0a, KBDCHARDEF_MOD_SHIFT},
+    /* 0x29 ')' */ {0x0b, KBDCHARDEF_MOD_SHIFT},
+    /* 0x2A '*' */ {0x09, KBDCHARDEF_MOD_SHIFT},
+    /* 0x2B '+' */ {0x0d, KBDCHARDEF_MOD_SHIFT},
+    /* 0x2C ',' */ {0x33, KBDCHARDEF_MOD_NONE},
+    /* 0x2D '-' */ {0x0c, KBDCHARDEF_MOD_NONE},
+    /* 0x2E '.' */ {0x34, KBDCHARDEF_MOD_NONE},
+    /* 0x2F '/' */ {0x35, KBDCHARDEF_MOD_NONE},
+    /* 0x30 '0' */ {0x0b, KBDCHARDEF_MOD_NONE},
+    /* 0x31 '1' */ {0x02, KBDCHARDEF_MOD_NONE},
+    /* 0x32 '2' */ {0x03, KBDCHARDEF_MOD_NONE},
+    /* 0x33 '3' */ {0x04, KBDCHARDEF_MOD_NONE},
+    /* 0x34 '4' */ {0x05, KBDCHARDEF_MOD_NONE},
+    /* 0x35 '5' */ {0x06, KBDCHARDEF_MOD_NONE},
+    /* 0x36 '6' */ {0x07, KBDCHARDEF_MOD_NONE},
+    /* 0x37 '7' */ {0x08, KBDCHARDEF_MOD_NONE},
+    /* 0x38 '8' */ {0x09, KBDCHARDEF_MOD_NONE},
+    /* 0x39 '9' */ {0x0a, KBDCHARDEF_MOD_NONE},
+    /* 0x3A ':' */ {0x27, KBDCHARDEF_MOD_SHIFT},
+    /* 0x3B ';' */ {0x27, KBDCHARDEF_MOD_NONE},
+    /* 0x3C '<' */ {0x33, KBDCHARDEF_MOD_SHIFT},
+    /* 0x3D '=' */ {0x0d, KBDCHARDEF_MOD_NONE},
+    /* 0x3E '>' */ {0x34, KBDCHARDEF_MOD_SHIFT},
+    /* 0x3F '?' */ {0x35, KBDCHARDEF_MOD_SHIFT},
+    /* 0x40 '@' */ {0x03, KBDCHARDEF_MOD_SHIFT},
+    /* 0x41 'A' */ {0x1e, KBDCHARDEF_MOD_SHIFT},
+    /* 0x42 'B' */ {0x30, KBDCHARDEF_MOD_SHIFT},
+    /* 0x43 'C' */ {0x2e, KBDCHARDEF_MOD_SHIFT},
+    /* 0x44 'D' */ {0x20, KBDCHARDEF_MOD_SHIFT},
+    /* 0x45 'E' */ {0x12, KBDCHARDEF_MOD_SHIFT},
+    /* 0x46 'F' */ {0x21, KBDCHARDEF_MOD_SHIFT},
+    /* 0x47 'G' */ {0x22, KBDCHARDEF_MOD_SHIFT},
+    /* 0x48 'H' */ {0x23, KBDCHARDEF_MOD_SHIFT},
+    /* 0x49 'I' */ {0x17, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4A 'J' */ {0x24, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4B 'K' */ {0x25, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4C 'L' */ {0x26, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4D 'M' */ {0x32, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4E 'N' */ {0x31, KBDCHARDEF_MOD_SHIFT},
+    /* 0x4F 'O' */ {0x18, KBDCHARDEF_MOD_SHIFT},
+    /* 0x50 'P' */ {0x19, KBDCHARDEF_MOD_SHIFT},
+    /* 0x51 'Q' */ {0x10, KBDCHARDEF_MOD_SHIFT},
+    /* 0x52 'R' */ {0x13, KBDCHARDEF_MOD_SHIFT},
+    /* 0x53 'S' */ {0x1f, KBDCHARDEF_MOD_SHIFT},
+    /* 0x54 'T' */ {0x14, KBDCHARDEF_MOD_SHIFT},
+    /* 0x55 'U' */ {0x16, KBDCHARDEF_MOD_SHIFT},
+    /* 0x56 'V' */ {0x2f, KBDCHARDEF_MOD_SHIFT},
+    /* 0x57 'W' */ {0x11, KBDCHARDEF_MOD_SHIFT},
+    /* 0x58 'X' */ {0x2d, KBDCHARDEF_MOD_SHIFT},
+    /* 0x59 'Y' */ {0x15, KBDCHARDEF_MOD_SHIFT},
+    /* 0x5A 'Z' */ {0x2c, KBDCHARDEF_MOD_SHIFT},
+    /* 0x5B '[' */ {0x1a, KBDCHARDEF_MOD_NONE},
+    /* 0x5C '\' */ {0x2b, KBDCHARDEF_MOD_NONE},
+    /* 0x5D ']' */ {0x1b, KBDCHARDEF_MOD_NONE},
+    /* 0x5E '^' */ {0x07, KBDCHARDEF_MOD_SHIFT},
+    /* 0x5F '_' */ {0x0c, KBDCHARDEF_MOD_SHIFT},
+    /* 0x60 '`' */ {0x28, KBDCHARDEF_MOD_NONE},
+    /* 0x61 'a' */ {0x1e, KBDCHARDEF_MOD_NONE},
+    /* 0x62 'b' */ {0x30, KBDCHARDEF_MOD_NONE},
+    /* 0x63 'c' */ {0x2e, KBDCHARDEF_MOD_NONE},
+    /* 0x64 'd' */ {0x20, KBDCHARDEF_MOD_NONE},
+    /* 0x65 'e' */ {0x12, KBDCHARDEF_MOD_NONE},
+    /* 0x66 'f' */ {0x21, KBDCHARDEF_MOD_NONE},
+    /* 0x67 'g' */ {0x22, KBDCHARDEF_MOD_NONE},
+    /* 0x68 'h' */ {0x23, KBDCHARDEF_MOD_NONE},
+    /* 0x69 'i' */ {0x17, KBDCHARDEF_MOD_NONE},
+    /* 0x6A 'j' */ {0x24, KBDCHARDEF_MOD_NONE},
+    /* 0x6B 'k' */ {0x25, KBDCHARDEF_MOD_NONE},
+    /* 0x6C 'l' */ {0x26, KBDCHARDEF_MOD_NONE},
+    /* 0x6D 'm' */ {0x32, KBDCHARDEF_MOD_NONE},
+    /* 0x6E 'n' */ {0x31, KBDCHARDEF_MOD_NONE},
+    /* 0x6F 'o' */ {0x18, KBDCHARDEF_MOD_NONE},
+    /* 0x70 'p' */ {0x19, KBDCHARDEF_MOD_NONE},
+    /* 0x71 'q' */ {0x10, KBDCHARDEF_MOD_NONE},
+    /* 0x72 'r' */ {0x13, KBDCHARDEF_MOD_NONE},
+    /* 0x73 's' */ {0x1f, KBDCHARDEF_MOD_NONE},
+    /* 0x74 't' */ {0x14, KBDCHARDEF_MOD_NONE},
+    /* 0x75 'u' */ {0x16, KBDCHARDEF_MOD_NONE},
+    /* 0x76 'v' */ {0x2f, KBDCHARDEF_MOD_NONE},
+    /* 0x77 'w' */ {0x11, KBDCHARDEF_MOD_NONE},
+    /* 0x78 'x' */ {0x2d, KBDCHARDEF_MOD_NONE},
+    /* 0x79 'y' */ {0x15, KBDCHARDEF_MOD_NONE},
+    /* 0x7A 'z' */ {0x2c, KBDCHARDEF_MOD_NONE},
+    /* 0x7B '{' */ {0x1a, KBDCHARDEF_MOD_SHIFT},
+    /* 0x7C '|' */ {0x2b, KBDCHARDEF_MOD_SHIFT},
+    /* 0x7D '}' */ {0x1b, KBDCHARDEF_MOD_SHIFT},
+    /* 0x7E '~' */ {0x29, KBDCHARDEF_MOD_SHIFT},
+    /* 0x7F ' ' */ {0x00, KBDCHARDEF_MOD_NONE},
+};
+
+static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> &llScancodes)
+{
+    /* Send scancodes to the VM. */
+    com::SafeArray<LONG> saScancodes(llScancodes);
+
+#if 1
+    HRESULT rc = S_OK;
+    int i;
+    for (i = 0; i < saScancodes.size(); ++i)
+    {
+        rc = pKeyboard->PutScancode(saScancodes[i]);
+        if (FAILED(rc))
+        {
+            RTMsgError("Failed to send a scancode");
+            break;
+        }
+
+        RTThreadSleep(10); /* "Typing" too fast causes lost characters. */
+    }
+#else
+    /** @todo PutScancodes does not deliver more than 20 scancodes. */
+    ULONG codesStored = 0;
+    HRESULT rc = pKeyboard->PutScancodes(ComSafeArrayAsInParam(saScancodes),
+                                         &codesStored);
+    if (SUCCEEDED(rc) && codesStored < saScancodes.size())
+    {
+        RTMsgError("Only %d scancodes were stored", codesStored);
+        rc = E_FAIL;
+    }
+#endif
+
+    return rc;
+}
+
+static void keyboardCharsToScancodes(const char *pch, size_t cchMax, std::list<LONG> &llScancodes, bool *pfShift)
+{
+    size_t cchProcessed = 0;
+    const char *p = pch;
+    while (cchProcessed < cchMax)
+    {
+        ++cchProcessed;
+        const uint8_t c = (uint8_t)*p++;
+        if (c < RT_ELEMENTS(g_aASCIIChars))
+        {
+            const KBDCHARDEF *d = &g_aASCIIChars[c];
+            if (d->u8Scancode)
+            {
+                const bool fNeedShift = RT_BOOL(d->u8Modifiers & KBDCHARDEF_MOD_SHIFT);
+                if (*pfShift != fNeedShift)
+                {
+                    *pfShift = fNeedShift;
+                    /* Press or release the SHIFT key. */
+                    llScancodes.push_back(0x2a | (fNeedShift? 0x00: 0x80));
+                }
+
+                llScancodes.push_back(d->u8Scancode);
+                llScancodes.push_back(d->u8Scancode | 0x80);
+            }
+        }
+    }
+}
+
+static HRESULT keyboardPutString(IKeyboard *pKeyboard, int argc, char **argv)
+{
+    std::list<LONG> llScancodes;
+    bool fShift = false;
+
+    /* Convert command line string(s) to the en-us keyboard scancodes. */
+    int i;
+    for (i = 1 + 1; i < argc; ++i)
+    {
+        if (llScancodes.size() > 0)
+        {
+            /* Insert a SPACE before the next string. */
+            llScancodes.push_back(0x39);
+            llScancodes.push_back(0x39 | 0x80);
+        }
+
+        keyboardCharsToScancodes(argv[i], strlen(argv[i]), llScancodes, &fShift);
+    }
+
+    /* Release SHIFT if pressed. */
+    if (fShift)
+        llScancodes.push_back(0x2a | 0x80);
+
+    return keyboardPutScancodes(pKeyboard, llScancodes);
+}
+
+static HRESULT keyboardPutFile(IKeyboard *pKeyboard, const char *pszFilename)
+{
+    std::list<LONG> llScancodes;
+    bool fShift = false;
+
+    RTFILE File = NIL_RTFILE;
+    int vrc = RTFileOpen(&File, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(vrc))
+    {
+        uint64_t cbFile = 0;
+        vrc = RTFileGetSize(File, &cbFile);
+        if (RT_SUCCESS(vrc))
+        {
+            const uint64_t cbFileMax = _64K;
+            if (cbFile <= cbFileMax)
+            {
+                const size_t cbBuffer = _4K;
+                char *pchBuf = (char *)RTMemAlloc(cbBuffer);
+                if (pchBuf)
+                {
+                    size_t cbRemaining = (size_t)cbFile;
+                    while (cbRemaining > 0)
+                    {
+                        const size_t cbToRead = cbRemaining > cbBuffer ? cbBuffer : cbRemaining;
+
+                        size_t cbRead = 0;
+                        vrc = RTFileRead(File, pchBuf, cbToRead, &cbRead);
+                        if (RT_FAILURE(vrc) || cbRead == 0)
+                            break;
+
+                        keyboardCharsToScancodes(pchBuf, cbRead, llScancodes, &fShift);
+                        cbRemaining -= cbRead;
+                    }
+
+                    RTMemFree(pchBuf);
+                }
+                else
+                    RTMsgError("Out of memory allocating %d bytes", cbBuffer);
+            }
+            else
+                RTMsgError("File size %RI64 is greater than %RI64: '%s'", cbFile, cbFileMax, pszFilename);
+        }
+        else
+            RTMsgError("Cannot get size of file '%s': %Rrc", pszFilename, vrc);
+
+        RTFileClose(File);
+    }
+    else
+        RTMsgError("Cannot open file '%s': %Rrc", pszFilename, vrc);
+
+    /* Release SHIFT if pressed. */
+    if (fShift)
+        llScancodes.push_back(0x2a | 0x80);
+
+    return keyboardPutScancodes(pKeyboard, llScancodes);
+}
+
 
 RTEXITCODE handleControlVM(HandlerArg *a)
 {
@@ -338,17 +624,47 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (FAILED(rc))
                 break;
 
-            /* Send scancodes to the VM. */
-            com::SafeArray<LONG> saScancodes(llScancodes);
-            ULONG codesStored = 0;
-            CHECK_ERROR_BREAK(pKeyboard, PutScancodes(ComSafeArrayAsInParam(saScancodes),
-                                                     &codesStored));
-            if (codesStored < saScancodes.size())
+            rc = keyboardPutScancodes(pKeyboard, llScancodes);
+        }
+        else if (!strcmp(a->argv[1], "keyboardputstring"))
+        {
+            ComPtr<IKeyboard> pKeyboard;
+            CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
+            if (!pKeyboard)
             {
-                RTMsgError("Only %d scancodes were stored", codesStored);
+                RTMsgError("Guest not running");
                 rc = E_FAIL;
                 break;
             }
+
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected ASCII string(s).", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            rc = keyboardPutString(pKeyboard, a->argc, a->argv);
+        }
+        else if (!strcmp(a->argv[1], "keyboardputfile"))
+        {
+            ComPtr<IKeyboard> pKeyboard;
+            CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
+            if (!pKeyboard)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
+
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'. Expected file name.", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            rc = keyboardPutFile(pKeyboard, a->argv[2]);
         }
         else if (!strncmp(a->argv[1], "setlinkstate", 12))
         {

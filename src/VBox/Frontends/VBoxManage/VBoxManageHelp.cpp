@@ -960,6 +960,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            pause|resume|reset|poweroff|savestate|\n"
                      "                            acpipowerbutton|acpisleepbutton|\n"
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
+                     "                            keyboardputstring <string1> [<string2> ...]|\n"
+                     "                            keyboardputfile <filename>|\n"
                      "                            setlinkstate<1-N> on|off |\n"
 #if defined(VBOX_WITH_NETFLT)
                      "                            nic<1-N> null|nat|bridged|intnet|hostonly|generic|\n"
