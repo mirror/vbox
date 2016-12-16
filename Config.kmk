@@ -6996,11 +6996,11 @@ else # !darwin
  endif
 
  VBOX_JAVA      = "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
- VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac(HOSTSUFF_EXE)"
- VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah(HOSTSUFF_EXE)"
- VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar(HOSTSUFF_EXE)"
- VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc(HOSTSUFF_EXE)"
- VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport(HOSTSUFF_EXE)"
+ VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac$(HOSTSUFF_EXE)"
+ VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah$(HOSTSUFF_EXE)"
+ VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar$(HOSTSUFF_EXE)"
+ VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc$(HOSTSUFF_EXE)"
+ VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport$(HOSTSUFF_EXE)"
  # correct for targets we care about
  VBOX_MD_OS     = $(KBUILD_TARGET)
  VBOX_JAVA_INC  = \
