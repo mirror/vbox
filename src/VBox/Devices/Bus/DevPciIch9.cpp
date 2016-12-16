@@ -1909,12 +1909,16 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
  * Worker for devpciR3IsConfigByteWritable that update BAR and ROM mappings.
  *
  * @param   pDev                The PCI device to update the mappings for.
+ * @param   fP2PBridge          Whether this is a PCI to PCI bridge or not.
  */
-static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev)
+static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
     uint16_t const u16Cmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
+        /* Skip over BAR2..BAR5 for bridges, as they have a different meaning there. */
+        if (fP2PBridge && iRegion >= 2 && iRegion <= 5)
+            continue;
         PCIIORegion   *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
         uint64_t const cbRegion = pRegion->size;
         if (cbRegion != 0)
@@ -2230,7 +2234,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
              * Update the region mappings if anything changed related to them (command, BARs, ROM).
              */
             if (fUpdateMappings)
-                devpciR3UpdateMappings(pPciDev);
+                devpciR3UpdateMappings(pPciDev, fP2PBridge);
         }
     }
     else if (uAddress + cb <= 4096)
