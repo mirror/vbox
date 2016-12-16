@@ -387,13 +387,20 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
         fprintf(pOutput,
                 "%%ifdef ASM_FORMAT_PE\n"
+                " %%ifdef RT_ARCH_X86\n"
                 "global __imp_%s\n"
                 "__imp_%s:\n"
+                " %%else\n"
+                "global __imp_%s\n"
+                "__imp_%s:\n"
+                " %%endif\n"
                 "%%endif\n"
                 "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
                 "\n",
                 pExp->szName,
                 pExp->szName,
+                pExp->pszUnstdcallName,
+                pExp->pszUnstdcallName,
                 pExp->pszExportedNm,
                 pExp->pszExportedNm);
     fprintf(pOutput,
@@ -493,7 +500,7 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
                     "    jmp     NAME(%s)\n"
                     "%%endif\n"
                     ,
-                    pExp->szName, pExp->szName);
+                    pExp->szName, pExp->pszUnstdcallName);
         fprintf(pOutput, "\n");
     }
     fprintf(pOutput,
