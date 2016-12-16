@@ -594,11 +594,11 @@ RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(RTASN1CORE, RTDECL, RTAsn1Core);
 /** @} */
 
 
-/** Check s whether an ASN.1 core object present in some way (default data,
+/** Checks whether an ASN.1 core object present in some way (default data,
  *  decoded data, ...). */
 #define RTASN1CORE_IS_PRESENT(a_pAsn1Core)          ( RT_BOOL((a_pAsn1Core)->fFlags) )
 
-/** Check s whether an ASN.1 core object is a dummy object (and is present). */
+/** Checks whether an ASN.1 core object is a dummy object (and is present). */
 #define RTASN1CORE_IS_DUMMY(a_pAsn1Core)            ( RT_BOOL((a_pAsn1Core)->fFlags & RTASN1CORE_F_DUMMY) )
 
 /**
