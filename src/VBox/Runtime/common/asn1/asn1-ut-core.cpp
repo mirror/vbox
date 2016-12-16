@@ -200,14 +200,18 @@ static DECLCALLBACK(int) rtAsn1Core_EncodeWrite(PRTASN1CORE pThisCore, uint32_t 
                                                 void *pvUser, PRTERRINFO pErrInfo)
 {
     int rc = RTAsn1EncodeWriteHeader(pThisCore, fFlags, pfnWriter, pvUser, pErrInfo);
-    if (RT_SUCCESS(rc) && rc != VINF_ASN1_NOT_ENCODED)
+    if (   RT_SUCCESS(rc)
+        && rc != VINF_ASN1_NOT_ENCODED)
     {
         Assert(!RTASN1CORE_IS_DUMMY(pThisCore));
-        AssertPtrReturn(pThisCore->uData.pv,
-                        RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_DATA_POINTER,
-                                      "Invalid uData pointer %p for lone ASN.1 core with %#x bytes of content",
-                                      pThisCore->uData.pv, pThisCore->cb));
-        rc = pfnWriter(pThisCore->uData.pv, pThisCore->cb, pvUser, pErrInfo);
+        if (pThisCore->cb)
+        {
+            AssertPtrReturn(pThisCore->uData.pv,
+                            RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_DATA_POINTER,
+                                          "Invalid uData pointer %p for lone ASN.1 core with %#x bytes of content",
+                                          pThisCore->uData.pv, pThisCore->cb));
+            rc = pfnWriter(pThisCore->uData.pv, pThisCore->cb, pvUser, pErrInfo);
+        }
     }
     return rc;
 }
