@@ -385,24 +385,37 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "BEGINDATA\n"
             "g_apfnImports:\n");
     for (PMYEXPORT pExp = g_pExpHead; pExp; pExp = pExp->pNext)
-        fprintf(pOutput,
-                "%%ifdef ASM_FORMAT_PE\n"
-                " %%ifdef RT_ARCH_X86\n"
-                "global __imp_%s\n"
-                "__imp_%s:\n"
-                " %%else\n"
-                "global __imp_%s\n"
-                "__imp_%s:\n"
-                " %%endif\n"
-                "%%endif\n"
-                "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
-                "\n",
-                pExp->szName,
-                pExp->szName,
-                pExp->pszUnstdcallName,
-                pExp->pszUnstdcallName,
-                pExp->pszExportedNm,
-                pExp->pszExportedNm);
+        if (pExp->pszUnstdcallName)
+            fprintf(pOutput,
+                    "%%ifdef ASM_FORMAT_PE\n"
+                    " %%ifdef RT_ARCH_X86\n"
+                    "global __imp_%s\n"
+                    "__imp_%s:\n"
+                    " %%else\n"
+                    "global __imp_%s\n"
+                    "__imp_%s:\n"
+                    " %%endif\n"
+                    "%%endif\n"
+                    "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
+                    "\n",
+                    pExp->szName,
+                    pExp->szName,
+                    pExp->pszUnstdcallName,
+                    pExp->pszUnstdcallName,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm);
+        else
+            fprintf(pOutput,
+                    "%%ifdef ASM_FORMAT_PE\n"
+                    "global __imp_%s\n"
+                    "__imp_%s:\n"
+                    "%%endif\n"
+                    "g_pfn%s RTCCPTR_DEF ___LazyLoad___%s\n"
+                    "\n",
+                    pExp->szName,
+                    pExp->szName,
+                    pExp->pszExportedNm,
+                    pExp->pszExportedNm);
     fprintf(pOutput,
             "RTCCPTR_DEF 0 ; Terminator entry for traversal.\n"
             "\n"
