@@ -178,11 +178,46 @@ RTDECL(int) RTAsn1Core_CompareEx(PCRTASN1CORE pLeft, PCRTASN1CORE pRight, bool f
 }
 
 
+/**
+ * @interface_method_impl{RTASN1COREVTABLE,pfnEncodePrep,
+ *      This is for not dropping the unparsed content of a 'core' structure when
+ *      re-encoding it. }
+ */
+static DECLCALLBACK(int) rtAsn1Core_EncodePrep(PRTASN1CORE pThisCore, uint32_t fFlags, PRTERRINFO pErrInfo)
+{
+    /* We don't update anything here. */
+    RT_NOREF(pThisCore, fFlags, pErrInfo);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTASN1COREVTABLE,pfnEncodeWrite,
+ *      This is for not dropping the unparsed content of a 'core' structure when
+ *      re-encoding it. }
+ */
+static DECLCALLBACK(int) rtAsn1Core_EncodeWrite(PRTASN1CORE pThisCore, uint32_t fFlags, PFNRTASN1ENCODEWRITER pfnWriter,
+                                                void *pvUser, PRTERRINFO pErrInfo)
+{
+    int rc = RTAsn1EncodeWriteHeader(pThisCore, fFlags, pfnWriter, pvUser, pErrInfo);
+    if (RT_SUCCESS(rc) && rc != VINF_ASN1_NOT_ENCODED)
+    {
+        Assert(!RTASN1CORE_IS_DUMMY(pThisCore));
+        AssertPtrReturn(pThisCore->uData.pv,
+                        RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_DATA_POINTER,
+                                      "Invalid uData pointer %p for lone ASN.1 core with %#x bytes of content",
+                                      pThisCore->uData.pv, pThisCore->cb));
+        rc = pfnWriter(pThisCore->uData.pv, pThisCore->cb, pvUser, pErrInfo);
+    }
+    return rc;
+}
+
+
 
 /*
  * ASN.1 Core - Standard Methods.
  *
- * Note! Children of the ASN.1 Core doesn't normally call these, they are for
+ * @note Children of the ASN.1 Core doesn't normally call these, they are for
  *       when RTASN1CORE is used as a member type.
  */
 
@@ -198,8 +233,8 @@ RT_DECL_DATA_CONST(RTASN1COREVTABLE const) g_RTAsn1Core_Vtable =
     (PFNRTASN1COREVTCLONE)RTAsn1Core_Clone,
     (PFNRTASN1COREVTCOMPARE)RTAsn1Core_Compare,
     (PFNRTASN1COREVTCHECKSANITY)RTAsn1Core_CheckSanity,
-    NULL,
-    NULL
+    rtAsn1Core_EncodePrep,
+    rtAsn1Core_EncodeWrite
 };
 
 
