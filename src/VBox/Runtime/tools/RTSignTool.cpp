@@ -474,6 +474,79 @@ static RTEXITCODE SignToolPkcs7_WriteSignatureToFile(PSIGNTOOLPKCS7 pThis, const
 }
 
 
+
+/**
+ * Worker for recursively searching for MS nested signatures and signer infos.
+ *
+ * @returns Pointer to the signer info corresponding to @a iSignature.  NULL if
+ *          not found.
+ * @param   pSignedData     The signature to search.
+ * @param   piNextSignature Pointer to the variable keeping track of the next
+ *                          signature number.
+ * @param   iReqSignature   The request signature number.
+ * @param   ppSignedData    Where to return the signature data structure.
+ */
+static PRTCRPKCS7SIGNERINFO SignToolPkcs7_FindNestedSignatureByIndexWorker(PRTCRPKCS7SIGNEDDATA pSignedData,
+                                                                           uint32_t *piNextSignature,
+                                                                           uint32_t iReqSignature,
+                                                                           PRTCRPKCS7SIGNEDDATA *ppSignedData)
+{
+    for (uint32_t iSignerInfo = 0; iSignerInfo < pSignedData->SignerInfos.cItems; iSignerInfo++)
+    {
+        /* Match?*/
+        PRTCRPKCS7SIGNERINFO pSignerInfo = pSignedData->SignerInfos.papItems[iSignerInfo];
+        if (*piNextSignature == iReqSignature)
+        {
+            *ppSignedData = pSignedData;
+            return pSignerInfo;
+        }
+        *piNextSignature += 1;
+
+        /* Look for nested signatures. */
+        for (uint32_t iAttrib = 0; iAttrib < pSignerInfo->UnauthenticatedAttributes.cItems; iAttrib++)
+            if (pSignerInfo->UnauthenticatedAttributes.papItems[iAttrib]->enmType == RTCRPKCS7ATTRIBUTETYPE_MS_NESTED_SIGNATURE)
+            {
+                PRTCRPKCS7SETOFCONTENTINFOS pCntInfos;
+                pCntInfos = pSignerInfo->UnauthenticatedAttributes.papItems[iAttrib]->uValues.pContentInfos;
+                for (uint32_t iCntInfo = 0; iCntInfo < pCntInfos->cItems; iCntInfo++)
+                {
+                    PRTCRPKCS7CONTENTINFO pCntInfo = pCntInfos->papItems[iCntInfo];
+                    if (RTCrPkcs7ContentInfo_IsSignedData(pCntInfo))
+                    {
+                        PRTCRPKCS7SIGNERINFO pRet;
+                        pRet = SignToolPkcs7_FindNestedSignatureByIndexWorker(pCntInfo->u.pSignedData, piNextSignature,
+                                                                              iReqSignature, ppSignedData);
+                        if (pRet)
+                            return pRet;
+                    }
+                }
+            }
+    }
+    return NULL;
+}
+
+
+/**
+ * Locates the given nested signature.
+ *
+ * @returns Pointer to the signer info corresponding to @a iSignature.  NULL if
+ *          not found.
+ * @param   pThis           The PKCS\#7 structure to search.
+ * @param   iReqSignature   The requested signature number.
+ * @param   ppSignedData    Where to return the pointer to the signed data that
+ *                          the returned signer info belongs to.
+ *
+ * @todo    Move into SPC or PKCS\#7.
+ */
+static PRTCRPKCS7SIGNERINFO SignToolPkcs7_FindNestedSignatureByIndex(PSIGNTOOLPKCS7 pThis, uint32_t iReqSignature,
+                                                                     PRTCRPKCS7SIGNEDDATA *ppSignedData)
+{
+    uint32_t iNextSignature = 0;
+    return SignToolPkcs7_FindNestedSignatureByIndexWorker(pThis->pSignedData, &iNextSignature, iReqSignature, ppSignedData);
+}
+
+
+
 /**
  * Reads and decodes PKCS\#7 signature from the given executable.
  *
@@ -796,7 +869,7 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
 static RTEXITCODE HelpExtractExeSignerCert(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
-    RTStrmPrintf(pStrm, "extract-exe-signer-cert [--ber|--cer|--der] [--exe|-e] <exe> [--output|-o] <outfile.cer>\n");
+    RTStrmPrintf(pStrm, "extract-exe-signer-cert [--ber|--cer|--der] [--signature-index|-i <num>] [--exe|-e] <exe> [--output|-o] <outfile.cer>\n");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -807,11 +880,12 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--ber",    'b', RTGETOPT_REQ_NOTHING },
-        { "--cer",    'c', RTGETOPT_REQ_NOTHING },
-        { "--der",    'd', RTGETOPT_REQ_NOTHING },
-        { "--exe",    'e', RTGETOPT_REQ_STRING },
-        { "--output", 'o', RTGETOPT_REQ_STRING },
+        { "--ber",              'b', RTGETOPT_REQ_NOTHING },
+        { "--cer",              'c', RTGETOPT_REQ_NOTHING },
+        { "--der",              'd', RTGETOPT_REQ_NOTHING },
+        { "--exe",              'e', RTGETOPT_REQ_STRING  },
+        { "--output",           'o', RTGETOPT_REQ_STRING  },
+        { "--signature-index",  'i', RTGETOPT_REQ_UINT32  },
     };
 
     const char *pszExe = NULL;
@@ -819,6 +893,7 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
     RTLDRARCH   enmLdrArch   = RTLDRARCH_WHATEVER;
     unsigned    cVerbosity   = 0;
     uint32_t    fCursorFlags = RTASN1CURSOR_FLAGS_DER;
+    uint32_t    iSignature   = 0;
 
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
@@ -834,6 +909,7 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
             case 'b':   fCursorFlags = 0; break;
             case 'c':   fCursorFlags = RTASN1CURSOR_FLAGS_CER; break;
             case 'd':   fCursorFlags = RTASN1CURSOR_FLAGS_DER; break;
+            case 'i':   iSignature = ValueUnion.u32; break;
             case 'V':   return HandleVersion(cArgs, papszArgs);
             case 'h':   return HelpExtractExeSignerCert(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
@@ -865,14 +941,15 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
     RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&This, pszExe, cVerbosity, enmLdrArch);
     if (rcExit == RTEXITCODE_SUCCESS)
     {
-        /* Find the signing certificate (ASSUMING there's only one signer and that
-           the certificate used is shipped in the set of certificates). */
+        /* Find the signing certificate (ASSUMING that the certificate used is shipped in the set of certificates). */
+        PRTCRPKCS7SIGNEDDATA  pSignedData;
+        PCRTCRPKCS7SIGNERINFO pSignerInfo = SignToolPkcs7_FindNestedSignatureByIndex(&This, iSignature, &pSignedData);
         rcExit = RTEXITCODE_FAILURE;
-        if (This.pSignedData->SignerInfos.cItems == 1)
+        if (pSignerInfo)
         {
-            PCRTCRPKCS7ISSUERANDSERIALNUMBER pISN = &This.pSignedData->SignerInfos.papItems[0]->IssuerAndSerialNumber;
+            PCRTCRPKCS7ISSUERANDSERIALNUMBER pISN = &pSignedData->SignerInfos.papItems[0]->IssuerAndSerialNumber;
             PCRTCRX509CERTIFICATE pCert;
-            pCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&This.pSignedData->Certificates,
+            pCert = RTCrPkcs7SetOfCerts_FindX509ByIssuerAndSerialNumber(&pSignedData->Certificates,
                                                                         &pISN->Name, &pISN->SerialNumber);
             if (pCert)
             {
@@ -909,8 +986,7 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
                 RTMsgError("Certificate not found.");
         }
         else
-            RTMsgError("SignerInfo count: %u", This.pSignedData->SignerInfos.cItems);
-
+            RTMsgError("Could not locate signature #%u!", iSignature);
 
         /* Delete the signature data. */
         SignToolPkcs7Exe_Delete(&This);
