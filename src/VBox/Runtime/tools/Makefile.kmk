@@ -40,7 +40,9 @@ bldRTSignTool_SOURCES = RTSignTool.cpp
 bldRTSignTool_DEFS = IPRT_IN_BUILD_TOOL
 bldRTSignTool_POST_CMDS.win = $(VBOX_SIGN_IMAGE_CMDS)
 
-if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && !defined(VBOX_ONLY_VALIDATIONKIT)
+if  !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
+ && !defined(VBOX_ONLY_VALIDATIONKIT)
 
  # RTManifest is a tool for creating and verifying manifest files.
  PROGRAMS += RTRm
