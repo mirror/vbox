@@ -69,7 +69,7 @@
  * E1K_INIT_LINKUP_DELAY prevents the link going up while the driver is still
  * in init (see @bugref{8624}).
  */
-//#define E1K_INIT_LINKUP_DELAY (500 * 1000)
+#define E1K_INIT_LINKUP_DELAY_US (2000 * 1000)
 /** @def E1K_IMS_INT_DELAY_NS
  * E1K_IMS_INT_DELAY_NS prevents interrupt storms in Windows guests on enabling
  * interrupts (see @bugref{8624}).
@@ -2677,16 +2677,8 @@ static int e1kRegWriteCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
             && pThis->fCableConnected
             && !(STATUS & STATUS_LU))
         {
-#ifdef E1K_INIT_LINKUP_DELAY
-            /*
-             * The driver indicates that we should bring up the link. Our default 5-second delay is too long,
-             * as Linux guests detect Tx hang after 2 seconds. Let's use 500 ms delay instead. */
-            e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY);
-#else /* !E1K_INIT_LINKUP_DELAY */
-            /* Bring up the link immediately, no need for an interrupt though. */
-            STATUS |= STATUS_LU;
-            Phy::setLinkStatus(&pThis->phy, true);
-#endif /* !E1K_INIT_LINKUP_DELAY */
+            /* It should take about 2 seconds for the link to come up */
+            e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY_US);
         }
         if (value & CTRL_VME)
         {

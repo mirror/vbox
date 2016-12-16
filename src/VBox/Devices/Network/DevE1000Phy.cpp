@@ -319,10 +319,10 @@ void Phy::hardReset(PPHY pPhy)
     PhyLog(("PHY#%d Hard reset\n", pPhy->iInstance));
     REG(PCTRL) = PCTRL_SPDSELM | PCTRL_DUPMOD | PCTRL_ANEG;
     /*
-     * 100 and 10 FD/HD, MF Preamble Suppression, Auto-Negotiation Complete,
+     * 100 and 10 FD/HD, Extended Status, MF Preamble Suppression,
      * AUTO NEG AB, EXT CAP
      */
-    REG(PSTATUS)  = (REG(PSTATUS) & ~PSTATUS_LNKSTAT) | 0x7969;
+    REG(PSTATUS)  = 0x7949;
     REG(ANA)      = 0x01E1;
     /* No flow control by our link partner, all speeds */
     REG(LPA)      = 0x01E0;
@@ -350,8 +350,15 @@ void Phy::hardReset(PPHY pPhy)
  */
 static void Phy::softReset(PPHY pPhy)
 {
-    RT_NOREF1(pPhy);
-    PhyLog(("PHY#%d Soft reset is not yet implemented!\n", pPhy->iInstance));
+    PhyLog(("PHY#%d Soft reset\n", pPhy->iInstance));
+    /*
+     * 100 and 10 FD/HD, Extended Status, MF Preamble Suppression,
+     * AUTO NEG AB, EXT CAP
+     */
+    REG(PSTATUS)  = 0x7949;
+    REG(PSSTAT)   = 0x0000;
+    PhyLog(("PHY#%d PSTATUS=%04x PSSTAT=%04x\n", pPhy->iInstance, REG(PSTATUS), REG(PSSTAT)));
+    PhyLog(("PHY#%d Soft reset is not yet fully implemented!\n", pPhy->iInstance));
 }
 
 /**
@@ -375,12 +382,16 @@ bool Phy::isLinkUp(PPHY pPhy)
 void Phy::setLinkStatus(PPHY pPhy, bool fLinkIsUp)
 {
     if (fLinkIsUp)
+    {
         REG(PSSTAT)  |= PSSTAT_LINK;
+        REG(PSTATUS) |= PSTATUS_NEGCOMP;
+    }
     else
     {
         REG(PSSTAT)  &= ~PSSTAT_LINK;
         REG(PSTATUS) &= ~PSTATUS_LNKSTAT;
     }
+    PhyLog(("PHY#%d setLinkStatus: PSTATUS=%04x PSSTAT=%04x\n", pPhy->iInstance, REG(PSTATUS), REG(PSSTAT)));
 }
 
 #ifdef IN_RING3
