@@ -7046,7 +7046,7 @@ else # !darwin
   VBOX_JAVA_HOME ?= c:/jdk
  endif
 
- VBOX_JAVA      = "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
+ VBOX_JAVA     ?= "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
  VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac$(HOSTSUFF_EXE)"
  VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah$(HOSTSUFF_EXE)"
  VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar$(HOSTSUFF_EXE)"
