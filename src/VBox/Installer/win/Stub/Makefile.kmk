@@ -68,7 +68,7 @@ if "$(KBUILD_TARGET_ARCH)" == "x86"
   endif
   if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all" && "$(VBOX_SIGNING_MODE)" == "release"
 	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index 1 --exe "$(VBOX_RTSIGNTOOL)" --output "$@.cer2" --der
-	$(VBOX_BIN2C) -ascii --append VBoxStubTrustedCert1 "$@.cer2" $@
+	$(VBOX_BIN2C) -ascii --append g_abVBoxStubTrustedCert2 "$@.cer2" $@
 	$(APPEND) "$@.array" "    { g_abVBoxStubTrustedCert2, sizeof(g_abVBoxStubTrustedCert2) }, "
   endif
 	$(APPEND) -n "$@" \
