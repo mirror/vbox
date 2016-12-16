@@ -36,10 +36,15 @@ BEGINCODE
 ; 64KB of zero memory with various sized labels.
 ;
 EXPORTEDNAME_EX g_abRTZeroPage, object
+size g_abRTZeroPage _4K
 EXPORTEDNAME_EX g_abRTZero4K, object
+size g_abRTZero4K _4K
 EXPORTEDNAME_EX g_abRTZero8K, object
+size g_abRTZero8K 2*_4K
 EXPORTEDNAME_EX g_abRTZero16K, object
+size g_abRTZero16K 4*_4K
 EXPORTEDNAME_EX g_abRTZero32K, object
+size g_abRTZero32K _32K
 EXPORTEDNAME_EX g_abRTZero64K, object
+size g_abRTZero64K _64K
         times 0x10000/(16*4) dd 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0
-
