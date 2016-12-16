@@ -737,6 +737,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT(RTASN1TMPL_EXT_NAME,_Clone)(RT_CONCAT(P,RTASN1TMP
 # define RTASN1TMPL_BEGIN_PCHOICE() \
     RTASN1TMPL_BEGIN_COMMON(); \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
+    pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
     RTAsn1MemInitAllocation(&pThis->Allocation, pAllocator); \
     int rc; \
     pThis->enmChoice = pSrc->enmChoice; \
@@ -864,6 +865,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
     AssertPtr(pSrc); AssertPtr(pThis); \
     RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(pThis); /* See _Init. */ \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
+    pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
     RTAsn1MemInitAllocation(&pThis->Allocation, pAllocator); \
     pThis->enmChoice = a_enmChoice; \
     int rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrName, sizeof(*pThis->a_PtrName)); \
@@ -887,6 +889,7 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
     AssertPtr(pThis); AssertPtr(pSrc); Assert(RT_CONCAT(a_Api,_IsPresent)(pSrc)); \
     RT_CONCAT(RTASN1TMPL_EXT_NAME,_Delete)(pThis); /* See _Init. */ \
     RTAsn1Dummy_InitEx(&pThis->Dummy); \
+    pThis->Dummy.Asn1Core.pOps = &RT_CONCAT3(g_,RTASN1TMPL_INT_NAME,_Vtable); \
     RTAsn1MemInitAllocation(&pThis->Allocation, pAllocator); \
     pThis->enmChoice = a_enmChoice; \
     int rc = RTAsn1MemAllocZ(&pThis->Allocation, (void **)&pThis->a_PtrTnNm, sizeof(*pThis->a_PtrTnNm)); \
@@ -991,6 +994,8 @@ RTASN1TMPL_DECL(int) RT_CONCAT3(RTASN1TMPL_EXT_NAME,_Set,a_Name)(RT_CONCAT(P,RTA
                 rc = RT_CONCAT(a_ItemApi,_Init)(pInserted, pAllocator); \
             if (RT_SUCCESS(rc)) \
             { \
+                pThis->cItems = cItems + 1; \
+                \
                 /* If not inserting at the end of the array, shift existing items out of the way and insert the new as req. */ \
                 if (iPosition != cItems) \
                 { \
