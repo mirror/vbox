@@ -3056,7 +3056,7 @@ ifdef VBOX_SIGNING_MODE
  endif
  # Corp code signing.
  VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
- 	$(wildcard $(KBUILD_DEVTOOLS)/common/css/v*/Client.jar)) \
+ 	$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
 	$(KBUILD_DEVTOOLS)/common/ccs/notfound/Client.jar )
  VBOX_CCS_USER       ?= virtualbox_grp
  VBOX_CCS_GLOBAL_UID ?= non-of-your-business
