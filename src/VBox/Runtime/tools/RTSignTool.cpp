@@ -345,6 +345,30 @@ static RTEXITCODE SignToolPkcs7_Encode(PSIGNTOOLPKCS7 pThis, unsigned cVerbosity
 static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTOOLPKCS7 pSrc, unsigned cVerbosity)
 {
     PRTCRPKCS7SIGNERINFO pSignerInfo = pThis->pSignedData->SignerInfos.papItems[0];
+    int rc;
+
+    /*
+     * Deal with UnauthenticatedAttributes being absent before trying to append to the array.
+     */
+    if (pSignerInfo->UnauthenticatedAttributes.cItems == 0)
+    {
+        /* HACK ALERT! Invent ASN.1 setters/whatever for members to replace this mess. */
+
+        if (pSignerInfo->AuthenticatedAttributes.cItems == 0)
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "No authenticated or unauthenticated attributes! Sorry, no can do.");
+
+        Assert(pSignerInfo->UnauthenticatedAttributes.SetCore.Asn1Core.uTag == 0);
+        rc = RTAsn1SetCore_Init(&pSignerInfo->UnauthenticatedAttributes.SetCore,
+                                pSignerInfo->AuthenticatedAttributes.SetCore.Asn1Core.pOps);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTAsn1SetCore_Init failed: %Rrc", rc);
+        pSignerInfo->UnauthenticatedAttributes.SetCore.Asn1Core.uTag   = 1;
+        pSignerInfo->UnauthenticatedAttributes.SetCore.Asn1Core.fClass = ASN1_TAGCLASS_CONTEXT | ASN1_TAGFLAG_CONSTRUCTED;
+        RTAsn1MemInitArrayAllocation(&pSignerInfo->UnauthenticatedAttributes.Allocation,
+                                     pSignerInfo->AuthenticatedAttributes.Allocation.pAllocator,
+                                     sizeof(**pSignerInfo->UnauthenticatedAttributes.papItems));
+    }
+
     int32_t iPos = RTCrPkcs7Attributes_Append(&pSignerInfo->UnauthenticatedAttributes);
     if (iPos >= 0)
     {
@@ -353,7 +377,7 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
         Assert((uint32_t)iPos < pSignerInfo->UnauthenticatedAttributes.cItems);
 
         PRTCRPKCS7ATTRIBUTE pAttr = pSignerInfo->UnauthenticatedAttributes.papItems[iPos];
-        int rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_MS_NESTED_SIGNATURE, pAttr->Allocation.pAllocator);
+        rc = RTAsn1ObjId_InitFromString(&pAttr->Type, RTCR_PKCS9_ID_MS_NESTED_SIGNATURE, pAttr->Allocation.pAllocator);
         if (RT_SUCCESS(rc))
         {
             /** @todo Generalize the Type + enmType DYN stuff and generate setters. */
