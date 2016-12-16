@@ -46,8 +46,8 @@ if "$(KBUILD_TARGET_ARCH)" == "x86"
  VBoxStub.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxStub.cpp_DEPS  = $(VBOX_SVN_REV_KMK)
 
- # If signing mode is enabled, then add the possibility to
- # install public certificate automatically in /silent mode
+ # If signing mode is enabled, then add the possibility to install the code
+ # signing certificates (public key only) automatically in /silent mode.
  ifdef VBOX_SIGNING_MODE
 
   VBoxStub_SOURCES  += VBoxStubCertUtil.cpp
