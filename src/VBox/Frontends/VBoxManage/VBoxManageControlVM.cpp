@@ -32,6 +32,7 @@
 #include <iprt/getopt.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/uuid.h>
 #include <iprt/file.h>
 #include <VBox/log.h>
@@ -228,7 +229,7 @@ static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> 
 
 #if 1
     HRESULT rc = S_OK;
-    int i;
+    size_t i;
     for (i = 0; i < saScancodes.size(); ++i)
     {
         rc = pKeyboard->PutScancode(saScancodes[i]);
