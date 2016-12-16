@@ -2051,7 +2051,7 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
         RTEXITCODE rcExitThis = SignToolPkcs7Exe_InitFromFile(&This, ValueUnion.psz, cVerbosity, enmLdrArch);
         if (rcExitThis == RTEXITCODE_SUCCESS)
         {
-            int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
+            rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
             if (RT_FAILURE(rc))
                 rcExit = RTEXITCODE_FAILURE;
             SignToolPkcs7Exe_Delete(&This);
@@ -2130,7 +2130,7 @@ static RTEXITCODE HandleShowCat(int cArgs, char **papszArgs)
         {
             This.hLdrMod = NIL_RTLDRMOD;
 
-            int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
+            rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
             if (RT_FAILURE(rc))
                 rcExit = RTEXITCODE_FAILURE;
             SignToolPkcs7Exe_Delete(&This);
