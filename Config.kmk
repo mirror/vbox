@@ -3054,6 +3054,22 @@ ifdef VBOX_SIGNING_MODE
  ifn1of ($(VBOX_SIGNING_MODE), test release)
   $(error VBOX_SIGNING_MODE must be either 'test' or 'release'. The value '$(VBOX_SIGNING_MODE)' is not recognized.)
  endif
+ # Corp code signing.
+ VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
+ 	$(wildcard $(KBUILD_DEVTOOLS)/common/css/v*/Client.jar)) \
+	$(KBUILD_DEVTOOLS)/common/ccs/notfound/Client.jar )
+ VBOX_CCS_USER       ?= virtualbox_grp
+ VBOX_CCS_GLOBAL_UID ?= non-of-your-business
+ VBOX_CCS_SERVER     ?= UK
+ ##
+ # Corp Code Signing command line.
+ # @param  $1  Signing method: solaris_elf, solaris_pkg, driver (microsoft), ...
+ # @param  $2  The file to be submitted for signing.
+ # @param  $3  The directory to put the signed file in. Defaults to $(dir $2).
+ # @param  $4  Additional options.
+ VBOX_CCS_SIGN_CMD    = $(VBOX_JAVA) -jar "$(VBOX_CCS_CLIENT_JAR)" \
+ 	sign -user "$(VBOX_CCS_USER)" -global_uid "$(VBOX_CCS_GLOBAL_UID)" -server "$(VBOX_CCS_SERVER)" \
+ 		-sign_method "$1" -file_to_sign "$2" -signed_location "$(if $3,$3,$(dir $2))" $4
 
  ifeq ($(KBUILD_HOST),win)
   #
@@ -3314,8 +3330,6 @@ ifdef VBOX_SIGNING_MODE
 
   VBOX_ELFSIGN ?= elfsign
 
-  ## Commands for signing a driver image after link.
-  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_ELF_FN,$(out)))
   # Sign an ELF image.
   # @param 1   The elf object file to sign.
   VBOX_SIGN_ELF_FN ?= $(VBOX_ELFSIGN) \
@@ -3324,6 +3338,13 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_TOKEN_NAME_ARGS) \
 	$(VBOX_PIN_ARGS) \
 	-e $(1)
+
+  ## Commands for signing a driver image after link.
+  ifdef VBOX_USE_CORP_CODE_SIGNING
+   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_CCS_SIGN_CMD,solaris_elf,$(out)))
+  else
+   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_ELF_FN,$(out)))
+  endif
 
  else
   # Not Windows, Mac OS X or Solaris build host, ignore.
@@ -6927,6 +6948,7 @@ ifeq ($(KBUILD_TARGET), darwin)
         /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands \
         $(if-expr $(VBOX_XCODE_VERSION_MAJOR) >= 4,/System/Library/Frameworks/JavaVM.framework/Versions/A/Commands,) \
         ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands)
+ VBOX_JAVA      = $(VBOX_JAVA_COMMANDS)/java
  VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
  VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
  VBOX_JAR       = $(VBOX_JAVA_COMMANDS)/jar
@@ -6938,7 +6960,7 @@ ifeq ($(KBUILD_TARGET), darwin)
   VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Headers
  endif
 
-else
+else # !darwin
 
  ifeq ($(KBUILD_TARGET),linux)
   ifeq ($(origin VBOX_JAVA_HOME),undefined)
@@ -6973,17 +6995,18 @@ else
   VBOX_JAVA_HOME ?= c:/jdk
  endif
 
- VBOX_JAVAC     = $(VBOX_JAVA_HOME)/bin/javac
- VBOX_JAVAH     = $(VBOX_JAVA_HOME)/bin/javah
- VBOX_JAR       = $(VBOX_JAVA_HOME)/bin/jar
- VBOX_JAVADOC   = $(VBOX_JAVA_HOME)/bin/javadoc
- VBOX_WSIMPORT  = $(VBOX_JAVA_HOME)/bin/wsimport
+ VBOX_JAVA      = "$(VBOX_JAVA_HOME)/bin/java$(HOSTSUFF_EXE)"
+ VBOX_JAVAC     = "$(VBOX_JAVA_HOME)/bin/javac(HOSTSUFF_EXE)"
+ VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah(HOSTSUFF_EXE)"
+ VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar(HOSTSUFF_EXE)"
+ VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc(HOSTSUFF_EXE)"
+ VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport(HOSTSUFF_EXE)"
  # correct for targets we care about
- VBOX_MD_OS = $(KBUILD_TARGET)
+ VBOX_MD_OS     = $(KBUILD_TARGET)
  VBOX_JAVA_INC  = \
  	$(VBOX_JAVA_HOME)/include \
  	$(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
-endif
+endif # !darwin
 
 
 #
