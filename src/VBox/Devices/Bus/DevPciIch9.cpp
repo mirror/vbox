@@ -1967,8 +1967,8 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
                     uint64_t uLast = uMemBase + cbRegion - 1;
                     if (   uMemBase < uLast
                         && uMemBase > 0
-                        && !(   uNew  <= UINT32_C(0xffffffff)
-                             && uLast >= UINT32_C(0xfec00000)) )
+                        && !(   uMemBase <= UINT32_C(0xffffffff)
+                             && uLast    >= UINT32_C(0xfec00000)) )
                         uNew = uMemBase;
                 }
             }
@@ -2168,7 +2168,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                         if (fWritable)
                         {
                             PCIDevSetByte(pPciDev, uAddress, bVal);
-                            fUpdateMappings = true; /** @todo r=bird: Probably not necessary to update mappings on VBOX_PCI_COMMAND changes for bridges? */
+                            fUpdateMappings = true;
                         }
                         break;
 
