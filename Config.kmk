@@ -3054,7 +3054,7 @@ ifdef VBOX_SIGNING_MODE
  ifn1of ($(VBOX_SIGNING_MODE), test release)
   $(error VBOX_SIGNING_MODE must be either 'test' or 'release'. The value '$(VBOX_SIGNING_MODE)' is not recognized.)
  endif
- # Corp code signing.
+ # Corp code signing client.
  VBOX_CCS_CLIENT_JAR := $(firstword $(rsort \
  	$(wildcard $(KBUILD_DEVTOOLS)/common/ccs/v*/Client.jar)) \
 	$(KBUILD_DEVTOOLS)/common/ccs/notfound/Client.jar )
@@ -3067,7 +3067,7 @@ ifdef VBOX_SIGNING_MODE
  # @param  $2  The file to be submitted for signing.
  # @param  $3  The directory to put the signed file in. Defaults to $(dir $2).
  # @param  $4  Additional options.
- VBOX_CCS_SIGN_CMD    = $(VBOX_JAVA) -jar "$(VBOX_CCS_CLIENT_JAR)" \
+ VBOX_CCS_SIGN_CMD    = $(VBOX_RETRY) $(VBOX_JAVA) -jar "$(VBOX_CCS_CLIENT_JAR)" \
  	sign -user "$(VBOX_CCS_USER)" -global_uid "$(VBOX_CCS_GLOBAL_UID)" -server "$(VBOX_CCS_SERVER)" \
  		-sign_method "$1" -file_to_sign "$2" -signed_location "$(if $3,$3,$(dir $2))" $4
 
@@ -3133,8 +3133,6 @@ ifdef VBOX_SIGNING_MODE
   VBOX_CERTIFICATE_SHA2_FINGERPRINT_ARGS := $(if-expr "$(VBOX_CERTIFICATE_SHA2_FINGERPRINT)" != "" \
   	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_SHA2_FINGERPRINT))",) # Still using SHA-1 for fingerprinting, it's good enough for that!
 
-  ## Commands for signing a driver image after link.
-  VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
   ## Sign a file (generic).
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
@@ -3142,7 +3140,9 @@ ifdef VBOX_SIGNING_MODE
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   # @param 5  Disables dual signing if non-empty.
   ifndef VBOX_SIGN_FILE_FN
-   ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
+   ifeq ($(VBOX_WITH_CORP_CODE_SIGNING), all)
+    VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver,$1,$(dir $1))
+   else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
     	sign /fd sha1\
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
@@ -3177,21 +3177,70 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
 
+  ## Corp code signing for drivers and catalogs, plan B.
+  #
+  # Since the corp code signing cannot dual signing and doesn't even have a
+  # SHA-1 cert, we have to get creative:
+  #   1. Sign $1 using local SHA-1 certificate.
+  #   2. Make temporary copy of $1 as $1.ccs
+  #   3. Do SHA-256 corp code signing of $1.ccs
+  #   4. Add the SHA-256 signature from $1.ccs to $1 using bldRTSignTool.
+  #   5. Delete $1.ccs.
+  #
+  # @param 1  The file to sign.
+  # @param 2  File description. Optional.
+  # @param 3  Additional parameters. Optional.
+  # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
+  # @param 5  Disables dual signing if non-empty.
+  #
+  # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
+  VBOX_SIGN_IMAGE_PLAN_B_FN = $(warning VBOX_SIGN_IMAGE_PLAN_B_FN: 1=$1 2=$2 3=$3 4=$4 5=$5)$(VBOX_SIGNTOOL) \
+  	sign /fd sha1\
+  	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
+  	$(VBOX_CERTIFICATE_STORE_ARGS) \
+  	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+  	$(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
+  	$(VBOX_TSA_URL_ARGS) \
+  	$(if $(strip $(2)),/d "$(strip $(2))",) \
+  	$(3) \
+  	$(1) \
+  	$(if-expr "$5" == "",\
+	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1.ccs,$(dir $1.ccs),-digest_algo SHA2) \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1" "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  	,)
+
   ## Sign an executable image.
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
   # @param 3  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   VBOX_SIGN_IMAGE_FN     ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
 
+  ## Commands for signing a driver image after link.
+  if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all"
+   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(out),,/ph,2))
+   VBOX_SIGN_DRIVER_ORDERDEPS ?= $(VBOX_RTSIGNTOOL)
+  else
+   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
+  endif
+
   ## Create a security catalog file.
   # @param 1  The directory containing the stuff to sign.
   # @param 2  The expected .cat name. (Inf2Cat lowercases it)
   # @param 3  The list of OSes, separated by ';'.
-  VBOX_MAKE_CAT_HLP_FN ?= \
-	$(RM) -f $(2)\
-	$(NL)$(TAB)$(VBOX_INF2CAT) /driver:$(strip $(1)) /os:$(strip $(subst ;,$(COMMA),$(3))) /verbose \
-	$(NL)$(TAB)$(MV) $(2) $(2) \
-	$(NL)$(TAB)$(call VBOX_SIGN_FILE_FN,$(2),,,$(NL)$(TAB))
+  ifndef VBOX_MAKE_CAT_HLP_FN
+   VBOX_MAKE_CAT_HLP_FN = \
+	$(RM) -f -- "$(2)"\
+	$(NL)$(TAB)$(VBOX_INF2CAT) "/driver:$(strip $(1))" "/os:$(strip $(subst ;,$(COMMA),$(3)))" /verbose \
+	$(NL)$(TAB)$(MV) -- "$(2)" "$(2)"
+   if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all"
+    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(2),,,$(NL)$(TAB))
+   else
+    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call         VBOX_SIGN_FILE_FN,$(2),,,$(NL)$(TAB))
+   endif
+  endif
   VBOX_MAKE_CAT64_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),XP_X64;Server2003_X64;Vista_X64)
   VBOX_MAKE_CAT32_FN   ?= $(call VBOX_MAKE_CAT_HLP_FN,$(1),$(2),2000;XP_X86;Server2003_X86;Vista_X86)
   ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -3974,6 +4023,7 @@ TEMPLATE_VBoxR0_LIBS                = \
  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
 TEMPLATE_VBoxR0_LIBS.x86            = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
+TEMPLATE_VBoxR0_ORDERDEPS           = $(VBOX_SIGN_DRIVER_ORDERDEPS)
 TEMPLATE_VBoxR0_POST_CMDS           = $(VBOX_SIGN_DRIVER_CMDS)
 endif # pe
 
@@ -4087,6 +4137,7 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR0DRV_LDFLAGS          += -IntegrityCheck
  endif
+ TEMPLATE_VBOXR0DRV_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
  TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
 
