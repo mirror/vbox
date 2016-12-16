@@ -39,6 +39,7 @@ ifdef VBOX_ONLY_ADDITIONS
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif
  if1of ($(KBUILD_TARGET),win)
+  LIBRARIES += RuntimeBldProg
   include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
  endif
 
