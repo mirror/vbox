@@ -179,8 +179,9 @@ static void SignToolPkcs7Exe_Delete(PSIGNTOOLPKCS7EXE pThis)
  *
  * @returns IPRT status code (error message already shown on failure).
  * @param   pThis               The PKCS\#7 signature to decode.
+ * @param   fCatalog            Set if catalog file, clear if executable.
  */
-static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis)
+static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis, bool fCatalog)
 {
     RTERRINFOSTATIC     ErrInfo;
     RTASN1CURSORPRIMARY PrimaryCursor;
@@ -210,8 +211,6 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis)
                                                      | RTCRPKCS7SIGNEDDATA_SANITY_F_ONLY_KNOWN_HASH
                                                      | RTCRPKCS7SIGNEDDATA_SANITY_F_SIGNING_CERT_PRESENT,
                                                      RTErrInfoInitStatic(&ErrInfo), "SD");
-                if (RT_FAILURE(rc))
-                    RTMsgError("PKCS#7 sanity check failed for '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
                 if (RT_SUCCESS(rc))
                 {
                     rc = RTCrSpcIndirectDataContent_CheckSanityEx(pThis->pIndData,
@@ -222,18 +221,70 @@ static int SignToolPkcs7_Decode(PSIGNTOOLPKCS7 pThis)
                         RTMsgError("SPC indirect data content sanity check failed for '%s': %Rrc - %s\n",
                                    pThis->pszFilename, rc, ErrInfo.szMsg);
                 }
+                else
+                    RTMsgError("PKCS#7 sanity check failed for '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
             }
-            else
+            else if (!fCatalog)
                 RTMsgError("Unexpected the signed content in '%s': %s (expected %s)", pThis->pszFilename,
                            pThis->pSignedData->ContentInfo.ContentType.szObjId, RTCRSPCINDIRECTDATACONTENT_OID);
         }
         else
-            RTMsgError("PKCS#7 content is inside '%s' is not 'signedData': %s\n",
-                       pThis->pszFilename, pThis->ContentInfo.ContentType.szObjId);
+            rc = RTMsgErrorRc(VERR_CR_PKCS7_NOT_SIGNED_DATA,
+                              "PKCS#7 content is inside '%s' is not 'signedData': %s\n",
+                              pThis->pszFilename, pThis->ContentInfo.ContentType.szObjId);
     }
     else
         RTMsgError("RTCrPkcs7ContentInfo_DecodeAsn1 failed on '%s': %Rrc - %s\n", pThis->pszFilename, rc, ErrInfo.szMsg);
     return rc;
+}
+
+
+/**
+ * Reads and decodes PKCS\#7 signature from the given cat file.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error message
+ *          on failure.
+ * @param   pThis               The structure to initialize.
+ * @param   pszFilename         The catalog (or any other DER PKCS\#7) filename.
+ * @param   cVerbosity          The verbosity.
+ */
+static RTEXITCODE SignToolPkcs7_InitFromFile(PSIGNTOOLPKCS7 pThis, const char *pszFilename, unsigned cVerbosity)
+{
+    /*
+     * Init the return structure.
+     */
+    RT_ZERO(*pThis);
+    pThis->pszFilename = pszFilename;
+
+    /*
+     * Lazy bird uses RTFileReadAll and duplicates the allocation.
+     */
+    void *pvFile;
+    int rc = RTFileReadAll(pszFilename, &pvFile, &pThis->cbBuf);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pbBuf = (uint8_t *)RTMemDup(pvFile, pThis->cbBuf);
+        RTFileReadAllFree(pvFile, pThis->cbBuf);
+        if (pThis->pbBuf)
+        {
+            if (cVerbosity > 2)
+                RTPrintf("PKCS#7 signature: %u bytes\n", pThis->cbBuf);
+
+            /*
+             * Decode it.
+             */
+            rc = SignToolPkcs7_Decode(pThis, true /*fCatalog*/);
+            if (RT_SUCCESS(rc))
+                return RTEXITCODE_SUCCESS;
+        }
+        else
+            RTMsgError("Out of memory!");
+    }
+    else
+        RTMsgError("Error reading '%s' into memory: %Rrc", pszFilename, rc);
+
+    SignToolPkcs7_Delete(pThis);
+    return RTEXITCODE_FAILURE;
 }
 
 
@@ -358,6 +409,48 @@ static RTEXITCODE SignToolPkcs7_AddNestedSignature(PSIGNTOOLPKCS7 pThis, PSIGNTO
 }
 
 
+/**
+ * Writes the signature to the file.
+ *
+ * Caller must have called SignToolPkcs7_Encode() prior to this function.
+ *
+ * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE with error
+ *          message on failure.
+ * @param   pThis               The file which to write.
+ * @param   cVerbosity          The verbosity.
+ */
+static RTEXITCODE SignToolPkcs7_WriteSignatureToFile(PSIGNTOOLPKCS7 pThis, const char *pszFilename, unsigned cVerbosity)
+{
+    AssertReturn(pThis->cbNewBuf && pThis->pbNewBuf, RTEXITCODE_FAILURE);
+
+    /*
+     * Open+truncate file, write new signature, close.  Simple.
+     */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_WRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileWrite(hFile, pThis->pbNewBuf, pThis->cbNewBuf, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileClose(hFile);
+            if (RT_SUCCESS(rc))
+            {
+                if (cVerbosity > 0)
+                    RTMsgInfo("Wrote %u bytes to %s", pThis->cbNewBuf, pszFilename);
+                return RTEXITCODE_SUCCESS;
+            }
+
+            RTMsgError("RTFileClose failed on %s: %Rrc", pszFilename, rc);
+        }
+        else
+            RTMsgError("Write error on %s: %Rrc", pszFilename, rc);
+    }
+    else
+        RTMsgError("Failed to open %s for writing: %Rrc", pszFilename, rc);
+    return RTEXITCODE_FAILURE;
+}
+
 
 /**
  * Reads and decodes PKCS\#7 signature from the given executable.
@@ -427,7 +520,7 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
                 /*
                  * Decode it.
                  */
-                rc = SignToolPkcs7_Decode(pThis);
+                rc = SignToolPkcs7_Decode(pThis, false /*fCatalog*/);
                 if (RT_SUCCESS(rc))
                     return RTEXITCODE_SUCCESS;
             }
@@ -444,7 +537,6 @@ static RTEXITCODE SignToolPkcs7Exe_InitFromFile(PSIGNTOOLPKCS7EXE pThis, const c
 
     SignToolPkcs7Exe_Delete(pThis);
     return RTEXITCODE_FAILURE;
-
 }
 
 
@@ -811,7 +903,12 @@ static RTEXITCODE HandleExtractExeSignerCert(int cArgs, char **papszArgs)
 static RTEXITCODE HelpAddNestedExeSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
     RT_NOREF_PV(enmLevel);
-    RTStrmPrintf(pStrm, "add-nested-exe-signature [-v|--verbose] <destination-exe> <source-exe>\n");
+    RTStrmPrintf(pStrm, "add-nested-exe-signature [-v|--verbose] [-d|--debug] <destination-exe> <source-exe>\n");
+    if (enmLevel == RTSIGNTOOLHELP_FULL)
+        RTStrmPrintf(pStrm,
+                     "\n"
+                     "The --debug option allows the source-exe to be omitted in order to test the\n"
+                     "encoding and PE file modification.\n");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -824,11 +921,13 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
+        { "--debug",   'd', RTGETOPT_REQ_NOTHING },
     };
 
-    const char *pszDst = NULL;
-    const char *pszSrc = NULL;
+    const char *pszDst     = NULL;
+    const char *pszSrc     = NULL;
     unsigned    cVerbosity = 0;
+    bool        fDebug     = false;
 
     RTGETOPTSTATE GetState;
     int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
@@ -840,6 +939,7 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
         switch (ch)
         {
             case 'v':   cVerbosity++; break;
+            case 'd':   fDebug = pszSrc == NULL; break;
             case 'V':   return HandleVersion(cArgs, papszArgs);
             case 'h':   return HelpAddNestedExeSignature(g_pStdOut, RTSIGNTOOLHELP_FULL);
 
@@ -847,7 +947,10 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
                 if (!pszDst)
                     pszDst = ValueUnion.psz;
                 else if (!pszSrc)
+                {
                     pszSrc = ValueUnion.psz;
+                    fDebug = false;
+                }
                 else
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many file arguments: %s", ValueUnion.psz);
                 break;
@@ -857,8 +960,8 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
         }
     }
     if (!pszDst)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No destination excutable given.");
-    if (!pszSrc)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No destination executable given.");
+    if (!pszSrc && !fDebug)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "No source executable file given.");
 
     /*
@@ -866,7 +969,7 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
      */
     /* Read & decode the source PKCS#7 signature. */
     SIGNTOOLPKCS7EXE Src;
-    RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&Src, pszSrc, cVerbosity);
+    RTEXITCODE rcExit = pszSrc ? SignToolPkcs7Exe_InitFromFile(&Src, pszSrc, cVerbosity) : RTEXITCODE_SUCCESS;
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         /* Ditto for the destination PKCS#7 signature. */
@@ -875,7 +978,8 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
         if (rcExit == RTEXITCODE_SUCCESS)
         {
             /* Do the signature manipulation. */
-            rcExit = SignToolPkcs7_AddNestedSignature(&Dst, &Src, cVerbosity);
+            if (pszSrc)
+                rcExit = SignToolPkcs7_AddNestedSignature(&Dst, &Src, cVerbosity);
             if (rcExit == RTEXITCODE_SUCCESS)
                 rcExit = SignToolPkcs7_Encode(&Dst, cVerbosity);
 
@@ -885,7 +989,108 @@ static RTEXITCODE HandleAddNestedExeSignature(int cArgs, char **papszArgs)
 
             SignToolPkcs7Exe_Delete(&Dst);
         }
-        SignToolPkcs7Exe_Delete(&Src);
+        if (pszSrc)
+            SignToolPkcs7Exe_Delete(&Src);
+    }
+
+    return rcExit;
+}
+
+
+/*
+ * The 'add-nested-cat-signature' command.
+ */
+static RTEXITCODE HelpAddNestedCatSignature(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+    RTStrmPrintf(pStrm, "add-nested-cat-signature [-v|--verbose] <destination-cat> <source-cat>\n");
+    if (enmLevel == RTSIGNTOOLHELP_FULL)
+        RTStrmPrintf(pStrm,
+                     "\n"
+                     "The --debug option allows the source-cat to be omitted in order to test the\n"
+                     "ASN.1 re-encoding of the destination catalog file.\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE HandleAddNestedCatSignature(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
+        { "--debug",   'd', RTGETOPT_REQ_NOTHING },
+    };
+
+    const char *pszDst     = NULL;
+    const char *pszSrc     = NULL;
+    unsigned    cVerbosity = 0;
+    bool        fDebug     = false;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'v':   cVerbosity++; break;
+            case 'd':   fDebug = pszSrc == NULL; break;
+            case 'V':   return HandleVersion(cArgs, papszArgs);
+            case 'h':   return HelpAddNestedCatSignature(g_pStdOut, RTSIGNTOOLHELP_FULL);
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszDst)
+                    pszDst = ValueUnion.psz;
+                else if (!pszSrc)
+                {
+                    pszSrc = ValueUnion.psz;
+                    fDebug = false;
+                }
+                else
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many file arguments: %s", ValueUnion.psz);
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (!pszDst)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No destination catalog file given.");
+    if (!pszSrc && !fDebug)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No source catalog file given.");
+
+    /*
+     * Do it.
+     */
+    /* Read & decode the source PKCS#7 signature. */
+    SIGNTOOLPKCS7 Src;
+    RTEXITCODE rcExit = pszSrc ? SignToolPkcs7_InitFromFile(&Src, pszSrc, cVerbosity) : RTEXITCODE_SUCCESS;
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /* Ditto for the destination PKCS#7 signature. */
+        SIGNTOOLPKCS7EXE Dst;
+        rcExit = SignToolPkcs7_InitFromFile(&Dst, pszDst, cVerbosity);
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            /* Do the signature manipulation. */
+            if (pszSrc)
+                rcExit = SignToolPkcs7_AddNestedSignature(&Dst, &Src, cVerbosity);
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SignToolPkcs7_Encode(&Dst, cVerbosity);
+
+            /* Update the destination executable file. */
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = SignToolPkcs7_WriteSignatureToFile(&Dst, pszDst, cVerbosity);
+
+            SignToolPkcs7_Delete(&Dst);
+        }
+        if (pszSrc)
+            SignToolPkcs7_Delete(&Src);
     }
 
     return rcExit;
@@ -1274,16 +1479,8 @@ static RTEXITCODE HandleVerifyExe(int cArgs, char **papszArgs)
 #ifndef IPRT_IN_BUILD_TOOL
 
 /*
- * The 'show-exe' command.
+ * common code for show-exe and show-cat:
  */
-static RTEXITCODE HelpShowExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
-{
-    RT_NOREF_PV(enmLevel);
-    RTStrmPrintf(pStrm,
-                 "show-exe [--verbose|-v] [--quiet|-q] <exe1> [exe2 [..]]\n");
-    return RTEXITCODE_SUCCESS;
-}
-
 
 /**
  * Display an object ID.
@@ -1664,6 +1861,8 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
      * Display list of signing algorithms.
      */
     RTPrintf("%sDigestAlgorithms: ", pThis->szPrefix);
+    if (pSignedData->DigestAlgorithms.cItems == 0)
+        RTPrintf("none");
     for (unsigned i = 0; i < pSignedData->DigestAlgorithms.cItems; i++)
     {
         PCRTCRX509ALGORITHMIDENTIFIER pAlgoId = pSignedData->DigestAlgorithms.papItems[i];
@@ -1696,13 +1895,16 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
     if (pSignedData->Certificates.cItems > 0)
     {
         RTPrintf("%s    Certificates: %u\n", pThis->szPrefix, pSignedData->Certificates.cItems);
-        for (uint32_t i = 0; i < pSignedData->Certificates.cItems; i++)
+        if (pThis->cVerbosity >= 2)
         {
-            if (i != 0)
-                RTPrintf("\n");
-            RTPrintf("%s      Certificate #%u:\n", pThis->szPrefix, i);
-            RTAsn1Dump(RTCrPkcs7Cert_GetAsn1Core(pSignedData->Certificates.papItems[i]), 0,
-                       ((uint32_t)offPrefix + 9) / 2, RTStrmDumpPrintfV, g_pStdOut);
+            for (uint32_t i = 0; i < pSignedData->Certificates.cItems; i++)
+            {
+                if (i != 0)
+                    RTPrintf("\n");
+                RTPrintf("%s      Certificate #%u:\n", pThis->szPrefix, i);
+                RTAsn1Dump(RTCrPkcs7Cert_GetAsn1Core(pSignedData->Certificates.papItems[i]), 0,
+                           ((uint32_t)offPrefix + 9) / 2, RTStrmDumpPrintfV, g_pStdOut);
+            }
         }
         /** @todo display certificates properly. */
     }
@@ -1713,8 +1915,11 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
     /*
      * Show signatures (SignerInfos).
      */
-    RTPrintf("%s     SignerInfos:\n", pThis->szPrefix);
     unsigned const cSigInfos = pSignedData->SignerInfos.cItems;
+    if (cSigInfos != 1)
+        RTPrintf("%s     SignerInfos: %u signers\n", pThis->szPrefix, cSigInfos);
+    else
+        RTPrintf("%s     SignerInfos:\n", pThis->szPrefix);
     for (unsigned i = 0; i < cSigInfos; i++)
     {
         PRTCRPKCS7SIGNERINFO pSigInfo = pSignedData->SignerInfos.papItems[i];
@@ -1785,40 +1990,20 @@ static int HandleShowExeWorkerPkcs7Display(PSHOWEXEPKCS7 pThis, PRTCRPKCS7SIGNED
 }
 
 
-/**
- * Shows the signing info for one executable.
- *
- * @returns RTEXITCODE_SUCCESS on success, RTEXITCODE_FAILURE on failure.
- * @param   pszFilename         The path to the executable.
- * @param   cVerbosity          The verbosity level.
- * @param   enmLdrArch          Sub image selector.
+/*
+ * The 'show-exe' command.
  */
-static RTEXITCODE HandleShowExeWorker(const char *pszFilename, unsigned cVerbosity, RTLDRARCH enmLdrArch)
+static RTEXITCODE HelpShowExe(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
 {
-    SHOWEXEPKCS7 This;
-    RT_ZERO(This);
-    This.cVerbosity = cVerbosity;
-
-    RTEXITCODE rcExit = SignToolPkcs7Exe_InitFromFile(&This, pszFilename, cVerbosity, enmLdrArch);
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
-        if (RT_FAILURE(rc))
-            rcExit = RTEXITCODE_FAILURE;
-        SignToolPkcs7Exe_Delete(&This);
-    }
-
-    return rcExit;
+    RT_NOREF_PV(enmLevel);
+    RTStrmPrintf(pStrm,
+                 "show-exe [--verbose|-v] [--quiet|-q] <exe1> [exe2 [..]]\n");
+    return RTEXITCODE_SUCCESS;
 }
 
 
 static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
 {
-    /* Note! This code does not try to clean up the crypto stores on failure.
-             This is intentional as the code is only expected to be used in a
-             one-command-per-process environment where we do exit() upon
-             returning from this function. */
-
     /*
      * Parse arguments.
      */
@@ -1828,7 +2013,7 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
         { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
     };
 
-    unsigned  cVerbose   = 0;
+    unsigned  cVerbosity = 0;
     RTLDRARCH enmLdrArch = RTLDRARCH_WHATEVER;
 
     RTGETOPTSTATE GetState;
@@ -1840,8 +2025,8 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
     {
         switch (ch)
         {
-            case 'v': cVerbose++; break;
-            case 'q': cVerbose = 0; break;
+            case 'v': cVerbosity++; break;
+            case 'q': cVerbosity = 0; break;
             case 'V': return HandleVersion(cArgs, papszArgs);
             case 'h': return HelpShowExe(g_pStdOut, RTSIGNTOOLHELP_FULL);
             default:  return RTGetOptPrintError(ch, &ValueUnion);
@@ -1858,9 +2043,101 @@ static RTEXITCODE HandleShowExe(int cArgs, char **papszArgs)
     do
     {
         RTPrintf(iFile == 0 ? "%s:\n" : "\n%s:\n", ValueUnion.psz);
-        RTEXITCODE rcExitThis = HandleShowExeWorker(ValueUnion.psz, cVerbose, enmLdrArch);
+
+        SHOWEXEPKCS7 This;
+        RT_ZERO(This);
+        This.cVerbosity = cVerbosity;
+
+        RTEXITCODE rcExitThis = SignToolPkcs7Exe_InitFromFile(&This, ValueUnion.psz, cVerbosity, enmLdrArch);
+        if (rcExitThis == RTEXITCODE_SUCCESS)
+        {
+            int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
+            if (RT_FAILURE(rc))
+                rcExit = RTEXITCODE_FAILURE;
+            SignToolPkcs7Exe_Delete(&This);
+        }
         if (rcExitThis != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
             rcExit = rcExitThis;
+
+        iFile++;
+    } while ((ch = RTGetOpt(&GetState, &ValueUnion)) == VINF_GETOPT_NOT_OPTION);
+    if (ch != 0)
+        return RTGetOptPrintError(ch, &ValueUnion);
+
+    return rcExit;
+}
+
+
+/*
+ * The 'show-cat' command.
+ */
+static RTEXITCODE HelpShowCat(PRTSTREAM pStrm, RTSIGNTOOLHELP enmLevel)
+{
+    RT_NOREF_PV(enmLevel);
+    RTStrmPrintf(pStrm,
+                 "show-cat [--verbose|-v] [--quiet|-q] <cat1> [cat2 [..]]\n");
+    return RTEXITCODE_SUCCESS;
+}
+
+
+static RTEXITCODE HandleShowCat(int cArgs, char **papszArgs)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose",      'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",        'q', RTGETOPT_REQ_NOTHING },
+    };
+
+    unsigned  cVerbosity = 0;
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, cArgs, papszArgs, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    RTGETOPTUNION ValueUnion;
+    int ch;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) && ch != VINF_GETOPT_NOT_OPTION)
+    {
+        switch (ch)
+        {
+            case 'v': cVerbosity++; break;
+            case 'q': cVerbosity = 0; break;
+            case 'V': return HandleVersion(cArgs, papszArgs);
+            case 'h': return HelpShowCat(g_pStdOut, RTSIGNTOOLHELP_FULL);
+            default:  return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (ch != VINF_GETOPT_NOT_OPTION)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No executable given.");
+
+    /*
+     * Do it.
+     */
+    unsigned   iFile  = 0;
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    do
+    {
+        RTPrintf(iFile == 0 ? "%s:\n" : "\n%s:\n", ValueUnion.psz);
+
+        SHOWEXEPKCS7 This;
+        RT_ZERO(This);
+        This.cVerbosity = cVerbosity;
+
+        RTEXITCODE rcExitThis = SignToolPkcs7_InitFromFile(&This, ValueUnion.psz, cVerbosity);
+        if (rcExitThis == RTEXITCODE_SUCCESS)
+        {
+            This.hLdrMod = NIL_RTLDRMOD;
+
+            int rc = HandleShowExeWorkerPkcs7Display(&This, This.pSignedData, 0, &This.ContentInfo);
+            if (RT_FAILURE(rc))
+                rcExit = RTEXITCODE_FAILURE;
+            SignToolPkcs7Exe_Delete(&This);
+        }
+        if (rcExitThis != RTEXITCODE_SUCCESS && rcExit == RTEXITCODE_SUCCESS)
+            rcExit = rcExitThis;
+
         iFile++;
     } while ((ch = RTGetOpt(&GetState, &ValueUnion)) == VINF_GETOPT_NOT_OPTION);
     if (ch != 0)
@@ -2132,9 +2409,11 @@ const g_aCommands[] =
 {
     { "extract-exe-signer-cert",        HandleExtractExeSignerCert,         HelpExtractExeSignerCert },
     { "add-nested-exe-signature",       HandleAddNestedExeSignature,        HelpAddNestedExeSignature },
+    { "add-nested-cat-signature",       HandleAddNestedCatSignature,        HelpAddNestedCatSignature },
 #ifndef IPRT_IN_BUILD_TOOL
     { "verify-exe",                     HandleVerifyExe,                    HelpVerifyExe },
     { "show-exe",                       HandleShowExe,                      HelpShowExe },
+    { "show-cat",                       HandleShowCat,                      HelpShowCat },
 #endif
     { "make-tainfo",                    HandleMakeTaInfo,                   HelpMakeTaInfo },
     { "help",                           HandleHelp,                         HelpHelp },
