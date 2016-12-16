@@ -32,13 +32,20 @@ if  !defined(VBOX_ONLY_SDK) \
 endif
 
 # PNG support (for screenshots).
-if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_VALIDATIONKIT) \
+if  !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_SDK) \
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
  && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.2.54"
  include $(PATH_SUB_CURRENT)/libpng-1.2.54/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
 # Libcurl for inet access
-if defined(VBOX_WITH_LIBCURL) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_VALIDATIONKIT) \
+if  defined(VBOX_WITH_LIBCURL) \
+ && !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
+ && !defined(VBOX_ONLY_SDK) \
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
  && "$(SDK_VBOX_LIBCURL_INCS)" == "$(PATH_ROOT)/src/libs/curl-7.50.3/include"
  include $(PATH_SUB_CURRENT)/curl-7.50.3/Makefile.kmk
 endif
@@ -49,7 +56,7 @@ if defined(IPRT_WITH_KSTUFF)
 endif
 
 # OpenSSL.
-if !defined(VBOX_ONLY_SDK) \
+if  !defined(VBOX_ONLY_SDK) \
  && (   "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)" \
      || defined(VBOX_WITH_EXTPACK_PUEL_BUILD))
  include $(PATH_SUB_CURRENT)/openssl-1.1.0c/Makefile.kmk
@@ -62,8 +69,10 @@ endif
 
 # Main related things - XPCOM and XSLT.
 if defined(VBOX_WITH_MAIN) \
+ && !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
+
  if defined(VBOX_WITH_XPCOM) && !defined(VBOX_ONLY_DOCS)
   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
  endif
