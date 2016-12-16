@@ -38,6 +38,9 @@ ifdef VBOX_ONLY_ADDITIONS
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif
+ if1of ($(KBUILD_TARGET),win)
+  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
+ endif
 
 else ifdef VBOX_ONLY_VALIDATIONKIT
  #
