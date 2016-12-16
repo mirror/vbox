@@ -697,14 +697,17 @@ static RTEXITCODE ProcessPackage(unsigned iPackage, const char *pszPkgDir, const
  *
  * @returns Fully complained exit code.
  */
-static RTEXITCODE InstallCertificate(void)
+static RTEXITCODE InstallCertificates(void)
 {
-    if (addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE,
-                       "TrustedPublisher",
-                       g_ab_VBoxStubPublicCert,
-                       sizeof(g_ab_VBoxStubPublicCert)))
-        return RTEXITCODE_SUCCESS;
-    return ShowError("Failed to construct install certificate.");
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aVBoxStubTrustedCerts); i++)
+    {
+        if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE,
+                            "TrustedPublisher",
+                            g_aVBoxStubTrustedCerts[i].pab,
+                            g_aVBoxStubTrustedCerts[i].cb))
+            return ShowError("Failed to construct install certificate.");
+    }
+    return RTEXITCODE_SUCCESS;
 }
 #endif /* VBOX_WITH_CODE_SIGNING */
 
@@ -1132,10 +1135,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 else
                 {
                     rcExit = CopyCustomDir(szExtractPath);
-    #ifdef VBOX_WITH_CODE_SIGNING
+#ifdef VBOX_WITH_CODE_SIGNING
                     if (rcExit == RTEXITCODE_SUCCESS && fEnableSilentCert && g_fSilent)
-                        rcExit = InstallCertificate();
-    #endif
+                        rcExit = InstallCertificates();
+#endif
                     unsigned iPackage = 0;
                     while (   iPackage < pHeader->byCntPkgs
                            && rcExit == RTEXITCODE_SUCCESS)
