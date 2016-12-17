@@ -443,6 +443,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
     ktReason_Host_HostMemoryLow                        = ( 'Host',              'HostMemoryLow' );
     ktReason_Host_DriverNotLoaded                      = ( 'Host',              'Driver not loaded' );
+    ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
@@ -699,6 +700,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     katSimpleVBoxHardeningLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
         ( True,  ktReason_Host_DriverNotLoaded,                     'Error opening VBoxDrvStub:  STATUS_OBJECT_NAME_NOT_FOUND' ),
+        ( True,  ktReason_Host_NotSignedWithBuildCert,              'Not signed with the build certificate' ),
     ];
 
 
