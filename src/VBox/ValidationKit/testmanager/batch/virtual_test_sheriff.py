@@ -442,6 +442,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Guru_VERR_VMX_INVALID_GUEST_STATE         = ( 'Guru Meditations',  'VERR_VMX_INVALID_GUEST_STATE' );
     ktReason_Guru_VINF_EM_TRIPLE_FAULT                 = ( 'Guru Meditations',  'VINF_EM_TRIPLE_FAULT' );
     ktReason_Host_HostMemoryLow                        = ( 'Host',              'HostMemoryLow' );
+    ktReason_Host_DriverNotLoaded                      = ( 'Host',              'Driver not loaded' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
@@ -690,6 +691,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
+        ( True,  ktReason_Host_DriverNotLoaded,                     'Error opening VBoxDrvStub:  STATUS_OBJECT_NAME_NOT_FOUND' ),
     ];
 
     ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
