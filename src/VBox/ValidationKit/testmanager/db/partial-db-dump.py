@@ -237,6 +237,7 @@ class PartialDbDump(object): # pylint: disable=R0903
             'TestGroups',
             'TestGroupMembers',
             'SchedGroups',
+            'TestBoxStrTab',
             'TestBoxes',
             'SchedGroupMembers',
             'SchedQueues',
@@ -261,7 +262,7 @@ class PartialDbDump(object): # pylint: disable=R0903
             oDb.execute('SELECT COUNT(*) FROM ' + sTable);
             cRows = oDb.fetchOne()[0];
             cMaxRows = 0;
-            if sTable in [ 'SchedGroups', 'TestResultStrTab', 'Users' ]:    cMaxRows =  1;
+            if sTable in [ 'SchedGroups', 'TestBoxStrTab', 'TestResultStrTab', 'Users' ]:    cMaxRows =  1;
             if cRows > cMaxRows:
                 print 'error: Table %s has %u rows which is more than %u - refusing to delete and load.' \
                     % (sTable, cRows, cMaxRows,);
@@ -269,7 +270,7 @@ class PartialDbDump(object): # pylint: disable=R0903
                 return 1;
 
         print 'Dropping default table content...\n'
-        for sTable in [ 'SchedGroups', 'TestResultStrTab', 'Users']:
+        for sTable in [ 'SchedGroups', 'TestBoxStrTab', 'TestResultStrTab', 'Users']:
             oDb.execute('DELETE FROM ' + sTable);
 
         oDb.execute('ALTER TABLE TestSets DROP CONSTRAINT IF EXISTS TestSets_idTestResult_fkey');
@@ -295,6 +296,7 @@ class PartialDbDump(object): # pylint: disable=R0903
             ( 'TestCaseArgsGenIdSeq',   'TestCaseArgs',         'idGenTestCaseArgs' ),
             ( 'TestGroupIdSeq',         'TestGroups',           'idTestGroup' ),
             ( 'SchedGroupIdSeq',        'SchedGroups',          'idSchedGroup' ),
+            ( 'TestBoxStrTabIdSeq',     'TestBoxStrTab',        'idStr' ),
             ( 'TestBoxIdSeq',           'TestBoxes',            'idTestBox' ),
             ( 'TestBoxGenIdSeq',        'TestBoxes',            'idGenTestBox' ),
             ( 'FailureCategoryIdSeq',   'FailureCategories',    'idFailureCategory' ),
