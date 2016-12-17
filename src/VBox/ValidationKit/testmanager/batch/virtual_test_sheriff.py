@@ -747,8 +747,6 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                             len(sKrnlLog)   if sKrnlLog is not None else 0,
                             len(sVgaText)   if sVgaText is not None else 0,
                             len(sInfoText)  if sInfoText is not None else 0, ));
-            if sVMLog is None:
-                sVMLog = '';
 
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
@@ -788,7 +786,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             #
             fFoundSomething = False;
             for fStopOnHit, tReason, sNeedle in self.katSimpleMainAndVmLogReasons:
-                if sResultLog.find(sNeedle) > 0 or sVMLog.find(sNeedle) > 0:
+                if sResultLog.find(sNeedle) > 0 or (sVMLog is not None and sVMLog.find(sNeedle) > 0):
                     oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
                     if fStopOnHit:
                         return True;
@@ -825,10 +823,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             #
             # Check for repeated reboots...
             #
-            cResets = sVMLog.count('Changing the VM state from \'RUNNING\' to \'RESETTING\'');
-            if cResets > 10:
-                return oCaseFile.noteReasonForId(self.ktReason_Unknown_Reboot_Loop, oFailedResult.idTestResult,
-                                                 sComment = 'Counted %s reboots' % (cResets,));
+            if sVMLog is not None:
+                cResets = sVMLog.count('Changing the VM state from \'RUNNING\' to \'RESETTING\'');
+                if cResets > 10:
+                    return oCaseFile.noteReasonForId(self.ktReason_Unknown_Reboot_Loop, oFailedResult.idTestResult,
+                                                     sComment = 'Counted %s reboots' % (cResets,));
 
             return fFoundSomething;
 
