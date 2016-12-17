@@ -446,7 +446,7 @@ Non-unique foreign key: Users(uid)';
 COMMENT ON COLUMN TestGroupMembers.iSchedPriority IS
   'Test case scheduling priority.
 Higher number causes the test case to be run more frequently.
-@sa SchedGroupMembers.iSchedPriority
+@sa SchedGroupMembers.iSchedPriority, TestBoxesInSchedGroups.iSchedPriority
 @todo Not sure we want to keep this...';
 
 
@@ -542,9 +542,9 @@ Non-unique foreign key: Users(uid)';
 
 
 COMMENT ON COLUMN SchedGroupMembers.iSchedPriority IS
-  'The scheduling priority if the test group.
+  'The scheduling priority of the test group.
 Higher number causes the test case to be run more frequently.
-@sa TestGroupMembers.iSchedPriority';
+@sa TestGroupMembers.iSchedPriority, TestBoxesInSchedGroups.iSchedPriority';
 
 
 COMMENT ON COLUMN SchedGroupMembers.bmHourlySchedule IS
@@ -713,6 +713,36 @@ COMMENT ON COLUMN TestBoxes.enmPendingCmd IS
 
 COMMENT ON INDEX TestBoxesUuidIdx IS
   'Nested paging requires hardware virtualization.';
+
+
+COMMENT ON TABLE TestBoxesInSchedGroups IS
+  'N:M relationship between test boxes and scheduling groups.
+
+We associate a priority with this relationship.
+
+@remarks This table stores history.  Never update or delete anything.  The
+         equivalent of deleting is done by setting the ''tsExpire'' field to
+         current_timestamp.  To select the currently valid entries use
+         tsExpire = TIMESTAMP WITH TIME ZONE ''infinity''.';
+
+
+COMMENT ON COLUMN TestBoxesInSchedGroups.tsEffective IS
+  'When this row starts taking effect (inclusive).';
+
+
+COMMENT ON COLUMN TestBoxesInSchedGroups.tsExpire IS
+  'When this row stops being tsEffective (exclusive).';
+
+
+COMMENT ON COLUMN TestBoxesInSchedGroups.uidAuthor IS
+  'The user id of the one who created/modified this entry.
+Non-unique foreign key: Users(uid)';
+
+
+COMMENT ON COLUMN TestBoxesInSchedGroups.iSchedPriority IS
+  'The scheduling priority of the scheduling group for the test box.
+Higher number causes the scheduling group to be serviced more frequently.
+@sa TestGroupMembers.iSchedPriority, SchedGroups.iSchedPriority';
 
 
 COMMENT ON TABLE FailureCategories IS
@@ -1256,6 +1286,11 @@ scenario it won''t be updated until the gang is gathered or we time out.';
 
 COMMENT ON COLUMN TestBoxStatuses.enmState IS
   'The current state.';
+
+
+COMMENT ON COLUMN TestBoxStatuses.iWorkItem IS
+  'Interal work item number.
+This is used to pick and prioritize between multiple scheduling groups.';
 
 
 COMMENT ON TABLE GlobalResourceStatuses IS

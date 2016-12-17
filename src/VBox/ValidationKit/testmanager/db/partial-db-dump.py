@@ -90,6 +90,7 @@ class PartialDbDump(object): # pylint: disable=R0903
         'FailureCategories',
         'FailureReasons',
         'GlobalResources',
+        'TestBoxStrTab',
         'Testcases',
         'TestcaseArgs',
         'TestcaseDeps',
