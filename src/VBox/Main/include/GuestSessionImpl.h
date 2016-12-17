@@ -200,11 +200,11 @@ protected:
         InstallerFile(const Utf8Str          &aSource,
                       const Utf8Str          &aDest,
                       uint32_t                aFlags,
-                      GuestProcessStartupInfo startupInfo)
+                      const GuestProcessStartupInfo &aStartupInfo)
             : strSource(aSource),
               strDest(aDest),
               fFlags(aFlags),
-              mProcInfo(startupInfo)
+              mProcInfo(aStartupInfo)
         {
             mProcInfo.mExecutable = strDest;
             if (mProcInfo.mName.isEmpty())

@@ -1405,36 +1405,57 @@ int SessionTaskUpdateAdditions::Run(void)
 
                         if (fInstallCert)
                         {
-                            /* Our certificate. */
-                            mFiles.push_back(InstallerFile("CERT/ORACLE_VBOX.CER",
-                                                           strUpdateDir + "oracle-vbox.cer",
-                                                           UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_OPTIONAL));
-                            /* Our certificate installation utility. */
-                            /* First pass: Copy over the file + execute it to remove any existing
-                             *             VBox certificates. */
-                            GuestProcessStartupInfo siCertUtilRem;
-                            siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
-                            siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
-                            siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
-                            siCertUtilRem.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
-                            siCertUtilRem.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
-                            mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
-                                                           strUpdateDir + "VBoxCertUtil.exe",
-                                                           UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_EXECUTE |
-                                                           UPDATEFILE_FLAG_OPTIONAL,
-                                                           siCertUtilRem));
-                            /* Second pass: Only execute (but don't copy) again, this time installng the
-                             *              recent certificates just copied over. */
-                            GuestProcessStartupInfo siCertUtilAdd;
-                            siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
-                            siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
-                            siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
-                            siCertUtilAdd.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
-                            siCertUtilAdd.mArguments.push_back(Utf8Str(strUpdateDir + "oracle-vbox.cer"));
-                            mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
-                                                           strUpdateDir + "VBoxCertUtil.exe",
-                                                           UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
-                                                           siCertUtilAdd));
+                            static struct { const char *pszDst, *pszIso; } const s_aCertFiles[] =
+                            {
+                                { "vbox.cer",           "CERT/VBOX.CER" },
+                                { "vbox-sha1.cer",      "CERT/VBOX_SHA1.CER" },
+                                { "vbox-sha256.cer",    "CERT/VBOX_SHA256.CER" },
+                                { "vbox-sha256-r3.cer", "CERT/VBOX_SHA256_R3.CER" },
+                                { "oracle-vbox.cer",    "CERT/ORACLE_VBOX.CER" },
+                            };
+                            uint32_t fCopyCertUtil = UPDATEFILE_FLAG_COPY_FROM_ISO;
+                            for (uint32_t i = 0; i < RT_ELEMENTS(s_aCertFiles); i++)
+                            {
+                                /* Skip if not present on the ISO. */
+                                uint32_t offIgn;
+                                size_t   cbIgn;
+                                rc = RTIsoFsGetFileInfo(&iso, s_aCertFiles[i].pszIso, &offIgn, &cbIgn);
+                                if (RT_FAILURE(rc))
+                                    continue;
+
+                                /* Copy the certificate certificate. */
+                                Utf8Str const strDstCert(strUpdateDir + s_aCertFiles[i].pszDst);
+                                mFiles.push_back(InstallerFile(s_aCertFiles[i].pszIso,
+                                                               strDstCert,
+                                                               UPDATEFILE_FLAG_COPY_FROM_ISO | UPDATEFILE_FLAG_OPTIONAL));
+
+                                /* Out certificate installation utility. */
+                                /* First pass: Copy over the file (first time only) + execute it to remove any
+                                 *             existing VBox certificates. */
+                                GuestProcessStartupInfo siCertUtilRem;
+                                siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
+                                siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
+                                siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
+                                siCertUtilRem.mArguments.push_back(strDstCert);
+                                siCertUtilRem.mArguments.push_back(strDstCert);
+                                mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
+                                                               strUpdateDir + "VBoxCertUtil.exe",
+                                                               fCopyCertUtil | UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
+                                                               siCertUtilRem));
+                                fCopyCertUtil = 0;
+                                /* Second pass: Only execute (but don't copy) again, this time installng the
+                                 *              recent certificates just copied over. */
+                                GuestProcessStartupInfo siCertUtilAdd;
+                                siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
+                                siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
+                                siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
+                                siCertUtilAdd.mArguments.push_back(strDstCert);
+                                siCertUtilAdd.mArguments.push_back(strDstCert);
+                                mFiles.push_back(InstallerFile("CERT/VBOXCERTUTIL.EXE",
+                                                               strUpdateDir + "VBoxCertUtil.exe",
+                                                               UPDATEFILE_FLAG_EXECUTE | UPDATEFILE_FLAG_OPTIONAL,
+                                                               siCertUtilAdd));
+                            }
                         }
                         /* The installers in different flavors, as we don't know (and can't assume)
                          * the guest's bitness. */
