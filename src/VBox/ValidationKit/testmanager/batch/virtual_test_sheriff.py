@@ -588,7 +588,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         Returns The text following the needle up to the end of the line.
         Returns None if not found.
         """
-        if sHayStack is None:
+        if sHaystack is None:
             return None;
         off = sHaystack.find(sNeedle);
         if off < 0:
