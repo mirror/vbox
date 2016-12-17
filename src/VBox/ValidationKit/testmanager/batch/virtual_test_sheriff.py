@@ -747,6 +747,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                             len(sKrnlLog)   if sKrnlLog is not None else 0,
                             len(sVgaText)   if sVgaText is not None else 0,
                             len(sInfoText)  if sInfoText is not None else 0, ));
+            if sVMLog is None:
+                sVMLog = '';
+
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
             #self.dprint(u'krnl.log<<<\n%s\n<<<\n' % (sKrnlLog,));
