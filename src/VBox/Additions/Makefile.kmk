@@ -263,47 +263,19 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 endif # win.x86
 
 if defined(VBOX_WITH_ADDITIONS_ISO.win.amd64) || defined(VBOX_WITH_ADDITIONS_ISO.win.x86)
- ifndef VBOX_SIGNING_MODE
- GUESTADDITIONS_FILESPEC.win = cert/oracle-vbox.cer=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/oracle-vbox.cer
+ ifdef VBOX_SIGNING_MODE
+  GUESTADDITIONS_FILESPEC.win =
  else if "$(VBOX_WITH_CORP_CODE_SIGNING)" == "all" || (!defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && !defined(VBOX_WITH_CORP_CODE_SIGNING))
- GUESTADDITIONS_FILESPEC.win = cert/oracle-vbox.cer=$(VBOX_PATH_ADDITIONS.win)/oracle-vbox.cer
+  GUESTADDITIONS_FILESPEC.win = cert/vbox.cer=$(VBOX_PATH_ADDITIONS.win)/vbox.cer
  else
   GUESTADDITIONS_FILESPEC.win = \
-  	cert/oracle-vbox1.cer=$(VBOX_PATH_ADDITIONS.win)/oracle-vbox1.cer \
-  	cert/oracle-vbox256.cer=$(VBOX_PATH_ADDITIONS.win)/oracle-vbox256.cer
+  	cert/vbox-sha1.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha1.cer \
+  	cert/vbox-sha256.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256.cer
   if defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && defined(VBOX_WITH_CORP_CODE_SIGNING)
-   GUESTADDITIONS_FILESPEC.win += cert/oracle-vbox256-r3.cer=$(VBOX_PATH_ADDITIONS.win)/oracle-vbox256-r3.cer
+   GUESTADDITIONS_FILESPEC.win += cert/vbox-sha256-r3.cer=$(VBOX_PATH_ADDITIONS.win)/vbox-sha256-r3.cer
   endif
  endif
-
 endif
-  $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h:  | $$(dir $$@) $(VBOX_RTSIGNTOOL) $(PATH_STAGE_SYS)/VBoxDrv.sys
-	$(RM) -f -- "$@" "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
-
-	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index 0 --exe "$(PATH_STAGE_SYS)/VBoxDrv.sys" --output "$@.cer0" --der
-	$(VBOX_BIN2C) -ascii --append VBoxStubTrustedCert0 "$@.cer0" $@
-	$(APPEND) "$@.array" "    { g_abVBoxStubTrustedCert0, sizeof(g_abVBoxStubTrustedCert0) }, "
-  if defined(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME) && (!defined(VBOX_WITH_CORP_CODE_SIGNING) || "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all")
-	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index 1 --exe "$(PATH_STAGE_SYS)/VBoxDrv.sys" --output "$@.cer1" --der
-	$(VBOX_BIN2C) -ascii --append VBoxStubTrustedCert1 "$@.cer1" $@
-	$(APPEND) "$@.array" "    { g_abVBoxStubTrustedCert1, sizeof(g_abVBoxStubTrustedCert1) }, "
-  endif
-  if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all" && "$(VBOX_SIGNING_MODE)" == "release"
-	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index 1 --exe "$(VBOX_RTSIGNTOOL)" --output "$@.cer2" --der
-	$(VBOX_BIN2C) -ascii --append g_abVBoxStubTrustedCert2 "$@.cer2" $@
-	$(APPEND) "$@.array" "    { g_abVBoxStubTrustedCert2, sizeof(g_abVBoxStubTrustedCert2) }, "
-  endif
-	$(APPEND) -n "$@" \
-		"" \
-		"struct { uint8_t const *pab; uint32_t cb; }" "g_aVBoxStubTrustedCerts[] = " \
-               "{"
-	$(SED) --append "$@" -e "" "$@.array"
-	$(APPEND) -n "$@" \
-               "};"
-	$(RM) -f -- "$@.cer0" "$@.cer1" "$@.cer2" "$@.array"
-
-  VBoxStubPublicCert.h:: $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h
-
 
 # haiku
 ifdef VBOX_WITH_ADDITIONS_ISO.haiku.x86

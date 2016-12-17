@@ -359,17 +359,18 @@
       <sect3>
         <title>Unattended Installation</title>
 
-        <para>As a prerequisite for performing an unattended installation of the
-        VirtualBox Guest Additions on a Windows guest, there need to be
-        Oracle CA (Certificate Authority)
-        certificates installed in order to prevent user intervention popups which
-        will undermine a silent installation.</para>
+        <para>As a prerequisite for avoid popups during performing an
+        unattended installation of the VirtualBox Guest Additions, the code
+        signing certificates used to sign the drivers needs to be installed in
+        the right certificates stores in the guest system.  Failing to do this
+        will cause a typical windows installation to pop up a dialog asking
+        whether its allowable to install each driver.</para>
 
         <note><para>On some Windows versions like Windows 2000 and Windows XP the user intervention
         popups mentioned above always will be displayed, even after importing the Oracle certificates.</para></note>
 
-        <para>Since VirtualBox 4.2 installing those CA certificates on a Windows
-        guest can be done in an automated fashion using the
+        <para>Since VirtualBox 4.2 installing those code signing certificates
+        on a Windows guest can be done in an automated fashion using the
         <computeroutput>VBoxCertUtil.exe</computeroutput> utility found on the Guest
         Additions installation CD in the <computeroutput>cert</computeroutput>
         folder:</para>
@@ -390,15 +391,15 @@
           </listitem>
 
           <listitem>
-            <para>Do<screen>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</screen></para>
+            <para>Do<screen>for %i in (vbox*.cer) do VBoxCertUtil add-trusted-publisher %i --root %i</screen></para>
             <para>This will install the certificates to the certificate store. When installing the same certificate
             more than once, an appropriate error will be displayed.</para>
           </listitem>
         </itemizedlist>
 
-        <para>Prior to VirtualBox 4.2 the Oracle CA certificates need to be imported in more manual style
+        <para>Prior to VirtualBox 4.2 the code signing certificates need to be imported in more manual style
         using the <computeroutput>certutil.exe</computeroutput> utility, which is shipped since Windows
-        Vista. For Windows versions before Vista you need to download and install <computeroutput>certutil.exe</computeroutput>
+        Vista.  For Windows versions before Vista you need to download and install <computeroutput>certutil.exe</computeroutput>
         manually. Since the certificates are not accompanied on the VirtualBox Guest Additions CD-ROM
         prior to 4.2, these need to get extracted from a signed VirtualBox executable first.</para>
 
