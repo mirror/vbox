@@ -3237,8 +3237,8 @@ ifdef VBOX_SIGNING_MODE
 	$(RM) -f -- "$(2)"\
 	$(NL)$(TAB)$(VBOX_INF2CAT) "/driver:$(strip $(1))" "/os:$(strip $(subst ;,$(COMMA),$(3)))" /verbose \
 	$(NL)$(TAB)$(MV) -- "$(2)" "$(2)"
-   if 0 && defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all" # temp disabled
-    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(2),,,$(NL)$(TAB))  # temp disabled
+   if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all"
+    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(2),,,$(NL)$(TAB))
    else
     VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call         VBOX_SIGN_FILE_FN,$(2),,,$(NL)$(TAB))
    endif
