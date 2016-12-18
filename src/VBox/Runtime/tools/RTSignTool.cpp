@@ -819,6 +819,7 @@ static RTEXITCODE SignToolPkcs7Exe_WriteSignatureToFile(PSIGNTOOLPKCS7EXE pThis,
                                             uint32_t uCheckSum = UINT32_MAX;
                                             if (SignToolPkcs7Exe_CalcPeCheckSum(pThis, hFile, &uCheckSum))
                                             {
+                                                uBuf.NtHdrs32.OptionalHeader.CheckSum = uCheckSum;
                                                 rc = RTFileWriteAt(hFile, offNtHdrs, &uBuf, cbNtHdrs, NULL);
                                                 if (RT_SUCCESS(rc))
                                                     rc = RTFileFlush(hFile);
