@@ -3142,7 +3142,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   # @param 5  Disables dual signing if non-empty.
   ifndef VBOX_SIGN_FILE_FN
-   ifeq ($(VBOX_WITH_CORP_CODE_SIGNING), all)
+   ifeq ($(VBOX_WITH_CORP_CODE_SIGNING),all)
     VBOX_SIGN_FILE_FN     = $(call VBOX_CCS_SIGN_CMD,driver,$1,$(dir $1))
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
@@ -3237,8 +3237,8 @@ ifdef VBOX_SIGNING_MODE
 	$(RM) -f -- "$(2)"\
 	$(NL)$(TAB)$(VBOX_INF2CAT) "/driver:$(strip $(1))" "/os:$(strip $(subst ;,$(COMMA),$(3)))" /verbose \
 	$(NL)$(TAB)$(MV) -- "$(2)" "$(2)"
-   if defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all"
-    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(2),,,$(NL)$(TAB))
+   if 0 && defined(VBOX_WITH_CORP_CODE_SIGNING) && "$(VBOX_WITH_CORP_CODE_SIGNING)" != "all" # temp disabled
+    VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(2),,,$(NL)$(TAB))  # temp disabled
    else
     VBOX_MAKE_CAT_HLP_FN += $(NL)$(TAB)$(call         VBOX_SIGN_FILE_FN,$(2),,,$(NL)$(TAB))
    endif
