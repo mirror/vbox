@@ -57,8 +57,11 @@ class WuiMain(WuiDispatcherBase):
     ksActionResultsGroupedBySchedGroup  = 'ResultsGroupedBySchedGroup'
     ksActionResultsGroupedByTestGroup   = 'ResultsGroupedByTestGroup'
     ksActionResultsGroupedByBuildRev    = 'ResultsGroupedByBuildRev'
+    ksActionResultsGroupedByBuildCat    = 'ResultsGroupedByBuildCat'
     ksActionResultsGroupedByTestBox     = 'ResultsGroupedByTestBox'
     ksActionResultsGroupedByTestCase    = 'ResultsGroupedByTestCase'
+    ksActionResultsGroupedByOS          = 'ResultsGroupedByOS'
+    ksActionResultsGroupedByArch        = 'ResultsGroupedByArch'
     ksActionTestSetDetails              = 'TestSetDetails';
     ksActionTestResultDetails           = ksActionTestSetDetails;
     ksActionTestSetDetailsFromResult    = 'TestSetDetailsFromResult'
@@ -198,8 +201,11 @@ class WuiMain(WuiDispatcherBase):
         self._dDispatch[self.ksActionResultsUnGrouped]              = self._actionResultsUnGrouped;
         self._dDispatch[self.ksActionResultsGroupedByTestGroup]     = self._actionResultsGroupedByTestGroup;
         self._dDispatch[self.ksActionResultsGroupedByBuildRev]      = self._actionResultsGroupedByBuildRev;
+        self._dDispatch[self.ksActionResultsGroupedByBuildCat]      = self._actionResultsGroupedByBuildCat;
         self._dDispatch[self.ksActionResultsGroupedByTestBox]       = self._actionResultsGroupedByTestBox;
         self._dDispatch[self.ksActionResultsGroupedByTestCase]      = self._actionResultsGroupedByTestCase;
+        self._dDispatch[self.ksActionResultsGroupedByOS]            = self._actionResultsGroupedByOS;
+        self._dDispatch[self.ksActionResultsGroupedByArch]          = self._actionResultsGroupedByArch;
         self._dDispatch[self.ksActionResultsGroupedBySchedGroup]    = self._actionResultsGroupedBySchedGroup;
 
         self._dDispatch[self.ksActionTestSetDetails]                = self._actionTestSetDetails;
@@ -261,7 +267,10 @@ class WuiMain(WuiDispatcherBase):
                     [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sSheriff ],
                     [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sSheriff ],
                     [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sSheriff ],
+                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sSheriff ],
+                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sSheriff ],
                     [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sSheriff ],
+                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sSheriff ],
                 ]
             ],
             [
@@ -282,7 +291,10 @@ class WuiMain(WuiDispatcherBase):
                     [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sExtraTimeNav ],
                     [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sExtraTimeNav ],
                     [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sExtraTimeNav ],
+                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sExtraTimeNav ],
+                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sExtraTimeNav ],
                     [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sExtraTimeNav ],
+                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sExtraTimeNav ],
                 ]
             ],
             [
@@ -293,7 +305,10 @@ class WuiMain(WuiDispatcherBase):
                     [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sOnlyFailures ],
                     [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sOnlyFailures ],
                     [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sOnlyFailures ],
+                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sOnlyFailures ],
+                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sOnlyFailures ],
                     [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sOnlyFailures ],
+                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sOnlyFailures ],
                 ]
             ],
             [
@@ -763,11 +778,29 @@ class WuiMain(WuiDispatcherBase):
                                     reverse = True, key = lambda asData: asData[0])
             self._sPageTitle = 'Grouped by Build'
 
+        elif enmResultsGroupingType == TestResultLogic.ksResultsGroupingTypeBuildCat:
+            aoTmp = oTrLogic.getBuildCategories(tsNow = tsEffective, sPeriod = sCurPeriod)
+            aoGroupMembers = sorted(list(set([ ( x.idBuildCategory, '%s / %s / %s / %s'
+                                                 % ( x.sProduct, x.sBranch, ', '.join(x.asOsArches), x.sType) )
+                                               for x in aoTmp ])),
+                                    reverse = True, key = lambda asData: asData[1]);
+            self._sPageTitle = 'Grouped by Build Category'
+
         elif enmResultsGroupingType == TestResultLogic.ksResultsGroupingTypeTestCase:
             aoTmp = oTrLogic.getTestCases(tsNow = tsEffective, sPeriod = sCurPeriod)
             aoGroupMembers = sorted(list(set([ (x.idTestCase, '%s' % x.sName) for x in aoTmp ])),
                                     reverse = False, key = lambda asData: asData[1])
             self._sPageTitle = 'Grouped by Test Case'
+
+        elif enmResultsGroupingType == TestResultLogic.ksResultsGroupingTypeOS:
+            aoTmp = oTrLogic.getOSes(tsNow = tsEffective, sPeriod = sCurPeriod)
+            aoGroupMembers = sorted(list(set(aoTmp)), reverse = False, key = lambda asData: asData[1]);
+            self._sPageTitle = 'Grouped by OS'
+
+        elif enmResultsGroupingType == TestResultLogic.ksResultsGroupingTypeArch:
+            aoTmp = oTrLogic.getArchitectures(tsNow = tsEffective, sPeriod = sCurPeriod)
+            aoGroupMembers = sorted(list(set(aoTmp)), reverse = False, key = lambda asData: asData[1]);
+            self._sPageTitle = 'Grouped by Architecture'
 
         elif enmResultsGroupingType == TestResultLogic.ksResultsGroupingTypeSchedGroup:
             aoTmp = oTrLogic.getSchedGroups(tsNow = tsEffective, sPeriod = sCurPeriod)
@@ -874,6 +907,13 @@ class WuiMain(WuiDispatcherBase):
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeBuildRev,
                                                  TestResultLogic, WuiGroupedResultList);
 
+    def _actionResultsGroupedByBuildCat(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeBuildCat,
+                                                 TestResultLogic, WuiGroupedResultList);
+
     def _actionResultsGroupedByTestBox(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
@@ -886,6 +926,20 @@ class WuiMain(WuiDispatcherBase):
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
         from testmanager.core.testresults           import TestResultLogic;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestCase,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByOS(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeOS,
+                                                 TestResultLogic, WuiGroupedResultList);
+
+    def _actionResultsGroupedByArch(self):
+        """ Action wrapper. """
+        from testmanager.webui.wuitestresult        import WuiGroupedResultList;
+        from testmanager.core.testresults           import TestResultLogic;
+        return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeArch,
                                                  TestResultLogic, WuiGroupedResultList);
 
     def _actionResultsGroupedBySchedGroup(self):

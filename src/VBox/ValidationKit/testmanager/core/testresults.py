@@ -39,7 +39,7 @@ from testmanager                            import config;
 from testmanager.core.base                  import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, \
                                                    TMTooManyRows, TMRowNotFound;
 from testmanager.core.testgroup             import TestGroupData;
-from testmanager.core.build                 import BuildDataEx;
+from testmanager.core.build                 import BuildDataEx, BuildCategoryData;
 from testmanager.core.failurereason         import FailureReasonLogic;
 from testmanager.core.testbox               import TestBoxData;
 from testmanager.core.testcase              import TestCaseData;
@@ -650,9 +650,12 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
     ksResultsGroupingTypeNone       = 'ResultsGroupingTypeNone';
     ksResultsGroupingTypeTestGroup  = 'ResultsGroupingTypeTestGroup';
-    ksResultsGroupingTypeBuildRev   = 'ResultsGroupingTypeBuild';
+    ksResultsGroupingTypeBuildCat   = 'ResultsGroupingTypeBuildCat';
+    ksResultsGroupingTypeBuildRev   = 'ResultsGroupingTypeBuildRev';
     ksResultsGroupingTypeTestBox    = 'ResultsGroupingTypeTestBox';
     ksResultsGroupingTypeTestCase   = 'ResultsGroupingTypeTestCase';
+    ksResultsGroupingTypeOS         = 'ResultsGroupingTypeOS';
+    ksResultsGroupingTypeArch       = 'ResultsGroupingTypeArch';
     ksResultsGroupingTypeSchedGroup = 'ResultsGroupingTypeSchedGroup';
 
     ## @name Result sorting options.
@@ -792,6 +795,19 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         ksResultsGroupingTypeTestGroup:  ('', 'TestSets.idTestGroup',     None,                      {},),
         ksResultsGroupingTypeTestBox:    ('', 'TestSets.idTestBox',       None,                      {},),
         ksResultsGroupingTypeTestCase:   ('', 'TestSets.idTestCase',      None,                      {},),
+        ksResultsGroupingTypeOS:                (
+            ', TestBoxes',
+            'TestBoxes.idStrOs',
+            ' AND TestBoxes.idGenTestBox = TestSets.idGenTestBox',
+            {},
+        ),
+        ksResultsGroupingTypeArch:       (
+            ', TestBoxes',
+            'TestBoxes.idStrCpuArch',
+            ' AND TestBoxes.idGenTestBox = TestSets.idGenTestBox',
+            {},
+        ),
+        ksResultsGroupingTypeBuildCat:   ('', 'TestSets.idBuildCategory', None,                      {},),
         ksResultsGroupingTypeBuildRev: (
             ', Builds',
             'Builds.iRevision',
@@ -1184,6 +1200,63 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for aoRow in self._oDb.fetchAll():
             aoRet.append(TestCaseData().initFromDbRow(aoRow));
         return aoRet
+
+    def getOSes(self, tsNow, sPeriod):
+        """
+        Get a list of [idStrOs, sOs] tuples of the OSes that appears in the specified result period.
+        """
+
+        # Note! INNER JOIN TestBoxesWithStrings performs miserable compared to LEFT OUTER JOIN. Doesn't matter for the result
+        #       because TestSets.idGenTestBox is a foreign key and unique in TestBoxes.  So, let's do what ever is faster.
+        self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrOs, TestBoxesWithStrings.sOs\n'
+                          'FROM   ( SELECT idTestBox         AS idTestBox,\n'
+                          '                MAX(idGenTestBox) AS idGenTestBox\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '         GROUP BY idTestBox\n'
+                          '       ) AS TestBoxIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
+                          'ORDER BY TestBoxesWithStrings.sOs\n' );
+        return self._oDb.fetchAll();
+
+    def getArchitectures(self, tsNow, sPeriod):
+        """
+        Get a list of [idStrCpuArch, sCpuArch] tuples of the architecutres
+        that appears in the specified result period.
+        """
+
+        # Note! INNER JOIN TestBoxesWithStrings performs miserable compared to LEFT OUTER JOIN. Doesn't matter for the result
+        #       because TestSets.idGenTestBox is a foreign key and unique in TestBoxes.  So, let's do what ever is faster.
+        self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrCpuArch, TestBoxesWithStrings.sCpuArch\n'
+                          'FROM   ( SELECT idTestBox         AS idTestBox,\n'
+                          '                MAX(idGenTestBox) AS idGenTestBox\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '         GROUP BY idTestBox\n'
+                          '       ) AS TestBoxIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
+                          'ORDER BY TestBoxesWithStrings.sCpuArch\n' );
+        return self._oDb.fetchAll();
+
+    def getBuildCategories(self, tsNow, sPeriod):
+        """
+        Get a list of BuildCategoryData that appears in the specified result period.
+        """
+
+        self._oDb.execute('SELECT DISTINCT BuildCategories.*\n'
+                          'FROM   ( SELECT DISTINCT idBuildCategory AS idBuildCategory\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '       ) AS BuildCategoryIDs\n'
+                          '       LEFT OUTER JOIN BuildCategories\n'
+                          '                    ON BuildCategories.idBuildCategory = BuildCategoryIDs.idBuildCategory\n'
+                          'ORDER BY BuildCategories.sProduct, BuildCategories.sBranch, BuildCategories.sType\n');
+        aoRet = [];
+        for aoRow in self._oDb.fetchAll():
+            aoRet.append(BuildCategoryData().initFromDbRow(aoRow));
+        return aoRet;
 
     def getSchedGroups(self, tsNow, sPeriod):
         """
