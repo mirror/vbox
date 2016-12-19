@@ -1322,7 +1322,8 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
                                            const com::Utf8Str &aBaseFolder,
                                            com::Utf8Str       &aFile)
 {
-    LogFlowThisFuncEnter();
+    if (RT_UNLIKELY(aName.isEmpty()))
+        return setError(E_INVALIDARG, tr("Machine name is invalid, must not be empty"));
 
     Utf8Str strBase = aBaseFolder;
     Utf8Str strName = aName;
@@ -1344,7 +1345,7 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
             else if (strKey == "directoryIncludesUUID")
                 fDirectoryIncludesUUID = (strValue == "1");
 
-        } while(uPos != com::Utf8Str::npos);
+        } while (uPos != com::Utf8Str::npos);
     }
 
     if (id.isZero())
@@ -1428,24 +1429,27 @@ void sanitiseMachineFilename(Utf8Str &strName)
         '\0'
     };
 
-    char *pszName = strName.mutableRaw();
-    ssize_t cReplacements = RTStrPurgeComplementSet(pszName, s_uszValidRangePairs, '_');
-    Assert(cReplacements >= 0);
-    NOREF(cReplacements);
+    if (!strName.isEmpty())
+    {
+        char *pszName = strName.mutableRaw();
+        ssize_t cReplacements = RTStrPurgeComplementSet(pszName, s_uszValidRangePairs, '_');
+        Assert(cReplacements >= 0);
+        NOREF(cReplacements);
 
-    /* No leading dot or dash. */
-    if (pszName[0] == '.' || pszName[0] == '-')
-        pszName[0] = '_';
+        /* No leading dot or dash. */
+        if (pszName[0] == '.' || pszName[0] == '-')
+            pszName[0] = '_';
 
-    /* No trailing dot. */
-    if (pszName[strName.length() - 1] == '.')
-        pszName[strName.length() - 1] = '_';
+        /* No trailing dot. */
+        if (pszName[strName.length() - 1] == '.')
+            pszName[strName.length() - 1] = '_';
 
-    /* Mangle leading and trailing spaces. */
-    for (size_t i = 0; pszName[i] == ' '; ++i)
-        pszName[i] = '_';
-    for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
-        pszName[i] = '_';
+        /* Mangle leading and trailing spaces. */
+        for (size_t i = 0; pszName[i] == ' '; ++i)
+            pszName[i] = '_';
+        for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
+            pszName[i] = '_';
+    }
 }
 
 #ifdef DEBUG
