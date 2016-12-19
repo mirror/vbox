@@ -359,7 +359,7 @@
       <sect3>
         <title>Unattended Installation</title>
 
-        <para>As a prerequisite for avoid popups during performing an
+        <para>As a prerequisite for avoid popups while performing an
         unattended installation of the VirtualBox Guest Additions, the code
         signing certificates used to sign the drivers needs to be installed in
         the right certificates stores in the guest system.  Failing to do this
