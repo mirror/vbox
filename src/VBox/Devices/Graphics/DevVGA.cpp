@@ -3870,12 +3870,14 @@ static int vbeParseBitmap(PVGASTATE pThis)
  * @param   yLogo       Logo Y position.
  * @param   cxLogo      Logo width.
  * @param   cyLogo      Logo height.
+ * @param   fInverse    True if the bitmask is black on white (only for 1bpp)
  * @param   iStep       Fade in/fade out step.
  * @param   pu32Palette Palette data.
  * @param   pbSrc       Source buffer.
  * @param   pbDst       Destination buffer.
  */
-static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16_t cxLogo, uint16_t cyLogo, uint8_t iStep,
+static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16_t cxLogo, uint16_t cyLogo,
+                          bool fInverse, uint8_t iStep,
                           const uint32_t *pu32Palette, const uint8_t *pbSrc, uint8_t *pbDst)
 {
     uint16_t        i;
@@ -3923,8 +3925,6 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
 
         for (i = 0; i < cxLogo; i++)
         {
-            uint8_t pix;
-
             switch (cBits)
             {
                 case 1:
@@ -3932,19 +3932,27 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
                     if (!j)
                         c = *pbSrc++;
 
-                    pix = (c & 1) ? 0xFF : 0;
-                    c >>= 1;
-
-                    if (pix)
+                    if (c & 1)
                     {
-                        *pbTmpDst++ = pix * iStep / LOGO_SHOW_STEPS;
-                        *pbTmpDst++ = pix * iStep / LOGO_SHOW_STEPS;
-                        *pbTmpDst++ = pix * iStep / LOGO_SHOW_STEPS;
-                        pbTmpDst++;
+                        if (fInverse)
+                        {
+                            *pbTmpDst++ = 0;
+                            *pbTmpDst++ = 0;
+                            *pbTmpDst++ = 0;
+                            pbTmpDst++;
+                        }
+                        else
+                        {
+                            uint8_t pix = 0xFF * iStep / LOGO_SHOW_STEPS;
+                            *pbTmpDst++ = pix;
+                            *pbTmpDst++ = pix;
+                            *pbTmpDst++ = pix;
+                            pbTmpDst++;
+                        }
                     }
                     else
                         pbTmpDst += 4;
-
+                    c >>= 1;
                     j = (j + 1) % 8;
                     break;
                 }
@@ -3954,7 +3962,7 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
                     if (!j)
                         c = *pbSrc++;
 
-                    pix = (c >> 4) & 0xF;
+                    uint8_t pix = (c >> 4) & 0xF;
                     c <<= 4;
 
                     uint32_t u32Pal = pu32Palette[pix];
@@ -3975,7 +3983,7 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
                 {
                     uint32_t u32Pal = pu32Palette[*pbSrc++];
 
-                    pix = (u32Pal >> 16) & 0xFF;
+                    uint8_t pix = (u32Pal >> 16) & 0xFF;
                     *pbTmpDst++ = pix * iStep / LOGO_SHOW_STEPS;
                     pix = (u32Pal >> 8) & 0xFF;
                     *pbTmpDst++ = pix * iStep / LOGO_SHOW_STEPS;
@@ -4054,14 +4062,14 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 /* Show the bitmap. */
                 vbeShowBitmap(pThis->cLogoBits, xLogo, yLogo,
                               pThis->cxLogo, pThis->cyLogo,
-                              iStep, &pThis->au32LogoPalette[0],
+                              false, iStep, &pThis->au32LogoPalette[0],
                               pbSrc, pbDst);
 
                 /* Show the 'Press F12...' text. */
                 if (pLogoHdr->fu8ShowBootMenu == 2)
                     vbeShowBitmap(1, LOGO_F12TEXT_X, LOGO_F12TEXT_Y,
                                   LOGO_F12TEXT_WIDTH, LOGO_F12TEXT_HEIGHT,
-                                  iStep, &pThis->au32LogoPalette[0],
+                                  pThis->fBootMenuInverse, iStep, &pThis->au32LogoPalette[0],
                                   &g_abLogoF12BootText[0], pbDst);
 
                 /* Blit the offscreen buffer. */
@@ -6068,6 +6076,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "VMSVGA3dEnabled\0"
                                           "HostWindowId\0"
 #endif
+                                          "SuppressNewYearSplash\0"
                                           ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for vga device"));
@@ -6918,10 +6927,18 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /*
      * Allocate buffer for the logo data.
-     * RT_MAX() is applied to let us fall back to default logo on read failure.
+     * Let us fall back to default logo on read failure.
      */
-    pThis->cbLogo = sizeof(LogoHdr) + LogoHdr.cbLogo;
-    pThis->pbLogo = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, RT_MAX(pThis->cbLogo, g_cbVgaDefBiosLogo + sizeof(LogoHdr)));
+    pThis->cbLogo = LogoHdr.cbLogo;
+    if (g_cbVgaDefBiosLogo)
+        pThis->cbLogo = g_cbVgaDefBiosLogo;
+#ifndef VBOX_OSE
+    if (g_cbVgaDefBiosLogoNY)
+        pThis->cbLogo = g_cbVgaDefBiosLogoNY;
+#endif
+    pThis->cbLogo += sizeof(LogoHdr);
+
+    pThis->pbLogo = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbLogo);
     if (pThis->pbLogo)
     {
         /*
@@ -6948,7 +6965,23 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (   !pThis->pszLogoFile
             || RT_FAILURE(rc))
         {
-            memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
+#ifndef VBOX_OSE
+            RTTIMESPEC Now;
+            RTTimeLocalNow(&Now);
+            RTTIME T;
+            RTTimeLocalExplode(&T, &Now);
+            bool fSuppressNewYearSplash = false;
+            rc = CFGMR3QueryBoolDef(pCfg, "SuppressNewYearSplash", &fSuppressNewYearSplash, false);
+            if (   !fSuppressNewYearSplash
+                && (T.u16YearDay > 353 || T.u16YearDay < 10))
+            {
+                pLogoHdr->cbLogo = LogoHdr.cbLogo = g_cbVgaDefBiosLogoNY;
+                memcpy(pLogoHdr + 1, g_abVgaDefBiosLogoNY, LogoHdr.cbLogo);
+                pThis->fBootMenuInverse = true;
+            }
+            else
+#endif
+                memcpy(pLogoHdr + 1, g_abVgaDefBiosLogo, LogoHdr.cbLogo);
             rc = vbeParseBitmap(pThis);
             if (RT_FAILURE(rc))
                 AssertReleaseMsgFailed(("Parsing of internal bitmap failed! vbeParseBitmap() -> %Rrc\n", rc));

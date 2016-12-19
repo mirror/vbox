@@ -24,8 +24,10 @@ RT_C_DECLS_BEGIN
 
 /** The default BIOS logo data. */
 extern const unsigned char  g_abVgaDefBiosLogo[];
+extern const unsigned char  g_abVgaDefBiosLogoNY[];
 /** The size of the default BIOS logo data. */
 extern const unsigned       g_cbVgaDefBiosLogo;
+extern const unsigned       g_cbVgaDefBiosLogoNY;
 
 
 extern const PDMDEVREG g_DevicePCI;
