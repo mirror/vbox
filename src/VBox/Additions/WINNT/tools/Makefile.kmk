@@ -51,7 +51,7 @@ ifdef VBOX_SIGNING_MODE
  define def_VBoxAdditionsInstCertFiles
   AdditionsInstCertFiles_SOURCES += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)=>$1
   AdditionsInstCertFiles_CLEAN   += $$(AdditionsInstCertFiles_0_OUTDIR)/$(1)
-  $$$$(AdditionsInstCertFiles_0_OUTDIR)/$(1): $$(2) | $$$$(dir $$$$@)
+  $$$$(AdditionsInstCertFiles_0_OUTDIR)/$(1): $$(2) | $$$$(dir $$$$@) $(VBOX_RTSIGNTOOL)
 	$(QUIET)$(RM) -f -- "$$@"
 	$(VBOX_RTSIGNTOOL) extract-exe-signer-cert --signature-index $3 --exe "$$<" --output "$$@" --der
  endef
