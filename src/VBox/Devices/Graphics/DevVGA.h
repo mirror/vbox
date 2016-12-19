@@ -584,7 +584,7 @@ typedef struct VGAState {
     uint16_t                    cLogoPalEntries;
     /** Clear screen flag. */
     uint8_t                     fLogoClearScreen;
-    uint8_t                     fBootMenuInverse;
+    bool                        fBootMenuInverse;
     uint8_t                     Padding8[6];
     /** Palette data. */
     uint32_t                    au32LogoPalette[256];
