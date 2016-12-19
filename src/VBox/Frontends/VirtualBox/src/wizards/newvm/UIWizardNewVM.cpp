@@ -105,8 +105,8 @@ bool UIWizardNewVM::createVM()
         QVector<QString> groups;
         if (!m_strGroup.isEmpty())
             groups << m_strGroup;
-        m_machine = vbox.CreateMachine(field("machineFilePath").toString(),
-                                       field("machineBaseName").toString(),
+        m_machine = vbox.CreateMachine(QString() /* no file-path for now */,
+                                       field("name").toString(),
                                        groups, strTypeId, QString());
         if (!vbox.isOk())
         {

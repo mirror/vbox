@@ -56,7 +56,7 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
             m_pNameAndSystemCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             QHBoxLayout *pNameAndSystemCntLayout = new QHBoxLayout(m_pNameAndSystemCnt);
             {
-                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt, true);
+                m_pNameAndSystemEditor = new UINameAndSystemEditor(m_pNameAndSystemCnt);
                 pNameAndSystemCntLayout->addWidget(m_pNameAndSystemEditor);
             }
         }
@@ -138,7 +138,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
 
     /* Setup connections: */
     connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltNameChanged(const QString &)));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)), this, SLOT(sltAdjustToolTip(const QString &)));
     connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(sltOsTypeChanged()));
     connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged()));
     connect(m_pRamEditor, SIGNAL(valueChanged(int)), this, SLOT(sltRamEditorValueChanged()));
@@ -155,14 +154,10 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     registerField("type", m_pNameAndSystemEditor, "type", SIGNAL(sigOsTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
     registerField("machineBaseName", this, "machineBaseName");
-    registerField("machineFilePath", this, "machineFilePath");
     registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
     registerField("virtualDisk", this, "virtualDisk");
     registerField("virtualDiskId", this, "virtualDiskId");
     registerField("virtualDiskLocation", this, "virtualDiskLocation");
-
-    /* Initialize tool-tip: */
-    adjustToolTip();
 }
 
 void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
@@ -177,12 +172,6 @@ void UIWizardNewVMPageExpert::sltNameChanged(const QString &strNewText)
 
     /* Broadcast complete-change: */
     emit completeChanged();
-}
-
-void UIWizardNewVMPageExpert::sltAdjustToolTip(const QString &strNewName)
-{
-    /* Call to base-class: */
-    adjustToolTip(strNewName);
 }
 
 void UIWizardNewVMPageExpert::sltOsTypeChanged()
