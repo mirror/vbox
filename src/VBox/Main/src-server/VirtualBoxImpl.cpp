@@ -1405,6 +1405,9 @@ HRESULT VirtualBox::composeMachineFilename(const com::Utf8Str &aName,
  */
 void sanitiseMachineFilename(Utf8Str &strName)
 {
+    if (strName.isEmpty())
+        return;
+
     /* Set of characters which should be safe for use in filenames: some basic
      * ASCII, Unicode from Latin-1 alphabetic to the end of Hangul.  We try to
      * skip anything that could count as a control character in Windows or
@@ -1425,27 +1428,24 @@ void sanitiseMachineFilename(Utf8Str &strName)
         '\0'
     };
 
-    if (!strName.isEmpty())
-    {
-        char *pszName = strName.mutableRaw();
-        ssize_t cReplacements = RTStrPurgeComplementSet(pszName, s_uszValidRangePairs, '_');
-        Assert(cReplacements >= 0);
-        NOREF(cReplacements);
+    char *pszName = strName.mutableRaw();
+    ssize_t cReplacements = RTStrPurgeComplementSet(pszName, s_uszValidRangePairs, '_');
+    Assert(cReplacements >= 0);
+    NOREF(cReplacements);
 
-        /* No leading dot or dash. */
-        if (pszName[0] == '.' || pszName[0] == '-')
-            pszName[0] = '_';
+    /* No leading dot or dash. */
+    if (pszName[0] == '.' || pszName[0] == '-')
+        pszName[0] = '_';
 
-        /* No trailing dot. */
-        if (pszName[strName.length() - 1] == '.')
-            pszName[strName.length() - 1] = '_';
+    /* No trailing dot. */
+    if (pszName[strName.length() - 1] == '.')
+        pszName[strName.length() - 1] = '_';
 
-        /* Mangle leading and trailing spaces. */
-        for (size_t i = 0; pszName[i] == ' '; ++i)
-            pszName[i] = '_';
-        for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
-            pszName[i] = '_';
-    }
+    /* Mangle leading and trailing spaces. */
+    for (size_t i = 0; pszName[i] == ' '; ++i)
+        pszName[i] = '_';
+    for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
+        pszName[i] = '_';
 }
 
 #ifdef DEBUG
