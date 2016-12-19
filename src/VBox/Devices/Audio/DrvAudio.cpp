@@ -1089,13 +1089,13 @@ static int drvAudioStreamLinkToInternal(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAM
         pStream->pPair = pPair;
         pPair->pPair   = pStream;
 
-        LogRel2(("Linked audio stream '%s' to '%s'\n", pStream->szName, pPair->szName));
+        LogRel2(("Audio: Linked audio stream '%s' to '%s'\n", pStream->szName, pPair->szName));
     }
     else /* Unlink. */
     {
         if (pStream->pPair)
         {
-            LogRel2(("Unlinked pair '%s' from stream '%s'\n", pStream->pPair->szName, pStream->szName));
+            LogRel2(("Audio: Unlinked pair '%s' from stream '%s'\n", pStream->pPair->szName, pStream->szName));
 
             AssertMsg(pStream->pPair->pPair == pStream,
                       ("Pair '%s' is not linked to '%s' (linked to '%s')\n",
