@@ -2642,6 +2642,22 @@ static int e1kRegReadCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 #endif /* unused */
 
 /**
+ * A callback used by PHY to indicate that the link needs to be updated due to
+ * reset of PHY.
+ *
+ * @param   pPhy        A pointer to phy member of the device state structure.
+ * @thread  any
+ */
+void e1kPhyLinkResetCallback(PPHY pPhy)
+{
+    /* PHY is aggregated into e1000, get pThis from pPhy. */
+    PE1KSTATE pThis = RT_FROM_MEMBER(pPhy, E1KSTATE, phy);
+    /* Make sure we have cable connected and MAC can talk to PHY */
+    if (pThis->fCableConnected && (CTRL & CTRL_SLU))
+        e1kArmTimer(pThis, pThis->CTX_SUFF(pLUTimer), E1K_INIT_LINKUP_DELAY_US);
+}
+
+/**
  * Write handler for Device Control register.
  *
  * Handles reset.
@@ -7648,7 +7664,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* Initialize internal PHY. */
     Phy::init(&pThis->phy, iInstance, pThis->eChip == E1K_CHIP_82543GC ? PHY_EPID_M881000 : PHY_EPID_M881011);
-    Phy::setLinkStatus(&pThis->phy, pThis->fCableConnected);
 
     /* Initialize critical sections. We do our own locking. */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));

@@ -37,7 +37,8 @@
  * Link up
  * Receive Pause Enable
  */
-#define PSSTAT_LINK     0xBC08
+#define PSSTAT_LINK_ALL 0xBC08
+#define PSSTAT_LINK     0x0400
 
 namespace Phy
 {
