@@ -1357,7 +1357,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
             *pcSamplesCaptured = cSamplesCaptured;
     }
     else
-        LogFunc(("[%s] Failed with %Rrc\n", rc));
+        LogFunc(("     Failed with %Rrc\n", rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
