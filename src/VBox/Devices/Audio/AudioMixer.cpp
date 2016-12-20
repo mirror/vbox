@@ -68,6 +68,56 @@ int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmC
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
 
 
+#ifdef LOG_ENABLED
+/**
+ * Converts a mixer sink status to a string.
+ *
+ * @returns Stringified mixer sink flags. Must be free'd with RTStrFree().
+ *          "NONE" if no flags set.
+ * @param   fFlags              Mixer sink flags to convert.
+ */
+char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
+{
+#define APPEND_FLAG_TO_STR(_aFlag)              \
+    if (fStatus & AUDMIXSINK_STS_##_aFlag)      \
+    {                                           \
+        if (pszFlags)                           \
+        {                                       \
+            rc2 = RTStrAAppend(&pszFlags, " "); \
+            if (RT_FAILURE(rc2))                \
+                break;                          \
+        }                                       \
+                                                \
+        rc2 = RTStrAAppend(&pszFlags, #_aFlag); \
+        if (RT_FAILURE(rc2))                    \
+            break;                              \
+    }                                           \
+
+    char *pszFlags = NULL;
+    int rc2 = VINF_SUCCESS;
+
+    do
+    {
+        APPEND_FLAG_TO_STR(NONE);
+        APPEND_FLAG_TO_STR(RUNNING);
+        APPEND_FLAG_TO_STR(PENDING_DISABLE);
+        APPEND_FLAG_TO_STR(DIRTY);
+
+    } while (0);
+
+    if (   RT_FAILURE(rc2)
+        && pszFlags)
+    {
+        RTStrFree(pszFlags);
+        pszFlags = NULL;
+    }
+
+#undef APPEND_FLAG_TO_STR
+
+    return pszFlags;
+}
+#endif /* DEBUG */
+
 /**
  * Creates an audio sink and attaches it to the given mixer.
  *
@@ -681,7 +731,11 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         pSink->fStatus |= AUDMIXSINK_STS_PENDING_DISABLE;
     }
 
-    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pSink->fStatus, rc));
+#ifdef LOG_ENABLED
+    char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
+    LogFlowFunc(("[%s]: enmCmd=%d, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
+    RTStrFree(pszStatus);
+#endif
 
     /* Not running anymore? Reset. */
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
@@ -1008,7 +1062,9 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_INPUT,
               ("Can't read from a sink which is not an input sink\n"));
 
-#ifndef VBOX_AUDIO_MIXER_WITH_MIXBUF
+#ifdef VBOX_AUDIO_MIXER_WITH_MIXBUF
+# error "Implement me!"
+#else
     uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbBuf);
     if (!pvMixBuf)
     {
@@ -1052,6 +1108,8 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
             if (RT_FAILURE(rc2))
                 LogFunc(("[%s] Failed reading from stream '%s': %Rrc\n", pSink->pszName, pMixStream->pszName, rc2));
 
+            Log3Func(("[%s] Stream '%s': Read %RU32 bytes\n", pSink->pszName, pMixStream->pszName, cbReadStrm));
+
             if (   RT_FAILURE(rc2)
                 || !cbReadStrm)
                 break;
@@ -1094,7 +1152,12 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     RTMemFree(pvMixBuf);
 #endif
 
-    Log3Func(("[%s] cbRead=%RU32, fClean=%RTbool, fStatus=0x%x, rc=%Rrc\n", pSink->pszName, cbRead, fClean, pSink->fStatus, rc));
+
+#ifdef LOG_ENABLED
+    char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
+    Log2Func(("[%s] cbRead=%RU32, fClean=%RTbool, fStatus=%s, rc=%Rrc\n", pSink->pszName, cbRead, fClean, pszStatus, rc));
+    RTStrFree(pszStatus);
+#endif
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -1349,7 +1412,11 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
     int rc = VINF_SUCCESS;
 
-    Log3Func(("[%s] fStatus=0x%x\n", pSink->pszName, pSink->fStatus));
+#ifdef LOG_ENABLED
+    char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
+    Log3Func(("[%s] fStatus=%s\n", pSink->pszName, pszStatus));
+    RTStrFree(pszStatus);
+#endif
 
     /* Sink disabled? Take a shortcut. */
     if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
@@ -1534,10 +1601,10 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertMsg(pSink->fStatus & AUDMIXSINK_STS_RUNNING, ("%s: Can't write to a sink which is not running (anymore)\n",
-                                                        pSink->pszName));
-    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,   ("%s: Can't write to a sink which is not an output sink\n",
-                                                        pSink->pszName));
+    AssertMsg(pSink->fStatus & AUDMIXSINK_STS_RUNNING,
+              ("%s: Can't write to a sink which is not running (anymore) (status 0x%x)\n", pSink->pszName, pSink->fStatus));
+    AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
+              ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
 
     Log3Func(("[%s] enmOp=%d, cbBuf=%RU32\n", pSink->pszName, enmOp, cbBuf));
 
