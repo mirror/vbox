@@ -136,6 +136,59 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 
 # endif /* unused */
 
+#ifdef LOG_ENABLED
+/**
+ * Converts an audio stream status to a string.
+ *
+ * @returns Stringified stream status flags. Must be free'd with RTStrFree().
+ *          "NONE" if no flags set.
+ * @param   fFlags              Stream status flags to convert.
+ */
+char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
+{
+#define APPEND_FLAG_TO_STR(_aFlag)              \
+    if (fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) \
+    {                                            \
+        if (pszFlags)                            \
+        {                                        \
+            rc2 = RTStrAAppend(&pszFlags, " ");  \
+            if (RT_FAILURE(rc2))                 \
+                break;                           \
+        }                                        \
+                                                 \
+        rc2 = RTStrAAppend(&pszFlags, #_aFlag);  \
+        if (RT_FAILURE(rc2))                     \
+            break;                               \
+    }                                            \
+
+    char *pszFlags = NULL;
+    int rc2 = VINF_SUCCESS;
+
+    do
+    {
+        APPEND_FLAG_TO_STR(NONE           );
+        APPEND_FLAG_TO_STR(INITIALIZED    );
+        APPEND_FLAG_TO_STR(ENABLED        );
+        APPEND_FLAG_TO_STR(PAUSED         );
+        APPEND_FLAG_TO_STR(PENDING_DISABLE);
+        APPEND_FLAG_TO_STR(DATA_READABLE  );
+        APPEND_FLAG_TO_STR(DATA_WRITABLE  );
+        APPEND_FLAG_TO_STR(PENDING_REINIT );
+    } while (0);
+
+    if (   RT_FAILURE(rc2)
+        && pszFlags)
+    {
+        RTStrFree(pszFlags);
+        pszFlags = NULL;
+    }
+
+#undef APPEND_FLAG_TO_STR
+
+    return pszFlags;
+}
+#endif /* LOG_ENABLED */
+
 /**
  * Returns the host stream part of an audio stream pair, or NULL
  * if no host stream has been assigned / is not available.
@@ -310,7 +363,13 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
     AssertPtr(pGstStream);
 
-    LogFlowFunc(("Status host=0x%x, guest=0x%x\n", pHstStream->fStatus, pGstStream->fStatus));
+#ifdef LOG_ENABLED
+    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    char *pszGstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFlowFunc(("Status host=%s, guest=%s\n", pszHstFlags, pszGstFlags));
+    RTStrFree(pszGstFlags);
+    RTStrFree(pszHstFlags);
+#endif /* LOG_ENABLED */
 
     int rc = VINF_SUCCESS;
 
@@ -420,7 +479,11 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     if (!pHstStream) /* Stream does not have a host backend? Bail out. */
         return VERR_NOT_FOUND;
 
-    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=0x%x\n", pHstStream->szName, enmStreamCmd, pHstStream->fStatus));
+#ifdef LOG_ENABLED
+    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=%s\n", pHstStream->szName, enmStreamCmd, pszHstFlags));
+    RTStrFree(pszHstFlags);
+#endif /* LOG_ENABLED */
 
     AssertPtr(pThis->pHostDrvAudio);
 
@@ -992,7 +1055,11 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
             return rc;
     }
 
-    Log3Func(("[%s] fStatus=0x%x\n", pHstStream->szName, pHstStream->fStatus));
+#ifdef LOG_ENABLED
+    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    Log3Func(("[%s] fStatus=%s\n", pHstStream->szName, pszHstFlags));
+    RTStrFree(pszHstFlags);
+#endif /* LOG_ENABLED */
 
     /* Not enabled or paused? Skip iteration. */
     if (   !(pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED)
@@ -1273,12 +1340,14 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
                     STAM_COUNTER_ADD(&pThis->Stats.TotalSamplesCaptured,  cSamplesCaptured);
                     STAM_COUNTER_ADD(&pHstStream->In.StatSamplesCaptured, cSamplesCaptured);
 #endif
+                    Log3Func(("[%s] %RU32 samples captured\n", pHstStream->szName, cSamplesCaptured));
                 }
             }
+            else
+                Log3Func(("[%s] Skipping (backend status 0x%x)\n", pHstStream->szName, stsBackend));
         }
-
-        Log3Func(("[%s] stsBackend=0x%x, cSamplesLive=%RU32, cSamplesCaptured=%RU32, rc=%Rrc\n",
-                  pHstStream->szName, stsBackend, cSamplesLive, cSamplesCaptured, rc));
+        else
+            Log3Func(("[%s] Skipping (still has %RU32 live samples)\n", pHstStream->szName, cSamplesLive));
 
     } while (0);
 
@@ -1287,6 +1356,8 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
         if (pcSamplesCaptured)
             *pcSamplesCaptured = cSamplesCaptured;
     }
+    else
+        LogFunc(("[%s] Failed with %Rrc\n", rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2364,7 +2435,11 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("%s: fStatus=0x%x\n", pHstStream->szName, pHstStream->fStatus));
+#ifdef LOG_ENABLED
+    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFunc(("%s: fStatus=%s\n", pHstStream->szName, pszHstFlags));
+    RTStrFree(pszHstFlags);
+#endif /* LOG_ENABLED */
 
     if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_INITIALIZED)
     {
