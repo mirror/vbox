@@ -144,7 +144,7 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
  *          "NONE" if no flags set.
  * @param   fFlags              Stream status flags to convert.
  */
-char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
+static char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
 {
 #define APPEND_FLAG_TO_STR(_aFlag)              \
     if (fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) \

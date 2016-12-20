@@ -76,7 +76,7 @@ static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
  *          "NONE" if no flags set.
  * @param   fFlags              Mixer sink flags to convert.
  */
-char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
+static char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
 {
 #define APPEND_FLAG_TO_STR(_aFlag)              \
     if (fStatus & AUDMIXSINK_STS_##_aFlag)      \
