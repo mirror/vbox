@@ -354,7 +354,8 @@ public:
           ullLimit(0),
           ullWeight(0),
           ulBusNumber(0),
-          ulLineNumber(0)
+          ulLineNumber(0),
+          fDefault(false)
     {
         itemName = "Item";
     };
