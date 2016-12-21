@@ -626,13 +626,15 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
     if (!pSink) /* No sink available (yet)? Bail out early. */
         return VINF_SUCCESS;
 
+#ifdef LOG_ENABLED
     const AUDMIXSINKSTS stsSink = AudioMixerSinkGetStatus(pSink);
 
-    const bool fIsEnabled       = stsSink & AUDMIXSINK_STS_RUNNING;
-    const bool fPendingDisable  = stsSink & AUDMIXSINK_STS_PENDING_DISABLE;
+    const bool fIsEnabled       = RT_BOOL(stsSink & AUDMIXSINK_STS_RUNNING);
+    const bool fPendingDisable  = RT_BOOL(stsSink & AUDMIXSINK_STS_PENDING_DISABLE);
 
     LogFunc(("[SD%RU8] fEnable=%RTbool, fIsEnabled=%RTbool, fPendingDisable=%RTbool, DCH=%RTbool, cStreamsActive=%RU8\n",
              pStream->u8Strm, fEnable, fIsEnabled, fPendingDisable, RT_BOOL(pStream->Regs.sr & AC97_SR_DCH), pThis->cStreamsActive));
+#endif
 
     int rc = VINF_SUCCESS;
 
