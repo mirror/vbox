@@ -55,7 +55,6 @@ protected:
     ThreadTask() : m_strTaskName("GenericTask")
     { }
 
-    /** The worker thread handle (may be invalid if the thread has shut down). */
     Utf8Str m_strTaskName;
     bool mAsync;
 
