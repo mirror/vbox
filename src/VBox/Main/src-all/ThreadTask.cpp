@@ -87,7 +87,8 @@ HRESULT ThreadTask::createThreadWithRaceCondition(PRTTHREAD phThread)
  */
 HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD phThread)
 {
-    int vrc = RTThreadCreate(&m_hThread,
+    RTTHREAD hThread;
+    int vrc = RTThreadCreate(&hThread,
                              taskHandlerThreadProc,
                              (void *)this,
                              0,
@@ -98,7 +99,7 @@ HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD phThrea
     {
         mAsync = true;
         if (phThread)
-            *phThread = m_hThread;
+            *phThread = hThread;
         return S_OK;
     }
 
@@ -123,7 +124,6 @@ HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD phThrea
      */
     pTask->handler();
 
-    pTask->m_hThread = NIL_RTTHREAD; /* unnecessary, but whatever. */
     delete pTask;
     return VINF_SUCCESS;
 }

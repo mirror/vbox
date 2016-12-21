@@ -34,8 +34,7 @@ class ThreadTask
 {
 public:
     ThreadTask(const Utf8Str &t)
-        : m_hThread(NIL_RTTHREAD)
-        , m_strTaskName(t)
+        : m_strTaskName(t)
         , mAsync(false)
     { }
 
@@ -53,11 +52,10 @@ protected:
     HRESULT createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD pThread);
     static DECLCALLBACK(int) taskHandlerThreadProc(RTTHREAD thread, void *pvUser);
 
-    ThreadTask() : m_hThread(NIL_RTTHREAD), m_strTaskName("GenericTask")
+    ThreadTask() : m_strTaskName("GenericTask")
     { }
 
     /** The worker thread handle (may be invalid if the thread has shut down). */
-    RTTHREAD m_hThread;
     Utf8Str m_strTaskName;
     bool mAsync;
 

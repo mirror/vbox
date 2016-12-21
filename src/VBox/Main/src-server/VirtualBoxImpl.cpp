@@ -3969,7 +3969,7 @@ void VirtualBox::i_rememberMachineNameChangeForMedia(const Utf8Str &strOldConfig
     m->llPendingMachineRenames.push_back(pmr);
 }
 
-static DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser);
+static DECLCALLBACK(int) fntSaveMediaRegistries(void *pvUser);
 
 class SaveMediaRegistriesDesc : public ThreadTask
 {
@@ -3986,7 +3986,7 @@ private:
     {
         try
         {
-            fntSaveMediaRegistries(m_hThread, this);
+            fntSaveMediaRegistries(this);
         }
         catch(...)
         {
@@ -3997,15 +3997,14 @@ private:
     MediaList llMedia;
     ComObjPtr<VirtualBox> pVirtualBox;
 
-    friend DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser);
+    friend DECLCALLBACK(int) fntSaveMediaRegistries(void *pvUser);
     friend void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
                                                 const Guid &uuidRegistry,
                                                 const Utf8Str &strMachineFolder);
 };
 
-DECLCALLBACK(int) fntSaveMediaRegistries(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) fntSaveMediaRegistries(void *pvUser)
 {
-    NOREF(ThreadSelf);
     SaveMediaRegistriesDesc *pDesc = (SaveMediaRegistriesDesc *)pvUser;
     if (!pDesc)
     {
