@@ -56,10 +56,6 @@
 //#define HDA_AS_PCI_EXPRESS
 #define VBOX_WITH_INTEL_HDA
 
-/* Enables asynchronous audio data handling
- * to speed up the actual DMA data routines. */
-#define VBOX_WITH_HDA_ASYNC_IO
-
 /*
  * HDA_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust HDA_DEBUG_DUMP_PCM_DATA_PATH

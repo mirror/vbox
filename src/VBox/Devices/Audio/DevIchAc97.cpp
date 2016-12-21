@@ -46,13 +46,6 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-/*
- * Enables asynchronous audio data handling
- * to speed up the actual DMA data routines and keeping up
- * audio processing out of EMT as much as possible.
- */
-#define VBOX_WITH_AUDIO_AC97_ASYNC_IO
-
 #if 0
 /*
  * AC97_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
