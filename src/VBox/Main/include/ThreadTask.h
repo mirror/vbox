@@ -35,7 +35,7 @@ class ThreadTask
 public:
     ThreadTask(const Utf8Str &t)
         : m_strTaskName(t)
-        , mAsync(false)
+        , mAsync(true)
     { }
 
     virtual ~ThreadTask()
@@ -43,13 +43,12 @@ public:
 
     HRESULT createThread(void);
     HRESULT createThreadWithType(RTTHREADTYPE enmType);
-    HRESULT createThreadWithRaceCondition(PRTTHREAD pThread);
 
     inline Utf8Str getTaskName() const { return m_strTaskName; }
     bool isAsync() { return mAsync; }
 
 protected:
-    HRESULT createThreadInternal(RTTHREADTYPE enmType, PRTTHREAD pThread);
+    HRESULT createThreadInternal(RTTHREADTYPE enmType);
     static DECLCALLBACK(int) taskHandlerThreadProc(RTTHREAD thread, void *pvUser);
 
     ThreadTask() : m_strTaskName("GenericTask")
