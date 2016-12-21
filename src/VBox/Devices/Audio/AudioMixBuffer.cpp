@@ -974,7 +974,6 @@ uint32_t AudioMixBufLive(PPDMAUDIOMIXBUF pMixBuf)
  * Mixes audio samples from a source mixing buffer to a destination mixing buffer.
  *
  * @return  IPRT status code.
- *          VERR_NO_DATA if the source does not have any audio data.
  *          VERR_BUFFER_UNDERFLOW if the source did not have enough audio data.
  *          VERR_BUFFER_OVERFLOW if the destination did not have enough space to store the converted source audio data.
  *
@@ -1013,14 +1012,8 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
     uint32_t cDstAvail    = pDst->cSamples - pDst->cUsed;
     uint32_t offDstWrite  = pDst->offWrite;
 
-    // Updated code causes tstAudioMixBuffer to fail. Problem is failing the call
-    // when source has no available data, which can apparently happen. See #8521.
-#if 0
-    if (!cSrcAvail)
-    {
-        return VERR_NO_DATA;
-    }
-#else
+    AUDMIXBUF_LOG(("cSrcSamples=%RU32, cSrcAvail=%RU32 -> cDstAvail=%RU32\n", cSrcSamples,  cSrcAvail, cDstAvail));
+
     if (   !cSrcAvail
         || !cDstAvail)
     {
@@ -1028,9 +1021,6 @@ static int audioMixBufMixTo(PPDMAUDIOMIXBUF pDst, PPDMAUDIOMIXBUF pSrc, uint32_t
             *pcProcessed = 0;
         return VINF_SUCCESS;
     }
-#endif
-
-    AUDMIXBUF_LOG(("cSrcSamples=%RU32, cSrcAvail=%RU32 -> cDstAvail=%RU32\n", cSrcSamples,  cSrcAvail, cDstAvail));
 
 #ifdef DEBUG
     audioMixBufDbgPrintInternal(pDst);
