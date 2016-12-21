@@ -262,53 +262,56 @@ class WuiMain(WuiDispatcherBase):
             [
                 'Sheriff',     sActUrlBase + self.ksActionResultsUnGrouped + sSheriff,
                 [
-                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped           + sSheriff ],
-                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sSheriff ],
-                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sSheriff ],
-                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sSheriff ],
-                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sSheriff ],
-                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sSheriff ],
-                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sSheriff ],
-                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sSheriff ],
-                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sSheriff ],
+                    [ 'Grouped by',        None ],
+                    [ 'Ungrouped',          sActUrlBase + self.ksActionResultsUnGrouped           + sSheriff ],
+                    [ 'Sched group',        sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sSheriff ],
+                    [ 'Test group',         sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sSheriff ],
+                    [ 'Test case',          sActUrlBase + self.ksActionResultsGroupedByTestCase   + sSheriff ],
+                    [ 'Testbox',            sActUrlBase + self.ksActionResultsGroupedByTestBox    + sSheriff ],
+                    [ 'OS',                 sActUrlBase + self.ksActionResultsGroupedByOS         + sSheriff ],
+                    [ 'Architecture',       sActUrlBase + self.ksActionResultsGroupedByArch       + sSheriff ],
+                    [ 'Revision',           sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sSheriff ],
+                    [ 'Build category',     sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sSheriff ],
                 ]
             ],
             [
                 'Reports',          sActUrlBase + self.ksActionReportSummary,
                 [
                     [ 'Summary',                  sActUrlBase + self.ksActionReportSummary                 + sExtraReports ],
-                    [ 'Success Rate',             sActUrlBase + self.ksActionReportRate                    + sExtraReports ],
-                    [ 'Test Case Failures',       sActUrlBase + self.ksActionReportTestCaseFailures        + sExtraReports ],
-                    [ 'TestBox Failures',         sActUrlBase + self.ksActionReportTestBoxFailures         + sExtraReports ],
-                    [ 'Failure Reasons',          sActUrlBase + self.ksActionReportFailureReasons          + sExtraReports ],
+                    [ 'Success rate',             sActUrlBase + self.ksActionReportRate                    + sExtraReports ],
+                    [ 'Test case failures',       sActUrlBase + self.ksActionReportTestCaseFailures        + sExtraReports ],
+                    [ 'Testbox failures',         sActUrlBase + self.ksActionReportTestBoxFailures         + sExtraReports ],
+                    [ 'Failure reasons',          sActUrlBase + self.ksActionReportFailureReasons          + sExtraReports ],
                 ]
             ],
             [
                 'Test Results',     sActUrlBase + self.ksActionResultsUnGrouped + sExtraTimeNav,
                 [
-                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped           + sExtraTimeNav ],
-                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sExtraTimeNav ],
-                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sExtraTimeNav ],
-                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sExtraTimeNav ],
-                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sExtraTimeNav ],
-                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sExtraTimeNav ],
-                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sExtraTimeNav ],
-                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sExtraTimeNav ],
-                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sExtraTimeNav ],
+                    [ 'Grouped by',        None ],
+                    [ 'Ungrouped',          sActUrlBase + self.ksActionResultsUnGrouped           + sExtraTimeNav ],
+                    [ 'Sched group',        sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sExtraTimeNav ],
+                    [ 'Test group',         sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sExtraTimeNav ],
+                    [ 'Test case',          sActUrlBase + self.ksActionResultsGroupedByTestCase   + sExtraTimeNav ],
+                    [ 'Testbox',            sActUrlBase + self.ksActionResultsGroupedByTestBox    + sExtraTimeNav ],
+                    [ 'OS',                 sActUrlBase + self.ksActionResultsGroupedByOS         + sExtraTimeNav ],
+                    [ 'Architecture',       sActUrlBase + self.ksActionResultsGroupedByArch       + sExtraTimeNav ],
+                    [ 'Revision',           sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sExtraTimeNav ],
+                    [ 'Build category',     sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sExtraTimeNav ],
                 ]
             ],
             [
                 'Test Failures',     sActUrlBase + self.ksActionResultsUnGrouped + sOnlyFailures,
                 [
-                    [ 'Ungrouped results',           sActUrlBase + self.ksActionResultsUnGrouped           + sOnlyFailures ],
-                    [ 'Grouped by Scheduling Group', sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sOnlyFailures ],
-                    [ 'Grouped by Test Group',       sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sOnlyFailures ],
-                    [ 'Grouped by TestBox',          sActUrlBase + self.ksActionResultsGroupedByTestBox    + sOnlyFailures ],
-                    [ 'Grouped by Test Case',        sActUrlBase + self.ksActionResultsGroupedByTestCase   + sOnlyFailures ],
-                    [ 'Grouped by OS',               sActUrlBase + self.ksActionResultsGroupedByOS         + sOnlyFailures ],
-                    [ 'Grouped by Architecture',     sActUrlBase + self.ksActionResultsGroupedByArch       + sOnlyFailures ],
-                    [ 'Grouped by Revision',         sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sOnlyFailures ],
-                    [ 'Grouped by Build Category',   sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sOnlyFailures ],
+                    [ 'Grouped by',        None ],
+                    [ 'Ungrouped',          sActUrlBase + self.ksActionResultsUnGrouped           + sOnlyFailures ],
+                    [ 'Sched group',        sActUrlBase + self.ksActionResultsGroupedBySchedGroup + sOnlyFailures ],
+                    [ 'Test group',         sActUrlBase + self.ksActionResultsGroupedByTestGroup  + sOnlyFailures ],
+                    [ 'Test case',          sActUrlBase + self.ksActionResultsGroupedByTestCase   + sOnlyFailures ],
+                    [ 'Testbox',            sActUrlBase + self.ksActionResultsGroupedByTestBox    + sOnlyFailures ],
+                    [ 'OS',                 sActUrlBase + self.ksActionResultsGroupedByOS         + sOnlyFailures ],
+                    [ 'Architecture',       sActUrlBase + self.ksActionResultsGroupedByArch       + sOnlyFailures ],
+                    [ 'Revision',           sActUrlBase + self.ksActionResultsGroupedByBuildRev   + sOnlyFailures ],
+                    [ 'Build category',     sActUrlBase + self.ksActionResultsGroupedByBuildCat   + sOnlyFailures ],
                 ]
             ],
             [
@@ -811,10 +814,11 @@ class WuiMain(WuiDispatcherBase):
         else:
             raise TMExceptionBase('Unknown grouping type')
 
-        _sPageBody  = ''
-        oContent    = None
-        cEntriesMax = 0
-        _dParams    = self.getParameters()
+        _sPageBody   = ''
+        oContent     = None
+        cEntriesMax  = 0
+        _dParams     = self.getParameters()
+        oResultLogic = oResultsLogicType(self._oDb);
         for idMember, sMemberName in aoGroupMembers:
             #
             # Count and fetch entries to be displayed.
@@ -826,7 +830,6 @@ class WuiMain(WuiDispatcherBase):
                    or (iGroupMemberId > 0   and enmResultsGroupingType != TestResultLogic.ksResultsGroupingTypeNone) ):
                 continue
 
-            oResultLogic = oResultsLogicType(self._oDb);
             cEntries = oResultLogic.getEntriesCount(tsNow = tsEffective,
                                                     sInterval = sCurPeriod,
                                                     enmResultsGroupingType = enmResultsGroupingType,
@@ -882,8 +885,38 @@ class WuiMain(WuiDispatcherBase):
             self._sPageBody = sHtmlNavigation + _sPageBody + sHtmlNavigation;
         else:
             self._sPageBody = sHtmlNavigation + '<p align="center"><i>No data to display</i></p>\n';
+
+        #
+        # Now, generate a filter control panel for the side bar.
+        #
+        self._sPageFilter = self._generateResultFilter(oResultLogic,
+                                                       tsNow = tsEffective,
+                                                       sInterval = sCurPeriod,
+                                                       enmResultsGroupingType = enmResultsGroupingType,
+                                                       aoGroupMembers = aoGroupMembers,
+                                                       fOnlyFailures = fOnlyFailures,
+                                                       fOnlyNeedingReason = fOnlyNeedingReason);
         return True;
 
+    def _generateResultFilter(self, oResultLogic, tsNow, sInterval, enmResultsGroupingType, aoGroupMembers,
+                              fOnlyFailures, fOnlyNeedingReason):
+        """
+        Generates the result filter for the left hand side.
+        """
+        sHtml  = u'<div id="side-filters">\n' \
+                 u' <p>Filters</p>\n' \
+                 u' <dl>\n';
+
+        sHtml += u'  <dt class="sf-collapsable"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">&#9660; Test filter 1</a></dd>\n';
+        sHtml += u'  <dd class="sf-collapsable"><ul><li>stuff 1</li><li>stuff 2</li><ul></dd>\n'
+
+        sHtml += u'  <dt class="sf-expandable"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">&#9654; Test filter 2</a></dd>\n';
+        sHtml += u'  <dd class="sf-expandable"><ul><li>stuff 3</li><li>stuff 4</li><ul></dd>\n'
+
+
+        sHtml += u' </dl>\n' \
+                 u'</div>\n';
+        return sHtml;
 
     def _actionResultsUnGrouped(self):
         """ Action wrapper. """

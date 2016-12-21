@@ -32,6 +32,7 @@ __version__ = "$Revision$"
 # Standard python imports.
 import os;
 import sys;
+import string;
 
 # Validation Kit imports.
 from common                       import webutils, utils;
@@ -114,6 +115,7 @@ class WuiDispatcherBase(object):
         self._sTemplate         = 'template-default.html';
         self._sPageTitle        = '$$TODO$$';   # The page title.
         self._aaoMenus          = [];           # List of [sName, sLink, [ [sSideName, sLink], .. ] tuples.
+        self._sPageFilter       = '';           # The filter controls (optional).
         self._sPageBody         = '$$TODO$$';   # The body text.
         self._sRedirectTo       = None;
         self._sDebug            = '';
@@ -153,11 +155,11 @@ class WuiDispatcherBase(object):
 
     def _isMenuMatch(self, sMenuUrl, sActionParam):
         """ Overridable menu matcher. """
-        return sMenuUrl.find(sActionParam) > 0;
+        return sMenuUrl is not None and sMenuUrl.find(sActionParam) > 0;
 
     def _isSideMenuMatch(self, sSideMenuUrl, sActionParam):
         """ Overridable side menu matcher. """
-        return sSideMenuUrl.find(sActionParam) > 0;
+        return sSideMenuUrl is not None and sSideMenuUrl.find(sActionParam) > 0;
 
     def _generateMenus(self):
         """
@@ -199,15 +201,16 @@ class WuiDispatcherBase(object):
         sSideMenuItems = '';
         if aasSideMenu is not None:
             for asSubItem in aasSideMenu:
-                if self._isSideMenuMatch(asSubItem[1], sActionParam):
-                    sSideMenuItems += '<li class="current_page_item">';
+                if asSubItem[1] is not None:
+                    if self._isSideMenuMatch(asSubItem[1], sActionParam):
+                        sSideMenuItems += '<li class="current_page_item">';
+                    else:
+                        sSideMenuItems += '<li>';
+                    sSideMenuItems += '<a href="' + webutils.escapeAttr(asSubItem[1]) + '">' \
+                                    + webutils.escapeElem(asSubItem[0]) + '</a></li>\n';
                 else:
-                    sSideMenuItems += '<li>';
-                sSideMenuItems += '<a href="' + webutils.escapeAttr(asSubItem[1]) + '">' \
-                                + webutils.escapeElem(asSubItem[0]) + '</a></li>\n';
-
+                    sSideMenuItems += '<li class="subheader_item">' + webutils.escapeElem(asSubItem[0]) + '</a></li>';
         return (sTopMenuItems, sSideMenuItems);
-
 
     def _generatePage(self):
         """
@@ -215,25 +218,9 @@ class WuiDispatcherBase(object):
         """
         assert self._sRedirectTo is None;
 
-        # Load the template.
-        oFile = open(os.path.join(self._oSrvGlue.pathTmWebUI(), self._sTemplate));
-        sTmpl = oFile.read();
-        oFile.close();
-
-        # Do replacements.
-        sTmpl = sTmpl.replace('@@PAGE_TITLE@@', self._sPageTitle);
-        sTmpl = sTmpl.replace('@@PAGE_BODY@@', self._sPageBody);
-        if self._oCurUser is not None:
-            sTmpl = sTmpl.replace('@@USER_NAME@@', self._oCurUser.sUsername);
-        else:
-            sTmpl = sTmpl.replace('@@USER_NAME@@', 'unauthorized user "' + self._oSrvGlue.getLoginName() + '"');
-        sTmpl = sTmpl.replace('@@TESTMANAGER_VERSION@@', config.g_ksVersion);
-        sTmpl = sTmpl.replace('@@TESTMANAGER_REVISION@@', config.g_ksRevision);
-        sTmpl = sTmpl.replace('@@BASE_URL@@', self._oSrvGlue.getBaseUrl());
-
-        (sTopMenuItems, sSideMenuItems) = self._generateMenus();
-        sTmpl = sTmpl.replace('@@TOP_MENU_ITEMS@@', sTopMenuItems);
-        sTmpl = sTmpl.replace('@@SIDE_MENU_ITEMS@@', sSideMenuItems);
+        #
+        # Build the replacement string dictionary.
+        #
 
         # Provide basic auth log out for browsers that supports it.
         sUserAgent = self._oSrvGlue.getUserAgent();
@@ -264,9 +251,31 @@ class WuiDispatcherBase(object):
             sLogOut = ''
         else:
             sLogOut = ''
-        sTmpl = sTmpl.replace('@@LOG_OUT@@', sLogOut)
 
-        # Debug section.
+        # Prep Menus.
+        (sTopMenuItems, sSideMenuItems) = self._generateMenus();
+
+        # The dictionary (max variable length is 28 chars (see further down)).
+        dReplacements = {
+            '@@PAGE_TITLE@@':           self._sPageTitle,
+            '@@LOG_OUT@@':              sLogOut,
+            '@@TESTMANAGER_VERSION@@':  config.g_ksVersion,
+            '@@TESTMANAGER_REVISION@@': config.g_ksRevision,
+            '@@BASE_URL@@':             self._oSrvGlue.getBaseUrl(),
+            '@@TOP_MENU_ITEMS@@':       sTopMenuItems,
+            '@@SIDE_MENU_ITEMS@@':      sSideMenuItems,
+            '@@SIDE_FILTER_CONTROL@@':  self._sPageFilter,
+            '@@PAGE_BODY@@':            self._sPageBody,
+            '@@DEBUG@@':                '',
+        };
+
+        # Special current user handling.
+        if self._oCurUser is not None:
+            dReplacements['@@USER_NAME@@'] = self._oCurUser.sUsername;
+        else:
+            dReplacements['@@USER_NAME@@'] = 'unauthorized user "' + self._oSrvGlue.getLoginName() + '"';
+
+        # Prep debug section.
         if self._sDebug == '':
             if config.g_kfWebUiSqlTrace or self._fDbgSqlTrace or self._fDbgSqlExplain:
                 self._sDebug  = '<h3>Processed in %s ns.</h3>\n%s\n' \
@@ -277,15 +286,50 @@ class WuiDispatcherBase(object):
                               % ( utils.formatNumber(utils.timestampNano() - self._oSrvGlue.tsStart,), );
             if config.g_kfWebUiDebugPanel:
                 self._sDebug += self._debugRenderPanel();
-
         if self._sDebug != '':
-            sTmpl = sTmpl.replace('@@DEBUG@@', '<div id="debug"><br><br><hr/>' + \
-                unicode(self._sDebug, errors='ignore') if isinstance(self._sDebug, str) else self._sDebug + '</div>');
-        else:
-            sTmpl = sTmpl.replace('@@DEBUG@@', '');
+            dReplacements['@@DEBUG@@'] = '<div id="debug"><br><br><hr/>' + \
+                unicode(self._sDebug, errors='ignore') if isinstance(self._sDebug, str) else self._sDebug + '</div>';
 
-        # Output the result.
-        self._oSrvGlue.write(sTmpl);
+        #
+        # Load the template.
+        #
+        oFile = open(os.path.join(self._oSrvGlue.pathTmWebUI(), self._sTemplate));
+        sTmpl = oFile.read();
+        oFile.close();
+
+        #
+        # Process the template, outputting each part we process.
+        #
+        offStart = 0;
+        offCur   = 0;
+        while offCur < len(sTmpl):
+            # Look for a replacement variable.
+            offAtAt = sTmpl.find('@@', offCur);
+            if offAtAt < 0:
+                break;
+            offCur = offAtAt + 2;
+            if sTmpl[offCur] not in string.ascii_uppercase:
+                continue;
+            offEnd = sTmpl.find('@@', offCur, offCur+28);
+            if offEnd <= 0:
+                continue;
+            offCur = offEnd;
+            sReplacement = sTmpl[offAtAt:offEnd+2];
+            if sReplacement in dReplacements:
+                # Got a match! Write out the previous chunk followed by the replacement text.
+                if offStart < offAtAt:
+                    self._oSrvGlue.write(sTmpl[offStart:offAtAt]);
+                self._oSrvGlue.write(dReplacements[sReplacement]);
+                # Advance past the replacement point in the template.
+                offCur += 2;
+                offStart = offCur;
+            else:
+                assert False, 'Unknown replacement "%s" at offset %s in %s' % (sReplacement, offAtAt, self._sTemplate );
+
+        # The final chunk.
+        if offStart < offCur:
+            self._oSrvGlue.write(sTmpl[offStart:]);
+
         return True;
 
     #

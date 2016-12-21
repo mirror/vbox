@@ -137,7 +137,7 @@ dl {
 
 #side-menu {
     position:       fixed;
-    width:          110px;
+    width:          116px;
     height:         auto;
     top:            92px;
     left:           0;
@@ -151,7 +151,7 @@ dl {
     height:         auto;
     max-height:     28px;
     top:            92px;
-    left:           118px;
+    left:           0px;
     right:          0;
     bottom:         auto;
 }
@@ -160,10 +160,10 @@ dl {
     position:       fixed;
     width:          auto;
     height:         auto;
-    top:            118px;  /**< header + top-menu + padding. */
+    top:            124px;  /**< header + top-menu + padding. */
     right:          0;
     bottom:         0;
-    left:           118px;
+    left:           124px;
     overflow:       auto;
     padding-top:    16px;
     padding-left:   10px;
@@ -216,7 +216,7 @@ dl {
  */
 
 #side-menu {
-    padding-top:    36px;
+    padding-top:    28px; /**< #top-menu.max-height */
     margin-right:   3px;
     margin-left:    3px;
     margin-bottom:  3px;
@@ -234,10 +234,43 @@ dl {
 }
 
 #side-menu li {
-    padding-bottom: 0.8em;
-    line-height:    1.2em;
-    text-align:     center;
+    padding-top:    0.3em;
+    padding-bottom: 0.3em;
+    line-height:    1.0em;
+    text-align:     left;
 }
+
+#side-menu .subheader_item {
+    font-style:     italic;
+    font-size:      1.1em;
+    text-decoration: underline;
+}
+
+.subheader_item:not(:first-child) {
+    margin-top:     0.5em;
+}
+
+
+#side-filters p:first-child {
+    margin-top:     0.5em;
+    font-style:     italic;
+    font-size:      1.1em;
+    text-decoration: underline;
+}
+
+#side-filters dd.sf-collapsable {
+    display:        block;
+}
+
+#side-filters dd.sf-expandable {
+    display:        none;
+}
+
+#side-filters a {
+    text-decoration: none;
+    color:          #000000;
+}
+
 
 #side-footer {
     position:       absolute;

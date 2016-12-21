@@ -314,51 +314,51 @@ class WuiAdmin(WuiDispatcherBase):
                 [
                     [ 'Builds',                 self._sActionUrlBase + self.ksActionBuildList ],
                     [ 'Blacklist',              self._sActionUrlBase + self.ksActionBuildBlacklist ],
-                    [ 'Build Sources',          self._sActionUrlBase + self.ksActionBuildSrcList ],
-                    [ 'Build Categories',       self._sActionUrlBase + self.ksActionBuildCategoryList ],
-                    [ 'New Build',              self._sActionUrlBase + self.ksActionBuildAdd ],
-                    [ 'New Blacklisting',       self._sActionUrlBase + self.ksActionBuildBlacklistAdd ],
-                    [ 'New Build Source',       self._sActionUrlBase + self.ksActionBuildSrcAdd],
-                    [ 'New Build Category',     self._sActionUrlBase + self.ksActionBuildCategoryAdd ],
+                    [ 'Build sources',          self._sActionUrlBase + self.ksActionBuildSrcList ],
+                    [ 'Build categories',       self._sActionUrlBase + self.ksActionBuildCategoryList ],
+                    [ 'New build',              self._sActionUrlBase + self.ksActionBuildAdd ],
+                    [ 'New blacklisting',       self._sActionUrlBase + self.ksActionBuildBlacklistAdd ],
+                    [ 'New build source',       self._sActionUrlBase + self.ksActionBuildSrcAdd],
+                    [ 'New build category',     self._sActionUrlBase + self.ksActionBuildCategoryAdd ],
                 ]
             ],
             [
                 'Failure Reasons',       self._sActionUrlBase + self.ksActionFailureReasonList,
                 [
-                    [ 'Failure Categories',     self._sActionUrlBase + self.ksActionFailureCategoryList ],
-                    [ 'Failure Reasons',        self._sActionUrlBase + self.ksActionFailureReasonList ],
-                    [ 'New Failure Category',   self._sActionUrlBase + self.ksActionFailureCategoryAdd ],
-                    [ 'New Failure Reason',     self._sActionUrlBase + self.ksActionFailureReasonAdd ],
+                    [ 'Failure categories',     self._sActionUrlBase + self.ksActionFailureCategoryList ],
+                    [ 'Failure reasons',        self._sActionUrlBase + self.ksActionFailureReasonList ],
+                    [ 'New failure category',   self._sActionUrlBase + self.ksActionFailureCategoryAdd ],
+                    [ 'New failure reason',     self._sActionUrlBase + self.ksActionFailureReasonAdd ],
                 ]
             ],
             [
                 'System',      self._sActionUrlBase + self.ksActionSystemLogList,
                 [
-                    [ 'System Log',             self._sActionUrlBase + self.ksActionSystemLogList ],
-                    [ 'User Accounts',          self._sActionUrlBase + self.ksActionUserList ],
-                    [ 'New User',               self._sActionUrlBase + self.ksActionUserAdd ],
+                    [ 'System log',             self._sActionUrlBase + self.ksActionSystemLogList ],
+                    [ 'User accounts',          self._sActionUrlBase + self.ksActionUserList ],
+                    [ 'New user',               self._sActionUrlBase + self.ksActionUserAdd ],
                 ]
             ],
             [
-                'TestBoxes',   self._sActionUrlBase + self.ksActionTestBoxList,
+                'Testboxes',   self._sActionUrlBase + self.ksActionTestBoxList,
                 [
-                    [ 'TestBoxes',              self._sActionUrlBase + self.ksActionTestBoxList ],
-                    [ 'Scheduling Groups',      self._sActionUrlBase + self.ksActionSchedGroupList ],
-                    [ 'New TestBox',            self._sActionUrlBase + self.ksActionTestBoxAdd ],
-                    [ 'New Scheduling Group',   self._sActionUrlBase + self.ksActionSchedGroupAdd ],
-                    [ 'Regenerate All Scheduling Queues', self._sActionUrlBase + self.ksActionTestBoxesRegenQueues ],
+                    [ 'Testboxes',              self._sActionUrlBase + self.ksActionTestBoxList ],
+                    [ 'Scheduling groups',      self._sActionUrlBase + self.ksActionSchedGroupList ],
+                    [ 'New testbox',            self._sActionUrlBase + self.ksActionTestBoxAdd ],
+                    [ 'New scheduling group',   self._sActionUrlBase + self.ksActionSchedGroupAdd ],
+                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestBoxesRegenQueues ],
                 ]
             ],
             [
                 'Test Config', self._sActionUrlBase + self.ksActionTestGroupList,
                 [
-                    [ 'Test Cases',             self._sActionUrlBase + self.ksActionTestCaseList ],
-                    [ 'Test Groups',            self._sActionUrlBase + self.ksActionTestGroupList ],
-                    [ 'Global Resources',       self._sActionUrlBase + self.ksActionGlobalRsrcShowAll ],
-                    [ 'New Test Case',          self._sActionUrlBase + self.ksActionTestCaseAdd ],
-                    [ 'New Test Group',         self._sActionUrlBase + self.ksActionTestGroupAdd ],
-                    [ 'New Global Resource',    self._sActionUrlBase + self.ksActionGlobalRsrcShowAdd ],
-                    [ 'Regenerate All Scheduling Queues', self._sActionUrlBase + self.ksActionTestCfgRegenQueues ],
+                    [ 'Test cases',             self._sActionUrlBase + self.ksActionTestCaseList ],
+                    [ 'Test groups',            self._sActionUrlBase + self.ksActionTestGroupList ],
+                    [ 'Global resources',       self._sActionUrlBase + self.ksActionGlobalRsrcShowAll ],
+                    [ 'New test case',          self._sActionUrlBase + self.ksActionTestCaseAdd ],
+                    [ 'New test group',         self._sActionUrlBase + self.ksActionTestGroupAdd ],
+                    [ 'New global resource',    self._sActionUrlBase + self.ksActionGlobalRsrcShowAdd ],
+                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestCfgRegenQueues ],
                 ]
             ],
             [

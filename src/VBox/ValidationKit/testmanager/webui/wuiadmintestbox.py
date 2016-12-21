@@ -204,10 +204,13 @@ class WuiTestBoxList(WuiListContentWithActionBase):
             cActive = 0;
             cDead   = 0;
             for oTestBox in self._aoEntries:
-                oDelta = oTestBox.tsCurrent - oTestBox.oStatus.tsUpdated;
-                if oDelta.days <= 0 and oDelta.seconds <= self.kcSecMaxStatusDeltaAlive:
-                    if oTestBox.fEnabled:
-                        cActive += 1;
+                if oTestBox.oStatus is not None:
+                    oDelta = oTestBox.tsCurrent - oTestBox.oStatus.tsUpdated;
+                    if oDelta.days <= 0 and oDelta.seconds <= self.kcSecMaxStatusDeltaAlive:
+                        if oTestBox.fEnabled:
+                            cActive += 1;
+                    else:
+                        cDead += 1;
                 else:
                     cDead += 1;
             sBody += '<div id="testboxsummary"><p>\n' \
