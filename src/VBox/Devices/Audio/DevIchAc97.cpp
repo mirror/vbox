@@ -1752,10 +1752,10 @@ static int ichac97MixerReset(PAC97STATE pThis)
     return VINF_SUCCESS;
 }
 
+/* Unused */
+#if 0
 static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 {
-return;
-
     LogFlowFunc(("cbElapsed=%RU32\n", cbElapsed));
 
     if (!(pThis->bup_flag & BUP_SET))
@@ -1792,6 +1792,7 @@ return;
         cbElapsed -= cbToWrite;
     }
 }
+#endif /* Unused */
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
@@ -1914,7 +1915,7 @@ static int ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint
             switch (pStream->u8Strm)
             {
                 case AC97SOUNDSOURCE_PO_INDEX:
-                    ichac97WriteBUP(pThis, cbToProcess);
+                    /*ichac97WriteBUP(pThis, cbToProcess);*/
                     break;
 
                 default:
