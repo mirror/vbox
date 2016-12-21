@@ -503,6 +503,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     bool fModifyProperties = false;
     bool fModifyCompact = false;
     bool fModifyResize = false;
+    bool fModifyResizeMB = false;
     bool fModifyLocation = false;
     bool fModifyDescription = false;
     uint64_t cbResize = 0;
@@ -590,6 +591,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
             case 'r':   // --resize
                 cbResize = ValueUnion.u64 * _1M;
                 fModifyResize = true;
+                fModifyResizeMB = true; // do sanity check!
                 break;
 
             case 'R':   // --resizebyte
@@ -669,6 +671,27 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     {
         RTMsgError("Invalid medium reference, avoiding crash");
         return RTEXITCODE_FAILURE;
+    }
+
+    if (   fModifyResize
+        && fModifyResizeMB)
+    {
+        // Sanity check
+        //
+        // In general users should know what they do but in this case users have no
+        // alternative to VBoxManage. If happens that one wants to resize the disk
+        // and uses --resize and does not consider that this parameter expects the
+        // new medium size in MB not Byte. If the operation is started and then
+        // aborted by the user, the result is most likely a medium which doesn't
+        // work anymore.
+        LONG64 logicalSize;
+        pMedium->COMGETTER(LogicalSize)(&logicalSize);
+        if (cbResize > (uint64_t)logicalSize * _1M)
+        {
+            RTMsgError("Error: Attempt to resize the medium from %RU64.%RU64 MB to %RU64.%RU64 MB. Use --resizebyte is this is intended!\n",
+                    logicalSize / _1M, (logicalSize % _1M) / (_1M / 10), cbResize / _1M, (cbResize % _1M) / (_1M / 10));
+            return RTEXITCODE_FAILURE;
+        }
     }
 
     if (fModifyMediumType)
