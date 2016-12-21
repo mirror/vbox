@@ -346,6 +346,7 @@ public:
 
     VirtualHardwareItem()
         : ulInstanceID(0),
+          fResourceRequired(false),
           fAutomaticAllocation(false),
           fAutomaticDeallocation(false),
           ullVirtualQuantity(0),
