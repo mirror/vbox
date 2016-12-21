@@ -540,7 +540,7 @@ const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl)
 {
     switch (enmMixerCtl)
     {
-        case PDMAUDIOMIXERCTL_VOLUME_MASTER: return "Unknown";
+        case PDMAUDIOMIXERCTL_VOLUME_MASTER: return "Master Volume";
         case PDMAUDIOMIXERCTL_FRONT:         return "Front";
         case PDMAUDIOMIXERCTL_CENTER_LFE:    return "Center / LFE";
         case PDMAUDIOMIXERCTL_REAR:          return "Rear";
