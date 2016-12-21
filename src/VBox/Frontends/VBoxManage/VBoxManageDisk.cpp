@@ -686,7 +686,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         // work anymore.
         LONG64 logicalSize;
         pMedium->COMGETTER(LogicalSize)(&logicalSize);
-        if (cbResize > (uint64_t)logicalSize * _1M)
+        if (cbResize > (uint64_t)logicalSize * 1000)
         {
             RTMsgError("Error: Attempt to resize the medium from %RU64.%RU64 MB to %RU64.%RU64 MB. Use --resizebyte if this is intended!\n",
                     logicalSize / _1M, (logicalSize % _1M) / (_1M / 10), cbResize / _1M, (cbResize % _1M) / (_1M / 10));
