@@ -570,7 +570,7 @@ void GuestDnDTarget::i_sendDataThreadTask(SendDataTask *pTask)
     if (FAILED(autoCaller.rc()))
         return;
 
-    vrc = pThis->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
+    int vrc = pThis->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
 /** @todo
  *
  *  r=bird: What happens with @a vrc?
