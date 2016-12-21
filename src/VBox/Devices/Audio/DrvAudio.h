@@ -181,6 +181,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEn
 void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm);
 
 const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir);
+const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl);
 char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags);
 
 int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMAUDIOPCMPROPS pProps, PDMAUDIOFILEFLAGS fFlags);

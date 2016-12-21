@@ -531,6 +531,29 @@ const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir)
 }
 
 /**
+ * Converts an audio mixer control to a string.
+ *
+ * @returns Stringified audio mixer control or "Unknown", if not found.
+ * @param   enmMixerCtl         Audio mixer control to convert.
+ */
+const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl)
+{
+    switch (enmMixerCtl)
+    {
+        case PDMAUDIOMIXERCTL_VOLUME_MASTER: return "Unknown";
+        case PDMAUDIOMIXERCTL_FRONT:         return "Front";
+        case PDMAUDIOMIXERCTL_CENTER_LFE:    return "Center / LFE";
+        case PDMAUDIOMIXERCTL_REAR:          return "Rear";
+        case PDMAUDIOMIXERCTL_LINE_IN:       return "Line-In";
+        case PDMAUDIOMIXERCTL_MIC_IN:        return "Microphone-In";
+        default:                             break;
+    }
+
+    AssertMsgFailed(("Invalid mixer control %ld\n", enmMixerCtl));
+    return "Unknown";
+}
+
+/**
  * Converts an audio device flags to a string.
  *
  * @returns Stringified audio flags. Must be free'd with RTStrFree().
