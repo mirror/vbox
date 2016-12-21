@@ -364,11 +364,11 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     AssertPtr(pGstStream);
 
 #ifdef LOG_ENABLED
-    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    char *pszGstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    LogFlowFunc(("Status host=%s, guest=%s\n", pszHstFlags, pszGstFlags));
-    RTStrFree(pszGstFlags);
-    RTStrFree(pszHstFlags);
+    char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    char *pszGstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFlowFunc(("Status host=%s, guest=%s\n", pszHstSts, pszGstSts));
+    RTStrFree(pszGstSts);
+    RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
     int rc = VINF_SUCCESS;
@@ -480,9 +480,9 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         return VERR_NOT_FOUND;
 
 #ifdef LOG_ENABLED
-    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=%s\n", pHstStream->szName, enmStreamCmd, pszHstFlags));
-    RTStrFree(pszHstFlags);
+    char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=%s\n", pHstStream->szName, enmStreamCmd, pszHstSts));
+    RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
     AssertPtr(pThis->pHostDrvAudio);
@@ -1056,9 +1056,9 @@ static int drvAudioStreamIterateInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     }
 
 #ifdef LOG_ENABLED
-    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    Log3Func(("[%s] fStatus=%s\n", pHstStream->szName, pszHstFlags));
-    RTStrFree(pszHstFlags);
+    char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    Log3Func(("[%s] fStatus=%s\n", pHstStream->szName, pszHstSts));
+    RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
     /* Not enabled or paused? Skip iteration. */
@@ -2227,7 +2227,11 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioStreamGetStatus(PPDMIAUDIOCONNECTOR
     if (pHstStream)
     {
         strmSts = pHstStream->fStatus;
-        Log3Func(("[%s] strmSts=0x%x\n", pHstStream->szName, strmSts));
+#ifdef LOG_ENABLED
+        char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+        Log3Func(("[%s] %s\n", pHstStream->szName, pszHstSts));
+        RTStrFree(pszHstSts);
+#endif
     }
 
     rc2 = RTCritSectLeave(&pThis->CritSect);
@@ -2436,9 +2440,9 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
     int rc = VINF_SUCCESS;
 
 #ifdef LOG_ENABLED
-    char *pszHstFlags = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    LogFunc(("%s: fStatus=%s\n", pHstStream->szName, pszHstFlags));
-    RTStrFree(pszHstFlags);
+    char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
+    LogFunc(("%s: fStatus=%s\n", pHstStream->szName, pszHstSts));
+    RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
     if (pHstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_INITIALIZED)
