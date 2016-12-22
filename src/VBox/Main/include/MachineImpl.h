@@ -39,6 +39,8 @@
 #include "Performance.h"
 #include "PerformanceImpl.h"
 #include "ThreadTask.h"
+#include "UnattendedImpl.h"
+
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 // generated header
@@ -771,6 +773,7 @@ protected:
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
+    const ComObjPtr<Unattended>       mUnattended;
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
     NetworkAdapterVector               mNetworkAdapters;
@@ -976,6 +979,7 @@ private:
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
     HRESULT getVMProcessPriority(com::Utf8Str &aVMProcessPriority);
     HRESULT setVMProcessPriority(const com::Utf8Str &aVMProcessPriority);
+    HRESULT getUnattended(ComPtr<IUnattended> &aUnattended);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,

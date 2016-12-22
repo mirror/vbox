@@ -7160,6 +7160,15 @@ HRESULT Machine::setVMProcessPriority(const com::Utf8Str &aVMProcessPriority)
     return hrc;
 }
 
+HRESULT Machine::getUnattended(ComPtr<IUnattended> &aUnattended)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aUnattended = mUnattended;
+
+    return S_OK;
+}
+
 HRESULT Machine::cloneTo(const ComPtr<IMachine> &aTarget, CloneMode_T aMode, const std::vector<CloneOptions_T> &aOptions,
                          ComPtr<IProgress> &aProgress)
 {
@@ -8385,6 +8394,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this);
 
+    /* create the unattended object (always present) */
+    unconst(mUnattended).createObject();
+    mUnattended->init(this);
+
     return S_OK;
 }
 
@@ -8460,6 +8473,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mBIOSSettings->uninit();
         unconst(mBIOSSettings).setNull();
+    }
+
+    if (mUnattended)
+    {
+        mUnattended->uninit();
+        unconst(mUnattended).setNull();
     }
 
     /* Deassociate media (only when a real Machine or a SnapshotMachine
@@ -12508,6 +12527,10 @@ HRESULT SessionMachine::init(Machine *aMachine)
     /* create another bandwidth control object that will be mutable */
     unconst(mBandwidthControl).createObject();
     mBandwidthControl->init(this, aMachine->mBandwidthControl);
+
+    /* create another unattended object that will be mutable */
+    unconst(mUnattended).createObject();
+    mUnattended->init(this, aMachine->mUnattended);
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
     mRemoveSavedState = true;
