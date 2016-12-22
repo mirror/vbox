@@ -1020,6 +1020,19 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "\n", SEP);
     }
 
+    if (fCategory & USAGE_UNATTENDEDINSTALL)
+    {
+        RTStrmPrintf(pStrm,
+                           "%s unattended %s      <uuid|vmname>\n"
+                     "                            --user <username>\n"
+                     "                            --password <password>\n"
+                     "                            --key <key>\n"
+                     "                            --isopath <OS ISO path>\n"
+                     "                            [--addisopath <additions ISO path>]"
+                     "                            [--imageindex <number>]\n"
+                     "\n", SEP);
+    }
+
     if (fCategory & USAGE_DISCARDSTATE)
         RTStrmPrintf(pStrm,
                            "%s discardstate %s    <uuid|vmname>\n"
