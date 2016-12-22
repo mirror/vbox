@@ -1281,6 +1281,42 @@ ContentNode *ElementNode::addContent(const char *pcszContent)
 }
 
 /**
+ * Changes the contents of node and appends it to the list of 
+ * children
+ *
+ * @param pcszContent
+ * @return
+ */
+ContentNode *ElementNode::setContent(const char *pcszContent)
+{
+//  1. Update content
+    xmlNodeSetContent(m_pLibNode, (const xmlChar*)pcszContent);
+
+//  2. Remove Content node from the list
+    /* Check that the order is right. */
+    xml::Node * pNode;
+    RTListForEach(&m_children, pNode, xml::Node, m_listEntry)
+    {
+        bool fLast = RTListNodeIsLast(&m_children, &pNode->m_listEntry);
+
+        if (pNode->isContent())
+        {
+            RTListNodeRemove(&pNode->m_listEntry);
+        }
+
+        if (fLast)
+            break;
+    }
+
+//  3. Create a new node and append to the list
+    // now wrap this in C++
+    ContentNode *pCNode = new ContentNode(this, &m_children, m_pLibNode);
+    RTListAppend(&m_children, &pCNode->m_listEntry);
+
+    return pCNode;
+}
+
+/**
  * Sets the given attribute; overloaded version for const char *.
  *
  * If an attribute with the given name exists, it is overwritten,

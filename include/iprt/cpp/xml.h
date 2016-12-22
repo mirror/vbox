@@ -830,6 +830,12 @@ public:
         return addContent(strContent.c_str());
     }
 
+    ContentNode *setContent(const char *pcszContent);
+    ContentNode *setContent(const RTCString &strContent)
+    {
+        return setContent(strContent.c_str());
+    }
+
     AttributeNode *setAttribute(const char *pcszName, const char *pcszValue);
     AttributeNode *setAttribute(const char *pcszName, const RTCString &strValue)
     {
