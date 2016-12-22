@@ -1201,6 +1201,16 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
 #endif
             }
 
+            /** @todo: Check this! */
+            if (   !cbProcessed
+#ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+                && RTCircBufUsed(pCircBuf) == 0
+#endif
+               )
+            {
+                fDone = true;
+            }
+
             STAM_PROFILE_STOP(&pThis->StatIn, a);
         }
         else
