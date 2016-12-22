@@ -3746,6 +3746,113 @@
     </method>
   </interface>
 
+  <!--
+  // IUnattended
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  
+  <interface
+    name="IUnattended" extends="$unknown"
+    uuid="167420e1-b72b-488e-9d56-f45894a8623a"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="4"
+    >
+
+    <desc>
+      The IUnattended interface represents the pipeline for preparing
+      the Guest OS for fully automated install.
+
+      It is based on the IMachine:
+      <link to="IMachine::unattended"/> attribute.
+    </desc>
+
+    <attribute name="group" type="wstring">
+      <desc>
+        A group this VM belongs to.
+    </desc>
+
+    </attribute>
+
+    <attribute name="vboxAdditionsIsoPath" type="wstring">
+      <desc>
+        Guest Additions ISO image path
+      </desc>
+    </attribute>
+
+    <attribute name="isoPath" type="wstring">
+      <desc>
+        Guest operating system ISO image
+      </desc>
+    </attribute>
+
+    <attribute name="user" type="wstring">
+      <desc>
+        Assign an user name.
+      </desc>
+    </attribute>
+
+    <attribute name="password" type="wstring">
+      <desc>
+        Assign a password to the user. The password is the same for both
+        normal user and for Administrator / 'root' accounts.
+      </desc>
+    </attribute>
+
+    <attribute name="productKey" type="wstring">
+      <desc>
+        Any key which is used as authorization of access to install genuine OS 
+      </desc>
+    </attribute>
+
+    <attribute name="installGuestAdditions" type="boolean">
+      <desc>
+        specifies if the Oracle VirtualBox additions should be installed or not.
+        (Answering "false" does not affect Guest Additions, that come 
+        pre-installed with certain versions of Linux guests, such as openSUSE).
+        Currently not implemented.
+      </desc>
+    </attribute>
+    <attribute name="imageIndex" type="unsigned short">
+      <desc>
+        The image index on installation CD\DVD used to install.
+	Used only with Windows installation CD\DVD
+      </desc>
+    </attribute>
+
+    <method name="preparation">
+      <desc>
+	Preparation for running the unattended process of installation
+      </desc>
+    </method>
+
+    <method name="constructScript">
+      <desc>
+	Generates Guest-OS-specific unattended script.
+      </desc>
+    </method>
+
+    <method name="constructMedia">
+      <desc>
+	Fix scripts in auxiliary CD ISO if it's needed
+	Packages Guest-OS-specific unattended script into auxiliary CD ISO 
+	or into auxiliary floppy, depending on IMachine::OSTypId.
+      </desc>
+    </method>
+
+    <method name="reconstructVM">
+      <desc>
+	Prepare a newly created VM to start unattended installation
+	(For example, such steps like open/attach bootable CD/FDD, OS ISO, additions)
+      </desc>
+    </method>
+
+    <method name="runInstallation">
+      <desc>
+	Run unattended installation
+      </desc>
+    </method>
+
+  </interface>
 
   <!--
   // IMachine
@@ -5231,6 +5338,10 @@
 
         The profiles are found in src/VBox/VMM/VMMR3/cpus/.
       </desc>
+    </attribute>
+
+    <attribute name="unattended" type="IUnattended" readonly="yes">
+      <desc>Associated unattended install class, always present.</desc>
     </attribute>
 
     <method name="lockMachine">
