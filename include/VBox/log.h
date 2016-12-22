@@ -607,6 +607,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_SYSTEMPROPERTIES,
     /** Main group, IToken. */
     LOG_GROUP_MAIN_TOKEN,
+    /** Main group, IUnattended. */
+    LOG_GROUP_MAIN_UNATTENDED,
     /** Main group, IUSBController. */
     LOG_GROUP_MAIN_USBCONTROLLER,
     /** Main group, IUSBControllerChangedEvent. */
@@ -1082,6 +1084,7 @@ typedef enum LOGGROUP
     "MAIN_STORAGEDEVICECHANGEDEVENT", \
     "MAIN_SYSTEMPROPERTIES", \
     "MAIN_TOKEN", \
+    "MAIN_UNATTENDED", \
     "MAIN_USBCONTROLLER", \
     "MAIN_USBCONTROLLERCHANGEDEVENT", \
     "MAIN_USBDEVICE", \
