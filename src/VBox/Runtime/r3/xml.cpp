@@ -1295,7 +1295,7 @@ ContentNode *ElementNode::setContent(const char *pcszContent)
 //  2. Remove Content node from the list
     /* Check that the order is right. */
     xml::Node * pNode;
-    RTListForEach(&m_children, pNode, xml::Node, m_listEntry)
+    RTListForEachCpp(&m_children, pNode, xml::Node, m_listEntry)
     {
         bool fLast = RTListNodeIsLast(&m_children, &pNode->m_listEntry);
 
