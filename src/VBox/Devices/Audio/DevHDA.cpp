@@ -4650,7 +4650,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
              * Process backends.
              */
 
-#ifdef VBOX_WITH_HDA_ASYNC_IO
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             /* Let the asynchronous thread know that there is some new data to process. */
             hdaStreamAsyncIONotify(pThis, pStream);
 #else
@@ -6149,6 +6149,10 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return rc;
 
     RTListInit(&pThis->lstDrv);
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    LogRel(("HDA: Asynchronous I/O enabled\n"));
+#endif
 
     uint8_t uLUN;
     for (uLUN = 0; uLUN < UINT8_MAX; ++uLUN)
