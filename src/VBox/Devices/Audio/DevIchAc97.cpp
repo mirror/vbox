@@ -484,6 +484,8 @@ static void               ichac97DoTransfers(PAC97STATE pThis);
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
 static DECLCALLBACK(int)  ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
+static int                ichac97StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream);
+static int                ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamAsyncIONotify(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOLock(PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOUnlock(PAC97STREAM pStream);
@@ -632,7 +634,10 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    ichac97StreamAsyncIOLock(pStream);
+    if (fEnable)
+        rc = ichac97StreamAsyncIOCreate(pThis, pStream);
+    if (RT_SUCCESS(rc))
+        ichac97StreamAsyncIOLock(pStream);
 #endif
 
     if (fEnable)
@@ -707,7 +712,9 @@ static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
  */
 static int ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm)
 {
+    RT_NOREF(pThis);
     AssertPtrReturn(pStream, VERR_INVALID_PARAMETER);
+    /** @todo Validate u8Strm. */
 
     LogFunc(("[SD%RU8] pStream=%p\n", u8Strm, pStream));
 
@@ -716,40 +723,6 @@ static int ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8
     int rc = RTCritSectInit(&pStream->CritSect);
     if (RT_SUCCESS(rc))
         rc = RTCircBufCreate(&pStream->State.pCircBuf, _4K); /** @todo Make this configurable. */
-
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    /*
-     * Create async I/O stuff.
-     */
-    PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    pAIO->fShutdown = false;
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTSemEventCreate(&pAIO->Event);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCritSectInit(&pAIO->CritSect);
-            if (RT_SUCCESS(rc))
-            {
-                AC97STREAMTHREADCTX Ctx = { pThis, pStream };
-
-                char szThreadName[64];
-                RTStrPrintf2(szThreadName, sizeof(szThreadName), "ac97AIO%RU8", pStream->u8Strm);
-
-                /** @todo Create threads on demand? */
-
-                rc = RTThreadCreate(&pAIO->Thread, ichac97StreamAsyncIOThread, &Ctx,
-                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
-                if (RT_SUCCESS(rc))
-                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
-            }
-        }
-    }
-#else
-    RT_NOREF(pThis);
-#endif
 
     return rc;
 }
@@ -775,34 +748,8 @@ static void ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
     }
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    /*
-     * Destroy async I/O stuff.
-     */
-    PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    if (ASMAtomicReadBool(&pAIO->fStarted))
-    {
-        ASMAtomicWriteBool(&pAIO->fShutdown, true);
-
-        rc2 = ichac97StreamAsyncIONotify(pThis, pStream);
-        AssertRC(rc2);
-
-        int rcThread;
-        rc2 = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
-        LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc2, rcThread));
-
-        if (RT_SUCCESS(rc2))
-        {
-            rc2 = RTCritSectDelete(&pAIO->CritSect);
-            AssertRC(rc2);
-
-            rc2 = RTSemEventDestroy(pAIO->Event);
-            AssertRC(rc2);
-
-            pAIO->fStarted  = false;
-            pAIO->fShutdown = false;
-        }
-    }
+    rc2 = ichac97StreamAsyncIODestroy(pThis, pStream);
+    AssertRC(rc2);
 #else
     RT_NOREF(pThis);
 #endif
@@ -1058,6 +1005,89 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
     ASMAtomicXchgBool(&pAIO->fStarted, false);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Creates the async I/O thread for a specific AC'97 audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 audio stream to create the async I/O thread for.
+ */
+static int ichac97StreamAsyncIOCreate(PAC97STATE pThis, PAC97STREAM pStream)
+{
+    PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    int rc;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+    {
+        pAIO->fShutdown = false;
+
+        rc = RTSemEventCreate(&pAIO->Event);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTCritSectInit(&pAIO->CritSect);
+            if (RT_SUCCESS(rc))
+            {
+                AC97STREAMTHREADCTX Ctx = { pThis, pStream };
+
+                char szThreadName[64];
+                RTStrPrintf2(szThreadName, sizeof(szThreadName), "ac97AIO%RU8", pStream->u8Strm);
+
+                /** @todo Create threads on demand? */
+
+                rc = RTThreadCreate(&pAIO->Thread, ichac97StreamAsyncIOThread, &Ctx,
+                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
+                if (RT_SUCCESS(rc))
+                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
+            }
+        }
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8Strm, rc));
+    return rc;
+}
+
+/**
+ * Destroys the async I/O thread of a specific AC'97 audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 audio stream to destroy the async I/O thread for.
+ */
+static int ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream)
+{
+    PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return VINF_SUCCESS;
+
+    ASMAtomicWriteBool(&pAIO->fShutdown, true);
+
+    int rc = ichac97StreamAsyncIONotify(pThis, pStream);
+    AssertRC(rc);
+
+    int rcThread;
+    rc = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
+    LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc, rcThread));
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCritSectDelete(&pAIO->CritSect);
+        AssertRC(rc);
+
+        rc = RTSemEventDestroy(pAIO->Event);
+        AssertRC(rc);
+
+        pAIO->fStarted  = false;
+        pAIO->fShutdown = false;
+    }
+
+    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8Strm, rc));
+    return rc;
 }
 
 /**
@@ -1548,6 +1578,16 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
     AssertPtrReturnVoid(pStream);
 
     LogFlowFunc(("[SD%RU8]\n", pStream->u8Strm));
+
+#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+    /*
+     * Make sure to destroy the async I/O thread for this stream on reset, as we
+     * can't be sure that the same stream is being used in the next cycle
+     * (and therefore would leave unused threads around).
+     */
+    int rc2 = ichac97StreamAsyncIODestroy(pThis, pStream);
+    AssertRC(rc2);
+#endif
 
     if (pStream->State.pCircBuf)
         RTCircBufReset(pStream->State.pCircBuf);

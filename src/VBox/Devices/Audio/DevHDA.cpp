@@ -1019,6 +1019,8 @@ DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, ui
 #ifdef IN_RING3
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
 static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUser);
+static int               hdaStreamAsyncIOCreate(PHDASTATE pThis, PHDASTREAM pStream);
+static int               hdaStreamAsyncIODestroy(PHDASTATE pThis, PHDASTREAM pStream);
 static int               hdaStreamAsyncIONotify(PHDASTATE pThis, PHDASTREAM pStream);
 static void              hdaStreamAsyncIOLock(PHDASTREAM pStream);
 static void              hdaStreamAsyncIOUnlock(PHDASTREAM pStream);
@@ -1702,7 +1704,8 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
 
 static int hdaStreamCreate(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
 {
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    RT_NOREF(pThis);
+    AssertPtrReturn(pStream,             VERR_INVALID_POINTER);
     AssertReturn(uSD <= HDA_MAX_STREAMS, VERR_INVALID_PARAMETER);
 
     int rc = RTCritSectInit(&pStream->State.CritSect);
@@ -1717,40 +1720,6 @@ static int hdaStreamCreate(PHDASTATE pThis, PHDASTREAM pStream, uint8_t uSD)
     if (RT_SUCCESS(rc))
         rc = RTCircBufCreate(&pStream->State.pCircBuf, _4K); /** @todo Make this configurable. */
 
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /*
-     * Create async I/O stuff.
-     */
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    pAIO->fShutdown = false;
-
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTSemEventCreate(&pAIO->Event);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTCritSectInit(&pAIO->CritSect);
-            if (RT_SUCCESS(rc))
-            {
-                HDASTREAMTHREADCTX Ctx = { pThis, pStream };
-
-                char szThreadName[64];
-                RTStrPrintf2(szThreadName, sizeof(szThreadName), "hdaAIO%RU8", pStream->u8SD);
-
-                /** @todo Create threads on demand? */
-
-                rc = RTThreadCreate(&pAIO->Thread, hdaStreamAsyncIOThread, &Ctx,
-                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
-                if (RT_SUCCESS(rc))
-                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
-            }
-        }
-    }
-#else
-    RT_NOREF(pThis);
-#endif
-
     LogFlowFunc(("uSD=%RU8\n", uSD));
     return rc;
 }
@@ -1763,7 +1732,16 @@ static void hdaStreamDestroy(PHDASTATE pThis, PHDASTREAM pStream)
 
     hdaStreamMapDestroy(&pStream->State.Mapping);
 
-    int rc2 = RTCritSectDelete(&pStream->State.CritSect);
+    int rc2;
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    rc2 = hdaStreamAsyncIODestroy(pThis, pStream);
+    AssertRC(rc2);
+#else
+    RT_NOREF(pThis);
+#endif
+
+    rc2 = RTCritSectDelete(&pStream->State.CritSect);
     AssertRC(rc2);
 
     if (pStream->State.pCircBuf)
@@ -1771,39 +1749,6 @@ static void hdaStreamDestroy(PHDASTATE pThis, PHDASTREAM pStream)
         RTCircBufDestroy(pStream->State.pCircBuf);
         pStream->State.pCircBuf = NULL;
     }
-
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /*
-     * Destroy async I/O stuff.
-     */
-    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
-
-    if (ASMAtomicReadBool(&pAIO->fStarted))
-    {
-        ASMAtomicWriteBool(&pAIO->fShutdown, true);
-
-        rc2 = hdaStreamAsyncIONotify(pThis, pStream);
-        AssertRC(rc2);
-
-        int rcThread;
-        rc2 = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
-        LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc2, rcThread));
-
-        if (RT_SUCCESS(rc2))
-        {
-            rc2 = RTCritSectDelete(&pAIO->CritSect);
-            AssertRC(rc2);
-
-            rc2 = RTSemEventDestroy(pAIO->Event);
-            AssertRC(rc2);
-
-            pAIO->fStarted  = false;
-            pAIO->fShutdown = false;
-        }
-    }
-#else
-    RT_NOREF(pThis);
-#endif
 
     LogFlowFuncLeave();
 }
@@ -1857,10 +1802,21 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     LogFunc(("[SD%RU8]: Reset\n", uSD));
 
     /*
-     * Set reset state.
+     * Enter reset state.
      */
     Assert(ASMAtomicReadBool(&pStream->State.fInReset) == false); /* No nested calls. */
     ASMAtomicXchgBool(&pStream->State.fInReset, true);
+
+    int rc2;
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    /*
+     * Make sure to destroy the async I/O thread for this stream on reset, as we
+     * can't be sure that the same stream is being used in the next cycle
+     * (and therefore would leave unused threads around).
+     */
+    rc2 = hdaStreamAsyncIODestroy(pThis, pStream);
+    AssertRC(rc2);
+#endif
 
     /*
      * First, reset the internal stream state.
@@ -1896,7 +1852,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     HDA_STREAM_REG(pThis, BDPU,  uSD) = 0;
     HDA_STREAM_REG(pThis, BDPL,  uSD) = 0;
 
-    int rc2 = hdaStreamInit(pThis, pStream, uSD);
+    rc2 = hdaStreamInit(pThis, pStream, uSD);
     AssertRC(rc2);
 
     /* Exit reset state. */
@@ -1913,7 +1869,10 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    hdaStreamAsyncIOLock(pStream);
+    if (fEnable)
+        rc = hdaStreamAsyncIOCreate(pThis, pStream);
+    if (RT_SUCCESS(rc))
+        hdaStreamAsyncIOLock(pStream);
 #endif
 
     if (pStream->pMixSink) /* Stream attached to a sink? */
@@ -4518,6 +4477,89 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
 }
 
 /**
+ * Creates the async I/O thread for a specific HDA audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pStream             HDA audio stream to create the async I/O thread for.
+ */
+static int hdaStreamAsyncIOCreate(PHDASTATE pThis, PHDASTREAM pStream)
+{
+    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    int rc;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+    {
+        pAIO->fShutdown = false;
+
+        rc = RTSemEventCreate(&pAIO->Event);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTCritSectInit(&pAIO->CritSect);
+            if (RT_SUCCESS(rc))
+            {
+                HDASTREAMTHREADCTX Ctx = { pThis, pStream };
+
+                char szThreadName[64];
+                RTStrPrintf2(szThreadName, sizeof(szThreadName), "hdaAIO%RU8", pStream->u8SD);
+
+                /** @todo Create threads on demand? */
+
+                rc = RTThreadCreate(&pAIO->Thread, hdaStreamAsyncIOThread, &Ctx,
+                                    0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
+                if (RT_SUCCESS(rc))
+                    rc = RTThreadUserWait(pAIO->Thread, 10 * 1000 /* 10s timeout */);
+            }
+        }
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    return rc;
+}
+
+/**
+ * Destroys the async I/O thread of a specific HDA audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ * @param   pStream             HDA audio stream to destroy the async I/O thread for.
+ */
+static int hdaStreamAsyncIODestroy(PHDASTATE pThis, PHDASTREAM pStream)
+{
+    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return VINF_SUCCESS;
+
+    ASMAtomicWriteBool(&pAIO->fShutdown, true);
+
+    int rc = hdaStreamAsyncIONotify(pThis, pStream);
+    AssertRC(rc);
+
+    int rcThread;
+    rc = RTThreadWait(pAIO->Thread, 30 * 1000 /* 30s timeout */, &rcThread);
+    LogFunc(("Async I/O thread ended with %Rrc (%Rrc)\n", rc, rcThread));
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCritSectDelete(&pAIO->CritSect);
+        AssertRC(rc);
+
+        rc = RTSemEventDestroy(pAIO->Event);
+        AssertRC(rc);
+
+        pAIO->fStarted  = false;
+        pAIO->fShutdown = false;
+    }
+
+    LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
+    return rc;
+}
+
+/**
  * Lets the stream's async I/O thread know that there is some data to process.
  *
  * @returns IPRT status code.
@@ -4530,17 +4572,33 @@ static int hdaStreamAsyncIONotify(PHDASTATE pThis, PHDASTREAM pStream)
     return RTSemEventSignal(pStream->State.AIO.Event);
 }
 
+/**
+ * Locks the async I/O thread of a specific HDA audio stream.
+ *
+ * @param   pStream             HDA stream to lock async I/O thread for.
+ */
 static void hdaStreamAsyncIOLock(PHDASTREAM pStream)
 {
     PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return;
 
     int rc2 = RTCritSectEnter(&pAIO->CritSect);
     AssertRC(rc2);
 }
 
+/**
+ * Unlocks the async I/O thread of a specific HDA audio stream.
+ *
+ * @param   pStream             HDA stream to unlock async I/O thread for.
+ */
 static void hdaStreamAsyncIOUnlock(PHDASTREAM pStream)
 {
     PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return;
 
     int rc2 = RTCritSectLeave(&pAIO->CritSect);
     AssertRC(rc2);
