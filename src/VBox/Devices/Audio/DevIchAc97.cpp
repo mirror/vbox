@@ -3200,6 +3200,10 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
+#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+    LogRel(("AC97: Asynchronous I/O enabled\n"));
+#endif
+
     /*
      * Attach driver.
      */
