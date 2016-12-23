@@ -1105,6 +1105,11 @@ static int ichac97StreamAsyncIONotify(PAC97STATE pThis, PAC97STREAM pStream)
     return RTSemEventSignal(pStream->State.AIO.Event);
 }
 
+/**
+ * Locks the async I/O thread of a specific AC'97 audio stream.
+ *
+ * @param   pStream             AC'97 stream to lock async I/O thread for.
+ */
 static void ichac97StreamAsyncIOLock(PAC97STREAM pStream)
 {
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
@@ -1113,6 +1118,11 @@ static void ichac97StreamAsyncIOLock(PAC97STREAM pStream)
     AssertRC(rc2);
 }
 
+/**
+ * Unlocks the async I/O thread of a specific AC'97 audio stream.
+ *
+ * @param   pStream             AC'97 stream to unlock async I/O thread for.
+ */
 static void ichac97StreamAsyncIOUnlock(PAC97STREAM pStream)
 {
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
@@ -1567,7 +1577,6 @@ static int ichac97StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream)
 /**
  * Resets an AC'97 stream.
  *
- * @returns IPRT status code.
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to reset.
  * @remark
