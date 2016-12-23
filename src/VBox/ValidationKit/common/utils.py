@@ -860,7 +860,7 @@ def processListAll(): # pylint: disable=R0914
     elif sOs == 'solaris':
         # Try our best to parse ps output. (Not perfect but does the job most of the time.)
         try:
-            sRaw = processOutputChecked([ '/usr/ccs/bin/ps', '-A',
+            sRaw = processOutputChecked([ '/usr/bin/ps', '-A',
                                           '-o', 'pid=',
                                           '-o', 'ppid=',
                                           '-o', 'pgid=',
