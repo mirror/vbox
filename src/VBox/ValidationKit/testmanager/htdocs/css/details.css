@@ -34,6 +34,9 @@
 #top-menu, #main {
     left:           0;
 }
+#main {
+    margin-left:    0px;
+}
 
 .tmtbl-events {
 

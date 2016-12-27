@@ -12,35 +12,34 @@
     <title>@@PAGE_TITLE@@</title>
 </head>
 
-<body>
+    <body>
+    <div id="wrap">
+        <div id="head-wrap">
+            <div id="logo">
+                <img alt ="VirtualBox" src="htdocs/images/VirtualBox.svg">
+            </div>
+            <div id="header">
+                <h1>@@PAGE_TITLE@@</h1>
+            </div>
+            <div id="top-menu">
+                <ul>
+                    @@TOP_MENU_ITEMS@@
+                </ul>
+            </div>
+            <div id="login">
+                <p><small>
+                    Logged in as <b>@@USER_NAME@@</b>@@LOG_OUT@@
+                </small></p>
+            </div>
+        </div>
 
-<div id="logo">
-    <img alt ="VirtualBox" src="htdocs/images/VirtualBox.svg">
-</div>
+        <div id="main">
+            @@PAGE_BODY@@
 
-<div id="header">
-    <h1>@@PAGE_TITLE@@</h1>
-</div>
+            @@DEBUG@@
+        </div>
 
-<div id="login">
-    <p><small>
-        Logged in as <b>@@USER_NAME@@</b>@@LOG_OUT@@
-    </small></p>
-</div>
-
-<div id="top-menu">
-    <ul>
-        @@TOP_MENU_ITEMS@@
-    </ul>
-</div>
-
-<div id="main" tabindex="1">
-    @@PAGE_BODY@@
-
-    @@DEBUG@@
-</div>
-
-
-</body>
+    </div>
+    </body>
 </html>
 
