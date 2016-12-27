@@ -146,8 +146,8 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
  */
 static char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
 {
-#define APPEND_FLAG_TO_STR(_aFlag)              \
-    if (fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) \
+#define APPEND_FLAG_TO_STR(_aFlag)               \
+    if ((fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) == PDMAUDIOSTRMSTS_FLAG_##_aFlag) \
     {                                            \
         if (pszFlags)                            \
         {                                        \
@@ -869,9 +869,13 @@ static DECLCALLBACK(int) drvAudioStreamWrite(PPDMIAUDIOCONNECTOR pInterface, PPD
         PPDMAUDIOSTREAM pGstStream = pHstStream->pPair;
         AssertPtr(pGstStream);
 
+#ifdef LOG_ENABLED
+        char *pszGstSts = dbgAudioStreamStatusToStr(pGstStream->fStatus);
         AssertMsg(pGstStream->fStatus & PDMAUDIOSTRMSTS_FLAG_ENABLED,
-                  ("Writing to disabled guest output stream \"%s\" not possible\n", pGstStream->szName));
-
+                  ("Writing to disabled guest output stream \"%s\" not possible (status is %s)\n",
+                   pGstStream->szName, pszGstSts));
+        RTStrFree(pszGstSts);
+#endif
         pGstStream->Out.tsLastWriteMS = RTTimeMilliTS();
 
         if (!AudioMixBufFreeBytes(&pGstStream->MixBuf))
@@ -1343,8 +1347,14 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
                     Log3Func(("[%s] %RU32 samples captured\n", pHstStream->szName, cSamplesCaptured));
                 }
             }
+#ifdef LOG_ENABLED
             else
-                Log3Func(("[%s] Skipping (backend status 0x%x)\n", pHstStream->szName, stsBackend));
+            {
+                char *pszHstSts = dbgAudioStreamStatusToStr(stsBackend);
+                Log3Func(("[%s] Skipping (backend status %s)\n", pHstStream->szName, pszHstSts));
+                RTStrFree(pszHstSts);
+            }
+#endif
         }
         else
             Log3Func(("[%s] Skipping (still has %RU32 live samples)\n", pHstStream->szName, cSamplesLive));
@@ -1357,7 +1367,7 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
             *pcSamplesCaptured = cSamplesCaptured;
     }
     else
-        LogFunc(("     Failed with %Rrc\n", rc));
+        LogFunc(("Failed with %Rrc\n", rc));
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))

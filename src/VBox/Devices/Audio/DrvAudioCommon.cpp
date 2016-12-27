@@ -564,7 +564,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
 {
 
 #define APPEND_FLAG_TO_STR(_aFlag)              \
-    if (fFlags & PDMAUDIODEV_FLAGS_##_aFlag)    \
+    if ((fFlags & PDMAUDIODEV_FLAGS_##_aFlag) == PDMAUDIODEV_FLAGS_##_aFlag)    \
     {                                           \
         if (pszFlags)                           \
         {                                       \
