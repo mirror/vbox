@@ -835,6 +835,10 @@ static int ichac97StreamWrite(PAC97STATE pThis, PAC97STREAM pDstStream, PAUDMIXS
                               uint32_t *pcbWritten)
 {
     RT_NOREF(pThis);
+    AssertPtrReturn(pDstStream,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrcMixSink, VERR_INVALID_POINTER);
+    AssertReturn(cbToWrite,      VERR_INVALID_PARAMETER);
+    /* pcbWritten is optional. */
 
     PRTCIRCBUF pCircBuf = pDstStream->State.pCircBuf;
     AssertPtr(pCircBuf);
@@ -882,6 +886,10 @@ static int ichac97StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIXSI
                              uint32_t *pcbRead)
 {
     RT_NOREF(pThis);
+    AssertPtrReturn(pSrcStream,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pDstMixSink, VERR_INVALID_POINTER);
+    AssertReturn(cbToRead,       VERR_INVALID_PARAMETER);
+    /* pcbRead is optional. */
 
     PRTCIRCBUF pCircBuf = pSrcStream->State.pCircBuf;
     AssertPtr(pCircBuf);
@@ -1114,6 +1122,9 @@ static void ichac97StreamAsyncIOLock(PAC97STREAM pStream)
 {
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
 
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return;
+
     int rc2 = RTCritSectEnter(&pAIO->CritSect);
     AssertRC(rc2);
 }
@@ -1126,6 +1137,9 @@ static void ichac97StreamAsyncIOLock(PAC97STREAM pStream)
 static void ichac97StreamAsyncIOUnlock(PAC97STREAM pStream)
 {
     PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
+
+    if (!ASMAtomicReadBool(&pAIO->fStarted))
+        return;
 
     int rc2 = RTCritSectLeave(&pAIO->CritSect);
     AssertRC(rc2);
@@ -1175,6 +1189,10 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
         {
             STAM_PROFILE_START(&pThis->StatOut, a);
 
+            /*
+             * Read from DMA.
+             */
+
             void *pvDst;
             size_t cbDst;
 
@@ -1189,19 +1207,28 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
 
             RTCircBufReleaseWriteBlock(pCircBuf, cbProcessed);
 
-            if (cbProcessed)
+            /*
+             * Process backends.
+             */
+
+            /* Do we have data left to write to the backends? */
+            uint32_t cbUsed = (uint32_t)RTCircBufUsed(pCircBuf);
+            if (cbUsed)
             {
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
                 /* Let the asynchronous thread know that there is some new data to process. */
                 ichac97StreamAsyncIONotify(pThis, pStream);
 #else
+                /* Read audio data from the AC'97 stream and write to the backends. */
                 rc2 = ichac97StreamRead(pThis, pStream, pMixSink, cbProcessed, NULL /* pcbRead */);
                 AssertRC(rc2);
 #endif
             }
 
+            /* All DMA transfers done for now? */
             if (   !cbProcessed
 #ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+            /* All data read *and* processed for now? */
                 && RTCircBufUsed(pCircBuf) == 0
 #endif
                )
@@ -1209,6 +1236,10 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
                 fDone = true;
             }
 
+#ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+            rc2 = AudioMixerSinkUpdate(pMixSink);
+            AssertRC(rc2);
+#endif
             STAM_PROFILE_STOP(&pThis->StatOut, a);
         }
         else if (   pStream->u8Strm == AC97SOUNDSOURCE_PI_INDEX  /* Input. */
@@ -1216,10 +1247,29 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
         {
             STAM_PROFILE_START(&pThis->StatIn, a);
 
+            /*
+             * Process backends.
+             */
+
+#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+            /* Let the asynchronous thread know that there is some new data to process. */
+            ichac97StreamAsyncIONotify(pThis, pStream);
+#else
+            rc2 = AudioMixerSinkUpdate(pMixSink);
+            AssertRC(rc2);
+
+            /* Write read data from the backend to the AC'97 stream. */
+            rc2 = ichac97StreamWrite(pThis, pStream, pMixSink, 256 /** @todo Fix this! */, NULL /* pcbWritten */);
+            AssertRC(rc2);
+#endif
+            /*
+             * Write to DMA.
+             */
+
             void *pvSrc;
             size_t cbSrc;
 
-            RTCircBufAcquireReadBlock(pCircBuf, 256 /** @todo */, &pvSrc, &cbSrc);
+            RTCircBufAcquireReadBlock(pCircBuf, 256 /** @todo Fix this! */, &pvSrc, &cbSrc);
 
             if (cbSrc)
             {
@@ -1230,36 +1280,15 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
 
             RTCircBufReleaseReadBlock(pCircBuf, cbProcessed);
 
-            if (cbProcessed)
-            {
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-                /* Let the asynchronous thread know that there is some new data to process. */
-                ichac97StreamAsyncIONotify(pThis, pStream);
-#else
-                rc2 = ichac97StreamWrite(pThis, pStream, pMixSink, cbProcessed, NULL /* pcbWritten */);
-                AssertRC(rc2);
-#endif
-            }
-
-            /** @todo: Check this! */
-            if (   !cbProcessed
-#ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-                && RTCircBufUsed(pCircBuf) == 0
-#endif
-               )
-            {
+            /* All DMA transfers done for now? */
+            if (!cbProcessed)
                 fDone = true;
-            }
 
             STAM_PROFILE_STOP(&pThis->StatIn, a);
         }
         else
             AssertFailed();
 
-#ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-        rc2 = AudioMixerSinkUpdate(pMixSink);
-        AssertRC(rc2);
-#endif
         if (fDone)
             break;
     }
