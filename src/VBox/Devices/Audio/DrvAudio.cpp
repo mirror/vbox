@@ -147,7 +147,7 @@ static const char *drvAudioGetConfStr(PCFGMNODE pCfgHandle, const char *pszKey,
 static char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
 {
 #define APPEND_FLAG_TO_STR(_aFlag)               \
-    if ((fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) == PDMAUDIOSTRMSTS_FLAG_##_aFlag) \
+    if (fStatus & PDMAUDIOSTRMSTS_FLAG_##_aFlag) \
     {                                            \
         if (pszFlags)                            \
         {                                        \
@@ -166,7 +166,6 @@ static char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
 
     do
     {
-        APPEND_FLAG_TO_STR(NONE           );
         APPEND_FLAG_TO_STR(INITIALIZED    );
         APPEND_FLAG_TO_STR(ENABLED        );
         APPEND_FLAG_TO_STR(PAUSED         );
@@ -175,6 +174,9 @@ static char *dbgAudioStreamStatusToStr(PDMAUDIOSTRMSTS fStatus)
         APPEND_FLAG_TO_STR(DATA_WRITABLE  );
         APPEND_FLAG_TO_STR(PENDING_REINIT );
     } while (0);
+
+    if (!pszFlags)
+        rc2 = RTStrAAppend(&pszFlags, "NONE");
 
     if (   RT_FAILURE(rc2)
         && pszFlags)
@@ -1230,7 +1232,11 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
         PDMAUDIOSTRMSTS stsBackend = pThis->pHostDrvAudio->pfnStreamGetStatus(pThis->pHostDrvAudio, pHstStream);
 
-        Log3Func(("[%s] Start: stsBackend=0x%x, csLive=%RU32\n", pHstStream->szName, stsBackend, csLive));
+#ifdef LOG_ENABLED
+        char *pszBackendSts = dbgAudioStreamStatusToStr(stsBackend);
+        Log3Func(("[%s] Start: stsBackend=%s, csLive=%RU32\n", pHstStream->szName, pszBackendSts, csLive));
+        RTStrFree(pszBackendSts);
+#endif /* LOG_ENABLED */
 
         if (   csLive
             && (stsBackend & PDMAUDIOSTRMSTS_FLAG_ENABLED)
@@ -1250,8 +1256,12 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
             }
         }
 
-        Log3Func(("[%s] End: stsBackend=0x%x, csLive=%RU32, csPlayed=%RU32, rc=%Rrc\n",
-                  pHstStream->szName, stsBackend, csLive, csPlayed, rc));
+#ifdef LOG_ENABLED
+        pszBackendSts = dbgAudioStreamStatusToStr(stsBackend);
+        Log3Func(("[%s] End: stsBackend=%s, csLive=%RU32, csPlayed=%RU32, rc=%Rrc\n",
+                  pHstStream->szName, pszBackendSts, csLive, csPlayed, rc));
+        RTStrFree(pszBackendSts);
+#endif /* LOG_ENABLED */
 
         if (!csLive)
         {

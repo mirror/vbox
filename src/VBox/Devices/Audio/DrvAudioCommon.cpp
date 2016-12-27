@@ -562,9 +562,8 @@ const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl)
  */
 char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
 {
-
 #define APPEND_FLAG_TO_STR(_aFlag)              \
-    if ((fFlags & PDMAUDIODEV_FLAGS_##_aFlag) == PDMAUDIODEV_FLAGS_##_aFlag)    \
+    if (fFlags & PDMAUDIODEV_FLAGS_##_aFlag)    \
     {                                           \
         if (pszFlags)                           \
         {                                       \
@@ -591,6 +590,9 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
         APPEND_FLAG_TO_STR(DEAD);
 
     } while (0);
+
+    if (!pszFlags)
+        rc2 = RTStrAAppend(&pszFlags, "NONE");
 
     if (   RT_FAILURE(rc2)
         && pszFlags)
