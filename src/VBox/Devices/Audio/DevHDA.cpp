@@ -1869,10 +1869,7 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    if (fEnable)
-        rc = hdaStreamAsyncIOCreate(pThis, pStream);
-    if (RT_SUCCESS(rc))
-        hdaStreamAsyncIOLock(pStream);
+    hdaStreamAsyncIOLock(pStream);
 #endif
 
     if (pStream->pMixSink) /* Stream attached to a sink? */
@@ -2900,6 +2897,14 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             rc = VERR_NOT_SUPPORTED;
             break;
     }
+
+#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
+    if (RT_SUCCESS(rc))
+    {
+        rc = hdaStreamAsyncIOCreate(pThis, pStream);
+        AssertRC(rc);
+    }
+#endif
 
     /*
      * Initialize the stream mapping in any case, regardless if
