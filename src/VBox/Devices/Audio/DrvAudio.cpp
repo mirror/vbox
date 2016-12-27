@@ -333,7 +333,7 @@ static DECLCALLBACK(int) drvAudioStreamControl(PPDMIAUDIOCONNECTOR pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("[%s] enmStreamCmd=%RU32\n", pStream->szName, enmStreamCmd));
+    LogFlowFunc(("[%s] enmStreamCmd=%s\n", pStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd)));
 
     rc = drvAudioStreamControlInternal(pThis, pStream, enmStreamCmd);
 
@@ -357,7 +357,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    LogFunc(("[%s] enmStreamCmd=%RU32\n", pStream->szName, enmStreamCmd));
+    LogFunc(("[%s] enmStreamCmd=%s\n", pStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd)));
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
     PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
@@ -450,7 +450,7 @@ static int drvAudioStreamControlInternal(PDRVAUDIO pThis, PPDMAUDIOSTREAM pStrea
         }
 
         default:
-            AssertMsgFailed(("Command %RU32 not implemented\n", enmStreamCmd));
+            AssertMsgFailed(("Command %s (%RU32) not implemented\n", DrvAudioHlpStreamCmdToStr(enmStreamCmd), enmStreamCmd));
             rc = VERR_NOT_IMPLEMENTED;
             break;
     }
@@ -481,7 +481,7 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 
 #ifdef LOG_ENABLED
     char *pszHstSts = dbgAudioStreamStatusToStr(pHstStream->fStatus);
-    LogFlowFunc(("[%s] enmStreamCmd=%RU32, fStatus=%s\n", pHstStream->szName, enmStreamCmd, pszHstSts));
+    LogFlowFunc(("[%s] enmStreamCmd=%s, fStatus=%s\n", pHstStream->szName, DrvAudioHlpStreamCmdToStr(enmStreamCmd), pszHstSts));
     RTStrFree(pszHstSts);
 #endif /* LOG_ENABLED */
 
@@ -1727,7 +1727,7 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
 
-    LogFlowFunc(("enmCmd=%RU32\n", enmCmd));
+    LogFlowFunc(("enmCmd=%s\n", DrvAudioHlpStreamCmdToStr(enmCmd)));
 
     if (!pThis->pHostDrvAudio)
         return;

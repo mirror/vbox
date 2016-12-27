@@ -994,6 +994,28 @@ void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
 }
 
 /**
+ * Converts a stream command to a string.
+ *
+ * @returns Stringified stream command, or "Unknown", if not found.
+ * @param   enmCmd              Stream command to convert.
+ */
+const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd)
+{
+    switch (enmCmd)
+    {
+        case PDMAUDIOSTREAMCMD_UNKNOWN: return "Unknown";
+        case PDMAUDIOSTREAMCMD_ENABLE:  return "Enable";
+        case PDMAUDIOSTREAMCMD_DISABLE: return "Disable";
+        case PDMAUDIOSTREAMCMD_PAUSE:   return "Pause";
+        case PDMAUDIOSTREAMCMD_RESUME:  return "Resume";
+        default:                        break;
+    }
+
+    AssertMsgFailed(("Invalid stream command %ld\n", enmCmd));
+    return "Unknown";
+}
+
+/**
  * Calculates the audio bit rate of the given bits per sample, the Hz and the number
  * of audio channels.
  *
