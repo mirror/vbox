@@ -4646,6 +4646,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
     while (!fDone)
     {
         int rc2;
+        uint32_t cbDMA = 0;
 
         if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
         {
@@ -4655,31 +4656,41 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
              * Read from DMA.
              */
 
-            uint8_t  abFIFO[HDA_FIFO_MAX + 1];
-            uint32_t cbProcessed = 0;
+            uint8_t abFIFO[HDA_FIFO_MAX + 1];
+            size_t  offFIFO = 0;
 
             /* Do one DMA transfer with FIFOS size at a time. */
-            rc2 = hdaStreamDoDMA(pThis, pStream, abFIFO, sizeof(abFIFO), (uint32_t)pStream->u16FIFOS /* cbToProcess */,
-                                 &cbProcessed);
+            rc2 = hdaStreamDoDMA(pThis, pStream, abFIFO, sizeof(abFIFO), (uint32_t)pStream->u16FIFOS /* cbToProcess */, &cbDMA);
             AssertRC(rc2);
 
-            if (cbProcessed)
+            uint32_t cbDMALeft = cbDMA;
+
+            while (   cbDMALeft
+                   && RTCircBufFree(pCircBuf))
             {
                 void *pvDst;
                 size_t cbDst;
 
-                Assert(pStream->u16FIFOS);
-                RTCircBufAcquireWriteBlock(pCircBuf, cbProcessed, &pvDst, &cbDst);
+                RTCircBufAcquireWriteBlock(pCircBuf, cbDMALeft, &pvDst, &cbDst);
 
                 if (cbDst)
                 {
-                    Assert(cbDst == cbProcessed);
-                    memcpy(pvDst, abFIFO, cbDst);
+                    memcpy(pvDst, abFIFO + offFIFO, cbDst);
+
+                    offFIFO += cbDst;
+                    Assert(offFIFO <= sizeof(abFIFO));
                 }
 
                 RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
+
+                Assert(cbDst <= cbDMALeft);
+                cbDMALeft -= (uint32_t)cbDst;
             }
 
+#ifdef DEBUG_andy
+            AssertMsg(cbDMALeft == 0, ("%RU32 bytes of DMA data left, CircBuf=%zu/%zu\n",
+                                       cbDMALeft, RTCircBufUsed(pCircBuf), RTCircBufSize(pCircBuf)));
+#endif
             /*
              * Process backends.
              */
@@ -4691,18 +4702,27 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 /* Let the asynchronous thread know that there is some new data to process. */
                 hdaStreamAsyncIONotify(pThis, pStream);
 #else
+                /* Read audio data from the HDA stream and write to the backends. */
                 rc2 = hdaStreamRead(pThis, pStream, cbUsed, NULL /* pcbRead */);
                 AssertRC(rc2);
 #endif
+            }
+
+            /* All DMA transfers done for now? */
+            if (   !cbDMA
+#ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
+            /* All data read *and* processed for now? */
+                && RTCircBufUsed(pCircBuf) == 0
+#endif
+               )
+            {
+                fDone = true;
             }
 
 #ifndef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             rc2 = AudioMixerSinkUpdate(pSink->pMixSink);
             AssertRC(rc2);
 #endif
-            if (!cbProcessed)
-                fDone = true;
-
             STAM_PROFILE_STOP(&pThis->StatOut, a);
         }
         else if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_IN) /* Input (SDI). */
@@ -4720,6 +4740,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
             rc2 = AudioMixerSinkUpdate(pSink->pMixSink);
             AssertRC(rc2);
 
+            /* Write read data from the backend to the HDA stream. */
             rc2 = hdaStreamWrite(pThis, pStream, pStream->u16FIFOS, NULL /* pcbWritten */);
             AssertRC(rc2);
 #endif
@@ -4732,18 +4753,16 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
 
             RTCircBufAcquireReadBlock(pCircBuf, pStream->u16FIFOS, &pvSrc, &cbSrc);
 
-            uint32_t cbProcessed = 0;
-
             if (cbSrc)
             {
                 /* Do one DMA transfer with FIFOS size at a time. */
-                rc2 = hdaStreamDoDMA(pThis, pStream, pvSrc, (uint32_t)cbSrc, (uint32_t)cbSrc /* cbToProcess */, &cbProcessed);
+                rc2 = hdaStreamDoDMA(pThis, pStream, pvSrc, (uint32_t)cbSrc, (uint32_t)cbSrc /* cbToProcess */, &cbDMA);
                 AssertRC(rc2);
             }
 
-            RTCircBufReleaseReadBlock(pCircBuf, cbProcessed);
+            RTCircBufReleaseReadBlock(pCircBuf, cbDMA);
 
-            if (!cbProcessed)
+            if (!cbDMA)
                 fDone = true;
 
             STAM_PROFILE_STOP(&pThis->StatIn, a);

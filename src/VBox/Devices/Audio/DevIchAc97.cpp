@@ -66,6 +66,9 @@
 /** Default timer frequency (in Hz). */
 #define AC97_TIMER_HZ       100
 
+/** Maximum FIFO size (in bytes). */
+#define AC97_FIFO_MAX       256
+
 #define AC97_SR_FIFOE RT_BIT(4)          /* rwc, FIFO error. */
 #define AC97_SR_BCIS  RT_BIT(3)          /* rwc, Buffer completion interrupt status. */
 #define AC97_SR_LVBCI RT_BIT(2)          /* rwc, Last valid buffer completion interrupt. */
@@ -472,6 +475,7 @@ static void               ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pSt
 static int                ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamClose(PAC97STATE pThis, PAC97STREAM pStream);
+static void               ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream);
 
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
@@ -689,6 +693,8 @@ static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
     pRegs->bdbar    = 0;
     pRegs->civ      = 0;
     pRegs->lvi      = 0;
+
+    ichac97StreamReset(pThis, pStream);
 
     ichac97StreamEnable(pThis, pStream, false /* fEnable */);
 
@@ -912,6 +918,10 @@ static int ichac97StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIXSI
 #endif
         int rc2 = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
         AssertRC(rc2);
+
+#ifdef DEBUG_andy
+        Assert(cbWritten == cbSrc);
+#endif
     }
 
     RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
@@ -1178,12 +1188,12 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
 
     bool fDone = false;
 
-    LogFunc(("[SD%RU8] Started\n", pStream->u8Strm));
+    Log3Func(("[SD%RU8] Started\n", pStream->u8Strm));
 
     while (!fDone)
     {
         int rc2;
-        uint32_t cbProcessed = 0;
+        uint32_t cbDMA = 0;
 
         if (pStream->u8Strm == AC97SOUNDSOURCE_PO_INDEX) /* Output. */
         {
@@ -1192,21 +1202,43 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
             /*
              * Read from DMA.
              */
+            uint8_t abFIFO[AC97_FIFO_MAX + 1];
+            size_t  offFIFO = 0;
 
-            void *pvDst;
-            size_t cbDst;
+            /* Do one DMA transfer with FIFOS size at a time. */
+            rc2 = ichac97DoDMA(pThis, pStream, abFIFO, sizeof(abFIFO), AC97_FIFO_MAX /** @todo FIFOS? */, &cbDMA);
+            AssertRC(rc2);
 
-            RTCircBufAcquireWriteBlock(pCircBuf, 256 /** @todo */, &pvDst, &cbDst);
+            uint32_t cbDMALeft = cbDMA;
 
-            if (cbDst)
+            while (   cbDMALeft
+                   && RTCircBufFree(pCircBuf))
             {
-                /* Do one DMA transfer with FIFOS size at a time. */
-                rc2 = ichac97DoDMA(pThis, pStream, pvDst, (uint32_t)cbDst, (uint32_t)cbDst /* cbToProcess */, &cbProcessed);
-                AssertRC(rc2);
+                Log3Func(("[SD%RU8] cbLeft=%RU32\n", pStream->u8Strm, cbDMALeft));
+
+                void *pvDst;
+                size_t cbDst;
+
+                RTCircBufAcquireWriteBlock(pCircBuf, cbDMALeft, &pvDst, &cbDst);
+
+                if (cbDst)
+                {
+                    memcpy(pvDst, abFIFO + offFIFO, cbDst);
+
+                    offFIFO += cbDst;
+                    Assert(offFIFO <= sizeof(abFIFO));
+                }
+
+                RTCircBufReleaseWriteBlock(pCircBuf, cbDst);
+
+                Assert(cbDst <= cbDMALeft);
+                cbDMALeft -= (uint32_t)cbDst;
             }
 
-            RTCircBufReleaseWriteBlock(pCircBuf, cbProcessed);
-
+#ifdef DEBUG_andy
+            AssertMsg(cbDMALeft == 0, ("%RU32 bytes of DMA data left, CircBuf=%zu/%zu\n",
+                                       cbDMALeft, RTCircBufUsed(pCircBuf), RTCircBufSize(pCircBuf)));
+#endif
             /*
              * Process backends.
              */
@@ -1215,18 +1247,20 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
             uint32_t cbUsed = (uint32_t)RTCircBufUsed(pCircBuf);
             if (cbUsed)
             {
+                Log3Func(("[SD%RU8] cbUsed=%RU32\n", pStream->u8Strm, cbUsed));
+
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
                 /* Let the asynchronous thread know that there is some new data to process. */
                 ichac97StreamAsyncIONotify(pThis, pStream);
 #else
                 /* Read audio data from the AC'97 stream and write to the backends. */
-                rc2 = ichac97StreamRead(pThis, pStream, pMixSink, cbProcessed, NULL /* pcbRead */);
+                rc2 = ichac97StreamRead(pThis, pStream, pMixSink, cbUsed, NULL /* pcbRead */);
                 AssertRC(rc2);
 #endif
             }
 
             /* All DMA transfers done for now? */
-            if (   !cbProcessed
+            if (   !cbDMA
 #ifndef VBOX_WITH_AUDIO_AC97_ASYNC_IO
             /* All data read *and* processed for now? */
                 && RTCircBufUsed(pCircBuf) == 0
@@ -1265,7 +1299,6 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
             /*
              * Write to DMA.
              */
-
             void *pvSrc;
             size_t cbSrc;
 
@@ -1274,14 +1307,14 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
             if (cbSrc)
             {
                 /* Do one DMA transfer with FIFOS size at a time. */
-                rc2 = ichac97DoDMA(pThis, pStream, pvSrc, (uint32_t)cbSrc, (uint32_t)cbSrc /* cbToProcess */, &cbProcessed);
+                rc2 = ichac97DoDMA(pThis, pStream, pvSrc, (uint32_t)cbSrc, (uint32_t)cbSrc /* cbToProcess */, &cbDMA);
                 AssertRC(rc2);
             }
 
-            RTCircBufReleaseReadBlock(pCircBuf, cbProcessed);
+            RTCircBufReleaseReadBlock(pCircBuf, cbDMA);
 
             /* All DMA transfers done for now? */
-            if (!cbProcessed)
+            if (!cbDMA)
                 fDone = true;
 
             STAM_PROFILE_STOP(&pThis->StatIn, a);
@@ -1615,7 +1648,7 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
     AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pStream);
 
-    LogFlowFunc(("[SD%RU8]\n", pStream->u8Strm));
+    LogFunc(("[SD%RU8] Reset\n", pStream->u8Strm));
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /*
@@ -1983,8 +2016,10 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 static int ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint32_t cbBuf,
                         uint32_t cbToProcess, uint32_t *pcbProcessed)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,             VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,           VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,             VERR_INVALID_POINTER);
+    AssertReturn(cbBuf >= cbToProcess, VERR_INVALID_PARAMETER);
     /* pcbProcessed is optional. */
 
     PAC97BMREGS pRegs = &pStream->Regs;
@@ -2100,6 +2135,7 @@ static int ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint
         if (cbChunk)
         {
             cbTotal     += cbChunk;
+            Assert(cbTotal <= cbToProcess);
             Assert(cbLeft >= cbChunk);
             cbLeft      -= cbChunk;
             Assert((cbChunk & 1) == 0); /* Else the following shift won't work */
