@@ -722,7 +722,8 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
 
     if (enmSinkCmd == AUDMIXSINKCMD_ENABLE)
     {
-        pSink->fStatus |= AUDMIXSINK_STS_RUNNING;
+        /* Make sure to clear any other former flags again by assigning AUDMIXSINK_STS_RUNNING directly. */
+        pSink->fStatus = AUDMIXSINK_STS_RUNNING;
     }
     else if (enmSinkCmd == AUDMIXSINKCMD_DISABLE)
     {
@@ -736,10 +737,6 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
     LogFlowFunc(("[%s]: enmCmd=%d, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
     RTStrFree(pszStatus);
 #endif
-
-    /* Not running anymore? Reset. */
-    if (!(pSink->fStatus & AUDMIXSINK_STS_RUNNING))
-        audioMixerSinkReset(pSink);
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
