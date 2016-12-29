@@ -83,10 +83,12 @@ typedef struct DRVAUDIOSTATS
     STAMCOUNTER TotalStreamsCreated;
     STAMCOUNTER TotalSamplesRead;
     STAMCOUNTER TotalSamplesWritten;
-    STAMCOUNTER TotalSamplesMixed;
-    STAMCOUNTER TotalSamplesLost;
-    STAMCOUNTER TotalSamplesPlayed;
-    STAMCOUNTER TotalSamplesCaptured;
+    STAMCOUNTER TotalSamplesMixedIn;
+    STAMCOUNTER TotalSamplesMixedOut;
+    STAMCOUNTER TotalSamplesLostIn;
+    STAMCOUNTER TotalSamplesLostOut;
+    STAMCOUNTER TotalSamplesOut;
+    STAMCOUNTER TotalSamplesIn;
     STAMCOUNTER TotalBytesRead;
     STAMCOUNTER TotalBytesWritten;
     /** How much delay (in ms) for input processing. */
