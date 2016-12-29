@@ -1845,7 +1845,7 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
  * Converts an AC'97 recording source index to a PDM audio recording source.
  *
  * @returns PDM audio recording source.
- * @param   i                   AC'97 index to convert.
+ * @param   uIdx                AC'97 index to convert.
  */
 static PDMAUDIORECSOURCE ichac97IdxToRecSource(uint8_t uIdx)
 {
@@ -1869,7 +1869,7 @@ static PDMAUDIORECSOURCE ichac97IdxToRecSource(uint8_t uIdx)
  * Converts a PDM audio recording source to an AC'97 recording source index.
  *
  * @returns AC'97 recording source index.
- * @param   rs                  PDM audio recording source to convert.
+ * @param   enmRecSrc           PDM audio recording source to convert.
  */
 static uint8_t ichac97RecSourceToIdx(PDMAUDIORECSOURCE enmRecSrc)
 {
@@ -1893,8 +1893,8 @@ static uint8_t ichac97RecSourceToIdx(PDMAUDIORECSOURCE enmRecSrc)
  * Retrieves an AC'97 audio stream from an AC'97 stream index.
  *
  * @returns Pointer to AC'97 audio stream if found, or NULL if not found / invalid.
- * @param pThis                 AC'97 state.
- * @param uIdx                  AC'97 stream index to retrieve AC'97 audio stream for.
+ * @param   pThis               AC'97 state.
+ * @param   uIdx                AC'97 stream index to retrieve AC'97 audio stream for.
  */
 DECLINLINE(PAC97STREAM) ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx)
 {
