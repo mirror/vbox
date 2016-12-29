@@ -581,9 +581,10 @@ class WebServerGlueBase(object):
                     self._oDbgFile.write('\n');
             else:
                 tsNow = utils.timestampMilli();
-                tsReq = tsNow - (self.tsStart / 1000000)
+                tsReq = tsNow - (self.tsStart / 1000000);
+                iPid  = os.getpid();
                 for sLine in sMessage.split('\n'):
-                    self._oDbgFile.write('%s/%03u: %s\n' % (tsNow, tsReq, sLine,));
+                    self._oDbgFile.write('%s/%03u,pid=%04x: %s\n' % (tsNow, tsReq, iPid, sLine,));
 
         return True;
 
