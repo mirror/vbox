@@ -1300,6 +1300,7 @@ class SchedulerBase(object):
               and oSchedGroup.idBuildSrc is not None \
               and oSchedGroup.idSchedGroup not in dIgnoreSchedGroupIds:
                 return (oSchedGroup, 0);
+            iWorkItem = 0;
 
         elif len(oTestBoxDataEx.aoInSchedGroups) > 0:
             # Construct priority table of currently enabled scheduling groups.
@@ -1339,9 +1340,11 @@ class SchedulerBase(object):
                     iWorkItem = 0;
                 if aoFlat[iWorkItem].idSchedGroup not in dIgnoreSchedGroupIds:
                     return (aoFlat[iWorkItem], iWorkItem);
+        else:
+            iWorkItem = 0;
 
         # No active group.
-        return (None, 0);
+        return (None, iWorkItem);
 
     @staticmethod
     def scheduleNewTask(oDb, oTestBoxData, iWorkItem, sBaseUrl, iVerbosity = 0):
@@ -1380,6 +1383,7 @@ class SchedulerBase(object):
               and oTestBoxDataEx.idGenTestBox == oTestBoxData.idGenTestBox:
 
                 # We may have to skip scheduling groups that are out of work (e.g. 'No build').
+                iInitialWorkItem     = iWorkItem;
                 dIgnoreSchedGroupIds = [];
                 while True:
                     # Now, pick the scheduling group.
@@ -1395,7 +1399,19 @@ class SchedulerBase(object):
                         oTBStatusLogic.updateWorkItem(oTestBoxDataEx.idTestBox, iWorkItem);
                         oDb.commit();
                         return dResponse;
+
+                    # Check out the next work item?
+                    if oScheduler.getElapsedSecs() > config.g_kcSecMaxNewTask:
+                        break;
                     dIgnoreSchedGroupIds[oSchedGroup.idSchedGroup] = oSchedGroup;
+
+                # No luck, but best if we update the work item if we've made progress.
+                # Note! In case of a config.g_kcSecMaxNewTask timeout, this may accidentally skip
+                #       a work item with actually work to do.  But that's a small price to pay.
+                if iWorkItem != iInitialWorkItem:
+                    oTBStatusLogic.updateWorkItem(oTestBoxDataEx.idTestBox, iWorkItem);
+                    oDb.commit();
+                    return None;
         except:
             oDb.rollback();
             raise;
