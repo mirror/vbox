@@ -508,6 +508,13 @@ static void ichac97ColdReset(PAC97STATE pThis)
     NOREF(pThis);
 }
 
+/**
+ * Retrieves the audio mixer sink of a corresponding AC'97 stream index.
+ *
+ * @returns Pointer to audio mixer sink if found, or NULL if not found / invalid.
+ * @param   pThis               AC'97 state.
+ * @param   uIndex              Stream index to get audio mixer sink for.
+ */
 DECLINLINE(PAUDMIXSINK) ichac97IndexToSink(PAC97STATE pThis, uint8_t uIndex)
 {
     AssertPtrReturn(pThis, NULL);
@@ -524,7 +531,15 @@ DECLINLINE(PAUDMIXSINK) ichac97IndexToSink(PAC97STATE pThis, uint8_t uIndex)
     return NULL;
 }
 
-/** Fetches the buffer descriptor at _CIV. */
+/**
+ * Fetches the current BDLE (Buffer Descriptor List Entry) of an AC'97 audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 stream to fetch BDLE for.
+ *
+ * @remark  Uses CIV as BDLE index.
+ */
 static void ichac97StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
 {
     PPDMDEVINS  pDevIns = ICHAC97STATE_2_DEVINS(pThis);
@@ -548,7 +563,11 @@ static void ichac97StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
 }
 
 /**
- * Update the BM status register
+ * Updates the status register (SR) of an AC'97 audio stream.
+ *
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 stream to update SR for.
+ * @param   new_sr              New value for status register (SR).
  */
 static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t new_sr)
 {
@@ -619,6 +638,14 @@ static bool ichac97StreamIsEnabled(PAC97STATE pThis, PAC97STREAM pStream)
     return fIsEnabled;
 }
 
+/**
+ * Enables or disables an AC'97 audio stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 stream to enable or disable.
+ * @param   fEnable             Whether to enable or disble the stream.
+ */
 static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnable)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
@@ -712,7 +739,7 @@ static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
 }
 
 /**
- * Creates an AC'97 stream.
+ * Creates an AC'97 audio stream.
  *
  * @returns IPRT status code.
  * @param   pThis               AC'97 state.
@@ -737,7 +764,7 @@ static int ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8
 }
 
 /**
- * Destroys an AC'97 stream.
+ * Destroys an AC'97 audio stream.
  *
  * @returns IPRT status code.
  * @param   pThis               AC'97 state.
@@ -767,7 +794,7 @@ static void ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
 }
 
 /**
- * Creates all AC'97 streams for the device.
+ * Creates all AC'97 audio streams of the device.
  *
  * @returns IPRT status code.
  * @param   pThis               AC'97 state.
@@ -821,6 +848,11 @@ static int ichac97StreamsCreate(PAC97STATE pThis)
     return rc;
 }
 
+/**
+ * Destroys all AC'97 audio streams of the device.
+ *
+ * @param   pThis               AC'97 state.
+ */
 static void ichac97StreamsDestroy(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
@@ -1703,6 +1735,17 @@ static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
         RTCircBufReset(pStream->State.pCircBuf);
 }
 
+/**
+ * Sets the volume of a specific AC'97 mixer control.
+ *
+ * This currently only supports attenuation -- gain support is currently not implemented.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ * @param   index               AC'97 mixer index to set volume for.
+ * @param   enmMixerCtl         Corresponding audio mixer sink.
+ * @param   uVal                Volume value to set.
+ */
 static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL enmMixerCtl, uint32_t uVal)
 {
     bool    fCntlMuted;
@@ -1797,6 +1840,12 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
     return rc;
 }
 
+/**
+ * Converts an AC'97 recording source index to a PDM audio recording source.
+ *
+ * @returns PDM audio recording source.
+ * @param   i                   AC'97 index to convert.
+ */
 static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
 {
     switch (i)
@@ -1815,6 +1864,12 @@ static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
     return PDMAUDIORECSOURCE_MIC;
 }
 
+/**
+ * Converts a PDM audio recording source to an AC'97 recording source index.
+ *
+ * @returns AC'97 recording source index.
+ * @param   rs                  PDM audio recording source to convert.
+ */
 static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
 {
     switch (rs)
@@ -1833,6 +1888,13 @@ static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
     return AC97_REC_MIC;
 }
 
+/**
+ * Performs an AC'97 mixer record select to switch to a different recording
+ * source.
+ *
+ * @param   pThis               AC'97 state.
+ * @param   val                 AC'97 recording source index to set.
+ */
 static void ichac97RecordSelect(PAC97STATE pThis, uint32_t val)
 {
     uint8_t rs = val & AC97_REC_MASK;
@@ -1844,6 +1906,12 @@ static void ichac97RecordSelect(PAC97STATE pThis, uint32_t val)
     ichac97MixerSet(pThis, AC97_Record_Select, rs | (ls << 8));
 }
 
+/**
+ * Resets the AC'97 mixer.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 state.
+ */
 static int ichac97MixerReset(PAC97STATE pThis)
 {
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
@@ -1948,6 +2016,11 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
 #endif /* Unused */
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
+/**
+ * Starts the internal audio device timer (if not started yet).
+ *
+ * @param   pThis               AC'97 state.
+ */
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
 {
     if (pThis->cStreamsActive == 0) /* Only start the timer if there at least is one active streams. */
@@ -1971,6 +2044,11 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis)
     ichac97DoTransfers(pThis);
 }
 
+/**
+ * Stops the internal audio device timer (if not stopped yet).
+ *
+ * @param   pThis               AC'97 state.
+ */
 static void ichac97TimerMaybeStop(PAC97STATE pThis)
 {
     if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
@@ -1988,6 +2066,12 @@ static void ichac97TimerMaybeStop(PAC97STATE pThis)
     ASMAtomicXchgBool(&pThis->fTimerActive, false);
 }
 
+/**
+ * Main routine to perform the actual audio data transfers from the AC'97 streams
+ * to the backend(s) and vice versa.
+ *
+ * @param   pThis               AC'97 state.
+ */
 static void ichac97DoTransfers(PAC97STATE pThis)
 {
     AssertPtrReturnVoid(pThis);
@@ -2029,6 +2113,13 @@ static void ichac97DoTransfers(PAC97STATE pThis)
 }
 #endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
+/**
+ * Timer callback which handles the audio data transfers on a periodic basis.
+ *
+ * @param   pDevIns             Device instance.
+ * @param   pTimer              Timer which was used when calling this.
+ * @param   pvUser              User argument as PAC97STATE.
+ */
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
@@ -2816,6 +2907,12 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
     return VINF_SUCCESS;
 }
 
+/**
+ * Retrieves an AC'97 audio stream from an AC'97 stream index.
+ *
+ * @returns Pointer to AC'97 audio stream if found, or NULL if not found / invalid.
+ * @param                       AC'97 state.
+ */
 DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID)
 {
     switch (uID)
@@ -2830,6 +2927,14 @@ DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID)
 }
 
 #ifdef IN_RING3
+/**
+ * Saves (serializes) an AC'97 stream using SSM.
+ *
+ * @returns IPRT status code.
+ * @param   pDevIns             Device instance.
+ * @param   pSSM                Saved state manager (SSM) handle to use.
+ * @param   pStream             AC'97 stream to save.
+ */
 static int ichac97SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
     RT_NOREF(pDevIns);
@@ -2885,6 +2990,14 @@ static DECLCALLBACK(int) ichac97SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+/**
+ * Loads an AC'97 stream from SSM.
+ *
+ * @returns IPRT status code.
+ * @param   pDevIns             Device instance.
+ * @param   pSSM                Saved state manager (SSM) handle to use.
+ * @param   pStream             AC'97 stream to load.
+ */
 static int ichac97LoadStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM pStream)
 {
     RT_NOREF(pDevIns);
