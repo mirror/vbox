@@ -1152,6 +1152,97 @@ class ModelDataBaseTestCase(unittest.TestCase):
             self.assertIsNotNone(oSample.toString());
 
 
+class FilterCriterionValueAndDescription(object):
+    """
+    A filter criterion value and its description.
+    """
+
+    def __init__(self, oValue, sDesc):
+        self.oValue = oValue;   ##< Typically the ID of something in the database.
+        self.sDesc  = sDesc;    ##< What to display.
+
+
+class FilterCriterion(object):
+    """
+    A filter criterion.
+    """
+
+    ## @name The state.
+    ## @{
+    ksState_NotSelected = 'not-selected';
+    ksState_Selected    = 'selected';
+    ## @}
+
+    ## @name The kind of filtering.
+    ## @{
+    ksKind_AnyOf = 'any-of';    ##< Any of the selected values are included (common).
+    ksKind_AllOf = 'all-of';    ##< All of the selected values must be matched (rare).
+    ## @}
+
+    ## @name The value type.
+    ## @{
+    ksType_UInt   = 'uint';     ##< unsigned integer value.
+    ksType_String = 'string';   ##< string value.
+    ## @}
+
+    def __init__(self, sName, sVarNm = None, sTypeNm = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_AnyOf):
+        self.sName      = sName;
+        self.sState     = sState;
+        self.sVarNm     = sVarNm if sVarNm is not None else sName;
+        self.sTypeNm    = sTypeNm;
+        self.sKind      = sKind;
+        self.aoSelected = []; # Single value, any type.
+        self.aoPossible = []; # type: list[FilterCriterionValueAndDescription]
+
+
+class ModelFilterBase(ModelBase):
+    """
+    Base class for filters.
+
+    Filters are used to narrow down data that is displayed in a list or
+    report.  It differs a little from ModelDataBase in that it's not tied to a
+    database table, but one or more database queries that are typically very
+    complicated.
+
+    The filter object has two roles:
+
+      1. It is used by a ModelLogicBase descendant to store the available
+         filtering options for data begin displayed.
+
+      2. It decodes and stores the filtering options submitted by the user so
+         a ModeLogicBase descendant can use it to construct WHERE statements.
+
+    The ModelFilterBase class is related to the ModelDataBase class in that it
+    decodes user parameters and stores data, however it is not a descendant.
+
+    Note! In order to reduce URL lengths, we use very very brief parameter
+          names for the filters.
+    """
+
+    def __init__(self):
+        ModelBase.__init__(self);
+        self.aCriteria = []; # type: list[FilterCriterion]
+
+    def initFromParams(self, oDisp): # type: (WuiDispatcherBase) -> self
+        """
+        Initialize the object from parameters.
+
+        Returns self. Raises exception on invalid parameter value.
+        """
+
+        for oCriterion in self.aCriteria:
+            if oCriterion.sType == FilterCriterion.ksType_UInt:
+                oCriterion.aoSelected = oDisp.getListOfIntParams(oCriterion.sVarNm, iMin = 0, aiDefaults = []);
+            else:
+                oCriterion.aoSelected = oDisp.getListOfStrParams(oCriterion.sVarNm, asDefaults = []);
+            if len(oCriterion.aoSelected):
+                oCriterion.sState = FilterCriterion.ksState_Selected;
+            else:
+                oCriterion.sState = FilterCriterion.ksState_NotSelected;
+        return self;
+
+
+
 class ModelLogicBase(ModelBase): # pylint: disable=R0903
     """
     Something all classes in the logic classes the logical model inherits from.
