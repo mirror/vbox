@@ -1384,7 +1384,7 @@ class SchedulerBase(object):
 
                 # We may have to skip scheduling groups that are out of work (e.g. 'No build').
                 iInitialWorkItem     = iWorkItem;
-                dIgnoreSchedGroupIds = [];
+                dIgnoreSchedGroupIds = {};
                 while True:
                     # Now, pick the scheduling group.
                     (oSchedGroup, iWorkItem) = SchedulerBase._pickSchedGroup(oTestBoxDataEx, iWorkItem, dIgnoreSchedGroupIds);
