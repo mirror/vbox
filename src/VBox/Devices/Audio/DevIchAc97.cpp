@@ -46,7 +46,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 
-#if 0
+#ifdef DEBUG_andy
 /*
  * AC97_DEBUG_DUMP_PCM_DATA enables dumping the raw PCM data
  * to a file on the host. Be sure to adjust AC97_DEBUG_DUMP_PCM_DATA_PATH
@@ -469,7 +469,7 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-DECLINLINE(PAC97STREAM)   ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID);
+DECLINLINE(PAC97STREAM)   ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx);
 static int                ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static void               ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream);
@@ -1847,9 +1847,9 @@ static int ichac97MixerSetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL e
  * @returns PDM audio recording source.
  * @param   i                   AC'97 index to convert.
  */
-static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
+static PDMAUDIORECSOURCE ichac97IdxToRecSource(uint8_t uIdx)
 {
-    switch (i)
+    switch (uIdx)
     {
         case AC97_REC_MIC:     return PDMAUDIORECSOURCE_MIC;
         case AC97_REC_CD:      return PDMAUDIORECSOURCE_CD;
@@ -1861,7 +1861,7 @@ static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
             break;
     }
 
-    LogFlowFunc(("Unknown record source %d, using MIC\n", i));
+    LogFlowFunc(("Unknown record source %d, using MIC\n", uIdx));
     return PDMAUDIORECSOURCE_MIC;
 }
 
@@ -1871,9 +1871,9 @@ static PDMAUDIORECSOURCE ichac97IndextoRecSource(uint8_t i)
  * @returns AC'97 recording source index.
  * @param   rs                  PDM audio recording source to convert.
  */
-static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
+static uint8_t ichac97RecSourceToIdx(PDMAUDIORECSOURCE enmRecSrc)
 {
-    switch (rs)
+    switch (enmRecSrc)
     {
         case PDMAUDIORECSOURCE_MIC:     return AC97_REC_MIC;
         case PDMAUDIORECSOURCE_CD:      return AC97_REC_CD;
@@ -1885,8 +1885,28 @@ static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
             break;
     }
 
-    LogFlowFunc(("Unknown audio recording source %d using MIC\n", rs));
+    LogFlowFunc(("Unknown audio recording source %d using MIC\n", enmRecSrc));
     return AC97_REC_MIC;
+}
+
+/**
+ * Retrieves an AC'97 audio stream from an AC'97 stream index.
+ *
+ * @returns Pointer to AC'97 audio stream if found, or NULL if not found / invalid.
+ * @param pThis                 AC'97 state.
+ * @param uIdx                  AC'97 stream index to retrieve AC'97 audio stream for.
+ */
+DECLINLINE(PAC97STREAM) ichac97GetStreamFromIdx(PAC97STATE pThis, uint32_t uIdx)
+{
+    switch (uIdx)
+    {
+        case AC97SOUNDSOURCE_PI_INDEX: return &pThis->StreamLineIn;
+        case AC97SOUNDSOURCE_MC_INDEX: return &pThis->StreamMicIn;
+        case AC97SOUNDSOURCE_PO_INDEX: return &pThis->StreamOut;
+        default:                       break;
+    }
+
+    return NULL;
 }
 
 /**
@@ -1896,14 +1916,14 @@ static uint8_t ichac97RecSourceToIndex(PDMAUDIORECSOURCE rs)
  * @param   pThis               AC'97 state.
  * @param   val                 AC'97 recording source index to set.
  */
-static void ichac97RecordSelect(PAC97STATE pThis, uint32_t val)
+static void ichac97MixerRecordSelect(PAC97STATE pThis, uint32_t val)
 {
     uint8_t rs = val & AC97_REC_MASK;
     uint8_t ls = (val >> 8) & AC97_REC_MASK;
-    PDMAUDIORECSOURCE ars = ichac97IndextoRecSource(rs);
-    PDMAUDIORECSOURCE als = ichac97IndextoRecSource(ls);
-    rs = ichac97RecSourceToIndex(ars);
-    ls = ichac97RecSourceToIndex(als);
+    PDMAUDIORECSOURCE ars = ichac97IdxToRecSource(rs);
+    PDMAUDIORECSOURCE als = ichac97IdxToRecSource(ls);
+    rs = ichac97RecSourceToIdx(ars);
+    ls = ichac97RecSourceToIdx(als);
     ichac97MixerSet(pThis, AC97_Record_Select, rs | (ls << 8));
 }
 
@@ -1964,7 +1984,7 @@ static int ichac97MixerReset(PAC97STATE pThis)
         ichac97MixerSet(pThis, AC97_Vendor_ID1              , 0x8384);
         ichac97MixerSet(pThis, AC97_Vendor_ID2              , 0x7600); /* 7608 */
     }
-    ichac97RecordSelect(pThis, 0);
+    ichac97MixerRecordSelect(pThis, 0);
 
     ichac97MixerSetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER, 0x8000);
     ichac97MixerSetVolume(pThis, AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT,         0x8808);
@@ -2348,7 +2368,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
     /* Get the index of the NABMBAR port. */
     const uint32_t uPortIdx = Port - pThis->IOPortBase[1];
 
-    PAC97STREAM pStream = ichac97GetStreamFromID(pThis, AC97_PORT2IDX(uPortIdx));
+    PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
 
     if (pStream)
@@ -2519,7 +2539,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
     /* Get the index of the NABMBAR register. */
     const uint32_t uPortIdx = Port - pThis->IOPortBase[1];
 
-    PAC97STREAM pStream = ichac97GetStreamFromID(pThis, AC97_PORT2IDX(uPortIdx));
+    PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
 
     if (pStream)
@@ -2801,7 +2821,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                     ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
                     break;
                 case AC97_Record_Select:
-                    ichac97RecordSelect(pThis, u32Val);
+                    ichac97MixerRecordSelect(pThis, u32Val);
                     break;
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
@@ -2917,25 +2937,6 @@ static DECLCALLBACK(int) ichac97IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 
     pThis->IOPortBase[iRegion] = Port;
     return VINF_SUCCESS;
-}
-
-/**
- * Retrieves an AC'97 audio stream from an AC'97 stream index.
- *
- * @returns Pointer to AC'97 audio stream if found, or NULL if not found / invalid.
- * @param                       AC'97 state.
- */
-DECLINLINE(PAC97STREAM) ichac97GetStreamFromID(PAC97STATE pThis, uint32_t uID)
-{
-    switch (uID)
-    {
-        case AC97SOUNDSOURCE_PI_INDEX: return &pThis->StreamLineIn;
-        case AC97SOUNDSOURCE_MC_INDEX: return &pThis->StreamMicIn;
-        case AC97SOUNDSOURCE_PO_INDEX: return &pThis->StreamOut;
-        default:                       break;
-    }
-
-    return NULL;
 }
 
 #ifdef IN_RING3
@@ -3060,7 +3061,7 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     uint8_t uaStrmsActive[AC97SOUNDSOURCE_LAST_INDEX];
     SSMR3GetMem(pSSM, uaStrmsActive, sizeof(uaStrmsActive));
 
-    ichac97RecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
+    ichac97MixerRecordSelect(pThis, ichac97MixerGet(pThis, AC97_Record_Select));
 # define V_(a, b) ichac97MixerSetVolume(pThis, a, b, ichac97MixerGet(pThis, a))
     V_(AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME_MASTER);
     V_(AC97_PCM_Out_Volume_Mute, PDMAUDIOMIXERCTL_FRONT);
