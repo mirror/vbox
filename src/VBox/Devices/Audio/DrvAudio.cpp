@@ -2675,18 +2675,18 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
                                   STAMUNIT_COUNT, "Total input samples lost.");
         PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalSamplesLostOut,  "TotalSamplesLostOut",
                                   STAMUNIT_COUNT, "Total output samples lost.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalSamplesOut,   "TotalSamplesPlayed",
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalSamplesOut,      "TotalSamplesPlayed",
                                   STAMUNIT_COUNT, "Total samples played by backend.");
-        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalSamplesIn, "TotalSamplesCaptured",
+        PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalSamplesIn,       "TotalSamplesCaptured",
                                   STAMUNIT_COUNT, "Total samples captured by backend.");
         PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesRead,       "TotalBytesRead",
                                   STAMUNIT_BYTES, "Total bytes read.");
         PDMDrvHlpSTAMRegCounterEx(pDrvIns, &pThis->Stats.TotalBytesWritten,    "TotalBytesWritten",
                                   STAMUNIT_BYTES, "Total bytes written.");
 
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn, "DelayIn",
+        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayIn,           "DelayIn",
                                      STAMUNIT_NS_PER_CALL, "Profiling of input data processing.");
-        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut, "DelayOut",
+        PDMDrvHlpSTAMRegProfileAdvEx(pDrvIns, &pThis->Stats.DelayOut,          "DelayOut",
                                      STAMUNIT_NS_PER_CALL, "Profiling of output data processing.");
 #endif
     }
