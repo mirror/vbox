@@ -481,6 +481,7 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
 static void               ichac97TimerMaybeStart(PAC97STATE pThis);
 static void               ichac97TimerMaybeStop(PAC97STATE pThis);
+static void               ichac97TimerMain(PAC97STATE pThis);
 static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif
 static int                ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t cbToProcess, uint32_t *pcbProcessed);
@@ -2041,7 +2042,7 @@ static void ichac97TimerMaybeStart(PAC97STATE pThis)
     pThis->uTimerTS = TMTimerGet(pThis->pTimer);
 
     /* Start transfers. */
-    ichac97DoTransfers(pThis);
+    ichac97TimerMain(pThis);
 }
 
 /**
@@ -2067,15 +2068,13 @@ static void ichac97TimerMaybeStop(PAC97STATE pThis)
 }
 
 /**
- * Main routine to perform the actual audio data transfers from the AC'97 streams
- * to the backend(s) and vice versa.
+ * Main routine for the device timer.
  *
+ * @returns IPRT status code.
  * @param   pThis               AC'97 state.
  */
-static void ichac97DoTransfers(PAC97STATE pThis)
+static void ichac97TimerMain(PAC97STATE pThis)
 {
-    AssertPtrReturnVoid(pThis);
-
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
     uint64_t cTicksNow = TMTimerGet(pThis->pTimer);
@@ -2086,9 +2085,7 @@ static void ichac97DoTransfers(PAC97STATE pThis)
     /* Flag indicating whether to kick the timer again for the next DMA transfer or sink processing. */
     bool fKickTimer = false;
 
-    ichac97StreamUpdate(pThis, &pThis->StreamLineIn);
-    ichac97StreamUpdate(pThis, &pThis->StreamMicIn);
-    ichac97StreamUpdate(pThis, &pThis->StreamOut);
+    ichac97DoTransfers(pThis);
 
     /* Do we need to kick the timer again? */
     if (   AudioMixerSinkIsActive(ichac97IndexToSink(pThis, pThis->StreamLineIn.u8Strm))
@@ -2111,7 +2108,6 @@ static void ichac97DoTransfers(PAC97STATE pThis)
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
-#endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
 
 /**
  * Timer callback which handles the audio data transfers on a periodic basis.
@@ -2128,7 +2124,23 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
     Assert(pThis == PDMINS_2_DATA(pDevIns, PAC97STATE));
     AssertPtr(pThis);
 
-    ichac97DoTransfers(pThis);
+    ichac97TimerMain(pThis);
+}
+#endif /* !VBOX_WITH_AUDIO_AC97_CALLBACKS */
+
+/**
+ * Main routine to perform the actual audio data transfers from the AC'97 streams
+ * to the backend(s) and vice versa.
+ *
+ * @param   pThis               AC'97 state.
+ */
+static void ichac97DoTransfers(PAC97STATE pThis)
+{
+    AssertPtrReturnVoid(pThis);
+
+    ichac97StreamUpdate(pThis, &pThis->StreamLineIn);
+    ichac97StreamUpdate(pThis, &pThis->StreamMicIn);
+    ichac97StreamUpdate(pThis, &pThis->StreamOut);
 }
 
 /**
