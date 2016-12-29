@@ -1290,13 +1290,15 @@ class SchedulerBase(object):
         return None;
 
     @staticmethod
-    def _pickSchedGroup(oTestBoxDataEx, iWorkItem):
+    def _pickSchedGroup(oTestBoxDataEx, iWorkItem, dIgnoreSchedGroupIds):
         """
         Picks the next scheduling group for the given testbox.
         """
         if len(oTestBoxDataEx.aoInSchedGroups) == 1:
             oSchedGroup = oTestBoxDataEx.aoInSchedGroups[0].oSchedGroup;
-            if oSchedGroup.fEnabled and oSchedGroup.idBuildSrc is not None:
+            if    oSchedGroup.fEnabled \
+              and oSchedGroup.idBuildSrc is not None \
+              and oSchedGroup.idSchedGroup not in dIgnoreSchedGroupIds:
                 return (oSchedGroup, 0);
 
         elif len(oTestBoxDataEx.aoInSchedGroups) > 0:
@@ -1329,11 +1331,14 @@ class SchedulerBase(object):
                 iHi -= 1;
 
             # Pick the next one.
-            iWorkItem += 1;
-            if iWorkItem >= len(aoFlat):
-                iWorkItem = 0;
-            if iWorkItem < len(aoFlat):
-                return (aoFlat[iWorkItem], iWorkItem);
+            cLeft = len(aoFlat);
+            while cLeft > 0:
+                cLeft     -= 1;
+                iWorkItem += 1;
+                if iWorkItem >= len(aoFlat) or iWorkItem < 0:
+                    iWorkItem = 0;
+                if aoFlat[iWorkItem].idSchedGroup not in dIgnoreSchedGroupIds:
+                    return (aoFlat[iWorkItem], iWorkItem);
 
         # No active group.
         return (None, 0);
@@ -1374,20 +1379,23 @@ class SchedulerBase(object):
             if    oTestBoxDataEx.fEnabled \
               and oTestBoxDataEx.idGenTestBox == oTestBoxData.idGenTestBox:
 
-                # Now, pick the scheduling group.
-                (oSchedGroup, iWorkItem) = SchedulerBase._pickSchedGroup(oTestBoxDataEx, iWorkItem);
-                if oSchedGroup is not None:
+                # We may have to skip scheduling groups that are out of work (e.g. 'No build').
+                dIgnoreSchedGroupIds = [];
+                while True:
+                    # Now, pick the scheduling group.
+                    (oSchedGroup, iWorkItem) = SchedulerBase._pickSchedGroup(oTestBoxDataEx, iWorkItem, dIgnoreSchedGroupIds);
+                    if oSchedGroup is None:
+                        break;
                     assert oSchedGroup.fEnabled and oSchedGroup.idBuildSrc is not None;
 
-                    #
                     # Instantiate the specified scheduler and let it do the rest.
-                    #
                     oScheduler = SchedulerBase._instantiate(oDb, oSchedGroup, iVerbosity, tsSecStart);
                     dResponse = oScheduler.scheduleNewTaskWorker(oTestBoxDataEx, tsNow, sBaseUrl);
                     if dResponse is not None:
                         oTBStatusLogic.updateWorkItem(oTestBoxDataEx.idTestBox, iWorkItem);
                         oDb.commit();
                         return dResponse;
+                    dIgnoreSchedGroupIds[oSchedGroup.idSchedGroup] = oSchedGroup;
         except:
             oDb.rollback();
             raise;
