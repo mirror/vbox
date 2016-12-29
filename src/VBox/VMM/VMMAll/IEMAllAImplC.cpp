@@ -682,7 +682,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u64_locked,(uint64_t *puDst, uint64_t uSrc,
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs does. */
+    /** @todo check what real CPUs do. */
     if (uSrc)
     {
         uint8_t  iBit;
@@ -733,19 +733,19 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs does. */
+    /** @todo check what real CPUs do. */
     if (uSrc)
     {
         uint8_t  iBit;
         uint32_t u32Src;
         if (uSrc & UINT64_C(0xffffffff00000000))
         {
-            iBit = 64;
+            iBit = 63;
             u32Src = uSrc >> 32;
         }
         else
         {
-            iBit = 32;
+            iBit = 31;
             u32Src = uSrc;
         }
         if (!(u32Src & UINT32_C(0xffff0000)))
@@ -768,11 +768,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32
             iBit -= 2;
             u32Src <<= 2;
         }
-        if (!(u32Src & UINT32_C(0x10000000)))
+        if (!(u32Src & UINT32_C(0x80000000)))
         {
             iBit -= 1;
-            u32Src <<= 1;
-            Assert(u32Src & RT_BIT_64(63));
+            Assert(u32Src & RT_BIT(30));
         }
 
         *puDst     = iBit;
