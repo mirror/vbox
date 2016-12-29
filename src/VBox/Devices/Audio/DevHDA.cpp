@@ -1064,6 +1064,7 @@ static void          hdaBDLEDumpAll(PHDASTATE pThis, uint64_t u64BaseDMA, uint16
 #if !defined(VBOX_WITH_AUDIO_HDA_CALLBACKS) && defined(IN_RING3)
 static void          hdaTimerMaybeStart(PHDASTATE pThis);
 static void          hdaTimerMaybeStop(PHDASTATE pThis);
+static void          hdaTimerMain(PHDASTATE pThis);
 #endif
 /** @} */
 
@@ -3895,6 +3896,11 @@ static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
 }
 
 #ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
+/**
+ * Starts the internal audio device timer (if not started yet).
+ *
+ * @param   pThis               HDA state.
+ */
 static void hdaTimerMaybeStart(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
@@ -3916,10 +3922,15 @@ static void hdaTimerMaybeStart(PHDASTATE pThis)
         pThis->uTimerTS = TMTimerGet(pThis->pTimer);
 
         /* Start transfers. */
-        hdaDoTransfers(pThis);
+        hdaTimerMain(pThis);
     }
 }
 
+/**
+ * Stops the internal audio device timer (if not stopped yet).
+ *
+ * @param   pThis               HDA state.
+ */
 static void hdaTimerStop(PHDASTATE pThis)
 {
     LogFlowFuncEnter();
@@ -3942,7 +3953,13 @@ static void hdaTimerMaybeStop(PHDASTATE pThis)
         hdaTimerStop(pThis);
 }
 
-static void hdaDoTransfers(PHDASTATE pThis)
+/**
+ * Main routine for the device timer.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               HDA state.
+ */
+static void hdaTimerMain(PHDASTATE pThis)
 {
     AssertPtrReturnVoid(pThis);
 
@@ -3959,36 +3976,7 @@ static void hdaDoTransfers(PHDASTATE pThis)
      * new data processing round. */
     bool fKickTimer = false;
 
-    PHDASTREAM pStreamLineIn  = hdaSinkGetStream(pThis, &pThis->SinkLineIn);
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    PHDASTREAM pStreamMicIn   = hdaSinkGetStream(pThis, &pThis->SinkMicIn);
-#endif
-    PHDASTREAM pStreamFront   = hdaSinkGetStream(pThis, &pThis->SinkFront);
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    /** @todo See note below. */
-#endif
-
-    hdaStreamUpdate(pThis, pStreamLineIn);
-#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    hdaStreamUpdate(pThis, pStreamMicIn);
-#endif
-    hdaStreamUpdate(pThis, pStreamFront);
-
-
-#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-    int rc2 = AudioMixerSinkUpdate(pThis->SinkCenterLFE.pMixSink);
-    AssertRC(rc2);
-
-    rc2 = AudioMixerSinkUpdate(pThis->SinkRear.pMixSink);
-    AssertRC(rc2);
-    /** @todo Check for stream interleaving and only call hdaStreamDoDMA() if required! */
-
-    /*
-     * Only call hdaTransfer if CenterLFE and/or Rear are on different SDs,
-     * otherwise we have to use the interleaved streams support for getting the data
-     * out of the Front sink (depending on the mapping layout).
-     */
-#endif
+    hdaDoTransfers(pThis);
 
     /* Do we need to kick the timer again? */
     if (   AudioMixerSinkIsActive(pThis->SinkFront.pMixSink)
@@ -4021,6 +4009,13 @@ static void hdaDoTransfers(PHDASTATE pThis)
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 
+/**
+ * Timer callback which handles the audio data transfers on a periodic basis.
+ *
+ * @param   pDevIns             Device instance.
+ * @param   pTimer              Timer which was used when calling this.
+ * @param   pvUser              User argument as PHDASTATE.
+ */
 static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
@@ -4029,7 +4024,7 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     Assert(pThis == PDMINS_2_DATA(pDevIns, PHDASTATE));
     AssertPtr(pThis);
 
-    hdaDoTransfers(pThis);
+    hdaTimerMain(pThis);
 }
 
 #else /* VBOX_WITH_AUDIO_HDA_CALLBACKS */
@@ -4081,6 +4076,46 @@ static DECLCALLBACK(int) hdaCallbackOutput(PDMAUDIOCBTYPE enmType, void *pvCtx, 
     }
 }
 #endif /* VBOX_WITH_AUDIO_HDA_CALLBACKS */
+
+/**
+ * Main routine to perform the actual audio data transfers from the HDA streams
+ * to the backend(s) and vice versa.
+ *
+ * @param   pThis               HDA state.
+ */
+static void hdaDoTransfers(PHDASTATE pThis)
+{
+    PHDASTREAM pStreamLineIn  = hdaSinkGetStream(pThis, &pThis->SinkLineIn);
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    PHDASTREAM pStreamMicIn   = hdaSinkGetStream(pThis, &pThis->SinkMicIn);
+#endif
+    PHDASTREAM pStreamFront   = hdaSinkGetStream(pThis, &pThis->SinkFront);
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    /** @todo See note below. */
+#endif
+
+    hdaStreamUpdate(pThis, pStreamLineIn);
+#ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+    hdaStreamUpdate(pThis, pStreamMicIn);
+#endif
+    hdaStreamUpdate(pThis, pStreamFront);
+
+
+#ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
+    int rc2 = AudioMixerSinkUpdate(pThis->SinkCenterLFE.pMixSink);
+    AssertRC(rc2);
+
+    rc2 = AudioMixerSinkUpdate(pThis->SinkRear.pMixSink);
+    AssertRC(rc2);
+    /** @todo Check for stream interleaving and only call hdaStreamDoDMA() if required! */
+
+    /*
+     * Only call hdaTransfer if CenterLFE and/or Rear are on different SDs,
+     * otherwise we have to use the interleaved streams support for getting the data
+     * out of the Front sink (depending on the mapping layout).
+     */
+#endif
+}
 
 #ifdef DEBUG_andy
 # define HDA_DEBUG_DMA
@@ -4762,6 +4797,7 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
 
             RTCircBufReleaseReadBlock(pCircBuf, cbDMA);
 
+            /* All DMA transfers done for now? */
             if (!cbDMA)
                 fDone = true;
 
