@@ -338,7 +338,7 @@ static uint8_t const g_afParity[256] =
  * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
  */
 #define X86_EFL_CALC_SF(a_uResult, a_cBitsWidth) \
-    ( (uint32_t)((a_uResult) >> ((a_cBitsWidth) - X86_EFL_SF_BIT)) & X86_EFL_SF )
+    ( (uint32_t)((a_uResult) >> ((a_cBitsWidth) - X86_EFL_SF_BIT - 1)) & X86_EFL_SF )
 
 /**
  * Calculates the zero flag value given a result.
