@@ -947,7 +947,8 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
             uint32_t cbChunkOff = 0;
             while (cbChunk)
             {
-                ssize_t cbChunkWritten = write(pStrm->hFile, (uint8_t *)pStrm->pvBuf + cbChunkOff, RT_MIN(cbChunk, 4096));
+                ssize_t cbChunkWritten = write(pStrm->hFile, (uint8_t *)pStrm->pvBuf + cbChunkOff,
+                                               RT_MIN(cbChunk, (unsigned)s_OSSConf.fragsize));
                 if (cbChunkWritten < 0)
                 {
                     LogRel(("OSS: Failed writing output data: %s\n", strerror(errno)));
@@ -961,10 +962,10 @@ static DECLCALLBACK(int) drvHostOSSAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                     break;
                 }
 
-                cbChunkOff += cbChunkWritten;
+                cbChunkOff += (uint32_t)cbChunkWritten;
                 Assert(cbChunkOff <= cbRead);
-                Assert(cbChunk    >= cbChunkWritten);
-                cbChunk    -= cbChunkWritten;
+                Assert(cbChunk    >= (uint32_t)cbChunkWritten);
+                cbChunk    -= (uint32_t)cbChunkWritten;
             }
 
             Assert(cbToRead >= cbRead);
