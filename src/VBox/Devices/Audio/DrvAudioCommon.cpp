@@ -148,12 +148,19 @@ void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf,
     if (!cbBuf || !cSamples)
         return;
 
+    Assert(pPCMProps->cBits);
+    size_t cbToClear = cSamples * (pPCMProps->cBits / 8 /* Bytes */);
+    Assert(cbBuf >= cbToClear);
+
+    if (cbBuf < cbToClear)
+        cbToClear = cbBuf;
+
     Log2Func(("pPCMInfo=%p, pvBuf=%p, cSamples=%RU32, fSigned=%RTbool, cBits=%RU8, cShift=%RU8\n",
               pPCMProps, pvBuf, cSamples, pPCMProps->fSigned, pPCMProps->cBits, pPCMProps->cShift));
 
     if (pPCMProps->fSigned)
     {
-        memset(pvBuf, 0, cSamples << pPCMProps->cShift);
+        RT_BZERO(pvBuf, cbToClear);
     }
     else
     {
@@ -161,20 +168,19 @@ void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf,
         {
             case 8:
             {
-                memset(pvBuf, 0x80, cSamples << pPCMProps->cShift);
+                memset(pvBuf, 0x80, cbToClear);
                 break;
             }
 
             case 16:
             {
                 uint16_t *p = (uint16_t *)pvBuf;
-                int shift = pPCMProps->cChannels - 1;
-                short s = INT16_MAX;
+                int16_t   s = INT16_MAX;
 
                 if (pPCMProps->fSwapEndian)
                     s = RT_BSWAP_U16(s);
 
-                for (unsigned i = 0; i < cSamples << shift; i++)
+                for (uint32_t i = 0; i < cSamples; i++)
                     p[i] = s;
 
                 break;
@@ -183,13 +189,12 @@ void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf,
             case 32:
             {
                 uint32_t *p = (uint32_t *)pvBuf;
-                int shift = pPCMProps->cChannels - 1;
-                int32_t s = INT32_MAX;
+                int32_t   s = INT32_MAX;
 
                 if (pPCMProps->fSwapEndian)
                     s = RT_BSWAP_U32(s);
 
-                for (unsigned i = 0; i < cSamples << shift; i++)
+                for (uint32_t i = 0; i < cSamples; i++)
                     p[i] = s;
 
                 break;
