@@ -35,9 +35,10 @@ import copy;
 # Validation Kit imports.
 from common                         import webutils;
 from testmanager                    import config;
-from testmanager.webui.wuibase      import WuiDispatcherBase, WuiException
+from testmanager.webui.wuibase      import WuiDispatcherBase, WuiException;
 from testmanager.webui.wuihlpform   import WuiHlpForm;
 from testmanager.core               import db;
+from testmanager.core.base          import AttributeChangeEntryPre;
 
 
 class WuiHtmlBase(object): # pylint: disable=R0903
@@ -459,11 +460,20 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         # Additional rows for each changed attribute.
         j = 0;
         for oChange in oEntry.aoChanges:
-            sContent += '        <tr class="%s%s"><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
-                      % ( sRowClass, 'odd' if j & 1 else 'even',
-                          webutils.escapeElem(oChange.sAttr),
-                          webutils.escapeElem(oChange.sOldText),
-                          webutils.escapeElem(oChange.sNewText), );
+            if isinstance(oChange, AttributeChangeEntryPre):
+                sContent += '        <tr class="%s%s"><td>%s</td>'\
+                            '<td><div class="tdpre"><pre>%s</pre></div></td>' \
+                            '<td><div class="tdpre"><pre>%s</pre></div></td></tr>\n' \
+                          % ( sRowClass, 'odd' if j & 1 else 'even',
+                              webutils.escapeElem(oChange.sAttr),
+                              webutils.escapeElem(oChange.sOldText),
+                              webutils.escapeElem(oChange.sNewText), );
+            else:
+                sContent += '        <tr class="%s%s"><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+                          % ( sRowClass, 'odd' if j & 1 else 'even',
+                              webutils.escapeElem(oChange.sAttr),
+                              webutils.escapeElem(oChange.sOldText),
+                              webutils.escapeElem(oChange.sNewText), );
             j += 1;
 
         return sContent;

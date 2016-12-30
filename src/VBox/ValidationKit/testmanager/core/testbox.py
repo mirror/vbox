@@ -37,7 +37,7 @@ import unittest;
 from testmanager.core               import db;
 from testmanager.core.base          import ModelDataBase, ModelDataBaseTestCase, ModelLogicBase, TMInFligthCollision, \
                                            TMInvalidData, TMTooManyRows, TMRowNotFound, \
-                                           ChangeLogEntry, AttributeChangeEntry;
+                                           ChangeLogEntry, AttributeChangeEntry, AttributeChangeEntryPre;
 from testmanager.core.useraccount   import UserAccountLogic;
 
 
@@ -748,7 +748,10 @@ class TestBoxLogic(ModelLogicBase):
                     oOldAttr = getattr(oOld, sAttr);
                     oNewAttr = getattr(oNew, sAttr);
                     if oOldAttr != oNewAttr:
-                        aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+                        if sAttr == 'sReport':
+                            aoChanges.append(AttributeChangeEntryPre(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
+                        else:
+                            aoChanges.append(AttributeChangeEntry(sAttr, oNewAttr, oOldAttr, str(oNewAttr), str(oOldAttr)));
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
 
         # If we're at the end of the log, add the initial entry.

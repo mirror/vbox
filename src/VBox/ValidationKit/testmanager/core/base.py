@@ -1298,6 +1298,14 @@ class AttributeChangeEntry(object): # pylint: disable=R0903
         self.sNewText       = sNewText;
         self.sOldText       = sOldText;
 
+class AttributeChangeEntryPre(AttributeChangeEntry): # pylint: disable=R0903
+    """
+    AttributeChangeEntry for preformatted values.
+    """
+
+    def __init__(self, sAttr, oNewRaw, oOldRaw, sNewText, sOldText):
+        AttributeChangeEntry.__init__(self, sAttr, oNewRaw, oOldRaw, sNewText, sOldText);
+
 class ChangeLogEntry(object): # pylint: disable=R0903
     """
     A change log entry returned by the fetchChangeLog method typically
