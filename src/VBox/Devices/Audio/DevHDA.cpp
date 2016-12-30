@@ -4544,8 +4544,6 @@ static int hdaStreamAsyncIOCreate(PHDASTATE pThis, PHDASTREAM pStream)
                 char szThreadName[64];
                 RTStrPrintf2(szThreadName, sizeof(szThreadName), "hdaAIO%RU8", pStream->u8SD);
 
-                /** @todo Create threads on demand? */
-
                 rc = RTThreadCreate(&pAIO->Thread, hdaStreamAsyncIOThread, &Ctx,
                                     0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, szThreadName);
                 if (RT_SUCCESS(rc))
