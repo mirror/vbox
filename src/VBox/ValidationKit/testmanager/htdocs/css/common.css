@@ -580,16 +580,24 @@ table.tmchangelog tr.tmoddeven, table.tmchangelog tr.tmeveneven, table.tmchangel
 }
 
 .tmsyschlogattr {
-    font-size:      0.64em;
+    font-size:      0.80em;
 }
 
-.tmsyschlogspacer, .tmsyschlogspacerfinal {
-    width:          3.14159em;
-    border-top:     0px solid green !important;
-    border-left:    0px solid green !important;
-}
 .tmsyschlogspacer {
+    width:          1.4em;
     border-bottom:  0px solid green !important;
+}
+
+.tmsyschlogevent {
+    border-bottom:  0px solid green !important;
+}
+
+.tmsyschlogspacerrowabove {
+    height:         0.22em;
+}
+
+.tmsyschlogspacerrowbelow {
+    height:         0.80em;
 }
 
 

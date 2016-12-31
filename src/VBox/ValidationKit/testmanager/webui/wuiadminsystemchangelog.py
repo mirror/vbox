@@ -363,38 +363,52 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
 
         else:
             oChangeEntry    = None;
-            cAttribsChanged = 1;
+            cAttribsChanged = -1;
 
         sHtml = u'  <tr class="%s">\n' \
-                u'    <td rowspan="%d">%s</td>\n' \
-                u'    <td rowspan="%d">%s</td>\n' \
-                u'    <td rowspanx="%d" colspan="4">%s<!--</td>\n' \
-                u'    <td colspan="3">--> %s</td>\n' \
+                u'    <td rowspan="%d" align="center" >%s</td>\n' \
+                u'    <td rowspan="%d" align="center" >%s</td>\n' \
+                u'    <td colspan="5" class="%s%s">%s %s</td>\n' \
                 u'  </tr>\n' \
               % ( sRowClass,
-                 cAttribsChanged, sDate,
-                 cAttribsChanged, webutils.escapeElem(oEntry.oAuthor.sUsername if oEntry.oAuthor is not None else ''),
-                 cAttribsChanged, webutils.escapeElem(sEvent),
+                 1 + cAttribsChanged + 1, sDate,
+                 1 + cAttribsChanged + 1, webutils.escapeElem(oEntry.oAuthor.sUsername if oEntry.oAuthor is not None else ''),
+                 sRowClass, ' tmsyschlogevent' if oChangeEntry is not None else '', webutils.escapeElem(sEvent),
                  oDetails.toHtml() if isinstance(oDetails, WuiHtmlBase) else oDetails,
                  );
 
         if oChangeEntry is not None:
+            sHtml += u'  <tr class="%s tmsyschlogspacerrowabove">\n' \
+                     u'    <td xrowspan="%d" style="border-right: 0px; border-bottom: 0px;"></td>\n' \
+                     u'    <td colspan="3" style="border-right: 0px;"></td>\n' \
+                     u'    <td rowspan="%d"></td>\n' \
+                     u'  </tr>\n' \
+                   % (sRowClass, cAttribsChanged + 1, cAttribsChanged + 1);
             for j, oChange in enumerate(oChangeEntry.aoChanges):
-                sHtml += '        <tr class="%s%s tmsyschlogattr"><td class="%s tmsyschlogspacer%s"></td>' \
+                sHtml += u'  <tr class="%s%s tmsyschlogattr%s">\n' \
                        % ( sRowClass, 'odd' if j & 1 else 'even',
-                           sRowClass, 'final' if j + 1 == len(oChangeEntry.aoChanges) else '');
+                           ' tmsyschlogattrfinal' if j + 1 == len(oChangeEntry.aoChanges) else '',);
+                if j == 0:
+                    sHtml += u'    <td class="%s tmsyschlogspacer" rowspan="%d"></td>\n' % (sRowClass, cAttribsChanged - 1,);
+
                 if isinstance(oChange, AttributeChangeEntryPre):
-                    sHtml += '<td><div class="tdpre"><pre>%s</pre></div></td>' \
-                             '<td><div class="tdpre"><pre>%s</pre></div></td></tr>\n' \
+                    sHtml += u'    <td>%s</td>\n' \
+                             u'    <td><div class="tdpre"><pre>%s</pre></div></td>\n' \
+                             u'    <td><div class="tdpre"><pre>%s</pre></div></td>\n' \
                            % ( webutils.escapeElem(oChange.sAttr),
                                webutils.escapeElem(oChange.sOldText),
                                webutils.escapeElem(oChange.sNewText), );
                 else:
-                    sHtml += '        <td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+                    sHtml += u'    <td>%s</td>\n' \
+                             u'    <td>%s</td>\n' \
+                             u'    <td>%s</td>\n' \
                            % ( webutils.escapeElem(oChange.sAttr),
                                webutils.escapeElem(oChange.sOldText),
                                webutils.escapeElem(oChange.sNewText), );
-        sHtml += u'  </tr>\n'
+                sHtml += u'  </tr>\n';
+
+        if oChangeEntry is not None:
+            sHtml += u'  <tr class="%s tmsyschlogspacerrowbelow "><td colspan="5"></td></tr>\n\n' % (sRowClass,);
         return sHtml;
 
 
@@ -407,13 +421,14 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
                 u' <tr>\n' \
                 u'  <th rowspan="2">When</th>\n' \
                 u'  <th rowspan="2">Who</th>\n' \
-                u'  <th colspan="4">Event</th>\n' \
+                u'  <th colspan="5">Event</th>\n' \
                 u' </tr>\n' \
                 u' <tr>\n' \
-                u'  <th></th>\n' \
+                u'  <th style="border-right: 0px;"></th>\n' \
                 u'  <th>Attribute</th>\n' \
                 u'  <th>Old</th>\n' \
-                u'  <th>New</th>\n' \
+                u'  <th style="border-right: 0px;">New</th>\n' \
+                u'  <th></th>\n' \
                 u' </tr>\n' \
                 u'</thead>\n';
         return sHtml;
