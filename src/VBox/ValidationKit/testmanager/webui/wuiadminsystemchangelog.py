@@ -266,7 +266,7 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
             oDetails = oEntry.sDesc;
 
         elif oEntry.sEvent == SystemLogData.ksEvent_TestSetAbandoned:
-            sEvent = 'Abandoned test set';
+            sEvent = 'Abandoned ' if oEntry.sDesc.startswith('idTestSet') else 'Abandoned test set';
             oDetails = self._formatDescGeneric(oEntry.sDesc, oEntry);
 
         elif oEntry.sEvent == SystemLogData.ksEvent_UserAccountUnknown:
@@ -358,6 +358,9 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         if aoChanges is not None and len(aoChanges) > 0:
             oChangeEntry    = aoChanges[0];
             cAttribsChanged = len(oChangeEntry.aoChanges) + 1;
+            if oChangeEntry.oOldRaw is None and sEvent.startswith('Modified '):
+                sEvent = 'Created ' + sEvent[9:];
+
         else:
             oChangeEntry    = None;
             cAttribsChanged = 1;
@@ -365,8 +368,8 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         sHtml = u'  <tr class="%s">\n' \
                 u'    <td rowspan="%d">%s</td>\n' \
                 u'    <td rowspan="%d">%s</td>\n' \
-                u'    <td rowspan="%d">%s</td>\n' \
-                u'    <td colspan="3">%s</td>\n' \
+                u'    <td rowspanx="%d" colspan="4">%s<!--</td>\n' \
+                u'    <td colspan="3">--> %s</td>\n' \
                 u'  </tr>\n' \
               % ( sRowClass,
                  cAttribsChanged, sDate,
@@ -377,18 +380,18 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
 
         if oChangeEntry is not None:
             for j, oChange in enumerate(oChangeEntry.aoChanges):
+                sHtml += '        <tr class="%s%s tmsyschlogattr"><td class="%s tmsyschlogspacer%s"></td>' \
+                       % ( sRowClass, 'odd' if j & 1 else 'even',
+                           sRowClass, 'final' if j + 1 == len(oChangeEntry.aoChanges) else '');
                 if isinstance(oChange, AttributeChangeEntryPre):
-                    sHtml += '        <tr class="%s%s tmsyschlogattr"><td>%s</td>'\
-                             '<td><div class="tdpre"><pre>%s</pre></div></td>' \
+                    sHtml += '<td><div class="tdpre"><pre>%s</pre></div></td>' \
                              '<td><div class="tdpre"><pre>%s</pre></div></td></tr>\n' \
-                           % ( sRowClass, 'odd' if j & 1 else 'even',
-                               webutils.escapeElem(oChange.sAttr),
+                           % ( webutils.escapeElem(oChange.sAttr),
                                webutils.escapeElem(oChange.sOldText),
                                webutils.escapeElem(oChange.sNewText), );
                 else:
-                    sHtml += '        <tr class="%s%s tmsyschlogattr"><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
-                           % ( sRowClass, 'odd' if j & 1 else 'even',
-                               webutils.escapeElem(oChange.sAttr),
+                    sHtml += '        <td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+                           % ( webutils.escapeElem(oChange.sAttr),
                                webutils.escapeElem(oChange.sOldText),
                                webutils.escapeElem(oChange.sNewText), );
         sHtml += u'  </tr>\n'
@@ -404,13 +407,13 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
                 u' <tr>\n' \
                 u'  <th rowspan="2">When</th>\n' \
                 u'  <th rowspan="2">Who</th>\n' \
-                u'  <th rowspan="2">Event</th>\n' \
-                u'  <th colspan="3">Details</th>\n' \
+                u'  <th colspan="4">Event</th>\n' \
                 u' </tr>\n' \
                 u' <tr>\n' \
+                u'  <th></th>\n' \
                 u'  <th>Attribute</th>\n' \
-                u'  <th>Old Value</th>\n' \
-                u'  <th>New Value</th>\n' \
+                u'  <th>Old</th>\n' \
+                u'  <th>New</th>\n' \
                 u' </tr>\n' \
                 u'</thead>\n';
         return sHtml;

@@ -583,6 +583,16 @@ table.tmchangelog tr.tmoddeven, table.tmchangelog tr.tmeveneven, table.tmchangel
     font-size:      0.64em;
 }
 
+.tmsyschlogspacer, .tmsyschlogspacerfinal {
+    width:          3.14159em;
+    border-top:     0px solid green !important;
+    border-left:    0px solid green !important;
+}
+.tmsyschlogspacer {
+    border-bottom:  0px solid green !important;
+}
+
+
 /*
  * Elements to be shows on *Show All* pages.
  */
