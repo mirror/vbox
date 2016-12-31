@@ -250,7 +250,7 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         sDate = self.formatTsShort(oEntry.tsEffective);
         if sDate[:10] != self._sPrevDate:
             self._sPrevDate = sDate[:10];
-            sHtml += '  <tr class="%s tmdaterow" align="left"><td>%s</td><td colspan="6"></td></tr>\n' % (sRowClass, sDate[:10],);
+            sHtml += '  <tr class="%s tmdaterow" align="left"><td colspan="7">%s</td></tr>\n' % (sRowClass, sDate[:10],);
         sDate = sDate[11:]
 
         #
