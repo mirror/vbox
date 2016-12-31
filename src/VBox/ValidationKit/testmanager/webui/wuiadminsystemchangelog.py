@@ -240,7 +240,9 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         """
         Overridden parent method.
         """
-        oEntry = self._aoEntries[iEntry];
+        oEntry    = self._aoEntries[iEntry];
+        sRowClass = 'tmodd' if (iEntry + 1) & 1 else 'tmeven';
+        sHtml     = u'';
 
         #
         # Format the timestamp.
@@ -250,7 +252,9 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
             sDate = sDate[11:]
         else:
             self._sPrevDate = sDate[:10];
-            sDate = '<b>' + sDate[:10] + '</b><br>' + sDate[11:];
+            sHtml += '  <tr class="%s" align="left"><td>%s</td><td colspan="6"></td></tr>\n' % (sRowClass, sDate[:10],);
+            #sDate = '<b>' + sDate[:10] + '</b><br>' + sDate[11:];
+            sDate = sDate[11:]
 
         #
         # System log events.
@@ -353,7 +357,6 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         #
         # Do the formatting.
         #
-        sRowClass = 'tmodd' if (iEntry + 1) & 1 else 'tmeven';
 
         if aoChanges is not None and len(aoChanges) > 0:
             oChangeEntry    = aoChanges[0];
@@ -365,17 +368,17 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
             oChangeEntry    = None;
             cAttribsChanged = -1;
 
-        sHtml = u'  <tr class="%s">\n' \
-                u'    <td rowspan="%d" align="center" >%s</td>\n' \
-                u'    <td rowspan="%d" align="center" >%s</td>\n' \
-                u'    <td colspan="5" class="%s%s">%s %s</td>\n' \
-                u'  </tr>\n' \
-              % ( sRowClass,
-                 1 + cAttribsChanged + 1, sDate,
-                 1 + cAttribsChanged + 1, webutils.escapeElem(oEntry.oAuthor.sUsername if oEntry.oAuthor is not None else ''),
-                 sRowClass, ' tmsyschlogevent' if oChangeEntry is not None else '', webutils.escapeElem(sEvent),
-                 oDetails.toHtml() if isinstance(oDetails, WuiHtmlBase) else oDetails,
-                 );
+        sHtml += u'  <tr class="%s">\n' \
+                 u'    <td rowspan="%d" align="center" >%s</td>\n' \
+                 u'    <td rowspan="%d" align="center" >%s</td>\n' \
+                 u'    <td colspan="5" class="%s%s">%s %s</td>\n' \
+                 u'  </tr>\n' \
+               % ( sRowClass,
+                  1 + cAttribsChanged + 1, sDate,
+                  1 + cAttribsChanged + 1, webutils.escapeElem(oEntry.oAuthor.sUsername if oEntry.oAuthor is not None else ''),
+                  sRowClass, ' tmsyschlogevent' if oChangeEntry is not None else '', webutils.escapeElem(sEvent),
+                  oDetails.toHtml() if isinstance(oDetails, WuiHtmlBase) else oDetails,
+                  );
 
         if oChangeEntry is not None:
             sHtml += u'  <tr class="%s tmsyschlogspacerrowabove">\n' \
