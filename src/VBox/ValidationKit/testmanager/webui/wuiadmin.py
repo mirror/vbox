@@ -166,8 +166,8 @@ class WuiAdmin(WuiDispatcherBase):
         #
         # System Log actions.
         #
-        self._dDispatch[self.ksActionSystemLogList]             = self._actionSystemLogList;
         self._dDispatch[self.ksActionSystemChangelogList]       = self._actionSystemChangelogList;
+        self._dDispatch[self.ksActionSystemLogList]             = self._actionSystemLogList;
 
         #
         # User Account actions.

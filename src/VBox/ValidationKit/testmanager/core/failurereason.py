@@ -212,7 +212,7 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
                               '     AND tsEffective      <= %s\n'
                               'ORDER BY sShort ASC\n'
                               'LIMIT %s OFFSET %s\n'
-                              , ( tsNow, tsNow, idFailureCategory, cMaxRows, iStart,));
+                              , ( idFailureCategory, tsNow, tsNow, cMaxRows, iStart,));
 
         aoRows = []
         for aoRow in self._oDb.fetchAll():

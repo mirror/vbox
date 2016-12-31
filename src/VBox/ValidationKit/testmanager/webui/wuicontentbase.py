@@ -110,6 +110,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
             sFmt = '<a %shref="%s">%s</a>';
         return sFmt % (sExtraAttrs, webutils.escapeAttr(self.sUrl), webutils.escapeElem(self.sName));
 
+
 class WuiTmLink(WuiLinkBase): # pylint: disable=R0903
     """ Local link to the test manager. """
 
@@ -130,6 +131,38 @@ class WuiTmLink(WuiLinkBase): # pylint: disable=R0903
 
         WuiLinkBase.__init__(self, sName, sUrlBase, dParams, sConfirm, sTitle, sFragmentId, fBracketed);
 
+
+class WuiAdminLink(WuiTmLink): # pylint: disable=R0903
+    """ Local link to the test manager's admin portion. """
+
+    def __init__(self, sName, sAction, tsEffectiveDate = None, dParams = None, sConfirm = None, sTitle = None,
+                 sFragmentId = None, fBracketed = True):
+        from testmanager.webui.wuiadmin import WuiAdmin;
+        if dParams is None or len(dParams) == 0:
+            dParams = dict();
+        else:
+            dParams = dict(dParams);
+        if sAction is not None:
+            dParams[WuiAdmin.ksParamAction] = sAction;
+        if tsEffectiveDate is not None:
+            dParams[WuiAdmin.ksParamEffectiveDate] = tsEffectiveDate;
+        WuiTmLink.__init__(self, sName, WuiAdmin.ksScriptName, dParams = dParams, sConfirm = sConfirm, sTitle = sTitle,
+                           sFragmentId = sFragmentId, fBracketed = fBracketed);
+
+class WuiMainLink(WuiTmLink): # pylint: disable=R0903
+    """ Local link to the test manager's main portion. """
+
+    def __init__(self, sName, sAction, dParams = None, sConfirm = None, sTitle = None,
+                 sFragmentId = None, fBracketed = True):
+        from testmanager.webui.wuimain import WuiMain;
+        if dParams is None or len(dParams) == 0:
+            dParams = dict();
+        else:
+            dParams = dict(dParams);
+        if sAction is not None:
+            dParams[WuiMain.ksParamAction] = sAction;
+        WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams = dParams, sConfirm = sConfirm, sTitle = sTitle,
+                           sFragmentId = sFragmentId, fBracketed = fBracketed);
 
 class WuiSvnLink(WuiLinkBase): # pylint: disable=R0903
     """
@@ -213,6 +246,12 @@ class WuiSpanText(WuiRawHtml): # pylint: disable=R0903
                                 u'<span class="%s" title="%s">%s</span>'
                                 % ( webutils.escapeAttr(sSpanClass), webutils.escapeAttr(sTitle), webutils.escapeElem(sText),));
 
+class WuiElementText(WuiRawHtml): # pylint: disable=R0903
+    """
+    Outputs the given element text.
+    """
+    def __init__(self, sText):
+        WuiRawHtml.__init__(self, webutils.escapeElem(sText));
 
 
 class WuiContentBase(object): # pylint: disable=R0903
@@ -253,7 +292,8 @@ class WuiContentBase(object): # pylint: disable=R0903
         if self._fnDPrint:
             self._fnDPrint(sText);
 
-    def formatTsShort(self, oTs):
+    @staticmethod
+    def formatTsShort(oTs):
         """
         Formats a timestamp (db rep) into a short form.
         """
@@ -398,7 +438,8 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         _ = oData;
         return [];
 
-    def _calcChangeLogEntryLinks(self, aoEntries, iEntry):
+    @staticmethod
+    def _calcChangeLogEntryLinks(aoEntries, iEntry):
         """
         Returns an array of links to go with the change log entry.
         """
@@ -409,7 +450,8 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         ## @todo clone link.
         return [];
 
-    def _guessChangeLogEntryDescription(self, aoEntries, iEntry):
+    @staticmethod
+    def _guessChangeLogEntryDescription(aoEntries, iEntry):
         """
         Guesses the action + author that caused the change log entry.
         Returns descriptive string.
@@ -434,7 +476,8 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
             return 'Automatically updated.'
         return 'Modified by %s.' % (sAuthor,);
 
-    def _formatChangeLogEntry(self, aoEntries, iEntry):
+    @staticmethod
+    def formatChangeLogEntry(aoEntries, iEntry):
         """
         Formats one change log entry into one or more HTML table rows.
 
@@ -452,10 +495,10 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
                    '      <td colspan="3">%s%s</td>\n' \
                    '    </tr>\n' \
                  % ( sRowClass,
-                     len(oEntry.aoChanges) + 1, webutils.escapeElem(self.formatTsShort(oEntry.tsEffective)),
-                     len(oEntry.aoChanges) + 1, webutils.escapeElem(self.formatTsShort(oEntry.tsExpire)),
-                     self._guessChangeLogEntryDescription(aoEntries, iEntry),
-                     ' '.join(oLink.toHtml() for oLink in self._calcChangeLogEntryLinks(aoEntries, iEntry)),);
+                     len(oEntry.aoChanges) + 1, webutils.escapeElem(WuiFormContentBase.formatTsShort(oEntry.tsEffective)),
+                     len(oEntry.aoChanges) + 1, webutils.escapeElem(WuiFormContentBase.formatTsShort(oEntry.tsExpire)),
+                     WuiFormContentBase._guessChangeLogEntryDescription(aoEntries, iEntry),
+                     ' '.join(oLink.toHtml() for oLink in WuiFormContentBase._calcChangeLogEntryLinks(aoEntries, iEntry)),);
 
         # Additional rows for each changed attribute.
         j = 0;
@@ -573,8 +616,8 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
                     '    </thead>\n' \
                     '    <tbody>\n';
 
-        for iEntry in range(len(aoEntries)):
-            sContent += self._formatChangeLogEntry(aoEntries, iEntry);
+        for iEntry, _ in enumerate(aoEntries):
+            sContent += self.formatChangeLogEntry(aoEntries, iEntry);
 
         sContent += '    <tbody>\n' \
                     '  </table>\n';
@@ -893,6 +936,22 @@ class WuiListContentBase(WuiContentBase):
                        '</div>\n';
         return sNavigation;
 
+    def _generateTableHeaders(self):
+        """
+        Generate table headers.
+        Returns raw html string.
+        Overridable.
+        """
+
+        sHtml  = '  <thead class="tmheader"><tr>';
+        for oHeader in self._asColumnHeaders:
+            if isinstance(oHeader, WuiHtmlBase):
+                sHtml += '<th>' + oHeader.toHtml() + '</th>';
+            else:
+                sHtml += '<th>' + webutils.escapeElem(oHeader) + '</th>';
+        sHtml += '</tr><thead>\n';
+        return sHtml
+
     def _generateTable(self):
         """
         show worker that just generates the table.
@@ -909,13 +968,7 @@ class WuiListContentBase(WuiContentBase):
         if len(self._asColumnHeaders) == 0:
             self._asColumnHeaders = self._aoEntries[0].getDataAttributes();
 
-        sPageBody += '  <thead class="tmheader"><tr>';
-        for oHeader in self._asColumnHeaders:
-            if isinstance(oHeader, WuiHtmlBase):
-                sPageBody += '<th>' + oHeader.toHtml() + '</th>';
-            else:
-                sPageBody += '<th>' + webutils.escapeElem(oHeader) + '</th>';
-        sPageBody += '</tr><thead>\n';
+        sPageBody += self._generateTableHeaders();
 
         #
         # Format the body and close the table.

@@ -994,7 +994,7 @@ class TestBoxLogic(ModelLogicBase):
             if self._oDb.getRowCount() == 0:
                 # Maybe it was deleted, try get the last entry.
                 self._oDb.execute('SELECT   TestBoxesWithStrings.*\n'
-                                  'FROM     TestBoxes\n'
+                                  'FROM     TestBoxesWithStrings\n'
                                   'WHERE    idTestBox = %s\n'
                                   'ORDER BY tsExpire DESC\n'
                                   'LIMIT 1\n'

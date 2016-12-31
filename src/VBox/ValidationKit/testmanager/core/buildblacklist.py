@@ -123,6 +123,10 @@ class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=R0903
     Build Back List logic.
     """
 
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.dCache = None;
+
     def fetchForListing(self, iStart, cMaxRows, tsNow):
         """
         Fetches Build Blacklist records.
@@ -222,6 +226,42 @@ class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=R0903
                           , (idBlacklisting,));
         self._oDb.maybeCommit(fCommit);
         return True;
+
+
+    def cachedLookup(self, idBlacklisting):
+        """
+        Looks up the most recent BuildBlacklistData object for idBlacklisting
+        via an object cache.
+
+        Returns a shared BuildBlacklistData object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.dCache is None:
+            self.dCache = self._oDb.getCache('BuildBlacklistData');
+        oEntry = self.dCache.get(idBlacklisting, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   *\n'
+                              'FROM     BuildBlacklist\n'
+                              'WHERE    idBlacklisting = %s\n'
+                              '     AND tsExpire   = \'infinity\'::TIMESTAMP\n'
+                              , (idBlacklisting, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   *\n'
+                                  'FROM     BuildBlacklist\n'
+                                  'WHERE    idBlacklisting = %s\n'
+                                  'ORDER BY tsExpire DESC\n'
+                                  'LIMIT 1\n'
+                                  , (idBlacklisting, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idBlacklisting));
+
+            if self._oDb.getRowCount() == 1:
+                aaoRow = self._oDb.fetchOne();
+                oEntry = BuildBlacklistData();
+                oEntry.initFromDbRow(aaoRow);
+                self.dCache[idBlacklisting] = oEntry;
+        return oEntry;
 
 
     #

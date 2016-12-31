@@ -479,6 +479,10 @@ class BuildLogic(ModelLogicBase): # pylint: disable=R0903
     Build database logic (covers build categories as well as builds).
     """
 
+    def __init__(self, oDb):
+        ModelLogicBase.__init__(self, oDb)
+        self.dCache = None;
+
     #
     # Standard methods.
     #
@@ -608,6 +612,43 @@ class BuildLogic(ModelLogicBase): # pylint: disable=R0903
 
         self._oDb.maybeCommit(fCommit);
         return True;
+
+    def cachedLookup(self, idBuild):
+        """
+        Looks up the most recent BuildDataEx object for idBuild
+        via an object cache.
+
+        Returns a shared BuildDataEx object.  None if not found.
+        Raises exception on DB error.
+        """
+        if self.dCache is None:
+            self.dCache = self._oDb.getCache('BuildDataEx');
+        oEntry = self.dCache.get(idBuild, None);
+        if oEntry is None:
+            self._oDb.execute('SELECT   Builds.*, BuildCategories.*\n'
+                              'FROM     Builds, BuildCategories\n'
+                              'WHERE    Builds.idBuild         = %s\n'
+                              '     AND Builds.idBuildCategory = BuildCategories.idBuildCategory\n'
+                              '     AND tsExpire = \'infinity\'::TIMESTAMP\n'
+                              , (idBuild, ));
+            if self._oDb.getRowCount() == 0:
+                # Maybe it was deleted, try get the last entry.
+                self._oDb.execute('SELECT   Builds.*, BuildCategories.*\n'
+                                  'FROM     Builds, BuildCategories\n'
+                                  'WHERE    Builds.idBuild         = %s\n'
+                                  '     AND Builds.idBuildCategory = BuildCategories.idBuildCategory\n'
+                                  'ORDER BY tsExpire DESC\n'
+                                  'LIMIT 1\n'
+                                  , (idBuild, ));
+            elif self._oDb.getRowCount() > 1:
+                raise self._oDb.integrityException('%s infinity rows for %s' % (self._oDb.getRowCount(), idBuild));
+
+            if self._oDb.getRowCount() == 1:
+                aaoRow = self._oDb.fetchOne();
+                oEntry = BuildDataEx();
+                oEntry.initFromDbRow(aaoRow);
+                self.dCache[idBuild] = oEntry;
+        return oEntry;
 
 
     #

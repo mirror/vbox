@@ -410,6 +410,19 @@ html, body {
    color:            black;
 }
 
+/*
+ * Generic class for div elements wrapping pre inside a table.  This prevents
+ * the <pre> from taking up way more screen space that available.
+ */
+.tdpre {
+    display:        table;
+    table-layout:   fixed;
+    width:          100%;
+}
+.tdpre pre {
+    overflow:       auto;
+}
+
 
 /*
  * A typical table.
@@ -566,6 +579,9 @@ table.tmchangelog tr.tmoddeven, table.tmchangelog tr.tmeveneven, table.tmchangel
     font-size:      0.86em;
 }
 
+.tmsyschlogattr {
+    font-size:      0.64em;
+}
 
 /*
  * Elements to be shows on *Show All* pages.
