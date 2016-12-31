@@ -248,13 +248,10 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         # Format the timestamp.
         #
         sDate = self.formatTsShort(oEntry.tsEffective);
-        if sDate[:10] == self._sPrevDate:
-            sDate = sDate[11:]
-        else:
+        if sDate[:10] != self._sPrevDate:
             self._sPrevDate = sDate[:10];
-            sHtml += '  <tr class="%s" align="left"><td>%s</td><td colspan="6"></td></tr>\n' % (sRowClass, sDate[:10],);
-            #sDate = '<b>' + sDate[:10] + '</b><br>' + sDate[11:];
-            sDate = sDate[11:]
+            sHtml += '  <tr class="%s tmdaterow" align="left"><td>%s</td><td colspan="6"></td></tr>\n' % (sRowClass, sDate[:10],);
+        sDate = sDate[11:]
 
         #
         # System log events.
