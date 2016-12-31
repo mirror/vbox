@@ -236,7 +236,7 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
             oRet.append(WuiElementText(sWord));
         return oRet;
 
-    def _formatListEntryHtml(self, iEntry):
+    def _formatListEntryHtml(self, iEntry): # pylint: disable=too-many-statements
         """
         Overridden parent method.
         """
@@ -381,9 +381,9 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
             sHtml += u'  <tr class="%s tmsyschlogspacerrowabove">\n' \
                      u'    <td xrowspan="%d" style="border-right: 0px; border-bottom: 0px;"></td>\n' \
                      u'    <td colspan="3" style="border-right: 0px;"></td>\n' \
-                     u'    <td rowspan="%d"></td>\n' \
+                     u'    <td rowspan="%d" class="%s tmsyschlogspacer"></td>\n' \
                      u'  </tr>\n' \
-                   % (sRowClass, cAttribsChanged + 1, cAttribsChanged + 1);
+                   % (sRowClass, cAttribsChanged + 1, cAttribsChanged + 1, sRowClass);
             for j, oChange in enumerate(oChangeEntry.aoChanges):
                 sHtml += u'  <tr class="%s%s tmsyschlogattr%s">\n' \
                        % ( sRowClass, 'odd' if j & 1 else 'even',
