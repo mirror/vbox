@@ -139,7 +139,7 @@
 <xsd:simpleType name="TMonitorCount">
   <xsd:restriction base="xsd:unsignedInt">
     <xsd:minInclusive value="1"/>
-    <!-- This should be in sync with VBOX_VIDEO_MAX_SCREENS in VBoxVideoVBE.h -->
+    <!-- This should be in sync with VBOX_VIDEO_MAX_SCREENS in VBoxVideoHW.h -->
     <xsd:maxInclusive value="64"/>
   </xsd:restriction>
 </xsd:simpleType>

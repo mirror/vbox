@@ -16,7 +16,7 @@
  */
 
 #include "VBoxMPWddm.h"
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBox/Hardware/VBoxVideoHW.h>
 #include <stdio.h>
 
 /* simple handle -> value table API */

@@ -102,7 +102,7 @@ if (!(expr)) \
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBox/Hardware/VBoxVideoHW.h>
 
 #include "xf86str.h"
 #include "xf86Cursor.h"

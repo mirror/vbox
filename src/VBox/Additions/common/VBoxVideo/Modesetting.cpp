@@ -18,7 +18,7 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBox/Hardware/VBoxVideoHW.h>
 
 #ifndef VBOX_GUESTR3XF86MOD
 # include <iprt/string.h>

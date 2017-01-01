@@ -26,7 +26,7 @@
 #ifndef ___VBox_VBoxVideo_h
 #define ___VBox_VBoxVideo_h
 
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBox/Hardware/VBoxVideoHW.h>
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
