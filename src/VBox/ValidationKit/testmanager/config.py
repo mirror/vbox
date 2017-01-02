@@ -31,7 +31,7 @@ __version__ = "$Revision$"
 import os;
 
 ## Test Manager version string.
-g_ksVersion             = 'v0.0.3';
+g_ksVersion             = 'v0.1.0';
 ## Test Manager revision string.
 g_ksRevision            = ('$Revision$')[11:-2];
 
@@ -156,7 +156,7 @@ g_ksSrcGlueDebugLogDst  = None;
 g_kfSrvGlueCgiTb        = False;
 ## Enables glue debug output.
 g_kfSrvGlueDebug        = False;
-## Timestamp the glue debug output.
+## Timestamp and pid prefix the glue debug output.
 g_kfSrvGlueDebugTS      = True;
 ## Enables task scheduler debug output to g_ksSrcGlueDebugLogDst.
 g_kfSrvGlueDebugScheduler = False;
