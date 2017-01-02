@@ -246,6 +246,7 @@ html, body {
  * Navigation in on the left side.
  */
 
+/* Side menu: */
 #side-menu {
     padding-top:    28px; /**< #top-menu.max-height */
     margin-right:   3px;
@@ -282,6 +283,7 @@ html, body {
 }
 
 
+/* Filters: */
 #side-filters p:first-child {
     margin-top:     0.5em;
     font-style:     italic;
@@ -302,13 +304,48 @@ html, body {
     color:          #000000;
 }
 
+#side-filters dt {
+    margin-top:     0.4em;
+}
+
 #side-filters dd {
-    font-size:      0.86em;
+    font-size:      0.82em;
+}
+
+#side-filters input[type=checkbox] {
+    vertical-align: text-top;
+}
+
+#side-filters ul {
     max-height:     22em;
     overflow:       auto;
 }
 
+.side-filter-irrelevant {
+    font-style:     italic;
+    font-weight:    normal;
+}
 
+/* Filters: webkit specific scroll bar optimizations  */
+#side-filters ::-webkit-scrollbar {
+    width:                  8px;
+}
+#side-filters ::-webkit-scrollbar-track {
+    -webkit-box-shadow:     inset 0 0 3px rgba(0, 0, 0, 0.3);
+    -webkit-border-radius:  4px;
+    border-radius:          4px;
+}
+#side-filters ::-webkit-scrollbar-thumb {
+    -webkit-box-shadow:     inset 0 0 3px rgba(0, 0, 0, 0.5);
+    -webkit-border-radius:  4px;
+    border-radius:          4px;
+    background:             rgba(112, 128, 144, 0.9);
+}
+#side-filters ::-webkit-scrollbar-thumb:window-inactive {
+    background:             rgba(112, 128, 144, 0.7);
+}
+
+/* Footer: */
 #side-footer {
     position:       absolute;
     top:            auto;

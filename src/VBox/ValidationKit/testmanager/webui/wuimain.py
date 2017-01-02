@@ -927,22 +927,24 @@ class WuiMain(WuiDispatcherBase):
                  u' <dl>\n';
 
         for iCrit, oCrit in enumerate(oFilter.aCriteria):
-            sClass = 'sf-collapsable' if oCrit.sState == oCrit.ksState_Selected else 'sf-expandable';
-            sChar  = '&#9660;'        if oCrit.sState == oCrit.ksState_Selected else '&#9654;';
-            sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">%s'\
-                     u' %s</a></dt>\n' \
-                     u'  <dd class="%s">\n' \
-                     u'   <ul>\n' \
-                     % (sClass, sChar, webutils.escapeElem(oCrit.sName), sClass);
-            for oDesc in oCrit.aoPossible:
-                fChecked = oDesc.oValue in oCrit.aoSelected;
-                sHtml += u'    <li><input type="checkbox" name="%s" value="%s"%s/>%s</li>\n' \
-                       % (oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '', webutils.escapeElem(oDesc.sDesc),);
+            if len(oCrit.aoPossible) > 0:
+                sClass = 'sf-collapsable' if oCrit.sState == oCrit.ksState_Selected else 'sf-expandable';
+                sChar  = '&#9660;'        if oCrit.sState == oCrit.ksState_Selected else '&#9654;';
+                sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">%s'\
+                         u' %s</a></dt>\n' \
+                         u'  <dd class="%s">\n' \
+                         u'   <ul>\n' \
+                         % (sClass, sChar, webutils.escapeElem(oCrit.sName), sClass);
 
-            sHtml += u'   </ul>\n';
-            if iCrit + 1 < len(oFilter.aCriteria):                    ## @todo fix me.
-                sHtml += u'   <div class="filterend">&nbsp;</div>\n'; ## @todo fix me.
-            sHtml += u'  </dd>\n';
+                for oDesc in oCrit.aoPossible:
+                    fChecked = oDesc.oValue in oCrit.aoSelected;
+                    sHtml += u'    <li%s><input type="checkbox" name="%s" value="%s"%s/>%s</li>\n' \
+                           % ( ' class="side-filter-irrelevant"' if oDesc.fIrrelevant else '',
+                               oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '',
+                               webutils.escapeElem(oDesc.sDesc),);
+
+                sHtml += u'   </ul>\n' \
+                         u'  </dd>\n';
 
         sHtml += u' </dl>\n';
         sHtml += u' <input type="submit" value="Apply"/>\n';

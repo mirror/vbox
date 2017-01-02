@@ -1157,9 +1157,10 @@ class FilterCriterionValueAndDescription(object):
     A filter criterion value and its description.
     """
 
-    def __init__(self, oValue, sDesc):
-        self.oValue = oValue;   ##< Typically the ID of something in the database.
-        self.sDesc  = sDesc;    ##< What to display.
+    def __init__(self, oValue, sDesc, fIrrelevant = False):
+        self.oValue      = oValue;      ##< Typically the ID of something in the database.
+        self.sDesc       = sDesc;       ##< What to display.
+        self.fIrrelevant = fIrrelevant; ##< Irrelevant filter option, only present because it's selected
 
 
 class FilterCriterion(object):
@@ -1185,7 +1186,8 @@ class FilterCriterion(object):
     ksType_String = 'string';   ##< string value.
     ## @}
 
-    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_AnyOf):
+    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_AnyOf,
+                 sTable = None, sColumn = None):
         assert len(sVarNm) in (2,3); # required by wuimain.py
         self.sName      = sName;
         self.sState     = sState;
@@ -1194,6 +1196,8 @@ class FilterCriterion(object):
         self.sKind      = sKind;
         self.aoSelected = []; # Single value, any type.
         self.aoPossible = []; # type: list[FilterCriterionValueAndDescription]
+        self.sTable     = sTable;
+        self.sColumn    = sColumn;
 
 
 class ModelFilterBase(ModelBase):
