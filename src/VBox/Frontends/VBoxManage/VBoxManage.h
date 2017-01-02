@@ -329,4 +329,3 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a);
 #endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !___H_VBOXMANAGE */
-

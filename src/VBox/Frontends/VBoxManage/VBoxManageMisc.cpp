@@ -1326,7 +1326,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
     Utf8Str installedOSStr(installedOSBSTR);
 
-    do{
+    do {
         RTPrintf("Start unattended installation OS %s on virtual machine '%ls'.\n"
                  "UUID: %s\n",
                  installedOSStr.c_str(),
@@ -1337,7 +1337,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
         CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(group.raw()));
 
-        if(installedOSStr.contains("Windows") && productKey.isEmpty())
+        if (installedOSStr.contains("Windows") && productKey.isEmpty())
         {
             return errorSyntax(USAGE_UNATTENDEDINSTALL, "Product key has been missed.");
         }

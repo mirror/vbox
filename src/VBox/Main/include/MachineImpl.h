@@ -36,12 +36,13 @@
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "Performance.h"
-#include "PerformanceImpl.h"
-#include "ThreadTask.h"
-#include "UnattendedImpl.h"
-
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+# include "Performance.h"
+# include "PerformanceImpl.h"
+# include "ThreadTask.h"
+#endif
+#ifdef VBOX_WITH_UNATTENDED
+# include "UnattendedImpl.h"
+#endif
 
 // generated header
 #include "SchemaDefs.h"
@@ -773,7 +774,9 @@ protected:
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
     const ComObjPtr<BandwidthControl>  mBandwidthControl;
-    const ComObjPtr<Unattended>       mUnattended;
+#ifdef VBOX_WITH_UNATTENDED
+    const ComObjPtr<Unattended>        mUnattended;
+#endif
 
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
     NetworkAdapterVector               mNetworkAdapters;
@@ -784,7 +787,7 @@ protected:
     typedef std::list<ComObjPtr<USBController> > USBControllerList;
     Backupable<USBControllerList>      mUSBControllers;
 
-    uint64_t                        uRegistryNeedsSaving;
+    uint64_t                           uRegistryNeedsSaving;
 
     /**
      * Abstract base class for all Machine or SessionMachine related
