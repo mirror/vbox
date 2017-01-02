@@ -3814,41 +3814,41 @@
     </attribute>
     <attribute name="imageIndex" type="unsigned short">
       <desc>
-        The image index on installation CD\DVD used to install.
-	Used only with Windows installation CD\DVD
+        The image index on installation CD/DVD used to install.
+        Used only with Windows installation CD/DVD
       </desc>
     </attribute>
 
     <method name="preparation">
       <desc>
-	Preparation for running the unattended process of installation
+        Preparation for running the unattended process of installation
       </desc>
     </method>
 
     <method name="constructScript">
       <desc>
-	Generates Guest-OS-specific unattended script.
+        Generates Guest-OS-specific unattended script.
       </desc>
     </method>
 
     <method name="constructMedia">
       <desc>
-	Fix scripts in auxiliary CD ISO if it's needed
-	Packages Guest-OS-specific unattended script into auxiliary CD ISO 
-	or into auxiliary floppy, depending on IMachine::OSTypId.
+        Fix scripts in auxiliary CD ISO if it's needed
+        Packages Guest-OS-specific unattended script into auxiliary CD ISO 
+        or into auxiliary floppy, depending on IMachine::OSTypId.
       </desc>
     </method>
 
     <method name="reconstructVM">
       <desc>
-	Prepare a newly created VM to start unattended installation
-	(For example, such steps like open/attach bootable CD/FDD, OS ISO, additions)
+        Prepare a newly created VM to start unattended installation
+        (For example, such steps like open/attach bootable CD/FDD, OS ISO, additions)
       </desc>
     </method>
 
     <method name="runInstallation">
       <desc>
-	Run unattended installation
+        Run unattended installation
       </desc>
     </method>
 
