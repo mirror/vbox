@@ -117,6 +117,7 @@ class WuiDispatcherBase(object):
         self._aaoMenus          = [];           # List of [sName, sLink, [ [sSideName, sLink], .. ] tuples.
         self._sPageFilter       = '';           # The filter controls (optional).
         self._sPageBody         = '$$TODO$$';   # The body text.
+        self._dSideMenuFormAttrs = {};          # key/value with attributes for the side menu <form> tag.
         self._sRedirectTo       = None;
         self._sDebug            = '';
 
@@ -265,9 +266,15 @@ class WuiDispatcherBase(object):
             '@@TOP_MENU_ITEMS@@':       sTopMenuItems,
             '@@SIDE_MENU_ITEMS@@':      sSideMenuItems,
             '@@SIDE_FILTER_CONTROL@@':  self._sPageFilter,
+            '@@SIDE_MENU_FORM_ATTRS@@': '',
             '@@PAGE_BODY@@':            self._sPageBody,
             '@@DEBUG@@':                '',
         };
+
+        # Side menu form attributes.
+        if len(self._dSideMenuFormAttrs) > 0:
+            dReplacements['@@SIDE_MENU_FORM_ATTRS@@'] = ' '.join(['%s="%s"' % (sKey, webutils.escapeAttr(sValue))
+                                                                  for sKey, sValue in self._dSideMenuFormAttrs.iteritems()]);
 
         # Special current user handling.
         if self._oCurUser is not None:
@@ -745,8 +752,13 @@ class WuiDispatcherBase(object):
 
         for sKey, oValue in self._dParams.iteritems():
             if sKey not in self.kasDbgParams:
-                sHtml += '  <input type="hidden" name="%s" value="%s"/>\n' \
-                       % (webutils.escapeAttr(sKey), webutils.escapeAttrToStr(oValue),);
+                if hasattr(oValue, 'startswith'):
+                    sHtml += '  <input type="hidden" name="%s" value="%s"/>\n' \
+                           % (webutils.escapeAttr(sKey), webutils.escapeAttrToStr(oValue),);
+                else:
+                    for oSubValue in oValue:
+                        sHtml += '  <input type="hidden" name="%s" value="%s"/>\n' \
+                               % (webutils.escapeAttr(sKey), webutils.escapeAttrToStr(oSubValue),);
 
         for aoCheckBox in (
                 [self.ksParamDbgSqlTrace, self._fDbgSqlTrace, 'SQL trace'],

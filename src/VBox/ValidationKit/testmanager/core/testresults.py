@@ -36,8 +36,9 @@ import unittest;
 # Validation Kit imports.
 from common                                 import constants;
 from testmanager                            import config;
-from testmanager.core.base                  import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, TMExceptionBase, \
-                                                   TMTooManyRows, TMRowNotFound;
+from testmanager.core.base                  import ModelDataBase, ModelLogicBase, ModelDataBaseTestCase, ModelFilterBase, \
+                                                   FilterCriterion, FilterCriterionValueAndDescription, \
+                                                   TMExceptionBase, TMTooManyRows, TMRowNotFound;
 from testmanager.core.testgroup             import TestGroupData;
 from testmanager.core.build                 import BuildDataEx, BuildCategoryData;
 from testmanager.core.failurereason         import FailureReasonLogic;
@@ -639,6 +640,39 @@ class TestResultHangingOffence(TMExceptionBase):
     pass;
 
 
+class TestResultFilter(ModelFilterBase):
+    """
+    Test result filter.
+    """
+
+    kiTestStatus        = 0;
+    kiSchedGroups       = 1;
+    kiTestBoxes         = 2;
+
+    def __init__(self):
+        ModelFilterBase.__init__(self);
+        oCrit = FilterCriterion('Test status', sVarNm = 'ts', sType = FilterCriterion.ksType_String);
+        oCrit.aoPossible = (
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Success,  'Success'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Running,  'Running'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Skipped,  'Skipped'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Aborted,  'Aborted'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Failure,  'Failure'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_TimedOut, 'Timed out'),
+            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Rebooted, 'Rebooted'),
+        );
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiTestStatus] is oCrit;
+
+        oCrit = FilterCriterion('Sched groups', sVarNm = 'sg');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiSchedGroups] is oCrit;
+
+        oCrit = FilterCriterion('Testboxes', sVarNm = 'tb');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiTestBoxes] is oCrit;
+
+
 class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
     """
     Results grouped by scheduling group.
@@ -848,7 +882,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                      sExtraIndent, sTsNow, sInterval );
         return sRet
 
-    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, enmResultSortBy, # pylint: disable=R0913
+    def fetchResultsForListing(self, iStart, cMaxRows, tsNow, sInterval, oFilter, enmResultSortBy, # pylint: disable=R0913
                                enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures, fOnlyNeedingReason):
         """
         Fetches TestResults table content.
@@ -863,6 +897,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         Returns an array (list) of TestResultData items, empty list if none.
         Raises exception on error.
         """
+
+        _ = oFilter;
 
         #
         # Get SQL query parameters
@@ -938,6 +974,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         if fOnlyFailures or fOnlyNeedingReason:
             sQuery += '            AND TestSets.enmStatus != \'success\'::TestStatus_T\n' \
                       '            AND TestSets.enmStatus != \'running\'::TestStatus_T\n';
+        if oFilter.aCriteria[oFilter.kiTestStatus].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.enmStatus IN (' \
+                    + ', '.join('\'%s\'' % sValue for sValue in oFilter.aCriteria[oFilter.kiTestStatus].aoSelected) + ')\n';
+        if oFilter.aCriteria[oFilter.kiSchedGroups].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.idSchedGroup IN (' \
+                    + ', '.join(str(iVal) for iVal in oFilter.aCriteria[oFilter.kiSchedGroups].aoSelected) + ')\n';
+        if oFilter.aCriteria[oFilter.kiTestBoxes].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.idTestBox IN (' \
+                    + ', '.join(str(iVal) for iVal in oFilter.aCriteria[oFilter.kiTestBoxes].aoSelected) + ')\n';
         if fOnlyNeedingReason:
             sQuery += '            AND TestResultFailures.idTestSet IS NULL\n';
         if sGroupingField is not None:
@@ -1069,7 +1114,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         return [aoRow[0] for aoRow in self._oDb.fetchAll()];
 
 
-    def getEntriesCount(self, tsNow, sInterval, enmResultsGroupingType, iResultsGroupingValue, fOnlyFailures, fOnlyNeedingReason):
+    def getEntriesCount(self, tsNow, sInterval, oFilter, enmResultsGroupingType, iResultsGroupingValue,
+                        fOnlyFailures, fOnlyNeedingReason):
         """
         Get number of table records.
 
@@ -1080,6 +1126,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         If @param enmResultsGroupingType is None, then
         @param iResultsGroupingValue is ignored.
         """
+        _ = oFilter;
 
         #
         # Get SQL query parameters
@@ -1107,6 +1154,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         if fOnlyFailures or fOnlyNeedingReason:
             sQuery += '   AND TestSets.enmStatus != \'success\'::TestStatus_T\n' \
                       '   AND TestSets.enmStatus != \'running\'::TestStatus_T\n';
+        if oFilter.aCriteria[oFilter.kiTestStatus].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.enmStatus IN (' \
+                    + ', '.join('\'%s\'' % sValue for sValue in oFilter.aCriteria[oFilter.kiTestStatus].aoSelected) + ')\n';
+        if oFilter.aCriteria[oFilter.kiSchedGroups].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.idSchedGroup IN (' \
+                    + ', '.join(str(iVal) for iVal in oFilter.aCriteria[oFilter.kiSchedGroups].aoSelected) + ')\n';
+        if oFilter.aCriteria[oFilter.kiTestBoxes].sState == FilterCriterion.ksState_Selected:
+            sQuery += '            AND TestSets.idTestBox IN (' \
+                    + ', '.join(str(iVal) for iVal in oFilter.aCriteria[oFilter.kiTestBoxes].aoSelected) + ')\n';
         if fOnlyNeedingReason:
             sQuery += '   AND TestResultFailures.idTestSet IS NULL\n';
         if sGroupingField is not None:
@@ -1297,6 +1353,48 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             return TestResultData().initFromDbRow(aRows[0])
         except IndexError:
             return None
+
+
+    def fetchPossibleFilterOptions(self, oFilter, tsNow, sPeriod):
+        """
+        Fetches the available filter criteria.
+        Returns oFilter.
+        """
+        assert isinstance(oFilter, TestResultFilter);
+
+        # Scheduling groups (see getSchedGroups).
+        oCrit = oFilter.aCriteria[TestResultFilter.kiSchedGroups];
+        self._oDb.execute('SELECT SchedGroups.idSchedGroup, SchedGroups.sName\n'
+                          'FROM   ( SELECT idSchedGroup,\n'
+                          '                MAX(TestSets.tsCreated) AS tsNow\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
+                          '         GROUP BY idSchedGroup\n'
+                          '       ) AS SchedGroupIDs\n'
+                          '       INNER JOIN SchedGroups\n'
+                          '               ON SchedGroups.idSchedGroup = SchedGroupIDs.idSchedGroup\n'
+                          '              AND SchedGroups.tsExpire     > SchedGroupIDs.tsNow\n'
+                          '              AND SchedGroups.tsEffective <= SchedGroupIDs.tsNow\n'
+                          'ORDER BY SchedGroups.sName\n' );
+        for aoRow in self._oDb.fetchAll():
+            oCrit.aoPossible.append(FilterCriterionValueAndDescription(aoRow[0], aoRow[1]));
+
+        # Scheduling groups (see getTestBoxes).
+        oCrit = oFilter.aCriteria[TestResultFilter.kiTestBoxes];
+        self._oDb.execute('SELECT TestBoxesWithStrings.idTestBox, TestBoxesWithStrings.sName\n'
+                          'FROM   ( SELECT idTestBox         AS idTestBox,\n'
+                          '                MAX(idGenTestBox) AS idGenTestBox\n'
+                          '         FROM   TestSets\n'
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '         GROUP BY idTestBox\n'
+                          '       ) AS TestBoxIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxIDs.idGenTestBox\n'
+                          'ORDER BY TestBoxesWithStrings.sName\n' );
+        for aoRow in self._oDb.fetchAll():
+            oCrit.aoPossible.append(FilterCriterionValueAndDescription(aoRow[0], aoRow[1]));
+
+        return oFilter;
 
 
     #

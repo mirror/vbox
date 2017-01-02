@@ -83,7 +83,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
             for sKey in dParams:
                 if dParams[sKey] is None:
                     dParams[sKey] = '';
-            self.sUrl += '?' + webutils.encodeUrlParams(dParams)
+            self.sUrl += '?' + webutils.encodeUrlParams(dParams);
 
         if sFragmentId is not None:
             self.sUrl += '#' + sFragmentId;

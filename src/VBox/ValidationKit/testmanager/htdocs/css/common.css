@@ -302,6 +302,12 @@ html, body {
     color:          #000000;
 }
 
+#side-filters dd {
+    font-size:      0.86em;
+    max-height:     22em;
+    overflow:       auto;
+}
+
 
 #side-footer {
     position:       absolute;

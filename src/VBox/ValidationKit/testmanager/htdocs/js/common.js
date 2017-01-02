@@ -367,11 +367,15 @@ function toggleCollapsableDtDd(oAnchor)
 {
     var oParent = oAnchor.parentElement;
     var sClass  = oParent.className;
-    var oUncle  = oParent.nextSibling;
-    var sNewClass;
-    var sNewChar;
+
+    /* Find the DD sibling tag */
+    var oDdElement = oParent.nextSibling;
+    while (oDdElement != null && oDdElement.tagName != 'DD')
+        oDdElement = oDdElement.nextSibling;
 
     /* Determin the new class and arrow char. */
+    var sNewClass;
+    var sNewChar;
     if (sClass.endsWith('collapsable'))
     {
         sNewClass = sClass.substr(0, sClass.length - 11) + 'expandable';
@@ -392,9 +396,9 @@ function toggleCollapsableDtDd(oAnchor)
     oParent.className   = sNewClass;
     oAnchor.firstChild.textContent = sNewChar + oAnchor.firstChild.textContent.substr(1);
 
-    /* Update the uncle (DD) class.*/
-    if (oUncle)
-        oUncle.className = sNewClass;
+    /* Update the uncle (DD) class. */
+    if (oDdElement)
+        oDdElement.className = sNewClass;
     return true;
 }
 

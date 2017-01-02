@@ -334,11 +334,10 @@ class WuiMain(WuiDispatcherBase):
     def _actionDefault(self):
         """Show the default admin page."""
         from testmanager.webui.wuitestresult import WuiGroupedResultList;
-        from testmanager.core.testresults    import TestResultLogic;
+        from testmanager.core.testresults    import TestResultLogic, TestResultFilter;
         self._sAction = self.ksActionResultsUnGrouped
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeNone,
-                                                 TestResultLogic,
-                                                 WuiGroupedResultList)
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _isMenuMatch(self, sMenuUrl, sActionParam):
         if super(WuiMain, self)._isMenuMatch(sMenuUrl, sActionParam):
@@ -721,12 +720,14 @@ class WuiMain(WuiDispatcherBase):
             self,
             enmResultsGroupingType,
             oResultsLogicType,
+            oResultFilterType,
             oResultsListContentType):
         """
         Override generic listing action.
 
-        oLogicType implements fetchForListing.
-        oListContentType is a child of WuiListContentBase.
+        oResultsLogicType implements getEntriesCount, fetchResultsForListing and more.
+        oResultFilterType is a child of ModelFilterBase.
+        oResultsListContentType is a child of WuiListContentBase.
         """
         from testmanager.core.testresults    import TestResultLogic;
 
@@ -739,6 +740,7 @@ class WuiMain(WuiDispatcherBase):
         enmResultSortBy     = self.getStringParam(self.ksParamTestResultsSortBy,
                                                   asValidValues = TestResultLogic.kasResultsSortBy,
                                                   sDefault = TestResultLogic.ksResultsSortByRunningAndStart);
+        oFilter = oResultFilterType().initFromParams(self);
 
         # Get testing results period and validate it
         asValidValues       = [x for (x, _, _) in self.kaoResultPeriods]
@@ -832,6 +834,7 @@ class WuiMain(WuiDispatcherBase):
 
             cEntries = oResultLogic.getEntriesCount(tsNow = tsEffective,
                                                     sInterval = sCurPeriod,
+                                                    oFilter = oFilter,
                                                     enmResultsGroupingType = enmResultsGroupingType,
                                                     iResultsGroupingValue = idMember,
                                                     fOnlyFailures = fOnlyFailures,
@@ -842,6 +845,7 @@ class WuiMain(WuiDispatcherBase):
                                                             cItemsPerPage,
                                                             tsNow = tsEffective,
                                                             sInterval = sCurPeriod,
+                                                            oFilter = oFilter,
                                                             enmResultSortBy = enmResultSortBy,
                                                             enmResultsGroupingType = enmResultsGroupingType,
                                                             iResultsGroupingValue = idMember,
@@ -889,98 +893,125 @@ class WuiMain(WuiDispatcherBase):
         #
         # Now, generate a filter control panel for the side bar.
         #
-        self._sPageFilter = self._generateResultFilter(oResultLogic,
-                                                       tsNow = tsEffective,
-                                                       sInterval = sCurPeriod,
+        self._sPageFilter = self._generateResultFilter(oFilter, oResultLogic, tsEffective, sCurPeriod,
                                                        enmResultsGroupingType = enmResultsGroupingType,
                                                        aoGroupMembers = aoGroupMembers,
                                                        fOnlyFailures = fOnlyFailures,
                                                        fOnlyNeedingReason = fOnlyNeedingReason);
         return True;
 
-    def _generateResultFilter(self, oResultLogic, tsNow, sInterval, enmResultsGroupingType, aoGroupMembers,
+    def _generateResultFilter(self, oFilter, oResultLogic, tsNow, sPeriod, enmResultsGroupingType, aoGroupMembers,
                               fOnlyFailures, fOnlyNeedingReason):
         """
         Generates the result filter for the left hand side.
         """
-        sHtml  = u'<div id="side-filters">\n' \
+        _ = enmResultsGroupingType; _ = aoGroupMembers; _ = fOnlyFailures; _ = fOnlyNeedingReason;
+        oResultLogic.fetchPossibleFilterOptions(oFilter, tsNow, sPeriod)
+
+        # Add non-filter parameters as hidden fields so we can use 'GET' and have URLs to bookmark.
+        self._dSideMenuFormAttrs['method'] = 'GET';
+        sHtml = u'';
+        for sKey, oValue in self._oSrvGlue.getParameters().iteritems():
+            if len(sKey) > 3:
+                if hasattr(oValue, 'startswith'):
+                    sHtml += u'<input type="hidden" name="%s" value="%s"/>\n' \
+                           % (webutils.escapeAttr(sKey), webutils.escapeAttr(oValue),);
+                else:
+                    for oSubValue in oValue:
+                        sHtml += u'<input type="hidden" name="%s" value="%s"/>\n' \
+                               % (webutils.escapeAttr(sKey), webutils.escapeAttr(oSubValue),);
+
+        # Generate the filter panel.
+        sHtml += u'<div id="side-filters">\n' \
                  u' <p>Filters</p>\n' \
                  u' <dl>\n';
 
-        sHtml += u'  <dt class="sf-collapsable"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">&#9660; Test filter 1</a></dd>\n';
-        sHtml += u'  <dd class="sf-collapsable"><ul><li>stuff 1</li><li>stuff 2</li><ul></dd>\n'
+        for iCrit, oCrit in enumerate(oFilter.aCriteria):
+            sClass = 'sf-collapsable' if oCrit.sState == oCrit.ksState_Selected else 'sf-expandable';
+            sChar  = '&#9660;'        if oCrit.sState == oCrit.ksState_Selected else '&#9654;';
+            sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">%s'\
+                     u' %s</a></dt>\n' \
+                     u'  <dd class="%s">\n' \
+                     u'   <ul>\n' \
+                     % (sClass, sChar, webutils.escapeElem(oCrit.sName), sClass);
+            for oDesc in oCrit.aoPossible:
+                fChecked = oDesc.oValue in oCrit.aoSelected;
+                sHtml += u'    <li><input type="checkbox" name="%s" value="%s"%s/>%s</li>\n' \
+                       % (oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '', webutils.escapeElem(oDesc.sDesc),);
 
-        sHtml += u'  <dt class="sf-expandable"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">&#9654; Test filter 2</a></dd>\n';
-        sHtml += u'  <dd class="sf-expandable"><ul><li>stuff 3</li><li>stuff 4</li><ul></dd>\n'
+            sHtml += u'   </ul>\n';
+            if iCrit + 1 < len(oFilter.aCriteria):                    ## @todo fix me.
+                sHtml += u'   <div class="filterend">&nbsp;</div>\n'; ## @todo fix me.
+            sHtml += u'  </dd>\n';
 
-
-        sHtml += u' </dl>\n' \
-                 u'</div>\n';
+        sHtml += u' </dl>\n';
+        sHtml += u' <input type="submit" value="Apply"/>\n';
+        sHtml += u'</div>\n';
         return sHtml;
 
     def _actionResultsUnGrouped(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         #return self._actionResultsListing(TestResultLogic, WuiGroupedResultList)?
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeNone,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByTestGroup(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestGroup,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByBuildRev(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeBuildRev,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByBuildCat(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeBuildCat,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByTestBox(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestBox,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByTestCase(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeTestCase,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByOS(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeOS,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedByArch(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeArch,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
     def _actionResultsGroupedBySchedGroup(self):
         """ Action wrapper. """
         from testmanager.webui.wuitestresult        import WuiGroupedResultList;
-        from testmanager.core.testresults           import TestResultLogic;
+        from testmanager.core.testresults           import TestResultLogic, TestResultFilter;
         return self._actionGroupedResultsListing(TestResultLogic.ksResultsGroupingTypeSchedGroup,
-                                                 TestResultLogic, WuiGroupedResultList);
+                                                 TestResultLogic, TestResultFilter, WuiGroupedResultList);
 
 
     def _actionTestSetDetailsCommon(self, idTestSet):
