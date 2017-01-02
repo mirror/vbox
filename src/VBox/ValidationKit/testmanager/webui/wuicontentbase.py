@@ -152,13 +152,12 @@ class WuiAdminLink(WuiTmLink): # pylint: disable=R0903
 class WuiMainLink(WuiTmLink): # pylint: disable=R0903
     """ Local link to the test manager's main portion. """
 
-    def __init__(self, sName, sAction, dParams = None, sConfirm = None, sTitle = None,
-                 sFragmentId = None, fBracketed = True):
-        from testmanager.webui.wuimain import WuiMain;
+    def __init__(self, sName, sAction, dParams = None, sConfirm = None, sTitle = None, sFragmentId = None, fBracketed = True):
         if dParams is None or len(dParams) == 0:
             dParams = dict();
         else:
             dParams = dict(dParams);
+        from testmanager.webui.wuimain import WuiMain;
         if sAction is not None:
             dParams[WuiMain.ksParamAction] = sAction;
         WuiTmLink.__init__(self, sName, WuiMain.ksScriptName, dParams = dParams, sConfirm = sConfirm, sTitle = sTitle,
