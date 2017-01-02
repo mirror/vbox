@@ -659,17 +659,8 @@ class TestResultFilter(ModelFilterBase):
 
     def __init__(self):
         ModelFilterBase.__init__(self);
-        oCrit = FilterCriterion('Test status', sVarNm = 'ts', sType = FilterCriterion.ksType_String,
+        oCrit = FilterCriterion('Test statuses', sVarNm = 'ts', sType = FilterCriterion.ksType_String,
                                 sTable = 'TestSets', sColumn = 'enmStatus');
-        oCrit.aoPossible = (
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Success,  'Success'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Running,  'Running'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Skipped,  'Skipped'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Aborted,  'Aborted'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Failure,  'Failure'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_TimedOut, 'Timed out'),
-            FilterCriterionValueAndDescription(TestResultData.ksTestStatus_Rebooted, 'Rebooted'),
-        );
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestStatus] is oCrit;
 
@@ -694,11 +685,11 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiRevisions] is oCrit;
 
-        oCrit = FilterCriterion('CPU Arches', sVarNm = 'ca', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuArch');
+        oCrit = FilterCriterion('CPU arches', sVarNm = 'ca', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuArch');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuArches] is oCrit;
 
-        oCrit = FilterCriterion('CPU Vendor', sVarNm = 'cv', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuVendor');
+        oCrit = FilterCriterion('CPU vendors', sVarNm = 'cv', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuVendor');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuVendors] is oCrit;
 
@@ -710,7 +701,7 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiOsVersions] is oCrit;
 
-        oCrit = FilterCriterion('Failure Reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
+        oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiFailReasons] is oCrit;
 
@@ -730,13 +721,16 @@ class TestResultFilter(ModelFilterBase):
                     sQuery += ', '.join(str(iValue) for iValue in oCrit.aoSelected) + ')\n';
         return sQuery;
 
-    def getTableJoins(self, sExtraIndent = '', iOmit = -1):
+    def getTableJoins(self, sExtraIndent = '', iOmit = -1, dOmitTables = None):
         """
         Construct the WHERE conditions for the filter, optionally omitting one
         criterion.
         """
-        sQuery = '';
         afDone = { 'TestSets': True, };
+        if dOmitTables is not None:
+            afDone.update(dOmitTables);
+
+        sQuery = '';
         for iCrit, oCrit in enumerate(self.aCriteria):
             if    oCrit.sState == FilterCriterion.ksState_Selected \
               and oCrit.sTable not in afDone \
@@ -1454,6 +1448,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         def workerDoFetch(oMissingLogicType, sNameAttr = 'sName', fIdIsName = False):
             """ Does the tedious result fetching and handling of missing bits. """
             dLeft = { oValue: 1 for oValue in oCrit.aoSelected };
+            oCrit.aoPossible = [];
             for aoRow in self._oDb.fetchAll():
                 oCrit.aoPossible.append(FilterCriterionValueAndDescription(aoRow[0], aoRow[1]));
                 if aoRow[0] in dLeft:
@@ -1470,6 +1465,16 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                             oCrit.aoPossible.append(FilterCriterionValueAndDescription(idMissing,
                                                                                        getattr(oMissing, sNameAttr),
                                                                                        fIrrelevant = True));
+
+        # Statuses.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiTestStatus];
+        self._oDb.execute('SELECT TestSets.enmStatus, TestSets.enmStatus, COUNT(TestSets.idTestSet)\n'
+                          'FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestStatus) +
+                          'WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod) +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestStatus) +
+                          'GROUP BY TestSets.enmStatus\n'
+                          'ORDER BY TestSets.enmStatus\n');
+        workerDoFetch(None, fIdIsName = True);
 
         # Scheduling groups (see getSchedGroups).
         oCrit = oFilter.aCriteria[TestResultFilter.kiSchedGroups];
@@ -1598,7 +1603,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '       INNER JOIN BuildCategories\n'
                           '               ON BuildCategories.idBuildCategory = BuildCategoryIDs.idBuildCategory\n'
                           'ORDER BY BuildCategories.sBranch DESC\n' );
-        workerDoFetch(BuildCategoryLogic, fIdIsName = True);
+        workerDoFetch(None, fIdIsName = True);
 
         # Failure reasons.
         oCrit = oFilter.aCriteria[TestResultFilter.kiFailReasons];

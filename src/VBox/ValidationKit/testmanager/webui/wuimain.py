@@ -900,8 +900,8 @@ class WuiMain(WuiDispatcherBase):
                                                        fOnlyNeedingReason = fOnlyNeedingReason);
         return True;
 
-    def _generateResultFilter(self, oFilter, oResultLogic, tsNow, sPeriod, enmResultsGroupingType, aoGroupMembers,
-                              fOnlyFailures, fOnlyNeedingReason):
+    def _generateResultFilter(self, oFilter, oResultLogic, tsNow, sPeriod, enmResultsGroupingType = None, aoGroupMembers = None,
+                              fOnlyFailures = False, fOnlyNeedingReason = False):
         """
         Generates the result filter for the left hand side.
         """
@@ -926,7 +926,7 @@ class WuiMain(WuiDispatcherBase):
                  u' <p>Filters</p>\n' \
                  u' <dl>\n';
 
-        for iCrit, oCrit in enumerate(oFilter.aCriteria):
+        for oCrit in oFilter.aCriteria:
             if len(oCrit.aoPossible) > 0:
                 sClass = 'sf-collapsable' if oCrit.sState == oCrit.ksState_Selected else 'sf-expandable';
                 sChar  = '&#9660;'        if oCrit.sState == oCrit.ksState_Selected else '&#9654;';
@@ -1187,10 +1187,11 @@ class WuiMain(WuiDispatcherBase):
             self._oSrvGlue.writeRaw(abChunk);
         return self.ksDispatchRcAllDone;
 
-    def _actionGenericReport(self, oModelType, oReportType):
+    def _actionGenericReport(self, oModelType, oFilterType, oReportType):
         """
         Generic report action.
         oReportType is a child of WuiReportContentBase.
+        oFilterType is a child of ModelFilterBase.
         oModelType is a child of ReportModelBase.
         """
         from testmanager.core.report                import ReportModelBase;
@@ -1206,6 +1207,7 @@ class WuiMain(WuiDispatcherBase):
             aidSubjects = self.getListOfIntParams(self.ksParamReportSubjectIds, iMin = 1);
             if aidSubjects is None:
                 raise WuiException('Missing parameter %s' % (self.ksParamReportSubjectIds,));
+        oFilter = oFilterType().initFromParams(self);
         self._checkForUnknownParameters();
 
         dParams = \
@@ -1216,37 +1218,40 @@ class WuiMain(WuiDispatcherBase):
             self.ksParamReportSubject:          sSubject,
             self.ksParamReportSubjectIds:       aidSubjects,
         };
+        ## @todo oFilter.
 
-        oModel   = oModelType(self._oDb, tsEffective, cPeriods, cHoursPerPeriod, sSubject, aidSubjects);
+        oModel   = oModelType(self._oDb, tsEffective, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, oFilter);
         oContent = oReportType(oModel, dParams, fSubReport = False, fnDPrint = self._oSrvGlue.dprint, oDisp = self);
         (self._sPageTitle, self._sPageBody) = oContent.show();
         sNavi = self._generateReportNavigation(tsEffective, cHoursPerPeriod, cPeriods);
         self._sPageBody = sNavi + self._sPageBody;
+
+        self._sPageFilter = self._generateResultFilter(oFilter, oModel, tsEffective, '%s hours' % (cHoursPerPeriod * cPeriods,));
         return True;
 
     def _actionReportSummary(self):
         """ Action wrapper. """
-        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.core.report                import ReportLazyModel, ReportFilter;
         from testmanager.webui.wuireport            import WuiReportSummary;
-        return self._actionGenericReport(ReportLazyModel, WuiReportSummary);
+        return self._actionGenericReport(ReportLazyModel, ReportFilter, WuiReportSummary);
 
     def _actionReportRate(self):
         """ Action wrapper. """
-        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.core.report                import ReportLazyModel, ReportFilter;
         from testmanager.webui.wuireport            import WuiReportSuccessRate;
-        return self._actionGenericReport(ReportLazyModel, WuiReportSuccessRate);
+        return self._actionGenericReport(ReportLazyModel, ReportFilter, WuiReportSuccessRate);
 
     def _actionReportTestCaseFailures(self):
         """ Action wrapper. """
-        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.core.report                import ReportLazyModel, ReportFilter;
         from testmanager.webui.wuireport            import WuiReportTestCaseFailures;
-        return self._actionGenericReport(ReportLazyModel, WuiReportTestCaseFailures);
+        return self._actionGenericReport(ReportLazyModel, ReportFilter, WuiReportTestCaseFailures);
 
     def _actionReportFailureReasons(self):
         """ Action wrapper. """
-        from testmanager.core.report                import ReportLazyModel;
+        from testmanager.core.report                import ReportLazyModel, ReportFilter;
         from testmanager.webui.wuireport            import WuiReportFailureReasons;
-        return self._actionGenericReport(ReportLazyModel, WuiReportFailureReasons);
+        return self._actionGenericReport(ReportLazyModel, ReportFilter, WuiReportFailureReasons);
 
     def _actionGraphWiz(self):
         """
