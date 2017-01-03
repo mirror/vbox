@@ -564,9 +564,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # Enable backend callback support.
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
 
- # Enable Audio Queues implementation for macOS hosts (Core Audio backend).
- VBoxDD_DEFS.darwin += VBOX_WITH_AUDIO_CA_QUEUES
-
  # Disable one-time audio stream initialization at device creation (VM startup) instead
  # of creating the stream when needed at some later point in time. 
  #
