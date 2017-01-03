@@ -559,7 +559,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  # Enable backend-independent device enumeration support. 
- #VBoxDD_DEFS  += VBOX_WITH_AUDIO_ENUM
+ VBoxDD_DEFS  += VBOX_WITH_AUDIO_ENUM
 
  # Enable backend callback support.
  #VBoxDD_DEFS  += VBOX_WITH_AUDIO_CALLBACKS
