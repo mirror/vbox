@@ -376,12 +376,12 @@ function toggleCollapsableDtDd(oAnchor)
     /* Determin the new class and arrow char. */
     var sNewClass;
     var sNewChar;
-    if (sClass.endsWith('collapsable'))
+    if (     sClass.substr(-11) == 'collapsable')
     {
         sNewClass = sClass.substr(0, sClass.length - 11) + 'expandable';
         sNewChar  = '\u25B6'; /* black right-pointing triangle */
     }
-    else if (sClass.endsWith('expandable'))
+    else if (sClass.substr(-10) == 'expandable')
     {
         sNewClass = sClass.substr(0, sClass.length - 10) + 'collapsable';
         sNewChar  = '\u25BC'; /* black down-pointing triangle */
