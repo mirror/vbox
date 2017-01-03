@@ -47,7 +47,6 @@ body {
 
 p, ul, ol {
     margin-top:     0;
-    line-height:    180%;
 }
 
 div {
@@ -60,6 +59,7 @@ h1, h2, h3 {
     padding:        0;
     font-weight:    normal;
     color:          #2f2f2f;
+    line-height:    180%;
 }
 h1 {
     font-size:      2.4em;
@@ -267,6 +267,7 @@ html, body {
  * Navigation in on the left side.
  */
 
+
 /* Side menu: */
 #side-menu {
     padding-top:    28px; /**< #top-menu.max-height */
@@ -351,10 +352,30 @@ html, body {
 #side-filters dd {
     font-size:      0.82em;
 }
+#side-filters li {
+    line-height: 0.7em;
+}
+
 
 #side-filters input[type=checkbox] {
-    vertical-align: text-top;
+    margin-right:   0.20em;
+    vertical-align: middle;
+    width:          1.0em;
+    height:         1.0em;
 }
+@supports(-moz-appearance:meterbar) { /* Mozilla hack for saving vertical space */
+    #side-filters input[type=checkbox] {
+        vertical-align: bottom;
+    }
+}
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) { /* IE 10+ specific tweaks */
+    #side-filters input[type=checkbox] {
+        vertical-align: bottom;
+        width:          1.1em;
+        height:         1.1em;
+    }
+}
+
 
 #side-filters ul {
     max-height:     22em;
@@ -697,9 +718,14 @@ table.tmlistnavtab {
  * Note! This _has_ to be redone. It sucks for the wide fields and such.
  */
 .tmform ul {
-    list-style:      none;
+    list-style:     none;
     list-style-type: none;
 }
+
+.tmform li {
+    line-height:    160%;
+}
+
 
 .tmform-field {
     display:        block;
