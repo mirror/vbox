@@ -26,6 +26,9 @@
 #include <VBox/scsi.h>
 #include <iprt/log.h>
 
+/** Maximum buffer size supported by the CAM subsystem. */
+#define FBSD_SCSI_MAX_BUFFER_SIZE (64 * _1K)
+
 /**
  * Host backend specific data.
  */
@@ -148,6 +151,14 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
 }
 
 
+DECLHIDDEN(size_t) drvHostBaseScsiCmdGetBufLimitOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+
+    return FBSD_SCSI_MAX_BUFFER_SIZE;
+}
+
+
 DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
 {
     /*
@@ -193,8 +204,8 @@ DECLHIDDEN(int) drvHostBaseReadOs(PDRVHOSTBASE pThis, uint64_t off, void *pvBuf,
         {
             const uint32_t  LBA       = off / pThis->Os.cbBlock;
             AssertReturn(!(off % pThis->Os.cbBlock), VERR_INVALID_PARAMETER);
-            uint32_t        cbRead32  =   cbRead > SCSI_MAX_BUFFER_SIZE
-                                        ? SCSI_MAX_BUFFER_SIZE
+            uint32_t        cbRead32  =   cbRead > FBSD_SCSI_MAX_BUFFER_SIZE
+                                        ? FBSD_SCSI_MAX_BUFFER_SIZE
                                         : (uint32_t)cbRead;
             const uint32_t  cBlocks   = cbRead32 / pThis->Os.cbBlock;
             AssertReturn(!(cbRead % pThis->Os.cbBlock), VERR_INVALID_PARAMETER);

@@ -28,6 +28,10 @@
 
 #include <iprt/assert.h>
 
+/**
+ * @todo: Remove when the splitting code was removed from DevATA.
+ *        The limit doesn't belong here but is specific for each host platform.
+ */
 #ifdef RT_OS_FREEBSD
 /* The cam subsystem doesn't allow more */
 # define SCSI_MAX_BUFFER_SIZE (64  * _1K)

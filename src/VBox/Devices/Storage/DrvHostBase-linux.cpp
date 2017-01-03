@@ -38,6 +38,9 @@
 #include <iprt/file.h>
 #include <VBox/scsi.h>
 
+/** Maximum buffer size supported by the kernel interface. */
+#define LNX_SCSI_MAX_BUFFER_SIZE (100 * _1K)
+
 /**
  * Host backend specific data.
  */
@@ -74,7 +77,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
     /* Allocate the temporary buffer lazily. */
     if(RT_UNLIKELY(!pThis->Os.pbDoubleBuffer))
     {
-        pThis->Os.pbDoubleBuffer = (uint8_t *)RTMemAlloc(SCSI_MAX_BUFFER_SIZE);
+        pThis->Os.pbDoubleBuffer = (uint8_t *)RTMemAlloc(LNX_SCSI_MAX_BUFFER_SIZE);
         if (!pThis->Os.pbDoubleBuffer)
             return VERR_NO_MEMORY;
     }
@@ -91,7 +94,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
             break;
         case PDMMEDIATXDIR_FROM_DEVICE:
             Assert(*pcbBuf != 0);
-            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
+            Assert(*pcbBuf <= LNX_SCSI_MAX_BUFFER_SIZE);
             /* Make sure that the buffer is clear for commands reading
              * data. The actually received data may be shorter than what
              * we expect, and due to the unreliable feedback about how much
@@ -104,7 +107,7 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
             break;
         case PDMMEDIATXDIR_TO_DEVICE:
             Assert(*pcbBuf != 0);
-            Assert(*pcbBuf <= SCSI_MAX_BUFFER_SIZE);
+            Assert(*pcbBuf <= LNX_SCSI_MAX_BUFFER_SIZE);
             memcpy(pThis->Os.pbDoubleBuffer, pvBuf, *pcbBuf);
             direction = CGC_DATA_WRITE;
             break;
@@ -152,6 +155,15 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
 
     return rc;
 }
+
+
+DECLHIDDEN(size_t) drvHostBaseScsiCmdGetBufLimitOs(PDRVHOSTBASE pThis)
+{
+    RT_NOREF(pThis);
+
+    return LNX_SCSI_MAX_BUFFER_SIZE;
+}
+
 
 DECLHIDDEN(int) drvHostBaseGetMediaSizeOs(PDRVHOSTBASE pThis, uint64_t *pcb)
 {

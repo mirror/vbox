@@ -554,6 +554,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
     PDMMEDIATXDIR enmXferDir = PDMMEDIATXDIR_NONE;
     size_t cbXfer = 0;
     size_t cbSector = 0;
+    size_t cbScsiCmdBufLimit = drvHostBaseScsiCmdGetBufLimitOs(&pThis->Core);
     bool fPassthrough = drvHostDvdParseCdb(pThis, pReq, pbCdb, cbCdb, cbBuf,
                                            &enmXferDir, &cbXfer, &cbSector, pu8ScsiSts);
     if (fPassthrough)
@@ -567,7 +568,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
         if (cbXfer)
             rc = drvHostBaseBufferRetain(&pThis->Core, pReq, cbXfer, enmXferDir == PDMMEDIATXDIR_TO_DEVICE, &pvBuf);
 
-        if (cbXfer > SCSI_MAX_BUFFER_SIZE)
+        if (cbXfer > cbScsiCmdBufLimit)
         {
             /* Linux accepts commands with up to 100KB of data, but expects
              * us to handle commands with up to 128KB of data. The usual
@@ -609,8 +610,8 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
             uint32_t cReqSectors = 0;
             for (uint32_t i = cSectors; i > 0; i -= cReqSectors)
             {
-                if (i * cbSector > SCSI_MAX_BUFFER_SIZE)
-                    cReqSectors = SCSI_MAX_BUFFER_SIZE / (uint32_t)cbSector;
+                if (i * cbSector > cbScsiCmdBufLimit)
+                    cReqSectors = cbScsiCmdBufLimit / (uint32_t)cbSector;
                 else
                     cReqSectors = i;
                 uint32_t cbCurrTX = (uint32_t)cbSector * cReqSectors;
