@@ -1355,7 +1355,6 @@ DECLINLINE(int) hdaStreamGetNextBDLE(PHDASTATE pThis, PHDASTREAM pStream, bool *
 
     return rc;
 }
-#endif /* IN_RING3 */
 
 
 /**
@@ -1378,7 +1377,6 @@ DECLINLINE(PHDASTREAM) hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD)
 }
 
 
-#ifdef IN_RING3
 /**
  * Returns the HDA stream of specified HDA sink.
  *
@@ -4855,11 +4853,6 @@ DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxRegDsc, uint32_t u32Value, c
     {
         const uint32_t uSDCTL = HDA_STREAM_REG(pThis, CTL, HDA_SD_NUM_FROM_REG(pThis, CTL, idxRegDsc));
 
-#ifdef LOG_ENABLED
-        PHDASTREAM pStream = hdaStreamGetFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, CTL, idxRegDsc));
-        Log3(("hdaWriteReg: %s: fInReset=%RTbool, %R[sdctl]\n",
-              g_aHdaRegMap[idxRegDsc].abbrev, pStream ? ASMAtomicReadBool(&pStream->State.fInReset) : false, uSDCTL));
-#endif
         /*
          * Some OSes (like Win 10 AU) violate the spec by writing stuff to registers which are not supposed to be be touched
          * while SDCTL's RUN bit is set. So just ignore those values.
