@@ -282,7 +282,7 @@ static void SPU_APIENTRY trapScissor(GLint x, GLint y, GLsizei w, GLsizei h)
 #endif /* unused */
 
 /**
- * Use the GL function pointers in <spu> to initialize the static glim
+ * Use the GL function pointers in \<spu\> to initialize the static glim
  * dispatch table.
  */
 static void stubInitSPUDispatch(SPU *spu)
