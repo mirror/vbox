@@ -2050,7 +2050,8 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                     ataLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
                     break;
             }
-            rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, aATAPICmd, (PDMMEDIATXDIR)s->uTxDir, pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
+            rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
+                                          pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
             if (rc != VINF_SUCCESS)
                 break;
             iATAPILBA += cReqSectors;
@@ -2091,7 +2092,8 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         }
     }
     else
-        rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, s->aATAPICmd, (PDMMEDIATXDIR)s->uTxDir, s->CTX_SUFF(pbIOBuffer), &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
+        rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, s->aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
+                                      s->CTX_SUFF(pbIOBuffer), &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
     if (pProf) { STAM_PROFILE_ADV_STOP(pProf, b); }
 
     STAM_PROFILE_START(&pCtl->StatLockWait, a);

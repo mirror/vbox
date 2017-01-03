@@ -287,7 +287,8 @@ typedef struct PDMIMEDIA
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pbCmd           Offset to start reading from.
+     * @param   pbCdb           The command to process.
+     * @param   cbCdb           The length of the command in bytes.
      * @param   enmTxDir        Direction of transfer.
      * @param   pvBuf           Pointer tp the transfer buffer.
      * @param   pcbBuf          Size of the transfer buffer.
@@ -296,9 +297,9 @@ typedef struct PDMIMEDIA
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIMEDIA pInterface, const uint8_t *pbCmd, PDMMEDIATXDIR enmTxDir,
-                                          void *pvBuf, uint32_t *pcbBuf, uint8_t *pabSense, size_t cbSense,
-                                          uint32_t cTimeoutMillies));
+    DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIMEDIA pInterface, const uint8_t *pbCdb, size_t cbCdb,
+                                          PDMMEDIATXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
+                                          uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
 
     /**
      * Merge medium contents during a live snapshot deletion. All details
@@ -461,7 +462,7 @@ typedef struct PDMIMEDIA
 
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
-#define PDMIMEDIA_IID                           "d344aeaa-3ad0-4563-bb03-2733383e9230"
+#define PDMIMEDIA_IID                           "527246f5-f300-47a7-9ec3-03d8ea8bf9de"
 
 
 /**

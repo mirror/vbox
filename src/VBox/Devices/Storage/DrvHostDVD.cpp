@@ -499,27 +499,24 @@ static DECLCALLBACK(int) drvHostDvdDoLock(PDRVHOSTBASE pThis, bool fLock)
 
 
 /** @interface_method_impl{PDMIMEDIA,pfnSendCmd} */
-static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t *pbCmd,
+static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t *pbCdb, size_t cbCdb,
                                            PDMMEDIATXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf,
                                            uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies)
 {
     PDRVHOSTBASE pThis = RT_FROM_MEMBER(pInterface, DRVHOSTBASE, IMedia);
     int rc;
-    LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCmd[0], enmTxDir, *pcbBuf, cTimeoutMillies));
+    LogFlow(("%s: cmd[0]=%#04x txdir=%d pcbBuf=%d timeout=%d\n", __FUNCTION__, pbCdb[0], enmTxDir, *pcbBuf, cTimeoutMillies));
 
     RTCritSectEnter(&pThis->CritSect);
-    /*
-     * Pass the request on to the internal scsi command interface.
-     * The command seems to be 12 bytes long, the docs a bit copy&pasty on the command length point...
-     */
+    /* Pass the request on to the internal scsi command interface. */
     if (enmTxDir == PDMMEDIATXDIR_FROM_DEVICE)
         memset(pvBuf, '\0', *pcbBuf); /* we got read size, but zero it anyway. */
-    rc = drvHostBaseScsiCmdOs(pThis, pbCmd, 12, enmTxDir, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
+    rc = drvHostBaseScsiCmdOs(pThis, pbCdb, cbCdb, enmTxDir, pvBuf, pcbBuf, pabSense, cbSense, cTimeoutMillies);
     if (rc == VERR_UNRESOLVED_ERROR)
         /* sense information set */
         rc = VERR_DEV_IO_ERROR;
 
-    if (pbCmd[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION)
+    if (pbCdb[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION)
     {
         uint8_t *pbBuf = (uint8_t*)pvBuf;
         Log2(("Event Status Notification class=%#02x supported classes=%#02x\n", pbBuf[2], pbBuf[3]));
