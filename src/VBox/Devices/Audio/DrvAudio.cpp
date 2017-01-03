@@ -1709,7 +1709,8 @@ static int drvAudioHostInit(PDRVAUDIO pThis, PCFGMNODE pCfgHandle)
 
 #ifdef VBOX_WITH_AUDIO_ENUM
     int rc2 = drvAudioDevicesEnumerateInternal(pThis, true /* fLog */, NULL /* pDevEnum */);
-    AssertRC(rc2);
+    if (rc2 != VERR_NOT_SUPPORTED) /* Some backends don't implement device enumeration. */
+        AssertRC(rc2);
 
     RT_NOREF(rc2);
     /* Ignore rc. */
