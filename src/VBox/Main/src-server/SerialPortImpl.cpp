@@ -492,7 +492,7 @@ HRESULT SerialPort::setServer(BOOL aServer)
  *  Loads settings from the given port node.
  *  May be called once right after this object creation.
  *
- *  @param aPortNode <Port> node.
+ *  @param data Configuration settings.
  *
  *  @note Locks this object for writing.
  */
@@ -515,7 +515,7 @@ HRESULT SerialPort::i_loadSettings(const settings::SerialPort &data)
  *
  *  Note that the given Port node is completely empty on input.
  *
- *  @param aPortNode <Port> node.
+ *  @param data Configuration settings.
  *
  *  @note Locks this object for reading.
  */

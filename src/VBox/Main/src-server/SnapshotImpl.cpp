@@ -1109,9 +1109,10 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 /**
  *  Initializes the SnapshotMachine object when loading from the settings file.
  *
- *  @param aMachine machine the snapshot belongs to
- *  @param aHWNode          <Hardware> node
- *  @param aHDAsNode        <HardDiskAttachments> node
+ *  @param aMachine         machine the snapshot belongs to
+ *  @param hardware         hardware settings
+ *  @param pDbg             debuging settings
+ *  @param pAutoStart       autostart settings
  *  @param aSnapshotId      snapshot ID of this snapshot machine
  *  @param aStateFilePath   file where the execution state is saved
  *                          (or NULL for the offline snapshot)

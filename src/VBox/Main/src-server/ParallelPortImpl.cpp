@@ -370,7 +370,7 @@ HRESULT ParallelPort::setPath(const com::Utf8Str &aPath)
  *  Loads settings from the given port node.
  *  May be called once right after this object creation.
  *
- *  @param aPortNode <Port> node.
+ *  @param data Configuration settings.
  *
  *  @note Locks this object for writing.
  */
@@ -392,7 +392,7 @@ HRESULT ParallelPort::i_loadSettings(const settings::ParallelPort &data)
  *
  *  Note that the given Port node is completely empty on input.
  *
- *  @param  <data> node.
+ *  @param  data Configuration settings.
  *
  *  @note Locks this object for reading.
  */

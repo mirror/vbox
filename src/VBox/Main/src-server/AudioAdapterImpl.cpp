@@ -467,7 +467,7 @@ HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &
  *  Loads settings from the given machine node.
  *  May be called once right after this object creation.
  *
- *  @param aMachineNode <Machine> node.
+ *  @param data Configuration settings.
  *
  *  @note Locks this object for writing.
  */
@@ -496,7 +496,7 @@ HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
 /**
  *  Saves settings to the given machine node.
  *
- *  @param aMachineNode <Machine> node.
+ *  @param data Configuration settings.
  *
  *  @note Locks this object for reading.
  */

@@ -224,7 +224,7 @@ private:
     RTPIPE mhWakeupPipeW;
     /** The root of usbfs. */
     Utf8Str mDevicesRoot;
-    /** Whether we're using <mUsbfsRoot>/devices or /sys/whatever. */
+    /** Whether we're using \<mUsbfsRoot\>/devices or /sys/whatever. */
     bool mUsingUsbfsDevices;
     /** Number of 500ms polls left to do. See usbDeterminState for details. */
     unsigned mUdevPolls;

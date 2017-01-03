@@ -8811,7 +8811,7 @@ HRESULT Machine::i_loadMachineDataFromSettings(const settings::MachineConfigFile
 /**
  *  Recursively loads all snapshots starting from the given.
  *
- *  @param aNode            <Snapshot> node.
+ *  @param data             snapshot settings.
  *  @param aCurSnapshotId   Current snapshot ID from the settings file.
  *  @param aParentSnapshot  Parent snapshot.
  */
@@ -9239,9 +9239,10 @@ HRESULT Machine::i_loadDebugging(const settings::Debugging *pDbg)
 /**
  *  Called from i_loadMachineDataFromSettings() for the storage controller data, including media.
  *
- * @param data
- * @param puuidRegistry media registry ID to set media to or NULL; see Machine::i_loadMachineDataFromSettings()
- * @param puuidSnapshot
+ * @param data          storage settings.
+ * @param puuidRegistry media registry ID to set media to or NULL;
+ *                      see Machine::i_loadMachineDataFromSettings()
+ * @param puuidSnapshot snapshot ID
  * @return
  */
 HRESULT Machine::i_loadStorageControllers(const settings::Storage &data,
@@ -10506,7 +10507,7 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
 /**
  *  Saves the storage controller configuration.
  *
- *  @param aNode    <StorageControllers> node to save the VM hardware configuration to.
+ *  @param data    storage settings.
  */
 HRESULT Machine::i_saveStorageControllers(settings::Storage &data)
 {
