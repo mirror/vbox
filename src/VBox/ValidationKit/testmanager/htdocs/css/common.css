@@ -325,6 +325,9 @@ html, body {
     font-style:     italic;
     font-weight:    normal;
 }
+.side-filter-count {
+    font-size:      0.72em;
+}
 
 /* Filters: webkit specific scroll bar optimizations  */
 #side-filters ::-webkit-scrollbar {

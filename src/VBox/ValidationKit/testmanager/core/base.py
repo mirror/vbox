@@ -1157,9 +1157,11 @@ class FilterCriterionValueAndDescription(object):
     A filter criterion value and its description.
     """
 
-    def __init__(self, oValue, sDesc, fIrrelevant = False):
+    def __init__(self, oValue, sDesc, cTimes = None, sHover = None, fIrrelevant = False):
         self.oValue      = oValue;      ##< Typically the ID of something in the database.
         self.sDesc       = sDesc;       ##< What to display.
+        self.cTimes      = cTimes;      ##< Number of times the value occurs in the result set. None if not given.
+        self.sHover      = sHover;      ##< Optional hover/title string.
         self.fIrrelevant = fIrrelevant; ##< Irrelevant filter option, only present because it's selected
 
 

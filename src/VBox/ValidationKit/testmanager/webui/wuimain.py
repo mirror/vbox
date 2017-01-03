@@ -938,10 +938,13 @@ class WuiMain(WuiDispatcherBase):
 
                 for oDesc in oCrit.aoPossible:
                     fChecked = oDesc.oValue in oCrit.aoSelected;
-                    sHtml += u'    <li%s><input type="checkbox" name="%s" value="%s"%s/>%s</li>\n' \
+                    sHtml += u'    <li%s%s><input type="checkbox" name="%s" value="%s"%s/>%s%s</li>\n' \
                            % ( ' class="side-filter-irrelevant"' if oDesc.fIrrelevant else '',
+                               ' title="%s"' % (webutils.escapeAttr(oDesc.sHover,) if oDesc.sHover is not None else ''),
                                oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '',
-                               webutils.escapeElem(oDesc.sDesc),);
+                               webutils.escapeElem(oDesc.sDesc),
+                               ' <span class="side-filter-count">(%u)</span>' % (oDesc.cTimes) if oDesc.cTimes is not None
+                               else '', );
 
                 sHtml += u'   </ul>\n' \
                          u'  </dd>\n';
