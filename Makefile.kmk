@@ -970,6 +970,7 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e '/^[[:space:]]/b ignore' \
                -e '/^Possible candidates/b ignore' \
                -e '/^HRESULT HostDnsService/b ignore' \
+               -e '/^def testmanager::webui::wuicontentbase::__init__/b ignore' \
                -e 'b nextwarning' \
                -e ':end' \
                -e 'p' \
