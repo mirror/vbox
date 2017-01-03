@@ -33,19 +33,23 @@
                 </div>
             </div>
 
-            <div id="side-menu">
-                <form id="side-menu-form"@@SIDE_MENU_FORM_ATTRS@@>
-                    <ul>
-                        @@SIDE_MENU_ITEMS@@
-                    </ul>
-                    @@SIDE_FILTER_CONTROL@@
-                </form>
-                <div id="side-footer">
-                    <p>
-                    VBox Test Manager<br/>@@TESTMANAGER_VERSION@@r@@TESTMANAGER_REVISION@@
-                    </p>
-                    <br>
-                    <p>Copyright &copy; 2012-2017 Oracle Corporation</p>
+            <div id="side-menu-wrap">
+                <div id="side-menu">
+                    <div id="side-menu-body">
+                        <form id="side-menu-form" @@SIDE_MENU_FORM_ATTRS@@>
+                            <ul>
+                                @@SIDE_MENU_ITEMS@@
+                            </ul>
+                            @@SIDE_FILTER_CONTROL@@
+                        </form>
+                    </div>
+                    <!-- justify-content: space-between -->
+                    <div id="side-footer">
+                        <p>
+                        VBox Test Manager<br/>@@TESTMANAGER_VERSION@@r@@TESTMANAGER_REVISION@@
+                        </p>
+                        <p>Copyright &copy; 2012-2017 Oracle Corporation</p>
+                    </div>
                 </div>
             </div>
 
