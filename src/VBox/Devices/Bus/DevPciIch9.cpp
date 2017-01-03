@@ -63,7 +63,7 @@ typedef struct
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def VBOX_ICH9PCI_SAVED_STATE_VERSION
+/** @def VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT
  * Saved state version of the ICH9 PCI bus device.
  */
 #define VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI 1
