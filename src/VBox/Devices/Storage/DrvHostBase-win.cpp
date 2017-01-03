@@ -81,7 +81,7 @@ NTSTATUS __stdcall NtQueryVolumeInformationFile(
 #include <VBox/scsi.h>
 
 /** Maximum buffer size we support, check whether darwin has some real upper limit. */
-#define SOL_SCSI_MAX_BUFFER_SIZE (100 * _1K)
+#define WIN_SCSI_MAX_BUFFER_SIZE (100 * _1K)
 
 /**
  * Host backend specific data.
