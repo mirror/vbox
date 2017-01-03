@@ -239,7 +239,7 @@ public:
 /**
  * Constructor. Allocates the XML internals, parses the XML file if
  * pstrFilename is != NULL and reads the settings version from it.
- * @param strFilename
+ * @param pstrFilename
  */
 ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     : m(new Data)
@@ -3192,7 +3192,7 @@ bool MachineUserData::operator==(const MachineUserData &c) const
  * the caller should catch; if this constructor does not throw, then the member
  * variables contain meaningful values (either from the file or defaults).
  *
- * @param strFilename
+ * @param pstrFilename
  */
 MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
     : ConfigFileBase(pstrFilename),
@@ -3293,7 +3293,7 @@ bool MachineConfigFile::operator==(const MachineConfigFile &c) const
 
 /**
  * Called from MachineConfigFile::readHardware() to read cpu information.
- * @param elmCpuid
+ * @param elmCpu
  * @param ll
  */
 void MachineConfigFile::readCpuTree(const xml::ElementNode &elmCpu,
@@ -3642,7 +3642,7 @@ void MachineConfigFile::readParallelPorts(const xml::ElementNode &elmLPT,
  * and maybe fix driver information depending on the current host hardware.
  *
  * @param elmAudioAdapter "AudioAdapter" XML element.
- * @param hw
+ * @param aa
  */
 void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter,
                                          AudioAdapter &aa)
@@ -3770,7 +3770,7 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
  * Helper function to read attributes that are common to \<SATAController\> (pre-1.7)
  * and \<StorageController\>.
  * @param elmStorageController
- * @param strg
+ * @param sctl
  */
 void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &elmStorageController,
                                                         StorageController &sctl)
@@ -4503,7 +4503,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
  * files which have a \<HardDiskAttachments\> node and storage controller settings
  * hidden in the \<Hardware\> settings. We set the StorageControllers fields just the
  * same, just from different sources.
- * @param elmHardware \<Hardware\> XML node.
  * @param elmHardDiskAttachments  \<HardDiskAttachments\> XML node.
  * @param strg
  */
@@ -6651,7 +6650,7 @@ void MachineConfigFile::buildSnapshotXML(uint32_t depth,
  *      unless the settings version is at least v1.9, which is always the case
  *      when this gets called for OVF export.
  *
- * --   BuildMachineXML_SuppressSavedState: If set, the Machine/@stateFile
+ * --   BuildMachineXML_SuppressSavedState: If set, the Machine/stateFile
  *      attribute is never set. This is also for the OVF export case because we
  *      cannot save states with OVF.
  *

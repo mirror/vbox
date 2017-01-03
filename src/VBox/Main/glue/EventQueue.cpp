@@ -192,7 +192,7 @@ int EventQueue::interruptEventQueueProcessing(void)
 /**
  *  Posts an event to this event loop asynchronously.
  *
- *  @param  event   the event to post, must be allocated using |new|
+ *  @param pEvent   the event to post, must be allocated using |new|
  *  @return         TRUE if successful and false otherwise
  */
 BOOL EventQueue::postEvent(Event *pEvent)
