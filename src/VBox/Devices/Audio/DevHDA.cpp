@@ -1393,6 +1393,7 @@ DECLINLINE(PHDASTREAM) hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink)
 }
 
 
+#ifdef IN_RING3
 /**
  * Returns the audio direction of a specified stream descriptor.
  *
@@ -1414,6 +1415,7 @@ DECLINLINE(PDMAUDIODIR) hdaGetDirFromSD(uint8_t uSD)
 
     return PDMAUDIODIR_OUT;
 }
+#endif /* IN_RING3 */
 
 
 static void hdaUpdateINTSTS(PHDASTATE pThis)
