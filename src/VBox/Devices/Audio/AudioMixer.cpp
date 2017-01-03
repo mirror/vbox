@@ -1786,7 +1786,7 @@ void AudioMixerStreamDestroy(PAUDMIXSTREAM pMixStream)
 /**
  * Returns whether a mixer stream currently is active (playing/recording) or not.
  *
- * @returns @true if playing/recording, @false if not.
+ * @returns @c true if playing/recording, @c false if not.
  * @param   pMixStream          Mixer stream to return status for.
  */
 bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
@@ -1818,7 +1818,7 @@ bool AudioMixerStreamIsActive(PAUDMIXSTREAM pMixStream)
 /**
  * Returns whether a mixer stream is valid (e.g. initialized and in a working state) or not.
  *
- * @returns @true if valid, @false if not.
+ * @returns @c true if valid, @c false if not.
  * @param   pMixStream          Mixer stream to return status for.
  */
 bool AudioMixerStreamIsValid(PAUDMIXSTREAM pMixStream)

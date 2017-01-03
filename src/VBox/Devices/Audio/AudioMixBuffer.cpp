@@ -804,10 +804,10 @@ int AudioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMAUDIOPCMPR
 }
 
 /**
- * Returns @true if there are any audio samples available for processing,
- * @false if not.
+ * Returns @c true if there are any audio samples available for processing,
+ * @c false if not.
  *
- * @return  bool                    @true if there are any audio samples available for processing, @false if not.
+ * @return  bool                    @c true if there are any audio samples available for processing, @c false if not.
  * @param   pMixBuf                 Mixing buffer to return value for.
  */
 bool AudioMixBufIsEmpty(PPDMAUDIOMIXBUF pMixBuf)

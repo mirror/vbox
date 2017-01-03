@@ -640,7 +640,7 @@ const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
  * Returns wether the given audio format has signed bits or not.
  *
  * @return  IPRT status code.
- * @return  bool                @true for signed bits, @false for unsigned.
+ * @return  bool                @c true for signed bits, @c false for unsigned.
  * @param   enmFmt              Audio format to retrieve value for.
  */
 bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt)
@@ -763,7 +763,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
  * Checks whether the given PCM properties are equal with the given
  * stream configuration.
  *
- * @returns @true if equal, @false if not.
+ * @returns @c true if equal, @c false if not.
  * @param   pProps              PCM properties to compare.
  * @param   pCfg                Stream configuration to compare.
  */
@@ -810,7 +810,7 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pC
 /**
  * Checks whether two given PCM properties are equal.
  *
- * @returns @true if equal, @false if not.
+ * @returns @c true if equal, @c false if not.
  * @param   pProps1             First properties to compare.
  * @param   pProps2             Second properties to compare.
  */
@@ -853,7 +853,7 @@ int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMC
 /**
  * Checks whether a given stream configuration is valid or not.
  *
- * Returns @true if configuration is valid, @false if not.
+ * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
  */
 bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
