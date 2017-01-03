@@ -210,7 +210,7 @@ class WuiDispatcherBase(object):
                     sSideMenuItems += '<a href="' + webutils.escapeAttr(asSubItem[1]) + '">' \
                                     + webutils.escapeElem(asSubItem[0]) + '</a></li>\n';
                 else:
-                    sSideMenuItems += '<li class="subheader_item">' + webutils.escapeElem(asSubItem[0]) + '</a></li>';
+                    sSideMenuItems += '<li class="subheader_item">' + webutils.escapeElem(asSubItem[0]) + '</li>';
         return (sTopMenuItems, sSideMenuItems);
 
     def _generatePage(self):
@@ -294,8 +294,10 @@ class WuiDispatcherBase(object):
             if config.g_kfWebUiDebugPanel:
                 self._sDebug += self._debugRenderPanel();
         if self._sDebug != '':
-            dReplacements['@@DEBUG@@'] = '<div id="debug"><br><br><hr/>' + \
-                unicode(self._sDebug, errors='ignore') if isinstance(self._sDebug, str) else self._sDebug + '</div>';
+            dReplacements['@@DEBUG@@'] = u'<div id="debug"><br><br><hr/>' \
+                                       + (unicode(self._sDebug, errors='ignore') if isinstance(self._sDebug, str)
+                                          else self._sDebug) \
+                                       + u'</div>\n';
 
         #
         # Load the template.
@@ -334,7 +336,7 @@ class WuiDispatcherBase(object):
                 assert False, 'Unknown replacement "%s" at offset %s in %s' % (sReplacement, offAtAt, self._sTemplate );
 
         # The final chunk.
-        if offStart < offCur:
+        if offStart < len(sTmpl):
             self._oSrvGlue.write(sTmpl[offStart:]);
 
         return True;
@@ -763,7 +765,7 @@ class WuiDispatcherBase(object):
         for aoCheckBox in (
                 [self.ksParamDbgSqlTrace, self._fDbgSqlTrace, 'SQL trace'],
                 [self.ksParamDbgSqlExplain, self._fDbgSqlExplain, 'SQL explain'], ):
-            sHtml += ' <input type="checkbox" name="%s" value="1"%s>%s</input>\n' \
+            sHtml += ' <input type="checkbox" name="%s" value="1"%s />%s\n' \
                 % (aoCheckBox[0], ' checked' if aoCheckBox[1] else '', aoCheckBox[2]);
 
         sHtml += '  <button type="submit">Apply</button>\n';
