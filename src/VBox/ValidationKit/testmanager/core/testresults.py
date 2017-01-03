@@ -645,18 +645,34 @@ class TestResultFilter(ModelFilterBase):
     Test result filter.
     """
 
-    kiTestStatus        =  0;
-    kiBranches          =  1;
-    kiSchedGroups       =  2;
-    kiTestBoxes         =  3;
-    kiTestCases         =  4;
-    kiTestCaseVars      =  5;
-    kiRevisions         =  6;
-    kiCpuArches         =  7;
-    kiCpuVendors        =  8;
-    kiOses              =  9;
-    kiOsVersions        = 10;
-    kiFailReasons       = 11;
+    kiTestStatus            =  0;
+    kiBranches              =  1;
+    kiSchedGroups           =  2;
+    kiTestBoxes             =  3;
+    kiTestCases             =  4;
+    kiTestCaseVars          =  5;
+    kiRevisions             =  6;
+    kiCpuArches             =  7;
+    kiCpuVendors            =  8;
+    kiCpuRevisions          =  9;
+    kiCpuCounts             = 10;
+    kiMemory                = 11;
+    kiMisc                  = 12;
+    kiOses                  = 13;
+    kiOsVersions            = 14;
+    kiPythonVersions        = 15;
+    kiFailReasons           = 16;
+
+    kiMisc_NestedPaging     =  0;
+    kiMisc_NoNestedPaging   =  1;
+    kiMisc_RawMode          =  2;
+    kiMisc_NoRawMode        =  3;
+    kiMisc_64BitGuest       =  4;
+    kiMisc_No64BitGuest     =  5;
+    kiMisc_HwVirt           =  6;
+    kiMisc_NoHwVirt         =  7;
+    kiMisc_IoMmu            =  8;
+    kiMisc_NoIoMmu          =  9;
 
     def __init__(self):
         ModelFilterBase.__init__(self);
@@ -698,6 +714,34 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuVendors] is oCrit;
 
+        oCrit = FilterCriterion('CPU revisions', sVarNm = 'cr', sTable = 'TestBoxesWithStrings', sColumn = 'lCpuRevision');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiCpuRevisions] is oCrit;
+
+        oCrit = FilterCriterion('CPU counts', sVarNm = 'cc', sTable = 'TestBoxesWithStrings', sColumn = 'cCpus');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiCpuCounts] is oCrit;
+
+        oCrit = FilterCriterion('Memory', sVarNm = 'mb', sTable = 'TestBoxesWithStrings', sColumn = 'cMbMemory');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiMemory] is oCrit;
+
+        oCrit = FilterCriterion('Misc', sVarNm = 'cf', sTable = 'TestBoxesWithStrings', sColumn = 'it_is_complicated');
+        oCrit.aoPossible = [
+            FilterCriterionValueAndDescription(self.kiMisc_NestedPaging,      "req nested paging"),
+            FilterCriterionValueAndDescription(self.kiMisc_NoNestedPaging,    "w/o nested paging"),
+            #FilterCriterionValueAndDescription(self.kiMisc_RawMode,           "req raw-mode"), - not implemented yet.
+            #FilterCriterionValueAndDescription(self.kiMisc_NoRawMode,         "w/o raw-mode"), - not implemented yet.
+            FilterCriterionValueAndDescription(self.kiMisc_64BitGuest,        "req 64-bit guests"),
+            FilterCriterionValueAndDescription(self.kiMisc_No64BitGuest,      "w/o 64-bit guests"),
+            FilterCriterionValueAndDescription(self.kiMisc_HwVirt,            "req VT-x / AMD-V"),
+            FilterCriterionValueAndDescription(self.kiMisc_NoHwVirt,          "w/o VT-x / AMD-V"),
+            #FilterCriterionValueAndDescription(self.kiMisc_IoMmu,             "req I/O MMU"), - not implemented yet.
+            #FilterCriterionValueAndDescription(self.kiMisc_NoIoMmu,           "w/o I/O MMU"), - not implemented yet.
+        ];
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiMisc] is oCrit;
+
         oCrit = FilterCriterion('OSes', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiOses] is oCrit;
@@ -706,10 +750,26 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiOsVersions] is oCrit;
 
+        oCrit = FilterCriterion('Python', sVarNm = 'py', sTable = 'TestBoxesWithStrings', sColumn = 'iPythonHexVersion');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiPythonVersions] is oCrit;
+
         oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiFailReasons] is oCrit;
 
+    kdMiscConditions = {
+        kiMisc_NestedPaging:    'TestBoxesWithStrings.fCpuNestedPaging IS TRUE',
+        kiMisc_NoNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging IS FALSE',
+        kiMisc_RawMode:         'TestBoxesWithStrings.fRawMode IS TRUE',
+        kiMisc_NoRawMode:       'TestBoxesWithStrings.fRawMode IS NOT TRUE',
+        kiMisc_64BitGuest:      'TestBoxesWithStrings.fCpu64BitGuest IS TRUE',
+        kiMisc_No64BitGuest:    'TestBoxesWithStrings.fCpu64BitGuest IS FALSE',
+        kiMisc_HwVirt:          'TestBoxesWithStrings.fCpuHwVirt IS TRUE',
+        kiMisc_NoHwVirt:        'TestBoxesWithStrings.fCpuHwVirt IS FALSE',
+        kiMisc_IoMmu:           'TestBoxesWithStrings.fChipsetIoMmu IS TRUE',
+        kiMisc_NoIoMmu:         'TestBoxesWithStrings.fChipsetIoMmu IS FALSE',
+    };
 
     def getWhereConditions(self, sExtraIndent = '', iOmit = -1):
         """
@@ -719,11 +779,19 @@ class TestResultFilter(ModelFilterBase):
         sQuery = '';
         for iCrit, oCrit in enumerate(self.aCriteria):
             if oCrit.sState == FilterCriterion.ksState_Selected and iCrit != iOmit:
-                sQuery += '%s   AND %s.%s IN (' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
-                if oCrit.sType == FilterCriterion.ksType_String:
-                    sQuery += ', '.join('\'%s\'' % (sValue,) for sValue in oCrit.aoSelected) + ')\n';
+                if iCrit == self.kiMisc:
+                    for iValue in oCrit.aoSelected:
+                        if iValue in self.kdMiscConditions:
+                            sQuery += '%s   AND %s\n' % (sExtraIndent, self.kdMiscConditions[iValue],);
                 else:
-                    sQuery += ', '.join(str(iValue) for iValue in oCrit.aoSelected) + ')\n';
+                    if iCrit == self.kiMemory:
+                        sQuery += '%s   AND (%s.%s / 1024) IN (' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    else:
+                        sQuery += '%s   AND %s.%s IN (' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    if oCrit.sType == FilterCriterion.ksType_String:
+                        sQuery += ', '.join('\'%s\'' % (sValue,) for sValue in oCrit.aoSelected) + ')\n';
+                    else:
+                        sQuery += ', '.join(str(iValue) for iValue in oCrit.aoSelected) + ')\n';
         return sQuery;
 
     def getTableJoins(self, sExtraIndent = '', iOmit = -1, dOmitTables = None):
@@ -1474,7 +1542,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             if len(dLeft) > 0:
                 if fIdIsName:
                     for idMissing in dLeft:
-                        oCrit.aoPossible.append(FilterCriterionValueAndDescription(idMissing, idMissing, fIrrelevant = True));
+                        oCrit.aoPossible.append(FilterCriterionValueAndDescription(idMissing, str(idMissing),
+                                                                                   fIrrelevant = True));
                 else:
                     oMissingLogic = oMissingLogicType(self._oDb);
                     for idMissing in dLeft:
@@ -1554,7 +1623,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
                           'GROUP BY TestBoxesWithStrings.idStrOs, TestBoxesWithStrings.sOs\n'
                           'ORDER BY TestBoxesWithStrings.sOs\n' );
-        workerDoFetch(TestBoxLogic, 'sOs');
+        workerDoFetch(None, fIdIsName = True);
 
         # Testbox OS versions .
         oCrit = oFilter.aCriteria[TestResultFilter.kiOsVersions];
@@ -1574,7 +1643,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
                           'GROUP BY TestBoxesWithStrings.idStrOsVersion, TestBoxesWithStrings.sOsVersion\n'
                           'ORDER BY TestBoxesWithStrings.sOsVersion\n' );
-        workerDoFetch(TestBoxLogic, 'sOsVersion');
+        workerDoFetch(None, fIdIsName = True);
 
         # Testbox CPU/OS architectures.
         oCrit = oFilter.aCriteria[TestResultFilter.kiCpuArches];
@@ -1594,7 +1663,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
                           'GROUP BY TestBoxesWithStrings.idStrCpuArch, TestBoxesWithStrings.sCpuArch\n'
                           'ORDER BY TestBoxesWithStrings.sCpuArch\n' );
-        workerDoFetch(TestBoxLogic, 'sCpuArch');
+        workerDoFetch(None, fIdIsName = True);
 
         # Testbox CPU vendors.
         oCrit = oFilter.aCriteria[TestResultFilter.kiCpuVendors];
@@ -1608,13 +1677,99 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiCpuVendors) +
                           oReportModel.getExtraSubjectWhereExpr() +
-                          '         GROUP BY TestSets.idGEnTestBox'
+                          '         GROUP BY TestSets.idGenTestBox'
                           '       ) AS TestBoxGenIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
                           'GROUP BY TestBoxesWithStrings.idStrCpuVendor, TestBoxesWithStrings.sCpuVendor\n'
                           'ORDER BY TestBoxesWithStrings.sCpuVendor\n' );
-        workerDoFetch(TestBoxLogic, 'sCpuVendor');
+        workerDoFetch(None, fIdIsName = True);
+
+        # Testbox CPU revisions.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiCpuRevisions];
+        self._oDb.execute('SELECT TestBoxesWithStrings.lCpuRevision,\n'
+                          '       TestBoxesWithStrings.sCpuVendor,\n'
+                          '       SUM(TestBoxGenIDs.cTimes)\n'
+                          'FROM   ( SELECT TestSets.idGenTestBox,\n'
+                          '                COUNT(TestSets.idTestSet) AS cTimes\n'
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiCpuRevisions) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiCpuRevisions) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '         GROUP BY TestSets.idGenTestBox'
+                          '       ) AS TestBoxGenIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
+                          'GROUP BY TestBoxesWithStrings.lCpuRevision, TestBoxesWithStrings.sCpuVendor\n'
+                          'ORDER BY TestBoxesWithStrings.sCpuVendor DESC, TestBoxesWithStrings.lCpuRevision DESC\n' );
+        workerDoFetch(None, fIdIsName = True);
+        for oCur in oCrit.aoPossible:
+            oCur.sDesc = TestBoxData.getPrettyCpuVersionEx(oCur.oValue, oCur.sDesc).replace('_', ' ');
+
+        # Testbox CPU core/thread counts.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiCpuCounts];
+        self._oDb.execute('SELECT TestBoxesWithStrings.cCpus,\n'
+                          '       CAST(TestBoxesWithStrings.cCpus AS TEXT),\n'
+                          '       SUM(TestBoxGenIDs.cTimes)\n'
+                          'FROM   ( SELECT TestSets.idGenTestBox,\n'
+                          '                COUNT(TestSets.idTestSet) AS cTimes\n'
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiCpuCounts) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiCpuCounts) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '         GROUP BY TestSets.idGenTestBox'
+                          '       ) AS TestBoxGenIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
+                          'GROUP BY TestBoxesWithStrings.cCpus\n'
+                          'ORDER BY TestBoxesWithStrings.cCpus\n' );
+        workerDoFetch(None, fIdIsName = True);
+
+        # Testbox memory.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiMemory];
+        self._oDb.execute('SELECT TestBoxesWithStrings.cMbMemory / 1024,\n'
+                          '       NULL,\n'
+                          '       SUM(TestBoxGenIDs.cTimes)\n'
+                          'FROM   ( SELECT TestSets.idGenTestBox,\n'
+                          '                COUNT(TestSets.idTestSet) AS cTimes\n'
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiMemory) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiMemory) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '         GROUP BY TestSets.idGenTestBox'
+                          '       ) AS TestBoxGenIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
+                          'GROUP BY TestBoxesWithStrings.cMbMemory / 1024\n'
+                          'ORDER BY 1\n' );
+        workerDoFetch(None, fIdIsName = True);
+        for oCur in oCrit.aoPossible:
+            oCur.sDesc = '%u GB' % (oCur.oValue,);
+
+        # Testbox python versions .
+        oCrit = oFilter.aCriteria[TestResultFilter.kiPythonVersions];
+        self._oDb.execute('SELECT TestBoxesWithStrings.iPythonHexVersion,\n'
+                          '       NULL,\n'
+                          '       SUM(TestBoxGenIDs.cTimes)\n'
+                          'FROM   ( SELECT TestSets.idGenTestBox     AS idGenTestBox,\n'
+                          '                COUNT(TestSets.idTestSet) AS cTimes\n'
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiPythonVersions) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiPythonVersions) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '         GROUP BY TestSets.idGenTestBox\n'
+                          '       ) AS TestBoxGenIDs\n'
+                          '       LEFT OUTER JOIN TestBoxesWithStrings\n'
+                          '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
+                          'GROUP BY TestBoxesWithStrings.iPythonHexVersion\n'
+                          'ORDER BY TestBoxesWithStrings.iPythonHexVersion\n' );
+        workerDoFetch(None, fIdIsName = True);
+        for oCur in oCrit.aoPossible:
+            oCur.sDesc = TestBoxData.formatPythonVersionEx(oCur.oValue);
 
         # Testcases (see getTestCases).
         oCrit = oFilter.aCriteria[TestResultFilter.kiTestCases];

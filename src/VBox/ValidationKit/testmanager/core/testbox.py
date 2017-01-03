@@ -338,35 +338,55 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             dErrors[self.ksParam_ipLom] = 'Light-out-management IP is mandatory and a LOM is selected.'
         return dErrors;
 
-    def formatPythonVersion(self):
-        """
-        Unbuttons the version number and formats it as a version string.
-        """
-        if self.iPythonHexVersion is None:
+    @staticmethod
+    def formatPythonVersionEx(iPythonHexVersion):
+        """ Unbuttons the version number and formats it as a version string. """
+        if iPythonHexVersion is None:
             return 'N/A';
         return 'v%d.%d.%d.%d' \
-            % (  self.iPythonHexVersion >> 24,
-                (self.iPythonHexVersion >> 16) & 0xff,
-                (self.iPythonHexVersion >>  8) & 0xff,
-                 self.iPythonHexVersion        & 0xff);
+            % (  iPythonHexVersion >> 24,
+                (iPythonHexVersion >> 16) & 0xff,
+                (iPythonHexVersion >>  8) & 0xff,
+                 iPythonHexVersion        & 0xff);
+
+    def formatPythonVersion(self):
+        """ Unbuttons the version number and formats it as a version string. """
+        return self.formatPythonVersionEx(self.iPythonHexVersion);
+
+
+    @staticmethod
+    def getCpuFamilyEx(lCpuRevision):
+        """ Returns the CPU family for a x86 or amd64 testboxes."""
+        if lCpuRevision is None:
+            return 0;
+        return (lCpuRevision >> 24 & 0xff);
 
     def getCpuFamily(self):
         """ Returns the CPU family for a x86 or amd64 testboxes."""
-        if self.lCpuRevision is None:
+        return self.getCpuFamilyEx(self.lCpuRevision);
+
+    @staticmethod
+    def getCpuModelEx(lCpuRevision):
+        """ Returns the CPU model for a x86 or amd64 testboxes."""
+        if lCpuRevision is None:
             return 0;
-        return (self.lCpuRevision >> 24 & 0xff);
+        return (lCpuRevision >> 8 & 0xffff);
 
     def getCpuModel(self):
         """ Returns the CPU model for a x86 or amd64 testboxes."""
-        if self.lCpuRevision is None:
+        return self.getCpuModelEx(self.lCpuRevision);
+
+    @staticmethod
+    def getCpuSteppingEx(lCpuRevision):
+        """ Returns the CPU stepping for a x86 or amd64 testboxes."""
+        if lCpuRevision is None:
             return 0;
-        return (self.lCpuRevision >> 8 & 0xffff);
+        return (lCpuRevision & 0xff);
 
     def getCpuStepping(self):
         """ Returns the CPU stepping for a x86 or amd64 testboxes."""
-        if self.lCpuRevision is None:
-            return 0;
-        return (self.lCpuRevision & 0xff);
+        return self.getCpuSteppingEx(self.lCpuRevision);
+
 
     # The following is a translation of the g_aenmIntelFamily06 array in CPUMR3CpuId.cpp:
     kdIntelFamily06 = {
@@ -435,18 +455,19 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         0x07: 'NB_Gallatin',
     };
 
-    def queryCpuMicroarch(self):
+    @staticmethod
+    def queryCpuMicroarchEx(lCpuRevision, sCpuVendor):
         """ Try guess the microarch name for the cpu.  Returns None if we cannot. """
-        if self.lCpuRevision is None or self.sCpuVendor is None:
+        if lCpuRevision is None or sCpuVendor is None:
             return None;
-        uFam = self.getCpuFamily();
-        uMod = self.getCpuModel();
-        if self.sCpuVendor == 'GenuineIntel':
+        uFam = TestBoxData.getCpuFamilyEx(lCpuRevision);
+        uMod = TestBoxData.getCpuModelEx(lCpuRevision);
+        if sCpuVendor == 'GenuineIntel':
             if uFam == 6:
-                return self.kdIntelFamily06.get(uMod, None);
+                return TestBoxData.kdIntelFamily06.get(uMod, None);
             if uFam == 15:
-                return self.kdIntelFamily15.get(uMod, None);
-        elif self.sCpuVendor == 'AuthenticAMD':
+                return TestBoxData.kdIntelFamily15.get(uMod, None);
+        elif sCpuVendor == 'AuthenticAMD':
             if uFam == 0xf:
                 if uMod < 0x10:                             return 'K8_130nm';
                 if uMod >= 0x60 and uMod < 0x80:            return 'K8_65nm';
@@ -463,7 +484,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                 return None;
             if uFam == 0x16:
                 return 'Jaguar';
-        elif self.sCpuVendor == 'CentaurHauls':
+        elif sCpuVendor == 'CentaurHauls':
             if uFam == 0x05:
                 if uMod == 0x01: return 'Centaur_C6';
                 if uMod == 0x04: return 'Centaur_C6';
@@ -472,21 +493,33 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             if uFam == 0x06:
                 if uMod == 0x05: return 'VIA_C3_M2';
                 if uMod == 0x06: return 'VIA_C3_C5A';
-                if uMod == 0x07: return 'VIA_C3_C5B' if self.getCpuStepping() < 8 else 'VIA_C3_C5C';
+                if uMod == 0x07: return 'VIA_C3_C5B' if TestBoxData.getCpuSteppingEx(lCpuRevision) < 8 else 'VIA_C3_C5C';
                 if uMod == 0x08: return 'VIA_C3_C5N';
-                if uMod == 0x09: return 'VIA_C3_C5XL' if self.getCpuStepping() < 8 else 'VIA_C3_C5P';
+                if uMod == 0x09: return 'VIA_C3_C5XL' if TestBoxData.getCpuSteppingEx(lCpuRevision) < 8 else 'VIA_C3_C5P';
                 if uMod == 0x0a: return 'VIA_C7_C5J';
                 if uMod == 0x0f: return 'VIA_Isaiah';
         return None;
 
+    def queryCpuMicroarch(self):
+        """ Try guess the microarch name for the cpu.  Returns None if we cannot. """
+        return self.queryCpuMicroarchEx(self.lCpuRevision, self.sCpuVendor);
+
+    @staticmethod
+    def getPrettyCpuVersionEx(lCpuRevision, sCpuVendor):
+        """ Pretty formatting of the family/model/stepping with microarch optimizations. """
+        if lCpuRevision is None or sCpuVendor is None:
+            return u'<none>';
+        sMarch = TestBoxData.queryCpuMicroarchEx(lCpuRevision, sCpuVendor);
+        if sMarch is not None:
+            return '%s m%02X s%02X' \
+                 % (sMarch, TestBoxData.getCpuModelEx(lCpuRevision), TestBoxData.getCpuSteppingEx(lCpuRevision));
+        return 'fam%02X m%02X s%02X' \
+             % ( TestBoxData.getCpuFamilyEx(lCpuRevision), TestBoxData.getCpuModelEx(lCpuRevision),
+                 TestBoxData.getCpuSteppingEx(lCpuRevision));
+
     def getPrettyCpuVersion(self):
         """ Pretty formatting of the family/model/stepping with microarch optimizations. """
-        if self.lCpuRevision is None or self.sCpuVendor is None:
-            return u'<none>';
-        sMarch = self.queryCpuMicroarch();
-        if sMarch is not None:
-            return '%s m%02X s%02X' % (sMarch, self.getCpuModel(), self.getCpuStepping());
-        return 'fam%02X m%02X s%02X' % (self.getCpuFamily(), self.getCpuModel(), self.getCpuStepping());
+        return self.getPrettyCpuVersionEx(self.lCpuRevision, self.sCpuVendor);
 
     def getArchBitString(self):
         """ Returns 32-bit, 64-bit, <none>, or sCpuArch. """
