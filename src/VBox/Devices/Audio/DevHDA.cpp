@@ -980,12 +980,6 @@ static int       hdaRegWriteSDBDPL(PHDASTATE pThis, uint32_t iReg, uint32_t u32V
 static int       hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value);
 /** @} */
 
-/* Locking + logging. */
-#ifdef IN_RING3
-DECLINLINE(int)  hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value);
-DECLINLINE(void) hdaRegWriteSDUnlock(PHDASTREAM pStream);
-#endif
-
 /** @name Generic register read/write functions.
  * @{
  */
@@ -1259,6 +1253,7 @@ static uint32_t const g_afMasks[5] =
 };
 
 
+#ifdef IN_RING3
 /**
  * Retrieves the number of bytes of a FIFOW register.
  *
@@ -1280,7 +1275,6 @@ DECLINLINE(uint8_t) hdaSDFIFOWToBytes(uint32_t u32RegFIFOW)
 }
 
 
-#ifdef IN_RING3
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB)
 {
     AssertPtrReturn(pThis,   0);
@@ -2433,7 +2427,9 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     /* Make sure to handle interrupts here as well. */
     hdaProcessInterrupt(pThis);
 
-    hdaRegWriteSDUnlock(pStream);
+    rc2 = RTCritSectLeave(&pStream->State.CritSect);
+    AssertRC(rc2);
+
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
     RT_NOREF_PV(pThis); RT_NOREF_PV(iReg); RT_NOREF_PV(u32Value);
@@ -2990,49 +2986,6 @@ static int hdaRegWriteSDBDPU(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     return hdaRegWriteSDBDPX(pThis, iReg, u32Value, HDA_SD_NUM_FROM_REG(pThis, BDPU, iReg));
 }
-
-#ifdef IN_RING3
-/**
- * XXX
- *
- * @return  VBox status code.  ALL THE CALLERS IGNORES THIS. DUH.
- *
- * @param   pThis               Pointer to HDA state.
- * @param   iReg                Register to write (logging only).
- * @param   u32Value            Value to write (logging only).
- */
-DECLINLINE(int) hdaRegWriteSDLock(PHDASTATE pThis, PHDASTREAM pStream, uint32_t iReg, uint32_t u32Value)
-{
-    RT_NOREF(pThis, iReg, u32Value);
-    AssertPtr(pThis);   /* don't bother returning errors */
-    AssertPtr(pStream);
-
-# ifdef VBOX_STRICT
-    /* Check if the SD's RUN bit is set. */
-    uint32_t u32SDCTL = HDA_STREAM_REG(pThis, CTL, pStream->u8SD);
-    bool fIsRunning   = RT_BOOL(u32SDCTL & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
-    if (fIsRunning)
-    {
-        LogFunc(("[SD%RU8]: Warning: Cannot write to register 0x%x (0x%x) when RUN bit is set (%R[sdctl])\n",
-                 pStream->u8SD, iReg, u32Value, u32SDCTL));
-#  ifdef DEBUG_andy
-        AssertFailed();
-#  endif
-        return VERR_ACCESS_DENIED;
-    }
-# endif
-
-    return RTCritSectEnter(&pStream->State.CritSect);
-}
-
-DECLINLINE(void) hdaRegWriteSDUnlock(PHDASTREAM pStream)
-{
-    AssertPtrReturnVoid(pStream);
-
-    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
-    AssertRC(rc2);
-}
-#endif /* IN_RING3 */
 
 static int hdaRegReadIRS(PHDASTATE pThis, uint32_t iReg, uint32_t *pu32Value)
 {
