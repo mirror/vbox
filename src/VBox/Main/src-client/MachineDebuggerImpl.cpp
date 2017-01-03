@@ -888,9 +888,9 @@ static DECLCALLBACK(size_t) MachineDebuggerInfoOutput(void *pvArg, const char *p
 /**
  * @interface_method_impl{DBGFINFOHLP,pfnPrintfV}
  */
-static DECLCALLBACK(void) MachineDebuggerInfoPrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list va)
+static DECLCALLBACK(void) MachineDebuggerInfoPrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
-    RTStrFormatV(MachineDebuggerInfoOutput, (void *)pHlp, NULL,  NULL, pszFormat, va);
+    RTStrFormatV(MachineDebuggerInfoOutput, (void *)pHlp, NULL,  NULL, pszFormat, args);
 }
 
 /**

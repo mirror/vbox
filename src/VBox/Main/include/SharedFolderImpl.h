@@ -35,9 +35,9 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aMachine, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
+    HRESULT init(Machine *aMachine, const com::Utf8Str &aName, const com::Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
     HRESULT initCopy(Machine *aMachine, SharedFolder *aThat);
-    HRESULT init(Console *aConsole, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
+    HRESULT init(Console *aConsole, const com::Utf8Str &aName, const com::Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
 //     HRESULT init(VirtualBox *aVirtualBox, const Utf8Str &aName, const Utf8Str &aHostPath, bool aWritable, bool aAutoMount, bool fFailOnError);
     void uninit();
 

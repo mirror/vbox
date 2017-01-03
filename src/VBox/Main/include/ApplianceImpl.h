@@ -177,7 +177,7 @@ private:
 
     void i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                        uint32_t ulAddressOnParent,
-                                       Utf8Str &controllerType,
+                                       Utf8Str &controllerName,
                                        int32_t &lControllerPort,
                                        int32_t &lDevice);
 

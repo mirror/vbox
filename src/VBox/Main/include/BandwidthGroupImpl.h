@@ -36,7 +36,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(BandwidthControl *aParent,
-                 const Utf8Str &aName,
+                 const com::Utf8Str &aName,
                  BandwidthGroupType_T aType,
                  LONG64 aMaxBytesPerSec);
     HRESULT init(BandwidthControl *aParent, BandwidthGroup *aThat, bool aReshare = false);

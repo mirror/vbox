@@ -266,6 +266,14 @@ HRESULT VirtualBoxBase::handleUnexpectedExceptions(VirtualBoxBase *const aThis, 
  *  indicates the error severity is reset to zero to make sure the receiver will
  *  recognize that the created error info object represents a warning rather
  *  than an error.
+ *
+ *  @param  aResultCode
+ *  @param  aIID
+ *  @param  pcszComponent
+ *  @param  aText
+ *  @param  aWarning
+ *  @param  aLogIt
+ *  @param  aResultDetail
  */
 /* static */
 HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
@@ -446,8 +454,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
  * class interface ID and component name inserted correctly. This uses the
  * virtual getClassIID() and getComponentName() methods which are automatically
  * defined by the VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT macro.
- * @param aResultCode
- * @param pcsz
+ * @param   aResultCode
  * @return
  */
 HRESULT VirtualBoxBase::setError(HRESULT aResultCode)
@@ -465,7 +472,8 @@ HRESULT VirtualBoxBase::setError(HRESULT aResultCode)
  * class interface ID and component name inserted correctly. This uses the
  * virtual getClassIID() and getComponentName() methods which are automatically
  * defined by the VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT macro.
- * @param aResultCode
+ * @param   aResultCode
+ * @param   pcsz
  * @return
  */
 HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
@@ -487,7 +495,7 @@ HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
  * class interface ID and component name inserted correctly. This uses the
  * virtual getClassIID() and getComponentName() methods which are automatically
  * defined by the VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT macro.
- * @param ei
+ * @param   ei
  * @return
  */
 HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)

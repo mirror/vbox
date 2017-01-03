@@ -891,6 +891,7 @@ RTVFSIOSTREAM Appliance::i_importSetupDigestCalculationForGivenIoStream(RTVFSIOS
 /**
  * Opens a source file (for reading obviously).
  *
+ * @param   stack
  * @param   rstrSrcPath         The source file to open.
  * @param   pszManifestEntry    The manifest entry of the source file.  This is
  *                              used when constructing our manifest using a pass
@@ -992,6 +993,9 @@ HRESULT Appliance::i_importCreateAndWriteDestinationFile(Utf8Str const &rstrDstP
 
 /**
  *
+ * @param   stack               Import stack.
+ * @param   rstrSrcPath         Source path.
+ * @param   rstrDstPath         Destination path.
  * @param   pszManifestEntry    The manifest entry of the source file.  This is
  *                              used when constructing our manifest using a pass
  *                              thru.
@@ -1040,6 +1044,9 @@ void Appliance::i_importCopyFile(ImportStack &stack, Utf8Str const &rstrSrcPath,
 
 /**
  *
+ * @param   stack
+ * @param   rstrSrcPath
+ * @param   rstrDstPath
  * @param   pszManifestEntry    The manifest entry of the source file.  This is
  *                              used when constructing our manifest using a pass
  *                              thru.
@@ -1987,8 +1994,8 @@ HRESULT Appliance::i_readTailProcessing(TaskOVF *pTask)
  *
  * 1) from the public Appliance::ImportMachines().
  *
- * @param aLocInfo
- * @param aProgress
+ * @param locInfo
+ * @param progress
  * @return
  */
 HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
@@ -2363,7 +2370,7 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
             controllerName = "SATA";
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
-        break;
+            break;
 
         case ovf::HardDiskController::SCSI:
         {
@@ -2373,8 +2380,8 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
                 controllerName = "SCSI";
             lControllerPort = (long)ulAddressOnParent;
             lDevice = (long)0;
+            break;
         }
-        break;
 
         default: break;
     }
@@ -3447,9 +3454,9 @@ l_skipped:
  *
  *  4)  Create the VirtualBox machine with the modfified machine config.
  *
- * @param config
- * @param pNewMachine
- * @param stack
+ * @param   vsdescThis
+ * @param   pReturnNewMachine 
+ * @param   stack
  */
 void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                     ComPtr<IMachine> &pReturnNewMachine,

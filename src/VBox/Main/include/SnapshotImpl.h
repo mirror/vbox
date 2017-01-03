@@ -39,8 +39,8 @@ public:
     // public initializer/uninitializer only for internal purposes
     HRESULT init(VirtualBox *aVirtualBox,
                  const Guid &aId,
-                 const Utf8Str &aName,
-                 const Utf8Str &aDescription,
+                 const com::Utf8Str &aName,
+                 const com::Utf8Str &aDescription,
                  const RTTIMESPEC &aTimeStamp,
                  SnapshotMachine *aMachine,
                  Snapshot *aParent);
@@ -79,7 +79,7 @@ public:
     RTTIMESPEC i_getTimeStamp() const;
 
     ComObjPtr<Snapshot> i_findChildOrSelf(IN_GUID aId);
-    ComObjPtr<Snapshot> i_findChildOrSelf(const Utf8Str &aName);
+    ComObjPtr<Snapshot> i_findChildOrSelf(const com::Utf8Str &aName);
 
     void i_updateSavedStatePaths(const Utf8Str &strOldPath,
                                  const Utf8Str &strNewPath);

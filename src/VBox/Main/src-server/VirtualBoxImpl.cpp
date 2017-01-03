@@ -3187,7 +3187,7 @@ VirtualBox::MachinesOList &VirtualBox::i_getMachinesList(void)
  *  of registered machines.
  *
  * @param aId Machine UUID to look for.
- * @param aPermitInaccessible If true, inaccessible machines will be found;
+ * @param fPermitInaccessible If true, inaccessible machines will be found;
  *                  if false, this will fail if the given machine is inaccessible.
  * @param aSetError If true, set errorinfo if the machine is not found.
  * @param aMachine Returned machine, if found.
@@ -3348,8 +3348,8 @@ static HRESULT i_validateMachineGroupHelper(const Utf8Str &aGroup, bool fPrimary
 /**
  * Validates a machine group.
  *
- * @param aMachineGroup     Machine group.
- * @param fPrimary          Set if this is the primary group.
+ * @param aGroup    Machine group.
+ * @param fPrimary  Set if this is the primary group.
  *
  * @return S_OK or E_INVALIDARG
  */
@@ -3451,7 +3451,7 @@ HRESULT VirtualBox::i_findHardDiskById(const Guid &aId,
  * registered hard disks. If both ID and location are specified, the first
  * object that matches either of them (not necessarily both) is returned.
  *
- * @param aLocation     Full location specification. Must not be empty.
+ * @param strLocation   Full location specification. Must not be empty.
  * @param aSetError     If @c true , the appropriate error info is set in case
  *                      when the hard disk is not found.
  * @param aHardDisk     Where to store the found hard disk object (can be NULL).
@@ -3772,7 +3772,7 @@ const Utf8Str& VirtualBox::i_homeDir() const
  * Calculates the absolute path of the given path taking the VirtualBox home
  * directory as the current directory.
  *
- * @param  aPath    Path to calculate the absolute path for.
+ * @param  strPath  Path to calculate the absolute path for.
  * @param  aResult  Where to put the result (used only on success, can be the
  *                  same Utf8Str instance as passed in @a aPath).
  * @return IPRT result.
@@ -4822,8 +4822,8 @@ const com::Utf8Str &VirtualBox::i_getVersionNormalized()
  * extracted relative path will be created based on the current working
  * directory which is normally unknown.
  *
- * @param aFileName     Full file name which path is checked/created.
- * @param aCreate       Flag if the path should be created if it doesn't exist.
+ * @param strFileName   Full file name which path is checked/created.
+ * @param fCreate       Flag if the path should be created if it doesn't exist.
  *
  * @return Extended error information on failure to check/create the path.
  */

@@ -178,7 +178,7 @@ public:
                                 bool aSetError,
                                 ComObjPtr<Machine> *aMachine = NULL);
 
-    HRESULT i_validateMachineGroup(const Utf8Str &aGroup, bool fPrimary);
+    HRESULT i_validateMachineGroup(const com::Utf8Str &aGroup, bool fPrimary);
     HRESULT i_convertMachineGroups(const std::vector<com::Utf8Str> aMachineGroups, StringsList *pllMachineGroups);
 
     HRESULT i_findHardDiskById(const Guid &id,

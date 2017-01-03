@@ -41,7 +41,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aParent, const Utf8Str &aName, USBControllerType_T enmType);
+    HRESULT init(Machine *aParent, const com::Utf8Str &aName, USBControllerType_T enmType);
     HRESULT init(Machine *aParent, USBController *aThat, bool fReshare = false);
     HRESULT initCopy(Machine *aParent, USBController *aThat);
     void uninit();

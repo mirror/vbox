@@ -168,16 +168,16 @@ HRESULT HostDnsServiceDarwin::updateInfo()
     CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store,
                                                             kStateNetworkGlobalDNSKey);
     /**
-     * 0:vvl@nb-mbp-i7-2(0)# scutil
-     * > get State:/Network/Global/DNS
-     * > d.show
-     * <dictionary> {
+     * # scutil
+     * \> get State:/Network/Global/DNS
+     * \> d.show
+     * \<dictionary\> {
      * DomainName : vvl-domain
-     * SearchDomains : <array> {
+     * SearchDomains : \<array\> {
      * 0 : vvl-domain
      * 1 : de.vvl-domain.com
      * }
-     * ServerAddresses : <array> {
+     * ServerAddresses : \<array\> {
      * 0 : 192.168.1.4
      * 1 : 192.168.1.1
      * 2 : 8.8.4.4

@@ -592,7 +592,7 @@ public:
      * the name of the C class as the first argument ("context of
      * translation"). See VirtualBoxBase::translate() for more info.
      *
-     * @param aSourceText   String to translate.
+     * @param pcszSourceText String to translate.
      * @param aComment      Comment to the string to resolve possible
      *                      ambiguities (NULL means no comment).
      *
@@ -640,8 +640,8 @@ public:
  * getComponentName() methods. If this macro is not present, instances
  * of a class derived from VirtualBoxBase cannot be instantiated.
  *
- * @param X The class name, e.g. "Class".
- * @param IX The interface name which this class implements, e.g. "IClass".
+ * @param cls The class name, e.g. "Class".
+ * @param iface The interface name which this class implements, e.g. "IClass".
  */
 #ifdef VBOX_WITH_XPCOM
   #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls, iface) \

@@ -561,11 +561,11 @@ Utf8Str GuestProcess::i_guestErrorToString(int guestRc)
 }
 
 /**
- * Returns @true if the passed in error code indicates an error which came from the guest side,
- * or @false if not.
+ * Returns @c true if the passed in error code indicates an error which came
+ * from the guest side, or @c false if not.
  *
- * @return  bool                @true if the passed in error code indicates an error which came from the guest side,
- *                              or @false if not.
+ * @return  bool                @c true if the passed in error code indicates an error which came
+ *                              from the guest side, or @c false if not.
  * @param   rc                  Error code to check.
  */
 /* static */

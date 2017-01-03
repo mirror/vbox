@@ -465,10 +465,15 @@ int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
  *
  * @returns IPRT status code.
  * @param   pCtx                Pointer to video recording context to initialize Framebuffer width.
- * @param   uScreeen            Screen number.
- * @param   strFile             File to save the recorded data
- * @param   uTargetWidth        Width of the target image in the video recoriding file (movie)
- * @param   uTargetHeight       Height of the target image in video recording file.
+ * @param   uScreen             Screen number.
+ * @param   pszFile             File to save the recorded data
+ * @param   uWidth              Width of the target image in the video recoriding file (movie)
+ * @param   uHeight             Height of the target image in video recording file.
+ * @param   uRate               Rate.
+ * @param   uFps                FPS.
+ * @param   uMaxTime
+ * @param   uMaxFileSize
+ * @param   pszOptions
  */
 int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
                      uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps,
@@ -709,9 +714,7 @@ bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSta
  * image to target file.
  *
  * @returns IPRT status code.
- * @param   pCtx  Pointer to video recording context.
- * @param   uSourceWidth      Width of the source image.
- * @param   uSourceHeight     Height of the source image.
+ * @param   pStrm             Stream.
  */
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm)
 {
@@ -755,7 +758,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm)
  * VideoRec utility function to convert RGB to YUV.
  *
  * @returns IPRT status code.
- * @param   pCtx      Pointer to video recording context.
+ * @param   pStrm      Strm.
  */
 static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
 {

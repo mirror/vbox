@@ -558,7 +558,7 @@ HRESULT USBProxyBackend::getType(com::Utf8Str &aType)
  * Sort a list of USB devices.
  *
  * @returns Pointer to the head of the sorted doubly linked list.
- * @param   aDevices        Head pointer (can be both singly and doubly linked list).
+ * @param   pDevices        Head pointer (can be both singly and doubly linked list).
  */
 static PUSBDEVICE sortDevices(PUSBDEVICE pDevices)
 {

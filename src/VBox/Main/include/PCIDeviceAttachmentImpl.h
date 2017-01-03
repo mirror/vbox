@@ -36,7 +36,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(IMachine *    aParent,
-                 const Utf8Str &aName,
+                 const Utf8Str &aDevName,
                  LONG          aHostAddess,
                  LONG          aGuestAddress,
                  BOOL          fPhysical);

@@ -637,7 +637,12 @@ PREDEFINED            += \
     "COMSETTER(n)=set_##n" \
     "ComSafeArrayIn(aType,aArg)=aType *aArg" \
     "ComSafeArrayOut(aType, aArg)=aType **aArg" \
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(a)=
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(a)= \
+    DECLARE_NOT_AGGREGATABLE(a)= \
+    DECLARE_CLASSFACTORY()= \
+    DECLARE_CLASSFACTORY_SINGLETON(a)= \
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(a,b)= \
+    "DECLARE_EMPTY_CTOR_DTOR(a):=a(); virtual ~a();"
 
 # COM hacks from From http://www.stack.nl/~dimitri/doxygen/preprocessing.html
 PREDEFINED          += \

@@ -115,7 +115,7 @@ class HostDnsMonitorProxy
     Data *m;
 };
 
-# ifdef RT_OS_DARWIN
+# if defined(RT_OS_DARWIN) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceDarwin : public HostDnsMonitor
 {
   public:
@@ -134,7 +134,7 @@ class HostDnsServiceDarwin : public HostDnsMonitor
     Data *m;
 };
 # endif
-# ifdef RT_OS_WINDOWS
+# if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceWin : public HostDnsMonitor
 {
     public:
@@ -154,7 +154,8 @@ class HostDnsServiceWin : public HostDnsMonitor
     Data *m;
 };
 # endif
-# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD)
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) \
+    || defined(DOXYGEN_RUNNING)
 class HostDnsServiceResolvConf: public HostDnsMonitor
 {
   public:
@@ -175,7 +176,7 @@ class HostDnsServiceResolvConf: public HostDnsMonitor
     struct Data;
     Data *m;
 };
-#  if defined(RT_OS_SOLARIS)
+#  if defined(RT_OS_SOLARIS) || defined(DOXYGEN_RUNNING)
 /**
  * XXX: https://blogs.oracle.com/praks/entry/file_events_notification
  */
@@ -189,7 +190,8 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
     }
 };
 
-#  elif defined(RT_OS_LINUX)
+#  endif
+#  if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceLinux : public HostDnsServiceResolvConf
 {
   public:
@@ -204,7 +206,8 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
     virtual int monitorWorker();
 };
 
-#  elif defined(RT_OS_FREEBSD)
+#  endif
+#  if defined(RT_OS_FREEBSD) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
 {
     public:
@@ -215,7 +218,8 @@ class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
     }
 };
 
-#  elif defined(RT_OS_OS2)
+#  endif
+#  if defined(RT_OS_OS2) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceOs2 : public HostDnsServiceResolvConf
 {
   public:

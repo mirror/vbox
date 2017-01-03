@@ -33,7 +33,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent,
-                 const Utf8Str &aName,
+                 const com::Utf8Str &aName,
                  StorageBus_T aBus,
                  ULONG aInstance,
                  bool fBootable);

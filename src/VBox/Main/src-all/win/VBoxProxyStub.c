@@ -279,9 +279,6 @@ ULONG WINAPI CStdStubBuffer2_Release(IRpcStubBuffer *pThis)                     
 
 /**
  * Pure virtual method implementation referenced by VirtualBox_p.c
- *
- * @returns New reference count.
- * @param   pThis               Buffer to release.
  */
 void __cdecl _purecall(void)                                                              /* see DLLDUMMYPURECALL in RpcProxy.h */
 {
@@ -369,10 +366,6 @@ typedef struct VBPSREGSTATE
  * @param   hkeyRoot        The registry root tree constant.
  * @param   pszSubRoot      The path to the where the classes are registered,
  *                          NULL if @a hkeyRoot.
- * @param   hkeyAltRoot     The registry root tree constant for the alternative
- *                          registrations (remove only).
- * @param   pszAltSubRoot   The path to where classes could also be registered,
- *                          but shouldn't be in our setup.
  * @param   fDelete         Whether to delete registrations first.
  * @param   fUpdate         Whether to update registrations.
  * @param   fSamWow         KEY_WOW64_32KEY or 0.
@@ -1266,6 +1259,7 @@ LSTATUS VbpsRegisterClassId(VBPSREGSTATE *pState, const CLSID *pClsId, const cha
  * Register modules and classes from the VirtualBox.xidl file.
  *
  * @returns COM status code.
+ * @param   pState
  * @param   pwszVBoxDir         The VirtualBox application directory.
  * @param   fIs32On64           Set if this is the 32-bit on 64-bit component.
  *
@@ -1422,10 +1416,6 @@ static void vbpsUpdateProxyStubRegistration(VBPSREGSTATE *pState, PCRTUTF16 pwsz
  * and NdrDllUnregisterProxy.
  *
  * @param   pState              The registry modifier state.
- * @param   pwszVBoxDir         The VirtualBox install directory (unicode),
- *                              trailing slash.
- * @param   fIs32On64           Set if we're registering the 32-bit proxy stub
- *                              on a 64-bit system.
  */
 static void vbpsUpdateInterfaceRegistrations(VBPSREGSTATE *pState)
 {

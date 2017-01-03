@@ -271,7 +271,7 @@ RTCString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPack
  *
  * @returns NULL on success, pointer to an error message on failure (caller
  *          deletes it).
- * @param   a_pszDir        The directory containing the description file.
+ * @param   hVfsFile        The file handle of the description file.
  * @param   a_pExtPackDesc  Where to store the extension pack descriptor.
  * @param   a_pObjInfo      Where to store the object info for the file (unix
  *                          attribs). Optional.
@@ -677,7 +677,7 @@ static void vboxExtPackSetError(char *pszError, size_t cbError, const char *pszF
  * Verifies the manifest and its signature.
  *
  * @returns VBox status code, failures with message.
- * @param   hManifestFile       The xml from the extension pack.
+ * @param   hXmlFile            The xml from the extension pack.
  * @param   pszExtPackName      The expected extension pack name.  This can be
  *                              NULL, in which we don't have any expectations.
  * @param   pszError            Where to store an error message on failure.

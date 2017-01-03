@@ -638,8 +638,8 @@ ComObjPtr<Snapshot> Snapshot::i_findChildOrSelf(const Utf8Str &aName)
 
 /**
  * Internal implementation for Snapshot::updateSavedStatePaths (below).
- * @param aOldPath
- * @param aNewPath
+ * @param   strOldPath
+ * @param   strNewPath
  */
 void Snapshot::i_updateSavedStatePathsImpl(const Utf8Str &strOldPath,
                                            const Utf8Str &strNewPath)
@@ -713,13 +713,13 @@ bool Snapshot::i_sharesSavedStateFile(const Utf8Str &strPath,
  *
  *  Intended to be called by Machine::openConfigLoader() only.
  *
- *  @param aOldPath old path (full)
- *  @param aNewPath new path (full)
+ *  @param  strOldPath old path (full)
+ *  @param  strNewPath new path (full)
  *
  *  @note Locks the machine (for the snapshots tree) +  this object + children for writing.
  */
 void Snapshot::i_updateSavedStatePaths(const Utf8Str &strOldPath,
-                                      const Utf8Str &strNewPath)
+                                       const Utf8Str &strNewPath)
 {
     LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", strOldPath.c_str(), strNewPath.c_str()));
 
@@ -1857,7 +1857,10 @@ void SessionMachine::i_takeSnapshotProgressCancelCallback(void *pvUser)
  *
  * @note Locks VirtualBox and this object for writing.
  *
- * @param aSuccess Whether Console was successful with the client-side snapshot things.
+ * @param   task
+ * @param   alock
+ * @param   aSuccess    Whether Console was successful with the client-side
+ *                      snapshot things.
  * @return
  */
 HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWriteLock &alock, bool aSuccess)
@@ -2616,7 +2619,7 @@ typedef std::list<MediumDeleteRec> MediumDeleteRecList;
  *
  * @note Locks the machine + the snapshot + the media tree for writing!
  *
- * @param pTask Task data.
+ * @param task Task data.
  */
 void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
 {

@@ -76,15 +76,15 @@ USBProxyBackendOs2::USBProxyBackendOs2(USBProxyService *aUsbProxyService, const 
                     }
                 }
 
-                LogRel(("USBProxyServiceOs2: failed to register change notification, rc=%d\n", rc));
+                LogRel(("USBProxyBackendOs2: failed to register change notification, rc=%d\n", rc));
             }
             else
-                LogRel(("USBProxyServiceOs2: failed to load usbcalls\n"));
+                LogRel(("USBProxyBackendOs2: failed to load usbcalls\n"));
 
             DosFreeModule(mhmod);
         }
         else
-            LogRel(("USBProxyServiceOs2: failed to load usbcalls, rc=%d\n", rc));
+            LogRel(("USBProxyBackendOs2: failed to load usbcalls, rc=%d\n", rc));
         mhmod = NULLHANDLE;
     }
     else
@@ -98,7 +98,7 @@ USBProxyBackendOs2::USBProxyBackendOs2(USBProxyService *aUsbProxyService, const 
 /**
  * Stop all service threads and free the device chain.
  */
-USBProxyServiceOs2::~USBProxyServiceOs2()
+USBProxyBackendOs2::~USBProxyBackendOs2()
 {
     LogFlowThisFunc(("\n"));
 
@@ -127,7 +127,7 @@ USBProxyServiceOs2::~USBProxyServiceOs2()
 }
 
 
-int USBProxyServiceOs2::captureDevice(HostUSBDevice *aDevice)
+int USBProxyBackendOs2::captureDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -146,7 +146,7 @@ int USBProxyServiceOs2::captureDevice(HostUSBDevice *aDevice)
 }
 
 
-int USBProxyServiceOs2::releaseDevice(HostUSBDevice *aDevice)
+int USBProxyBackendOs2::releaseDevice(HostUSBDevice *aDevice)
 {
     AssertReturn(aDevice, VERR_GENERAL_FAILURE);
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
@@ -165,7 +165,7 @@ int USBProxyServiceOs2::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
-bool USBProxyServiceOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
+bool USBProxyBackendOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                            SessionMachine **aIgnoreMachine)
 {
     AssertReturn(aDevice, false);
@@ -175,14 +175,14 @@ bool USBProxyServiceOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aU
 
 
 
-int USBProxyServiceOs2::wait(RTMSINTERVAL aMillies)
+int USBProxyBackendOs2::wait(RTMSINTERVAL aMillies)
 {
     int rc = DosWaitEventSem(mhev, aMillies);
     return RTErrConvertFromOS2(rc);
 }
 
 
-int USBProxyServiceOs2::interruptWait(void)
+int USBProxyBackendOs2::interruptWait(void)
 {
     int rc = DosPostEventSem(mhev);
     return rc == NO_ERROR || rc == ERROR_ALREADY_POSTED
@@ -192,7 +192,7 @@ int USBProxyServiceOs2::interruptWait(void)
 
 #include <stdio.h>
 
-PUSBDEVICE USBProxyServiceOs2::getDevices(void)
+PUSBDEVICE USBProxyBackendOs2::getDevices(void)
 {
     /*
      * Count the devices.

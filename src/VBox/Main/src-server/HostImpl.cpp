@@ -1153,7 +1153,7 @@ HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
  * Returns the name string of the host operating system
  *
  * @returns COM status code
- * @param   os address of result variable
+ * @param   aOperatingSystem result variable
  */
 HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
 {

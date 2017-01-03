@@ -65,6 +65,7 @@ void HostNetworkInterface::FinalRelease()
  * @returns COM result indicator
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
+ * @param   ifType interface type
  */
 HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aGuid, HostNetworkInterfaceType_T ifType)
 {
@@ -362,10 +363,10 @@ HRESULT HostNetworkInterface::getIPV6Address(com::Utf8Str &aIPV6Address)
 }
 
 /**
- * Returns the IP V6 network mask of the host network interface.
+ * Returns the IP V6 network mask prefix length of the host network interface.
  *
  * @returns COM status code
- * @param   aIPV6Mask address of result pointer
+ * @param   aIPV6NetworkMaskPrefixLength address of result pointer
  */
 HRESULT HostNetworkInterface::getIPV6NetworkMaskPrefixLength(ULONG *aIPV6NetworkMaskPrefixLength)
 {

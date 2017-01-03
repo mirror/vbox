@@ -599,8 +599,8 @@ int NativeEventQueue::interruptEventQueueProcessing()
 /**
  *  Posts an event to this event loop asynchronously.
  *
- *  @param  event   the event to post, must be allocated using |new|
- *  @return         TRUE if successful and false otherwise
+ *  @param  pEvent  the event to post, must be allocated using |new|
+ *  @return         @c TRUE if successful and false otherwise
  */
 BOOL NativeEventQueue::postEvent(NativeEvent *pEvent)
 {

@@ -173,7 +173,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
 DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
                                               const char *pszUser, const char *pszDomain,
                                               uint32_t uState,
-                                              const uint8_t *puDetails, uint32_t cbDetails)
+                                              const uint8_t *pabDetails, uint32_t cbDetails)
 {
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, Connector);
     AssertPtr(pDrv);
@@ -185,7 +185,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
     AssertPtrReturnVoid(pGuest);
 
     pGuest->i_onUserStateChange(Bstr(pszUser), Bstr(pszDomain), (VBoxGuestUserState)uState,
-                                puDetails, cbDetails);
+                                pabDetails, cbDetails);
 }
 
 
@@ -311,7 +311,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
  * are given and the connector should update its internal state.
  *
  * @param   pInterface          Pointer to this interface.
- * @param   newCapabilities     New capabilities.
+ * @param   fNewCaps            New capabilities.
  * @thread  The emulation thread.
  */
 DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t fNewCaps)

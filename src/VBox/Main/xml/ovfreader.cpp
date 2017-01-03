@@ -119,8 +119,8 @@ void OVFReader::parse()
  * Private helper method that goes thru the elements of the given "current" element in the OVF XML
  * and handles the contained child elements (which can be "Section" or "Content" elements).
  *
- * @param pcszPath Path spec of the XML file, for error messages.
- * @param pReferencesElement "References" element from OVF, for looking up file specifications; can be NULL if no such element is present.
+ * @param pReferencesElem "References" element from OVF, for looking up file specifications;
+ *                        can be NULL if no such element is present.
  * @param pCurElem Element whose children are to be analyzed here.
  * @return
  */
@@ -294,8 +294,6 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
  * Private helper method that handles network sections in the OVF XML.
  * Gets called indirectly from IAppliance::read().
  *
- * @param pcszPath Path spec of the XML file, for error messages.
- * @param pSectionElem Section element for which this helper is getting called.
  * @return
  */
 void OVFReader::HandleNetworkSection(const xml::ElementNode * /* pSectionElem */)
@@ -321,8 +319,7 @@ void OVFReader::HandleNetworkSection(const xml::ElementNode * /* pSectionElem */
  * Private helper method that handles a "VirtualSystem" element in the OVF XML.
  * Gets called indirectly from IAppliance::read().
  *
- * @param pcszPath
- * @param pContentElem
+ * @param pelmVirtualSystem
  * @return
  */
 void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSystem)

@@ -1535,7 +1535,7 @@ static DECLCALLBACK(int) fntWatchdog(RTTHREAD hThreadSelf, void *pvUser)
  * functions, which raise specific SOAP faults.
  *
  * @param soap
- * @param str
+ * @param pcsz
  * @param extype
  * @param ex
  */
@@ -1606,7 +1606,7 @@ std::string ConvertComString(const com::Bstr &bstr)
 /**
  * Return a safe C++ string from the given COM UUID,
  * without crashing if the UUID is empty.
- * @param bstr
+ * @param uuid
  * @return
  */
 std::string ConvertComString(const com::Guid &uuid)
@@ -1797,9 +1797,6 @@ class WebServiceSessionPrivate
  * Constructor for the websession object.
  *
  * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
- *
- * @param username
- * @param password
  */
 WebServiceSession::WebServiceSession()
     : _uNextObjectID(1),        // avoid 0 for no real reason
@@ -1988,7 +1985,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
  *
  * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
- * @param pcu pointer to a COM object.
+ * @param pObject pointer to a COM object.
  * @return The existing ManagedObjectRef that represents the COM object, or NULL if there's none yet.
  */
 ManagedObjectRef* WebServiceSession::findRefFromPtr(const IUnknown *pObject)
@@ -2363,9 +2360,9 @@ int __vbox__IManagedObjectRef_USCORErelease(
  * a much better solution, both for performance and cleanliness, for the webservice
  * client to clean up itself.
  *
- * @param
- * @param vbox__IWebsessionManager_USCORElogon
- * @param vbox__IWebsessionManager_USCORElogonResponse
+ * @param soap
+ * @param req
+ * @param resp
  * @return
  */
 int __vbox__IWebsessionManager_USCORElogon(
@@ -2453,9 +2450,8 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
 /**
  * hard-coded implementation for IWebsessionManager::logoff.
  *
- * @param
- * @param vbox__IWebsessionManager_USCORElogon
- * @param vbox__IWebsessionManager_USCORElogonResponse
+ * @param req
+ * @param resp
  * @return
  */
 int __vbox__IWebsessionManager_USCORElogoff(

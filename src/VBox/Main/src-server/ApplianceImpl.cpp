@@ -269,7 +269,7 @@ static const osTypePattern g_osTypesPattern64[] =
 /**
  * Private helper func that suggests a VirtualBox guest OS type
  * for the given OVF operating system type.
- * @param osTypeVBox
+ * @param strType
  * @param c
  * @param cStr
  */
@@ -445,7 +445,7 @@ void Appliance::uninit()
 
 /**
  * Public method implementation.
- * @param
+ * @param   aPath
  * @return
  */
 HRESULT Appliance::getPath(com::Utf8Str &aPath)
@@ -462,7 +462,7 @@ HRESULT Appliance::getPath(com::Utf8Str &aPath)
 
 /**
  * Public method implementation.
- * @param
+ * @param aDisks
  * @return
  */
 HRESULT Appliance::getDisks(std::vector<com::Utf8Str> &aDisks)
@@ -530,7 +530,7 @@ HRESULT Appliance::getCertificate(ComPtr<ICertificate> &aCertificateInfo)
 
 /**
  * Public method implementation.
- * @param
+ * @param   aVirtualSystemDescriptions
  * @return
  */
 HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSystemDescription> > &aVirtualSystemDescriptions)
@@ -552,7 +552,7 @@ HRESULT Appliance::getVirtualSystemDescriptions(std::vector<ComPtr<IVirtualSyste
 
 /**
  * Public method implementation.
- * @param aDisks
+ * @param aMachines
  * @return
  */
 HRESULT Appliance::getMachines(std::vector<com::Utf8Str> &aMachines)
@@ -1563,8 +1563,8 @@ HRESULT VirtualSystemDescription::addDescription(VirtualSystemDescriptionType_T 
  * Internal method; adds a new description item to the member list.
  * @param aType Type of description for the new item.
  * @param strRef Reference item; only used with hard disk controllers.
- * @param aOrigValue Corresponding original value from OVF.
- * @param aAutoValue Initial configuration value (can be overridden by caller with setFinalValues).
+ * @param aOvfValue Corresponding original value from OVF.
+ * @param aVBoxValue Initial configuration value (can be overridden by caller with setFinalValues).
  * @param ulSizeMB Weight for IProgress
  * @param strExtraConfig Extra configuration; meaning dependent on type.
  */

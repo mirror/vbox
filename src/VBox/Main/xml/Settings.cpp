@@ -875,7 +875,8 @@ void ConfigFileBase::readMedium(MediaType t,
  *
  * For pre-1.4 files, this gets called with the \<DiskRegistry\> chunk instead.
  *
- * @param elmMediaRegistry
+ * @param   elmMediaRegistry
+ * @param   mr
  */
 void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
                                        MediaRegistry &mr)
@@ -1817,7 +1818,7 @@ void MainConfigFile::buildUSBDeviceSources(xml::ElementNode &elmParent,
  * stores them in the given linklist. This is in ConfigFileBase because it's used
  * from both MainConfigFile (for host filters) and MachineConfigFile (for machine
  * filters).
- * @param elmDeviceFilters
+ * @param elmDeviceSources
  * @param ll
  */
 void MainConfigFile::readUSBDeviceSources(const xml::ElementNode &elmDeviceSources,
@@ -1862,7 +1863,7 @@ void MainConfigFile::readUSBDeviceSources(const xml::ElementNode &elmDeviceSourc
  * the caller should catch; if this constructor does not throw, then the member
  * variables contain meaningful values (either from the file or defaults).
  *
- * @param strFilename
+ * @param pstrFilename
  */
 MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
     : ConfigFileBase(pstrFilename)
@@ -4570,7 +4571,8 @@ void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &e
  * This is only called for settings version 1.7 and above; see readHardDiskAttachments_pre1_7()
  * for earlier versions.
  *
- * @param elmStorageControllers
+ * @param   elmStorageControllers
+ * @param   strg
  */
 void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorageControllers,
                                                Storage &strg)

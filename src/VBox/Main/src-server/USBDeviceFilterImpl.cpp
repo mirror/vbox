@@ -38,7 +38,7 @@
  *
  *  @param  aFilter     The filter.
  *  @param  aIdx        The field index.
- *  @param  aStr        The output string.
+ *  @param  rstrOut     The output string.
  */
 static void i_usbFilterFieldToString(PCUSBFILTER aFilter, USBFILTERIDX aIdx, Utf8Str &rstrOut)
 {

@@ -44,7 +44,7 @@ class HostPowerService
     std::vector<ComPtr<IInternalSessionControl> > mSessionControls;
 };
 
-# ifdef RT_OS_WINDOWS
+# if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 /**
  * The Windows hosted Power Service.
  */
@@ -63,7 +63,8 @@ private:
     HWND        mHwnd;
     RTTHREAD    mThread;
 };
-#elif defined(RT_OS_LINUX)
+# endif
+# if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
 /**
  * The Linux hosted Power Service.
  */
@@ -86,7 +87,8 @@ private:
     DBusConnection *mpConnection;
 };
 
-# elif defined(RT_OS_DARWIN) /* RT_OS_WINDOWS */
+# endif
+# if defined(RT_OS_DARWIN) || defined(DOXYGEN_RUNNING)
 /**
  * The Darwin hosted Power Service.
  */
@@ -115,7 +117,7 @@ private:
 
     bool mCritical; /* Indicate if the battery was in the critical state last checked */
 };
-# endif /* RT_OS_DARWIN */
+# endif
 
 #endif /* !____H_HOSTPOWER */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

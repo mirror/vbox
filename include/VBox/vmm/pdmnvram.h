@@ -53,6 +53,7 @@ typedef struct PDMINVRAMCONNECTOR
      * @retval  VERR_NOT_FOUND if the variable was not found. This indicates that
      *          there are not variables with a higher index.
      *
+     * @param   pInterface      Pointer to this interface structure.
      * @param   idxVariable     The variable index. By starting @a idxVariable at 0
      *                          and increasing it with each call, this can be used
      *                          to enumerate all available variables.
@@ -74,7 +75,7 @@ typedef struct PDMINVRAMCONNECTOR
      * Begins variable store sequence.
      *
      * @returns VBox status code.
-     * @param   pInterance      Pointer to this interface structure.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   cVariables      The number of variables.
      */
     DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqBegin,(PPDMINVRAMCONNECTOR pInterface, uint32_t cVariables));
@@ -83,16 +84,17 @@ typedef struct PDMINVRAMCONNECTOR
      * Puts the next variable in the store sequence.
      *
      * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   idxVariable     The variable index. This will start at 0 and advance
      *                          up to @a cVariables - 1.
      * @param   pVendorUuid     The vendor UUID of the variable.
      * @param   pszName         The variable name buffer.
-     * @param   pcchName        On input this hold the name buffer size (including
+     * @param   cchName         On input this hold the name buffer size (including
      *                          the space for the terminator char).  On successful
      *                          return it holds the strlen() value for @a pszName.
      * @param   fAttributes     The value attributes.
      * @param   pbValue         The value buffer.
-     * @param   pcbValue        On input the size of the value buffer, on output the
+     * @param   cbValue         On input the size of the value buffer, on output the
      *                          actual number of bytes returned.
      */
     DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqPut,(PPDMINVRAMCONNECTOR pInterface, int idxVariable,
@@ -103,7 +105,7 @@ typedef struct PDMINVRAMCONNECTOR
      * Ends a variable store sequence.
      *
      * @returns VBox status code, @a rc on success.
-     * @param   pInterance      Pointer to this interface structure.
+     * @param   pInterface      Pointer to this interface structure.
      * @param   rc              The VBox status code for the whole store operation.
      */
     DECLR3CALLBACKMEMBER(int, pfnVarStoreSeqEnd,(PPDMINVRAMCONNECTOR pInterface, int rc));

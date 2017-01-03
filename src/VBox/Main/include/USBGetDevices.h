@@ -62,7 +62,7 @@ DECLINLINE(void) deviceFree(PUSBDEVICE pDevice)
 
 /**
  * Free a linked list of USB devices created by the Linux enumeration code.
- * @param  pHead  Pointer to the first device in the linked list
+ * @param  ppHead  Pointer to the first device in the linked list
  */
 DECLINLINE(void) deviceListFree(PUSBDEVICE *ppHead)
 {
