@@ -40,7 +40,7 @@ from testmanager.core.base                  import ModelDataBase, ModelLogicBase
                                                    FilterCriterion, FilterCriterionValueAndDescription, \
                                                    TMExceptionBase, TMTooManyRows, TMRowNotFound;
 from testmanager.core.testgroup             import TestGroupData;
-from testmanager.core.build                 import BuildDataEx, BuildCategoryData, BuildLogic, BuildCategoryLogic;
+from testmanager.core.build                 import BuildDataEx, BuildCategoryData, BuildLogic;
 from testmanager.core.failurereason         import FailureReasonLogic;
 from testmanager.core.testbox               import TestBoxData, TestBoxLogic;
 from testmanager.core.testcase              import TestCaseData, TestCaseLogic;
@@ -1437,13 +1437,25 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         except IndexError:
             return None
 
-    def fetchPossibleFilterOptions(self, oFilter, tsNow, sPeriod):
+    def fetchPossibleFilterOptions(self, oFilter, tsNow, sPeriod, oReportModel = None):
         """
         Fetches the available filter criteria, given the current filtering.
 
         Returns oFilter.
         """
         assert isinstance(oFilter, TestResultFilter);
+
+        # Hack to avoid lot's of conditionals or duplicate this code.
+        if oReportModel is None:
+            class DummyReportModel(object):
+                """ Dummy """
+                def getExtraSubjectTables(self):
+                    """ Dummy """
+                    return [];
+                def getExtraSubjectWhereExpr(self):
+                    """ Dummy """
+                    return '';
+            oReportModel = DummyReportModel();
 
         def workerDoFetch(oMissingLogicType, sNameAttr = 'sName', fIdIsName = False):
             """ Does the tedious result fetching and handling of missing bits. """
@@ -1470,8 +1482,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         oCrit = oFilter.aCriteria[TestResultFilter.kiTestStatus];
         self._oDb.execute('SELECT TestSets.enmStatus, TestSets.enmStatus, COUNT(TestSets.idTestSet)\n'
                           'FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestStatus) +
+                          ''.join('        , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           'WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod) +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestStatus) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           'GROUP BY TestSets.enmStatus\n'
                           'ORDER BY TestSets.enmStatus\n');
         workerDoFetch(None, fIdIsName = True);
@@ -1482,8 +1496,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'FROM   ( SELECT TestSets.idSchedGroup,\n'
                           '                MAX(TestSets.tsCreated) AS tsNow\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiSchedGroups) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '         ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiSchedGroups) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestSets.idSchedGroup\n'
                           '       ) AS SchedGroupIDs\n'
                           '       INNER JOIN SchedGroups\n'
@@ -1499,8 +1515,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'FROM   ( SELECT TestSets.idTestBox         AS idTestBox,\n'
                           '                MAX(TestSets.idGenTestBox) AS idGenTestBox\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestBoxes) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestBoxes) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestSets.idTestBox\n'
                           '       ) AS TestBoxIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
@@ -1513,8 +1531,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrOs, TestBoxesWithStrings.sOs\n'
                           'FROM   ( SELECT DISTINCT TestSets.idGenTestBox\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiOses) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiOses) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '       ) AS TestBoxGenIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
@@ -1526,8 +1546,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrOsVersion, TestBoxesWithStrings.sOsVersion\n'
                           'FROM   ( SELECT DISTINCT TestSets.idGenTestBox AS idGenTestBox\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiOsVersions) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiOsVersions) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '       ) AS TestBoxGenIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
@@ -1539,8 +1561,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrCpuArch, TestBoxesWithStrings.sCpuArch\n'
                           'FROM   ( SELECT DISTINCT TestSets.idGenTestBox\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiCpuArches) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiCpuArches) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '       ) AS TestBoxGenIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
@@ -1552,8 +1576,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.execute('SELECT DISTINCT TestBoxesWithStrings.idStrCpuVendor, TestBoxesWithStrings.sCpuVendor\n'
                           'FROM   ( SELECT DISTINCT TestSets.idGenTestBox\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiCpuVendors) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiCpuVendors) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '       ) AS TestBoxGenIDs\n'
                           '       LEFT OUTER JOIN TestBoxesWithStrings\n'
                           '                    ON TestBoxesWithStrings.idGenTestBox = TestBoxGenIDs.idGenTestBox\n'
@@ -1566,8 +1592,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'FROM   ( SELECT TestSets.idTestCase         AS idTestCase,\n'
                           '                MAX(TestSets.idGenTestCase) AS idGenTestCase\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestCases) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestCases) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestSets.idTestCase\n'
                           '       ) AS TestCasesIDs\n'
                           '       LEFT OUTER JOIN TestCases ON TestCases.idGenTestCase = TestCasesIDs.idGenTestCase\n'
@@ -1580,8 +1608,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'FROM   ( SELECT TestSets.idBuild        AS idBuild,\n'
                           '                MAX(TestSets.tsCreated) AS tsNow\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiRevisions) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiRevisions) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestSets.idBuild\n'
                           '       ) AS BuildIDs\n'
                           '       INNER JOIN Builds\n'
@@ -1597,8 +1627,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         self._oDb.execute('SELECT DISTINCT BuildCategories.sBranch, BuildCategories.sBranch\n'
                           'FROM   ( SELECT DISTINCT TestSets.idBuildCategory\n'
                           '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiBranches) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiBranches) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '       ) AS BuildCategoryIDs\n'
                           '       INNER JOIN BuildCategories\n'
                           '               ON BuildCategories.idBuildCategory = BuildCategoryIDs.idBuildCategory\n'
@@ -1614,8 +1646,10 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '                 ON     TestResultFailures.idTestSet = TestSets.idTestSet\n'
                           '                    AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' +
                           oFilter.getTableJoins(iOmit = TestResultFilter.kiFailReasons) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiFailReasons) +
+                          oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestResultFailures.idFailureReason\n'
                           '       ) AS FailureReasonIDs\n'
                           '       INNER JOIN FailureReasons\n'

@@ -863,7 +863,7 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
         """
         Fetches possible filtering options.
         """
-        return TestResultLogic(self._oDb).fetchPossibleFilterOptions(oFilter, tsNow, sPeriod);
+        return TestResultLogic(self._oDb).fetchPossibleFilterOptions(oFilter, tsNow, sPeriod, oReportModel = self);
 
 
 
