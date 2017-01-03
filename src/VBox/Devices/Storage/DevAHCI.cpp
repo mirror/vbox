@@ -57,7 +57,6 @@
 # include <iprt/uuid.h>
 # include <iprt/time.h>
 #endif
-#include "PIIX3ATABmDma.h"
 #include "ide.h"
 #include "VBoxDD.h"
 
@@ -4970,7 +4969,7 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    SSMR3Skip(pSSM, 19 + 5 * sizeof(bool) + sizeof(BMDMAState));
+    SSMR3Skip(pSSM, 19 + 5 * sizeof(bool) + 8 /* sizeof(BMDMAState) */);
 
     for (uint32_t j = 0; j < 2; j++)
     {
