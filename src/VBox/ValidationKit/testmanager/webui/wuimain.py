@@ -954,7 +954,7 @@ class WuiMain(WuiDispatcherBase):
                                ' title="%s"' % (webutils.escapeAttr(oDesc.sHover,) if oDesc.sHover is not None else ''),
                                oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '',
                                webutils.escapeElem(oDesc.sDesc),
-                               ' <span class="side-filter-count">(%u)</span>' % (oDesc.cTimes) if oDesc.cTimes is not None
+                               '<span class="side-filter-count"> [%u]</span>' % (oDesc.cTimes) if oDesc.cTimes is not None
                                else '', );
 
                 sHtml += u'   </ul>\n' \

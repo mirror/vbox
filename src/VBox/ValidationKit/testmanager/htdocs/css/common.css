@@ -351,31 +351,31 @@ html, body {
 
 #side-filters dd {
     font-size:      0.82em;
-}
-#side-filters li {
-    line-height: 0.7em;
+    font-family:    "Arial Narrow", Arial, sans-serif;
+    font-weight:    normal;
 }
 
+#side-filters li, #side-filters input[type=checkbox], #side-filters p {
+    line-height:    0.9em;
+    vertical-align: text-bottom;
+}
 
 #side-filters input[type=checkbox] {
     margin-right:   0.20em;
-    vertical-align: middle;
     width:          1.0em;
     height:         1.0em;
 }
-@supports(-moz-appearance:meterbar) { /* Mozilla hack for saving vertical space */
+@supports(-moz-appearance:meterbar) {
     #side-filters input[type=checkbox] {
-        vertical-align: bottom;
+        /* not currently used */
     }
 }
 @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) { /* IE 10+ specific tweaks */
     #side-filters input[type=checkbox] {
-        vertical-align: bottom;
         width:          1.1em;
         height:         1.1em;
     }
 }
-
 
 #side-filters ul {
     max-height:     22em;
@@ -387,7 +387,8 @@ html, body {
     font-weight:    normal;
 }
 .side-filter-count {
-    font-size:      0.72em;
+    font-size:      smaller;
+    vertical-align: text-top;
 }
 
 /* Footer: */
