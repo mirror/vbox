@@ -310,11 +310,11 @@ typedef struct ATADevState
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                                szModelNumber[ATA_MODEL_NUMBER_LENGTH+1];
     /** The vendor identification string for SCSI INQUIRY commands. */
-    char                                szInquiryVendorId[ATAPI_INQUIRY_VENDOR_ID_LENGTH+1];
+    char                                szInquiryVendorId[SCSI_INQUIRY_VENDOR_ID_LENGTH+1];
     /** The product identification string for SCSI INQUIRY commands. */
-    char                                szInquiryProductId[ATAPI_INQUIRY_PRODUCT_ID_LENGTH+1];
+    char                                szInquiryProductId[SCSI_INQUIRY_PRODUCT_ID_LENGTH+1];
     /** The revision string for SCSI INQUIRY commands. */
-    char                                szInquiryRevision[ATAPI_INQUIRY_REVISION_LENGTH+1];
+    char                                szInquiryRevision[SCSI_INQUIRY_REVISION_LENGTH+1];
     /** The current tracklist of the loaded medium if passthrough is used. */
     R3PTRTYPE(PTRACKLIST)               pTrackList;
 

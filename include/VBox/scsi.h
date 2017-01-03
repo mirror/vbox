@@ -227,6 +227,14 @@ typedef enum SCSIMAINTENANCEIN
 /** @name SCSI_INQUIRY
  * @{
  */
+
+/** Length of the SCSI INQUIRY vendor identifier (without termination). */
+#define SCSI_INQUIRY_VENDOR_ID_LENGTH   8
+/** Length of the SCSI INQUIRY product identifier (without termination). */
+#define SCSI_INQUIRY_PRODUCT_ID_LENGTH 16
+/** Length of the SCSI INQUIRY revision identifier (without termination). */
+#define SCSI_INQUIRY_REVISION_LENGTH    4
+
 #pragma pack(1)
 typedef struct SCSIINQUIRYCDB
 {
@@ -247,21 +255,21 @@ typedef const SCSIINQUIRYCDB *PCSCSIINQUIRYCDB;
 #pragma pack(1)
 typedef struct SCSIINQUIRYDATA
 {
-    unsigned u5PeripheralDeviceType : 5;    /**< 0x00 / 00 */
+    unsigned u5PeripheralDeviceType : 5;                    /**< 0x00 / 00 */
     unsigned u3PeripheralQualifier : 3;
-    unsigned u6DeviceTypeModifier : 7;      /**< 0x01 */
+    unsigned u6DeviceTypeModifier : 7;                      /**< 0x01 */
     unsigned fRMB : 1;
-    unsigned u3AnsiVersion : 3;             /**< 0x02 */
+    unsigned u3AnsiVersion : 3;                             /**< 0x02 */
     unsigned u3EcmaVersion : 3;
     unsigned u2IsoVersion : 2;
-    unsigned u4ResponseDataFormat : 4;      /**< 0x03 */
+    unsigned u4ResponseDataFormat : 4;                      /**< 0x03 */
     unsigned u2Reserved0 : 2;
     unsigned fTrmlOP : 1;
     unsigned fAEC : 1;
-    unsigned cbAdditional : 8;              /**< 0x04 */
-    unsigned u8Reserved1 : 8;               /**< 0x05 */
-    unsigned u8Reserved2 : 8;               /**< 0x06 */
-    unsigned fSftRe : 1;                    /**< 0x07 */
+    unsigned cbAdditional : 8;                              /**< 0x04 */
+    unsigned u8Reserved1 : 8;                               /**< 0x05 */
+    unsigned u8Reserved2 : 8;                               /**< 0x06 */
+    unsigned fSftRe : 1;                                    /**< 0x07 */
     unsigned fCmdQue : 1;
     unsigned fReserved3 : 1;
     unsigned fLinked : 1;
@@ -269,12 +277,12 @@ typedef struct SCSIINQUIRYDATA
     unsigned fWBus16 : 1;
     unsigned fWBus32 : 1;
     unsigned fRelAdr : 1;
-    int8_t   achVendorId[8];                /**< 0x08 */
-    int8_t   achProductId[16];              /**< 0x10 */
-    int8_t   achProductLevel[4];            /**< 0x20 */
-    uint8_t  abVendorSpecific[20];          /**< 0x24/36 - Optional it seems. */
+    int8_t   achVendorId[SCSI_INQUIRY_VENDOR_ID_LENGTH];    /**< 0x08 */
+    int8_t   achProductId[SCSI_INQUIRY_PRODUCT_ID_LENGTH];  /**< 0x10 */
+    int8_t   achProductLevel[SCSI_INQUIRY_REVISION_LENGTH]; /**< 0x20 */
+    uint8_t  abVendorSpecific[20];                          /**< 0x24/36 - Optional it seems. */
     uint8_t  abReserved4[40];
-    uint8_t  abVendorSpecificParameters[1]; /**< 0x60/96 - Variable size. */
+    uint8_t  abVendorSpecificParameters[1];                 /**< 0x60/96 - Variable size. */
 } SCSIINQUIRYDATA;
 #pragma pack()
 AssertCompileSize(SCSIINQUIRYDATA, 97);

@@ -192,17 +192,6 @@ typedef enum ATACMD
 #define ATAPI_INT_REASON_REL            0x04
 #define ATAPI_INT_REASON_TAG_MASK       0xf8
 
-
-/**
- * Length of the ATAPI VPD data (without termination)
- *
- * @todo move to scsi.h
- */
-#define ATAPI_INQUIRY_VENDOR_ID_LENGTH   8
-#define ATAPI_INQUIRY_PRODUCT_ID_LENGTH 16
-#define ATAPI_INQUIRY_REVISION_LENGTH    4
-
-
 #if defined(LOG_ENABLED) && defined(IN_RING3)
 const char * ATACmdText(uint8_t uCmd);
 #endif
