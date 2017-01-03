@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___Storage_IDE_h
-#define ___Storage_IDE_h
+#ifndef ___VBox_ata_h
+#define ___VBox_ata_h
 
 
 /* Bits of HD_STATUS */
@@ -196,5 +196,5 @@ typedef enum ATACMD
 const char * ATACmdText(uint8_t uCmd);
 #endif
 
-#endif /* !___Storage_IDE_h */
+#endif /* !___VBox_ata_h */
 

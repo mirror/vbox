@@ -60,9 +60,9 @@
 
 #include <VBox/sup.h>
 #include <VBox/scsi.h>
+#include <VBox/ata.h>
 
 #include "PIIX3ATABmDma.h"
-#include "ide.h"
 #include "ATAPIPassthrough.h"
 #include "VBoxDD.h"
 

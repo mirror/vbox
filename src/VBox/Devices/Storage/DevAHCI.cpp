@@ -45,6 +45,7 @@
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/sup.h>
 #include <VBox/scsi.h>
+#include <VBox/ata.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -57,7 +58,6 @@
 # include <iprt/uuid.h>
 # include <iprt/time.h>
 #endif
-#include "ide.h"
 #include "VBoxDD.h"
 
 #if   defined(VBOX_WITH_DTRACE) \

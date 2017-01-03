@@ -21,7 +21,7 @@
 #include <iprt/types.h>
 #include <iprt/string.h>
 #include <VBox/scsi.h>
-#include "ide.h"
+#include <VBox/ata.h>
 
 #ifdef LOG_ENABLED
 
