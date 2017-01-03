@@ -116,7 +116,7 @@ private slots:
 /**
  * The Debugger Console Input widget.
  *
- * This is a combobox which only responds to <return>.
+ * This is a combobox which only responds to \<return\>.
  */
 class VBoxDbgConsoleInput : public QComboBox
 {
