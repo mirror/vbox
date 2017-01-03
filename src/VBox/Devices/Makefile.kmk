@@ -567,13 +567,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # Enable Audio Queues implementation for macOS hosts (Core Audio backend).
  VBoxDD_DEFS.darwin += VBOX_WITH_AUDIO_CA_QUEUES
 
- # Enable one-time audio stream initialization at device creation (VM startup) instead
+ # Disable one-time audio stream initialization at device creation (VM startup) instead
  # of creating the stream when needed at some later point in time. 
  #
  # This was the default behavior ever since.
- VBoxDD_DEFS  += VBOX_WITH_AUDIO_SB16_ONETIME_INIT
- VBoxDD_DEFS  += VBOX_WITH_AUDIO_AC97_ONETIME_INIT
- VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ONETIME_INIT
+ #
+ # We now go with the new behavior by default now.
+ #VBoxDD_DEFS  += VBOX_WITH_AUDIO_SB16_ONETIME_INIT
+ #VBoxDD_DEFS  += VBOX_WITH_AUDIO_AC97_ONETIME_INIT
+ #VBoxDD_DEFS  += VBOX_WITH_AUDIO_HDA_ONETIME_INIT
 
  #
  # Enables asynchronous audio data handling
