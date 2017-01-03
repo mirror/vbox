@@ -893,6 +893,10 @@ class WuiMain(WuiDispatcherBase):
         #
         # Now, generate a filter control panel for the side bar.
         #
+        if hasattr(oFilter, 'kiBranches'):
+            oFilter.aCriteria[oFilter.kiBranches].fExpanded = True;
+        if hasattr(oFilter, 'kiTestStatus'):
+            oFilter.aCriteria[oFilter.kiTestStatus].fExpanded = True;
         self._sPageFilter = self._generateResultFilter(oFilter, oResultLogic, tsEffective, sCurPeriod,
                                                        enmResultsGroupingType = enmResultsGroupingType,
                                                        aoGroupMembers = aoGroupMembers,
@@ -928,8 +932,15 @@ class WuiMain(WuiDispatcherBase):
 
         for oCrit in oFilter.aCriteria:
             if len(oCrit.aoPossible) > 0:
-                sClass = 'sf-collapsable' if oCrit.sState == oCrit.ksState_Selected else 'sf-expandable';
-                sChar  = '&#9660;'        if oCrit.sState == oCrit.ksState_Selected else '&#9654;';
+                if   oCrit.sState == oCrit.ksState_Selected \
+                  or len(oCrit.aoPossible) <= 2 \
+                  or oCrit.fExpanded is True:
+                    sClass = 'sf-collapsable';
+                    sChar  = '&#9660;';
+                else:
+                    sClass = 'sf-expandable';
+                    sChar  = '&#9654;';
+
                 sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">%s'\
                          u' %s</a></dt>\n' \
                          u'  <dd class="%s">\n' \
@@ -1229,6 +1240,8 @@ class WuiMain(WuiDispatcherBase):
         sNavi = self._generateReportNavigation(tsEffective, cHoursPerPeriod, cPeriods);
         self._sPageBody = sNavi + self._sPageBody;
 
+        if hasattr(oFilter, 'kiBranches'):
+            oFilter.aCriteria[oFilter.kiBranches].fExpanded = True;
         self._sPageFilter = self._generateResultFilter(oFilter, oModel, tsEffective, '%s hours' % (cHoursPerPeriod * cPeriods,));
         return True;
 

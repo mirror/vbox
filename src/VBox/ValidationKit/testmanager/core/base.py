@@ -1200,6 +1200,7 @@ class FilterCriterion(object):
         self.aoPossible = []; # type: list[FilterCriterionValueAndDescription]
         self.sTable     = sTable;
         self.sColumn    = sColumn;
+        self.fExpanded  = None; ##< Tristate (None, False, True) indicating whether the criterion should be shown/hid regardless.
 
 
 class ModelFilterBase(ModelBase):
