@@ -1378,6 +1378,7 @@ DECLINLINE(PHDASTREAM) hdaStreamGetFromSD(PHDASTATE pThis, uint8_t uSD)
 }
 
 
+#ifdef IN_RING3
 /**
  * Returns the HDA stream of specified HDA sink.
  *
@@ -1393,7 +1394,6 @@ DECLINLINE(PHDASTREAM) hdaSinkGetStream(PHDASTATE pThis, PHDAMIXERSINK pSink)
 }
 
 
-#ifdef IN_RING3
 /**
  * Returns the audio direction of a specified stream descriptor.
  *
