@@ -30,6 +30,7 @@
 #include <iprt/thread.h>
 #include <iprt/critsect.h>
 #include <VBox/scsi.h>
+#include <VBox/scsiinline.h>
 
 #include "VBoxDD.h"
 #include "DrvHostBase.h"
@@ -59,61 +60,6 @@ typedef DRVHOSTDVD *PDRVHOSTDVD;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-DECLINLINE(void) drvHostDvdH2BE_U16(uint8_t *pbBuf, uint16_t val)
-{
-    pbBuf[0] = val >> 8;
-    pbBuf[1] = val;
-}
-
-
-DECLINLINE(void) drvHostDvdH2BE_U24(uint8_t *pbBuf, uint32_t val)
-{
-    pbBuf[0] = val >> 16;
-    pbBuf[1] = val >> 8;
-    pbBuf[2] = val;
-}
-
-
-DECLINLINE(void) drvHostDvdH2BE_U32(uint8_t *pbBuf, uint32_t val)
-{
-    pbBuf[0] = val >> 24;
-    pbBuf[1] = val >> 16;
-    pbBuf[2] = val >> 8;
-    pbBuf[3] = val;
-}
-
-
-DECLINLINE(uint16_t) drvHostDvdBE2H_U16(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 8) | pbBuf[1];
-}
-
-
-DECLINLINE(uint32_t) drvHostDvdBE2H_U24(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 16) | (pbBuf[1] << 8) | pbBuf[2];
-}
-
-
-DECLINLINE(uint32_t) drvHostDvdBE2H_U32(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 24) | (pbBuf[1] << 16) | (pbBuf[2] << 8) | pbBuf[3];
-}
-
-
-DECLINLINE(void) drvHostDvdLBA2MSF(uint8_t *pbBuf, uint32_t iATAPILBA)
-{
-    iATAPILBA += 150;
-    pbBuf[0] = (iATAPILBA / 75) / 60;
-    pbBuf[1] = (iATAPILBA / 75) % 60;
-    pbBuf[2] = iATAPILBA % 75;
-}
-
-
-DECLINLINE(uint32_t) drvHostDvdMSF2LBA(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
-}
 
 static uint8_t drvHostDvdCmdOK(PDRVHOSTDVD pThis)
 {
@@ -196,8 +142,8 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             fPassthrough = true;
             break;
         case SCSI_ERASE_10:
-            uLba = drvHostDvdBE2H_U32(pbCdb + 2);
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            uLba = scsiBE2H_U32(pbCdb + 2);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
@@ -207,12 +153,12 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             fPassthrough = true;
             break;
         case SCSI_GET_CONFIGURATION:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
@@ -222,48 +168,48 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             fPassthrough = true;
             break;
         case SCSI_INQUIRY:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 3);
+            cbXfer = scsiBE2H_U16(pbCdb + 3);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_MECHANISM_STATUS:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_MODE_SELECT_10:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_MODE_SENSE_10:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_10:
-            uLba = drvHostDvdBE2H_U32(pbCdb + 2);
-            cSectors = drvHostDvdBE2H_U16(pbCdb + 7);
+            uLba = scsiBE2H_U32(pbCdb + 2);
+            cSectors = scsiBE2H_U16(pbCdb + 7);
             cbSector = 2048;
             cbXfer = cSectors * cbSector;
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_12:
-            uLba = drvHostDvdBE2H_U32(pbCdb + 2);
-            cSectors = drvHostDvdBE2H_U32(pbCdb + 6);
+            uLba = scsiBE2H_U32(pbCdb + 2);
+            cSectors = scsiBE2H_U32(pbCdb + 6);
             cbSector = 2048;
             cbXfer = cSectors * cbSector;
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_BUFFER:
-            cbXfer = drvHostDvdBE2H_U24(pbCdb + 6);
+            cbXfer = scsiBE2H_U24(pbCdb + 6);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_BUFFER_CAPACITY:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
@@ -283,9 +229,9 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
                     uint32_t iLbaStart;
 
                     if (pbCdb[0] == SCSI_READ_CD)
-                        iLbaStart = drvHostDvdBE2H_U32(&pbCdb[2]);
+                        iLbaStart = scsiBE2H_U32(&pbCdb[2]);
                     else
-                        iLbaStart = drvHostDvdMSF2LBA(&pbCdb[3]);
+                        iLbaStart = scsiMSF2LBA(&pbCdb[3]);
 
                     if (pThis->pTrackList)
                         cbSector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pThis->pTrackList, iLbaStart);
@@ -314,10 +260,10 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             }
 
             if (pbCdb[0] == SCSI_READ_CD)
-                cbXfer = drvHostDvdBE2H_U24(pbCdb + 6) * cbSector;
+                cbXfer = scsiBE2H_U24(pbCdb + 6) * cbSector;
             else /* SCSI_READ_MSF */
             {
-                cSectors = drvHostDvdMSF2LBA(pbCdb + 6) - drvHostDvdMSF2LBA(pbCdb + 3);
+                cSectors = scsiMSF2LBA(pbCdb + 6) - scsiMSF2LBA(pbCdb + 3);
                 if (cSectors > 32)
                     cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
                 cbXfer = cSectors * cbSector;
@@ -327,37 +273,37 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             break;
         }
         case SCSI_READ_DISC_INFORMATION:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_DVD_STRUCTURE:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_FORMAT_CAPACITIES:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_SUBCHANNEL:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_TOC_PMA_ATIP:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_READ_TRACK_INFORMATION:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_REPORT_KEY:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
@@ -382,39 +328,39 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             fPassthrough = true;
             break;
         case SCSI_SEND_CUE_SHEET:
-            cbXfer = drvHostDvdBE2H_U24(pbCdb + 6);
+            cbXfer = scsiBE2H_U24(pbCdb + 6);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_SEND_DVD_STRUCTURE:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_SEND_EVENT:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_SEND_KEY:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 8);
+            cbXfer = scsiBE2H_U16(pbCdb + 8);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_SEND_OPC_INFORMATION:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 7);
+            cbXfer = scsiBE2H_U16(pbCdb + 7);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_SET_STREAMING:
-            cbXfer = drvHostDvdBE2H_U16(pbCdb + 9);
+            cbXfer = scsiBE2H_U16(pbCdb + 9);
             enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
             fPassthrough = true;
             break;
         case SCSI_WRITE_10:
         case SCSI_WRITE_AND_VERIFY_10:
-            uLba = drvHostDvdBE2H_U32(pbCdb + 2);
-            cSectors = drvHostDvdBE2H_U16(pbCdb + 7);
+            uLba = scsiBE2H_U32(pbCdb + 2);
+            cSectors = scsiBE2H_U16(pbCdb + 7);
             if (pThis->pTrackList)
                 cbSector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pThis->pTrackList, uLba);
             else
@@ -424,8 +370,8 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
             fPassthrough = true;
             break;
         case SCSI_WRITE_12:
-            uLba = drvHostDvdBE2H_U32(pbCdb + 2);
-            cSectors = drvHostDvdBE2H_U32(pbCdb + 6);
+            uLba = scsiBE2H_U32(pbCdb + 2);
+            cSectors = scsiBE2H_U32(pbCdb + 6);
             if (pThis->pTrackList)
                 cbSector = ATAPIPassthroughTrackListGetSectorSizeFromLba(pThis->pTrackList, uLba);
             else
@@ -447,14 +393,14 @@ static bool drvHostDvdParseCdb(PDRVHOSTDVD pThis, PDRVHOSTBASEREQ pReq,
                     *pu8ScsiSts = drvHostDvdCmdErrorSimple(pThis, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                     break;
                 default:
-                    cbXfer = drvHostDvdBE2H_U16(pbCdb + 6);
+                    cbXfer = scsiBE2H_U16(pbCdb + 6);
                     enmTxDir = PDMMEDIATXDIR_TO_DEVICE;
                     fPassthrough = true;
                     break;
             }
             break;
         case SCSI_REPORT_LUNS: /* Not part of MMC-3, but used by Windows. */
-            cbXfer = drvHostDvdBE2H_U32(pbCdb + 6);
+            cbXfer = scsiBE2H_U32(pbCdb + 6);
             enmTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             fPassthrough = true;
             break;
@@ -582,21 +528,21 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                 case SCSI_READ_10:
                 case SCSI_WRITE_10:
                 case SCSI_WRITE_AND_VERIFY_10:
-                    iATAPILBA = drvHostDvdBE2H_U32(pbCdb + 2);
-                    cSectors = drvHostDvdBE2H_U16(pbCdb + 7);
+                    iATAPILBA = scsiBE2H_U32(pbCdb + 2);
+                    cSectors = scsiBE2H_U16(pbCdb + 7);
                     break;
                 case SCSI_READ_12:
                 case SCSI_WRITE_12:
-                    iATAPILBA = drvHostDvdBE2H_U32(pbCdb + 2);
-                    cSectors = drvHostDvdBE2H_U32(pbCdb + 6);
+                    iATAPILBA = scsiBE2H_U32(pbCdb + 2);
+                    cSectors = scsiBE2H_U32(pbCdb + 6);
                     break;
                 case SCSI_READ_CD:
-                    iATAPILBA = drvHostDvdBE2H_U32(pbCdb + 2);
-                    cSectors = drvHostDvdBE2H_U24(pbCdb + 6);
+                    iATAPILBA = scsiBE2H_U32(pbCdb + 2);
+                    cSectors = scsiBE2H_U24(pbCdb + 6);
                     break;
                 case SCSI_READ_CD_MSF:
-                    iATAPILBA = drvHostDvdMSF2LBA(pbCdb + 3);
-                    cSectors = drvHostDvdMSF2LBA(pbCdb + 6) - iATAPILBA;
+                    iATAPILBA = scsiMSF2LBA(pbCdb + 3);
+                    cSectors = scsiMSF2LBA(pbCdb + 6) - iATAPILBA;
                     break;
                 default:
                     AssertMsgFailed(("Don't know how to split command %#04x\n", pbCdb[0]));
@@ -620,21 +566,21 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                     case SCSI_READ_10:
                     case SCSI_WRITE_10:
                     case SCSI_WRITE_AND_VERIFY_10:
-                        drvHostDvdH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                        drvHostDvdH2BE_U16(aATAPICmd + 7, cReqSectors);
+                        scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                        scsiH2BE_U16(aATAPICmd + 7, cReqSectors);
                         break;
                     case SCSI_READ_12:
                     case SCSI_WRITE_12:
-                        drvHostDvdH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                        drvHostDvdH2BE_U32(aATAPICmd + 6, cReqSectors);
+                        scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                        scsiH2BE_U32(aATAPICmd + 6, cReqSectors);
                         break;
                     case SCSI_READ_CD:
-                        drvHostDvdH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                        drvHostDvdH2BE_U24(aATAPICmd + 6, cReqSectors);
+                        scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                        scsiH2BE_U24(aATAPICmd + 6, cReqSectors);
                         break;
                     case SCSI_READ_CD_MSF:
-                        drvHostDvdLBA2MSF(aATAPICmd + 3, iATAPILBA);
-                        drvHostDvdLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
+                        scsiLBA2MSF(aATAPICmd + 3, iATAPILBA);
+                        scsiLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
                         break;
                 }
                 rc = drvHostBaseScsiCmdOs(&pThis->Core, aATAPICmd, sizeof(aATAPICmd),
