@@ -2959,13 +2959,13 @@ QString VBoxGlobal::locationForHTML (const QString &aFileName)
  *    with blue color;
  *  - UUIDs be put inside <nobr> and marked
  *    with green color;
- *  - replaces new line chars with </p><p> constructs to form paragraphs
- *    (note that <p> and </p> are not appended to the beginning and to the
+ *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
+ *    (note that \<p\> and \</p\> are not appended to the beginning and to the
  *     end of the string respectively, to allow the result be appended
  *     or prepended to the existing paragraph).
  *
  *  If @a aToolTip is true, colouring is not applied, only the <nobr> tag
- *  is added. Also, new line chars are replaced with <br> instead of <p>.
+ *  is added. Also, new line chars are replaced with \<br\> instead of \<p\>.
  */
 /* static */
 QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
