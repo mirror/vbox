@@ -2686,7 +2686,7 @@ QChar VBoxGlobal::decimalSep()
 
 /**
  *  Returns the regexp string that defines the format of the human-readable
- *  size representation, <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ *  size representation, <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt>.
  *
  *  This regexp will capture 5 groups of text:
  *  - cap(1): integer number in case when no decimal point is present
@@ -2714,7 +2714,7 @@ QString VBoxGlobal::sizeRegexp()
 
 /**
  *  Parses the given size string that should be in form of
- *  <tt>####[.##] B|KB|MB|GB|TB|PB</tt> and returns
+ *  <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt> and returns
  *  the size value in bytes. Zero is returned on error.
  */
 /* static */
@@ -2763,7 +2763,7 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 
 /**
  * Formats the given @a aSize value in bytes to a human readable string
- * in form of <tt>####[.##] B|KB|MB|GB|TB|PB</tt>.
+ * in form of <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt>.
  *
  * The @a aMode and @a aDecimal parameters are used for rounding the resulting
  * number when converting the size value to KB, MB, etc gives a fractional part:
@@ -3022,12 +3022,12 @@ QString VBoxGlobal::replaceHtmlEntities(QString strText)
 
 /**
  *  Reformats the input string @a aStr so that:
- *  - strings in single quotes will be put inside <nobr> and marked
+ *  - strings in single quotes will be put inside \<nobr\> and marked
  *    with bold style;
  *  - UUIDs be put inside <nobr> and marked
  *    with italic style;
- *  - replaces new line chars with </p><p> constructs to form paragraphs
- *    (note that <p> and </p> are not appended to the beginning and to the
+ *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
+ *    (note that \<p\> and \</p\> are not appended to the beginning and to the
  *     end of the string respectively, to allow the result be appended
  *     or prepended to the existing paragraph).
  */
@@ -3446,7 +3446,7 @@ void VBoxGlobal::setSkipPagerFlag(QWidget *pWidget)
  *  that may (or may not) contain the accelerator mark.
  *
  *  In order to support accelerators used in non-alphabet languages
- *  (e.g. Japanese) that has a form of "(&<L>)" (where <L> is a latin letter),
+ *  (e.g. Japanese) that has a form of "(&\<L\>)" (where \<L\> is a latin letter),
  *  this method first searches for this pattern and, if found, removes it as a
  *  whole. If such a pattern is not found, then the '&' character is simply
  *  removed from the string.
