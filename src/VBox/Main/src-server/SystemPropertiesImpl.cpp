@@ -1174,7 +1174,7 @@ HRESULT SystemProperties::i_getUserHomeDirectory(Utf8Str &strPath)
  * from the public attribute setter as well as loadSettings(). With 4.0,
  * the "default default" machine folder has changed, and we now require
  * a full path always.
- * @param aPath
+ * @param   strPath
  * @return
  */
 HRESULT SystemProperties::i_setDefaultMachineFolder(const Utf8Str &strPath)

@@ -38,12 +38,12 @@ public:
                  LONG aPort,
                  LONG aDevice,
                  DeviceType_T aType,
-                 bool fImplicit,
-                 bool fPassthrough,
-                 bool fTempEject,
-                 bool fNonRotational,
-                 bool fDiscard,
-                 bool fHotPluggable,
+                 bool aImplicit,
+                 bool aPassthrough,
+                 bool aTempEject,
+                 bool aNonRotational,
+                 bool aDiscard,
+                 bool aHotPluggable,
                  const Utf8Str &strBandwidthGroup);
     HRESULT initCopy(Machine *aParent, MediumAttachment *aThat);
     void uninit();

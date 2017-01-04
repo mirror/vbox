@@ -78,7 +78,7 @@ public:
      * @param aDescription
      * @param aCancelable
      * @param cOperations
-     * @param bstrFirstOperationDescription
+     * @param aFirstOperationDescription
      * @return
      */
     HRESULT init(

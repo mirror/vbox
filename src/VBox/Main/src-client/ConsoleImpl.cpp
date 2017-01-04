@@ -4825,7 +4825,7 @@ void Console::i_removeSecretKeysOnSuspend()
  *
  * @returns COM status code.
  *
- * @parma   pUVM                The VM handle (caller hold this safely).
+ * @param   pUVM                The VM handle (caller hold this safely).
  * @param   pszDevice           The PDM device name.
  * @param   uInstance           The PDM device instance.
  * @param   uLun                The PDM LUN number of the drive.

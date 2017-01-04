@@ -74,7 +74,12 @@ VFSExplorer::~VFSExplorer()
 
 /**
  * VFSExplorer COM initializer.
- * @param
+ * @param   aType       VFS type.
+ * @param   aFilePath   File path.
+ * @param   aHostname   Host name.
+ * @param   aUsername   User name.
+ * @param   aPassword   Password.
+ * @param   aVirtualBox VirtualBox object.
  * @return
  */
 HRESULT VFSExplorer::init(VFSType_T aType, Utf8Str aFilePath, Utf8Str aHostname, Utf8Str aUsername,
@@ -124,7 +129,7 @@ void VFSExplorer::uninit()
 
 /**
  * Public method implementation.
- * @param
+ * @param   aPath   Where to store the path.
  * @return
  */
 HRESULT VFSExplorer::getPath(com::Utf8Str &aPath)

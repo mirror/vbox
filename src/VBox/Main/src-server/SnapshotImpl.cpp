@@ -98,6 +98,7 @@ void Snapshot::FinalRelease()
 /**
  *  Initializes the instance
  *
+ *  @param  aVirtualBox    VirtualBox object
  *  @param  aId            id of the snapshot
  *  @param  aName          name of the snapshot
  *  @param  aDescription   name of the snapshot (NULL if no description)
@@ -1112,7 +1113,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
  *  @param aMachine         machine the snapshot belongs to
  *  @param hardware         hardware settings
  *  @param pDbg             debuging settings
- *  @param pAutoStart       autostart settings
+ *  @param pAutostart       autostart settings
  *  @param aSnapshotId      snapshot ID of this snapshot machine
  *  @param aStateFilePath   file where the execution state is saved
  *                          (or NULL for the offline snapshot)
@@ -2050,7 +2051,7 @@ HRESULT SessionMachine::restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
  *
  * @note Locks mParent + this object for writing.
  *
- * @param pTask Task data.
+ * @param task Task data.
  */
 void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
 {
@@ -3628,7 +3629,7 @@ void SessionMachine::i_cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
  * @param aMediumAttachment Identify where the disk is attached in the VM.
  * @param aSource       Source hard disk for merge.
  * @param aTarget       Target hard disk for merge.
- * @param aMergeForward Merge direction.
+ * @param fMergeForward Merge direction.
  * @param aParentForTarget New parent if target needs to be reparented.
  * @param aChildrenToReparent Medium lock list with children which have to be
  *                      reparented to the target.

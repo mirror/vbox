@@ -66,7 +66,7 @@ DECLCALLBACK(void *) PCIRawDev::drvQueryInterface(PPDMIBASE pInterface, const ch
 
 
 /**
- * @interface_method_impl{PDMIPCIRAWUP,pfnPciDeviceConstructComplete}
+ * @interface_method_impl{PDMIPCIRAWCONNECTOR,pfnDeviceConstructComplete}
  */
 DECLCALLBACK(int) PCIRawDev::drvDeviceConstructComplete(PPDMIPCIRAWCONNECTOR pInterface, const char *pcszName,
                                                         uint32_t uHostPCIAddress, uint32_t uGuestPCIAddress,

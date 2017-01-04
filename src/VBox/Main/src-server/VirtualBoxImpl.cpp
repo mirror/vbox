@@ -665,11 +665,12 @@ HRESULT VirtualBox::initMachines()
  * global arrays of media (including the GUI's virtual media manager)
  * continue to work as before.
  *
- * @param uuidMachineRegistry The UUID of the media registry. This is either the
+ * @param uuidRegistry The UUID of the media registry. This is either the
  *       transient UUID created at VirtualBox startup for the global registry or
  *       a machine ID.
  * @param mediaRegistry The XML settings structure to load, either from VirtualBox.xml
  *       or a machine XML.
+ * @param strMachineFolder The folder of the machine.
  * @return
  */
 HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
@@ -3622,6 +3623,7 @@ HRESULT VirtualBox::i_findDVDOrFloppyImage(DeviceType_T mediumType,
  * @param mediumType Must be DeviceType_DVD or DeviceType_Floppy.
  * @param uuid UUID to search for; must refer to a host drive or an image file or be null.
  * @param fRefresh Whether to refresh the list of host drives in IHost (see Host::getDrives())
+ * @param aSetError
  * @param pMedium out: IMedium object found.
  * @return
  */

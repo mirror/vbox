@@ -71,6 +71,7 @@ void ParallelPort::FinalRelease()
  *  Initializes the Parallel Port object.
  *
  *  @param aParent  Handle of the parent object.
+ *  @param aSlot    Slotnumber this parallel port is plugged into.
  */
 HRESULT ParallelPort::init(Machine *aParent, ULONG aSlot)
 {

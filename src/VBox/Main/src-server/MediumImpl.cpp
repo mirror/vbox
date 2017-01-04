@@ -1073,7 +1073,7 @@ void Medium::FinalRelease()
  * @param aLocation     Storage unit location.
  * @param uuidMachineRegistry The registry to which this medium should be added
  *                            (global registry UUID or machine UUID or empty if none).
- * @param deviceType    Device Type.
+ * @param aDeviceType   Device Type.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      const Utf8Str &aFormat,
@@ -4366,8 +4366,8 @@ void Medium::i_dumpBackRefs()
  * Checks if the given change of \a aOldPath to \a aNewPath affects the location
  * of this media and updates it if necessary to reflect the new location.
  *
- * @param aOldPath  Old path (full).
- * @param aNewPath  New path (full).
+ * @param strOldPath  Old path (full).
+ * @param strNewPath  New path (full).
  *
  * @note Locks this object for writing.
  */
@@ -6071,16 +6071,16 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 /**
  * Used by IAppliance to export disk images.
  *
- * @param aFilename             Filename to create (UTF8).
- * @param aFormat               Medium format for creating @a aFilename.
- * @param aVariant              Which exact image format variant to use
- *                              for the destination image.
- * @param pKeyStore             The optional key store for decrypting the data
- *                              for encrypted media during the export.
- * @param aVDImageIOCallbacks   Pointer to the callback table for a
- *                              VDINTERFACEIO interface. May be NULL.
- * @param aVDImageIOUser        Opaque data for the callbacks.
- * @param aProgress             Progress object to use.
+ * @param aFilename         Filename to create (UTF8).
+ * @param aFormat           Medium format for creating @a aFilename.
+ * @param aVariant          Which exact image format variant to use for the
+ *                          destination image.
+ * @param pKeyStore         The optional key store for decrypting the data for
+ *                          encrypted media during the export.
+ * @param aVDImageIOIf      Pointer to the callback table for a VDINTERFACEIO
+ *                          interface. May be NULL.
+ * @param aVDImageIOUser    Opaque data for the callbacks.
+ * @param aProgress         Progress object to use.
  * @return
  * @note The source format is defined by the Medium instance.
  */
@@ -6510,9 +6510,12 @@ Utf8Str Medium::i_getNewLocationForMoving() const
  *
  * @note Locks m->pParent for reading. Locks this object for writing.
  *
- * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
- * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent
- *                     UUID in the medium instance data (see SetIDs())
+ * @param fSetImageId   Whether to reset the UUID contained in the image file
+ *                      to the UUID in the medium instance data (see SetIDs())
+ * @param fSetParentId  Whether to reset the parent UUID contained in the image
+ *                      file to the parent UUID in the medium instance data (see
+ *                      SetIDs())
+ * @param autoCaller
  * @return
  */
 HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &autoCaller)

@@ -2189,8 +2189,9 @@ ManagedObjectRef::~ManagedObjectRef()
  *
  * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
- * @param strId
- * @param iter
+ * @param   id
+ * @param   pRef
+ * @param   fNullAllowed
  * @return
  */
 int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,

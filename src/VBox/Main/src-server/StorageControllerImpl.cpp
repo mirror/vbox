@@ -82,7 +82,9 @@ void StorageController::FinalRelease()
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
  * @param aName         Name of the storage controller.
+ * @param aStorageBus   Type of the storage bus.
  * @param aInstance     Instance number of the storage controller.
+ * @param fBootable     Bootable flag.
  */
 HRESULT StorageController::init(Machine *aParent,
                                 const Utf8Str &aName,
@@ -175,6 +177,8 @@ HRESULT StorageController::init(Machine *aParent,
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
+ *  @param  aParent     Pointer to our parent object.
+ *  @param  aThat
  *  @param  aReshare
  *      When false, the original object will remain a data owner.
  *      Otherwise, data ownership will be transferred from the original

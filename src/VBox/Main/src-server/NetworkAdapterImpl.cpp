@@ -64,6 +64,7 @@ void NetworkAdapter::FinalRelease()
  *  Initializes the network adapter object.
  *
  *  @param aParent  Handle of the parent object.
+ *  @param uSlot    Slot number this network adapter is plugged into.
  */
 HRESULT NetworkAdapter::init(Machine *aParent, ULONG uSlot)
 {
@@ -101,6 +102,8 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG uSlot)
  *  (a kind of copy constructor). This object shares data with
  *  the object passed as an argument.
  *
+ *  @param  aParent     Parent object.
+ *  @param  aThat
  *  @param  aReshare
  *      When false, the original object will remain a data owner.
  *      Otherwise, data ownership will be transferred from the original

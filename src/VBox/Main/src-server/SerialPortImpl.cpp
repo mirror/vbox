@@ -73,6 +73,7 @@ void SerialPort::FinalRelease()
  *  Initializes the Serial Port object.
  *
  *  @param aParent  Handle of the parent object.
+ *  @param aSlot    Slot number the serial port is plugged into.
  */
 HRESULT SerialPort::init(Machine *aParent, ULONG aSlot)
 {

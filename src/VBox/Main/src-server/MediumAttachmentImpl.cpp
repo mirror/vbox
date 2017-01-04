@@ -91,11 +91,17 @@ void MediumAttachment::FinalRelease()
  *
  * @param aParent           Machine object.
  * @param aMedium           Medium object.
- * @param aController       Controller the hard disk is attached to.
+ * @param aControllerName   Controller the hard disk is attached to.
  * @param aPort             Port number.
  * @param aDevice           Device number on the port.
+ * @param aType             Device type.
+ * @param aImplicit
  * @param aPassthrough      Whether accesses are directly passed to the host drive.
- * @param aBandwidthLimit   Bandwidth limit in Mbps
+ * @param aTempEject
+ * @param aNonRotational    Whether this medium is non-rotational (aka SSD).
+ * @param aDiscard
+ * @param aHotPluggable     Whether this medium is hot-pluggable.
+ * @param aBandwidthLimit   Bandwidth limit in Mbps.
  */
 HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,

@@ -138,7 +138,7 @@ void Progress::FinalRelease()
  * @param cOperations   Number of operations within this task (at least 1).
  * @param ulTotalOperationsWeight Total weight of operations; must be the sum of ulFirstOperationWeight and
  *                          what is later passed with each subsequent setNextOperation() call.
- * @param bstrFirstOperationDescription Description of the first operation.
+ * @param aFirstOperationDescription Description of the first operation.
  * @param ulFirstOperationWeight Weight of first sub-operation.
  */
 HRESULT Progress::init(
@@ -406,7 +406,7 @@ HRESULT Progress::i_notifyComplete(HRESULT aResultCode,
  *
  * @param aResultCode   Operation result (error) code, must not be S_OK.
  * @param aIID          IID of the interface that defines the error.
- * @param aComponent    Name of the component that generates the error.
+ * @param pcszComponent Name of the component that generates the error.
  * @param aText         Error message (must not be null), an RTStrPrintf-like
  *                      format string in UTF-8 encoding.
  * @param va            List of arguments for the format string.
@@ -780,7 +780,8 @@ HRESULT Progress::setCurrentOperationProgress(ULONG aPercent)
  * Signals that the current operation is successfully completed and advances to
  * the next operation. The operation percentage is reset to 0.
  *
- * @param aOperationDescription     Description of the next operation.
+ * @param aNextOperationDescription  Description of the next operation.
+ * @param aNextOperationsWeight     Weight of the next operation.
  *
  * @note The current operation must not be the last one.
  */

@@ -542,7 +542,7 @@ HRESULT USBProxyService::i_saveSettings(settings::USBDeviceSourcesList &llUSBDev
  * VM attaching. This may result in IPC and temporary lock abandonment.
  *
  * @param   aDevice     The device in question.
- * @param   aUSBDevice  The USB device structure.
+ * @param   pDev        The USB device structure.
  */
 void USBProxyService::i_deviceAdded(ComObjPtr<HostUSBDevice> &aDevice,
                                     PUSBDEVICE pDev)
@@ -710,6 +710,7 @@ void USBProxyService::deviceChanged(ComObjPtr<HostUSBDevice> &aDevice, bool fRun
  *
  * @returns COM status code (only parameter & state checks will fail).
  * @param   aDevice         The USB device to apply filters to.
+ * @param   llOpenedMachines The list of opened machines.
  * @param   aIgnoreMachine  The machine to ignore filters from (we've just
  *                          detached the device from this machine).
  *

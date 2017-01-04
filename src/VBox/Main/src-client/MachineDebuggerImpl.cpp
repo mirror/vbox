@@ -142,7 +142,7 @@ HRESULT MachineDebugger::getSingleStep(BOOL *aSingleStep)
  * Sets the singlestepping flag.
  *
  * @returns COM status code
- * @param   a_fEnable       The new state.
+ * @param   aSingleStep     The new state.
  */
 HRESULT MachineDebugger::setSingleStep(BOOL aSingleStep)
 {
@@ -223,7 +223,7 @@ HRESULT MachineDebugger::i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
  * Returns the current recompile user mode code flag.
  *
  * @returns COM status code
- * @param   a_fEnabled address of result variable
+ * @param   aRecompileUser  address of result variable
  */
 HRESULT MachineDebugger::getRecompileUser(BOOL *aRecompileUser)
 {
@@ -234,7 +234,7 @@ HRESULT MachineDebugger::getRecompileUser(BOOL *aRecompileUser)
  * Sets the recompile user mode code flag.
  *
  * @returns COM status
- * @param   aEnable new user mode code recompile flag.
+ * @param   aRecompileUser  new user mode code recompile flag.
  */
 HRESULT MachineDebugger::setRecompileUser(BOOL aRecompileUser)
 {
@@ -246,7 +246,7 @@ HRESULT MachineDebugger::setRecompileUser(BOOL aRecompileUser)
  * Returns the current recompile supervisor code flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aRecompileSupervisor    address of result variable
  */
 HRESULT MachineDebugger::getRecompileSupervisor(BOOL *aRecompileSupervisor)
 {
@@ -257,7 +257,7 @@ HRESULT MachineDebugger::getRecompileSupervisor(BOOL *aRecompileSupervisor)
  * Sets the new recompile supervisor code flag.
  *
  * @returns COM status code
- * @param   aEnable new recompile supervisor code flag
+ * @param   aRecompileSupervisor    new recompile supervisor code flag
  */
 HRESULT MachineDebugger::setRecompileSupervisor(BOOL aRecompileSupervisor)
 {
@@ -269,7 +269,7 @@ HRESULT MachineDebugger::setRecompileSupervisor(BOOL aRecompileSupervisor)
  * Returns the current execute-all-in-IEM setting.
  *
  * @returns COM status code
- * @param   aEnabled    Address of result variable.
+ * @param   aExecuteAllInIEM    Address of result variable.
  */
 HRESULT MachineDebugger::getExecuteAllInIEM(BOOL *aExecuteAllInIEM)
 {
@@ -280,7 +280,7 @@ HRESULT MachineDebugger::getExecuteAllInIEM(BOOL *aExecuteAllInIEM)
  * Changes the execute-all-in-IEM setting.
  *
  * @returns COM status code
- * @param   aEnable     New setting.
+ * @param   aExecuteAllInIEM    New setting.
  */
 HRESULT MachineDebugger::setExecuteAllInIEM(BOOL aExecuteAllInIEM)
 {
@@ -292,7 +292,7 @@ HRESULT MachineDebugger::setExecuteAllInIEM(BOOL aExecuteAllInIEM)
  * Returns the current patch manager enabled flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aPATMEnabled    address of result variable
  */
 HRESULT MachineDebugger::getPATMEnabled(BOOL *aPATMEnabled)
 {
@@ -313,7 +313,7 @@ HRESULT MachineDebugger::getPATMEnabled(BOOL *aPATMEnabled)
  * Set the new patch manager enabled flag.
  *
  * @returns COM status code
- * @param   aEnable new patch manager enabled flag
+ * @param   aPATMEnabled    new patch manager enabled flag
  */
 HRESULT MachineDebugger::setPATMEnabled(BOOL aPATMEnabled)
 {
@@ -348,7 +348,7 @@ HRESULT MachineDebugger::setPATMEnabled(BOOL aPATMEnabled)
  * Returns the current code scanner enabled flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aCSAMEnabled    address of result variable
  */
 HRESULT MachineDebugger::getCSAMEnabled(BOOL *aCSAMEnabled)
 {
@@ -370,7 +370,7 @@ HRESULT MachineDebugger::getCSAMEnabled(BOOL *aCSAMEnabled)
  * Sets the new code scanner enabled flag.
  *
  * @returns COM status code
- * @param   aEnable new code scanner enabled flag
+ * @param   aCSAMEnabled    new code scanner enabled flag
  */
 HRESULT MachineDebugger::setCSAMEnabled(BOOL aCSAMEnabled)
 {
@@ -592,7 +592,7 @@ HRESULT MachineDebugger::getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled)
  * Returns the current unrestricted execution setting.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aHWVirtExUXEnabled  address of result variable
  */
 HRESULT MachineDebugger::getHWVirtExUXEnabled(BOOL *aHWVirtExUXEnabled)
 {
@@ -674,7 +674,7 @@ HRESULT MachineDebugger::getOSVersion(com::Utf8Str &aOSVersion)
  * Returns the current PAE flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aPAEEnabled     address of result variable.
  */
 HRESULT MachineDebugger::getPAEEnabled(BOOL *aPAEEnabled)
 {
@@ -698,7 +698,7 @@ HRESULT MachineDebugger::getPAEEnabled(BOOL *aPAEEnabled)
  * Returns the current virtual time rate.
  *
  * @returns COM status code.
- * @param   a_puPct      Where to store the rate.
+ * @param   aVirtualTimeRate    Where to store the rate.
  */
 HRESULT MachineDebugger::getVirtualTimeRate(ULONG *aVirtualTimeRate)
 {
@@ -713,10 +713,10 @@ HRESULT MachineDebugger::getVirtualTimeRate(ULONG *aVirtualTimeRate)
 }
 
 /**
- * Returns the current virtual time rate.
+ * Set the virtual time rate.
  *
  * @returns COM status code.
- * @param   aPct     Where to store the rate.
+ * @param   aVirtualTimeRate    The new rate.
  */
 HRESULT MachineDebugger::setVirtualTimeRate(ULONG aVirtualTimeRate)
 {

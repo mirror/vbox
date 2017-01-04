@@ -120,7 +120,7 @@ HRESULT USBController::init(Machine *aParent, const Utf8Str &aName, USBControlle
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
  * @param aPeer         The object to share.
- *  @param  aReshare
+ * @param fReshare
  *      When false, the original object will remain a data owner.
  *      Otherwise, data ownership will be transferred from the original
  *      object to this one.

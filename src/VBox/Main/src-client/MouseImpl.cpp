@@ -366,7 +366,7 @@ HRESULT Mouse::i_updateVMMDevMouseCaps(uint32_t fCapsAdded,
  * mouse events.
  *
  * @returns COM status code
- * @param absoluteSupported address of result variable
+ * @param aAbsoluteSupported address of result variable
  */
 HRESULT Mouse::getAbsoluteSupported(BOOL *aAbsoluteSupported)
 {
@@ -379,7 +379,7 @@ HRESULT Mouse::getAbsoluteSupported(BOOL *aAbsoluteSupported)
  * mouse events.
  *
  * @returns COM status code
- * @param relativeSupported address of result variable
+ * @param aRelativeSupported address of result variable
  */
 HRESULT Mouse::getRelativeSupported(BOOL *aRelativeSupported)
 {
@@ -392,7 +392,7 @@ HRESULT Mouse::getRelativeSupported(BOOL *aRelativeSupported)
  * mouse events.
  *
  * @returns COM status code
- * @param multiTouchSupported address of result variable
+ * @param aMultiTouchSupported address of result variable
  */
 HRESULT Mouse::getMultiTouchSupported(BOOL *aMultiTouchSupported)
 {
@@ -405,7 +405,7 @@ HRESULT Mouse::getMultiTouchSupported(BOOL *aMultiTouchSupported)
  * itself if it is asked to by the front-end.
  *
  * @returns COM status code
- * @param pfNeedsHostCursor address of result variable
+ * @param aNeedsHostCursor address of result variable
  */
 HRESULT Mouse::getNeedsHostCursor(BOOL *aNeedsHostCursor)
 {
@@ -735,10 +735,11 @@ void Mouse::i_fireMultiTouchEvent(uint8_t cContacts,
  *       arrival of new absolute pointer data
  *
  * @returns COM status code
- * @param dx          X movement
- * @param dy          Y movement
- * @param dz          Z movement
- * @param fButtons    The mouse button state
+ * @param dx            X movement.
+ * @param dy            Y movement.
+ * @param dz            Z movement.
+ * @param dw            Mouse wheel movement.
+ * @param aButtonState  The mouse button state.
  */
 HRESULT Mouse::putMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw,
                              LONG aButtonState)
@@ -836,10 +837,11 @@ HRESULT Mouse::i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAd
  * @note all calls out of this object are made with no locks held!
  *
  * @returns COM status code
- * @param x          X position (pixel), starting from 1
- * @param y          Y position (pixel), starting from 1
- * @param dz         Z movement
- * @param fButtons   The mouse button state
+ * @param x         X position (pixel), starting from 1
+ * @param y         Y position (pixel), starting from 1
+ * @param dz        Z movement
+ * @param dw        mouse wheel movement
+ * @param aButtonState The mouse button state
  */
 HRESULT Mouse::putMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG aButtonState)
@@ -1047,7 +1049,12 @@ bool Mouse::i_guestNeedsHostCursor(void)
 
 
 /** Check what sort of reporting can be done using the devices currently
- * enabled.  Does not consider the VMM device. */
+ * enabled.  Does not consider the VMM device.
+ *
+ * @param   pfAbs   supports absolute mouse coordinates.
+ * @param   pfRel   supports relative mouse coordinates.
+ * @param   pfMT    supports multitouch.
+ */
 void Mouse::i_getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
 {
     bool fAbsDev = false;
@@ -1148,18 +1155,19 @@ void Mouse::i_sendMouseCapsNotifications(void)
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
  * A virtual device is notifying us about its current state and capabilities
  */
-DECLCALLBACK(void) Mouse::i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMT)
+DECLCALLBACK(void) Mouse::i_mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRelative,
+                                             bool fAbsolute, bool fMultiTouch)
 {
     PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
-    if (fRel)
+    if (fRelative)
         pDrv->u32DevCaps |= MOUSE_DEVCAP_RELATIVE;
     else
         pDrv->u32DevCaps &= ~MOUSE_DEVCAP_RELATIVE;
-    if (fAbs)
+    if (fAbsolute)
         pDrv->u32DevCaps |= MOUSE_DEVCAP_ABSOLUTE;
     else
         pDrv->u32DevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
-    if (fMT)
+    if (fMultiTouch)
         pDrv->u32DevCaps |= MOUSE_DEVCAP_MULTI_TOUCH;
     else
         pDrv->u32DevCaps &= ~MOUSE_DEVCAP_MULTI_TOUCH;
