@@ -19,11 +19,11 @@
 
 #include <VBox/vscsi.h>
 #include <VBox/scsi.h>
+#include <VBox/scsiinline.h>
 #include <iprt/memcache.h>
 #include <iprt/sg.h>
 #include <iprt/list.h>
 
-#include "VSCSIInline.h"
 #include "VSCSIVpdPages.h"
 
 /** Pointer to an internal virtual SCSI device. */

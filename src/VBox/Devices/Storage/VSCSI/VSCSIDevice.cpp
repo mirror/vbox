@@ -66,7 +66,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 size_t cbData;
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
-                vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU16(&pVScsiReq->pbCDB[3]));
+                vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U16(&pVScsiReq->pbCDB[3]));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
                 ScsiInquiryReply.cbAdditional = 31;
                 ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
@@ -85,7 +85,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
              * If allocation length is less than 16 bytes SPC compliant devices have
              * to return an error.
              */
-            vscsiReqSetXferSize(pVScsiReq, vscsiBE2HU32(&pVScsiReq->pbCDB[6]));
+            vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U32(&pVScsiReq->pbCDB[6]));
             if (pVScsiReq->cbXfer < 16)
                 *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
             else
@@ -94,7 +94,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 uint8_t aReply[16]; /* We report only one LUN. */
 
                 memset(aReply, 0, sizeof(aReply));
-                vscsiH2BEU32(&aReply[0], 8); /* List length starts at position 0. */
+                scsiH2BE_U32(&aReply[0], 8); /* List length starts at position 0. */
                 cbData = RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                 if (cbData < 16)
                     *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
@@ -140,8 +140,8 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                         bool fTimeoutDesc = RT_BOOL(pVScsiReq->pbCDB[2] & 0x80);
                         uint8_t u8ReportMode = pVScsiReq->pbCDB[2] & 0x7;
                         uint8_t u8Opc = pVScsiReq->pbCDB[3];
-                        uint16_t u16SvcAction = vscsiBE2HU16(&pVScsiReq->pbCDB[4]);
-                        uint16_t cbData = vscsiBE2HU16(&pVScsiReq->pbCDB[6]);
+                        uint16_t u16SvcAction = scsiBE2H_U16(&pVScsiReq->pbCDB[4]);
+                        uint16_t cbData = scsiBE2H_U16(&pVScsiReq->pbCDB[6]);
 
                         switch (u8ReportMode)
                         {

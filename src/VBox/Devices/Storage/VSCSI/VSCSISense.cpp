@@ -68,7 +68,7 @@ int vscsiReqSenseErrorInfoSet(PVSCSISENSE pVScsiSense, PVSCSIREQINT pVScsiReq, u
     memset(pVScsiSense->abSenseBuf, 0, sizeof(pVScsiSense->abSenseBuf));
     pVScsiSense->abSenseBuf[0] = RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED; /* Fixed format */
     pVScsiSense->abSenseBuf[2] = uSCSISenseKey;
-    vscsiH2BEU32(&pVScsiSense->abSenseBuf[3], uInfo);
+    scsiH2BE_U32(&pVScsiSense->abSenseBuf[3], uInfo);
     pVScsiSense->abSenseBuf[7]  = 10;
     pVScsiSense->abSenseBuf[12] = uSCSIASC;
     pVScsiSense->abSenseBuf[13] = uSCSIASCQ;
