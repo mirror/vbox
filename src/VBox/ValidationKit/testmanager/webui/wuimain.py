@@ -984,6 +984,7 @@ class WuiMain(WuiDispatcherBase):
 
         sHtml += u' </dl>\n';
         sHtml += u' <input type="submit" value="Apply"/>\n';
+        sHtml += u' <input type="reset" value="Reset"/>\n';
         sHtml += u'</div>\n';
         return sHtml;
 

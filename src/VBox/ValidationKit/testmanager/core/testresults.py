@@ -650,17 +650,16 @@ class TestResultFilter(ModelFilterBase):
     kiSchedGroups           =  2;
     kiTestBoxes             =  3;
     kiTestCases             =  4;
-    kiTestCaseVars          =  5;
-    kiRevisions             =  6;
-    kiCpuArches             =  7;
-    kiCpuVendors            =  8;
-    kiCpuRevisions          =  9;
-    kiCpuCounts             = 10;
-    kiMemory                = 11;
-    kiMisc                  = 12;
-    kiOses                  = 13;
-    kiPythonVersions        = 14;
-    kiFailReasons           = 15;
+    kiRevisions             =  5;
+    kiCpuArches             =  6;
+    kiCpuVendors            =  7;
+    kiCpuRevisions          =  8;
+    kiCpuCounts             =  9;
+    kiMemory                = 10;
+    kiMisc                  = 11;
+    kiOses                  = 12;
+    kiPythonVersions        = 13;
+    kiFailReasons           = 14;
 
     kiMisc_NestedPaging     =  0;
     kiMisc_NoNestedPaging   =  1;
@@ -693,13 +692,11 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestBoxes] is oCrit;
 
-        oCrit = FilterCriterion('Test cases', sVarNm = 'tc', sTable = 'TestSets', sColumn = 'idTestCase');
+        oCrit = FilterCriterion('Test case / var', sVarNm = 'tc', sTable = 'TestSets', sColumn = 'idTestCase',
+                                oSub = FilterCriterion('Test variations', sVarNm = 'tv',
+                                                       sTable = 'TestSets', sColumn = 'idTestCaseArgs'));
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestCases] is oCrit;
-
-        oCrit = FilterCriterion('Test variations', sVarNm = 'tv', sTable = 'TestSets', sColumn = 'idTestCaseArgs');
-        self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiTestCaseVars] is oCrit;
 
         oCrit = FilterCriterion('Revisions', sVarNm = 'rv', sTable = 'Builds', sColumn = 'iRevision');
         self.aCriteria.append(oCrit);
@@ -741,7 +738,7 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiMisc] is oCrit;
 
-        oCrit = FilterCriterion('OS / Version', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs',
+        oCrit = FilterCriterion('OS / version', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs',
                                 oSub = FilterCriterion('OS Versions', sVarNm = 'ov',
                                                        sTable = 'TestBoxesWithStrings', sColumn = 'idStrOsVersion'));
         self.aCriteria.append(oCrit);
@@ -1657,11 +1654,11 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '         TestBoxesWithStrings.idStrOsVersion,\n'
                           '         TestBoxesWithStrings.sOsVersion\n'
                           'ORDER BY TestBoxesWithStrings.sOs,\n'
-                          '         TestBoxesWithStrings.sOsVersion\n'
+                          '         TestBoxesWithStrings.sOsVersion DESC\n'
                            );
         workerDoFetchNested();
 
-        # Testbox CPU/OS architectures.
+        # Testbox CPU(/OS) architectures.
         oCrit = oFilter.aCriteria[TestResultFilter.kiCpuArches];
         self._oDb.execute('SELECT TestBoxesWithStrings.idStrCpuArch,\n'
                           '       TestBoxesWithStrings.sCpuArch,\n'
@@ -1787,30 +1784,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         for oCur in oCrit.aoPossible:
             oCur.sDesc = TestBoxData.formatPythonVersionEx(oCur.oValue); # pylint: disable=redefined-variable-type
 
-        # Testcases (see getTestCases).
+        # Testcase with variation.
         oCrit = oFilter.aCriteria[TestResultFilter.kiTestCases];
-        self._oDb.execute('SELECT TestCases.idTestCase, TestCases.sName, TestCasesIDs.cTimes\n'
-                          'FROM   ( SELECT TestSets.idTestCase         AS idTestCase,\n'
-                          '                MAX(TestSets.idGenTestCase) AS idGenTestCase,\n'
-                          '                COUNT(TestSets.idTestSet)   AS cTimes\n'
-                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestCases) +
-                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
-                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
-                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestCases) +
-                          oReportModel.getExtraSubjectWhereExpr() +
-                          '         GROUP BY TestSets.idTestCase\n'
-                          '       ) AS TestCasesIDs\n'
-                          '       LEFT OUTER JOIN TestCases ON TestCases.idGenTestCase = TestCasesIDs.idGenTestCase\n'
-                          'ORDER BY TestCases.sName\n' );
-        workerDoFetch(TestCaseLogic);
-
-        # Testcase variations.
-        oCrit = oFilter.aCriteria[TestResultFilter.kiTestCaseVars];
-        self._oDb.execute('SELECT TestCaseArgsIDs.idTestCaseArgs,\n'
+        self._oDb.execute('SELECT TestCaseArgsIDs.idTestCase,\n'
+                          '       TestCases.sName,\n'
+                          '       TestCaseArgsIDs.idTestCaseArgs,\n'
                           '       CASE WHEN TestCaseArgs.sSubName IS NULL OR TestCaseArgs.sSubName = \'\' THEN\n'
-                          '           CONCAT(TestCases.sName, \' / #\', TestCaseArgs.idTestCaseArgs)\n'
+                          '           CONCAT(\'/ #\', TestCaseArgs.idTestCaseArgs)\n'
                           '       ELSE\n'
-                          '           CONCAT(TestCases.sName, \' / \', TestCaseArgs.sSubName)\n'
+                          '           TestCaseArgs.sSubName\n'
                           '       END,'
                           '       TestCaseArgsIDs.cTimes\n'
                           'FROM   ( SELECT TestSets.idTestCase             AS idTestCase,\n'
@@ -1818,18 +1800,18 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '                MAX(TestSets.idGenTestCase)     AS idGenTestCase,\n'
                           '                MAX(TestSets.idGenTestCaseArgs) AS idGenTestCaseArgs,\n'
                           '                COUNT(TestSets.idTestSet)       AS cTimes\n'
-                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestCaseVars) +
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiTestCases) +
                           ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
-                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestCaseVars) +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiTestCases) +
                           oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestSets.idTestCase, TestSets.idTestCaseArgs\n'
                           '       ) AS TestCaseArgsIDs\n'
                           '       LEFT OUTER JOIN TestCases ON TestCases.idGenTestCase = TestCaseArgsIDs.idGenTestCase\n'
                           '       LEFT OUTER JOIN TestCaseArgs\n'
                           '                    ON TestCaseArgs.idGenTestCaseArgs = TestCaseArgsIDs.idGenTestCaseArgs\n'
-                          'ORDER BY TestCases.sName\n' );
-        workerDoFetch(TestCaseLogic);
+                          'ORDER BY TestCases.sName, 4\n' );
+        workerDoFetchNested();
 
         # Build revisions.
         oCrit = oFilter.aCriteria[TestResultFilter.kiRevisions];
