@@ -641,6 +641,8 @@ typedef struct HDASTREAMSTATEAIO
     volatile bool         fStarted;
     /** Shutdown indicator. */
     volatile bool         fShutdown;
+    /** Whether the thread should do any data processing or not. */
+    volatile bool         fEnabled;
     uint32_t              Padding1;
 } HDASTREAMSTATEAIO, *PHDASTREAMSTATEAIO;
 #endif
@@ -1004,6 +1006,8 @@ static int           hdaStreamDoDMA(PHDASTATE pThis, PHDASTREAM pStream, void *p
 static int           hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable);
 static int           hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream);
 DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, uint32_t u32LPIB);
+static void          hdaStreamLock(PHDASTREAM pStream);
+static void          hdaStreamUnlock(PHDASTREAM pStream);
 #endif /* IN_RING3 */
 /** @} */
 
@@ -1018,6 +1022,7 @@ static int               hdaStreamAsyncIODestroy(PHDASTATE pThis, PHDASTREAM pSt
 static int               hdaStreamAsyncIONotify(PHDASTATE pThis, PHDASTREAM pStream);
 static void              hdaStreamAsyncIOLock(PHDASTREAM pStream);
 static void              hdaStreamAsyncIOUnlock(PHDASTREAM pStream);
+static void              hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable);
 # endif
 #endif
 /** @} */
@@ -1301,6 +1306,34 @@ DECLINLINE(uint32_t) hdaStreamUpdateLPIB(PHDASTATE pThis, PHDASTREAM pStream, ui
     }
 
     return u32LPIB;
+}
+
+
+/**
+ * Locks an HDA stream for serialized access.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             HDA stream to lock.
+ */
+static void hdaStreamLock(PHDASTREAM pStream)
+{
+    AssertPtrReturnVoid(pStream);
+    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
+    AssertRC(rc2);
+}
+
+
+/**
+ * Unlocks a formerly locked HDA stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             HDA stream to unlock.
+ */
+static void hdaStreamUnlock(PHDASTREAM pStream)
+{
+    AssertPtrReturnVoid(pStream);
+    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
+    AssertRC(rc2);
 }
 
 
@@ -1808,17 +1841,6 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
 
     LogFunc(("[SD%RU8]: Reset\n", uSD));
 
-    int rc2;
-#ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
-    /*
-     * Make sure to destroy the async I/O thread for this stream on reset, as we
-     * can't be sure that the same stream is being used in the next cycle
-     * (and therefore would leave unused threads around).
-     */
-    rc2 = hdaStreamAsyncIODestroy(pThis, pStream);
-    AssertRC(rc2);
-#endif
-
     /*
      * First, reset the internal stream state.
      */
@@ -1853,7 +1875,7 @@ static void hdaStreamReset(PHDASTATE pThis, PHDASTREAM pStream)
     HDA_STREAM_REG(pThis, BDPU,  uSD) = 0;
     HDA_STREAM_REG(pThis, BDPL,  uSD) = 0;
 
-    rc2 = hdaStreamInit(pThis, pStream, uSD);
+    int rc2 = hdaStreamInit(pThis, pStream, uSD);
     AssertRC(rc2);
 }
 
@@ -1862,12 +1884,15 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("[SD%RU8]: fEnable=%RTbool, pMixSink=%p\n", pStream->u8SD, fEnable, pStream->pMixSink));
+    LogFunc(("[SD%RU8]: fEnable=%RTbool, pMixSink=%p\n", pStream->u8SD, fEnable, pStream->pMixSink));
 
     int rc = VINF_SUCCESS;
 
+    hdaStreamLock(pStream);
+
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     hdaStreamAsyncIOLock(pStream);
+    hdaStreamAsyncIOEnable(pStream, fEnable);
 #endif
 
     if (pStream->pMixSink) /* Stream attached to a sink? */
@@ -1879,49 +1904,24 @@ static int hdaStreamEnable(PHDASTATE pThis, PHDASTREAM pStream, bool fEnable)
         if (pStream->pMixSink->pMixSink)
             rc = AudioMixerSinkCtl(pStream->pMixSink->pMixSink, enmCmd);
     }
-    else
-        rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     hdaStreamAsyncIOUnlock(pStream);
 #endif
 
-    if (RT_FAILURE(rc))
-    {
-        LogFunc(("Failed with rc=%Rrc\n", rc));
-        return rc;
-    }
+    /* Make sure to leave the lock before (eventually) starting the timer. */
+    hdaStreamUnlock(pStream);
 
+#ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
     /* Second, see if we need to start or stop the timer. */
     if (!fEnable)
-    {
-# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStop(pThis);
-# endif
-    }
     else
-    {
-# ifndef VBOX_WITH_AUDIO_HDA_CALLBACKS
         hdaTimerMaybeStart(pThis);
-# endif
-    }
+#endif
 
-    LogFlowFunc(("u8Strm=%RU8, fEnable=%RTbool, cStreamsActive=%RU8\n", pStream->u8SD, fEnable, pThis->cStreamsActive));
-    return VINF_SUCCESS;
-}
-
-static void hdaStreamAssignToSink(PHDASTREAM pStream, PHDAMIXERSINK pMixSink)
-{
-    AssertPtrReturnVoid(pStream);
-
-    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
-    if (RT_SUCCESS(rc2))
-    {
-        pStream->pMixSink = pMixSink;
-
-        rc2 = RTCritSectLeave(&pStream->State.CritSect);
-        AssertRC(rc2);
-    }
+    LogFunc(("[SD%RU8]: cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8SD, pThis->cStreamsActive, rc));
+    return rc;
 }
 
 # if defined(VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT) || defined(VBOX_WITH_AUDIO_HDA_51_SURROUND)
@@ -2370,10 +2370,6 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     PHDASTREAM pStream = pTag->pStrm;
     AssertPtr(pStream);
 
-    /* Note: Do not use hdaRegWriteSDLock() here, as SDnCTL might change the RUN bit. */
-    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
-    AssertRC(rc2);
-
     if (fInReset)
     {
         Assert(!fReset);
@@ -2398,7 +2394,11 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         Assert(ASMAtomicReadBool(&pStream->State.fInReset) == false); /* No nested calls. */
         ASMAtomicXchgBool(&pStream->State.fInReset, true);
 
+        hdaStreamLock(pStream);
+
         hdaStreamReset(pThis, pStream);
+
+        hdaStreamUnlock(pStream);
     }
     else
     {
@@ -2413,7 +2413,7 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             if (fRun)
             {
                 /* Make sure to first fetch the current BDLE before enabling the stream below. */
-                rc2 = hdaBDLEFetch(pThis, &pStream->State.BDLE, pStream->u64BDLBase, pStream->State.uCurBDLE);
+                int rc2 = hdaBDLEFetch(pThis, &pStream->State.BDLE, pStream->u64BDLBase, pStream->State.uCurBDLE);
                 AssertRC(rc2);
             }
 
@@ -2421,14 +2421,11 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         }
     }
 
-    rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
+    int rc2 = hdaRegWriteU24(pThis, iReg, u32Value);
     AssertRC(rc2);
 
     /* Make sure to handle interrupts here as well. */
     hdaProcessInterrupt(pThis);
-
-    rc2 = RTCritSectLeave(&pStream->State.CritSect);
-    AssertRC(rc2);
 
     return VINF_SUCCESS; /* Always return success to the MMIO handler. */
 #else  /* !IN_RING3 */
@@ -3657,6 +3654,8 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
  * @return  IPRT status code.
  * @param   pThis               HDA state.
  * @param   enmMixerCtl         Mixer control to remove.
+ *
+ * @remarks Can be called as a callback by the HDA codec.
  */
 static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl)
 {
@@ -3735,6 +3734,8 @@ static DECLCALLBACK(int) hdaMixerRemoveStream(PHDASTATE pThis, PDMAUDIOMIXERCTL 
  * @param   enmMixerCtl         Mixer control to set SD stream number and channel for.
  * @param   uSD                 SD stream number (number + 1) to set. Set to 0 for unassign.
  * @param   uChannel            Channel to set. Only valid if a valid SD stream number is specified.
+ *
+ * @remarks Can be called as a callback by the HDA codec.
  */
 static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enmMixerCtl, uint8_t uSD, uint8_t uChannel)
 {
@@ -3770,11 +3771,13 @@ static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
         PHDASTREAM pStream = hdaStreamGetFromSD(pThis, uSD);
         if (pStream)
         {
-            pSink->uSD      = uSD;
-            pSink->uChannel = uChannel;
+            hdaStreamLock(pStream);
 
-            /* Make sure that the stream also has this sink set. */
-            hdaStreamAssignToSink(pStream, pSink);
+            pSink->uSD        = uSD;
+            pSink->uChannel   = uChannel;
+            pStream->pMixSink = pSink;
+
+            hdaStreamUnlock(pStream);
 
             rc = VINF_SUCCESS;
         }
@@ -3799,6 +3802,8 @@ static DECLCALLBACK(int) hdaMixerSetStream(PHDASTATE pThis, PDMAUDIOMIXERCTL enm
  * @param   pThis               HDA State.
  * @param   enmMixerCtl         Mixer control to set volume for.
  * @param   pVol                Pointer to volume data to set.
+ *
+ * @remarks Can be called as a callback by the HDA codec.
  */
 static DECLCALLBACK(int) hdaMixerSetVolume(PHDASTATE pThis,
                                            PDMAUDIOMIXERCTL enmMixerCtl, PPDMAUDIOVOLUME pVol)
@@ -4406,6 +4411,12 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
         rc2 = RTCritSectEnter(&pAIO->CritSect);
         if (RT_SUCCESS(rc2))
         {
+            if (!pAIO->fEnabled)
+            {
+                RTCritSectLeave(&pAIO->CritSect);
+                continue;
+            }
+
             uint32_t cbToProcess;
             uint32_t cbProcessed = 0;
 
@@ -4565,6 +4576,20 @@ static void hdaStreamAsyncIOUnlock(PHDASTREAM pStream)
     int rc2 = RTCritSectLeave(&pAIO->CritSect);
     AssertRC(rc2);
 }
+
+/**
+ * Enables (resumes) or disables (pauses) the async I/O thread.
+ *
+ * @param   pStream             HDA stream to enable/disable async I/O thread for.
+ * @param   fEnable             Whether to enable or disable the I/O thread.
+ *
+ * @remarks Does not do locking.
+ */
+static void hdaStreamAsyncIOEnable(PHDASTREAM pStream, bool fEnable)
+{
+    PHDASTREAMSTATEAIO pAIO = &pStream->State.AIO;
+    ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
+}
 #endif /* VBOX_WITH_AUDIO_HDA_ASYNC_IO */
 
 /**
@@ -4585,6 +4610,8 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
+    hdaStreamLock(pStream);
+
     PHDAMIXERSINK pSink  = pStream->pMixSink;
     AssertPtr(pSink);
 
@@ -4592,11 +4619,12 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
     AssertPtr(pCircBuf);
 
     if (!AudioMixerSinkIsActive(pSink->pMixSink))
+    {
+        hdaStreamUnlock(pStream);
         return VINF_SUCCESS;
+    }
 
     Log2Func(("[SD%RU8]\n", pStream->u8SD));
-
-    int rc = VINF_SUCCESS;
 
     bool fDone = false;
     uint8_t cTransfers = 0;
@@ -4734,7 +4762,9 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
 
     } /* while !fDone */
 
-    return rc;
+    hdaStreamUnlock(pStream);
+
+    return VINF_SUCCESS;
 }
 #endif /* IN_RING3 */
 
