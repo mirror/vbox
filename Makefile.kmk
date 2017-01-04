@@ -917,48 +917,18 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
 	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
 	doxygen $(PATH_TARGET)/Doxyfile.Core
 	$(SED) -n \
-		-e ':nextwarning' \
+               -e ':nextwarning' \
                -e '/^ *$(DOLLAR)/d' \
-		-e '/warning. Unexpected tag .dd. found/d' \
-		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
-               -e '/\/include\/VBox\/VBoxVideoGuest\.h.* warning/b ignore' \
-               -e '/\/include\/VBox\/sup\.h.* warning/b ignore' \
-               -e '/\/include\/VBox\/settings\.h.* warning/b ignore' \
+               -e '/warning. Unexpected tag .dd. found/d' \
+               -e '/warning. Unsupported xml.html tag .globalScope. found/d' \
                -e '/\/include\/VBox\/com\/EventQueue\.h.* warning/b ignore' \
                -e '/\/include\/VBox\/com\/NativeEventQueue\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Devices\/.* warning/b ignore' \
+               -e '/\/src\/VBox\/Devices\/Graphics\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostDrivers\/VBoxPci\/VBoxPci\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/Installer\/VBoxDrvInst\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxCredProv\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxGINA\/Helper\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDnD\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/HGSMIBase\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/common\/VBoxVideo\/Modesetting\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/common\/pam\/pam_vbox\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/os2\/VBoxMouse\/cmdline\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/solaris\/SharedFolders\/vboxfs_prov\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/Virtio-solaris\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/solaris\/Virtio\/VirtioNet-solaris\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/clipboard\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/draganddrop\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/x11\/vboxvideo\/vbva\.c.* warning/b ignore' \
-               -e '/\/src\/VBox\/Additions\/x11\/vboxvideo\/vboxvideo\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Debugger\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostServices\/GuestControl\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostServices\/GuestProperties\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostServices\/SharedClipboard\/.* warning/b ignore' \
                -e '/\/src\/VBox\/HostServices\/SharedFolders\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostServices\/SharedOpenGL\/.* warning/b ignore' \
-               -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.cpp.* warning/b ignore' \
-               -e '/\/src\/VBox\/NetworkServices\/DHCP\/Config\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/Support\/win\/SUPR3HardenedMain-win\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
                \
@@ -975,7 +945,7 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
                -e ':end' \
                -e 'p' \
                --output $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2 \
-		$(VBOX_CORE_DOXYFILE_OUTPUT)/errors
+               $(VBOX_CORE_DOXYFILE_OUTPUT)/errors
 	$(CAT) $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
 	$(SED) -e "/[^ ]/q 1" $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
 	$(APPEND) $(PATH_TARGET)/docs.Core
