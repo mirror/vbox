@@ -2686,7 +2686,7 @@ QChar VBoxGlobal::decimalSep()
 
 /**
  *  Returns the regexp string that defines the format of the human-readable
- *  size representation, <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt>.
+ *  size representation, <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt>.
  *
  *  This regexp will capture 5 groups of text:
  *  - cap(1): integer number in case when no decimal point is present
@@ -2714,7 +2714,7 @@ QString VBoxGlobal::sizeRegexp()
 
 /**
  *  Parses the given size string that should be in form of
- *  <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt> and returns
+ *  <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt> and returns
  *  the size value in bytes. Zero is returned on error.
  */
 /* static */
@@ -2763,7 +2763,7 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 
 /**
  * Formats the given @a aSize value in bytes to a human readable string
- * in form of <tt>!#!#!#!#[.!#!#] B|KB|MB|GB|TB|PB</tt>.
+ * in form of <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt>.
  *
  * The @a aMode and @a aDecimal parameters are used for rounding the resulting
  * number when converting the size value to KB, MB, etc gives a fractional part:
@@ -3024,7 +3024,7 @@ QString VBoxGlobal::replaceHtmlEntities(QString strText)
  *  Reformats the input string @a aStr so that:
  *  - strings in single quotes will be put inside \<nobr\> and marked
  *    with bold style;
- *  - UUIDs be put inside <nobr> and marked
+ *  - UUIDs be put inside \<nobr\> and marked
  *    with italic style;
  *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
  *    (note that \<p\> and \</p\> are not appended to the beginning and to the
