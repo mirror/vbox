@@ -46,7 +46,7 @@ public:
 
 private:
     LONG m_cRefs;
-    friend HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID, void **ppv);
+    friend HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID, void **ppvInterface);
 };
 #endif /* !___VBOX_CREDPROV_FACTORY_H___ */
 

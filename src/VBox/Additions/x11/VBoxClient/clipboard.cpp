@@ -78,6 +78,7 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  * Get clipboard data from the host.
  *
  * @returns VBox result code
+ * @param   pCtx      Our context information
  * @param   u32Format The format of the data being requested
  * @retval  ppv       On success and if pcb > 0, this will point to a buffer
  *                    to be freed with RTMemFree containing the data read.
@@ -143,7 +144,8 @@ struct _CLIPREADCBREQ
 /**
  * Tell the host that new clipboard formats are available.
  *
- * @param u32Formats      The formats to advertise
+ * @param  pCtx      Our context information
+ * @param u32Formats The formats to advertise
  */
 void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
 {

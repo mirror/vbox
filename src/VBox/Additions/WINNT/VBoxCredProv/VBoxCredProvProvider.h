@@ -54,10 +54,10 @@ public:
                                       __out DWORD *pdwDefault,
                                       __out BOOL *pfAutoLogonWithDefault);
     IFACEMETHODIMP GetCredentialAt(DWORD dwIndex,
-                                   __out ICredentialProviderCredential **ppcpc);
+                                   __out ICredentialProviderCredential **ppCredProvCredential);
     /** @} */
 
-    friend HRESULT VBoxCredProvProviderCreate(REFIID riid, __deref_out void **ppv);
+    friend HRESULT VBoxCredProvProviderCreate(REFIID riid, __deref_out void **ppvInterface);
 
 protected:
 

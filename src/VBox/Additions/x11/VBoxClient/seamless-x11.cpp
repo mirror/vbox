@@ -71,6 +71,7 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
 /**
   * Initialise the guest and ensure that it is capable of handling seamless mode
   *
+  * @param  pHostCallback   host callback.
   * @returns true if it can handle seamless, false otherwise
   */
 int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
@@ -364,7 +365,7 @@ void SeamlessX11::nextConfigurationEvent(void)
 /**
  * Handle a configuration event in the seamless event thread by setting the new position.
  *
- * @param event the X11 event structure
+ * @param hWin the window to be examined
  */
 void SeamlessX11::doConfigureEvent(Window hWin)
 {
@@ -386,7 +387,7 @@ void SeamlessX11::doConfigureEvent(Window hWin)
 /**
  * Handle a window shape change event in the seamless event thread.
  *
- * @param event the X11 event structure
+ * @param hWin the window to be examined
  */
 void SeamlessX11::doShapeEvent(Window hWin)
 {
