@@ -309,6 +309,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
                               'vboxautostart', 'vboxballoonctrl', 'vboxbfe', 'vboxextpackhelperapp', 'vboxnetdhcp',
                               'vboxnetadpctl', 'vboxtestogl', 'vboxtunctl', 'vboxvmmpreload', 'vboxxpcomipcd', 'vmCreator', ]:
                     aoTodo.append(oProcess);
+                if sBase.startswith('virtualbox-') and sBase.endswith('-multiarch.exe'):
+                    aoTodo.append(oProcess);
                 if iIteration in [0, 21]  and  sBase in [ 'windbg', 'gdb', 'gdb-i386-apple-darwin', ]:
                     reporter.log('Warning: debugger running: %s (%s)' % (oProcess.iPid, sBase,));
             if len(aoTodo) == 0:
