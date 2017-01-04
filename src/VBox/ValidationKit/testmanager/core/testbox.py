@@ -511,7 +511,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
             return u'<none>';
         sMarch = TestBoxData.queryCpuMicroarchEx(lCpuRevision, sCpuVendor);
         if sMarch is not None:
-            return '%s m%02X s%02X' \
+            return '%s %02x:%x' \
                  % (sMarch, TestBoxData.getCpuModelEx(lCpuRevision), TestBoxData.getCpuSteppingEx(lCpuRevision));
         return 'fam%02X m%02X s%02X' \
              % ( TestBoxData.getCpuFamilyEx(lCpuRevision), TestBoxData.getCpuModelEx(lCpuRevision),
