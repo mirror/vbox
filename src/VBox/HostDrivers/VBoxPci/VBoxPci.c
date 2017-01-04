@@ -277,14 +277,14 @@ static DECLCALLBACK(int) vboxPciDevMapRegion(PRAWPCIDEVPORT pPort,
                                              RTHCPHYS       RegionStart,
                                              uint64_t       u64RegionSize,
                                              int32_t        fFlags,
-                                             RTR0PTR        *pRegionBase)
+                                             RTR0PTR        *pRegionBaseR0)
 {
     PVBOXRAWPCIINS pThis = DEVPORT_2_VBOXRAWPCIINS(pPort);
     int            rc;
 
     vboxPciDevLock(pThis);
 
-    rc = vboxPciOsDevMapRegion(pThis, iRegion, RegionStart, u64RegionSize, fFlags, pRegionBase);
+    rc = vboxPciOsDevMapRegion(pThis, iRegion, RegionStart, u64RegionSize, fFlags, pRegionBaseR0);
 
     vboxPciDevUnlock(pThis);
 
@@ -443,8 +443,11 @@ static DECLCALLBACK(int) vboxPciDevPowerStateChange(PRAWPCIDEVPORT    pPort,
  *
  * @returns VBox status code.
  * @param   pGlobals            The globals.
- * @param   pszName             The instance name.
+ * @param   u32HostAddress      Host address.
+ * @param   fFlags              Flags.
+ * @param   pVmCtx              VM context.
  * @param   ppDevPort           Where to store the pointer to our port interface.
+ * @param   pfDevFlags          The device flags.
  */
 static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
                               uint32_t           u32HostAddress,
@@ -599,11 +602,11 @@ static DECLCALLBACK(int)  vboxPciFactoryInitVm(PRAWPCIFACTORY       pFactory,
  */
 static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
                                                   PVM                  pVM,
-                                                  PRAWPCIPERVM         pPciData)
+                                                  PRAWPCIPERVM         pVmData)
 {
-    if (pPciData->pDriverData)
+    if (pVmData->pDriverData)
     {
-        PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)pPciData->pDriverData;
+        PVBOXRAWPCIDRVVM pThis = (PVBOXRAWPCIDRVVM)pVmData->pDriverData;
 
 #ifdef VBOX_WITH_IOMMU
         /* If we have IOMMU, need to unmap all guest's physical pages from IOMMU on VM termination. */
@@ -618,7 +621,7 @@ static DECLCALLBACK(void)  vboxPciFactoryDeinitVm(PRAWPCIFACTORY       pFactory,
         }
 
         RTMemFree(pThis);
-        pPciData->pDriverData = NULL;
+        pVmData->pDriverData = NULL;
     }
 }
 

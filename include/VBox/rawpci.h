@@ -389,6 +389,11 @@ typedef struct RAWPCIDEVPORT
      * Get PCI region info.
      *
      * @param   pPort     Pointer to this structure.
+     * @param   iRegion   Region number.
+     * @param   pRegionStart    Where to start the region address.
+     * @param   pu64RegionSize  Where to store the region size.
+     * @param   pfPresent   Where to store if the region is present.
+     * @param   pfFlags     Where to store the flags.
      */
     DECLR0CALLBACKMEMBER(int,  pfnGetRegionInfo,(PRAWPCIDEVPORT pPort,
                                                  int32_t        iRegion,
@@ -402,6 +407,11 @@ typedef struct RAWPCIDEVPORT
      * Map PCI region.
      *
      * @param   pPort     Pointer to this structure.
+     * @param   iRegion   Region number.
+     * @param   RegionStart     Region start.
+     * @param   u64RegionSize   Region size.
+     * @param   fFlags    Flags.
+     * @param   pRegionBaseR0   Where to store the R0 address.
      */
     DECLR0CALLBACKMEMBER(int,  pfnMapRegion,(PRAWPCIDEVPORT pPort,
                                              int32_t        iRegion,
@@ -414,6 +424,10 @@ typedef struct RAWPCIDEVPORT
      * Unmap PCI region.
      *
      * @param   pPort     Pointer to this structure.
+     * @param   iRegion   Region number.
+     * @param   RegionStart     Region start.
+     * @param   u64RegionSize   Region size.
+     * @param   RegionBase      Base address.
      */
     DECLR0CALLBACKMEMBER(int,  pfnUnmapRegion,(PRAWPCIDEVPORT pPort,
                                                int32_t        iRegion,
@@ -495,7 +509,7 @@ typedef struct RAWPCIFACTORY
      * will retain a reference to the factory and the caller has to call this method to
      * release it once the pfnCreateAndConnect call(s) has been done.
      *
-     * @param   pIfFactory          Pointer to this structure.
+     * @param   pFactory            Pointer to this structure.
      */
     DECLR0CALLBACKMEMBER(void, pfnRelease,(PRAWPCIFACTORY pFactory));
 
@@ -506,12 +520,13 @@ typedef struct RAWPCIFACTORY
      *
      * @returns VBox status code.
      *
-     * @param   pIfFactory          Pointer to this structure.
+     * @param   pFactory            Pointer to this structure.
      * @param   u32HostAddress      Address of PCI device on the host.
      * @param   fFlags              Creation flags.
      * @param   pVmCtx              Context of VM where device is created.
      * @param   ppDevPort           Where to store the pointer to the device port
      *                              on success.
+     * @param   pfDevFlags          Where to store the device flags.
      *
      */
     DECLR0CALLBACKMEMBER(int, pfnCreateAndConnect,(PRAWPCIFACTORY       pFactory,
@@ -527,26 +542,26 @@ typedef struct RAWPCIFACTORY
      *
      * @returns VBox status code.
      *
-     * @param   pIfFactory  Pointer to this structure.
+     * @param   pFactory    Pointer to this structure.
      * @param   pVM         The cross context VM structure.
-     * @param   pPciData    Pointer to PCI data.
+     * @param   pVmData     Pointer to PCI data.
      */
     DECLR0CALLBACKMEMBER(int, pfnInitVm,(PRAWPCIFACTORY       pFactory,
                                          PVM                  pVM,
-                                         PRAWPCIPERVM         pPciData));
+                                         PRAWPCIPERVM         pVmData));
 
     /**
      * Deinitialize per-VM data related to PCI passthrough.
      *
      * @returns VBox status code.
      *
-     * @param   pIfFactory  Pointer to this structure.
+     * @param   pFactory    Pointer to this structure.
      * @param   pVM         The cross context VM structure.
-     * @param   pPciData    Pointer to PCI data.
+     * @param   pVmData     Pointer to PCI data.
      */
     DECLR0CALLBACKMEMBER(void, pfnDeinitVm,(PRAWPCIFACTORY       pFactory,
                                             PVM                  pVM,
-                                            PRAWPCIPERVM         pPciData));
+                                            PRAWPCIPERVM         pVmData));
 } RAWPCIFACTORY;
 
 #define RAWPCIFACTORY_UUID_STR   "ea089839-4171-476f-adfb-9e7ab1cbd0fb"
