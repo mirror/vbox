@@ -323,7 +323,7 @@ int _info(struct modinfo *pModInfo)
  * Attach entry point, to attach a device to the system or resume it.
  *
  * @param   pDip            The module structure instance.
- * @param   enmCmd          Operation type (attach/resume).
+ * @param   Cmd             Operation type (attach/resume).
  *
  * @return corresponding solaris error code.
  */
@@ -337,7 +337,7 @@ static int VirtioNetAttach(dev_info_t *pDip, ddi_attach_cmd_t Cmd)
  * Detach entry point, to detach a device to the system or suspend it.
  *
  * @param   pDip            The module structure instance.
- * @param   enmCmd          Operation type (detach/suspend).
+ * @param   Cmd             Operation type (detach/suspend).
  *
  * @return corresponding solaris error code.
  */

@@ -114,6 +114,7 @@ static void pam_vbox_writesyslog(char *pszBuf)
 /**
  * Displays an error message.
  *
+ * @param   hPAM                    PAM handle.
  * @param   pszFormat               The message text.
  * @param   ...                     Format arguments.
  */
@@ -136,6 +137,7 @@ static void pam_vbox_error(pam_handle_t *hPAM, const char *pszFormat, ...)
 /**
  * Displays a debug message.
  *
+ * @param   hPAM                    PAM handle.
  * @param   pszFormat               The message text.
  * @param   ...                     Format arguments.
  */
@@ -674,7 +676,6 @@ static DECLCALLBACK(int) pam_vbox_wait_thread(RTTHREAD hThreadSelf, void *pvUser
  * @return  IPRT status code.
  * @param   hPAM                    PAM handle.
  * @param   uClientID               Guest property service client ID.
- * @param   pszKey                  Key (name) of guest property to wait for.
  * @param   uTimeoutMS              Timeout (in ms) to wait for the change. Specify
  *                                  RT_INDEFINITE_WAIT to wait indefinitly.
  */

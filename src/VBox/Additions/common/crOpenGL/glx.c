@@ -507,17 +507,18 @@ err_exit:
  ** define it to be an unsigned long.
  ** Solution: We don't support
  ** glXCopyContext anyway so we'll just
- ** #ifdef out the code.
+ ** \#ifdef out the code.
  */
 DECLEXPORT(void)
 VBOXGLXTAG(glXCopyContext)( Display *dpy, GLXContext src, GLXContext dst, 
 #if defined(AIX) || defined(PLAYSTATION2)
-GLuint mask )
+GLuint mask
 #elif defined(SunOS)
-unsigned long mask )
+unsigned long mask
 #else
-unsigned long mask )
+unsigned long mask
 #endif
+)
 {
     (void) dpy;
     (void) src;

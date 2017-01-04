@@ -166,6 +166,7 @@ int VirtioDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  * Allocates a Virtio Queue object and assigns it an index.
  *
  * @param pDevice           Pointer to the Virtio device instance.
+ * @param Index             Queue index.
  *
  * @return A pointer to a Virtio Queue instance.
  */

@@ -923,7 +923,7 @@ sfprov_readdir(
 	int error;
 	char *cp;
 	int len;
-	SHFLSTRING *mask_str = NULL;	/* must be path with "/*" appended */
+	SHFLSTRING *mask_str = NULL;	/* must be path with "/ *" appended */
 	int mask_size;
 	sfp_file_t *fp;
 	uint32_t infobuff_alloc = 16384;
