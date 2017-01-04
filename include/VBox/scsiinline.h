@@ -179,7 +179,7 @@ DECLINLINE(uint32_t) scsiMSF2LBA(const uint8_t *pbBuf)
  * in the destination with spaces.
  *
  * @returns nothing.
- * @param   pDst                Where to store the string padded with spaces.
+ * @param   pbDst               Where to store the string padded with spaces.
  * @param   pbSrc               The string to copy.
  * @param   cbSize              Size of the destination buffer.
  */
@@ -200,7 +200,7 @@ DECLINLINE(void) scsiPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
  * in the destination with spaces.
  *
  * @returns nothing.
- * @param   pDst                Where to store the string padded with spaces.
+ * @param   pbDst               Where to store the string padded with spaces.
  * @param   pbSrc               The string to copy.
  * @param   cbSize              Size of the destination buffer.
  */
