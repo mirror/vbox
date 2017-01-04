@@ -718,6 +718,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
     # Windows
     #
 
+    ## VBox windows services we can query the status of.
+    kasWindowsServices = [ 'vboxdrv', 'vboxusbmon' ];
+
     def _installVBoxOnWindows(self):
         """ Installs VBox on Windows."""
         sExe = self._findFile('^VirtualBox-.*-(MultiArch|Win).exe$');
@@ -768,6 +771,25 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._waitForTestManagerConnectivity(30);
         return fRc;
 
+    def _isProcessPresent(self, sName):
+        """ Checks whether the named process is present or not. """
+        for oProcess in utils.processListAll():
+            sBase = oProcess.getBaseImageNameNoExeSuff();
+            if sBase is not None and sBase.lower() == sName:
+                return True;
+        return False;
+
+    def _killProcessesByName(self, sName, sDesc):
+        """ Checks whether the named process is present or not. """
+        cKilled = 0;
+        for oProcess in utils.processListAll():
+            sBase = oProcess.getBaseImageNameNoExeSuff();
+            if sBase is not None and sBase.lower() == sName:
+                reporter.log('Killing %s process: %s (%s)' % (sDesc, oProcess.iPid, sBase));
+                utils.processKill(oProcess.iPid);
+                cKilled += 1;
+        return cKilled;
+
     def _uninstallVBoxOnWindows(self):
         """
         Uninstalls VBox on Windows, all installations we find to be on the safe side...
@@ -792,16 +814,19 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 asProdCodes.append([sProdCode, sProdName]);
 
         # Before we start uninstalling anything, just ruthlessly kill any
-        # msiexec process we might find hanging around.
+        # msiexec and drvinst process we might find hanging around.
         cKilled = 0;
-        for oProcess in utils.processListAll():
-            sBase = oProcess.getBaseImageNameNoExeSuff();
-            if sBase is not None and sBase.lower() in [ 'msiexec', ]:
-                reporter.log('Killing MSI process: %s (%s)' % (oProcess.iPid, sBase));
-                utils.processKill(oProcess.iPid);
-                cKilled += 1;
-        if cKilled > 0:
-            time.sleep(16); # fudge.
+        if self._isProcessPresent('drvinst'):
+            time.sleep(15);     # In the hope that it goes away.
+            cKilled = self._killProcessesByName('drvinst', 'MSI driver installation');
+            if cKilled > 0:
+                time.sleep(15); # Give related MSI process a chance to clean up after we killed the driver installer.
+
+        if self._isProcessPresent('msiexec'):
+            time.sleep(15);     # In the hope that it goes away.
+            cKilled = self._killProcessesByName('msiexec', 'MSI driver installation');
+            if cKilled > 0:
+                time.sleep(16); # fudge.
 
         # Do the uninstalling.
         fRc = True;
@@ -821,6 +846,11 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._waitForTestManagerConnectivity(30);
         if fRc is False and os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/uninstaller');
+
+        # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
+        for sService in self.kasWindowsServices:
+            self._sudoExecuteSync(['sc.exe', 'query', sService]);
+
         return fRc;
 
 
