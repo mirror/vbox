@@ -36,7 +36,7 @@
 #include <iprt/string.h>
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnFree} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnFree} */
 static DECLCALLBACK(void) rtAsn1EFenceAllocator_Free(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ALLOCATION pAllocation, void *pv)
 {
     RT_NOREF_PV(pThis);
@@ -45,7 +45,7 @@ static DECLCALLBACK(void) rtAsn1EFenceAllocator_Free(PCRTASN1ALLOCATORVTABLE pTh
 }
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnAlloc} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnAlloc} */
 static DECLCALLBACK(int)  rtAsn1EFenceAllocator_Alloc(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ALLOCATION pAllocation,
                                                       void **ppv, size_t cb)
 {
@@ -61,7 +61,7 @@ static DECLCALLBACK(int)  rtAsn1EFenceAllocator_Alloc(PCRTASN1ALLOCATORVTABLE pT
 }
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnRealloc} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnRealloc} */
 static DECLCALLBACK(int)  rtAsn1EFenceAllocator_Realloc(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ALLOCATION pAllocation,
                                                         void *pvOld, void **ppvNew, size_t cbNew)
 {
@@ -79,7 +79,7 @@ static DECLCALLBACK(int)  rtAsn1EFenceAllocator_Realloc(PCRTASN1ALLOCATORVTABLE 
 }
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnFreeArray} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnFreeArray} */
 static DECLCALLBACK(void) rtAsn1EFenceAllocator_FreeArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
                                                           void **papvArray)
 {
@@ -101,7 +101,7 @@ static DECLCALLBACK(void) rtAsn1EFenceAllocator_FreeArray(PCRTASN1ALLOCATORVTABL
 }
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnGrowArray} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnGrowArray} */
 static DECLCALLBACK(int) rtAsn1EFenceAllocator_GrowArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
                                                          void ***ppapvArray, uint32_t cMinEntries)
 {
@@ -145,7 +145,7 @@ static DECLCALLBACK(int) rtAsn1EFenceAllocator_GrowArray(PCRTASN1ALLOCATORVTABLE
 }
 
 
-/** @interface_method_impl{RTASN1ALLOCATORVTABLE, pfnShrinkArray} */
+/** @interface_method_impl{RTASN1ALLOCATORVTABLE,pfnShrinkArray} */
 static DECLCALLBACK(void) rtAsn1EFenceAllocator_ShrinkArray(PCRTASN1ALLOCATORVTABLE pThis, PRTASN1ARRAYALLOCATION pAllocation,
                                                             void ***ppapvArray, uint32_t cNew, uint32_t cCurrent)
 {
