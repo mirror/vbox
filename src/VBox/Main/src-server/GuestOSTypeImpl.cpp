@@ -64,45 +64,19 @@ void GuestOSType::FinalRelease()
  * Initializes the guest OS type object.
  *
  * @returns COM result indicator
- * @param aFamilyId          os family short name string
- * @param aFamilyDescription os family name string
- * @param aId                os short name string
- * @param aDescription       os name string
- * @param aOSType            global OS type ID
- * @param aOSHint            os configuration hint
- * @param aRAMSize           recommended RAM size in megabytes
- * @param aVRAMSize          recommended video memory size in megabytes
- * @param aHDDSize           recommended HDD size in bytes
+ * @param ostype containing the following parts:
+ * @a aFamilyId          os family short name string
+ * @a aFamilyDescription os family name string
+ * @a aId                os short name string
+ * @a aDescription       os name string
+ * @a aOSType            global OS type ID
+ * @a aOSHint            os configuration hint
+ * @a aRAMSize           recommended RAM size in megabytes
+ * @a aVRAMSize          recommended video memory size in megabytes
+ * @a aHDDSize           recommended HDD size in bytes
  */
-HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, const char *aFamilyDescription,
-                          const char *aId, const char *aDescription,
-                          VBOXOSTYPE aOSType, uint32_t aOSHint,
-                          uint32_t aRAMSize, uint32_t aVRAMSize, uint64_t aHDDSize,
-                          NetworkAdapterType_T aNetworkAdapterType,
-                          uint32_t aNumSerialEnabled,
-                          StorageControllerType_T aDVDStorageControllerType,
-                          StorageBus_T aDVDStorageBusType,
-                          StorageControllerType_T aHDStorageControllerType,
-                          StorageBus_T aHDStorageBusType,
-                          ChipsetType_T aChipsetType
-                          AudioControllerType_T aAudioControllerType*/
+HRESULT GuestOSType::init(const Global::OSType &ostype)
 {
-#if 0
-    LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
-                      "aId='%s', aDescription='%s', "
-                      "aType=%d, aOSHint=%x, "
-                      "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%lld, "
-                      "aNetworkAdapterType=%d, aNumSerialEnabled=%d, "
-                      "aStorageControllerType=%d\n",
-                      aFamilyId, aFamilyDescription,
-                      aId, aDescription,
-                      aOSType, aOSHint,
-                      aRAMSize, aVRAMSize, aHDDSize,
-                      aNetworkAdapterType,
-                      aNumSerialEnabled,
-                      aStorageControllerType));
-#endif
-
     ComAssertRet(ostype.familyId && ostype.familyDescription && ostype.id && ostype.description, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */

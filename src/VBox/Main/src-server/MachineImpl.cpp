@@ -285,6 +285,8 @@ void Machine::FinalRelease()
  *  @param aOsType      OS Type of this machine or NULL.
  *  @param aId          UUID for the new machine.
  *  @param fForceOverwrite Whether to overwrite an existing machine settings file.
+ *  @param fDirectoryIncludesUUID Whether the use a special VM directory naming
+ *                      scheme (includes the UUID).
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
@@ -406,7 +408,7 @@ HRESULT Machine::init(VirtualBox *aParent,
  *         and the machine remains unregistered until RegisterMachine() is called.
  *
  *  @param aParent      Associated parent object
- *  @param aConfigFile  Local file system path to the VM settings file (can
+ *  @param strConfigFile Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
  *  @param aId          UUID of the machine or NULL (see above).
  *
@@ -517,6 +519,7 @@ HRESULT Machine::initFromSettings(VirtualBox *aParent,
  *  (import OVF case). Since we are importing, the UUID in the machine
  *  config is ignored and we always generate a fresh one.
  *
+ *  @param aParent  Associated parent object.
  *  @param strName  Name for the new machine; this overrides what is specified in config and is used
  *                  for the settings file as well.
  *  @param config   Machine configuration loaded and parsed from XML.
@@ -609,7 +612,8 @@ HRESULT Machine::init(VirtualBox *aParent,
 
 /**
  * Shared code between the various init() implementations.
- * @param aParent
+ * @param   aParent         The VirtualBox object.
+ * @param   strConfigFile   Settings file.
  * @return
  */
 HRESULT Machine::initImpl(VirtualBox *aParent,
@@ -7254,7 +7258,8 @@ HRESULT Machine::discardSavedState(BOOL aFRemoveFile)
 /**
  * Adds the given IsModified_* flag to the dirty flags of the machine.
  * This must be called either during i_loadSettings or under the machine write lock.
- * @param fl
+ * @param   fl                       Flag
+ * @param   fAllowStateModification  If state modifications are allowed.
  */
 void Machine::i_setModified(uint32_t fl, bool fAllowStateModification /* = true */)
 {
@@ -7267,7 +7272,8 @@ void Machine::i_setModified(uint32_t fl, bool fAllowStateModification /* = true 
  * Adds the given IsModified_* flag to the dirty flags of the machine, taking
  * care of the write locking.
  *
- * @param   fModifications      The flag to add.
+ * @param   fModification            The flag to add.
+ * @param   fAllowStateModification  If state modifications are allowed.
  */
 void Machine::i_setModifiedLock(uint32_t fModification, bool fAllowStateModification /* = true */)
 {
@@ -7278,7 +7284,7 @@ void Machine::i_setModifiedLock(uint32_t fModification, bool fAllowStateModifica
 /**
  *  Saves the registry entry of this machine to the given configuration node.
  *
- *  @param aEntryNode Node to save the registry entry to.
+ *  @param data     Machine registry data.
  *
  *  @note locks this object for reading.
  */
@@ -7299,7 +7305,7 @@ HRESULT Machine::i_saveRegistryEntry(settings::MachineRegistryEntry &data)
  * Calculates the absolute path of the given path taking the directory of the
  * machine settings file as the current directory.
  *
- * @param  aPath    Path to calculate the absolute path for.
+ * @param  strPath  Path to calculate the absolute path for.
  * @param  aResult  Where to put the result (used only on success, can be the
  *                  same Utf8Str instance as passed in @a aPath).
  * @return IPRT result.
@@ -7452,7 +7458,7 @@ Utf8Str Machine::i_getHardeningLogFilename(void)
  *
  * So instead we now use a timestamp.
  *
- * @param str
+ * @param strStateFilePath
  */
 
 void Machine::i_composeSavedStateFilename(Utf8Str &strStateFilePath)
@@ -8890,9 +8896,11 @@ HRESULT Machine::i_loadSnapshot(const settings::Snapshot &data,
 /**
  *  Loads settings into mHWData.
  *
- *  @param data           Reference to the hardware settings.
- *  @param pDbg           Pointer to the debugging settings.
- *  @param pAutostart     Pointer to the autostart settings.
+ * @param puuidRegistry Registry ID.
+ * @param puuidSnapshot Snapshot ID
+ * @param data          Reference to the hardware settings.
+ * @param pDbg          Pointer to the debugging settings.
+ * @param pAutostart    Pointer to the autostart settings.
  */
 HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
                                 const Guid *puuidSnapshot,
@@ -9300,10 +9308,11 @@ HRESULT Machine::i_loadStorageControllers(const settings::Storage &data,
 /**
  * Called from i_loadStorageControllers for a controller's devices.
  *
- * @param aStorageController
- * @param data
- * @param puuidRegistry media registry ID to set media to or NULL; see Machine::i_loadMachineDataFromSettings()
- * @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
+ * @param   aStorageController
+ * @param   data
+ * @param   puuidRegistry   media registry ID to set media to or NULL; see
+ *                          Machine::i_loadMachineDataFromSettings()
+ * @param   puuidSnapshot   pointer to the snapshot ID if this is a snapshot machine
  * @return
  */
 HRESULT Machine::i_loadStorageDevices(StorageController *aStorageController,
@@ -9571,7 +9580,7 @@ HRESULT Machine::i_findSnapshotById(const Guid &aId,
 /**
  *  Returns the snapshot with the given name or fails of no such snapshot.
  *
- *  @param aName        snapshot name to find
+ *  @param strName      snapshot name to find
  *  @param aSnapshot    where to return the found snapshot
  *  @param aSetError    true to set extended error info on failure
  */
@@ -9964,6 +9973,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
  *          settings have changed. This will happen if a machine rename has been
  *          saved and the global machine and media registries will therefore need
  *          updating.
+ * @param   aFlags  Flags.
  */
 HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
                                 int  aFlags /*= 0*/)
@@ -10727,6 +10737,7 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
  * @param aProgress         Progress object to run (must contain at least as
  *                          many operations left as the number of hard disks
  *                          attached).
+ * @param aWeight           Weight of this operation.
  * @param aOnline           Whether the VM was online prior to this operation.
  *
  * @note The progress object is not marked as completed, neither on success nor
@@ -11185,7 +11196,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
  * and returns it, or NULL if not found. The list is a parameter so that backup lists
  * can be searched as well if needed.
  *
- * @param list
+ * @param ll
  * @param aControllerName
  * @param aControllerPort
  * @param aDevice
@@ -11211,10 +11222,8 @@ MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
  * and returns it, or NULL if not found. The list is a parameter so that backup lists
  * can be searched as well if needed.
  *
- * @param list
- * @param aControllerName
- * @param aControllerPort
- * @param aDevice
+ * @param ll
+ * @param pMedium
  * @return
  */
 MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
@@ -11236,10 +11245,8 @@ MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
  * and returns it, or NULL if not found. The list is a parameter so that backup lists
  * can be searched as well if needed.
  *
- * @param list
- * @param aControllerName
- * @param aControllerPort
- * @param aDevice
+ * @param ll
+ * @param id
  * @return
  */
 MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
@@ -11260,10 +11267,12 @@ MediumAttachment* Machine::i_findAttachment(const MediaData::AttachmentList &ll,
  * Main implementation for Machine::DetachDevice. This also gets called
  * from Machine::prepareUnregister() so it has been taken out for simplicity.
  *
- * @param pAttach Medium attachment to detach.
- * @param writeLock Machine write lock which the caller must have locked once. This may be released temporarily in here.
- * @param pSnapshot If NULL, then the detachment is for the current machine. Otherwise this is for a
- * SnapshotMachine, and this must be its snapshot.
+ * @param pAttach   Medium attachment to detach.
+ * @param writeLock Machine write lock which the caller must have locked once.
+ *                  This may be released temporarily in here.
+ * @param pSnapshot If NULL, then the detachment is for the current machine.
+ *                  Otherwise this is for a SnapshotMachine, and this must be
+ *                  its snapshot.
  * @return
  */
 HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
@@ -11336,12 +11345,15 @@ HRESULT Machine::i_detachDevice(MediumAttachment *pAttach,
  * Requires caller and locking. The machine lock must be passed in because it
  * will be passed on to i_detachDevice which needs it for temporary unlocking.
  *
- * @param writeLock Machine lock from top-level caller; this gets passed to i_detachDevice.
- * @param pSnapshot Must be NULL when called for a "real" Machine or a snapshot object if called for a SnapshotMachine.
- * @param cleanupMode If DetachAllReturnHardDisksOnly, only hard disk media get added to llMedia; if
- * Full, then all media get added;
- *          otherwise no media get added.
- * @param llMedia Caller's list to receive Medium objects which got detached so caller can close() them, depending on cleanupMode.
+ * @param writeLock Machine lock from top-level caller; this gets passed to
+ *                  i_detachDevice.
+ * @param pSnapshot Must be NULL when called for a "real" Machine or a snapshot
+ *                  object if called for a SnapshotMachine.
+ * @param cleanupMode If DetachAllReturnHardDisksOnly, only hard disk media get
+ *                  added to llMedia; if Full, then all media get added;
+ *                  otherwise no media get added.
+ * @param llMedia   Caller's list to receive Medium objects which got detached so
+ *                  caller can close() them, depending on cleanupMode.
  * @return
  */
 HRESULT Machine::i_detachAllMedia(AutoWriteLock &writeLock,

@@ -67,7 +67,8 @@ using namespace std;
  * Public method implementation. This opens the OVF with ovfreader.cpp.
  * Thread implementation is in Appliance::readImpl().
  *
- * @param aFile
+ * @param aFile     File to read the appliance from.
+ * @param aProgress Progress object.
  * @return
  */
 HRESULT Appliance::read(const com::Utf8Str &aFile,
@@ -751,7 +752,8 @@ HRESULT Appliance::interpret()
  * Public method implementation. This creates one or more new machines according to the
  * VirtualSystemScription instances created by Appliance::Interpret().
  * Thread implementation is in Appliance::i_importImpl().
- * @param aProgress
+ * @param aOptions  Import options.
+ * @param aProgress Progress object.
  * @return
  */
 HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,

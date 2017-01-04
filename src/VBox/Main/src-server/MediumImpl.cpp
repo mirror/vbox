@@ -1440,9 +1440,12 @@ HRESULT Medium::initOne(Medium *aParent,
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
  * @param aDeviceType   Device type of the medium.
- * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUID or machine UUID).
+ * @param uuidMachineRegistry The registry to which this medium should be added
+ *                      (global registry UUID or machine UUID).
  * @param data          Configuration settings.
- * @param strMachineFolder The machine folder with which to resolve relative paths; if empty, then we use the VirtualBox home directory
+ * @param strMachineFolder The machine folder with which to resolve relative
+ *                      paths; if empty, then we use the VirtualBox home directory
+ * @param mediaTreeLock Autolock.
  *
  * @note Locks the medium tree for writing.
  */
@@ -5440,7 +5443,7 @@ HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
  * This method is to be called prior to calling the #mergeTo() to perform
  * necessary consistency checks and place involved media to appropriate
  * states. If #mergeTo() is not called or fails, the state modifications
- * performed by this method must be undone by #cancelMergeTo().
+ * performed by this method must be undone by #i_cancelMergeTo().
  *
  * See #mergeTo() for more information about merging.
  *
@@ -5450,7 +5453,7 @@ HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
  *                      do not check.
  * @param fLockMedia    Flag whether to lock the medium lock list or not.
  *                      If set to false and the medium lock list locking fails
- *                      later you must call #cancelMergeTo().
+ *                      later you must call #i_cancelMergeTo().
  * @param fMergeForward Resulting merge direction (out).
  * @param pParentForTarget New parent for target medium after merge (out).
  * @param aChildrenToReparent Medium lock list containing all children of the
@@ -5790,8 +5793,8 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  * Neither the source medium nor intermediate media may be attached to
  * any VM directly or in the snapshot, otherwise this method will assert.
  *
- * The #prepareMergeTo() method must be called prior to this method to place all
- * involved to necessary states and perform other consistency checks.
+ * The #i_prepareMergeTo() method must be called prior to this method to place
+ * all involved to necessary states and perform other consistency checks.
  *
  * If @a aWait is @c true then this method will perform the operation on the
  * calling thread and will not return to the caller until the operation is
@@ -5814,7 +5817,7 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  *
  * When this method fails (regardless of the @a aWait mode), it is a caller's
  * responsibility to undo state changes and delete @a aMediumLockList using
- * #cancelMergeTo().
+ * #i_cancelMergeTo().
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
  * progress object will be created and assigned to @a *aProgress on success,
@@ -5922,7 +5925,7 @@ HRESULT Medium::i_mergeTo(const ComObjPtr<Medium> &pTarget,
 }
 
 /**
- * Undoes what #prepareMergeTo() did. Must be called if #mergeTo() is not
+ * Undoes what #i_prepareMergeTo() did. Must be called if #mergeTo() is not
  * called or fails. Frees memory occupied by @a aMediumLockList and unlocks
  * the medium objects in @a aChildrenToReparent.
  *
@@ -7529,7 +7532,7 @@ Utf8Str Medium::i_vdError(int aVRC)
  *
  * @param   pvUser          The opaque data passed on container creation.
  * @param   rc              The VBox error code.
- * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
+ * @param   SRC_POS         Use RT_SRC_POS.
  * @param   pszFormat       Error message format string.
  * @param   va              Error message arguments.
  */

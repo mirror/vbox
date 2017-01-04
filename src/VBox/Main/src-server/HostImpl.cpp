@@ -536,7 +536,7 @@ void Host::uninit()
  * Returns a list of host DVD drives.
  *
  * @returns COM status code
- * @param drives address of result pointer
+ * @param aDVDDrives    address of result pointer
  */
 
 HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
@@ -560,7 +560,7 @@ HRESULT Host::getDVDDrives(std::vector<ComPtr<IMedium> > &aDVDDrives)
  * Returns a list of host floppy drives.
  *
  * @returns COM status code
- * @param drives address of result pointer
+ * @param   aFloppyDrives   address of result pointer
  */
 HRESULT Host::getFloppyDrives(std::vector<ComPtr<IMedium> > &aFloppyDrives)
 {
@@ -627,7 +627,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
  * Returns a list of host network interfaces.
  *
  * @returns COM status code
- * @param drives address of result pointer
+ * @param   aNetworkInterfaces  address of result pointer
  */
 HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
@@ -899,7 +899,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
  * Returns the number of installed logical processors
  *
  * @returns COM status code
- * @param   count address of result variable
+ * @param   aCount  address of result variable
  */
 
 HRESULT Host::getProcessorCount(ULONG *aCount)
@@ -914,7 +914,7 @@ HRESULT Host::getProcessorCount(ULONG *aCount)
  * Returns the number of online logical processors
  *
  * @returns COM status code
- * @param   count address of result variable
+ * @param   aCount  address of result variable
  */
 HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
 {
@@ -928,7 +928,7 @@ HRESULT Host::getProcessorOnlineCount(ULONG *aCount)
  * Returns the number of installed physical processor cores.
  *
  * @returns COM status code
- * @param   count address of result variable
+ * @param   aCount  address of result variable
  */
 HRESULT Host::getProcessorCoreCount(ULONG *aCount)
 {
@@ -942,7 +942,7 @@ HRESULT Host::getProcessorCoreCount(ULONG *aCount)
  * Returns the number of installed physical processor cores.
  *
  * @returns COM status code
- * @param   count address of result variable
+ * @param   aCount  address of result variable
  */
 HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
 {
@@ -956,8 +956,9 @@ HRESULT Host::getProcessorOnlineCoreCount(ULONG *aCount)
  * Returns the (approximate) maximum speed of the given host CPU in MHz
  *
  * @returns COM status code
- * @param   cpu id to get info for.
- * @param   speed address of result variable, speed is 0 if unknown or aCpuId is invalid.
+ * @param   aCpuId  id to get info for.
+ * @param   aSpeed  address of result variable, speed is 0 if unknown or aCpuId
+ *          is invalid.
  */
 HRESULT Host::getProcessorSpeed(ULONG aCpuId,
                                 ULONG *aSpeed)
@@ -972,8 +973,9 @@ HRESULT Host::getProcessorSpeed(ULONG aCpuId,
  * Returns a description string for the host CPU
  *
  * @returns COM status code
- * @param   cpu id to get info for.
- * @param   description address of result variable, empty string if not known or aCpuId is invalid.
+ * @param   aCpuId  id to get info for.
+ * @param   aDescription address of result variable, empty string if not known
+ *          or aCpuId is invalid.
  */
 HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 {
@@ -994,8 +996,8 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
  * Returns whether a host processor feature is supported or not
  *
  * @returns COM status code
- * @param   Feature to query.
- * @param   address of supported bool result variable
+ * @param   aFeature    to query.
+ * @param   aSupported  supported bool result variable
  */
 HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 {
@@ -1117,7 +1119,7 @@ HRESULT Host::getProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
  * Returns the amount of installed system memory in megabytes
  *
  * @returns COM status code
- * @param   size address of result variable
+ * @param   aSize   address of result variable
  */
 HRESULT Host::getMemorySize(ULONG *aSize)
 {
@@ -1135,7 +1137,7 @@ HRESULT Host::getMemorySize(ULONG *aSize)
  * Returns the current system memory free space in megabytes
  *
  * @returns COM status code
- * @param   available address of result variable
+ * @param   aAvailable  address of result variable
  */
 HRESULT Host::getMemoryAvailable(ULONG *aAvailable)
 {
@@ -1171,7 +1173,7 @@ HRESULT Host::getOperatingSystem(com::Utf8Str &aOperatingSystem)
  * Returns the version string of the host operating system
  *
  * @returns COM status code
- * @param   os address of result variable
+ * @param   aVersion    address of result variable
  */
 HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
 {
@@ -1206,7 +1208,7 @@ HRESULT Host::getOSVersion(com::Utf8Str &aVersion)
  * Returns the current host time in milliseconds since 1970-01-01 UTC.
  *
  * @returns COM status code
- * @param   time address of result variable
+ * @param   aUTCTime    address of result variable
  */
 HRESULT Host::getUTCTime(LONG64 *aUTCTime)
 {
@@ -2048,7 +2050,7 @@ HRESULT Host::i_findHostDriveByNameOrId(DeviceType_T mediumType,
 
 /**
  * Called from getDrives() to build the DVD drives list.
- * @param pll
+ * @param   list    Media list
  * @return
  */
 HRESULT Host::i_buildDVDDrivesList(MediaList &list)

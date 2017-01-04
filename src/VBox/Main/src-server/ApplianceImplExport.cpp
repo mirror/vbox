@@ -52,7 +52,9 @@ using namespace std;
 
 /**
 * Public method implementation.
-* @param appliance
+* @param aAppliance     Appliance object.
+* @param aLocation      Where to store the appliance.
+* @param aDescription   Appliance description.
 * @return
 */
 HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8Str &aLocation,
@@ -617,10 +619,10 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
 
 /**
  * Public method implementation.
- * @param format
- * @param options
- * @param path
- * @param aProgress
+ * @param aFormat   Appliance format.
+ * @param aOptions  Export options.
+ * @param aPath     Path to write the appliance to.
+ * @param aProgress Progress object.
  * @return
  */
 HRESULT Appliance::write(const com::Utf8Str &aFormat,

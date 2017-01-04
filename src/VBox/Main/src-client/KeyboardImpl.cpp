@@ -95,7 +95,7 @@ void Keyboard::FinalRelease()
  * Initializes the keyboard object.
  *
  * @returns COM result indicator
- * @param parent handle of our parent object
+ * @param aParent   handle of our parent object
  */
 HRESULT Keyboard::init(Console *aParent)
 {

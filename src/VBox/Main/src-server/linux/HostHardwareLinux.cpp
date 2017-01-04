@@ -892,8 +892,9 @@ public:
     hotplugNullImpl(const char *) {}
     virtual ~hotplugNullImpl (void) {}
     /** @copydoc VBoxMainHotplugWaiter::Wait */
-    virtual int Wait (RTMSINTERVAL)
+    virtual int Wait (RTMSINTERVAL cMillies)
     {
+        NOREF(cMillies);
         return VERR_NOT_SUPPORTED;
     }
     /** @copydoc VBoxMainHotplugWaiter::Interrupt */

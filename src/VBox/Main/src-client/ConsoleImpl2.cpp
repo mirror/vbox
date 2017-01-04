@@ -4012,9 +4012,10 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
  * @param   pUVM       The usermode VM handle.
  * @param   enmBus     The storage bus.
  * @param   enmDevType The device type.
- * @param   pczsDevice The device emulation.
+ * @param   pcszDevice The device emulation.
  * @param   uInstance  Instance of the device.
  * @param   uLUN       The LUN on the device.
+ * @param   fForceUnmount  Whether to force unmounting.
  */
 int Console::i_unmountMediumFromGuest(PUVM pUVM, StorageBus_T enmBus, DeviceType_T enmDevType,
                                       const char *pcszDevice, unsigned uInstance, unsigned uLUN,
@@ -4060,7 +4061,7 @@ int Console::i_unmountMediumFromGuest(PUVM pUVM, StorageBus_T enmBus, DeviceType
  *
  * @returns VBox status code.
  * @param   pCtlInst      The controler instance node in the CFGM tree.
- * @param   pczsDevice    The device name.
+ * @param   pcszDevice    The device name.
  * @param   uInstance     The device instance.
  * @param   uLUN          The device LUN.
  * @param   enmBus        The storage bus.

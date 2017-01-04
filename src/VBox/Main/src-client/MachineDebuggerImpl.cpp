@@ -123,7 +123,7 @@ void MachineDebugger::uninit()
  * Returns the current singlestepping flag.
  *
  * @returns COM status code
- * @param   a_fEnabled      Where to store the result.
+ * @param   aSingleStep     Where to store the result.
  */
 HRESULT MachineDebugger::getSingleStep(BOOL *aSingleStep)
 {
@@ -532,7 +532,7 @@ HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations
  * Returns the current hardware virtualization flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aHWVirtExEnabled    address of result variable
  */
 HRESULT MachineDebugger::getHWVirtExEnabled(BOOL *aHWVirtExEnabled)
 {
@@ -552,7 +552,7 @@ HRESULT MachineDebugger::getHWVirtExEnabled(BOOL *aHWVirtExEnabled)
  * Returns the current nested paging flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aHWVirtExNestedPagingEnabled    address of result variable
  */
 HRESULT MachineDebugger::getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled)
 {
@@ -572,7 +572,7 @@ HRESULT MachineDebugger::getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPag
  * Returns the current VPID flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   aHWVirtExVPIDEnabled address of result variable
  */
 HRESULT MachineDebugger::getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled)
 {

@@ -606,8 +606,7 @@ Display::i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint
  * Initializes the display object.
  *
  * @returns COM result indicator
- * @param parent          handle of our parent object
- * @param qemuConsoleData address of common console data structure
+ * @param aParent   handle of our parent object
  */
 HRESULT Display::init(Console *aParent)
 {
@@ -890,10 +889,15 @@ int Display::i_notifyCroglResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen,
 /**
  *  Handles display resize event.
  *
- *  @param w New display width
- *  @param h New display height
+ * @param uScreenId Screen ID
+ * @param bpp       New bits per pixel.
+ * @param pvVRAM    VRAM pointer.
+ * @param cbLine    New bytes per line.
+ * @param w         New display width.
+ * @param h         New display height.
+ * @param flags     Flags of the new video mode.
  *
- *  @thread EMT
+ * @thread EMT
  */
 int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags)

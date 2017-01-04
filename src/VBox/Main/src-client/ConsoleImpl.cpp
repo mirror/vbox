@@ -1567,7 +1567,8 @@ HRESULT Console::i_loadDataFromSavedState()
  * Callback handler to save various console data to the state file,
  * called when the user saves the VM state.
  *
- * @param pvUser       pointer to Console
+ * @param pSSM      SSM handle.
+ * @param pvUser    pointer to Console
  *
  * @note Locks the Console object for reading.
  */
@@ -1621,6 +1622,7 @@ DECLCALLBACK(void) Console::i_saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
  * Callback handler to load various console data from the state file.
  * Called when the VM is being restored from the saved state.
  *
+ * @param pSSM         SSM handle.
  * @param pvUser       pointer to Console
  * @param uVersion     Console unit version.
  *                     Should match sSSMConsoleVer.
@@ -1647,9 +1649,9 @@ Console::i_loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, u
 
 /**
  * Method to load various console data from the state file.
- * Called from #loadDataFromSavedState.
+ * Called from #i_loadDataFromSavedState.
  *
- * @param pvUser       pointer to Console
+ * @param pSSM         SSM handle.
  * @param u32Version   Console unit version.
  *                     Should match sSSMConsoleVer.
  *
@@ -3319,7 +3321,7 @@ HRESULT Console::i_convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LON
  * @param pUVM              Safe VM handle.
  * @param pAlock            The automatic lock instance. This is for when we have
  *                          to leave it in order to avoid deadlocks.
- * @param pfSuspend         where to store the information if we need to resume
+ * @param pfResume          where to store the information if we need to resume
  *                          afterwards.
  */
 HRESULT Console::i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, bool *pfResume)
@@ -3515,14 +3517,10 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
  * @param   pUVM            The VM handle.
  * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
- * @param   uLun            The PDM LUN number of the drive.
- * @param   fHostDrive      True if this is a host drive attachment.
- * @param   pszPath         The path to the media / drive which is now being mounted / captured.
- *                          If NULL no media or drive is attached and the LUN will be configured with
- *                          the default block driver with no media. This will also be the state if
- *                          mounting / capturing the specified media / drive fails.
- * @param   pszFormat       Medium format string, usually "RAW".
- * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
+ * @param   enmBus          The storage bus type of the controller.
+ * @param   fUseHostIOCache Whether to use the host I/O cache (disable async I/O).
+ * @param   aMediumAtt      The medium attachment.
+ * @param   fForce          Force unmounting.
  *
  * @thread  EMT
  * @note The VM must not be running since it might have pending I/O to the drive which is being changed.
@@ -3697,6 +3695,9 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
  * @param   pUVM            The VM handle.
  * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
+ * @param   enmBus          The storage bus type of the controller.
+ * @param   fUseHostIOCache Whether to use the host I/O cache (disable async I/O).
+ * @param   aMediumAtt      The medium attachment.
  * @param   fSilent         Flag whether to inform the guest about the attached device.
  *
  * @thread  EMT
@@ -3867,6 +3868,8 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
  * @param   pUVM            The VM handle.
  * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
+ * @param   enmBus          The storage bus type of the controller.
+ * @param   pMediumAtt      Pointer to the medium attachment.
  * @param   fSilent         Flag whether to notify the guest about the detached device.
  *
  * @thread  EMT
@@ -4426,7 +4429,7 @@ HRESULT Console::i_initSecretKeyIfOnAllAttachments(void)
  * Useful when changing the key store or dropping it.
  *
  * @returns COM status code.
- * @param   aId    The ID to look for.
+ * @param   strId    The ID to look for.
  */
 HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8Str &strId)
 {
@@ -4687,8 +4690,9 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId, unsigne
 /**
  * Parses the encryption configuration for one disk.
  *
- * @returns Pointer to the string following encryption configuration.
- * @param   psz    Pointer to the configuration for the encryption of one disk.
+ * @returns COM status code.
+ * @param   psz     Pointer to the configuration for the encryption of one disk.
+ * @param   ppszEnd Pointer to the string following encrpytion configuration.
  */
 HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd)
 {
@@ -5448,10 +5452,10 @@ HRESULT Console::i_onSharedFolderChange(BOOL aGlobal)
  * @return S_OK if the device was attached to the VM.
  * @return failure if not attached.
  *
- * @param aDevice
- *     The device in question.
- * @param aMaskedIfs
- *     The interfaces to hide from the guest.
+ * @param aDevice       The device in question.
+ * @param aError        Error information.
+ * @param aMaskedIfs    The interfaces to hide from the guest.
+ * @param aCaptureFilename File name where to store the USB traffic.
  *
  * @note Locks this object for writing.
  */
@@ -7869,7 +7873,7 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
  * Searches for a shared folder with the given logical name
  * in the collection of shared folders.
  *
- * @param aName            logical name of the shared folder
+ * @param strName          logical name of the shared folder
  * @param aSharedFolder    where to return the found object
  * @param aSetError        whether to set the error info if the folder is
  *                         not found
@@ -8046,7 +8050,7 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
  * Searches for a shared folder with the given name in the list of machine
  * shared folders and then in the list of the global shared folders.
  *
- * @param aName    Name of the folder to search for.
+ * @param strName  Name of the folder to search for.
  * @param aIt      Where to store the pointer to the found folder.
  * @return         @c true if the folder was found and @c false otherwise.
  *
@@ -8074,8 +8078,8 @@ bool Console::i_findOtherSharedFolder(const Utf8Str &strName,
 /**
  * Calls the HGCM service to add a shared folder definition.
  *
- * @param aName        Shared folder name.
- * @param aHostPath    Shared folder path.
+ * @param strName      Shared folder name.
+ * @param aData        Shared folder data.
  *
  * @note Must be called from under AutoVMCaller and when mpUVM != NULL!
  * @note Doesn't lock anything.
@@ -8187,7 +8191,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
 /**
  * Calls the HGCM service to remove the shared folder definition.
  *
- * @param aName        Shared folder name.
+ * @param strName       Shared folder name.
  *
  * @note Must be called from under AutoVMCaller and when mpUVM != NULL!
  * @note Doesn't lock anything.
@@ -9219,7 +9223,7 @@ DECLCALLBACK(int) Console::i_stateProgressCallback(PUVM pUVM, unsigned uPercent,
  */
 /*static*/ DECLCALLBACK(void)
 Console::i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
-                                     const char *pszErrorFmt, va_list va)
+                                     const char *pszFormat, va_list args)
 {
     RT_SRC_POS_NOREF();
     Utf8Str *pErrorText = (Utf8Str *)pvUser;
@@ -9227,14 +9231,14 @@ Console::i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS
 
     /* We ignore RT_SRC_POS_DECL arguments to avoid confusion of end-users. */
     va_list va2;
-    va_copy(va2, va);
+    va_copy(va2, args);
 
     /* Append to any the existing error message. */
     if (pErrorText->length())
         *pErrorText = Utf8StrFmt("%s.\n%N (%Rrc)", pErrorText->c_str(),
-                                 pszErrorFmt, &va2, rc, rc);
+                                 pszFormat, &va2, rc, rc);
     else
-        *pErrorText = Utf8StrFmt("%N (%Rrc)", pszErrorFmt, &va2, rc, rc);
+        *pErrorText = Utf8StrFmt("%N (%Rrc)", pszFormat, &va2, rc, rc);
 
     va_end(va2);
 
@@ -9951,9 +9955,11 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
  *
  * @param   pThis         Reference to the console object.
  * @param   pUVM          The VM handle.
- * @param   lInstance     The instance of the controller.
  * @param   pcszDevice    The name of the controller type.
+ * @param   uInstance     The instance of the controller.
  * @param   enmBus        The storage bus type of the controller.
+ * @param   fUseHostIOCache Use the host I/O cache (disable async I/O).
+ * @param   fBuiltinIOCache Use the builtin I/O cache.
  * @param   fSetupMerge   Whether to set up a medium merge
  * @param   uMergeSource  Merge source image index
  * @param   uMergeTarget  Merge target image index

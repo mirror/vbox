@@ -188,7 +188,7 @@ static const char g_szWelcome[] = "VirtualBox-Teleporter-1.0\n";
 static int teleporterTcpReadLine(TeleporterState *pState, char *pszBuf, size_t cchBuf)
 {
     char       *pszStart = pszBuf;
-    RTSOCKET    Sock     = pState->mhSocket;
+    RTSOCKET    hSocket  = pState->mhSocket;
 
     AssertReturn(cchBuf > 1, VERR_INTERNAL_ERROR);
     *pszBuf = '\0';
@@ -197,7 +197,7 @@ static int teleporterTcpReadLine(TeleporterState *pState, char *pszBuf, size_t c
     for (;;)
     {
         char ch;
-        int rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+        int rc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
         if (RT_FAILURE(rc))
         {
             LogRel(("Teleporter: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
@@ -931,7 +931,7 @@ Console::i_teleporterSrcThreadWrapper(RTTHREAD hThreadSelf, void *pvUser)
  * @returns COM status code.
  *
  * @param   aHostname       The name of the target host.
- * @param   aPort           The TCP port number.
+ * @param   aTcpport        The TCP port number.
  * @param   aPassword       The password.
  * @param   aMaxDowntime    Max allowed "downtime" in milliseconds.
  * @param   aProgress       Where to return the progress object.
@@ -1256,17 +1256,17 @@ static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2, const
  * @returns VINF_SUCCESS or VERR_TCP_SERVER_STOP.
  */
 /*static*/ DECLCALLBACK(int)
-Console::i_teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
+Console::i_teleporterTrgServeConnection(RTSOCKET hSocket, void *pvUser)
 {
     TeleporterStateTrg *pState = (TeleporterStateTrg *)pvUser;
-    pState->mhSocket = Sock;
+    pState->mhSocket = hSocket;
 
     /*
      * Disable Nagle and say hello.
      */
     int vrc = RTTcpSetSendCoalescing(pState->mhSocket, false /*fEnable*/);
     AssertRC(vrc);
-    vrc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
+    vrc = RTTcpWrite(hSocket, g_szWelcome, sizeof(g_szWelcome) - 1);
     if (RT_FAILURE(vrc))
     {
         LogRel(("Teleporter: Failed to write welcome message: %Rrc\n", vrc));
@@ -1281,7 +1281,7 @@ Console::i_teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     while (pszPassword[off])
     {
         char ch;
-        vrc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
+        vrc = RTTcpRead(hSocket, &ch, sizeof(ch), NULL);
         if (    RT_FAILURE(vrc)
             ||  pszPassword[off] != ch)
         {
@@ -1303,7 +1303,7 @@ Console::i_teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
      */
     HRESULT     hrc;
     RTNETADDR   Addr;
-    vrc = RTTcpGetPeerAddress(Sock, &Addr);
+    vrc = RTTcpGetPeerAddress(hSocket, &Addr);
     if (RT_SUCCESS(vrc))
     {
         LogRel(("Teleporter: Incoming VM from %RTnaddr!\n", &Addr));

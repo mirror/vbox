@@ -380,7 +380,7 @@ typedef struct PDMIMOUSECONNECTOR
      * @param   pInterface      Pointer to this interface structure.
      * @param   fRelative       Whether relative mode is currently supported.
      * @param   fAbsolute       Whether absolute mode is currently supported.
-     * @param   fAbsolute       Whether multi-touch mode is currently supported.
+     * @param   fMultiTouch     Whether multi-touch mode is currently supported.
      */
     DECLR3CALLBACKMEMBER(void, pfnReportModes,(PPDMIMOUSECONNECTOR pInterface, bool fRelative, bool fAbsolute, bool fMultiTouch));
 

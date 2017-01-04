@@ -121,7 +121,7 @@ public:
 
     /**
      * Shortcut to <tt>IsOnline(aState) || IsTransient(aState)</tt>. When it returns
-     * @false, the VM is turned off (no VM process) and not busy with
+     * @c false, the VM is turned off (no VM process) and not busy with
      * another exclusive operation.
      */
     static bool IsOnlineOrTransient(MachineState_T aState)

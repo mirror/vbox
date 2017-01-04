@@ -741,9 +741,10 @@ HRESULT Guest::i_setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
 /**
  * Returns the status of a specified Guest Additions facility.
  *
- * @return  aStatus         Current status of specified facility.
- * @param   aType           Facility to get the status from.
+ * @return  COM status code
+ * @param   aFacility       Facility to get the status from.
  * @param   aTimestamp      Timestamp of last facility status update in ms (optional).
+ * @param   aStatus         Current status of the specified facility.
  */
 HRESULT Guest::getFacilityStatus(AdditionsFacilityType_T aFacility, LONG64 *aTimestamp, AdditionsFacilityStatus_T *aStatus)
 {
@@ -1046,7 +1047,6 @@ void Guest::i_onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enm
  *
  * Gets called by vmmdevUpdateGuestStatus, which just passes the report along.
  *
- * @param   a_pInterface        Pointer to this interface.
  * @param   a_enmFacility       The facility.
  * @param   a_enmStatus         The status.
  * @param   a_fFlags            Flags assoicated with the update. Currently
@@ -1091,7 +1091,7 @@ void Guest::i_setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestF
 /**
  * Sets the supported features (and whether they are active or not).
  *
- * @param   fCaps       Guest capability bit mask (VMMDEV_GUEST_SUPPORTS_XXX).
+ * @param   aCaps   Guest capability bit mask (VMMDEV_GUEST_SUPPORTS_XXX).
  */
 void Guest::i_setSupportedFeatures(uint32_t aCaps)
 {

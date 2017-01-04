@@ -508,6 +508,7 @@ HRESULT HostUSBDevice::i_requestCaptureForVM(SessionMachine *aMachine, bool aSet
  * @retval  E_* as appropriate.
  *
  * @param   aMachine        Machine this device should be attach to.
+ * @param   aCaptureFilename Filename to capture the USB traffic to.
  * @param   aMaskedIfs      The interfaces to hide from the guest.
  */
 HRESULT HostUSBDevice::i_attachToVM(SessionMachine *aMachine, const com::Utf8Str &aCaptureFilename,
@@ -2230,7 +2231,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
  * A convenience for entering a transitional state.
 
  * @param   aNewState       The new state (transitional).
- * @param   aFinalSubState  The final state of the transition (non-transitional).
+ * @param   aFinalState     The final state of the transition (non-transitional).
  * @param   aNewSubState    The new sub-state when applicable.
  *
  * @returns Always false because filters are never applied for the start of a transition.
