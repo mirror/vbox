@@ -72,7 +72,7 @@ AssertCompileMemberAlignment(GIMDEV, IDbgBase, 8);
 /* -=-=-=-=-=-=-=-=- PDMIBASE on LUN#GIMDEV_DEBUG_LUN -=-=-=-=-=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMIBASE, pfnQueryInterface}
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) gimdevR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {

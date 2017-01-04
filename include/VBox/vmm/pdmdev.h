@@ -568,7 +568,7 @@ typedef struct PDMPCIBUSREG
      * @param   pPciDev         The PCI device structure.
      * @param   iRegion         The region number.
      * @param   cbRegion        Size of the region.
-     * @param   iType           PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
+     * @param   enmType         PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
      * @param   pfnCallback     Callback for doing the mapping.
      * @remarks Caller enters the PDM critical section.
      */
@@ -585,7 +585,7 @@ typedef struct PDMPCIBUSREG
      *                          PCI config read function. This way, user can decide when (and if)
      *                          to call default PCI config read function. Can be NULL.
      * @param   pfnWrite        Pointer to the user defined PCI config write function.
-     * @param   pfnWriteOld     Pointer to function pointer which will receive the old (default)
+     * @param   ppfnWriteOld    Pointer to function pointer which will receive the old (default)
      *                          PCI config write function. This way, user can decide when (and if)
      *                          to call default PCI config write function. Can be NULL.
      * @remarks Caller enters the PDM critical section.

@@ -2090,9 +2090,10 @@ static void vga_get_resolution(PVGASTATE pThis, int *pwidth, int *pheight)
  * @param   pThis   Pointer to the vga state.
  * @param   cx      The width.
  * @param   cy      The height.
+ * @param   pDrv    The display connector.
  */
 static int vga_resize_graphic(PVGASTATE pThis, int cx, int cy,
-                PDMIDISPLAYCONNECTOR *pDrv)
+                              PDMIDISPLAYCONNECTOR *pDrv)
 {
     const unsigned cBits = pThis->get_bpp(pThis);
 
@@ -3865,7 +3866,7 @@ static int vbeParseBitmap(PVGASTATE pThis)
  *
  * @returns VBox status code.
  *
- * @param   cbDepth     Logo depth.
+ * @param   cBits       Logo depth.
  * @param   xLogo       Logo X position.
  * @param   yLogo       Logo Y position.
  * @param   cxLogo      Logo width.
@@ -4610,6 +4611,9 @@ static DECLCALLBACK(int) vgaPortQueryStatusLed(PPDMILEDPORTS pInterface, unsigne
  * request from the guest os, but may also happen as the result of a reset.
  *
  * @param   pInterface          Pointer to this interface.
+ * @param   bpp                 Bits per pixel.
+ * @param   pvVRAM              VRAM.
+ * @param   cbLine              Number of bytes per line.
  * @param   cx                  New display width.
  * @param   cy                  New display height
  * @thread  The emulation thread.
@@ -4767,6 +4771,7 @@ DECLCALLBACK(int) vgaUpdateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
  * Update the entire display.
  *
  * @param   pInterface          Pointer to this interface.
+ * @param   fFailOnResize       Fail on resize.
  * @see     PDMIKEYBOARDPORT::pfnUpdateDisplayAll() for details.
  */
 static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bool fFailOnResize)
@@ -5584,7 +5589,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * @copydoc FNSSMDEVSAVEEXEC
+ * @copydoc FNSSMDEVLOADEXEC
  */
 static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {

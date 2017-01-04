@@ -1206,7 +1206,7 @@ static DECLCALLBACK(void) usbMsdLun0MediumEjected(PPDMIMEDIAEXPORT pInterface)
 
 
 /**
- * @interface_method_impl{PDMISCSIPORT,pfnQueryDeviceLocation}
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
  */
 static DECLCALLBACK(int) usbMsdLun0QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN)

@@ -270,7 +270,7 @@ DECLINLINE(int) get_pci_irq_level(PDEVPCIROOT pGlobals, int irq_num)
 /**
  * Set the IRQ for a PCI device on the host bus - shared by host bus and bridge.
  *
- * @param   pDevIns         Device instance of the host PCI Bus.
+ * @param   pGlobals        Device instance of the host PCI Bus.
  * @param   uDevFn          The device number on the host bus which will raise the IRQ
  * @param   pPciDev         The PCI device structure which raised the interrupt.
  * @param   iIrq            IRQ number to set.

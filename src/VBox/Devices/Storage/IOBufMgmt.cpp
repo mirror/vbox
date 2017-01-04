@@ -113,7 +113,7 @@ DECLINLINE(uint32_t) iobufMgrGetBinCount(uint32_t cbMin, uint32_t cbMax)
  * @returns Number of entries required in the object array.
  * @param   cbMem       Size of the memory buffer.
  * @param   cBins       Number of bins available.
- * @param   cbBinMin    Minimum object size.
+ * @param   cbMinBin    Minimum object size.
  */
 DECLINLINE(uint32_t) iobufMgrGetObjCount(size_t cbMem, unsigned cBins, size_t cbMinBin)
 {

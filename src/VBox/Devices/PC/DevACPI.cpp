@@ -3265,38 +3265,38 @@ static int acpiR3PlantTables(ACPIState *pThis)
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
-static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address, unsigned cb)
+static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
 {
     ACPIState *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
-    Log2(("acpi: PCI config read: 0x%x (%d)\n", Address, cb));
-    return pThis->pfnAcpiPciConfigRead(pDevIns, pPciDev, Address, cb);
+    Log2(("acpi: PCI config read: 0x%x (%d)\n", uAddress, cb));
+    return pThis->pfnAcpiPciConfigRead(pDevIns, pPciDev, uAddress, cb);
 }
 
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t Address,
+static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
                                                uint32_t u32Value, unsigned cb)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
-    Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
+    Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, uAddress, cb));
     DEVACPI_LOCK_R3(pThis);
 
-    if (Address == VBOX_PCI_INTERRUPT_LINE)
+    if (uAddress == VBOX_PCI_INTERRUPT_LINE)
     {
         Log(("acpi: ignore interrupt line settings: %d, we'll use hardcoded value %d\n", u32Value, SCI_INT));
         u32Value = SCI_INT;
     }
 
-    pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, Address, u32Value, cb);
+    pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, uAddress, u32Value, cb);
 
     /* Assume that the base address is only changed when the corresponding
      * hardware functionality is disabled. The IO region is mapped when the
      * functionality is enabled by the guest. */
 
-    if (Address == PMREGMISC)
+    if (uAddress == PMREGMISC)
     {
         RTIOPORT NewIoPortBase = 0;
         /* Check Power Management IO Space Enable (PMIOSE) bit */
@@ -3310,7 +3310,7 @@ static DECLCALLBACK(void) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pP
         AssertRC(rc);
     }
 
-    if (Address == SMBHSTCFG)
+    if (uAddress == SMBHSTCFG)
     {
         RTIOPORT NewIoPortBase = 0;
         /* Check SMBus Controller Host Interface Enable (SMB_HST_EN) bit */

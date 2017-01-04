@@ -54,7 +54,7 @@ typedef PCIIOREGION *PPCIIOREGION;
  * @param   pDevIns         Pointer to the device instance of the PCI bus.
  * @param   iBus            The bus number this device is on.
  * @param   iDevice         The number of the device on the bus.
- * @param   Address         The configuration space register address. [0..255]
+ * @param   u32Address      The configuration space register address. [0..255]
  * @param   cb              The register size. [1,2,4]
  */
 typedef DECLCALLBACK(uint32_t) FNPCIBRIDGECONFIGREAD(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb);
@@ -69,7 +69,7 @@ typedef PFNPCIBRIDGECONFIGREAD *PPFNPCIBRIDGECONFIGREAD;
  * @param   pDevIns         Pointer to the device instance of the PCI bus.
  * @param   iBus            The bus number this device is on.
  * @param   iDevice         The number of the device on the bus.
- * @param   Address         The configuration space register address. [0..255]
+ * @param   u32Address      The configuration space register address. [0..255]
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
  * @param   cb              The register size. [1,2,4]

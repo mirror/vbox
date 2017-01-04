@@ -154,10 +154,10 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-PDMBOTHCBDECL(int) ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    LogFlow(("ich9pciIOPortAddressWrite: Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
-    RT_NOREF2(Port, pvUser);
+    LogFlow(("ich9pciIOPortAddressWrite: Port=%#x u32=%#x cb=%d\n", uPort, u32, cb));
+    RT_NOREF2(uPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
@@ -191,9 +191,9 @@ PDMBOTHCBDECL(int) ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, R
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-PDMBOTHCBDECL(int) ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF2(Port, pvUser);
+    RT_NOREF2(uPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
@@ -202,11 +202,11 @@ PDMBOTHCBDECL(int) ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RT
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
 
-        LogFlow(("ich9pciIOPortAddressRead: Port=%#x cb=%d -> %#x\n", Port, cb, *pu32));
+        LogFlow(("ich9pciIOPortAddressRead: Port=%#x cb=%d -> %#x\n", uPort, cb, *pu32));
         return VINF_SUCCESS;
     }
 
-    Log(("ich9pciIOPortAddressRead: Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", Port, cb));
+    Log(("ich9pciIOPortAddressRead: Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -300,21 +300,21 @@ static int ich9pciDataWrite(PDEVPCIROOT pPciRoot, uint32_t addr, uint32_t val, i
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-PDMBOTHCBDECL(int) ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    LogFlow(("ich9pciIOPortDataWrite: Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
+    LogFlow(("ich9pciIOPortDataWrite: Port=%#x u32=%#x cb=%d\n", uPort, u32, cb));
     NOREF(pvUser);
     int rc = VINF_SUCCESS;
-    if (!(Port % cb))
+    if (!(uPort % cb))
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
 
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
-        rc = ich9pciDataWrite(pThis, Port, u32, cb);
+        rc = ich9pciDataWrite(pThis, uPort, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
     else
-        AssertMsgFailed(("Unaligned write to port %#x u32=%#x cb=%d\n", Port, u32, cb));
+        AssertMsgFailed(("Unaligned write to port %#x u32=%#x cb=%d\n", uPort, u32, cb));
     return rc;
 }
 
@@ -421,21 +421,21 @@ static int ich9pciDataRead(PDEVPCIROOT pPciRoot, uint32_t addr, int cb, uint32_t
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  */
-PDMBOTHCBDECL(int) ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
-    if (!(Port % cb))
+    if (!(uPort % cb))
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
 
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
-        int rc = ich9pciDataRead(pThis, Port, cb, pu32);
+        int rc = ich9pciDataRead(pThis, uPort, cb, pu32);
         PCI_UNLOCK(pDevIns);
 
-        LogFlow(("ich9pciIOPortDataRead: Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, rc));
+        LogFlow(("ich9pciIOPortDataRead: Port=%#x cb=%#x -> %#x (%Rrc)\n", uPort, cb, *pu32, rc));
         return rc;
     }
-    AssertMsgFailed(("Unaligned read from port %#x cb=%d\n", Port, cb));
+    AssertMsgFailed(("Unaligned read from port %#x cb=%d\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -1908,7 +1908,7 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
 /**
  * Worker for devpciR3IsConfigByteWritable that update BAR and ROM mappings.
  *
- * @param   pDev                The PCI device to update the mappings for.
+ * @param   pPciDev             The PCI device to update the mappings for.
  * @param   fP2PBridge          Whether this is a PCI to PCI bridge or not.
  */
 static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)

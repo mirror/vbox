@@ -534,11 +534,11 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 /**
  * @interface_method_impl{PDMIDISPLAYPORT,pfnSetViewport}
  */
-DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t idScreen, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
     PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IPort);
 
-    Log(("vmsvgaPortSetViewPort: screen %d (%d,%d)(%d,%d)\n", uScreenId, x, y, cx, cy));
+    Log(("vmsvgaPortSetViewPort: screen %d (%d,%d)(%d,%d)\n", idScreen, x, y, cx, cy));
     VMSVGAVIEWPORT const OldViewport = pThis->svga.viewport;
 
     if (x < pThis->svga.uWidth)
@@ -573,9 +573,9 @@ DECLCALLBACK(void) vmsvgaPortSetViewport(PPDMIDISPLAYPORT pInterface, uint32_t u
      * Now inform the 3D backend.
      */
     if (pThis->svga.f3DEnabled)
-        vmsvga3dUpdateHostScreenViewport(pThis, uScreenId, &OldViewport);
+        vmsvga3dUpdateHostScreenViewport(pThis, idScreen, &OldViewport);
 # else
-    RT_NOREF(uScreenId, OldViewport);
+    RT_NOREF(idScreen, OldViewport);
 # endif
 }
 #endif /* IN_RING3 */
@@ -1482,7 +1482,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
  *                      variable regardless of what @a cb might say.
  * @param   cb          Number of bytes read.
  */
-PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     RT_NOREF_PV(pvUser);
@@ -1490,12 +1490,12 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
     /* Ignore non-dword accesses. */
     if (cb != 4)
     {
-        Log(("Ignoring non-dword read at %x cb=%d\n", Port, cb));
+        Log(("Ignoring non-dword read at %x cb=%d\n", uPort, cb));
         *pu32 = UINT32_MAX;
         return VINF_SUCCESS;
     }
 
-    switch (Port - pThis->svga.BasePort)
+    switch (uPort - pThis->svga.BasePort)
     {
     case SVGA_INDEX_PORT:
         *pu32 = pThis->svga.u32IndexReg;
@@ -1529,7 +1529,7 @@ PDMBOTHCBDECL(int) vmsvgaIORead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  */
-PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     RT_NOREF_PV(pvUser);
@@ -1537,11 +1537,11 @@ PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     /* Ignore non-dword accesses. */
     if (cb != 4)
     {
-        Log(("Ignoring non-dword write at %x val=%x cb=%d\n", Port, u32, cb));
+        Log(("Ignoring non-dword write at %x val=%x cb=%d\n", uPort, u32, cb));
         return VINF_SUCCESS;
     }
 
-    switch (Port - pThis->svga.BasePort)
+    switch (uPort - pThis->svga.BasePort)
     {
     case SVGA_INDEX_PORT:
         pThis->svga.u32IndexReg = u32;

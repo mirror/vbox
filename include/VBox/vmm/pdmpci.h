@@ -70,7 +70,7 @@ typedef struct PDMIPCIRAWUP
      * @param   pGCPhysRegion       Where to store region base address (guest).
      * @param   pcbRegion           Where to store region size.
      *
-     * @param   fMmio               If region is MMIO or IO.
+     * @param   pfFlags             If region is MMIO or IO.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(bool, pfnGetRegionInfo, (PPDMIPCIRAWUP pInterface,
@@ -166,13 +166,15 @@ typedef struct PDMIPCIRAWUP
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
      * @param   Address             Guest physical address.
+     *                              @todo Why is this documented as guest physical
+     *                              address and given a host ring-0 address type?
      * @param   pvValue             Address of value to write.
      * @param   cb                  Access width.
      *
      * @thread  EMT thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnMmioWrite, (PPDMIPCIRAWUP pInterface,
-                                             RTR0PTR       Address, /**< Why is this documented as guest physical address and given a host ring-0 address type??? */
+                                             RTR0PTR       Address,
                                              void const   *pvValue,
                                              unsigned      cb));
 
@@ -182,6 +184,8 @@ typedef struct PDMIPCIRAWUP
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
      * @param   Address             Guest physical address.
+     *                              @todo Why is this documented as guest physical
+     *                              address and given a host ring-0 address type?
      * @param   pvValue             Place to store read value.
      * @param   cb                  Access width.
      *
@@ -189,7 +193,7 @@ typedef struct PDMIPCIRAWUP
      */
 
     DECLR3CALLBACKMEMBER(int, pfnMmioRead, (PPDMIPCIRAWUP pInterface,
-                                            RTR0PTR       Address, /**< Why is this documented as guest physical address and given a host ring-0 address type??? */
+                                            RTR0PTR       Address,
                                             void         *pvValue,
                                             unsigned      cb));
 
@@ -242,7 +246,6 @@ typedef struct PDMIPCIRAWUP
      *
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
-     * @param   pListener           Pointer to the listener object.
      * @param   uGuestIrq           Guest IRQ to be passed to pfnInterruptRequest().
      *
      * @thread  Any thread, pfnInterruptRequest() will be usually invoked on a dedicated thread.
@@ -302,6 +305,7 @@ typedef struct PDMIPCIRAWUP
      * Notify driver on finalization of raw PCI device.
      *
      * @param   pInterface          Pointer to this interface structure.
+     * @param   fFlags              Flags.
      *
      * @thread  Any thread.
      */
@@ -325,8 +329,8 @@ typedef struct PDMIPCIRAWUP
      *
      * @param   pInterface          Pointer to this interface structure.
      * @param   fFatal              If error is fatal.
-     * @param   szErrorId           Error ID.
-     * @param   szMessage           Error message.
+     * @param   pszErrorId          Error ID.
+     * @param   pszMessage          Error message.
      *
      * @thread  Any thread.
      */
