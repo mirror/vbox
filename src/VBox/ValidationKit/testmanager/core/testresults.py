@@ -749,6 +749,8 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiFailReasons] is oCrit;
 
+        ## @todo Add build type, error count, gang counts (if any > 1)...
+
     kdMiscConditions = {
         kiMisc_NestedPaging:    'TestBoxesWithStrings.fCpuNestedPaging IS TRUE',
         kiMisc_NoNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging IS FALSE',
