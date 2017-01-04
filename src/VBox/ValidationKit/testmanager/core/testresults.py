@@ -1654,6 +1654,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '         TestBoxesWithStrings.idStrOsVersion,\n'
                           '         TestBoxesWithStrings.sOsVersion\n'
                           'ORDER BY TestBoxesWithStrings.sOs,\n'
+                          '         TestBoxesWithStrings.sOs = \'win\' AND TestBoxesWithStrings.sOsVersion = \'10\' DESC,\n'
                           '         TestBoxesWithStrings.sOsVersion DESC\n'
                            );
         workerDoFetchNested();
