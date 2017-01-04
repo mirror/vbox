@@ -202,8 +202,8 @@ private:
 public:
     /**
      * Initialise the guest and ensure that it is capable of handling seamless mode
-     * @param   pHost Host interface callback to notify of window configuration
-     *                changes.
+     * @param   pHostCallback Host interface callback to notify of window configuration
+     *                        changes.
      *
      * @returns iprt status code
      */

@@ -223,6 +223,7 @@ DECLHIDDEN(void) VBoxVideoDisableVBE(void)
  * Set a video mode via an HGSMI request.  The views must have been
  * initialised first using @a VBoxHGSMISendViewInfo and if the mode is being
  * set on the first display then it must be set first using registers.
+ * @param  pCtx      The context containing the heap to use.
  * @param  cDisplay  the screen number
  * @param  cOriginX  the horizontal displacement relative to the first screen
  * @param  cOriginY  the vertical displacement relative to the first screen
@@ -233,6 +234,7 @@ DECLHIDDEN(void) VBoxVideoDisableVBE(void)
  * @param  cWidth    the mode width
  * @param  cHeight   the mode height
  * @param  cBPP      the colour depth of the mode
+ * @param  fFlags    flags
  */
 DECLHIDDEN(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cDisplay,
@@ -320,7 +322,7 @@ DECLHIDDEN(int)      VBoxHGSMIUpdateInputMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * Get most recent video mode hints.
  * @param  pCtx      the context containing the heap to use
  * @param  cScreens  the number of screens to query hints for, starting at 0.
- * @param  pHints    array of VBVAMODEHINT structures for receiving the hints.
+ * @param  paHints   array of VBVAMODEHINT structures for receiving the hints.
  * @returns  iprt status code
  * @returns  VERR_NO_MEMORY      HGSMI heap allocation failed.
  * @returns  VERR_NOT_SUPPORTED  Host does not support this command.

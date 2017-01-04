@@ -1654,7 +1654,6 @@ static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg,
  * @return  IPRT status code.
  * @param   pEnv                        The DnD service's environment.
  * @param   ppInstance                  The instance pointer which refer to this object.
- * @param   pfStartThread               Pointer to flag whether the DnD service can be started or not.
  */
 DECLCALLBACK(int) VBoxDnDInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 {

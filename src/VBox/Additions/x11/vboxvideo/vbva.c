@@ -35,7 +35,7 @@
  * Callback function called by the X server to tell us about dirty
  * rectangles in the video buffer.
  *
- * @param pScreen pointer to the information structure for the current
+ * @param pScrn   pointer to the information structure for the current
  *                screen
  * @param iRects  Number of dirty rectangles to update
  * @param aRects  Array of structures containing the coordinates of the

@@ -559,7 +559,8 @@ PREDEFINED += \
     VMMRC_INT_DECL(type)=type \
     VMMRZ_INT_DECL(type)=type \
     GMMR0DECL(type)=type \
-    GMMR3DECL(type)=type 
+    GMMR3DECL(type)=type \
+    VBOX_DND_FN_DECL_LOG(x)=x
 
 # BS3Kit
 PREDEFINED += \

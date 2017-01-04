@@ -504,7 +504,7 @@ int ExecuteInfFile(const _TCHAR *pszSection, int iMode, const _TCHAR *pszInf)
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
  * @param   pszSubKey           Sub key containing the list.
  * @param   pszKeyValue         The actual key name of the list.
- * @param   pszValueToRemove    The value to add to the list.
+ * @param   pszValueToAdd       The value to add to the list.
  * @param   uiOrder             Position (zero-based) of where to add the value to the list.
  */
 int RegistryAddStringToMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyValue, const TCHAR *pszValueToAdd, unsigned int uiOrder)

@@ -346,6 +346,7 @@ DECLHIDDEN(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
  * @param  cbGuestHeapMemory       the size of the backing memory area
  * @param  offVRAMGuestHeapMemory  the offset of the memory pointed to by
  *                                 @a pvGuestHeapMemory within the video RAM
+ * @param  pEnv                    HGSMI environment.
  */
 DECLHIDDEN(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                            void *pvGuestHeapMemory,
@@ -554,6 +555,7 @@ DECLHIDDEN(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * Pass the host a new mouse pointer shape via an HGSMI command.
  *
  * @returns  success or failure
+ * @param  pCtx      the context containing the heap to be used
  * @param  fFlags    cursor flags, @see VMMDevReqMousePointer::fFlags
  * @param  cHotX     horizontal position of the hot spot
  * @param  cHotY     vertical position of the hot spot

@@ -35,7 +35,7 @@ DWORD g_dwVerbosity = 0;
 /**
  * Displays a verbose message.
  *
- * @param   iLevel      Minimum log level required to display this message.
+ * @param   dwLevel     Minimum log level required to display this message.
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
  */
