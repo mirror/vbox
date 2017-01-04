@@ -136,7 +136,7 @@ public:
     QIcon icon() const { return m_icon; }
     /** Returns the item text. */
     QString text() const { return m_strText; }
-    /** Defines the item @s strText. */
+    /** Defines the item @a strText. */
     void setText(const QString &strText) { m_strText = strText; }
     /** Returns the item ID. */
     int id() const { return m_iID; }
