@@ -331,10 +331,12 @@ Client ConfigurationManager::getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, s
  *          to the option length.
  *          On failure, NULL is returned and *pcbOpt unchanged.
  *
- * @param   uOption         The option to search for.
- * @param   pDhcpMsg        The DHCP message.
- *                          that this is adjusted if the option length is larger
- *                          than the message buffer.
+ * @param   uOption     The option to search for.
+ * @param   pDhcpMsg    The DHCP message.
+ *                      that this is adjusted if the option length is larger
+ *                      than the message buffer.
+ * @param   cbDhcpMsg   Size of the DHCP message.
+ * @param   opt         The actual option we found.
  */
 int
 ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& opt)

@@ -759,7 +759,7 @@ public:
     /**
      * Puts an 32-bit integer (network endian).
      *
-     * @param   u32Network  The integer.
+     * @param   u32         The integer.
      */
     void putU32(uint32_t u32)
     {
@@ -772,7 +772,7 @@ public:
      * @returns true/false just like begin().
      *
      * @param   uOption     The option number.
-     * @param   u32Network  The integer.
+     * @param   u32         The integer.
      */
     bool optU32(uint8_t uOption, uint32_t u32)
     {
