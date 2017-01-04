@@ -72,7 +72,7 @@ static int vboxClipboardChanged (VBOXCLIPBOARDCONTEXT *pCtx)
  * This thread will check for the arrival of new data on the clipboard.
  *
  * @returns VINF_SUCCESS (not used).
- * @param   Thread      Our thread handle.
+ * @param   ThreadSelf  Our thread handle.
  * @param   pvUser      Pointer to the VBOXCLIPBOARDCONTEXT structure.
  *
  */

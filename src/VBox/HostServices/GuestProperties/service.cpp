@@ -1046,8 +1046,10 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * Get the next guest notification.
  *
  * @returns iprt status value
- * @param   cParms  the number of HGCM parameters supplied
- * @param   paParms the array of HGCM parameters
+ * @param   u32ClientId the client ID
+ * @param   callHandle  handle
+ * @param   cParms      the number of HGCM parameters supplied
+ * @param   paParms     the array of HGCM parameters
  * @thread  HGCM
  * @throws  can throw std::bad_alloc
  */

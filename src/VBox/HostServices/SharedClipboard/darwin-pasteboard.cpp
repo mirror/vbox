@@ -63,10 +63,10 @@ void destroyPasteboard(PasteboardRef *pPasteboardRef)
  * Inspect the global pasteboard for new content. Check if there is some type
  * that is supported by vbox and return it.
  *
- * @param   pPasteboardRef Reference to the global pasteboard.
+ * @param   pPasteboard    Reference to the global pasteboard.
  * @param   pfFormats      Pointer for the bit combination of the
  *                         supported types.
- * @param   pbChanged      True if something has changed after the
+ * @param   pfChanged      True if something has changed after the
  *                         last call.
  *
  * @returns IPRT status code. (Always VINF_SUCCESS atm.)
@@ -136,8 +136,8 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
  * Read content from the host clipboard and write it to the internal clipboard
  * structure for further processing.
  *
- * @param   pPasteboardRef Reference to the global pasteboard.
- * @param   fFormats       The format type which should be read.
+ * @param   pPasteboard    Reference to the global pasteboard.
+ * @param   fFormat        The format type which should be read.
  * @param   pv             The destination buffer.
  * @param   cb             The size of the destination buffer.
  * @param   pcbActual      The size which is needed to transfer the content.
@@ -273,10 +273,10 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
  * Write clipboard content to the host clipboard from the internal clipboard
  * structure.
  *
- * @param   pPasteboardRef Reference to the global pasteboard.
+ * @param   pPasteboard    Reference to the global pasteboard.
  * @param   pv             The source buffer.
  * @param   cb             The size of the source buffer.
- * @param   fFormats       The format type which should be written.
+ * @param   fFormat        The format type which should be written.
  *
  * @returns IPRT status code.
  */

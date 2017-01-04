@@ -281,8 +281,7 @@ typedef struct HostCommand
      *
      * @return  IPRT status code.
      * @param   paDstParms              Array of parameters of HGCM request to fill the data into.
-     * @param   cPDstarms               Number of parameters the HGCM request can handle.
-     * @param   pSrcBuf                 Parameter buffer to assign.
+     * @param   cDstParms               Number of parameters the HGCM request can handle.
      */
     int CopyTo(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms) const
     {
