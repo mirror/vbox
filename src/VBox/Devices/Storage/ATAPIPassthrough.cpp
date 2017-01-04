@@ -23,6 +23,7 @@
 #include <VBox/err.h>
 #include <VBox/cdefs.h>
 #include <VBox/scsi.h>
+#include <VBox/scsiinline.h>
 
 #include "ATAPIPassthrough.h"
 
@@ -110,27 +111,6 @@ typedef struct TRACKLIST
     PTRACK      paTracks;
 } TRACKLIST, *PTRACKLIST;
 
-DECLINLINE(uint16_t) atapiBE2H_U16(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 8) | pbBuf[1];
-}
-
-
-DECLINLINE(uint32_t) atapiBE2H_U24(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 16) | (pbBuf[1] << 8) | pbBuf[2];
-}
-
-
-DECLINLINE(uint32_t) atapiBE2H_U32(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 24) | (pbBuf[1] << 16) | (pbBuf[2] << 8) | pbBuf[3];
-}
-
-DECLINLINE(int64_t) atapiMSF2LBA(const uint8_t *pbBuf)
-{
-    return ((int64_t)(pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2]) - 150; /* 2 second pregap */
-}
 
 /**
  * Reallocate the given track list to be able to hold the given number of tracks.
@@ -246,11 +226,11 @@ static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, const uint
 
     pTrack->enmMainDataForm = enmTrackDataForm;
     pTrack->enmSubChnDataForm = enmSubChnDataForm;
-    pTrack->iLbaStart = atapiMSF2LBA(&pbCueSheetEntry[5]);
+    pTrack->iLbaStart = scsiMSF2LBA(&pbCueSheetEntry[5]);
     if (pbCueSheetEntry[1] != 0xaa)
     {
         /* Calculate number of sectors from the next entry. */
-        int64_t iLbaNext = atapiMSF2LBA(&pbCueSheetEntry[5+8]);
+        int64_t iLbaNext = scsiMSF2LBA(&pbCueSheetEntry[5+8]);
         pTrack->cSectors = iLbaNext - pTrack->iLbaStart;
     }
     else
@@ -272,7 +252,7 @@ static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, const uint
 static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
-    unsigned cbCueSheet = atapiBE2H_U24(pbCDB + 6);
+    unsigned cbCueSheet = scsiBE2H_U24(pbCDB + 6);
     unsigned cTracks = cbCueSheet / 8;
 
     AssertReturn(cbCueSheet % 8 == 0 && cTracks, VERR_INVALID_PARAMETER);
@@ -317,7 +297,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 {
     RT_NOREF(iTrack, cbBuffer); /** @todo unused parameters */
     int rc = VINF_SUCCESS;
-    unsigned cbToc = atapiBE2H_U16(pbBuf);
+    unsigned cbToc = scsiBE2H_U16(pbBuf);
     uint8_t iTrackFirst = pbBuf[2];
     unsigned cTracks;
 
@@ -341,9 +321,9 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 
             pTrack->enmSubChnDataForm = SUBCHNDATAFORM_0;
             if (fMSF)
-                pTrack->iLbaStart = atapiMSF2LBA(&pbBuf[4]);
+                pTrack->iLbaStart = scsiMSF2LBA(&pbBuf[4]);
             else
-                pTrack->iLbaStart = atapiBE2H_U32(&pbBuf[4]);
+                pTrack->iLbaStart = scsiBE2H_U32(&pbBuf[4]);
 
             if (pbBuf[2] != 0xaa)
             {
@@ -351,9 +331,9 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
                 int64_t iLbaNext;
 
                 if (fMSF)
-                    iLbaNext = atapiMSF2LBA(&pbBuf[4+8]);
+                    iLbaNext = scsiMSF2LBA(&pbBuf[4+8]);
                 else
-                    iLbaNext = atapiBE2H_U32(&pbBuf[4+8]);
+                    iLbaNext = scsiBE2H_U32(&pbBuf[4+8]);
 
                 pTrack->cSectors = iLbaNext - pTrack->iLbaStart;
             }
@@ -372,7 +352,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
-    uint16_t cbBuffer = atapiBE2H_U16(&pbCDB[7]);
+    uint16_t cbBuffer = scsiBE2H_U16(&pbCDB[7]);
     bool fMSF = (pbCDB[1] & 0x2) != 0;
     uint8_t uFmt = pbCDB[2] & 0xf;
     uint8_t iTrack = pbCDB[6];
