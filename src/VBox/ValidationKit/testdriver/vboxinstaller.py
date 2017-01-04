@@ -781,15 +781,23 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 return True;
         return False;
 
-    def _killProcessesByName(self, sName, sDesc):
+    def _killProcessesByName(self, sName, sDesc, fChildren = False):
         """ Checks whether the named process is present or not. """
         cKilled = 0;
-        for oProcess in utils.processListAll():
+        aoProcesses = utils.processListAll();
+        for oProcess in aoProcesses:
             sBase = oProcess.getBaseImageNameNoExeSuff();
             if sBase is not None and sBase.lower() == sName:
                 reporter.log('Killing %s process: %s (%s)' % (sDesc, oProcess.iPid, sBase));
                 utils.processKill(oProcess.iPid);
                 cKilled += 1;
+
+                if fChildren:
+                    for oChild in aoProcesses:
+                        if oChild.iParentPid == oProcess.iPid and oChild.iParentPid is not None:
+                            reporter.log('Killing %s child process: %s (%s)' % (sDesc, oChild.iPid, sBase));
+                            utils.processKill(oChild.iPid);
+                            cKilled += 1;
         return cKilled;
 
     def _uninstallVBoxOnWindows(self):
@@ -817,12 +825,15 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         # Before we start uninstalling anything, just ruthlessly kill any
         # msiexec and drvinst process we might find hanging around.
-        cKilled = 0;
         if self._isProcessPresent('drvinst'):
             time.sleep(15);     # In the hope that it goes away.
-            cKilled = self._killProcessesByName('drvinst', 'MSI driver installation');
-            if cKilled > 0:
-                time.sleep(15); # Give related MSI process a chance to clean up after we killed the driver installer.
+            cTimes = 0;
+            while cTimes < 4:
+                cTimes += 1;
+                cKilled = self._killProcessesByName('drvinst', 'MSI driver installation', True);
+                if cKilled <= 0:
+                    break;
+                time.sleep(10); # Give related MSI process a chance to clean up after we killed the driver installer.
 
         if self._isProcessPresent('msiexec'):
             time.sleep(15);     # In the hope that it goes away.
