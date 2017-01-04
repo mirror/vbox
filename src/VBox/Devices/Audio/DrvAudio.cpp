@@ -1192,7 +1192,7 @@ static int drvAudioStreamLinkToInternal(PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAM
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
-                                            PPDMAUDIOSTREAM pStream, uint32_t *pcsPlayed)
+                                            PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -1294,8 +1294,8 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        if (pcsPlayed)
-            *pcsPlayed = csPlayed;
+        if (pcSamplesPlayed)
+            *pcSamplesPlayed = csPlayed;
     }
 
     if (RT_FAILURE(rc))
@@ -2591,9 +2591,9 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    LogFlowFunc(("pDrvIns=%#p, pCfgHandle=%#p, fFlags=%x\n", pDrvIns, pCfgHandle, fFlags));
+    LogFlowFunc(("pDrvIns=%#p, pCfgHandle=%#p, fFlags=%x\n", pDrvIns, pCfg, fFlags));
 
     PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -2653,7 +2653,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
                                 N_("Host audio backend missing or invalid"));
     }
 
-    rc = drvAudioInit(pDrvIns, pCfgHandle);
+    rc = drvAudioInit(pDrvIns, pCfg);
     if (RT_SUCCESS(rc))
     {
         pThis->fTerminate = false;

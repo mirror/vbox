@@ -1501,7 +1501,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTA
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetConfig}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
 static DECLCALLBACK(int) drvHostPulseAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
@@ -1535,7 +1535,7 @@ static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface
 /**
  * Destructs a PulseAudio Audio driver instance.
  *
- * @copydoc FNPDMDRVCONSTRUCT
+ * @copydoc FNPDMDRVDESTRUCT
  */
 static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
 {

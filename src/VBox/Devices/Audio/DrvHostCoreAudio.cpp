@@ -1931,7 +1931,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
 }
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamCapture}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
@@ -2058,7 +2058,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
 }
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamPlay}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                                                     PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
@@ -2248,7 +2248,7 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnGetConfig}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetConfig}
  */
 static DECLCALLBACK(int) drvHostCoreAudioGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
@@ -2269,7 +2269,7 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConfig(PPDMIHOSTAUDIO pInterface, PP
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnGetDevices}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetDevices}
  */
 static DECLCALLBACK(int) drvHostCoreAudioGetDevices(PPDMIHOSTAUDIO pInterface, PPDMAUDIODEVICEENUM pDeviceEnum)
 {
@@ -2306,7 +2306,7 @@ static DECLCALLBACK(int) drvHostCoreAudioGetDevices(PPDMIHOSTAUDIO pInterface, P
 
 #ifdef VBOX_WITH_AUDIO_CALLBACKS
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnSetCallback}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnSetCallback}
  */
 static DECLCALLBACK(int) drvHostCoreAudioSetCallback(PPDMIHOSTAUDIO pInterface, PFNPDMHOSTAUDIOCALLBACK pfnCallback)
 {
@@ -2341,7 +2341,7 @@ static DECLCALLBACK(int) drvHostCoreAudioSetCallback(PPDMIHOSTAUDIO pInterface, 
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
@@ -2353,7 +2353,7 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioGetStatus(PPDMIHOSTAUDIO
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamCreate}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
                                                       PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
@@ -2427,7 +2427,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamDestroy}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
@@ -2474,7 +2474,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamControl}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamControl(PPDMIHOSTAUDIO pInterface,
                                                        PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
@@ -2493,7 +2493,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamControl(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
@@ -2527,7 +2527,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAU
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnStreamIterate}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
@@ -2540,7 +2540,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnInit}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnInit}
  */
 static DECLCALLBACK(int) drvHostCoreAudioInit(PPDMIHOSTAUDIO pInterface)
 {
@@ -2583,7 +2583,7 @@ static DECLCALLBACK(int) drvHostCoreAudioInit(PPDMIHOSTAUDIO pInterface)
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO, pfnShutdown}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnShutdown}
  */
 static DECLCALLBACK(void) drvHostCoreAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {

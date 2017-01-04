@@ -904,8 +904,8 @@ static void ichac97StreamsDestroy(PAC97STATE pThis)
  *
  * @returns IPRT status code.
  * @param   pThis               AC'97 state.
- * @param   pStream             AC'97 stream to write to.
- * @param   pMixSink            Mixer sink to get audio data to write from.
+ * @param   pDstStream          AC'97 stream to write to.
+ * @param   pSrcMixSink         Mixer sink to get audio data to write from.
  * @param   cbToWrite           Number of bytes to write.
  * @param   pcbWritten          Number of bytes written. Optional.
  */
@@ -2360,13 +2360,13 @@ static int ichac97DoDMA(PAC97STATE pThis, PAC97STREAM pStream, void *pvBuf, uint
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
     /* Get the index of the NABMBAR port. */
-    const uint32_t uPortIdx = Port - pThis->IOPortBase[1];
+    const uint32_t uPortIdx = uPort - pThis->IOPortBase[1];
 
     PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
@@ -2381,7 +2381,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
 
     int rc = VINF_SUCCESS;
 
-    switch (cbVal)
+    switch (cb)
     {
         case 1:
         {
@@ -2390,47 +2390,47 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                 case AC97_CAS:
                     /* Codec Access Semaphore Register */
                     Log3Func(("CAS %d\n", pThis->cas));
-                    *pu32Val = pThis->cas;
+                    *pu32 = pThis->cas;
                     pThis->cas = 1;
                     break;
                 case PI_CIV:
                 case PO_CIV:
                 case MC_CIV:
                     /* Current Index Value Register */
-                    *pu32Val = pRegs->civ;
-                    Log3Func(("CIV[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->civ;
+                    Log3Func(("CIV[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_LVI:
                 case PO_LVI:
                 case MC_LVI:
                     /* Last Valid Index Register */
-                    *pu32Val = pRegs->lvi;
-                    Log3Func(("LVI[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->lvi;
+                    Log3Func(("LVI[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_PIV:
                 case PO_PIV:
                 case MC_PIV:
                     /* Prefetched Index Value Register */
-                    *pu32Val = pRegs->piv;
-                    Log3Func(("PIV[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->piv;
+                    Log3Func(("PIV[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_CR:
                 case PO_CR:
                 case MC_CR:
                     /* Control Register */
-                    *pu32Val = pRegs->cr;
-                    Log3Func(("CR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->cr;
+                    Log3Func(("CR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_SR:
                 case PO_SR:
                 case MC_SR:
                     /* Status Register (lower part) */
-                    *pu32Val = RT_LO_U8(pRegs->sr);
-                    Log3Func(("SRb[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = RT_LO_U8(pRegs->sr);
+                    Log3Func(("SRb[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 default:
-                    *pu32Val = UINT32_MAX;
-                    LogFunc(("U nabm readb %#x -> %#x\n", Port, *pu32Val));
+                    *pu32 = UINT32_MAX;
+                    LogFunc(("U nabm readb %#x -> %#x\n", uPort, *pu32));
                     break;
             }
             break;
@@ -2444,19 +2444,19 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                 case PO_SR:
                 case MC_SR:
                     /* Status Register */
-                    *pu32Val = pRegs->sr;
-                    Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->sr;
+                    Log3Func(("SR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_PICB:
                 case PO_PICB:
                 case MC_PICB:
                     /* Position in Current Buffer */
-                    *pu32Val = pRegs->picb;
-                    Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->picb;
+                    Log3Func(("PICB[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 default:
-                    *pu32Val = UINT32_MAX;
-                    LogFunc(("U nabm readw %#x -> %#x\n", Port, *pu32Val));
+                    *pu32 = UINT32_MAX;
+                    LogFunc(("U nabm readw %#x -> %#x\n", uPort, *pu32));
                     break;
             }
             break;
@@ -2470,8 +2470,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                 case PO_BDBAR:
                 case MC_BDBAR:
                     /* Buffer Descriptor Base Address Register */
-                    *pu32Val = pRegs->bdbar;
-                    Log3Func(("BMADDR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32Val));
+                    *pu32 = pRegs->bdbar;
+                    Log3Func(("BMADDR[%d] -> %#x\n", AC97_PORT2IDX(uPortIdx), *pu32));
                     break;
                 case PI_CIV:
                 case PO_CIV:
@@ -2479,7 +2479,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                     /* 32-bit access: Current Index Value Register +
                      *                Last Valid Index Register +
                      *                Status Register */
-                    *pu32Val = pRegs->civ | (pRegs->lvi << 8) | (pRegs->sr << 16); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                    *pu32 = pRegs->civ | (pRegs->lvi << 8) | (pRegs->sr << 16); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
                     Log3Func(("CIV LVI SR[%d] -> %#x, %#x, %#x\n",
                               AC97_PORT2IDX(uPortIdx), pRegs->civ, pRegs->lvi, pRegs->sr));
                     break;
@@ -2489,23 +2489,23 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
                     /* 32-bit access: Position in Current Buffer Register +
                      *                Prefetched Index Value Register +
                      *                Control Register */
-                    *pu32Val = pRegs->picb | (pRegs->piv << 16) | (pRegs->cr << 24); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
+                    *pu32 = pRegs->picb | (pRegs->piv << 16) | (pRegs->cr << 24); /** @todo r=andy Use RT_MAKE_U32_FROM_U8. */
                     Log3Func(("PICB PIV CR[%d] -> %#x %#x %#x %#x\n",
-                              AC97_PORT2IDX(uPortIdx), *pu32Val, pRegs->picb, pRegs->piv, pRegs->cr));
+                              AC97_PORT2IDX(uPortIdx), *pu32, pRegs->picb, pRegs->piv, pRegs->cr));
                     break;
                 case AC97_GLOB_CNT:
                     /* Global Control */
-                    *pu32Val = pThis->glob_cnt;
-                    Log3Func(("glob_cnt -> %#x\n", *pu32Val));
+                    *pu32 = pThis->glob_cnt;
+                    Log3Func(("glob_cnt -> %#x\n", *pu32));
                     break;
                 case AC97_GLOB_STA:
                     /* Global Status */
-                    *pu32Val = pThis->glob_sta | AC97_GS_S0CR;
-                    Log3Func(("glob_sta -> %#x\n", *pu32Val));
+                    *pu32 = pThis->glob_sta | AC97_GS_S0CR;
+                    Log3Func(("glob_sta -> %#x\n", *pu32));
                     break;
                 default:
-                    *pu32Val = UINT32_MAX;
-                    LogFunc(("U nabm readl %#x -> %#x\n", Port, *pu32Val));
+                    *pu32 = UINT32_MAX;
+                    LogFunc(("U nabm readl %#x -> %#x\n", uPort, *pu32));
                     break;
             }
             break;
@@ -2530,14 +2530,14 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                uint32_t u32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
+                                                uint32_t u32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     PAC97STATE  pThis   = (PAC97STATE)pvUser;
 
     /* Get the index of the NABMBAR register. */
-    const uint32_t uPortIdx = Port - pThis->IOPortBase[1];
+    const uint32_t uPortIdx = uPort - pThis->IOPortBase[1];
 
     PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
@@ -2550,7 +2550,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
         AssertRC(rc2);
     }
 
-    switch (cbVal)
+    switch (cb)
     {
         case 1:
         {
@@ -2572,8 +2572,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
 
                         ichac97StreamFetchBDLE(pThis, pStream);
                     }
-                    pRegs->lvi = u32Val % 32;
-                    Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8Strm, u32Val));
+                    pRegs->lvi = u32 % 32;
+                    Log3Func(("[SD%RU8] LVI <- %#x\n", pStream->u8Strm, u32));
                     break;
                 }
 
@@ -2584,9 +2584,9 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case PO_CR:
                 case MC_CR:
                 {
-                    Log3Func(("[SD%RU8] CR <- %#x (cr %#x)\n", pStream->u8Strm, u32Val, pRegs->cr));
+                    Log3Func(("[SD%RU8] CR <- %#x (cr %#x)\n", pStream->u8Strm, u32, pRegs->cr));
 
-                    if (u32Val & AC97_CR_RR) /* Busmaster reset. */
+                    if (u32 & AC97_CR_RR) /* Busmaster reset. */
                     {
                         Log3Func(("[SD%RU8] Reset\n", pStream->u8Strm));
 
@@ -2597,7 +2597,7 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                     }
                     else
                     {
-                        pRegs->cr = u32Val & AC97_CR_VALID_MASK;
+                        pRegs->cr = u32 & AC97_CR_VALID_MASK;
 
                         if (!(pRegs->cr & AC97_CR_RPBM))
                         {
@@ -2632,14 +2632,14 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case PO_SR:
                 case MC_SR:
                 {
-                    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
-                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8Strm, u32Val, pRegs->sr));
+                    pRegs->sr |= u32 & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
+                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32 & AC97_SR_WCLEAR_MASK));
+                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8Strm, u32, pRegs->sr));
                     break;
                 }
 
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (Byte)\n", Port, u32Val));
+                    LogFunc(("Unimplemented: %#x <- %#x (Byte)\n", uPort, u32));
                     break;
             }
             break;
@@ -2653,12 +2653,12 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case PO_SR:
                 case MC_SR:
                     /* Status Register */
-                    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
-                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8Strm, u32Val, pRegs->sr));
+                    pRegs->sr |= u32 & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
+                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32 & AC97_SR_WCLEAR_MASK));
+                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8Strm, u32, pRegs->sr));
                     break;
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (Word)\n", Port, u32Val));
+                    LogFunc(("Unimplemented: %#x <- %#x (Word)\n", uPort, u32));
                     break;
             }
             break;
@@ -2672,34 +2672,34 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                 case PO_BDBAR:
                 case MC_BDBAR:
                     /* Buffer Descriptor list Base Address Register */
-                    pRegs->bdbar = u32Val & ~3;
-                    Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(uPortIdx), u32Val, pRegs->bdbar));
+                    pRegs->bdbar = u32 & ~3;
+                    Log3Func(("[SD%RU8] BDBAR <- %#x (bdbar %#x)\n", AC97_PORT2IDX(uPortIdx), u32, pRegs->bdbar));
                     break;
                 case AC97_GLOB_CNT:
                     /* Global Control */
-                    if (u32Val & AC97_GC_WR)
+                    if (u32 & AC97_GC_WR)
                         ichac97WarmReset(pThis);
-                    if (u32Val & AC97_GC_CR)
+                    if (u32 & AC97_GC_CR)
                         ichac97ColdReset(pThis);
-                    if (!(u32Val & (AC97_GC_WR | AC97_GC_CR)))
-                        pThis->glob_cnt = u32Val & AC97_GC_VALID_MASK;
-                    Log3Func(("glob_cnt <- %#x (glob_cnt %#x)\n", u32Val, pThis->glob_cnt));
+                    if (!(u32 & (AC97_GC_WR | AC97_GC_CR)))
+                        pThis->glob_cnt = u32 & AC97_GC_VALID_MASK;
+                    Log3Func(("glob_cnt <- %#x (glob_cnt %#x)\n", u32, pThis->glob_cnt));
                     break;
                 case AC97_GLOB_STA:
                     /* Global Status */
-                    pThis->glob_sta &= ~(u32Val & AC97_GS_WCLEAR_MASK);
-                    pThis->glob_sta |= (u32Val & ~(AC97_GS_WCLEAR_MASK | AC97_GS_RO_MASK)) & AC97_GS_VALID_MASK;
-                    Log3Func(("glob_sta <- %#x (glob_sta %#x)\n", u32Val, pThis->glob_sta));
+                    pThis->glob_sta &= ~(u32 & AC97_GS_WCLEAR_MASK);
+                    pThis->glob_sta |= (u32 & ~(AC97_GS_WCLEAR_MASK | AC97_GS_RO_MASK)) & AC97_GS_VALID_MASK;
+                    Log3Func(("glob_sta <- %#x (glob_sta %#x)\n", u32, pThis->glob_sta));
                     break;
                 default:
-                    LogFunc(("Unimplemented: %#x <- %#x (DWord)\n", Port, u32Val));
+                    LogFunc(("Unimplemented: %#x <- %#x (DWord)\n", uPort, u32));
                     break;
             }
             break;
         }
 
         default:
-            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cbVal, u32Val));
+            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cb, u32));
             break;
     }
 
@@ -2715,33 +2715,33 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
     int rc = VINF_SUCCESS;
 
-    switch (cbVal)
+    switch (cb)
     {
         case 1:
         {
-            Log3Func(("U nam readb %#x\n", Port));
+            Log3Func(("U nam readb %#x\n", uPort));
             pThis->cas = 0;
-            *pu32Val = UINT32_MAX;
+            *pu32 = UINT32_MAX;
             break;
         }
 
         case 2:
         {
-            uint32_t index = Port - pThis->IOPortBase[0];
-            *pu32Val = UINT32_MAX;
+            uint32_t index = uPort - pThis->IOPortBase[0];
+            *pu32 = UINT32_MAX;
             pThis->cas = 0;
             switch (index)
             {
                 default:
-                    *pu32Val = ichac97MixerGet(pThis, index);
-                    Log3Func(("nam readw %#x -> %#x\n", Port, *pu32Val));
+                    *pu32 = ichac97MixerGet(pThis, index);
+                    Log3Func(("nam readw %#x -> %#x\n", uPort, *pu32));
                     break;
             }
             break;
@@ -2749,9 +2749,9 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 
         case 4:
         {
-            Log3Func(("U nam readl %#x\n", Port));
+            Log3Func(("U nam readl %#x\n", uPort));
             pThis->cas = 0;
-            *pu32Val = UINT32_MAX;
+            *pu32 = UINT32_MAX;
             break;
         }
 
@@ -2768,23 +2768,23 @@ static DECLCALLBACK(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, 
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32Val, unsigned cbVal)
+static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pDevIns);
     PAC97STATE pThis = (PAC97STATE)pvUser;
 
-    switch (cbVal)
+    switch (cb)
     {
         case 1:
         {
-            Log3Func(("U nam writeb %#x <- %#x\n", Port, u32Val));
+            Log3Func(("U nam writeb %#x <- %#x\n", uPort, u32));
             pThis->cas = 0;
             break;
         }
 
         case 2:
         {
-            uint32_t index = Port - pThis->IOPortBase[0];
+            uint32_t index = uPort - pThis->IOPortBase[0];
             pThis->cas = 0;
             switch (index)
             {
@@ -2792,9 +2792,9 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                     ichac97Reset(pThis->CTX_SUFF(pDevIns));
                     break;
                 case AC97_Powerdown_Ctrl_Stat:
-                    u32Val &= ~0xf;
-                    u32Val |= ichac97MixerGet(pThis, index) & 0xf;
-                    ichac97MixerSet(pThis, index, u32Val);
+                    u32 &= ~0xf;
+                    u32 |= ichac97MixerGet(pThis, index) & 0xf;
+                    ichac97MixerSet(pThis, index, u32);
                     break;
                 case AC97_Master_Volume_Mute:
                     if (pThis->uCodecModel == AC97_CODEC_AD1980)
@@ -2802,7 +2802,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_LOSEL)
                             break; /* Register controls surround (rear), do nothing. */
                     }
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32);
                     break;
                 case AC97_Headphone_Volume_Mute:
                     if (pThis->uCodecModel == AC97_CODEC_AD1980)
@@ -2810,28 +2810,28 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                         if (ichac97MixerGet(pThis, AC97_AD_Misc) & AC97_AD_MISC_HPSEL)
                         {
                             /* Register controls PCM (front) outputs. */
-                            ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32Val);
+                            ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME_MASTER, u32);
                         }
                     }
                     break;
                 case AC97_PCM_Out_Volume_Mute:
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_FRONT, u32Val);
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_FRONT, u32);
                     break;
                 case AC97_Line_In_Volume_Mute:
-                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32Val);
+                    ichac97MixerSetVolume(pThis, index, PDMAUDIOMIXERCTL_LINE_IN, u32);
                     break;
                 case AC97_Record_Select:
-                    ichac97MixerRecordSelect(pThis, u32Val);
+                    ichac97MixerRecordSelect(pThis, u32);
                     break;
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
-                    LogFunc(("Attempt to write vendor ID to %#x\n", u32Val));
+                    LogFunc(("Attempt to write vendor ID to %#x\n", u32));
                     break;
                 case AC97_Extended_Audio_ID:
-                    LogFunc(("Attempt to write extended audio ID to %#x\n", u32Val));
+                    LogFunc(("Attempt to write extended audio ID to %#x\n", u32));
                     break;
                 case AC97_Extended_Audio_Ctrl_Stat:
-                    if (!(u32Val & AC97_EACS_VRA))
+                    if (!(u32 & AC97_EACS_VRA))
                     {
                         ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 48000);
                         ichac97StreamReOpen(pThis, &pThis->StreamOut);
@@ -2842,7 +2842,7 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                     else
                         LogRel2(("AC97: Variable rate audio (VRA) is not supported\n"));
 
-                    if (!(u32Val & AC97_EACS_VRM))
+                    if (!(u32 & AC97_EACS_VRM))
                     {
                         ichac97MixerSet(pThis, AC97_MIC_ADC_Rate,       48000);
                         ichac97StreamReOpen(pThis, &pThis->StreamMicIn);
@@ -2850,42 +2850,42 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
                     else
                         LogRel2(("AC97: Variable rate microphone audio (VRM) is not supported\n"));
 
-                    LogFunc(("Setting extended audio control to %#x\n", u32Val));
-                    ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, u32Val);
+                    LogFunc(("Setting extended audio control to %#x\n", u32));
+                    ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, u32);
                     break;
                 case AC97_PCM_Front_DAC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
-                        LogFunc(("Set front DAC rate to %RU32\n", u32Val));
+                        ichac97MixerSet(pThis, index, u32);
+                        LogFunc(("Set front DAC rate to %RU32\n", u32));
                         ichac97StreamReOpen(pThis, &pThis->StreamOut);
                     }
                     else
-                        AssertMsgFailed(("Attempt to set front DAC rate to %RU32, but VRA is not set\n", u32Val));
+                        AssertMsgFailed(("Attempt to set front DAC rate to %RU32, but VRA is not set\n", u32));
                     break;
                 case AC97_MIC_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRM)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
-                        LogFunc(("Set MIC ADC rate to %RU32\n", u32Val));
+                        ichac97MixerSet(pThis, index, u32);
+                        LogFunc(("Set MIC ADC rate to %RU32\n", u32));
                         ichac97StreamReOpen(pThis, &pThis->StreamMicIn);
                     }
                     else
-                        AssertMsgFailed(("Attempt to set MIC ADC rate to %RU32, but VRM is not set\n", u32Val));
+                        AssertMsgFailed(("Attempt to set MIC ADC rate to %RU32, but VRM is not set\n", u32));
                     break;
                 case AC97_PCM_LR_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
                     {
-                        ichac97MixerSet(pThis, index, u32Val);
-                        LogFunc(("Set front LR ADC rate to %RU32\n", u32Val));
+                        ichac97MixerSet(pThis, index, u32);
+                        LogFunc(("Set front LR ADC rate to %RU32\n", u32));
                         ichac97StreamReOpen(pThis, &pThis->StreamLineIn);
                     }
                     else
-                        AssertMsgFailed(("Attempt to set LR ADC rate to %RU32, but VRA is not set\n", u32Val));
+                        AssertMsgFailed(("Attempt to set LR ADC rate to %RU32, but VRA is not set\n", u32));
                     break;
                 default:
-                    LogFunc(("U nam writew %#x <- %#x\n", Port, u32Val));
-                    ichac97MixerSet(pThis, index, u32Val);
+                    LogFunc(("U nam writew %#x <- %#x\n", uPort, u32));
+                    ichac97MixerSet(pThis, index, u32);
                     break;
             }
             break;
@@ -2893,13 +2893,13 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser,
 
         case 4:
         {
-            Log3Func(("U nam writel %#x <- %#x\n", Port, u32Val));
+            Log3Func(("U nam writel %#x <- %#x\n", uPort, u32));
             pThis->cas = 0;
             break;
         }
 
         default:
-            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cbVal, u32Val));
+            AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cb, u32));
             break;
     }
 

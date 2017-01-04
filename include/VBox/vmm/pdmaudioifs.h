@@ -962,7 +962,6 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pStream         Pointer to audio stream.
-     * @param   pcData          Data (in audio samples) available. Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream));
 
@@ -1008,6 +1007,7 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   pStream              Pointer to audio stream.
      * @param   pcSamplesPlayed      Number of samples played. Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesPlayed));
@@ -1017,6 +1017,7 @@ typedef struct PDMIAUDIOCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface           Pointer to the interface structure containing the called function pointer.
+     * @param   pStream              Pointer to audio stream.
      * @param   pcSamplesCaptured    Number of samples captured. Optional.
      */
     DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOSTREAM pStream, uint32_t *pcSamplesCaptured));
@@ -1147,7 +1148,7 @@ typedef struct PDMIHOSTAUDIO
      *
      * @returns PDMAUDIOSTRMSTS
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
-     * @param   enmDir              Audio direction to check status for.
+     * @param   pStream             Pointer to audio stream.
      */
     DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
 
