@@ -96,7 +96,7 @@ RT_C_DECLS_BEGIN
  *                          occurred before successfully creating a VM.
  * @param   pvUser          The user argument.
  * @param   rc              VBox status code.
- * @param   RT_SRC_POS_DECL The source position arguments. See RT_SRC_POS and RT_SRC_POS_ARGS.
+ * @param   SRC_POS         The source position arguments. See RT_SRC_POS and RT_SRC_POS_ARGS.
  * @param   pszFormat       Error message format string.
  * @param   args            Error message arguments.
  */
