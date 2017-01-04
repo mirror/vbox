@@ -148,6 +148,7 @@ static void vbsfFreeFullPath(char *pszFullPath)
  * @returns iprt status code
  * @param  fShflFlags shared folder create flags
  * @param  fMode      file attributes
+ * @param  handleInitial initial handle
  * @retval pfOpen     iprt create flags
  */
 static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
@@ -699,7 +700,8 @@ static int vbsfCloseFile(SHFLFILEHANDLE *pHandle)
  * Look up file or folder information by host path.
  *
  * @returns iprt status code (currently VINF_SUCCESS)
- * @param   pszFullPath    The path of the file to be looked up
+ * @param   pClient    client data
+ * @param   pszPath    The path of the file to be looked up
  * @retval  pParms->Result Status of the operation (success or error)
  * @retval  pParms->Info   On success, information returned about the file
  */
@@ -756,6 +758,7 @@ void testCreate(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
+
 /**
  * Create or open a file or folder.  Perform character set and case
  * conversion on the file name if necessary.

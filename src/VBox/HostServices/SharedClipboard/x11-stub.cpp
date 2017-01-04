@@ -48,12 +48,14 @@ void vboxClipboardDestroy (void)
 /**
   * Enable the shared clipboard - called by the hgcm clipboard subsystem.
   *
-  * @param   pClient Structure containing context information about the guest system
+  * @param   pClient    Structure containing context information about the guest system
+  * @param   fHeadless  Whether headless.
   * @returns RT status code
   */
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
-                          bool /* fHeadless */)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient,
+                          bool fHeadless)
 {
+    NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
 }
@@ -70,9 +72,12 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
 
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
+ * 
+ * @param   pClient    Structure containing context information about the guest system
  */
-void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
+void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
+    NOREF(pClient);
     LogFlowFunc(("called, returning.\n"));
 }
 
@@ -83,9 +88,10 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
  * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
  */
-void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
-                                  uint32_t /* u32Formats */)
+void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
+                                  uint32_t u32Formats)
 {
+    NOREF(pClient, u32Formats);
     LogFlowFunc(("called, returning.\n"));
 }
 
@@ -98,9 +104,10 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
  * @param cb        The size of the buffer to write the data to
  * @param pcbActual Where to write the actual size of the written data
  */
-int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, uint32_t /* u32Format */,
-                           void * /* pv */, uint32_t /* cb */, uint32_t * pcbActual)
+int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
+                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
+    NOREF(pClient, u32Format, pv, cb);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     /* No data available. */
     *pcbActual = 0;
@@ -115,8 +122,9 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, uint32_t /* 
  * @param cb        The size of the data written
  * @param u32Format The format of the data written
  */
-void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA * /* pClient */, void * /* pv */,
-                             uint32_t /* cb */, uint32_t /* u32Format */)
+void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
+                             uint32_t cb, uint32_t u32Format)
 {
+    NOREF(pClient, pv, cb, u32Format);
     LogFlowFunc(("called, returning.\n"));
 }

@@ -36,18 +36,13 @@
  * @param cbGuestString          Size of pGuestString memory buffer.
  * @param ppszHostPath           Returned full host path: root prefix + guest path.
  * @param pcbHostPathRoot        Length of the root prefix in bytes. Optional, can be NULL.
- * @param fWildCard              Whether the last component may contain
- *                               wildcards and thus might require exclusion
- *                               from the case correction.
- * @param fPreserveLastComponent Always exclude the last component from case
- *                               correction if set.
+ * @param fu32Options            Options.
  * @param pfu32PathFlags         VBSF_F_PATH_* flags. Optional, can be NULL.
  */
 int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
                         PSHFLSTRING pGuestString, uint32_t cbGuestString,
                         char **ppszHostPath, uint32_t *pcbHostPathRoot,
-                        uint32_t fu32Options,
-                        uint32_t *pfu32PathFlags);
+                        uint32_t fu32Options, uint32_t *pfu32PathFlags);
 
 /** Free the host path returned by vbsfPathGuestToHost.
  *

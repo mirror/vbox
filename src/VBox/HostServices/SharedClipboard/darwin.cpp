@@ -150,10 +150,12 @@ void vboxClipboardDestroy (void)
  * Enable the shared clipboard - called by the hgcm clipboard subsystem.
  *
  * @param   pClient Structure containing context information about the guest system
+ * @param   fHeadless Whether headless.
  * @returns RT status code
  */
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
+    NOREF(fHeadless);
     if (g_ctx.pClient != NULL)
     {
         /* One client only. */

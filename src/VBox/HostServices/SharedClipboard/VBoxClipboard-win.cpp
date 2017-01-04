@@ -789,8 +789,9 @@ void vboxClipboardDestroy (void)
     g_ctx.thread = NIL_RTTHREAD;
 }
 
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
+    NOREF(fHeadless);
     Log(("vboxClipboardConnect\n"));
 
     if (g_ctx.pClient != NULL)
@@ -1046,7 +1047,9 @@ static int GetHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *p
 /**
  * Check that the source string contains CF_HTML struct
  *
- * @returns @c true if the @source string is in CF_HTML format
+ * @param   pszSource   source string.
+ *
+ * @returns @c true if the @a pszSource string is in CF_HTML format
  */
 static bool IsWindowsHTML(const char *pszSource)
 {

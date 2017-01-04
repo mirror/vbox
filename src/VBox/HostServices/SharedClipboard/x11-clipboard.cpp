@@ -249,15 +249,15 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
  * be written to the buffer provided in the initial request.
  * @param  pCtx  request context information
  * @param  rc    the completion status of the request
- * @param  cbActual  on successful completion, the number of bytes of data
- *                   actually written, on buffer overflow the size of the
- *                   buffer needed, ignored otherwise
+ * @param  pReq  request
+ * @param  pv    address
+ * @param  cb    size
+ *
  * @todo   change this to deal with the buffer issues rather than offloading
  *         them onto the caller
  */
 void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
-                                    CLIPREADCBREQ *pReq, void *pv,
-                                    uint32_t cb)
+                                    CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     if (cb <= pReq->cb)
         memcpy(pReq->pv, pv, cb);
