@@ -60,6 +60,7 @@
 
 #include <VBox/sup.h>
 #include <VBox/scsi.h>
+#include <VBox/scsiinline.h>
 #include <VBox/ata.h>
 
 #include "PIIX3ATABmDma.h"
@@ -1099,75 +1100,6 @@ static void ataR3PadString(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
 }
 
 
-static void ataR3SCSIPadStr(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
-{
-    for (uint32_t i = 0; i < cbSize; i++)
-    {
-        if (*pbSrc)
-            pbDst[i] = *pbSrc++;
-        else
-            pbDst[i] = ' ';
-    }
-}
-
-
-DECLINLINE(void) ataH2BE_U16(uint8_t *pbBuf, uint16_t val)
-{
-    pbBuf[0] = val >> 8;
-    pbBuf[1] = val;
-}
-
-
-DECLINLINE(void) ataH2BE_U24(uint8_t *pbBuf, uint32_t val)
-{
-    pbBuf[0] = val >> 16;
-    pbBuf[1] = val >> 8;
-    pbBuf[2] = val;
-}
-
-
-DECLINLINE(void) ataH2BE_U32(uint8_t *pbBuf, uint32_t val)
-{
-    pbBuf[0] = val >> 24;
-    pbBuf[1] = val >> 16;
-    pbBuf[2] = val >> 8;
-    pbBuf[3] = val;
-}
-
-
-DECLINLINE(uint16_t) ataBE2H_U16(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 8) | pbBuf[1];
-}
-
-
-DECLINLINE(uint32_t) ataBE2H_U24(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 16) | (pbBuf[1] << 8) | pbBuf[2];
-}
-
-
-DECLINLINE(uint32_t) ataBE2H_U32(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] << 24) | (pbBuf[1] << 16) | (pbBuf[2] << 8) | pbBuf[3];
-}
-
-
-DECLINLINE(void) ataLBA2MSF(uint8_t *pbBuf, uint32_t iATAPILBA)
-{
-    iATAPILBA += 150;
-    pbBuf[0] = (iATAPILBA / 75) / 60;
-    pbBuf[1] = (iATAPILBA / 75) % 60;
-    pbBuf[2] = iATAPILBA % 75;
-}
-
-
-DECLINLINE(uint32_t) ataMSF2LBA(const uint8_t *pbBuf)
-{
-    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
-}
-
-
 #if 0 /* unused */
 /**
  * Compares two MSF values.
@@ -1844,7 +1776,7 @@ static bool atapiR3ReadSS(ATADevState *s)
                 pbBuf += 10;
                 *pbBuf++ = 0x00;
                 /* MSF */
-                ataLBA2MSF(pbBuf, i);
+                scsiLBA2MSF(pbBuf, i);
                 pbBuf += 3;
                 *pbBuf++ = 0x01; /* mode 1 data */
                 /* data */
@@ -1949,7 +1881,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     {
         case SCSI_MODE_SELECT_10:
         {
-            size_t cbBlkDescLength = ataBE2H_U16(&s->CTX_SUFF(pbIOBuffer)[6]);
+            size_t cbBlkDescLength = scsiBE2H_U16(&s->CTX_SUFF(pbIOBuffer)[6]);
 
             SCSILogModePage(szBuf, sizeof(szBuf) - 1,
                             s->CTX_SUFF(pbIOBuffer) + 8 + cbBlkDescLength,
@@ -1990,21 +1922,21 @@ static bool atapiR3PassthroughSS(ATADevState *s)
             case SCSI_READ_10:
             case SCSI_WRITE_10:
             case SCSI_WRITE_AND_VERIFY_10:
-                iATAPILBA = ataBE2H_U32(s->aATAPICmd + 2);
-                cSectors = ataBE2H_U16(s->aATAPICmd + 7);
+                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
+                cSectors = scsiBE2H_U16(s->aATAPICmd + 7);
                 break;
             case SCSI_READ_12:
             case SCSI_WRITE_12:
-                iATAPILBA = ataBE2H_U32(s->aATAPICmd + 2);
-                cSectors = ataBE2H_U32(s->aATAPICmd + 6);
+                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
+                cSectors = scsiBE2H_U32(s->aATAPICmd + 6);
                 break;
             case SCSI_READ_CD:
-                iATAPILBA = ataBE2H_U32(s->aATAPICmd + 2);
-                cSectors = ataBE2H_U24(s->aATAPICmd + 6);
+                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
+                cSectors = scsiBE2H_U24(s->aATAPICmd + 6);
                 break;
             case SCSI_READ_CD_MSF:
-                iATAPILBA = ataMSF2LBA(s->aATAPICmd + 3);
-                cSectors = ataMSF2LBA(s->aATAPICmd + 6) - iATAPILBA;
+                iATAPILBA = scsiMSF2LBA(s->aATAPICmd + 3);
+                cSectors = scsiMSF2LBA(s->aATAPICmd + 6) - iATAPILBA;
                 break;
             default:
                 AssertMsgFailed(("Don't know how to split command %#04x\n", s->aATAPICmd[0]));
@@ -2033,21 +1965,21 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                 case SCSI_READ_10:
                 case SCSI_WRITE_10:
                 case SCSI_WRITE_AND_VERIFY_10:
-                    ataH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U16(aATAPICmd + 7, cReqSectors);
+                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U16(aATAPICmd + 7, cReqSectors);
                     break;
                 case SCSI_READ_12:
                 case SCSI_WRITE_12:
-                    ataH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U32(aATAPICmd + 6, cReqSectors);
+                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U32(aATAPICmd + 6, cReqSectors);
                     break;
                 case SCSI_READ_CD:
-                    ataH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U24(aATAPICmd + 6, cReqSectors);
+                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U24(aATAPICmd + 6, cReqSectors);
                     break;
                 case SCSI_READ_CD_MSF:
-                    ataLBA2MSF(aATAPICmd + 3, iATAPILBA);
-                    ataLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
+                    scsiLBA2MSF(aATAPICmd + 3, iATAPILBA);
+                    scsiLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
                     break;
             }
             rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
@@ -2066,21 +1998,21 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                 case SCSI_READ_10:
                 case SCSI_WRITE_10:
                 case SCSI_WRITE_AND_VERIFY_10:
-                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U16(s->aATAPICmd + 7, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U16(s->aATAPICmd + 7, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_12:
                 case SCSI_WRITE_12:
-                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U32(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U32(s->aATAPICmd + 6, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_CD:
-                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    ataH2BE_U24(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U24(s->aATAPICmd + 6, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_CD_MSF:
-                    ataLBA2MSF(s->aATAPICmd + 3, iATAPILBA);
-                    ataLBA2MSF(s->aATAPICmd + 6, iATAPILBA + cSectors - cSectorsMax);
+                    scsiLBA2MSF(s->aATAPICmd + 3, iATAPILBA);
+                    scsiLBA2MSF(s->aATAPICmd + 6, iATAPILBA + cSectors - cSectorsMax);
                     break;
                 default:
                     AssertMsgFailed(("Don't know how to split command %#04x\n", s->aATAPICmd[0]));
@@ -2162,9 +2094,9 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                  * Motivation: changing the VM configuration should be as
                  *             invisible as possible to the guest. */
                 Log3(("ATAPI PT inquiry data before (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
-                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
-                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
-                ataR3SCSIPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
+                scsiPadStr(s->CTX_SUFF(pbIOBuffer) + 8, "VBOX", 8);
+                scsiPadStr(s->CTX_SUFF(pbIOBuffer) + 16, "CD-ROM", 16);
+                scsiPadStr(s->CTX_SUFF(pbIOBuffer) + 32, "1.0", 4);
             }
 
             if (cbTransfer)
@@ -2212,7 +2144,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
     int media = s->aATAPICmd[1];
     int format = s->aATAPICmd[7];
 
-    uint16_t max_len = ataBE2H_U16(&s->aATAPICmd[8]);
+    uint16_t max_len = scsiBE2H_U16(&s->aATAPICmd[8]);
 
     memset(buf, 0, max_len);
 
@@ -2269,12 +2201,12 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                         buf[7] = 0;   /* default densities */
 
                         /* FIXME: 0x30000 per spec? */
-                        ataH2BE_U32(buf + 8, 0); /* start sector */
-                        ataH2BE_U32(buf + 12, total_sectors - 1); /* end sector */
-                        ataH2BE_U32(buf + 16, total_sectors - 1); /* l0 end sector */
+                        scsiH2BE_U32(buf + 8, 0); /* start sector */
+                        scsiH2BE_U32(buf + 12, total_sectors - 1); /* end sector */
+                        scsiH2BE_U32(buf + 16, total_sectors - 1); /* l0 end sector */
 
                         /* Size of buffer, not including 2 byte size field */
-                        ataH2BE_U32(&buf[0], 2048 + 2);
+                        scsiH2BE_U32(&buf[0], 2048 + 2);
 
                         /* 2k data + 4 byte header */
                         uASC = (2048 + 4);
@@ -2285,7 +2217,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                         buf[5] = 0; /* no region restrictions */
 
                         /* Size of buffer, not including 2 byte size field */
-                        ataH2BE_U16(buf, 4 + 2);
+                        scsiH2BE_U16(buf, 4 + 2);
 
                         /* 4 byte header + 4 byte data */
                         uASC = (4 + 4);
@@ -2297,7 +2229,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
 
                     case 0x04: /* DVD disc manufacturing information */
                         /* Size of buffer, not including 2 byte size field */
-                        ataH2BE_U16(buf, 2048 + 2);
+                        scsiH2BE_U16(buf, 2048 + 2);
 
                         /* 2k data + 4 byte header */
                         uASC = (2048 + 4);
@@ -2310,22 +2242,22 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
 
                         buf[4] = 0x00; /* Physical format */
                         buf[5] = 0x40; /* Not writable, is readable */
-                        ataH2BE_U16((buf + 6), 2048 + 4);
+                        scsiH2BE_U16((buf + 6), 2048 + 4);
 
                         buf[8] = 0x01; /* Copyright info */
                         buf[9] = 0x40; /* Not writable, is readable */
-                        ataH2BE_U16((buf + 10), 4 + 4);
+                        scsiH2BE_U16((buf + 10), 4 + 4);
 
                         buf[12] = 0x03; /* BCA info */
                         buf[13] = 0x40; /* Not writable, is readable */
-                        ataH2BE_U16((buf + 14), 188 + 4);
+                        scsiH2BE_U16((buf + 14), 188 + 4);
 
                         buf[16] = 0x04; /* Manufacturing info */
                         buf[17] = 0x40; /* Not writable, is readable */
-                        ataH2BE_U16((buf + 18), 2048 + 4);
+                        scsiH2BE_U16((buf + 18), 2048 + 4);
 
                         /* Size of buffer, not including 2 byte size field */
-                        ataH2BE_U16(buf, 16 + 2);
+                        scsiH2BE_U16(buf, 16 + 2);
 
                         /* data written + 4 byte header */
                         uASC = (16 + 4);
@@ -2379,8 +2311,8 @@ static bool atapiR3ReadCapacitySS(ATADevState *s)
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 8);
-    ataH2BE_U32(pbBuf, s->cTotalSectors - 1);
-    ataH2BE_U32(pbBuf + 4, 2048);
+    scsiH2BE_U32(pbBuf, s->cTotalSectors - 1);
+    scsiH2BE_U32(pbBuf + 4, 2048);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2394,7 +2326,7 @@ static bool atapiR3ReadDiscInformationSS(ATADevState *s)
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 34);
     memset(pbBuf, '\0', 34);
-    ataH2BE_U16(pbBuf, 32);
+    scsiH2BE_U16(pbBuf, 32);
     pbBuf[2] = (0 << 4) | (3 << 2) | (2 << 0); /* not erasable, complete session, complete disc */
     pbBuf[3] = 1; /* number of first track */
     pbBuf[4] = 1; /* number of sessions (LSB) */
@@ -2405,8 +2337,8 @@ static bool atapiR3ReadDiscInformationSS(ATADevState *s)
     pbBuf[9] = 0; /* number of sessions (MSB) */
     pbBuf[10] = 0; /* number of sessions (MSB) */
     pbBuf[11] = 0; /* number of sessions (MSB) */
-    ataH2BE_U32(pbBuf + 16, 0x00ffffff); /* last session lead-in start time is not available */
-    ataH2BE_U32(pbBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
+    scsiH2BE_U32(pbBuf + 16, 0x00ffffff); /* last session lead-in start time is not available */
+    scsiH2BE_U32(pbBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2420,20 +2352,20 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *s)
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 36);
     /* Accept address/number type of 1 only, and only track 1 exists. */
-    if ((s->aATAPICmd[1] & 0x03) != 1 || ataBE2H_U32(&s->aATAPICmd[2]) != 1)
+    if ((s->aATAPICmd[1] & 0x03) != 1 || scsiBE2H_U32(&s->aATAPICmd[2]) != 1)
     {
         atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
         return false;
     }
     memset(pbBuf, '\0', 36);
-    ataH2BE_U16(pbBuf, 34);
+    scsiH2BE_U16(pbBuf, 34);
     pbBuf[2] = 1; /* track number (LSB) */
     pbBuf[3] = 1; /* session number (LSB) */
     pbBuf[5] = (0 << 5) | (0 << 4) | (4 << 0); /* not damaged, primary copy, data track */
     pbBuf[6] = (0 << 7) | (0 << 6) | (0 << 5) | (0 << 6) | (1 << 0); /* not reserved track, not blank, not packet writing, not fixed packet, data mode 1 */
     pbBuf[7] = (0 << 1) | (0 << 0); /* last recorded address not valid, next recordable address not valid */
-    ataH2BE_U32(pbBuf + 8, 0); /* track start address is 0 */
-    ataH2BE_U32(pbBuf + 24, s->cTotalSectors); /* track size */
+    scsiH2BE_U32(pbBuf + 8, 0); /* track start address is 0 */
+    scsiH2BE_U32(pbBuf + 24, s->cTotalSectors); /* track size */
     pbBuf[32] = 0; /* track number (MSB) */
     pbBuf[33] = 0; /* session number (MSB) */
     s->iSourceSink = ATAFN_SS_NULL;
@@ -2447,14 +2379,14 @@ static uint32_t atapiR3GetConfigurationFillFeatureListProfiles(ATADevState *s, u
     if (cbBuf < 3*4)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x0); /* feature 0: list of profiles supported */
+    scsiH2BE_U16(pbBuf, 0x0); /* feature 0: list of profiles supported */
     pbBuf[2] = (0 << 2) | (1 << 1) | (1 << 0); /* version 0, persistent, current */
     pbBuf[3] = 8; /* additional bytes for profiles */
     /* The MMC-3 spec says that DVD-ROM read capability should be reported
      * before CD-ROM read capability. */
-    ataH2BE_U16(pbBuf + 4, 0x10); /* profile: read-only DVD */
+    scsiH2BE_U16(pbBuf + 4, 0x10); /* profile: read-only DVD */
     pbBuf[6] = (0 << 0); /* NOT current profile */
-    ataH2BE_U16(pbBuf + 8, 0x08); /* profile: read only CD */
+    scsiH2BE_U16(pbBuf + 8, 0x08); /* profile: read only CD */
     pbBuf[10] = (1 << 0); /* current profile */
 
     return 3*4; /* Header + 2 profiles entries */
@@ -2466,10 +2398,10 @@ static uint32_t atapiR3GetConfigurationFillFeatureCore(ATADevState *s, uint8_t *
     if (cbBuf < 12)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x1); /* feature 0001h: Core Feature */
+    scsiH2BE_U16(pbBuf, 0x1); /* feature 0001h: Core Feature */
     pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 8; /* Additional length */
-    ataH2BE_U16(pbBuf + 4, 0x00000002); /* Physical interface ATAPI. */
+    scsiH2BE_U16(pbBuf + 4, 0x00000002); /* Physical interface ATAPI. */
     pbBuf[8] = RT_BIT(0); /* DBE */
     /* Rest is reserved. */
 
@@ -2482,7 +2414,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureMorphing(ATADevState *s, uint8
     if (cbBuf < 8)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x2); /* feature 0002h: Morphing Feature */
+    scsiH2BE_U16(pbBuf, 0x2); /* feature 0002h: Morphing Feature */
     pbBuf[2] = (0x1 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 4; /* Additional length */
     pbBuf[4] = RT_BIT(1) | 0x0; /* OCEvent | !ASYNC */
@@ -2497,7 +2429,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureRemovableMedium(ATADevState *s
     if (cbBuf < 8)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x3); /* feature 0003h: Removable Medium Feature */
+    scsiH2BE_U16(pbBuf, 0x3); /* feature 0003h: Removable Medium Feature */
     pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 4; /* Additional length */
     /* Tray type loading | Load | Eject | !Pvnt Jmpr | !DBML | Lock */
@@ -2513,11 +2445,11 @@ static uint32_t atapiR3GetConfigurationFillFeatureRandomReadable (ATADevState *s
     if (cbBuf < 12)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x10); /* feature 0010h: Random Readable Feature */
+    scsiH2BE_U16(pbBuf, 0x10); /* feature 0010h: Random Readable Feature */
     pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 8; /* Additional length */
-    ataH2BE_U32(pbBuf + 4, 2048); /* Logical block size. */
-    ataH2BE_U16(pbBuf + 8, 0x10); /* Blocking (0x10 for DVD, CD is not defined). */
+    scsiH2BE_U32(pbBuf + 4, 2048); /* Logical block size. */
+    scsiH2BE_U16(pbBuf + 8, 0x10); /* Blocking (0x10 for DVD, CD is not defined). */
     pbBuf[10] = 0; /* PP not present */
     /* Rest is reserved. */
 
@@ -2530,7 +2462,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t
     if (cbBuf < 8)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x1e); /* feature 001Eh: CD Read Feature */
+    scsiH2BE_U16(pbBuf, 0x1e); /* feature 001Eh: CD Read Feature */
     pbBuf[2] = (0x2 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 0; /* Additional length */
     pbBuf[4] = (0x0 << 7) | (0x0 << 1) | 0x0; /* !DAP | !C2-Flags | !CD-Text. */
@@ -2545,7 +2477,7 @@ static uint32_t atapiR3GetConfigurationFillFeaturePowerManagement(ATADevState *s
     if (cbBuf < 4)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x100); /* feature 0100h: Power Management Feature */
+    scsiH2BE_U16(pbBuf, 0x100); /* feature 0100h: Power Management Feature */
     pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 0; /* Additional length */
 
@@ -2558,7 +2490,7 @@ static uint32_t atapiR3GetConfigurationFillFeatureTimeout(ATADevState *s, uint8_
     if (cbBuf < 8)
         return 0;
 
-    ataH2BE_U16(pbBuf, 0x105); /* feature 0105h: Timeout Feature */
+    scsiH2BE_U16(pbBuf, 0x105); /* feature 0105h: Timeout Feature */
     pbBuf[2] = (0x0 << 2) | RT_BIT(1) | RT_BIT(0); /* Version | Persistent | Current */
     pbBuf[3] = 4; /* Additional length */
     pbBuf[4] = 0x0; /* !Group3 */
@@ -2571,7 +2503,7 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
     uint32_t cbBuf = s->cbIOBuffer;
     uint32_t cbCopied = 0;
-    uint16_t u16Sfn = ataBE2H_U16(&s->aATAPICmd[2]);
+    uint16_t u16Sfn = scsiBE2H_U16(&s->aATAPICmd[2]);
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 80);
@@ -2585,9 +2517,9 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     /** @todo implement switching between CD-ROM and DVD-ROM profile (the only
      * way to differentiate them right now is based on the image size). */
     if (s->cTotalSectors)
-        ataH2BE_U16(pbBuf + 6, 0x08); /* current profile: read-only CD */
+        scsiH2BE_U16(pbBuf + 6, 0x08); /* current profile: read-only CD */
     else
-        ataH2BE_U16(pbBuf + 6, 0x00); /* current profile: none -> no media */
+        scsiH2BE_U16(pbBuf + 6, 0x00); /* current profile: none -> no media */
     cbBuf    -= 8;
     pbBuf    += 8;
 
@@ -2624,7 +2556,7 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     pbBuf += cbCopied;
 
     /* Set data length now - the field is not included in the final length. */
-    ataH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
+    scsiH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
 
     /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
     s->iSourceSink = ATAFN_SS_NULL;
@@ -2656,7 +2588,7 @@ static bool atapiR3GetEventStatusNotificationSS(ATADevState *s)
         {
             case ATA_EVENT_STATUS_MEDIA_NEW:
                 /* mount */
-                ataH2BE_U16(pbBuf + 0, 6);
+                scsiH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
                 pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x02; /* new medium */
@@ -2668,7 +2600,7 @@ static bool atapiR3GetEventStatusNotificationSS(ATADevState *s)
             case ATA_EVENT_STATUS_MEDIA_CHANGED:
             case ATA_EVENT_STATUS_MEDIA_REMOVED:
                 /* umount */
-                ataH2BE_U16(pbBuf + 0, 6);
+                scsiH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
                 pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x03; /* media removal */
@@ -2680,7 +2612,7 @@ static bool atapiR3GetEventStatusNotificationSS(ATADevState *s)
                 break;
 
             case ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED: /* currently unused */
-                ataH2BE_U16(pbBuf + 0, 6);
+                scsiH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
                 pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x01; /* eject requested (eject button pressed) */
@@ -2691,7 +2623,7 @@ static bool atapiR3GetEventStatusNotificationSS(ATADevState *s)
 
             case ATA_EVENT_STATUS_UNCHANGED:
             default:
-                ataH2BE_U16(pbBuf + 0, 6);
+                scsiH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x01; /* operational change request / notification */
                 pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x00;
@@ -2727,9 +2659,9 @@ static bool atapiR3InquirySS(ATADevState *s)
     pbBuf[5] = 0; /* reserved */
     pbBuf[6] = 0; /* reserved */
     pbBuf[7] = 0; /* reserved */
-    ataR3SCSIPadStr(pbBuf + 8, s->szInquiryVendorId, 8);
-    ataR3SCSIPadStr(pbBuf + 16, s->szInquiryProductId, 16);
-    ataR3SCSIPadStr(pbBuf + 32, s->szInquiryRevision, 4);
+    scsiPadStr(pbBuf + 8, s->szInquiryVendorId, 8);
+    scsiPadStr(pbBuf + 16, s->szInquiryProductId, 16);
+    scsiPadStr(pbBuf + 32, s->szInquiryRevision, 4);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2742,7 +2674,7 @@ static bool atapiR3ModeSenseErrorRecoverySS(ATADevState *s)
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 16);
-    ataH2BE_U16(&pbBuf[0], 16 + 6);
+    scsiH2BE_U16(&pbBuf[0], 16 + 6);
     pbBuf[2] = (uint8_t)s->MediaTrackType;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
@@ -2770,7 +2702,7 @@ static bool atapiR3ModeSenseCDStatusSS(ATADevState *s)
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 40);
-    ataH2BE_U16(&pbBuf[0], 38);
+    scsiH2BE_U16(&pbBuf[0], 38);
     pbBuf[2] = (uint8_t)s->MediaTrackType;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
@@ -2791,21 +2723,21 @@ static bool atapiR3ModeSenseCDStatusSS(ATADevState *s)
     if (s->pDrvMount->pfnIsLocked(s->pDrvMount))
         pbBuf[14] |= 1 << 1; /* report lock state */
     pbBuf[15] = 0; /* no subchannel reads supported, no separate audio volume control, no changer etc. */
-    ataH2BE_U16(&pbBuf[16], 5632); /* (obsolete) claim 32x speed support */
-    ataH2BE_U16(&pbBuf[18], 2); /* number of audio volume levels */
-    ataH2BE_U16(&pbBuf[20], s->cbIOBuffer / _1K); /* buffer size supported in Kbyte */
-    ataH2BE_U16(&pbBuf[22], 5632); /* (obsolete) current read speed 32x */
+    scsiH2BE_U16(&pbBuf[16], 5632); /* (obsolete) claim 32x speed support */
+    scsiH2BE_U16(&pbBuf[18], 2); /* number of audio volume levels */
+    scsiH2BE_U16(&pbBuf[20], s->cbIOBuffer / _1K); /* buffer size supported in Kbyte */
+    scsiH2BE_U16(&pbBuf[22], 5632); /* (obsolete) current read speed 32x */
     pbBuf[24] = 0; /* reserved */
     pbBuf[25] = 0; /* reserved for digital audio (see idx 15) */
-    ataH2BE_U16(&pbBuf[26], 0); /* (obsolete) maximum write speed */
-    ataH2BE_U16(&pbBuf[28], 0); /* (obsolete) current write speed */
-    ataH2BE_U16(&pbBuf[30], 0); /* copy management revision supported 0=no CSS */
+    scsiH2BE_U16(&pbBuf[26], 0); /* (obsolete) maximum write speed */
+    scsiH2BE_U16(&pbBuf[28], 0); /* (obsolete) current write speed */
+    scsiH2BE_U16(&pbBuf[30], 0); /* copy management revision supported 0=no CSS */
     pbBuf[32] = 0; /* reserved */
     pbBuf[33] = 0; /* reserved */
     pbBuf[34] = 0; /* reserved */
     pbBuf[35] = 1; /* rotation control CAV */
-    ataH2BE_U16(&pbBuf[36], 0); /* current write speed */
-    ataH2BE_U16(&pbBuf[38], 0); /* number of write speed performance descriptors */
+    scsiH2BE_U16(&pbBuf[36], 0); /* current write speed */
+    scsiH2BE_U16(&pbBuf[38], 0); /* number of write speed performance descriptors */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2831,13 +2763,13 @@ static bool atapiR3MechanismStatusSS(ATADevState *s)
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 8);
-    ataH2BE_U16(pbBuf, 0);
+    scsiH2BE_U16(pbBuf, 0);
     /* no current LBA */
     pbBuf[2] = 0;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
     pbBuf[5] = 1;
-    ataH2BE_U16(pbBuf + 6, 0);
+    scsiH2BE_U16(pbBuf + 6, 0);
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
     return false;
@@ -2870,13 +2802,13 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
         if (fMSF)
         {
             *q++ = 0; /* reserved */
-            ataLBA2MSF(q, 0);
+            scsiLBA2MSF(q, 0);
             q += 3;
         }
         else
         {
             /* sector 0 */
-            ataH2BE_U32(q, 0);
+            scsiH2BE_U32(q, 0);
             q += 4;
         }
     }
@@ -2888,16 +2820,16 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
     if (fMSF)
     {
         *q++ = 0; /* reserved */
-        ataLBA2MSF(q, s->cTotalSectors);
+        scsiLBA2MSF(q, s->cTotalSectors);
         q += 3;
     }
     else
     {
-        ataH2BE_U32(q, s->cTotalSectors);
+        scsiH2BE_U32(q, s->cTotalSectors);
         q += 4;
     }
     cbSize = q - pbBuf;
-    ataH2BE_U16(pbBuf, cbSize - 2);
+    scsiH2BE_U16(pbBuf, cbSize - 2);
     if (cbSize < s->cbTotalTransfer)
         s->cbTotalTransfer = cbSize;
     s->iSourceSink = ATAFN_SS_NULL;
@@ -2925,12 +2857,12 @@ static bool atapiR3ReadTOCMultiSS(ATADevState *s)
     if (fMSF)
     {
         pbBuf[8] = 0; /* reserved */
-        ataLBA2MSF(&pbBuf[9], 0);
+        scsiLBA2MSF(&pbBuf[9], 0);
     }
     else
     {
         /* sector 0 */
-        ataH2BE_U32(pbBuf + 8, 0);
+        scsiH2BE_U32(pbBuf + 8, 0);
     }
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
@@ -2986,12 +2918,12 @@ static bool atapiR3ReadTOCRawSS(ATADevState *s)
     if (fMSF)
     {
         *q++ = 0; /* reserved */
-        ataLBA2MSF(q, s->cTotalSectors);
+        scsiLBA2MSF(q, s->cTotalSectors);
         q += 3;
     }
     else
     {
-        ataH2BE_U32(q, s->cTotalSectors);
+        scsiH2BE_U32(q, s->cTotalSectors);
         q += 4;
     }
 
@@ -3005,18 +2937,18 @@ static bool atapiR3ReadTOCRawSS(ATADevState *s)
     if (fMSF)
     {
         *q++ = 0; /* reserved */
-        ataLBA2MSF(q, 0);
+        scsiLBA2MSF(q, 0);
         q += 3;
     }
     else
     {
         /* sector 0 */
-        ataH2BE_U32(q, 0);
+        scsiH2BE_U32(q, 0);
         q += 4;
     }
 
     cbSize = q - pbBuf;
-    ataH2BE_U16(pbBuf, cbSize - 2);
+    scsiH2BE_U16(pbBuf, cbSize - 2);
     if (cbSize < s->cbTotalTransfer)
         s->cbTotalTransfer = cbSize;
     s->iSourceSink = ATAFN_SS_NULL;
@@ -3049,13 +2981,13 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
             break;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             ataR3StartTransfer(s, RT_MIN(cbMax, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
             break;
         case SCSI_MODE_SENSE_10:
         {
             uint8_t uPageControl, uPageCode;
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             uPageControl = pbPacket[2] >> 6;
             uPageCode = pbPacket[2] & 0x3f;
             switch (uPageControl)
@@ -3117,10 +3049,10 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 break;
             }
             if (pbPacket[0] == SCSI_READ_10)
-                cSectors = ataBE2H_U16(pbPacket + 7);
+                cSectors = scsiBE2H_U16(pbPacket + 7);
             else
-                cSectors = ataBE2H_U32(pbPacket + 6);
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
+                cSectors = scsiBE2H_U32(pbPacket + 6);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
             if (cSectors == 0)
             {
                 atapiR3CmdOK(s);
@@ -3160,7 +3092,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 break;
             }
             cSectors = (pbPacket[6] << 16) | (pbPacket[7] << 8) | pbPacket[8];
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
             if (cSectors == 0)
             {
                 atapiR3CmdOK(s);
@@ -3216,7 +3148,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
             }
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
             if (iATAPILBA > s->cTotalSectors)
             {
                 /* Rate limited logging, one log line per second. For
@@ -3282,7 +3214,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
         }
         case SCSI_MECHANISM_STATUS:
         {
-            cbMax = ataBE2H_U16(pbPacket + 8);
+            cbMax = scsiBE2H_U16(pbPacket + 8);
             ataR3StartTransfer(s, RT_MIN(cbMax, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MECHANISM_STATUS, true);
             break;
         }
@@ -3301,7 +3233,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
             }
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             /* SCSI MMC-3 spec says format is at offset 2 (lower 4 bits),
              * but Linux kernel uses offset 9 (topmost 2 bits). Hope that
              * the other field is clear... */
@@ -3350,7 +3282,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
             }
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             ataR3StartTransfer(s, RT_MIN(cbMax, 34), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DISC_INFORMATION, true);
             break;
         case SCSI_READ_TRACK_INFORMATION:
@@ -3365,21 +3297,21 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                 break;
             }
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             ataR3StartTransfer(s, RT_MIN(cbMax, 36), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_TRACK_INFORMATION, true);
             break;
         case SCSI_GET_CONFIGURATION:
             /* No media change stuff here, it can confuse Linux guests. */
-            cbMax = ataBE2H_U16(pbPacket + 7);
+            cbMax = scsiBE2H_U16(pbPacket + 7);
             ataR3StartTransfer(s, RT_MIN(cbMax, 80), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_CONFIGURATION, true);
             break;
         case SCSI_INQUIRY:
-            cbMax = ataBE2H_U16(pbPacket + 3);
+            cbMax = scsiBE2H_U16(pbPacket + 3);
             ataR3StartTransfer(s, RT_MIN(cbMax, 36), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_INQUIRY, true);
             break;
         case SCSI_READ_DVD_STRUCTURE:
         {
-            cbMax = ataBE2H_U16(pbPacket + 8);
+            cbMax = scsiBE2H_U16(pbPacket + 8);
             ataR3StartTransfer(s, RT_MIN(cbMax, 4), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DVD_STRUCTURE, true);
             break;
         }
@@ -3410,8 +3342,8 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
         case SCSI_CLOSE_TRACK_SESSION:
             goto sendcmd;
         case SCSI_ERASE_10:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d\n", iATAPILBA));
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
@@ -3420,11 +3352,11 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_GET_CONFIGURATION:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_GET_EVENT_STATUS_NOTIFICATION:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             if (ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
             {
                 ataR3StartTransfer(s, RT_MIN(cbTransfer, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
@@ -3437,21 +3369,21 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_INQUIRY:
-            cbTransfer = ataBE2H_U16(pbPacket + 3);
+            cbTransfer = scsiBE2H_U16(pbPacket + 3);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_LOAD_UNLOAD_MEDIUM:
             goto sendcmd;
         case SCSI_MECHANISM_STATUS:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_MODE_SELECT_10:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_MODE_SENSE_10:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_PAUSE_RESUME:
@@ -3466,27 +3398,27 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             /** @todo do not forget to unlock when a VM is shut down */
             goto sendcmd;
         case SCSI_READ_10:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cSectors = ataBE2H_U16(pbPacket + 7);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            cSectors = scsiBE2H_U16(pbPacket + 7);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
             s->cbATAPISector = 2048;
             cbTransfer = cSectors * s->cbATAPISector;
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_12:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cSectors = ataBE2H_U32(pbPacket + 6);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            cSectors = scsiBE2H_U32(pbPacket + 6);
             Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
             s->cbATAPISector = 2048;
             cbTransfer = cSectors * s->cbATAPISector;
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_BUFFER:
-            cbTransfer = ataBE2H_U24(pbPacket + 6);
+            cbTransfer = scsiBE2H_U24(pbPacket + 6);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_BUFFER_CAPACITY:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_CAPACITY:
@@ -3504,9 +3436,9 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
                     uint32_t iLbaStart;
 
                     if (pbPacket[0] == SCSI_READ_CD)
-                        iLbaStart = ataBE2H_U32(&pbPacket[2]);
+                        iLbaStart = scsiBE2H_U32(&pbPacket[2]);
                     else
-                        iLbaStart = ataMSF2LBA(&pbPacket[3]);
+                        iLbaStart = scsiMSF2LBA(&pbPacket[3]);
 
                     if (s->pTrackList)
                         s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iLbaStart);
@@ -3535,10 +3467,10 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             }
 
             if (pbPacket[0] == SCSI_READ_CD)
-                cbTransfer = ataBE2H_U24(pbPacket + 6) * s->cbATAPISector;
+                cbTransfer = scsiBE2H_U24(pbPacket + 6) * s->cbATAPISector;
             else /* SCSI_READ_MSF */
             {
-                cSectors = ataMSF2LBA(pbPacket + 6) - ataMSF2LBA(pbPacket + 3);
+                cSectors = scsiMSF2LBA(pbPacket + 6) - scsiMSF2LBA(pbPacket + 3);
                 if (cSectors > 32)
                     cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
                 cbTransfer = cSectors * s->cbATAPISector;
@@ -3547,33 +3479,33 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             goto sendcmd;
         }
         case SCSI_READ_DISC_INFORMATION:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_DVD_STRUCTURE:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_FORMAT_CAPACITIES:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_SUBCHANNEL:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_TOC_PMA_ATIP:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_READ_TRACK_INFORMATION:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_REPAIR_TRACK:
             goto sendcmd;
         case SCSI_REPORT_KEY:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_REQUEST_SENSE:
@@ -3592,23 +3524,23 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
         case SCSI_SEEK_10:
             goto sendcmd;
         case SCSI_SEND_CUE_SHEET:
-            cbTransfer = ataBE2H_U24(pbPacket + 6);
+            cbTransfer = scsiBE2H_U24(pbPacket + 6);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_SEND_DVD_STRUCTURE:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_SEND_EVENT:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_SEND_KEY:
-            cbTransfer = ataBE2H_U16(pbPacket + 8);
+            cbTransfer = scsiBE2H_U16(pbPacket + 8);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_SEND_OPC_INFORMATION:
-            cbTransfer = ataBE2H_U16(pbPacket + 7);
+            cbTransfer = scsiBE2H_U16(pbPacket + 7);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_SET_CD_SPEED:
@@ -3616,7 +3548,7 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
         case SCSI_SET_READ_AHEAD:
             goto sendcmd;
         case SCSI_SET_STREAMING:
-            cbTransfer = ataBE2H_U16(pbPacket + 9);
+            cbTransfer = scsiBE2H_U16(pbPacket + 9);
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_START_STOP_UNIT:
@@ -3631,8 +3563,8 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             goto sendcmd;
         case SCSI_WRITE_10:
         case SCSI_WRITE_AND_VERIFY_10:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cSectors = ataBE2H_U16(pbPacket + 7);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            cSectors = scsiBE2H_U16(pbPacket + 7);
             if (s->pTrackList)
                 s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iATAPILBA);
             else
@@ -3642,8 +3574,8 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             uTxDir = PDMMEDIATXDIR_TO_DEVICE;
             goto sendcmd;
         case SCSI_WRITE_12:
-            iATAPILBA = ataBE2H_U32(pbPacket + 2);
-            cSectors = ataBE2H_U32(pbPacket + 6);
+            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            cSectors = scsiBE2H_U32(pbPacket + 6);
             if (s->pTrackList)
                 s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iATAPILBA);
             else
@@ -3665,13 +3597,13 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
                     atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                     break;
                 default:
-                    cbTransfer = ataBE2H_U16(pbPacket + 6);
+                    cbTransfer = scsiBE2H_U16(pbPacket + 6);
                     uTxDir = PDMMEDIATXDIR_TO_DEVICE;
                     goto sendcmd;
             }
             break;
         case SCSI_REPORT_LUNS: /* Not part of MMC-3, but used by Windows. */
-            cbTransfer = ataBE2H_U32(pbPacket + 6);
+            cbTransfer = scsiBE2H_U32(pbPacket + 6);
             uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
             goto sendcmd;
         case SCSI_REZERO_UNIT:
