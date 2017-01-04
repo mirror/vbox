@@ -932,16 +932,21 @@ class WuiMain(WuiDispatcherBase):
 
         for oCrit in oFilter.aCriteria:
             if len(oCrit.aoPossible) > 0:
-                if   oCrit.sState == oCrit.ksState_Selected \
-                  or len(oCrit.aoPossible) <= 2 \
+                if   (    oCrit.oSub is None \
+                      and (   oCrit.sState == oCrit.ksState_Selected \
+                           or len(oCrit.aoPossible) <= 2)) \
+                  or (    oCrit.oSub is not None \
+                      and (   oCrit.sState == oCrit.ksState_Selected \
+                           or oCrit.oSub.sState == oCrit.ksState_Selected \
+                           or (len(oCrit.aoPossible) <= 2 and len(oCrit.oSub.aoPossible) <= 2))) \
                   or oCrit.fExpanded is True:
-                    sClass = 'sf-collapsable';
+                    sClass = 'sf-collapsible';
                     sChar  = '&#9660;';
                 else:
                     sClass = 'sf-expandable';
                     sChar  = '&#9654;';
 
-                sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsableDtDd(this);">%s'\
+                sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsibleDtDd(this);">%s'\
                          u' %s</a></dt>\n' \
                          u'  <dd class="%s">\n' \
                          u'   <ul>\n' \
@@ -949,14 +954,31 @@ class WuiMain(WuiDispatcherBase):
 
                 for oDesc in oCrit.aoPossible:
                     fChecked = oDesc.oValue in oCrit.aoSelected;
-                    sHtml += u'    <li%s%s><input type="checkbox" name="%s" value="%s"%s/>%s%s</li>\n' \
+                    sHtml += u'    <li%s%s><label><input type="checkbox" name="%s" value="%s"%s%s/>%s%s</label>\n' \
                            % ( ' class="side-filter-irrelevant"' if oDesc.fIrrelevant else '',
-                               ' title="%s"' % (webutils.escapeAttr(oDesc.sHover,) if oDesc.sHover is not None else ''),
-                               oCrit.sVarNm, oDesc.oValue, ' checked' if fChecked else '',
+                               (' title="%s"' % (webutils.escapeAttr(oDesc.sHover,)) if oDesc.sHover is not None else ''),
+                               oCrit.sVarNm,
+                               oDesc.oValue,
+                               ' checked' if fChecked else '',
+                               ' onclick="toggleCollapsibleCheckbox(this);"' if oDesc.aoSubs is not None else '',
                                webutils.escapeElem(oDesc.sDesc),
                                '<span class="side-filter-count"> [%u]</span>' % (oDesc.cTimes) if oDesc.cTimes is not None
                                else '', );
+                    if oDesc.aoSubs is not None:
+                        sHtml += u'     <ul class="sf-checkbox-%s">\n' % ('collapsible' if fChecked else 'expandable', );
+                        for oSubDesc in oDesc.aoSubs:
+                            fSubChecked = oSubDesc.oValue in oCrit.oSub.aoSelected;
+                            sHtml += u'     <li%s%s><label><input type="checkbox" name="%s" value="%s"%s/>%s%s</label>\n' \
+                                   % ( ' class="side-filter-irrelevant"' if oSubDesc.fIrrelevant else '',
+                                       ' title="%s"' % ( webutils.escapeAttr(oSubDesc.sHover,) if oSubDesc.sHover is not None
+                                                         else ''),
+                                       oCrit.oSub.sVarNm, oSubDesc.oValue, ' checked' if fSubChecked else '',
+                                       webutils.escapeElem(oSubDesc.sDesc),
+                                       '<span class="side-filter-count"> [%u]</span>' % (oSubDesc.cTimes)
+                                       if oSubDesc.cTimes is not None else '', );
 
+                        sHtml += u'     </ul>\n';
+                    sHtml += u'    </li>';
                 sHtml += u'   </ul>\n' \
                          u'  </dd>\n';
 

@@ -352,18 +352,18 @@ function addRedirectToAnchorHref(oAnchor)
 }
 
 
-/** @name Collapsable / Expandable items
+/** @name Collapsible / Expandable items
  * @{
  */
 
 
 /**
- * Toggles the collapsable / expandable state of a parent DD and DT unclke.
+ * Toggles the collapsible / expandable state of a parent DD and DT uncle.
  *
  * @returns true
  * @param   oAnchor             The anchor object.
  */
-function toggleCollapsableDtDd(oAnchor)
+function toggleCollapsibleDtDd(oAnchor)
 {
     var oParent = oAnchor.parentElement;
     var sClass  = oParent.className;
@@ -376,19 +376,19 @@ function toggleCollapsableDtDd(oAnchor)
     /* Determin the new class and arrow char. */
     var sNewClass;
     var sNewChar;
-    if (     sClass.substr(-11) == 'collapsable')
+    if (     sClass.substr(-11) == 'collapsible')
     {
         sNewClass = sClass.substr(0, sClass.length - 11) + 'expandable';
         sNewChar  = '\u25B6'; /* black right-pointing triangle */
     }
     else if (sClass.substr(-10) == 'expandable')
     {
-        sNewClass = sClass.substr(0, sClass.length - 10) + 'collapsable';
+        sNewClass = sClass.substr(0, sClass.length - 10) + 'collapsible';
         sNewChar  = '\u25BC'; /* black down-pointing triangle */
     }
     else
     {
-        console.log('toggleCollapsableParent: Invalid class: ' + sClass);
+        console.log('toggleCollapsibleParent: Invalid class: ' + sClass);
         return true;
     }
 
@@ -399,6 +399,31 @@ function toggleCollapsableDtDd(oAnchor)
     /* Update the uncle (DD) class. */
     if (oDdElement)
         oDdElement.className = sNewClass;
+    return true;
+}
+
+/**
+ * Shows/hides a sub-category UL according to checkbox status.
+ *
+ * The checkbox is expected to be within a label element or something.
+ *
+ * @returns true
+ * @param   oInput          The input checkbox.
+ */
+function toggleCollapsibleCheckbox(oInput)
+{
+    var oParent = oInput.parentElement;
+
+    /* Find the UL sibling element. */
+    var oUlElement = oParent.nextSibling;
+    while (oUlElement != null && oUlElement.tagName != 'UL')
+        oUlElement = oUlElement.nextSibling;
+
+    /* Change the visibility. */
+    if (oInput.checked)
+        oUlElement.className = oUlElement.className.replace('expandable', 'collapsible');
+    else
+        oUlElement.className = oUlElement.className.replace('collapsible', 'expandable');
     return true;
 }
 

@@ -323,7 +323,6 @@ html, body {
     background:             rgba(112, 128, 144, 0.7);
 }
 
-
 /* Filters: */
 #side-filters p:first-child {
     margin-top:     0.5em;
@@ -332,7 +331,7 @@ html, body {
     text-decoration: underline;
 }
 
-#side-filters dd.sf-collapsable {
+#side-filters dd.sf-collapsible {
     display:        block;
 }
 
@@ -377,9 +376,27 @@ html, body {
     }
 }
 
-#side-filters ul {
+#side-filters dd > ul {
     max-height:     22em;
     overflow:       auto;
+}
+
+#side-filters ul ul {
+    margin-left:    1.4em;
+}
+
+#side-filters li {
+    padding-top:    1px;
+    padding-bottom: 1px;
+    overflow-wrap:  break-word;
+}
+
+ul.sf-checkbox-collapsible {
+    display:        block;
+}
+
+ul.sf-checkbox-expandable {
+    display:        none;
 }
 
 .side-filter-irrelevant {
@@ -406,9 +423,11 @@ html, body {
     margin-left:    3px;
     margin-right:   3px;
     margin-bottom:  0.5em;
+    font-family:    Times New, Times, serif;
     font-size:      0.86em;
-    line-height:    1.2em;
     font-style:     normal;
+    font-weight:    normal;
+    line-height:    1.2em;
     text-align:     center;
 }
 

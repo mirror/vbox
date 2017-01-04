@@ -1163,6 +1163,7 @@ class FilterCriterionValueAndDescription(object):
         self.cTimes      = cTimes;      ##< Number of times the value occurs in the result set. None if not given.
         self.sHover      = sHover;      ##< Optional hover/title string.
         self.fIrrelevant = fIrrelevant; ##< Irrelevant filter option, only present because it's selected
+        self.aoSubs      = [];          ##< References to FilterCriterion.oSub.aoPossible.
 
 
 class FilterCriterion(object):
@@ -1189,18 +1190,19 @@ class FilterCriterion(object):
     ## @}
 
     def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_AnyOf,
-                 sTable = None, sColumn = None):
+                 sTable = None, sColumn = None, oSub = None):
         assert len(sVarNm) in (2,3); # required by wuimain.py
         self.sName      = sName;
         self.sState     = sState;
         self.sVarNm     = sVarNm if sVarNm is not None else sName;
         self.sType      = sType;
         self.sKind      = sKind;
-        self.aoSelected = []; # Single value, any type.
-        self.aoPossible = []; # type: list[FilterCriterionValueAndDescription]
+        self.aoSelected = [];       ##< Single value, any type.
+        self.aoPossible = [];       ##< type: list[FilterCriterionValueAndDescription]
         self.sTable     = sTable;
         self.sColumn    = sColumn;
-        self.fExpanded  = None; ##< Tristate (None, False, True) indicating whether the criterion should be shown/hid regardless.
+        self.fExpanded  = None;     ##< Tristate (None, False, True)
+        self.oSub       = oSub;     ##< type: FilterCriterion
 
 
 class ModelFilterBase(ModelBase):
@@ -1231,6 +1233,31 @@ class ModelFilterBase(ModelBase):
         ModelBase.__init__(self);
         self.aCriteria = []; # type: list[FilterCriterion]
 
+    def _initFromParamsWorker(self, oDisp, oCriterion):
+        """ Worker for initFromParams. """
+        if oCriterion.sType == FilterCriterion.ksType_UInt:
+            oCriterion.aoSelected = oDisp.getListOfIntParams(oCriterion.sVarNm, iMin = 0, aiDefaults = []);
+        elif oCriterion.sType == FilterCriterion.ksType_String:
+            oCriterion.aoSelected = oDisp.getListOfStrParams(oCriterion.sVarNm, asDefaults = []);
+            if len(oCriterion.aoSelected) > 100:
+                raise TMExceptionBase('Variable %s has %u value, max allowed is 100!'
+                                      % (oCriterion.sVarNm, len(oCriterion.aoSelected)));
+            for sValue in oCriterion.aoSelected:
+                if   len(sValue) > 64 \
+                  or '\'' in sValue \
+                  or sValue[-1] == '\\':
+                    raise TMExceptionBase('Variable %s has an illegal value "%s"!' % (oCriterion.sVarNm, sValue));
+        else:
+            assert False;
+        if len(oCriterion.aoSelected) > 0:
+            oCriterion.sState     = FilterCriterion.ksState_Selected;
+        else:
+            oCriterion.sState     = FilterCriterion.ksState_NotSelected;
+
+        if oCriterion.oSub is not None:
+            self._initFromParamsWorker(oDisp, oCriterion.oSub);
+        return;
+
     def initFromParams(self, oDisp): # type: (WuiDispatcherBase) -> self
         """
         Initialize the object from parameters.
@@ -1239,24 +1266,7 @@ class ModelFilterBase(ModelBase):
         """
 
         for oCriterion in self.aCriteria:
-            if oCriterion.sType == FilterCriterion.ksType_UInt:
-                oCriterion.aoSelected = oDisp.getListOfIntParams(oCriterion.sVarNm, iMin = 0, aiDefaults = []);
-            elif oCriterion.sType == FilterCriterion.ksType_String:
-                oCriterion.aoSelected = oDisp.getListOfStrParams(oCriterion.sVarNm, asDefaults = []);
-                if len(oCriterion.aoSelected) > 100:
-                    raise TMExceptionBase('Variable %s has %u value, max allowed is 100!'
-                                          % (oCriterion.sVarNm, len(oCriterion.aoSelected)));
-                for sValue in oCriterion.aoSelected:
-                    if   len(sValue) > 64 \
-                      or '\'' in sValue \
-                      or sValue[-1] == '\\':
-                        raise TMExceptionBase('Variable %s has an illegal value "%s"!' % (oCriterion.sVarNm, sValue));
-            else:
-                assert False;
-            if len(oCriterion.aoSelected) > 0:
-                oCriterion.sState     = FilterCriterion.ksState_Selected;
-            else:
-                oCriterion.sState     = FilterCriterion.ksState_NotSelected;
+            self._initFromParamsWorker(oDisp, oCriterion);
         return self;
 
 
