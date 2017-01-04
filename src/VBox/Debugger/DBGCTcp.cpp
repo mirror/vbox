@@ -168,11 +168,11 @@ static DECLCALLBACK(int) dbgcTcpBackWrite(PDBGCBACK pBack, const void *pvBuf, si
 }
 
 /** @copydoc FNDBGCBACKSETREADY */
-static DECLCALLBACK(void) dbgcTcpBackSetReady(PDBGCBACK pBack, bool fBusy)
+static DECLCALLBACK(void) dbgcTcpBackSetReady(PDBGCBACK pBack, bool fReady)
 {
     /* stub */
     NOREF(pBack);
-    NOREF(fBusy);
+    NOREF(fReady);
 }
 
 

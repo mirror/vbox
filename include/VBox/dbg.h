@@ -413,7 +413,8 @@ typedef struct DBGCCMDHLP
      *
      * @returns VBox status.
      * @param   pCmdHlp     Pointer to the command callback structure.
-     * @param   pcb         Where to store the number of bytes written.
+     * @param   pcbWritten  Where to store the number of bytes written.
+     *                      This is optional.
      * @param   pszFormat   The format string.  This may use all IPRT extensions as
      *                      well as the debugger ones.
      * @param   ...         Arguments specified in the format string.
@@ -426,7 +427,8 @@ typedef struct DBGCCMDHLP
      *
      * @returns VBox status.
      * @param   pCmdHlp     Pointer to the command callback structure.
-     * @param   pcb         Where to store the number of bytes written.
+     * @param   pcbWritten  Where to store the number of bytes written.
+     *                      This is optional. 
      * @param   pszFormat   The format string.  This may use all IPRT extensions as
      *                      well as the debugger ones.
      * @param   args        Arguments specified in the format string.
@@ -479,7 +481,6 @@ typedef struct DBGCCMDHLP
      * @returns VBox status code appropriate to return from a command.
      * @param   pCmdHlp     Pointer to the command callback structure.
      * @param   rc          The VBox status code.
-     * @param   pcb         Where to store the number of bytes written.
      * @param   pszFormat   Format string for additional messages. Can be NULL.
      * @param   args        Format arguments, optional.
      */

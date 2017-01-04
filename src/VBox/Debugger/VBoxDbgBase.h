@@ -43,7 +43,7 @@ public:
     /**
      * Construct the object.
      *
-     * @param   pDbgGui     Pointer to the debugger gui object.
+     * @param   a_pDbgGui   Pointer to the debugger gui object.
      */
     VBoxDbgBase(VBoxDbgGui *a_pDbgGui);
 
@@ -129,7 +129,8 @@ public:
     /**
      * Construct the object.
      *
-     * @param   pDbgGui     Pointer to the debugger gui object.
+     * @param   a_pDbgGui   Pointer to the debugger gui object.
+     * @param   a_pParent   Pointer to the parent object.
      */
     VBoxDbgBaseWindow(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent);
 

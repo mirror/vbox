@@ -1625,7 +1625,7 @@ static void dbgcCmdUnassembleCfgDumpBb(PDBGCFLOWBBDUMP pDumpBb, DBGCSCREEN hScre
  * Dumps one branch table using the dumper callback.
  *
  * @returns nothing.
- * @param   pDumpBb             The basic block dump state to dump.
+ * @param   pDumpBranchTbl      The basic block dump state to dump.
  * @param   hScreen             The screen to draw to.
  */
 static void dbgcCmdUnassembleCfgDumpBranchTbl(PDBGCFLOWBRANCHTBLDUMP pDumpBranchTbl, DBGCSCREEN hScreen)
@@ -2620,8 +2620,7 @@ static DECLCALLBACK(int) dbgcCmdStepTraceToggle(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 
 /**
- * @callback_method_impl{FNDBGCCMD,
- *      The 'p', 'pc', 'pt', 't', 'tc', and 'tt' commands.}
+ * @callback_method_impl{FNDBGCCMD, The 'p'\, 'pc'\, 'pt'\, 't'\, 'tc'\, and 'tt' commands.}
  */
 static DECLCALLBACK(int) dbgcCmdStepTrace(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -4716,6 +4715,7 @@ static DECLCALLBACK(int) dbgcCmdMemoryInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
  * @retval  VERR_INTERNAL_ERROR on bad variable type, bitched.
  * @retval  VINF_SUCCESS on success.
  *
+ * @param   pCmdHlp The command helper callback table.
  * @param   pvBuf   The buffer to convert into.
  * @param   pcbBuf  The buffer size on input. The size of the result on output.
  * @param   cbUnit  The unit size to apply when converting.

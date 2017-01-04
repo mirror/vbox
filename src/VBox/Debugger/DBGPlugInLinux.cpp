@@ -2091,8 +2091,6 @@ static int dbgDiggerLinuxCfgParseIde(const char *pszCfg, const char **ppszCfgNex
  * @returns VBox status code.
  * @param   pszCfg              The config data.
  * @param   ppszCfgNext         Where to store the pointer to the data following the identifier.
- * @param   pcbCfg              Where the initial size of the string is stored.
- *                              Contains the remaining string length on return.
  * @param   ppCfgItem           Where to store the created config item on success.
  */
 static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNext,
@@ -2174,7 +2172,7 @@ static int dbgDiggerLinuxCfgParseVal(const char *pszCfg, const char **ppszCfgNex
  *
  * @returns VBox status code
  * @param   pThis               The Linux digger data.
- * @param   pbCfg               The config string.
+ * @param   pszCfg              The config string.
  */
 static int dbgDiggerLinuxCfgParse(PDBGDIGGERLINUX pThis, const char *pszCfg)
 {

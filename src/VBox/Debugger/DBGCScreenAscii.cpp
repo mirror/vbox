@@ -235,7 +235,7 @@ DECLHIDDEN(void) dbgcScreenAsciiDestroy(DBGCSCREEN hScreen)
  * Blits the entire screen using the given callback callback.
  *
  * @returns VBox status code.
- * @param   pScreen             The screen to blit.
+ * @param   hScreen             The screen to blit.
  * @param   pfnBlit             Blitting callback.
  * @param   pvUser              Opaque user data to pass to the dumper callback.
  * @param   fAddColors          Flag whether to use the color info inserting
