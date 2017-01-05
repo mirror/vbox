@@ -1192,7 +1192,7 @@ class FilterCriterion(object):
     ## @}
 
     def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
-                 sTable = None, sColumn = None, oSub = None):
+                 sTable = None, sColumn = None, asTables = None, oSub = None):
         assert len(sVarNm) == 2;    # required by wuimain.py for filtering.
         self.sName      = sName;
         self.sState     = sState;
@@ -1203,8 +1203,11 @@ class FilterCriterion(object):
         self.sInvVarNm  = 'i' + sVarNm if sKind == self.ksKind_ElementOfOrNot else None;
         self.fInverted  = False;    ##< User input from sInvVarNm. Inverts the operation (-> not an element of).
         self.aoPossible = [];       ##< type: list[FilterCriterionValueAndDescription]
-        self.sTable     = sTable;
-        self.sColumn    = sColumn;
+        assert (sTable is None and asTables is None) or ((sTable is not None) != (asTables is not None)), \
+               '%s %s' % (sTable, asTables);
+        self.asTables   = [sTable,] if sTable is not None else asTables;
+        assert sColumn is None or len(self.asTables) == 1, '%s %s' % (self.asTables, sColumn);
+        self.sColumn    = sColumn;  ##< Normally only applicable if one table.
         self.fExpanded  = None;     ##< Tristate (None, False, True)
         self.oSub       = oSub;     ##< type: FilterCriterion
 

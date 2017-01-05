@@ -43,7 +43,7 @@ from testmanager.core.testgroup             import TestGroupData;
 from testmanager.core.build                 import BuildDataEx, BuildCategoryData, BuildLogic;
 from testmanager.core.failurereason         import FailureReasonLogic;
 from testmanager.core.testbox               import TestBoxData, TestBoxLogic;
-from testmanager.core.testcase              import TestCaseData, TestCaseLogic;
+from testmanager.core.testcase              import TestCaseData;
 from testmanager.core.schedgroup            import SchedGroupData, SchedGroupLogic;
 from testmanager.core.systemlog             import SystemLogData, SystemLogLogic;
 from testmanager.core.testresultfailures    import TestResultFailureDataEx;
@@ -650,26 +650,49 @@ class TestResultFilter(ModelFilterBase):
     kiSchedGroups           =  2;
     kiTestBoxes             =  3;
     kiTestCases             =  4;
-    kiRevisions             =  5;
-    kiCpuArches             =  6;
-    kiCpuVendors            =  7;
-    kiCpuCounts             =  8;
-    kiMemory                =  9;
-    kiMisc                  = 10;
-    kiOses                  = 11;
-    kiPythonVersions        = 12;
-    kiFailReasons           = 13;
+    kiTestCaseMisc          =  5;
+    kiRevisions             =  6;
+    kiCpuArches             =  7;
+    kiCpuVendors            =  8;
+    kiCpuCounts             =  9;
+    kiMemory                = 10;
+    kiTestboxMisc           = 11;
+    kiOses                  = 12;
+    kiPythonVersions        = 13;
+    kiFailReasons           = 14
 
-    kiMisc_NestedPaging     =  0;
-    kiMisc_NoNestedPaging   =  1;
-    kiMisc_RawMode          =  2;
-    kiMisc_NoRawMode        =  3;
-    kiMisc_64BitGuest       =  4;
-    kiMisc_No64BitGuest     =  5;
-    kiMisc_HwVirt           =  6;
-    kiMisc_NoHwVirt         =  7;
-    kiMisc_IoMmu            =  8;
-    kiMisc_NoIoMmu          =  9;
+    ## Misc test case / variation name filters.
+    ## Presented in table order.  The first sub element is the presistent ID.
+    kaTcMisc = (
+        (  1, 'x86', ),
+        (  2, 'amd64', ),
+        (  3, 'uni', ),
+        (  4, 'smp', ),
+        (  5, '-raw', ),
+        (  6, '-hw', ),
+        (  7, '-np', ),
+        (  8, 'Install', ),
+        (  8, 'Benchmark', ),
+        (  8, 'USB', ),
+        (  9, 'Debian', ),
+        ( 10, 'Fedora', ),
+        ( 11, 'Oracle', ),
+        ( 12, 'RHEL', ),
+        ( 13, 'SUSE', ),
+        ( 14, 'Ubuntu', ),
+        ( 15, 'Win', ),
+    );
+
+    kiTbMisc_NestedPaging     =  0;
+    kiTbMisc_NoNestedPaging   =  1;
+    kiTbMisc_RawMode          =  2;
+    kiTbMisc_NoRawMode        =  3;
+    kiTbMisc_64BitGuest       =  4;
+    kiTbMisc_No64BitGuest     =  5;
+    kiTbMisc_HwVirt           =  6;
+    kiTbMisc_NoHwVirt         =  7;
+    kiTbMisc_IoMmu            =  8;
+    kiTbMisc_NoIoMmu          =  9;
 
     def __init__(self):
         ModelFilterBase.__init__(self);
@@ -697,6 +720,17 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestCases] is oCrit;
 
+        oCrit = FilterCriterion('Test case name', sVarNm = 'cm', sKind = FilterCriterion.ksKind_Special,
+                                asTables = ('TestCases', 'TestCaseArgs'));
+        oCrit.aoPossible = [
+            FilterCriterionValueAndDescription(aoCur[0], 'Include %s' % (aoCur[1],)) for aoCur in self.kaTcMisc
+        ];
+        oCrit.aoPossible.extend([
+            FilterCriterionValueAndDescription(aoCur[0] + 32, 'Exclude %s' % (aoCur[1],)) for aoCur in self.kaTcMisc
+        ]);
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiTestCaseMisc] is oCrit;
+
         oCrit = FilterCriterion('Revisions', sVarNm = 'rv', sTable = 'Builds', sColumn = 'iRevision');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiRevisions] is oCrit;
@@ -719,22 +753,22 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiMemory] is oCrit;
 
-        oCrit = FilterCriterion('Misc', sVarNm = 'cf', sKind = FilterCriterion.ksKind_Special,
-                                sTable = 'TestBoxesWithStrings', sColumn = 'it_is_complicated');
+        oCrit = FilterCriterion('Testbox misc', sVarNm = 'tm', sKind = FilterCriterion.ksKind_Special,
+                                sTable = 'TestBoxesWithStrings');
         oCrit.aoPossible = [
-            FilterCriterionValueAndDescription(self.kiMisc_NestedPaging,      "req nested paging"),
-            FilterCriterionValueAndDescription(self.kiMisc_NoNestedPaging,    "w/o nested paging"),
-            #FilterCriterionValueAndDescription(self.kiMisc_RawMode,           "req raw-mode"), - not implemented yet.
-            #FilterCriterionValueAndDescription(self.kiMisc_NoRawMode,         "w/o raw-mode"), - not implemented yet.
-            FilterCriterionValueAndDescription(self.kiMisc_64BitGuest,        "req 64-bit guests"),
-            FilterCriterionValueAndDescription(self.kiMisc_No64BitGuest,      "w/o 64-bit guests"),
-            FilterCriterionValueAndDescription(self.kiMisc_HwVirt,            "req VT-x / AMD-V"),
-            FilterCriterionValueAndDescription(self.kiMisc_NoHwVirt,          "w/o VT-x / AMD-V"),
-            #FilterCriterionValueAndDescription(self.kiMisc_IoMmu,             "req I/O MMU"), - not implemented yet.
-            #FilterCriterionValueAndDescription(self.kiMisc_NoIoMmu,           "w/o I/O MMU"), - not implemented yet.
+            FilterCriterionValueAndDescription(self.kiTbMisc_NestedPaging,      "req nested paging"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_NoNestedPaging,    "w/o nested paging"),
+            #FilterCriterionValueAndDescription(self.kiTbMisc_RawMode,           "req raw-mode"), - not implemented yet.
+            #FilterCriterionValueAndDescription(self.kiTbMisc_NoRawMode,         "w/o raw-mode"), - not implemented yet.
+            FilterCriterionValueAndDescription(self.kiTbMisc_64BitGuest,        "req 64-bit guests"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_No64BitGuest,      "w/o 64-bit guests"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_HwVirt,            "req VT-x / AMD-V"),
+            FilterCriterionValueAndDescription(self.kiTbMisc_NoHwVirt,          "w/o VT-x / AMD-V"),
+            #FilterCriterionValueAndDescription(self.kiTbMisc_IoMmu,             "req I/O MMU"), - not implemented yet.
+            #FilterCriterionValueAndDescription(self.kiTbMisc_NoIoMmu,           "w/o I/O MMU"), - not implemented yet.
         ];
         self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiMisc] is oCrit;
+        assert self.aCriteria[self.kiTestboxMisc] is oCrit;
 
         oCrit = FilterCriterion('OS / version', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs',
                                 oSub = FilterCriterion('OS Versions', sVarNm = 'ov',
@@ -752,32 +786,41 @@ class TestResultFilter(ModelFilterBase):
 
         ## @todo Add build type, error count, gang counts (if any > 1)...
 
-    kdMiscConditions = {
-        kiMisc_NestedPaging:    'TestBoxesWithStrings.fCpuNestedPaging IS TRUE',
-        kiMisc_NoNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging IS FALSE',
-        kiMisc_RawMode:         'TestBoxesWithStrings.fRawMode IS TRUE',
-        kiMisc_NoRawMode:       'TestBoxesWithStrings.fRawMode IS NOT TRUE',
-        kiMisc_64BitGuest:      'TestBoxesWithStrings.fCpu64BitGuest IS TRUE',
-        kiMisc_No64BitGuest:    'TestBoxesWithStrings.fCpu64BitGuest IS FALSE',
-        kiMisc_HwVirt:          'TestBoxesWithStrings.fCpuHwVirt IS TRUE',
-        kiMisc_NoHwVirt:        'TestBoxesWithStrings.fCpuHwVirt IS FALSE',
-        kiMisc_IoMmu:           'TestBoxesWithStrings.fChipsetIoMmu IS TRUE',
-        kiMisc_NoIoMmu:         'TestBoxesWithStrings.fChipsetIoMmu IS FALSE',
+    kdTbMiscConditions = {
+        kiTbMisc_NestedPaging:    'TestBoxesWithStrings.fCpuNestedPaging IS TRUE',
+        kiTbMisc_NoNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging IS FALSE',
+        kiTbMisc_RawMode:         'TestBoxesWithStrings.fRawMode IS TRUE',
+        kiTbMisc_NoRawMode:       'TestBoxesWithStrings.fRawMode IS NOT TRUE',
+        kiTbMisc_64BitGuest:      'TestBoxesWithStrings.fCpu64BitGuest IS TRUE',
+        kiTbMisc_No64BitGuest:    'TestBoxesWithStrings.fCpu64BitGuest IS FALSE',
+        kiTbMisc_HwVirt:          'TestBoxesWithStrings.fCpuHwVirt IS TRUE',
+        kiTbMisc_NoHwVirt:        'TestBoxesWithStrings.fCpuHwVirt IS FALSE',
+        kiTbMisc_IoMmu:           'TestBoxesWithStrings.fChipsetIoMmu IS TRUE',
+        kiTbMisc_NoIoMmu:         'TestBoxesWithStrings.fChipsetIoMmu IS FALSE',
     };
 
     def _getWhereWorker(self, iCrit, oCrit, sExtraIndent, iOmit):
         """ Formats one - main or sub. """
         sQuery = '';
         if oCrit.sState == FilterCriterion.ksState_Selected and iCrit != iOmit:
-            if iCrit == self.kiMisc:
+            if iCrit == self.kiTestCaseMisc:
+                for iValue, sLike in self.kaTcMisc:
+                    if iValue in oCrit.aoSelected:        sNot = '';
+                    elif iValue + 32 in oCrit.aoSelected: sNot = 'NOT ';
+                    else:                                 continue;
+                    sQuery += '%s   AND %s (TestCases.sName LIKE \'%%%s%%\' OR TestCaseArgs.sSubName LIKE \'%%%s%%\')\n' \
+                            % (sExtraIndent, sNot, sLike, sLike,);
+            elif iCrit == self.kiTestboxMisc:
+                dConditions = self.kdTbMiscConditions;
                 for iValue in oCrit.aoSelected:
-                    if iValue in self.kdMiscConditions:
-                        sQuery += '%s   AND %s\n' % (sExtraIndent, self.kdMiscConditions[iValue],);
+                    if iValue in dConditions:
+                        sQuery += '%s   AND %s\n' % (sExtraIndent, dConditions[iValue],);
             else:
+                assert len(oCrit.asTables) == 1;
                 if iCrit == self.kiMemory:
-                    sQuery += '%s   AND (%s.%s / 1024)' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    sQuery += '%s   AND (%s.%s / 1024)' % (sExtraIndent, oCrit.asTables[0], oCrit.sColumn,);
                 else:
-                    sQuery += '%s   AND %s.%s' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    sQuery += '%s   AND %s.%s' % (sExtraIndent, oCrit.asTables[0], oCrit.sColumn,);
                 if not oCrit.fInverted:
                     sQuery += ' IN (';
                 else:
@@ -812,36 +855,45 @@ class TestResultFilter(ModelFilterBase):
         sQuery = '';
         for iCrit, oCrit in enumerate(self.aCriteria):
             if    oCrit.sState == FilterCriterion.ksState_Selected \
-              and oCrit.sTable not in afDone \
               and iCrit != iOmit:
-                afDone[oCrit.sTable] = True;
-                if oCrit.sTable == 'Builds':
-                    sQuery += '%sINNER JOIN Builds\n' \
-                              '%s        ON     Builds.idBuild      = TestSets.idBuild\n' \
-                              '%s           AND Builds.tsExpire     > TestSets.tsCreated\n' \
-                              '%s           AND Builds.tsEffective <= TestSets.tsCreated\n' \
-                            % ( sExtraIndent, sExtraIndent, sExtraIndent, sExtraIndent, );
-                elif oCrit.sTable == 'TestResultFailures':
-                    sQuery += '%sLEFT OUTER JOIN TestResultFailures\n' \
-                              '%s             ON     TestResultFailures.idTestSet = TestSets.idTestSet\n' \
-                              '%s                AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' \
-                            % ( sExtraIndent, sExtraIndent, sExtraIndent, );
-                elif oCrit.sTable == 'TestBoxesWithStrings':
-                    sQuery += '%sLEFT OUTER JOIN TestBoxesWithStrings\n' \
-                              '%s             ON     TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox\n' \
-                            % ( sExtraIndent, sExtraIndent, );
-                elif oCrit.sTable == 'BuildCategories':
-                    sQuery += '%sINNER JOIN BuildCategories\n' \
-                              '%s        ON BuildCategories.idBuildCategory = TestSets.idBuildCategory\n' \
-                            % ( sExtraIndent, sExtraIndent, );
-                else:
-                    assert False, oCrit.sTable;
+                for sTable in oCrit.asTables:
+                    if sTable not in afDone:
+                        afDone[sTable] = True;
+                        if sTable == 'Builds':
+                            sQuery += '%sINNER JOIN Builds\n' \
+                                      '%s        ON     Builds.idBuild      = TestSets.idBuild\n' \
+                                      '%s           AND Builds.tsExpire     > TestSets.tsCreated\n' \
+                                      '%s           AND Builds.tsEffective <= TestSets.tsCreated\n' \
+                                    % ( sExtraIndent, sExtraIndent, sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestResultFailures':
+                            sQuery += '%sLEFT OUTER JOIN TestResultFailures\n' \
+                                      '%s             ON     TestResultFailures.idTestSet = TestSets.idTestSet\n' \
+                                      '%s                AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' \
+                                    % ( sExtraIndent, sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestBoxesWithStrings':
+                            sQuery += '%sLEFT OUTER JOIN TestBoxesWithStrings\n' \
+                                      '%s             ON     TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'BuildCategories':
+                            sQuery += '%sINNER JOIN BuildCategories\n' \
+                                      '%s        ON BuildCategories.idBuildCategory = TestSets.idBuildCategory\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestCases':
+                            sQuery += '%sINNER JOIN TestCases\n' \
+                                      '%s        ON TestCases.idGenTestCase = TestSets.idGenTestCase\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestCaseArgs':
+                            sQuery += '%sINNER JOIN TestCaseArgs\n' \
+                                      '%s        ON TestCaseArgs.idGenTestCaseArgs = TestSets.idGenTestCaseArgs\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        else:
+                            assert False, sTable;
         return sQuery;
 
     def isJoiningWithTable(self, sTable):
         """ Checks whether getTableJoins already joins with TestResultFailures. """
         for oCrit in self.aCriteria:
-            if oCrit.sTable == sTable and oCrit.sState == FilterCriterion.ksState_Selected:
+            if oCrit.sState == FilterCriterion.ksState_Selected and sTable in oCrit.asTables:
                 return True;
         return False
 
