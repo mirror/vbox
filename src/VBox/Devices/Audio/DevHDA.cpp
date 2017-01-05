@@ -4443,13 +4443,13 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
 
             if (hdaGetDirFromSD(pStream->u8SD) == PDMAUDIODIR_OUT) /* Output (SDO). */
             {
-                cbToProcess = RTCircBufUsed(pCircBuf);
+                cbToProcess = (uint32_t)RTCircBufUsed(pCircBuf);
                 if (cbToProcess)
                     rc2 = hdaStreamRead(pThis, pStream, cbToProcess, &cbProcessed);
             }
             else /* Input (SDI). */
             {
-                cbToProcess = RTCircBufFree(pCircBuf);
+                cbToProcess = (uint32_t)RTCircBufFree(pCircBuf);
                 if (cbToProcess)
                     rc2 = hdaStreamWrite(pThis, pStream, cbToProcess, &cbProcessed);
             }
