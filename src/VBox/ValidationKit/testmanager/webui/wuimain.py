@@ -949,15 +949,18 @@ class WuiMain(WuiDispatcherBase):
 
                 sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsibleDtDd(this);">%s %s</a> ' \
                        % (sClass, sChar, webutils.escapeElem(oCrit.sName),);
+                sHtml += u'<span class="tm-side-filter-dt-buttons">';
                 if oCrit.sInvVarNm is not None:
                     sHtml += u'<input  id="sf-union-%s" class="tm-side-filter-union-input" ' \
                              u'name="%s" value="1" type="checkbox"%s />' \
-                             u'<label for="sf-union-%s" class="tm-side-filter-union-input"/>' \
+                             u'<label for="sf-union-%s" class="tm-side-filter-union-input"></label>' \
                            % ( oCrit.sInvVarNm, oCrit.sInvVarNm, ' checked' if oCrit.fInverted else '', oCrit.sInvVarNm,);
+                sHtml += u' <input type="submit" value="Apply" />';
+                sHtml += u'</span>';
                 sHtml += u'</dt>\n' \
                          u'  <dd class="%s">\n' \
                          u'   <ul>\n' \
-                         % (sClass, );
+                         % (sClass);
 
                 for oDesc in oCrit.aoPossible:
                     fChecked = oDesc.oValue in oCrit.aoSelected;

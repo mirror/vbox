@@ -335,10 +335,10 @@ input.tm-side-filter-union-input {
 input.tm-side-filter-union-input + label {
     vertical-align: middle;
 }
-input.tm-side-filter-union-input:checked + label::after {
+input.tm-side-filter-union-input[type=checkbox]:checked + label::after {
     content:        '∉'; /* U+2209: not an element of. */
 }
-input.tm-side-filter-union-input + label::after {
+input.tm-side-filter-union-input[type=checkbox] + label::after {
     content:        '∈'; /* U+2208: element of. */
 }
 
@@ -365,10 +365,25 @@ input.tm-side-filter-union-input + label::after {
 .tm-side-filter-title-buttons {
     float:          right;
 }
+body.tm-wide-side-menu .tm-side-filter-title-buttons input {
+    display:        none;
+}
+.tm-side-filter-title-buttons input {
+    display:        inline;
+}
 .tm-side-filter-title-buttons input {
     font-size:      0.6em;
 }
-.tm-side-filter-union-input {
+.tm-side-filter-dt-buttons input {
+    font-size:      0.6em;
+}
+body.tm-wide-side-menu .tm-side-filter-dt-buttons input[type=submit] {
+    display:        inline;
+}
+.tm-side-filter-dt-buttons input[type=submit] {
+    display:        none;
+}
+.tm-side-filter-dt-buttons {
     float:          right;
 }
 
@@ -400,6 +415,7 @@ input.tm-side-filter-union-input + label::after {
     font-size:      0.82em;
     font-family:    "Arial Narrow", Arial, sans-serif;
     font-weight:    normal;
+    clear:          both;       /* cancel .tm-side-filter-dt-buttons */
 }
 
 #side-filters li, #side-filters input[type=checkbox], #side-filters p {
