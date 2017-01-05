@@ -378,14 +378,14 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
  * @returns IPRT status code
  * @param  pClient               Data structure describing the client accessing the shared folder
  * @param  pszPath               Path to the file or folder on the host.
- * @param  pParms->CreateFlags   Creation or open parameters, see include/VBox/shflsvc.h
- * @param  pParms->Info          When a new file is created this specifies the initial parameters.
+ * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
+ * @param  pParms @a Info        When a new file is created this specifies the initial parameters.
  *                               When a file is created or overwritten, it also specifies the
  *                               initial size.
- * @retval pParms->Result        Shared folder status code, see include/VBox/shflsvc.h
- * @retval pParms->Handle        On success the (shared folder) handle of the file opened or
+ * @retval pParms @a Resulte     Shared folder status code, see include/VBox/shflsvc.h
+ * @retval pParms @a Handle      On success the (shared folder) handle of the file opened or
  *                               created
- * @retval pParms->Info          On success the parameters of the file opened or created
+ * @retval pParms @a Info        On success the parameters of the file opened or created
  */
 static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATEPARMS *pParms)
 {
@@ -551,12 +551,13 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
  * Open a folder or create and open a new one.
  *
  * @returns IPRT status code
+ * @param  pClient               Data structure describing the client accessing the shared folder
  * @param  pszPath               Path to the file or folder on the host.
- * @param  pParms->CreateFlags   Creation or open parameters, see include/VBox/shflsvc.h
- * @retval pParms->Result        Shared folder status code, see include/VBox/shflsvc.h
- * @retval pParms->Handle        On success the (shared folder) handle of the folder opened or
+ * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
+ * @retval pParms @a Result      Shared folder status code, see include/VBox/shflsvc.h
+ * @retval pParms @a Handle      On success the (shared folder) handle of the folder opened or
  *                               created
- * @retval pParms->Info          On success the parameters of the folder opened or created
+ * @retval pParms @a Info        On success the parameters of the folder opened or created
  *
  * @note folders are created with fMode = 0777
  */
@@ -772,11 +773,11 @@ void testCreate(RTTEST hTest)
  *                         indexed by root.
  * @param   cbPath         Presumably the length of the path in pPath.  Actually
  *                         ignored, as pPath contains a length parameter.
- * @param   pParms->Info   If a new file is created or an old one overwritten, set
+ * @param   pParms @a Info If a new file is created or an old one overwritten, set
  *                         these attributes
- * @retval  pParms->Result Shared folder result code, see include/VBox/shflsvc.h
- * @retval  pParms->Handle Shared folder handle to the newly opened file
- * @retval  pParms->Info   Attributes of the file or folder opened
+ * @retval  pParms @a Result Shared folder result code, see include/VBox/shflsvc.h
+ * @retval  pParms @a Handle Shared folder handle to the newly opened file
+ * @retval  pParms @a Info Attributes of the file or folder opened
  *
  * @note This function returns success if a "non-exceptional" error occurred,
  *       such as "no such file".  In this case, the caller should check the

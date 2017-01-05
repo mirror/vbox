@@ -456,7 +456,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
  * @returns VBox status code.
  *  or does not return at all (when the trap is actually forwarded)
  *
- * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  * @param   iGate       Trap or interrupt gate number
  * @param   cbInstr     Instruction size (only relevant for software interrupts)

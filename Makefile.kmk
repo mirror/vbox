@@ -916,13 +916,10 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
                -e '/^ *$(DOLLAR)/d' \
                -e '/warning. Unexpected tag .dd. found/d' \
                -e '/warning. Unsupported xml.html tag .globalScope. found/d' \
-               -e '/\/include\/VBox\/com\/EventQueue\.h.* warning/b ignore' \
-               -e '/\/include\/VBox\/com\/NativeEventQueue\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/HostServices\/SharedFolders\/.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/Support\/win\/SUPR3HardenedMain-win\.cpp.* warning/b ignore' \
                -e '/\/src\/VBox\/ValidationKit\/.* warning/b ignore' \
                \

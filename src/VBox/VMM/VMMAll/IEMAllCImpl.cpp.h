@@ -190,6 +190,7 @@ static void iemHlpUpdateArithEFlagsU8(PVMCPU pVCpu, uint8_t u8Result, uint32_t f
 /**
  * Helper used by iret.
  *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
  * @param   uCpl                The new CPL.
  * @param   pSReg               Pointer to the segment register.
  */
