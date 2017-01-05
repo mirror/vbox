@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2016 Oracle Corporation
+ * Copyright (C) 2005-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,9 @@ class SharedFolder;
 class VRDEServerInfo;
 class EmulatedUSB;
 class AudioVRDE;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+class AudioVideoRec;
+#endif
 class Nvram;
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;
@@ -131,7 +134,12 @@ public:
     Mouse *i_getMouse() const { return mMouse; }
     Display *i_getDisplay() const { return mDisplay; }
     MachineDebugger *i_getMachineDebugger() const { return mDebugger; }
+#ifdef VBOX_WITH_VRDE_AUDIO
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
+#endif
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    AudioVideoRec *getAudioVideoRec() const { return mAudioVideoRec; }
+#endif
 
     const ComPtr<IMachine> &i_machine() const { return mMachine; }
     const Bstr &i_getId() const { return mstrUuid; }
@@ -846,7 +854,6 @@ private:
     ConsoleVRDPServer * const mConsoleVRDPServer;
     bool mfVRDEChangeInProcess;
     bool mfVRDEChangePending;
-
     const ComObjPtr<Guest> mGuest;
     const ComObjPtr<Keyboard> mKeyboard;
     const ComObjPtr<Mouse> mMouse;
@@ -908,6 +915,10 @@ private:
 
     VMMDev *                    m_pVMMDev;
     AudioVRDE * const           mAudioVRDE;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    /** The video recording audio backend. */
+    AudioVideoRec * const       mAudioVideoRec;
+#endif
     Nvram   * const             mNvram;
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const       mUsbCardReader;

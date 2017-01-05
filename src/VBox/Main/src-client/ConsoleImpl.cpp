@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2016 Oracle Corporation
+ * Copyright (C) 2005-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,6 +57,9 @@
 #include "SharedFolderImpl.h"
 #ifdef VBOX_WITH_VRDE_AUDIO
 # include "DrvAudioVRDE.h"
+#endif
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+# include "DrvAudioVideoRec.h"
 #endif
 #include "Nvram.h"
 #ifdef VBOX_WITH_USB_CARDREADER
@@ -391,6 +394,9 @@ Console::Console()
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioVRDE(NULL)
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    , mAudioVideoRec(NULL)
+#endif
     , mNvram(NULL)
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
@@ -574,6 +580,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         unconst(mAudioVRDE) = new AudioVRDE(this);
         AssertReturn(mAudioVRDE, E_FAIL);
 #endif
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        unconst(mAudioVideoRec) = new AudioVideoRec(this);
+        AssertReturn(mAudioVideoRec, E_FAIL);
+#endif
         FirmwareType_T enmFirmwareType;
         mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
         if (   enmFirmwareType == FirmwareType_EFI
@@ -715,6 +725,14 @@ void Console::uninit()
     {
         delete mAudioVRDE;
         unconst(mAudioVRDE) = NULL;
+    }
+#endif
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    if (mAudioVideoRec)
+    {
+        delete mAudioVideoRec;
+        unconst(mAudioVideoRec) = NULL;
     }
 #endif
 

@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2950,6 +2950,23 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg, "ObjectVRDPServer", (uintptr_t)mConsoleVRDPServer);
 #endif /* VBOX_WITH_VRDE_AUDIO */
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            /*
+             * The video recording audio backend driver.
+             * Currently being used with VPX video recording only.
+             */
+            CFGMR3InsertNodeF(pInst, &pLunL1, "LUN#%RU8", u8AudioLUN++);
+            InsertConfigString(pLunL1, "Driver", "AUDIO");
+
+            InsertConfigNode(pLunL1, "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "AudioVideoRec");
+
+            InsertConfigNode(pLunL1, "Config", &pCfg);
+            InsertConfigString(pCfg, "AudioDriver", "AudioVideoRec");
+            InsertConfigString(pCfg, "StreamName", bstr);
+            InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVideoRec);
+#endif /* VBOX_WITH_AUDIO_VIDEOREC */
+
 #ifdef VBOX_WITH_AUDIO_DEBUG
             /*
              * The audio debug backend. Only can be used in debug builds.
@@ -3974,7 +3991,7 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
                 mfSnapshotFolderExt4WarningShown = true;
             }
         }
-        
+
         /*
          * 2.6.18 bug: Check if the host I/O cache is disabled and the host is running
          *             Linux 2.6.18. See @bugref{8690}. Apparently the same problem as

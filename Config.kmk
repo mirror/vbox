@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (C) 2006-2016 Oracle Corporation
+# Copyright (C) 2006-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -653,6 +653,8 @@ VBOX_WITH_VBOX_IMG =
 # Enables the VPX module for VM video capturing
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86 linux.amd64 solaris.amd64 win.x86 win.amd64)
  VBOX_WITH_VPX = 1
+ # Enables audio support for VM video capturing. Not enabled by default yet.
+ VBOX_WITH_AUDIO_VIDEOREC =
 endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
