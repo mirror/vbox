@@ -189,7 +189,6 @@ public:
     HRESULT i_reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments);
     int i_hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName);
     VMMDev *i_getVMMDev() { return m_pVMMDev; }
-    AudioVRDE *i_getAudioVRDE() { return mAudioVRDE; }
 
 #ifdef VBOX_WITH_EXTPACK
     ExtPackManager *i_getExtPackManager();
