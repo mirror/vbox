@@ -249,6 +249,10 @@ html, body {
     border-radius:  12px;
 }
 
+#head-wrap {
+    line-height:    180%;
+}
+
 #top-menu ul li a, #side-menu ul li a {
     text-decoration: none;
     color:          #000000;
