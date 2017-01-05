@@ -222,11 +222,15 @@ void tstASMCpuId(void)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
                       iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
 
-        /* Leaf 04 and leaf 0d output depend on the initial value of ECX
+        /* Some leafs output depend on the initial value of ECX.
          * The same seems to apply to invalid standard functions */
         if (iStd > cFunctions)
             continue;
-        if (iStd != 0x04 && iStd != 0x07 && iStd != 0x0b && iStd != 0x0d)
+        if (   iStd != 0x04 /* Deterministic Cache Parameters Leaf */
+            && iStd != 0x07 /* Structured Extended Feature Flags */
+            && iStd != 0x0b /* Extended Topology Enumeration Leafs */
+            && iStd != 0x0d /* Extended State Enumeration Leafs */
+            && iStd != 0x14 /* Trace Enumeration Leafs */)
         {
             u32 = ASMCpuId_EAX(iStd);
             CHECKVAL(u32, s.uEAX, "%x");
