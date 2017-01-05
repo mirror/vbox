@@ -41,8 +41,8 @@
  * Define this to experiment with using NSOpenGLView instead
  * of NSView.  There are transparency issues with the former,
  * so for the time being we're using the latter.  */
-#if 0
-#define USE_NSOPENGLVIEW
+#if 0 || DOXYGEN_RUNNING
+# define USE_NSOPENGLVIEW
 #endif
 
 /**@def FLOAT_FMT_STR
@@ -698,8 +698,14 @@ VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaServiceRunLoop(void)
 /**
  * Document me later.
  *
+ * @param   ppView
+ * @param   ppCtx
  * @param   pParentView     The parent view if this is a context we'll be
  *                          presenting to.
+ * @param   cx
+ * @param   cy
+ * @param   pSharedCtx
+ * @param   fOtherProfile
  */
 VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
                                                            NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,

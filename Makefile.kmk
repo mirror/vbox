@@ -918,7 +918,6 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
                -e '/warning. Unsupported xml.html tag .globalScope. found/d' \
                -e '/\/include\/VBox\/com\/EventQueue\.h.* warning/b ignore' \
                -e '/\/include\/VBox\/com\/NativeEventQueue\.h.* warning/b ignore' \
-               -e '/\/src\/VBox\/Devices\/Graphics\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
