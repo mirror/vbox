@@ -1674,7 +1674,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                         del dLeft[aoRow[0]];
                 oCurSub = FilterCriterionValueAndDescription(aoRow[2], aoRow[3], aoRow[4]);
                 oCrit.oSub.aoPossible.append(oCurSub);
-                if aoRow[2] in dLeft:
+                if aoRow[2] in dSubLeft:
                     del dSubLeft[aoRow[2]];
 
                 oMain.aoSubs.append(oCurSub);
