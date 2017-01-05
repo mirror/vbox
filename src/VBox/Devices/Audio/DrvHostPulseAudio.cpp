@@ -1470,28 +1470,40 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostPulseAudioStreamGetStatus(PPDMIHOSTA
     PDRVHOSTPULSEAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTPULSEAUDIO(pInterface);
     PPULSEAUDIOSTREAM  pStrm = (PPULSEAUDIOSTREAM)pStream;
 
-    PDMAUDIOSTRMSTS strmSts  = PDMAUDIOSTRMSTS_FLAG_INITIALIZED
-                             | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+    PDMAUDIOSTRMSTS strmSts  = PDMAUDIOSTRMSTS_FLAG_NONE;
+
+    /* Check PulseAudio's general status. */
+    if (   pThis->pContext
+        && PA_CONTEXT_IS_GOOD(pa_context_get_state(pThis->pContext)))
+    {
+       strmSts = PDMAUDIOSTRMSTS_FLAG_INITIALIZED
+               | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+    }
 
     pa_threaded_mainloop_lock(pThis->pMainLoop);
 
-    /*pa_context_state_t ctxState = pa_context_get_state(pThis->pContext); - unused */
-
-    if (   pa_context_get_state(pThis->pContext) == PA_CONTEXT_READY
-        && pa_stream_get_state(pStrm->pPAStream) == PA_STREAM_READY)
+    /* Check the PulseAudio stream. */
+    if (PA_STREAM_IS_GOOD(pa_stream_get_state(pStrm->pPAStream)))
     {
+        size_t cbSize;
         if (pStream->enmDir == PDMAUDIODIR_IN)
         {
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
+            cbSize = pa_stream_readable_size(pStrm->pPAStream);
+            Log3Func(("cbSize=%zu\n", cbSize));
+
+            if (cbSize)
+                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
         }
-        else
+        else if (pStream->enmDir == PDMAUDIODIR_OUT)
         {
-            size_t cbSize = pa_stream_writable_size(pStrm->pPAStream);
-            LogFlowFunc(("cbSize=%zu\n", cbSize));
+            cbSize = pa_stream_writable_size(pStrm->pPAStream);
+            Log3Func(("cbSize=%zu, cbMinReq=%RU32\n", cbSize, pStrm->BufAttr.minreq));
 
             if (cbSize >= pStrm->BufAttr.minreq)
                 strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
         }
+        else
+            AssertFailed();
     }
 
     pa_threaded_mainloop_unlock(pThis->pMainLoop);
