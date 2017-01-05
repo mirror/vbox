@@ -4469,6 +4469,8 @@ static DECLCALLBACK(int) hdaStreamAsyncIOThread(RTTHREAD hThreadSelf, void *pvUs
 
     LogFunc(("[SD%RU8]: Ended\n", pStream->u8SD));
 
+    ASMAtomicXchgBool(&pAIO->fStarted, false);
+
     return VINF_SUCCESS;
 }
 
@@ -4547,6 +4549,7 @@ static int hdaStreamAsyncIODestroy(PHDASTATE pThis, PHDASTREAM pStream)
 
         pAIO->fStarted  = false;
         pAIO->fShutdown = false;
+        pAIO->fEnabled  = false;
     }
 
     LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8SD, rc));
