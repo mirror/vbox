@@ -300,6 +300,8 @@ typedef struct AC97STREAMSTATEAIO
     volatile bool         fStarted;
     /** Shutdown indicator. */
     volatile bool         fShutdown;
+    /** Whether the thread should do any data processing or not. */
+    volatile bool         fEnabled;
     uint32_t              Padding1;
 } AC97STREAMSTATEAIO, *PAC97STREAMSTATEAIO;
 #endif
@@ -311,6 +313,8 @@ typedef struct AC97STREAMSTATE
 {
     /** Circular buffer (FIFO) for holding DMA'ed data. */
     R3PTRTYPE(PRTCIRCBUF) pCircBuf;
+    /** Criticial section for this stream. */
+    RTCRITSECT            CritSect;
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     /** Asynchronous I/O state members. */
     AC97STREAMSTATEAIO    AIO;
@@ -324,8 +328,6 @@ typedef struct AC97STREAM
 {
     /** Stream number (SDn). */
     uint8_t         u8Strm;
-    /** Criticial section for this stream. */
-    RTCRITSECT      CritSect;
     /** Bus master registers of this stream. */
     AC97BMREGS      Regs;
     /** Internal state of this stream. */
@@ -476,6 +478,8 @@ static int                ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStrea
 static int                ichac97StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream);
 static int                ichac97StreamClose(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream);
+static void               ichac97StreamLock(PAC97STREAM pStream);
+static void               ichac97StreamUnlock(PAC97STREAM pStream);
 
 static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns);
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
@@ -497,6 +501,7 @@ static int                ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STR
 static int                ichac97StreamAsyncIONotify(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOLock(PAC97STREAM pStream);
 static void               ichac97StreamAsyncIOUnlock(PAC97STREAM pStream);
+static void               ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable);
 #endif
 
 static void ichac97WarmReset(PAC97STATE pThis)
@@ -646,25 +651,14 @@ static bool ichac97StreamIsEnabled(PAC97STATE pThis, PAC97STREAM pStream)
  * @param   pThis               AC'97 state.
  * @param   pStream             AC'97 stream to enable or disable.
  * @param   fEnable             Whether to enable or disble the stream.
+ *
  */
 static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnable)
 {
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    PAUDMIXSINK pSink = ichac97IndexToSink(pThis, pStream->u8Strm);
-    if (!pSink) /* No sink available (yet)? Bail out early. */
-        return VINF_SUCCESS;
-
-#ifdef LOG_ENABLED
-    const AUDMIXSINKSTS stsSink = AudioMixerSinkGetStatus(pSink);
-
-    const bool fIsEnabled       = RT_BOOL(stsSink & AUDMIXSINK_STS_RUNNING);
-    const bool fPendingDisable  = RT_BOOL(stsSink & AUDMIXSINK_STS_PENDING_DISABLE);
-
-    LogFunc(("[SD%RU8] fEnable=%RTbool, fIsEnabled=%RTbool, fPendingDisable=%RTbool, DCH=%RTbool, cStreamsActive=%RU8\n",
-             pStream->u8Strm, fEnable, fIsEnabled, fPendingDisable, RT_BOOL(pStream->Regs.sr & AC97_SR_DCH), pThis->cStreamsActive));
-#endif
+    ichac97StreamLock(pStream);
 
     int rc = VINF_SUCCESS;
 
@@ -672,52 +666,68 @@ static int ichac97StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEnab
     if (fEnable)
         rc = ichac97StreamAsyncIOCreate(pThis, pStream);
     if (RT_SUCCESS(rc))
+    {
         ichac97StreamAsyncIOLock(pStream);
+        ichac97StreamAsyncIOEnable(pStream, fEnable);
+    }
 #endif
 
     if (fEnable)
+    {
+        if (pStream->State.pCircBuf)
+            RTCircBufReset(pStream->State.pCircBuf);
+
         rc = ichac97StreamOpen(pThis, pStream);
+    }
     else
         rc = ichac97StreamClose(pThis, pStream);
 
     if (RT_SUCCESS(rc))
+    {
+        /* First, enable or disable the stream and the stream's sink, if any. */
         rc = AudioMixerSinkCtl(ichac97IndexToSink(pThis, pStream->u8Strm),
                                fEnable ? AUDMIXSINKCMD_ENABLE : AUDMIXSINKCMD_DISABLE);
+    }
 
 #ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
     ichac97StreamAsyncIOUnlock(pStream);
 #endif
 
-    if (RT_SUCCESS(rc))
-    {
-        if (!fEnable)
-        {
-            if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
-                pThis->cStreamsActive--;
+    /* Make sure to leave the lock before (eventually) starting the timer. */
+    ichac97StreamUnlock(pStream);
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-            ichac97TimerMaybeStop(pThis);
+    /* Second, see if we need to start or stop the timer. */
+    if (!fEnable)
+        ichac97TimerMaybeStop(pThis);
+    else
+        ichac97TimerMaybeStart(pThis);
 #endif
-        }
-        else
-        {
-            pThis->cStreamsActive++;
-#ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
-            ichac97TimerMaybeStart(pThis);
-#endif
-        }
-    }
 
-    LogFunc(("Returning %Rrc\n", rc));
+    LogFunc(("[SD%RU8]: cStreamsActive=%RU8, rc=%Rrc\n", pStream->u8Strm, pThis->cStreamsActive, rc));
     return rc;
 }
 
-static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
+/**
+ * Resets an AC'97 stream.
+ *
+ * @param   pThis               AC'97 state.
+ * @param   pStream             AC'97 stream to reset.
+ *
+ */
+static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
 {
     AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pStream);
 
+    ichac97StreamLock(pStream);
+
     LogFunc(("[SD%RU8]\n", pStream->u8Strm));
+
+    AudioMixerSinkReset(ichac97IndexToSink(pThis, pStream->u8Strm));
+
+    if (pStream->State.pCircBuf)
+        RTCircBufReset(pStream->State.pCircBuf);
 
     PAC97BMREGS pRegs = &pStream->Regs;
 
@@ -725,18 +735,14 @@ static void ichac97StreamResetBMRegs(PAC97STATE pThis, PAC97STREAM pStream)
     pRegs->civ      = 0;
     pRegs->lvi      = 0;
 
-    ichac97StreamReset(pThis, pStream);
-
-    ichac97StreamEnable(pThis, pStream, false /* fEnable */);
-
-    ichac97StreamUpdateSR(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
-
     pRegs->picb     = 0;
     pRegs->piv      = 0;
     pRegs->cr       = pRegs->cr & AC97_CR_DONT_CLEAR_MASK;
     pRegs->bd_valid = 0;
 
     RT_ZERO(pThis->silence);
+
+    ichac97StreamUnlock(pStream);
 }
 
 /**
@@ -757,7 +763,7 @@ static int ichac97StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8
 
     pStream->u8Strm = u8Strm;
 
-    int rc = RTCritSectInit(&pStream->CritSect);
+    int rc = RTCritSectInit(&pStream->State.CritSect);
     if (RT_SUCCESS(rc))
         rc = RTCircBufCreate(&pStream->State.pCircBuf, _4K); /** @todo Make this configurable. */
 
@@ -775,7 +781,7 @@ static void ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8Strm));
 
-    int rc2 = RTCritSectDelete(&pStream->CritSect);
+    int rc2 = RTCritSectDelete(&pStream->State.CritSect);
     AssertRC(rc2);
 
     if (pStream->State.pCircBuf)
@@ -792,61 +798,6 @@ static void ichac97StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream)
 #endif
 
     LogFlowFuncLeave();
-}
-
-/**
- * Creates all AC'97 audio streams of the device.
- *
- * @returns IPRT status code.
- * @param   pThis               AC'97 state.
- */
-static int ichac97StreamsCreate(PAC97STATE pThis)
-{
-    LogFlowFuncEnter();
-
-    /*
-     * Create all sinks and AC'97 streams.
-     */
-
-    /* Line-In. */
-    int rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
-    if (RT_SUCCESS(rc))
-        rc = ichac97StreamCreate(pThis, &pThis->StreamLineIn, AC97SOUNDSOURCE_PI_INDEX);
-
-    /* Microphone-In. */
-    if (RT_SUCCESS(rc))
-    {
-        rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
-        if (RT_SUCCESS(rc))
-            rc = ichac97StreamCreate(pThis, &pThis->StreamMicIn, AC97SOUNDSOURCE_MC_INDEX);
-    }
-
-    /* Output. */
-    if (RT_SUCCESS(rc))
-    {
-        rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
-        if (RT_SUCCESS(rc))
-            rc = ichac97StreamCreate(pThis, &pThis->StreamOut, AC97SOUNDSOURCE_PO_INDEX);
-    }
-
-    /*
-     * Open all streams with the current AC'97 mixer settings.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        rc = ichac97StreamOpen        (pThis, &pThis->StreamLineIn);
-        if (RT_SUCCESS(rc))
-        {
-            rc = ichac97StreamOpen    (pThis, &pThis->StreamMicIn);
-            if (RT_SUCCESS(rc))
-            {
-                rc = ichac97StreamOpen(pThis, &pThis->StreamOut);
-            }
-        }
-    }
-
-    LogFlowFunc(("Returning %Rrc\n", rc));
-    return rc;
 }
 
 /**
@@ -1049,42 +1000,49 @@ static DECLCALLBACK(int) ichac97StreamAsyncIOThread(RTTHREAD hThreadSelf, void *
         if (ASMAtomicReadBool(&pAIO->fShutdown))
             break;
 
-        size_t cbToProcess = RTCircBufUsed(pCircBuf);
-        if (cbToProcess)
+        rc2 = RTCritSectEnter(&pAIO->CritSect);
+        if (RT_SUCCESS(rc2))
         {
+            if (!pAIO->fEnabled)
+            {
+                RTCritSectLeave(&pAIO->CritSect);
+                continue;
+            }
+
+            uint32_t cbToProcess;
             uint32_t cbProcessed = 0;
 
-            rc2 = RTCritSectEnter(&pAIO->CritSect);
-            if (RT_SUCCESS(rc2))
+            switch (pStream->u8Strm)
             {
-                switch (pStream->u8Strm)
+                /* Input. */
+                case AC97SOUNDSOURCE_PI_INDEX:
+                case AC97SOUNDSOURCE_MC_INDEX:
                 {
-                    case AC97SOUNDSOURCE_PI_INDEX:
-                    case AC97SOUNDSOURCE_MC_INDEX:
+                    cbToProcess = RTCircBufFree(pCircBuf);
+                    if (cbToProcess)
                         rc2 = ichac97StreamWrite(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
-                        break;
-
-                    case AC97SOUNDSOURCE_PO_INDEX:
-                        rc2 = ichac97StreamRead(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
-                        break;
-
-                    default:
-                        AssertFailedStmt(rc2 = VERR_NOT_SUPPORTED);
-                        break;
+                    break;
                 }
 
-                if (RT_SUCCESS(rc2))
-                    rc2 = AudioMixerSinkUpdate(pMixSink);
-
-                if (cbProcessed)
+                /* Output. */
+                case AC97SOUNDSOURCE_PO_INDEX:
                 {
-                    Assert(cbToProcess >= cbProcessed);
-                    cbToProcess -= cbProcessed;
+                    cbToProcess = RTCircBufUsed(pCircBuf);
+                    if (cbToProcess)
+                        rc2 = ichac97StreamRead(pThis, pStream, pMixSink, (uint32_t)cbToProcess, &cbProcessed);
+                    break;
                 }
 
-                int rc3 = RTCritSectLeave(&pAIO->CritSect);
-                AssertRC(rc3);
+                default:
+                    AssertFailedStmt(rc2 = VERR_NOT_SUPPORTED);
+                    break;
             }
+
+            if (RT_SUCCESS(rc2))
+                rc2 = AudioMixerSinkUpdate(pMixSink);
+
+            int rc3 = RTCritSectLeave(&pAIO->CritSect);
+            AssertRC(rc3);
         }
 
         AssertRC(rc2);
@@ -1172,6 +1130,7 @@ static int ichac97StreamAsyncIODestroy(PAC97STATE pThis, PAC97STREAM pStream)
 
         pAIO->fStarted  = false;
         pAIO->fShutdown = false;
+        pAIO->fEnabled  = false;
     }
 
     LogFunc(("[SD%RU8]: Returning %Rrc\n", pStream->u8Strm, rc));
@@ -1224,7 +1183,21 @@ static void ichac97StreamAsyncIOUnlock(PAC97STREAM pStream)
     int rc2 = RTCritSectLeave(&pAIO->CritSect);
     AssertRC(rc2);
 }
-#endif /* VBOX_WITH_AUDIO_AC97_ASYNC_IO*/
+
+/**
+ * Enables (resumes) or disables (pauses) the async I/O thread.
+ *
+ * @param   pStream             AC'97 stream to enable/disable async I/O thread for.
+ * @param   fEnable             Whether to enable or disable the I/O thread.
+ *
+ * @remarks Does not do locking.
+ */
+static void ichac97StreamAsyncIOEnable(PAC97STREAM pStream, bool fEnable)
+{
+    PAC97STREAMSTATEAIO pAIO = &pStream->State.AIO;
+    ASMAtomicXchgBool(&pAIO->fEnabled, fEnable);
+}
+#endif /* VBOX_WITH_AUDIO_AC97_ASYNC_IO */
 
 /**
  * Updates an AC'97 stream according to its usage (input / output).
@@ -1244,22 +1217,24 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
     AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    PAUDMIXSINK pMixSink = ichac97IndexToSink(pThis, pStream->u8Strm);
-    if (!pMixSink)
-        return VINF_SUCCESS;
+    ichac97StreamLock(pStream);
 
-    if (AudioMixerSinkIsActive(pMixSink) == false)
+    PAUDMIXSINK pMixSink = ichac97IndexToSink(pThis, pStream->u8Strm);
+    AssertPtr(pMixSink);
+
+    if (!AudioMixerSinkIsActive(pMixSink))
+    {
+        ichac97StreamUnlock(pStream);
         return VINF_SUCCESS;
+    }
 
     PRTCIRCBUF pCircBuf  = pStream->State.pCircBuf;
     AssertPtr(pCircBuf);
 
-    int rc = VINF_SUCCESS;
-
     bool fDone = false;
     uint8_t cTransfers = 0;
 
-    Log3Func(("[SD%RU8] Started\n", pStream->u8Strm));
+    Log2Func(("[SD%RU8] Started\n", pStream->u8Strm));
 
     while (!fDone)
     {
@@ -1398,9 +1373,11 @@ static int ichac97StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream)
 
     } /* while !fDone */
 
-    LogFunc(("[SD%RU8] End\n", pStream->u8Strm));
+    Log2Func(("[SD%RU8] End\n", pStream->u8Strm));
 
-    return rc;
+    ichac97StreamUnlock(pStream);
+
+    return VINF_SUCCESS;
 }
 
 static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
@@ -1656,13 +1633,15 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
     if (RT_SUCCESS(rc))
     {
-        if (streamCfg.uHz) /* Some valid rate set in the AC'97 mixer? */
+        ichac97MixerRemoveDrvStreams(pThis, pMixSink, streamCfg.enmDir, streamCfg.DestSource);
+
+        if (streamCfg.uHz)
         {
+            Assert(streamCfg.enmDir != PDMAUDIODIR_UNKNOWN);
+
             streamCfg.cChannels     = 2;
             streamCfg.enmFormat     = PDMAUDIOFMT_S16;
             streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
-
-            ichac97MixerRemoveDrvStreams(pThis, pMixSink, streamCfg.enmDir, streamCfg.DestSource);
 
             rc = ichac97MixerAddDrvStreams(pThis, pMixSink, &streamCfg);
         }
@@ -1709,31 +1688,30 @@ static int ichac97StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream)
 }
 
 /**
- * Resets an AC'97 stream.
+ * Locks an AC'97 stream for serialized access.
  *
- * @param   pThis               AC'97 state.
- * @param   pStream             AC'97 stream to reset.
- * @remark
+ * @returns IPRT status code.
+ * @param   pStream             AC'97 stream to lock.
  */
-static void ichac97StreamReset(PAC97STATE pThis, PAC97STREAM pStream)
+static void ichac97StreamLock(PAC97STREAM pStream)
 {
-    AssertPtrReturnVoid(pThis);
     AssertPtrReturnVoid(pStream);
-
-    LogFunc(("[SD%RU8] Reset\n", pStream->u8Strm));
-
-#ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-    /*
-     * Make sure to destroy the async I/O thread for this stream on reset, as we
-     * can't be sure that the same stream is being used in the next cycle
-     * (and therefore would leave unused threads around).
-     */
-    int rc2 = ichac97StreamAsyncIODestroy(pThis, pStream);
+    int rc2 = RTCritSectEnter(&pStream->State.CritSect);
     AssertRC(rc2);
-#endif
+}
 
-    if (pStream->State.pCircBuf)
-        RTCircBufReset(pStream->State.pCircBuf);
+
+/**
+ * Unlocks a formerly locked AC'97 stream.
+ *
+ * @returns IPRT status code.
+ * @param   pStream             AC'97 stream to unlock.
+ */
+static void ichac97StreamUnlock(PAC97STREAM pStream)
+{
+    AssertPtrReturnVoid(pStream);
+    int rc2 = RTCritSectLeave(&pStream->State.CritSect);
+    AssertRC(rc2);
 }
 
 /**
@@ -2044,47 +2022,63 @@ static void ichac97WriteBUP(PAC97STATE pThis, uint32_t cbElapsed)
  */
 static void ichac97TimerMaybeStart(PAC97STATE pThis)
 {
-    if (pThis->cStreamsActive == 0) /* Only start the timer if there at least is one active streams. */
-        return;
+    LogFlowFuncEnter();
 
     if (!pThis->pTimer)
         return;
 
-    if (ASMAtomicReadBool(&pThis->fTimerActive) == true) /* Already started? */
-        return;
+    pThis->cStreamsActive++;
 
-    LogRel2(("AC97: Starting transfers\n"));
+    /* Only start the timer at the first active stream. */
+    if (pThis->cStreamsActive == 1)
+    {
+        LogRel2(("AC97: Starting transfers\n"));
 
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, true);
+        /* Set timer flag. */
+        ASMAtomicXchgBool(&pThis->fTimerActive, true);
 
-    /* Update current time timestamp. */
-    pThis->uTimerTS = TMTimerGet(pThis->pTimer);
+        /* Update current time timestamp. */
+        pThis->uTimerTS = TMTimerGet(pThis->pTimer);
 
-    /* Start transfers. */
-    ichac97TimerMain(pThis);
+        /* Start transfers. */
+        ichac97TimerMain(pThis);
+    }
 }
 
 /**
- * Stops the internal audio device timer (if not stopped yet).
+ * Stops the internal audio device timer.
+ *
+ * @param   pThis               AC'97 state.
+ */
+static void ichac97TimerStop(PAC97STATE pThis)
+{
+    LogFlowFuncEnter();
+
+    /* Set timer flag. */
+    ASMAtomicXchgBool(&pThis->fTimerActive, false);
+}
+
+/**
+ * Decreases the active AC'97 streams count by one and
+ * then checks if the internal audio device timer can be
+ * stopped.
  *
  * @param   pThis               AC'97 state.
  */
 static void ichac97TimerMaybeStop(PAC97STATE pThis)
 {
-    if (pThis->cStreamsActive) /* Some streams still active? Bail out. */
-        return;
+    LogFlowFuncEnter();
 
     if (!pThis->pTimer)
         return;
 
-    if (ASMAtomicReadBool(&pThis->fTimerActive) == false) /* Already stopped? */
-        return;
+    if (pThis->cStreamsActive) /* Function can be called mupltiple times. */
+    {
+        pThis->cStreamsActive--;
 
-    LogRel2(("AC97: Stopping transfers\n"));
-
-    /* Set timer flag. */
-    ASMAtomicXchgBool(&pThis->fTimerActive, false);
+        if (pThis->cStreamsActive == 0)
+            ichac97TimerStop(pThis);
+    }
 }
 
 /**
@@ -2124,7 +2118,7 @@ static void ichac97TimerMain(PAC97STATE pThis)
         TMTimerSet(pThis->pTimer, cTicksNow + cTicks);
     }
     else
-        LogRel2(("AC97: Stopped transfers\n"));
+        LogRel2(("AC97: Stopping transfers\n"));
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
@@ -2371,13 +2365,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
     PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
 
-    if (pStream)
-    {
+    if (pStream) /* Can be NULL, depending on the index (port). */
         pRegs = &pStream->Regs;
-
-        int rc2 = RTCritSectEnter(&pStream->CritSect);
-        AssertRC(rc2);
-    }
 
     int rc = VINF_SUCCESS;
 
@@ -2518,12 +2507,6 @@ static DECLCALLBACK(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser,
         }
     }
 
-    if (pStream)
-    {
-        int rc2 = RTCritSectLeave(&pStream->CritSect);
-        AssertRC(rc2);
-    }
-
     return rc;
 }
 
@@ -2542,13 +2525,8 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
     PAC97STREAM pStream = ichac97GetStreamFromIdx(pThis, AC97_PORT2IDX(uPortIdx));
     PAC97BMREGS pRegs   = NULL;
 
-    if (pStream)
-    {
+    if (pStream) /* Can be NULL, depending on the index (port). */
         pRegs = &pStream->Regs;
-
-        int rc2 = RTCritSectEnter(&pStream->CritSect);
-        AssertRC(rc2);
-    }
 
     switch (cb)
     {
@@ -2593,7 +2571,10 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
                         /* Make sure that Run/Pause Bus Master bit (RPBM) is cleared (0). */
                         Assert((pRegs->cr & AC97_CR_RPBM) == 0);
 
-                        ichac97StreamResetBMRegs(pThis, pStream);
+                        ichac97StreamEnable(pThis, pStream, false /* Disable */);
+                        ichac97StreamReset(pThis, pStream);
+
+                        ichac97StreamUpdateSR(pThis, pStream, AC97_SR_DCH); /** @todo Do we need to do that? */
                     }
                     else
                     {
@@ -2701,12 +2682,6 @@ static DECLCALLBACK(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser
         default:
             AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", uPort, cb, u32));
             break;
-    }
-
-    if (pStream)
-    {
-        int rc2 = RTCritSectLeave(&pStream->CritSect);
-        AssertRC(rc2);
     }
 
     return VINF_SUCCESS;
@@ -3073,18 +3048,12 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
             ichac97MixerSetVolume(pThis, AC97_Headphone_Volume_Mute, PDMAUDIOMIXERCTL_VOLUME_MASTER,
                              ichac97MixerGet(pThis, AC97_Headphone_Volume_Mute));
 
-    ichac97StreamsDestroy(pThis);
-
-    rc2 = ichac97StreamsCreate(pThis);
+    /** @todo r=andy Stream IDs are hardcoded to certain streams. */
+    rc2 = ichac97StreamEnable(pThis, &pThis->StreamLineIn,    RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_PI_INDEX]));
     if (RT_SUCCESS(rc2))
-    {
-        /** @todo r=andy Stream IDs are hardcoded to certain streams. */
-        rc2 = ichac97StreamEnable(pThis, &pThis->StreamLineIn,    RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_PI_INDEX]));
-        if (RT_SUCCESS(rc2))
-            rc2 = ichac97StreamEnable(pThis, &pThis->StreamMicIn, RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_MC_INDEX]));
-        if (RT_SUCCESS(rc2))
-            rc2 = ichac97StreamEnable(pThis, &pThis->StreamOut,   RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_PO_INDEX]));
-    }
+        rc2 = ichac97StreamEnable(pThis, &pThis->StreamMicIn, RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_MC_INDEX]));
+    if (RT_SUCCESS(rc2))
+        rc2 = ichac97StreamEnable(pThis, &pThis->StreamOut,   RT_BOOL(uaStrmsActive[AC97SOUNDSOURCE_PO_INDEX]));
 
     pThis->bup_flag  = 0;
     pThis->last_samp = 0;
@@ -3147,13 +3116,6 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     LogFlowFuncEnter();
 
     /*
-     * Reset the device state (will need pDrv later).
-     */
-    ichac97StreamResetBMRegs(pThis, &pThis->StreamLineIn);
-    ichac97StreamResetBMRegs(pThis, &pThis->StreamMicIn);
-    ichac97StreamResetBMRegs(pThis, &pThis->StreamOut);
-
-    /*
      * Reset the mixer too. The Windows XP driver seems to rely on
      * this. At least it wants to read the vendor id before it resets
      * the codec manually.
@@ -3163,8 +3125,13 @@ static DECLCALLBACK(void) ichac97Reset(PPDMDEVINS pDevIns)
     /*
      * Reset all streams.
      */
+    ichac97StreamEnable(pThis, &pThis->StreamLineIn, false /* Disable */);
     ichac97StreamReset(pThis, &pThis->StreamLineIn);
+
+    ichac97StreamEnable(pThis, &pThis->StreamMicIn, false /* Disable */);
     ichac97StreamReset(pThis, &pThis->StreamMicIn);
+
+    ichac97StreamEnable(pThis, &pThis->StreamOut, false /* Disable */);
     ichac97StreamReset(pThis, &pThis->StreamOut);
 
     LogRel(("AC97: Reset\n"));
@@ -3513,13 +3480,31 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
     if (RT_SUCCESS(rc))
+    {
         rc = AudioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
-
-    ichac97Reset(pDevIns);
+        if (RT_SUCCESS(rc))
+        {
+            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
+            AssertRC(rc);
+            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
+            AssertRC(rc);
+            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOut);
+            AssertRC(rc);
+        }
+    }
 
     if (RT_SUCCESS(rc))
     {
-        ichac97StreamsCreate(pThis);
+        /*
+         * Create all hardware streams.
+         */
+        rc = ichac97StreamCreate(pThis, &pThis->StreamLineIn, AC97SOUNDSOURCE_PI_INDEX);
+        if (RT_SUCCESS(rc))
+        {
+            rc = ichac97StreamCreate(pThis, &pThis->StreamMicIn, AC97SOUNDSOURCE_MC_INDEX);
+            if (RT_SUCCESS(rc))
+                rc = ichac97StreamCreate(pThis, &pThis->StreamOut, AC97SOUNDSOURCE_PO_INDEX);
+        }
 
 #ifdef VBOX_WITH_AUDIO_AC97_ONETIME_INIT
         PAC97DRIVER pDrv;
@@ -3545,14 +3530,8 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             {
                 LogRel(("AC97: Falling back to NULL backend (no sound audible)\n"));
 
-                /* Destroy the streams before re-attaching the NULL driver. */
-                ichac97StreamsDestroy(pThis);
-
                 ichac97Reset(pDevIns);
                 ichac97Reattach(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
-                /* Re-create the streams after re-attaching. */
-                ichac97StreamsCreate(pThis);
 
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
                     N_("No audio devices could be opened. Selecting the NULL audio backend "
@@ -3624,6 +3603,9 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         }
 #endif /* VBOX_WITH_AUDIO_AC97_ONETIME_INIT */
     }
+
+    if (RT_SUCCESS(rc))
+        ichac97Reset(pDevIns);
 
 #ifndef VBOX_WITH_AUDIO_AC97_CALLBACKS
     if (RT_SUCCESS(rc))
