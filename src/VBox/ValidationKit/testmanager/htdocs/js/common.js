@@ -435,6 +435,30 @@ function toggleCollapsibleCheckbox(oInput)
     return true;
 }
 
+/**
+ * Toggles the sidebar size so filters can more easily manipulated.
+ */
+function toggleSidebarSize()
+{
+    var sLinkText;
+    if (document.body.className != 'tm-wide-side-menu')
+    {
+        document.body.className = 'tm-wide-side-menu';
+        sLinkText = '\u00ab\u00ab';
+    }
+    else
+    {
+        document.body.className = '';
+        sLinkText = '\u00bb\u00bb';
+    }
+
+    var aoToggleLink = document.getElementsByClassName('tm-sidebar-size-link');
+    var i;
+    for (i = 0; i < aoToggleLink.length; i++)
+        if (aoToggleLink[i].textContent.indexOf('\u00bb') >= 0 || aoToggleLink[i].textContent.indexOf('\u00ab') >= 0)
+            aoToggleLink[i].textContent = sLinkText;
+}
+
 /** @} */
 
 

@@ -176,6 +176,9 @@ html, body {
     bottom:         auto;
 }
 
+body.tm-wide-side-menu #side-menu-wrap {
+    width:          300px;
+}
 #side-menu-wrap {
     position:       fixed;
     top:            0px;
@@ -193,9 +196,12 @@ html, body {
 
 #side-menu {
     margin-top:     46px;
+    margin-top:     70px;
+    padding-top:    6px
     height:         auto;
     max-height:     100%;
-    width:          156px;
+    width:          95%;
+    width:          calc(100% - 8px); /* CSS3 */
 
     display:            flex;
     flex-direction:     column;
@@ -208,6 +214,9 @@ html, body {
     overflow:       auto;
 }
 
+body.tm-wide-side-menu #main {
+    margin-left:    300px;
+}
 #main {
     height:         100%;
     margin-top:     74px;  /**< header + top-menu + padding. */
@@ -246,7 +255,17 @@ html, body {
     font-family:    Arial, Helvetica, sans-serif;
     background-color: #c0d0e0;
     padding:        2px 2px 2px 2px;
+}
+
+#top-menu.tm-top-menu-wo-side {
     border-radius:  12px;
+}
+#top-menu {
+    border-radius:  12px 12px 12px 0px;
+}
+
+#side-menu {
+    border-radius:  0px 0px 12px 12px;
 }
 
 #head-wrap {
@@ -274,7 +293,7 @@ html, body {
 
 /* Side menu: */
 #side-menu {
-    padding-top:    28px; /**< #top-menu.max-height */
+    /* margin-top and padding-top are set up in layout !*/
     margin-right:   3px;
     margin-left:    3px;
     margin-bottom:  3px;
@@ -307,6 +326,11 @@ html, body {
 .subheader_item:not(:first-child) {
     margin-top:     0.5em;
 }
+
+.tm-sidebar-size-link {
+    float:          right;
+}
+
 
 /* Webkit: Pretty scroll bars on the menu body as well as inside filter criteria. */
 #side-menu ::-webkit-scrollbar {
@@ -440,7 +464,8 @@ ul.sf-checkbox-expandable {
  * Navigation in the header.
  */
 #top-menu {
-   margin:          0 auto;
+   margin-right:   3px;                 /* same as #side-menu! */
+   margin-left:    3px;
 }
 
 #top-menu ul li a {

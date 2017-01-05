@@ -927,7 +927,8 @@ class WuiMain(WuiDispatcherBase):
 
         # Generate the filter panel.
         sHtml += u'<div id="side-filters">\n' \
-                 u' <p>Filters</p>\n' \
+                 u' <p>Filters' \
+                 u' <a href="javascript:toggleSidebarSize();" class="tm-sidebar-size-link">&#x00bb;&#x00bb;</p>\n'\
                  u' <dl>\n';
 
         for oCrit in oFilter.aCriteria:
