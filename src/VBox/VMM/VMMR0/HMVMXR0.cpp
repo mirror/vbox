@@ -959,7 +959,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         VMXLOCAL_INIT_VMCPU_MEMOBJ(Vmcs, pv);
-        VMXLOCAL_INIT_VMCPU_MEMOBJ(VirtApic, pb);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(MsrBitmap, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(GuestMsr, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(HostMsr, pv);
