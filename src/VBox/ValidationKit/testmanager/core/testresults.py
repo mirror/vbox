@@ -728,7 +728,8 @@ class TestResultFilter(ModelFilterBase):
         assert self.aCriteria[self.kiRevisions] is oCrit;
 
         # Failure reasons
-        oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
+        oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sType = FilterCriterion.ksType_UIntNil,
+                                sTable = 'TestResultFailures', sColumn = 'idFailureReason');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiFailReasons] is oCrit;
 
@@ -845,18 +846,30 @@ class TestResultFilter(ModelFilterBase):
                         sQuery += '%s   AND %s\n' % (sExtraIndent, dConditions[iValue],);
             else:
                 assert len(oCrit.asTables) == 1;
-                if iCrit == self.kiMemory:
-                    sQuery += '%s   AND (%s.%s / 1024)' % (sExtraIndent, oCrit.asTables[0], oCrit.sColumn,);
-                else:
-                    sQuery += '%s   AND %s.%s' % (sExtraIndent, oCrit.asTables[0], oCrit.sColumn,);
-                if not oCrit.fInverted:
-                    sQuery += ' IN (';
-                else:
-                    sQuery += ' NOT IN (';
-                if oCrit.sType == FilterCriterion.ksType_String:
-                    sQuery += ', '.join('\'%s\'' % (sValue,) for sValue in oCrit.aoSelected) + ')\n';
-                else:
-                    sQuery += ', '.join(str(iValue) for iValue in oCrit.aoSelected) + ')\n';
+                sQuery += '%s   AND (' % (sExtraIndent,);
+
+                if oCrit.sType != FilterCriterion.ksType_UIntNil or max(oCrit.aoSelected) != -1:
+                    if iCrit == self.kiMemory:
+                        sQuery += '(%s.%s / 1024)' % (oCrit.asTables[0], oCrit.sColumn,);
+                    else:
+                        sQuery += '%s.%s' % (oCrit.asTables[0], oCrit.sColumn,);
+                    if not oCrit.fInverted:
+                        sQuery += ' IN (';
+                    else:
+                        sQuery += ' NOT IN (';
+                    if oCrit.sType == FilterCriterion.ksType_String:
+                        sQuery += ', '.join('\'%s\'' % (sValue,) for sValue in oCrit.aoSelected) + ')';
+                    else:
+                        sQuery += ', '.join(str(iValue) for iValue in oCrit.aoSelected if iValue != -1) + ')';
+
+                if    oCrit.sType == FilterCriterion.ksType_UIntNil \
+                  and -1 in oCrit.aoSelected:
+                    if sQuery[-1] != '(': sQuery += ' OR ';
+                    sQuery += '%s.%s IS NULL' % (oCrit.asTables[0], oCrit.sColumn,);
+
+                if iCrit == self.kiFailReasons:
+                    sQuery += '%s    AND TestSets.enmStatus >= \'failure\'::TestStatus_T\n' % (sExtraIndent,);
+                sQuery += ')\n';
             if oCrit.oSub is not None:
                 sQuery += self._getWhereWorker(iCrit | (((iCrit >> 8) + 1) << 8), oCrit.oSub, sExtraIndent, iOmit);
         return sQuery;
@@ -1620,12 +1633,15 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                     return '';
             oReportModel = DummyReportModel();
 
-        def workerDoFetch(oMissingLogicType, sNameAttr = 'sName', fIdIsName = False, idxHover = -1):
+        def workerDoFetch(oMissingLogicType, sNameAttr = 'sName', fIdIsName = False, idxHover = -1,
+                          idNull = -1, sNullDesc = '<NULL>'):
             """ Does the tedious result fetching and handling of missing bits. """
             dLeft = { oValue: 1 for oValue in oCrit.aoSelected };
             oCrit.aoPossible = [];
             for aoRow in self._oDb.fetchAll():
-                oCrit.aoPossible.append(FilterCriterionValueAndDescription(aoRow[0], aoRow[1], aoRow[2],
+                oCrit.aoPossible.append(FilterCriterionValueAndDescription(aoRow[0] if aoRow[0] is not None else idNull,
+                                                                           aoRow[1] if aoRow[1] is not None else sNullDesc,
+                                                                           aoRow[2],
                                                                            aoRow[idxHover] if idxHover >= 0 else None));
                 if aoRow[0] in dLeft:
                     del dLeft[aoRow[0]];
@@ -1954,21 +1970,23 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'FROM   ( SELECT TestResultFailures.idFailureReason,\n'
                           '                COUNT(TestSets.idTestSet) as cTimes\n'
                           '         FROM   TestSets\n'
-                          '         INNER JOIN TestResultFailures\n'
+                          '         LEFT OUTER JOIN TestResultFailures\n'
                           '                 ON     TestResultFailures.idTestSet = TestSets.idTestSet\n'
                           '                    AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' +
                           oFilter.getTableJoins(iOmit = TestResultFilter.kiFailReasons) +
                           ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
                           '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          '            AND TestSets.enmStatus >= \'failure\'::TestStatus_T\n' +
                           oFilter.getWhereConditions(iOmit = TestResultFilter.kiFailReasons) +
                           oReportModel.getExtraSubjectWhereExpr() +
                           '         GROUP BY TestResultFailures.idFailureReason\n'
                           '       ) AS FailureReasonIDs\n'
-                          '       INNER JOIN FailureReasons\n'
+                          '       LEFT OUTER JOIN FailureReasons\n'
                           '               ON FailureReasons.idFailureReason = FailureReasonIDs.idFailureReason\n'
                           '              AND FailureReasons.tsExpire        = \'infinity\'::TIMESTAMP\n'
-                          'ORDER BY FailureReasons.sShort\n' );
-        workerDoFetch(FailureReasonLogic, 'sShort');
+                          'ORDER BY FailureReasons.idFailureReason IS NULL DESC,\n'
+                          '         FailureReasons.sShort\n' );
+        workerDoFetch(FailureReasonLogic, 'sShort', sNullDesc = 'Not given');
 
         # Error counts.
         oCrit = oFilter.aCriteria[TestResultFilter.kiErrorCounts];

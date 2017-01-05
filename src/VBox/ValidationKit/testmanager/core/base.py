@@ -1187,8 +1187,9 @@ class FilterCriterion(object):
 
     ## @name The value type.
     ## @{
-    ksType_UInt   = 'uint';     ##< unsigned integer value.
-    ksType_String = 'string';   ##< string value.
+    ksType_UInt    = 'uint';     ##< unsigned integer value.
+    ksType_UIntNil = 'uint-nil'; ##< unsigned integer value, with nil.
+    ksType_String  = 'string';   ##< string value.
     ## @}
 
     def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
@@ -1244,6 +1245,8 @@ class ModelFilterBase(ModelBase):
         """ Worker for initFromParams. """
         if oCriterion.sType == FilterCriterion.ksType_UInt:
             oCriterion.aoSelected = oDisp.getListOfIntParams(oCriterion.sVarNm, iMin = 0, aiDefaults = []);
+        elif oCriterion.sType == FilterCriterion.ksType_UIntNil:
+            oCriterion.aoSelected = oDisp.getListOfIntParams(oCriterion.sVarNm, iMin = -1, aiDefaults = []);
         elif oCriterion.sType == FilterCriterion.ksType_String:
             oCriterion.aoSelected = oDisp.getListOfStrParams(oCriterion.sVarNm, asDefaults = []);
             if len(oCriterion.aoSelected) > 100:
