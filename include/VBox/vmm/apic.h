@@ -160,15 +160,6 @@ VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
 /** @} */
 #endif /* IN_RING3 */
 
-#ifdef IN_RING0
-/** @defgroup grp_apic_r0  The APIC Host Context Ring-0 API
- * @{
- */
-VMMR0_INT_DECL(int)         APICR0InitVM(PVM pVM);
-VMMR0_INT_DECL(int)         APICR0TermVM(PVM pVM);
-/** @} */
-#endif /* IN_RING0 */
-
 /* These functions are exported as they are called from external modules (recompiler). */
 VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPU pVCpu);
 VMMDECL(int)                APICGetTpr(PVMCPU pVCpu, uint8_t *pu8Tpr, bool *pfPending, uint8_t *pu8PendingIntr);
@@ -189,6 +180,8 @@ VMM_INT_DECL(VBOXSTRICTRC)  APICSetBaseMsr(PVMCPU pVCpu, uint64_t u64BaseMsr);
 VMM_INT_DECL(int)           APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc);
 VMM_INT_DECL(int)           APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
                                            uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
+VMM_INT_DECL(int)           APICGetApicPageForCpu(PVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr,
+                                                  PRTRCPTR pRCPtr);
 
 /** @name Hyper-V interface (Ring-3 and all-context API).
  * @{ */

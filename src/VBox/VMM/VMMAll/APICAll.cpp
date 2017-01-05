@@ -3274,3 +3274,31 @@ VMM_INT_DECL(VBOXSTRICTRC) APICHvSetEoi(PVMCPU pVCpu, uint32_t uEoi)
     return apicSetEoi(pVCpu, uEoi, VINF_CPUM_R3_MSR_WRITE, true /* fForceX2ApicBehaviour */);
 }
 
+
+/**
+ * Gets the APIC page pointers for the specified VCPU.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pHCPhys         Where to store the host-context physical address.
+ * @param   pR0Ptr          Where to store the ring-0 address.
+ * @param   pR3Ptr          Where to store the ring-3 address (optional).
+ * @param   pRCPtr          Where to store the raw-mode context address
+ *                          (optional).
+ */
+VMM_INT_DECL(int) APICGetApicPageForCpu(PVMCPU pVCpu, PRTHCPHYS pHCPhys, PRTR0PTR pR0Ptr, PRTR3PTR pR3Ptr, PRTRCPTR pRCPtr)
+{
+    AssertReturn(pVCpu,   VERR_INVALID_PARAMETER);
+    AssertReturn(pHCPhys, VERR_INVALID_PARAMETER);
+    AssertReturn(pR0Ptr,  VERR_INVALID_PARAMETER);
+
+    PCAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+    *pHCPhys = pApicCpu->HCPhysApicPage;
+    *pR0Ptr  = pApicCpu->pvApicPageR0;
+    if (pR3Ptr)
+        *pR3Ptr  = pApicCpu->pvApicPageR3;
+    if (pRCPtr)
+        *pRCPtr  = pApicCpu->pvApicPageRC;
+    return VINF_SUCCESS;
+}
+
