@@ -670,9 +670,9 @@ class TestResultFilter(ModelFilterBase):
         (  2, 'amd64', ),
         (  3, 'uni', ),
         (  4, 'smp', ),
-        (  5, '-raw', ),
-        (  6, '-hw', ),
-        (  7, '-np', ),
+        (  5, 'raw', ),
+        (  6, 'hw', ),
+        (  7, 'np', ),
         (  8, 'Install', ),
         (  8, 'Benchmark', ),
         (  8, 'USB', ),
@@ -837,8 +837,13 @@ class TestResultFilter(ModelFilterBase):
                     if iValue in oCrit.aoSelected:        sNot = '';
                     elif iValue + 32 in oCrit.aoSelected: sNot = 'NOT ';
                     else:                                 continue;
-                    sQuery += '%s   AND %s (TestCases.sName LIKE \'%%%s%%\' OR TestCaseArgs.sSubName LIKE \'%%%s%%\')\n' \
-                            % (sExtraIndent, sNot, sLike, sLike,);
+                    sQuery += '%s   AND %s (' % (sExtraIndent, sNot,);
+                    if len(sLike) <= 3: # do word matching for small substrings (hw, np, smp, uni, ++).
+                        sQuery += 'TestCases.sName ~ \'.*\\y%s\\y.*\' OR TestCaseArgs.sSubName ~ \'.*\\y%s\\y.*\')\n' \
+                                % ( sLike, sLike,);
+                    else:
+                        sQuery += 'TestCases.sName LIKE \'%%%s%%\' OR TestCaseArgs.sSubName LIKE \'%%%s%%\')\n' \
+                                % ( sLike, sLike,);
             elif iCrit == self.kiTestboxMisc:
                 dConditions = self.kdTbMiscConditions;
                 for iValue in oCrit.aoSelected:
