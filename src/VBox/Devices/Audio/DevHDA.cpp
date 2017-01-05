@@ -3897,10 +3897,12 @@ static void hdaTimerMaybeStop(PHDASTATE pThis)
         return;
 
     if (pThis->cStreamsActive) /* Disable can be called mupltiple times. */
+    {
         pThis->cStreamsActive--;
 
-    if (pThis->cStreamsActive == 0)
-        hdaTimerStop(pThis);
+        if (pThis->cStreamsActive == 0)
+            hdaTimerStop(pThis);
+    }
 }
 
 /**
@@ -3916,8 +3918,6 @@ static void hdaTimerMain(PHDASTATE pThis)
     STAM_PROFILE_START(&pThis->StatTimer, a);
 
     uint64_t cTicksNow = TMTimerGet(pThis->pTimer);
-
-    Log4Func(("Timer enter\n"));
 
     /* Update current time timestamp. */
     pThis->uTimerTS = cTicksNow;
@@ -4785,6 +4785,8 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
             fDone = true;
 
     } /* while !fDone */
+
+    Log2Func(("[SD%RU8] End\n", pStream->u8SD));
 
     hdaStreamUnlock(pStream);
 
