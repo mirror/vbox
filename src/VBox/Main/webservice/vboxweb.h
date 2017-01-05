@@ -192,7 +192,8 @@ class ManagedObjectRef
         /**
          * Returns the contained COM pointer and the UUID of the COM interface
          * which it supports.
-         * @param
+         * @param   ppobjInterface
+         * @param   ppobjUnknown
          * @return
          */
         const com::Guid& getPtr(void **ppobjInterface,
@@ -316,6 +317,7 @@ int findComPtrFromId(struct soap *soap,
  *
  * @param idParent managed object reference of calling object; used to extract
  *              websession ID
+ * @param pcszInterface
  * @param pc COM object for which to create a reference
  * @return existing or new managed object reference
  */

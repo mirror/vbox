@@ -932,7 +932,7 @@ HRESULT Machine::getAccessible(BOOL *aAccessible)
 
         if (mData->pMachineConfigFile)
         {
-            // reset the XML file to force loadSettings() (called from registeredInit())
+            // reset the XML file to force loadSettings() (called from i_registeredInit())
             // to parse it again; the file might have changed
             delete mData->pMachineConfigFile;
             mData->pMachineConfigFile = NULL;
@@ -8117,11 +8117,11 @@ HRESULT Machine::i_prepareRegister()
 /**
  * Increases the number of objects dependent on the machine state or on the
  * registered state. Guarantees that these two states will not change at least
- * until #releaseStateDependency() is called.
+ * until #i_releaseStateDependency() is called.
  *
  * Depending on the @a aDepType value, additional state checks may be made.
  * These checks will set extended error info on failure. See
- * #checkStateDependency() for more info.
+ * #i_checkStateDependency() for more info.
  *
  * If this method returns a failure, the dependency is not added and the caller
  * is not allowed to rely on any particular machine state or registration state
@@ -8174,7 +8174,7 @@ HRESULT Machine::i_addStateDependency(StateDependency aDepType /* = AnyStateDep 
 
 /**
  * Decreases the number of objects dependent on the machine state.
- * Must always complete the #addStateDependency() call after the state
+ * Must always complete the #i_addStateDependency() call after the state
  * dependency is no more necessary.
  */
 void Machine::i_releaseStateDependency()
@@ -8250,8 +8250,8 @@ Utf8Str Machine::i_getExtraData(const Utf8Str &strKey)
  *
  *  @param aDepType     Dependency type to check.
  *
- *  @note Non Machine based classes should use #addStateDependency() and
- *  #releaseStateDependency() methods or the smart AutoStateDependency
+ *  @note Non Machine based classes should use #i_addStateDependency() and
+ *  #i_releaseStateDependency() methods or the smart AutoStateDependency
  *  template.
  *
  *  @note This method must be called from under this object's read or write
@@ -8341,7 +8341,7 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
  * This method must be called as a part of the object's initialization procedure
  * (usually done in the #init() method).
  *
- * @note Must be called only from #init() or from #registeredInit().
+ * @note Must be called only from #init() or from #i_registeredInit().
  */
 HRESULT Machine::initDataAndChildObjects()
 {
@@ -8421,7 +8421,7 @@ HRESULT Machine::initDataAndChildObjects()
  * This method must be called as a part of the object's uninitialization
  * procedure (usually done in the #uninit() method).
  *
- * @note Must be called only from #uninit() or from #registeredInit().
+ * @note Must be called only from #uninit() or from #i_registeredInit().
  */
 void Machine::uninitDataAndChildObjects()
 {
@@ -8691,7 +8691,7 @@ HRESULT Machine::i_findSharedFolder(const Utf8Str &aName,
  * This gets called in several contexts during machine initialization:
  *
  * -- When machine XML exists on disk already and needs to be loaded into memory,
- *    for example, from registeredInit() to load all registered machines on
+ *    for example, from #i_registeredInit() to load all registered machines on
  *    VirtualBox startup. In this case, puuidRegistry is NULL because the media
  *    attached to the machine should be part of some media registry already.
  *
@@ -9957,9 +9957,6 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
  *  - SaveS_ResetCurStateModified: Resets mData->mCurrentStateModified to FALSE.
  *    Used when saving settings after an operation that makes them 100%
  *    correspond to the settings from the current snapshot.
- *  - SaveS_InformCallbacksAnyway: Callbacks will be informed even if
- *    #isReallyModified() returns false. This is necessary for cases when we
- *    change machine data directly, not through the backup()/commit() mechanism.
  *  - SaveS_Force: settings will be saved without doing a deep compare of the
  *    settings structures. This is used when this is called because snapshots
  *    have changed to avoid the overhead of the deep compare.
@@ -10068,7 +10065,7 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
         rc = VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
     }
 
-    if (fNeedsWrite || (aFlags & SaveS_InformCallbacksAnyway))
+    if (fNeedsWrite)
     {
         /* Fire the data change event, even on failure (since we've already
          * committed all data). This is done only for SessionMachines because

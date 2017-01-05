@@ -560,7 +560,10 @@ PREDEFINED += \
     VMMRZ_INT_DECL(type)=type \
     GMMR0DECL(type)=type \
     GMMR3DECL(type)=type \
-    VBOX_DND_FN_DECL_LOG(x)=x
+    VBOX_DND_FN_DECL_LOG(x)=x \
+    DECLSPEC_HIDDEN= \
+    VMSVGA3DCOCOA_DECL(type)=type \
+    VBOX_LISTENER_DECLARE(a)=
 
 # BS3Kit
 PREDEFINED += \

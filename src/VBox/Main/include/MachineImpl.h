@@ -667,7 +667,6 @@ protected:
     {
         /* flags for #saveSettings() */
         SaveS_ResetCurStateModified = 0x01,
-        SaveS_InformCallbacksAnyway = 0x02,
         SaveS_Force = 0x04,
         /* flags for #saveStateSettings() */
         SaveSTS_CurStateModified = 0x20,

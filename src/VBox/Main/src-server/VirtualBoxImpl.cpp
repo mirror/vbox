@@ -5048,7 +5048,7 @@ HRESULT VirtualBox::removeDHCPServer(const ComPtr<IDHCPServer> &aServer)
  * @param aSaveSettings @c true to save settings to disk (default).
  *
  * When @a aSaveSettings is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the dhcp server object
+ * failed #i_saveSettings() method it calls. In this case, the dhcp server object
  * will not be remembered. It is therefore the responsibility of the caller to
  * call this method as the last step of some action that requires registration
  * in order to make sure that only fully functional dhcp server objects get
@@ -5113,7 +5113,7 @@ HRESULT VirtualBox::i_registerDHCPServer(DHCPServer *aDHCPServer,
  *
  * @param aDHCPServer   DHCP server object to remove.
  *
- * This operation may fail because of the failed #saveSettings() method it
+ * This operation may fail because of the failed #i_saveSettings() method it
  * calls. In this case, the DHCP server will NOT be removed from the settings
  * when this method returns.
  *
@@ -5294,7 +5294,7 @@ HRESULT VirtualBox::i_registerNATNetwork(NATNetwork *aNATNetwork,
  * @param aSaveSettings @c true to save settings to disk (default).
  *
  * When @a aSaveSettings is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the DHCP server
+ * failed #i_saveSettings() method it calls. In this case, the DHCP server
  * will NOT be removed from the settingsi when this method returns.
  *
  * @note Locks this object for writing.

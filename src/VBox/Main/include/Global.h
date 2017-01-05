@@ -98,7 +98,7 @@ public:
      * Returns @c true if the given machine state is an online state. This is a
      * recommended way to detect if the VM is online (being executed in a
      * dedicated process) or not. Note that some online states are also
-     * transitional states (see #IsTransitional()).
+     * transitional states (see #IsTransient()).
      */
     static bool IsOnline(MachineState_T aState)
     {
