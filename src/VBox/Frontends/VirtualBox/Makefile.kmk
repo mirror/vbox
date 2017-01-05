@@ -1255,35 +1255,86 @@ QTGUI_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/qtgui
 BLDDIRS += $(QTGUI_DOXYFILE_OUTPUT)
 OTHER_CLEAN += \
 	$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui \
-	$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+	$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep \
+	$(PATH_TARGET)/docs.qtgui
+
+QTGUI_DOXYFILE_INPUT_DIRS := \
+	$(addprefix $(PATH_SUB_CURRENT)/src/, \
+		converter \
+		extensions \
+		extensions/graphics \
+		extradata \
+		globals \
+		medium \
+		net \
+		objects \
+		platform \
+		platform/darwin \
+		platform/os2 \
+		platform/win \
+		platform/x11 \
+		runtime \
+		runtime/fullscreen \
+		runtime/information \
+		runtime/normal \
+		runtime/scale \
+		runtime/seamless \
+		selector \
+		selector/graphics \
+		selector/graphics/chooser \
+		selector/graphics/details \
+		settings \
+		settings/global \
+		settings/machine \
+		widgets \
+		widgets/graphics \
+		wizards \
+		wizards/clonevd \
+		wizards/clonevm \
+		wizards/exportappliance \
+		wizards/firstrun \
+		wizards/importappliance \
+		wizards/newvd \
+		wizards/newvm)
+
+QTGUI_DOXYFILE_INPUT := \
+	$(foreach dir, $(QTGUI_DOXYFILE_INPUT_DIRS), \
+		$(sort $(wildcard $(dir)/*.h)) \
+		$(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm))
+
+-include $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep
 
 # Generate the Doxyfile
 $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
 		$(PATH_SUB_CURRENT)/Doxyfile \
 		$(PATH_SUB_CURRENT)/Makefile.kmk \
+		$(comp-vars QTGUI_DOXYFILE_INPUT,QTGUI_DOXYFILE_INPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(RM) -f $@ $@.tmp $@.dep
-	$(CP) -f $< $@.tmp
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(QTGUI_DOXYFILE_OUTPUT)"
-	$(APPEND) $@.tmp "WARN_LOGFILE = $(QTGUI_DOXYFILE_OUTPUT)/errors"
-	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include ."
-	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
-	$(APPEND) $@.tmp
-	$(APPEND) $@.tmp "INPUT = $(dir $<)"
-	$(APPEND) $@.tmp
-	$(MV) -f $@.tmp $@
+	$(call MSG_L1,generating qtgui doxygen file)
+	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
+	$(QUIET)$(CP) -f $< $@.tmp
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(QTGUI_DOXYFILE_OUTPUT)"
+	$(QUIET)$(APPEND) $@.tmp "WARN_LOGFILE = $(QTGUI_DOXYFILE_OUTPUT)/errors"
+	$(QUIET)$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include ."
+	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(QTGUI_DOXYFILE_INPUT),\$(NLTAB)$(x))'
+	$(QUIET)$(APPEND) $@.tmp
+	$(QUIET)$(MV) -f $@.tmp $@
+	@$(APPEND) $@.dep "QTGUI_DOXYFILE_INPUT_PREV = $(QTGUI_DOXYFILE_INPUT)"
 
 # Do the actual job.
-$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) | $(QTGUI_DOXYFILE_OUTPUT)/
-	$(RM) -Rf -- $(QTGUI_DOXYFILE_OUTPUT)/html/
-	doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
-	$(APPEND) $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+$(PATH_TARGET)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) | $(QTGUI_DOXYFILE_OUTPUT)/
+	$(call MSG_L1,doxygen qtgui)
+	$(QUIET)$(RM) -Rf -- $(QTGUI_DOXYFILE_OUTPUT)/html/
+	$(QUIET)doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
+	$(QUIET)$(APPEND) $(PATH_TARGET)/docs.qtgui
 
 # aliases
-docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+docs.qtgui: $(PATH_TARGET)/docs.qtgui
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
-docs:      $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+docs:      $(PATH_TARGET)/docs.qtgui
 endif
 
 
