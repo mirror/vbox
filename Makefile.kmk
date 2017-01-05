@@ -530,8 +530,8 @@ docs.Core docs.core: $(PATH_TARGET)/docs.Core
 # and GCFGM lists.
 #
 OTHER_CLEAN += \
-	$(PATH_TARGET)/Doxyfile.Core \
-	$(PATH_TARGET)/Doxyfile.Core.dep
+	$(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core \
+	$(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
 
 VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	include/iprt \
@@ -881,14 +881,15 @@ VBOX_CORE_DOXYFILE_INPUT += \
 VBOX_CORE_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/Core
 BLDDIRS += $(VBOX_CORE_DOXYFILE_OUTPUT)
 
--include $(PATH_TARGET)/Doxyfile.Core.dep
+-include $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
 
 # Generate the Doxyfile
-$(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
+$(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core: Doxyfile.Core \
 		$(comp-vars VBOX_CORE_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
 		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(QUIET)$(RM) -f $@ $@.tmp $(PATH_TARGET)/Doxyfile.Core.dep
+	$(call MSG_L1,generating Core doxygen file)
+	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
 	$(QUIET)$(CP) -f Doxyfile.Core $@.tmp
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(VBOX_CORE_DOXYFILE_OUTPUT)"
@@ -908,14 +909,14 @@ $(PATH_TARGET)/Doxyfile.Core: Doxyfile.Core \
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
-	@$(APPEND) $(PATH_TARGET)/Doxyfile.Core.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
+	@$(APPEND) @.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
+	@$(APPEND) @.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
 # Do the actual job.
-$(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) | $(VBOX_CORE_DOXYFILE_OUTPUT)/
+$(PATH_TARGET)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) | $(VBOX_CORE_DOXYFILE_OUTPUT)/
 	$(RM) -f $(PATH_TARGET)/docs.Core
 	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
-	doxygen $(PATH_TARGET)/Doxyfile.Core
+	doxygen $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
 	$(SED) -n \
                -e ':nextwarning' \
                -e '/^ *$(DOLLAR)/d' \
