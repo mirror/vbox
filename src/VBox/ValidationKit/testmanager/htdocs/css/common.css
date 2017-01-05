@@ -328,14 +328,6 @@ body.tm-wide-side-menu #main {
     margin-top:     0.5em;
 }
 
-.tm-sidebar-size-link {
-    float:          right;
-}
-
-.tm-side-filter-union-input {
-    float:          right;
-}
-
 /* The following is for the element of / not element of checkbox, supplying text and hiding the actual box. */
 input.tm-side-filter-union-input {
     display:        none;
@@ -370,6 +362,16 @@ input.tm-side-filter-union-input + label::after {
 }
 
 /* Filters: */
+.tm-side-filter-title-buttons {
+    float:          right;
+}
+.tm-side-filter-title-buttons input {
+    font-size:      0.6em;
+}
+.tm-side-filter-union-input {
+    float:          right;
+}
+
 #side-filters p:first-child {
     margin-top:     0.5em;
     font-style:     italic;

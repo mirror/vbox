@@ -352,6 +352,55 @@ function addRedirectToAnchorHref(oAnchor)
 }
 
 
+
+/**
+ * Clears one input element.
+ *
+ * @param   oInput      The input to clear.
+ */
+function resetInput(oInput)
+{
+    switch (oInput.type)
+    {
+        case 'checkbox':
+        case 'radio':
+            oInput.checked = false;
+            break;
+
+        case 'text':
+            oInput.value = 0;
+            break;
+    }
+}
+
+
+/**
+ * Clears a form.
+ *
+ * @param   sIdForm     The ID of the form
+ */
+function clearForm(sIdForm)
+{
+    var oForm = document.getElementById(sIdForm);
+    if (oForm)
+    {
+        var aoInputs = oForm.getElementsByTagName('INPUT');
+        var i;
+        for (i = 0; i < aoInputs.length; i++)
+            resetInput(aoInputs[i])
+
+        /* HTML5 allows inputs outside <form>, so scan the document. */
+        aoInputs = document.getElementsByTagName('INPUT');
+        for (i = 0; i < aoInputs.length; i++)
+            if (aoInputs.hasOwnProperty("form"))
+                if (aoInputs.form == sIdForm)
+                    resetInput(aoInputs[i])
+    }
+
+    return true;
+}
+
+
 /** @name Collapsible / Expandable items
  * @{
  */
@@ -455,7 +504,8 @@ function toggleSidebarSize()
     var aoToggleLink = document.getElementsByClassName('tm-sidebar-size-link');
     var i;
     for (i = 0; i < aoToggleLink.length; i++)
-        if (aoToggleLink[i].textContent.indexOf('\u00bb') >= 0 || aoToggleLink[i].textContent.indexOf('\u00ab') >= 0)
+        if (   aoToggleLink[i].textContent.indexOf('\u00bb') >= 0
+            || aoToggleLink[i].textContent.indexOf('\u00ab') >= 0)
             aoToggleLink[i].textContent = sLinkText;
 }
 

@@ -928,9 +928,9 @@ class WuiMain(WuiDispatcherBase):
         # Generate the filter panel.
         sHtml += u'<div id="side-filters">\n' \
                  u' <p>Filters' \
-                 u' <a href="javascript:toggleSidebarSize();" class="tm-sidebar-size-link">&#x00bb;&#x00bb;</p>\n'\
-                 u' <dl>\n';
-
+                 u' <span class="tm-side-filter-title-buttons"><input type="submit" value="Apply" />\n' \
+                 u' <a href="javascript:toggleSidebarSize();" class="tm-sidebar-size-link">&#x00bb;&#x00bb;</a></span></p>\n';
+        sHtml += u' <dl>\n';
         for oCrit in oFilter.aCriteria:
             if len(oCrit.aoPossible) > 0:
                 if   (    oCrit.oSub is None \
@@ -992,6 +992,7 @@ class WuiMain(WuiDispatcherBase):
         sHtml += u' </dl>\n';
         sHtml += u' <input type="submit" value="Apply"/>\n';
         sHtml += u' <input type="reset" value="Reset"/>\n';
+        sHtml += u' <button type="button" onclick="clearForm(\'side-menu-form\');">Clear</button>\n';
         sHtml += u'</div>\n';
         return sHtml;
 
