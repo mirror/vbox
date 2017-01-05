@@ -6537,9 +6537,9 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
 
     /*
      * If VT-x marks the segment as unusable, most other bits remain undefined:
-     *    - For CS the L, D and G bits have meaning.
-     *    - For SS the DPL has meaning (it -is- the CPL for Intel and VBox).
-     *    - For the remaining data segments no bits are defined.
+     *   - For CS the L, D and G bits have meaning.
+     *   - For SS the DPL has meaning (it -is- the CPL for Intel and VBox).
+     *   - For the remaining data segments no bits are defined.
      *
      * The present bit and the unusable bit has been observed to be set at the
      * same time (the selector was supposed to be invalid as we started executing
@@ -6829,17 +6829,13 @@ static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool
     /*
      * We assume all general purpose registers other than RSP are available.
      *
-     * RIP is a must, as it will be incremented or otherwise changed.
-     *
-     * RFLAGS are always required to figure the CPL.
-     *
-     * RSP isn't always required, however it's a GPR, so frequently required.
-     *
-     * SS and CS are the only segment register needed if IEM doesn't do memory
-     * access (CPL + 16/32/64-bit mode), but we can only get all segment registers.
-     *
-     * CR0 is always required by IEM for the CPL, while CR3 and CR4 will only
-     * be required for memory accesses.
+     *   - RIP is a must, as it will be incremented or otherwise changed.
+     *   - RFLAGS are always required to figure the CPL.
+     *   - RSP isn't always required, however it's a GPR, so frequently required.
+     *   - SS and CS are the only segment register needed if IEM doesn't do memory
+     *     access (CPL + 16/32/64-bit mode), but we can only get all segment registers.
+     *   - CR0 is always required by IEM for the CPL, while CR3 and CR4 will only
+     *     be required for memory accesses.
      *
      * Note! Before IEM dispatches an exception, it will call us to sync in everything.
      */
@@ -8953,9 +8949,9 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 
     /*
      * Update the VM-exit history array here even if the VM-entry failed due to:
-     *  - Invalid guest state.
-     *  - MSR loading.
-     *  - Machine-check event.
+     *   - Invalid guest state.
+     *   - MSR loading.
+     *   - Machine-check event.
      *
      * In any of the above cases we will still have a "valid" VM-exit reason
      * despite @a fVMEntryFailed being false.
