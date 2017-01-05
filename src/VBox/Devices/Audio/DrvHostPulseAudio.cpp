@@ -157,6 +157,23 @@ typedef struct PULSEAUDIOENUMCBCTX
     char               *pszDefaultSource;
 } PULSEAUDIOENUMCBCTX, *PPULSEAUDIOENUMCBCTX;
 
+#ifndef PA_CONTEXT_IS_GOOD /* To allow running on systems with PulseAudio < 0.9.11. */
+static inline int PA_CONTEXT_IS_GOOD(pa_context_state_t x) {
+    return
+        x == PA_CONTEXT_CONNECTING ||
+        x == PA_CONTEXT_AUTHORIZING ||
+        x == PA_CONTEXT_SETTING_NAME ||
+        x == PA_CONTEXT_READY;
+}
+#endif /* !PA_CONTEXT_IS_GOOD */
+
+#ifndef PA_STREAM_IS_GOOD /* To allow running on systems with PulseAudio < 0.9.11. */
+static inline int PA_STREAM_IS_GOOD(pa_stream_state_t x) {
+    return
+        x == PA_STREAM_CREATING ||
+        x == PA_STREAM_READY;
+}
+#endif /* !PA_STREAM_IS_GOOD */
 
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
