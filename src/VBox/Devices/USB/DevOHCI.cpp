@@ -2219,11 +2219,11 @@ static bool ohciUnlinkTds(POHCI pThis, PVUSBURB pUrb, POHCIED pEd)
             const uint32_t TdAddr = pUrb->paTds[iTd].TdAddr;
 
             /** @todo r=bird: Messing with the toggle flag in prepare is probably not correct
-             * when we encounter a STALL error, 4.3.1.3.7.2: "If an endpoint returns a STALL
+             * when we encounter a STALL error, 4.3.1.3.7.2: ''If an endpoint returns a STALL
              * PID, the  Host Controller retires the General TD with the ConditionCode set
              * to STALL and halts the endpoint. The CurrentBufferPointer, ErrorCount, and
              * dataToggle fields retain the values that they had at the start of the
-             * transaction." */
+             * transaction.'' */
 
             /* update toggle and set data toggle carry */
             pTd->hwinfo &= ~TD_HWINFO_TOGGLE;

@@ -351,9 +351,9 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
             /* Don't bother with error callback for isochronous URBs. */
             break;
 
-#if 1   /** @todo r=bird: OHCI say "If the Transfer Descriptor is being
+#if 1   /** @todo r=bird: OHCI say ''If the Transfer Descriptor is being
          * retired because of an error, the Host Controller must update
-         * the Halt bit of the Endpoint Descriptor."
+         * the Halt bit of the Endpoint Descriptor.''
          *
          * So, I'll subject all transfertypes to the same halt stuff now. It could
          * just happen to fix the logitech disconnect trap in win2k.
