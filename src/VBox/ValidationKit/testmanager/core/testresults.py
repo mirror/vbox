@@ -646,20 +646,22 @@ class TestResultFilter(ModelFilterBase):
     """
 
     kiTestStatus            =  0;
-    kiBranches              =  1;
-    kiSchedGroups           =  2;
-    kiTestBoxes             =  3;
-    kiTestCases             =  4;
-    kiTestCaseMisc          =  5;
-    kiRevisions             =  6;
-    kiCpuArches             =  7;
-    kiCpuVendors            =  8;
-    kiCpuCounts             =  9;
-    kiMemory                = 10;
-    kiTestboxMisc           = 11;
-    kiOses                  = 12;
-    kiPythonVersions        = 13;
-    kiFailReasons           = 14
+    kiErrorCounts           =  1;
+    kiBranches              =  2;
+    kiBuildTypes            =  3;
+    kiRevisions             =  4;
+    kiFailReasons           =  5;
+    kiTestCases             =  6;
+    kiTestCaseMisc          =  7;
+    kiTestBoxes             =  8
+    kiOses                  =  9;
+    kiCpuArches             = 10;
+    kiCpuVendors            = 11;
+    kiCpuCounts             = 12;
+    kiMemory                = 13;
+    kiTestboxMisc           = 14;
+    kiPythonVersions        = 15;
+    kiSchedGroups           = 16;
 
     ## Misc test case / variation name filters.
     ## Presented in table order.  The first sub element is the presistent ID.
@@ -696,30 +698,48 @@ class TestResultFilter(ModelFilterBase):
 
     def __init__(self):
         ModelFilterBase.__init__(self);
+
+        # Test statuses
         oCrit = FilterCriterion('Test statuses', sVarNm = 'ts', sType = FilterCriterion.ksType_String,
                                 sTable = 'TestSets', sColumn = 'enmStatus');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestStatus] is oCrit;
 
+        # Error counts
+        oCrit = FilterCriterion('Error counts', sVarNm = 'ec', sTable = 'TestResults', sColumn = 'cErrors');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiErrorCounts] is oCrit;
+
+        # Branches
         oCrit = FilterCriterion('Branches', sVarNm = 'br', sType = FilterCriterion.ksType_String,
                                 sTable = 'BuildCategories', sColumn = 'sBranch');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiBranches] is oCrit;
 
-        oCrit = FilterCriterion('Sched groups', sVarNm = 'sg', sTable = 'TestSets', sColumn = 'idSchedGroup');
+        # Build types
+        oCrit = FilterCriterion('Build types', sVarNm = 'bt', sType = FilterCriterion.ksType_String,
+                                sTable = 'BuildCategories', sColumn = 'sType');
         self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiSchedGroups] is oCrit;
+        assert self.aCriteria[self.kiBuildTypes] is oCrit;
 
-        oCrit = FilterCriterion('Testboxes', sVarNm = 'tb', sTable = 'TestSets', sColumn = 'idTestBox');
+        # Revisions
+        oCrit = FilterCriterion('Revisions', sVarNm = 'rv', sTable = 'Builds', sColumn = 'iRevision');
         self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiTestBoxes] is oCrit;
+        assert self.aCriteria[self.kiRevisions] is oCrit;
 
+        # Failure reasons
+        oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiFailReasons] is oCrit;
+
+        # Test cases and variations.
         oCrit = FilterCriterion('Test case / var', sVarNm = 'tc', sTable = 'TestSets', sColumn = 'idTestCase',
                                 oSub = FilterCriterion('Test variations', sVarNm = 'tv',
                                                        sTable = 'TestSets', sColumn = 'idTestCaseArgs'));
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestCases] is oCrit;
 
+        # Special test case and varation name sub string matching.
         oCrit = FilterCriterion('Test case name', sVarNm = 'cm', sKind = FilterCriterion.ksKind_Special,
                                 asTables = ('TestCases', 'TestCaseArgs'));
         oCrit.aoPossible = [
@@ -731,29 +751,42 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestCaseMisc] is oCrit;
 
-        oCrit = FilterCriterion('Revisions', sVarNm = 'rv', sTable = 'Builds', sColumn = 'iRevision');
+        # Testboxes
+        oCrit = FilterCriterion('Testboxes', sVarNm = 'tb', sTable = 'TestSets', sColumn = 'idTestBox');
         self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiRevisions] is oCrit;
+        assert self.aCriteria[self.kiTestBoxes] is oCrit;
 
+        # Testbox OS and OS version.
+        oCrit = FilterCriterion('OS / version', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs',
+                                oSub = FilterCriterion('OS Versions', sVarNm = 'ov',
+                                                       sTable = 'TestBoxesWithStrings', sColumn = 'idStrOsVersion'));
+        self.aCriteria.append(oCrit);
+        assert self.aCriteria[self.kiOses] is oCrit;
+
+        # Testbox CPU architectures.
         oCrit = FilterCriterion('CPU arches', sVarNm = 'ca', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuArch');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuArches] is oCrit;
 
+        # Testbox CPU vendors and revisions.
         oCrit = FilterCriterion('CPU vendor / rev', sVarNm = 'cv', sTable = 'TestBoxesWithStrings', sColumn = 'idStrCpuVendor',
                                 oSub = FilterCriterion('CPU revisions', sVarNm = 'cr',
                                                        sTable = 'TestBoxesWithStrings', sColumn = 'lCpuRevision'));
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuVendors] is oCrit;
 
+        # Testbox CPU (thread) count
         oCrit = FilterCriterion('CPU counts', sVarNm = 'cc', sTable = 'TestBoxesWithStrings', sColumn = 'cCpus');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiCpuCounts] is oCrit;
 
+        # Testbox memory sizes.
         oCrit = FilterCriterion('Memory', sVarNm = 'mb', sTable = 'TestBoxesWithStrings', sColumn = 'cMbMemory');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiMemory] is oCrit;
 
-        oCrit = FilterCriterion('Testbox misc', sVarNm = 'tm', sKind = FilterCriterion.ksKind_Special,
+        # Testbox features.
+        oCrit = FilterCriterion('Testbox features', sVarNm = 'tm', sKind = FilterCriterion.ksKind_Special,
                                 sTable = 'TestBoxesWithStrings');
         oCrit.aoPossible = [
             FilterCriterionValueAndDescription(self.kiTbMisc_NestedPaging,      "req nested paging"),
@@ -770,21 +803,16 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiTestboxMisc] is oCrit;
 
-        oCrit = FilterCriterion('OS / version', sVarNm = 'os', sTable = 'TestBoxesWithStrings', sColumn = 'idStrOs',
-                                oSub = FilterCriterion('OS Versions', sVarNm = 'ov',
-                                                       sTable = 'TestBoxesWithStrings', sColumn = 'idStrOsVersion'));
-        self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiOses] is oCrit;
-
+        # Testbox python versions.
         oCrit = FilterCriterion('Python', sVarNm = 'py', sTable = 'TestBoxesWithStrings', sColumn = 'iPythonHexVersion');
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiPythonVersions] is oCrit;
 
-        oCrit = FilterCriterion('Failure reasons', sVarNm = 'fr', sTable = 'TestResultFailures', sColumn = 'idFailureReason');
+        # Scheduling groups.
+        oCrit = FilterCriterion('Sched groups', sVarNm = 'sg', sTable = 'TestSets', sColumn = 'idSchedGroup');
         self.aCriteria.append(oCrit);
-        assert self.aCriteria[self.kiFailReasons] is oCrit;
+        assert self.aCriteria[self.kiSchedGroups] is oCrit;
 
-        ## @todo Add build type, error count, gang counts (if any > 1)...
 
     kdTbMiscConditions = {
         kiTbMisc_NestedPaging:    'TestBoxesWithStrings.fCpuNestedPaging IS TRUE',
@@ -865,18 +893,13 @@ class TestResultFilter(ModelFilterBase):
                                       '%s           AND Builds.tsExpire     > TestSets.tsCreated\n' \
                                       '%s           AND Builds.tsEffective <= TestSets.tsCreated\n' \
                                     % ( sExtraIndent, sExtraIndent, sExtraIndent, sExtraIndent, );
-                        elif sTable == 'TestResultFailures':
-                            sQuery += '%sLEFT OUTER JOIN TestResultFailures\n' \
-                                      '%s             ON     TestResultFailures.idTestSet = TestSets.idTestSet\n' \
-                                      '%s                AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' \
-                                    % ( sExtraIndent, sExtraIndent, sExtraIndent, );
-                        elif sTable == 'TestBoxesWithStrings':
-                            sQuery += '%sLEFT OUTER JOIN TestBoxesWithStrings\n' \
-                                      '%s             ON     TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox\n' \
-                                    % ( sExtraIndent, sExtraIndent, );
                         elif sTable == 'BuildCategories':
                             sQuery += '%sINNER JOIN BuildCategories\n' \
                                       '%s        ON BuildCategories.idBuildCategory = TestSets.idBuildCategory\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestBoxesWithStrings':
+                            sQuery += '%sLEFT OUTER JOIN TestBoxesWithStrings\n' \
+                                      '%s             ON     TestBoxesWithStrings.idGenTestBox = TestSets.idGenTestBox\n' \
                                     % ( sExtraIndent, sExtraIndent, );
                         elif sTable == 'TestCases':
                             sQuery += '%sINNER JOIN TestCases\n' \
@@ -886,6 +909,15 @@ class TestResultFilter(ModelFilterBase):
                             sQuery += '%sINNER JOIN TestCaseArgs\n' \
                                       '%s        ON TestCaseArgs.idGenTestCaseArgs = TestSets.idGenTestCaseArgs\n' \
                                     % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestResults':
+                            sQuery += '%sINNER JOIN TestResults\n' \
+                                      '%s        ON TestResults.idTestResult = TestSets.idTestResult\n' \
+                                    % ( sExtraIndent, sExtraIndent, );
+                        elif sTable == 'TestResultFailures':
+                            sQuery += '%sLEFT OUTER JOIN TestResultFailures\n' \
+                                      '%s             ON     TestResultFailures.idTestSet = TestSets.idTestSet\n' \
+                                      '%s                AND TestResultFailures.tsExpire  = \'infinity\'::TIMESTAMP\n' \
+                                    % ( sExtraIndent, sExtraIndent, sExtraIndent, );
                         else:
                             assert False, sTable;
         return sQuery;
@@ -1898,6 +1930,24 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           'ORDER BY BuildCategories.sBranch DESC\n' );
         workerDoFetch(None, fIdIsName = True);
 
+        # Build types.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiBuildTypes];
+        self._oDb.execute('SELECT BuildCategories.sType, BuildCategories.sType, SUM(BuildCategoryIDs.cTimes)\n'
+                          'FROM   ( SELECT TestSets.idBuildCategory,\n'
+                          '                COUNT(TestSets.idTestSet) AS cTimes\n'
+                          '         FROM   TestSets\n' + oFilter.getTableJoins(iOmit = TestResultFilter.kiBuildTypes) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiBuildTypes) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '         GROUP BY TestSets.idBuildCategory\n'
+                          '       ) AS BuildCategoryIDs\n'
+                          '       INNER JOIN BuildCategories\n'
+                          '               ON BuildCategories.idBuildCategory = BuildCategoryIDs.idBuildCategory\n'
+                          'GROUP BY BuildCategories.sType\n'
+                          'ORDER BY BuildCategories.sType DESC\n' );
+        workerDoFetch(None, fIdIsName = True);
+
         # Failure reasons.
         oCrit = oFilter.aCriteria[TestResultFilter.kiFailReasons];
         self._oDb.execute('SELECT FailureReasons.idFailureReason, FailureReasons.sShort, FailureReasonIDs.cTimes\n'
@@ -1919,6 +1969,24 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '              AND FailureReasons.tsExpire        = \'infinity\'::TIMESTAMP\n'
                           'ORDER BY FailureReasons.sShort\n' );
         workerDoFetch(FailureReasonLogic, 'sShort');
+
+        # Error counts.
+        oCrit = oFilter.aCriteria[TestResultFilter.kiErrorCounts];
+        self._oDb.execute('SELECT TestResults.cErrors, CAST(TestResults.cErrors AS TEXT), COUNT(TestResults.idTestResult)\n'
+                          'FROM   ( SELECT TestSets.idTestResult AS idTestResult\n'
+                          '         FROM   TestSets\n' +
+                          oFilter.getTableJoins(iOmit = TestResultFilter.kiFailReasons) +
+                          ''.join('                , %s\n' % (sTable,) for sTable in oReportModel.getExtraSubjectTables()) +
+                          '         WHERE  ' + self._getTimePeriodQueryPart(tsNow, sPeriod, '        ') +
+                          oFilter.getWhereConditions(iOmit = TestResultFilter.kiFailReasons) +
+                          oReportModel.getExtraSubjectWhereExpr() +
+                          '       ) AS TestSetIDs\n'
+                          '       INNER JOIN TestResults\n'
+                          '               ON TestResults.idTestResult = TestSetIDs.idTestResult\n'
+                          'GROUP BY TestResults.cErrors\n'
+                          'ORDER BY TestResults.cErrors\n');
+
+        workerDoFetch(None, fIdIsName = True);
 
         return oFilter;
 
