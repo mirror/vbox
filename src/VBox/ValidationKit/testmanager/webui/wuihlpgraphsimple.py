@@ -84,20 +84,25 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
                 cxBar  = int(float(oValue) * self.cxMaxBar / fpMax);
                 sValue = escapeElem(oRow.asValues[j]);
                 sColor = self.kasColors[j % len(self.kasColors)];
+                sInvColor = 'white';
+                if sColor[0] == '#' and len(sColor) == 7:
+                    sInvColor = '#%06x' % (~int(sColor[1:],16) & 0xffffff,);
 
                 sReport += '        <tr><td>\n' \
                            '          <table class="tmbargraphl3" height="100%%" border="0" cellspacing="0" cellpadding="0">\n' \
                            '            <tr>\n';
                 if cPct >= 99:
-                    sReport += '              <td width="%spx" nowrap bgcolor="%s" align="right">%s&nbsp;</td>\n' \
-                             % (cxBar, sColor, sValue);
+                    sReport += '              <td width="%spx" nowrap bgcolor="%s" align="right" style="color:%s;">' \
+                               '%s&nbsp;</td>\n' \
+                             % (cxBar, sColor, sInvColor, sValue);
                 elif cPct < 1:
                     sReport += '              <td width="%spx" nowrap style="color:%s;">%s</td>\n' \
                              % (self.cxMaxBar - cxBar, sColor, sValue);
                 elif cPct >= 50:
-                    sReport += '              <td width="%spx" nowrap bgcolor="%s" align="right">%s&nbsp;</td>\n' \
+                    sReport += '              <td width="%spx" nowrap bgcolor="%s" align="right" style="color:%s;">' \
+                               '%s&nbsp;</td>\n' \
                                '              <td width="%spx" nowrap><div>&nbsp;</div></td>\n' \
-                             % (cxBar, sColor, sValue, self.cxMaxBar - cxBar);
+                             % (cxBar, sColor, sInvColor, sValue, self.cxMaxBar - cxBar);
                 else:
                     sReport += '              <td width="%spx" nowrap bgcolor="%s"></td>\n' \
                                '              <td width="%spx" nowrap>&nbsp;%s</td>\n' \
