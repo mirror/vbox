@@ -128,9 +128,9 @@ OTHER_CLEAN += \
 	$(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts \
 	$(IPRT_OUT_DIR)/odi2name.h \
 	$(IPRT_OUT_DIR)/odi2name.h.ts \
-	$(IPRT_OUT_DIR)/Doxyfile.iprt \
-	$(IPRT_OUT_DIR)/Doxyfile.iprt.dep \
-	$(IPRT_OUT_DIR)/docs.iprt
+	$(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt \
+	$(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt.dep \
+	$(IPRT_DOXYFILE_OUTPUT)/docs.iprt
 
 
 #
@@ -2910,20 +2910,20 @@ IPRT_DOXYFILE_INPUT := \
 	$(foreach dir, $(IPRT_DOXYFILE_INPUT_DIRS), $(wildcard $(dir)/*.cpp $(dir)/.c $(dir)/.asm))
 IPRT_DOXYFILE_INPUT := \
 	$(IPRT_DOXYFILE_INPUT_FIRST) \
-	$(filter-out $(IPRT_DOXYFILE_INPUT_FIRST), $(IPRT_DOXYFILE_INPUT))
+	$(sort $(filter-out $(IPRT_DOXYFILE_INPUT_FIRST), $(IPRT_DOXYFILE_INPUT)))
 
 
 IPRT_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/iprt
 BLDDIRS += $(IPRT_DOXYFILE_OUTPUT)
 
-includedep $(IPRT_OUT_DIR)/Doxyfile.iprt.dep
+includedep $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt.dep
 
 # Generate the Doxyfile
-$(IPRT_OUT_DIR)/Doxyfile.iprt: \
+$(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt: \
 		$(VBOX_PATH_RUNTIME_SRC)/Doxyfile \
 		$(VBOX_PATH_RUNTIME_SRC)/Makefile.kmk \
-		$(comp-vars IPRT_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
-		$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
+		$(comp-vars IPRT_DOXYFILE_INPUT,DOXYGEN_IPRT_INPUT_PREV,FORCE) \
+		$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_IPRT_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
 	$(QUIET)$(CP) -f $(VBOX_PATH_RUNTIME_SRC)/Doxyfile $@.tmp
@@ -2946,31 +2946,34 @@ $(IPRT_OUT_DIR)/Doxyfile.iprt: \
 	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(IPRT_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
-	$(QUIET)$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
-	$(QUIET)$(APPEND) $@.dep "DOXYGEN_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
+	$(QUIET)$(APPEND) $@.dep "DOXYGEN_IPRT_OUTPUT_PREV = $(IPRT_DOXYFILE_OUTPUT)"
+	$(QUIET)$(APPEND) $@.dep "DOXYGEN_IPRT_INPUT_PREV = $(IPRT_DOXYFILE_INPUT)"
 
 # Do the actual job.
-$(IPRT_OUT_DIR)/docs.iprt: $(IPRT_OUT_DIR)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) | $(IPRT_DOXYFILE_OUTPUT)/
-	$(QUIET)$(RM) -f $(wildcard $(IPRT_DOXYFILE_OUTPUT)/html/*) $(IPRT_OUT_DIR)/docs.iprt
-	doxygen $(DOXYGEN_OPTS) $(IPRT_OUT_DIR)/Doxyfile.iprt
-	$(SED)	-e '/warning. Unexpected tag .dd. found/d' \
-		-e '/warning. Unsupported xml.html tag .globalScope. found/d' \
-               --output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
-		$(IPRT_DOXYFILE_OUTPUT)/errors
+$(IPRT_DOXYFILE_OUTPUT)/docs.iprt: $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt $$(IPRT_DOXYFILE_INPUT) \
+		| $(IPRT_DOXYFILE_OUTPUT)/
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(RM) -Rf $(IPRT_DOXYFILE_OUTPUT)/html/
+	doxygen $(DOXYGEN_OPTS) $(IPRT_DOXYFILE_OUTPUT)/Doxyfile.iprt
+	$(SED) \
+                -e '/warning. Unexpected tag .dd. found/d' \
+                -e '/warning. Unsupported xml.html tag .globalScope. found/d' \
+                --output $(IPRT_DOXYFILE_OUTPUT)/errors2 \
+                $(IPRT_DOXYFILE_OUTPUT)/errors
 	$(CAT) $(IPRT_DOXYFILE_OUTPUT)/errors2
 	$(SED) -e "/[^ ]/q 1" $(IPRT_DOXYFILE_OUTPUT)/errors2
-	$(APPEND) $(IPRT_OUT_DIR)/docs.iprt
+	$(APPEND) $@
 
 # aliases
-docs.iprt: $(IPRT_OUT_DIR)/docs.iprt
+docs.iprt: $(IPRT_DOXYFILE_OUTPUT)/docs.iprt
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
-docs:      $(IPRT_OUT_DIR)/docs.iprt
+docs: $(IPRT_DOXYFILE_OUTPUT)/docs.iprt
 endif
 
 test-doxygen::
-	@echo test-$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE)
+	@echo test-$(comp-vars IPRT_DOXYFILE_OUTPUT,DOXYGEN_IPRT_OUTPUT_PREV,FORCE)
 	@echo $(IPRT_DOXYFILE_OUTPUT)
-	@echo $(DOXYGEN_OUTPUT_PREV)
+	@echo $(DOXYGEN_IPRT_OUTPUT_PREV)
 	@echo $(IPRT_DOXYFILE_INPUT)
 
 

@@ -519,16 +519,14 @@ docs: docs.Core
  endif
 endif # !VBOX_ONLY_DOCS
 
-docs.Core docs.core: $(PATH_TARGET)/docs.Core
-
-
-
 #
 # The core (VMM+REM+Devices+Main) documentation.
 #
 # This includes so much because we wish to have the complete CFGM
 # and GCFGM lists.
 #
+VBOX_CORE_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/Core
+BLDDIRS += $(VBOX_CORE_DOXYFILE_OUTPUT)
 OTHER_CLEAN += \
 	$(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core \
 	$(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
@@ -870,25 +868,20 @@ VBOX_CORE_DOXYFILE_INPUT := \
 		, $(wildcard $(dir)/*.cpp $(dir)/*.c $(dir)/*.m $(dir)/*.mm $(dir)/*.py $(dir)/.asm))
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
-	$(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT))
+	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT)))
 
 # And some some additional stuff.
 VBOX_CORE_DOXYFILE_INPUT += \
 	$(PATH_ROOT)/src/recompiler/VBoxRecompiler.c \
 	$(PATH_ROOT)/src/recompiler/VBoxREMWrapper.cpp
 
-
-VBOX_CORE_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/Core
-BLDDIRS += $(VBOX_CORE_DOXYFILE_OUTPUT)
-
--include $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
+includedep $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
 
 # Generate the Doxyfile
 $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core: Doxyfile.Core \
-		$(comp-vars VBOX_CORE_DOXYFILE_INPUT,DOXYGEN_INPUT_PREV,FORCE) \
-		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_OUTPUT_PREV,FORCE) \
+		$(comp-vars VBOX_CORE_DOXYFILE_INPUT,DOXYGEN_CORE_INPUT_PREV,FORCE) \
+		$(comp-vars VBOX_CORE_DOXYFILE_OUTPUT,DOXYGEN_CORE_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(call MSG_L1,generating Core doxygen file)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
 	$(QUIET)$(CP) -f Doxyfile.Core $@.tmp
 	$(QUIET)$(APPEND) $@.tmp
@@ -909,13 +902,14 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core: Doxyfile.Core \
 	$(QUIET)$(APPEND) $@.tmp "PREDEFINED += ARCH_BITS=HC_ARCH_BITS R3_ARCH_BITS=HC_ARCH_BITS R0_ARCH_BITS=HC_ARCH_BITS "
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
-	@$(APPEND) $@.dep "DOXYGEN_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
-	@$(APPEND) $@.dep "DOXYGEN_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
+	@$(APPEND) $@.dep "DOXYGEN_CORE_OUTPUT_PREV = $(VBOX_CORE_DOXYFILE_OUTPUT)"
+	@$(APPEND) $@.dep "DOXYGEN_CORE_INPUT_PREV = $(VBOX_CORE_DOXYFILE_INPUT)"
 
 # Do the actual job.
-$(PATH_TARGET)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) | $(VBOX_CORE_DOXYFILE_OUTPUT)/
-	$(RM) -f $(PATH_TARGET)/docs.Core
-	$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
+$(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INPUT) \
+		| $(VBOX_CORE_DOXYFILE_OUTPUT)/
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(RM) -Rf $(VBOX_CORE_DOXYFILE_OUTPUT)/html/
 	doxygen $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core
 	$(SED) -n \
                -e ':nextwarning' \
@@ -949,7 +943,9 @@ $(PATH_TARGET)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core $$(VBOX_COR
                $(VBOX_CORE_DOXYFILE_OUTPUT)/errors
 	$(CAT) $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
 	$(SED) -e "/[^ ]/q 1" $(VBOX_CORE_DOXYFILE_OUTPUT)/errors2
-	$(APPEND) $(PATH_TARGET)/docs.Core
+	$(APPEND) $@
+
+docs.Core docs.core: $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core
 
 
 #

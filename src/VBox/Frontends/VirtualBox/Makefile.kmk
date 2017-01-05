@@ -1256,7 +1256,7 @@ BLDDIRS += $(QTGUI_DOXYFILE_OUTPUT)
 OTHER_CLEAN += \
 	$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui \
 	$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep \
-	$(PATH_TARGET)/docs.qtgui
+	$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 
 QTGUI_DOXYFILE_INPUT_DIRS := \
 	$(addprefix $(PATH_SUB_CURRENT)/src/, \
@@ -1300,17 +1300,17 @@ QTGUI_DOXYFILE_INPUT_DIRS := \
 QTGUI_DOXYFILE_INPUT := \
 	$(foreach dir, $(QTGUI_DOXYFILE_INPUT_DIRS), \
 		$(sort $(wildcard $(dir)/*.h)) \
-		$(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm))
+		$(sort $(wildcard $(dir)/*.cpp $(dir)/*.m $(dir)/*.mm)))
 
--include $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep
+includedep $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui.dep
 
 # Generate the Doxyfile
 $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
 		$(PATH_SUB_CURRENT)/Doxyfile \
 		$(PATH_SUB_CURRENT)/Makefile.kmk \
-		$(comp-vars QTGUI_DOXYFILE_INPUT,QTGUI_DOXYFILE_INPUT_PREV,FORCE) \
+		$(comp-vars QTGUI_DOXYFILE_INPUT,DOXYGEN_QTGUI_INPUT_PREV,FORCE) \
+		$(comp-vars QTGUI_DOXYFILE_OUTPUT,DOXYGEN_QTGUI_OUTPUT_PREV,FORCE) \
 		| $$(dir $$@)
-	$(call MSG_L1,generating qtgui doxygen file)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.dep
 	$(QUIET)$(CP) -f $< $@.tmp
 	$(QUIET)$(APPEND) $@.tmp
@@ -1322,19 +1322,22 @@ $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
 	$(QUIET)$(APPEND) $@.tmp 'INPUT = $(foreach x,$(QTGUI_DOXYFILE_INPUT),\$(NLTAB)$(x))'
 	$(QUIET)$(APPEND) $@.tmp
 	$(QUIET)$(MV) -f $@.tmp $@
-	@$(APPEND) $@.dep "QTGUI_DOXYFILE_INPUT_PREV = $(QTGUI_DOXYFILE_INPUT)"
+	@$(APPEND) $@.dep "DOXYGEN_QTGUI_OUTPUT_PREV = $(QTGUI_DOXYFILE_OUTPUT)"
+	@$(APPEND) $@.dep "DOXYGEN_QTGUI_INPUT_PREV = $(QTGUI_DOXYFILE_INPUT)"
 
 # Do the actual job.
-$(PATH_TARGET)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) | $(QTGUI_DOXYFILE_OUTPUT)/
+$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) \
+		| $(QTGUI_DOXYFILE_OUTPUT)/
 	$(call MSG_L1,doxygen qtgui)
+	$(QUIET)$(RM) -f $@
 	$(QUIET)$(RM) -Rf -- $(QTGUI_DOXYFILE_OUTPUT)/html/
-	$(QUIET)doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
-	$(QUIET)$(APPEND) $(PATH_TARGET)/docs.qtgui
+	doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
+	$(APPEND) $@
 
 # aliases
-docs.qtgui: $(PATH_TARGET)/docs.qtgui
+docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
-docs:      $(PATH_TARGET)/docs.qtgui
+docs: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 endif
 
 
