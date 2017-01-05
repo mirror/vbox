@@ -918,7 +918,6 @@ static void hmR0VmxStructsFree(PVM pVM)
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
             hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjMsrBitmap, &pVCpu->hm.s.vmx.pvMsrBitmap, &pVCpu->hm.s.vmx.HCPhysMsrBitmap);
 
-        hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjVirtApic, (PRTR0PTR)&pVCpu->hm.s.vmx.pbVirtApic, &pVCpu->hm.s.vmx.HCPhysVirtApic);
         hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjVmcs, &pVCpu->hm.s.vmx.pvVmcs, &pVCpu->hm.s.vmx.HCPhysVmcs);
     }
 
@@ -1010,8 +1009,8 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         /* Allocate the Virtual-APIC page for transparent TPR accesses. */
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         {
-            rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjVirtApic, (PRTR0PTR)&pVCpu->hm.s.vmx.pbVirtApic,
-                                   &pVCpu->hm.s.vmx.HCPhysVirtApic);
+            rc = APICGetApicPageForCpu(pVCpu, &pVCpu->hm.s.vmx.HCPhysVirtApic, (PRTR0PTR)&pVCpu->hm.s.vmx.pbVirtApic,
+                                       NULL /* pR3Ptr */, NULL /* pRCPtr */);
             if (RT_FAILURE(rc))
                 goto cleanup;
         }
