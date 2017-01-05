@@ -2686,7 +2686,7 @@ QChar VBoxGlobal::decimalSep()
 
 /**
  *  Returns the regexp string that defines the format of the human-readable
- *  size representation, <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt>.
+ *  size representation: @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim
  *
  *  This regexp will capture 5 groups of text:
  *  - cap(1): integer number in case when no decimal point is present
@@ -2714,7 +2714,7 @@ QString VBoxGlobal::sizeRegexp()
 
 /**
  *  Parses the given size string that should be in form of
- *  <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt> and returns
+ *  @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim and returns
  *  the size value in bytes. Zero is returned on error.
  */
 /* static */
@@ -2763,7 +2763,7 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 
 /**
  * Formats the given @a aSize value in bytes to a human readable string
- * in form of <tt>\#\#\#\#[.\#\#] B|KB|MB|GB|TB|PB</tt>.
+ * in form of @verbatim ####[.##] B|KB|MB|GB|TB|PB @endverbatim.
  *
  * The @a aMode and @a aDecimal parameters are used for rounding the resulting
  * number when converting the size value to KB, MB, etc gives a fractional part:
@@ -2955,16 +2955,16 @@ QString VBoxGlobal::locationForHTML (const QString &aFileName)
 
 /**
  *  Reformats the input string @a aStr so that:
- *  - strings in single quotes will be put inside <nobr> and marked
+ *  - strings in single quotes will be put inside \<nobr\> and marked
  *    with blue color;
- *  - UUIDs be put inside <nobr> and marked
+ *  - UUIDs be put inside \<nobr\> and marked
  *    with green color;
  *  - replaces new line chars with \</p\>\<p\> constructs to form paragraphs
  *    (note that \<p\> and \</p\> are not appended to the beginning and to the
  *     end of the string respectively, to allow the result be appended
  *     or prepended to the existing paragraph).
  *
- *  If @a aToolTip is true, colouring is not applied, only the <nobr> tag
+ *  If @a aToolTip is true, colouring is not applied, only the \<nobr\> tag
  *  is added. Also, new line chars are replaced with \<br\> instead of \<p\>.
  */
 /* static */
