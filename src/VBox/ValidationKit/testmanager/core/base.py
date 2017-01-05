@@ -1179,8 +1179,10 @@ class FilterCriterion(object):
 
     ## @name The kind of filtering.
     ## @{
-    ksKind_AnyOf = 'any-of';    ##< Any of the selected values are included (common).
-    ksKind_AllOf = 'all-of';    ##< All of the selected values must be matched (rare).
+    ## 'Element of' by default, 'not an element of' when fInverted is False.
+    ksKind_ElementOfOrNot = 'element-of-or-not';
+    ## The criterion is a special one and cannot be inverted.
+    ksKind_Special        = 'special';
     ## @}
 
     ## @name The value type.
@@ -1189,15 +1191,17 @@ class FilterCriterion(object):
     ksType_String = 'string';   ##< string value.
     ## @}
 
-    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_AnyOf,
+    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
                  sTable = None, sColumn = None, oSub = None):
-        assert len(sVarNm) in (2,3); # required by wuimain.py
+        assert len(sVarNm) == 2;    # required by wuimain.py for filtering.
         self.sName      = sName;
         self.sState     = sState;
-        self.sVarNm     = sVarNm if sVarNm is not None else sName;
         self.sType      = sType;
         self.sKind      = sKind;
-        self.aoSelected = [];       ##< Single value, any type.
+        self.sVarNm     = sVarNm;
+        self.aoSelected = [];       ##< User input from sVarNm. Single value, type according to sType.
+        self.sInvVarNm  = 'i' + sVarNm if sKind == self.ksKind_ElementOfOrNot else None;
+        self.fInverted  = False;    ##< User input from sInvVarNm. Inverts the operation (-> not an element of).
         self.aoPossible = [];       ##< type: list[FilterCriterionValueAndDescription]
         self.sTable     = sTable;
         self.sColumn    = sColumn;
@@ -1250,9 +1254,12 @@ class ModelFilterBase(ModelBase):
         else:
             assert False;
         if len(oCriterion.aoSelected) > 0:
-            oCriterion.sState     = FilterCriterion.ksState_Selected;
+            oCriterion.sState = FilterCriterion.ksState_Selected;
         else:
-            oCriterion.sState     = FilterCriterion.ksState_NotSelected;
+            oCriterion.sState = FilterCriterion.ksState_NotSelected;
+
+        if oCriterion.sKind == FilterCriterion.ksKind_ElementOfOrNot:
+            oCriterion.fInverted = oDisp.getBoolParam(oCriterion.sInvVarNm, fDefault = False);
 
         if oCriterion.oSub is not None:
             self._initFromParamsWorker(oDisp, oCriterion.oSub);

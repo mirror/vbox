@@ -719,7 +719,8 @@ class TestResultFilter(ModelFilterBase):
         self.aCriteria.append(oCrit);
         assert self.aCriteria[self.kiMemory] is oCrit;
 
-        oCrit = FilterCriterion('Misc', sVarNm = 'cf', sTable = 'TestBoxesWithStrings', sColumn = 'it_is_complicated');
+        oCrit = FilterCriterion('Misc', sVarNm = 'cf', sKind = FilterCriterion.ksKind_Special,
+                                sTable = 'TestBoxesWithStrings', sColumn = 'it_is_complicated');
         oCrit.aoPossible = [
             FilterCriterionValueAndDescription(self.kiMisc_NestedPaging,      "req nested paging"),
             FilterCriterionValueAndDescription(self.kiMisc_NoNestedPaging,    "w/o nested paging"),
@@ -774,9 +775,13 @@ class TestResultFilter(ModelFilterBase):
                         sQuery += '%s   AND %s\n' % (sExtraIndent, self.kdMiscConditions[iValue],);
             else:
                 if iCrit == self.kiMemory:
-                    sQuery += '%s   AND (%s.%s / 1024) IN (' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    sQuery += '%s   AND (%s.%s / 1024)' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
                 else:
-                    sQuery += '%s   AND %s.%s IN (' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                    sQuery += '%s   AND %s.%s' % (sExtraIndent, oCrit.sTable, oCrit.sColumn,);
+                if not oCrit.fInverted:
+                    sQuery += ' IN (';
+                else:
+                    sQuery += ' NOT IN (';
                 if oCrit.sType == FilterCriterion.ksType_String:
                     sQuery += ', '.join('\'%s\'' % (sValue,) for sValue in oCrit.aoSelected) + ')\n';
                 else:

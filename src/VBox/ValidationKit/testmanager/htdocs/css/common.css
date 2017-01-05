@@ -24,6 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+@charset "UTF-8";
 
 /*
  * Basic HTML elements.
@@ -331,6 +332,23 @@ body.tm-wide-side-menu #main {
     float:          right;
 }
 
+.tm-side-filter-union-input {
+    float:          right;
+}
+
+/* The following is for the element of / not element of checkbox, supplying text and hiding the actual box. */
+input.tm-side-filter-union-input {
+    display:        none;
+}
+input.tm-side-filter-union-input + label {
+    vertical-align: middle;
+}
+input.tm-side-filter-union-input:checked + label::after {
+    content:        '∉'; /* U+2209: not an element of. */
+}
+input.tm-side-filter-union-input + label::after {
+    content:        '∈'; /* U+2208: element of. */
+}
 
 /* Webkit: Pretty scroll bars on the menu body as well as inside filter criteria. */
 #side-menu ::-webkit-scrollbar {

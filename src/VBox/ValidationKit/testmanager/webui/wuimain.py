@@ -947,11 +947,17 @@ class WuiMain(WuiDispatcherBase):
                     sClass = 'sf-expandable';
                     sChar  = '&#9654;';
 
-                sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsibleDtDd(this);">%s'\
-                         u' %s</a></dt>\n' \
+                sHtml += u'  <dt class="%s"><a href="javascript:void(0)" onclick="toggleCollapsibleDtDd(this);">%s %s</a> ' \
+                       % (sClass, sChar, webutils.escapeElem(oCrit.sName),);
+                if oCrit.sInvVarNm is not None:
+                    sHtml += u'<input  id="sf-union-%s" class="tm-side-filter-union-input" ' \
+                             u'name="%s" value="1" type="checkbox"%s />' \
+                             u'<label for="sf-union-%s" class="tm-side-filter-union-input"/>' \
+                           % ( oCrit.sInvVarNm, oCrit.sInvVarNm, ' checked' if oCrit.fInverted else '', oCrit.sInvVarNm,);
+                sHtml += u'</dt>\n' \
                          u'  <dd class="%s">\n' \
                          u'   <ul>\n' \
-                         % (sClass, sChar, webutils.escapeElem(oCrit.sName), sClass);
+                         % (sClass, );
 
                 for oDesc in oCrit.aoPossible:
                     fChecked = oDesc.oValue in oCrit.aoSelected;
