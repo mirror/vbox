@@ -1455,24 +1455,26 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                     uPtrRet.pu32[0] = pCtx->eip + cbInstr;
                     uPtrRet.pu32[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
 
-                    /* Map the relevant chunk of the old stack. */
-                    rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        Log(("BranchCallGate: Old stack mapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
-                        return rcStrict;
-                    }
+                    if (cbWords) {
+                        /* Map the relevant chunk of the old stack. */
+                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                        if (rcStrict != VINF_SUCCESS)
+                        {
+                            Log(("BranchCallGate: Old stack mapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                            return rcStrict;
+                        }
 
-                    /* Copy the parameter (d)words. */
-                    for (int i = 0; i < cbWords; ++i)
-                        uPtrRet.pu32[2 + i] = uPtrParmWds.pu32[i];
+                        /* Copy the parameter (d)words. */
+                        for (int i = 0; i < cbWords; ++i)
+                            uPtrRet.pu32[2 + i] = uPtrParmWds.pu32[i];
 
-                    /* Unmap the old stack. */
-                    rcStrict = iemMemCommitAndUnmap(pVCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
-                        return rcStrict;
+                        /* Unmap the old stack. */
+                        rcStrict = iemMemCommitAndUnmap(pVCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
+                        if (rcStrict != VINF_SUCCESS)
+                        {
+                            Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                            return rcStrict;
+                        }
                     }
 
                     /* Push the old SS:rSP. */
@@ -1487,24 +1489,26 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                     uPtrRet.pu16[0] = pCtx->ip + cbInstr;
                     uPtrRet.pu16[1] = pCtx->cs.Sel;
 
-                    /* Map the relevant chunk of the old stack. */
-                    rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        Log(("BranchCallGate: Old stack mapping (16-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
-                        return rcStrict;
-                    }
+                    if (cbWords) {
+                        /* Map the relevant chunk of the old stack. */
+                        rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
+                        if (rcStrict != VINF_SUCCESS)
+                        {
+                            Log(("BranchCallGate: Old stack mapping (16-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                            return rcStrict;
+                        }
 
-                    /* Copy the parameter words. */
-                    for (int i = 0; i < cbWords; ++i)
-                        uPtrRet.pu16[2 + i] = uPtrParmWds.pu16[i];
+                        /* Copy the parameter words. */
+                        for (int i = 0; i < cbWords; ++i)
+                            uPtrRet.pu16[2 + i] = uPtrParmWds.pu16[i];
 
-                    /* Unmap the old stack. */
-                    rcStrict = iemMemCommitAndUnmap(pVCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
-                        return rcStrict;
+                        /* Unmap the old stack. */
+                        rcStrict = iemMemCommitAndUnmap(pVCpu, uPtrParmWds.pv, IEM_ACCESS_DATA_R);
+                        if (rcStrict != VINF_SUCCESS)
+                        {
+                            Log(("BranchCallGate: Old stack unmapping (32-bit) failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                            return rcStrict;
+                        }
                     }
 
                     /* Push the old SS:rSP. */
