@@ -2455,7 +2455,6 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.u32Limit       = cbLimitCs;
         pCtx->cs.u64Base        = u64Base;
         pVCpu->iem.s.enmCpuMode     = iemCalcCpuMode(pCtx);
-        pCtx->rsp               = uNewOuterRsp;
         pCtx->ss.Sel            = uNewOuterSs;
         pCtx->ss.ValidSel       = uNewOuterSs;
         pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
@@ -2465,6 +2464,10 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             pCtx->ss.u64Base    = 0;
         else
             pCtx->ss.u64Base    = X86DESC_BASE(&DescSs.Legacy);
+        if (!pCtx->ss.Attr.n.u1DefBig)
+            pCtx->sp            = (uint16_t)uNewOuterRsp;
+        else
+            pCtx->rsp           = uNewOuterRsp;
 
         pVCpu->iem.s.uCpl           = (uNewCs & X86_SEL_RPL);
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pCtx->ds);
@@ -2528,7 +2531,10 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* commit */
-        pCtx->rsp           = uNewRsp;
+        if (!pCtx->ss.Attr.n.u1DefBig)
+            pCtx->sp        = (uint16_t)uNewRsp;
+        else
+            pCtx->rsp       = uNewRsp;
         if (enmEffOpSize == IEMMODE_16BIT)
             pCtx->rip       = uNewRip & UINT16_MAX; /** @todo Testcase: When exactly does this occur? With call it happens prior to the limit check according to Intel... */
         else
@@ -3403,16 +3409,17 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
         pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pCtx);
-        if (!pCtx->ss.Attr.n.u1DefBig)
-            pCtx->sp        = (uint16_t)uNewESP;
-        else
-            pCtx->rsp       = uNewESP;
+
         pCtx->ss.Sel        = uNewSS;
         pCtx->ss.ValidSel   = uNewSS;
         pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->ss.Attr.u     = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
         pCtx->ss.u32Limit   = cbLimitSs;
         pCtx->ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
+        if (!pCtx->ss.Attr.n.u1DefBig)
+            pCtx->sp        = (uint16_t)uNewESP;
+        else
+            pCtx->rsp       = uNewESP;
 
         pVCpu->iem.s.uCpl       = uNewCs & X86_SEL_RPL;
         iemHlpAdjustSelectorForNewCpl(pVCpu, uNewCs & X86_SEL_RPL, &pCtx->ds);
@@ -3476,7 +3483,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
         pVCpu->iem.s.enmCpuMode = iemCalcCpuMode(pCtx);
-        pCtx->rsp           = uNewRsp;
+        if (!pCtx->ss.Attr.n.u1DefBig)
+            pCtx->sp        = (uint16_t)uNewRsp;
+        else
+            pCtx->rsp       = uNewRsp;
         /* Done! */
     }
 
