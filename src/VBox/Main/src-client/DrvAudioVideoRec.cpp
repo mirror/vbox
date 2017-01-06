@@ -54,8 +54,6 @@ typedef struct DRVAUDIOVIDEOREC
     PPDMDRVINS           pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO        IHostAudio;
-    /** Pointer to the VRDP's console object. */
-    ConsoleVRDPServer   *pConsoleVRDPServer;
     /** Pointer to the DrvAudio port interface that is above us. */
     PPDMIAUDIOCONNECTOR  pDrvAudio;
 } DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
@@ -218,11 +216,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 
 static int avRecDestroyStreamIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
 {
-    RT_NOREF(pStream);
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
-
-    if (pThis->pConsoleVRDPServer)
-        pThis->pConsoleVRDPServer->SendAudioInputEnd(NULL);
+    RT_NOREF(pInterface, pStream);
 
     return VINF_SUCCESS;
 }
@@ -421,20 +415,10 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvAudioVideoRec);
 
     /*
-     * Get the ConsoleVRDPServer object pointer.
-     */
-    void *pvUser;
-    int rc = CFGMR3QueryPtr(pCfg, "ObjectVRDPServer", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
-    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc), rc);
-
-    /* CFGM tree saves the pointer to ConsoleVRDPServer in the Object node of AudioVideoRec. */
-    pThis->pConsoleVRDPServer = (ConsoleVRDPServer *)pvUser;
-
-    /*
      * Get the AudioVideoRec object pointer.
      */
-    pvUser = NULL;
-    rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
+    void *pvUser = NULL;
+    int rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
 
     pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;
