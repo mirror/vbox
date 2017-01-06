@@ -690,9 +690,16 @@ static void scmSvnTryResolveFunctions(void)
 # else
             { "../lib/lib", ".so" },
             { "../lib/lib", "-1.so" },
+# ifdef RT_ARCH_X86
+            { "../lib/i386-linux-gnu/lib", ".so" },
+            { "../lib/i386-linux-gnu/lib", "-1.so" },
+# else
+            { "../lib/x86_64-linux-gnu/lib", ".so" },
+            { "../lib/x86_64-linux-gnu/lib", "-1.so" },
+# endif
 # endif
         };
-        for (unsigned iVar = 0; RT_ELEMENTS(s_aVariations); iVar++)
+        for (unsigned iVar = 0; iVar < RT_ELEMENTS(s_aVariations); iVar++)
         {
             /*
              * Try load the svn_client library ...
@@ -704,18 +711,26 @@ static void scmSvnTryResolveFunctions(void)
             unsigned iLib;
             for (iLib = 0; iLib < RT_ELEMENTS(s_apszLibraries) && RT_SUCCESS(rc); iLib++)
             {
-                *pszEndPath = '\0';
-                rc = RTPathAppend(szPath, sizeof(szPath), s_aVariations[iVar].pszPrefix);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrCat(szPath, sizeof(szPath), s_apszLibraries[iLib]);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrCat(szPath, sizeof(szPath), s_aVariations[iVar].pszSuffix);
-                if (RT_SUCCESS(rc))
+                static const char * const s_apszSuffixes[] = { "", ".0", ".1" };
+                for (unsigned iSuff = 0; iSuff < RT_ELEMENTS(s_apszSuffixes); iSuff++)
                 {
+                    *pszEndPath = '\0';
+                    rc = RTPathAppend(szPath, sizeof(szPath), s_aVariations[iVar].pszPrefix);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrCat(szPath, sizeof(szPath), s_apszLibraries[iLib]);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrCat(szPath, sizeof(szPath), s_aVariations[iVar].pszSuffix);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrCat(szPath, sizeof(szPath), s_apszSuffixes[iSuff]);
+                    if (RT_SUCCESS(rc))
+                    {
 # ifdef RT_OS_WINDOWS
-                    RTPathChangeToDosSlashes(pszEndPath, false);
+                        RTPathChangeToDosSlashes(pszEndPath, false);
 # endif
-                    rc = RTLdrLoadEx(szPath, &ahMods[iLib], RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
+                        rc = RTLdrLoadEx(szPath, &ahMods[iLib], RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
+                        if (RT_SUCCESS(rc))
+                            break;
+                    }
                 }
             }
             if (iLib == RT_ELEMENTS(s_apszLibraries) && RT_SUCCESS(rc))
