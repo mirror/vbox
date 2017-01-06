@@ -3457,7 +3457,7 @@ l_skipped:
  *  4)  Create the VirtualBox machine with the modfified machine config.
  *
  * @param   vsdescThis
- * @param   pReturnNewMachine 
+ * @param   pReturnNewMachine
  * @param   stack
  */
 void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,

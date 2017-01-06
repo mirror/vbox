@@ -164,4 +164,3 @@ ULONG VirtualBoxClient::InternalRelease()
 }
 #endif
 
-

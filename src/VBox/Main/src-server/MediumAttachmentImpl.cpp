@@ -95,7 +95,7 @@ void MediumAttachment::FinalRelease()
  * @param aPort             Port number.
  * @param aDevice           Device number on the port.
  * @param aType             Device type.
- * @param aImplicit         
+ * @param aImplicit
  * @param aPassthrough      Whether accesses are directly passed to the host drive.
  * @param aTempEject        Whether guest-triggered eject results in unmounting the medium.
  * @param aNonRotational    Whether this medium is non-rotational (aka SSD).

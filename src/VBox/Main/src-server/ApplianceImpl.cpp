@@ -391,7 +391,7 @@ HRESULT VirtualBox::createAppliance(ComPtr<IAppliance> &aAppliance)
 
 /**
  * Appliance COM initializer.
- * @param   aVirtualBox     The VirtualBox object. 
+ * @param   aVirtualBox     The VirtualBox object.
  * @return
  */
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
