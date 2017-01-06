@@ -62,16 +62,33 @@ enum
 static uint32_t g_enmState = VIDREC_UNINITIALIZED;
 
 /**
+ * Structure for keeping specific video recording codec data.
+ */
+typedef struct VIDEORECCODEC
+{
+    union
+    {
+        struct
+        {
+            /** VPX codec context. */
+            vpx_codec_ctx_t     CodecCtx;
+            /** VPX codec configuration. */
+            vpx_codec_enc_cfg_t Config;
+            /** VPX image context. */
+            vpx_image_t         RawImage;
+        } VPX;
+    };
+} VIDEORECCODEC, *PVIDEORECCODEC;
+
+/**
  * Strucutre for maintaining a video recording stream.
  */
 typedef struct VIDEORECSTREAM
 {
     /** Container context. */
     WebMWriter         *pEBML;
-    /** VPX codec context. */
-    vpx_codec_ctx_t     VpxCodec;
-    /** VPX configuration. */
-    vpx_codec_enc_cfg_t VpxConfig;
+    /** Codec data. */
+    VIDEORECCODEC       Codec;
     /** Target X resolution (in pixels). */
     uint32_t            uTargetWidth;
     /** Target Y resolution (in pixels). */
@@ -86,8 +103,6 @@ typedef struct VIDEORECSTREAM
     uint8_t            *pu8RgbBuf;
     /** YUV buffer the encode function fetches the frame from. */
     uint8_t            *pu8YuvBuf;
-    /** VPX image context. */
-    vpx_image_t         VpxRawImage;
     /** Whether video recording is enabled or not. */
     bool                fEnabled;
     /** Whether the RGB buffer is filled or not. */
@@ -564,8 +579,8 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 
             pStream->pEBML->close();
 
-            vpx_img_free(&pStream->VpxRawImage);
-            vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->VpxCodec);
+            vpx_img_free(&pStream->Codec.VPX.RawImage);
+            vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Codec.VPX.CodecCtx);
             Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
             if (pStream->pu8RgbBuf)
@@ -627,7 +642,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         return rc;
     }
 
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->VpxConfig, 0);
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to configure codec: %s\n", vpx_codec_err_to_string(rcv)));
@@ -667,37 +682,37 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     } while(pos != com::Utf8Str::npos);
 
     /* target bitrate in kilobits per second */
-    pStream->VpxConfig.rc_target_bitrate = uRate;
+    pStream->Codec.VPX.Config.rc_target_bitrate = uRate;
     /* frame width */
-    pStream->VpxConfig.g_w = uWidth;
+    pStream->Codec.VPX.Config.g_w = uWidth;
     /* frame height */
-    pStream->VpxConfig.g_h = uHeight;
+    pStream->Codec.VPX.Config.g_h = uHeight;
     /* 1ms per frame */
-    pStream->VpxConfig.g_timebase.num = 1;
-    pStream->VpxConfig.g_timebase.den = 1000;
+    pStream->Codec.VPX.Config.g_timebase.num = 1;
+    pStream->Codec.VPX.Config.g_timebase.den = 1000;
     /* disable multithreading */
-    pStream->VpxConfig.g_threads = 0;
+    pStream->Codec.VPX.Config.g_threads = 0;
 
     pStream->uDelay = 1000 / uFps;
 
     struct vpx_rational arg_framerate = { (int)uFps, 1 };
-    rc = pStream->pEBML->writeHeader(&pStream->VpxConfig, &arg_framerate);
+    rc = pStream->pEBML->writeHeader(&pStream->Codec.VPX.Config, &arg_framerate);
     AssertRCReturn(rc, rc);
 
     /* Initialize codec */
-    rcv = vpx_codec_enc_init(&pStream->VpxCodec, DEFAULTCODEC, &pStream->VpxConfig, 0);
+    rcv = vpx_codec_enc_init(&pStream->Codec.VPX.CodecCtx, DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to initialize VP8 encoder %s", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (!vpx_img_alloc(&pStream->VpxRawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
+    if (!vpx_img_alloc(&pStream->Codec.VPX.RawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
     {
         LogFlow(("Failed to allocate image %dx%d", uWidth, uHeight));
         return VERR_NO_MEMORY;
     }
-    pStream->pu8YuvBuf = pStream->VpxRawImage.planes[0];
+    pStream->pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
 
     pCtx->fEnabled = true;
     pStream->fEnabled = true;
@@ -792,8 +807,8 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
 {
     /* presentation time stamp */
     vpx_codec_pts_t pts = pStream->u64TimeStamp;
-    vpx_codec_err_t rcv = vpx_codec_encode(&pStream->VpxCodec,
-                                           &pStream->VpxRawImage,
+    vpx_codec_err_t rcv = vpx_codec_encode(&pStream->Codec.VPX.CodecCtx,
+                                           &pStream->Codec.VPX.RawImage,
                                            pts /* time stamp */,
                                            pStream->uDelay  /* how long to show this frame */,
                                            0   /* flags */,
@@ -808,13 +823,13 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     int rc = VERR_NO_DATA;
     for (;;)
     {
-        const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pStream->VpxCodec, &iter);
+        const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pStream->Codec.VPX.CodecCtx, &iter);
         if (!pkt)
             break;
         switch (pkt->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
-                rc = pStream->pEBML->writeBlock(&pStream->VpxConfig, pkt);
+                rc = pStream->pEBML->writeBlock(&pStream->Codec.VPX.Config, pkt);
                 break;
             default:
                 LogFlow(("Unexpected CODEC Packet.\n"));
