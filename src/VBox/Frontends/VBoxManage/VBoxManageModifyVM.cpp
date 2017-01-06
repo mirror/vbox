@@ -203,17 +203,17 @@ enum
     MODIFYVM_USBCARDREADER,
 #endif
 #ifdef VBOX_WITH_VPX
-    MODIFYVM_VCP,
-    MODIFYVM_VCP_SCREENS,
-    MODIFYVM_VCP_FILENAME,
-    MODIFYVM_VCP_WIDTH,
-    MODIFYVM_VCP_HEIGHT,
-    MODIFYVM_VCP_RES,
-    MODIFYVM_VCP_RATE,
-    MODIFYVM_VCP_FPS,
-    MODIFYVM_VCP_MAXTIME,
-    MODIFYVM_VCP_MAXSIZE,
-    MODIFYVM_VCP_OPTIONS,
+    MODIFYVM_VIDEOCAP,
+    MODIFYVM_VIDEOCAP_SCREENS,
+    MODIFYVM_VIDEOCAP_FILENAME,
+    MODIFYVM_VIDEOCAP_WIDTH,
+    MODIFYVM_VIDEOCAP_HEIGHT,
+    MODIFYVM_VIDEOCAP_RES,
+    MODIFYVM_VIDEOCAP_RATE,
+    MODIFYVM_VIDEOCAP_FPS,
+    MODIFYVM_VIDEOCAP_MAXTIME,
+    MODIFYVM_VIDEOCAP_MAXSIZE,
+    MODIFYVM_VIDEOCAP_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
     MODIFYVM_DEFAULTFRONTEND
@@ -372,25 +372,25 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VPX
-    { "--videocap",                 MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vcpenabled",               MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--videocapscreens",          MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING },
-    { "--vcpscreens",               MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--videocapfile",             MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
-    { "--vcpfile",                  MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--videocapres",              MODIFYVM_VCP_RES,                   RTGETOPT_REQ_STRING },
-    { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 }, /* deprecated */
-    { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 }, /* deprecated */
-    { "--videocaprate",             MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 },
-    { "--vcprate",                  MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 }, /* deprecated */
-    { "--videocapfps",              MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 },
-    { "--vcpfps",                   MODIFYVM_VCP_FPS,                   RTGETOPT_REQ_UINT32 }, /* deprecated */
-    { "--videocapmaxtime",          MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  },
-    { "--vcpmaxtime",               MODIFYVM_VCP_MAXTIME,               RTGETOPT_REQ_INT32  }, /* deprecated */
-    { "--videocapmaxsize",          MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  },
-    { "--vcpmaxsize",               MODIFYVM_VCP_MAXSIZE,               RTGETOPT_REQ_INT32  }, /* deprecated */
-    { "--videocapopts",             MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING },
-    { "--vcpoptions",               MODIFYVM_VCP_OPTIONS,               RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--videocap",                 MODIFYVM_VIDEOCAP,                  RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vcpenabled",               MODIFYVM_VIDEOCAP,                  RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--videocapscreens",          MODIFYVM_VIDEOCAP_SCREENS,          RTGETOPT_REQ_STRING },
+    { "--vcpscreens",               MODIFYVM_VIDEOCAP_SCREENS,          RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--videocapfile",             MODIFYVM_VIDEOCAP_FILENAME,         RTGETOPT_REQ_STRING },
+    { "--vcpfile",                  MODIFYVM_VIDEOCAP_FILENAME,         RTGETOPT_REQ_STRING }, /* deprecated */
+    { "--videocapres",              MODIFYVM_VIDEOCAP_RES,              RTGETOPT_REQ_STRING },
+    { "--vcpwidth",                 MODIFYVM_VIDEOCAP_WIDTH,            RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--vcpheight",                MODIFYVM_VIDEOCAP_HEIGHT,           RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocaprate",             MODIFYVM_VIDEOCAP_RATE,             RTGETOPT_REQ_UINT32 },
+    { "--vcprate",                  MODIFYVM_VIDEOCAP_RATE,             RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocapfps",              MODIFYVM_VIDEOCAP_FPS,              RTGETOPT_REQ_UINT32 },
+    { "--vcpfps",                   MODIFYVM_VIDEOCAP_FPS,              RTGETOPT_REQ_UINT32 }, /* deprecated */
+    { "--videocapmaxtime",          MODIFYVM_VIDEOCAP_MAXTIME,          RTGETOPT_REQ_INT32  },
+    { "--vcpmaxtime",               MODIFYVM_VIDEOCAP_MAXTIME,          RTGETOPT_REQ_INT32  }, /* deprecated */
+    { "--videocapmaxsize",          MODIFYVM_VIDEOCAP_MAXSIZE,          RTGETOPT_REQ_INT32  },
+    { "--vcpmaxsize",               MODIFYVM_VIDEOCAP_MAXSIZE,          RTGETOPT_REQ_INT32  }, /* deprecated */
+    { "--videocapopts",             MODIFYVM_VIDEOCAP_OPTIONS,          RTGETOPT_REQ_STRING },
+    { "--vcpoptions",               MODIFYVM_VIDEOCAP_OPTIONS,          RTGETOPT_REQ_STRING }, /* deprecated */
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2849,12 +2849,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 #ifdef VBOX_WITH_VPX
-            case MODIFYVM_VCP:
+            case MODIFYVM_VIDEOCAP:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureEnabled)(ValueUnion.f));
                 break;
             }
-            case MODIFYVM_VCP_SCREENS:
+            case MODIFYVM_VIDEOCAP_SCREENS:
             {
                 ULONG cMonitors = 64;
                 CHECK_ERROR(sessionMachine, COMGETTER(MonitorCount)(&cMonitors));
@@ -2868,7 +2868,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(screens)));
                 break;
             }
-            case MODIFYVM_VCP_FILENAME:
+            case MODIFYVM_VIDEOCAP_FILENAME:
             {
                 Bstr bstr;
                 /* empty string will fall through, leaving bstr empty */
@@ -2887,17 +2887,17 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureFile)(bstr.raw()));
                 break;
             }
-            case MODIFYVM_VCP_WIDTH:
+            case MODIFYVM_VIDEOCAP_WIDTH:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureWidth)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_HEIGHT:
+            case MODIFYVM_VIDEOCAP_HEIGHT:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_RES:
+            case MODIFYVM_VIDEOCAP_RES:
             {
                 uint32_t uWidth = 0;
                 char *pszNext;
@@ -2920,27 +2920,27 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureHeight)(uHeight));
                 break;
             }
-            case MODIFYVM_VCP_RATE:
+            case MODIFYVM_VIDEOCAP_RATE:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureRate)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_FPS:
+            case MODIFYVM_VIDEOCAP_FPS:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureFPS)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_MAXTIME:
+            case MODIFYVM_VIDEOCAP_MAXTIME:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureMaxTime)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_MAXSIZE:
+            case MODIFYVM_VIDEOCAP_MAXSIZE:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureMaxFileSize)(ValueUnion.u32));
                 break;
             }
-            case MODIFYVM_VCP_OPTIONS:
+            case MODIFYVM_VIDEOCAP_OPTIONS:
             {
                 Bstr bstr(ValueUnion.psz);
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureOptions)(bstr.raw()));
