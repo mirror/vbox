@@ -2933,6 +2933,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 default: AssertFailedBreak();
             }
 
+            /** @todo Implement a prioritizing feature here, e.g. which driver to insert in which order? */
+
 #ifdef VBOX_WITH_VRDE_AUDIO
             /*
              * The VRDE audio backend driver.
