@@ -2292,7 +2292,7 @@ int Display::i_VideoCaptureStart()
     if (VideoRecIsEnabled(mpVideoRecCtx))
         return VINF_SUCCESS;
 
-    int rc = VideoRecContextCreate(&mpVideoRecCtx, mcMonitors);
+    int rc = VideoRecContextCreate(mcMonitors, &mpVideoRecCtx);
     if (RT_FAILURE(rc))
     {
         LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
@@ -2354,10 +2354,10 @@ int Display::i_VideoCaptureStart()
         }
         if (RT_SUCCESS(rc))
         {
-            rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
-                                  pszName, ulWidth, ulHeight,
-                                  ulRate, ulFPS, ulMaxTime,
-                                  ulMaxSize, com::Utf8Str(strOptions).c_str());
+            rc = VideoRecStreamInit(mpVideoRecCtx, uScreen,
+                                    pszName, ulWidth, ulHeight,
+                                    ulRate, ulFPS, ulMaxTime,
+                                    ulMaxSize, com::Utf8Str(strOptions).c_str());
             if (rc == VERR_ALREADY_EXISTS)
             {
                 RTStrFree(pszName);
@@ -2374,10 +2374,10 @@ int Display::i_VideoCaptureStart()
                                       time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
                                       pszSuff);
                 if (RT_SUCCESS(rc))
-                    rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
-                                          pszName, ulWidth, ulHeight, ulRate,
-                                          ulFPS, ulMaxTime,
-                                          ulMaxSize, com::Utf8Str(strOptions).c_str());
+                    rc = VideoRecStreamInit(mpVideoRecCtx, uScreen,
+                                            pszName, ulWidth, ulHeight, ulRate,
+                                            ulFPS, ulMaxTime,
+                                            ulMaxSize, com::Utf8Str(strOptions).c_str());
             }
         }
 
@@ -2408,7 +2408,7 @@ void Display::i_VideoCaptureStop()
 #ifdef VBOX_WITH_VPX
     if (VideoRecIsEnabled(mpVideoRecCtx))
         LogRel(("Display::VideoCaptureStop: WebM/VP8 video recording stopped\n"));
-    VideoRecContextClose(mpVideoRecCtx);
+    VideoRecContextDestroy(mpVideoRecCtx);
     mpVideoRecCtx = NULL;
 
     unsigned uScreenId;
@@ -4393,6 +4393,11 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     BOOL fEnabled = false;
     HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+
+#ifdef DEBUG_andy
+    fEnabled = true;
+#endif
+
     if (fEnabled)
     {
         rc = pDisplay->i_VideoCaptureStart();
