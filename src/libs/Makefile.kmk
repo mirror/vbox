@@ -84,6 +84,14 @@ if defined(VBOX_WITH_MAIN) \
    include $(PATH_SUB_CURRENT)/libvpx/Makefile.kmk
   endif
  endif
+
+ # Opus for audio encoding video capture
+ if defined(VBOX_WITH_LIBOPUS) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK) \
+   && ("$(SDK_VBOX_OPUS_INCS)" == "$(SDK_VBOX_OPUS_DEFAULT_INCS)")
+  if1of ($(KBUILD_TARGET), linux)
+   include $(PATH_SUB_CURRENT)/libopus/Makefile.kmk
+  endif
+ endif
 endif
 
 if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)

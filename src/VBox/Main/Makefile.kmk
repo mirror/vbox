@@ -705,6 +705,13 @@ VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 ifdef VBOX_WITH_VPX
   VBoxC_SDKS += VBOX_VPX
 endif
+ifdef VBOX_WITH_AUDIO_VIDEOREC
+  ifdef VBOX_WITH_LIBOPUS
+   VBoxC_SDKS += VBOX_OPUS
+  else
+   $(error "VBox: No alternative for Opus when using audio support for video capturing yet")
+  endif
+endif
 ifdef VBOX_WITH_OPENSSL_FIPS
   VBoxC_SDKS += VBOX_OPENSSL2
 endif
