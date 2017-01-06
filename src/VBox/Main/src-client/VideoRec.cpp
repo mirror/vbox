@@ -120,14 +120,12 @@ typedef struct VIDEORECCONTEXT
     bool                fEnabled;
     /** Worker thread. */
     RTTHREAD            Thread;
-    /** Number of stream contexts */
-    uint32_t            cScreens;
     /** Maximal time stamp. */
     uint64_t            u64MaxTimeStamp;
     /** Maximal file size in MB. */
     uint32_t            uMaxFileSize;
     /** Vector of current video recording stream contexts. */
-    VideoRecStreams     lstStreams;
+    VideoRecStreams     vecStreams;
 } VIDEORECCONTEXT, *PVIDEORECCONTEXT;
 
 
@@ -411,7 +409,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         if (ASMAtomicReadU32(&g_enmState) == VIDREC_TERMINATING)
             break;
 
-        for (VideoRecStreams::iterator it = pCtx->lstStreams.begin(); it != pCtx->lstStreams.end(); it++)
+        for (VideoRecStreams::iterator it = pCtx->vecStreams.begin(); it != pCtx->vecStreams.end(); it++)
         {
             PVIDEORECSTREAM pStream = (*it);
 
@@ -472,7 +470,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
         try
         {
-            pCtx->lstStreams.push_back(pStream);
+            pCtx->vecStreams.push_back(pStream);
 
             pStream->pEBML = new WebMWriter();
         }
@@ -485,8 +483,6 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
     if (RT_SUCCESS(rc))
     {
-        pCtx->cScreens = cScreens;
-
         rc = RTSemEventCreate(&pCtx->WaitEvent);
         AssertRCReturn(rc, rc);
 
@@ -505,8 +501,8 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
     else
     {
         /* Roll back allocations on error. */
-        VideoRecStreams::iterator it = pCtx->lstStreams.begin();
-        while (it != pCtx->lstStreams.end())
+        VideoRecStreams::iterator it = pCtx->vecStreams.begin();
+        while (it != pCtx->vecStreams.end())
         {
             PVIDEORECSTREAM pStream = (*it);
 
@@ -516,10 +512,10 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
             RTMemFree(pStream);
             pStream = NULL;
 
-            it = pCtx->lstStreams.erase(it);
+            it = pCtx->vecStreams.erase(it);
         }
 
-        Assert(pCtx->lstStreams.empty());
+        Assert(pCtx->vecStreams.empty());
     }
 
     return rc;
@@ -556,7 +552,7 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     RTSemEventDestroy(pCtx->WaitEvent);
     RTSemEventDestroy(pCtx->TermEvent);
 
-    for (VideoRecStreams::iterator it = pCtx->lstStreams.begin(); it != pCtx->lstStreams.end(); it++)
+    for (VideoRecStreams::iterator it = pCtx->vecStreams.begin(); it != pCtx->vecStreams.end(); it++)
     {
         PVIDEORECSTREAM pStream = (*it);
 
@@ -606,13 +602,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps,
                        uint32_t uMaxTime, uint32_t uMaxFileSize, const char *pszOptions)
 {
-    AssertPtrReturn(pCtx,                  VERR_INVALID_PARAMETER);
-    AssertReturn(uScreen < pCtx->cScreens, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx,                           VERR_INVALID_PARAMETER);
+    AssertReturn(uScreen < pCtx->vecStreams.size(), VERR_INVALID_PARAMETER);
 
     pCtx->u64MaxTimeStamp = (uMaxTime > 0 ? RTTimeProgramMilliTS() + uMaxTime * 1000 : 0);
     pCtx->uMaxFileSize = uMaxFileSize;
 
-    PVIDEORECSTREAM pStream = pCtx->lstStreams.at(uScreen);
+    PVIDEORECSTREAM pStream = pCtx->vecStreams.at(uScreen);
 
     pStream->uTargetWidth  = uWidth;
     pStream->uTargetHeight = uHeight;
@@ -737,7 +733,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSt
     if (enmState != VIDREC_IDLE)
         return false;
 
-    PVIDEORECSTREAM pStream = pCtx->lstStreams.at(uScreen);
+    PVIDEORECSTREAM pStream = pCtx->vecStreams.at(uScreen);
     if (!pStream->fEnabled)
         return false;
 
@@ -762,7 +758,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSt
 
 bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp)
 {
-    PVIDEORECSTREAM pStream = pCtx->lstStreams.at(uScreen);
+    PVIDEORECSTREAM pStream = pCtx->vecStreams.at(uScreen);
     if(!pStream->fEnabled)
         return false;
 
@@ -901,12 +897,12 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
     int rc = VINF_SUCCESS;
     do
     {
-        AssertPtrBreakStmt(pu8BufAddr, rc = VERR_INVALID_PARAMETER);
-        AssertBreakStmt(uSourceWidth, rc = VERR_INVALID_PARAMETER);
-        AssertBreakStmt(uSourceHeight, rc = VERR_INVALID_PARAMETER);
-        AssertBreakStmt(uScreen < pCtx->cScreens, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pu8BufAddr,                     rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uSourceWidth,                      rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uSourceHeight,                     rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uScreen < pCtx->vecStreams.size(), rc = VERR_INVALID_PARAMETER);
 
-        PVIDEORECSTREAM pStream = pCtx->lstStreams.at(uScreen);
+        PVIDEORECSTREAM pStream = pCtx->vecStreams.at(uScreen);
         if (!pStream->fEnabled)
         {
             rc = VINF_TRY_AGAIN; /* not (yet) enabled */
