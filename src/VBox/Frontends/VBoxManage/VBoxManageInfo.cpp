@@ -2542,8 +2542,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(File.asOutParam()), rc);
         if (details == VMINFO_MACHINEREADABLE)
         {
-            RTPrintf("vcpenabled=\"%s\"\n", bActive ? "on" : "off");
-            RTPrintf("vcpscreens=");
+            RTPrintf("videocap=\"%s\"\n", bActive ? "on" : "off");
+            RTPrintf("videocapscreens=");
             bool fComma = false;
             for (unsigned i = 0; i < screens.size(); i++)
                 if (screens[i])
@@ -2552,11 +2552,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     fComma = true;
                 }
             RTPrintf("\n");
-            RTPrintf("vcpfile=\"%ls\"\n", File.raw());
-            RTPrintf("vcpwidth=%u\n", (unsigned)Width);
-            RTPrintf("vcpheight=%u\n", (unsigned)Height);
-            RTPrintf("vcprate=%u\n", (unsigned)Rate);
-            RTPrintf("vcpfps=%u\n", (unsigned)Fps);
+            RTPrintf("videocapfile=\"%ls\"\n", File.raw());
+            RTPrintf("videocapres=%ux%u\n", (unsigned)Width, (unsigned)Height);
+            RTPrintf("videocaprate=%u\n", (unsigned)Rate);
+            RTPrintf("videocapfps=%u\n", (unsigned)Fps);
         }
         else
         {
