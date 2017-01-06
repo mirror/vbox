@@ -4519,6 +4519,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
              u8Vector, uNewEip, cbLimitCS, NewCS));
         return iemRaiseGeneralProtectionFault(pVCpu, 0);
     }
+    Log7(("iemRaiseXcptOrIntInProtMode: new EIP=%#x CS=%#x\n", uNewEip, NewCS));
 
     /* Calc the flag image to push. */
     uint32_t        fEfl    = IEMMISC_GET_EFL(pVCpu, pCtx);
@@ -4552,6 +4553,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
         rcStrict = iemMiscValidateNewSS(pVCpu, pCtx, NewSS, uNewCpl, &DescSS);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+        Log7(("iemRaiseXcptOrIntInProtMode: New SS=%#x ESP=%#x (from TSS); current SS=%#x ESP=%#x\n", NewSS, uNewEsp, pCtx->ss.Sel, pCtx->esp));
 
         /* Check that there is sufficient space for the stack frame. */
         uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
@@ -4604,6 +4606,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
             uStackFrame.pu32[2] = fEfl;
             uStackFrame.pu32[3] = pCtx->esp;
             uStackFrame.pu32[4] = pCtx->ss.Sel;
+            Log7(("iemRaiseXcptOrIntInProtMode: 32-bit push SS=%#x ESP=%#x\n", pCtx->ss.Sel, pCtx->esp));
             if (fEfl & X86_EFL_VM)
             {
                 uStackFrame.pu32[1] = pCtx->cs.Sel;
@@ -4622,6 +4625,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
             uStackFrame.pu16[2] = fEfl;
             uStackFrame.pu16[3] = pCtx->sp;
             uStackFrame.pu16[4] = pCtx->ss.Sel;
+            Log7(("iemRaiseXcptOrIntInProtMode: 16-bit push SS=%#x SP=%#x\n", pCtx->ss.Sel, pCtx->sp));
             if (fEfl & X86_EFL_VM)
             {
                 uStackFrame.pu16[1] = pCtx->cs.Sel;
