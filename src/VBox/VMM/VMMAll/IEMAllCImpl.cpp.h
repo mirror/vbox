@@ -1386,6 +1386,10 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             /** @todo: According to Intel, new stack is checked for enough space first,
              *         then switched. According to AMD, the stack is switched first and
              *         then pushes might fault!
+             *         NB: OS/2 Warp 3/4 actively relies on the fact that possible
+             *         incoming stack #PF happens before actual stack switch. AMD is
+             *         either lying or implicitly assumes that new state is committed
+             *         only if and when an instruction doesn't fault.
              */
 
             /** @todo: According to AMD, CS is loaded first, then SS.
@@ -1405,9 +1409,25 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 
             /* Remember the old SS:rSP and their linear address. */
             uOldSS  = pCtx->ss.Sel;
-            uOldRsp = pCtx->rsp;
+            uOldRsp = pCtx->ss.Attr.n.u1DefBig ? pCtx->rsp : pCtx->sp;
 
-            GCPtrParmWds = pCtx->ss.u64Base + pCtx->rsp;
+            GCPtrParmWds = pCtx->ss.u64Base + uOldRsp;
+
+            /* Probe if the write to the new stack will succeed. May #SS(NewSS) or #PF. */
+            void     *pvNewFrame;
+            RTGCPTR  GCPtrNewStack = X86DESC_BASE(&DescSS.Legacy) + uNewRsp - cbNewStack;
+            rcStrict = iemMemMap(pVCpu, &pvNewFrame, cbNewStack, UINT8_MAX, GCPtrNewStack, IEM_ACCESS_SYS_RW);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: Incoming stack (%04x:%08RX64) not accessible, rc=%Rrc\n", uNewSS, uNewRsp, VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
+            rcStrict = iemMemCommitAndUnmap(pVCpu, pvNewFrame, IEM_ACCESS_SYS_RW);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                Log(("BranchCallGate: New stack probe unmapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+                return rcStrict;
+            }
 
             /* Commit new SS:rSP. */
             pCtx->ss.Sel      = uNewSS;
@@ -1417,18 +1437,15 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             pCtx->ss.u64Base  = X86DESC_BASE(&DescSS.Legacy);
             pCtx->ss.fFlags   = CPUMSELREG_FLAGS_VALID;
             pCtx->rsp         = uNewRsp;
-            pVCpu->iem.s.uCpl     = uNewCSDpl;
+            pVCpu->iem.s.uCpl = uNewCSDpl;
             Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
 
-            /* Check new stack - may #SS(NewSS). */
+            /* At this point the stack access must not fail because new state was already committed. */
             rcStrict = iemMemStackPushBeginSpecial(pVCpu, cbNewStack,
                                                    &uPtrRet.pv, &uNewRsp);
-            if (rcStrict != VINF_SUCCESS)
-            {
-                Log(("BranchCallGate: New stack mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
-                return rcStrict;
-            }
+            AssertMsgReturn(rcStrict == VINF_SUCCESS, ("BranchCallGate: New stack mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)),
+                            VERR_IPE_UNEXPECTED_STATUS);
 
             if (!IEM_IS_LONG_MODE(pVCpu))
             {
