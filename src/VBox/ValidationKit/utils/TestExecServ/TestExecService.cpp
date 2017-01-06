@@ -3351,7 +3351,7 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
             case 't':
             {
                 PCTXSTRANSPORT pTransport = NULL;
-                for (size_t i = 0; RT_ELEMENTS(g_apTransports); i++)
+                for (size_t i = 0; i < RT_ELEMENTS(g_apTransports); i++)
                     if (!strcmp(g_apTransports[i]->szName, Val.psz))
                     {
                         pTransport = g_apTransports[i];

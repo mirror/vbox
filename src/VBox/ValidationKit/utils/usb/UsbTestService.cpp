@@ -1538,7 +1538,7 @@ static RTEXITCODE utsParseArgv(int argc, char **argv, bool *pfExit)
             case 't':
             {
                 PCUTSTRANSPORT pTransport = NULL;
-                for (size_t i = 0; RT_ELEMENTS(g_apTransports); i++)
+                for (size_t i = 0; i < RT_ELEMENTS(g_apTransports); i++)
                     if (!strcmp(g_apTransports[i]->szName, Val.psz))
                     {
                         pTransport = g_apTransports[i];
