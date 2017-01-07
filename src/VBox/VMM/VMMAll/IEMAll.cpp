@@ -11205,7 +11205,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     iemFpuUpdateFSWWithMemOpThenPop(pVCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
 /** Updates the FSW, FOP, FPUIP, and FPUCS, and then pops the stack twice. */
 #define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW) \
-    iemFpuUpdateFSWThenPop(pVCpu, a_u16FSW)
+    iemFpuUpdateFSWThenPopPop(pVCpu, a_u16FSW)
 
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
