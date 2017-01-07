@@ -533,6 +533,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
 IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    VBOXSTRICTRC rcStrict;
 
     /*
      * If we're in V8086 mode some care is required (which is why we're in
@@ -548,30 +549,32 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
             return iemRaiseGeneralProtectionFault0(pVCpu);
         fEfl &= ~X86_EFL_IF;          /* (RF and VM are out of range) */
         fEfl |= (fEfl & X86_EFL_VIF) >> (19 - 9);
-        return iemMemStackPushU16(pVCpu, (uint16_t)fEfl);
+        rcStrict = iemMemStackPushU16(pVCpu, (uint16_t)fEfl);
     }
-
-    /*
-     * Ok, clear RF and VM, adjust for ancient CPUs, and push the flags.
-     */
-    fEfl &= ~(X86_EFL_RF | X86_EFL_VM);
-
-    VBOXSTRICTRC rcStrict;
-    switch (enmEffOpSize)
+    else
     {
-        case IEMMODE_16BIT:
-            AssertCompile(IEMTARGETCPU_8086 <= IEMTARGETCPU_186 && IEMTARGETCPU_V20 <= IEMTARGETCPU_186 && IEMTARGETCPU_286 > IEMTARGETCPU_186);
-            if (IEM_GET_TARGET_CPU(pVCpu) <= IEMTARGETCPU_186)
-                fEfl |= UINT16_C(0xf000);
-            rcStrict = iemMemStackPushU16(pVCpu, (uint16_t)fEfl);
-            break;
-        case IEMMODE_32BIT:
-            rcStrict = iemMemStackPushU32(pVCpu, fEfl);
-            break;
-        case IEMMODE_64BIT:
-            rcStrict = iemMemStackPushU64(pVCpu, fEfl);
-            break;
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+
+        /*
+         * Ok, clear RF and VM, adjust for ancient CPUs, and push the flags.
+         */
+        fEfl &= ~(X86_EFL_RF | X86_EFL_VM);
+
+        switch (enmEffOpSize)
+        {
+            case IEMMODE_16BIT:
+                AssertCompile(IEMTARGETCPU_8086 <= IEMTARGETCPU_186 && IEMTARGETCPU_V20 <= IEMTARGETCPU_186 && IEMTARGETCPU_286 > IEMTARGETCPU_186);
+                if (IEM_GET_TARGET_CPU(pVCpu) <= IEMTARGETCPU_186)
+                    fEfl |= UINT16_C(0xf000);
+                rcStrict = iemMemStackPushU16(pVCpu, (uint16_t)fEfl);
+                break;
+            case IEMMODE_32BIT:
+                rcStrict = iemMemStackPushU32(pVCpu, fEfl);
+                break;
+            case IEMMODE_64BIT:
+                rcStrict = iemMemStackPushU64(pVCpu, fEfl);
+                break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
     }
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
