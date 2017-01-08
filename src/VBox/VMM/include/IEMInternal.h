@@ -1339,6 +1339,7 @@ FNIEMAIMPLFPUR80            iemAImpl_fprem1_r80_by_r80;
 FNIEMAIMPLFPUR80            iemAImpl_fscale_r80_by_r80;
 
 FNIEMAIMPLFPUR80            iemAImpl_fpatan_r80_by_r80;
+FNIEMAIMPLFPUR80            iemAImpl_fyl2x_r80_by_r80;
 FNIEMAIMPLFPUR80            iemAImpl_fyl2xp1_r80_by_r80;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80FSW,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
@@ -1358,7 +1359,6 @@ typedef FNIEMAIMPLFPUR80UNARY *PFNIEMAIMPLFPUR80UNARY;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fabs_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fchs_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_f2xm1_r80;
-FNIEMAIMPLFPUR80UNARY       iemAImpl_fyl2x_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fsqrt_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_frndint_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fsin_r80;
