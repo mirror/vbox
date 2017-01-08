@@ -4910,8 +4910,6 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
         else /* BT */
             fAccess = IEM_ACCESS_DATA_R;
 
-        NOREF(fAccess);
-
         /** @todo test negative bit offsets! */
         switch (pVCpu->iem.s.enmEffOpSize)
         {
@@ -4936,12 +4934,12 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(GCPtrEffDst, i16AddrAdj);
                 IEM_MC_FETCH_EFLAGS(EFlags);
 
-                IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu16Dst, fAccess, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
                 if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU16, pu16Dst, u16Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
@@ -4969,12 +4967,12 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADD_LOCAL_S32_TO_EFF_ADDR(GCPtrEffDst, i32AddrAdj);
                 IEM_MC_FETCH_EFLAGS(EFlags);
 
-                IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu32Dst, fAccess, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
                 if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU32, pu32Dst, u32Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
@@ -5002,12 +5000,12 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ADD_LOCAL_S64_TO_EFF_ADDR(GCPtrEffDst, i64AddrAdj);
                 IEM_MC_FETCH_EFLAGS(EFlags);
 
-                IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu64Dst, fAccess, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0);
                 if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU64, pu64Dst, u64Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
@@ -5023,7 +5021,7 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
 /** Opcode 0x0f 0xa3. */
 FNIEMOP_DEF(iemOp_bt_Ev_Gv)
 {
-    IEMOP_MNEMONIC(bt_Gv_Gv, "bt  Gv,Gv");
+    IEMOP_MNEMONIC(bt_Ev_Gv, "bt  Ev,Gv");
     IEMOP_HLP_MIN_386();
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_bt);
 }
@@ -5927,6 +5925,7 @@ FNIEMOP_DEF(iemOp_lss_Gv_Mp)
 FNIEMOP_DEF(iemOp_btr_Ev_Gv)
 {
     IEMOP_MNEMONIC(btr_Ev_Gv, "btr Ev,Gv");
+    IEMOP_HLP_MIN_386();
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_btr);
 }
 
@@ -7412,7 +7411,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[256] =
     /* 0xb8 */  iemOp_popcnt_Gv_Ev_jmpe,
     /* 0xb9 */  iemOp_Grp10,
     /* 0xba */  iemOp_Grp8,
-    /* 0xbd */  iemOp_btc_Ev_Gv,
+    /* 0xbb */  iemOp_btc_Ev_Gv,
     /* 0xbc */  iemOp_bsf_Gv_Ev,
     /* 0xbd */  iemOp_bsr_Gv_Ev,
     /* 0xbe */  iemOp_movsx_Gv_Eb,
