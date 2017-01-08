@@ -18,7 +18,7 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 #include <iprt/asm.h>
 #include <iprt/string.h>

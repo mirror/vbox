@@ -22,7 +22,7 @@
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
 #endif
 #include <wchar.h>
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 #ifdef VBOX_WITH_WDDM
 # define VBOX_WITHOUT_24BPP_MODES

@@ -32,7 +32,7 @@
 #include <VBox/vmm/ssm.h>
 
 #include <VBox/VBoxVideo.h>
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxVideo3D.h>
 #include <VBox/VBoxVideoHost3D.h>
 

@@ -56,7 +56,7 @@
 #include "vboxvideo.h"
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 #include "version-generated.h"
 #include "product-generated.h"
 #include "revision-generated.h"

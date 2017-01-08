@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_Hardware_VBoxVideoHW_h
-#define ___VBox_Hardware_VBoxVideoHW_h
+#ifndef ___VBox_Hardware_VBoxVideoVBE_h
+#define ___VBox_Hardware_VBoxVideoVBE_h
 
 /* GUEST <-> HOST Communication API */
 
@@ -83,5 +83,5 @@
 /* this should be in sync with monitorCount <xsd:maxInclusive value="64"/> in src/VBox/Main/xml/VirtualBox-settings-common.xsd */
 #define VBOX_VIDEO_MAX_SCREENS 64
 
-#endif /* !___VBox_Hardware_VBoxVideoHW_h */
+#endif /* !___VBox_Hardware_VBoxVideoVBE_h */
 

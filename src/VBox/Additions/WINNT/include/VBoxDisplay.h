@@ -83,7 +83,7 @@ typedef struct VBOXDISPIFESCAPE_ISANYX
 //#define VBOX_WDDM_REPLUG_ON_MODE_CHANGE
 
 /* for VBOX_VIDEO_MAX_SCREENS definition */
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 typedef struct VBOXWDDM_RECOMMENDVIDPN_SOURCE
 {

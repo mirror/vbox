@@ -18,7 +18,7 @@
 
 #include "VBoxMPInternal.h"
 #include "common/VBoxMPCommon.h"
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VBoxVideo.h>
 

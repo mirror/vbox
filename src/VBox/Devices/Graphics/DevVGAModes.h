@@ -20,7 +20,7 @@
 
 #ifdef VBE_NEW_DYN_LIST
 
-#include <VBox/Hardware/VBoxVideoHW.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
 
 /* VBE Mode Numbers */
 #define VBE_MODE_VESA_DEFINED                            0x0100
