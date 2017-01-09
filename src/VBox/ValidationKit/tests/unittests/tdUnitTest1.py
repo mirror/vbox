@@ -644,7 +644,7 @@ class tdUnitTest1(vbox.TestDriver):
                 oChild = None;
 
             if oChild is not None:
-                self.pidFileAdd(oChild.pid, fSudo = fHardened);
+                self.pidFileAdd(oChild.pid, sName, fSudo = fHardened);
                 iRc = oChild.wait();
                 self.pidFileRemove(oChild.pid);
         else:

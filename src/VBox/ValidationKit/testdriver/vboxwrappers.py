@@ -2617,7 +2617,7 @@ class SessionWrapper(TdTaskBase):
                     reporter.log2Xcpt();
             if self.uPid is not None:
                 reporter.log2('getPid: %u' % (self.uPid,));
-                self.oTstDrv.pidFileAdd(self.uPid);
+                self.oTstDrv.pidFileAdd(self.uPid, 'vm_%s' % (self.sName,), fSudo = True); # Set-uid-to-root is similar to SUDO.
         return self.uPid;
 
     def addLogsToReport(self, cReleaseLogs = 1):

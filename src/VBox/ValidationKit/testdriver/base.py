@@ -1138,9 +1138,9 @@ class TestDriverBase(object): # pylint: disable=R0902
     def pidFileRead(self):
         """
         Worker that reads the PID file.
-        Returns list of PID, empty if no file.
+        Returns dictionary of PID with value (sName, fSudo), empty if no file.
         """
-        aiPids = [];
+        dPids = {};
         if os.path.isfile(self.sPidFile):
             try:
                 oFile = utils.openNoInherit(self.sPidFile, 'r');
@@ -1148,28 +1148,32 @@ class TestDriverBase(object): # pylint: disable=R0902
                 oFile.close();
             except:
                 reporter.errorXcpt();
-                return aiPids;
+                return dPids;
 
             sContent = str(sContent).strip().replace('\n', ' ').replace('\r', ' ').replace('\t', ' ');
-            for sPid in sContent.split(' '):
-                if sPid.isdigit():
+            for sProcess in sContent.split(' '):
+                asFields = sProcess.split(':');
+                if len(asFields) == 3 and asFields[0].isdigit():
                     try:
-                        aiPids.append(int(sPid));
+                        dPids[int(asFields[0])] = (asFields[2], asFields[1] == 'sudo');
                     except:
-                        reporter.logXcpt('sPid=%s' % (sPid,));
+                        reporter.logXcpt('sProcess=%s' % (sProcess,));
                 else:
-                    reporter.log('%s: "%s"' % (self.sPidFile, sPid));
+                    reporter.log('%s: "%s"' % (self.sPidFile, sProcess));
 
-        return aiPids;
+        return dPids;
 
-    def pidFileAdd(self, iPid, fSudo = False):
+    def pidFileAdd(self, iPid, sName, fSudo = False):
         """
         Adds a PID to the PID file, creating the file if necessary.
         """
         _ = fSudo; ## @todo remember sudo (root) children.
         try:
             oFile = utils.openNoInherit(self.sPidFile, 'a');
-            oFile.write(str(iPid) + '\n');
+            oFile.write('%s:%s:%s\n'
+                        % ( iPid,
+                            'sudo' if fSudo else 'normal',
+                             sName.replace(' ', '_').replace(':','_').replace('\n','_').replace('\r','_').replace('\t','_'),));
             oFile.close();
         except:
             reporter.errorXcpt();
@@ -1181,16 +1185,18 @@ class TestDriverBase(object): # pylint: disable=R0902
         """
         Removes a PID from the PID file.
         """
-        aiPids = self.pidFileRead();
-        if iPid not in aiPids:
+        dPids = self.pidFileRead();
+        if iPid not in dPids:
             if not fQuiet:
-                reporter.log('pidFileRemove could not find %s in the PID file (content: %s)' % (iPid, aiPids));
+                reporter.log('pidFileRemove could not find %s in the PID file (content: %s)' % (iPid, dPids));
             return False;
 
-        aiPids.remove(iPid);
+        sName = dPids[iPid][0];
+        del dPids[iPid];
+
         sPid = '';
-        for iPid2 in aiPids:
-            sPid += '%s\n' % (iPid2,);
+        for iPid2 in dPids:
+            sPid += '%s:%s:%s\n' % (iPid2, 'sudo' if dPids[iPid2][1] else 'normal', dPids[iPid2][0]);
 
         try:
             oFile = utils.openNoInherit(self.sPidFile, 'w');
@@ -1200,7 +1206,7 @@ class TestDriverBase(object): # pylint: disable=R0902
             reporter.errorXcpt();
             return False;
 
-        reporter.log2('pidFileRemove: removed PID %d (new content: %s)' % (iPid, self.pidFileRead(),));
+        reporter.log2('pidFileRemove: removed PID %d [%s] (new content: %s)' % (iPid, sName, self.pidFileRead(),));
         return True;
 
     def pidFileDelete(self):
@@ -1515,8 +1521,8 @@ class TestDriverBase(object): # pylint: disable=R0902
         other process covered by the testdriver PID file.
         """
 
-        aiPids = self.pidFileRead();
-        reporter.log('The pid file contained: %s' % (aiPids,));
+        dPids = self.pidFileRead();
+        reporter.log('The pid file contained: %s' % (dPids,));
 
         #
         # Try convince the processes to quit with increasing impoliteness.
@@ -1526,28 +1532,28 @@ class TestDriverBase(object): # pylint: disable=R0902
         else:
             afnMethods = [ sendUserSignal1, processInterrupt, processTerminate, processKill ];
         for fnMethod in afnMethods:
-            for iPid in aiPids:
+            ## @todo Handle SUDO processes.
+            for iPid in dPids:
                 fnMethod(iPid);
 
             for i in range(10):
                 if i > 0:
                     time.sleep(1);
 
-                for j in range(len(aiPids) - 1, -1, -1):
-                    iPid = aiPids[j];
+                for iPid in dPids.keys():
                     if not processExists(iPid):
-                        reporter.log('%s terminated' % (iPid,));
+                        reporter.log('%s (%s) terminated' % (dPids[iPid][0], iPid,));
                         self.pidFileRemove(iPid, fQuiet = True);
-                        aiPids.pop(j);
+                        del dPids[iPid];
 
-                if len(aiPids) == 0:
+                if len(dPids) == 0:
                     reporter.log('All done.');
                     return True;
 
                 if i in [4, 8]:
-                    reporter.log('Still waiting for: %s (method=%s)' % (aiPids, fnMethod,));
+                    reporter.log('Still waiting for: %s (method=%s)' % (dPids, fnMethod,));
 
-        reporter.log('Failed to terminate the following processes: %s' % (aiPids,));
+        reporter.log('Failed to terminate the following processes: %s' % (dPids,));
         return False;
 
 
@@ -1660,7 +1666,7 @@ class TestDriverBase(object): # pylint: disable=R0902
                 if fRc2 is not True and fRc is True: fRc = fRc2;
                 reporter.log('*** cleanup-before action completed (fRc2=%s, fRc=%s) ***' % (fRc2, fRc,));
 
-            self.pidFileAdd(os.getpid());
+            self.pidFileAdd(os.getpid(), os.path.basename(sys.argv[0]));
 
             if 'config' in asActions and fRc is True:
                 asActions.remove('config');
@@ -1729,11 +1735,22 @@ class TestDriverBaseTestCase(unittest.TestCase):
         pass; # clean up scratch dir and such.
 
     def testPidFile(self):
-        aiPids = [os.getpid() + 1, os.getpid() + 2];
-        self.assertTrue(self.oTstDrv.pidFileAdd(aiPids[0]));
-        self.assertEqual(self.oTstDrv.pidFileRead(), aiPids[0:1]);
-        self.assertTrue(self.oTstDrv.pidFileAdd(aiPids[1]));
-        self.assertEqual(self.oTstDrv.pidFileRead(), aiPids[0:2]);
+
+        iPid1 = os.getpid() + 1;
+        iPid2 = os.getpid() + 2;
+
+        self.assertTrue(self.oTstDrv.pidFileAdd(iPid1, 'test1'));
+        self.assertEqual(self.oTstDrv.pidFileRead(), {iPid1:('test1',False)});
+
+        self.assertTrue(self.oTstDrv.pidFileAdd(iPid2, 'test2', fSudo = True));
+        self.assertEqual(self.oTstDrv.pidFileRead(), {iPid1:('test1',False), iPid2:('test2',True)});
+
+        self.assertTrue(self.oTstDrv.pidFileRemove(iPid1));
+        self.assertEqual(self.oTstDrv.pidFileRead(), {iPid2:('test2',True)});
+
+        self.assertTrue(self.oTstDrv.pidFileRemove(iPid2));
+        self.assertEqual(self.oTstDrv.pidFileRead(), {});
+
         self.assertTrue(self.oTstDrv.pidFileDelete());
 
 if __name__ == '__main__':
