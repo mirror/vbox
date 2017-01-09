@@ -34,7 +34,6 @@ __version__ = "$Revision$"
 import os
 import sys
 import re
-import subprocess
 
 
 # Only the main script needs to modify the path.
