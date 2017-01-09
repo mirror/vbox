@@ -1379,6 +1379,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             else
             {
                 /* Just grab the new (NULL) SS descriptor. */
+                /** @todo testcase: Check whether the zero GDT entry is actually loaded here
+                 *        like we do... */
                 rcStrict = iemMemFetchSelDesc(pVCpu, &DescSS, uNewSS, X86_XCPT_SS);
                 if (rcStrict != VINF_SUCCESS)
                     return rcStrict;
@@ -1416,8 +1418,12 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
 
             GCPtrParmWds = pCtx->ss.u64Base + uOldRsp;
 
-            /* Probe if the write to the new stack will succeed. May #SS(NewSS) or #PF. */
-            void     *pvNewFrame;
+            /* HACK ALERT! Probe if the write to the new stack will succeed. May #SS(NewSS)
+                           or #PF, the former is not implemented in this workaround. */
+            /** @todo Proper fix callgate target stack exceptions. */
+            /** @todo testcase: Cover callgates with partially or fully inaccessible
+             *        target stacks. */
+            void    *pvNewFrame;
             RTGCPTR  GCPtrNewStack = X86DESC_BASE(&DescSS.Legacy) + uNewRsp - cbNewStack;
             rcStrict = iemMemMap(pVCpu, &pvNewFrame, cbNewStack, UINT8_MAX, GCPtrNewStack, IEM_ACCESS_SYS_RW);
             if (rcStrict != VINF_SUCCESS)
@@ -1445,10 +1451,11 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
             CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_HIDDEN_SEL_REGS);
 
             /* At this point the stack access must not fail because new state was already committed. */
+            /** @todo this can still fail due to SS.LIMIT not check.   */
             rcStrict = iemMemStackPushBeginSpecial(pVCpu, cbNewStack,
                                                    &uPtrRet.pv, &uNewRsp);
             AssertMsgReturn(rcStrict == VINF_SUCCESS, ("BranchCallGate: New stack mapping failed (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)),
-                            VERR_IPE_UNEXPECTED_STATUS);
+                            VERR_INTERNAL_ERROR_5);
 
             if (!IEM_IS_LONG_MODE(pVCpu))
             {
@@ -1458,7 +1465,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                     uPtrRet.pu32[0] = pCtx->eip + cbInstr;
                     uPtrRet.pu32[1] = pCtx->cs.Sel; /** @todo Testcase: What is written to the high word when pushing CS? */
 
-                    if (cbWords) {
+                    if (cbWords)
+                    {
                         /* Map the relevant chunk of the old stack. */
                         rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 4, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
                         if (rcStrict != VINF_SUCCESS)
@@ -1492,7 +1500,8 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
                     uPtrRet.pu16[0] = pCtx->ip + cbInstr;
                     uPtrRet.pu16[1] = pCtx->cs.Sel;
 
-                    if (cbWords) {
+                    if (cbWords)
+                    {
                         /* Map the relevant chunk of the old stack. */
                         rcStrict = iemMemMap(pVCpu, &uPtrParmWds.pv, cbWords * 2, UINT8_MAX, GCPtrParmWds, IEM_ACCESS_DATA_R);
                         if (rcStrict != VINF_SUCCESS)
