@@ -434,16 +434,25 @@ def _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs):
             aPositionalArgs = (asArgs,) + aPositionalArgs[1:];
     return None;
 
+def processPopenSafe(*aPositionalArgs, **dKeywordArgs):
+    """
+    Wrapper for subprocess.Popen that's Ctrl-C safe on windows.
+    """
+    if getHostOs() == 'win':
+        if dKeywordArgs.get('creationflags', 0) == 0:
+            dKeywordArgs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP;
+    return subprocess.Popen(*aPositionalArgs, **dKeywordArgs);
+
 def processCall(*aPositionalArgs, **dKeywordArgs):
     """
-    Wrapper around subprocess.call to deal with its absense in older
+    Wrapper around subprocess.call to deal with its absence in older
     python versions.
     Returns process exit code (see subprocess.poll).
     """
     assert dKeywordArgs.get('stdout') is None;
     assert dKeywordArgs.get('stderr') is None;
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
-    oProcess = subprocess.Popen(*aPositionalArgs, **dKeywordArgs);
+    oProcess = processPopenSafe(*aPositionalArgs, **dKeywordArgs);
     return oProcess.wait();
 
 def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
@@ -452,7 +461,7 @@ def processOutputChecked(*aPositionalArgs, **dKeywordArgs):
     python versions.
     """
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
-    oProcess = subprocess.Popen(stdout=subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
+    oProcess = processPopenSafe(stdout=subprocess.PIPE, *aPositionalArgs, **dKeywordArgs);
 
     sOutput, _ = oProcess.communicate();
     iExitCode  = oProcess.poll();
@@ -540,11 +549,11 @@ def sudoProcessOutputCheckedNoI(*aPositionalArgs, **dKeywordArgs):
 
 def sudoProcessPopen(*aPositionalArgs, **dKeywordArgs):
     """
-    sudo (or similar) + subprocess.Popen.
+    sudo (or similar) + processPopenSafe.
     """
     _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs);
     _sudoFixArguments(aPositionalArgs, dKeywordArgs);
-    return subprocess.Popen(*aPositionalArgs, **dKeywordArgs);
+    return processPopenSafe(*aPositionalArgs, **dKeywordArgs);
 
 
 #

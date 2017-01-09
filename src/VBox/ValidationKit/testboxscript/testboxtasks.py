@@ -422,16 +422,16 @@ class TestBoxTestDriverTask(TestBoxBaseTask):
 
         # Spawn child.
         try:
-            oChild = subprocess.Popen(asArgs,
-                                      shell      = False,
-                                      bufsize    = -1,
-                                      stdout     = subprocess.PIPE,
-                                      stderr     = subprocess.STDOUT,
-                                      cwd        = self._oTestBoxScript.getPathSpill(),
-                                      universal_newlines = True,
-                                      close_fds  = (False if utils.getHostOs() == 'win' else True),
-                                      preexec_fn = (None if utils.getHostOs() in ['win', 'os2']
-                                                    else os.setsid)); # pylint: disable=E1101
+            oChild = utils.processPopenSafe(asArgs,
+                                            shell      = False,
+                                            bufsize    = -1,
+                                            stdout     = subprocess.PIPE,
+                                            stderr     = subprocess.STDOUT,
+                                            cwd        = self._oTestBoxScript.getPathSpill(),
+                                            universal_newlines = True,
+                                            close_fds  = (False if utils.getHostOs() == 'win' else True),
+                                            preexec_fn = (None if utils.getHostOs() in ['win', 'os2']
+                                                          else os.setsid)); # pylint: disable=E1101
         except Exception, oXcpt:
             self._log('Error creating child process %s: %s' % (asArgs, oXcpt));
             return (False, None);

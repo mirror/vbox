@@ -632,7 +632,7 @@ class tdUnitTest1(vbox.TestDriver):
                 if fHardened:
                     oChild = utils.sudoProcessPopen(asArgs, stdin = oDevNull, stdout = sys.stdout, stderr = sys.stdout);
                 else:
-                    oChild = subprocess.Popen(      asArgs, stdin = oDevNull, stdout = sys.stdout, stderr = sys.stdout);
+                    oChild = utils.processPopenSafe(asArgs, stdin = oDevNull, stdout = sys.stdout, stderr = sys.stdout);
             except:
                 if sName in [ 'tstAsmStructsRC',    # 32-bit, may fail to start on 64-bit linux. Just ignore.
                             ]:
