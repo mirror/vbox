@@ -221,8 +221,6 @@ void PerformanceCollector::uninit()
         return;
     }
 
-    mMagic = 0;
-
     /* Destroy unregistered metrics */
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
@@ -245,6 +243,9 @@ void PerformanceCollector::uninit()
     int vrc = RTTimerLRDestroy(m.sampler);
     AssertMsgRC(vrc, ("Failed to destroy resource usage sampling timer (%Rra)\n", vrc));
     m.sampler = NULL;
+
+    /* Invalidate the magic now. */
+    mMagic = 0;
 
     //delete m.factory;
     //m.factory = NULL;
