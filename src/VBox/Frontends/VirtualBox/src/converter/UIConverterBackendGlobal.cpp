@@ -1363,6 +1363,32 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     return values.at(keys.indexOf(QRegExp(strIndicatorType, Qt::CaseInsensitive)));
 }
 
+/* QString <= IndicatorType: */
+template<> QString toString(const IndicatorType &indicatorType)
+{
+    QString strResult;
+    switch (indicatorType)
+    {
+        case IndicatorType_HardDisks:     strResult = QApplication::translate("VBoxGlobal", "Hard Disks", "IndicatorType"); break;
+        case IndicatorType_OpticalDisks:  strResult = QApplication::translate("VBoxGlobal", "Optical Disks", "IndicatorType"); break;
+        case IndicatorType_FloppyDisks:   strResult = QApplication::translate("VBoxGlobal", "Floppy Disks", "IndicatorType"); break;
+        case IndicatorType_Network:       strResult = QApplication::translate("VBoxGlobal", "Network", "IndicatorType"); break;
+        case IndicatorType_USB:           strResult = QApplication::translate("VBoxGlobal", "USB", "IndicatorType"); break;
+        case IndicatorType_SharedFolders: strResult = QApplication::translate("VBoxGlobal", "Shared Folders", "IndicatorType"); break;
+        case IndicatorType_Display:       strResult = QApplication::translate("VBoxGlobal", "Display", "IndicatorType"); break;
+        case IndicatorType_VideoCapture:  strResult = QApplication::translate("VBoxGlobal", "Video Capture", "IndicatorType"); break;
+        case IndicatorType_Features:      strResult = QApplication::translate("VBoxGlobal", "Features", "IndicatorType"); break;
+        case IndicatorType_Mouse:         strResult = QApplication::translate("VBoxGlobal", "Mouse", "IndicatorType"); break;
+        case IndicatorType_Keyboard:      strResult = QApplication::translate("VBoxGlobal", "Keyboard", "IndicatorType"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", indicatorType));
+            break;
+        }
+    }
+    return strResult;
+}
+
 /* QIcon <= IndicatorType: */
 template<> QIcon toIcon(const IndicatorType &indicatorType)
 {

@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QStylePainter>
 # include <QStyleOption>
 # include <QHBoxLayout>
@@ -112,6 +113,82 @@ private:
     QPoint m_mousePressPosition;
 };
 
+
+/** QAccessibleWidget extension used as an accessibility interface for UIStatusBarEditor buttons. */
+class UIAccessibilityInterfaceForUIStatusBarEditorButton : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject);
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUIStatusBarEditorButton(QWidget *pWidget);
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text enmTextRole) const /* override */;
+
+    /** Returns the state. */
+    virtual QAccessible::State state() const /* override */;
+
+private:
+
+    /** Returns corresponding toolbar button. */
+    UIStatusBarEditorButton *button() const { return qobject_cast<UIStatusBarEditorButton*>(widget()); }
+};
+
+
+/*********************************************************************************************************************************
+*   Class UIAccessibilityInterfaceForUIStatusBarEditorButton implementation.                                                     *
+*********************************************************************************************************************************/
+
+/* static */
+QAccessibleInterface *UIAccessibilityInterfaceForUIStatusBarEditorButton::pFactory(const QString &strClassname, QObject *pObject)
+{
+    /* Creating toolbar button accessibility interface: */
+    if (   pObject
+        && strClassname == QLatin1String("UIStatusBarEditorButton"))
+        return new UIAccessibilityInterfaceForUIStatusBarEditorButton(qobject_cast<QWidget*>(pObject));
+
+    /* Null by default: */
+    return 0;
+}
+
+UIAccessibilityInterfaceForUIStatusBarEditorButton::UIAccessibilityInterfaceForUIStatusBarEditorButton(QWidget *pWidget)
+    : QAccessibleWidget(pWidget, QAccessible::CheckBox)
+{
+}
+
+QString UIAccessibilityInterfaceForUIStatusBarEditorButton::text(QAccessible::Text /* enmTextRole */) const
+{
+    /* Make sure view still alive: */
+    AssertPtrReturn(button(), QString());
+
+    /* Return view tool-tip: */
+    return gpConverter->toString(button()->type());
+}
+
+QAccessible::State UIAccessibilityInterfaceForUIStatusBarEditorButton::state() const /* override */
+{
+    /* Prepare the button state: */
+    QAccessible::State state;
+
+    /* Make sure button still alive: */
+    AssertPtrReturn(button(), state);
+
+    /* Compose the button state: */
+    state.checkable = true;
+    state.checked = button()->isChecked();
+
+    /* Return the button state: */
+    return state;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Class UIStatusBarEditorButton implementation.                                                                                *
+*********************************************************************************************************************************/
 
 /* static */
 const QString UIStatusBarEditorButton::MimeType = QString("application/virtualbox;value=IndicatorType");
@@ -401,6 +478,9 @@ void UIStatusBarEditorWidget::prepare()
     /* Do not prepare if machine ID is not set: */
     if (m_strMachineID.isEmpty())
         return;
+
+    /* Install tool-bar button accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIStatusBarEditorButton::pFactory);
 
     /* Track D&D events: */
     setAcceptDrops(true);
