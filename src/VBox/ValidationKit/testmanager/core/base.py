@@ -1192,7 +1192,8 @@ class FilterCriterion(object):
     ksType_String  = 'string';   ##< string value.
     ## @}
 
-    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
+    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, # pylint: disable=too-many-arguments
+                 sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
                  sTable = None, sColumn = None, asTables = None, oSub = None):
         assert len(sVarNm) == 2;    # required by wuimain.py for filtering.
         self.sName      = sName;
