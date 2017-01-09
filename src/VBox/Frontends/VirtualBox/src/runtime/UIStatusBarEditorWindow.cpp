@@ -72,6 +72,8 @@ public:
     /** Returns button size-hint. */
     QSize sizeHint() const { return m_size; }
 
+    /** Returns whether button is checked. */
+    bool isChecked() const;
     /** Defines whether button is @a fChecked. */
     void setChecked(bool fChecked);
 
@@ -137,6 +139,11 @@ UIStatusBarEditorButton::UIStatusBarEditorButton(IndicatorType type)
 
     /* Translate finally: */
     retranslateUi();
+}
+
+bool UIStatusBarEditorButton::isChecked() const
+{
+    return m_fChecked;
 }
 
 void UIStatusBarEditorButton::setChecked(bool fChecked)
