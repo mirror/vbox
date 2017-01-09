@@ -100,8 +100,9 @@ static void tstBasic(RTTEST hTest)
  */
 static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJSONVALTYPE enmType)
 {
-#ifndef RT_STRICT /* Enable manually if assertions are enabled or it will assert all over the place for debug builds. */
-/** @todo you can disable assertions and all the noise. See RTAssertSetMayPanic and RTAssertSetQuiet. */
+    bool fSavedMayPanic = RTAssertSetMayPanic(false);
+    bool fSavedQuiet    = RTAssertSetQuiet(true);
+
     if (   enmType != RTJSONVALTYPE_OBJECT
         && enmType != RTJSONVALTYPE_ARRAY)
     {
@@ -139,9 +140,9 @@ static void tstCorrectnessRcForInvalidType(RTTEST hTest, RTJSONVAL hJsonVal, RTJ
         RTTEST_CHECK(hTest, RTJsonValueGetString(hJsonVal) == NULL);
         RTTEST_CHECK_RC(hTest, RTJsonValueQueryString(hJsonVal, &psz), VERR_JSON_VALUE_INVALID_TYPE);
     }
-#else
-    RT_NOREF3(hTest, hJsonVal, enmType);
-#endif
+
+    RTAssertSetMayPanic(fSavedMayPanic);
+    RTAssertSetQuiet(fSavedQuiet);
 }
 
 /**
