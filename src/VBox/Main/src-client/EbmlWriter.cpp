@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -219,7 +219,6 @@ private:
 
 class WebMWriter_Impl
 {
-
     struct CueEntry
     {
         uint32_t    time;
@@ -227,7 +226,10 @@ class WebMWriter_Impl
         CueEntry(uint32_t t, uint64_t l) : time(t), loc(l) {}
     };
 
-    bool            m_bDebug;
+    /** Operation mode. */
+    WebMWriter::Mode m_enmMode;
+
+    bool            m_fDebug;
     int64_t         m_iLastPtsMs;
     int64_t         m_iInitialPtsMs;
     vpx_rational_t  m_Framerate;
@@ -248,12 +250,13 @@ class WebMWriter_Impl
 
     std::list<CueEntry> m_CueList;
 
-    Ebml m_Ebml;
+    Ebml                m_Ebml;
 
 public:
 
     WebMWriter_Impl() :
-        m_bDebug(false),
+        m_enmMode(WebMWriter::Mode_Unknown),
+        m_fDebug(false),
         m_iLastPtsMs(-1),
         m_iInitialPtsMs(-1),
         m_Framerate(),
@@ -268,8 +271,7 @@ public:
         m_uClusterTimecode(0),
         m_bClusterOpen(false) {}
 
-    void writeHeader(const vpx_codec_enc_cfg_t *a_pCfg,
-                     const struct vpx_rational *a_pFps)
+    void writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const struct vpx_rational *a_pFps)
     {
         m_Ebml.subStart(EBML)
               .serializeUnsignedInteger(EBMLVersion, 1)
@@ -290,32 +292,65 @@ public:
 
         m_uTrackPos = RTFileTell(m_Ebml.getFile());
 
-        m_Ebml.subStart(Tracks)
-              .subStart(TrackEntry)
-              .serializeUnsignedInteger(TrackNumber, 1);
+        m_Ebml.subStart(Tracks);
 
-        m_uTrackIdPos = RTFileTell(m_Ebml.getFile());
+        /* Write video? */
+        if (   m_enmMode == WebMWriter::Mode_Video
+            || m_enmMode == WebMWriter::Mode_AudioVideo)
+        {
+            /*
+             * Video track.
+             */
+            m_Ebml.subStart(TrackEntry);
+            m_Ebml.serializeUnsignedInteger(TrackNumber, 1);
 
-        m_Ebml.serializeUnsignedInteger(TrackUID, 0, 4)
-              .serializeUnsignedInteger(TrackType, 1)
-              .serializeString(CodecID, "V_VP8")
-              .subStart(Video)
-              .serializeUnsignedInteger(PixelWidth, a_pCfg->g_w)
-              .serializeUnsignedInteger(PixelHeight, a_pCfg->g_h)
-              .serializeFloat(FrameRate, (double) a_pFps->num / a_pFps->den)
-              .subEnd(Video)
-              .subEnd(TrackEntry)
-              .subEnd(Tracks);
+            m_uTrackIdPos = RTFileTell(m_Ebml.getFile());
+
+            m_Ebml.serializeUnsignedInteger(TrackUID, 0 /* UID */, 4)
+                  .serializeUnsignedInteger(TrackType, 1 /* Video */)
+                  .serializeString(CodecID, "V_VP8")
+                  .subStart(Video)
+                  .serializeUnsignedInteger(PixelWidth, a_pCfg->g_w)
+                  .serializeUnsignedInteger(PixelHeight, a_pCfg->g_h)
+                  .serializeFloat(FrameRate, (double) a_pFps->num / a_pFps->den)
+                  .subEnd(Video)
+                  .subEnd(TrackEntry);
+        }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        if (   m_enmMode == WebMWriter::Mode_Audio
+            || m_enmMode == WebMWriter::Mode_AudioVideo)
+        {
+            /*
+             * Audio track.
+             */
+            m_Ebml.subStart(TrackEntry);
+            m_Ebml.serializeUnsignedInteger(TrackNumber, 2);
+            /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
+
+            m_Ebml.serializeUnsignedInteger(TrackUID, 1 /* UID */, 4)
+                  .serializeUnsignedInteger(TrackType, 2 /* Audio */)
+                  .serializeString(CodecID, "A_OPUS")
+                  .subStart(Audio)
+                  .serializeFloat(SamplingFrequency, 44100.0)
+                  .serializeFloat(OutputSamplingFrequency, 44100.0)
+                  .serializeUnsignedInteger(Channels, 2)
+                  .serializeUnsignedInteger(BitDepth, 16)
+                  .subEnd(Audio)
+                  .subEnd(TrackEntry);
+        }
+#endif
+
+        m_Ebml.subEnd(Tracks);
     }
 
-    void writeBlock(const vpx_codec_enc_cfg_t *a_pCfg,
-                                const vpx_codec_cx_pkt_t *a_pPkt)
+    void writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
     {
         uint16_t uBlockTimecode = 0;
         int64_t  iPtsMs;
         bool     bStartCluster = false;
 
-        /* Calculate the PTS of this frame in milliseconds */
+        /* Calculate the PTS of this frame in milliseconds. */
         iPtsMs = a_pPkt->data.frame.pts * 1000
                  * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
         if (iPtsMs <= m_iLastPtsMs)
@@ -325,7 +360,7 @@ public:
         if (m_iInitialPtsMs < 0)
           m_iInitialPtsMs = m_iLastPtsMs;
 
-        /* Calculate the relative time of this block */
+        /* Calculate the relative time of this block. */
         if (iPtsMs - m_uClusterTimecode > 65536)
             bStartCluster = 1;
         else
@@ -337,7 +372,7 @@ public:
             if (m_bClusterOpen)
                 m_Ebml.subEnd(Cluster);
 
-            /* Open a new cluster */
+            /* Open a new cluster. */
             uBlockTimecode = 0;
             m_bClusterOpen = true;
             m_uClusterTimecode = (uint32_t)iPtsMs;
@@ -353,7 +388,7 @@ public:
             }
         }
 
-        /* Write a Simple Block */
+        /* Write a "Simple Block". */
         m_Ebml.writeClassId(SimpleBlock);
         m_Ebml.writeUnsignedInteger(0x10000000u | (4 + a_pPkt->data.frame.sz), 4);
         m_Ebml.writeSize(1);
@@ -388,7 +423,7 @@ public:
         int rc = RTFileSeek(m_Ebml.getFile(), m_uTrackIdPos, RTFILE_SEEK_BEGIN, NULL);
         if (!RT_SUCCESS(rc)) throw rc;
 
-        m_Ebml.serializeUnsignedInteger(TrackUID, (m_bDebug ? 0xDEADBEEF : a_u64Hash), 4);
+        m_Ebml.serializeUnsignedInteger(TrackUID, (m_fDebug ? 0xDEADBEEF : a_u64Hash), 4);
 
         rc = RTFileSeek(m_Ebml.getFile(), 0, RTFILE_SEEK_END, NULL);
         if (!RT_SUCCESS(rc)) throw rc;
@@ -430,7 +465,7 @@ private:
 
         char szVersion[64];
         RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%s",
-                    m_bDebug ? "" : vpx_codec_version_str());
+                    m_fDebug ? "" : vpx_codec_version_str());
 
         m_Ebml.subStart(Info)
               .serializeUnsignedInteger(TimecodeScale, 1000000)
@@ -448,8 +483,10 @@ WebMWriter::~WebMWriter()
     delete m_Impl;
 }
 
-int WebMWriter::create(const char *a_pszFilename)
+int WebMWriter::create(const char *a_pszFilename, WebMWriter::Mode a_enmMode)
 {
+    m_Impl->m_enmMode = a_enmMode;
+
     return m_Impl->m_Ebml.create(a_pszFilename);
 }
 

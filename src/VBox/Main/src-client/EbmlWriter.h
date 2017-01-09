@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2016 Oracle Corporation
+ * Copyright (C) 2013-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,22 +31,43 @@ class WebMWriter_Impl;
 
 class WebMWriter
 {
+
 public:
+
+    /**
+     * Operation mode -- this specifies what to write.
+     */
+    enum Mode
+    {
+        /** Unknown / invalid mode. */
+        Mode_Unknown     = 0,
+        /** Only writes audio. */
+        Mode_Audio       = 1,
+        /** Only Writes video. */
+        Mode_Video       = 2,
+        /** Writes audio and video. */
+        Mode_AudioVideo  = 3
+    };
+
+public:
+
     WebMWriter();
     virtual ~WebMWriter();
 
-    /** Creates output file
+    /**
+     * Creates output file.
      *
      * @param   a_pszFilename   Name of the file to create.
+     * @param   a_enmMode       Operation mode.
      *
      * @returns VBox status code. */
-    int create(const char *a_pszFilename);
+    int create(const char *a_pszFilename, WebMWriter::Mode a_enmMode);
 
     /* Closes output file. */
     void close();
 
-    /** Writes WebM header to file.
-     *
+    /**
+     * Writes WebM header to file.
      * Should be called before any writeBlock call.
      *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
@@ -56,7 +77,8 @@ public:
      */
     int writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps);
 
-    /** Writes a block of compressed data
+    /**
+     * Writes a block of compressed data.
      *
      * @param a_pCfg Pointer to VPX Codec configuration structure.
      * @param a_pPkt VPX data packet.
@@ -65,8 +87,8 @@ public:
      */
     int writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
 
-    /** Writes WebM footer.
-     *
+    /**
+     * Writes WebM footer.
      * No other write functions should be called after this one.
      *
      * @param a_u64Hash Hash value for the data written.
@@ -75,25 +97,27 @@ public:
      */
     int writeFooter(uint32_t a_u64Hash);
 
-    /** Gets current output file size.
+    /**
+     * Gets current output file size.
      *
      * @returns File size in bytes.
      */
-    uint64_t getFileSize();
+    uint64_t getFileSize(void);
 
-    /** Gets current free storage space
-     * available for the file.
+    /**
+     * Gets current free storage space available for the file.
      *
      * @returns Available storage free space.
      */
-    uint64_t getAvailableSpace();
+    uint64_t getAvailableSpace(void);
 
 private:
+
     /** WebMWriter implementation.
-     * To isolate some include files */
+     *  To isolate some include files. */
     WebMWriter_Impl *m_Impl;
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WebMWriter);
 };
 
-#endif
+#endif /* ____EBMLWRITER */

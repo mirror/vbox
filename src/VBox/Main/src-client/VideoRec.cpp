@@ -646,7 +646,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
      * hazardous as nothing prevents the user from picking a file name of some
      * other important file, causing unintentional data loss. */
 
-    int rc = pStream->pEBML->create(pszFile);
+    int rc = pStream->pEBML->create(pszFile, WebMWriter::Mode_AudioVideo); /** @todo Make mode configurable. */
     if (RT_FAILURE(rc))
     {
         LogRel(("Failed to create the video capture output file \"%s\" (%Rrc)\n", pszFile, rc));
