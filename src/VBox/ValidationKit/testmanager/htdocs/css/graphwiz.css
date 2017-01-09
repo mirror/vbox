@@ -31,8 +31,8 @@
  * and main sections so they start at the left border.
  */
 
-#top-menu, #main {
-    left:           0;
+#main {
+    margin-left:    0;
 }
 
 .tmtbl-events {
