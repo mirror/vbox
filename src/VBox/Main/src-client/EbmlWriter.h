@@ -27,12 +27,42 @@
 # include <vpx/vpx_encoder.h>
 #endif
 
+#include <iprt/file.h>
+
 class WebMWriter_Impl;
 
 class WebMWriter
 {
 
 public:
+
+    /**
+     * Supported audio codecs.
+     */
+    enum AudioCodec
+    {
+        /** No audio codec specified. */
+        AudioCodec_Unknown = 0,
+        /** Opus. */
+        AudioCodec_Opus    = 1
+    };
+
+    /**
+     * Supported video codecs.
+     */
+    enum VideoCodec
+    {
+        /** No video codec specified. */
+        VideoCodec_None = 0,
+        /** VP8. */
+        VideoCodec_VP8  = 1
+    };
+
+    struct BlockData
+    {
+        void  *pvData;
+        size_t cbData;
+    };
 
     /**
      * Operation mode -- this specifies what to write.
@@ -43,7 +73,7 @@ public:
         Mode_Unknown     = 0,
         /** Only writes audio. */
         Mode_Audio       = 1,
-        /** Only Writes video. */
+        /** Only writes video. */
         Mode_Video       = 2,
         /** Writes audio and video. */
         Mode_AudioVideo  = 3
@@ -58,12 +88,16 @@ public:
      * Creates output file.
      *
      * @param   a_pszFilename   Name of the file to create.
+     * @param   a_fOpen         File open mode of type RTFILE_O_.
      * @param   a_enmMode       Operation mode.
+     * @param   a_enmAudioCodec Audio codec to use.
+     * @param   a_enmVideoCodec Video codec to use.
      *
      * @returns VBox status code. */
-    int create(const char *a_pszFilename, WebMWriter::Mode a_enmMode);
+    int create(const char *a_pszFilename, uint64_t a_fOpen, WebMWriter::Mode a_enmMode,
+               WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
 
-    /* Closes output file. */
+    /** Closes output file. */
     void close();
 
     /**
@@ -115,7 +149,7 @@ private:
 
     /** WebMWriter implementation.
      *  To isolate some include files. */
-    WebMWriter_Impl *m_Impl;
+    WebMWriter_Impl *m_pImpl;
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(WebMWriter);
 };

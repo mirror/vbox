@@ -48,9 +48,9 @@ private:
 public:
 
     /** Creates EBML output file. */
-    inline int create(const char *a_pszFilename)
+    inline int create(const char *a_pszFilename, uint64_t fOpen)
     {
-        return RTFileOpen(&m_File, a_pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        return RTFileOpen(&m_File, a_pszFilename, fOpen);
     }
 
     /** Returns file size. */
@@ -145,6 +145,15 @@ public:
         return *this;
     }
 
+    /** Serializes binary data. */
+    inline Ebml &serializeData(EbmlClassId classId, const void *pvData, size_t cbData)
+    {
+        writeClassId(classId);
+        writeSize(cbData);
+        write(pvData, cbData);
+        return *this;
+    }
+
     /** Writes raw data to file. */
     inline void write(const void *data, size_t size)
     {
@@ -226,50 +235,85 @@ class WebMWriter_Impl
         CueEntry(uint32_t t, uint64_t l) : time(t), loc(l) {}
     };
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+# pragma pack(push)
+# pragma pack(1)
+    /** Opus codec private data.
+     *  Taken from: https://wiki.xiph.org/MatroskaOpus */
+    struct OpusPrivData
+    {
+        uint8_t  au8Head[8]       = { 0x4f, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64 };
+        uint8_t  u8Version        = 1;
+        uint8_t  c8Channels;
+        uint16_t u16PreSkip       = 0;
+        uint32_t u32SampleRate;
+        uint16_t u16Gain          = 0;
+        uint8_t  u8Mapping_family = 0;
+    };
+# pragma pack(pop)
+#endif /* VBOX_WITH_AUDIO_VIDEOREC */
+
     /** Operation mode. */
-    WebMWriter::Mode m_enmMode;
+    WebMWriter::Mode       m_enmMode;
+    /** Audio codec to use. */
+    WebMWriter::AudioCodec m_enmAudioCodec;
+    /** Video codec to use. */
+    WebMWriter::VideoCodec m_enmVideoCodec;
 
-    bool            m_fDebug;
-    int64_t         m_iLastPtsMs;
-    int64_t         m_iInitialPtsMs;
-    vpx_rational_t  m_Framerate;
+    bool                   m_fDebug;
 
-    uint64_t        m_uPositionReference;
-    uint64_t        m_uSeekInfoPos;
-    uint64_t        m_uSegmentInfoPos;
-    uint64_t        m_uTrackPos;
-    uint64_t        m_uCuePos;
-    uint64_t        m_uClusterPos;
+    /** Timestamp of initial PTS (Presentation Time Stamp). */
+    int64_t                m_tsInitialPtsMs;
+    /** Timestamp of last written PTS (Presentation Time Stamp). */
+    int64_t                m_tsLastPtsMs;
 
-    uint64_t        m_uTrackIdPos;
+    vpx_rational_t         m_Framerate;
 
-    uint64_t        m_uStartSegment;
+    /** Start offset (in bytes) of current segment. */
+    uint64_t               m_offSegCurStart;
 
-    uint32_t        m_uClusterTimecode;
-    bool            m_bClusterOpen;
+    /** Start offset (in bytes) of seeking info segment. */
+    uint64_t               m_offSegSeekInfoStart;
+    /** Offset (in bytes) for current seek info element. */
+    uint64_t               m_offSeekInfo;
 
-    std::list<CueEntry> m_CueList;
+    /** Start offset (in bytes) of tracks segment. */
+    uint64_t               m_offSegTracksStart;
 
-    Ebml                m_Ebml;
+    /** Absolute position of cue segment. */
+    uint64_t               m_uCuePos;
+    /** List of cue points. Needed for seeking table. */
+    std::list<CueEntry>    m_lstCue;
+
+    uint64_t               m_uTrackIdPos;
+
+    /** Timestamp (in ms) when the current cluster has been opened. */
+    uint32_t               m_tsClusterOpenMs;
+    /** Whether we're currently in an opened cluster segment. */
+    bool                   m_fClusterOpen;
+    /** Absolute position (in bytes) of current cluster within file.
+     *  Needed for seeking info table. */
+    uint64_t               m_offSegClusterStart;
+
+    Ebml                   m_Ebml;
 
 public:
 
     WebMWriter_Impl() :
-        m_enmMode(WebMWriter::Mode_Unknown),
-        m_fDebug(false),
-        m_iLastPtsMs(-1),
-        m_iInitialPtsMs(-1),
-        m_Framerate(),
-        m_uPositionReference(0),
-        m_uSeekInfoPos(0),
-        m_uSegmentInfoPos(0),
-        m_uTrackPos(0),
-        m_uCuePos(0),
-        m_uClusterPos(0),
-        m_uTrackIdPos(0),
-        m_uStartSegment(0),
-        m_uClusterTimecode(0),
-        m_bClusterOpen(false) {}
+          m_enmMode(WebMWriter::Mode_Unknown)
+        , m_fDebug(false)
+        , m_tsInitialPtsMs(-1)
+        , m_tsLastPtsMs(-1)
+        , m_Framerate()
+        , m_offSegCurStart(0)
+        , m_offSegSeekInfoStart(0)
+        , m_offSeekInfo(0)
+        , m_offSegTracksStart(0)
+        , m_uCuePos(0)
+        , m_uTrackIdPos(0)
+        , m_tsClusterOpenMs(0)
+        , m_fClusterOpen(false)
+        , m_offSegClusterStart(0) {}
 
     void writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const struct vpx_rational *a_pFps)
     {
@@ -285,12 +329,15 @@ public:
 
         m_Ebml.subStart(Segment);
 
-        m_uPositionReference = RTFileTell(m_Ebml.getFile());
         m_Framerate = *a_pFps;
+
+        /* Save offset of current segment. */
+        m_offSegCurStart = RTFileTell(m_Ebml.getFile());
 
         writeSeekInfo();
 
-        m_uTrackPos = RTFileTell(m_Ebml.getFile());
+        /* Save offset of upcoming tracks segment. */
+        m_offSegTracksStart = RTFileTell(m_Ebml.getFile());
 
         m_Ebml.subStart(Tracks);
 
@@ -328,9 +375,12 @@ public:
             m_Ebml.serializeUnsignedInteger(TrackNumber, 2);
             /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
 
+            OpusPrivData opusPrivData;
+
             m_Ebml.serializeUnsignedInteger(TrackUID, 1 /* UID */, 4)
                   .serializeUnsignedInteger(TrackType, 2 /* Audio */)
                   .serializeString(CodecID, "A_OPUS")
+                  .serializeData(CodecPrivate, &opusPrivData, sizeof(opusPrivData))
                   .subStart(Audio)
                   .serializeFloat(SamplingFrequency, 44100.0)
                   .serializeFloat(OutputSamplingFrequency, 44100.0)
@@ -346,45 +396,48 @@ public:
 
     void writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
     {
-        uint16_t uBlockTimecode = 0;
-        int64_t  iPtsMs;
-        bool     bStartCluster = false;
-
         /* Calculate the PTS of this frame in milliseconds. */
-        iPtsMs = a_pPkt->data.frame.pts * 1000
-                 * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
-        if (iPtsMs <= m_iLastPtsMs)
-            iPtsMs = m_iLastPtsMs + 1;
-        m_iLastPtsMs = iPtsMs;
+        int64_t iPtsMs = a_pPkt->data.frame.pts * 1000
+                       * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
 
-        if (m_iInitialPtsMs < 0)
-          m_iInitialPtsMs = m_iLastPtsMs;
+        if (iPtsMs <= m_tsLastPtsMs)
+            iPtsMs = m_tsLastPtsMs + 1;
+
+        m_tsLastPtsMs = iPtsMs;
+
+        if (m_tsInitialPtsMs < 0)
+          m_tsInitialPtsMs = m_tsLastPtsMs;
 
         /* Calculate the relative time of this block. */
-        if (iPtsMs - m_uClusterTimecode > 65536)
-            bStartCluster = 1;
-        else
-            uBlockTimecode = static_cast<uint16_t>(iPtsMs - m_uClusterTimecode);
+        uint16_t uBlockTimecode = 0;
+        bool     fClusterStart  = false;
 
-        int fKeyframe = (a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
-        if (bStartCluster || fKeyframe)
+        if (iPtsMs - m_tsClusterOpenMs > 65536)
+            fClusterStart = true;
+        else
+            uBlockTimecode = static_cast<uint16_t>(iPtsMs - m_tsClusterOpenMs);
+
+        bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
+
+        if (   fClusterStart
+            || fKeyframe)
         {
-            if (m_bClusterOpen)
+            if (m_fClusterOpen)
                 m_Ebml.subEnd(Cluster);
 
             /* Open a new cluster. */
             uBlockTimecode = 0;
-            m_bClusterOpen = true;
-            m_uClusterTimecode = (uint32_t)iPtsMs;
-            m_uClusterPos = RTFileTell(m_Ebml.getFile());
+            m_fClusterOpen = true;
+            m_tsClusterOpenMs = (uint32_t)iPtsMs;
+            m_offSegClusterStart = RTFileTell(m_Ebml.getFile());
             m_Ebml.subStart(Cluster)
-                  .serializeUnsignedInteger(Timecode, m_uClusterTimecode);
+                  .serializeUnsignedInteger(Timecode, m_tsClusterOpenMs);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
             {
-                CueEntry cue(m_uClusterTimecode, m_uClusterPos);
-                m_CueList.push_back(cue);
+                CueEntry cue(m_tsClusterOpenMs, m_offSegClusterStart);
+                m_lstCue.push_back(cue);
             }
         }
 
@@ -399,18 +452,18 @@ public:
 
     void writeFooter(uint32_t a_u64Hash)
     {
-        if (m_bClusterOpen)
+        if (m_fClusterOpen)
             m_Ebml.subEnd(Cluster);
 
         m_uCuePos = RTFileTell(m_Ebml.getFile());
         m_Ebml.subStart(Cues);
-        for (std::list<CueEntry>::iterator it = m_CueList.begin(); it != m_CueList.end(); ++it)
+        for (std::list<CueEntry>::iterator it = m_lstCue.begin(); it != m_lstCue.end(); ++it)
         {
           m_Ebml.subStart(CuePoint)
                 .serializeUnsignedInteger(CueTime, it->time)
                 .subStart(CueTrackPositions)
                 .serializeUnsignedInteger(CueTrack, 1)
-                .serializeUnsignedInteger(CueClusterPosition, it->loc - m_uPositionReference, 8)
+                .serializeUnsignedInteger(CueClusterPosition, it->loc - m_offSegCurStart, 8)
                 .subEnd(CueTrackPositions)
                 .subEnd(CuePoint);
         }
@@ -433,35 +486,35 @@ public:
 
 private:
 
-    void writeSeekInfo()
+    void writeSeekInfo(void)
     {
         uint64_t uPos = RTFileTell(m_Ebml.getFile());
-        if (m_uSeekInfoPos)
-            RTFileSeek(m_Ebml.getFile(), m_uSeekInfoPos, RTFILE_SEEK_BEGIN, NULL);
+        if (m_offSegSeekInfoStart)
+            RTFileSeek(m_Ebml.getFile(), m_offSegSeekInfoStart, RTFILE_SEEK_BEGIN, NULL);
         else
-            m_uSeekInfoPos = uPos;
+            m_offSegSeekInfoStart = uPos;
 
         m_Ebml.subStart(SeekHead)
 
               .subStart(Seek)
               .serializeUnsignedInteger(SeekID, Tracks)
-              .serializeUnsignedInteger(SeekPosition, m_uTrackPos - m_uPositionReference, 8)
+              .serializeUnsignedInteger(SeekPosition, m_offSegTracksStart - m_offSegCurStart, 8)
               .subEnd(Seek)
 
               .subStart(Seek)
               .serializeUnsignedInteger(SeekID, Cues)
-              .serializeUnsignedInteger(SeekPosition, m_uCuePos - m_uPositionReference, 8)
+              .serializeUnsignedInteger(SeekPosition, m_uCuePos - m_offSegCurStart, 8)
               .subEnd(Seek)
 
               .subStart(Seek)
               .serializeUnsignedInteger(SeekID, Info)
-              .serializeUnsignedInteger(SeekPosition, m_uSegmentInfoPos - m_uPositionReference, 8)
+              .serializeUnsignedInteger(SeekPosition, m_offSeekInfo - m_offSegCurStart, 8)
               .subEnd(Seek)
 
-              .subEnd(SeekHead);
+        .subEnd(SeekHead);
 
         int64_t iFrameTime = (int64_t)1000 * m_Framerate.den / m_Framerate.num;
-        m_uSegmentInfoPos = RTFileTell(m_Ebml.getFile());
+        m_offSeekInfo = RTFileTell(m_Ebml.getFile());
 
         char szVersion[64];
         RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%s",
@@ -469,37 +522,41 @@ private:
 
         m_Ebml.subStart(Info)
               .serializeUnsignedInteger(TimecodeScale, 1000000)
-              .serializeFloat(Segment_Duration, m_iLastPtsMs + iFrameTime - m_iInitialPtsMs)
+              .serializeFloat(Segment_Duration, m_tsLastPtsMs + iFrameTime - m_tsInitialPtsMs)
               .serializeString(MuxingApp, szVersion)
               .serializeString(WritingApp, szVersion)
               .subEnd(Info);
     }
 };
 
-WebMWriter::WebMWriter() : m_Impl(new WebMWriter_Impl()) {}
+WebMWriter::WebMWriter(void) : m_pImpl(new WebMWriter_Impl()) {}
 
-WebMWriter::~WebMWriter()
+WebMWriter::~WebMWriter(void)
 {
-    delete m_Impl;
+    if (m_pImpl)
+        delete m_pImpl;
 }
 
-int WebMWriter::create(const char *a_pszFilename, WebMWriter::Mode a_enmMode)
+int WebMWriter::create(const char *a_pszFilename, uint64_t a_fOpen, WebMWriter::Mode a_enmMode,
+                       WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec)
 {
-    m_Impl->m_enmMode = a_enmMode;
+    m_pImpl->m_enmMode       = a_enmMode;
+    m_pImpl->m_enmAudioCodec = a_enmAudioCodec;
+    m_pImpl->m_enmVideoCodec = a_enmVideoCodec;
 
-    return m_Impl->m_Ebml.create(a_pszFilename);
+    return m_pImpl->m_Ebml.create(a_pszFilename, a_fOpen);
 }
 
-void WebMWriter::close()
+void WebMWriter::close(void)
 {
-    m_Impl->m_Ebml.close();
+    m_pImpl->m_Ebml.close();
 }
 
 int WebMWriter::writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps)
 {
     try
     {
-        m_Impl->writeHeader(a_pCfg, a_pFps);
+        m_pImpl->writeHeader(a_pCfg, a_pFps);
     }
     catch(int rc)
     {
@@ -512,7 +569,7 @@ int WebMWriter::writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx
 {
     try
     {
-        m_Impl->writeBlock(a_pCfg, a_pPkt);
+        m_pImpl->writeBlock(a_pCfg, a_pPkt);
     }
     catch(int rc)
     {
@@ -525,7 +582,7 @@ int WebMWriter::writeFooter(uint32_t a_u64Hash)
 {
     try
     {
-        m_Impl->writeFooter(a_u64Hash);
+        m_pImpl->writeFooter(a_u64Hash);
     }
     catch(int rc)
     {
@@ -536,11 +593,11 @@ int WebMWriter::writeFooter(uint32_t a_u64Hash)
 
 uint64_t WebMWriter::getFileSize()
 {
-    return m_Impl->m_Ebml.getFileSize();
+    return m_pImpl->m_Ebml.getFileSize();
 }
 
 uint64_t WebMWriter::getAvailableSpace()
 {
-    return m_Impl->m_Ebml.getAvailableSpace();
+    return m_pImpl->m_Ebml.getAvailableSpace();
 }
 
