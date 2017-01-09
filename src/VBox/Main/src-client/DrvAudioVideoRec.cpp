@@ -41,6 +41,7 @@
 
 #include <opus.h>
 
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -290,8 +291,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
      */
     uint32_t cReadTotal = 0;
 
-    uint8_t pvDst[_4K];
-    opus_int32 cbDst = _4K;
+    uint8_t abDst[_4K];
+    opus_int32 cbDst = (opus_int32)sizeof(abDst);
 
     PPDMAUDIOSAMPLE pSamples;
     uint32_t cRead;
@@ -302,7 +303,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     {
         cReadTotal = cRead;
 
-        opus_int32 orc = opus_encode(pStreamOut->Codec.Opus.pEnc, (opus_int16 *)pSamples, cRead, pvDst, cbDst);
+        opus_int32 orc = opus_encode(pStreamOut->Codec.Opus.pEnc, (opus_int16 *)pSamples, cRead, abDst, cbDst);
         if (orc != OPUS_OK)
             LogFunc(("Encoding (1) failed: %s\n", opus_strerror(orc)));
 
