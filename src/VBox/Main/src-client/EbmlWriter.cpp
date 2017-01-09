@@ -50,7 +50,7 @@ public:
     /** Creates EBML output file. */
     inline int create(const char *a_pszFilename)
     {
-      return RTFileOpen(&m_File, a_pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        return RTFileOpen(&m_File, a_pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
     }
 
     /** Returns file size. */
