@@ -1167,7 +1167,6 @@ class TestDriverBase(object): # pylint: disable=R0902
         """
         Adds a PID to the PID file, creating the file if necessary.
         """
-        _ = fSudo; ## @todo remember sudo (root) children.
         try:
             oFile = utils.openNoInherit(self.sPidFile, 'a');
             oFile.write('%s:%s:%s\n'
@@ -1178,7 +1177,9 @@ class TestDriverBase(object): # pylint: disable=R0902
         except:
             reporter.errorXcpt();
             return False;
-        reporter.log2('pidFileAdd: added PID %d (new content: %s)' % (iPid, self.pidFileRead(),));
+        ## @todo s/log/log2/
+        reporter.log('pidFileAdd: added %s (%#x) %s fSudo=%s (new content: %s)'
+                     % (iPid, iPid, sName, fSudo, self.pidFileRead(),));
         return True;
 
     def pidFileRemove(self, iPid, fQuiet = False):
@@ -1205,8 +1206,8 @@ class TestDriverBase(object): # pylint: disable=R0902
         except:
             reporter.errorXcpt();
             return False;
-
-        reporter.log2('pidFileRemove: removed PID %d [%s] (new content: %s)' % (iPid, sName, self.pidFileRead(),));
+        ## @todo s/log/log2/
+        reporter.log('pidFileRemove: removed PID %d [%s] (new content: %s)' % (iPid, sName, self.pidFileRead(),));
         return True;
 
     def pidFileDelete(self):
@@ -1217,6 +1218,8 @@ class TestDriverBase(object): # pylint: disable=R0902
             except:
                 reporter.logXcpt();
                 return False;
+            ## @todo s/log/log2/
+            reporter.log('pidFileDelete: deleted "%s"' % (self.sPidFile,));
         return True;
 
     #
