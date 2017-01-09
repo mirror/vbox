@@ -93,6 +93,22 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         self.sSubject        = sSubject;
         self.aidSubjects     = aidSubjects;
         self.oFilter         = oFilter;
+        if self.oFilter is None:
+            class DummyFilter(object):
+                """ Dummy """
+                def getTableJoins(self, sExtraIndent = '', iOmit = -1, dOmitTables = None):
+                    """ Dummy """
+                    _ = sExtraIndent; _ = iOmit; _ = dOmitTables; # pylint: disable=redefined-variable-type
+                    return '';
+                def getWhereConditions(self, sExtraIndent = '', iOmit = -1):
+                    """ Dummy """
+                    _ = sExtraIndent; _ = iOmit; # pylint: disable=redefined-variable-type
+                    return '';
+                def isJoiningWithTable(self, sTable):
+                    """ Dummy """;
+                    _ = sTable;
+                    return False;
+            self.oFilter = DummyFilter();
 
     def getExtraSubjectTables(self):
         """
@@ -957,7 +973,7 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
     def __init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, # pylint: disable=R0913
                  aidTestBoxes, aidBuildCats, aidTestCases, fSepTestVars):
         assert(sSubject == self.ksSubEverything); # dummy
-        ReportModelBase.__init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects);
+        ReportModelBase.__init__(self, oDb, tsNow, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, oFilter = None);
         self.aidTestBoxes = aidTestBoxes;
         self.aidBuildCats = aidBuildCats;
         self.aidTestCases = aidTestCases;
