@@ -274,6 +274,8 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
         pSeg->cbSeg = (size_t)RT_BIT_32(u32Order);
         cbAlloc = pSeg->cbSeg;
         AssertPtr(pSeg->pvSeg);
+
+        pThis->cbFree -= cbAlloc;
     }
 
     return cbAlloc;
@@ -404,8 +406,6 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
         *pcbIoBufAllocated = cbIoBufAlloc;
         Assert(   (RT_SUCCESS(rc) && *pcbIoBufAllocated > 0)
                || RT_FAILURE(rc));
-
-        pThis->cbFree -= cbIoBufAlloc;
 
         RTCritSectLeave(&pThis->CritSectAlloc);
     }
