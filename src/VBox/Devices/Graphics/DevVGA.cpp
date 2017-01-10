@@ -6976,7 +6976,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             RTTIME T;
             RTTimeLocalExplode(&T, &Now);
             bool fSuppressNewYearSplash = false;
-            rc = CFGMR3QueryBoolDef(pCfg, "SuppressNewYearSplash", &fSuppressNewYearSplash, false);
+            rc = CFGMR3QueryBoolDef(pCfg, "SuppressNewYearSplash", &fSuppressNewYearSplash, true);
             if (   !fSuppressNewYearSplash
                 && (T.u16YearDay > 353 || T.u16YearDay < 10))
             {
