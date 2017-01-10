@@ -35,7 +35,7 @@ class ThreadTask
 public:
     ThreadTask(const Utf8Str &t)
         : m_strTaskName(t)
-        , mAsync(true)
+        , mAsync(false)
     { }
 
     virtual ~ThreadTask()

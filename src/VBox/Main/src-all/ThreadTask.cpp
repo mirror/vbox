@@ -73,6 +73,7 @@ HRESULT ThreadTask::createThreadWithType(RTTHREADTYPE enmType)
  */
 HRESULT ThreadTask::createThreadInternal(RTTHREADTYPE enmType)
 {
+    mAsync = true;
     int vrc = RTThreadCreate(NULL,
                              taskHandlerThreadProc,
                              (void *)this,
