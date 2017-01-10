@@ -72,8 +72,16 @@ int main(int argc, char **argv)
                     apv[i] = SUPR3ContAlloc(1 + (i % 11), NULL, &HCPhys);
                     if (!apv[i])
                     {
-                        RTPrintf("tstContiguous: i=%d: failed to allocate %d pages\n", i, 1 + (i % 11));
-                        rcRet++;
+                        RTPrintf("tstContiguous: i=%d: failed to allocate %d pages", i, 1 + (i % 11));
+#if defined(RT_ARCH_X86) && defined(RT_OS_LINUX)
+                        /* With 32-bit address spaces it's sometimes difficult
+                         * to find bigger chunks of contiguous memory */
+                        if (i % 11 < 8)
+                            RTPrintf(" => ignoring (32-bit host)");
+                        else
+#endif
+                            rcRet++;
+                        RTPrintf("\n");
                     }
                 }
                 for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
