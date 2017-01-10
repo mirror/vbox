@@ -679,7 +679,7 @@ class TestBoxLogic(ModelLogicBase):
     kiSortColumn_cCpus              =  6;
     kiSortColumn_cMbMemory          =  7;
     kiSortColumn_cMbScratch         =  8;
-    kiSortColumn_fNestedPaging      =  9;
+    kiSortColumn_fCpuNestedPaging   =  9;
     kiSortColumn_iTestBoxScriptRev  = 10;
     kiSortColumn_iPythonHexVersion  = 11;
     kcMaxSortColumns                = 12;
@@ -693,7 +693,7 @@ class TestBoxLogic(ModelLogicBase):
         kiSortColumn_cCpus:             'TestBoxesWithStrings.cCpus',
         kiSortColumn_cMbMemory:         'TestBoxesWithStrings.cMbMemory',
         kiSortColumn_cMbScratch:        'TestBoxesWithStrings.cMbScratch',
-        kiSortColumn_fNestedPaging:     'TestBoxesWithStrings.fNestedPaging',
+        kiSortColumn_fCpuNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging',
         kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev',
         kiSortColumn_iPythonHexVersion: 'TestBoxesWithStrings.iPythonHexVersion',
     };

@@ -202,7 +202,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
             None, # Group
             (TestBoxLogic.kiSortColumn_sOs, TestBoxLogic.kiSortColumn_sOsVersion, TestBoxLogic.kiSortColumn_sCpuArch,),
             (TestBoxLogic.kiSortColumn_sCpuVendor, TestBoxLogic.kiSortColumn_lCpuRevision,),
-            (TestBoxLogic.kiSortColumn_fNestedPaging,),
+            (TestBoxLogic.kiSortColumn_fCpuNestedPaging,),
             (TestBoxLogic.kiSortColumn_cCpus,),
             (TestBoxLogic.kiSortColumn_cMbMemory,),
             (TestBoxLogic.kiSortColumn_cMbScratch,),
