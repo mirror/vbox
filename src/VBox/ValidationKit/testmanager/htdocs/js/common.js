@@ -53,6 +53,22 @@ function isInteger(sValue)
 }
 
 /**
+ * Checks if @a oMemmber is present in aoArray.
+ *
+ * @returns true/false.
+ * @param   aoArray             The array to check.
+ * @param   oMember             The member to check for.
+ */
+function isMemberOfArray(aoArray, oMember)
+{
+    var i;
+    for (i = 0; i < aoArray.length; i++)
+        if (aoArray[i] == oMember)
+            return true;
+    return false;
+}
+
+/**
  * Removes the element with the specified ID.
  */
 function removeHtmlNode(sContainerId)
@@ -198,6 +214,72 @@ function getCurrentBrowerUrlPartForRedirectTo()
     return sWhere.substring(offPathKeep + 1);
 }
 
+/**
+ * Adds the given sorting options to the URL and reloads.
+ *
+ * This will preserve previous sorting columns except for those
+ * given in @a aiColumns.
+ *
+ * @param   sParam              Sorting parameter.
+ * @param   aiColumns           Array of sorting columns.
+ */
+function ahrefActionSortByColumns(sParam, aiColumns)
+{
+    var sWhere = window.location.href;
+
+    var offHash = sWhere.indexOf('#');
+    if (offHash < 0)
+        offHash = sWhere.length;
+
+    var offQm = sWhere.indexOf('?');
+    if (offQm > offHash)
+        offQm = -1;
+
+    var sNew = '';
+    if (offQm > 0)
+        sNew = sWhere.substring(0, offQm);
+
+    sNew += '?' + sParam + '=' + aiColumns[0];
+    var i;
+    for (i = 1; i < aiColumns.length; i++)
+        sNew += '&' + sParam + '=' + aiColumns[i];
+
+    if (offQm >= 0 && offQm + 1 < offHash)
+    {
+        var sArgs = '&' + sWhere.substring(offQm + 1, offHash);
+        var off   = 0;
+        while (off < sArgs.length)
+        {
+            var offMatch = sArgs.indexOf('&' + sParam + '=', off);
+            if (offMatch >= 0)
+            {
+                if (off < offMatch)
+                    sNew += sArgs.substring(off, offMatch);
+
+                var offValue = offMatch + 1 + sParam.length + 1;
+                offEnd = sArgs.indexOf('&', offValue);
+                if (offEnd < 0)
+                    offEnd = sArgs.length;
+
+                var iColumn = parseInt(sArgs.substring(offValue, offEnd));
+                if (!isMemberOfArray(aiColumns, iColumn) && !isMemberOfArray(aiColumns, -iColumn))
+                    sNew += sArgs.substring(off, offEnd);
+
+                off = offEnd;
+            }
+            else
+            {
+                sNew += sArgs.substring(off);
+                break;
+            }
+        }
+    }
+
+    if (offHash < sWhere.length)
+        sNew = sWhere.substr(offHash);
+
+    window.location.href = sNew;
+}
 
 /**
  * Sets the value of an input field element (give by ID).
