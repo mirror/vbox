@@ -43,6 +43,8 @@
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm);
 static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm);
 
+using namespace com;
+
 /**
  * Enumeration for a video recording state.
  */
@@ -646,12 +648,72 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
      * hazardous as nothing prevents the user from picking a file name of some
      * other important file, causing unintentional data loss. */
 
-    /** @todo Make mode configurable. */
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
+    if (rcv != VPX_CODEC_OK)
+    {
+        LogRel(("VideoRec: Failed to get default configuration for VPX codec: %s\n", vpx_codec_err_to_string(rcv)));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    com::Utf8Str options(pszOptions);
+    size_t pos = 0;
+
+    /* By default we enable both, video and audio recording (if available). */
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     WebMWriter::Mode enmMode = WebMWriter::Mode_AudioVideo;
 #else
     WebMWriter::Mode enmMode = WebMWriter::Mode_Video;
 #endif
+
+    do {
+
+        com::Utf8Str key, value;
+        pos = options.parseKeyValue(key, value, pos);
+
+        if (key.compare("vc_quality", Utf8Str::CaseInsensitive))
+        {
+            if (value.compare("realtime", Utf8Str::CaseInsensitive))
+            {
+                pStream->uEncoderDeadline = VPX_DL_REALTIME;
+            }
+            else if (value.compare("good", Utf8Str::CaseInsensitive))
+            {
+                pStream->uEncoderDeadline = 1000000 / uFps;
+            }
+            else if (value.compare("best", Utf8Str::CaseInsensitive))
+            {
+                pStream->uEncoderDeadline = VPX_DL_BEST_QUALITY;
+            }
+            else
+            {
+                LogRel(("VideoRec: Settings quality deadline to '%s'\n", value.c_str()));
+                pStream->uEncoderDeadline = value.toUInt32();
+            }
+        }
+        if (key.compare("vc_enabled", Utf8Str::CaseInsensitive))
+        {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
+            {
+                enmMode = WebMWriter::Mode_Audio;
+                LogRel(("VideoRec: Only audio will be recorded\n"));
+            }
+#endif
+        }
+        if (key.compare("ac_enabled", Utf8Str::CaseInsensitive))
+        {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
+            {
+                enmMode = WebMWriter::Mode_Video;
+                LogRel(("VideoRec: Only video will be recorded\n"));
+            }
+#endif
+        }
+        else
+            LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
+
+    } while(pos != com::Utf8Str::npos);
 
     uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
 #ifdef DEBUG
@@ -667,46 +729,6 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         LogRel(("VideoRec: Failed to create the video capture output file '%s' (%Rrc)\n", pszFile, rc));
         return rc;
     }
-
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
-    if (rcv != VPX_CODEC_OK)
-    {
-        LogFlow(("Failed to configure codec: %s\n", vpx_codec_err_to_string(rcv)));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    com::Utf8Str options(pszOptions);
-    size_t pos = 0;
-
-    do {
-
-        com::Utf8Str key, value;
-        pos = options.parseKeyValue(key, value, pos);
-
-        if (key == "quality")
-        {
-            if (value == "realtime")
-            {
-                pStream->uEncoderDeadline = VPX_DL_REALTIME;
-            }
-            else if (value == "good")
-            {
-                pStream->uEncoderDeadline = 1000000 / uFps;
-            }
-            else if (value == "best")
-            {
-                pStream->uEncoderDeadline = VPX_DL_BEST_QUALITY;
-            }
-            else
-            {
-                LogRel(("VideoRec: Settings quality deadline to '%s'\n", value.c_str()));
-                pStream->uEncoderDeadline = value.toUInt32();
-            }
-        }
-        else
-            LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
-
-    } while(pos != com::Utf8Str::npos);
 
     /* target bitrate in kilobits per second */
     pStream->Codec.VPX.Config.rc_target_bitrate = uRate;
