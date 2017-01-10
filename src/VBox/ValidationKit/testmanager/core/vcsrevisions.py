@@ -112,14 +112,14 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
     # Standard methods.
     #
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches VCS revisions for listing.
 
         Returns an array (list) of VcsRevisionData items, empty list if none.
         Raises exception on error.
         """
-        _ = tsNow;
+        _ = tsNow; _ = aiSortColumns;
         self._oDb.execute('SELECT   *\n'
                           'FROM     VcsRevisions\n'
                           'ORDER BY tsCreated, sRepository, iRevision\n'

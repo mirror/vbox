@@ -110,13 +110,14 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         ModelLogicBase.__init__(self, oDb)
         self.dCache = None;
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches Failure Category records.
 
         Returns an array (list) of FailureCategoryData items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
 
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'

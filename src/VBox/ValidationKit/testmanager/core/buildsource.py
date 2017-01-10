@@ -162,13 +162,15 @@ class BuildSourceLogic(ModelLogicBase): # pylint: disable=R0903
     # Standard methods.
     #
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches build sources.
 
         Returns an array (list) of BuildSourceData items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
+
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     BuildSources\n'

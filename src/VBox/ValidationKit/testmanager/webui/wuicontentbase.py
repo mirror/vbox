@@ -748,6 +748,7 @@ class WuiListContentBase(WuiContentBase):
         self._sId               = sId;
         self._asColumnHeaders   = [];
         self._asColumnAttribs   = [];
+        self._aaiColumnSorting  = [];   ##< list of list of integers
 
     def _formatCommentCell(self, sComment, cMaxLines = 3, cchMaxLine = 63):
         """
@@ -943,9 +944,14 @@ class WuiListContentBase(WuiContentBase):
         """
 
         sHtml  = '  <thead class="tmheader"><tr>';
-        for oHeader in self._asColumnHeaders:
+        for iHeader, oHeader in enumerate(self._asColumnHeaders):
             if isinstance(oHeader, WuiHtmlBase):
                 sHtml += '<th>' + oHeader.toHtml() + '</th>';
+            elif iHeader < len(self._aaiColumnSorting) and self._aaiColumnSorting[iHeader] is not None:
+                sHtml += '<th>'
+                sHtml += '<a href="javascript:ahrefActionSortByColumns(\'%s\', [%s]);">' \
+                       % (WuiDispatcherBase.ksParamSortColumns, ','.join([str(i) for i in self._aaiColumnSorting[iHeader]]));
+                sHtml += webutils.escapeElem(oHeader) + '</a></th>';
             else:
                 sHtml += '<th>' + webutils.escapeElem(oHeader) + '</th>';
         sHtml += '</tr><thead>\n';
@@ -1023,6 +1029,7 @@ class WuiListContentWithActionBase(WuiListContentBase):
         self._asColumnHeaders = [ WuiRawHtml('<input type="checkbox" onClick="toggle%s(this)">'
                                              % ('' if sId is None else sId)), ];
         self._asColumnAttribs = [ 'align="center"', ];
+        self._aaiColumnSorting = [ None, ];
 
     def _getCheckBoxColumn(self, iEntry, sValue):
         """

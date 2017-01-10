@@ -379,13 +379,14 @@ class TestGroupLogic(ModelLogicBase):
     # Standard methods.
     #
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches test groups.
 
         Returns an array (list) of TestGroupDataEx items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     TestGroups\n'

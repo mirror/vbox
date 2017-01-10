@@ -127,13 +127,14 @@ class SystemChangelogLogic(ModelLogicBase):
         ModelLogicBase.__init__(self, oDb);
 
 
-    def fetchForListingEx(self, iStart, cMaxRows, tsNow, cDaysBack):
+    def fetchForListingEx(self, iStart, cMaxRows, tsNow, cDaysBack, aiSortColumns = None):
         """
         Fetches SystemLog entries.
 
         Returns an array (list) of SystemLogData items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
 
         #
         # Construct the query.

@@ -148,13 +148,14 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
         self.oCategoryLogic = None;
         self.oUserAccountLogic = None;
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches Failure Category records.
 
         Returns an array (list) of FailureReasonDataEx items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
         self._ensureCachesPresent();
 
         if tsNow is None:
@@ -187,13 +188,14 @@ class FailureReasonLogic(ModelLogicBase): # pylint: disable=R0903
             aoRows.append(FailureReasonDataEx().initFromDbRowEx(aoRow, self.oCategoryLogic, self.oUserAccountLogic));
         return aoRows
 
-    def fetchForListingInCategory(self, iStart, cMaxRows, tsNow, idFailureCategory):
+    def fetchForListingInCategory(self, iStart, cMaxRows, tsNow, idFailureCategory, aiSortColumns = None):
         """
         Fetches Failure Category records.
 
         Returns an array (list) of FailureReasonDataEx items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
         self._ensureCachesPresent();
 
         if tsNow is None:

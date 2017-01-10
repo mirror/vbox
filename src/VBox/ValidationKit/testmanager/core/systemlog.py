@@ -102,13 +102,14 @@ class SystemLogLogic(ModelLogicBase):
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb);
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches SystemLog entries.
 
         Returns an array (list) of SystemLogData items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     SystemLog\n'

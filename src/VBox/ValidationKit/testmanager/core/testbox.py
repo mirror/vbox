@@ -670,6 +670,33 @@ class TestBoxLogic(ModelLogicBase):
     TestBox logic.
     """
 
+    kiSortColumn_sName              =  0;
+    kiSortColumn_sOs                =  1;
+    kiSortColumn_sOsVersion         =  2;
+    kiSortColumn_sCpuVendor         =  3;
+    kiSortColumn_sCpuArch           =  4;
+    kiSortColumn_lCpuRevision       =  5;
+    kiSortColumn_cCpus              =  6;
+    kiSortColumn_cMbMemory          =  7;
+    kiSortColumn_cMbScratch         =  8;
+    kiSortColumn_fNestedPaging      =  9;
+    kiSortColumn_iTestBoxScriptRev  = 10;
+    kiSortColumn_iPythonHexVersion  = 11;
+    kcMaxSortColumns                = 12;
+    kdSortColumnMap                 = {
+        kiSortColumn_sName:             'TestBoxesWithStrings.sName',
+        kiSortColumn_sOs:               'TestBoxesWithStrings.sOs',
+        kiSortColumn_sOsVersion:        'TestBoxesWithStrings.sOsVersion',
+        kiSortColumn_sCpuVendor:        'TestBoxesWithStrings.sCpuVendor',
+        kiSortColumn_sCpuArch:          'TestBoxesWithStrings.sCpuArch',
+        kiSortColumn_lCpuRevision:      'TestBoxesWithStrings.lCpuRevision',
+        kiSortColumn_cCpus:             'TestBoxesWithStrings.cCpus',
+        kiSortColumn_cMbMemory:         'TestBoxesWithStrings.cMbMemory',
+        kiSortColumn_cMbScratch:        'TestBoxesWithStrings.cMbScratch',
+        kiSortColumn_fNestedPaging:     'TestBoxesWithStrings.fNestedPaging',
+        kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev',
+        kiSortColumn_iPythonHexVersion: 'TestBoxesWithStrings.iPythonHexVersion',
+    };
 
     def __init__(self, oDb):
         ModelLogicBase.__init__(self, oDb);
@@ -693,7 +720,7 @@ class TestBoxLogic(ModelLogicBase):
         oData.initFromDbRow(self._oDb.fetchOne());
         return oData;
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches testboxes for listing.
 
@@ -713,6 +740,9 @@ class TestBoxLogic(ModelLogicBase):
 
         from testmanager.core.testboxstatus import TestBoxStatusData;
 
+        if aiSortColumns is None or len(aiSortColumns) == 0:
+            aiSortColumns = [self.kiSortColumn_sName,];
+
         if tsNow is None:
             self._oDb.execute('SELECT   TestBoxesWithStrings.*,\n'
                               '         TestBoxStatuses.*\n'
@@ -720,7 +750,7 @@ class TestBoxLogic(ModelLogicBase):
                               '         LEFT OUTER JOIN TestBoxStatuses\n'
                               '                      ON TestBoxStatuses.idTestBox = TestBoxesWithStrings.idTestBox\n'
                               'WHERE    TestBoxesWithStrings.tsExpire = \'infinity\'::TIMESTAMP\n'
-                              'ORDER BY TestBoxesWithStrings.sName\n'
+                              'ORDER BY ' + (', '.join([self.kdSortColumnMap[i] for i in aiSortColumns])) + '\n'
                               'LIMIT %s OFFSET %s\n'
                               , (cMaxRows, iStart,));
         else:
@@ -731,7 +761,7 @@ class TestBoxLogic(ModelLogicBase):
                               '                      ON TestBoxStatuses.idTestBox = TestBoxesWithStrings.idTestBox\n'
                               'WHERE    tsExpire     > %s\n'
                               '     AND tsEffective <= %s\n'
-                              'ORDER BY TestBoxesWithStrings.sName\n'
+                              'ORDER BY ' + (', '.join([self.kdSortColumnMap[i] for i in aiSortColumns])) + '\n'
                               'LIMIT %s OFFSET %s\n'
                               , ( tsNow, tsNow, cMaxRows, iStart,));
 

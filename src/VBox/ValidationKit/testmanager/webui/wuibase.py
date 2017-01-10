@@ -82,6 +82,9 @@ class WuiDispatcherBase(object):
     ## The name of the list-action parameter (WuiListContentWithActionBase).
     ksParamListAction    = 'ListAction';
 
+    ## One or more columns to sort by.
+    ksParamSortColumns   = 'SortBy';
+
     ## The name of the change log enabled/disabled parameter.
     ksParamChangeLogEnabled         = 'ChangeLogEnabled';
     ## The name of the parmaeter indicating the change log page number.
@@ -800,9 +803,15 @@ class WuiDispatcherBase(object):
         tsEffective     = self.getEffectiveDateParam();
         cItemsPerPage   = self.getIntParam(self.ksParamItemsPerPage, iMin = 2, iMax =   9999, iDefault = 300);
         iPage           = self.getIntParam(self.ksParamPageNo,       iMin = 0, iMax = 999999, iDefault = 0);
+        aiSortColumnsDup = self.getListOfIntParams(self.ksParamSortColumns, iMin = 0,
+                                                   iMax = getattr(oLogicType, 'kcMaxSortColumns', 0), aiDefaults = []);
+        aiSortColumns   = [];
+        for iSortColumn in aiSortColumnsDup:
+            if iSortColumn not in aiSortColumns:
+                aiSortColumns.append(iSortColumn);
         self._checkForUnknownParameters();
 
-        aoEntries  = oLogicType(self._oDb).fetchForListing(iPage * cItemsPerPage, cItemsPerPage + 1, tsEffective);
+        aoEntries  = oLogicType(self._oDb).fetchForListing(iPage * cItemsPerPage, cItemsPerPage + 1, tsEffective, aiSortColumns);
         oContent   = oListContentType(aoEntries, iPage, cItemsPerPage, tsEffective,
                                       fnDPrint = self._oSrvGlue.dprint, oDisp = self);
         (self._sPageTitle, self._sPageBody) = oContent.show();

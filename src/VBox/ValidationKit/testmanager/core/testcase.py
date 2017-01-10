@@ -964,13 +964,14 @@ class TestCaseLogic(ModelLogicBase):
             aoRet.append(TestCaseData().initFromDbRow(aoRow))
         return aoRet
 
-    def fetchForListing(self, iStart, cMaxRows, tsNow):
+    def fetchForListing(self, iStart, cMaxRows, tsNow, aiSortColumns = None):
         """
         Fetches test cases.
 
         Returns an array (list) of TestCaseDataEx items, empty list if none.
         Raises exception on error.
         """
+        _ = aiSortColumns;
         if tsNow is None:
             self._oDb.execute('SELECT   *\n'
                               'FROM     TestCases\n'
