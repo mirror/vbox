@@ -177,7 +177,20 @@ def tryGetHostByName(sName):
                 reporter.error('gethostbyname(%s) -> %s' % (sName, sIpAddr));
     return sName;
 
-def processInterrupt(uPid):
+def __processSudoKill(uPid, iSignal, fSudo):
+    """
+    Does the sudo kill -signal pid thing if fSudo is true, else uses os.kill.
+    """
+    try:
+        if fSudo:
+            return utils.sudoProcessCall(['/bin/kill', '-%s' % (iSignal,), str(uPid)]) == 0;
+        os.kill(uPid, iSignal);
+        return True;
+    except:
+        reporter.logXcpt('uPid=%s' % (uPid,));
+    return False;
+
+def processInterrupt(uPid, fSudo = False):
     """
     Sends a SIGINT or equivalent to interrupt the specified process.
     Returns True on success, False on failure.
@@ -188,15 +201,10 @@ def processInterrupt(uPid):
     if sys.platform == 'win32':
         fRc = winbase.processInterrupt(uPid)
     else:
-        try:
-            os.kill(uPid, signal.SIGINT);
-            fRc = True;
-        except:
-            reporter.logXcpt('uPid=%s' % (uPid,));
-            fRc = False;
+        fRc = __processSudoKill(uPid, signal.SIGINT, fSudo);
     return fRc;
 
-def sendUserSignal1(uPid):
+def sendUserSignal1(uPid, fSudo = False):
     """
     Sends a SIGUSR1 or equivalent to nudge the process into shutting down
     (VBoxSVC) or something.
@@ -208,15 +216,10 @@ def sendUserSignal1(uPid):
     if sys.platform == 'win32':
         fRc = False;
     else:
-        try:
-            os.kill(uPid, signal.SIGUSR1); # pylint: disable=E1101
-            fRc = True;
-        except:
-            reporter.logXcpt('uPid=%s' % (uPid,));
-            fRc = False;
+        fRc = __processSudoKill(uPid, signal.SIGUSR1, fSudo); # pylint: disable=E1101
     return fRc;
 
-def processTerminate(uPid):
+def processTerminate(uPid, fSudo = False):
     """
     Terminates the process in a nice manner (SIGTERM or equivalent).
     Returns True on success, False on failure (logged).
@@ -225,14 +228,10 @@ def processTerminate(uPid):
     if sys.platform == 'win32':
         fRc = winbase.processTerminate(uPid);
     else:
-        try:
-            os.kill(uPid, signal.SIGTERM);
-            fRc = True;
-        except:
-            reporter.logXcpt('uPid=%s' % (uPid,));
+        fRc = __processSudoKill(uPid, signal.SIGTERM, fSudo);
     return fRc;
 
-def processKill(uPid):
+def processKill(uPid, fSudo = False):
     """
     Terminates the process with extreme prejudice (SIGKILL).
     Returns True on success, False on failure.
@@ -241,11 +240,7 @@ def processKill(uPid):
     if sys.platform == 'win32':
         fRc = winbase.processKill(uPid);
     else:
-        try:
-            os.kill(uPid, signal.SIGKILL); # pylint: disable=E1101
-            fRc = True;
-        except:
-            reporter.logXcpt('uPid=%s' % (uPid,));
+        fRc = __processSudoKill(uPid, signal.SIGKILL, fSudo); # pylint: disable=E1101
     return fRc;
 
 def processKillWithNameCheck(uPid, sName):
@@ -1535,9 +1530,8 @@ class TestDriverBase(object): # pylint: disable=R0902
         else:
             afnMethods = [ sendUserSignal1, processInterrupt, processTerminate, processKill ];
         for fnMethod in afnMethods:
-            ## @todo Handle SUDO processes.
             for iPid in dPids:
-                fnMethod(iPid);
+                fnMethod(iPid, fSudo = dPids[iPid][1]);
 
             for i in range(10):
                 if i > 0:
