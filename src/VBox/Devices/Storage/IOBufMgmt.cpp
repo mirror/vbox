@@ -14,14 +14,20 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#define LOG_GROUP LOG_GROUP_IOBUFMGMT
 #include <VBox/cdefs.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #include <iprt/mem.h>
 #include <iprt/memsafer.h>
 #include <iprt/sg.h>
+#include <iprt/string.h>
 #include <iprt/asm.h>
+
+/** Set to verify the allocations for distinct memory areas. */
+//#define IOBUFMGR_VERIFY_ALLOCATIONS 1
 
 /** The minimum bin size to create - power of two!. */
 #define IOBUFMGR_BIN_SIZE_MIN _4K
@@ -82,6 +88,10 @@ typedef struct IOBUFMGRINT
     bool                fAllocSuspended;
     /** Array of bins. */
     PIOBUFMGRBIN        paBins;
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+    /** Pointer to the object state (allocated/free) bitmap. */
+    void                *pbmObjState;
+#endif
     /** Array of pointer entries for the various bins - variable in size. */
     void               *apvObj[1];
 } IOBUFMGRINT;
@@ -130,6 +140,28 @@ DECLINLINE(uint32_t) iobufMgrGetObjCount(size_t cbMem, unsigned cBins, size_t cb
     return (uint32_t)cObjs;
 }
 
+DECLINLINE(void) iobufMgrBinObjAdd(PIOBUFMGRBIN pBin, void *pvObj)
+{
+    LogFlowFunc(("pBin=%#p{.iFree=%u} pvObj=%#p\n", pBin, pBin->iFree, pvObj));
+    AssertPtr(pvObj);
+    pBin->papvFree[pBin->iFree] = pvObj;
+    pBin->iFree++;
+    LogFlowFunc(("return pBin=%#p{.iFree=%u}\n", pBin, pBin->iFree));
+}
+
+DECLINLINE(void *) iobufMgrBinObjRemove(PIOBUFMGRBIN pBin)
+{
+    LogFlowFunc(("pBin=%#p{.iFree=%u}\n", pBin, pBin->iFree));
+    Assert(pBin->iFree > 0);
+
+    pBin->iFree--;
+    void *pvObj = pBin->papvFree[pBin->iFree];
+    AssertPtr(pvObj);
+
+    LogFlowFunc(("returns pvObj=%#p pBin=%#p{.iFree=%u}\n", pvObj, pBin, pBin->iFree));
+    return pvObj;
+}
+
 /**
  * Resets the bins to factory default (memory resigin in the largest bin).
  *
@@ -156,10 +188,9 @@ static void iobufMgrResetBins(PIOBUFMGRINT pThis)
             uint8_t *pbMem = (uint8_t *)pThis->pvMem;
             while (cbMax)
             {
-                pBin->papvFree[pBin->iFree] = pbMem;
+                iobufMgrBinObjAdd(pBin, pbMem);
                 cbMax -= cbBin;
                 pbMem += cbBin;
-                pBin->iFree++;
 
                 if (cbMax < cbBin) /** @todo Populate smaller bins and don't waste memory. */
                     break;
@@ -215,8 +246,7 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
         {
             if (pBinCur->iFree != 0)
             {
-                pBinCur->iFree--;
-                uint8_t *pbMem = (uint8_t *)pBinCur->papvFree[pBinCur->iFree];
+                uint8_t *pbMem = (uint8_t *)iobufMgrBinObjRemove(pBinCur);
                 AssertPtr(pbMem);
 
                 /* Always split into half. */
@@ -224,13 +254,11 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
                 {
                     iBinCur--;
                     pBinCur = &pThis->paBins[iBinCur];
-                    pBinCur->papvFree[pBinCur->iFree] = pbMem + (size_t)RT_BIT(iBinCur + pThis->u32OrderMin); /* (RT_BIT causes weird MSC warning without cast) */
-                    pBinCur->iFree++;
+                    iobufMgrBinObjAdd(pBinCur, pbMem + (size_t)RT_BIT(iBinCur + pThis->u32OrderMin)); /* (RT_BIT causes weird MSC warning without cast) */
                 }
 
                 /* For the last bin we will get two new memory blocks. */
-                pBinCur->papvFree[pBinCur->iFree] = pbMem;
-                pBinCur->iFree++;
+                iobufMgrBinObjAdd(pBinCur, pbMem);
                 Assert(pBin == pBinCur);
                 break;
             }
@@ -269,13 +297,27 @@ static size_t iobufMgrAllocSegment(PIOBUFMGRINT pThis, PRTSGSEG pSeg, size_t cb)
     }
     else if (pBin->iFree != 0)
     {
-        pBin->iFree--;
-        pSeg->pvSeg = pBin->papvFree[pBin->iFree];
+        pSeg->pvSeg = iobufMgrBinObjRemove(pBin);
         pSeg->cbSeg = (size_t)RT_BIT_32(u32Order);
         cbAlloc = pSeg->cbSeg;
         AssertPtr(pSeg->pvSeg);
 
         pThis->cbFree -= cbAlloc;
+
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+        /* Mark the objects as allocated. */
+        uint32_t iBinStart = ((uintptr_t)pSeg->pvSeg - (uintptr_t)pThis->pvMem) / IOBUFMGR_BIN_SIZE_MIN;
+        Assert(   !(((uintptr_t)pSeg->pvSeg - (uintptr_t)pThis->pvMem) % IOBUFMGR_BIN_SIZE_MIN)
+               && !(pSeg->cbSeg % IOBUFMGR_BIN_SIZE_MIN));
+        uint32_t iBinEnd = iBinStart + (pSeg->cbSeg / IOBUFMGR_BIN_SIZE_MIN);
+        while (iBinStart < iBinEnd)
+        {
+            bool fState = ASMBitTestAndSet(pThis->pbmObjState, iBinStart);
+            //LogFlowFunc(("iBinStart=%u fState=%RTbool -> true\n", iBinStart, fState));
+            AssertMsg(!fState, ("Trying to allocate an already allocated object\n"));
+            iBinStart++;
+        }
+#endif
     }
 
     return cbAlloc;
@@ -303,7 +345,14 @@ DECLHIDDEN(int) IOBUFMgrCreate(PIOBUFMGR phIoBufMgr, size_t cbMax, uint32_t fFla
         pThis->u32OrderMax     = ASMBitLastSetU32(IOBUFMGR_BIN_SIZE_MAX) - 1;
         pThis->paBins = (PIOBUFMGRBIN)((uint8_t *)pThis + RT_OFFSETOF(IOBUFMGRINT, apvObj[cObjs]));
 
-        rc = RTCritSectInit(&pThis->CritSectAlloc);
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+        pThis->pbmObjState = RTMemAllocZ((cbMax / IOBUFMGR_BIN_SIZE_MIN / 8) + 1);
+        if (!pThis->pbmObjState)
+            rc = VERR_NO_MEMORY;
+#endif
+
+        if (RT_SUCCESS(rc))
+            rc = RTCritSectInit(&pThis->CritSectAlloc);
         if (RT_SUCCESS(rc))
         {
             if (pThis->fFlags & IOBUFMGR_F_REQUIRE_NOT_PAGABLE)
@@ -350,6 +399,12 @@ DECLHIDDEN(int) IOBUFMgrDestroy(IOBUFMGR hIoBufMgr)
             else
                 RTMemPageFree(pThis->pvMem, RT_ALIGN_Z(pThis->cbMax, _4K));
 
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+            AssertPtr(pThis->pbmObjState);
+            RTMemFree(pThis->pbmObjState);
+            pThis->pbmObjState = NULL;
+#endif
+
             RTCritSectLeave(&pThis->CritSectAlloc);
             RTCritSectDelete(&pThis->CritSectAlloc);
             RTMemFree(pThis);
@@ -368,6 +423,9 @@ DECLHIDDEN(int) IOBUFMgrAllocBuf(IOBUFMGR hIoBufMgr, PIOBUFDESC pIoBufDesc, size
                                  size_t *pcbIoBufAllocated)
 {
     PIOBUFMGRINT pThis = hIoBufMgr;
+
+    LogFlowFunc(("pThis=%#p pIoBufDesc=%#p cbIoBuf=%zu pcbIoBufAllocated=%#p\n",
+                 pThis, pIoBufDesc, cbIoBuf, pcbIoBufAllocated));
 
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(cbIoBuf > 0, VERR_INVALID_PARAMETER);
@@ -417,6 +475,8 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc)
 {
     PIOBUFMGRINT pThis = pIoBufDesc->Int.pIoBufMgr;
 
+    LogFlowFunc(("pIoBufDesc=%#p{.cSegsUsed=%u}\n", pIoBufDesc, pIoBufDesc->Int.cSegsUsed));
+
     AssertPtr(pThis);
 
     int rc = RTCritSectEnter(&pThis->CritSectAlloc);
@@ -433,9 +493,27 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc)
 
             Assert(iBin < pThis->cBins);
             PIOBUFMGRBIN pBin = &pThis->paBins[iBin];
-            pBin->papvFree[pBin->iFree] = pSeg->pvSeg;
-            pBin->iFree++;
+            iobufMgrBinObjAdd(pBin, pSeg->pvSeg);
             pThis->cbFree += pSeg->cbSeg;
+
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+            /* Mark the objects as free. */
+            uint32_t iBinStart = ((uintptr_t)pSeg->pvSeg - (uintptr_t)pThis->pvMem) / IOBUFMGR_BIN_SIZE_MIN;
+            Assert(   !(((uintptr_t)pSeg->pvSeg - (uintptr_t)pThis->pvMem) % IOBUFMGR_BIN_SIZE_MIN)
+                   && !(pSeg->cbSeg % IOBUFMGR_BIN_SIZE_MIN));
+            uint32_t iBinEnd = iBinStart + (pSeg->cbSeg / IOBUFMGR_BIN_SIZE_MIN);
+            while (iBinStart < iBinEnd)
+            {
+                bool fState = ASMBitTestAndClear(pThis->pbmObjState, iBinStart);
+                //LogFlowFunc(("iBinStart=%u fState=%RTbool -> false\n", iBinStart, fState));
+                AssertMsg(fState, ("Trying to free a non allocated object\n"));
+                iBinStart++;
+            }
+
+            /* Poison the state. */
+            pSeg->cbSeg = ~0;
+            pSeg->pvSeg = (void *)~(uintptr_t)0;
+#endif
         }
 
         if (   pThis->cbFree == pThis->cbMax
@@ -449,5 +527,8 @@ DECLHIDDEN(void) IOBUFMgrFreeBuf(PIOBUFDESC pIoBufDesc)
     }
 
     pIoBufDesc->Int.cSegsUsed = 0;
+#ifdef IOBUFMGR_VERIFY_ALLOCATIONS
+    memset(&pIoBufDesc->SgBuf, 0xff, sizeof(pIoBufDesc->SgBuf));
+#endif
 }
 

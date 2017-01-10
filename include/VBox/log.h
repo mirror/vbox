@@ -267,6 +267,8 @@ typedef enum LOGGROUP
     LOG_GROUP_HM,
     /** IEM group. */
     LOG_GROUP_IEM,
+    /** I/O buffer management group. */
+    LOG_GROUP_IOBUFMGMT,
     /** IOM group. */
     LOG_GROUP_IOM,
     /** XPCOM IPC group. */
@@ -914,6 +916,7 @@ typedef enum LOGGROUP
     "HGSMI",        \
     "HM",           \
     "IEM",          \
+    "IOBUFMGMT",    \
     "IOM",          \
     "IPC",          \
     "LWIP",            \
