@@ -670,17 +670,17 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         com::Utf8Str key, value;
         pos = options.parseKeyValue(key, value, pos);
 
-        if (key.compare("vc_quality", Utf8Str::CaseInsensitive))
+        if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
         {
-            if (value.compare("realtime", Utf8Str::CaseInsensitive))
+            if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
             {
                 pStream->uEncoderDeadline = VPX_DL_REALTIME;
             }
-            else if (value.compare("good", Utf8Str::CaseInsensitive))
+            else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
             {
                 pStream->uEncoderDeadline = 1000000 / uFps;
             }
-            else if (value.compare("best", Utf8Str::CaseInsensitive))
+            else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
             {
                 pStream->uEncoderDeadline = VPX_DL_BEST_QUALITY;
             }
@@ -690,17 +690,17 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
                 pStream->uEncoderDeadline = value.toUInt32();
             }
         }
-        if (key.compare("vc_enabled", Utf8Str::CaseInsensitive))
+        if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-            if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
+            if (value.compare("false", Utf8Str::CaseInsensitive) == 0) /* Disable audio. */
             {
                 enmMode = WebMWriter::Mode_Audio;
                 LogRel(("VideoRec: Only audio will be recorded\n"));
             }
 #endif
         }
-        if (key.compare("ac_enabled", Utf8Str::CaseInsensitive))
+        if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
