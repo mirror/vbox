@@ -637,9 +637,45 @@ void UICocoaSegmentedButton::onClicked(int iSegment)
     emit clicked(iSegment, false);
 }
 
+
+/** QAccessibleWidget extension used as an accessibility interface for search-field. */
+class UIAccessibilityInterfaceForUICocoaSearchField : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating segmented-button accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UICocoaSearchField"))
+            return new UIAccessibilityInterfaceForUICocoaSearchField(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    UIAccessibilityInterfaceForUICocoaSearchField(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::EditableText)
+    {
+        // For now this class doesn't implement interface casting.
+        // Which means there will be no editable text accessible
+        // in basic accessibility layer, only in advanced one.
+    }
+
+private:
+
+    /** Returns corresponding search-field. */
+    UICocoaSearchField *field() const { return qobject_cast<UICocoaSearchField*>(widget()); }
+};
+
+
 UICocoaSearchField::UICocoaSearchField(QWidget *pParent)
     : QMacCocoaViewContainer(0, pParent)
 {
+    /* Install segmented-button accessibility interface factory: */
+    QAccessible::installFactory(UIAccessibilityInterfaceForUICocoaSearchField::pFactory);
+
     /* Prepare auto-release pool: */
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
