@@ -986,6 +986,13 @@ typedef struct _PEB_COMMON
     uint32_t Padding6;                                                      /**< 0x37c / NA */
 #endif
     uint64_t CsrServerReadOnlySharedMemoryBase;                             /**< 0x380 / 0x248 */
+    /* End of PEB in W8, W81. */
+    uintptr_t TppWorkerpListLock;                                           /**< 0x388 / 0x250 */
+    LIST_ENTRY TppWorkerpList;                                              /**< 0x390 / 0x254 */
+    PVOID WaitOnAddressHashTable[128];                                      /**< 0x3a0 / 0x25c */
+#if ARCH_BITS == 32
+    uint32_t ExplicitPadding7;                                              /**< NA NA / 0x45c */
+#endif
 } PEB_COMMON;
 typedef PEB_COMMON *PPEB_COMMON;
 
@@ -997,12 +1004,14 @@ AssertCompileMemberOffset(PEB_COMMON, LoaderLock,     ARCH_BITS == 64 ? 0x110 : 
 AssertCompileMemberOffset(PEB_COMMON, Diff5.W52.ImageProcessAffinityMask, ARCH_BITS == 64 ? 0x138 :  0xc0);
 AssertCompileMemberOffset(PEB_COMMON, PostProcessInitRoutine,    ARCH_BITS == 64 ? 0x230 : 0x14c);
 AssertCompileMemberOffset(PEB_COMMON, AppCompatFlags, ARCH_BITS == 64 ? 0x2c8 : 0x1d8);
-AssertCompileSize(PEB_COMMON, ARCH_BITS == 64 ? 0x388 : 0x250);
+AssertCompileSize(PEB_COMMON, ARCH_BITS == 64 ? 0x7a0 : 0x460);
 
+/** The size of the windows 10 (build 14393) PEB structure. */
+#define PEB_SIZE_W10    sizeof(PEB_COMMON)
 /** The size of the windows 8.1 PEB structure.  */
-#define PEB_SIZE_W81    sizeof(PEB_COMMON)
+#define PEB_SIZE_W81    RT_UOFFSETOF(PEB_COMMON, TppWorkerpListLock)
 /** The size of the windows 8.0 PEB structure.  */
-#define PEB_SIZE_W80    sizeof(PEB_COMMON)
+#define PEB_SIZE_W80    RT_UOFFSETOF(PEB_COMMON, TppWorkerpListLock)
 /** The size of the windows 7 PEB structure.  */
 #define PEB_SIZE_W7     RT_UOFFSETOF(PEB_COMMON, CsrServerReadOnlySharedMemoryBase)
 /** The size of the windows vista PEB structure.  */
@@ -1374,7 +1383,10 @@ typedef struct _TEB_COMMON
             /* End of TEB in W7 (windows 7)! */
             PVOID ReservedForWdf;                                          /**< 0x1818 / 0xfe4 - New Since W7. */
             /* End of TEB in W8 (windows 8.0 & 8.1)! */
-        } W8, W80, W81;
+            PVOID ReservedForCrt;                                          /**< 0x1820 / 0xfe8 - New Since W10.  */
+            RTUUID EffectiveContainerId;                                   /**< 0x1828 / 0xfec - New Since W10.  */
+            /* End of TEB in W10 14393! */
+        } W8, W80, W81, W10;
         struct
         {
             PVOID ResourceRetValue;                                        /**< 0x1810 / 0xfe0 */
@@ -1401,9 +1413,11 @@ AssertCompileMemberOffset(TEB_COMMON, WinSockData,          ARCH_BITS == 64 ? 0x
 AssertCompileMemberOffset(TEB_COMMON, GuaranteedStackBytes, ARCH_BITS == 64 ? 0x1748 : 0xf78);
 AssertCompileMemberOffset(TEB_COMMON, MuiImpersonation,     ARCH_BITS == 64 ? 0x17e8 : 0xfc4);
 AssertCompileMemberOffset(TEB_COMMON, LockCount,            ARCH_BITS == 64 ? 0x1808 : 0xfd8);
-AssertCompileSize(TEB_COMMON, ARCH_BITS == 64 ? 0x1828 : 0xff8);
+AssertCompileSize(TEB_COMMON, ARCH_BITS == 64 ? 0x1838 : 0x1000);
 
 
+/** The size of the windows 8.1 PEB structure.  */
+#define TEB_SIZE_W10    ( RT_UOFFSETOF(TEB_COMMON, Diff12.W10.EffectiveContainerId) + sizeof(RTUUID) )
 /** The size of the windows 8.1 PEB structure.  */
 #define TEB_SIZE_W81    ( RT_UOFFSETOF(TEB_COMMON, Diff12.W8.ReservedForWdf) + sizeof(PVOID) )
 /** The size of the windows 8.0 PEB structure.  */
