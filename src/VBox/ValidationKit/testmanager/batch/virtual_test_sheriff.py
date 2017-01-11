@@ -696,7 +696,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
         ( True,  ktReason_Unknown_File_Not_Found,
-          'NS_ERROR_FAILURE text="File not found. (VERR_FILE_NOT_FOUND)"' ),
+          'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
@@ -841,6 +841,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # case we run multiple VMs here (this is of course ASSUMING they
         # appear in the order that terminateVmBySession uploads them).
         #
+        cTimes      = 0;
         sVMLog      = None;
         sNtHardLog  = None;
         sScreenHash = None;
@@ -853,6 +854,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     if sVMLog is not None:
                         if investigateLogSet() is True:
                             return True;
+                        cTimes += 1;
                     sInfoText   = None;
                     sVgaText    = None;
                     sKrnlLog    = None;
@@ -874,7 +876,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     self.vprint(u'%s  %s' % ( sScreenHash, oFile.sFile,));
 
         if    (   sVMLog     is not None \
-               or sNtHardLog is not None) \
+               or sNtHardLog is not None \
+               or cTimes == 0) \
           and investigateLogSet() is True:
             return True;
 
