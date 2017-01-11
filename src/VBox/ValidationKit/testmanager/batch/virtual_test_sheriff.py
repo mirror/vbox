@@ -696,6 +696,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
         ( True,  ktReason_Unknown_File_Not_Found,
+          'Error: failed to start machine. Error message: File not found. (VERR_FILE_NOT_FOUND)' ),
+        ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
     ];
 
