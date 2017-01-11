@@ -261,6 +261,9 @@ public:
                  * connect after this event has been posted to the main queue
                  * but before it started to process it. */
                 LogRel(("Destruction is canceled (refcnt=%d).\n", count));
+                /* Important: restore previous refcount, we decreased it
+                 * above based on the assumption that the object is unused! */
+                sInstance->AddRef();
             }
 
             RTCritSectLeave(&sLock);
