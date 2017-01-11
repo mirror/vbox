@@ -486,7 +486,6 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 #endif
                     pHlp->pfnPrintf(pHlp,
                                     "!!\n"
-                                    "!!\n"
                                     "!! Addresses on the stack (iAddr=%#x, iLast=%#x)\n"
                                     "!!\n",
                                     iAddr, iLast);
