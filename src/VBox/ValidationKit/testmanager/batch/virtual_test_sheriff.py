@@ -454,6 +454,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_XPCOM_NS_ERROR_CALL_FAILED                = ( 'API / (XP)COM',     'NS_ERROR_CALL_FAILED' );
     ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
+    ktReason_Unknown_File_Not_Found                    = ( 'Unknown',           'File not found' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
     ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
@@ -694,6 +695,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Exception: 0x800706be (Call to remote object failed (NS_ERROR_CALL_FAILED))' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'HostMemoryLow' ),
         ( True,  ktReason_Host_HostMemoryLow,                       'Failed to procure handy pages; rc=VERR_NO_MEMORY' ),
+        ( True,  ktReason_Unknown_File_Not_Found,
+          'NS_ERROR_FAILURE text="File not found. (VERR_FILE_NOT_FOUND)"' ),
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
