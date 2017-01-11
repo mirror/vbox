@@ -36,6 +36,7 @@
 #include <VBox/version.h>
 #include <VBox/vmm/hm.h>
 #include <iprt/assert.h>
+#include <iprt/dbg.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -471,11 +472,58 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                         DBGFR3StackWalkEnd(pFirstFrame);
                     }
 
+                    /* Symbols on the stack. */
+#ifdef VMM_R0_SWITCH_STACK
+                    uint32_t const   iLast   = VMM_STACK_SIZE / sizeof(uintptr_t);
+                    uint32_t         iAddr   = (uint32_t)(  pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp
+                                                          - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3) / sizeof(uintptr_t);
+                    if (iAddr > iLast)
+                        iAddr = 0;
+#else
+                    uint32_t const   iLast   = RT_MIN(pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack, VMM_STACK_SIZE)
+                                             / sizeof(uintptr_t);
+                    uint32_t         iAddr   = 0;
+#endif
+                    pHlp->pfnPrintf(pHlp,
+                                    "!!\n"
+                                    "!!\n"
+                                    "!! Addresses on the stack (iAddr=%#x, iLast=%#x)\n"
+                                    "!!\n",
+                                    iAddr, iLast);
+                    uintptr_t const *paAddr  = (uintptr_t const *)pVCpu->vmm.s.pbEMTStackR3;
+                    while (iAddr < iLast)
+                    {
+                        uintptr_t const uAddr = paAddr[iAddr];
+                        if (uAddr > X86_PAGE_SIZE)
+                        {
+                            DBGFADDRESS  Addr;
+                            DBGFR3AddrFromFlat(pVM->pUVM, &Addr, uAddr);
+                            RTGCINTPTR   offDisp = 0;
+                            PRTDBGSYMBOL pSym  = DBGFR3AsSymbolByAddrA(pVM->pUVM, DBGF_AS_R0, &Addr,
+                                                                       RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDisp, NULL);
+                            RTGCINTPTR   offLineDisp;
+                            PRTDBGLINE   pLine = DBGFR3AsLineByAddrA(pVM->pUVM, DBGF_AS_R0, &Addr, &offLineDisp, NULL);
+                            if (pLine || pSym)
+                            {
+                                pHlp->pfnPrintf(pHlp, "%#06x: %p =>", iAddr * sizeof(uintptr_t), uAddr);
+                                if (pSym)
+                                    pHlp->pfnPrintf(pHlp, " %s + %#x", pSym->szName, (intptr_t)offDisp);
+                                if (pLine)
+                                    pHlp->pfnPrintf(pHlp, " [%s:%u + %#x]\n", pLine->szFilename, pLine->uLineNo, offLineDisp);
+                                else
+                                    pHlp->pfnPrintf(pHlp, "\n");
+                                RTDbgSymbolFree(pSym);
+                                RTDbgLineFree(pLine);
+                            }
+                        }
+                        iAddr++;
+                    }
+
                     /* raw stack */
                     Hlp.fRecSummary = false;
                     pHlp->pfnPrintf(pHlp,
                                     "!!\n"
-                                    "!! Raw stack (mind the direction). \n"
+                                    "!! Raw stack (mind the direction).\n"
                                     "!! pbEMTStackR0=%RHv pbEMTStackBottomR0=%RHv VMM_STACK_SIZE=%#x\n"
                                     "!! pbEmtStackR3=%p\n"
                                     "!!\n"
