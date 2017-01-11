@@ -3483,9 +3483,11 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                         rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
                         AssertRCReturn(rc, rc);
 
-                        /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
+                        /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables
+                           if necessary. */
                         Log4(("HM: VCPU%u: Mapped HC APIC-access page GCPhysApicBase=%#RGp\n", pVCpu->idCpu, GCPhysApicBase));
-                        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+                        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess,
+                                                  X86_PTE_RW | X86_PTE_P);
                         AssertRCReturn(rc, rc);
                     }
 
