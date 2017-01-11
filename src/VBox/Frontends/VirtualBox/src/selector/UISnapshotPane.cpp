@@ -739,8 +739,9 @@ void UISnapshotPane::sltCurrentItemChanged(QTreeWidgetItem *pItem)
         && !pSnapshotItem->isCurrentStateItem()
     );
     m_pActionCloneSnapshot->setEnabled(
-           !fBusy
-        && pSnapshotItem
+           pSnapshotItem
+        && (   !pSnapshotItem->isCurrentStateItem()
+            || !fBusy)
     );
 }
 
