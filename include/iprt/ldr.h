@@ -375,7 +375,7 @@ typedef RTLDRARCH *PRTLDRARCH;
 /** @} */
 
 /**
- * Open a binary image file, extended version.
+ * Open a binary image file.
  *
  * @returns iprt status code.
  * @param   pszFilename Image filename.
@@ -384,6 +384,18 @@ typedef RTLDRARCH *PRTLDRARCH;
  * @param   phLdrMod    Where to store the handle to the loader module.
  */
 RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
+
+/**
+ * Open a binary image file, extended version.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loader module.
+ * @param   pErrInfo    Where to return extended error information. Optional.
+ */
+RTDECL(int) RTLdrOpenEx(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo);
 
 /**
  * Opens a binary image file using kLdr.

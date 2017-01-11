@@ -1004,6 +1004,7 @@
 # define RTLdrLoadEx                                    RT_MANGLER(RTLdrLoadEx)
 # define RTLdrLoadSystem                                RT_MANGLER(RTLdrLoadSystem)
 # define RTLdrOpen                                      RT_MANGLER(RTLdrOpen)
+# define RTLdrOpenEx                                    RT_MANGLER(RTLdrOpenEx)
 # define RTLdrOpenInMemory                              RT_MANGLER(RTLdrOpenInMemory)
 # define RTLdrOpenkLdr                                  RT_MANGLER(RTLdrOpenkLdr)
 # define RTLdrRelocate                                  RT_MANGLER(RTLdrRelocate)

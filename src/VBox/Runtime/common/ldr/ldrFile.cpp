@@ -242,17 +242,34 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
 
 
 /**
- * Open a binary image file, extended version.
+ * Open a binary image file.
  *
  * @returns iprt status code.
  * @param   pszFilename Image filename.
- * @param   fFlags      Reserved, MBZ.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
  * @param   enmArch     CPU architecture specifier for the image to be loaded.
  * @param   phLdrMod    Where to store the handle to the loader module.
  */
 RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrOpen: pszFilename=%p:{%s} fFlags=%#x enmArch=%d phLdrMod=%p\n",
+    return RTLdrOpenEx(pszFilename, fFlags, enmArch, phLdrMod, NULL /*pErrInfo*/);
+}
+RT_EXPORT_SYMBOL(RTLdrOpen);
+
+
+/**
+ * Open a binary image file, extended version.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   phLdrMod    Where to store the handle to the loader module.
+ * @param   pErrInfo    Where to return extended error information. Optional.
+ */
+RTDECL(int) RTLdrOpenEx(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
+{
+    LogFlow(("RTLdrOpenEx: pszFilename=%p:{%s} fFlags=%#x enmArch=%d phLdrMod=%p\n",
              pszFilename, pszFilename, fFlags, enmArch, phLdrMod));
     AssertMsgReturn(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     AssertMsgReturn(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch), VERR_INVALID_PARAMETER);
@@ -264,19 +281,19 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
     int rc = rtldrFileCreate(&pReader, pszFilename);
     if (RT_SUCCESS(rc))
     {
-        rc = RTLdrOpenWithReader(pReader, fFlags, enmArch, phLdrMod, NULL);
+        rc = RTLdrOpenWithReader(pReader, fFlags, enmArch, phLdrMod, pErrInfo);
         if (RT_SUCCESS(rc))
         {
-            LogFlow(("RTLdrOpen: return %Rrc *phLdrMod=%p\n", rc, *phLdrMod));
+            LogFlow(("RTLdrOpenEx: return %Rrc *phLdrMod=%p\n", rc, *phLdrMod));
             return rc;
         }
         pReader->pfnDestroy(pReader);
     }
     *phLdrMod = NIL_RTLDRMOD;
-    LogFlow(("RTLdrOpen: return %Rrc\n", rc));
+    LogFlow(("RTLdrOpenEx: return %Rrc\n", rc));
     return rc;
 }
-RT_EXPORT_SYMBOL(RTLdrOpen);
+RT_EXPORT_SYMBOL(RTLdrOpenEx);
 
 
 /**

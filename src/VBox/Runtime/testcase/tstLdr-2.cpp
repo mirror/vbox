@@ -93,11 +93,14 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
  */
 static int testLdrOne(const char *pszFilename)
 {
+    RTERRINFOSTATIC ErrInfo;
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pszFilename, 0, RTLDRARCH_WHATEVER, &hLdrMod);
+    int rc = RTLdrOpenEx(pszFilename, 0, RTLDRARCH_WHATEVER, &hLdrMod, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstLdr: Failed to open '%s', rc=%Rrc. aborting test.\n", pszFilename, rc);
+        if (ErrInfo.szMsg[0])
+            RTPrintf("tstLdr: %s\n", ErrInfo.szMsg);
         Assert(hLdrMod == NIL_RTLDRMOD);
         return 1;
     }
