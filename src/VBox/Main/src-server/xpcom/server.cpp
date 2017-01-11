@@ -260,7 +260,7 @@ public:
                 /* This condition is quite rare: a new client happened to
                  * connect after this event has been posted to the main queue
                  * but before it started to process it. */
-                LogFlowFunc(("Destruction is canceled (refcnt=%d).\n", count));
+                LogRel(("Destruction is canceled (refcnt=%d).\n", count));
             }
 
             RTCritSectLeave(&sLock);
