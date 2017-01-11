@@ -476,7 +476,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 #ifdef VMM_R0_SWITCH_STACK
                     uint32_t const   iLast   = VMM_STACK_SIZE / sizeof(uintptr_t);
                     uint32_t         iAddr   = (uint32_t)(  pVCpu->vmm.s.CallRing3JmpBufR0.SavedEsp
-                                                          - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3) / sizeof(uintptr_t);
+                                                          - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3)) / sizeof(uintptr_t);
                     if (iAddr > iLast)
                         iAddr = 0;
 #else
