@@ -74,6 +74,7 @@ private:
     UIMachineLogic *m_pMachineLogic;
     QList<int> m_guestScreens;
     QList<int> m_disabledGuestScreens;
+    const uint m_cGuestScreens;
     int m_cHostScreens;
     QMap<int, int> m_screenMap;
     QList<QMenu*> m_screenMenuList;

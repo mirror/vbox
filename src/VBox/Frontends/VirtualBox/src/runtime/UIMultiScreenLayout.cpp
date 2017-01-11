@@ -47,6 +47,8 @@
 
 UIMultiScreenLayout::UIMultiScreenLayout(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
+    , m_cGuestScreens(m_pMachineLogic->machine().GetMonitorCount())
+    , m_cHostScreens(0)
 {
     /* Calculate host/guest screen count: */
     calculateHostMonitorCount();
@@ -68,7 +70,6 @@ void UIMultiScreenLayout::update()
     /* Load all combinations stored in the settings file.
      * We have to make sure they are valid, which means there have to be unique combinations
      * and all guests screens need there own host screen. */
-    CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
     bool fShouldWeAutoMountGuestScreens = gEDataManager->autoMountGuestScreensEnabled(vboxGlobal().managedVMUuid());
     LogRel(("GUI: UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
     foreach (int iGuestScreen, m_guestScreens)
@@ -129,7 +130,7 @@ void UIMultiScreenLayout::update()
         {
             /* Then we have to disable excessive guest-screen: */
             LogRel(("GUI: UIMultiScreenLayout::update: Disabling excessive guest-screen %d\n", iGuestScreen));
-            display.SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
+            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
             m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, false);
         }
     }
@@ -163,7 +164,7 @@ void UIMultiScreenLayout::update()
             /* Re-enable guest-screen with proper resolution: */
             LogRel(("GUI: UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d\n",
                     iGuestScreen, uWidth, uHeight));
-            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32);
+            m_pMachineLogic->display().SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32);
             m_pMachineLogic->uisession()->setScreenVisibleHostDesires(iGuestScreen, true);
         }
     }
@@ -226,10 +227,9 @@ void UIMultiScreenLayout::sltHandleScreenLayoutChange(int iRequestedGuestScreen,
 
     /* Check the memory requirements first: */
     bool fSuccess = true;
-    CMachine machine = m_pMachineLogic->session().GetMachine();
     if (m_pMachineLogic->uisession()->isGuestSupportsGraphics())
     {
-        quint64 availBits = machine.GetVRAMSize() * _1M * 8;
+        quint64 availBits = m_pMachineLogic->machine().GetVRAMSize() * _1M * 8;
         quint64 usedBits = memoryRequirements(tmpMap);
         fSuccess = availBits >= usedBits;
         if (!fSuccess)
@@ -262,12 +262,10 @@ void UIMultiScreenLayout::calculateHostMonitorCount()
 
 void UIMultiScreenLayout::calculateGuestScreenCount()
 {
-    /* Get machine: */
-    CMachine machine = m_pMachineLogic->session().GetMachine();
     /* Enumerate all the guest screens: */
     m_guestScreens.clear();
     m_disabledGuestScreens.clear();
-    for (uint iGuestScreen = 0; iGuestScreen < machine.GetMonitorCount(); ++iGuestScreen)
+    for (uint iGuestScreen = 0; iGuestScreen < m_cGuestScreens; ++iGuestScreen)
         if (m_pMachineLogic->uisession()->isScreenVisible(iGuestScreen))
             m_guestScreens << iGuestScreen;
         else
@@ -291,7 +289,6 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     LONG xOrigin = 0;
     LONG yOrigin = 0;
     quint64 usedBits = 0;
-    CDisplay display = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay();
     foreach (int iGuestScreen, m_guestScreens)
     {
         QRect screen;
@@ -300,7 +297,7 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
         else
             screen = gpDesktop->screenGeometry(screenLayout.value(iGuestScreen, 0));
         KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        display.GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin, monitorStatus);
+        m_pMachineLogic->display().GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin, monitorStatus);
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */
