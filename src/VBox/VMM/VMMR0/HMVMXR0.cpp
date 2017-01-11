@@ -3447,55 +3447,6 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 rc = hmR0VmxApicSetTprThreshold(pVCpu, u32TprThreshold);
                 AssertRCReturn(rc, rc);
             }
-
-#ifndef IEM_VERIFICATION_MODE_FULL
-            /*
-             * Setup the virtualized-APIC accesses.
-             *
-             * Note! This can cause a longjumps to R3 due to the acquisition of the PGM lock
-             * in both PGMHandlerPhysicalReset() and IOMMMIOMapMMIOHCPage(), see @bugref{8721}.
-             */
-            if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-            {
-                uint64_t u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
-                if (u64MsrApicBase != pVCpu->hm.s.vmx.u64MsrApicBase)
-                {
-                    /* We only care about the APIC base MSR address and not the other bits. */
-                    PVM pVM = pVCpu->CTX_SUFF(pVM);
-                    Assert(pVM->hm.s.vmx.HCPhysApicAccess);
-                    RTGCPHYS GCPhysApicBase;
-                    GCPhysApicBase  = u64MsrApicBase;
-                    GCPhysApicBase &= PAGE_BASE_GC_MASK;
-
-                    /*
-                     * We only need a single HC page as the APIC-access page for all VCPUs as it's used
-                     * purely for causing VM-exits and not for data access within the actual page.
-                     *
-                     * The following check ensures we do the mapping on a per-VM basis as our APIC code
-                     * does not allow different APICs to be mapped at different addresses on different VCPUs.
-                     *
-                     * In fact, we do not support remapping of the APIC base at all, see APICSetBaseMsr()
-                     * so we just map this once per-VM.
-                     */
-                    if (ASMAtomicCmpXchgU64(&pVM->hm.s.vmx.GCPhysApicBase, GCPhysApicBase, 0 /* u64Old */))
-                    {
-                        /* Unalias any existing mapping. */
-                        rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
-                        AssertRCReturn(rc, rc);
-
-                        /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables
-                           if necessary. */
-                        Log4(("HM: VCPU%u: Mapped HC APIC-access page GCPhysApicBase=%#RGp\n", pVCpu->idCpu, GCPhysApicBase));
-                        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess,
-                                                  X86_PTE_RW | X86_PTE_P);
-                        AssertRCReturn(rc, rc);
-                    }
-
-                    /* Update the per-VCPU cache of the APIC base MSR. */
-                    pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
-                }
-            }
-#endif /* !IEM_VERIFICATION_MODE_FULL */
         }
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
     }
@@ -8411,6 +8362,8 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
  */
 static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -8418,6 +8371,9 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     AssertPtr(pVCpu);
     AssertPtr(pMixedCtx);
     HMVMX_ASSERT_PREEMPT_SAFE();
+
+    VMMRZCallRing3Disable(pVCpu);
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
@@ -8484,6 +8440,8 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 
     /* Clear any unused and reserved bits. */
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
+
+    VMMRZCallRing3Enable(pVCpu);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
@@ -8559,6 +8517,8 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ *
+ * @remarks No-long-jump zone!!!
  */
 static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -8651,6 +8611,42 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     { /* FFs doesn't get set all the time. */ }
     else
         return rcStrict;
+
+#ifndef IEM_VERIFICATION_MODE_FULL
+    /*
+     * Setup the virtualized-APIC accesses.
+     *
+     * Note! This can cause a longjumps to R3 due to the acquisition of the PGM lock
+     * in both PGMHandlerPhysicalReset() and IOMMMIOMapMMIOHCPage(), see @bugref{8721}.
+     *
+     * This is the reason we do it here and not in hmR0VmxLoadGuestState().
+     */
+    if (   !pVCpu->hm.s.vmx.u64MsrApicBase
+        && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
+        && PDMHasApic(pVM))
+    {
+        uint64_t u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
+        Assert(u64MsrApicBase);
+        Assert(pVM->hm.s.vmx.HCPhysApicAccess);
+
+        /* We only care about the APIC base MSR address and not the other bits. */
+        RTGCPHYS GCPhysApicBase;
+        GCPhysApicBase  = u64MsrApicBase;
+        GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+        /* Unalias any existing mapping. */
+        int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
+        AssertRCReturn(rc, rc);
+
+        /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
+        LogRel(("HM: VCPU%u: Mapped HC APIC-access page GCPhysApicBase=%#RGp\n", pVCpu->idCpu, GCPhysApicBase));
+        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+        AssertRCReturn(rc, rc);
+
+        /* Update the per-VCPU cache of the APIC base MSR. */
+        pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
+    }
+#endif /* !IEM_VERIFICATION_MODE_FULL */
 
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);

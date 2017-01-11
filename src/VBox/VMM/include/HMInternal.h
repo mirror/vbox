@@ -461,9 +461,6 @@ typedef struct HM
         /** Virtual address of the identity page table used for real mode and protected mode without paging emulation in EPT mode. */
         R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
 
-        /** The guest's MSR APIC base address at which the APIC access page is mapped. */
-        RTGCPHYS volatile           GCPhysApicBase;
-
         /** Physical address of the APIC-access page. */
         RTHCPHYS                    HCPhysApicAccess;
         /** R0 memory object for the APIC-access page. */
