@@ -69,8 +69,8 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
         *pValue = (uintptr_t)RTAssertMsg2V;
     else if (!strcmp(pszSymbol, "RTAssertMayPanic")     || !strcmp(pszSymbol, "_RTAssertMayPanic"))
         *pValue = (uintptr_t)RTAssertMayPanic;
-    else if (!strcmp(pszSymbol, "RTLogDefaultInstance") || !strcmp(pszSymbol, "_RTLogDefaultInstance"))
-        *pValue = (uintptr_t)RTLogDefaultInstance;
+    else if (!strcmp(pszSymbol, "RTLogDefaultInstanceEx") || !strcmp(pszSymbol, "RTLogDefaultInstanceEx"))
+        *pValue = (uintptr_t)RTLogDefaultInstanceEx;
     else if (!strcmp(pszSymbol, "RTLogLoggerExV")       || !strcmp(pszSymbol, "_RTLogLoggerExV"))
         *pValue = (uintptr_t)RTLogLoggerExV;
     else if (!strcmp(pszSymbol, "RTLogPrintfV")         || !strcmp(pszSymbol, "_RTLogPrintfV"))
