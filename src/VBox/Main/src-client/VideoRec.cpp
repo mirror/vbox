@@ -883,7 +883,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
         {
             case VPX_CODEC_CX_FRAME_PKT:
             {
-                WebMWriter::BlockData_VP8 blockData { &pStream->Codec.VPX.Config, pPacket };
+                WebMWriter::BlockData_VP8 blockData = { &pStream->Codec.VPX.Config, pPacket };
                 rc = pStream->pEBML->WriteBlock(WebMWriter::BlockType_Video, &blockData, sizeof(blockData));
                 break;
             }
