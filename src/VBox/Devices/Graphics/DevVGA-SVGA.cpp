@@ -3616,7 +3616,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     {
                         SVGA3dCmdPresent *pCmd = (SVGA3dCmdPresent *)(pHdr + 1);
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
-                        if (enmCmdId == SVGA_3D_CMD_PRESENT)
+                        if ((unsigned)enmCmdId == SVGA_3D_CMD_PRESENT)
                             STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dPresent);
                         else
                             STAM_REL_COUNTER_INC(&pSVGAState->StatR3Cmd3dPresentReadBack);
