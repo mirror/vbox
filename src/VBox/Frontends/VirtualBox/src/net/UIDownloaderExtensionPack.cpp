@@ -22,6 +22,7 @@
 /* Global includes: */
 # include <QDir>
 # include <QFile>
+# include <QCryptographicHash>
 
 /* Local includes: */
 # include "UIDownloaderExtensionPack.h"
@@ -60,14 +61,13 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
         m_spInstance = this;
 
     /* Prepare source/target: */
-    QString strVersion = vboxGlobal().vboxVersionStringNormalized();
     QString strExtPackUnderscoredName(QString(GUI_ExtPackName).replace(' ', '_'));
     QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
     QString strTemplateSourceName(QString("%1-%2.vbox-extpack").arg(strExtPackUnderscoredName));
-    QString strSourcePath(strTemplateSourcePath.arg(strVersion));
-    QString strSourceName(strTemplateSourceName.arg(strVersion));
+    QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
+    QString strSourceName(strTemplateSourceName.arg(vboxGlobal().vboxVersionStringNormalized()));
     QString strSource(strSourcePath + strSourceName);
-    QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
+    QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(vboxGlobal().vboxVersionStringNormalized());
     QString strTargetPath(vboxGlobal().homeFolder());
     QString strTargetName(strSourceName);
     QString strTarget(QDir(strTargetPath).absoluteFilePath(strTargetName));
@@ -125,22 +125,14 @@ void UIDownloaderExtensionPack::handleVerifiedObject(UINetworkReply *pReply)
         {
             const QString strFileName = strRecord.section(" *", 1);
             const QString strDownloadedSumm = strRecord.section(" *", 0, 0);
-            if (strFileName == QFileInfo(source().toString()).fileName())
+            if (strFileName == source().fileName())
             {
-                /* Calculate the SHA-256 on the bytes, creating a string: */
-                uint8_t abHash[RTSHA256_HASH_SIZE];
-                RTSha256(m_receivedData.constData(), m_receivedData.length(), abHash);
-                char szDigest[RTSHA256_DIGEST_LEN + 1];
-                int rc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
-                if (RT_FAILURE(rc))
-                {
-                    AssertRC(rc);
-                    szDigest[0] = '\0';
-                }
-
-                const QString strCalculatedSumm(szDigest);
-                // printf("Downloaded SHA-256 summ: [%s]\n", strDownloadedSumm.toUtf8().constData());
-                // printf("Calculated SHA-256 summ: [%s]\n", strCalculatedSumm.toUtf8().constData());
+                /* Calculate the SHA-256 hash ourselves: */
+                QCryptographicHash hashSHA256(QCryptographicHash::Sha256);
+                hashSHA256.addData(m_receivedData);
+                const QString strCalculatedSumm(hashSHA256.result().toHex());
+                //printf("Downloaded SHA-256 summ: [%s]\n", strDownloadedSumm.toUtf8().constData());
+                //printf("Calculated SHA-256 summ: [%s]\n", strCalculatedSumm.toUtf8().constData());
                 /* Make sure checksum is valid: */
                 fSuccess = strDownloadedSumm == strCalculatedSumm;
                 break;
