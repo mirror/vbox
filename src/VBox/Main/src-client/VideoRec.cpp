@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Encodes the screen content in VPX format.
+ * Video capturing utility routines.
  */
 
 /*
@@ -33,12 +33,14 @@
 #include "EbmlWriter.h"
 #include "VideoRec.h"
 
-#define VPX_CODEC_DISABLE_COMPAT 1
-#include <vpx/vp8cx.h>
-#include <vpx/vpx_image.h>
+#ifdef VBOX_WITH_LIBVPX
+# define VPX_CODEC_DISABLE_COMPAT 1
+# include <vpx/vp8cx.h>
+# include <vpx/vpx_image.h>
 
 /** Default VPX codec to use. */
-#define DEFAULTCODEC (vpx_codec_vp8_cx())
+# define DEFAULTCODEC (vpx_codec_vp8_cx())
+#endif /* VBOX_WITH_LIBVPX */
 
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm);
 static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm);
@@ -48,20 +50,35 @@ using namespace com;
 /**
  * Enumeration for a video recording state.
  */
-enum
+enum VIDEORECSTS
 {
     /** Not initialized. */
-    VIDREC_UNINITIALIZED = 0,
+    VIDEORECSTS_UNINITIALIZED = 0,
     /** Initialized, idle. */
-    VIDREC_IDLE = 1,
+    VIDEORECSTS_IDLE          = 1,
     /** Currently in VideoRecCopyToIntBuf(), delay termination. */
-    VIDREC_COPYING = 2,
+    VIDEORECSTS_COPYING       = 2,
     /** Signal that we are terminating. */
-    VIDREC_TERMINATING = 3
+    VIDEORECSTS_TERMINATING   = 3
+};
+
+/**
+ * Enumeration for supported pixel formats.
+ */
+enum VIDEORECPIXELFMT
+{
+    /** Unknown pixel format. */
+    VIDEORECPIXELFMT_UNKNOWN = 0,
+    /** RGB 24. */
+    VIDEORECPIXELFMT_RGB24   = 1,
+    /** RGB 24. */
+    VIDEORECPIXELFMT_RGB32   = 2,
+    /** RGB 565. */
+    VIDEORECPIXELFMT_RGB565  = 3
 };
 
 /* Must be always accessible and therefore cannot be part of VIDEORECCONTEXT */
-static uint32_t g_enmState = VIDREC_UNINITIALIZED;
+static uint32_t g_enmState = VIDEORECSTS_UNINITIALIZED;
 
 /**
  * Structure for keeping specific video recording codec data.
@@ -70,6 +87,7 @@ typedef struct VIDEORECCODEC
 {
     union
     {
+#ifdef VBOX_WITH_LIBVPX
         struct
         {
             /** VPX codec context. */
@@ -79,6 +97,7 @@ typedef struct VIDEORECCODEC
             /** VPX image context. */
             vpx_image_t         RawImage;
         } VPX;
+#endif /* VBOX_WITH_LIBVPX */
     };
 } VIDEORECCODEC, *PVIDEORECCODEC;
 
@@ -423,7 +442,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
-        if (ASMAtomicReadU32(&g_enmState) == VIDREC_TERMINATING)
+        if (ASMAtomicReadU32(&g_enmState) == VIDEORECSTS_TERMINATING)
             break;
 
         for (VideoRecStreams::iterator it = pCtx->vecStreams.begin(); it != pCtx->vecStreams.end(); it++)
@@ -468,7 +487,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
     AssertReturn(cScreens, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppCtx, VERR_INVALID_POINTER);
 
-    Assert(ASMAtomicReadU32(&g_enmState) == VIDREC_UNINITIALIZED);
+    Assert(ASMAtomicReadU32(&g_enmState) == VIDEORECSTS_UNINITIALIZED);
 
     int rc = VINF_SUCCESS;
 
@@ -510,7 +529,7 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
                             RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
         AssertRCReturn(rc, rc);
 
-        ASMAtomicWriteU32(&g_enmState, VIDREC_IDLE);
+        ASMAtomicWriteU32(&g_enmState, VIDEORECSTS_IDLE);
 
         if (ppCtx)
             *ppCtx = pCtx;
@@ -548,17 +567,17 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     if (!pCtx)
         return;
 
-    uint32_t enmState = VIDREC_IDLE;
+    uint32_t enmState = VIDEORECSTS_IDLE;
 
     for (;;) /** @todo r=andy Remove busy waiting! */
     {
-        if (ASMAtomicCmpXchgExU32(&g_enmState, VIDREC_TERMINATING, enmState, &enmState))
+        if (ASMAtomicCmpXchgExU32(&g_enmState, VIDEORECSTS_TERMINATING, enmState, &enmState))
             break;
-        if (enmState == VIDREC_UNINITIALIZED)
+        if (enmState == VIDEORECSTS_UNINITIALIZED)
             return;
     }
 
-    if (enmState == VIDREC_COPYING)
+    if (enmState == VIDEORECSTS_COPYING)
     {
         int rc = RTSemEventWait(pCtx->TermEvent, RT_INDEFINITE_WAIT);
         AssertRC(rc);
@@ -605,7 +624,7 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     Assert(pCtx->vecStreams.empty());
     RTMemFree(pCtx);
 
-    ASMAtomicWriteU32(&g_enmState, VIDREC_UNINITIALIZED);
+    ASMAtomicWriteU32(&g_enmState, VIDEORECSTS_UNINITIALIZED);
 }
 
 /**
@@ -639,11 +658,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pStream->uTargetHeight = uHeight;
     pStream->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pStream->pu8RgbBuf, VERR_NO_MEMORY);
-    pStream->uEncoderDeadline = VPX_DL_REALTIME;
 
     /* Play safe: the file must not exist, overwriting is potentially
      * hazardous as nothing prevents the user from picking a file name of some
      * other important file, causing unintentional data loss. */
+
+#ifdef VBOX_WITH_LIBVPX
+    pStream->uEncoderDeadline = VPX_DL_REALTIME;
 
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
     if (rcv != VPX_CODEC_OK)
@@ -651,6 +672,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         LogRel(("VideoRec: Failed to get default configuration for VPX codec: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_INVALID_PARAMETER;
     }
+#endif
 
     com::Utf8Str options(pszOptions);
     size_t pos = 0;
@@ -668,7 +690,9 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         {
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
             {
+#ifdef VBOX_WITH_LIBVPX
                 pStream->uEncoderDeadline = VPX_DL_REALTIME;
+#endif
             }
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
             {
@@ -676,7 +700,9 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             }
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
             {
+#ifdef VBOX_WITH_LIBVPX
                 pStream->uEncoderDeadline = VPX_DL_BEST_QUALITY;
+#endif
             }
             else
             {
@@ -723,6 +749,19 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         return rc;
     }
 
+    pStream->uDelay = 1000 / uFps;
+
+    if (fHasVideoTrack)
+    {
+        rc = pStream->pEBML->AddVideoTrack(uWidth, uHeight, uFps);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
+            return rc;
+        }
+    }
+
+#ifdef VBOX_WITH_LIBVPX
     /* target bitrate in kilobits per second */
     pStream->Codec.VPX.Config.rc_target_bitrate = uRate;
     /* frame width */
@@ -735,21 +774,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     /* disable multithreading */
     pStream->Codec.VPX.Config.g_threads = 0;
 
-    pStream->uDelay = 1000 / uFps;
-
-    if (fHasVideoTrack)
-    {
-        rc = pStream->pEBML->AddVideoTrack(pStream->Codec.VPX.Config.g_w, /* Width */
-                                           pStream->Codec.VPX.Config.g_h, /* Height */
-                                           uFps);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
-            return rc;
-        }
-    }
-
-    /* Initialize codec */
+    /* Initialize codec. */
     rcv = vpx_codec_enc_init(&pStream->Codec.VPX.CodecCtx, DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
     if (rcv != VPX_CODEC_OK)
     {
@@ -764,6 +789,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     }
 
     pStream->pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
+#endif
 
     pCtx->fEnabled = true;
     pStream->fEnabled = true;
@@ -781,8 +807,8 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 {
     RT_NOREF(pCtx);
     uint32_t enmState = ASMAtomicReadU32(&g_enmState);
-    return (   enmState == VIDREC_IDLE
-            || enmState == VIDREC_COPYING);
+    return (   enmState == VIDEORECSTS_IDLE
+            || enmState == VIDEORECSTS_COPYING);
 }
 
 /**
@@ -797,7 +823,7 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStamp)
 {
     uint32_t enmState = ASMAtomicReadU32(&g_enmState);
-    if (enmState != VIDREC_IDLE)
+    if (enmState != VIDEORECSTS_IDLE)
         return false;
 
     PVIDEORECSTREAM pStream = pCtx->vecStreams.at(uScreen);
@@ -857,6 +883,9 @@ bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSta
  */
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
 {
+    int rc;
+
+#ifdef VBOX_WITH_LIBVPX
     /* presentation time stamp */
     vpx_codec_pts_t pts = pStream->u64TimeStamp;
     vpx_codec_err_t rcv = vpx_codec_encode(&pStream->Codec.VPX.CodecCtx,
@@ -872,7 +901,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     }
 
     vpx_codec_iter_t iter = NULL;
-    int rc = VERR_NO_DATA;
+    rc = VERR_NO_DATA;
     for (;;)
     {
         const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pStream->Codec.VPX.CodecCtx, &iter);
@@ -895,6 +924,10 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     }
 
     pStream->cFrame++;
+#else
+    RT_NOREF(pStream);
+    rc = VERR_NOT_SUPPORTED;
+#endif /* VBOX_WITH_LIBVPX */
     return rc;
 }
 
@@ -908,32 +941,32 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
 {
     switch (pStrm->u32PixelFormat)
     {
-        case VPX_IMG_FMT_RGB32:
+        case VIDEORECPIXELFMT_RGB32:
             LogFlow(("32 bit\n"));
             if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStrm->uTargetWidth,
                                                             pStrm->uTargetHeight,
                                                             pStrm->pu8YuvBuf,
                                                             pStrm->pu8RgbBuf))
-                return VERR_GENERAL_FAILURE;
+                return VERR_INVALID_PARAMETER;
             break;
-        case VPX_IMG_FMT_RGB24:
+        case VIDEORECPIXELFMT_RGB24:
             LogFlow(("24 bit\n"));
             if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStrm->uTargetWidth,
                                                            pStrm->uTargetHeight,
                                                            pStrm->pu8YuvBuf,
                                                            pStrm->pu8RgbBuf))
-                return VERR_GENERAL_FAILURE;
+                return VERR_INVALID_PARAMETER;
             break;
-        case VPX_IMG_FMT_RGB565:
+        case VIDEORECPIXELFMT_RGB565:
             LogFlow(("565 bit\n"));
             if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStrm->uTargetWidth,
                                                             pStrm->uTargetHeight,
                                                             pStrm->pu8YuvBuf,
                                                             pStrm->pu8RgbBuf))
-                return VERR_GENERAL_FAILURE;
+                return VERR_INVALID_PARAMETER;
             break;
         default:
-            return VERR_GENERAL_FAILURE;
+            return VERR_NOT_SUPPORTED;
     }
     return VINF_SUCCESS;
 }
@@ -963,7 +996,7 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
                          uint64_t u64TimeStamp)
 {
     /* Do not execute during termination and guard against termination */
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDREC_COPYING, VIDREC_IDLE))
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_COPYING, VIDEORECSTS_IDLE))
         return VINF_TRY_AGAIN;
 
     int rc = VINF_SUCCESS;
@@ -1049,15 +1082,15 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
             switch (uBitsPerPixel)
             {
                 case 32:
-                    pStream->u32PixelFormat = VPX_IMG_FMT_RGB32;
+                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB32;
                     bpp = 4;
                     break;
                 case 24:
-                    pStream->u32PixelFormat = VPX_IMG_FMT_RGB24;
+                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB24;
                     bpp = 3;
                     break;
                 case 16:
-                    pStream->u32PixelFormat = VPX_IMG_FMT_RGB565;
+                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB565;
                     bpp = 2;
                     break;
                 default:
@@ -1097,7 +1130,7 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
         RTSemEventSignal(pCtx->WaitEvent);
     } while (0);
 
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDREC_IDLE, VIDREC_COPYING))
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_IDLE, VIDEORECSTS_COPYING))
     {
         rc = RTSemEventSignal(pCtx->TermEvent);
         AssertRC(rc);

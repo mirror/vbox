@@ -308,7 +308,7 @@ class WebMWriter_Impl
         uint64_t      offID;
     };
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_LIBOPUS
 # pragma pack(push)
 # pragma pack(1)
     /** Opus codec private data.
@@ -324,7 +324,7 @@ class WebMWriter_Impl
         uint8_t  u8MappingFamily = 0;
     };
 # pragma pack(pop)
-#endif /* VBOX_WITH_AUDIO_VIDEOREC */
+#endif /* VBOX_WITH_LIBOPUS */
 
     /** Audio codec to use. */
     WebMWriter::AudioCodec      m_enmAudioCodec;
@@ -386,7 +386,7 @@ public:
 
     int AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth)
     {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_LIBOPUS
         m_Ebml.subStart(TrackEntry);
         m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_lstTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
@@ -556,13 +556,13 @@ public:
         return writeSimpleBlockInternal(0 /** @todo FIX! */, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
 
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+#ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
     int writeBlockOpus(const void *pvData, size_t cbData)
     {
 static uint16_t s_uTimecode = 0;
 
-        return writeSimpleBlockInternal(1 /** @todo FIX! */, s_uTimecode++, pvData, cbData, 0 /* Flags */);
+        return writeSimpleBlockInternal(0 /** @todo FIX! */, s_uTimecode++, pvData, cbData, 0 /* Flags */);
     }
 #endif
 
@@ -580,9 +580,10 @@ static uint16_t s_uTimecode = 0;
 
         switch (blockType)
         {
-#ifdef VBOX_WITH_AUDIO_VIDEOREC
+
             case WebMWriter::BlockType_Audio:
             {
+#ifdef VBOX_WITH_LIBOPUS
                 if (m_enmAudioCodec == WebMWriter::AudioCodec_Opus)
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
@@ -590,10 +591,11 @@ static uint16_t s_uTimecode = 0;
                     rc = writeBlockOpus(pData->pvData, pData->cbData);
                 }
                 else
+#endif /* VBOX_WITH_LIBOPUS */
                     rc = VERR_NOT_SUPPORTED;
                 break;
             }
-#endif
+
             case WebMWriter::BlockType_Video:
             {
                 if (m_enmVideoCodec == WebMWriter::VideoCodec_VP8)

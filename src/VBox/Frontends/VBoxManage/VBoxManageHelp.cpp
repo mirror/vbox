@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -884,7 +884,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--autostop-type disabled|savestate|poweroff|\n"
                      "                                             acpishutdown]\n"
 #endif
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
                      "                            [--videocap on|off]\n"
                      "                            [--videocapscreens all|<screen ID> [<screen ID> ...]]\n"
                      "                            [--videocapfile <filename>]\n"

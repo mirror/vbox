@@ -288,7 +288,8 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_AUDIO_DEBUG),VBOX_WITH_AUDIO_DEBUG,) \
 	$(if $(VBOX_WITH_AUDIO_VALIDATIONKIT),VBOX_WITH_AUDIO_VALIDATIONKIT,) \
 	$(if $(VBOX_WITH_AUDIO_VIDEOREC),VBOX_WITH_AUDIO_VIDEOREC,) \
-	$(if $(VBOX_WITH_VRDE_AUDIO),VBOX_WITH_VRDE_AUDIO,) \
+    $(if $(VBOX_WITH_VIDEOREC),VBOX_WITH_VIDEOREC,) \
+    $(if $(VBOX_WITH_VRDE_AUDIO),VBOX_WITH_VRDE_AUDIO,) \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
 	$(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
@@ -670,6 +671,7 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_AUDIO_DEBUG),VBOX_WITH_AUDIO_DEBUG,) \
 	$(if $(VBOX_WITH_AUDIO_VALIDATIONKIT),VBOX_WITH_AUDIO_VALIDATIONKIT,) \
 	$(if $(VBOX_WITH_AUDIO_VIDEOREC),VBOX_WITH_AUDIO_VIDEOREC,) \
+    $(if $(VBOX_WITH_VIDEOREC),VBOX_WITH_VIDEOREC,) \
 	$(if $(VBOX_WITH_VRDE_AUDIO),VBOX_WITH_VRDE_AUDIO,) \
 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
@@ -685,8 +687,7 @@ VBoxC_DEFS = \
 	$(if-expr defined(VBOX_WITH_EHCI) && defined(VBOX_WITH_USB),VBOX_WITH_EHCI,) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
-	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,) \
-	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX,)
+	$(if $(VBOX_WITH_VRDEAUTH_IN_VBOXSVC),VBOX_WITH_VRDEAUTH_IN_VBOXSVC,)
 ifdef VBOX_WITH_CRHGSMI
  VBoxC_DEFS += VBOX_WITH_CRHGSMI
 endif
@@ -702,16 +703,25 @@ if $(KBUILD_TARGET) != "win" && $(VBOX_GCC_VERSION_CXX) >= 40900 # gcc 4.9.x (4.
 endif
 
 VBoxC_SDKS = VBOX_LIBPNG VBOX_ZLIB
-ifdef VBOX_WITH_VPX
-  VBoxC_SDKS += VBOX_VPX
+
+ifdef VBOX_WITH_VIDEOREC
+  ifdef VBOX_WITH_LIBVPX
+   VBoxC_SDKS += VBOX_VPX
+   VBoxC_DEFS += VBOX_WITH_LIBVPX
+  else
+   $(error "VBox: No alternative for VPX when using video capturing support yet")
+  endif
 endif
+
 ifdef VBOX_WITH_AUDIO_VIDEOREC
   ifdef VBOX_WITH_LIBOPUS
    VBoxC_SDKS += VBOX_OPUS
+   VBoxC_DEFS += VBOX_WITH_LIBOPUS
   else
    $(error "VBox: No alternative for Opus when using audio support for video capturing yet")
   endif
 endif
+
 ifdef VBOX_WITH_OPENSSL_FIPS
   VBoxC_SDKS += VBOX_OPENSSL2
 endif
@@ -801,6 +811,7 @@ VBoxC_SOURCES = \
 	src-client/DisplayImpl.cpp \
 	src-client/DisplayImplLegacy.cpp \
 	src-client/DisplaySourceBitmapImpl.cpp \
+	src-client/EbmlWriter.cpp \
 	src-client/EmulatedUSBImpl.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/GuestCtrlImpl.cpp \
@@ -811,6 +822,7 @@ VBoxC_SOURCES = \
 	src-client/SessionImpl.cpp \
 	src-client/USBDeviceImpl.cpp \
 	src-client/VBoxDriversRegister.cpp \
+	src-client/VideoRec.cpp \
 	src-client/VirtualBoxClientImpl.cpp \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
@@ -856,11 +868,6 @@ endif
 ifdef VBOX_WITH_USB
  VBoxC_SOURCES += \
 	src-client/RemoteUSBBackend.cpp
-endif
-ifdef VBOX_WITH_VPX
- VBoxC_SOURCES += \
-	src-client/EbmlWriter.cpp \
-	src-client/VideoRec.cpp
 endif
 ifndef VBOX_WITH_VRDEAUTH_IN_VBOXSVC
  VBoxC_SOURCES += \

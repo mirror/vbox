@@ -650,9 +650,9 @@ VBOX_WITH_TESTCASES = 1
 VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
-# Enables the VPX module for VM video capturing
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86 linux.amd64 solaris.amd64 win.x86 win.amd64)
- VBOX_WITH_VPX = 1
+ # Enables the video capturing support.
+ VBOX_WITH_VIDEOREC = 1
  # Enables audio support for VM video capturing. Not enabled by default yet.
  VBOX_WITH_AUDIO_VIDEOREC =
 endif
@@ -678,6 +678,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # Enable cURL (required for the network part of the GUI)
 VBOX_WITH_LIBCURL = 1
+# Enable VPX (VP8 / VP9 codec), used for video capturing.
+VBOX_WITH_LIBVPX = 1
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
@@ -1147,7 +1149,7 @@ ifdef VBOX_OSE
   VBOX_WITH_INSTALLER=
  endif
  if1of ($(KBUILD_TARGET), win)
-  VBOX_WITH_VPX=
+  VBOX_WITH_LIBVPX=
  endif
  VBOX_GUI_WITH_HIDPI=
  # branding
@@ -3706,15 +3708,17 @@ SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_L
 SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
 endif
 
-SDK_VBOX_VPX       = .
-SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx
-SDK_VBOX_VPX_INCS ?= $(SDK_VBOX_VPX_DEFAULT_INCS)
-SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
+ifdef VBOX_WITH_LIBVPX
+ SDK_VBOX_VPX       = .
+ SDK_VBOX_VPX_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libvpx
+ SDK_VBOX_VPX_INCS ?= $(SDK_VBOX_VPX_DEFAULT_INCS)
+ SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_LIB)/VBox-libvpx$(VBOX_SUFF_LIB)
+endif
 
 ifdef VBOX_WITH_LIBOPUS
-SDK_VBOX_OPUS       = .
-SDK_VBOX_OPUS_INCS ?= $(PATH_ROOT)/src/libs/libopus-1.1.3/include
-SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
+ SDK_VBOX_OPUS       = .
+ SDK_VBOX_OPUS_INCS ?= $(PATH_ROOT)/src/libs/libopus-1.1.3/include
+ SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
 #

@@ -202,7 +202,7 @@ enum
 #ifdef VBOX_WITH_USB_CARDREADER
     MODIFYVM_USBCARDREADER,
 #endif
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     MODIFYVM_VIDEOCAP,
     MODIFYVM_VIDEOCAP_SCREENS,
     MODIFYVM_VIDEOCAP_FILENAME,
@@ -371,7 +371,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     { "--videocap",                 MODIFYVM_VIDEOCAP,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--vcpenabled",               MODIFYVM_VIDEOCAP,                  RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--videocapscreens",          MODIFYVM_VIDEOCAP_SCREENS,          RTGETOPT_REQ_STRING },
@@ -450,6 +450,7 @@ void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
     }
 }
 
+#ifdef VBOX_WITH_VIDEOREC
 static int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
 {
     while (pcszScreens && *pcszScreens)
@@ -473,6 +474,7 @@ static int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
     }
     return 0;
 }
+#endif
 
 static int parseNum(uint32_t uIndex, unsigned cMaxIndex, const char *pszName)
 {
@@ -2848,7 +2850,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
             case MODIFYVM_VIDEOCAP:
             {
                 CHECK_ERROR(sessionMachine, COMSETTER(VideoCaptureEnabled)(ValueUnion.f));

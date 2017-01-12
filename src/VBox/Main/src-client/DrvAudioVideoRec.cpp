@@ -38,8 +38,9 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 
-#include <opus.h>
-
+#ifdef VBOX_WITH_LIBOPUS
+# include <opus.h>
+#endif
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -69,11 +70,13 @@ typedef struct AVRECCODEC
 {
     union
     {
+#ifdef VBOX_WITH_LIBOPUS
         struct
         {
             /** Encoder we're going to use. */
             OpusEncoder *pEnc;
         } Opus;
+#endif /* VBOX_WITH_LIBOPUS */
     };
 } AVRECCODEC, *PAVRECCODEC;
 
@@ -134,7 +137,10 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
     PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
 
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
+    int rc;
+
+#ifdef VBOX_WITH_LIBOPUS
+    rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
     if (RT_SUCCESS(rc))
     {
         size_t cbFrameBuf = sizeof(uint8_t) * _8K; /** @todo Make this configurable */
@@ -176,9 +182,12 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     //      }
         }
     }
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif /* VBOX_WITH_LIBOPUS */
 
-    LogFlowFuncLeaveRC(VINF_SUCCESS);
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 
@@ -309,17 +318,21 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
                  pStreamOut->Props.uHz,   pStreamOut->Props.cChannels,
                  pStreamOut->Props.cBits, pStreamOut->Props.fSigned, cSamplesToSend));
 
+    uint32_t csRead = 0;
+
+    int rc;
+
     /*
      * Call the encoder with the data.
      */
+#ifdef VBOX_WITH_LIBOPUS
 
     /** @todo For now we ASSUME 25 FPS. */
     uint16_t csFrameSize = /*pStreamOut->Props.uHz*/ 48000 / 25;
     size_t   cbFrameSize = AUDIOMIXBUF_S2B(&pStream->MixBuf, csFrameSize);
 
-    uint32_t csRead = 0;
-    int rc = AudioMixBufReadCirc(&pStream->MixBuf, (uint8_t *)&pStreamOut->pvFrameBuf[pStreamOut->offFrameBufWrite],
-                                 pStreamOut->cbFrameBufSize - pStreamOut->offFrameBufWrite, &csRead);
+    rc = AudioMixBufReadCirc(&pStream->MixBuf, (uint8_t *)&pStreamOut->pvFrameBuf[pStreamOut->offFrameBufWrite],
+                             pStreamOut->cbFrameBufSize - pStreamOut->offFrameBufWrite, &csRead);
     if (RT_SUCCESS(rc))
     {
         const uint32_t cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
@@ -355,6 +368,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
                 AssertMsgFailed(("Encoding failed: %s\n", opus_strerror(cbWritten)));
         }
     }
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif /* VBOX_WITH_LIBOPUS */
 
     if (csRead)
         AudioMixBufFinish(&pStream->MixBuf, csRead);
@@ -384,11 +400,13 @@ static int avRecDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
         pStreamOut->pvFrameBuf = NULL;
     }
 
+#ifdef VBOX_WITH_LIBOPUS
     if (pStreamOut->Codec.Opus.pEnc)
     {
         opus_encoder_destroy(pStreamOut->Codec.Opus.pEnc);
         pStreamOut->Codec.Opus.pEnc = NULL;
     }
+#endif
 
     return VINF_SUCCESS;
 }

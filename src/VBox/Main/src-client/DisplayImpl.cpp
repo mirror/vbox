@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,7 @@
 
 #include <VBox/com/array.h>
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
 # include <iprt/path.h>
 # include "VideoRec.h"
 #endif
@@ -130,7 +130,7 @@ HRESULT Display::FinalConstruct()
     mfGuestVBVACapabilities = 0;
     mfHostCursorCapabilities = 0;
 #endif
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     rc = RTCritSectInit(&mVideoCaptureLock);
     AssertRC(rc);
 
@@ -162,7 +162,7 @@ void Display::FinalRelease()
 {
     uninit();
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     if (RTCritSectIsInitialized(&mVideoCaptureLock))
     {
         RTCritSectDelete(&mVideoCaptureLock);
@@ -713,7 +713,7 @@ void Display::uninit()
         maFramebuffers[uScreenId].updateImage.pu8Address = NULL;
         maFramebuffers[uScreenId].updateImage.cbLine = 0;
         maFramebuffers[uScreenId].pFramebuffer.setNull();
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
         maFramebuffers[uScreenId].videoCapture.pSourceBitmap.setNull();
 #endif
     }
@@ -987,7 +987,7 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     if (mfSeamlessEnabled)
         i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     videoCaptureScreenChanged(uScreenId);
 #endif
 
@@ -2265,7 +2265,7 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
 
 int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
 {
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     com::SafeArray<BOOL> Screens(ComSafeArrayInArg(aScreens));
     for (unsigned i = 0; i < Screens.size(); i++)
     {
@@ -2279,7 +2279,8 @@ int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
     }
     return VINF_SUCCESS;
 #else
-    return VERR_NOT_IMPLEMENTED;
+    ComSafeArrayNoRef(aScreens);
+    return VERR_NOT_SUPPORTED;
 #endif
 }
 
@@ -2288,7 +2289,7 @@ int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
  */
 int Display::i_VideoCaptureStart()
 {
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     if (VideoRecIsEnabled(mpVideoRecCtx))
         return VINF_SUCCESS;
 
@@ -2347,10 +2348,17 @@ int Display::i_VideoCaptureStart()
         char *pszName = NULL;
         if (RT_SUCCESS(rc))
         {
+#ifndef DEUBG_andy
             if (mcMonitors > 1)
                 rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszSuff);
             else
                 rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszSuff);
+#else
+            if (mcMonitors > 1)
+                rc = RTStrAPrintf(&pszName, "/tmp/avcap-%u.webm", uScreen+1);
+            else
+                rc = RTStrAPrintf(&pszName, "/tmp/avcap.webm");
+#endif
         }
         if (RT_SUCCESS(rc))
         {
@@ -2395,8 +2403,8 @@ int Display::i_VideoCaptureStart()
         RTStrFree(pszAbsPath);
     }
     return rc;
-#else
-    return VERR_NOT_IMPLEMENTED;
+#else /* VBOX_WITH_VIDEOREC */
+    return VERR_NOT_SUPPORTED;
 #endif
 }
 
@@ -2405,7 +2413,7 @@ int Display::i_VideoCaptureStart()
  */
 void Display::i_VideoCaptureStop()
 {
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     if (VideoRecIsEnabled(mpVideoRecCtx))
         LogRel(("Display::VideoCaptureStop: WebM/VP8 video recording stopped\n"));
     VideoRecContextDestroy(mpVideoRecCtx);
@@ -2417,7 +2425,7 @@ void Display::i_VideoCaptureStop()
 #endif
 }
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
 void Display::videoCaptureScreenChanged(unsigned uScreenId)
 {
     ComPtr<IDisplaySourceBitmap> pSourceBitmap;
@@ -2435,7 +2443,7 @@ void Display::videoCaptureScreenChanged(unsigned uScreenId)
         RTCritSectLeave(&mVideoCaptureLock);
     }
 }
-#endif
+#endif /* VBOX_WITH_VIDEOREC */
 
 int Display::i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
                                ULONG x, ULONG y, ULONG width, ULONG height)
@@ -3132,7 +3140,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
         }
     }
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     if (VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
         do {
@@ -3228,7 +3236,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
             }
         } while (0);
     }
-#endif /* VBOX_WITH_VPX */
+#endif /* VBOX_WITH_VIDEOREC */
 
 #ifdef DEBUG_sunlover_2
     LogFlowFunc(("leave\n"));
@@ -3577,7 +3585,7 @@ bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64Times
     /** @todo r=bird: u64Timestamp - using the 'u64' prefix add nothing.
      *        However, using one of the prefixes indicating the timestamp unit
      *        would be very valuable!  */
-# if VBOX_WITH_VPX
+# if VBOX_WITH_VIDEOREC
     return VideoRecIsReady(mpVideoRecCtx, uScreen, u64Timestamp);
 # else
     RT_NOREF(uScreen, u64Timestamp);
@@ -3597,7 +3605,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                                uint8_t *pu8BufferAddress, uint64_t u64Timestamp)
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
-# if VBOX_WITH_VPX
+# if VBOX_WITH_VIDEOREC
     int rc = VideoRecCopyToIntBuf(mpVideoRecCtx, uScreen, x, y,
                                   uPixelFormat,
                                   uBitsPerPixel, uBytesPerLine,
@@ -3605,7 +3613,10 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                   pu8BufferAddress, u64Timestamp);
     NOREF(rc);
     Assert(rc == VINF_SUCCESS /* || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN*/);
-# endif
+# else
+    RT_NOREF(uScreen, x, y, uPixelFormat, \
+             uBitsPerPixel, uBytesPerLine, uGuestWidth, uGuestHeight, pu8BufferAddress, u64Timestamp);
+# endif /* VBOX_WITH_VIDEOREC */
 }
 
 void  Display::i_handleVRecCompletion()
@@ -4277,7 +4288,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pDisplay)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
         pThis->pDisplay->i_VideoCaptureStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI
@@ -4388,15 +4399,11 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pDisplay->i_setupCrHgsmiData();
 #endif
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     ComPtr<IMachine> pMachine = pDisplay->mParent->i_machine();
     BOOL fEnabled = false;
     HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-
-#ifdef DEBUG_andy
-    fEnabled = true;
-#endif
 
     if (fEnabled)
     {

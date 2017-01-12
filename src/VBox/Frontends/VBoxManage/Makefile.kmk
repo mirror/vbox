@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2016 Oracle Corporation
+# Copyright (C) 2006-2017 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -37,7 +37,7 @@ VBOX_COMMON_VBOXMANAGE_DEFS = \
  	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
  	$(if $(VBOX_WITH_USB_CARDREADER),VBOX_WITH_USB_CARDREADER) \
  	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH) \
- 	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX) \
+ 	$(if $(VBOX_WITH_VIDEOREC),VBOX_WITH_VIDEOREC) \
  	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE) \
  	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA)
 

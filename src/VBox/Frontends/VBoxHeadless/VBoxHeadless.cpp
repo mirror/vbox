@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,7 +43,7 @@ using namespace com;
 #include <VBox/err.h>
 #include <VBox/VBoxVideo.h>
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
 # include <cstdlib>
 # include <cerrno>
 # include <iprt/process.h>
@@ -463,7 +463,7 @@ static void show_usage()
              "   --settingspwfile <file>           Specify a file containing the\n"
              "                                       settings password\n"
              "   -start-paused, --start-paused     Start the VM in paused state\n"
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
              "   -c, -capture, --capture           Record the VM screen output to a file\n"
              "   -w, --width                       Frame width when recording\n"
              "   -h, --height                      Frame height when recording\n"
@@ -474,7 +474,7 @@ static void show_usage()
              "\n");
 }
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
 /**
  * Parse the environment for variables which can influence the VIDEOREC settings.
  * purely for backwards compatibility.
@@ -523,7 +523,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
     if ((pszEnvTemp = RTEnvGet("VBOX_CAPTUREFILE")) != 0)
         *ppszFileName = pszEnvTemp;
 }
-#endif /* VBOX_WITH_VPX defined */
+#endif /* VBOX_WITH_VIDEOREC defined */
 
 static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
 {
@@ -625,14 +625,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
     unsigned fPaused = 0;
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     bool fVideoRec = 0;
     unsigned long ulFrameWidth = 800;
     unsigned long ulFrameHeight = 600;
     unsigned long ulBitRate = 300000; /** @todo r=bird: The COM type ULONG isn't unsigned long, it's 32-bit unsigned int. */
     char szMpegFile[RTPATH_MAX];
     const char *pszFileNameParam = "VBox-%d.vob";
-#endif /* VBOX_WITH_VPX */
+#endif /* VBOX_WITH_VIDEOREC */
 #ifdef RT_OS_WINDOWS
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
@@ -642,7 +642,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
              "All rights reserved.\n\n");
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     /* Parse the environment */
     parse_environ(&ulFrameWidth, &ulFrameHeight, &ulBitRate, &pszFileNameParam);
 #endif
@@ -695,14 +695,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--nocsam", OPT_NO_CSAM, 0 },
         { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
         { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
         { "-capture", 'c', 0 },
         { "--capture", 'c', 0 },
         { "--width", 'w', RTGETOPT_REQ_UINT32 },
         { "--height", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
         { "--bitrate", 'r', RTGETOPT_REQ_UINT32 },
         { "--filename", 'f', RTGETOPT_REQ_STRING },
-#endif /* VBOX_WITH_VPX defined */
+#endif /* VBOX_WITH_VIDEOREC defined */
         { "-comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
         { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING },
         { "-start-paused", OPT_PAUSED, 0 },
@@ -779,7 +779,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case OPT_PAUSED:
                 fPaused = true;
                 break;
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
             case 'c':
                 fVideoRec = true;
                 break;
@@ -792,9 +792,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 'f':
                 pszFileNameParam = ValueUnion.psz;
                 break;
-#endif /* VBOX_WITH_VPX defined */
+#endif /* VBOX_WITH_VIDEOREC defined */
             case 'h':
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
                 if ((GetState.pDef->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
                 {
                     ulFrameHeight = ValueUnion.u32;
@@ -816,7 +816,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     if (ulFrameWidth < 512 || ulFrameWidth > 2048 || ulFrameWidth % 2)
     {
         LogError("VBoxHeadless: ERROR: please specify an even frame width between 512 and 2048", 0);
@@ -846,7 +846,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
     RTStrPrintf(&szMpegFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
-#endif /* defined VBOX_WITH_VPX */
+#endif /* defined VBOX_WITH_VIDEOREC */
 
     if (!pcszNameOrUUID)
     {
@@ -957,7 +957,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         ComPtr<IDisplay> display;
         CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
         if (fVideoRec)
         {
             CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureFile)(Bstr(szMpegFile).raw()));
@@ -966,7 +966,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureRate)(ulBitRate));
             CHECK_ERROR_BREAK(machine, COMSETTER(VideoCaptureEnabled)(TRUE));
         }
-#endif /* defined(VBOX_WITH_VPX) */
+#endif /* defined(VBOX_WITH_VIDEOREC) */
 
         /* get the machine debugger (isn't necessarily available) */
         ComPtr <IMachineDebugger> machineDebugger;
@@ -1215,13 +1215,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: event loop has terminated...\n"));
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
         if (fVideoRec)
         {
             if (!machine.isNull())
                 machine->COMSETTER(VideoCaptureEnabled)(FALSE);
         }
-#endif /* defined(VBOX_WITH_VPX) */
+#endif /* defined(VBOX_WITH_VIDEOREC) */
 
         /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }

@@ -95,12 +95,12 @@ typedef struct _DISPLAYFBINFO
     } pendingViewportInfo;
 #endif /* VBOX_WITH_CROGL */
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     struct
     {
         ComPtr<IDisplaySourceBitmap> pSourceBitmap;
     } videoCapture;
-#endif
+#endif /* VBOX_WITH_VIDEOREC */
 } DISPLAYFBINFO;
 
 /* The legacy VBVA (VideoAccel) data.
@@ -204,7 +204,7 @@ public:
     int  i_VideoCaptureStart();
     void i_VideoCaptureStop();
     int  i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     void videoCaptureScreenChanged(unsigned uScreenId);
 #endif
 
@@ -461,7 +461,7 @@ private:
 
     /* Serializes access to mVideoAccelLegacy and mfVideoAccelVRDP, etc between VRDP and Display. */
     RTCRITSECT mVideoAccelLock;
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     /* Serializes access to video capture source bitmaps. */
     RTCRITSECT mVideoCaptureLock;
 #endif
@@ -502,7 +502,7 @@ private:
     volatile uint32_t mu32UpdateVBVAFlags;
 #endif
 
-#ifdef VBOX_WITH_VPX
+#ifdef VBOX_WITH_VIDEOREC
     VIDEORECCONTEXT *mpVideoRecCtx;
     bool maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
