@@ -124,12 +124,16 @@ public:
     /** Ends an EBML sub-element. */
     inline Ebml &subEnd(EbmlClassId classId)
     {
+#ifdef VBOX_STRICT
         /* Class ID on the top of the stack should match the class ID passed
          * to the function. Otherwise it may mean that we have a bug in the code.
          */
         AssertMsg(!m_Elements.empty(), ("No elements to close anymore\n"));
         AssertMsg(m_Elements.top().classId == classId,
                   ("Ending sub element 0x%x is in wrong order (next to close is 0x%x)\n", classId, m_Elements.top().classId));
+#else
+        RT_NOREF(classId);
+#endif
 
         uint64_t uPos = RTFileTell(m_File);
         uint64_t uSize = uPos - m_Elements.top().offset - 8;
@@ -564,6 +568,8 @@ static uint16_t s_uTimecode = 0;
 
     int WriteBlock(WebMWriter::BlockType blockType, const void *pvData, size_t cbData)
     {
+        RT_NOREF(cbData); /* Only needed for assertions for now. */
+
         int rc;
 
         if (m_fTracksOpen)
