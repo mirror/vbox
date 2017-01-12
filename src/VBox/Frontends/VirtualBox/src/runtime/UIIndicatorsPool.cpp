@@ -20,6 +20,7 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
+# include <QAccessibleWidget>
 # include <QTimer>
 # include <QPainter>
 # include <QHBoxLayout>
@@ -94,10 +95,50 @@ protected:
 };
 
 
+/** QAccessibleWidget extension used as an accessibility interface for UISessionStateStatusBarIndicator. */
+class QIAccessibilityInterfaceForUISessionStateStatusBarIndicator : public QAccessibleWidget
+{
+public:
+
+    /** Returns an accessibility interface for passed @a strClassname and @a pObject. */
+    static QAccessibleInterface *pFactory(const QString &strClassname, QObject *pObject)
+    {
+        /* Creating UISessionStateStatusBarIndicator accessibility interface: */
+        if (pObject && strClassname == QLatin1String("UISessionStateStatusBarIndicator"))
+            return new QIAccessibilityInterfaceForUISessionStateStatusBarIndicator(qobject_cast<QWidget*>(pObject));
+
+        /* Null by default: */
+        return 0;
+    }
+
+    /** Constructs an accessibility interface passing @a pWidget to the base-class. */
+    QIAccessibilityInterfaceForUISessionStateStatusBarIndicator(QWidget *pWidget)
+        : QAccessibleWidget(pWidget, QAccessible::Button)
+    {}
+
+    /** Returns a text for the passed @a enmTextRole. */
+    virtual QString text(QAccessible::Text /* enmTextRole */) const /* override */
+    {
+        /* Sanity check: */
+        AssertPtrReturn(indicator(), 0);
+
+        /* Return the indicator description: */
+        return indicator()->description();
+    }
+
+private:
+
+    /** Returns corresponding UISessionStateStatusBarIndicator. */
+    UISessionStateStatusBarIndicator *indicator() const { return qobject_cast<UISessionStateStatusBarIndicator*>(widget()); }
+};
+
+
 UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType enmType, UISession *pSession)
     : m_enmType(enmType)
     , m_pSession(pSession)
 {
+    /* Install UISessionStateStatusBarIndicator accessibility interface factory: */
+    QAccessible::installFactory(QIAccessibilityInterfaceForUISessionStateStatusBarIndicator::pFactory);
 }
 
 void UISessionStateStatusBarIndicator::retranslateUi()
