@@ -3403,7 +3403,7 @@ DECLINLINE(int) hmR0VmxApicSetTprThreshold(PVMCPU pVCpu, uint32_t u32TprThreshol
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
- * @remarks Can cause longjumps!!!
+ * @remarks No-long-jump zone!!!
  */
 DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -8372,9 +8372,6 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     AssertPtr(pMixedCtx);
     HMVMX_ASSERT_PREEMPT_SAFE();
 
-    VMMRZCallRing3Disable(pVCpu);
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
-
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
@@ -8440,8 +8437,6 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 
     /* Clear any unused and reserved bits. */
     HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR2);
-
-    VMMRZCallRing3Enable(pVCpu);
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
@@ -8523,12 +8518,18 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     HMVMX_ASSERT_PREEMPT_SAFE();
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log5(("LoadFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 #ifdef HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
     HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 #endif
 
+    /*
+     * RIP is what changes the most often and hence if it's the only bit needing to be
+     * updated, we shall handle it early for performance reasons.
+     */
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (HMCPU_CF_IS_SET_ONLY(pVCpu, HM_CHANGED_GUEST_RIP))
     {
@@ -8625,21 +8626,18 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
         && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
         && PDMHasApic(pVM))
     {
-        uint64_t u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
+        uint64_t const u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
         Assert(u64MsrApicBase);
         Assert(pVM->hm.s.vmx.HCPhysApicAccess);
 
-        /* We only care about the APIC base MSR address and not the other bits. */
-        RTGCPHYS GCPhysApicBase;
-        GCPhysApicBase  = u64MsrApicBase;
-        GCPhysApicBase &= PAGE_BASE_GC_MASK;
+        RTGCPHYS const GCPhysApicBase = u64MsrApicBase & PAGE_BASE_GC_MASK;
 
         /* Unalias any existing mapping. */
         int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
         AssertRCReturn(rc, rc);
 
         /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
-        LogRel(("HM: VCPU%u: Mapped HC APIC-access page GCPhysApicBase=%#RGp\n", pVCpu->idCpu, GCPhysApicBase));
+        LogRel(("hmR0VmxPreRunGuest: VCPU%u: Mapped HC APIC-access page at %#RGp\n", pVCpu->idCpu, GCPhysApicBase));
         rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
         AssertRCReturn(rc, rc);
 
@@ -8667,24 +8665,31 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     }
 
     /*
-     * Load the guest state bits, we can handle longjmps/getting preempted here.
-     *
-     * If we are injecting events to a real-on-v86 mode guest, we will have to update
-     * RIP and some segment registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
-     * Hence, this needs to be done -after- injection of events.
-     */
-    rcStrict = hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
-    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-    { /* likely */ }
-    else
-        return rcStrict;
-
-    /*
      * No longjmps to ring-3 from this point on!!!
      * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
      * This also disables flushing of the R0-logger instance (if any).
      */
     VMMRZCallRing3Disable(pVCpu);
+
+    /*
+     * Load the guest state bits.
+     *
+     * We cannot perform longjmps while loading the guest state because we do not preserve the
+     * host/guest state (although the VMCS will be preserved) across longjmps which can cause
+     * CPU migration.
+     *
+     * If we are injecting events to a real-on-v86 mode guest, we will have to update
+     * RIP and some segment registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
+     * Hence, loading of the guest state needs to be done -after- injection of events.
+     */
+    rcStrict = hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* likely */ }
+    else
+    {
+        VMMRZCallRing3Enable(pVCpu);
+        return rcStrict;
+    }
 
     /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
