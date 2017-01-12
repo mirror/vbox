@@ -33,6 +33,8 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#include <iprt/sha.h>
+
 
 /* static */
 UIDownloaderAdditions* UIDownloaderAdditions::m_spInstance = 0;
@@ -80,13 +82,16 @@ UIDownloaderAdditions::UIDownloaderAdditions()
     }
 
     /* Prepare source/target: */
-    const QString &strName = QString("VBoxGuestAdditions_%1.iso").arg(strVersion);
-    const QString &strSource = QString("http://download.virtualbox.org/virtualbox/%1/").arg(strVersion) + strName;
-    const QString &strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strName);
+    const QString strSourceName = QString("VBoxGuestAdditions_%1.iso").arg(strVersion);
+    const QString strSourceFolder = QString("http://download.virtualbox.org/virtualbox/%1/").arg(strVersion);
+    const QString strSource = strSourceFolder + strSourceName;
+    const QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
+    const QString strTarget = QDir(vboxGlobal().homeFolder()).absoluteFilePath(strSourceName);
 
     /* Set source/target: */
     setSource(strSource);
     setTarget(strTarget);
+    setPathSHA256SumsFile(strPathSHA256SumsFile);
 }
 
 UIDownloaderAdditions::~UIDownloaderAdditions()
@@ -110,7 +115,64 @@ bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply
 void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 {
     /* Read received data into the buffer: */
-    QByteArray receivedData(pReply->readAll());
+    m_receivedData = pReply->readAll();
+}
+
+void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
+{
+    /* Try to verify the SHA-256 checksum: */
+    bool fSuccess = false;
+    do
+    {
+        /* Read received data into the buffer: */
+        const QByteArray receivedData(pReply->readAll());
+        /* Make sure it's not empty: */
+        if (receivedData.isEmpty())
+            break;
+
+        /* Parse buffer contents to dictionary: */
+        const QStringList dictionary(QString(receivedData).split("\n", QString::SkipEmptyParts));
+        /* Make sure it's not empty: */
+        if (dictionary.isEmpty())
+            break;
+
+        /* Parse each record to tags, look for the required one: */
+        foreach (const QString &strRecord, dictionary)
+        {
+            const QString strFileName = strRecord.section(" *", 1);
+            const QString strDownloadedSumm = strRecord.section(" *", 0, 0);
+            if (strFileName == QFileInfo(source().toString()).fileName())
+            {
+                /* Calculate the SHA-256 on the bytes, creating a string: */
+                uint8_t abHash[RTSHA256_HASH_SIZE];
+                RTSha256(m_receivedData.constData(), m_receivedData.length(), abHash);
+                char szDigest[RTSHA256_DIGEST_LEN + 1];
+                int rc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
+                if (RT_FAILURE(rc))
+                {
+                    AssertRC(rc);
+                    szDigest[0] = '\0';
+                }
+
+                const QString strCalculatedSumm(szDigest);
+                // printf("Downloaded SHA-256 summ: [%s]\n", strDownloadedSumm.toUtf8().constData());
+                // printf("Calculated SHA-256 summ: [%s]\n", strCalculatedSumm.toUtf8().constData());
+                /* Make sure checksum is valid: */
+                fSuccess = strDownloadedSumm == strCalculatedSumm;
+                break;
+            }
+        }
+    }
+    while (false);
+
+    /* If SHA-256 checksum verification failed: */
+    if (!fSuccess)
+    {
+        /* Warn the user about additions-image was downloaded and saved but checksum is invalid: */
+        msgCenter().cannotValidateGuestAdditionsSHA256Sum(source().toString(), QDir::toNativeSeparators(target()));
+        return;
+    }
+
     /* Serialize that buffer into the file: */
     while (true)
     {
@@ -119,7 +181,7 @@ void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
         if (file.open(QIODevice::WriteOnly))
         {
             /* Write buffer into the file: */
-            file.write(receivedData);
+            file.write(m_receivedData);
             file.close();
 
             /* Warn the user about additions-image loaded and saved, propose to mount it: */

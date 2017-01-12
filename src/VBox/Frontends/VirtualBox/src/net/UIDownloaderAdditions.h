@@ -49,9 +49,11 @@ private:
     /* Virtual stuff reimplementations: */
     bool askForDownloadingConfirmation(UINetworkReply *pReply);
     void handleDownloadedObject(UINetworkReply *pReply);
+    void handleVerifiedObject(UINetworkReply *pReply);
 
     /* Variables: */
     static UIDownloaderAdditions *m_spInstance;
+    QByteArray m_receivedData;
 };
 
 #endif // __UIDownloaderAdditions_h__

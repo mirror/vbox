@@ -328,6 +328,7 @@ public:
     bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
     void cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const;
     bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
+    void cannotValidateGuestAdditionsSHA256Sum(const QString &strUrl, const QString &strSrc) const;
     void cannotUpdateGuestAdditions(const CProgress &progress) const;
     bool cannotFindUserManual(const QString &strMissedLocation) const;
     bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
@@ -337,6 +338,7 @@ public:
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
     void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+    void cannotValidateExtentionPackSHA256Sum(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
     bool proposeDeleteExtentionPack(const QString &strTo) const;
     bool proposeDeleteOldExtentionPacks(const QStringList &strFiles) const;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */

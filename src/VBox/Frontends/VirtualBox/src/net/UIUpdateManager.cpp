@@ -55,10 +55,8 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-#if 0
 /* enable to test the version update check */
-#define VBOX_NEW_VERSION_TEST "0.0.0_0 http://unknown.unknown.org/0.0.0/VirtualBox-0.0.0-0-unknown.pkg"
-#endif
+//#define VBOX_NEW_VERSION_TEST "5.1.12_0 http://unknown.unknown.org/0.0.0/VirtualBox-0.0.0-0-unknown.pkg"
 
 /* Forward declarations: */
 class UIUpdateStep;

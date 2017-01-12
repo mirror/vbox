@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/// This class requires proper doxy.
+/// For now I'm keeping the old style consistent.
+
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -48,11 +51,21 @@ void UIDownloader::sltStartAcknowledging()
 /* Downloading start: */
 void UIDownloader::sltStartDownloading()
 {
-    /* Set state to acknowledging: */
+    /* Set state to downloading: */
     m_state = UIDownloaderState_Downloading;
 
     /* Send GET request: */
     createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << m_source);
+}
+
+/* Verifying start: */
+void UIDownloader::sltStartVerifying()
+{
+    /* Set state to verifying: */
+    m_state = UIDownloaderState_Verifying;
+
+    /* Send GET request: */
+    createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << m_strPathSHA256SumsFile);
 }
 
 /* Constructor: */
@@ -62,6 +75,7 @@ UIDownloader::UIDownloader()
     /* Connect listeners: */
     connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
     connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigToStartVerifying()), this, SLOT(sltStartVerifying()), Qt::QueuedConnection);
 }
 
 /* virtual override */
@@ -72,6 +86,7 @@ const QString UIDownloader::description() const
     {
         case UIDownloaderState_Acknowledging: return tr("Looking for %1...");
         case UIDownloaderState_Downloading:   return tr("Downloading %1...");
+        case UIDownloaderState_Verifying:     return tr("Verifying %1...");
         default:                              break;
     }
     /* Return null-string by default: */
@@ -112,6 +127,11 @@ void UIDownloader::processNetworkReplyFinished(UINetworkReply *pNetworkReply)
             handleDownloadingResult(pNetworkReply);
             break;
         }
+        case UIDownloaderState_Verifying:
+        {
+            handleVerifyingResult(pNetworkReply);
+            break;
+        }
         default:
             break;
     }
@@ -141,6 +161,24 @@ void UIDownloader::handleDownloadingResult(UINetworkReply *pNetworkReply)
 {
     /* Handle downloaded object: */
     handleDownloadedObject(pNetworkReply);
+
+    /* Check whether we should do verification: */
+    if (!m_strPathSHA256SumsFile.isEmpty())
+    {
+        /* Start verifying: */
+        startDelayedVerifying();
+    }
+    else
+    {
+        /* Delete downloader: */
+        deleteLater();
+    }
+}
+
+void UIDownloader::handleVerifyingResult(UINetworkReply *pNetworkReply)
+{
+    /* Handle verified object: */
+    handleVerifiedObject(pNetworkReply);
 
     /* Delete downloader: */
     deleteLater();
