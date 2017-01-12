@@ -382,6 +382,7 @@ public:
 
     int AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth)
     {
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
         m_Ebml.subStart(TrackEntry);
         m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_lstTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
@@ -405,6 +406,10 @@ public:
               .subEnd(TrackEntry);
 
         return VINF_SUCCESS;
+#else
+        RT_NOREF(fSamplingHz, fOutputHz, cChannels, cBitDepth);
+        return VERR_NOT_SUPPORTED;
+#endif
     }
 
     int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS)
