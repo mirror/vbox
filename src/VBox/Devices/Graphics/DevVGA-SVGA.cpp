@@ -1573,70 +1573,81 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
     {
         STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWr);
 
-        SVGAGuestMemDescriptor desc;
-        RTGCPHYS               GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
-        RTGCPHYS               GCPhysBase = GCPhys;
-        uint32_t               idGMR = pThis->svga.u32CurrentGMRId;
-        uint32_t               cDescriptorsAllocated = 16;
-        uint32_t               iDescriptor = 0;
-
         /* Validate current GMR id. */
+        uint32_t idGMR = pThis->svga.u32CurrentGMRId;
         AssertBreak(idGMR < VMSVGA_MAX_GMR_IDS);
 
         /* Free the old GMR if present. */
         vmsvgaGMRFree(pThis, idGMR);
 
         /* Just undefine the GMR? */
+        RTGCPHYS GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
         if (GCPhys == 0)
+        {
+            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrFree);
             break;
+        }
 
-        pSVGAState->aGMR[idGMR].paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ(cDescriptorsAllocated * sizeof(VMSVGAGMRDESCRIPTOR));
-        AssertReturn(pSVGAState->aGMR[idGMR].paDesc, VERR_NO_MEMORY);
 
         /* Never cross a page boundary automatically. */
+        const uint32_t          cMaxPages   = RT_MIN(VMSVGA_MAX_GMR_PAGES, UINT32_MAX / X86_PAGE_SIZE);
+        uint32_t                cPagesTotal = 0;
+        uint32_t                iDesc       = 0;
+        PVMSVGAGMRDESCRIPTOR    paDescs     = NULL;
+        uint32_t                cLoops      = 0;
+        RTGCPHYS                GCPhysBase  = GCPhys;
         while (PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhysBase))
         {
             /* Read descriptor. */
+            SVGAGuestMemDescriptor desc;
             rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, &desc, sizeof(desc));
             AssertRCBreak(rc);
 
-            if (    desc.ppn == 0
-                &&  desc.numPages == 0)
-                break;  /* terminator */
+            if (desc.numPages != 0)
+            {
+                AssertBreakStmt(desc.numPages <= cMaxPages, rc = VERR_OUT_OF_RANGE);
+                cPagesTotal += desc.numPages;
+                AssertBreakStmt(cPagesTotal   <= cMaxPages, rc = VERR_OUT_OF_RANGE);
 
-            if (    desc.ppn != 0
-                &&  desc.numPages == 0)
-            {
-                /* Pointer to the next physical page of descriptors. */
-                GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
-            }
-            else
-            {
-                if (iDescriptor == cDescriptorsAllocated)
+                if ((iDesc & 15) == 0)
                 {
-                    cDescriptorsAllocated += 16;
-                    pSVGAState->aGMR[idGMR].paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemRealloc(pSVGAState->aGMR[idGMR].paDesc, cDescriptorsAllocated * sizeof(VMSVGAGMRDESCRIPTOR));
-                    AssertReturn(pSVGAState->aGMR[idGMR].paDesc, VERR_NO_MEMORY);
+                    void *pvNew = RTMemRealloc(paDescs, (iDesc + 16) * sizeof(VMSVGAGMRDESCRIPTOR));
+                    AssertBreakStmt(pvNew, rc = VERR_NO_MEMORY);
+                    paDescs = (PVMSVGAGMRDESCRIPTOR)pvNew;
                 }
 
-                pSVGAState->aGMR[idGMR].paDesc[iDescriptor].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
-                pSVGAState->aGMR[idGMR].paDesc[iDescriptor++].numPages = desc.numPages;
-                pSVGAState->aGMR[idGMR].cbTotal += desc.numPages * PAGE_SIZE;
+                paDescs[iDesc].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+                paDescs[iDesc++].numPages = desc.numPages;
 
                 /* Continue with the next descriptor. */
                 GCPhys += sizeof(desc);
             }
-        }
-        pSVGAState->aGMR[idGMR].numDescriptors = iDescriptor;
-        Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x\n", idGMR, iDescriptor, pSVGAState->aGMR[idGMR].cbTotal));
+            else if (desc.ppn == 0)
+                break;  /* terminator */
+            else /* Pointer to the next physical page of descriptors. */
+                GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
 
-        if (!pSVGAState->aGMR[idGMR].numDescriptors)
-        {
-            AssertFailed();
-            RTMemFree(pSVGAState->aGMR[idGMR].paDesc);
-            pSVGAState->aGMR[idGMR].paDesc = NULL;
+            cLoops++;
+            AssertBreakStmt(cLoops < VMSVGA_MAX_GMR_DESC_LOOP_COUNT, rc = VERR_OUT_OF_RANGE);
         }
-        AssertRC(rc);
+
+        AssertStmt(iDesc > 0 || RT_FAILURE_NP(rc), rc = VERR_OUT_OF_RANGE);
+        if (RT_SUCCESS(rc))
+        {
+            /* Commit the GMR. */
+            pSVGAState->aGMR[idGMR].paDesc         = paDescs;
+            pSVGAState->aGMR[idGMR].numDescriptors = iDesc;
+            pSVGAState->aGMR[idGMR].cMaxPages      = cPagesTotal;
+            pSVGAState->aGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
+            Assert((pSVGAState->aGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
+            Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x (%#x pages)\n",
+                 idGMR, iDesc, pSVGAState->aGMR[idGMR].cbTotal, cPagesTotal));
+        }
+        else
+        {
+            RTMemFree(paDescs);
+            STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrErrors);
+        }
         break;
     }
 # endif /* IN_RING3 */
@@ -3090,6 +3101,12 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     if (pGMR->cMaxPages)
                         STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineGmr2Modify);
 
+                    /* Not sure if we should always free the descriptor, but for simplicity
+                       we do so if the new size is smaller than the current. */
+                    /** @todo always free the descriptor in SVGA_CMD_DEFINE_GMR2? */
+                    if (pGMR->cbTotal / X86_PAGE_SIZE > pGMR->cMaxPages)
+                        vmsvgaGMRFree(pThis, pCmd->gmrId);
+
                     pGMR->cMaxPages = pCmd->numPages;
                     /* The rest is done by the REMAP_GMR2 command. */
                 }
@@ -3103,51 +3120,62 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdRemapGMR2, sizeof(*pCmd));
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRemapGmr2);
 
-                uint32_t cbPageDesc = (pCmd->flags & SVGA_REMAP_GMR2_PPN64) ? sizeof(uint64_t) : sizeof(uint32_t);
-                uint32_t cbCmd;
-                uint64_t *paNewPage64 = NULL;
-
                 Log(("vmsvgaFIFOLoop: SVGA_CMD_REMAP_GMR2 id=%x flags=%x offset=%x npages=%x\n", pCmd->gmrId, pCmd->flags, pCmd->offsetPages, pCmd->numPages));
                 AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
 
                 /* Calculate the size of what comes after next and fetch it. */
-                cbCmd = sizeof(SVGAFifoCmdRemapGMR2);
+                uint32_t cbCmd = sizeof(SVGAFifoCmdRemapGMR2);
                 if (pCmd->flags & SVGA_REMAP_GMR2_VIA_GMR)
                     cbCmd += sizeof(SVGAGuestPtr);
                 else
-                if (pCmd->flags & SVGA_REMAP_GMR2_SINGLE_PPN)
                 {
-                    cbCmd         += cbPageDesc;
-                    pCmd->numPages = 1;
-                }
-                else
-                {
-                    AssertBreak(pCmd->numPages <= VMSVGA_FIFO_SIZE);
-                    cbCmd += cbPageDesc * pCmd->numPages;
+                    uint32_t const cbPageDesc = (pCmd->flags & SVGA_REMAP_GMR2_PPN64) ? sizeof(uint64_t) : sizeof(uint32_t);
+                    if (pCmd->flags & SVGA_REMAP_GMR2_SINGLE_PPN)
+                    {
+                        cbCmd         += cbPageDesc;
+                        pCmd->numPages = 1;
+                    }
+                    else
+                    {
+                        AssertBreak(pCmd->numPages <= VMSVGA_FIFO_SIZE / cbPageDesc);
+                        cbCmd += cbPageDesc * pCmd->numPages;
+                    }
                 }
                 VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdRemapGMR2, cbCmd);
 
-                /* Validate current GMR id. */
+                /* Validate current GMR id and size. */
                 AssertBreak(pCmd->gmrId < VMSVGA_MAX_GMR_IDS);
                 PGMR pGMR = &pSVGAState->aGMR[pCmd->gmrId];
-                AssertBreak(pCmd->offsetPages + pCmd->numPages <= pGMR->cMaxPages);
+                AssertBreak(   (uint64_t)pCmd->offsetPages + pCmd->numPages
+                            <= RT_MIN(pGMR->cMaxPages, RT_MIN(VMSVGA_MAX_GMR_PAGES, UINT32_MAX / X86_PAGE_SIZE)));
                 AssertBreak(!pCmd->offsetPages || pGMR->paDesc); /** @todo */
 
-                /* Save the old page descriptors as an array of page addresses (>> PAGE_SHIFT) */
+                if (pCmd->numPages == 0)
+                    break;
+
+                /* Calc new total page count so we can use it instead of cMaxPages for allocations below. */
+                uint32_t const cNewTotalPages = RT_MAX(pGMR->cbTotal >> X86_PAGE_SHIFT, pCmd->offsetPages + pCmd->numPages);
+
+                /*
+                 * We flatten the existing descriptors into a page array, overwrite the
+                 * pages specified in this command and then recompress the descriptor.
+                 */
+                /** @todo Optimize the GMR remap algorithm! */
+
+                /* Save the old page descriptors as an array of page frame numbers (address >> X86_PAGE_SHIFT) */
+                uint64_t *paNewPage64 = NULL;
                 if (pGMR->paDesc)
                 {
-                    uint32_t idxPage = 0;
-                    paNewPage64 = (uint64_t *)RTMemAllocZ(pGMR->cMaxPages * sizeof(uint64_t));
+                    STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdRemapGmr2Modify);
+
+                    paNewPage64 = (uint64_t *)RTMemAllocZ(cNewTotalPages * sizeof(uint64_t));
                     AssertBreak(paNewPage64);
 
+                    uint32_t idxPage = 0;
                     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
-                    {
                         for (uint32_t j = 0; j < pGMR->paDesc[i].numPages; j++)
-                        {
-                            paNewPage64[idxPage++] = (pGMR->paDesc[i].GCPhys + j * PAGE_SIZE) >> PAGE_SHIFT;
-                        }
-                    }
-                    AssertBreak(idxPage == pGMR->cbTotal >> PAGE_SHIFT);
+                            paNewPage64[idxPage++] = (pGMR->paDesc[i].GCPhys + j * X86_PAGE_SIZE) >> X86_PAGE_SHIFT;
+                    AssertBreakStmt(idxPage == pGMR->cbTotal >> X86_PAGE_SHIFT, RTMemFree(paNewPage64));
                 }
 
                 /* Free the old GMR if present. */
@@ -3155,72 +3183,76 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     RTMemFree(pGMR->paDesc);
 
                 /* Allocate the maximum amount possible (everything non-continuous) */
-                pGMR->paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ(pGMR->cMaxPages * sizeof(VMSVGAGMRDESCRIPTOR));
-                AssertBreak(pGMR->paDesc);
+                PVMSVGAGMRDESCRIPTOR paDescs;
+                pGMR->paDesc = paDescs = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ(cNewTotalPages * sizeof(VMSVGAGMRDESCRIPTOR));
+                AssertBreakStmt(paDescs, RTMemFree(paNewPage64));
 
                 if (pCmd->flags & SVGA_REMAP_GMR2_VIA_GMR)
                 {
                     /** @todo */
                     AssertFailed();
+                    pGMR->numDescriptors = 0;
                 }
                 else
                 {
-                    uint32_t            *pPage32 = (uint32_t *)(pCmd + 1);
-                    uint64_t            *pPage64 = (uint64_t *)(pCmd + 1);
-                    uint32_t             iDescriptor = 0;
-                    RTGCPHYS             GCPhys;
-                    bool                 fGCPhys64 = !!(pCmd->flags & SVGA_REMAP_GMR2_PPN64);
+                    uint32_t  *paPages32 = (uint32_t *)(pCmd + 1);
+                    uint64_t  *paPages64 = (uint64_t *)(pCmd + 1);
+                    bool       fGCPhys64 = RT_BOOL(pCmd->flags & SVGA_REMAP_GMR2_PPN64);
 
                     if (paNewPage64)
                     {
                         /* Overwrite the old page array with the new page values. */
-                        for (uint32_t i = pCmd->offsetPages; i < pCmd->offsetPages + pCmd->numPages; i++)
-                        {
-                            if (pCmd->flags & SVGA_REMAP_GMR2_PPN64)
-                                paNewPage64[i] = pPage64[i - pCmd->offsetPages];
-                            else
-                                paNewPage64[i] = pPage32[i - pCmd->offsetPages];
-                        }
+                        if (fGCPhys64)
+                            for (uint32_t i = pCmd->offsetPages; i < pCmd->offsetPages + pCmd->numPages; i++)
+                                paNewPage64[i] = paPages64[i - pCmd->offsetPages];
+                        else
+                            for (uint32_t i = pCmd->offsetPages; i < pCmd->offsetPages + pCmd->numPages; i++)
+                                paNewPage64[i] = paPages32[i - pCmd->offsetPages];
+
                         /* Use the updated page array instead of the command data. */
                         fGCPhys64      = true;
-                        pPage64        = paNewPage64;
-                        pCmd->numPages = pGMR->cbTotal >> PAGE_SHIFT;
+                        paPages64      = paNewPage64;
+                        pCmd->numPages = cNewTotalPages;
                     }
 
+                    /* The first page. */
+                    /** @todo The 0x00000FFFFFFFFFFF mask limits to 44 bits and should not be
+                     *        applied to paNewPage64. */
+                    RTGCPHYS GCPhys;
                     if (fGCPhys64)
-                        GCPhys = (pPage64[0] << PAGE_SHIFT) & 0x00000FFFFFFFFFFFULL;    /* seeing rubbish in the top bits with certain linux guests*/
+                        GCPhys = (paPages64[0] << X86_PAGE_SHIFT) & UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
                     else
-                        GCPhys = (RTGCPHYS)pPage32[0] << PAGE_SHIFT;
+                        GCPhys = (RTGCPHYS)paPages32[0] << PAGE_SHIFT;
+                    paDescs[0].GCPhys    = GCPhys;
+                    paDescs[0].numPages  = 1;
 
-                    pGMR->paDesc[0].GCPhys    = GCPhys;
-                    pGMR->paDesc[0].numPages  = 1;
-                    pGMR->cbTotal             = PAGE_SIZE;
-
+                    /* Subsequent pages. */
+                    uint32_t iDescriptor = 0;
                     for (uint32_t i = 1; i < pCmd->numPages; i++)
                     {
                         if (pCmd->flags & SVGA_REMAP_GMR2_PPN64)
-                            GCPhys = (pPage64[i] << PAGE_SHIFT) & 0x00000FFFFFFFFFFFULL;    /* seeing rubbish in the top bits with certain linux guests*/
+                            GCPhys = (paPages64[i] << X86_PAGE_SHIFT) & UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
                         else
-                            GCPhys = (RTGCPHYS)pPage32[i] << PAGE_SHIFT;
+                            GCPhys = (RTGCPHYS)paPages32[i] << X86_PAGE_SHIFT;
 
                         /* Continuous physical memory? */
-                        if (GCPhys == pGMR->paDesc[iDescriptor].GCPhys + pGMR->paDesc[iDescriptor].numPages * PAGE_SIZE)
+                        if (GCPhys == paDescs[iDescriptor].GCPhys + paDescs[iDescriptor].numPages * X86_PAGE_SIZE)
                         {
-                            Assert(pGMR->paDesc[iDescriptor].numPages);
-                            pGMR->paDesc[iDescriptor].numPages++;
+                            Assert(paDescs[iDescriptor].numPages);
+                            paDescs[iDescriptor].numPages++;
                             LogFlow(("Page %x GCPhys=%RGp successor\n", i, GCPhys));
                         }
                         else
                         {
                             iDescriptor++;
-                            pGMR->paDesc[iDescriptor].GCPhys   = GCPhys;
-                            pGMR->paDesc[iDescriptor].numPages = 1;
-                            LogFlow(("Page %x GCPhys=%RGp\n", i, pGMR->paDesc[iDescriptor].GCPhys));
+                            paDescs[iDescriptor].GCPhys   = GCPhys;
+                            paDescs[iDescriptor].numPages = 1;
+                            LogFlow(("Page %x GCPhys=%RGp\n", i, paDescs[iDescriptor].GCPhys));
                         }
-
-                        pGMR->cbTotal += PAGE_SIZE;
                     }
-                    LogFlow(("Nr of descriptors %x\n", iDescriptor + 1));
+
+                    pGMR->cbTotal = cNewTotalPages << X86_PAGE_SHIFT;
+                    LogFlow(("Nr of descriptors %x; cbTotal=%#x\n", iDescriptor + 1, cNewTotalPages));
                     pGMR->numDescriptors = iDescriptor + 1;
                 }
 
@@ -3834,9 +3866,10 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
     PVMSVGAR3STATE pSVGAState = pThis->svga.pSvgaR3State;
 
     /* Free the old descriptor if present. */
-    if (pSVGAState->aGMR[idGMR].numDescriptors)
+    PGMR pGMR = &pSVGAState->aGMR[idGMR];
+    if (   pGMR->numDescriptors
+        || pGMR->paDesc /* needed till we implement SVGA_REMAP_GMR2_VIA_GMR */)
     {
-        PGMR pGMR = &pSVGAState->aGMR[idGMR];
 # ifdef DEBUG_GMR_ACCESS
         VMR3ReqCallWaitU(PDMDevHlpGetUVM(pThis->pDevInsR3), VMCPUID_ANY, (PFNRT)vmsvgaDeregisterGMR, 2, pThis->pDevInsR3, idGMR);
 # endif
@@ -3848,7 +3881,8 @@ void vmsvgaGMRFree(PVGASTATE pThis, uint32_t idGMR)
         pGMR->cbTotal        = 0;
         pGMR->cMaxPages      = 0;
     }
-    Assert(!pSVGAState->aGMR[idGMR].cbTotal);
+    Assert(!pGMR->cMaxPages);
+    Assert(!pGMR->cbTotal);
 }
 
 /**
@@ -4307,9 +4341,8 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
 
         if (pGMR->numDescriptors)
         {
-            /* Allocate the maximum amount possible (everything non-continuous) */
             Assert(pGMR->cMaxPages || pGMR->cbTotal);
-            pGMR->paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ((pGMR->cMaxPages) ? pGMR->cMaxPages : (pGMR->cbTotal >> PAGE_SHIFT) * sizeof(VMSVGAGMRDESCRIPTOR));
+            pGMR->paDesc = (PVMSVGAGMRDESCRIPTOR)RTMemAllocZ(pGMR->numDescriptors * sizeof(VMSVGAGMRDESCRIPTOR));
             AssertReturn(pGMR->paDesc, VERR_NO_MEMORY);
 
             for (uint32_t j = 0; j < pGMR->numDescriptors; j++)

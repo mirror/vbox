@@ -28,6 +28,8 @@
 #define VMSVGA_MAX_GMR_PAGES            0x100000
 /** Maximum nr of GMR ids. */
 #define VMSVGA_MAX_GMR_IDS              0x100
+/** Maximum number of GMR descriptors.  */
+#define VMSVGA_MAX_GMR_DESC_LOOP_COUNT  VMSVGA_MAX_GMR_PAGES
 
 #define VMSVGA_VAL_UNINITIALIZED        (unsigned)-1
 
