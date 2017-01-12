@@ -59,7 +59,6 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-
 /** QIStateStatusBarIndicator extension for Runtime UI. */
 class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatusBarIndicator>
 {
@@ -68,12 +67,21 @@ class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatu
 public:
 
     /** Constructor which remembers passed @a session object. */
-    UISessionStateStatusBarIndicator(UISession *pSession) : m_pSession(pSession) {}
+    UISessionStateStatusBarIndicator(IndicatorType enmType, UISession *pSession)
+        : m_enmType(enmType)
+        , m_pSession(pSession)
+    {}
+
+    /** Returns the indicator type. */
+    IndicatorType type() const { return m_enmType; }
 
     /** Abstract update routine. */
     virtual void updateAppearance() = 0;
 
 protected:
+
+    /** Holds the indicator type. */
+    const IndicatorType m_enmType;
 
     /** Holds the session UI reference. */
     UISession *m_pSession;
@@ -88,7 +96,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorHardDrive(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_HardDisks, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/hd_16px.png"));
@@ -161,7 +169,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorOpticalDisks(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_OpticalDisks, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/cd_16px.png"));
@@ -238,7 +246,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorFloppyDisks(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_FloppyDisks, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/fd_16px.png"));
@@ -315,7 +323,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorNetwork(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Network, pSession)
         , m_pTimerAutoUpdate(0)
         , m_cMaxNetworkAdapters(0)
     {
@@ -465,7 +473,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorUSB(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_USB, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/usb_16px.png"));
@@ -531,7 +539,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorSharedFolders(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_SharedFolders, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Idle,    UIIconPool::iconSet(":/sf_16px.png"));
@@ -602,7 +610,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorDisplay(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Display, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/display_software_16px.png"));
@@ -684,7 +692,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorVideoCapture(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_VideoCapture, pSession)
         , m_pAnimation(0)
         , m_dRotationAngle(0)
     {
@@ -806,7 +814,7 @@ public:
 
     /** Constructor, passes @a pSession to the UISessionStateStatusBarIndicator constructor. */
     UIIndicatorFeatures(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Features, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
@@ -891,7 +899,7 @@ public:
 
     /** Constructor, using @a pSession for state-update routine. */
     UIIndicatorMouse(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Mouse, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/mouse_disabled_16px.png"));
@@ -951,7 +959,7 @@ public:
 
     /** Constructor, using @a pSession for state-update routine. */
     UIIndicatorKeyboard(UISession *pSession)
-        : UISessionStateStatusBarIndicator(pSession)
+        : UISessionStateStatusBarIndicator(IndicatorType_Keyboard, pSession)
     {
         /* Assign state-icons: */
         setStateIcon(0, UIIconPool::iconSet(":/hostkey_16px.png"));
