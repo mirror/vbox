@@ -158,7 +158,7 @@ class BuildCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         Returns an array (list) of UserAccountData items, empty list if none.
         Raises exception on error.
         """
-        _ = tsNow;
+        _ = tsNow; _ = aiSortColumns;
         self._oDb.execute('SELECT   *\n'
                           'FROM     BuildCategories\n'
                           'ORDER BY sProduct, sRepository, sBranch, sType, idBuildCategory\n'
