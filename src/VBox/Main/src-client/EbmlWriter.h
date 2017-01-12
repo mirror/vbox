@@ -58,25 +58,35 @@ public:
         VideoCodec_VP8  = 1
     };
 
-    struct BlockData
+    /**
+     * Block data for VP8-encoded video data.
+     */
+    struct BlockData_VP8
     {
-        void  *pvData;
-        size_t cbData;
+        const vpx_codec_enc_cfg_t *pCfg;
+        const vpx_codec_cx_pkt_t  *pPkt;
     };
 
     /**
-     * Operation mode -- this specifies what to write.
+     * Block data for Opus-encoded audio data.
      */
-    enum Mode
+    struct BlockData_Opus
     {
-        /** Unknown / invalid mode. */
-        Mode_Unknown     = 0,
-        /** Only writes audio. */
-        Mode_Audio       = 1,
-        /** Only writes video. */
-        Mode_Video       = 2,
-        /** Writes audio and video. */
-        Mode_AudioVideo  = 3
+        /** Pointer to encoded Opus audio data. */
+        const void *pvData;
+        /** Size (in bytes) of encoded Opus audio data. */
+        size_t      cbData;
+    };
+
+    /**
+     * Block type to write.
+     */
+    enum BlockType
+    {
+        BlockType_Invalid = 0,
+        BlockType_Audio   = 1,
+        BlockType_Video   = 2,
+        BlockType_Raw     = 3
     };
 
 public:
@@ -89,61 +99,44 @@ public:
      *
      * @param   a_pszFilename   Name of the file to create.
      * @param   a_fOpen         File open mode of type RTFILE_O_.
-     * @param   a_enmMode       Operation mode.
      * @param   a_enmAudioCodec Audio codec to use.
      * @param   a_enmVideoCodec Video codec to use.
      *
      * @returns VBox status code. */
-    int create(const char *a_pszFilename, uint64_t a_fOpen, WebMWriter::Mode a_enmMode,
+    int Create(const char *a_pszFilename, uint64_t a_fOpen,
                WebMWriter::AudioCodec a_enmAudioCodec, WebMWriter::VideoCodec a_enmVideoCodec);
 
     /** Closes output file. */
-    void close();
+    int Close(void);
 
-    /**
-     * Writes WebM header to file.
-     * Should be called before any writeBlock call.
-     *
-     * @param a_pCfg Pointer to VPX Codec configuration structure.
-     * @param a_pFps Framerate information (frames per second).
-     *
-     * @returns VBox status code.
-     */
-    int writeHeader(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_rational *a_pFps);
+    int AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth);
+
+    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS);
 
     /**
      * Writes a block of compressed data.
      *
-     * @param a_pCfg Pointer to VPX Codec configuration structure.
-     * @param a_pPkt VPX data packet.
+     * @param blockType         Block type to write.
+     * @param pvData            Pointer to block data to write.
+     * @param cbData            Size (in bytes) of block data to write.
      *
      * @returns VBox status code.
      */
-    int writeBlock(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt);
-
-    /**
-     * Writes WebM footer.
-     * No other write functions should be called after this one.
-     *
-     * @param a_u64Hash Hash value for the data written.
-     *
-     * @returns VBox status code.
-     */
-    int writeFooter(uint32_t a_u64Hash);
+    int WriteBlock(WebMWriter::BlockType blockType, const void *pvData, size_t cbData);
 
     /**
      * Gets current output file size.
      *
      * @returns File size in bytes.
      */
-    uint64_t getFileSize(void);
+    uint64_t GetFileSize(void);
 
     /**
      * Gets current free storage space available for the file.
      *
      * @returns Available storage free space.
      */
-    uint64_t getAvailableSpace(void);
+    uint64_t GetAvailableSpace(void);
 
 private:
 

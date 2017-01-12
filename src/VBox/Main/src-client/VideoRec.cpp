@@ -577,10 +577,7 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
         if (pStream->fEnabled)
         {
             AssertPtr(pStream->pEBML);
-            int rc = pStream->pEBML->writeFooter(0);
-            AssertRC(rc);
-
-            pStream->pEBML->close();
+            pStream->pEBML->Close();
 
             vpx_img_free(&pStream->Codec.VPX.RawImage);
             vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Codec.VPX.CodecCtx);
@@ -658,18 +655,15 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     com::Utf8Str options(pszOptions);
     size_t pos = 0;
 
-    /* By default we enable both, video and audio recording (if available). */
+    /* By default we enable everything (if available). */
+    bool fHasVideoTrack = true;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    WebMWriter::Mode enmMode = WebMWriter::Mode_AudioVideo;
-#else
-    WebMWriter::Mode enmMode = WebMWriter::Mode_Video;
+    bool fHasAudioTrack = true;
 #endif
 
-    do {
-
-        com::Utf8Str key, value;
-        pos = options.parseKeyValue(key, value, pos);
-
+    com::Utf8Str key, value;
+    while ((pos = options.parseKeyValue(key, value, pos)) != com::Utf8Str::npos)
+    {
         if (key.compare("vc_quality", Utf8Str::CaseInsensitive) == 0)
         {
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
@@ -686,26 +680,26 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             }
             else
             {
-                LogRel(("VideoRec: Settings quality deadline to '%s'\n", value.c_str()));
+                LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
                 pStream->uEncoderDeadline = value.toUInt32();
             }
         }
-        if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
+        else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("false", Utf8Str::CaseInsensitive) == 0) /* Disable audio. */
             {
-                enmMode = WebMWriter::Mode_Audio;
+                fHasVideoTrack = false;
                 LogRel(("VideoRec: Only audio will be recorded\n"));
             }
 #endif
         }
-        if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
+        else if (key.compare("ac_enabled", Utf8Str::CaseInsensitive) == 0)
         {
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
             if (value.compare("false", Utf8Str::CaseInsensitive)) /* Disable audio. */
             {
-                enmMode = WebMWriter::Mode_Video;
+                fHasAudioTrack = false;
                 LogRel(("VideoRec: Only video will be recorded\n"));
             }
 #endif
@@ -713,7 +707,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         else
             LogRel(("VideoRec: Unknown option '%s' (value '%s'), skipping\n", key.c_str(), value.c_str()));
 
-    } while(pos != com::Utf8Str::npos);
+    } /* while */
 
     uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_WRITE;
 #ifdef DEBUG
@@ -722,8 +716,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     fOpen |= RTFILE_O_CREATE;
 #endif
 
-    int rc = pStream->pEBML->create(pszFile, fOpen, enmMode,
-                                    WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_VP8);
+    int rc = pStream->pEBML->Create(pszFile, fOpen, WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_VP8);
     if (RT_FAILURE(rc))
     {
         LogRel(("VideoRec: Failed to create the video capture output file '%s' (%Rrc)\n", pszFile, rc));
@@ -744,9 +737,17 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 
     pStream->uDelay = 1000 / uFps;
 
-    struct vpx_rational arg_framerate = { (int)uFps, 1 };
-    rc = pStream->pEBML->writeHeader(&pStream->Codec.VPX.Config, &arg_framerate);
-    AssertRCReturn(rc, rc);
+    if (fHasVideoTrack)
+    {
+        rc = pStream->pEBML->AddVideoTrack(pStream->Codec.VPX.Config.g_w, /* Width */
+                                           pStream->Codec.VPX.Config.g_h, /* Height */
+                                           uFps);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
+            return rc;
+        }
+    }
 
     /* Initialize codec */
     rcv = vpx_codec_enc_init(&pStream->Codec.VPX.CodecCtx, DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
@@ -761,10 +762,12 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         LogFlow(("Failed to allocate image %dx%d", uWidth, uHeight));
         return VERR_NO_MEMORY;
     }
+
     pStream->pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
 
     pCtx->fEnabled = true;
     pStream->fEnabled = true;
+
     return VINF_SUCCESS;
 }
 
@@ -831,12 +834,12 @@ bool VideoRecIsFull(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSta
 
     if (pCtx->uMaxFileSize > 0)
     {
-        uint64_t sizeInMB = pStream->pEBML->getFileSize() / (1024 * 1024);
+        uint64_t sizeInMB = pStream->pEBML->GetFileSize() / (1024 * 1024);
         if(sizeInMB >= pCtx->uMaxFileSize)
             return true;
     }
     /* Check for available free disk space */
-    if (pStream->pEBML->getAvailableSpace() < 0x100000)
+    if (pStream->pEBML->GetAvailableSpace() < 0x100000)
     {
         LogRel(("VideoRec: Not enough free storage space available, stopping video capture\n"));
         return true;
@@ -872,16 +875,21 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     int rc = VERR_NO_DATA;
     for (;;)
     {
-        const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pStream->Codec.VPX.CodecCtx, &iter);
-        if (!pkt)
+        const vpx_codec_cx_pkt_t *pPacket = vpx_codec_get_cx_data(&pStream->Codec.VPX.CodecCtx, &iter);
+        if (!pPacket)
             break;
-        switch (pkt->kind)
+
+        switch (pPacket->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
-                rc = pStream->pEBML->writeBlock(&pStream->Codec.VPX.Config, pkt);
+            {
+                WebMWriter::BlockData_VP8 blockData { &pStream->Codec.VPX.Config, pPacket };
+                rc = pStream->pEBML->WriteBlock(WebMWriter::BlockType_Video, &blockData, sizeof(blockData));
                 break;
+            }
+
             default:
-                LogFlow(("Unexpected CODEC Packet.\n"));
+                LogFlow(("Unexpected CODEC packet kind %ld\n", pPacket->kind));
                 break;
         }
     }
