@@ -67,25 +67,49 @@ class UISessionStateStatusBarIndicator : public QIWithRetranslateUI<QIStateStatu
 public:
 
     /** Constructor which remembers passed @a session object. */
-    UISessionStateStatusBarIndicator(IndicatorType enmType, UISession *pSession)
-        : m_enmType(enmType)
-        , m_pSession(pSession)
-    {}
+    UISessionStateStatusBarIndicator(IndicatorType enmType, UISession *pSession);
 
     /** Returns the indicator type. */
     IndicatorType type() const { return m_enmType; }
+
+    /** Returns the indicator description. */
+    virtual QString description() const { return m_strDescription; }
 
     /** Abstract update routine. */
     virtual void updateAppearance() = 0;
 
 protected:
 
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
+
     /** Holds the indicator type. */
     const IndicatorType m_enmType;
 
     /** Holds the session UI reference. */
     UISession *m_pSession;
+
+    /** Holds the indicator description. */
+    QString m_strDescription;
 };
+
+
+UISessionStateStatusBarIndicator::UISessionStateStatusBarIndicator(IndicatorType enmType, UISession *pSession)
+    : m_enmType(enmType)
+    , m_pSession(pSession)
+{
+}
+
+void UISessionStateStatusBarIndicator::retranslateUi()
+{
+    /* Translate description: */
+    m_strDescription = tr("%1 status-bar indicator", "like 'hard-disk status-bar indicator'")
+                         .arg(gpConverter->toString(type()));
+
+    /* Update appearance finally: */
+    updateAppearance();
+}
+
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Hard-drive indicator. */
 class UIIndicatorHardDrive : public UISessionStateStatusBarIndicator
@@ -108,12 +132,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -181,12 +199,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -258,12 +270,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -375,12 +381,6 @@ private slots:
 
 private:
 
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
     /** Update routine. */
     void updateAppearance()
     {
@@ -486,12 +486,6 @@ public:
 
 private:
 
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
     /** Update routine. */
     void updateAppearance()
     {
@@ -551,12 +545,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -621,12 +609,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -731,12 +713,6 @@ private slots:
 
 private:
 
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
-
     /** Paint-event handler. */
     void paintEvent(QPaintEvent*)
     {
@@ -824,12 +800,6 @@ public:
     }
 
 private:
-
-    /** Retranslation routine. */
-    void retranslateUi()
-    {
-        updateAppearance();
-    }
 
     /** Update routine. */
     void updateAppearance()
@@ -933,8 +903,8 @@ private slots:
 
 private:
 
-    /** Retranslation routine. */
-    void retranslateUi()
+    /** Update routine. */
+    void updateAppearance()
     {
         setToolTip(QApplication::translate("UIIndicatorsPool",
                    "Indicates whether the host mouse pointer is captured by the guest OS:<br>"
@@ -945,9 +915,6 @@ private:
                    "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
                    "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
     }
-
-    /** Update routine. */
-    void updateAppearance() {}
 };
 
 /** UISessionStateStatusBarIndicator extension for Runtime UI: Keyboard indicator. */
@@ -975,17 +942,14 @@ public:
 
 private:
 
-    /** Retranslation routine. */
-    void retranslateUi()
+    /** Update routine. */
+    void updateAppearance()
     {
         setToolTip(QApplication::translate("UIIndicatorsPool",
                    "Indicates whether the host keyboard is captured by the guest OS:<br>"
                    "<nobr><img src=:/hostkey_16px.png/>&nbsp;&nbsp;keyboard is not captured</nobr><br>"
                    "<nobr><img src=:/hostkey_captured_16px.png/>&nbsp;&nbsp;keyboard is captured</nobr>"));
     }
-
-    /** Update routine. */
-    void updateAppearance() {}
 };
 
 /** QITextStatusBarIndicator extension for Runtime UI: Keyboard-extension indicator. */
