@@ -18,17 +18,19 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else
+/* GUI includes: */
 # include "QIStatusBar.h"
 #endif
 
 
-QIStatusBar::QIStatusBar (QWidget *aParent)
-    : QStatusBar (aParent)
+QIStatusBar::QIStatusBar(QWidget *pParent)
+    : QStatusBar(pParent)
 {
-    connect (this, SIGNAL (messageChanged (const QString&)),
-             this, SLOT (rememberLastMessage (const QString&)));
+    /* Make sure we remember the last one status message: */
+    connect(this, SIGNAL(messageChanged(const QString &)),
+            this, SLOT(sltRememberLastMessage(const QString &)));
 
-    /* Remove that ugly border around the statusbar items on every platform */
-    setStyleSheet ("QStatusBar::item { border: 0px none black; }");
+    /* Remove that ugly border around the status-bar items on every platform: */
+    setStyleSheet("QStatusBar::item { border: 0px none black; }");
 }
 

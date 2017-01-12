@@ -15,32 +15,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIStatusBar_h__
-#define __QIStatusBar_h__
+#ifndef ___QIStatusBar_h___
+#define ___QIStatusBar_h___
 
-/* Qt includes */
+/* Qt includes: */
 #include <QStatusBar>
 
-/**
- *  The QIStatusBar class is a replacement of QStatusBar with disabling
- *  drawing of sunken borders around every widget on the status bar.
- */
+
+/** QStatusBar subclass extending standard functionality. */
 class QIStatusBar : public QStatusBar
 {
     Q_OBJECT;
 
 public:
 
-    QIStatusBar (QWidget *aParent = 0);
+    /** Constructs status-bar passing @a pParent to the base-class. */
+    QIStatusBar(QWidget *pParent = 0);
 
 protected slots:
 
-    void rememberLastMessage (const QString &aMsg) { mMessage = aMsg; }
+    /** Remembers the last status @a strMessage. */
+    void sltRememberLastMessage(const QString &strMessage) { m_strMessage = strMessage; }
 
 protected:
 
-    QString mMessage;
+    /** Holds the last status message. */
+    QString m_strMessage;
 };
 
-#endif // __QIStatusBar_h__
+#endif /* !___QIStatusBar_h___ */
 
