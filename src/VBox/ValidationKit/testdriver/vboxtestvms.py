@@ -78,6 +78,7 @@ g_aaNameToDetails = \
     [ 'WindowsXP_64',   'WindowsXP_64',          g_k64,    1,  32, ['xp64',   'xp64sp[0-9]']],
     [ 'Windows2003',    'Windows2003',           g_k32,    1,  32, ['w2k3',   'w2k3sp[0-9]', 'win2k3', 'win2k3sp[0-9]']],
     [ 'WindowsVista',   'WindowsVista',          g_k32,    1,  32, ['vista',  'vistasp[0-9]']],
+    [ 'WindowsVista_64','WindowsVista_64',       g_k64,    1,  64, ['vista-64', 'vistasp[0-9]-64',]],  # max cpus/cores??
     [ 'Windows2008',    'Windows2008',           g_k32,    1,  64, ['w2k8',   'w2k8sp[0-9]', 'win2k8', 'win2k8sp[0-9]']],     # max cpus/cores??
     [ 'Windows2008_64', 'Windows2008_64',        g_k64,    1,  64, ['w2k8r2', 'w2k8r2sp[0-9]', 'win2k8r2', 'win2k8r2sp[0-9]']], # max cpus/cores??
     [ 'Windows7',       'Windows7',              g_k32,    1,  32, ['w7',     'w7sp[0-9]', 'win7',]],        # max cpus/cores??
