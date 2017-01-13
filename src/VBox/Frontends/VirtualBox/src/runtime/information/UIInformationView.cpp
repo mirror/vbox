@@ -19,8 +19,9 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-# include <QTextEdit>
+/* Qt includes: */
 # include <QClipboard>
+# include <QTextEdit>
 
 /* GUI includes: */
 # include "UIInformationView.h"
@@ -28,13 +29,14 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 UIInformationView::UIInformationView(QWidget *pParent)
     : QListView(pParent)
 {
-    /* Create a dummy textEdit for copying rich-text as,
-     * manual copying to clipboard is not working: */
+    // WORKAROUND:
+    // Create a dummy text-edit for copying rich-text
+    // as manual copying to clipboard is not working:
     m_pTextEdit = new QTextEdit(this);
-    /* Hide textedit: */
     m_pTextEdit->setVisible(false);
     /* Set selection mode: */
     setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -45,15 +47,15 @@ UIInformationView::UIInformationView(QWidget *pParent)
 void UIInformationView::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
     /* Iterate through all indexes: */
-    for (int iRowIndex = topLeft.row(); iRowIndex <= bottomRight.row(); iRowIndex++)
+    for (int iRowIndex = topLeft.row(); iRowIndex <= bottomRight.row(); ++iRowIndex)
     {
         /* Get the index for current row: */
-        QModelIndex index = topLeft.sibling(iRowIndex, topLeft.column());
+        const QModelIndex index = topLeft.sibling(iRowIndex, topLeft.column());
         /* If index is valid: */
         if (index.isValid())
         {
             /* Get the row-count of data-table: */
-            int iCount = index.data(Qt::UserRole + 1).value<UITextTable>().count();
+            const int iCount = index.data(Qt::UserRole + 1).value<UITextTable>().count();
             /* If there is no data hide the item: */
             if (iCount == 0)
                 setRowHidden(index.row(), true);
@@ -67,7 +69,7 @@ void UIInformationView::keyPressEvent(QKeyEvent *pEvent)
     if (pEvent == QKeySequence::Copy)
     {
         QString strText;
-        /* Get Selection model: */
+        /* Get selection model: */
         QItemSelectionModel *pSelectionModel = selectionModel();
         if (pSelectionModel)
         {
