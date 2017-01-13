@@ -43,6 +43,7 @@ typedef struct _SHFLHANDLEHDR
 typedef struct _SHFLFILEHANDLE
 {
     SHFLHANDLEHDR Header;
+    SHFLROOT root; /* Where the handle has been opened. */
     union
     {
         struct

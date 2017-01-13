@@ -142,6 +142,52 @@ static void vbsfFreeFullPath(char *pszFullPath)
     vbsfFreeHostPath(pszFullPath);
 }
 
+typedef enum VBSFCHECKACCESS
+{
+    VBSF_CHECK_ACCESS_READ = 0,
+    VBSF_CHECK_ACCESS_WRITE = 1
+} VBSFCHECKACCESS;
+
+/**
+ * Check if the handle data is valid and the operation is allowed on the shared folder.
+ *
+ * @returns IPRT status code
+ * @param  pClient               Data structure describing the client accessing the shared folder
+ * @param  root                  The index of the shared folder in the table of mappings.
+ * @param  pHandle               Information about the file or directory object.
+ * @param  enmCheckAccess        Whether the operation needs read only or write access.
+ */
+static int vbsfCheckHandleAccess(SHFLCLIENTDATA *pClient, SHFLROOT root,
+                                 SHFLFILEHANDLE *pHandle, VBSFCHECKACCESS enmCheckAccess)
+{
+    /* Handle from the same 'root' index? */
+    if (RT_LIKELY(RT_VALID_PTR(pHandle) && root == pHandle->root))
+    { /* likely */ }
+    else
+        return VERR_INVALID_HANDLE;
+
+    /* Check if the guest is still allowed to access this share.
+     * vbsfMappingsQueryWritable returns error if the shared folder has been removed from the VM settings.
+     */
+    bool fWritable;
+    int rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return VERR_ACCESS_DENIED;
+
+    if (enmCheckAccess == VBSF_CHECK_ACCESS_WRITE)
+    {
+        /* Operation requires write access. Check if the shared folder is writable too. */
+        if (RT_LIKELY(fWritable))
+        { /* likely */ }
+        else
+            return VERR_WRITE_PROTECT;
+    }
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Convert shared folder create flags (see include/iprt/shflsvc.h) into iprt create flags.
  *
@@ -420,6 +466,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
             pHandle = vbsfQueryFileHandle(pClient, handle);
             if (pHandle)
             {
+                pHandle->root = root;
                 rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
             }
         }
@@ -563,6 +610,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
  *
  * @returns IPRT status code
  * @param  pClient               Data structure describing the client accessing the shared folder
+ * @param  root                  The index of the shared folder in the table of mappings.
  * @param  pszPath               Path to the file or folder on the host.
  * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
  * @retval pParms @a Result      Shared folder status code, see include/VBox/shflsvc.h
@@ -572,7 +620,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
  *
  * @note folders are created with fMode = 0777
  */
-static int vbsfOpenDir(SHFLCLIENTDATA *pClient, const char *pszPath,
+static int vbsfOpenDir(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPath,
                        SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenDir: pszPath = %s, pParms = %p\n", pszPath, pParms));
@@ -583,6 +631,7 @@ static int vbsfOpenDir(SHFLCLIENTDATA *pClient, const char *pszPath,
     SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, handle);
     if (0 != pHandle)
     {
+        pHandle->root = root;
         rc = VINF_SUCCESS;
         pParms->Result = SHFL_FILE_EXISTS;  /* May be overwritten with SHFL_FILE_CREATED. */
         /** @todo Can anyone think of a sensible, race-less way to do this?  Although
@@ -884,7 +933,7 @@ int vbsfCreate(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
             {
                 if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
                 {
-                    rc = vbsfOpenDir(pClient, pszFullPath, pParms);
+                    rc = vbsfOpenDir(pClient, root, pszFullPath, pParms);
                 }
                 else
                 {
@@ -919,34 +968,39 @@ void testClose(RTTEST hTest)
 
 int vbsfClose(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
-    RT_NOREF1(root);
-    int rc = VINF_SUCCESS;
+    LogFunc(("pClient = %p, root 0x%RX32, Handle = 0x%RX64\n",
+             pClient, root, Handle));
 
-    LogFlow(("vbsfClose: pClient = %p, Handle = %RX64\n",
-             pClient, Handle));
-
+    int rc = VERR_INVALID_HANDLE;
     uint32_t type = vbsfQueryHandleType(pClient, Handle);
     Assert((type & ~(SHFL_HF_TYPE_DIR | SHFL_HF_TYPE_FILE)) == 0);
-
     switch (type & (SHFL_HF_TYPE_DIR | SHFL_HF_TYPE_FILE))
     {
         case SHFL_HF_TYPE_DIR:
         {
-            rc = vbsfCloseDir(vbsfQueryDirHandle(pClient, Handle));
+            SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
+            if (RT_LIKELY(pHandle && root == pHandle->root))
+            {
+                rc = vbsfCloseDir(pHandle);
+                vbsfFreeFileHandle(pClient, Handle);
+            }
             break;
         }
         case SHFL_HF_TYPE_FILE:
         {
-            rc = vbsfCloseFile(vbsfQueryFileHandle(pClient, Handle));
+            SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
+            if (RT_LIKELY(pHandle && root == pHandle->root))
+            {
+                rc = vbsfCloseFile(pHandle);
+                vbsfFreeFileHandle(pClient, Handle);
+            }
             break;
         }
         default:
-            return VERR_INVALID_HANDLE;
+            break;
     }
-    vbsfFreeFileHandle(pClient, Handle);
 
-    Log(("vbsfClose: rc = %Rrc\n", rc));
-
+    LogFunc(("rc = %Rrc\n", rc));
     return rc;
 }
 
@@ -962,41 +1016,39 @@ void testRead(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
-int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+int vbsfRead(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    LogFunc(("pClient %p, root 0x%RX32, Handle 0x%RX64, offset 0x%RX64, bytes 0x%RX32\n",
+             pClient, root, Handle, offset, pcbBuffer? *pcbBuffer: 0));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    size_t count = 0;
-    int rc;
-
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
-
-    Log(("vbsfRead %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
-
-    /* Is the guest allowed to access this share?
-     * Checked here because the shared folder can be removed from the VM settings. */
-    bool fWritable;
-    rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
-    if (RT_FAILURE(rc))
-        return VERR_ACCESS_DENIED;
-
-    if (*pcbBuffer == 0)
-        return VINF_SUCCESS; /** @todo correct? */
-
-
-    rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
         return rc;
+
+    if (RT_LIKELY(*pcbBuffer != 0))
+    {
+        rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            size_t count = 0;
+            rc = RTFileRead(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
+            *pcbBuffer = (uint32_t)count;
+        }
+        else
+            AssertRC(rc);
+    }
+    else
+    {
+        /* Reading zero bytes always succeeds. */
+        rc = VINF_SUCCESS;
     }
 
-    rc = RTFileRead(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-    *pcbBuffer = (uint32_t)count;
-    Log(("RTFileRead returned %Rrc bytes read %x\n", rc, count));
+    LogFunc(("%Rrc bytes read 0x%RX32\n", rc, *pcbBuffer));
     return rc;
 }
 
@@ -1014,38 +1066,37 @@ void testWrite(RTTEST hTest)
 #endif
 int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
+    LogFunc(("pClient %p, root 0x%RX32, Handle 0x%RX64, offset 0x%RX64, bytes 0x%RX32\n",
+             pClient, root, Handle, offset, pcbBuffer? *pcbBuffer: 0));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    size_t count = 0;
-    int rc;
-
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
-
-    Log(("vbsfWrite %RX64 offset %RX64 bytes %x\n", Handle, offset, *pcbBuffer));
-
-    /* Is the guest allowed to write to this share?
-     * Checked here because the shared folder can be removed from the VM settings. */
-    bool fWritable;
-    rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
-    if (RT_FAILURE(rc) || !fWritable)
-        return VERR_WRITE_PROTECT;
-
-    if (*pcbBuffer == 0)
-        return VINF_SUCCESS; /** @todo correct? */
-
-    rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
-    if (rc != VINF_SUCCESS)
-    {
-        AssertRC(rc);
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
         return rc;
+
+    if (RT_LIKELY(*pcbBuffer != 0))
+    {
+        rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            size_t count = 0;
+            rc = RTFileWrite(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
+            *pcbBuffer = (uint32_t)count;
+        }
+        else
+            AssertRC(rc);
+    }
+    else
+    {
+        /** @todo: What writing zero bytes should do? */
+        rc = VINF_SUCCESS;
     }
 
-    rc = RTFileWrite(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-    *pcbBuffer = (uint32_t)count;
-    Log(("RTFileWrite returned %Rrc bytes written %x\n", rc, count));
+    LogFunc(("%Rrc bytes written 0x%RX32\n", rc, *pcbBuffer));
     return rc;
 }
 
@@ -1065,19 +1116,21 @@ void testFlush(RTTEST hTest)
 
 int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
-    RT_NOREF1(root);
+    LogFunc(("pClient %p, root 0x%RX32, Handle 0x%RX64\n",
+             pClient, root, Handle));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    int rc = VINF_SUCCESS;
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
 
-    if (pHandle == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_HANDLE;
-    }
-
-    Log(("vbsfFlush %RX64\n", Handle));
     rc = RTFileFlush(pHandle->file.Handle);
-    AssertRC(rc);
+
+    LogFunc(("%Rrc\n", rc));
     return rc;
 }
 
@@ -1096,31 +1149,23 @@ void testDirList(RTTEST hTest)
 int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLSTRING *pPath, uint32_t flags,
                 uint32_t *pcbBuffer, uint8_t *pBuffer, uint32_t *pIndex, uint32_t *pcFiles)
 {
-    SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
     PRTDIRENTRYEX  pDirEntry = 0, pDirEntryOrg;
     uint32_t       cbDirEntry, cbBufferOrg;
-    int            rc = VINF_SUCCESS;
     PSHFLDIRINFO   pSFDEntry;
     PRTUTF16       pwszString;
     PRTDIR         DirHandle;
-    bool           fUtf8;
+    const bool     fUtf8 = BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8) != 0;
 
-    fUtf8 = BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8) != 0;
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
 
-    /* Is the guest allowed to access this share?
-     * Checked here because the shared folder can be removed from the VM settings. */
-    bool fWritable;
-    rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
-    if (RT_FAILURE(rc))
-        return VERR_ACCESS_DENIED;
-
-    Assert(pIndex && *pIndex == 0);
+    Assert(*pIndex == 0);
     DirHandle = pHandle->dir.Handle;
 
     cbDirEntry = 4096;
@@ -1359,7 +1404,7 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
 int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
                       uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    RT_NOREF2(root, flags);
+    RT_NOREF1(flags);
     uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int            rc = VINF_SUCCESS;
     SHFLFSOBJINFO   *pObjInfo = (SHFLFSOBJINFO *)pBuffer;
@@ -1383,12 +1428,16 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     if (type == SHFL_HF_TYPE_DIR)
     {
         SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
-        rc = RTDirQueryInfo(pHandle->dir.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
+        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+        if (RT_SUCCESS(rc))
+            rc = RTDirQueryInfo(pHandle->dir.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
     }
     else
     {
         SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-        rc = RTFileQueryInfo(pHandle->file.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
+        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+        if (RT_SUCCESS(rc))
+            rc = RTFileQueryInfo(pHandle->file.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
 #ifdef RT_OS_WINDOWS
         if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
             pObjInfo->Attr.fMode |= 0111;
@@ -1408,7 +1457,7 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
                            uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    RT_NOREF2(root, flags);
+    RT_NOREF1(flags);
     uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
@@ -1431,22 +1480,26 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     if (type == SHFL_HF_TYPE_DIR)
     {
         SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
-        rc = RTDirSetTimes(pHandle->dir.Handle,
-                            (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
-                            );
+        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+        if (RT_SUCCESS(rc))
+            rc = RTDirSetTimes(pHandle->dir.Handle,
+                                (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
+                                (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
+                                (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
+                                (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
+                                );
     }
     else
     {
         SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-        rc = RTFileSetTimes(pHandle->file.Handle,
-                            (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
-                            (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
-                            );
+        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+        if (RT_SUCCESS(rc))
+            rc = RTFileSetTimes(pHandle->file.Handle,
+                                 (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
+                                 (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
+                                 (RTTimeSpecGetNano(&pSFDEntry->ChangeTime)) ?       &pSFDEntry->ChangeTime: NULL,
+                                 (RTTimeSpecGetNano(&pSFDEntry->BirthTime)) ?        &pSFDEntry->BirthTime: NULL
+                                 );
     }
     if (rc != VINF_SUCCESS)
     {
@@ -1462,24 +1515,28 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     if (type == SHFL_HF_TYPE_FILE)
     {
         SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-        /* Change file attributes if necessary */
-        if (pSFDEntry->Attr.fMode)
+        rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+        if (RT_SUCCESS(rc))
         {
-            RTFMODE fMode = pSFDEntry->Attr.fMode;
+            /* Change file attributes if necessary */
+            if (pSFDEntry->Attr.fMode)
+            {
+                RTFMODE fMode = pSFDEntry->Attr.fMode;
 
 #ifndef RT_OS_WINDOWS
-            /* Don't allow the guest to clear the own bit, otherwise the guest wouldn't be
-             * able to access this file anymore. Only for guests, which set the UNIX mode. */
-            if (fMode & RTFS_UNIX_MASK)
-                fMode |= RTFS_UNIX_IRUSR;
+                /* Don't allow the guest to clear the own bit, otherwise the guest wouldn't be
+                 * able to access this file anymore. Only for guests, which set the UNIX mode. */
+                if (fMode & RTFS_UNIX_MASK)
+                    fMode |= RTFS_UNIX_IRUSR;
 #endif
 
-            rc = RTFileSetMode(pHandle->file.Handle, fMode);
-            if (rc != VINF_SUCCESS)
-            {
-                Log(("RTFileSetMode %x failed with %Rrc\n", fMode, rc));
-                /* silent failure, because this tends to fail with e.g. windows guest & linux host */
-                rc = VINF_SUCCESS;
+                rc = RTFileSetMode(pHandle->file.Handle, fMode);
+                if (rc != VINF_SUCCESS)
+                {
+                    Log(("RTFileSetMode %x failed with %Rrc\n", fMode, rc));
+                    /* silent failure, because this tends to fail with e.g. windows guest & linux host */
+                    rc = VINF_SUCCESS;
+                }
             }
         }
     }
@@ -1505,9 +1562,8 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
 static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags,
                             uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    RT_NOREF2(root, flags);
+    RT_NOREF1(flags);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
 
     if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
@@ -1515,6 +1571,12 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
+
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
 
     *pcbBuffer  = 0;
     pSFDEntry   = (SHFLFSOBJINFO *)pBuffer;
@@ -1647,12 +1709,6 @@ int vbsfSetFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uin
         return VERR_INVALID_PARAMETER;
     }
 
-    /* is the guest allowed to write to this share? */
-    bool fWritable;
-    int rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
-    if (RT_FAILURE(rc) || !fWritable)
-        return VERR_WRITE_PROTECT;
-
     if (flags & SHFL_INFO_FILE)
         return vbsfSetFileInfo(pClient, root, Handle, flags, pcbBuffer, pBuffer);
 
@@ -1680,18 +1736,17 @@ void testLock(RTTEST hTest)
 
 int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
-    RT_NOREF1(root);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     uint32_t        fRTLock = 0;
-    int             rc;
 
     Assert((flags & SHFL_LOCK_MODE_MASK) != SHFL_LOCK_CANCEL);
 
-    if (pHandle == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_HANDLE;
-    }
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
+
     if (   ((flags & SHFL_LOCK_MODE_MASK) == SHFL_LOCK_CANCEL)
         || (flags & SHFL_LOCK_ENTIRE)
        )
@@ -1736,16 +1791,16 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 
 int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
-    RT_NOREF1(root);
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    int             rc;
 
     Assert((flags & SHFL_LOCK_MODE_MASK) == SHFL_LOCK_CANCEL);
 
-    if (pHandle == 0)
-    {
-        return VERR_INVALID_HANDLE;
-    }
+    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
+        return rc;
+
     if (   ((flags & SHFL_LOCK_MODE_MASK) != SHFL_LOCK_CANCEL)
         || (flags & SHFL_LOCK_ENTIRE)
        )
@@ -1955,13 +2010,32 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
  */
 int vbsfDisconnect(SHFLCLIENTDATA *pClient)
 {
-    for (int i=0; i<SHFLHANDLE_MAX; i++)
+    for (int i = 0; i < SHFLHANDLE_MAX; ++i)
     {
+        SHFLFILEHANDLE *pHandle = NULL;
         SHFLHANDLE Handle = (SHFLHANDLE)i;
-        if (vbsfQueryHandleType(pClient, Handle))
+
+        uint32_t type = vbsfQueryHandleType(pClient, Handle);
+        switch (type & (SHFL_HF_TYPE_DIR | SHFL_HF_TYPE_FILE))
         {
-            Log(("Open handle %08x\n", i));
-            vbsfClose(pClient, SHFL_HANDLE_ROOT /* incorrect, but it's not important */, (SHFLHANDLE)i);
+            case SHFL_HF_TYPE_DIR:
+            {
+                pHandle = vbsfQueryDirHandle(pClient, Handle);
+                break;
+            }
+            case SHFL_HF_TYPE_FILE:
+            {
+                pHandle = vbsfQueryFileHandle(pClient, Handle);
+                break;
+            }
+            default:
+                break;
+        }
+
+        if (pHandle)
+        {
+            LogFunc(("Opened handle 0x%08x\n", i));
+            vbsfClose(pClient, pHandle->root, Handle);
         }
     }
     return VINF_SUCCESS;
