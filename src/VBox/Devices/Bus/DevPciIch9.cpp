@@ -1537,6 +1537,7 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
         /* PCI bridges have 2 BARs. */
         cRegions = 2;
 
+    bool fSuppressMem = false;
     bool fActiveMemRegion = false;
     bool fActiveIORegion = false;
     for (int iRegion = 0; iRegion < cRegions; iRegion++)
@@ -1547,10 +1548,27 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
            are cleared. */
         uint8_t u8ResourceType = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address, 1);
 
+        bool fPrefetch =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_IO)))
+                      == PCI_ADDRESS_SPACE_MEM_PREFETCH;
         bool f64Bit =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
                       == PCI_ADDRESS_SPACE_BAR64;
         bool fIsPio = ((u8ResourceType & PCI_ADDRESS_SPACE_IO) == PCI_ADDRESS_SPACE_IO);
         uint64_t cbRegSize64 = 0;
+
+        /* Hack: since this PCI init code cannot handle prefetchable BARs on
+         * anything besides the primary bus, it's for now the best solution
+         * to leave such BARs uninitialized and keep memory transactions
+         * disabled. The OS will hopefully be clever enough to fix this.
+         * Prefetchable BARs are the only ones which can be truly big (and
+         * are almost always 64-bit BARs). The non-prefetchable ones will not
+         * cause running out of space in the PCI memory hole. */
+        if (fPrefetch && uBus != 0)
+        {
+            fSuppressMem = true;
+            if (f64Bit)
+                iRegion++; /* skip next region */
+            continue;
+        }
 
         if (f64Bit)
         {
@@ -1647,7 +1665,7 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
 
     /* Update the command word appropriately. */
     uint8_t uCmd = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_COMMAND, 2);
-    if (fActiveMemRegion)
+    if (fActiveMemRegion && !fSuppressMem)
         uCmd |= VBOX_PCI_COMMAND_MEMORY; /* Enable MMIO access. */
     if (fActiveIORegion)
         uCmd |= VBOX_PCI_COMMAND_IO; /* Enable I/O space access. */
@@ -1855,7 +1873,7 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     pPciRoot->uPciBiosMmio   = cbBelow4GB;
     pPciRoot->uPciBiosMmio64 = cbAbove4GB + _4G;
 
-    /* NB: Assume that if PCI controller MMIO range is enabled, it is at the bottom of the memory hole. */
+    /* NB: Assume that if PCI controller MMIO range is enabled, it is below the beginning of the memory hole. */
     if (pPciRoot->u64PciConfigMMioAddress)
     {
         AssertRelease(pPciRoot->u64PciConfigMMioAddress >= cbBelow4GB);
@@ -2401,52 +2419,49 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                 pHlp->pfnPrintf(pHlp, "\n");
             }
 
-            uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
-            if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
+            for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+                PCIIORegion const *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
+                uint64_t const     cbRegion = pRegion->size;
+
+                if (cbRegion == 0)
+                    continue;
+
+                uint32_t uAddr = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion));
+                const char * pszDesc;
+                char szDescBuf[128];
+
+                bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                              == PCI_ADDRESS_SPACE_BAR64;
+                if (pRegion->type & PCI_ADDRESS_SPACE_IO)
                 {
-                    PCIIORegion const *pRegion  = &pPciDev->Int.s.aIORegions[iRegion];
-                    uint64_t const     cbRegion = pRegion->size;
-
-                    if (cbRegion == 0)
-                        continue;
-
-                    uint32_t uAddr = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion));
-                    const char * pszDesc;
-                    char szDescBuf[128];
-
-                    bool f64Bit =    (pRegion->type & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
-                                  == PCI_ADDRESS_SPACE_BAR64;
-                    if (pRegion->type & PCI_ADDRESS_SPACE_IO)
-                    {
-                        pszDesc = "IO";
-                        uAddr &= ~0x3;
-                    }
-                    else
-                    {
-                        RTStrPrintf(szDescBuf, sizeof(szDescBuf), "MMIO%s%s",
-                                    f64Bit ? "64" : "32",
-                                    pRegion->type & PCI_ADDRESS_SPACE_MEM_PREFETCH ? " PREFETCH" : "");
-                        pszDesc = szDescBuf;
-                        uAddr &= ~0xf;
-                    }
-
-                    devpciR3InfoIndent(pHlp, iIndentLvl + 2);
-                    pHlp->pfnPrintf(pHlp, "%s region #%u: ", pszDesc, iRegion);
-                    if (f64Bit)
-                    {
-                        uint32_t u32High = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion+1));
-                        uint64_t u64Addr = RT_MAKE_U64(uAddr, u32High);
-                        pHlp->pfnPrintf(pHlp, "%RX64..%RX64\n", u64Addr, u64Addr + cbRegion - 1);
-                        iRegion++;
-                    }
-                    else
-                        pHlp->pfnPrintf(pHlp, "%x..%x\n", uAddr, uAddr + (uint32_t)cbRegion - 1);
+                    pszDesc = "IO";
+                    uAddr &= ~0x3;
                 }
+                else
+                {
+                    RTStrPrintf(szDescBuf, sizeof(szDescBuf), "MMIO%s%s",
+                                f64Bit ? "64" : "32",
+                                pRegion->type & PCI_ADDRESS_SPACE_MEM_PREFETCH ? " PREFETCH" : "");
+                    pszDesc = szDescBuf;
+                    uAddr &= ~0xf;
+                }
+
+                devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+                pHlp->pfnPrintf(pHlp, "%s region #%u: ", pszDesc, iRegion);
+                if (f64Bit)
+                {
+                    uint32_t u32High = ich9pciGetDWord(pPciDev, ich9pciGetRegionReg(iRegion+1));
+                    uint64_t u64Addr = RT_MAKE_U64(uAddr, u32High);
+                    pHlp->pfnPrintf(pHlp, "%RX64..%RX64\n", u64Addr, u64Addr + cbRegion - 1);
+                    iRegion++;
+                }
+                else
+                    pHlp->pfnPrintf(pHlp, "%x..%x\n", uAddr, uAddr + (uint32_t)cbRegion - 1);
             }
 
             devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+            uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             uint16_t iStatus = ich9pciGetWord(pPciDev, VBOX_PCI_STATUS);
             pHlp->pfnPrintf(pHlp, "Command: %04X, Status: %04x\n", iCmd, iStatus);
             devpciR3InfoIndent(pHlp, iIndentLvl + 2);
