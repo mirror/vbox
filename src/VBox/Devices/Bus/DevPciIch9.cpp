@@ -2490,10 +2490,10 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                             (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_LIMIT) & 0xfff0) << 16 | 0xfffff);
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "behind bridge: prefetch memory %#018x..%#018x\n",
-                            (  (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32
-                             | ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE) & 0xfff0) << 16,
-                            (  (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32
-                             | ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT) & 0xfff0) << 16
+                            (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
+                             | (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE) & 0xfff0) << 16),
+                            (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
+                             | (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT) & 0xfff0) << 16)
                              | 0xfffff);
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
