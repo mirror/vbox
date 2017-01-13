@@ -32,6 +32,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const CMachine &machine, const CConsole &console)
     : QWidget(pParent)
     , m_machine(machine)
@@ -40,8 +41,8 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     , m_pModel(0)
     , m_pView(0)
 {
-    /* Prepare main-layout: */
-    prepareMainLayout();
+    /* Prepare layout: */
+    prepareLayout();
 
     /* Prepare model: */
     prepareModel();
@@ -50,17 +51,15 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     prepareView();
 }
 
-void UIInformationConfiguration::prepareMainLayout()
+void UIInformationConfiguration::prepareLayout()
 {
-    /* Create main-layout: */
-    m_pMainLayout = new QVBoxLayout;
+    /* Create layout: */
+    m_pMainLayout = new QVBoxLayout(this);
     AssertPtrReturnVoid(m_pMainLayout);
     {
-        /* Configure main-layout: */
+        /* Configure layout: */
         m_pMainLayout->setContentsMargins(2, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
-        /* Set main-layout: */
-        setLayout(m_pMainLayout);
     }
 }
 
@@ -162,6 +161,7 @@ void UIInformationConfiguration::prepareView()
     {
         /* Configure information-view: */
         m_pView->setResizeMode(QListView::Adjust);
+
         /* Create information-delegate item: */
         UIInformationItem *pItem = new UIInformationItem(m_pView);
         AssertPtrReturnVoid(pItem);
@@ -169,13 +169,13 @@ void UIInformationConfiguration::prepareView()
             /* Set item-delegate for information-view: */
             m_pView->setItemDelegate(pItem);
         }
-        /* Connect datachanged signal: */
-        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
-                m_pView, SLOT(updateData(const QModelIndex&, const QModelIndex&)));
+        /* Connect data changed signal: */
+        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &)),
+                m_pView, SLOT(updateData(const QModelIndex &, const QModelIndex &)));
 
         /* Set model for view: */
         m_pView->setModel(m_pModel);
-        /* Add information-view to the main-layout: */
+        /* Add information-view to the layout: */
         m_pMainLayout->addWidget(m_pView);
     }
 }

@@ -32,6 +32,7 @@ class QVBoxLayout;
 class UIInformationView;
 class UIInformationModel;
 
+
 /** QWidget extension
   * providing GUI with configuration-information tab in session-information window. */
 class UIInformationConfiguration : public QWidget
@@ -47,8 +48,8 @@ public:
 
 private:
 
-    /** Prepares main-layout. */
-    void prepareMainLayout();
+    /** Prepares layout. */
+    void prepareLayout();
 
     /** Prepares model. */
     void prepareModel();
