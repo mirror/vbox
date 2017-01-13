@@ -28,7 +28,6 @@
 #include "UIInformationDataItem.h"
 
 /* COM includes: */
-/* COMEnums.h should be first header included for enum definitions: */
 #include "COMEnums.h"
 #include "CGuest.h"
 #include "CMachine.h"
@@ -45,6 +44,7 @@ class CNetworkAdapter;
 class QTextLayout;
 class UIInformationModel;
 
+
 /** QObject extension
   * used as data-item in information-model in session-information window. */
 class UIInformationDataItem : public QObject
@@ -54,8 +54,9 @@ class UIInformationDataItem : public QObject
 public:
 
     /** Constructs information data-item of type @a type.
-      * @param machine is machine reference.
-      * @param console is machine console reference. */
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataItem(InformationElementType type, const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
     /** Destructs information data-item. */
@@ -64,7 +65,7 @@ public:
     /** Returns type of information data-item. */
     InformationElementType elementType() const { return m_type; }
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
 protected:
@@ -88,6 +89,7 @@ protected:
     UIInformationModel *m_pModel;
 };
 
+
 /** UIInformationDataItem extension for the details-element type 'General'. */
 class UIInformationDataGeneral : public UIInformationDataItem
 {
@@ -95,13 +97,16 @@ class UIInformationDataGeneral : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set.
-      * @param fOpened brings whether the details-element should be visually opened. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataGeneral(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'System'. */
 class UIInformationDataSystem : public UIInformationDataItem
@@ -110,13 +115,16 @@ class UIInformationDataSystem : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set.
-      * @param fOpened brings whether the details-element should be visually opened. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSystem(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'System'. */
 class UIInformationDataDisplay : public UIInformationDataItem
@@ -125,13 +133,16 @@ class UIInformationDataDisplay : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set.
-      * @param fOpened brings whether the details-element should be visually opened. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataDisplay(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'Storage'. */
 class UIInformationDataStorage : public UIInformationDataItem
@@ -140,12 +151,16 @@ class UIInformationDataStorage : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataStorage(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'Audio'. */
 class UIInformationDataAudio : public UIInformationDataItem
@@ -154,12 +169,16 @@ class UIInformationDataAudio : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataAudio(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'Network'. */
 class UIInformationDataNetwork : public UIInformationDataItem
@@ -168,12 +187,16 @@ class UIInformationDataNetwork : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataNetwork(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'Serial ports'. */
 class UIInformationDataSerialPorts : public UIInformationDataItem
@@ -182,12 +205,16 @@ class UIInformationDataSerialPorts : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSerialPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 #ifdef VBOX_WITH_PARALLEL_PORTS
 /** UIInformationDataItem extension for the details-element type 'Parallel ports'. */
@@ -197,13 +224,17 @@ class UIInformationDataParallelPorts : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataParallelPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 #endif /* VBOX_WITH_PARALLEL_PORTS */
+
 
 /** UIInformationDataItem extension for the details-element type 'USB'. */
 class UIInformationDataUSB : public UIInformationDataItem
@@ -212,12 +243,16 @@ class UIInformationDataUSB : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataUSB(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'Shared folders'. */
 class UIInformationDataSharedFolders : public UIInformationDataItem
@@ -226,15 +261,21 @@ class UIInformationDataSharedFolders : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSharedFolders(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
 protected slots:
+
+    /** Updates item data. */
     void updateData();
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'runtime attributes'. */
 class UIInformationDataRuntimeAttributes : public UIInformationDataItem
@@ -243,12 +284,16 @@ class UIInformationDataRuntimeAttributes : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataRuntimeAttributes(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'network statistics'. */
 class UIInformationDataNetworkStatistics : public UIInformationDataItem
@@ -257,13 +302,17 @@ class UIInformationDataNetworkStatistics : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataNetworkStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
 private slots:
+
     /** Handles processing of statistics. */
     void sltProcessStatistics();
 
@@ -279,17 +328,18 @@ private:
     /** VM statistics counter struct. */
     struct CounterElementType { QString type; DataMapType list; };
 
-    /** VM statistics counter names. */
+    /** Holds the VM statistics counter names. */
     DataMapType        m_names;
-    /** VM statistics counter values. */
+    /** Holds the VM statistics counter values. */
     DataMapType        m_values;
-    /** VM statistics counter units. */
+    /** Holds the VM statistics counter units. */
     DataMapType        m_units;
-    /** VM statistics counter links. */
+    /** Holds the VM statistics counter links. */
     LinksMapType       m_links;
-    /** VM statistics update timer. */
+    /** Holds the VM statistics update timer instance. */
     QTimer            *m_pTimer;
 };
+
 
 /** UIInformationDataItem extension for the details-element type 'storage statistics'. */
 class UIInformationDataStorageStatistics : public UIInformationDataItem
@@ -298,13 +348,17 @@ class UIInformationDataStorageStatistics : public UIInformationDataItem
 
 public:
 
-    /** Constructs details-element object for passed @a pParent set. */
+    /** Constructs details-element object.
+      * @param  machine  Brings the machine reference.
+      * @param  console  Brings the machine console reference.
+      * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataStorageStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a idx for the @a role. */
+    /** Returns data for item specified by @a index for the @a role. */
     virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
 private slots:
+
     /** Handles processing of statistics. */
     void sltProcessStatistics();
 
@@ -313,8 +367,7 @@ private:
     /** Returns parsed-data of statistics. */
     QString parseStatistics(const QString &strText);
 
-    /** Converts a given storage controller type to the string representation used
-     * in statistics. */
+    /** Converts a given storage controller type to the string representation used in statistics. */
     const char *storCtrlType2Str(const KStorageControllerType enmCtrlType) const;
 
     /** VM statistics counter data map. */
@@ -324,15 +377,15 @@ private:
     /** VM statistics counter struct. */
     struct CounterElementType { QString type; DataMapType list; };
 
-    /** VM statistics counter names. */
+    /** Holds the VM statistics counter names. */
     DataMapType        m_names;
-    /** VM statistics counter values. */
+    /** Holds the VM statistics counter values. */
     DataMapType        m_values;
-    /** VM statistics counter units. */
+    /** Holds the VM statistics counter units. */
     DataMapType        m_units;
-    /** VM statistics counter links. */
+    /** Holds the VM statistics counter links. */
     LinksMapType       m_links;
-    /** VM statistics update timer. */
+    /** Holds the VM statistics update timer instance. */
     QTimer            *m_pTimer;
 };
 

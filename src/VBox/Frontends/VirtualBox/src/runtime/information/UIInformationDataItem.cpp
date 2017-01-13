@@ -59,6 +59,10 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/*********************************************************************************************************************************
+*   Class UIInformationDataItem implementation.                                                                                  *
+*********************************************************************************************************************************/
+
 UIInformationDataItem::UIInformationDataItem(InformationElementType type, const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : m_type(type)
     , m_machine(machine)
@@ -74,6 +78,8 @@ UIInformationDataItem::~UIInformationDataItem()
 QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
 {
     RT_NOREF(index);
+
+    /* For particular role: */
     switch (role)
     {
         case Qt::DisplayRole:
@@ -96,6 +102,11 @@ QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataGeneral implementation.                                                                               *
+*********************************************************************************************************************************/
+
 UIInformationDataGeneral::UIInformationDataGeneral(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_General, machine, console, pModel)
 {
@@ -103,6 +114,7 @@ UIInformationDataGeneral::UIInformationDataGeneral(const CMachine &machine, cons
 
 QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -128,6 +140,11 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataSystem implementation.                                                                                *
+*********************************************************************************************************************************/
+
 UIInformationDataSystem::UIInformationDataSystem(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_System, machine, console, pModel)
 {
@@ -135,6 +152,7 @@ UIInformationDataSystem::UIInformationDataSystem(const CMachine &machine, const 
 
 QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -217,6 +235,11 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataDisplay implementation.                                                                               *
+*********************************************************************************************************************************/
+
 UIInformationDataDisplay::UIInformationDataDisplay(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Display, machine, console, pModel)
 {
@@ -224,6 +247,7 @@ UIInformationDataDisplay::UIInformationDataDisplay(const CMachine &machine, cons
 
 QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -276,6 +300,11 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataStorage implementation.                                                                               *
+*********************************************************************************************************************************/
+
 UIInformationDataStorage::UIInformationDataStorage(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Storage, machine, console, pModel)
 {
@@ -283,6 +312,7 @@ UIInformationDataStorage::UIInformationDataStorage(const CMachine &machine, cons
 
 QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
 
@@ -340,6 +370,11 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataAudio implementation.                                                                                 *
+*********************************************************************************************************************************/
+
 UIInformationDataAudio::UIInformationDataAudio(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Audio, machine, console, pModel)
 {
@@ -347,6 +382,7 @@ UIInformationDataAudio::UIInformationDataAudio(const CMachine &machine, const CC
 
 QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -378,6 +414,11 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataNetwork implementation.                                                                               *
+*********************************************************************************************************************************/
+
 UIInformationDataNetwork::UIInformationDataNetwork(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Network, machine, console, pModel)
 {
@@ -385,6 +426,7 @@ UIInformationDataNetwork::UIInformationDataNetwork(const CMachine &machine, cons
 
 QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -443,6 +485,11 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataSerialPorts implementation.                                                                           *
+*********************************************************************************************************************************/
+
 UIInformationDataSerialPorts::UIInformationDataSerialPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Serial, machine, console, pModel)
 {
@@ -450,6 +497,7 @@ UIInformationDataSerialPorts::UIInformationDataSerialPorts(const CMachine &machi
 
 QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -496,7 +544,12 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
     return UIInformationDataItem::data(index, role);
 }
 
+
 #ifdef VBOX_WITH_PARALLEL_PORTS
+/*********************************************************************************************************************************
+*   Class UIInformationDataParallelPorts implementation.                                                                         *
+*********************************************************************************************************************************/
+
 UIInformationDataParallelPorts::UIInformationDataParallelPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_Parallel, machine, console, pModel)
 {
@@ -504,6 +557,7 @@ UIInformationDataParallelPorts::UIInformationDataParallelPorts(const CMachine &m
 
 QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -538,6 +592,11 @@ QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role
 }
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataUSB implementation.                                                                                   *
+*********************************************************************************************************************************/
+
 UIInformationDataUSB::UIInformationDataUSB(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_USB, machine, console, pModel)
 {
@@ -545,6 +604,7 @@ UIInformationDataUSB::UIInformationDataUSB(const CMachine &machine, const CConso
 
 QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -587,6 +647,11 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataSharedFolders implementation.                                                                         *
+*********************************************************************************************************************************/
+
 UIInformationDataSharedFolders::UIInformationDataSharedFolders(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_SharedFolders, machine, console, pModel)
 {
@@ -595,6 +660,7 @@ UIInformationDataSharedFolders::UIInformationDataSharedFolders(const CMachine &m
 
 QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -628,6 +694,11 @@ void UIInformationDataSharedFolders::updateData()
     m_pModel->updateData(this);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataRuntimeAttributes implementation.                                                                     *
+*********************************************************************************************************************************/
+
 UIInformationDataRuntimeAttributes::UIInformationDataRuntimeAttributes(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_RuntimeAttributes, machine, console, pModel)
 {
@@ -635,6 +706,7 @@ UIInformationDataRuntimeAttributes::UIInformationDataRuntimeAttributes(const CMa
 
 QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -770,6 +842,11 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
     return UIInformationDataItem::data(index, role);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataNetworkStatistics implementation.                                                                     *
+*********************************************************************************************************************************/
+
 UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_NetworkStatistics, machine, console, pModel)
 {
@@ -821,6 +898,7 @@ UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMa
 
 QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
@@ -917,6 +995,11 @@ void UIInformationDataNetworkStatistics::sltProcessStatistics()
     m_pModel->updateData(index);
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIInformationDataStorageStatistics implementation.                                                                     *
+*********************************************************************************************************************************/
+
 UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
     : UIInformationDataItem(InformationElementType_StorageStatistics, machine, console, pModel)
 {
@@ -1012,6 +1095,7 @@ UIInformationDataStorageStatistics::UIInformationDataStorageStatistics(const CMa
 
 QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int role) const
 {
+    /* For particular role: */
     switch (role)
     {
         case Qt::DecorationRole:
