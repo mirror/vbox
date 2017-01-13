@@ -146,12 +146,13 @@ static void vbsfFreeFullPath(char *pszFullPath)
  * Convert shared folder create flags (see include/iprt/shflsvc.h) into iprt create flags.
  *
  * @returns iprt status code
+ * @param  fWritable  whether the shared folder is writable
  * @param  fShflFlags shared folder create flags
  * @param  fMode      file attributes
  * @param  handleInitial initial handle
  * @retval pfOpen     iprt create flags
  */
-static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
+static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
 {
     uint32_t fOpen = 0;
     int rc = VINF_SUCCESS;
@@ -367,6 +368,9 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
 
     if (RT_SUCCESS(rc))
     {
+        if (!fWritable)
+            fOpen &= ~RTFILE_O_WRITE;
+
         *pfOpen = fOpen;
     }
     return rc;
@@ -377,6 +381,7 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
  *
  * @returns IPRT status code
  * @param  pClient               Data structure describing the client accessing the shared folder
+ * @param  root                  The index of the shared folder in the table of mappings.
  * @param  pszPath               Path to the file or folder on the host.
  * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
  * @param  pParms @a Info        When a new file is created this specifies the initial parameters.
@@ -387,7 +392,7 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
  *                               created
  * @retval pParms @a Info        On success the parameters of the file opened or created
  */
-static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATEPARMS *pParms)
+static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszPath, SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p\n", pszPath, pParms));
     Log(("SHFL create flags %08x\n", pParms->CreateFlags));
@@ -399,7 +404,13 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
     bool fNoError = false;
     static int cErrors;
 
-    int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
+    /* is the guest allowed to write to this share? */
+    bool fWritable;
+    int rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
+    if (RT_FAILURE(rc))
+        fWritable = false;
+
+    rc = vbsfConvertFileOpenFlags(fWritable, pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
     if (RT_SUCCESS(rc))
     {
         rc = VERR_NO_MEMORY;  /* Default error. */
@@ -877,7 +888,7 @@ int vbsfCreate(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
                 }
                 else
                 {
-                    rc = vbsfOpenFile(pClient, pszFullPath, pParms);
+                    rc = vbsfOpenFile(pClient, root, pszFullPath, pParms);
                 }
             }
             else
