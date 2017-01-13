@@ -28,8 +28,8 @@
 
 /* Forward declarations: */
 class QITabWidget;
-class UIMachineWindow;
 class QIDialogButtonBox;
+class UIMachineWindow;
 
 
 /** QIMainWindow subclass providing user
@@ -92,19 +92,19 @@ private:
     /** @name General variables.
      * @{ */
     /** Holds the dialog instance. */
-    static UIVMInformationDialog *m_spInstance;
+    static UIVMInformationDialog *s_pInstance;
     /** @} */
 
     /** @name Widget variables.
      * @{ */
     /** Holds the dialog tab-widget instance. */
-    QITabWidget               *m_pTabWidget;
+    QITabWidget                  *m_pTabWidget;
     /** Holds the map of dialog tab instances. */
-    QMap<int, QWidget*>        m_tabs;
+    QMap<int, QWidget*>           m_tabs;
     /** Holds the dialog button-box instance. */
-    QIDialogButtonBox         *m_pButtonBox;
+    QIDialogButtonBox            *m_pButtonBox;
     /** Holds the machine-window reference. */
-    UIMachineWindow         *m_pMachineWindow;
+    UIMachineWindow              *m_pMachineWindow;
     /** @} */
 };
 
