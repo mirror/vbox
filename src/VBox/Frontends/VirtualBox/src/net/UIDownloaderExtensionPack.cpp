@@ -61,13 +61,14 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
         m_spInstance = this;
 
     /* Prepare source/target: */
+    QString strVersion = vboxGlobal().vboxVersionStringNormalized();
     QString strExtPackUnderscoredName(QString(GUI_ExtPackName).replace(' ', '_'));
     QString strTemplateSourcePath("http://download.virtualbox.org/virtualbox/%1/");
     QString strTemplateSourceName(QString("%1-%2.vbox-extpack").arg(strExtPackUnderscoredName));
-    QString strSourcePath(strTemplateSourcePath.arg(vboxGlobal().vboxVersionStringNormalized()));
-    QString strSourceName(strTemplateSourceName.arg(vboxGlobal().vboxVersionStringNormalized()));
+    QString strSourcePath(strTemplateSourcePath.arg(strVersion));
+    QString strSourceName(strTemplateSourceName.arg(strVersion));
     QString strSource(strSourcePath + strSourceName);
-    QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(vboxGlobal().vboxVersionStringNormalized());
+    QString strPathSHA256SumsFile = QString("https://www.virtualbox.org/download/hashes/%1/SHA256SUMS").arg(strVersion);
     QString strTargetPath(vboxGlobal().homeFolder());
     QString strTargetName(strSourceName);
     QString strTarget(QDir(strTargetPath).absoluteFilePath(strTargetName));
