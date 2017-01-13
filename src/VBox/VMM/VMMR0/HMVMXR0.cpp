@@ -8408,7 +8408,6 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     { /* likely */ }
     else
     {
-        VMMRZCallRing3Enable(pVCpu);
         Assert(rcStrict == VINF_EM_RESCHEDULE_REM || RT_FAILURE_NP(rcStrict));
         return rcStrict;
     }
@@ -8552,6 +8551,7 @@ static VBOXSTRICTRC hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX
         {
             AssertMsg(rcStrict == VINF_EM_RESCHEDULE_REM,
                       ("hmR0VmxLoadGuestStateOptimal: hmR0VmxLoadGuestState failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            Assert(!VMMRZCallRing3IsEnabled(pVCpu));
             return rcStrict;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
@@ -8710,9 +8710,14 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     {
         if (!RTThreadPreemptIsPending(NIL_RTTHREAD))
         {
-            /* We've injected any pending events. This is really the point of no return (to ring-3). */
             pVCpu->hm.s.Event.fPending = false;
 
+            /*
+             * We've injected any pending events. This is really the point of no return (to ring-3).
+             *
+             * Note! The caller expects to continue with interrupts & longjmps disabled on successful
+             * returns from this function, so don't enable them here.
+             */
             return VINF_SUCCESS;
         }
 
