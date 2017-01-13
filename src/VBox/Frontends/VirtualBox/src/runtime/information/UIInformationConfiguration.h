@@ -20,7 +20,6 @@
 
 /* Qt includes: */
 #include <QWidget>
-#include <QListView>
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -61,7 +60,7 @@ private:
     CMachine m_machine;
     /** Holds the console instance. */
     CConsole m_console;
-    /** Holds the instance of main-layout we create. */
+    /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
     /** Holds the instance of model we create. */
     UIInformationModel *m_pModel;
