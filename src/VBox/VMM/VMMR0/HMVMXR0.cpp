@@ -1572,32 +1572,45 @@ static void hmR0VmxLazyLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-#define VMXLOCAL_LAZY_LOAD_GUEST_MSR(uMsr, a_GuestMsr, a_HostMsr) \
-    do { \
-        if (pMixedCtx->msr##a_GuestMsr != pVCpu->hm.s.vmx.u64Host##a_HostMsr##Msr) \
-            ASMWrMsr(uMsr, pMixedCtx->msr##a_GuestMsr); \
-        else \
-            Assert(ASMRdMsr(uMsr) == pVCpu->hm.s.vmx.u64Host##a_HostMsr##Msr); \
-    } while (0)
-
     Assert(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_SAVED_HOST);
-    if (!(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST))
-    {
 #if HC_ARCH_BITS == 64
-        if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests)
+    {
+        /*
+         * If the guest MSRs are not loaded -and- if all the guest MSRs are identical
+         * to the MSRs on the CPU (which are the saved host MSRs, see assertion above) then
+         * we can skip a few MSR writes.
+         *
+         * Otherwise, it implies either 1. they're not loaded, or 2. they're loaded but the
+         * guest MSR values in the guest-CPU context might be different to what's currently
+         * loaded in the CPU. In either case, we need to write the new guest MSR values to the
+         * CPU, see @bugref{8728}.
+         */
+        if (   !(pVCpu->hm.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+            && pMixedCtx->msrKERNELGSBASE == pVCpu->hm.s.vmx.u64HostKernelGSBaseMsr
+            && pMixedCtx->msrLSTAR        == pVCpu->hm.s.vmx.u64HostLStarMsr
+            && pMixedCtx->msrSTAR         == pVCpu->hm.s.vmx.u64HostStarMsr
+            && pMixedCtx->msrSFMASK       == pVCpu->hm.s.vmx.u64HostSFMaskMsr)
         {
-            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_LSTAR, LSTAR, LStar);
-            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K6_STAR, STAR, Star);
-            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_SF_MASK, SFMASK, SFMask);
-            VMXLOCAL_LAZY_LOAD_GUEST_MSR(MSR_K8_KERNEL_GS_BASE, KERNELGSBASE, KernelGSBase);
-        }
-#else
-        RT_NOREF(pMixedCtx);
+#ifdef VBOX_STRICT
+            Assert(ASMRdMsr(MSR_K8_KERNEL_GS_BASE) == pMixedCtx->msrKERNELGSBASE);
+            Assert(ASMRdMsr(MSR_K8_LSTAR)          == pMixedCtx->msrLSTAR);
+            Assert(ASMRdMsr(MSR_K6_STAR)           == pMixedCtx->msrSTAR);
+            Assert(ASMRdMsr(MSR_K8_SF_MASK)        == pMixedCtx->msrSFMASK);
 #endif
-        pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
+        }
+        else
+        {
+            ASMWrMsr(MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE);
+            ASMWrMsr(MSR_K8_LSTAR,          pMixedCtx->msrLSTAR);
+            ASMWrMsr(MSR_K6_STAR,           pMixedCtx->msrSTAR);
+            ASMWrMsr(MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK);
+        }
     }
-
-#undef VMXLOCAL_LAZY_LOAD_GUEST_MSR
+#else
+    RT_NOREF(pMixedCtx);
+#endif
+    pVCpu->hm.s.vmx.fLazyMsrs |= VMX_LAZY_MSRS_LOADED_GUEST;
 }
 
 
