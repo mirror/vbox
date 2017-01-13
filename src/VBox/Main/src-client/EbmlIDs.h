@@ -133,6 +133,8 @@ enum Mkv
 //  TrackTranslateEditionUID = 0x66FC,
 //  TrackTranslateCodec = 0x66BF,
 //  TrackTranslateTrackID = 0x66A5,
+    CodecDelay = 0x56AA,
+    SeekPreRoll = 0x56BB,
     //video
     Video = 0xE0,
     FlagInterlaced = 0x9A,

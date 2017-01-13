@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * EbmlWriter.cpp - EBML writer + WebM container
+ * EbmlWriter.cpp - EBML writer + WebM container handling.
  */
 
 /*
@@ -315,12 +315,22 @@ class WebMWriter_Impl
      *  Taken from: https://wiki.xiph.org/MatroskaOpus */
     struct OpusPrivData
     {
+        OpusPrivData(uint32_t a_u32SampleRate, uint8_t a_u8Channels)
+            : u8Channels(a_u8Channels)
+            , u32SampleRate(a_u32SampleRate) { }
+
+        /** "OpusHead". */
         uint8_t  au8Head[8]      = { 0x4f, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64 };
+        /** Must set to 1. */
         uint8_t  u8Version       = 1;
-        uint8_t  c8Channels      = 0;
+        uint8_t  u8Channels      = 0;
         uint16_t u16PreSkip      = 0;
+        /** Sample rate *before* encoding to Opus.
+         *  Note: This rate has nothing to do with the playback rate later! */
         uint32_t u32SampleRate   = 0;
         uint16_t u16Gain         = 0;
+        /** Must stay 0 -- otherwise a mapping table must be appended
+         *  right after this header. */
         uint8_t  u8MappingFamily = 0;
     };
 # pragma pack(pop)
@@ -384,7 +394,7 @@ public:
         , m_fClusterOpen(false)
         , m_offSegClusterStart(0) {}
 
-    int AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth)
+    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits)
     {
 #ifdef VBOX_WITH_LIBOPUS
         m_Ebml.subStart(TrackEntry);
@@ -394,24 +404,28 @@ public:
         WebMTrack TrackAudio(WebMTrackType_Audio, RTFileTell(m_Ebml.getFile()));
         m_lstTracks.push_back(TrackAudio);
 
+        if (uHz >= 44100)
+            uHz = 48000;
+
         /** @todo Resolve codec type. */
-        OpusPrivData opusPrivData;
+        OpusPrivData opusPrivData(uHz, cChannels);
 
         m_Ebml.serializeUnsignedInteger(TrackUID, TrackAudio.uID, 4)
               .serializeUnsignedInteger(TrackType, 2 /* Audio */)
               .serializeString(CodecID, "A_OPUS")
               .serializeData(CodecPrivate, &opusPrivData, sizeof(opusPrivData))
+              .serializeUnsignedInteger(CodecDelay, 0)
+              .serializeUnsignedInteger(SeekPreRoll, 80000000)
               .subStart(Audio)
-              .serializeFloat(SamplingFrequency, fSamplingHz)
-              .serializeFloat(OutputSamplingFrequency, fOutputHz)
-              .serializeUnsignedInteger(Channels, cChannels)
-              .serializeUnsignedInteger(BitDepth, cBitDepth)
+                  .serializeFloat(SamplingFrequency,       (float)uHz)
+                  .serializeUnsignedInteger(Channels,      cChannels)
+                  .serializeUnsignedInteger(BitDepth,      cBits)
               .subEnd(Audio)
               .subEnd(TrackEntry);
 
         return VINF_SUCCESS;
 #else
-        RT_NOREF(fSamplingHz, fOutputHz, cChannels, cBitDepth);
+        RT_NOREF(uHz, cChannels, cBits);
         return VERR_NOT_SUPPORTED;
 #endif
     }
@@ -561,6 +575,13 @@ public:
     int writeBlockOpus(const void *pvData, size_t cbData)
     {
 static uint16_t s_uTimecode = 0;
+
+        if (!m_fClusterOpen)
+        {
+            m_Ebml.subStart(Cluster)
+                  .serializeUnsignedInteger(Timecode, 0);
+            m_fClusterOpen = true;
+        }
 
         return writeSimpleBlockInternal(0 /** @todo FIX! */, s_uTimecode++, pvData, cbData, 0 /* Flags */);
     }
@@ -758,9 +779,9 @@ int WebMWriter::Close(void)
     return rc;
 }
 
-int WebMWriter::AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth)
+int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBitDepth)
 {
-    return m_pImpl->AddAudioTrack(fSamplingHz, fOutputHz, cChannels, cBitDepth);
+    return m_pImpl->AddAudioTrack(uHz, cChannels, cBitDepth);
 }
 
 int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS)

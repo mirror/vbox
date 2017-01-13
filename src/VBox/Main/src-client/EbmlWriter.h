@@ -109,7 +109,7 @@ public:
     /** Closes output file. */
     int Close(void);
 
-    int AddAudioTrack(float fSamplingHz, float fOutputHz, uint8_t cChannels, uint8_t cBitDepth);
+    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits);
 
     int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS);
 

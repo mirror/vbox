@@ -234,7 +234,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
                 rc = pThis->pEBML->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
                                           WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
                 if (RT_SUCCESS(rc))
-                    rc = pThis->pEBML->AddAudioTrack(44100.0, 44100, 2, 16);
+                    rc = pThis->pEBML->AddAudioTrack(44100, 2, 16);
                 break;
             }
 
