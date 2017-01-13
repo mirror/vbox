@@ -23,25 +23,14 @@
 #include <QModelIndex>
 
 /* GUI includes: */
-#include "UIThreadPool.h"
 #include "UIExtraDataDefs.h"
-#include "UIInformationDataItem.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CGuest.h"
 #include "CMachine.h"
 #include "CConsole.h"
-#include "CDisplay.h"
-#include "CNetworkAdapter.h"
-#include "CMachineDebugger.h"
-#include "CMediumAttachment.h"
-#include "CSystemProperties.h"
-#include "CStorageController.h"
 
 /* Forward declarations: */
-class CNetworkAdapter;
-class QTextLayout;
 class UIInformationModel;
 
 
@@ -53,25 +42,22 @@ class UIInformationDataItem : public QObject
 
 public:
 
-    /** Constructs information data-item of type @a type.
+    /** Constructs information data-item of type @a enmType.
       * @param  machine  Brings the machine reference.
       * @param  console  Brings the machine console reference.
       * @param  pModel   Brings the information model this item belings to. */
-    UIInformationDataItem(InformationElementType type, const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
-
-    /** Destructs information data-item. */
-    ~UIInformationDataItem();
+    UIInformationDataItem(InformationElementType enmType, const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
     /** Returns type of information data-item. */
-    InformationElementType elementType() const { return m_type; }
+    InformationElementType elementType() const { return m_enmType; }
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 
 protected:
 
     /** Holds the type of information data-item. */
-    InformationElementType m_type;
+    InformationElementType m_enmType;
 
     /** Holds the pixmap of information data-item. */
     QPixmap m_pixmap;
@@ -103,8 +89,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataGeneral(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -121,8 +107,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSystem(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -139,8 +125,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataDisplay(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -157,8 +143,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataStorage(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -175,8 +161,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataAudio(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -193,8 +179,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataNetwork(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -211,8 +197,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSerialPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -230,8 +216,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataParallelPorts(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 #endif /* VBOX_WITH_PARALLEL_PORTS */
 
@@ -249,8 +235,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataUSB(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -267,8 +253,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataSharedFolders(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 
 protected slots:
 
@@ -290,8 +276,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataRuntimeAttributes(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 };
 
 
@@ -308,8 +294,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataNetworkStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 
 private slots:
 
@@ -322,22 +308,22 @@ private:
     QString parseStatistics(const QString &strText);
 
     /** VM statistics counter data map. */
-    typedef QMap <QString, QString> DataMapType;
+    typedef QMap<QString, QString> DataMapType;
     /** VM statistics counter links map. */
-    typedef QMap <QString, QStringList> LinksMapType;
+    typedef QMap<QString, QStringList> LinksMapType;
     /** VM statistics counter struct. */
     struct CounterElementType { QString type; DataMapType list; };
 
     /** Holds the VM statistics counter names. */
-    DataMapType        m_names;
+    DataMapType   m_names;
     /** Holds the VM statistics counter values. */
-    DataMapType        m_values;
+    DataMapType   m_values;
     /** Holds the VM statistics counter units. */
-    DataMapType        m_units;
+    DataMapType   m_units;
     /** Holds the VM statistics counter links. */
-    LinksMapType       m_links;
+    LinksMapType  m_links;
     /** Holds the VM statistics update timer instance. */
-    QTimer            *m_pTimer;
+    QTimer       *m_pTimer;
 };
 
 
@@ -354,8 +340,8 @@ public:
       * @param  pModel   Brings the information model this item belings to. */
     UIInformationDataStorageStatistics(const CMachine &machine, const CConsole &console, UIInformationModel *pModel);
 
-    /** Returns data for item specified by @a index for the @a role. */
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+    /** Returns data for item specified by @a index for the @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const;
 
 private slots:
 
@@ -371,22 +357,22 @@ private:
     const char *storCtrlType2Str(const KStorageControllerType enmCtrlType) const;
 
     /** VM statistics counter data map. */
-    typedef QMap <QString, QString> DataMapType;
+    typedef QMap<QString, QString> DataMapType;
     /** VM statistics counter links map. */
-    typedef QMap <QString, QStringList> LinksMapType;
+    typedef QMap<QString, QStringList> LinksMapType;
     /** VM statistics counter struct. */
     struct CounterElementType { QString type; DataMapType list; };
 
     /** Holds the VM statistics counter names. */
-    DataMapType        m_names;
+    DataMapType   m_names;
     /** Holds the VM statistics counter values. */
-    DataMapType        m_values;
+    DataMapType   m_values;
     /** Holds the VM statistics counter units. */
-    DataMapType        m_units;
+    DataMapType   m_units;
     /** Holds the VM statistics counter links. */
-    LinksMapType       m_links;
+    LinksMapType  m_links;
     /** Holds the VM statistics update timer instance. */
-    QTimer            *m_pTimer;
+    QTimer       *m_pTimer;
 };
 
 #endif /* !___UIInformationDataItem_h___ */

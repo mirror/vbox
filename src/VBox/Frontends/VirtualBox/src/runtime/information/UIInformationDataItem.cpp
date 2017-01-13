@@ -24,23 +24,18 @@
 # include <QTimer>
 
 /* GUI includes: */
+# include "VBoxGlobal.h"
 # include "UIMachine.h"
 # include "UISession.h"
-# include "UIIconPool.h"
-# include "VBoxGlobal.h"
 # include "UIConverter.h"
-# include "UIMessageCenter.h"
 # include "UIInformationItem.h"
 # include "UIInformationModel.h"
 # include "UIInformationDataItem.h"
-# include "UIGraphicsRotatorButton.h"
 
 /* COM includes: */
-# include "COMEnums.h"
 # include "CMedium.h"
-# include "CMachine.h"
-# include "CVRDEServer.h"
 # include "CSerialPort.h"
+# include "CVRDEServer.h"
 # include "CAudioAdapter.h"
 # include "CParallelPort.h"
 # include "CSharedFolder.h"
@@ -49,12 +44,9 @@
 # include "CVRDEServerInfo.h"
 # include "CUSBDeviceFilter.h"
 # include "CMediumAttachment.h"
-# include "CUSBDeviceFilters.h"
 # include "CSystemProperties.h"
+# include "CUSBDeviceFilters.h"
 # include "CStorageController.h"
-
-/* Other VBox includes: */
-# include <iprt/time.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -63,39 +55,22 @@
 *   Class UIInformationDataItem implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UIInformationDataItem::UIInformationDataItem(InformationElementType type, const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
-    : m_type(type)
+UIInformationDataItem::UIInformationDataItem(InformationElementType enmType, const CMachine &machine, const CConsole &console, UIInformationModel *pModel)
+    : m_enmType(enmType)
     , m_machine(machine)
     , m_console(console)
     , m_pModel(pModel)
 {
 }
 
-UIInformationDataItem::~UIInformationDataItem()
+QVariant UIInformationDataItem::data(const QModelIndex & /* index */, int role) const
 {
-}
-
-QVariant UIInformationDataItem::data(const QModelIndex &index, int role) const
-{
-    RT_NOREF(index);
-
     /* For particular role: */
     switch (role)
     {
-        case Qt::DisplayRole:
-        {
-            return gpConverter->toString(m_type);
-        }
-        break;
-
-        case Qt::UserRole + 2:
-        {
-            return m_type;
-        }
-        break;
-
-        default:
-        break;
+        case Qt::DisplayRole:  return gpConverter->toString(m_enmType);
+        case Qt::UserRole + 2: return m_enmType;
+        default:               break;
     }
 
     /* Return null QVariant by default: */
@@ -121,7 +96,6 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
         {
             return QString(":/machine_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -130,10 +104,9 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
             p_text << UITextTableLine(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(m_machine.GetOSTypeId()));
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -159,7 +132,6 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
         {
             return QString(":/chipset_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -225,10 +197,9 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -254,9 +225,8 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
         {
             return QString(":/vrdp_16px.png");
         }
-        break;
 
-        case Qt::UserRole+1:
+        case Qt::UserRole + 1:
         {
             UITextTable p_text;
             /* Video tab: */
@@ -290,10 +260,9 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -315,14 +284,12 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
     /* For particular role: */
     switch (role)
     {
-
         case Qt::DecorationRole:
         {
             return QString(":/hd_16px.png");
         }
-        break;
 
-        case Qt::UserRole+1:
+        case Qt::UserRole + 1:
         {
             UITextTable p_text;
 
@@ -360,10 +327,9 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -389,7 +355,6 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
         {
             return QString(":/sound_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -404,10 +369,9 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -433,9 +397,8 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
         {
             return QString(":/nw_16px.png");
         }
-        break;
 
-        case Qt::UserRole+1:
+        case Qt::UserRole + 1:
         {
             UITextTable p_text;
 
@@ -446,28 +409,28 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
                 if (adapter.GetEnabled())
                 {
                     KNetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = gpConverter->toString (adapter.GetAdapterType())
-                                      .replace (QRegExp ("\\s\\(.+\\)"), " (%1)");
+                    QString attType = gpConverter->toString(adapter.GetAdapterType())
+                                      .replace(QRegExp ("\\s\\(.+\\)"), " (%1)");
                     /* don't use the adapter type string for types that have
                      * an additional symbolic network/interface name field, use
                      * this name instead */
                     if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg (tr ("Bridged adapter, %1",
-                            "details report (network)").arg (adapter.GetBridgedInterface()));
+                        attType = attType.arg(tr("Bridged adapter, %1",
+                            "details report (network)").arg(adapter.GetBridgedInterface()));
                     else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg (tr ("Internal network, '%1'",
-                            "details report (network)").arg (adapter.GetInternalNetwork()));
+                        attType = attType.arg(tr("Internal network, '%1'",
+                            "details report (network)").arg(adapter.GetInternalNetwork()));
                     else if (type == KNetworkAttachmentType_HostOnly)
-                        attType = attType.arg (tr ("Host-only adapter, '%1'",
-                            "details report (network)").arg (adapter.GetHostOnlyInterface()));
+                        attType = attType.arg(tr("Host-only adapter, '%1'",
+                            "details report (network)").arg(adapter.GetHostOnlyInterface()));
                     else if (type == KNetworkAttachmentType_Generic)
-                        attType = attType.arg (tr ("Generic, '%1'",
-                            "details report (network)").arg (adapter.GetGenericDriver()));
+                        attType = attType.arg(tr("Generic, '%1'",
+                            "details report (network)").arg(adapter.GetGenericDriver()));
                     else if (type == KNetworkAttachmentType_NATNetwork)
-                        attType = attType.arg (tr ("NAT network, '%1'",
-                            "details report (network)").arg (adapter.GetNATNetwork()));
+                        attType = attType.arg(tr("NAT network, '%1'",
+                            "details report (network)").arg(adapter.GetNATNetwork()));
                     else
-                        attType = attType.arg (gpConverter->toString (type));
+                        attType = attType.arg(gpConverter->toString(type));
 
                     p_text << UITextTableLine(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1), attType);
                 }
@@ -475,10 +438,9 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -504,7 +466,6 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
         {
             return QString(":/serial_port_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -513,18 +474,18 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
 
             for (ulong slot = 0; slot < count; slot++)
             {
-                CSerialPort port = m_machine.GetSerialPort (slot);
+                CSerialPort port = m_machine.GetSerialPort(slot);
                 if (port.GetEnabled())
                 {
                     KPortMode mode = port.GetHostMode();
-                    QString data = vboxGlobal().toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
+                    QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
                     if (mode == KPortMode_HostPipe ||
                         mode == KPortMode_HostDevice ||
                         mode == KPortMode_TCP ||
                         mode == KPortMode_RawFile)
-                        data += QString ("%1 (<nobr>%2</nobr>)")
-                                .arg (gpConverter->toString (mode))
-                                .arg (QDir::toNativeSeparators (port.GetPath()));
+                        data += QString("%1 (<nobr>%2</nobr>)")
+                                       .arg(gpConverter->toString(mode))
+                                       .arg(QDir::toNativeSeparators(port.GetPath()));
                     else
                         data += gpConverter->toString(mode);
 
@@ -534,10 +495,9 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -564,7 +524,6 @@ QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role
         {
             return QString(":/parallel_port_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -574,19 +533,18 @@ QVariant UIInformationDataParallelPorts::data(const QModelIndex &index, int role
                 CParallelPort port = m_machine.GetParallelPort(slot);
                 if (port.GetEnabled())
                 {
-                    QString data = vboxGlobal().toLPTPortName (port.GetIRQ(), port.GetIOBase()) +
-                        QString (" (<nobr>%1</nobr>)")
-                        .arg (QDir::toNativeSeparators (port.GetPath()));
+                    QString data = vboxGlobal().toLPTPortName(port.GetIRQ(), port.GetIOBase()) +
+                        QString(" (<nobr>%1</nobr>)")
+                               .arg(QDir::toNativeSeparators(port.GetPath()));
                     p_text << UITextTableLine(tr("Port %1", "details report (parallel ports)").arg(port.GetSlot() + 1), data);
                 }
             }
             if (p_text.count() == 0)
                 p_text << UITextTableLine(tr("Disabled", "details report (parallel ports)"), QString());
         }
-        break;
 
         default:
-        break;
+            break;
     }
     return QVariant();
 }
@@ -611,7 +569,6 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
         {
             return QString(":/usb_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -633,14 +590,13 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
                             active ++;
 
                     p_text << UITextTableLine(tr("Device Filters", "details report (USB)"), tr("%1 (%2 active)", "details report (USB)")
-                                                 .arg(coll.size()).arg(active));
+                                                                                              .arg(coll.size()).arg(active));
                 }
             }
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -667,7 +623,6 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
         {
             return QString(":/sf_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -679,10 +634,9 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -713,7 +667,6 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
         {
             return QString(":/state_running_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -832,10 +785,9 @@ QVariant UIInformationDataRuntimeAttributes::data(const QModelIndex &index, int 
 
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -887,7 +839,7 @@ UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMa
             << QString("/Devices/%1%2/ReceiveBytes").arg(name).arg(i);
     }
 
-     m_pTimer = new QTimer(this);
+    m_pTimer = new QTimer(this);
 
     connect(m_pTimer, SIGNAL(timeout()), this, SLOT(sltProcessStatistics()));
 
@@ -905,7 +857,6 @@ QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int 
         {
             return QString(":/nw_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -927,10 +878,9 @@ QVariant UIInformationDataNetworkStatistics::data(const QModelIndex &index, int 
             }
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
@@ -1102,7 +1052,6 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
         {
             return QString(":/hd_16px.png");
         }
-        break;
 
         case Qt::UserRole + 1:
         {
@@ -1166,10 +1115,9 @@ QVariant UIInformationDataStorageStatistics::data(const QModelIndex &index, int 
             }
             return QVariant::fromValue(p_text);
         }
-        break;
 
         default:
-        break;
+            break;
     }
 
     /* Call to base-class: */
