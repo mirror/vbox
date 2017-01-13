@@ -176,7 +176,8 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         /* First region. */
         RTGCPHYS const cbFirst = iPciFun == 0 ? 8*_1G64 : iPciFun * _4K;
         rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 0, cbFirst,
-                                            (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
+                                            (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
+                                                              | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
                                             devPlaygroundMap);
         AssertLogRelRCReturn(rc, rc);
         rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 0, cbFirst,
@@ -189,7 +190,8 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         /* Second region. */
         RTGCPHYS const cbSecond = iPciFun == 0  ? 256*_1G64 : iPciFun * _32K;
         rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 2, cbSecond,
-                                            (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64),
+                                            (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
+                                                              | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
                                             devPlaygroundMap);
         AssertLogRelRCReturn(rc, rc);
         rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 2, cbSecond,
