@@ -764,10 +764,12 @@ DECLINLINE(void) ich9pciSetWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint16_t 
     ich9pciSetCfg(pPciDev, iRegister, u16, 2);
 }
 
+#if 0
 DECLINLINE(void) ich9pciSetDWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32)
 {
     ich9pciSetCfg(pPciDev, iRegister, u32, 4);
 }
+#endif
 
 
 /* -=-=-=-=-=- PCI Bus Interface Methods (PDMPCIBUSREG) -=-=-=-=-=- */
