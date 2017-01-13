@@ -60,6 +60,7 @@
 
 #include "CVRDEServerInfo.h"
 
+
 /* static */
 UIVMInformationDialog* UIVMInformationDialog::m_spInstance = 0;
 
@@ -129,7 +130,7 @@ bool UIVMInformationDialog::event(QEvent *pEvent)
     /* Process required events: */
     switch (pEvent->type())
     {
-        /* Handle every Resize and Move we keep track of the geometry. */
+        /* Handle Resize event to keep track of the geometry: */
         case QEvent::Resize:
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
@@ -139,6 +140,7 @@ bool UIVMInformationDialog::event(QEvent *pEvent)
             }
             break;
         }
+        /* Handle Move event to keep track of the geometry: */
         case QEvent::Move:
         {
             if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
@@ -182,17 +184,17 @@ void UIVMInformationDialog::prepareThis()
     connect(m_pMachineWindow, SIGNAL(destroyed(QObject*)), this, SLOT(suicide()));
 
 #ifdef VBOX_WS_MAC
-    /* No window-icon on Mac OX X, because it acts as proxy icon which isn't necessary here. */
+    /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
     setWindowIcon(QIcon());
-#else /* !VBOX_WS_MAC */
-    /* Assign window-icon(s: */
+#else
+    /* Assign window-icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/session_info_32px.png", ":/session_info_16px.png"));
-#endif /* !VBOX_WS_MAC */
+#endif
 
     /* Prepare central-widget: */
     prepareCentralWidget();
 
-    /* Configure handlers: */
+    /* Assign tab-widget page change handler: */
     connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
 
     /* Retranslate: */
@@ -234,24 +236,23 @@ void UIVMInformationDialog::prepareTabWidget()
         /* Add tab-widget into main-layout: */
         centralWidget()->layout()->addWidget(m_pTabWidget);
 
-        /* Create tabs: */
-        /* Create Configuration details tab: */
+        /* Create Configuration Details tab: */
         UIInformationConfiguration *pInformationConfigurationWidget = new UIInformationConfiguration(this, gpMachine->uisession()->machine(), gpMachine->uisession()->console());
         AssertPtrReturnVoid(pInformationConfigurationWidget);
         {
-            //pInformationWidget->setItems(items);
             m_tabs.insert(0, pInformationConfigurationWidget);
             m_pTabWidget->addTab(m_tabs.value(0), QString());
         }
 
-        /* Create Runtime information tab: */
+        /* Create Runtime Information tab: */
         UIInformationRuntime *pInformationRuntimeWidget = new UIInformationRuntime(this, gpMachine->uisession()->machine(), gpMachine->uisession()->console());
         AssertPtrReturnVoid(pInformationRuntimeWidget);
         {
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
-        /* Set runtime information tab as default: */
+
+        /* Set Runtime Information tab as default: */
         m_pTabWidget->setCurrentIndex(1);
     }
 }

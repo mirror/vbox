@@ -18,8 +18,6 @@
 #ifndef ___UIVMInformationDialog_h___
 #define ___UIVMInformationDialog_h___
 
-/* Qt includes: */
-
 /* GUI includes: */
 #include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
@@ -33,7 +31,9 @@ class QITabWidget;
 class UIMachineWindow;
 class QIDialogButtonBox;
 
-/** QIMainWindow based dialog providing user with VM details and statistics. */
+
+/** QIMainWindow subclass providing user
+  * with the dialog unifying VM details and statistics. */
 class UIVMInformationDialog : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
@@ -46,64 +46,64 @@ public:
 
 protected:
 
-    /** Information dialog constructor. */
+    /** Constructs information dialog for passed @a pMachineWindow. */
     UIVMInformationDialog(UIMachineWindow *pMachineWindow);
-    /** Information dialog destructor. */
+    /** Destructs information dialog. */
     ~UIVMInformationDialog();
 
     /** Returns whether the dialog should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const /* override */;
 
-    /** Translation handler. */
+    /** Handles translation event. */
     void retranslateUi();
 
-    /** Common event-handler. */
+    /** Handles any Qt @a pEvent. */
     bool event(QEvent *pEvent);
 
 private slots:
 
-    /** Slot to destroy dialog immediately. */
+    /** Destroys dialog immediately. */
     void suicide() { delete this; }
-    /** Slot to handle tab-widget page change. */
+    /** Handles tab-widget page change. */
     void sltHandlePageChanged(int iIndex);
 
 private:
 
-    /** General prepare helper. */
+    /** Prepares all. */
     void prepare();
-    /** Prepare helper for dialog itself. */
+    /** Prepares this. */
     void prepareThis();
-    /** Prepare helper for central-widget. */
+    /** Prepares central-widget. */
     void prepareCentralWidget();
-    /** Prepare helper for tab-widget. */
+    /** Prepares tab-widget. */
     void prepareTabWidget();
-    /** Prepare helper for @a iTabIndex. */
+    /** Prepares tab with @a iTabIndex. */
     void prepareTab(int iTabIndex);
-    /** Prepare helper for button-box. */
+    /** Prepares button-box. */
     void prepareButtonBox();
-    /** Load settings helper. */
+    /** Loads settings. */
     void loadSettings();
 
-    /** Save settings helper. */
+    /** Saves settings. */
     void saveSettings();
-    /** General cleanup helper. */
+    /** Cleanups all. */
     void cleanup();
 
     /** @name General variables.
      * @{ */
-    /** Dialog instance pointer. */
+    /** Holds the dialog instance. */
     static UIVMInformationDialog *m_spInstance;
     /** @} */
 
     /** @name Widget variables.
      * @{ */
-    /** Dialog tab-widget. */
+    /** Holds the dialog tab-widget instance. */
     QITabWidget               *m_pTabWidget;
-    /** Dialog tabs map. */
+    /** Holds the map of dialog tab instances. */
     QMap<int, QWidget*>        m_tabs;
-    /** Dialog button-box. */
+    /** Holds the dialog button-box instance. */
     QIDialogButtonBox         *m_pButtonBox;
-    /** machine-window. */
+    /** Holds the machine-window reference. */
     UIMachineWindow         *m_pMachineWindow;
     /** @} */
 };
