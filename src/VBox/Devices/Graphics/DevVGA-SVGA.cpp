@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMWare SVGA device.
+ * VMware SVGA device.
  *
  * Logging levels guidelines for this and related files:
  *  - Log() for normal bits.
@@ -20,6 +20,103 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ */
+
+
+/** @page pg_dev_vmsvga     VMSVGA - VMware SVGA II Device Emulation
+ *
+ * This device emulation was contributed by trivirt AG.  It offers an
+ * alternative to our Bochs based VGA graphics and 3d emulations.  This is
+ * valuable for Xorg based guests, as there is driver support shipping with Xorg
+ * since it forked from XFree86.
+ *
+ *
+ * @section sec_dev_vmsvga_sdk  The VMware SDK
+ *
+ * This is officially deprecated now, however it's still quite useful,
+ * especially for getting the old features working:
+ * http://vmware-svga.sourceforge.net/
+ *
+ * They currently point developers at the following resources.
+ *  - http://cgit.freedesktop.org/xorg/driver/xf86-video-vmware/
+ *  - http://cgit.freedesktop.org/mesa/mesa/tree/src/gallium/drivers/svga/
+ *  - http://cgit.freedesktop.org/mesa/vmwgfx/
+ *
+ * @subsection subsec_dev_vmsvga_sdk_results  Test results
+ *
+ * Test results:
+ *  - 2dmark.img:
+ *       + todo
+ *  - backdoor-tclo.img:
+ *       + todo
+ *  - blit-cube.img:
+ *       + todo
+ *  - bunnies.img:
+ *       + todo
+ *  - cube.img:
+ *       + todo
+ *  - cubemark.img:
+ *       + todo
+ *  - dynamic-vertex-stress.img:
+ *       + todo
+ *  - dynamic-vertex.img:
+ *       + todo
+ *  - fence-stress.img:
+ *       + todo
+ *  - gmr-test.img:
+ *       + todo
+ *  - half-float-test.img:
+ *       + todo
+ *  - noscreen-cursor.img:
+ *       - The CURSOR I/O and FIFO registers are not implemented, so the mouse
+ *         cursor doesn't show. (Hacking the GUI a little, would make the cursor
+ *         visible though.)
+ *       - Cursor animation via the palette doesn't work.
+ *       - During debugging, it turns out that the framebuffer content seems to
+ *         be halfways ignore or something (memset(fb, 0xcc, lots)).
+ *       - Trouble with way to small FIFO and the 256x256 cursor fails. Need to
+ *         grow it 0x10 fold (128KB -> 2MB like in WS10).
+ *  - null.img:
+ *       + todo
+ *  - pong.img:
+ *       + todo
+ *  - presentReadback.img:
+ *       + todo
+ *  - resolution-set.img:
+ *       + todo
+ *  - rt-gamma-test.img:
+ *       + todo
+ *  - screen-annotation.img:
+ *       + todo
+ *  - screen-cursor.img:
+ *       + todo
+ *  - screen-dma-coalesce.img:
+ *       + todo
+ *  - screen-gmr-discontig.img:
+ *       + todo
+ *  - screen-gmr-remap.img:
+ *       + todo
+ *  - screen-multimon.img:
+ *       + todo
+ *  - screen-present-clip.img:
+ *       + todo
+ *  - screen-render-test.img:
+ *       + todo
+ *  - screen-simple.img:
+ *       + todo
+ *  - screen-text.img:
+ *       + todo
+ *  - simple-shaders.img:
+ *       + todo
+ *  - simple_blit.img:
+ *       + todo
+ *  - tiny-2d-updates.img:
+ *       + todo
+ *  - video-formats.img:
+ *       + todo
+ *  - video-sync.img:
+ *       + todo
+ *
  */
 
 
@@ -415,113 +512,63 @@ static const char *vmsvgaIndexToString(PVGASTATE pThis, uint32_t idxReg)
 {
     switch (idxReg)
     {
-    case SVGA_REG_ID:
-        return "SVGA_REG_ID";
-    case SVGA_REG_ENABLE:
-        return "SVGA_REG_ENABLE";
-    case SVGA_REG_WIDTH:
-        return "SVGA_REG_WIDTH";
-    case SVGA_REG_HEIGHT:
-        return "SVGA_REG_HEIGHT";
-    case SVGA_REG_MAX_WIDTH:
-        return "SVGA_REG_MAX_WIDTH";
-    case SVGA_REG_MAX_HEIGHT:
-        return "SVGA_REG_MAX_HEIGHT";
-    case SVGA_REG_DEPTH:
-        return "SVGA_REG_DEPTH";
-    case SVGA_REG_BITS_PER_PIXEL:      /* Current bpp in the guest */
-        return "SVGA_REG_BITS_PER_PIXEL";
-    case SVGA_REG_HOST_BITS_PER_PIXEL: /* (Deprecated) */
-        return "SVGA_REG_HOST_BITS_PER_PIXEL";
-    case SVGA_REG_PSEUDOCOLOR:
-        return "SVGA_REG_PSEUDOCOLOR";
-    case SVGA_REG_RED_MASK:
-        return "SVGA_REG_RED_MASK";
-    case SVGA_REG_GREEN_MASK:
-        return "SVGA_REG_GREEN_MASK";
-    case SVGA_REG_BLUE_MASK:
-        return "SVGA_REG_BLUE_MASK";
-    case SVGA_REG_BYTES_PER_LINE:
-        return "SVGA_REG_BYTES_PER_LINE";
-    case SVGA_REG_VRAM_SIZE:            /* VRAM size */
-        return "SVGA_REG_VRAM_SIZE";
-    case SVGA_REG_FB_START:             /* Frame buffer physical address. */
-        return "SVGA_REG_FB_START";
-    case SVGA_REG_FB_OFFSET:            /* Offset of the frame buffer in VRAM */
-        return "SVGA_REG_FB_OFFSET";
-    case SVGA_REG_FB_SIZE:              /* Frame buffer size */
-        return "SVGA_REG_FB_SIZE";
-    case SVGA_REG_CAPABILITIES:
-        return "SVGA_REG_CAPABILITIES";
-    case SVGA_REG_MEM_START:           /* FIFO start */
-        return "SVGA_REG_MEM_START";
-    case SVGA_REG_MEM_SIZE:            /* FIFO size */
-        return "SVGA_REG_MEM_SIZE";
-    case SVGA_REG_CONFIG_DONE:         /* Set when memory area configured */
-        return "SVGA_REG_CONFIG_DONE";
-    case SVGA_REG_SYNC:                /* See "FIFO Synchronization Registers" */
-        return "SVGA_REG_SYNC";
-    case SVGA_REG_BUSY:                /* See "FIFO Synchronization Registers" */
-        return "SVGA_REG_BUSY";
-    case SVGA_REG_GUEST_ID:            /* Set guest OS identifier */
-        return "SVGA_REG_GUEST_ID";
-    case SVGA_REG_SCRATCH_SIZE:        /* Number of scratch registers */
-        return "SVGA_REG_SCRATCH_SIZE";
-    case SVGA_REG_MEM_REGS:            /* Number of FIFO registers */
-        return "SVGA_REG_MEM_REGS";
-    case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
-        return "SVGA_REG_PITCHLOCK";
-    case SVGA_REG_IRQMASK:             /* Interrupt mask */
-        return "SVGA_REG_IRQMASK";
-    case SVGA_REG_GMR_ID:
-        return "SVGA_REG_GMR_ID";
-    case SVGA_REG_GMR_DESCRIPTOR:
-        return "SVGA_REG_GMR_DESCRIPTOR";
-    case SVGA_REG_GMR_MAX_IDS:
-        return "SVGA_REG_GMR_MAX_IDS";
-    case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:
-        return "SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH";
-    case SVGA_REG_TRACES:            /* Enable trace-based updates even when FIFO is on */
-        return "SVGA_REG_TRACES";
-    case SVGA_REG_GMRS_MAX_PAGES:    /* Maximum number of 4KB pages for all GMRs */
-        return "SVGA_REG_GMRS_MAX_PAGES";
-    case SVGA_REG_MEMORY_SIZE:       /* Total dedicated device memory excluding FIFO */
-        return "SVGA_REG_MEMORY_SIZE";
-    case SVGA_REG_TOP:               /* Must be 1 more than the last register */
-        return "SVGA_REG_TOP";
-    case SVGA_PALETTE_BASE:         /* Base of SVGA color map */
-        return "SVGA_PALETTE_BASE";
-    case SVGA_REG_CURSOR_ID:
-        return "SVGA_REG_CURSOR_ID";
-    case SVGA_REG_CURSOR_X:
-        return "SVGA_REG_CURSOR_X";
-    case SVGA_REG_CURSOR_Y:
-        return "SVGA_REG_CURSOR_Y";
-    case SVGA_REG_CURSOR_ON:
-        return "SVGA_REG_CURSOR_ON";
-    case SVGA_REG_NUM_GUEST_DISPLAYS:/* Number of guest displays in X/Y direction */
-        return "SVGA_REG_NUM_GUEST_DISPLAYS";
-    case SVGA_REG_DISPLAY_ID:        /* Display ID for the following display attributes */
-        return "SVGA_REG_DISPLAY_ID";
-    case SVGA_REG_DISPLAY_IS_PRIMARY:/* Whether this is a primary display */
-        return "SVGA_REG_DISPLAY_IS_PRIMARY";
-    case SVGA_REG_DISPLAY_POSITION_X:/* The display position x */
-        return "SVGA_REG_DISPLAY_POSITION_X";
-    case SVGA_REG_DISPLAY_POSITION_Y:/* The display position y */
-        return "SVGA_REG_DISPLAY_POSITION_Y";
-    case SVGA_REG_DISPLAY_WIDTH:     /* The display's width */
-        return "SVGA_REG_DISPLAY_WIDTH";
-    case SVGA_REG_DISPLAY_HEIGHT:    /* The display's height */
-        return "SVGA_REG_DISPLAY_HEIGHT";
-    case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
-        return "SVGA_REG_NUM_DISPLAYS";
+        case SVGA_REG_ID:                       return "SVGA_REG_ID";
+        case SVGA_REG_ENABLE:                   return "SVGA_REG_ENABLE";
+        case SVGA_REG_WIDTH:                    return "SVGA_REG_WIDTH";
+        case SVGA_REG_HEIGHT:                   return "SVGA_REG_HEIGHT";
+        case SVGA_REG_MAX_WIDTH:                return "SVGA_REG_MAX_WIDTH";
+        case SVGA_REG_MAX_HEIGHT:               return "SVGA_REG_MAX_HEIGHT";
+        case SVGA_REG_DEPTH:                    return "SVGA_REG_DEPTH";
+        case SVGA_REG_BITS_PER_PIXEL:           return "SVGA_REG_BITS_PER_PIXEL"; /* Current bpp in the guest */
+        case SVGA_REG_HOST_BITS_PER_PIXEL:      return "SVGA_REG_HOST_BITS_PER_PIXEL"; /* (Deprecated) */
+        case SVGA_REG_PSEUDOCOLOR:              return "SVGA_REG_PSEUDOCOLOR";
+        case SVGA_REG_RED_MASK:                 return "SVGA_REG_RED_MASK";
+        case SVGA_REG_GREEN_MASK:               return "SVGA_REG_GREEN_MASK";
+        case SVGA_REG_BLUE_MASK:                return "SVGA_REG_BLUE_MASK";
+        case SVGA_REG_BYTES_PER_LINE:           return "SVGA_REG_BYTES_PER_LINE";
+        case SVGA_REG_VRAM_SIZE:                return "SVGA_REG_VRAM_SIZE"; /* VRAM size */
+        case SVGA_REG_FB_START:                 return "SVGA_REG_FB_START"; /* Frame buffer physical address. */
+        case SVGA_REG_FB_OFFSET:                return "SVGA_REG_FB_OFFSET"; /* Offset of the frame buffer in VRAM */
+        case SVGA_REG_FB_SIZE:                  return "SVGA_REG_FB_SIZE"; /* Frame buffer size */
+        case SVGA_REG_CAPABILITIES:             return "SVGA_REG_CAPABILITIES";
+        case SVGA_REG_MEM_START:                return "SVGA_REG_MEM_START"; /* FIFO start */
+        case SVGA_REG_MEM_SIZE:                 return "SVGA_REG_MEM_SIZE"; /* FIFO size */
+        case SVGA_REG_CONFIG_DONE:              return "SVGA_REG_CONFIG_DONE"; /* Set when memory area configured */
+        case SVGA_REG_SYNC:                     return "SVGA_REG_SYNC"; /* See "FIFO Synchronization Registers" */
+        case SVGA_REG_BUSY:                     return "SVGA_REG_BUSY"; /* See "FIFO Synchronization Registers" */
+        case SVGA_REG_GUEST_ID:                 return "SVGA_REG_GUEST_ID"; /* Set guest OS identifier */
+        case SVGA_REG_SCRATCH_SIZE:             return "SVGA_REG_SCRATCH_SIZE"; /* Number of scratch registers */
+        case SVGA_REG_MEM_REGS:                 return "SVGA_REG_MEM_REGS"; /* Number of FIFO registers */
+        case SVGA_REG_PITCHLOCK:                return "SVGA_REG_PITCHLOCK"; /* Fixed pitch for all modes */
+        case SVGA_REG_IRQMASK:                  return "SVGA_REG_IRQMASK"; /* Interrupt mask */
+        case SVGA_REG_GMR_ID:                   return "SVGA_REG_GMR_ID";
+        case SVGA_REG_GMR_DESCRIPTOR:           return "SVGA_REG_GMR_DESCRIPTOR";
+        case SVGA_REG_GMR_MAX_IDS:              return "SVGA_REG_GMR_MAX_IDS";
+        case SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH:return "SVGA_REG_GMR_MAX_DESCRIPTOR_LENGTH";
+        case SVGA_REG_TRACES:                   return "SVGA_REG_TRACES"; /* Enable trace-based updates even when FIFO is on */
+        case SVGA_REG_GMRS_MAX_PAGES:           return "SVGA_REG_GMRS_MAX_PAGES"; /* Maximum number of 4KB pages for all GMRs */
+        case SVGA_REG_MEMORY_SIZE:              return "SVGA_REG_MEMORY_SIZE"; /* Total dedicated device memory excluding FIFO */
+        case SVGA_REG_TOP:                      return "SVGA_REG_TOP"; /* Must be 1 more than the last register */
+        case SVGA_PALETTE_BASE:                 return "SVGA_PALETTE_BASE"; /* Base of SVGA color map */
+        case SVGA_REG_CURSOR_ID:                return "SVGA_REG_CURSOR_ID";
+        case SVGA_REG_CURSOR_X:                 return "SVGA_REG_CURSOR_X";
+        case SVGA_REG_CURSOR_Y:                 return "SVGA_REG_CURSOR_Y";
+        case SVGA_REG_CURSOR_ON:                return "SVGA_REG_CURSOR_ON";
+        case SVGA_REG_NUM_GUEST_DISPLAYS:       return "SVGA_REG_NUM_GUEST_DISPLAYS"; /* Number of guest displays in X/Y direction */
+        case SVGA_REG_DISPLAY_ID:               return "SVGA_REG_DISPLAY_ID";  /* Display ID for the following display attributes */
+        case SVGA_REG_DISPLAY_IS_PRIMARY:       return "SVGA_REG_DISPLAY_IS_PRIMARY"; /* Whether this is a primary display */
+        case SVGA_REG_DISPLAY_POSITION_X:       return "SVGA_REG_DISPLAY_POSITION_X"; /* The display position x */
+        case SVGA_REG_DISPLAY_POSITION_Y:       return "SVGA_REG_DISPLAY_POSITION_Y"; /* The display position y */
+        case SVGA_REG_DISPLAY_WIDTH:            return "SVGA_REG_DISPLAY_WIDTH";    /* The display's width */
+        case SVGA_REG_DISPLAY_HEIGHT:           return "SVGA_REG_DISPLAY_HEIGHT";   /* The display's height */
+        case SVGA_REG_NUM_DISPLAYS:             return "SVGA_REG_NUM_DISPLAYS";     /* (Deprecated) */
 
-    default:
-        if (idxReg - (uint32_t)SVGA_SCRATCH_BASE < pThis->svga.cScratchRegion)
-            return "SVGA_SCRATCH_BASE reg";
-        if (idxReg - (uint32_t)SVGA_PALETTE_BASE < (uint32_t)SVGA_NUM_PALETTE_REGS)
-            return "SVGA_PALETTE_BASE reg";
-        return "UNKNOWN";
+        default:
+            if (idxReg - (uint32_t)SVGA_SCRATCH_BASE < pThis->svga.cScratchRegion)
+                return "SVGA_SCRATCH_BASE reg";
+            if (idxReg - (uint32_t)SVGA_PALETTE_BASE < (uint32_t)SVGA_NUM_PALETTE_REGS)
+                return "SVGA_PALETTE_BASE reg";
+            return "UNKNOWN";
     }
 }
 
@@ -536,112 +583,59 @@ static const char *vmsvgaFIFOCmdToString(uint32_t u32Cmd)
 {
     switch (u32Cmd)
     {
-    case SVGA_CMD_INVALID_CMD:
-        return "SVGA_CMD_INVALID_CMD";
-    case SVGA_CMD_UPDATE:
-        return "SVGA_CMD_UPDATE";
-    case SVGA_CMD_RECT_COPY:
-        return "SVGA_CMD_RECT_COPY";
-    case SVGA_CMD_DEFINE_CURSOR:
-        return "SVGA_CMD_DEFINE_CURSOR";
-    case SVGA_CMD_DEFINE_ALPHA_CURSOR:
-        return "SVGA_CMD_DEFINE_ALPHA_CURSOR";
-    case SVGA_CMD_UPDATE_VERBOSE:
-        return "SVGA_CMD_UPDATE_VERBOSE";
-    case SVGA_CMD_FRONT_ROP_FILL:
-        return "SVGA_CMD_FRONT_ROP_FILL";
-    case SVGA_CMD_FENCE:
-        return "SVGA_CMD_FENCE";
-    case SVGA_CMD_ESCAPE:
-        return "SVGA_CMD_ESCAPE";
-    case SVGA_CMD_DEFINE_SCREEN:
-        return "SVGA_CMD_DEFINE_SCREEN";
-    case SVGA_CMD_DESTROY_SCREEN:
-        return "SVGA_CMD_DESTROY_SCREEN";
-    case SVGA_CMD_DEFINE_GMRFB:
-        return "SVGA_CMD_DEFINE_GMRFB";
-    case SVGA_CMD_BLIT_GMRFB_TO_SCREEN:
-        return "SVGA_CMD_BLIT_GMRFB_TO_SCREEN";
-    case SVGA_CMD_BLIT_SCREEN_TO_GMRFB:
-        return "SVGA_CMD_BLIT_SCREEN_TO_GMRFB";
-    case SVGA_CMD_ANNOTATION_FILL:
-        return "SVGA_CMD_ANNOTATION_FILL";
-    case SVGA_CMD_ANNOTATION_COPY:
-        return "SVGA_CMD_ANNOTATION_COPY";
-    case SVGA_CMD_DEFINE_GMR2:
-        return "SVGA_CMD_DEFINE_GMR2";
-    case SVGA_CMD_REMAP_GMR2:
-        return "SVGA_CMD_REMAP_GMR2";
-    case SVGA_3D_CMD_SURFACE_DEFINE:
-        return "SVGA_3D_CMD_SURFACE_DEFINE";
-    case SVGA_3D_CMD_SURFACE_DESTROY:
-        return "SVGA_3D_CMD_SURFACE_DESTROY";
-    case SVGA_3D_CMD_SURFACE_COPY:
-        return "SVGA_3D_CMD_SURFACE_COPY";
-    case SVGA_3D_CMD_SURFACE_STRETCHBLT:
-        return "SVGA_3D_CMD_SURFACE_STRETCHBLT";
-    case SVGA_3D_CMD_SURFACE_DMA:
-        return "SVGA_3D_CMD_SURFACE_DMA";
-    case SVGA_3D_CMD_CONTEXT_DEFINE:
-        return "SVGA_3D_CMD_CONTEXT_DEFINE";
-    case SVGA_3D_CMD_CONTEXT_DESTROY:
-        return "SVGA_3D_CMD_CONTEXT_DESTROY";
-    case SVGA_3D_CMD_SETTRANSFORM:
-        return "SVGA_3D_CMD_SETTRANSFORM";
-    case SVGA_3D_CMD_SETZRANGE:
-        return "SVGA_3D_CMD_SETZRANGE";
-    case SVGA_3D_CMD_SETRENDERSTATE:
-        return "SVGA_3D_CMD_SETRENDERSTATE";
-    case SVGA_3D_CMD_SETRENDERTARGET:
-        return "SVGA_3D_CMD_SETRENDERTARGET";
-    case SVGA_3D_CMD_SETTEXTURESTATE:
-        return "SVGA_3D_CMD_SETTEXTURESTATE";
-    case SVGA_3D_CMD_SETMATERIAL:
-        return "SVGA_3D_CMD_SETMATERIAL";
-    case SVGA_3D_CMD_SETLIGHTDATA:
-        return "SVGA_3D_CMD_SETLIGHTDATA";
-    case SVGA_3D_CMD_SETLIGHTENABLED:
-        return "SVGA_3D_CMD_SETLIGHTENABLED";
-    case SVGA_3D_CMD_SETVIEWPORT:
-        return "SVGA_3D_CMD_SETVIEWPORT";
-    case SVGA_3D_CMD_SETCLIPPLANE:
-        return "SVGA_3D_CMD_SETCLIPPLANE";
-    case SVGA_3D_CMD_CLEAR:
-        return "SVGA_3D_CMD_CLEAR";
-    case SVGA_3D_CMD_PRESENT:
-        return "SVGA_3D_CMD_PRESENT";
-    case SVGA_3D_CMD_SHADER_DEFINE:
-        return "SVGA_3D_CMD_SHADER_DEFINE";
-    case SVGA_3D_CMD_SHADER_DESTROY:
-        return "SVGA_3D_CMD_SHADER_DESTROY";
-    case SVGA_3D_CMD_SET_SHADER:
-        return "SVGA_3D_CMD_SET_SHADER";
-    case SVGA_3D_CMD_SET_SHADER_CONST:
-        return "SVGA_3D_CMD_SET_SHADER_CONST";
-    case SVGA_3D_CMD_DRAW_PRIMITIVES:
-        return "SVGA_3D_CMD_DRAW_PRIMITIVES";
-    case SVGA_3D_CMD_SETSCISSORRECT:
-        return "SVGA_3D_CMD_SETSCISSORRECT";
-    case SVGA_3D_CMD_BEGIN_QUERY:
-        return "SVGA_3D_CMD_BEGIN_QUERY";
-    case SVGA_3D_CMD_END_QUERY:
-        return "SVGA_3D_CMD_END_QUERY";
-    case SVGA_3D_CMD_WAIT_FOR_QUERY:
-        return "SVGA_3D_CMD_WAIT_FOR_QUERY";
-    case SVGA_3D_CMD_PRESENT_READBACK:
-        return "SVGA_3D_CMD_PRESENT_READBACK";
-    case SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN:
-        return "SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN";
-    case SVGA_3D_CMD_SURFACE_DEFINE_V2:
-        return "SVGA_3D_CMD_SURFACE_DEFINE_V2";
-    case SVGA_3D_CMD_GENERATE_MIPMAPS:
-        return "SVGA_3D_CMD_GENERATE_MIPMAPS";
-    case SVGA_3D_CMD_ACTIVATE_SURFACE:
-        return "SVGA_3D_CMD_ACTIVATE_SURFACE";
-    case SVGA_3D_CMD_DEACTIVATE_SURFACE:
-        return "SVGA_3D_CMD_DEACTIVATE_SURFACE";
-    default:
-        return "UNKNOWN";
+        case SVGA_CMD_INVALID_CMD:              return "SVGA_CMD_INVALID_CMD";
+        case SVGA_CMD_UPDATE:                   return "SVGA_CMD_UPDATE";
+        case SVGA_CMD_RECT_COPY:                return "SVGA_CMD_RECT_COPY";
+        case SVGA_CMD_DEFINE_CURSOR:            return "SVGA_CMD_DEFINE_CURSOR";
+        case SVGA_CMD_DEFINE_ALPHA_CURSOR:      return "SVGA_CMD_DEFINE_ALPHA_CURSOR";
+        case SVGA_CMD_UPDATE_VERBOSE:           return "SVGA_CMD_UPDATE_VERBOSE";
+        case SVGA_CMD_FRONT_ROP_FILL:           return "SVGA_CMD_FRONT_ROP_FILL";
+        case SVGA_CMD_FENCE:                    return "SVGA_CMD_FENCE";
+        case SVGA_CMD_ESCAPE:                   return "SVGA_CMD_ESCAPE";
+        case SVGA_CMD_DEFINE_SCREEN:            return "SVGA_CMD_DEFINE_SCREEN";
+        case SVGA_CMD_DESTROY_SCREEN:           return "SVGA_CMD_DESTROY_SCREEN";
+        case SVGA_CMD_DEFINE_GMRFB:             return "SVGA_CMD_DEFINE_GMRFB";
+        case SVGA_CMD_BLIT_GMRFB_TO_SCREEN:     return "SVGA_CMD_BLIT_GMRFB_TO_SCREEN";
+        case SVGA_CMD_BLIT_SCREEN_TO_GMRFB:     return "SVGA_CMD_BLIT_SCREEN_TO_GMRFB";
+        case SVGA_CMD_ANNOTATION_FILL:          return "SVGA_CMD_ANNOTATION_FILL";
+        case SVGA_CMD_ANNOTATION_COPY:          return "SVGA_CMD_ANNOTATION_COPY";
+        case SVGA_CMD_DEFINE_GMR2:              return "SVGA_CMD_DEFINE_GMR2";
+        case SVGA_CMD_REMAP_GMR2:               return "SVGA_CMD_REMAP_GMR2";
+        case SVGA_3D_CMD_SURFACE_DEFINE:        return "SVGA_3D_CMD_SURFACE_DEFINE";
+        case SVGA_3D_CMD_SURFACE_DESTROY:       return "SVGA_3D_CMD_SURFACE_DESTROY";
+        case SVGA_3D_CMD_SURFACE_COPY:          return "SVGA_3D_CMD_SURFACE_COPY";
+        case SVGA_3D_CMD_SURFACE_STRETCHBLT:    return "SVGA_3D_CMD_SURFACE_STRETCHBLT";
+        case SVGA_3D_CMD_SURFACE_DMA:           return "SVGA_3D_CMD_SURFACE_DMA";
+        case SVGA_3D_CMD_CONTEXT_DEFINE:        return "SVGA_3D_CMD_CONTEXT_DEFINE";
+        case SVGA_3D_CMD_CONTEXT_DESTROY:       return "SVGA_3D_CMD_CONTEXT_DESTROY";
+        case SVGA_3D_CMD_SETTRANSFORM:          return "SVGA_3D_CMD_SETTRANSFORM";
+        case SVGA_3D_CMD_SETZRANGE:             return "SVGA_3D_CMD_SETZRANGE";
+        case SVGA_3D_CMD_SETRENDERSTATE:        return "SVGA_3D_CMD_SETRENDERSTATE";
+        case SVGA_3D_CMD_SETRENDERTARGET:       return "SVGA_3D_CMD_SETRENDERTARGET";
+        case SVGA_3D_CMD_SETTEXTURESTATE:       return "SVGA_3D_CMD_SETTEXTURESTATE";
+        case SVGA_3D_CMD_SETMATERIAL:           return "SVGA_3D_CMD_SETMATERIAL";
+        case SVGA_3D_CMD_SETLIGHTDATA:          return "SVGA_3D_CMD_SETLIGHTDATA";
+        case SVGA_3D_CMD_SETLIGHTENABLED:       return "SVGA_3D_CMD_SETLIGHTENABLED";
+        case SVGA_3D_CMD_SETVIEWPORT:           return "SVGA_3D_CMD_SETVIEWPORT";
+        case SVGA_3D_CMD_SETCLIPPLANE:          return "SVGA_3D_CMD_SETCLIPPLANE";
+        case SVGA_3D_CMD_CLEAR:                 return "SVGA_3D_CMD_CLEAR";
+        case SVGA_3D_CMD_PRESENT:               return "SVGA_3D_CMD_PRESENT";
+        case SVGA_3D_CMD_SHADER_DEFINE:         return "SVGA_3D_CMD_SHADER_DEFINE";
+        case SVGA_3D_CMD_SHADER_DESTROY:        return "SVGA_3D_CMD_SHADER_DESTROY";
+        case SVGA_3D_CMD_SET_SHADER:            return "SVGA_3D_CMD_SET_SHADER";
+        case SVGA_3D_CMD_SET_SHADER_CONST:      return "SVGA_3D_CMD_SET_SHADER_CONST";
+        case SVGA_3D_CMD_DRAW_PRIMITIVES:       return "SVGA_3D_CMD_DRAW_PRIMITIVES";
+        case SVGA_3D_CMD_SETSCISSORRECT:        return "SVGA_3D_CMD_SETSCISSORRECT";
+        case SVGA_3D_CMD_BEGIN_QUERY:           return "SVGA_3D_CMD_BEGIN_QUERY";
+        case SVGA_3D_CMD_END_QUERY:             return "SVGA_3D_CMD_END_QUERY";
+        case SVGA_3D_CMD_WAIT_FOR_QUERY:        return "SVGA_3D_CMD_WAIT_FOR_QUERY";
+        case SVGA_3D_CMD_PRESENT_READBACK:      return "SVGA_3D_CMD_PRESENT_READBACK";
+        case SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN:return "SVGA_3D_CMD_BLIT_SURFACE_TO_SCREEN";
+        case SVGA_3D_CMD_SURFACE_DEFINE_V2:     return "SVGA_3D_CMD_SURFACE_DEFINE_V2";
+        case SVGA_3D_CMD_GENERATE_MIPMAPS:      return "SVGA_3D_CMD_GENERATE_MIPMAPS";
+        case SVGA_3D_CMD_ACTIVATE_SURFACE:      return "SVGA_3D_CMD_ACTIVATE_SURFACE";
+        case SVGA_3D_CMD_DEACTIVATE_SURFACE:    return "SVGA_3D_CMD_DEACTIVATE_SURFACE";
+        default:                                return "UNKNOWN";
     }
 }
 # endif /* IN_RING3 */
