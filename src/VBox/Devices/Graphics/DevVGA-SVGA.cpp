@@ -361,7 +361,7 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOR0),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pSvgaR3State),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, p3dState),
-    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFrameBufferBackup),
+    SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pbVgaFrameBufferR3),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pvFIFOExtCmdParam),
     SSMFIELD_ENTRY_IGN_GCPHYS(      VMSVGAState, GCPhysFIFO),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cbFIFO),
@@ -833,7 +833,7 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
 
     case SVGA_REG_PSEUDOCOLOR:
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegPsuedoColorRd);
-        *pu32 = 0;
+        *pu32 = pThis->svga.uBpp == 8; /* See section 6 "Pseudocolor" in svga_interface.txt. */
         break;
 
     case SVGA_REG_RED_MASK:
@@ -1174,8 +1174,9 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         }
         else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
         {
+            /* Note! Using last_palette rather than palette here to preserve the VGA one. */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteRd);
-            /* Next 768 (== 256*3) registers exist for colormap */
+            *pu32 = pThis->last_palette[offReg];
         }
         else
         {
@@ -1317,12 +1318,12 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
     {
     case SVGA_REG_ID:
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegIdWr);
-        if (    u32 == SVGA_ID_0
-            ||  u32 == SVGA_ID_1
-            ||  u32 == SVGA_ID_2)
+        if (   u32 == SVGA_ID_0
+            || u32 == SVGA_ID_1
+            || u32 == SVGA_ID_2)
             pThis->svga.u32SVGAId = u32;
         else
-            AssertMsgFailed(("%#x\n", u32));
+            PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS, "Trying to set SVGA_REG_ID to %#x (%d)\n", u32, u32);
         break;
 
     case SVGA_REG_ENABLE:
@@ -1341,8 +1342,10 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         if (    u32 == 1
             &&  pThis->svga.fEnabled == false)
         {
-            /* Make a backup copy of the first 32k in order to save font data etc. */
-            memcpy(pThis->svga.pFrameBufferBackup, pThis->vram_ptrR3, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
+            /* Make a backup copy of the first 512kb in order to save font data etc. */
+            /** @todo should probably swap here, rather than copy + zero */
+            memcpy(pThis->svga.pbVgaFrameBufferR3, pThis->vram_ptrR3, VMSVGA_VGA_FB_BACKUP_SIZE);
+            memset(pThis->vram_ptrR3, 0, VMSVGA_VGA_FB_BACKUP_SIZE);
         }
 
         pThis->svga.fEnabled = u32;
@@ -1377,7 +1380,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         else
         {
             /* Restore the text mode backup. */
-            memcpy(pThis->vram_ptrR3, pThis->svga.pFrameBufferBackup, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
+            memcpy(pThis->vram_ptrR3, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
 /*            pThis->svga.uHeight    = -1;
             pThis->svga.uWidth     = -1;
@@ -1388,9 +1391,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
             /* Enable dirty page tracking again when going into legacy mode. */
             vmsvgaSetTraces(pThis, true);
         }
-#else
+#else  /* !IN_RING3 */
         rc = VINF_IOM_R3_IOPORT_WRITE;
-#endif
+#endif /* !IN_RING3 */
         break;
 
     case SVGA_REG_WIDTH:
@@ -1709,8 +1712,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         }
         else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
         {
+            /* Note! Using last_palette rather than palette here to preserve the VGA one. */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteWr);
-            /* Next 768 (== 256*3) registers exist for colormap */
+            pThis->last_palette[offReg] = (uint8_t)u32;
         }
         else
         {
@@ -2319,6 +2323,314 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 
 #ifdef IN_RING3
 
+
+/**
+ * Common worker for changing the pointer shape.
+ *
+ * @param   pThis               The VGA instance data.
+ * @param   pSVGAState          The VMSVGA ring-3 instance data.
+ * @param   fAlpha              Whether there is alpha or not.
+ * @param   xHot                Hotspot x coordinate.
+ * @param   yHot                Hotspot y coordinate.
+ * @param   cx                  Width.
+ * @param   cy                  Height.
+ * @param   pbData              Heap copy of the cursor data.  Consumed.
+ * @param   cbData              The size of the data.
+ */
+static void vmsvgaR3InstallNewCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, bool fAlpha,
+                                     uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, uint8_t *pbData, uint32_t cbData)
+{
+    Log(("vmsvgaR3InstallNewCursor: cx=%d cy=%d xHot=%d yHot=%d fAlpha=%d cbData=%#x\n", cx, cy, xHot, yHot, fAlpha, cbData));
+    if (LogIs2Enabled())
+    {
+        uint32_t cbAndLine = RT_ALIGN(cx, 8) / 8;
+        if (!fAlpha)
+        {
+            Log2(("VMSVGA Cursor AND mask (%d,%d):\n", cx, cy));
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                Log2(("%3u:", y));
+                uint8_t const *pbLine = &pbData[y * cbAndLine];
+                for (uint32_t x = 0; x < cx; x += 8)
+                {
+                    uint8_t   b = pbLine[x / 8];
+                    char      szByte[12];
+                    szByte[0] = b & 0x80 ? '*' : ' '; /* most significant bit first */
+                    szByte[1] = b & 0x40 ? '*' : ' ';
+                    szByte[2] = b & 0x20 ? '*' : ' ';
+                    szByte[3] = b & 0x10 ? '*' : ' ';
+                    szByte[4] = b & 0x08 ? '*' : ' ';
+                    szByte[5] = b & 0x04 ? '*' : ' ';
+                    szByte[6] = b & 0x02 ? '*' : ' ';
+                    szByte[7] = b & 0x01 ? '*' : ' ';
+                    szByte[8] = '\0';
+                    Log2(("%s", szByte));
+                }
+                Log2(("\n"));
+            }
+        }
+
+        Log2(("VMSVGA Cursor XOR mask (%d,%d):\n", cx, cy));
+        uint32_t const *pu32Xor = (uint32_t const *)&pbData[RT_ALIGN_32(cbAndLine * cy, 4)];
+        for (uint32_t y = 0; y < cy; y++)
+        {
+            Log2(("%3u:", y));
+            uint32_t const *pu32Line = &pu32Xor[y * cx];
+            for (uint32_t x = 0; x < cx; x++)
+                Log2((" %08x", pu32Line[x]));
+            Log2(("\n"));
+        }
+    }
+
+    int rc = pThis->pDrv->pfnVBVAMousePointerShape(pThis->pDrv, true /*fVisible*/, fAlpha, xHot, yHot, cx, cy, pbData);
+    AssertRC(rc);
+
+    if (pSVGAState->Cursor.fActive)
+        RTMemFree(pSVGAState->Cursor.pData);
+
+    pSVGAState->Cursor.fActive  = true;
+    pSVGAState->Cursor.xHotspot = xHot;
+    pSVGAState->Cursor.yHotspot = yHot;
+    pSVGAState->Cursor.width    = cx;
+    pSVGAState->Cursor.height   = cy;
+    pSVGAState->Cursor.cbData   = cbData;
+    pSVGAState->Cursor.pData    = pbData;
+}
+
+
+/**
+ * Handles the SVGA_CMD_DEFINE_CURSOR command.
+ *
+ * @param   pThis               The VGA instance data.
+ * @param   pSVGAState          The VMSVGA ring-3 instance data.
+ * @param   pCursor             The cursor.
+ * @param   pbSrcAndMask        The AND mask.
+ * @param   cbSrcAndLine        The scanline length of the AND mask.
+ * @param   pbSrcXorMask        The XOR mask.
+ * @param   cbSrcXorLine        The scanline length of the XOR mask.
+ */
+static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, SVGAFifoCmdDefineCursor const *pCursor,
+                                    uint8_t const *pbSrcAndMask, uint32_t cbSrcAndLine,
+                                    uint8_t const *pbSrcXorMask, uint32_t cbSrcXorLine)
+{
+    uint32_t const cx = pCursor->width;
+    uint32_t const cy = pCursor->height;
+
+    /*
+     * Convert the input to 1-bit AND mask and a 32-bit BRGA XOR mask.
+     * The AND data uses 8-bit aligned scanlines.
+     * The XOR data must be starting on a 32-bit boundrary.
+     */
+    uint32_t cbDstAndLine = RT_ALIGN_32(cx, 8) / 8;
+    uint32_t cbDstAndMask = cbDstAndLine          * cy;
+    uint32_t cbDstXorMask = cx * sizeof(uint32_t) * cy;
+    uint32_t cbCopy = RT_ALIGN_32(cbDstAndMask, 4) + cbDstXorMask;
+
+    uint8_t *pbCopy = (uint8_t *)RTMemAlloc(cbCopy);
+    AssertReturnVoid(pbCopy);
+
+    /* Convert the AND mask. */
+    uint8_t       *pbDst     = pbCopy;
+    uint8_t const *pbSrc     = pbSrcAndMask;
+    switch (pCursor->andMaskDepth)
+    {
+        case 1:
+            if (cbSrcAndLine == cbDstAndLine)
+                memcpy(pbDst, pbSrc, cbSrcAndLine * cy);
+            else
+            {
+                Assert(cbSrcAndLine > cbDstAndLine); /* lines are dword alined in source, but only byte in destination. */
+                for (uint32_t y = 0; y < cy; y++)
+                {
+                    memcpy(pbDst, pbSrc, cbDstAndLine);
+                    pbDst += cbDstAndLine;
+                    pbSrc += cbSrcAndLine;
+                }
+            }
+            break;
+        case 8:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; )
+                {
+                    uint8_t bDst = 0;
+                    uint8_t fBit = 1;
+                    do
+                    {
+                        if (pbSrc[x])
+                            bDst |= fBit;
+                        fBit <<= 1;
+                        x++;
+                    } while (x < cx && (x & 7));
+                    pbDst[(x - 1) / 8] = bDst;
+                }
+                pbDst += cbDstAndLine;
+                pbSrc += cbSrcAndLine;
+            }
+            break;
+        case 15:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; )
+                {
+                    uint8_t bDst = 0;
+                    uint8_t fBit = 1;
+                    do
+                    {
+                        if (pbSrc[x * 2] || (pbSrc[x * 2 + 1] & 0x7f))
+                            bDst |= fBit;
+                        fBit <<= 1;
+                        x++;
+                    } while (x < cx && (x & 7));
+                    pbDst[(x - 1) / 8] = bDst;
+                }
+                pbDst += cbDstAndLine;
+                pbSrc += cbSrcAndLine;
+            }
+            break;
+        case 16:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; )
+                {
+                    uint8_t bDst = 0;
+                    uint8_t fBit = 1;
+                    do
+                    {
+                        if (pbSrc[x * 2] || pbSrc[x * 2 + 1])
+                            bDst |= fBit;
+                        fBit <<= 1;
+                        x++;
+                    } while (x < cx && (x & 7));
+                    pbDst[(x - 1) / 8] = bDst;
+                }
+                pbDst += cbDstAndLine;
+                pbSrc += cbSrcAndLine;
+            }
+            break;
+        case 24:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; )
+                {
+                    uint8_t bDst = 0;
+                    uint8_t fBit = 1;
+                    do
+                    {
+                        if (pbSrc[x * 3] || pbSrc[x * 3 + 1] || pbSrc[x * 3 + 2])
+                            bDst |= fBit;
+                        fBit <<= 1;
+                        x++;
+                    } while (x < cx && (x & 7));
+                    pbDst[(x - 1) / 8] = bDst;
+                }
+                pbDst += cbDstAndLine;
+                pbSrc += cbSrcAndLine;
+            }
+        case 32:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; )
+                {
+                    uint8_t bDst = 0;
+                    uint8_t fBit = 1;
+                    do
+                    {
+                        if (pbSrc[x * 4] || pbSrc[x * 4 + 1] || pbSrc[x * 4 + 2] || pbSrc[x * 4 + 3])
+                            bDst |= fBit;
+                        fBit <<= 1;
+                        x++;
+                    } while (x < cx && (x & 7));
+                    pbDst[(x - 1) / 8] = bDst;
+                }
+                pbDst += cbDstAndLine;
+                pbSrc += cbSrcAndLine;
+            }
+            break;
+        default:
+            RTMemFree(pbCopy);
+            AssertFailedReturnVoid();
+    }
+
+    /* Convert the XOR mask. */
+    uint32_t *pu32Dst = (uint32_t *)(pbCopy + cbDstAndMask);
+    pbSrc  = pbSrcXorMask;
+    switch (pCursor->xorMaskDepth)
+    {
+        case 1:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                    *pu32Dst++ = ASMBitTest(pbSrc, x) ? UINT32_C(0x00ffffff) : 0;
+                pbSrc += cbSrcXorLine;
+            }
+            break;
+        case 8:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                {
+                    uintptr_t const idxPal = pbSrc[x] * 3;
+                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(pThis->last_palette[idxPal + 2],
+                                                     pThis->last_palette[idxPal + 1],
+                                                     pThis->last_palette[idxPal + 0], 0);
+                }
+                pbSrc += cbSrcXorLine;
+            }
+            break;
+        case 15: /* Src: RGB-5-5-5 */
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                {
+                    uint32_t const uValue = RT_MAKE_U16(pbSrc[x * 2], pbSrc[x * 2 + 1]);
+                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(( uValue        & 0x1f) << 3,
+                                                     ((uValue >>  5) & 0x1f) << 3,
+                                                     ((uValue >> 10) & 0x1f) << 3, 0);
+                }
+                pbSrc += cbSrcXorLine;
+            }
+            break;
+        case 16: /* Src: RGB-5-6-5 */
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                {
+                    uint32_t const uValue = RT_MAKE_U16(pbSrc[x * 2], pbSrc[x * 2 + 1]);
+                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(( uValue        & 0x1f) << 3,
+                                                     ((uValue >>  5) & 0x3f) << 2,
+                                                     ((uValue >> 11) & 0x1f) << 3, 0);
+                }
+                pbSrc += cbSrcXorLine;
+            }
+            break;
+        case 24:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(pbSrc[x*3], pbSrc[x*3 + 1], pbSrc[x*3 + 2], 0);
+                pbSrc += cbSrcXorLine;
+            }
+        case 32:
+            for (uint32_t y = 0; y < cy; y++)
+            {
+                for (uint32_t x = 0; x < cx; x++)
+                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(pbSrc[x*4], pbSrc[x*4 + 1], pbSrc[x*4 + 2], 0);
+                pbSrc += cbSrcXorLine;
+            }
+            break;
+        default:
+            RTMemFree(pbCopy);
+            AssertFailedReturnVoid();
+    }
+
+    /*
+     * Pass it to the frontend/whatever.
+     */
+    vmsvgaR3InstallNewCursor(pThis, pSVGAState, false /*fAlpha*/, pCursor->hotspotX, pCursor->hotspotY, cx, cy, pbCopy, cbCopy);
+}
+
+
 /**
  * Worker for vmsvgaR3FifoThread that handles an external command.
  *
@@ -2894,7 +3206,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             Assert(offCurrentCmd < offFifoMax && offCurrentCmd >= offFifoMin);
 
             /* First check any pending actions. */
-            if (ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT))
+            if (   ASMBitTestAndClear(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE_BIT)
+                && pThis->svga.p3dState != NULL)
 # ifdef VBOX_WITH_VMSVGA3D
                 vmsvga3dChangeMode(pThis);
 # else
@@ -2965,7 +3278,20 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 SVGAFifoCmdDefineCursor *pCursor;
                 VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCursor, SVGAFifoCmdDefineCursor, sizeof(*pCursor));
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdDefineCursor);
-                AssertFailed(); /** @todo implement when necessary. */
+
+                Log(("vmsvgaFIFOLoop: CURSOR id=%d size (%d,%d) hotspot (%d,%d) andMaskDepth=%d xorMaskDepth=%d\n",
+                     pCursor->id, pCursor->width, pCursor->height, pCursor->hotspotX, pCursor->hotspotY,
+                     pCursor->andMaskDepth, pCursor->xorMaskDepth));
+                AssertBreak(pCursor->height < 2048 && pCursor->width < 2048);
+
+                uint32_t cbAndLine = RT_ALIGN_32(pCursor->width * (pCursor->andMaskDepth + (pCursor->andMaskDepth == 15)), 32) / 8;
+                uint32_t cbAndMask = cbAndLine * pCursor->height;
+                uint32_t cbXorLine = RT_ALIGN_32(pCursor->width * (pCursor->xorMaskDepth + (pCursor->xorMaskDepth == 15)), 32) / 8;
+                uint32_t cbXorMask = cbXorLine * pCursor->height;
+                VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pCursor, SVGAFifoCmdDefineCursor, sizeof(*pCursor) + cbAndMask + cbXorMask);
+
+                vmsvgaR3CmdDefineCursor(pThis, pSVGAState, pCursor, (uint8_t const *)(pCursor + 1), cbAndLine,
+                                        (uint8_t const *)(pCursor + 1) + cbAndMask, cbXorLine);
                 break;
             }
 
@@ -2998,33 +3324,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 pCursorCopy = (uint8_t *)RTMemAlloc(cbCursorShape);
                 AssertBreak(pCursorCopy);
 
-                Log2(("Cursor data:\n%.*Rhxd\n", pCursor->width * pCursor->height * sizeof(uint32_t), pCursor+1));
-
                 /* Transparency is defined by the alpha bytes, so make the whole bitmap visible. */
                 memset(pCursorCopy, 0xff, cbAndMask);
                 /* Colour data */
                 memcpy(pCursorCopy + cbAndMask, (pCursor + 1), pCursor->width * pCursor->height * sizeof(uint32_t));
 
-                rc = pThis->pDrv->pfnVBVAMousePointerShape (pThis->pDrv,
-                                                            true,
-                                                            true,
-                                                            pCursor->hotspotX,
-                                                            pCursor->hotspotY,
-                                                            pCursor->width,
-                                                            pCursor->height,
-                                                            pCursorCopy);
-                AssertRC(rc);
-
-                if (pSVGAState->Cursor.fActive)
-                    RTMemFree(pSVGAState->Cursor.pData);
-
-                pSVGAState->Cursor.fActive  = true;
-                pSVGAState->Cursor.xHotspot = pCursor->hotspotX;
-                pSVGAState->Cursor.yHotspot = pCursor->hotspotY;
-                pSVGAState->Cursor.width    = pCursor->width;
-                pSVGAState->Cursor.height   = pCursor->height;
-                pSVGAState->Cursor.cbData   = cbCursorShape;
-                pSVGAState->Cursor.pData    = pCursorCopy;
+                vmsvgaR3InstallNewCursor(pThis, pSVGAState, true /*fAlpha*/, pCursor->hotspotX, pCursor->hotspotY,
+                                         pCursor->width, pCursor->height, pCursorCopy, cbCursorShape);
                 break;
             }
 
@@ -4313,9 +4619,25 @@ int vmsvgaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint3
     rc = SSMR3GetStructEx(pSSM, &pThis->svga, sizeof(pThis->svga), 0, g_aVGAStateSVGAFields, NULL);
     AssertRCReturn(rc, rc);
 
-    /* Load the framebuffer backup. */
-    rc = SSMR3GetMem(pSSM, pThis->svga.pFrameBufferBackup, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
+    /* Load the VGA framebuffer. */
+    AssertCompile(VMSVGA_VGA_FB_BACKUP_SIZE >= _32K);
+    uint32_t cbVgaFramebuffer = _32K;
+    if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_VGA_FB_FIX)
+    {
+        rc = SSMR3GetU32(pSSM, &cbVgaFramebuffer);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgReturn(cbVgaFramebuffer <= _4M && cbVgaFramebuffer >= _32K && RT_IS_POWER_OF_TWO(cbVgaFramebuffer),
+                              ("cbVgaFramebuffer=%#x - expected 32KB..4MB, power of two\n", cbVgaFramebuffer),
+                              VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        AssertCompile(VMSVGA_VGA_FB_BACKUP_SIZE <= _4M);
+        AssertCompile(RT_IS_POWER_OF_TWO(VMSVGA_VGA_FB_BACKUP_SIZE));
+    }
+    rc = SSMR3GetMem(pSSM, pThis->svga.pbVgaFrameBufferR3, RT_MIN(cbVgaFramebuffer, VMSVGA_VGA_FB_BACKUP_SIZE));
     AssertRCReturn(rc, rc);
+    if (cbVgaFramebuffer > VMSVGA_VGA_FB_BACKUP_SIZE)
+        SSMR3Skip(pSSM, cbVgaFramebuffer - VMSVGA_VGA_FB_BACKUP_SIZE);
+    else if (cbVgaFramebuffer < VMSVGA_VGA_FB_BACKUP_SIZE)
+        RT_BZERO(&pThis->svga.pbVgaFrameBufferR3[cbVgaFramebuffer], VMSVGA_VGA_FB_BACKUP_SIZE - cbVgaFramebuffer);
 
     /* Load the VMSVGA state. */
     rc = SSMR3GetStructEx(pSSM, pSVGAState, sizeof(*pSVGAState), 0, g_aVMSVGAR3STATEFields, NULL);
@@ -4415,7 +4737,8 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     AssertLogRelRCReturn(rc, rc);
 
     /* Save the framebuffer backup. */
-    rc = SSMR3PutMem(pSSM, pThis->svga.pFrameBufferBackup, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
+    rc = SSMR3PutU32(pSSM, VMSVGA_VGA_FB_BACKUP_SIZE);
+    rc = SSMR3PutMem(pSSM, pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
     AssertLogRelRCReturn(rc, rc);
 
     /* Save the VMSVGA state. */
@@ -4481,7 +4804,7 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
     pThis->svga.cScratchRegion = VMSVGA_SCRATCH_SIZE;
     RT_ZERO(pThis->svga.au32ScratchRegion);
     RT_ZERO(*pThis->svga.pSvgaR3State);
-    RT_BZERO(pThis->svga.pFrameBufferBackup, VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
+    RT_BZERO(pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
     /* Register caps. */
     pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
@@ -4558,8 +4881,11 @@ int vmsvgaDestruct(PPDMDEVINS pDevIns)
     /*
      * Free our resources residing in the VGA state.
      */
-    if (pThis->svga.pFrameBufferBackup)
-        RTMemFree(pThis->svga.pFrameBufferBackup);
+    if (pThis->svga.pbVgaFrameBufferR3)
+    {
+        RTMemFree(pThis->svga.pbVgaFrameBufferR3);
+        pThis->svga.pbVgaFrameBufferR3 = NULL;
+    }
     if (pThis->svga.FIFOExtCmdSem != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy(pThis->svga.FIFOExtCmdSem);
@@ -4595,8 +4921,8 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     pSVGAState = pThis->svga.pSvgaR3State;
 
     /* Necessary for creating a backup of the text mode frame buffer when switching into svga mode. */
-    pThis->svga.pFrameBufferBackup = RTMemAllocZ(VMSVGA_FRAMEBUFFER_BACKUP_SIZE);
-    AssertReturn(pThis->svga.pFrameBufferBackup, VERR_NO_MEMORY);
+    pThis->svga.pbVgaFrameBufferR3 = (uint8_t *)RTMemAllocZ(VMSVGA_VGA_FB_BACKUP_SIZE);
+    AssertReturn(pThis->svga.pbVgaFrameBufferR3, VERR_NO_MEMORY);
 
     /* Create event semaphore. */
     pThis->svga.pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
