@@ -2341,6 +2341,7 @@ static void vmsvgaR3InstallNewCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState,
                                      uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, uint8_t *pbData, uint32_t cbData)
 {
     Log(("vmsvgaR3InstallNewCursor: cx=%d cy=%d xHot=%d yHot=%d fAlpha=%d cbData=%#x\n", cx, cy, xHot, yHot, fAlpha, cbData));
+#ifdef LOG_ENABLED
     if (LogIs2Enabled())
     {
         uint32_t cbAndLine = RT_ALIGN(cx, 8) / 8;
@@ -2381,6 +2382,7 @@ static void vmsvgaR3InstallNewCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState,
             Log2(("\n"));
         }
     }
+#endif
 
     int rc = pThis->pDrv->pfnVBVAMousePointerShape(pThis->pDrv, true /*fVisible*/, fAlpha, xHot, yHot, cx, cy, pbData);
     AssertRC(rc);
