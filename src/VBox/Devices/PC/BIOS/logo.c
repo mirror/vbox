@@ -409,6 +409,8 @@ void show_logo(void)
             }
         }
     }
+    else if (!f12_pressed)
+        outw(LOGO_IO_PORT, LOGO_CMD_SHOW_BMP | 0);
 
 done:
     // Clear forced boot drive setting.
