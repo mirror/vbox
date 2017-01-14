@@ -68,7 +68,7 @@
 /** Size of the region to backup when switching into svga mode. */
 #define VMSVGA_VGA_FB_BACKUP_SIZE                       _512K
 
-/** @def VMSVGA_WITH_BACKUP_VGA_FB
+/** @def VMSVGA_WITH_VGA_FB_BACKUP
  * Enables correct VGA MMIO read/write handling when VMSVGA is enabled.  It
  * is SLOW and probably not entirely right, but it helps with getting 3dmark
  * output and other stuff. */
@@ -76,7 +76,7 @@
 
 /** @def VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
  * defined(VMSVGA_WITH_VGA_FB_BACKUP) && defined(IN_RING3)  */
-#if defined(VMSVGA_WITH_VGA_FB_BACKUP) && defined(IN_RING3)
+#if (defined(VMSVGA_WITH_VGA_FB_BACKUP) && defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
 # define VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3         1
 #else
 # undef  VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RING3
@@ -84,7 +84,7 @@
 
 /** @def VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RZ
  * defined(VMSVGA_WITH_VGA_FB_BACKUP) && !defined(IN_RING3)  */
-#if defined(VMSVGA_WITH_VGA_FB_BACKUP) && !defined(IN_RING3)
+#if (defined(VMSVGA_WITH_VGA_FB_BACKUP) && !defined(IN_RING3)) || defined(DOXYGEN_RUNNING)
 # define VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RZ            1
 #else
 # undef  VMSVGA_WITH_VGA_FB_BACKUP_AND_IN_RZ
