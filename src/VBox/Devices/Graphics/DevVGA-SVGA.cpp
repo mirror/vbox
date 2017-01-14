@@ -2867,7 +2867,7 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
     Assert(pcbAlreadyRead);
     Assert(offFifoMin < offFifoMax);
     Assert(offCurrentCmd >= offFifoMin && offCurrentCmd < offFifoMax);
-    Assert(offFifoMax <= VMSVGA_FIFO_SIZE);
+    Assert(offFifoMax <= pThis->svga.cbFIFO);
 
     /*
      * Check if the requested payload size has already been satisfied                                                                                                .
@@ -3028,7 +3028,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
      * Allocate a bounce buffer for command we get from the FIFO.
      * (All code must return via the end of the function to free this buffer.)
      */
-    uint8_t *pbBounceBuf = (uint8_t *)RTMemAllocZ(VMSVGA_FIFO_SIZE);
+    uint8_t *pbBounceBuf = (uint8_t *)RTMemAllocZ(pThis->svga.cbFIFO);
     AssertReturn(pbBounceBuf, VERR_NO_MEMORY);
 
     /*
@@ -3129,7 +3129,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         uint32_t       offCurrentCmd = pFIFO[SVGA_FIFO_STOP];
         if (RT_UNLIKELY(   !VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_STOP, offFifoMin)
                         || offFifoMax <= offFifoMin
-                        || offFifoMax > VMSVGA_FIFO_SIZE
+                        || offFifoMax > pThis->svga.cbFIFO
                         || (offFifoMax & 3) != 0
                         || (offFifoMin & 3) != 0
                         || offCurrentCmd < offFifoMin
@@ -3338,7 +3338,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3CmdEscape);
 
                 /* Refetch the command buffer with the variable data; undo size increase (ugly) */
-                AssertBreak(pEscape->size < VMSVGA_FIFO_SIZE);
+                AssertBreak(pEscape->size < pThis->svga.cbFIFO);
                 uint32_t cbCmd = sizeof(SVGAFifoCmdEscape) + pEscape->size;
                 VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pEscape, SVGAFifoCmdEscape, cbCmd);
 
@@ -3439,7 +3439,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     }
                     else
                     {
-                        AssertBreak(pCmd->numPages <= VMSVGA_FIFO_SIZE / cbPageDesc);
+                        AssertBreak(pCmd->numPages <= pThis->svga.cbFIFO / cbPageDesc);
                         cbCmd += cbPageDesc * pCmd->numPages;
                     }
                 }
@@ -3710,7 +3710,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     /* All 3d commands start with a common header, which defines the size of the command. */
                     SVGA3dCmdHeader *pHdr;
                     VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pHdr, SVGA3dCmdHeader, sizeof(*pHdr));
-                    AssertBreak(pHdr->size < VMSVGA_FIFO_SIZE);
+                    AssertBreak(pHdr->size < pThis->svga.cbFIFO);
                     uint32_t cbCmd = sizeof(SVGA3dCmdHeader) + pHdr->size;
                     VMSVGAFIFO_GET_MORE_CMD_BUFFER_BREAK(pHdr, SVGA3dCmdHeader, cbCmd);
 
@@ -4444,7 +4444,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
 # ifdef DEBUG_FIFO_ACCESS
             if (RT_SUCCESS(rc))
             {
-                rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (VMSVGA_FIFO_SIZE - 1),
+                rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (pThis->svga.cbFIFO - 1),
                                                 pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
                                                 "VMSVGA FIFO");
                 AssertRC(rc);

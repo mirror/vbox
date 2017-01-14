@@ -6090,6 +6090,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "MaxBiosYRes\0"
 #ifdef VBOX_WITH_VMSVGA
                                           "VMSVGAEnabled\0"
+                                          "VMSVGAFifoSize\0"
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
                                           "VMSVGA3dEnabled\0"
@@ -6129,6 +6130,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAEnabled", &pThis->fVMSVGAEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAEnabled   = %d\n", pThis->fVMSVGAEnabled));
+
+    rc = CFGMR3QueryU32Def(pCfg, "VMSVGAFifoSize", &pThis->svga.cbFIFO, VMSVGA_FIFO_SIZE);
+    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgReturn(pThis->svga.cbFIFO >= _128K, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
+    AssertLogRelMsgReturn(pThis->svga.cbFIFO <=  _16M, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
+    AssertLogRelMsgReturn(RT_IS_POWER_OF_TWO(pThis->svga.cbFIFO), ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_NOT_POWER_OF_TWO);
+    Log(("VMSVGA: VMSVGAFifoSize  = %#x (%'u)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO));
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
     rc = CFGMR3QueryBoolDef(pCfg, "VMSVGA3dEnabled", &pThis->svga.f3DEnabled, false);
@@ -6246,7 +6254,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, VMSVGA_FIFO_SIZE,
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2 /* iRegion */, pThis->svga.cbFIFO,
                                           PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
@@ -6276,13 +6284,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate and initialize the FIFO MMIO2 memory.
          */
-        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, 2 /*iRegion*/, VMSVGA_FIFO_SIZE,
+        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, 2 /*iRegion*/, pThis->svga.cbFIFO,
                                     0 /*fFlags*/, (void **)&pThis->svga.pFIFOR3, "VMSVGA-FIFO");
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                        N_("Failed to allocate %u bytes of memory for the VMSVGA device"), VMSVGA_FIFO_SIZE);
+                                        N_("Failed to allocate %u bytes of memory for the VMSVGA device"), pThis->svga.cbFIFO);
         pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
-        pThis->svga.cbFIFO  = VMSVGA_FIFO_SIZE;
     }
 #else
     int iPCIRegionVRAM = 0;
@@ -6314,8 +6321,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (pThis->fVMSVGAEnabled)
         {
             RTR0PTR pR0Mapping = 0;
-            rc = PDMDevHlpMMIO2MapKernel(pDevIns, 2 /* iRegion */, 0 /* off */,  VMSVGA_FIFO_SIZE, "VMSVGA-FIFO", &pR0Mapping);
-            AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", VMSVGA_FIFO_SIZE, rc), rc);
+            rc = PDMDevHlpMMIO2MapKernel(pDevIns, 2 /* iRegion */, 0 /* off */,  pThis->svga.cbFIFO, "VMSVGA-FIFO", &pR0Mapping);
+            AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
             pThis->svga.pFIFOR0 = pR0Mapping;
         }
 # endif
