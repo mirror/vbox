@@ -1719,7 +1719,11 @@ typedef struct PGMREGMMIORANGE
     /** MMIO2 range identifier, for page IDs (PGMPAGE::s.idPage). */
     uint8_t                             idMmio2;
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
-    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 : 2];
+    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 6 + 8 : 2 + 8];
+    /** The real size.
+     * This may be larger than indicated by RamRange.cb if the range has been
+     * reduced during saved state loading. */
+    RTGCPHYS                            cbReal;
     /** Pointer to the physical handler for MMIO. */
     R3PTRTYPE(PPGMPHYSHANDLER)          pPhysHandlerR3;
     /** Live save per page tracking data for MMIO2. */
