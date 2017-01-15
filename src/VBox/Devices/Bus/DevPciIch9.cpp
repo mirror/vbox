@@ -73,12 +73,15 @@ typedef struct
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT
- * Saved state version of the ICH9 PCI bus device.
- */
-#define VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI 1
-#define VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI   2
-#define VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI
+/** Saved state version of the ICH9 PCI bus device. */
+#define VBOX_ICH9PCI_SAVED_STATE_VERSION                VBOX_ICH9PCI_SAVED_STATE_VERSION_REGION_SIZES
+/** Adds I/O region types and sizes for dealing changes in resource regions. */
+#define VBOX_ICH9PCI_SAVED_STATE_VERSION_REGION_SIZES   3
+/** This appears to be the first state we need to care about. */
+#define VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI            2
+/** This is apparently not supported or has a grossly incomplete state, juding
+ * from hints in the code. */
+#define VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI          1
 
 /** Invalid PCI region mapping address. */
 #define INVALID_PCI_ADDRESS     UINT32_MAX
@@ -917,6 +920,7 @@ static int ich9pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
             rc = SSMR3PutU8(pSSM, pDev->Int.s.u8MsixCapSize);
             if (RT_FAILURE(rc))
                 return rc;
+
             /* Save MSI-X page state */
             if (pDev->Int.s.u8MsixCapOffset != 0)
             {
@@ -924,6 +928,14 @@ static int ich9pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
                 SSMR3PutMem(pSSM, pDev->Int.s.pMsixPageR3, 0x1000);
                 if (RT_FAILURE(rc))
                     return rc;
+            }
+
+            /* Save the type an size of all the regions. */
+            for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+            {
+                SSMR3PutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
+                rc = SSMR3PutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
+                AssertRCReturn(rc, rc);
             }
         }
     }
@@ -1197,6 +1209,75 @@ void devpciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig)
         }
 }
 
+
+/**
+ * @callback_method_impl{FNPCIIOREGIONOLDSETTER}
+ */
+static DECLCALLBACK(int) devpciR3CommonRestoreOldSetRegion(PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                           RTGCPHYS cbRegion, PCIADDRESSSPACE enmType)
+{
+    AssertLogRelReturn(iRegion < RT_ELEMENTS(pPciDev->Int.s.aIORegions), VERR_INVALID_PARAMETER);
+    pPciDev->Int.s.aIORegions[iRegion].type = enmType;
+    pPciDev->Int.s.aIORegions[iRegion].size = cbRegion;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks for and deals with changes in resource sizes and types.
+ *
+ * @returns VBox status code.
+ * @param   pSSM                The Saved state handle.
+ * @param   pPciDev             The PCI device in question.
+ * @param   paIoRegions         I/O regions with the size and type fields from
+ *                              the saved state.
+ * @param   fNewState           Set if this is a new state with I/O region sizes
+ *                              and types, clear if old one.
+ */
+int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGION paIoRegions, bool fNewState)
+{
+    int rc;
+    if (fNewState)
+    {
+        for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+        {
+            if (   pPciDev->Int.s.aIORegions[iRegion].type != paIoRegions[iRegion].type
+                || pPciDev->Int.s.aIORegions[iRegion].size != paIoRegions[iRegion].size)
+            {
+                AssertLogRelMsgFailed(("PCI: %8s/%u: region #%u size/type load change: %#RGp/%#x -> %#RGp/%#x\n",
+                                       pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance,
+                                       pPciDev->Int.s.aIORegions[iRegion].size, pPciDev->Int.s.aIORegions[iRegion].type,
+                                       paIoRegions[iRegion].size, paIoRegions[iRegion].type));
+                if (pPciDev->pfnRegionLoadChangeHookR3)
+                {
+                    rc = pPciDev->pfnRegionLoadChangeHookR3(pPciDev->Int.s.pDevInsR3, pPciDev, iRegion, paIoRegions[iRegion].size,
+                                                            (PCIADDRESSSPACE)paIoRegions[iRegion].type, NULL /*pfnOldSetter*/);
+                    if (RT_FAILURE(rc))
+                        return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,
+                                                 N_("Device %s/%u failed to respond to region #%u size/type changing from %#RGp/%#x to %#RGp/%#x: %Rrc"),
+                                                 pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, iRegion,
+                                                 pPciDev->Int.s.aIORegions[iRegion].size, pPciDev->Int.s.aIORegions[iRegion].type,
+                                                 paIoRegions[iRegion].size, paIoRegions[iRegion].type, rc);
+                }
+                pPciDev->Int.s.aIORegions[iRegion].type = paIoRegions[iRegion].type;
+                pPciDev->Int.s.aIORegions[iRegion].size = paIoRegions[iRegion].size;
+            }
+        }
+    }
+    /* Old saved state without sizes and types.  Do a special hook call to give
+       devices with changes a chance to adjust resources back to old values. */
+    else if (pPciDev->pfnRegionLoadChangeHookR3)
+    {
+        rc = pPciDev->pfnRegionLoadChangeHookR3(pPciDev->Int.s.pDevInsR3, pPciDev, UINT32_MAX, RTGCPHYS_MAX, (PCIADDRESSSPACE)-1,
+                                                devpciR3CommonRestoreOldSetRegion);
+        if (RT_FAILURE(rc))
+            return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,  N_("Device %s/%u failed to resize its resources: %Rrc"),
+                                     pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, rc);
+    }
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Common worker for ich9pciR3LoadExec and ich9pcibridgeR3LoadExec.
  *
@@ -1213,7 +1294,8 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
     int         rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-    if (uVersion != VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT)
+    if (   uVersion < VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI
+        || uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /*
@@ -1247,9 +1329,6 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
      */
     for (i = 0;; i++)
     {
-        PPDMPCIDEV  pDev;
-        PDMPCIDEV   DevTmp;
-
         /* index / terminator */
         rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
@@ -1259,6 +1338,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
         AssertMsgBreak(u32 < RT_ELEMENTS(pBus->apDevices) && u32 >= i, ("u32=%#x i=%#x\n", u32, i));
 
         /* skip forward to the device checking that no new devices are present. */
+        PPDMPCIDEV pDev;
         for (; i < u32; i++)
         {
             pDev = pBus->apDevices[i];
@@ -1280,6 +1360,8 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
             break;
 
         /* get the data */
+        PDMPCIDEV DevTmp;
+        RT_ZERO(DevTmp);
         DevTmp.Int.s.fFlags = 0;
         DevTmp.Int.s.u8MsiCapOffset = 0;
         DevTmp.Int.s.u8MsiCapSize = 0;
@@ -1306,7 +1388,20 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
                 break;
         }
 
-        /* check that it's still around. */
+        /* Load the region types and sizes. */
+        if (uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_REGION_SIZES)
+        {
+            for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+            {
+                SSMR3GetU8(pSSM, &DevTmp.Int.s.aIORegions[iRegion].type);
+                rc = SSMR3GetU64(pSSM, &DevTmp.Int.s.aIORegions[iRegion].size);
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+
+        /*
+         * Check that it's still around.
+         */
         pDev = pBus->apDevices[i];
         if (!pDev)
         {
@@ -1334,6 +1429,10 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSS
         }
 
         /* commit the loaded device config. */
+        rc = devpciR3CommonRestoreRegions(pSSM, pDev, DevTmp.Int.s.aIORegions,
+                                          uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_REGION_SIZES);
+        if (RT_FAILURE(rc))
+            break;
         Assert(!pciDevIsPassthrough(pDev));
         devpciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0]);
 
@@ -1362,9 +1461,9 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
     int             rc;
 
     /* We ignore this version as there's no saved state with it anyway */
-    if (uVersion == VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI)
+    if (uVersion <= VBOX_ICH9PCI_SAVED_STATE_VERSION_NOMSI)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    if (uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI)
+    if (uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /*
@@ -1391,8 +1490,6 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
 static DECLCALLBACK(int) ich9pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVPCIBUS pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    if (uVersion > VBOX_ICH9PCI_SAVED_STATE_VERSION_MSI)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     return ich9pciR3CommonLoadExec(pThis, pSSM, uVersion, uPass);
 }
 
@@ -2729,7 +2826,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         }
     }
 
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT,
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION,
                                 sizeof(*pBus) + 16*128, "pgm",
                                 NULL, NULL, NULL,
                                 NULL, ich9pciR3SaveExec, NULL,
@@ -2971,7 +3068,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
      * Register SSM handlers. We use the same saved state version as for the host bridge
      * to make changes easier.
      */
-    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT,
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION,
                                 sizeof(*pBus) + 16*128,
                                 "pgm" /* before */,
                                 NULL, NULL, NULL,

@@ -147,7 +147,7 @@ int main()
     GEN_CHECK_OFF(PDMPCIDEV, abConfig);
     GEN_CHECK_OFF(PDMPCIDEV, uDevFn);
     GEN_CHECK_OFF(PDMPCIDEV, pszNameR3);
-    GEN_CHECK_OFF(PDMPCIDEV, pvReserved);
+    GEN_CHECK_OFF(PDMPCIDEV, pfnRegionLoadChangeHookR3);
     GEN_CHECK_OFF(PDMPCIDEV, Int);
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.aIORegions);
     GEN_CHECK_OFF(PDMPCIDEV, Int.s.aIORegions[1]);

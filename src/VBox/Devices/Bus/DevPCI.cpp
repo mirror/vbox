@@ -67,10 +67,15 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def VBOX_PCI_SAVED_STATE_VERSION
- * Saved state version of the PCI bus device.
- */
-#define VBOX_PCI_SAVED_STATE_VERSION 3
+/** Saved state version of the PCI bus device. */
+#define VBOX_PCI_SAVED_STATE_VERSION                VBOX_PCI_SAVED_STATE_VERSION_REGION_SIZES
+/** Adds I/O region types and sizes for dealing changes in resource regions. */
+#define VBOX_PCI_SAVED_STATE_VERSION_REGION_SIZES   4
+/** Before region sizes, the first named one.
+ * Looking at the code though, we support even older version.  */
+#define VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES     3
+/** Notes whether we use the I/O APIC. */
+#define VBOX_PCI_SAVED_STATE_VERSION_USE_IO_APIC    2
 
 
 /*********************************************************************************************************************************
@@ -885,9 +890,14 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
             SSMR3PutU32(pSSM, i);
             SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
 
-            int rc = SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
-            if (RT_FAILURE(rc))
-                return rc;
+            SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
+
+            /* Save the type an size of all the regions. */
+            for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+            {
+                SSMR3PutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
+                SSMR3PutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
+            }
         }
     }
     return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
@@ -970,14 +980,11 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
      */
     for (i = 0;; i++)
     {
-        PDMPCIDEV   DevTmp;
-        PPDMPCIDEV  pDev;
-
         /* index / terminator */
         rc = SSMR3GetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
-        if (u32 == (uint32_t)~0)
+        if (u32 == UINT32_MAX)
             break;
         if (    u32 >= RT_ELEMENTS(pBus->apDevices)
             ||  u32 < i)
@@ -1000,9 +1007,11 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
         }
 
         /* get the data */
+        PDMPCIDEV DevTmp;
+        RT_ZERO(DevTmp);
         DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
         SSMR3GetMem(pSSM, DevTmp.abConfig, sizeof(DevTmp.abConfig));
-        if (uVersion < 3)
+        if (uVersion < VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES)
         {
             int32_t i32Temp;
             /* Irq value not needed anymore. */
@@ -1017,8 +1026,19 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
                 return rc;
         }
 
+        /* Load the region types and sizes. */
+        if (uVersion >= VBOX_PCI_SAVED_STATE_VERSION_REGION_SIZES)
+        {
+            for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
+            {
+                SSMR3GetU8(pSSM, &DevTmp.Int.s.aIORegions[iRegion].type);
+                rc = SSMR3GetU64(pSSM, &DevTmp.Int.s.aIORegions[iRegion].size);
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+
         /* check that it's still around. */
-        pDev = pBus->apDevices[i];
+        PPDMPCIDEV pDev = pBus->apDevices[i];
         if (!pDev)
         {
             LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
@@ -1032,10 +1052,15 @@ static DECLCALLBACK(int) pciR3CommonLoadExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM, u
         /* match the vendor id assuming that this will never be changed. */
         if (   DevTmp.abConfig[0] != pDev->abConfig[0]
             || DevTmp.abConfig[1] != pDev->abConfig[1])
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
+            return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                    N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
                                     i, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
+        rc = devpciR3CommonRestoreRegions(pSSM, pDev, DevTmp.Int.s.aIORegions,
+                                          uVersion >= VBOX_PCI_SAVED_STATE_VERSION_REGION_SIZES);
+        if (RT_FAILURE(rc))
+            break;
         devpciR3CommonRestoreConfig(pDev, &DevTmp.abConfig[0]);
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
@@ -1066,11 +1091,11 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
      * Bus state data.
      */
     SSMR3GetU32(pSSM, &pThis->uConfigReg);
-    if (uVersion > 1)
+    if (uVersion >= VBOX_PCI_SAVED_STATE_VERSION_USE_IO_APIC)
         SSMR3GetBool(pSSM, &pThis->fUseIoApic);
 
     /* Load IRQ states. */
-    if (uVersion > 2)
+    if (uVersion >= VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES)
     {
         for (uint8_t i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->Piix3.auPciLegacyIrqLevels[i]);
@@ -1085,7 +1110,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 != (uint32_t)~0)
+    if (u32 != UINT32_MAX)
         AssertMsgFailedReturn(("u32=%#x\n", u32), rc);
 
     /*

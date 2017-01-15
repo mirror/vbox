@@ -80,7 +80,7 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
  * @returns VBox status code.
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
+ * @param   pPciDev         Pointer to the PCI device.
  * @param   iRegion         The region number.
  * @param   GCPhysAddress   Physical address of the region. If enmType is PCI_ADDRESS_SPACE_IO, this
  *                          is an I/O port, otherwise it's a physical address.
@@ -99,6 +99,22 @@ typedef DECLCALLBACK(int) FNPCIIOREGIONMAP(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
 /** Pointer to a FNPCIIOREGIONMAP() function. */
 typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
+
+
+/**
+ * Sets the size and type for old saved states from within a
+ * PDMPCIDEV::pfnRegionLoadChangeHookR3 callback.
+ *
+ * @returns VBox status code.
+ * @param   pPciDev         Pointer to the PCI device.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        The region size.
+ * @param   enmType         Combination of the PCI_ADDRESS_SPACE_* values.
+ */
+typedef DECLCALLBACK(int) FNPCIIOREGIONOLDSETTER(PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion, PCIADDRESSSPACE enmType);
+/** Pointer to a FNPCIIOREGIONOLDSETTER() function. */
+typedef FNPCIIOREGIONOLDSETTER *PFNPCIIOREGIONOLDSETTER;
+
 
 
 /*
@@ -141,9 +157,34 @@ typedef struct PDMPCIDEV
     uint32_t                Alignment0; /**< Alignment. */
     /** Device name. */
     R3PTRTYPE(const char *) pszNameR3;
-    /** Reserved. */
-    RTR3PTR                 pvReserved;
     /** @} */
+
+    /**
+     * Callback for dealing with size changes.
+     *
+     * This is set by the PCI device when needed.  It is only needed if any changes
+     * in the PCI resources have been made that may be incompatible with saved state
+     * (i.e. does not reflect configuration, but configuration defaults changed).
+     *
+     * The implementation can use PDMDevHlpMMIOExReduce to adjust the resource
+     * allocation down in size.  There is currently no way of growing resources.
+     * Dropping a resource is automatic.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         Pointer to the device instance the PCI device
+     *                          belongs to.
+     * @param   pPciDev         Pointer to the PCI device.
+     * @param   iRegion         The region number or UINT32_MAX if old saved state call.
+     * @param   cbRegion        The size being loaded, RTGCPHYS_MAX if old saved state
+     *                          call, or 0 for dummy 64-bit top half region.
+     * @param   enmType         The type being loaded, -1 if old saved state call, or
+     *                          0xff if dummy 64-bit top half region.
+     * @param   pfnOldSetter    Callback for setting size and type for call
+     *                          regarding old saved states.  NULL otherwise.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRegionLoadChangeHookR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                         uint64_t cbRegion, PCIADDRESSSPACE enmType,
+                                                         PFNPCIIOREGIONOLDSETTER pfnOldSetter));
 } PDMPCIDEV;
 #ifdef PDMPCIDEVINT_DECLARED
 AssertCompile(RT_SIZEOFMEMB(PDMPCIDEV, Int.s) <= RT_SIZEOFMEMB(PDMPCIDEV, Int.padding));
