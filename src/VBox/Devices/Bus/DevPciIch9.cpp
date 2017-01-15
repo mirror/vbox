@@ -1245,7 +1245,7 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
                 || pPciDev->Int.s.aIORegions[iRegion].size != paIoRegions[iRegion].size)
             {
                 AssertLogRelMsgFailed(("PCI: %8s/%u: region #%u size/type load change: %#RGp/%#x -> %#RGp/%#x\n",
-                                       pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance,
+                                       pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, iRegion,
                                        pPciDev->Int.s.aIORegions[iRegion].size, pPciDev->Int.s.aIORegions[iRegion].type,
                                        paIoRegions[iRegion].size, paIoRegions[iRegion].type));
                 if (pPciDev->pfnRegionLoadChangeHookR3)
