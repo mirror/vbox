@@ -5495,6 +5495,64 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 }
 
 
+#ifdef VBOX_WITH_VMSVGA /* Currently not needed in the non-VMSVGA mode, but keeping it flexible for later. */
+/**
+ * @interface_method_impl{PDMPCIDEV,pfnRegionLoadChangeHookR3}
+ */
+static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                      uint64_t cbRegion, PCIADDRESSSPACE enmType,
+                                                      PFNPCIIOREGIONOLDSETTER pfnOldSetter)
+{
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+# ifdef VBOX_WITH_VMSVGA
+    /*
+     * The VMSVGA changed the default FIFO size from 128KB to 2MB after 5.1.
+     */
+    if (pThis->fVMSVGAEnabled)
+    {
+        if (iRegion == 2 /*FIFO*/)
+        {
+            /* Make sure it's still 32-bit memory.  Ignore fluxtuations in the prefetch flag */
+            AssertLogRelMsgReturn(!(enmType & (PCI_ADDRESS_SPACE_IO | PCI_ADDRESS_SPACE_BAR64)), ("enmType=%#x\n", enmType),
+                                  VERR_VGA_UNEXPECTED_PCI_REGION_LOAD_CHANGE);
+
+            /* If the size didn't change we're fine, so just return already. */
+            if (cbRegion == pThis->svga.cbFIFO)
+                return VINF_SUCCESS;
+
+            /* If the size is larger than the current configuration, refuse to load. */
+            AssertLogRelMsgReturn(cbRegion <= pThis->svga.cbFIFOConfig,
+                                  ("cbRegion=%#RGp cbFIFOConfig=%#x cbFIFO=%#x\n",
+                                   cbRegion, pThis->svga.cbFIFOConfig, pThis->svga.cbFIFO),
+                                  VERR_SSM_LOAD_CONFIG_MISMATCH);
+
+            /* Adjust the size down. */
+            int rc = PDMDevHlpMMIOExReduce(pDevIns, pPciDev, iRegion, cbRegion);
+            AssertLogRelMsgRCReturn(rc,
+                                    ("cbRegion=%#RGp cbFIFOConfig=%#x cbFIFO=%#x: %Rrc\n",
+                                     cbRegion, pThis->svga.cbFIFOConfig, pThis->svga.cbFIFO, rc),
+                                    rc);
+            pThis->svga.cbFIFO = cbRegion;
+            return rc;
+
+        }
+        /* Emulate callbacks for 5.1 and older saved states by recursion. */
+        else if (iRegion == UINT32_MAX)
+        {
+            int rc = vgaR3PciRegionLoadChangeHook(pDevIns, pPciDev, 2, VMSVGA_FIFO_SIZE_OLD, PCI_ADDRESS_SPACE_MEM, NULL);
+            if (RT_SUCCESS(rc))
+                rc = pfnOldSetter(pPciDev, 2, VMSVGA_FIFO_SIZE_OLD, PCI_ADDRESS_SPACE_MEM);
+            return rc;
+        }
+    }
+# endif /* VBOX_WITH_VMSVGA */
+
+    return VERR_VGA_UNEXPECTED_PCI_REGION_LOAD_CHANGE;
+}
+#endif /* VBOX_WITH_VMSVGA */
+
+
 /* -=-=-=-=-=- Ring3: Misc Wrappers & Sidekicks -=-=-=-=-=- */
 
 /**
@@ -6136,6 +6194,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertLogRelMsgReturn(pThis->svga.cbFIFO >= _128K, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(pThis->svga.cbFIFO <=  _16M, ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(RT_IS_POWER_OF_TWO(pThis->svga.cbFIFO), ("cbFIFO=%#x\n", pThis->svga.cbFIFO), VERR_NOT_POWER_OF_TWO);
+    pThis->svga.cbFIFOConfig = pThis->svga.cbFIFO;
     Log(("VMSVGA: VMSVGAFifoSize  = %#x (%'u)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO));
 #endif
 #ifdef VBOX_WITH_VMSVGA3D
@@ -6258,6 +6317,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
+        pThis->Dev.pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
     else
 #endif /* VBOX_WITH_VMSVGA */

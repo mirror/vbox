@@ -462,6 +462,7 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pvFIFOExtCmdParam),
     SSMFIELD_ENTRY_IGN_GCPHYS(      VMSVGAState, GCPhysFIFO),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cbFIFO),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cbFIFOConfig),
     SSMFIELD_ENTRY(                 VMSVGAState, u32SVGAId),
     SSMFIELD_ENTRY(                 VMSVGAState, fEnabled),
     SSMFIELD_ENTRY(                 VMSVGAState, fConfigured),
@@ -4438,6 +4439,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             /*
              * Mapping the FIFO RAM.
              */
+            AssertLogRelMsg(cb == pThis->svga.cbFIFO, ("cb=%#RGp cbFIFO=%#x\n", cb, pThis->svga.cbFIFO));
             rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
             AssertRC(rc);
 
@@ -4453,7 +4455,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             if (RT_SUCCESS(rc))
             {
                 pThis->svga.GCPhysFIFO = GCPhysAddress;
-                Log(("vmsvgaR3IORegionMap: FIFO address = %RGp\n", GCPhysAddress));
+                Log(("vmsvgaR3IORegionMap: GCPhysFIFO=%RGp cbFIFO=%#x\n", GCPhysAddress, pThis->svga.cbFIFO));
             }
         }
         else

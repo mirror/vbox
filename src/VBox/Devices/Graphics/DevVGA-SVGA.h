@@ -25,7 +25,9 @@
 
 
 /** Default FIFO size. */
-#define VMSVGA_FIFO_SIZE                _128K
+#define VMSVGA_FIFO_SIZE                _2M
+/** The old FIFO size. */
+#define VMSVGA_FIFO_SIZE_OLD            _128K
 
 /** Default scratch region size. */
 #define VMSVGA_SCRATCH_SIZE             0x100
@@ -158,8 +160,11 @@ typedef struct VMSVGAState
 
     /** Guest physical address of the FIFO memory range. */
     RTGCPHYS                    GCPhysFIFO;
-    /** Size in bytes of the FIFO memory range. */
+    /** Size in bytes of the FIFO memory range.
+     * This may be smaller than cbFIFOConfig after restoring an old VM state.  */
     uint32_t                    cbFIFO;
+    /** The configured FIFO size. */
+    uint32_t                    cbFIFOConfig;
     /** SVGA id. */
     uint32_t                    u32SVGAId;
     /** SVGA extensions enabled or not. */
@@ -175,10 +180,8 @@ typedef struct VMSVGAState
     uint32_t                    fTraces;
     /** Guest OS identifier. */
     uint32_t                    u32GuestId;
-    /** Scratch region size. */
+    /** Scratch region size (VMSVGAState::au32ScratchRegion). */
     uint32_t                    cScratchRegion;
-    /** Scratch array. */
-    uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
     /** Irq status. */
     uint32_t                    u32IrqStatus;
     /** Irq mask. */
@@ -189,7 +192,6 @@ typedef struct VMSVGAState
     uint32_t                    u32CurrentGMRId;
     /** Register caps. */
     uint32_t                    u32RegCaps;
-    uint32_t                    Padding2;
     /** Physical address of command mmio range. */
     RTIOPORT                    BasePort;
     RTIOPORT                    Padding3;
@@ -232,6 +234,10 @@ typedef struct VMSVGAState
     /** FIFO debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hFifoAccessHandlerType;
 #endif
+
+    /** Scratch array.
+     * Putting this at the end since it's big it probably not . */
+    uint32_t                    au32ScratchRegion[VMSVGA_SCRATCH_SIZE];
 
     STAMCOUNTER                 StatRegBitsPerPixelWr;
     STAMCOUNTER                 StatRegBusyWr;
