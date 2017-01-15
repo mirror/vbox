@@ -1719,6 +1719,8 @@
 #define VERR_VGA_INVALID_CUSTOM_MODE                (-3500)
 /** The display connector is resizing. */
 #define VINF_VGA_RESIZE_IN_PROGRESS                 (3501)
+/** Unexpected PCI region change during VGA saved state loading. */
+#define VERR_VGA_UNEXPECTED_PCI_REGION_LOAD_CHANGE  (-3502)
 /** @} */
 
 
