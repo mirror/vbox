@@ -5007,7 +5007,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     bool const fResumeVM = RT_BOOL(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED);
     /** @todo Add stats for resume vs launch. */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = HMR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
+    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
 #else
     int rc = pVCpu->hm.s.vmx.pfnStartVM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif
@@ -5146,7 +5146,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "CS: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "CS: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_DS_SEL, &u32Val);      AssertRC(rc);
@@ -5154,7 +5154,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "DS: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "DS: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_ES_SEL, &u32Val);      AssertRC(rc);
@@ -5162,7 +5162,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "ES: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "ES: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_FS_SEL, &u32Val);      AssertRC(rc);
@@ -5170,7 +5170,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "FS: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "FS: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_GS_SEL, &u32Val);      AssertRC(rc);
@@ -5178,7 +5178,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "GS: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "GS: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_SS_SEL, &u32Val);      AssertRC(rc);
@@ -5186,7 +5186,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "SS: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "SS: ");
                 }
 
                 rc = VMXReadVmcs32(VMX_VMCS16_HOST_TR_SEL,  &u32Val);     AssertRC(rc);
@@ -5194,7 +5194,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 if (u32Val < HostGdtr.cbGdt)
                 {
                     pDesc  = (PCX86DESCHC)(HostGdtr.pGdt + (u32Val & X86_SEL_MASK));
-                    HMR0DumpDescriptor(pDesc, u32Val, "TR: ");
+                    hmR0DumpDescriptor(pDesc, u32Val, "TR: ");
                 }
 
                 rc = VMXReadVmcsHstN(VMX_VMCS_HOST_TR_BASE, &uHCReg);       AssertRC(rc);
@@ -5314,7 +5314,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
 
-    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
     RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
 
     /* Clear VMCS. Marking it inactive, clearing implementation-specific data and writing VMCS data back to memory. */
@@ -5375,7 +5375,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 {
     NOREF(fResume);
 
-    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
     RTHCPHYS HCPhysCpuPage = pCpu->HCPhysMemObj;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -8844,7 +8844,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR];
 
-    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
     RTCPUID  idCurrentCpu = pCpu->idCpu;
     if (   pVmxTransient->fUpdateTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
@@ -11983,7 +11983,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMix
     NOREF(pVmxTransient);
 #endif
 
-    HMDumpRegs(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
+    hmDumpRegs(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     return VERR_VMX_INVALID_GUEST_STATE;
 }
 

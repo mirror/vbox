@@ -794,7 +794,7 @@ ENDPROC SVMR0InvlpgA
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) HMR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
 ;
@@ -805,11 +805,11 @@ ENDPROC SVMR0InvlpgA
 ; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
 ; @param        pfnStartVM      msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as HMR0SVMRunWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as hmR0SVMRunWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC HMR0VMXStartVMWrapXMM
+BEGINPROC hmR0VMXStartVMWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -956,13 +956,13 @@ ALIGNCODE(8)
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
         jmp     .restore_non_volatile_host_xmm_regs
-ENDPROC   HMR0VMXStartVMWrapXMM
+ENDPROC   hmR0VMXStartVMWrapXMM
 
 ;;
 ; Wrapper around svm.pfnVMRun that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 ;
 ; @returns      eax
 ;
@@ -973,11 +973,11 @@ ENDPROC   HMR0VMXStartVMWrapXMM
 ; @param        pVCpu           msc:[rbp+30h]   The cross context virtual CPU structure of the calling EMT.
 ; @param        pfnVMRun        msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as HMR0VMXStartVMWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC HMR0SVMRunWrapXMM
+BEGINPROC hmR0SVMRunWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -1124,7 +1124,7 @@ ALIGNCODE(8)
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
         movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
         jmp     .restore_non_volatile_host_xmm_regs
-ENDPROC   HMR0SVMRunWrapXMM
+ENDPROC   hmR0SVMRunWrapXMM
 
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 

@@ -1609,24 +1609,10 @@ VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
  *
  * @returns The cpu structure pointer.
  */
-VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpu(void)
+VMMR0DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     RTCPUID idCpu = RTMpCpuId();
-    Assert(idCpu < RT_ELEMENTS(g_HmR0.aCpuInfo));
-    return &g_HmR0.aCpuInfo[idCpu];
-}
-
-
-/**
- * Returns the cpu structure for the current cpu.
- * Keep in mind that there is no guarantee it will stay the same (long jumps to ring 3!!!).
- *
- * @returns The cpu structure pointer.
- * @param   idCpu       id of the VCPU.
- */
-VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
-{
     Assert(idCpu < RT_ELEMENTS(g_HmR0.aCpuInfo));
     return &g_HmR0.aCpuInfo[idCpu];
 }
@@ -1714,7 +1700,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
         return VINF_SUCCESS;
 
     /* Ok, disable VT-x. */
-    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
     AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ && pCpu->pvMemObj && pCpu->HCPhysMemObj != NIL_RTHCPHYS, VERR_HM_IPE_2);
 
     *pfVTxDisabled = true;
@@ -1744,7 +1730,7 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         Assert(g_HmR0.fEnabled);
         Assert(g_HmR0.fGlobalInit);
 
-        PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+        PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
         AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ && pCpu->pvMemObj && pCpu->HCPhysMemObj != NIL_RTHCPHYS);
 
         VMXR0EnableCpu(pCpu, pVM, pCpu->pvMemObj, pCpu->HCPhysMemObj, false, &g_HmR0.vmx.Msrs);

@@ -1098,24 +1098,19 @@ AssertCompileMemberAlignment(HMCPU, Event, 8);
 
 
 #ifdef IN_RING0
-/** @todo r=bird: s/[[:space:]]HM/ hm/ - internal functions starts with a
- *        lower cased prefix.  HMInternal.h is an internal header, so
- *        everything here must be internal. */
-VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpu(void);
-VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu);
-
+VMMR0DECL(PHMGLOBALCPUINFO) hmR0GetCurrentCpu(void);
 
 # ifdef VBOX_STRICT
-VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
+VMMR0DECL(void) hmDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg);
 # else
-#  define HMDumpRegs(a, b ,c)            do { } while (0)
-#  define HMR0DumpDescriptor(a, b, c)    do { } while (0)
+#  define hmDumpRegs(a, b ,c)            do { } while (0)
+#  define hmR0DumpDescriptor(a, b, c)    do { } while (0)
 # endif /* VBOX_STRICT */
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int) HMR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+DECLASM(int) hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 # endif
 
 #endif /* IN_RING0 */

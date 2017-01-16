@@ -884,7 +884,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 {
     PVM pVM              = pVCpu->CTX_SUFF(pVM);
     PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = hmR0GetCurrentCpu();
 
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
@@ -2771,7 +2771,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
     {
-        HMDumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
+        hmDumpRegs(pVM, pVCpu, pCtx); NOREF(pVM);
 #ifdef VBOX_STRICT
         Log4(("ctrl.u64VmcbCleanBits             %#RX64\n",   pVmcb->ctrl.u64VmcbCleanBits));
         Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
@@ -3144,7 +3144,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     AssertMsg(!HMCPU_CF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
     /* Setup TSC offsetting. */
-    RTCPUID idCurrentCpu = HMR0GetCurrentCpu()->idCpu;
+    RTCPUID idCurrentCpu = hmR0GetCurrentCpu()->idCpu;
     if (   pSvmTransient->fUpdateTscOffsetting
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
@@ -3174,7 +3174,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     /* Flush the appropriate tagged-TLB entries. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0SvmFlushTaggedTlb(pVCpu);
-    Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
+    Assert(hmR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
