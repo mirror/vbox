@@ -78,17 +78,6 @@ public:
         size_t      cbData;
     };
 
-    /**
-     * Block type to write.
-     */
-    enum BlockType
-    {
-        BlockType_Invalid = 0,
-        BlockType_Audio   = 1,
-        BlockType_Video   = 2,
-        BlockType_Raw     = 3
-    };
-
 public:
 
     WebMWriter();
@@ -109,20 +98,20 @@ public:
     /** Closes output file. */
     int Close(void);
 
-    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits);
+    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack);
 
-    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS);
+    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack);
 
     /**
      * Writes a block of compressed data.
      *
-     * @param blockType         Block type to write.
+     * @param uTrack            Track number to write data to.
      * @param pvData            Pointer to block data to write.
      * @param cbData            Size (in bytes) of block data to write.
      *
      * @returns VBox status code.
      */
-    int WriteBlock(WebMWriter::BlockType blockType, const void *pvData, size_t cbData);
+    int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData);
 
     /**
      * Gets current output file size.

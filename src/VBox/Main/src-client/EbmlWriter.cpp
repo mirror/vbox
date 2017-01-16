@@ -17,6 +17,7 @@
 
 
 #include <list>
+#include <map>
 #include <stack>
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
@@ -294,17 +295,34 @@ class WebMWriter_Impl
      */
     struct WebMTrack
     {
-        WebMTrack(WebMTrackType a_enmType, uint64_t a_offID)
+        WebMTrack(WebMTrackType a_enmType, uint8_t a_uTrack, uint64_t a_offID)
             : enmType(a_enmType)
+            , uTrack(a_uTrack)
             , offID(a_offID)
         {
-            uID = RTRandU32();
+            uUUID = RTRandU32();
         }
 
         /** The type of this track. */
         WebMTrackType enmType;
-        /** The track's UUID. */
-        uint32_t      uID;
+        /** Track parameters. */
+        union
+        {
+            struct
+            {
+                /** Sample rate of input data. */
+                uint16_t uHzIn;
+                /** Sample rate the codec is using. */
+                uint16_t uHzCodec;
+                /** Frame size (in bytes), based on the codec sample rate. */
+                size_t   cbFrameSize;
+            } Audio;
+        };
+        /** This track's track number. Also used as key in track map. */
+        uint8_t       uTrack;
+        /** The track's "UUID".
+         *  Needed in case this track gets mux'ed with tracks from other files. Not really unique though. */
+        uint32_t      uUUID;
         /** Absolute offset in file of track ID.
          *  Needed to write the hash sum within the footer. */
         uint64_t      offID;
@@ -366,8 +384,10 @@ class WebMWriter_Impl
     /** List of cue points. Needed for seeking table. */
     std::list<WebMCueEntry>     m_lstCue;
 
-    /** List of tracks. */
-    std::list<WebMTrack>        m_lstTracks;
+    /** Map of tracks.
+     *  The key marks the track number (*not* the UID!). */
+    std::map <uint8_t, WebMTrack *> m_mapTracks;
+    /** Whether we're currently in an opened tracks segment. */
     bool                        m_fTracksOpen;
 
     /** Timestamp (in ms) when the current cluster has been opened. */
@@ -379,6 +399,10 @@ class WebMWriter_Impl
     uint64_t                    m_offSegClusterStart;
 
     Ebml                        m_Ebml;
+
+public:
+
+    typedef std::map <uint8_t, WebMTrack *> WebMTracks;
 
 public:
 
@@ -396,34 +420,54 @@ public:
         , m_fClusterOpen(false)
         , m_offSegClusterStart(0) {}
 
-    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits)
+    virtual ~WebMWriter_Impl()
+    {
+        close();
+    }
+
+    int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
     {
 #ifdef VBOX_WITH_LIBOPUS
         m_Ebml.subStart(TrackEntry);
-        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_lstTracks.size());
+        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
 
-        WebMTrack TrackAudio(WebMTrackType_Audio, RTFileTell(m_Ebml.getFile()));
-        m_lstTracks.push_back(TrackAudio);
+        uint8_t uTrack = m_mapTracks.size();
 
-        if (uHz >= 44100)
-            uHz = 48000;
+        WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
+
+        /* Clamp the codec rate value if it reaches a certain threshold. */
+        if      (uHz > 24000) pTrack->Audio.uHzCodec = 48000;
+        else if (uHz > 16000) pTrack->Audio.uHzCodec = 24000;
+        else if (uHz > 12000) pTrack->Audio.uHzCodec = 16000;
+        else if (uHz > 8000 ) pTrack->Audio.uHzCodec = 12000;
+        else                  pTrack->Audio.uHzCodec = 8000;
+
+        pTrack->Audio.uHzIn = uHz;
+
+        /** @todo 1920 bytes is 40ms worth of audio data. Make this configurable. */
+        pTrack->Audio.cbFrameSize =  1920 / (48000 / pTrack->Audio.uHzCodec);
 
         /** @todo Resolve codec type. */
         OpusPrivData opusPrivData(uHz, cChannels);
 
-        m_Ebml.serializeUnsignedInteger(TrackUID, TrackAudio.uID, 4)
+        m_Ebml.serializeUnsignedInteger(TrackUID, pTrack->uUUID, 4)
               .serializeUnsignedInteger(TrackType, 2 /* Audio */)
               .serializeString(CodecID, "A_OPUS")
               .serializeData(CodecPrivate, &opusPrivData, sizeof(opusPrivData))
               .serializeUnsignedInteger(CodecDelay, 0)
               .serializeUnsignedInteger(SeekPreRoll, 80000000)
               .subStart(Audio)
-                  .serializeFloat(SamplingFrequency,       (float)uHz)
-                  .serializeUnsignedInteger(Channels,      cChannels)
-                  .serializeUnsignedInteger(BitDepth,      cBits)
+                  .serializeFloat(SamplingFrequency,  (float)pTrack->Audio.uHzCodec)
+                  .serializeUnsignedInteger(Channels, cChannels)
+                  .serializeUnsignedInteger(BitDepth, cBits)
               .subEnd(Audio)
               .subEnd(TrackEntry);
+
+        m_mapTracks[uTrack] = pTrack;
+
+        if (puTrack)
+            *puTrack = uTrack;
 
         return VINF_SUCCESS;
 #else
@@ -432,17 +476,17 @@ public:
 #endif
     }
 
-    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS)
+    int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
     {
         m_Ebml.subStart(TrackEntry);
-        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_lstTracks.size());
+        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
 
-        WebMTrack TrackVideo(WebMTrackType_Video, RTFileTell(m_Ebml.getFile()));
-        m_lstTracks.push_back(TrackVideo);
+        uint8_t uTrack = m_mapTracks.size();
+
+        WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(m_Ebml.getFile()));
 
         /** @todo Resolve codec type. */
-
-        m_Ebml.serializeUnsignedInteger(TrackUID, TrackVideo.uID /* UID */, 4)
+        m_Ebml.serializeUnsignedInteger(TrackUID, pTrack->uUUID /* UID */, 4)
               .serializeUnsignedInteger(TrackType, 1 /* Video */)
               .serializeString(CodecID, "V_VP8")
               .subStart(Video)
@@ -451,6 +495,11 @@ public:
               .serializeFloat(FrameRate, dbFPS)
               .subEnd(Video)
               .subEnd(TrackEntry);
+
+        m_mapTracks[uTrack] = pTrack;
+
+        if (puTrack)
+            *puTrack = uTrack;
 
         return VINF_SUCCESS;
     }
@@ -509,8 +558,10 @@ public:
         return VINF_SUCCESS;
     }
 
-    int writeBlockVP8(const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
+    int writeBlockVP8(const WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
     {
+        RT_NOREF(a_pTrack);
+
         /* Calculate the PTS of this frame in milliseconds. */
         int64_t tsPtsMs = a_pPkt->data.frame.pts * 1000
                         * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
@@ -569,13 +620,16 @@ public:
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
             fFlags |= 0x08; /* Invisible frame. */
 
-        return writeSimpleBlockInternal(0 /** @todo FIX! */, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
+        return writeSimpleBlockInternal(a_pTrack->uTrack, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
 
 #ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
-    int writeBlockOpus(const void *pvData, size_t cbData)
+    int writeBlockOpus(const WebMTrack *a_pTrack, const void *pvData, size_t cbData)
     {
+        AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
+        AssertReturn(a_pTrack->Audio.cbFrameSize == cbData, VERR_INVALID_PARAMETER);
+
 static uint16_t s_uTimecode = 0;
 
         if (!m_fClusterOpen)
@@ -585,13 +639,26 @@ static uint16_t s_uTimecode = 0;
             m_fClusterOpen = true;
         }
 
-        return writeSimpleBlockInternal(0 /** @todo FIX! */, s_uTimecode++, pvData, cbData, 0 /* Flags */);
+        uint64_t ts = (s_uTimecode * 1000 * 1000 * 1000) / 48000;
+
+        LogFunc(("ts=%RU64 (timecode %RU16)\n", ts, s_uTimecode));
+
+        s_uTimecode += a_pTrack->Audio.cbFrameSize;
+
+        return writeSimpleBlockInternal(a_pTrack->uTrack, ts, pvData, cbData, 0 /* Flags */);
     }
 #endif
 
-    int WriteBlock(WebMWriter::BlockType blockType, const void *pvData, size_t cbData)
+    int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
     {
         RT_NOREF(cbData); /* Only needed for assertions for now. */
+
+        WebMTracks::const_iterator itTrack = m_mapTracks.find(uTrack);
+        if (itTrack == m_mapTracks.end())
+            return VERR_NOT_FOUND;
+
+        const WebMTrack *pTrack = itTrack->second;
+        AssertPtr(pTrack);
 
         int rc;
 
@@ -601,17 +668,17 @@ static uint16_t s_uTimecode = 0;
             m_fTracksOpen = false;
         }
 
-        switch (blockType)
+        switch (pTrack->enmType)
         {
 
-            case WebMWriter::BlockType_Audio:
+            case WebMTrackType_Audio:
             {
 #ifdef VBOX_WITH_LIBOPUS
                 if (m_enmAudioCodec == WebMWriter::AudioCodec_Opus)
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
                     WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                    rc = writeBlockOpus(pData->pvData, pData->cbData);
+                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData);
                 }
                 else
 #endif /* VBOX_WITH_LIBOPUS */
@@ -619,13 +686,13 @@ static uint16_t s_uTimecode = 0;
                 break;
             }
 
-            case WebMWriter::BlockType_Video:
+            case WebMTrackType_Video:
             {
                 if (m_enmVideoCodec == WebMWriter::VideoCodec_VP8)
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
                     WebMWriter::BlockData_VP8 *pData = (WebMWriter::BlockData_VP8 *)pvData;
-                    rc = writeBlockVP8(pData->pCfg, pData->pPkt);
+                    rc = writeBlockVP8(pTrack, pData->pCfg, pData->pPkt);
                 }
                 else
                     rc = VERR_NOT_SUPPORTED;
@@ -684,6 +751,22 @@ static uint16_t s_uTimecode = 0;
         writeSeekInfo();
 
         return RTFileSeek(m_Ebml.getFile(), 0, RTFILE_SEEK_END, NULL);
+    }
+
+    int close(void)
+    {
+        WebMTracks::iterator itTrack = m_mapTracks.begin();
+        for (; itTrack != m_mapTracks.end(); ++itTrack)
+        {
+            delete itTrack->second;
+            itTrack = m_mapTracks.erase(itTrack);
+        }
+
+        Assert(m_mapTracks.size() == 0);
+
+        m_Ebml.close();
+
+        return VINF_SUCCESS;
     }
 
     friend class Ebml;
@@ -777,30 +860,29 @@ int WebMWriter::Close(void)
         return VINF_SUCCESS;
 
     int rc = m_pImpl->writeFooter();
-
-    /* Close the file in any case. */
-    m_pImpl->m_Ebml.close();
+    if (RT_SUCCESS(rc))
+        m_pImpl->close();
 
     return rc;
 }
 
-int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBitDepth)
+int WebMWriter::AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBitDepth, uint8_t *puTrack)
 {
-    return m_pImpl->AddAudioTrack(uHz, cChannels, cBitDepth);
+    return m_pImpl->AddAudioTrack(uHz, cChannels, cBitDepth, puTrack);
 }
 
-int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS)
+int WebMWriter::AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
 {
-    return m_pImpl->AddVideoTrack(uWidth, uHeight, dbFPS);
+    return m_pImpl->AddVideoTrack(uWidth, uHeight, dbFPS, puTrack);
 }
 
-int WebMWriter::WriteBlock(WebMWriter::BlockType blockType, const void *pvData, size_t cbData)
+int WebMWriter::WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
 {
     int rc;
 
     try
     {
-        rc = m_pImpl->WriteBlock(blockType, pvData, cbData);
+        rc = m_pImpl->WriteBlock(uTrack, pvData, cbData);
     }
     catch(int rc2)
     {

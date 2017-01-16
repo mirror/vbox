@@ -108,6 +108,8 @@ typedef struct VIDEORECSTREAM
 {
     /** Container context. */
     WebMWriter         *pEBML;
+    /** Track number of video stream. */
+    uint8_t             uTrackVideo;
     /** Codec data. */
     VIDEORECCODEC       Codec;
     /** Target X resolution (in pixels). */
@@ -753,7 +755,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 
     if (fHasVideoTrack)
     {
-        rc = pStream->pEBML->AddVideoTrack(uWidth, uHeight, uFps);
+        rc = pStream->pEBML->AddVideoTrack(uWidth, uHeight, uFps, &pStream->uTrackVideo);
         if (RT_FAILURE(rc))
         {
             LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
@@ -913,7 +915,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
             case VPX_CODEC_CX_FRAME_PKT:
             {
                 WebMWriter::BlockData_VP8 blockData = { &pStream->Codec.VPX.Config, pPacket };
-                rc = pStream->pEBML->WriteBlock(WebMWriter::BlockType_Video, &blockData, sizeof(blockData));
+                rc = pStream->pEBML->WriteBlock(pStream->uTrackVideo, &blockData, sizeof(blockData));
                 break;
             }
 

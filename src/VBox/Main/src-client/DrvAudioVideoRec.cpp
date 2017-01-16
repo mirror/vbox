@@ -95,6 +95,7 @@ typedef struct AVRECSTREAMOUT
      *  As every stream can be different, one codec per stream is needed. */
     AVRECCODEC           Codec;
     /** (Audio) frame buffer. */
+    PRTCIRCBUF           pCircBuf;
     uint8_t             *pvFrameBuf;
     size_t               cbFrameBufSize;
     size_t               cbFrameBufUsed;
@@ -120,6 +121,8 @@ typedef struct DRVAUDIOVIDEOREC
     /** Pointer to WebM container to write recorded audio data to.
      *  See the AVRECMODE enumeration for more information. */
     WebMWriter          *pEBML;
+    /** Track number for audio data. */
+    uint8_t              uTrack;
 } DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
 
 /** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
@@ -140,10 +143,12 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     int rc;
 
 #ifdef VBOX_WITH_LIBOPUS
+    RTCircBufCreate(&pStreamOut->pCircBuf, _4K);
+
     rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
     if (RT_SUCCESS(rc))
     {
-        size_t cbFrameBuf = sizeof(uint8_t) * _8K; /** @todo Make this configurable */
+        size_t cbFrameBuf = sizeof(uint8_t) * _4K; /** @todo Make this configurable */
 
         pStreamOut->pvFrameBuf = (uint8_t *)RTMemAlloc(cbFrameBuf);
         if (pStreamOut->pvFrameBuf)
@@ -234,7 +239,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
                 rc = pThis->pEBML->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
                                           WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
                 if (RT_SUCCESS(rc))
-                    rc = pThis->pEBML->AddAudioTrack(44100, 2, 16);
+                    rc = pThis->pEBML->AddAudioTrack(44100, 2, 16, &pThis->uTrack);
                 break;
             }
 
@@ -284,10 +289,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
+                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf2, uint32_t cbBuf2,
                                                     uint32_t *pcbWritten)
 {
-    RT_NOREF2(pvBuf, cbBuf);
+    RT_NOREF2(pvBuf2, cbBuf2);
 
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -318,7 +323,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
                  pStreamOut->Props.uHz,   pStreamOut->Props.cChannels,
                  pStreamOut->Props.cBits, pStreamOut->Props.fSigned, cSamplesToSend));
 
-    uint32_t csRead = 0;
+    uint32_t csReadTotal = 0;
 
     int rc;
 
@@ -328,61 +333,105 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 #ifdef VBOX_WITH_LIBOPUS
 
     /** @todo For now we ASSUME 25 FPS. */
-    uint16_t csFrameSize = /*pStreamOut->Props.uHz*/ 48000 / 25;
-    size_t   cbFrameSize = AUDIOMIXBUF_S2B(&pStream->MixBuf, csFrameSize);
+    uint16_t cbFrameSize = (/*pStreamOut->Props.uHz*/ 48000 / 25 /* FPS */);
 
-    rc = AudioMixBufReadCirc(&pStream->MixBuf, (uint8_t *)&pStreamOut->pvFrameBuf[pStreamOut->offFrameBufWrite],
-                             pStreamOut->cbFrameBufSize - pStreamOut->offFrameBufWrite, &csRead);
-    if (RT_SUCCESS(rc))
+    PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
+
+    while (pStreamOut->cbFrameBufUsed < cbFrameSize)
     {
-        const uint32_t cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
+        void  *pvBuf;
+        size_t cbBuf;
+        RTCircBufAcquireWriteBlock(pCircBuf, RTCircBufFree(pCircBuf), &pvBuf, &cbBuf);
 
-        pStreamOut->offFrameBufWrite =
-            (pStreamOut->offFrameBufWrite + cbRead) % pStreamOut->cbFrameBufSize;
-        Assert(pStreamOut->offFrameBufWrite <= pStreamOut->cbFrameBufSize);
-        pStreamOut->cbFrameBufUsed  += cbRead;
-        Assert(pStreamOut->cbFrameBufUsed  <= pStreamOut->cbFrameBufSize);
+        uint32_t cbRead = 0;
 
-        if (pStreamOut->cbFrameBufUsed >= cbFrameSize)
+        if (cbBuf)
         {
-            /* Opus always encodes PER FRAME, that is, 2.5, 5, 10, 20, 40 or 60 ms of audio data. */
+            uint32_t csRead = 0;
+            rc = AudioMixBufReadCirc(&pStream->MixBuf, pvBuf, cbBuf, &csRead);
+            if (RT_SUCCESS(rc))
+            {
+                AudioMixBufFinish(&pStream->MixBuf, csRead);
+
+                cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
+                csReadTotal += csRead;
+            }
+        }
+
+        RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
+
+        if (   RT_FAILURE(rc)
+            || !cbRead)
+        {
+            break;
+        }
+
+        if (RTCircBufUsed(pCircBuf) >= cbFrameSize)
+        {
+            uint8_t abSrc[_4K];
+            size_t  cbSrc = 0;
+
+            while (cbSrc < cbFrameSize)
+            {
+                RTCircBufAcquireReadBlock(pCircBuf, cbFrameSize - cbSrc, &pvBuf, &cbBuf);
+
+                if (cbBuf)
+                {
+                    memcpy(&abSrc[cbSrc], pvBuf, cbBuf);
+
+                    cbSrc += cbBuf;
+                    Assert(cbSrc <= sizeof(abSrc));
+                }
+
+                RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
+
+                if (!cbBuf)
+                    break;
+            }
+
+            /*
+             * Opus always encodes PER FRAME, that is, 2.5, 5, 10, 20, 40 or 60 ms of audio data.
+             *
+             * A packet can have up to 120ms worth of audio data.
+             * Anything > 120ms of data will result in a "corrupted package" error message by
+             * by decoding application.
+             */
             uint8_t abDst[_4K];
             size_t  cbDst = sizeof(abDst);
 
             /* Call the encoder to encode our input samples. */
+            opus_encoder_ctl(pStreamOut->Codec.Opus.pEnc, OPUS_SET_BITRATE(196000)); /** @todo */
             opus_int32 cbWritten = opus_encode(pStreamOut->Codec.Opus.pEnc,
-                                               (opus_int16 *)&pStreamOut->pvFrameBuf[pStreamOut->offFrameBufRead],
-                                               csFrameSize, abDst, cbDst);
+                                               (opus_int16 *)abSrc, cbSrc, abDst, cbDst);
             if (cbWritten > 0)
             {
-                pStreamOut->offFrameBufRead = (pStreamOut->offFrameBufRead + cbWritten) % pStreamOut->cbFrameBufSize;
-                Assert(pStreamOut->cbFrameBufUsed >= cbFrameSize);
-                pStreamOut->cbFrameBufUsed -= cbFrameSize;
-
                 /* Call the WebM writer to actually write the encoded audio data. */
                 WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
-                rc = pThis->pEBML->WriteBlock(WebMWriter::BlockType_Audio, &blockData, sizeof(blockData));
+                rc = pThis->pEBML->WriteBlock(pThis->uTrack, &blockData, sizeof(blockData));
                 AssertRC(rc);
             }
             else if (cbWritten < 0)
+            {
                 AssertMsgFailed(("Encoding failed: %s\n", opus_strerror(cbWritten)));
+                rc = VERR_INVALID_PARAMETER;
+            }
+
+            if (RT_FAILURE(rc))
+                break;
         }
     }
 #else
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
-    if (csRead)
-        AudioMixBufFinish(&pStream->MixBuf, csRead);
-
     /*
      * Always report back all samples acquired, regardless of whether the
      * encoder actually did process those.
      */
     if (pcbWritten)
-        *pcbWritten = csRead;
+        *pcbWritten = csReadTotal;
 
-    LogFlowFunc(("csRead=%RU32, rc=%Rrc\n", csRead, rc));
+    LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", csReadTotal, rc));
     return rc;
 }
 
@@ -392,6 +441,12 @@ static int avRecDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
     PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
     PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
+
+    if (pStreamOut->pCircBuf)
+    {
+        RTCircBufDestroy(pStreamOut->pCircBuf);
+        pStreamOut->pCircBuf = NULL;
+    }
 
     if (pStreamOut->pvFrameBuf)
     {
