@@ -36,12 +36,13 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 UIInformationModel::UIInformationModel(QObject *pParent, const CMachine &machine, const CConsole &console)
     : QAbstractListModel(pParent)
     , m_machine(machine)
     , m_console(console)
 {
-    /* Prepare information-model: */
+    /* Prepare: */
     prepare();
 }
 
@@ -111,7 +112,7 @@ void UIInformationModel::updateData(const QModelIndex &idx)
 
 void UIInformationModel::updateData(UIInformationDataItem *pItem)
 {
-    /* Updates data: */
+    /* Update data: */
     AssertPtrReturnVoid(pItem);
     int iRow = m_list.indexOf(pItem);
     QModelIndex index = createIndex(iRow, 0);
