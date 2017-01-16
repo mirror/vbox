@@ -58,11 +58,7 @@
 # undef LOG_GROUP
 # include "../../VMM/VMMR3/APIC.cpp"
 #undef LOG_GROUP
-#ifdef VBOX_WITH_NEW_IOAPIC
-# include "../PC/DevIoApic.cpp"
-#else
-# include "../PC/DevIoApic_Old.cpp"
-#endif
+#include "../PC/DevIoApic.cpp"
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
 #undef LOG_GROUP
@@ -327,17 +323,10 @@ int main()
 # endif
 #endif
     CHECK_MEMBER_ALIGNMENT(E1KSTATE, StatReceiveBytes, 8);
-#ifdef VBOX_WITH_NEW_IOAPIC
     CHECK_MEMBER_ALIGNMENT(IOAPIC, au64RedirTable, 8);
 # ifdef VBOX_WITH_STATISTICS
     CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMmioReadRZ, 8);
 # endif
-#else
-# ifdef VBOX_WITH_STATISTICS
-    CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMMIOReadGC, 8);
-    CHECK_MEMBER_ALIGNMENT(IOAPIC, StatMMIOReadGC, 8);
-# endif
-#endif
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, GCPhysMMIOBase, 8);
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, aMessage, 8);
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, ReplyPostQueueCritSect, 8);

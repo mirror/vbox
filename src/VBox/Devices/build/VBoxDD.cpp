@@ -65,11 +65,9 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePcBios);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_WITH_NEW_IOAPIC
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceIOAPIC);
     if (RT_FAILURE(rc))
         return rc;
-#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePS2KeyboardMouse);
     if (RT_FAILURE(rc))
         return rc;

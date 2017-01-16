@@ -60,14 +60,8 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
 {
     LogFlow(("VBoxDevicesRegister: u32Version=%#x\n", u32Version));
     AssertReleaseMsg(u32Version == VBOX_VERSION, ("u32Version=%#x VBOX_VERSION=%#x\n", u32Version, VBOX_VERSION));
-    int rc;
 
-#ifndef VBOX_WITH_NEW_IOAPIC
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceIOAPIC);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
+    int rc = pCallbacks->pfnRegister(pCallbacks, &g_DeviceLPC);
     if (RT_FAILURE(rc))
         return rc;
 

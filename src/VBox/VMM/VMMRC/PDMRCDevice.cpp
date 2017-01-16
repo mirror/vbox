@@ -555,15 +555,7 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
     PVM pVM = pDevIns->Internal.s.pVMRC;
 
     if (pVM->pdm.s.IoApic.pDevInsRC)
-    {
-#ifdef VBOX_WITH_NEW_IOAPIC
         pVM->pdm.s.IoApic.pfnSetIrqRC(pVM->pdm.s.IoApic.pDevInsRC, iIrq, iLevel, uTagSrc);
-#else
-        pdmLock(pVM);
-        pVM->pdm.s.IoApic.pfnSetIrqRC(pVM->pdm.s.IoApic.pDevInsRC, iIrq, iLevel, uTagSrc);
-        pdmUnlock(pVM);
-#endif
-    }
     else if (pVM->pdm.s.IoApic.pDevInsR3)
     {
         /* queue for ring-3 execution. */
@@ -592,15 +584,7 @@ static DECLCALLBACK(void) pdmRCPciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS
     PVM pVM = pDevIns->Internal.s.pVMRC;
 
     if (pVM->pdm.s.IoApic.pDevInsRC)
-    {
-#ifdef VBOX_WITH_NEW_IOAPIC
         pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
-#else
-        pdmLock(pVM);
-        pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCPhys, uValue, uTagSrc);
-        pdmUnlock(pVM);
-#endif
-    }
     else
         AssertFatalMsgFailed(("Lazy bastarts!"));
 }
