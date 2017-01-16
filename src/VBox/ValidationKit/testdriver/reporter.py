@@ -836,7 +836,10 @@ class RemoteReporter(ReporterBase):
 
     def addLogFile(self, oSrcFile, sSrcFilename, sAltName, sDescription, sKind, sCaller, sTsPrf):
         fRc = True;
-        if sKind in [ 'text', 'log', ]  or  sKind.startswith('log/')  or  sKind.startswith('info/'):
+        if    sKind in [ 'text', 'log', 'process'] \
+           or sKind.startswith('log/') \
+           or sKind.startswith('info/') \
+           or sKind.startswith('process/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
@@ -857,7 +860,10 @@ class RemoteReporter(ReporterBase):
 
     def addLogString(self, sLog, sLogName, sDescription, sKind, sCaller, sTsPrf):
         fRc = True;
-        if sKind in [ 'text', 'log', ]  or  sKind.startswith('log/')  or  sKind.startswith('info/'):
+        if    sKind in [ 'text', 'log', 'process'] \
+           or sKind.startswith('log/') \
+           or sKind.startswith('info/') \
+           or sKind.startswith('process/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
