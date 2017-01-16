@@ -327,6 +327,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             self.oLogFile.write((u'info: %s\n' % (sText,)).encode('utf-8'));
         return 0;
 
+    def getFailureReason(self, tReason):
+        """ Gets the failure reason object for tReason. """
+        return self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
 
     def selfCheck(self):
         """ Does some self checks, looking up things we expect to be in the database and such. """
@@ -334,7 +337,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         for sAttr in dir(self.__class__):
             if sAttr.startswith('ktReason_'):
                 tReason = getattr(self.__class__, sAttr);
-                oFailureReason = self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
+                oFailureReason = self.getFailureReason(tReason);
                 if oFailureReason is None:
                     rcExit = self.eprint(u'Failed to find failure reason "%s" in category "%s" in the database!'
                                          % (tReason[1], tReason[0],));
@@ -365,9 +368,17 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         oTestBoxLogic = TestBoxLogic(self.oDb);
 
         #
+        # Generate a list of failures reasons we consider bad-testbox behavior.
+        #
+        aidFailureReasons = [
+            self.getFailureReason(self.ktReason_Host_DriverNotUnloading).idFailureReason,
+        ];
+
+        #
         # Get list of bad test boxes for given period and check them out individually.
         #
-        aidBadTestBoxes = self.oTestSetLogic.fetchBadTestBoxIds(cHoursBack = cHoursBack, tsNow = tsNow);
+        aidBadTestBoxes = self.oTestSetLogic.fetchBadTestBoxIds(cHoursBack = cHoursBack, tsNow = tsNow,
+                                                                aidFailureReasons = aidFailureReasons);
         for idTestBox in aidBadTestBoxes:
             # Skip if the testbox is already disabled or has a pending reboot command.
             try:
@@ -393,10 +404,18 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 if oSet.enmStatus == TestSetData.ksTestStatus_BadTestBox:
                     cBad += 1;
                 else:
-                    ## @todo maybe check the elapsed time here, it could still be a bad run.
-                    cOkay += 1;
-                    if iFirstOkay > iSet:
-                        iFirstOkay = iSet;
+                    # Check for bad failure reasons.
+                    oFailure = None;
+                    if oSet.enmStatus in TestSetData.kasBadTestStatuses:
+                        oFailure = self.oTestResultFailureLogic.getById(oSet.idTestResult);
+                    if oFailure is not None and oFailure.idFailureReason in aidFailureReasons:
+                        cBad += 1;
+                    else:
+                        # This is an okay test result then.
+                        ## @todo maybe check the elapsed time here, it could still be a bad run?
+                        cOkay += 1;
+                        if iFirstOkay > iSet:
+                            iFirstOkay = iSet;
                 if iSet > 10:
                     break;
 
@@ -521,7 +540,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Add the test failure reason record(s).
         #
         for idTestResult, tReason in dReasonForResultId.items():
-            oFailureReason = self.oFailureReasonLogic.cachedLookupByNameAndCategory(tReason[1], tReason[0]);
+            oFailureReason = self.getFailureReason(tReason);
             if oFailureReason is not None:
                 sComment = 'Set by $Revision$' # Handy for reverting later.
                 if idTestResult in dCommentForResultId:
@@ -640,6 +659,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         We lump the two together since the installation typically also performs
         an uninstall first and will be seeing similar issues to the uninstall.
         """
+        _ = fInstall;
+
         atSimple = self.katSimpleInstallUninstallMainLogReasons;
         if oCaseFile.oTestBox.sOs in self.kdatSimpleInstallUninstallMainLogReasonsPerOs:
             atSimple = self.kdatSimpleInstallUninstallMainLogReasonsPerOs[oCaseFile.oTestBox.sOs] + atSimple;
@@ -1137,7 +1158,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             else:
                 self.uidSelf = self.oLogin.uid;
 
+        #
         # Do the stuff.
+        #
         if rcExit == 0:
             rcExit  = self.selfCheck();
         if rcExit == 0:
@@ -1145,6 +1168,9 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             rcExit2 = self.reasoningFailures();
             if rcExit == 0:
                 rcExit = rcExit2;
+            # Redo the bad testbox management after failure reasons have been assigned (got timing issues).
+            if rcExit == 0:
+                rcExit = self.badTestBoxManagement();
 
         # Cleanup.
         self.oFailureReasonLogic     = None;
