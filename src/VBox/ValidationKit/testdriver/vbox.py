@@ -1739,8 +1739,14 @@ class TestDriver(base.TestDriver):                                              
         """
         Terminate VBoxSVC if we've got a pid file.
         """
-        self._killVBoxSVCByPidFile('%s/VBoxSVC.pid' % (self.sScratchPath,));
-        return base.TestDriver.actionAbort(self);
+        #
+        # Take default action first, then kill VBoxSVC.  The other way around
+        # is problematic since the testscript would continue running and possibly
+        # trigger a new VBoxSVC to start.
+        #
+        fRc1 = base.TestDriver.actionAbort(self);
+        fRc2 = self._killVBoxSVCByPidFile('%s/VBoxSVC.pid' % (self.sScratchPath,));
+        return fRc1 is True and fRc2 is True;
 
     def onExit(self, iRc):
         """
