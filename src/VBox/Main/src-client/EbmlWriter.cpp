@@ -759,7 +759,9 @@ static uint16_t s_uTimecode = 0;
         for (; itTrack != m_mapTracks.end(); ++itTrack)
         {
             delete itTrack->second;
-            itTrack = m_mapTracks.erase(itTrack);
+            m_mapTracks.erase(itTrack);
+
+            itTrack = m_mapTracks.begin();
         }
 
         Assert(m_mapTracks.size() == 0);
