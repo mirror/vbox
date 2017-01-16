@@ -19,27 +19,12 @@
 #define ___UIInformationModel_h___
 
 /* Qt includes: */
-#include <QMap>
-#include <QSet>
-#include <QObject>
-#include <QPointer>
 #include <QAbstractListModel>
 
-/* GUI includes: */
-#include "UIExtraDataDefs.h"
-#include "UIInformationDataItem.h"
-
 /* COM includes: */
-# include "CGuest.h"
-# include "CConsole.h"
-# include "CDisplay.h"
-# include "CMachine.h"
 # include "COMEnums.h"
-# include "CNetworkAdapter.h"
-# include "CMachineDebugger.h"
-# include "CMediumAttachment.h"
-# include "CSystemProperties.h"
-# include "CStorageController.h"
+# include "CConsole.h"
+# include "CMachine.h"
 
 /* Forward declarations: */
 class UIInformationDataItem;
@@ -60,17 +45,17 @@ public:
     /** Destructs information-model. */
     ~UIInformationModel();
 
-    /** Returns the row-count for item specified by the @a parentIdx. */
-    int rowCount(const QModelIndex &parentIdx = QModelIndex()) const;
+    /** Returns the row-count for item specified by the @a parentIndex. */
+    virtual int rowCount(const QModelIndex &parentIndex = QModelIndex()) const /* override */;
 
     /** Returns the data for item specified by the @a index and the @a role. */
-    QVariant data(const QModelIndex &idx, int role = Qt::DisplayRole) const;
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const /* override */;
 
     /** Adds the @a pItem into the model. */
     void addItem(UIInformationDataItem *pItem);
 
     /** Updates the data for item specified by the @a index. */
-    void updateData(const QModelIndex &idx);
+    void updateData(const QModelIndex &index);
 
 public slots:
 

@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 # include "UIInformationRuntime.h"
+# include "UIInformationDataItem.h"
 # include "UIInformationItem.h"
 # include "UIInformationView.h"
 # include "UIExtraDataManager.h"

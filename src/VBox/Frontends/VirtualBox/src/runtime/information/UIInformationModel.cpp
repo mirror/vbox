@@ -19,18 +19,7 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Qt includes: */
-# include <QFont>
-# include <QHash>
-# include <QBrush>
-# include <QGraphicsView>
-# include <QGraphicsScene>
-# include <QGraphicsSceneContextMenuEvent>
-
 /* GUI includes: */
-# include "VBoxGlobal.h"
-# include "UIConverter.h"
-# include "UIExtraDataManager.h"
 # include "UIInformationModel.h"
 # include "UIInformationDataItem.h"
 
@@ -52,7 +41,7 @@ UIInformationModel::~UIInformationModel()
     cleanup();
 }
 
-int UIInformationModel::rowCount(const QModelIndex& /*parent */) const
+int UIInformationModel::rowCount(const QModelIndex & /* parentIndex */) const
 {
     /* Return row-count: */
     return m_list.count();
@@ -60,10 +49,8 @@ int UIInformationModel::rowCount(const QModelIndex& /*parent */) const
 
 QVariant UIInformationModel::data(const QModelIndex &index, int role) const
 {
-    /* Get row: */
-    int row = index.row();
     /* Get item at the row: */
-    UIInformationDataItem *pItem = m_list.at(row);
+    UIInformationDataItem *pItem = m_list.at(index.row());
     /* Return the data for the corresponding role: */
     return pItem->data(index, role);
 }
@@ -76,10 +63,10 @@ void UIInformationModel::addItem(UIInformationDataItem *pItem)
     m_list.append(pItem);
 }
 
-void UIInformationModel::updateData(const QModelIndex &idx)
+void UIInformationModel::updateData(const QModelIndex &index)
 {
     /* Emit data-changed signal: */
-    emit dataChanged(idx, idx);
+    emit dataChanged(index, index);
 }
 
 void UIInformationModel::updateData(UIInformationDataItem *pItem)
