@@ -70,7 +70,7 @@ class SystemChangelogLogic(ModelLogicBase):
     ## @}
 
     ## Mapping a changelog entry kind to a table, key and clue.
-    kdWhatToTable = dict({
+    kdWhatToTable = dict({  # pylint: disable=W0142
         ksWhat_TestBox:          ( 'TestBoxes',          'idTestBox',           None, ),
         ksWhat_TestCase:         ( 'TestCasees',         'idTestCase',          None, ),
         ksWhat_Blacklisting:     ( 'Blacklist',          'idBlacklisting',      None, ),
@@ -83,7 +83,7 @@ class SystemChangelogLogic(ModelLogicBase):
         ksWhat_TestGroup:        ( 'TestGroupes',        'idTestGroup',         None, ),
         ksWhat_User:             ( 'Users',              'idUser',              None, ),
         ksWhat_TestResult:       ( 'TestResults',        'idTestResult',        None, ),
-    }, **{sEvent: ( 'SystemLog',  'tsCreated',  'TimestampId', ) for sEvent in SystemLogData.kasEvents}); # pylint: disable=W0142
+    }, **{sEvent: ( 'SystemLog',  'tsCreated',  'TimestampId', ) for sEvent in SystemLogData.kasEvents});
 
     ## The table key is the effective timestamp. (Can't be used above for some weird scoping reason.)
     ksClue_TimestampId = 'TimestampId';
