@@ -45,7 +45,7 @@ from testmanager.core.base              import TMExceptionBase;
 from testmanager.core.globalresource    import GlobalResourceLogic;
 from testmanager.core.testboxstatus     import TestBoxStatusData, TestBoxStatusLogic;
 from testmanager.core.testbox           import TestBoxData, TestBoxLogic;
-from testmanager.core.testresults       import TestResultLogic;
+from testmanager.core.testresults       import TestResultLogic, TestResultFileData;
 from testmanager.core.testset           import TestSetData, TestSetLogic;
 from testmanager.core.systemlog         import SystemLogData, SystemLogLogic;
 from testmanager.core.schedulerbase     import SchedulerBase;
@@ -703,29 +703,7 @@ class TestBoxController(object): # pylint: disable=R0903
                           ]:
             raise TestBoxControllerException('Invalid MIME type "%s"' % (sMime,));
 
-        if sKind not in [ 'log/release/vm',
-                          'log/debug/vm',
-                          'log/release/svc',
-                          'log/debug/svc',
-                          'log/release/client',
-                          'log/debug/client',
-                          'log/installer',
-                          'log/uninstaller',
-                          'log/guest/kernel',
-                          'log/host/vmprocess',
-                          'crash/report/vm',
-                          'crash/dump/vm',
-                          'crash/report/svc',
-                          'crash/dump/svc',
-                          'crash/report/client',
-                          'crash/dump/client',
-                          'info/collection',
-                          'info/vgatext',
-                          'misc/other',
-                          'screenshot/failure',
-                          'screenshot/success',
-                          #'screencapture/failure',
-                          ]:
+        if sKind not in TestResultFileData.kasKinds:
             raise TestBoxControllerException('Invalid kind "%s"' % (sKind,));
 
         if len(sDesc) > 256:

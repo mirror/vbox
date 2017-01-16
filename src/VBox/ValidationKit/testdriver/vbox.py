@@ -2575,17 +2575,17 @@ class TestDriver(base.TestDriver):                                              
         # If the host is out of memory, just skip all the info collection as it
         # requires memory too and seems to wedge.
         #
+        sHostProcessInfo    = None;
         sLastScreenshotPath = None;
         sOsKernelLog        = None;
         sVgaText            = None;
         asMiscInfos         = [];
-        sHostProcessInfo    = None;
-
-        # Try to fetch the VM process info before meddling with its state.
-        if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
-            sHostProcessInfo = utils.processGetInfo(oSession.getPid());
 
         if not oSession.fHostMemoryLow:
+            # Try to fetch the VM process info before meddling with its state.
+            if self.fAlwaysUploadLogs or reporter.testErrorCount() > 0:
+                sHostProcessInfo = utils.processGetInfo(oSession.getPid(), fSudo = True);
+
             #
             # Pause the VM if we're going to take any screenshots or dig into the
             # guest.  Failures are quitely ignored.
@@ -2741,7 +2741,7 @@ class TestDriver(base.TestDriver):                                              
 
         # Add the host process info if we were able to retrieve it.
         if sHostProcessInfo is not None:
-            reporter.addLogString(sHostProcessInfo, 'vmprocess.log', 'log/host/vmprocess', 'VM process state');
+            reporter.addLogString(sHostProcessInfo, 'vmprocess.log', 'process/report/vm', 'VM process state');
 
         return fRc;
 
