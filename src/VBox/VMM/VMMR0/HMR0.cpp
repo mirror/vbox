@@ -1747,7 +1747,7 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
  * @param   Sel      Selector number.
  * @param   pszMsg   Message to prepend the log entry with.
  */
-VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
+VMMR0DECL(void) hmR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
