@@ -267,7 +267,7 @@ static int ich9pciDataWriteAddr(PDEVPCIROOT pPciRoot, PciAddress* pAddr,
         }
     }
 
-    Log2(("ich9pciDataWriteAddr: %02x:%02x:%02x reg %x(%d) %x %Rrc\n",
+    Log2(("ich9pciDataWriteAddr: %02x:%02x.%d reg %x(%d) %x %Rrc\n",
           pAddr->iBus, pAddr->iDeviceFunc >> 3, pAddr->iDeviceFunc & 0x7, pAddr->iRegister,
           cb, val, rc));
     return rc;
@@ -386,7 +386,7 @@ static int ich9pciDataReadAddr(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr, int c
             ich9pciNoMem(pu32, cb);
     }
 
-    Log3(("ich9pciDataReadAddr: %02x:%02x:%02x reg %x(%d) gave %x %Rrc\n",
+    Log3(("ich9pciDataReadAddr: %02x:%02x.%d reg %x(%d) gave %x %Rrc\n",
           pPciAddr->iBus, pPciAddr->iDeviceFunc >> 3, pPciAddr->iDeviceFunc & 0x7, pPciAddr->iRegister,
           cb, *pu32, rc));
     return rc;
@@ -1554,7 +1554,7 @@ static void ich9pciBiosInitSetRegionAddress(PDEVPCIROOT pPciRoot, uint8_t uBus, 
 
 static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn)
 {
-    Log(("BIOS init bridge: %02x::%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+    Log(("BIOS init bridge: %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
     /*
      * The I/O range for the bridge must be aligned to a 4KB boundary.
@@ -2163,7 +2163,7 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
                         && uMemBase > 0
                         && !(   uMemBase <= UINT32_C(0xffffffff)
                              && uLast    >= UINT32_C(0xfec00000))
-                        && uMemBase <= UINT64_C(0xffffffff00000000) )
+                        && uMemBase < UINT64_C(0xffffffff00000000) )
                         uNew = uMemBase;
                 }
             }
@@ -2474,7 +2474,7 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
      * are doing something non-trivial (like implementing an indirect
      * passthrough approach), because then the abConfig array is an imprecise
      * cache needed for efficiency (so that certain reads can be done from
-     * R0/GC), but far from authoritative or what the guest would see. */
+     * R0/RC), but far from authoritative or what the guest would see. */
 
     for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
     {
@@ -2487,7 +2487,7 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
              * For passthrough devices MSI/MSI-X mostly reflects the way interrupts delivered to the guest,
              * as host driver handles real devices interrupts.
              */
-            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s%s: %04x-%04x %s%s%s",
+            pHlp->pfnPrintf(pHlp, "%02x:%02x.%d %s%s: %04x-%04x %s%s%s",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
                             pPciDev->pszNameR3,
                             pciDevIsPassthrough(pPciDev) ? " (PASSTHROUGH)" : "",
@@ -2560,9 +2560,14 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
             devpciR3InfoIndent(pHlp, iIndentLvl + 2);
             uint16_t iCmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
             uint16_t iStatus = ich9pciGetWord(pPciDev, VBOX_PCI_STATUS);
-            pHlp->pfnPrintf(pHlp, "Command: %04X, Status: %04x\n", iCmd, iStatus);
+            pHlp->pfnPrintf(pHlp, "Command: %04x, Status: %04x\n", iCmd, iStatus);
             devpciR3InfoIndent(pHlp, iIndentLvl + 2);
             pHlp->pfnPrintf(pHlp, "Bus master: %s\n", iCmd & VBOX_PCI_COMMAND_MASTER ? "Yes" : "No");
+            if (iCmd != PDMPciDevGetCommand(pPciDev))
+            {
+                devpciR3InfoIndent(pHlp, iIndentLvl + 2);
+                pHlp->pfnPrintf(pHlp, "CACHE INCONSISTENCY: Command: %04x\n", PDMPciDevGetCommand(pPciDev));
+            }
 
             if (fRegisters)
             {
@@ -2589,11 +2594,22 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
         for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
         {
             PDEVPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->Int.s.CTX_SUFF(pDevIns), PDEVPCIBUS);
+            uint8_t uPrimary = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_PRIMARY_BUS);
+            uint8_t uSecondary = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_SECONDARY_BUS);
+            uint8_t uSubordinate = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS);
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "bridge topology: primary=%d secondary=%d subordinate=%d\n",
-                            ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_PRIMARY_BUS),
-                            ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_SECONDARY_BUS),
-                            ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS));
+                            uPrimary, uSecondary, uSubordinate);
+            if (   uPrimary != PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_PRIMARY_BUS)
+                || uSecondary != PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SECONDARY_BUS)
+                || uSubordinate != PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS))
+            {
+                devpciR3InfoIndent(pHlp, iIndentLvl);
+                pHlp->pfnPrintf(pHlp, "CACHE INCONSISTENCY: primary=%d secondary=%d subordinate=%d\n",
+                                PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_PRIMARY_BUS),
+                                PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SECONDARY_BUS),
+                                PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS));
+            }
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "behind bridge: I/O %#06x..%#06x\n",
                             (ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_BASE) & 0xf0) << 8,
