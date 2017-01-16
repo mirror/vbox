@@ -33,6 +33,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+
 UIInformationItem::UIInformationItem(QObject *pParent)
     : QStyledItemDelegate(pParent)
 {
@@ -105,7 +106,7 @@ void UIInformationItem::paint(QPainter *pPainter, const QStyleOptionViewItem &op
     pPainter->save();
     /* Update data: */
     updateData(index);
-
+    /* If there is something to paint: */
     if (m_text.count() != 0)
     {
         /* Draw item as per application style: */

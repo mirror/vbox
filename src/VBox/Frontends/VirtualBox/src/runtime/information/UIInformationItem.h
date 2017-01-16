@@ -33,11 +33,12 @@
 class QTextLayout;
 class QTextDocument;
 
-/* Typedefs: */
+/* Type definitions: */
 typedef QPair<QString, QString> UITextTableLine;
 typedef QList<UITextTableLine> UITextTable;
 
 Q_DECLARE_METATYPE(UITextTable);
+
 
 /** QStyledItemDelegate extension
   * providing GUI with delegate implementation for information-view in session-information window. */
@@ -47,7 +48,7 @@ class UIInformationItem : public QStyledItemDelegate
 
 public:
 
-    /** Constructs information-item by passing @a pParent to the base-class. */
+    /** Constructs information-item passing @a pParent to the base-class. */
     UIInformationItem(QObject *pParent = 0);
 
     /** Defines the icon of information-item as @a icon. */
@@ -58,22 +59,23 @@ public:
 
     /** Returns the text-data of information-item. */
     const UITextTable& text() const;
-    /** Defines the text-data of information-item. */
+    /** Defines the text-data of information-item as @a text. */
     void setText(const UITextTable &text) const;
 
-    /** Paint routine. */
+    /** Performs painting for @a index using @a pPainter and @a option set. */
     void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
-    /** Size-hint calculation routine. */
+    /** Calculates size-hint for @a index using @a option set. */
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
-    /** Updates data for the item with @a index. */
+    /** Updates data for information-item with @a index. */
     void updateData(const QModelIndex &index) const;
 
-    /** returns html data. */
+    /** Returns html data. */
     QString htmlData();
 
 private:
+
     /** Updates text-layout. */
     void updateTextLayout() const;
 
