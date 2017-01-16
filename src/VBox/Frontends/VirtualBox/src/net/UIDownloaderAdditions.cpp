@@ -155,7 +155,7 @@ void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
                     AssertRC(rc);
                     szDigest[0] = '\0';
                 }
-                strCalculatedSumm = &szDigest[0];
+                strCalculatedSumm = szDigest;
                 //printf("Downloaded SHA-256 summ: [%s]\n", strDownloadedSumm.toUtf8().constData());
                 //printf("Calculated SHA-256 summ: [%s]\n", strCalculatedSumm.toUtf8().constData());
                 /* Make sure checksum is valid: */
