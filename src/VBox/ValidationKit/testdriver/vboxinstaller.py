@@ -318,8 +318,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
             # Kill.
             for oProcess in aoTodo:
-                reporter.log('Loop #%d - Killing %s (%s)'
-                             % (iIteration, oProcess.iPid, oProcess.sImage if oProcess.sName is None else oProcess.sName,));
+                reporter.log('Loop #%d - Killing %s (%s, uid=%s)'
+                             % ( iIteration, oProcess.iPid, oProcess.sImage if oProcess.sName is None else oProcess.sName,
+                                 oProcess.iUid, ));
                 utils.processKill(oProcess.iPid); # No mercy.
 
             # Check if they're all dead like they should be.
