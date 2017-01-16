@@ -432,7 +432,7 @@ public:
         m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
 
-        uint8_t uTrack = m_mapTracks.size();
+        uint8_t uTrack = (uint8_t)m_mapTracks.size();
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
 
@@ -471,7 +471,7 @@ public:
 
         return VINF_SUCCESS;
 #else
-        RT_NOREF(uHz, cChannels, cBits);
+        RT_NOREF(uHz, cChannels, cBits, puTrack);
         return VERR_NOT_SUPPORTED;
 #endif
     }
@@ -481,7 +481,7 @@ public:
         m_Ebml.subStart(TrackEntry);
         m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
 
-        uint8_t uTrack = m_mapTracks.size();
+        uint8_t uTrack = (uint8_t)m_mapTracks.size();
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(m_Ebml.getFile()));
 
