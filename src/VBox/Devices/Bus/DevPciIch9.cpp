@@ -1720,7 +1720,10 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
                 || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000))
                 || uNew >= _4G)
             {
-                if (f64Bit)
+                /* Only prefetchable regions can be placed above 4GB, as the
+                 * address decoder for non-prefetchable addresses in bridges
+                 * is limited to 32 bits. */
+                if (f64Bit && fPrefetch)
                 {
                     /* Map a 64-bit region above 4GB. */
                     Assert(!fIsPio);
