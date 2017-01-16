@@ -48,9 +48,8 @@ UIInformationModel::UIInformationModel(QObject *pParent, const CMachine &machine
 
 UIInformationModel::~UIInformationModel()
 {
-    /* Destroy all data-items: */
-    qDeleteAll(m_list);
-    m_list.clear();
+    /* Cleanup: */
+    cleanup();
 }
 
 int UIInformationModel::rowCount(const QModelIndex& /*parent */) const
@@ -67,33 +66,6 @@ QVariant UIInformationModel::data(const QModelIndex &index, int role) const
     UIInformationDataItem *pItem = m_list.at(row);
     /* Return the data for the corresponding role: */
     return pItem->data(index, role);
-}
-
-void UIInformationModel::prepare()
-{
-    /* Prepare role-names for model: */
-    QHash<int, QByteArray> roleNames;
-    roleNames[Qt::DisplayRole] = "";
-    roleNames[Qt::DecorationRole] = "";
-    roleNames[Qt::UserRole + 1] = "";
-    roleNames[Qt::UserRole + 2] = "";
-    # if QT_VERSION < 0x050000
-    setRoleNames(roleNames);
-    # endif /* QT_VERSION < 0x050000 */
-
-    /* Register meta-type: */
-    qRegisterMetaType<InformationElementType>();
-}
-
-QHash<int, QByteArray> UIInformationModel::roleNames() const
-{
-    /* Add supported roles and return: */
-    QHash<int, QByteArray> roleNames;
-    roleNames[Qt::DisplayRole] = "";
-    roleNames[Qt::DecorationRole] = "";
-    roleNames[Qt::UserRole + 1] = "";
-    roleNames[Qt::UserRole + 2] = "";
-    return roleNames;
 }
 
 void UIInformationModel::addItem(UIInformationDataItem *pItem)
@@ -117,5 +89,39 @@ void UIInformationModel::updateData(UIInformationDataItem *pItem)
     int iRow = m_list.indexOf(pItem);
     QModelIndex index = createIndex(iRow, 0);
     emit dataChanged(index, index);
+}
+
+void UIInformationModel::prepare()
+{
+    /* Prepare role-names for model: */
+    QHash<int, QByteArray> roleNames;
+    roleNames[Qt::DisplayRole] = "";
+    roleNames[Qt::DecorationRole] = "";
+    roleNames[Qt::UserRole + 1] = "";
+    roleNames[Qt::UserRole + 2] = "";
+    # if QT_VERSION < 0x050000
+    setRoleNames(roleNames);
+    # endif /* QT_VERSION < 0x050000 */
+
+    /* Register meta-type: */
+    qRegisterMetaType<InformationElementType>();
+}
+
+void UIInformationModel::cleanup()
+{
+    /* Destroy all data-items: */
+    qDeleteAll(m_list);
+    m_list.clear();
+}
+
+QHash<int, QByteArray> UIInformationModel::roleNames() const
+{
+    /* Add supported roles and return: */
+    QHash<int, QByteArray> roleNames;
+    roleNames[Qt::DisplayRole] = "";
+    roleNames[Qt::DecorationRole] = "";
+    roleNames[Qt::UserRole + 1] = "";
+    roleNames[Qt::UserRole + 2] = "";
+    return roleNames;
 }
 

@@ -81,6 +81,8 @@ private:
 
     /** Prepares all. */
     void prepare();
+    /** Cleanups all. */
+    void cleanup();
 
     /** Returns the list of role-names supported by model. */
     QHash<int, QByteArray> roleNames() const;
