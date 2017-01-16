@@ -2445,6 +2445,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                 }
             }
             break;
+        /* Should take the XOR mask into account for the multi-bit AND mask. */
         case 8:
             for (uint32_t y = 0; y < cy; y++)
             {
@@ -2454,7 +2455,10 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     uint8_t fBit = 1;
                     do
                     {
-                        if (pbSrc[x])
+                        uintptr_t const idxPal = pbSrc[x] * 3;
+                        if ((  pThis->last_palette[idxPal + 2]
+                             | pThis->last_palette[idxPal + 1]
+                             | pThis->last_palette[idxPal + 0]) > 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2474,7 +2478,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     uint8_t fBit = 1;
                     do
                     {
-                        if (pbSrc[x * 2] || (pbSrc[x * 2 + 1] & 0x7f))
+                        if ((pbSrc[x * 2] | (pbSrc[x * 2 + 1] & 0x7f)) >= 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2494,7 +2498,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     uint8_t fBit = 1;
                     do
                     {
-                        if (pbSrc[x * 2] || pbSrc[x * 2 + 1])
+                        if ((pbSrc[x * 2] | pbSrc[x * 2 + 1]) >= 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2514,7 +2518,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     uint8_t fBit = 1;
                     do
                     {
-                        if (pbSrc[x * 3] || pbSrc[x * 3 + 1] || pbSrc[x * 3 + 2])
+                        if ((pbSrc[x * 3] | pbSrc[x * 3 + 1] | pbSrc[x * 3 + 2]) >= 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2533,7 +2537,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     uint8_t fBit = 1;
                     do
                     {
-                        if (pbSrc[x * 4] || pbSrc[x * 4 + 1] || pbSrc[x * 4 + 2] || pbSrc[x * 4 + 3])
+                        if ((pbSrc[x * 4] | pbSrc[x * 4 + 1] | pbSrc[x * 4 + 2] | pbSrc[x * 4 + 3]) >= 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2557,8 +2561,17 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
         case 1:
             for (uint32_t y = 0; y < cy; y++)
             {
-                for (uint32_t x = 0; x < cx; x++)
-                    *pu32Dst++ = ASMBitTest(pbSrc, x) ? UINT32_C(0x00ffffff) : 0;
+                for (uint32_t x = 0; x < cx; )
+                {
+                    /* most significant bit is the left most one. */
+                    uint8_t bSrc = pbSrc[x / 8];
+                    do
+                    {
+                        *pu32Dst++ = bSrc & 0x80 ? UINT32_C(0x00ffffff) : 0;
+                        bSrc <<= 1;
+                        x++;
+                    } while ((x & 7) && x < cx);
+                }
                 pbSrc += cbSrcXorLine;
             }
             break;
