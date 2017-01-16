@@ -693,18 +693,24 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Process simple test case failures first, using their name as reason.
         # We do the reason management just like for BSODs.
         #
-        cRelevantOnes = 0;
+        cRelevantOnes   = 0;
+        sMainLog        = oCaseFile.getMainLog();
         aoFailedResults = oCaseFile.oTree.getListOfFailures();
         for oFailedResult in aoFailedResults:
             if oFailedResult is oCaseFile.oTree:
                 self.vprint('TODO: toplevel failure');
                 cRelevantOnes += 1
+
             elif oFailedResult.sName == 'Installing VirtualBox':
-                self.vprint('TODO: Installation failure');
+                sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated, oFailedResult.tsElapsed);
+                self.investigateInstallUninstallFailure(oCaseFile, oFailedResult, sResultLog, fInstall = True)
                 cRelevantOnes += 1
+
             elif oFailedResult.sName == 'Uninstalling VirtualBox':
-                self.vprint('TODO: Uninstallation failure');
+                sResultLog = TestSetData.extractLogSectionElapsed(sMainLog, oFailedResult.tsCreated, oFailedResult.tsElapsed);
+                self.investigateInstallUninstallFailure(oCaseFile, oFailedResult, sResultLog, fInstall = False)
                 cRelevantOnes += 1
+
             elif oFailedResult.oParent is not None:
                 # Get the 2nd level node because that's where we'll find the unit test name.
                 while oFailedResult.oParent.oParent is not None:
