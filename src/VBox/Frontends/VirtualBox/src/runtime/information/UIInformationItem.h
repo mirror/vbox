@@ -62,17 +62,19 @@ public:
     /** Defines the text-data of information-item as @a text. */
     void setText(const UITextTable &text) const;
 
-    /** Performs painting for @a index using @a pPainter and @a option set. */
-    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-
-    /** Calculates size-hint for @a index using @a option set. */
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
-
     /** Updates data for information-item with @a index. */
     void updateData(const QModelIndex &index) const;
 
     /** Returns html data. */
     QString htmlData();
+
+protected:
+
+    /** Performs painting for @a index using @a pPainter and @a option set. */
+    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+    /** Calculates size-hint for @a index using @a option set. */
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
 private:
 
