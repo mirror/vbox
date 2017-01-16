@@ -873,7 +873,10 @@ class TestResultFilter(ModelFilterBase):
                     sQuery += '%s.%s IS NULL' % (oCrit.asTables[0], oCrit.sColumn,);
 
                 if iCrit == self.kiFailReasons:
-                    sQuery += '%s    AND TestSets.enmStatus >= \'failure\'::TestStatus_T\n' % (sExtraIndent,);
+                    if oCrit.fInverted:
+                        sQuery += '%s    OR TestResultFailures.idFailureReason IS NULL\n' % (sExtraIndent,);
+                    else:
+                        sQuery += '%s    AND TestSets.enmStatus >= \'failure\'::TestStatus_T\n' % (sExtraIndent,);
                 sQuery += ')\n';
             if oCrit.oSub is not None:
                 sQuery += self._getWhereWorker(iCrit | (((iCrit >> 8) + 1) << 8), oCrit.oSub, sExtraIndent, iOmit);
