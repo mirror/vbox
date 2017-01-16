@@ -83,7 +83,7 @@ class SystemChangelogLogic(ModelLogicBase):
         ksWhat_TestGroup:        ( 'TestGroupes',        'idTestGroup',         None, ),
         ksWhat_User:             ( 'Users',              'idUser',              None, ),
         ksWhat_TestResult:       ( 'TestResults',        'idTestResult',        None, ),
-    }, **{sEvent: ( 'SystemLog',  'tsCreated',  'TimestampId', ) for sEvent in SystemLogData.kasEvents});
+    }, **{sEvent: ( 'SystemLog',  'tsCreated',  'TimestampId', ) for sEvent in SystemLogData.kasEvents}); # pylint: disable=W0142
 
     ## The table key is the effective timestamp. (Can't be used above for some weird scoping reason.)
     ksClue_TimestampId = 'TimestampId';
