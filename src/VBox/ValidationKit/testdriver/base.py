@@ -1639,6 +1639,7 @@ class TestDriverBase(object): # pylint: disable=R0902
             fRc = self.actionExtract();
             reporter.log('*** extract action completed (fRc=%s) ***' % (fRc));
         elif 'abort' in asActions:
+            reporter.appendToProcessName('/abort'); # Make it easier to spot in the log.
             reporter.log('*** abort action ***');
             asActions.remove('abort');
             fRc = self.actionAbort();

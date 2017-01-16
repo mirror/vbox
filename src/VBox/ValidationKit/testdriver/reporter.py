@@ -102,6 +102,15 @@ class ReporterBase(object):
         """Increases the debug level."""
         self.iDebug += 1;
 
+    def appendToProcessName(self, sAppend):
+        """
+        Appends sAppend to the base process name.
+        Returns the new process name.
+        """
+        self.sName = os.path.splitext(os.path.basename(sys.argv[0]))[0] + sAppend;
+        return self.sName;
+
+
     #
     # Generic logging.
     #
@@ -1366,6 +1375,13 @@ def incVerbosity():
 def incDebug():
     """Increases the debug level."""
     return g_oReporter.incDebug()
+
+def appendToProcessName(sAppend):
+    """
+    Appends sAppend to the base process name.
+    Returns the new process name.
+    """
+    return g_oReporter.appendToProcessName(sAppend);
 
 def getErrorCount():
     """
