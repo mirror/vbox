@@ -1870,7 +1870,7 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the CPU context.
  */
-VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0DECL(void) hmDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     NOREF(pVM);
 
