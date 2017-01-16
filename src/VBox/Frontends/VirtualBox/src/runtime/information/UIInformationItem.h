@@ -19,18 +19,15 @@
 #define ___UIInformationItem_h___
 
 /* Qt includes: */
-#include <QIcon>
-#include <QTextLayout>
 #include <QStyledItemDelegate>
-#include <QStyleOptionViewItem>
 
 /* GUI includes: */
-#include "UIGDetailsItem.h"
-#include "UIExtraDataDefs.h"
 #include "QIWithRetranslateUI.h"
+#include "UIExtraDataDefs.h"
+#include "UIGDetailsItem.h"
 
 /* Forward declarations: */
-class QTextLayout;
+class QStyleOptionViewItem;
 class QTextDocument;
 
 /* Type definitions: */
@@ -58,7 +55,7 @@ public:
     void setName(const QString &strName) const;
 
     /** Returns the text-data of information-item. */
-    const UITextTable& text() const;
+    const UITextTable &text() const;
     /** Defines the text-data of information-item as @a text. */
     void setText(const UITextTable &text) const;
 
@@ -66,15 +63,15 @@ public:
     void updateData(const QModelIndex &index) const;
 
     /** Returns html data. */
-    QString htmlData();
+    QString htmlData() const;
 
 protected:
 
     /** Performs painting for @a index using @a pPainter and @a option set. */
-    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    virtual void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const /* override */;
 
     /** Calculates size-hint for @a index using @a option set. */
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const /* override */;
 
 private:
 
