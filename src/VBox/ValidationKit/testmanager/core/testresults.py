@@ -400,6 +400,7 @@ class TestResultFileData(ModelDataBase):
     ksKind_LogInstaller         = 'log/installer';
     ksKind_LogUninstaller       = 'log/uninstaller';
     ksKind_LogGuestKernel       = 'log/guest/kernel';
+    ksKind_LogHostVmProcess     = 'log/host/vmprocess';
     ksKind_CrashReportVm        = 'crash/report/vm';
     ksKind_CrashDumpVm          = 'crash/dump/vm';
     ksKind_CrashReportSvc       = 'crash/report/svc';
