@@ -397,8 +397,6 @@ typedef struct HM
     bool                        fLargePages;
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
-    /** Set if an IO-APIC is configured for this VM. */
-    bool                        fHasIoApic;
     /** Set when TPR patching is allowed. */
     bool                        fTprPatchingAllowed;
     /** Set when we initialize VT-x or AMD-V once for all CPUs. */
@@ -412,6 +410,8 @@ typedef struct HM
     bool                        fVirtApicRegs;
     /** Set if posted interrupt processing is enabled. */
     bool                        fPostedIntrs;
+    /** Alignment. */
+    bool                        fAlignment0;
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    fHostKernelFeatures;

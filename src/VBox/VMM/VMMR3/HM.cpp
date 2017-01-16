@@ -1142,8 +1142,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
      * No TPR patching is required when the IO-APIC is not enabled for this VM.
      * (Main should have taken care of this already)
      */
-    pVM->hm.s.fHasIoApic = PDMHasIoApic(pVM);
-    if (!pVM->hm.s.fHasIoApic)
+    if (!PDMHasIoApic(pVM))
     {
         Assert(!pVM->hm.s.fTprPatchingAllowed); /* paranoia */
         pVM->hm.s.fTprPatchingAllowed = false;
