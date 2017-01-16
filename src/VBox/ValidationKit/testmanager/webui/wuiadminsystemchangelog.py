@@ -139,7 +139,6 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         """ Creates a link to the global resource details. """
         oGlobalResource = self._oGlobalResourceLogic.cachedLookup(idGlobalRsrc);
         if oGlobalResource is not None:
-            from testmanager.webui.wuiadmin import WuiAdmin;
             return WuiAdminLink(oGlobalResource.sName, '@todo', tsEffective,
                                 { GlobalResourceData.ksParam_idGlobalRsrc: oGlobalResource.idGlobalRsrc },
                                 fBracketed = False,
@@ -205,7 +204,6 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         """ Creates a link to the user account details. """
         oUser = self._oUserAccountLogic.cachedLookup(uid);
         if oUser is not None:
-            from testmanager.webui.wuiadmin import WuiAdmin;
             return WuiAdminLink(oUser.sUsername, '@todo', tsEffective, { UserAccountData.ksParam_uid: oUser.uid },
                                 fBracketed = False, sTitle = '%s (#%u)' % (oUser.sFullName, oUser.uid));
         return WuiElementText('[user #%u not found]' % (uid,));
