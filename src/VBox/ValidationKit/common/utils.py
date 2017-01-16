@@ -843,8 +843,9 @@ def processListAll(): # pylint: disable=R0914
             oMyInfo = ProcessInfo(iPid);
             oMyInfo.windowsGrabProcessInfo(oProcess);
             asProcesses.append(oMyInfo);
+        return asProcesses;
 
-    elif sOs in [ 'linux', ]:  # Not solaris, ps gets more info than /proc/.
+    if sOs in [ 'linux', ]:  # Not solaris, ps gets more info than /proc/.
         try:
             asDirs = os.listdir('/proc');
         except:
@@ -852,77 +853,77 @@ def processListAll(): # pylint: disable=R0914
         for sDir in asDirs:
             if sDir.isdigit():
                 asProcesses.append(ProcessInfo(int(sDir),));
+        return asProcesses;
 
-    elif sOs == 'darwin':
-        # Try our best to parse ps output. (Not perfect but does the job most of the time.)
-        try:
-            sRaw = processOutputChecked([ '/bin/ps', '-A',
-                                          '-o', 'pid=',
-                                          '-o', 'ppid=',
-                                          '-o', 'pgid=',
-                                          '-o', 'sess=',
-                                          '-o', 'uid=',
-                                          '-o', 'gid=',
-                                          '-o', 'comm=' ]);
-        except:
-            return asProcesses;
+    #
+    # The other OSes parses the output from the 'ps' utility.
+    #
+    asPsCmd = [
+        '/bin/ps',          # 0
+        '-A',               # 1
+        '-o', 'pid=',       # 2,3
+        '-o', 'ppid=',      # 4,5
+        '-o', 'pgid=',      # 6,7
+        '-o', 'sid=',       # 8,9
+        '-o', 'uid=',       # 10,11
+        '-o', 'gid=',       # 12,13
+        '-o', 'comm='       # 14,15
+    ];
+
+    if sOs == 'darwin':
+        assert asPsCmd[9] == 'sid=';
+        asPsCmd[9] = 'sess=';
     elif sOs == 'solaris':
-        # Try our best to parse ps output. (Not perfect but does the job most of the time.)
-        try:
-            sRaw = processOutputChecked([ '/usr/bin/ps', '-A',
-                                          '-o', 'pid=',
-                                          '-o', 'ppid=',
-                                          '-o', 'pgid=',
-                                          '-o', 'sid=',
-                                          '-o', 'uid=',
-                                          '-o', 'gid=',
-                                          '-o', 'comm=' ]);
-        except:
-            return asProcesses;
+        asPsCmd[0] = '/usr/bin/ps';
 
-        for sLine in sRaw.split('\n'):
-            sLine = sLine.lstrip();
-            if len(sLine) < 7 or not sLine[0].isdigit():
-                continue;
+    try:
+        sRaw = processOutputChecked(asPsCmd);
+    except:
+        return asProcesses;
 
-            iField   = 0;
-            off      = 0;
-            aoFields = [None, None, None, None, None, None, None];
-            while iField < 7:
-                # Eat whitespace.
-                while off < len(sLine) and (sLine[off] == ' ' or sLine[off] == '\t'):
-                    off += 1;
+    for sLine in sRaw.split('\n'):
+        sLine = sLine.lstrip();
+        if len(sLine) < 7 or not sLine[0].isdigit():
+            continue;
 
-                # Final field / EOL.
-                if iField == 6:
-                    aoFields[6] = sLine[off:];
-                    break;
-                if off >= len(sLine):
-                    break;
-
-                # Generic field parsing.
-                offStart = off;
+        iField   = 0;
+        off      = 0;
+        aoFields = [None, None, None, None, None, None, None];
+        while iField < 7:
+            # Eat whitespace.
+            while off < len(sLine) and (sLine[off] == ' ' or sLine[off] == '\t'):
                 off += 1;
-                while off < len(sLine) and sLine[off] != ' ' and sLine[off] != '\t':
-                    off += 1;
-                try:
-                    if iField != 3:
-                        aoFields[iField] = int(sLine[offStart:off]);
-                    else:
-                        aoFields[iField] = long(sLine[offStart:off], 16); # sess is a hex address.
-                except:
-                    pass;
-                iField += 1;
 
-            if aoFields[0] is not None:
-                oMyInfo = ProcessInfo(aoFields[0]);
-                oMyInfo.iParentPid = aoFields[1];
-                oMyInfo.iProcGroup = aoFields[2];
-                oMyInfo.iSessionId = aoFields[3];
-                oMyInfo.iUid       = aoFields[4];
-                oMyInfo.iGid       = aoFields[5];
-                oMyInfo.sName      = aoFields[6];
-                asProcesses.append(oMyInfo);
+            # Final field / EOL.
+            if iField == 6:
+                aoFields[6] = sLine[off:];
+                break;
+            if off >= len(sLine):
+                break;
+
+            # Generic field parsing.
+            offStart = off;
+            off += 1;
+            while off < len(sLine) and sLine[off] != ' ' and sLine[off] != '\t':
+                off += 1;
+            try:
+                if iField != 3:
+                    aoFields[iField] = int(sLine[offStart:off]);
+                else:
+                    aoFields[iField] = long(sLine[offStart:off], 16); # sess is a hex address.
+            except:
+                pass;
+            iField += 1;
+
+        if aoFields[0] is not None:
+            oMyInfo = ProcessInfo(aoFields[0]);
+            oMyInfo.iParentPid = aoFields[1];
+            oMyInfo.iProcGroup = aoFields[2];
+            oMyInfo.iSessionId = aoFields[3];
+            oMyInfo.iUid       = aoFields[4];
+            oMyInfo.iGid       = aoFields[5];
+            oMyInfo.sName      = aoFields[6];
+            asProcesses.append(oMyInfo);
 
     return asProcesses;
 
