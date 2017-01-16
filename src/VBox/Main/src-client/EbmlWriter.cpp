@@ -19,6 +19,7 @@
 #include <list>
 #include <stack>
 #include <iprt/asm.h>
+#include <iprt/buildconfig.h>
 #include <iprt/cdefs.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -26,6 +27,7 @@
 #include <iprt/string.h>
 
 #include <VBox/log.h>
+#include <VBox/version.h>
 
 #include "EbmlWriter.h"
 #include "EbmlIDs.h"
@@ -722,14 +724,17 @@ private:
 
         LogFunc(("Info @ %RU64\n", m_offSegInfoStart));
 
-        char szVersion[64];
-        RTStrPrintf(szVersion, sizeof(szVersion), "vpxenc%s", vpx_codec_version_str()); /** @todo Make this configurable? */
+        char szMux[64];
+        RTStrPrintf(szMux, sizeof(szMux), "vpxenc%s", vpx_codec_version_str());
+
+        char szApp[64];
+        RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
 
         m_Ebml.subStart(Info)
               .serializeUnsignedInteger(TimecodeScale, 1000000)
               .serializeFloat(Segment_Duration, m_tsLastPtsMs + iFrameTime - m_tsInitialPtsMs)
-              .serializeString(MuxingApp, szVersion)
-              .serializeString(WritingApp, szVersion)
+              .serializeString(MuxingApp, szMux)
+              .serializeString(WritingApp, szApp)
               .subEnd(Info);
     }
 };
