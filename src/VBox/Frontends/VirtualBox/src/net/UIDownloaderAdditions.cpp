@@ -22,7 +22,6 @@
 /* Global includes: */
 # include <QDir>
 # include <QFile>
-# include <QCryptographicHash>
 
 /* Local includes: */
 # include "UIDownloaderAdditions.h"
@@ -33,6 +32,9 @@
 # include "UIModalWindowManager.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
+/* Other VBox includes: */
+#include <iprt/sha.h>
 
 
 /* static */
@@ -120,6 +122,7 @@ void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
 {
     /* Try to verify the SHA-256 checksum: */
+    QString strCalculatedSumm;
     bool fSuccess = false;
     do
     {
@@ -142,10 +145,17 @@ void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
             const QString strDownloadedSumm = strRecord.section(" *", 0, 0);
             if (strFileName == source().fileName())
             {
-                /* Calculate the SHA-256 hash ourselves: */
-                QCryptographicHash hashSHA256(QCryptographicHash::Sha256);
-                hashSHA256.addData(m_receivedData);
-                const QString strCalculatedSumm(hashSHA256.result().toHex());
+                /* Calc the SHA-256 on the bytes, creating a string: */
+                uint8_t abHash[RTSHA256_HASH_SIZE];
+                RTSha256(m_receivedData.constData(), m_receivedData.length(), abHash);
+                char szDigest[RTSHA256_DIGEST_LEN + 1];
+                int rc = RTSha256ToString(abHash, szDigest, sizeof(szDigest));
+                if (RT_FAILURE(rc))
+                {
+                    AssertRC(rc);
+                    szDigest[0] = '\0';
+                }
+                strCalculatedSumm = &szDigest[0];
                 //printf("Downloaded SHA-256 summ: [%s]\n", strDownloadedSumm.toUtf8().constData());
                 //printf("Calculated SHA-256 summ: [%s]\n", strCalculatedSumm.toUtf8().constData());
                 /* Make sure checksum is valid: */
