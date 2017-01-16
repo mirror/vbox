@@ -3227,7 +3227,7 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
      */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    return HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
+    return hmR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
                              pVCpu->hm.s.svm.pfnVMRun);
 #else
     return pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu);
