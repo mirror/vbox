@@ -760,8 +760,6 @@ static uint16_t s_uTimecode = 0;
         {
             delete itTrack->second;
             m_mapTracks.erase(itTrack);
-
-            itTrack = m_mapTracks.begin();
         }
 
         Assert(m_mapTracks.size() == 0);
