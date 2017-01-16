@@ -10254,7 +10254,20 @@ iemMemFetchSelDescWithErr(PVMCPU pVCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_
      * Read the legacy descriptor and maybe the long mode extensions if
      * required.
      */
-    VBOXSTRICTRC rcStrict = iemMemFetchSysU64(pVCpu, &pDesc->Legacy.u, UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK));
+    VBOXSTRICTRC rcStrict;
+    if (IEM_GET_TARGET_CPU(pVCpu) > IEMTARGETCPU_286)
+        rcStrict = iemMemFetchSysU64(pVCpu, &pDesc->Legacy.u, UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK));
+    else
+    {
+        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[0], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 0);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[1], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 2);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[2], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 4);
+    }
+
     if (rcStrict == VINF_SUCCESS)
     {
         if (   !IEM_IS_LONG_MODE(pVCpu)
