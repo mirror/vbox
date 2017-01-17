@@ -345,16 +345,20 @@ class WebMWriter_Impl
             : uID(0)
             , offCluster(0)
             , fOpen(false)
-            , tsStart(0)
-            , tsEnd(0) { }
+            , tsStartMs(0)
+            , tsEndMs(0) { }
 
+        /** This cluster's ID. */
         uint64_t      uID;
         /** Absolute offset (in bytes) of current cluster.
          *  Needed for seeking info table. */
         uint64_t      offCluster;
+        /** Whether this cluster element is opened currently. */
         bool          fOpen;
-        uint64_t      tsStart;
-        uint64_t      tsEnd;
+        /** Timestamp (in ms) when starting this  cluster. */
+        uint64_t      tsStartMs;
+        /** Timestamp (in ms) when this cluster ended. */
+        uint64_t      tsEndMs;
     };
 
     /**
@@ -635,12 +639,12 @@ public:
         bool     fClusterStart = false;
 
         /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tsPtsMs - CurSeg.CurCluster.tsStart > m_uTimecodeMax)
+        if (tsPtsMs - CurSeg.CurCluster.tsStartMs > m_uTimecodeMax)
             fClusterStart = true;
         else
         {
             /* Calculate the block's timecode, which is relative to the current cluster's starting timecode. */
-            tsBlockMs = static_cast<uint16_t>(tsPtsMs - CurSeg.CurCluster.tsStart);
+            tsBlockMs = static_cast<uint16_t>(tsPtsMs - CurSeg.CurCluster.tsStartMs);
         }
 
         const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
@@ -662,18 +666,18 @@ public:
 
             /* Open a new cluster. */
             Cluster.fOpen      = true;
-            Cluster.tsStart    = tsPtsMs;
+            Cluster.tsStartMs    = tsPtsMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
 
             LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStart);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStartMs);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
             {
-                WebMCueEntry cue(Cluster.tsStart, Cluster.offCluster);
+                WebMCueEntry cue(Cluster.tsStartMs, Cluster.offCluster);
                 CurSeg.lstCues.push_back(cue);
             }
         }
@@ -718,12 +722,12 @@ public:
             fClusterStart = true;
 
         /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tsPtsMs - Cluster.tsStart > m_uTimecodeMax)
+        if (tsPtsMs - Cluster.tsStartMs > m_uTimecodeMax)
             fClusterStart = true;
         else
         {
             /* Calculate the block's timecode, which is relative to the Cluster timecode. */
-            tsBlockMs = static_cast<uint16_t>(tsPtsMs - Cluster.tsStart);
+            tsBlockMs = static_cast<uint16_t>(tsPtsMs - Cluster.tsStartMs);
         }
 
         if (fClusterStart)
@@ -739,13 +743,13 @@ public:
             tsBlockMs = 0;
 
             Cluster.fOpen      = true;
-            Cluster.tsStart    = tsPtsMs;
+            Cluster.tsStartMs    = tsPtsMs;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
 
             LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStart);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStartMs);
         }
 
         LogFunc(("Cluster %RU64 - Block %RU64: -> %RU64ms\n",
