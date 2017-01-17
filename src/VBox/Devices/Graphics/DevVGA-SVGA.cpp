@@ -1171,7 +1171,13 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
         {
             /* Note! Using last_palette rather than palette here to preserve the VGA one. */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteRd);
-            *pu32 = pThis->last_palette[offReg];
+            uint32_t u32 = pThis->last_palette[offReg / 3];
+            switch (offReg % 3)
+            {
+                case 0: *pu32 = (u32 >> 16) & 0xff; break; /* red */
+                case 1: *pu32 = (u32 >>  8) & 0xff; break; /* green */
+                case 2: *pu32 =  u32        & 0xff; break; /* blue */
+            }
         }
         else
         {
@@ -1707,9 +1713,18 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         }
         else if ((offReg = idxReg - SVGA_PALETTE_BASE) < (uint32_t)SVGA_NUM_PALETTE_REGS)
         {
-            /* Note! Using last_palette rather than palette here to preserve the VGA one. */
+            /* Note! Using last_palette rather than palette here to preserve the VGA one.
+                     Btw, see rgb_to_pixel32.  */
             STAM_REL_COUNTER_INC(&pThis->svga.StatRegPaletteWr);
-            pThis->last_palette[offReg] = (uint8_t)u32;
+            u32 &= 0xff;
+            uint32_t uRgb = pThis->last_palette[offReg / 3];
+            switch (offReg % 3)
+            {
+                case 0: uRgb = (uRgb & UINT32_C(0x0000ffff)) | (u32 << 16); break; /* red */
+                case 1: uRgb = (uRgb & UINT32_C(0x00ff00ff)) | (u32 <<  8); break; /* green */
+                case 2: uRgb = (uRgb & UINT32_C(0x00ffff00)) |  u32       ; break; /* blue */
+            }
+            pThis->last_palette[offReg / 3] = uRgb;
         }
         else
         {
@@ -2456,9 +2471,9 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     do
                     {
                         uintptr_t const idxPal = pbSrc[x] * 3;
-                        if ((  pThis->last_palette[idxPal + 2]
-                             | pThis->last_palette[idxPal + 1]
-                             | pThis->last_palette[idxPal + 0]) > 0xfc)
+                        if (((   pThis->last_palette[idxPal]
+                              | (pThis->last_palette[idxPal] >>  8)
+                              | (pThis->last_palette[idxPal] >> 16)) & 0xff) > 0xfc)
                             bDst |= fBit;
                         fBit <<= 1;
                         x++;
@@ -2580,10 +2595,8 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
             {
                 for (uint32_t x = 0; x < cx; x++)
                 {
-                    uintptr_t const idxPal = pbSrc[x] * 3;
-                    *pu32Dst++ = RT_MAKE_U32_FROM_U8(pThis->last_palette[idxPal + 2],
-                                                     pThis->last_palette[idxPal + 1],
-                                                     pThis->last_palette[idxPal + 0], 0);
+                    uint32_t u = pThis->last_palette[pbSrc[x]];
+                    *pu32Dst++ = u;//RT_MAKE_U32_FROM_U8(RT_BYTE1(u), RT_BYTE2(u), RT_BYTE3(u), 0);
                 }
                 pbSrc += cbSrcXorLine;
             }
