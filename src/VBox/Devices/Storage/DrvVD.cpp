@@ -3367,6 +3367,93 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 
 
 /**
+ * Returns a string description of the given request state.
+ *
+ * @returns Pointer to the stringified state.
+ * @param   enmState  The state.
+ */
+DECLINLINE(const char *) drvvdMediaExIoReqStateStringify(VDIOREQSTATE enmState)
+{
+#define STATE2STR(a_State) case VDIOREQSTATE_##a_State: return #a_State
+    switch (enmState)
+    {
+        STATE2STR(INVALID);
+        STATE2STR(FREE);
+        STATE2STR(ALLOCATED);
+        STATE2STR(ACTIVE);
+        STATE2STR(SUSPENDED);
+        STATE2STR(COMPLETING);
+        STATE2STR(COMPLETED);
+        STATE2STR(CANCELED);
+        default:
+            AssertMsgFailed(("Unknown state %u\n", enmState));
+            return "UNKNOWN";
+    }
+#undef STATE2STR
+}
+
+
+/**
+ * Returns a string description of the given request type.
+ *
+ * @returns Pointer to the stringified type.
+ * @param   enmType  The request type.
+ */
+DECLINLINE(const char *) drvvdMediaExIoReqTypeStringify(PDMMEDIAEXIOREQTYPE enmType)
+{
+#define TYPE2STR(a_Type) case PDMMEDIAEXIOREQTYPE_##a_Type: return #a_Type
+    switch (enmType)
+    {
+        TYPE2STR(INVALID);
+        TYPE2STR(FLUSH);
+        TYPE2STR(WRITE);
+        TYPE2STR(READ);
+        TYPE2STR(DISCARD);
+        TYPE2STR(SCSI);
+        default:
+            AssertMsgFailed(("Unknown type %u\n", enmType));
+            return "UNKNOWN";
+    }
+#undef TYPE2STR
+}
+
+
+/**
+ * Dumps the interesting bits about the given I/O request to the release log.
+ *
+ * @returns nothing.
+ * @param   pThis     VBox disk container instance data.
+ * @param   pIoReq    The I/O request to dump.
+ */
+static void drvvdMediaExIoReqLogRel(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
+{
+    uint64_t offStart = 0;
+    size_t cbReq = 0;
+    size_t cbLeft = 0;
+    size_t cbBufSize = 0;
+    uint64_t tsActive = RTTimeMilliTS() - pIoReq->tsSubmit;
+
+    if (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
+        || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
+    {
+        offStart = pIoReq->ReadWrite.offStart;
+        cbReq = pIoReq->ReadWrite.cbReq;
+        cbLeft = pIoReq->ReadWrite.cbReqLeft;
+        cbBufSize = pIoReq->ReadWrite.cbIoBuf;
+    }
+
+    LogRel(("VD#%u: Request{%#p}:\n"
+            "    Type=%s State=%s Id=%#llx SubmitTs=%llu {%llu} Flags=%#x\n"
+            "    Offset=%llu Size=%zu Left=%zu BufSize=%zu\n",
+            pThis->pDrvIns->iInstance, pIoReq,
+            drvvdMediaExIoReqTypeStringify(pIoReq->enmType),
+            drvvdMediaExIoReqStateStringify(pIoReq->enmState),
+            pIoReq->uIoReqId, pIoReq->tsSubmit, tsActive, pIoReq->fFlags,
+            offStart, cbReq, cbLeft, cbBufSize));
+}
+
+
+/**
  * Returns whether the VM is in a running state.
  *
  * @returns Flag indicating whether the VM is currently in a running state.
@@ -3414,6 +3501,8 @@ static bool drvvdMediaExIoReqCancel(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
     bool fXchg = true;
     VDIOREQSTATE enmStateOld = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
+
+    drvvdMediaExIoReqLogRel(pThis, pIoReq);
 
     /*
      * We might have to try canceling the request multiple times if it transitioned from
@@ -3588,6 +3677,8 @@ static DECLCALLBACK(int) drvvdIoReqCancelAll(PPDMIMEDIAEX pInterface)
     int rc = VINF_SUCCESS;
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
 
+    LogRel(("VD#%u: Cancelling all active requests\n", pThis->pDrvIns->iInstance));
+
     for (unsigned idxBin = 0; idxBin < RT_ELEMENTS(pThis->aIoReqAllocBins); idxBin++)
     {
         rc = RTSemFastMutexRequest(pThis->aIoReqAllocBins[idxBin].hMtxLstIoReqAlloc);
@@ -3614,6 +3705,8 @@ static DECLCALLBACK(int) drvvdIoReqCancel(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOR
 {
     PVBOXDISK pThis = RT_FROM_MEMBER(pInterface, VBOXDISK, IMediaEx);
     unsigned idxBin = drvvdMediaExIoReqIdHash(uIoReqId);
+
+    LogRel(("VD#%u: Trying to cancel request %#llx\n", pThis->pDrvIns->iInstance, uIoReqId));
 
     int rc = RTSemFastMutexRequest(pThis->aIoReqAllocBins[idxBin].hMtxLstIoReqAlloc);
     if (RT_SUCCESS(rc))
