@@ -14058,7 +14058,7 @@ FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
     IEMOP_MNEMONIC(fstp_st0_stN, "fstp st0,stN");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
-    /* fstp st0, st0 is frequendly used as an official 'ffreep st0' sequence. */
+    /* fstp st0, st0 is frequently used as an official 'ffreep st0' sequence. */
     uint8_t const iDstReg = bRm & X86_MODRM_RM_MASK;
     if (!iDstReg)
     {
