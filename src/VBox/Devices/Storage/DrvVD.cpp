@@ -2756,7 +2756,8 @@ static int drvvdMediaExIoReqInsert(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
         PPDMMEDIAEXIOREQINT pIt;
         RTListForEach(&pThis->aIoReqAllocBins[idxBin].LstIoReqAlloc, pIt, PDMMEDIAEXIOREQINT, NdAllocatedList)
         {
-            if (RT_UNLIKELY(pIt->uIoReqId == pIoReq->uIoReqId))
+            if (RT_UNLIKELY(   pIt->uIoReqId == pIoReq->uIoReqId
+                            && pIt->enmState != VDIOREQSTATE_CANCELED))
             {
                 rc = VERR_PDM_MEDIAEX_IOREQID_CONFLICT;
                 break;
@@ -3499,7 +3500,7 @@ static DECLCALLBACK(void) drvvdMediaExIoReqComplete(void *pvUser1, void *pvUser2
  */
 static bool drvvdMediaExIoReqCancel(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
 {
-    bool fXchg = true;
+    bool fXchg = false;
     VDIOREQSTATE enmStateOld = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
 
     drvvdMediaExIoReqLogRel(pThis, pIoReq);
@@ -3514,8 +3515,10 @@ static bool drvvdMediaExIoReqCancel(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT pIoReq)
            && !fXchg)
     {
         fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReq->enmState, VDIOREQSTATE_CANCELED, enmStateOld);
-        if (!fXchg)
-            enmStateOld = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
+        if (fXchg)
+            break;
+
+        enmStateOld = (VDIOREQSTATE)ASMAtomicReadU32((volatile uint32_t *)&pIoReq->enmState);
     }
 
     if (fXchg)
