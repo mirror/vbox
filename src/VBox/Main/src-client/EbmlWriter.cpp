@@ -31,7 +31,7 @@
 #include <VBox/version.h>
 
 #include "EbmlWriter.h"
-#include "EbmlIDs.h"
+#include "EbmlMkvIDs.h"
 #include "Logging.h"
 
 
@@ -142,7 +142,7 @@ public:
         uint64_t uSize = uPos - m_Elements.top().offset - 8;
         RTFileSeek(m_File, m_Elements.top().offset, RTFILE_SEEK_BEGIN, NULL);
 
-        /* make sure that size will be serialized as uint64 */
+        /* Make sure that size will be serialized as uint64_t. */
         writeUnsignedInteger(uSize | UINT64_C(0x0100000000000000));
         RTFileSeek(m_File, uPos, RTFILE_SEEK_BEGIN, NULL);
         m_Elements.pop();
@@ -291,14 +291,16 @@ class WebMWriter_Impl
     };
 
     /**
-     * Structure for keeping a track entry.
+     * Structure for keeping a WebM track entry.
      */
     struct WebMTrack
     {
         WebMTrack(WebMTrackType a_enmType, uint8_t a_uTrack, uint64_t a_offID)
             : enmType(a_enmType)
             , uTrack(a_uTrack)
-            , offID(a_offID)
+            , offUUID(a_offID)
+            , cTotalClusters(0)
+            , cTotalBlocks(0)
         {
             uUUID = RTRandU32();
         }
@@ -314,7 +316,9 @@ class WebMWriter_Impl
                 uint16_t uHzIn;
                 /** Sample rate the codec is using. */
                 uint16_t uHzCodec;
-                /** Frame size (in bytes), based on the codec sample rate. */
+                /** Frame size (in bytes), based on the codec sample rate.
+                 *  Note: For now this does *not* change dynamically, in other words,
+                 *        we do CBR (and not VBR) here! */
                 size_t   cbFrameSize;
             } Audio;
         };
@@ -323,10 +327,74 @@ class WebMWriter_Impl
         /** The track's "UUID".
          *  Needed in case this track gets mux'ed with tracks from other files. Not really unique though. */
         uint32_t      uUUID;
-        /** Absolute offset in file of track ID.
+        /** Absolute offset in file of track UUID.
          *  Needed to write the hash sum within the footer. */
-        uint64_t      offID;
+        uint64_t      offUUID;
+        /** Total number of clusters. */
+        uint64_t      cTotalClusters;
+        /** Total number of blocks. */
+        uint64_t      cTotalBlocks;
     };
+
+    /**
+     * Structure for keeping a WebM cluster entry.
+     */
+    struct WebMCluster
+    {
+        WebMCluster(void)
+            : uID(0)
+            , offCluster(0)
+            , fOpen(false)
+            , tsStart(0)
+            , tsEnd(0) { }
+
+        uint64_t      uID;
+        /** Absolute offset (in bytes) of current cluster.
+         *  Needed for seeking info table. */
+        uint64_t      offCluster;
+        bool          fOpen;
+        uint64_t      tsStart;
+        uint64_t      tsEnd;
+    };
+
+    /**
+     * Structure for keeping a WebM segment entry.
+     *
+     * Current we're only using one segment.
+     */
+    struct WebMSegment
+    {
+        WebMSegment(void)
+            : offStart(0)
+            , offInfo(0)
+            , offSeekInfo(0)
+            , offTracks(0)
+            , offCues(0) { }
+
+        /** Absolute offset (in bytes) of CurSeg. */
+        uint64_t                        offStart;
+        /** Absolute offset (in bytes) of general info. */
+        uint64_t                        offInfo;
+        /** Absolute offset (in bytes) of seeking info. */
+        uint64_t                        offSeekInfo;
+        /** Absolute offset (in bytes) of tracks. */
+        uint64_t                        offTracks;
+        /** Absolute offset (in bytes) of cues table. */
+        uint64_t                        offCues;
+        /** List of cue points. Needed for seeking table. */
+        std::list<WebMCueEntry>         lstCues;
+
+        /** Map of tracks.
+         *  The key marks the track number (*not* the UUID!). */
+        std::map <uint8_t, WebMTrack *> mapTracks;
+
+        /** Current cluster which is being handled.
+         *
+         *  Note that we don't need (and shouldn't need, as this can be a *lot* of data!) a
+         *  list of all clusters. */
+        WebMCluster                     CurCluster;
+
+    } CurSeg;
 
 #ifdef VBOX_WITH_LIBOPUS
 # pragma pack(push)
@@ -368,35 +436,15 @@ class WebMWriter_Impl
     /** Timestamp (in ms) of last written PTS. */
     int64_t                     m_tsLastPtsMs;
 
-    /** Start offset (in bytes) of current segment. */
-    uint64_t                    m_offSegCurStart;
+    /** Whether we're currently in the tracks section. */
+    bool                        m_fInTracksSection;
 
-    /** Start offset (in bytes) of seeking info segment. */
-    uint64_t                    m_offSegSeekInfoStart;
-    /** Start offset (in bytes) of general info segment. */
-    uint64_t                    m_offSegInfoStart;
-
-    /** Start offset (in bytes) of tracks segment. */
-    uint64_t                    m_offSegTracksStart;
-
-    /** Absolute position of cue segment. */
-    uint64_t                    m_offSegCuesStart;
-    /** List of cue points. Needed for seeking table. */
-    std::list<WebMCueEntry>     m_lstCue;
-
-    /** Map of tracks.
-     *  The key marks the track number (*not* the UID!). */
-    std::map <uint8_t, WebMTrack *> m_mapTracks;
-    /** Whether we're currently in an opened tracks segment. */
-    bool                        m_fTracksOpen;
-
-    /** Timestamp (in ms) when the current cluster has been opened. */
-    uint32_t                    m_tsClusterOpenMs;
-    /** Whether we're currently in an opened cluster segment. */
-    bool                        m_fClusterOpen;
-    /** Absolute position (in bytes) of current cluster within file.
-     *  Needed for seeking info table. */
-    uint64_t                    m_offSegClusterStart;
+    /** Size of timecodes in bytes. */
+    size_t                      m_cbTimecode;
+    /** Maximum value a timecode can have. */
+    uint32_t                    m_uTimecodeMax;
+    /** The timecode scale factor. */
+    uint64_t                    m_uTimecodeScaleNs;
 
     Ebml                        m_Ebml;
 
@@ -410,15 +458,16 @@ public:
           m_uPts(0)
         , m_tsInitialPtsMs(-1)
         , m_tsLastPtsMs(-1)
-        , m_offSegCurStart(0)
-        , m_offSegSeekInfoStart(0)
-        , m_offSegInfoStart(0)
-        , m_offSegTracksStart(0)
-        , m_offSegCuesStart(0)
-        , m_fTracksOpen(false)
-        , m_tsClusterOpenMs(0)
-        , m_fClusterOpen(false)
-        , m_offSegClusterStart(0) {}
+        , m_fInTracksSection(false)
+    {
+        /* Size (in bytes) of time code to write. We use 2 bytes (16 bit) by default. */
+        m_cbTimecode   = 2;
+        m_uTimecodeMax = UINT16_MAX;
+
+        /* This is the default for WebM -- all timecodes in the segments are expressed in ms.
+         * This allows every cluster to have blocks with positive values up to 32.767 seconds. */
+        m_uTimecodeScaleNs = 1000000;
+    }
 
     virtual ~WebMWriter_Impl()
     {
@@ -428,15 +477,15 @@ public:
     int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
     {
 #ifdef VBOX_WITH_LIBOPUS
-        m_Ebml.subStart(TrackEntry);
-        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
+        m_Ebml.subStart(MkvElem_TrackEntry);
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
 
-        uint8_t uTrack = (uint8_t)m_mapTracks.size();
+        uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
 
-        /* Clamp the codec rate value if it reaches a certain threshold. */
+        /* Clamp the codec rate (Hz) value if it reaches a certain threshold. */
         if      (uHz > 24000) pTrack->Audio.uHzCodec = 48000;
         else if (uHz > 16000) pTrack->Audio.uHzCodec = 24000;
         else if (uHz > 12000) pTrack->Audio.uHzCodec = 16000;
@@ -445,26 +494,26 @@ public:
 
         pTrack->Audio.uHzIn = uHz;
 
-        /** @todo 1920 bytes is 40ms worth of audio data. Make this configurable. */
-        pTrack->Audio.cbFrameSize =  1920 / (48000 / pTrack->Audio.uHzCodec);
+        /** @todo 960 bytes is 20ms worth of audio data. Make this configurable. */
+        pTrack->Audio.cbFrameSize = 960 /* Bytes */ / (48000 /* Hz */ / pTrack->Audio.uHzCodec);
 
         /** @todo Resolve codec type. */
         OpusPrivData opusPrivData(uHz, cChannels);
 
-        m_Ebml.serializeUnsignedInteger(TrackUID, pTrack->uUUID, 4)
-              .serializeUnsignedInteger(TrackType, 2 /* Audio */)
-              .serializeString(CodecID, "A_OPUS")
-              .serializeData(CodecPrivate, &opusPrivData, sizeof(opusPrivData))
-              .serializeUnsignedInteger(CodecDelay, 0)
-              .serializeUnsignedInteger(SeekPreRoll, 80000000)
-              .subStart(Audio)
-                  .serializeFloat(SamplingFrequency,  (float)pTrack->Audio.uHzCodec)
-                  .serializeUnsignedInteger(Channels, cChannels)
-                  .serializeUnsignedInteger(BitDepth, cBits)
-              .subEnd(Audio)
-              .subEnd(TrackEntry);
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID, pTrack->uUUID, 4)
+              .serializeUnsignedInteger(MkvElem_TrackType, 2 /* Audio */)
+              .serializeString(MkvElem_CodecID, "A_OPUS")
+              .serializeData(MkvElem_CodecPrivate, &opusPrivData, sizeof(opusPrivData))
+              .serializeUnsignedInteger(MkvElem_CodecDelay,  0)
+              .serializeUnsignedInteger(MkvElem_SeekPreRoll, 80000000) /* 80.000ms */
+              .subStart(MkvElem_Audio)
+                  .serializeFloat(MkvElem_SamplingFrequency,  (float)pTrack->Audio.uHzCodec)
+                  .serializeUnsignedInteger(MkvElem_Channels, cChannels)
+                  .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
+              .subEnd(MkvElem_Audio)
+              .subEnd(MkvElem_TrackEntry);
 
-        m_mapTracks[uTrack] = pTrack;
+        CurSeg.mapTracks[uTrack] = pTrack;
 
         if (puTrack)
             *puTrack = uTrack;
@@ -478,25 +527,25 @@ public:
 
     int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
     {
-        m_Ebml.subStart(TrackEntry);
-        m_Ebml.serializeUnsignedInteger(TrackNumber, (uint8_t)m_mapTracks.size());
+        m_Ebml.subStart(MkvElem_TrackEntry);
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
 
-        uint8_t uTrack = (uint8_t)m_mapTracks.size();
+        uint8_t uTrack = (uint8_t)CurSeg.mapTracks.size();
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(m_Ebml.getFile()));
 
         /** @todo Resolve codec type. */
-        m_Ebml.serializeUnsignedInteger(TrackUID, pTrack->uUUID /* UID */, 4)
-              .serializeUnsignedInteger(TrackType, 1 /* Video */)
-              .serializeString(CodecID, "V_VP8")
-              .subStart(Video)
-              .serializeUnsignedInteger(PixelWidth, uWidth)
-              .serializeUnsignedInteger(PixelHeight, uHeight)
-              .serializeFloat(FrameRate, dbFPS)
-              .subEnd(Video)
-              .subEnd(TrackEntry);
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID, pTrack->uUUID /* UID */, 4)
+              .serializeUnsignedInteger(MkvElem_TrackType, 1 /* Video */)
+              .serializeString(MkvElem_CodecID, "V_VP8")
+              .subStart(MkvElem_Video)
+              .serializeUnsignedInteger(MkvElem_PixelWidth, uWidth)
+              .serializeUnsignedInteger(MkvElem_PixelHeight, uHeight)
+              .serializeFloat(MkvElem_FrameRate, dbFPS)
+              .subEnd(MkvElem_Video)
+              .subEnd(MkvElem_TrackEntry);
 
-        m_mapTracks[uTrack] = pTrack;
+        CurSeg.mapTracks[uTrack] = pTrack;
 
         if (puTrack)
             *puTrack = uTrack;
@@ -508,57 +557,64 @@ public:
     {
         LogFunc(("Header @ %RU64\n", RTFileTell(m_Ebml.getFile())));
 
-        m_Ebml.subStart(EBML)
-              .serializeUnsignedInteger(EBMLVersion, 1)
-              .serializeUnsignedInteger(EBMLReadVersion, 1)
-              .serializeUnsignedInteger(EBMLMaxIDLength, 4)
-              .serializeUnsignedInteger(EBMLMaxSizeLength, 8)
-              .serializeString(DocType, "webm")
-              .serializeUnsignedInteger(DocTypeVersion, 2)
-              .serializeUnsignedInteger(DocTypeReadVersion, 2)
-              .subEnd(EBML);
+        m_Ebml.subStart(MkvElem_EBML)
+              .serializeUnsignedInteger(MkvElem_EBMLVersion, 1)
+              .serializeUnsignedInteger(MkvElem_EBMLReadVersion, 1)
+              .serializeUnsignedInteger(MkvElem_EBMLMaxIDLength, 4)
+              .serializeUnsignedInteger(MkvElem_EBMLMaxSizeLength, 8)
+              .serializeString(MkvElem_DocType, "webm")
+              .serializeUnsignedInteger(MkvElem_DocTypeVersion, 2)
+              .serializeUnsignedInteger(MkvElem_DocTypeReadVersion, 2)
+              .subEnd(MkvElem_EBML);
 
-        m_Ebml.subStart(Segment);
+        m_Ebml.subStart(MkvElem_Segment);
 
         /* Save offset of current segment. */
-        m_offSegCurStart = RTFileTell(m_Ebml.getFile());
+        CurSeg.offStart = RTFileTell(m_Ebml.getFile());
 
-        writeSeekInfo();
+        writeSegSeekInfo();
 
         /* Save offset of upcoming tracks segment. */
-        m_offSegTracksStart = RTFileTell(m_Ebml.getFile());
+        CurSeg.offTracks = RTFileTell(m_Ebml.getFile());
 
         /* The tracks segment starts right after this header. */
-        m_Ebml.subStart(Tracks);
-        m_fTracksOpen = true;
+        m_Ebml.subStart(MkvElem_Tracks);
+        m_fInTracksSection = true;
 
         return VINF_SUCCESS;
     }
 
-    int writeSimpleBlockInternal(uint8_t uTrackID, uint16_t uTimecode, const void *pvData, size_t cbData, uint8_t fFlags)
+    int writeSimpleBlockInternal(WebMTrack *a_pTrack, uint64_t a_uTimecode,
+                                 const void *a_pvData, size_t a_cbData, uint8_t a_fFlags)
     {
-        LogFunc(("SimpleBlock @ %RU64 (T%RU8, TS=%RU16, %zu bytes)\n", RTFileTell(m_Ebml.getFile()), uTrackID, uTimecode, cbData));
+        LogFunc(("SimpleBlock @ %RU64 (T%RU8, TS=%RU64, %zu bytes)\n",
+                 RTFileTell(m_Ebml.getFile()), a_pTrack->uTrack, a_uTimecode, a_cbData));
+
+        /** @todo Mask out non-valid timecode bits, e.g. the upper 48 bits for a (default) 16-bit timecode. */
+        Assert(a_uTimecode <= m_uTimecodeMax);
 
         /* Write a "Simple Block". */
-        m_Ebml.writeClassId(SimpleBlock);
+        m_Ebml.writeClassId(MkvElem_SimpleBlock);
         /* Block size. */
-        m_Ebml.writeUnsignedInteger(0x10000000u | (1      /* Track number. */
-                                    + 2      /* Timecode .*/
-                                    + 1      /* Flags. */
-                                    + cbData /* Actual frame data. */),  4);
+        m_Ebml.writeUnsignedInteger(0x10000000u | (  1            /* Track number size. */
+                                                   + m_cbTimecode /* Timecode size .*/
+                                                   + 1            /* Flags size. */
+                                                   + a_cbData     /* Actual frame data size. */),  4);
         /* Track number. */
-        m_Ebml.writeSize(uTrackID);
+        m_Ebml.writeSize(a_pTrack->uTrack);
         /* Timecode (relative to cluster opening timecode). */
-        m_Ebml.writeUnsignedInteger(uTimecode, 2);
+        m_Ebml.writeUnsignedInteger(a_uTimecode, m_cbTimecode);
         /* Flags. */
-        m_Ebml.writeUnsignedInteger(fFlags, 1);
+        m_Ebml.writeUnsignedInteger(a_fFlags, 1);
         /* Frame data. */
-        m_Ebml.write(pvData, cbData);
+        m_Ebml.write(a_pvData, a_cbData);
+
+        a_pTrack->cTotalBlocks++;
 
         return VINF_SUCCESS;
     }
 
-    int writeBlockVP8(const WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
+    int writeBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
     {
         RT_NOREF(a_pTrack);
 
@@ -578,12 +634,13 @@ public:
         uint16_t tsBlockMs     = 0;
         bool     fClusterStart = false;
 
-        if (tsPtsMs - m_tsClusterOpenMs > 65536)
+        /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
+        if (tsPtsMs - CurSeg.CurCluster.tsStart > m_uTimecodeMax)
             fClusterStart = true;
         else
         {
-            /* Calculate the block's timecode, which is relative to the Cluster timecode. */
-            tsBlockMs = static_cast<uint16_t>(tsPtsMs - m_tsClusterOpenMs);
+            /* Calculate the block's timecode, which is relative to the current cluster's starting timecode. */
+            tsBlockMs = static_cast<uint16_t>(tsPtsMs - CurSeg.CurCluster.tsStart);
         }
 
         const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
@@ -591,26 +648,33 @@ public:
         if (   fClusterStart
             || fKeyframe)
         {
-            if (m_fClusterOpen) /* Close current cluster first. */
-                m_Ebml.subEnd(Cluster);
+            WebMCluster &Cluster = CurSeg.CurCluster;
+
+            a_pTrack->cTotalClusters++;
+
+            if (Cluster.fOpen) /* Close current cluster first. */
+            {
+                m_Ebml.subEnd(MkvElem_Cluster);
+                Cluster.fOpen = false;
+            }
 
             tsBlockMs = 0;
 
             /* Open a new cluster. */
-            m_fClusterOpen       = true;
-            m_tsClusterOpenMs    = (uint32_t)tsPtsMs;
-            m_offSegClusterStart = RTFileTell(m_Ebml.getFile());
+            Cluster.fOpen      = true;
+            Cluster.tsStart    = tsPtsMs;
+            Cluster.offCluster = RTFileTell(m_Ebml.getFile());
 
-            LogFunc(("Cluster @ %RU64\n", m_offSegClusterStart));
+            LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
 
-            m_Ebml.subStart(Cluster)
-                  .serializeUnsignedInteger(Timecode, m_tsClusterOpenMs);
+            m_Ebml.subStart(MkvElem_Cluster)
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStart);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
             {
-                WebMCueEntry cue(m_tsClusterOpenMs, m_offSegClusterStart);
-                m_lstCue.push_back(cue);
+                WebMCueEntry cue(Cluster.tsStart, Cluster.offCluster);
+                CurSeg.lstCues.push_back(cue);
             }
         }
 
@@ -620,32 +684,74 @@ public:
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
             fFlags |= 0x08; /* Invisible frame. */
 
-        return writeSimpleBlockInternal(a_pTrack->uTrack, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
+        return writeSimpleBlockInternal(a_pTrack, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
 
 #ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
-    int writeBlockOpus(const WebMTrack *a_pTrack, const void *pvData, size_t cbData)
+    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData)
     {
         AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
-        AssertReturn(a_pTrack->Audio.cbFrameSize == cbData, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+        AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
-static uint16_t s_uTimecode = 0;
+        //static uint64_t s_uTimecode = 0;
+        /* For now this is constant while encoding (CBR), but might change to VBR later. */
+        //s_uTimecode += a_pTrack->Audio.cbFrameSize * 48000 / a_pTrack->Audio.uHzCodec;
 
-        if (!m_fClusterOpen)
+        //static uint64_t s_uPts = 0;
+
+        int64_t tsPtsMs = 1000000000 * a_pTrack->cTotalBlocks / 48000;
+
+        m_tsLastPtsMs = tsPtsMs;
+
+        if (m_tsInitialPtsMs < 0)
+            m_tsInitialPtsMs = m_tsLastPtsMs;
+
+        WebMCluster &Cluster = CurSeg.CurCluster;
+
+        /* Calculate the relative time of this block. */
+        uint16_t tsBlockMs     = 0;
+        bool     fClusterStart = false;
+
+        if (a_pTrack->cTotalBlocks == 0)
+            fClusterStart = true;
+
+        /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
+        if (tsPtsMs - Cluster.tsStart > m_uTimecodeMax)
+            fClusterStart = true;
+        else
         {
-            m_Ebml.subStart(Cluster)
-                  .serializeUnsignedInteger(Timecode, 0);
-            m_fClusterOpen = true;
+            /* Calculate the block's timecode, which is relative to the Cluster timecode. */
+            tsBlockMs = static_cast<uint16_t>(tsPtsMs - Cluster.tsStart);
         }
 
-        uint64_t ts = (s_uTimecode * 1000 * 1000 * 1000) / 48000;
+        if (fClusterStart)
+        {
+            a_pTrack->cTotalClusters++;
 
-        LogFunc(("ts=%RU64 (timecode %RU16)\n", ts, s_uTimecode));
+            if (Cluster.fOpen) /* Close current cluster first. */
+            {
+                m_Ebml.subEnd(MkvElem_Cluster);
+                Cluster.fOpen = false;
+            }
 
-        s_uTimecode += a_pTrack->Audio.cbFrameSize;
+            tsBlockMs = 0;
 
-        return writeSimpleBlockInternal(a_pTrack->uTrack, ts, pvData, cbData, 0 /* Flags */);
+            Cluster.fOpen      = true;
+            Cluster.tsStart    = tsPtsMs;
+            Cluster.offCluster = RTFileTell(m_Ebml.getFile());
+
+            LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
+
+            m_Ebml.subStart(MkvElem_Cluster)
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStart);
+        }
+
+        LogFunc(("Cluster %RU64 - Block %RU64: -> %RU64ms\n",
+                 a_pTrack->cTotalClusters, a_pTrack->cTotalBlocks, a_pTrack->cTotalBlocks * 20));
+
+        return writeSimpleBlockInternal(a_pTrack, tsBlockMs, pvData, cbData, 0 /* Flags */);
     }
 #endif
 
@@ -653,19 +759,19 @@ static uint16_t s_uTimecode = 0;
     {
         RT_NOREF(cbData); /* Only needed for assertions for now. */
 
-        WebMTracks::const_iterator itTrack = m_mapTracks.find(uTrack);
-        if (itTrack == m_mapTracks.end())
+        WebMTracks::iterator itTrack = CurSeg.mapTracks.find(uTrack);
+        if (itTrack == CurSeg.mapTracks.end())
             return VERR_NOT_FOUND;
 
-        const WebMTrack *pTrack = itTrack->second;
+        WebMTrack *pTrack = itTrack->second;
         AssertPtr(pTrack);
 
         int rc;
 
-        if (m_fTracksOpen)
+        if (m_fInTracksSection)
         {
-            m_Ebml.subEnd(Tracks);
-            m_fTracksOpen = false;
+            m_Ebml.subEnd(MkvElem_Tracks);
+            m_fInTracksSection = false;
         }
 
         switch (pTrack->enmType)
@@ -709,60 +815,63 @@ static uint16_t s_uTimecode = 0;
 
     int writeFooter(void)
     {
-        if (m_fTracksOpen)
+        if (m_fInTracksSection)
         {
-            m_Ebml.subEnd(Tracks);
-            m_fTracksOpen = false;
+            m_Ebml.subEnd(MkvElem_Tracks);
+            m_fInTracksSection = false;
         }
 
-        if (m_fClusterOpen)
+        if (CurSeg.CurCluster.fOpen)
         {
-            m_Ebml.subEnd(Cluster);
-            m_fClusterOpen = false;
+            m_Ebml.subEnd(MkvElem_Cluster);
+            CurSeg.CurCluster.fOpen = false;
         }
 
         /*
-         * Write Cues segment.
+         * Write Cues element.
          */
         LogFunc(("Cues @ %RU64\n", RTFileTell(m_Ebml.getFile())));
 
-        m_offSegCuesStart = RTFileTell(m_Ebml.getFile());
+        CurSeg.offCues = RTFileTell(m_Ebml.getFile());
 
-        m_Ebml.subStart(Cues);
+        m_Ebml.subStart(MkvElem_Cues);
 
-        for (std::list<WebMCueEntry>::iterator it = m_lstCue.begin(); it != m_lstCue.end(); ++it)
+        std::list<WebMCueEntry>::iterator itCuePoint = CurSeg.lstCues.begin();
+        while (itCuePoint != CurSeg.lstCues.end())
         {
-            m_Ebml.subStart(CuePoint)
-                  .serializeUnsignedInteger(CueTime, it->time)
-                  .subStart(CueTrackPositions)
-                  .serializeUnsignedInteger(CueTrack, 1)
-                  .serializeUnsignedInteger(CueClusterPosition, it->loc - m_offSegCurStart, 8)
-                  .subEnd(CueTrackPositions)
-                  .subEnd(CuePoint);
+            m_Ebml.subStart(MkvElem_CuePoint)
+                  .serializeUnsignedInteger(MkvElem_CueTime, itCuePoint->time)
+                  .subStart(MkvElem_CueTrackPositions)
+                  .serializeUnsignedInteger(MkvElem_CueTrack, 1)
+                  .serializeUnsignedInteger(MkvElem_CueClusterPosition, itCuePoint->loc - CurSeg.offStart, 8)
+                  .subEnd(MkvElem_CueTrackPositions)
+                  .subEnd(MkvElem_CuePoint);
+
+            itCuePoint++;
         }
 
-        m_Ebml.subEnd(Cues)
-              .subEnd(Segment);
+        m_Ebml.subEnd(MkvElem_Cues)
+              .subEnd(MkvElem_Segment);
 
         /*
-         * Update SeekHead / Info segment.
+         * Re-Update SeekHead / Info elements.
          */
 
-        writeSeekInfo();
+        writeSegSeekInfo();
 
         return RTFileSeek(m_Ebml.getFile(), 0, RTFILE_SEEK_END, NULL);
     }
 
     int close(void)
     {
-        WebMTracks::iterator itTrack = m_mapTracks.begin();
-        for (; itTrack != m_mapTracks.end(); ++itTrack)
+        WebMTracks::iterator itTrack = CurSeg.mapTracks.begin();
+        for (; itTrack != CurSeg.mapTracks.end(); ++itTrack)
         {
             delete itTrack->second;
-            m_mapTracks.erase(itTrack);
+            CurSeg.mapTracks.erase(itTrack);
         }
 
-        Assert(m_mapTracks.size() == 0);
+        Assert(CurSeg.mapTracks.size() == 0);
 
         m_Ebml.close();
 
@@ -774,38 +883,43 @@ static uint16_t s_uTimecode = 0;
 
 private:
 
-    void writeSeekInfo(void)
+    /**
+     * Writes the segment's seek information and cue points.
+     *
+     * @returns IPRT status code.
+     */
+    void writeSegSeekInfo(void)
     {
-        if (m_offSegSeekInfoStart)
-            RTFileSeek(m_Ebml.getFile(), m_offSegSeekInfoStart, RTFILE_SEEK_BEGIN, NULL);
+        if (CurSeg.offSeekInfo)
+            RTFileSeek(m_Ebml.getFile(), CurSeg.offSeekInfo, RTFILE_SEEK_BEGIN, NULL);
         else
-            m_offSegSeekInfoStart = RTFileTell(m_Ebml.getFile());
+            CurSeg.offSeekInfo = RTFileTell(m_Ebml.getFile());
 
-        LogFunc(("SeekHead @ %RU64\n", m_offSegSeekInfoStart));
+        LogFunc(("SeekHead @ %RU64\n", CurSeg.offSeekInfo));
 
-        m_Ebml.subStart(SeekHead)
+        m_Ebml.subStart(MkvElem_SeekHead)
 
-              .subStart(Seek)
-              .serializeUnsignedInteger(SeekID, Tracks)
-              .serializeUnsignedInteger(SeekPosition, m_offSegTracksStart - m_offSegCurStart, 8)
-              .subEnd(Seek)
+              .subStart(MkvElem_Seek)
+              .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Tracks)
+              .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offTracks - CurSeg.offStart, 8)
+              .subEnd(MkvElem_Seek)
 
-              .subStart(Seek)
-              .serializeUnsignedInteger(SeekID, Cues)
-              .serializeUnsignedInteger(SeekPosition, m_offSegCuesStart - m_offSegCurStart, 8)
-              .subEnd(Seek)
+              .subStart(MkvElem_Seek)
+              .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Cues)
+              .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offCues - CurSeg.offStart, 8)
+              .subEnd(MkvElem_Seek)
 
-              .subStart(Seek)
-              .serializeUnsignedInteger(SeekID, Info)
-              .serializeUnsignedInteger(SeekPosition, m_offSegInfoStart - m_offSegCurStart, 8)
-              .subEnd(Seek)
+              .subStart(MkvElem_Seek)
+              .serializeUnsignedInteger(MkvElem_SeekID, MkvElem_Info)
+              .serializeUnsignedInteger(MkvElem_SeekPosition, CurSeg.offInfo - CurSeg.offStart, 8)
+              .subEnd(MkvElem_Seek)
 
-        .subEnd(SeekHead);
+        .subEnd(MkvElem_SeekHead);
 
         int64_t iFrameTime = (int64_t)1000 * 1 / 25; //m_Framerate.den / m_Framerate.num; /** @todo Fix this! */
-        m_offSegInfoStart = RTFileTell(m_Ebml.getFile());
+        CurSeg.offInfo = RTFileTell(m_Ebml.getFile());
 
-        LogFunc(("Info @ %RU64\n", m_offSegInfoStart));
+        LogFunc(("Info @ %RU64\n", CurSeg.offInfo));
 
         char szMux[64];
         RTStrPrintf(szMux, sizeof(szMux), "vpxenc%s", vpx_codec_version_str());
@@ -813,12 +927,12 @@ private:
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
-        m_Ebml.subStart(Info)
-              .serializeUnsignedInteger(TimecodeScale, 1000000)
-              .serializeFloat(Segment_Duration, m_tsLastPtsMs + iFrameTime - m_tsInitialPtsMs)
-              .serializeString(MuxingApp, szMux)
-              .serializeString(WritingApp, szApp)
-              .subEnd(Info);
+        m_Ebml.subStart(MkvElem_Info)
+              .serializeUnsignedInteger(MkvElem_TimecodeScale, m_uTimecodeScaleNs)
+              .serializeFloat(MkvElem_Segment_Duration, m_tsLastPtsMs + iFrameTime - m_tsInitialPtsMs)
+              .serializeString(MkvElem_MuxingApp, szMux)
+              .serializeString(MkvElem_WritingApp, szApp)
+              .subEnd(MkvElem_Info);
     }
 };
 

@@ -96,11 +96,11 @@ typedef struct AVRECSTREAMOUT
     AVRECCODEC           Codec;
     /** (Audio) frame buffer. */
     PRTCIRCBUF           pCircBuf;
-    uint8_t             *pvFrameBuf;
-    size_t               cbFrameBufSize;
-    size_t               cbFrameBufUsed;
-    size_t               offFrameBufRead;
-    size_t               offFrameBufWrite;
+    /** Pointer to WebM container to write recorded audio data to.
+     *  See the AVRECMODE enumeration for more information. */
+    WebMWriter          *pWebM;
+    /** Assigned track number from WebM container. */
+    uint8_t              uTrack;
 } AVRECSTREAMOUT, *PAVRECSTREAMOUT;
 
 /**
@@ -118,11 +118,6 @@ typedef struct DRVAUDIOVIDEOREC
     PPDMIAUDIOCONNECTOR  pDrvAudio;
     /** Recording mode. */
     AVRECMODE            enmMode;
-    /** Pointer to WebM container to write recorded audio data to.
-     *  See the AVRECMODE enumeration for more information. */
-    WebMWriter          *pEBML;
-    /** Track number for audio data. */
-    uint8_t              uTrack;
 } DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
 
 /** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
@@ -143,49 +138,53 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     int rc;
 
 #ifdef VBOX_WITH_LIBOPUS
-    RTCircBufCreate(&pStreamOut->pCircBuf, _4K);
+    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+
+    if (pThis->enmMode == AVRECMODE_AUDIO)
+    {
+        pStreamOut->pWebM = new WebMWriter();
+        rc = pStreamOut->pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
+                                       WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
+        if (RT_SUCCESS(rc))
+            rc = pStreamOut->pWebM->AddAudioTrack(44100, 2, 16, &pStreamOut->uTrack);
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTCircBufCreate(&pStreamOut->pCircBuf, _4K);
+    if (RT_FAILURE(rc))
+        return rc;
 
     rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
     if (RT_SUCCESS(rc))
     {
-        size_t cbFrameBuf = sizeof(uint8_t) * _4K; /** @todo Make this configurable */
+        OpusEncoder *pEnc = NULL;
 
-        pStreamOut->pvFrameBuf = (uint8_t *)RTMemAlloc(cbFrameBuf);
-        if (pStreamOut->pvFrameBuf)
+        int orc;
+        pEnc = opus_encoder_create(48000 /* Hz */, 2 /* Stereo */, OPUS_APPLICATION_AUDIO, &orc);
+        if (orc != OPUS_OK)
         {
-            pStreamOut->cbFrameBufSize   = cbFrameBuf;
-            pStreamOut->cbFrameBufUsed   = 0;
-            pStreamOut->offFrameBufRead  = 0;
-            pStreamOut->offFrameBufWrite = 0;
-
-            OpusEncoder *pEnc = NULL;
-
-            int orc;
-            pEnc = opus_encoder_create(48000 /* Hz */, 2 /* Stereo */, OPUS_APPLICATION_AUDIO, &orc);
-            if (orc != OPUS_OK)
-            {
-                LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
-                return VERR_AUDIO_BACKEND_INIT_FAILED;
-            }
-
-            AssertPtr(pEnc);
-
-    #if 0
-            orc = opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(DrvAudioHlpCalcBitrate()));
-            if (orc != OPUS_OK)
-            {
-                LogRel(("VideoRec: Audio codec failed to set bitrate: %s\n", opus_strerror(orc)));
-                rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-            }
-            else
-            {
-    #endif
-                pStreamOut->Codec.Opus.pEnc = pEnc;
-
-                if (pCfgAcq)
-                    pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
-    //      }
+            LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
+            return VERR_AUDIO_BACKEND_INIT_FAILED;
         }
+
+        AssertPtr(pEnc);
+
+#if 0
+        orc = opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(DrvAudioHlpCalcBitrate()));
+        if (orc != OPUS_OK)
+        {
+            LogRel(("VideoRec: Audio codec failed to set bitrate: %s\n", opus_strerror(orc)));
+            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
+        }
+        else
+        {
+#endif
+        pStreamOut->Codec.Opus.pEnc = pEnc;
+
+        if (pCfgAcq)
+            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
     }
 #else
     rc = VERR_NOT_SUPPORTED;
@@ -208,7 +207,25 @@ static int avRecControlStreamOut(PPDMIHOSTAUDIO pInterface,
 
     LogFlowFunc(("enmStreamCmd=%ld\n", enmStreamCmd));
 
-    AudioMixBufReset(&pStream->MixBuf);
+    switch (enmStreamCmd)
+    {
+        case PDMAUDIOSTREAMCMD_ENABLE:
+        case PDMAUDIOSTREAMCMD_RESUME:
+            break;
+
+        case PDMAUDIOSTREAMCMD_DISABLE:
+        {
+            AudioMixBufReset(&pStream->MixBuf);
+            break;
+        }
+
+        case PDMAUDIOSTREAMCMD_PAUSE:
+            break;
+
+        default:
+            AssertMsgFailed(("Invalid command %ld\n", enmStreamCmd));
+            break;
+    }
 
     return VINF_SUCCESS;
 }
@@ -233,13 +250,11 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
     {
         switch (pThis->enmMode)
         {
+            /* In audio-only mode we're creating our own WebM writer instance,
+             * as we don't have to synchronize with any external source, such as video recording data.*/
             case AVRECMODE_AUDIO:
             {
-                pThis->pEBML = new WebMWriter();
-                rc = pThis->pEBML->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
-                                          WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
-                if (RT_SUCCESS(rc))
-                    rc = pThis->pEBML->AddAudioTrack(44100, 2, 16, &pThis->uTrack);
+                rc = VINF_SUCCESS;
                 break;
             }
 
@@ -332,12 +347,11 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
      */
 #ifdef VBOX_WITH_LIBOPUS
 
-    /** @todo For now we ASSUME 25 FPS. */
-    uint16_t cbFrameSize = (/*pStreamOut->Props.uHz*/ 48000 / 25 /* FPS */);
+    uint16_t cbFrameSize = 960; /** @todo 20ms worth of audio data. */
 
     PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
 
-    while (pStreamOut->cbFrameBufUsed < cbFrameSize)
+    while (RTCircBufUsed(pCircBuf) < cbFrameSize)
     {
         void  *pvBuf;
         size_t cbBuf;
@@ -399,15 +413,18 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
             uint8_t abDst[_4K];
             size_t  cbDst = sizeof(abDst);
 
-            /* Call the encoder to encode our input samples. */
-            opus_encoder_ctl(pStreamOut->Codec.Opus.pEnc, OPUS_SET_BITRATE(196000)); /** @todo */
+            /* Call the encoder to encode one frame per iteration. */
+            opus_encoder_ctl(pStreamOut->Codec.Opus.pEnc, OPUS_SET_BITRATE(196000)); /** @todo Only needed for VBR encoding. */
             opus_int32 cbWritten = opus_encode(pStreamOut->Codec.Opus.pEnc,
                                                (opus_int16 *)abSrc, cbSrc, abDst, cbDst);
             if (cbWritten > 0)
             {
+                cbDst = cbWritten;
+                Assert(cbDst <= sizeof(abDst));
+
                 /* Call the WebM writer to actually write the encoded audio data. */
                 WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
-                rc = pThis->pEBML->WriteBlock(pThis->uTrack, &blockData, sizeof(blockData));
+                rc = pStreamOut->pWebM->WriteBlock(pStreamOut->uTrack, &blockData, sizeof(blockData));
                 AssertRC(rc);
             }
             else if (cbWritten < 0)
@@ -448,13 +465,6 @@ static int avRecDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
         pStreamOut->pCircBuf = NULL;
     }
 
-    if (pStreamOut->pvFrameBuf)
-    {
-        Assert(pStreamOut->cbFrameBufSize);
-        RTMemFree(pStreamOut->pvFrameBuf);
-        pStreamOut->pvFrameBuf = NULL;
-    }
-
 #ifdef VBOX_WITH_LIBOPUS
     if (pStreamOut->Codec.Opus.pEnc)
     {
@@ -462,6 +472,20 @@ static int avRecDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
         pStreamOut->Codec.Opus.pEnc = NULL;
     }
 #endif
+
+    switch (pThis->enmMode)
+    {
+        case AVRECMODE_AUDIO:
+        {
+            if (pStreamOut->pWebM)
+                pStreamOut->pWebM->Close();
+            break;
+        }
+
+        case AVRECMODE_AUDIO_VIDEO:
+        default:
+            break;
+    }
 
     return VINF_SUCCESS;
 }
@@ -493,33 +517,13 @@ static DECLCALLBACK(void) drvAudioVideoRecShutdown(PPDMIHOSTAUDIO pInterface)
 
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
-    int rc;
-
     switch (pThis->enmMode)
     {
         case AVRECMODE_AUDIO:
-        {
-            if (pThis->pEBML)
-            {
-                pThis->pEBML->Close();
-
-                delete pThis->pEBML;
-                pThis->pEBML = NULL;
-            }
-            break;
-        }
-
         case AVRECMODE_AUDIO_VIDEO:
-        {
-            break;
-        }
-
         default:
-            rc = VERR_NOT_SUPPORTED;
             break;
     }
-
-    LogFlowFuncLeaveRC(rc);
 }
 
 
