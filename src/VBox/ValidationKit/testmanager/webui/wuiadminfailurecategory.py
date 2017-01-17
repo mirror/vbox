@@ -108,10 +108,10 @@ class WuiFailureCategoryList(WuiListContentBase):
     WUI Admin Failure Category Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Failure Categories', sId = 'failureCategories',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._asColumnHeaders = ['ID', 'Short Description', 'Full Description', 'Actions' ]
         self._asColumnAttribs = ['align="right"', 'align="center"', 'align="center"', 'align="center"']

@@ -79,10 +79,10 @@ class WuiAdminBuildSrcList(WuiListContentBase):
     WUI Build Source content generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Registered Build Sources', sId = 'build sources',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = ['ID', 'Name', 'Description', 'Product',
                                  'Branch', 'Build Types', 'OS/ARCH', 'First Revision', 'Last Revision', 'Max Age',
                                  'Actions' ];

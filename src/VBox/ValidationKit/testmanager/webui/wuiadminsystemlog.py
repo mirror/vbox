@@ -41,9 +41,9 @@ class WuiAdminSystemLogList(WuiListContentBase):
     WUI System Log Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, 'System Log',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = ['Date', 'Event', 'Message', 'Action'];
         self._asColumnAttribs = ['', '', '', 'align="center"'];
 

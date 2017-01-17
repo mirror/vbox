@@ -77,9 +77,10 @@ class WuiAdminBuildList(WuiListContentBase):
     WUI Admin Build List Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
-                                    sTitle = 'Builds', sId = 'builds', fnDPrint = fnDPrint, oDisp = oDisp);
+                                    sTitle = 'Builds', sId = 'builds', fnDPrint = fnDPrint, oDisp = oDisp,
+                                    aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._asColumnHeaders = ['ID', 'Product', 'Branch', 'Version',
                                  'Type', 'OS(es)', 'Author', 'Added',

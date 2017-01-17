@@ -83,11 +83,11 @@ class WuiTestGroupList(WuiListContentBase):
     WUI test group list content generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         assert len(aoEntries) == 0 or isinstance(aoEntries[0], TestGroupDataEx)
 
-        WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
-                                    sTitle = 'Test Groups', fnDPrint = fnDPrint, oDisp = oDisp);
+        WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, sTitle = 'Test Groups',
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = [ 'ID', 'Name', 'Description', 'Test Cases', 'Note', 'Actions' ];
         self._asColumnAttribs = [ 'align="right"', '', '', '', 'align="center"', 'align="center"' ];
 

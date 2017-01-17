@@ -123,10 +123,10 @@ class WuiAdminFailureReasonList(WuiListContentBase):
     WUI Admin Failure Reasons Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Failure Reasons', sId = 'failureReasons',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._asColumnHeaders = ['ID', 'Category', 'Short Description',
                                  'Full Description', 'Ticket', 'External References', 'Actions' ]

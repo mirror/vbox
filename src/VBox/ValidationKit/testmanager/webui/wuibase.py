@@ -803,7 +803,8 @@ class WuiDispatcherBase(object):
         tsEffective     = self.getEffectiveDateParam();
         cItemsPerPage   = self.getIntParam(self.ksParamItemsPerPage, iMin = 2, iMax =   9999, iDefault = 300);
         iPage           = self.getIntParam(self.ksParamPageNo,       iMin = 0, iMax = 999999, iDefault = 0);
-        aiSortColumnsDup = self.getListOfIntParams(self.ksParamSortColumns, iMin = 0,
+        aiSortColumnsDup = self.getListOfIntParams(self.ksParamSortColumns,
+                                                   iMin = -getattr(oLogicType, 'kcMaxSortColumns', 0) + 1,
                                                    iMax = getattr(oLogicType, 'kcMaxSortColumns', 0), aiDefaults = []);
         aiSortColumns   = [];
         for iSortColumn in aiSortColumnsDup:
@@ -813,7 +814,7 @@ class WuiDispatcherBase(object):
 
         aoEntries  = oLogicType(self._oDb).fetchForListing(iPage * cItemsPerPage, cItemsPerPage + 1, tsEffective, aiSortColumns);
         oContent   = oListContentType(aoEntries, iPage, cItemsPerPage, tsEffective,
-                                      fnDPrint = self._oSrvGlue.dprint, oDisp = self);
+                                      fnDPrint = self._oSrvGlue.dprint, oDisp = self, aiSelectedSortColumns = aiSortColumns);
         (self._sPageTitle, self._sPageBody) = oContent.show();
         return True;
 

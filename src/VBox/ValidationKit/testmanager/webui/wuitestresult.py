@@ -763,11 +763,12 @@ class WuiGroupedResultList(WuiListContentBase):
     WUI results content generator.
     """
 
-    def __init__(self, aoEntries, cEntriesCount, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, cEntriesCount, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp,
+                 aiSelectedSortColumns = None):
         """Override initialization"""
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Ungrouped (%d)' % cEntriesCount, sId = 'results',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._cEntriesCount   = cEntriesCount
 

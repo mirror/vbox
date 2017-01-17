@@ -102,10 +102,10 @@ class WuiAdminListOfBlacklistItems(WuiListContentBase):
     WUI Admin Build Blacklist Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Build Blacklist', sId = 'buildsBlacklist',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._asColumnHeaders = ['ID', 'Failure Reason',
                                  'Product', 'Branch', 'Type',

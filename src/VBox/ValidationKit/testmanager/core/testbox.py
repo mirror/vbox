@@ -670,32 +670,45 @@ class TestBoxLogic(ModelLogicBase):
     TestBox logic.
     """
 
-    kiSortColumn_sName              =  0;
-    kiSortColumn_sOs                =  1;
-    kiSortColumn_sOsVersion         =  2;
-    kiSortColumn_sCpuVendor         =  3;
-    kiSortColumn_sCpuArch           =  4;
-    kiSortColumn_lCpuRevision       =  5;
-    kiSortColumn_cCpus              =  6;
-    kiSortColumn_cMbMemory          =  7;
-    kiSortColumn_cMbScratch         =  8;
-    kiSortColumn_fCpuNestedPaging   =  9;
-    kiSortColumn_iTestBoxScriptRev  = 10;
-    kiSortColumn_iPythonHexVersion  = 11;
-    kcMaxSortColumns                = 12;
+    kiSortColumn_sName              =  1;
+    kiSortColumn_sOs                =  2;
+    kiSortColumn_sOsVersion         =  3;
+    kiSortColumn_sCpuVendor         =  4;
+    kiSortColumn_sCpuArch           =  5;
+    kiSortColumn_lCpuRevision       =  6;
+    kiSortColumn_cCpus              =  7;
+    kiSortColumn_cMbMemory          =  8;
+    kiSortColumn_cMbScratch         =  9;
+    kiSortColumn_fCpuNestedPaging   = 10;
+    kiSortColumn_iTestBoxScriptRev  = 11;
+    kiSortColumn_iPythonHexVersion  = 12;
+    kcMaxSortColumns                = 13;
     kdSortColumnMap                 = {
-        kiSortColumn_sName:             'TestBoxesWithStrings.sName',
-        kiSortColumn_sOs:               'TestBoxesWithStrings.sOs',
-        kiSortColumn_sOsVersion:        'TestBoxesWithStrings.sOsVersion',
-        kiSortColumn_sCpuVendor:        'TestBoxesWithStrings.sCpuVendor',
-        kiSortColumn_sCpuArch:          'TestBoxesWithStrings.sCpuArch',
-        kiSortColumn_lCpuRevision:      'TestBoxesWithStrings.lCpuRevision',
-        kiSortColumn_cCpus:             'TestBoxesWithStrings.cCpus',
-        kiSortColumn_cMbMemory:         'TestBoxesWithStrings.cMbMemory',
-        kiSortColumn_cMbScratch:        'TestBoxesWithStrings.cMbScratch',
-        kiSortColumn_fCpuNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging',
-        kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev',
-        kiSortColumn_iPythonHexVersion: 'TestBoxesWithStrings.iPythonHexVersion',
+        0:                               'TestBoxesWithStrings.sName',
+        kiSortColumn_sName:              'TestBoxesWithStrings.sName',
+        -kiSortColumn_sName:             'TestBoxesWithStrings.sName DESC',
+        kiSortColumn_sOs:                'TestBoxesWithStrings.sOs',
+        -kiSortColumn_sOs:               'TestBoxesWithStrings.sOs DESC',
+        kiSortColumn_sOsVersion:         'TestBoxesWithStrings.sOsVersion',
+        -kiSortColumn_sOsVersion:        'TestBoxesWithStrings.sOsVersion DESC',
+        kiSortColumn_sCpuVendor:         'TestBoxesWithStrings.sCpuVendor',
+        -kiSortColumn_sCpuVendor:        'TestBoxesWithStrings.sCpuVendor DESC',
+        kiSortColumn_sCpuArch:           'TestBoxesWithStrings.sCpuArch',
+        -kiSortColumn_sCpuArch:          'TestBoxesWithStrings.sCpuArch DESC',
+        kiSortColumn_lCpuRevision:       'TestBoxesWithStrings.lCpuRevision',
+        -kiSortColumn_lCpuRevision:      'TestBoxesWithStrings.lCpuRevision DESC',
+        kiSortColumn_cCpus:              'TestBoxesWithStrings.cCpus',
+        -kiSortColumn_cCpus:             'TestBoxesWithStrings.cCpus DESC',
+        kiSortColumn_cMbMemory:          'TestBoxesWithStrings.cMbMemory',
+        -kiSortColumn_cMbMemory:         'TestBoxesWithStrings.cMbMemory DESC',
+        kiSortColumn_cMbScratch:         'TestBoxesWithStrings.cMbScratch',
+        -kiSortColumn_cMbScratch:        'TestBoxesWithStrings.cMbScratch DESC',
+        kiSortColumn_fCpuNestedPaging:   'TestBoxesWithStrings.fCpuNestedPaging',
+        -kiSortColumn_fCpuNestedPaging:  'TestBoxesWithStrings.fCpuNestedPaging DESC',
+        kiSortColumn_iTestBoxScriptRev:  'TestBoxesWithStrings.iTestBoxScriptRev',
+        -kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev DESC',
+        kiSortColumn_iPythonHexVersion:  'TestBoxesWithStrings.iPythonHexVersion',
+        -kiSortColumn_iPythonHexVersion: 'TestBoxesWithStrings.iPythonHexVersion DESC',
     };
 
     def __init__(self, oDb):

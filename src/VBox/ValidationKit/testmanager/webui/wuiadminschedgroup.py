@@ -93,10 +93,10 @@ class WuiAdminSchedGroupList(WuiListContentBase):
     Content generator for the schedule group listing.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Registered Scheduling Groups', sId = 'schedgroups',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
 
         self._asColumnHeaders = [
             'ID',  'Name', 'Enabled', 'Scheduler Type',

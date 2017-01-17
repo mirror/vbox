@@ -179,10 +179,11 @@ class WuiTestBoxList(WuiListContentWithActionBase):
     ## Boxes which doesn't report in for more than 15 min are considered dead.
     kcSecMaxStatusDeltaAlive = 15*60
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         # type: (list[TestBoxDataForListing], int, int, datetime.datetime, ignore, WuiAdmin) -> None
         WuiListContentWithActionBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
-                                              sTitle = 'TestBoxes', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp);
+                                              sTitle = 'TestBoxes', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp,
+                                              aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders.extend([ 'Name', 'LOM', 'Status', 'Cmd',
                                        'Note', 'Script', 'Python', 'Group',
                                        'OS', 'CPU', 'Features', 'CPUs', 'RAM', 'Scratch',

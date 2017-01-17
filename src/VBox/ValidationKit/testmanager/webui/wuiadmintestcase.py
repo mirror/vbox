@@ -58,9 +58,9 @@ class WuiTestCaseList(WuiListContentBase):
     WUI test case list content generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
-        WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
-                                    sTitle = 'Test Cases', fnDPrint = fnDPrint, oDisp = oDisp);
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
+        WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, sTitle = 'Test Cases',
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = \
         [
             'Name', 'Active', 'Timeout', 'Base Command / Variations', 'Validation Kit Files',

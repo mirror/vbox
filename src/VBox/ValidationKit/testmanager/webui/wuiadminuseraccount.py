@@ -66,9 +66,10 @@ class WuiUserAccountList(WuiListContentBase):
     WUI user account list content generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
-                                    sTitle = 'Registered User Accounts', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp);
+                                    sTitle = 'Registered User Accounts', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp,
+                                    aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = ['User ID', 'Name', 'E-mail', 'Full Name', 'Login Name', 'Actions'];
         self._asColumnAttribs = ['align="center"', 'align="center"', 'align="center"', 'align="center"', 'align="center"',
                                  'align="center"'];

@@ -41,10 +41,10 @@ class WuiAdminBuildCatList(WuiListContentBase):
     WUI Build Category List Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Build Categories', sId = 'buildcategories',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = ([ 'ID', 'Product', 'Repository', 'Branch', 'Build Type', 'OS/Architectures', 'Actions' ]);
         self._asColumnAttribs = (['align="right"', '', '', '', '', 'align="center"' ]);
 

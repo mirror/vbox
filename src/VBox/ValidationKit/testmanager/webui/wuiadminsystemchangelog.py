@@ -57,9 +57,9 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
     WUI System Changelog Content Generator.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, cDaysBack):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, cDaysBack, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, 'System Changelog',
-                                    fnDPrint = fnDPrint, oDisp = oDisp);
+                                    fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._asColumnHeaders = [ 'When', 'User', 'Event', 'Details' ];
         self._asColumnAttribs = [ 'align="center"', 'align="center"', '', '' ];
         self._oBuildBlacklistLogic  = BuildBlacklistLogic(oDisp.getDb());
