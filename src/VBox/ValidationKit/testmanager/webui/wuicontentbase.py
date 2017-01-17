@@ -736,8 +736,8 @@ class WuiListContentBase(WuiContentBase):
     Base for the list content classes.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, sId = None, fnDPrint = None,
-                 oDisp = None, aiSelectedSortColumns = None): # pylint: disable=too-many-arguments
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, # pylint: disable=too-many-arguments
+                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None):
         WuiContentBase.__init__(self, fnDPrint = fnDPrint, oDisp = oDisp);
         self._aoEntries         = aoEntries; ## @todo should replace this with a Logic object and define methods for querying.
         self._iPage             = iPage;
@@ -1036,8 +1036,8 @@ class WuiListContentWithActionBase(WuiListContentBase):
     Base for the list content with action classes.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, sId = None, fnDPrint = None,
-                 oDisp = None, aiSelectedSortColumns = None):   # pylint: disable=too-many-arguments
+    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, # pylint: disable=too-many-arguments
+                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, sId = sId,
                                     fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._aoActions     = None; # List of [ oValue, sText, sHover ] provided by the child class.
