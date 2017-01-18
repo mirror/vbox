@@ -781,7 +781,7 @@ VBoxC_INTERMEDIATES = \
 	$(VBOX_AUTOGEN_EVENT_H) \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
-VBoxC_SOURCES = \
+VBoxC_SOURCES += \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
