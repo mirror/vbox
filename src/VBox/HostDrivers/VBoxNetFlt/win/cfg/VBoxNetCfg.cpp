@@ -81,7 +81,7 @@ static  PFNSETIPINTERFACEENTRY          g_pfnSetIpInterfaceEntry        = NULL;
 /*
 * Forward declaration for using vboxNetCfgWinSetupMetric()
 */
-HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey);
+HRESULT vboxNetCfgWinSetupMetric(IN NET_LUID* pLuid);
 HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID);
 
 
@@ -315,7 +315,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
     {
         if (pTempComponent != NULL)
         {
-            HKEY hkey;
+            HKEY hkey = (HKEY)INVALID_HANDLE_VALUE;
             HRESULT res;
 
             /*
@@ -325,9 +325,17 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
             res = pTempComponent->OpenParamKey(&hkey);
 
             /* Set default metric value for host-only interface only */
-            if (SUCCEEDED(res) && hkey != NULL && wcsnicmp(pszwComponentId, VBOXNETCFGWIN_NETADP_ID, 256) == 0)
+            if (   SUCCEEDED(res)
+                && hkey != INVALID_HANDLE_VALUE
+                && wcsnicmp(pszwComponentId, VBOXNETCFGWIN_NETADP_ID, 256) == 0)
             {
-                res = vboxNetCfgWinSetupMetric(hkey);
+                NET_LUID luid;
+                res = vboxNetCfgWinGetInterfaceLUID(hkey, &luid);
+
+                /* Close the key as soon as possible. See @bugref{7973}. */
+                RegCloseKey (hkey);
+                hkey = (HKEY)INVALID_HANDLE_VALUE;
+
                 if (FAILED(res))
                 {
                     /*
@@ -335,9 +343,28 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
                      *   So we will not break installation process due to this error.
                      */
                     NonStandardLogFlow(("VBoxNetCfgWinInstallComponent Warning! "
-                        "vboxNetCfgWinSetupMetric failed, default metric "
-                        "for new interface will not be set, hr (0x%x)\n", res));
+                                        "vboxNetCfgWinGetInterfaceLUID failed, default metric "
+                                        "for new interface will not be set, hr (0x%x)\n", res));
                 }
+                else
+                {
+                    res = vboxNetCfgWinSetupMetric(&luid);
+                    if (FAILED(res))
+                    {
+                        /*
+                         *   The setting of Metric is not very important functionality,
+                         *   So we will not break installation process due to this error.
+                         */
+                        NonStandardLogFlow(("VBoxNetCfgWinInstallComponent Warning! "
+                                            "vboxNetCfgWinSetupMetric failed, default metric "
+                                            "for new interface will not be set, hr (0x%x)\n", res));
+                    }
+                }
+            }
+            if (hkey != INVALID_HANDLE_VALUE)
+            {
+                RegCloseKey (hkey);
+                hkey = (HKEY)INVALID_HANDLE_VALUE;
             }
             if (ppComponent != NULL)
                 *ppComponent = pTempComponent;
@@ -3133,16 +3160,6 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
             SetErrBreak (("SetupDiCallClassInstaller (DIF_INSTALLDEVICE) failed (0x%08X)",
                           GetLastError()));
 
-        /* Figure out NetCfgInstanceId */
-        hkey = SetupDiOpenDevRegKey(hDeviceInfo,
-                                    &DeviceInfoData,
-                                    DICS_FLAG_GLOBAL,
-                                    0,
-                                    DIREG_DRV,
-                                    KEY_READ);
-        if (hkey == INVALID_HANDLE_VALUE)
-            SetErrBreak(("SetupDiOpenDevRegKey failed (0x%08X)", GetLastError()));
-
         /* Query the instance ID; on Windows 10, the registry key may take a short
          * while to appear. Microsoft recommends waiting for up to 5 seconds, but
          * we want to be on the safe side, so let's wait for 20 seconds. Waiting
@@ -3151,14 +3168,27 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
          */
         for (int retries = 0; retries < 2 * 20; ++retries)
         {
+            Sleep(500); /* half second */
+
+            /* Figure out NetCfgInstanceId */
+            hkey = SetupDiOpenDevRegKey(hDeviceInfo,
+                                        &DeviceInfoData,
+                                        DICS_FLAG_GLOBAL,
+                                        0,
+                                        DIREG_DRV,
+                                        KEY_READ);
+            if (hkey == INVALID_HANDLE_VALUE)
+                break;
+
             cbSize = sizeof(pWCfgGuidString);
             ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
                                    &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
             /* As long as the return code is FILE_NOT_FOUND, sleep and retry. */
-            if (ret == ERROR_FILE_NOT_FOUND)
-                Sleep(500); /* half second */
-            else
+            if (ret != ERROR_FILE_NOT_FOUND)
                 break;
+
+            RegCloseKey (hkey);
+            hkey = (HKEY)INVALID_HANDLE_VALUE;
         }
 
         if (ret == ERROR_FILE_NOT_FOUND)
@@ -3167,14 +3197,23 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
             break;
         }
 
+        /*
+         * We need to check 'hkey' after we check 'ret' to distinguish the case
+         * of failed SetupDiOpenDevRegKey from the case when we timed out.
+         */
+        if (hkey == INVALID_HANDLE_VALUE)
+            SetErrBreak(("SetupDiOpenDevRegKey failed (0x%08X)", GetLastError()));
+
         if (ret != ERROR_SUCCESS)
             SetErrBreak(("Querying NetCfgInstanceId failed (0x%08X)", ret));
 
-        /*
-        *   Set default metric value of interface to fix multicast issue
-        *   See @bugref{6379} for details.
-        */
-        HRESULT hSMRes = vboxNetCfgWinSetupMetric(hkey);
+        NET_LUID luid;
+        HRESULT hSMRes = vboxNetCfgWinGetInterfaceLUID(hkey, &luid);
+
+        /* Close the key as soon as possible. See @bugref{7973}. */
+        RegCloseKey (hkey);
+        hkey = (HKEY)INVALID_HANDLE_VALUE;
+
         if (FAILED(hSMRes))
         {
             /*
@@ -3182,9 +3221,28 @@ static HRESULT vboxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, 
             *   So we will not break installation process due to this error.
             */
             NonStandardLogFlow(("vboxNetCfgWinCreateHostOnlyNetworkInterface Warning! "
-                "vboxNetCfgWinSetupMetric failed, default metric "
-                "for new interface will not be set, hr (0x%x)\n", hSMRes));
+                                "vboxNetCfgWinGetInterfaceLUID failed, default metric "
+                                "for new interface will not be set, hr (0x%x)\n", hSMRes));
         }
+        else
+        {
+            /*
+             *   Set default metric value of interface to fix multicast issue
+             *   See @bugref{6379} for details.
+             */
+            hSMRes = vboxNetCfgWinSetupMetric(&luid);
+            if (FAILED(hSMRes))
+            {
+                /*
+                 *   The setting of Metric is not very important functionality,
+                 *   So we will not break installation process due to this error.
+                 */
+                NonStandardLogFlow(("vboxNetCfgWinCreateHostOnlyNetworkInterface Warning! "
+                                    "vboxNetCfgWinSetupMetric failed, default metric "
+                                    "for new interface will not be set, hr (0x%x)\n", hSMRes));
+            }
+        }
+
 
 #ifndef VBOXNETCFG_DELAYEDRENAME
         /*
@@ -3500,21 +3558,16 @@ HRESULT vboxNetCfgWinGetInterfaceLUID(IN HKEY hKey, OUT NET_LUID* pLUID)
 }
 
 
-HRESULT vboxNetCfgWinSetupMetric(IN HKEY hKey)
+HRESULT vboxNetCfgWinSetupMetric(IN NET_LUID* pLuid)
 {
     HINSTANCE hModule = NULL;
     HRESULT rc = vboxLoadIpHelpFunctions(hModule);
     if (SUCCEEDED(rc))
     {
-        NET_LUID luid;
-        rc = vboxNetCfgWinGetInterfaceLUID(hKey, &luid);
+        int loopbackMetric;
+        rc = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
         if (SUCCEEDED(rc))
-        {
-            int loopbackMetric;
-            rc = vboxNetCfgWinGetLoopbackMetric(&loopbackMetric);
-            if (SUCCEEDED(rc))
-                rc = vboxNetCfgWinSetInterfaceMetric(&luid, loopbackMetric - 1);
-        }
+            rc = vboxNetCfgWinSetInterfaceMetric(pLuid, loopbackMetric - 1);
     }
 
     g_pfnInitializeIpInterfaceEntry = NULL;
