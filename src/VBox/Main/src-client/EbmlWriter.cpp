@@ -531,6 +531,7 @@ public:
 
     int AddVideoTrack(uint16_t uWidth, uint16_t uHeight, double dbFPS, uint8_t *puTrack)
     {
+#ifdef VBOX_WITH_LIBVPX
         m_Ebml.subStart(MkvElem_TrackEntry);
         m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
 
@@ -555,6 +556,10 @@ public:
             *puTrack = uTrack;
 
         return VINF_SUCCESS;
+#else
+        RT_NOREF(uWidth, uHeight, dbFPS, puTrack);
+        return VERR_NOT_SUPPORTED;
+#endif
     }
 
     int writeHeader(void)
@@ -618,6 +623,7 @@ public:
         return VINF_SUCCESS;
     }
 
+#ifdef VBOX_WITH_LIBVPX
     int writeBlockVP8(WebMTrack *a_pTrack, const vpx_codec_enc_cfg_t *a_pCfg, const vpx_codec_cx_pkt_t *a_pPkt)
     {
         RT_NOREF(a_pTrack);
@@ -690,6 +696,7 @@ public:
 
         return writeSimpleBlockInternal(a_pTrack, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
+#endif /* VBOX_WITH_LIBVPX */
 
 #ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
@@ -757,11 +764,11 @@ public:
 
         return writeSimpleBlockInternal(a_pTrack, tsBlockMs, pvData, cbData, 0 /* Flags */);
     }
-#endif
+#endif /* VBOX_WITH_LIBOPUS */
 
     int WriteBlock(uint8_t uTrack, const void *pvData, size_t cbData)
     {
-        RT_NOREF(cbData); /* Only needed for assertions for now. */
+        RT_NOREF(pvData, cbData); /* Only needed for assertions for now. */
 
         WebMTracks::iterator itTrack = CurSeg.mapTracks.find(uTrack);
         if (itTrack == CurSeg.mapTracks.end())
@@ -798,6 +805,7 @@ public:
 
             case WebMTrackType_Video:
             {
+#ifdef VBOX_WITH_LIBVPX
                 if (m_enmVideoCodec == WebMWriter::VideoCodec_VP8)
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_VP8));
@@ -805,6 +813,7 @@ public:
                     rc = writeBlockVP8(pTrack, pData->pCfg, pData->pPkt);
                 }
                 else
+#endif /* VBOX_WITH_LIBVPX */
                     rc = VERR_NOT_SUPPORTED;
                 break;
             }
@@ -926,8 +935,12 @@ private:
         LogFunc(("Info @ %RU64\n", CurSeg.offInfo));
 
         char szMux[64];
-        RTStrPrintf(szMux, sizeof(szMux), "vpxenc%s", vpx_codec_version_str());
-
+        RTStrPrintf(szMux, sizeof(szMux),
+#ifdef VBOX_WITH_LIBVPX
+                     "vpxenc%s", vpx_codec_version_str());
+#else
+                     "unknown");
+#endif
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 

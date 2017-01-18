@@ -708,6 +708,8 @@ ifdef VBOX_WITH_VIDEOREC
   ifdef VBOX_WITH_LIBVPX
    VBoxC_SDKS += VBOX_VPX
    VBoxC_DEFS += VBOX_WITH_LIBVPX
+   VBoxC_SOURCES += \
+	src-client/VideoRec.cpp
   else
    $(error "VBox: No alternative for VPX when using video capturing support yet")
   endif
@@ -822,7 +824,6 @@ VBoxC_SOURCES = \
 	src-client/SessionImpl.cpp \
 	src-client/USBDeviceImpl.cpp \
 	src-client/VBoxDriversRegister.cpp \
-	src-client/VideoRec.cpp \
 	src-client/VirtualBoxClientImpl.cpp \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \

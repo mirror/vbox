@@ -18,14 +18,16 @@
 #ifndef ____EBMLWRITER
 #define ____EBMLWRITER
 
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4668) /* vpx_codec.h(64) : warning C4668: '__GNUC__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
-#include <vpx/vpx_encoder.h>
-# pragma warning(pop)
-#else
-# include <vpx/vpx_encoder.h>
-#endif
+#ifdef VBOX_WITH_LIBVPX
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4668) /* vpx_codec.h(64) : warning C4668: '__GNUC__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
+#  include <vpx/vpx_encoder.h>
+#  pragma warning(pop)
+# else
+#  include <vpx/vpx_encoder.h>
+# endif
+#endif /* VBOX_WITH_LIBVPX */
 
 #include <iprt/file.h>
 
@@ -58,6 +60,7 @@ public:
         VideoCodec_VP8  = 1
     };
 
+#ifdef VBOX_WITH_LIBVPX
     /**
      * Block data for VP8-encoded video data.
      */
@@ -66,7 +69,9 @@ public:
         const vpx_codec_enc_cfg_t *pCfg;
         const vpx_codec_cx_pkt_t  *pPkt;
     };
+#endif /* VBOX_WITH_LIBVPX */
 
+#ifdef VBOX_WITH_LIBOPUS
     /**
      * Block data for Opus-encoded audio data.
      */
@@ -77,6 +82,7 @@ public:
         /** Size (in bytes) of encoded Opus audio data. */
         size_t      cbData;
     };
+#endif /* VBOX_WITH_LIBOPUS */
 
 public:
 
