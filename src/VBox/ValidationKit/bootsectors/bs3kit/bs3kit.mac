@@ -1702,6 +1702,9 @@ endstruc
 %define BS3CPU_F_PSE                0x0800
 %define BS3CPU_F_PSE_BIT            11
 %define BS3CPU_F_LONG_MODE          0x1000
+%define BS3CPU_F_LONG_MODE_BIT      12
+%define BS3CPU_F_NX                 0x2000
+%define BS3CPU_F_NX_BIT             13
 ;; @}
 
 

@@ -3380,6 +3380,8 @@ BS3_MODE_PROTO_NOSB(uint8_t, Bs3CpuDetect,(void));
 #define BS3CPU_F_PSE                UINT16_C(0x0800)
 /** Flag indicating that the CPU supports long mode. */
 #define BS3CPU_F_LONG_MODE          UINT16_C(0x1000)
+/** Flag indicating that the CPU supports NX. */
+#define BS3CPU_F_NX                 UINT16_C(0x2000)
 /** @} */
 
 /** The return value of #Bs3CpuDetect_mmm. (Initial value is BS3CPU_TYPE_MASK.) */

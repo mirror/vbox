@@ -81,24 +81,83 @@ typedef struct BS3CPUBASIC2PFSTATE
     uint8_t                    *pbOrgTest;
     /** The size of the test area (at least two pages). */
     uint32_t                    cbTest;
+    /** cbTest expressed as a page count. */
+    uint16_t                    cTestPages;
+    /** The number of PTEs in the first PTE, i.e. what we can
+     *  safely access via PgInfo.u.Pae.pPte/PgInfo.u.Legacy.pPte. */
+    uint16_t                    cTest1stPtes;
+    /** The number of PDEs for cTestPages. */
+    uint16_t                    cTestPdes;
     /** 16-bit data selector for pbTest. */
     uint16_t                    uSel16TestData;
     /** 16-bit code selector for pbTest. */
     uint16_t                    uSel16TestCode;
+    /** The size of the PDE backup. */
+    uint16_t                    cbPdeBackup;
+    /** The size of the PTE backup. */
+    uint16_t                    cbPteBackup;
     /** Test paging information for pbTest. */
     BS3PAGINGINFO4ADDR          PgInfo;
 
     /** Set if we can use the INVLPG instruction. */
     bool                        fUseInvlPg;
 
+    /** Reflects CR0.WP. */
+    bool                        fWp;
+    /** Reflects EFER.NXE & CR4.PAE. */
+    bool                        fNxe;
+
     /** Trap context frame. */
     BS3TRAPFRAME                TrapCtx;
     /** Expected result context. */
     BS3REGCTX                   ExpectCtx;
 
+    /** The PML4E backup. */
+    uint64_t                    u64Pml4eBackup;
+    /** The PDPTE backup. */
+    uint64_t                    u64PdpteBackup;
+    /** The PDE backup. */
+    uint64_t                    au64PdeBackup[16];
+    /** The PTE backup. */
+    uint64_t                    au64PteBackup[X86_PG_PAE_ENTRIES];
+
 } BS3CPUBASIC2PFSTATE;
 /** Pointer to state for the \#PF test. */
 typedef BS3CPUBASIC2PFSTATE *PBS3CPUBASIC2PFSTATE;
+
+
+/**
+ * Paging modification worker.
+ */
+typedef struct BS3CPUBASIC2PFMODPT
+{
+    const char *pszName;
+    uint32_t fPresent    : 1;
+    uint32_t fUser       : 1;
+    uint32_t fWriteable  : 1;
+    uint32_t fNoExecute  : 1;
+    uint32_t fReserved   : 1;
+    uint32_t uModifyArg  : 24;
+    void   (*pfnModify)(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, struct BS3CPUBASIC2PFMODPT const *pEntry);
+    bool   (*pfnApplicable)(PBS3CPUBASIC2PFSTATE pThis, struct BS3CPUBASIC2PFMODPT const *pEntry);
+} BS3CPUBASIC2PFMODPT;
+typedef BS3CPUBASIC2PFMODPT const *PCBS3CPUBASIC2PFMODPT;
+
+
+/**
+ * Memory accessor.
+ */
+typedef struct BS3CPUBASIC2PFACCESSOR
+{
+    /** Accessor name.   */
+    const char *pszName;
+    /** The accessor. */
+    void      (*pfnAccessor)(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd, bool fPageLevel);
+    /** The X86_TRAP_PF_XXX access flags this access sets.   */
+    uint32_t    fAccess;
+
+} BS3CPUBASIC2PFACCESSOR;
+typedef const BS3CPUBASIC2PFACCESSOR *PCBS3CPUBASIC2PFACCESSOR;
 
 
 /*********************************************************************************************************************************
@@ -261,12 +320,52 @@ static void bs3CpuBasic2Pf_CompareSimpleUd(PBS3CPUBASIC2PFSTATE pThis, PCBS3REGC
 }
 
 
+/**
+ * Restores all the paging entries from backup and flushes everything.
+ */
+static void bs3CpuBasic2Pf_FlushAll(void)
+{
+    if ((g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+    {
+        uint32_t uCr4 = ASMGetCR4();
+        if (uCr4 & (X86_CR4_PGE | X86_CR4_PCIDE))
+        {
+            ASMSetCR4(uCr4 & ~(X86_CR4_PGE | X86_CR4_PCIDE));
+            ASMSetCR4(uCr4);
+            return;
+        }
+    }
+
+    ASMReloadCR3();
+}
+
+
+/**
+ * Restores all the paging entries from backup and flushes everything.
+ *
+ * @param   pThis       Test state data.
+ */
+static void bs3CpuBasic2Pf_RestoreFromBackups(PBS3CPUBASIC2PFSTATE pThis)
+{
+    Bs3MemCpy(pThis->PgInfo.u.Legacy.pPte, pThis->au64PteBackup, pThis->cbPteBackup);
+    Bs3MemCpy(pThis->PgInfo.u.Legacy.pPde, pThis->au64PdeBackup, pThis->cbPdeBackup);
+    if (pThis->PgInfo.cEntries > 2)
+        pThis->PgInfo.u.Pae.pPdpe->u  = pThis->u64PdpteBackup;
+    if (pThis->PgInfo.cEntries > 3)
+        pThis->PgInfo.u.Pae.pPml4e->u = pThis->u64Pml4eBackup;
+    bs3CpuBasic2Pf_FlushAll();
+}
+
+
+/** @name BS3CPUBASIC2PFACCESSOR::pfnAccessor Implementations
+ * @{ */
+
 static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd, bool fPageLevel)
 {
     uint8_t *pbOrgTest = pThis->pbOrgTest;
     unsigned off;
 
-    for (off = X86_PAGE_SIZE - 4; off < X86_PAGE_SIZE + 2; off++)
+    for (off = X86_PAGE_SIZE - 5; off < X86_PAGE_SIZE + 2; off++)
     {
         /* Emit a little bit of code (using the original allocation mapping) and point pCtx to it. */
         pbOrgTest[off + 0] = X86_OP_PRF_SIZE_ADDR;
@@ -294,14 +393,16 @@ static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
 
         Bs3TrapSetJmpAndRestore(pCtx, &pThis->TrapCtx);
         //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
-        if (bXcpt == X86_XCPT_PF)
-        {
-            unsigned offAddPC = !fPageLevel || off >= X86_PAGE_SIZE ? 0 : X86_PAGE_SIZE - off;
-            bs3CpuBasic2Pf_CompareSimplePf(pThis, pCtx, offAddPC, uPfErrCd, (uintptr_t)pThis->pbTest + offAddPC);
-        }
-        else
+        if (   bXcpt != X86_XCPT_PF
+            || (fPageLevel && off < X86_PAGE_SIZE - 4))
             bs3CpuBasic2Pf_CompareSimpleUd(pThis, pCtx, 3);
-
+        else if (!fPageLevel || off >= X86_PAGE_SIZE)
+            bs3CpuBasic2Pf_CompareSimplePf(pThis, pCtx, 0, uPfErrCd, (uintptr_t)pThis->pbTest + off);
+        else
+            bs3CpuBasic2Pf_CompareSimplePf(pThis, pCtx,
+                                             off + 3 == X86_PAGE_SIZE || off + 4 == X86_PAGE_SIZE
+                                           ? RT_MIN(X86_PAGE_SIZE, off + 3) - off : 0,
+                                           uPfErrCd, (uintptr_t)pThis->pbTest + RT_MIN(X86_PAGE_SIZE, off + 4));
     }
 }
 
@@ -381,6 +482,7 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
     {
         unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
         unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+
         for (; off < offEnd; off++)
         {
             *(uint64_t *)&pThis->pbOrgTest[off] = s_uValue;
@@ -397,7 +499,7 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
                 || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 pThis->ExpectCtx.rax.u = uExpectRax;
-                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovLoad.offUd2, bXcpt, 0 /*uErrCd*/);
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovLoad.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
                 pThis->ExpectCtx.rax = pCtx->rax;
             }
             else
@@ -481,7 +583,7 @@ static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCt
                 || (fPageLevel && off >= X86_PAGE_SIZE * 2)
                 || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
-                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovStore.offUd2, bXcpt, 0 /*uErrCd*/);
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovStore.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
                 if (*(uint64_t *)&pThis->pbOrgTest[off] != uExpectStored)
                     Bs3TestFailedF("%u - %s: Stored %#RX64, expected %#RX64",
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uExpectStored);
@@ -579,7 +681,7 @@ static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
                 || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 pThis->ExpectCtx.rax.u = uExpectedRax;
-                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->Xchg.offUd2, bXcpt, 0 /*uErrCd*/);
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->Xchg.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
                 if (*(uint64_t *)&pThis->pbOrgTest[off] != uExpectStored)
                     Bs3TestFailedF("%u - %s: Stored %#RX64, expected %#RX64",
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uExpectStored);
@@ -701,7 +803,7 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
             {
                 pThis->ExpectCtx.rax.u = uExpectedRax;
                 pThis->ExpectCtx.rflags.u32 = uExpectedFlags;
-                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->CmpXchg.offUd2, bXcpt, 0 /*uErrCd*/);
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->CmpXchg.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
                 if (*(uint64_t *)&pThis->pbOrgTest[off] != uExpectStored)
                     Bs3TestFailedF("%u - %s: Stored %#RX64, expected %#RX64",
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uExpectStored);
@@ -728,6 +830,167 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
 }
 
 
+static void bs3CpuBasic2Pf_DoCmpXchgMiss(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
+                                         bool fPageLevel)
+{
+    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, bXcpt, uPfErrCd, fPageLevel, true /*fMissmatch*/ );
+}
+
+
+static void bs3CpuBasic2Pf_DoCmpXchgMatch(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
+                                          bool fPageLevel)
+{
+    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, bXcpt, uPfErrCd, fPageLevel, false /*fMissmatch*/ );
+}
+
+
+static BS3CPUBASIC2PFACCESSOR const g_aAccessors[] =
+{
+    {   "DoExec",           bs3CpuBasic2Pf_DoExec,                          X86_TRAP_PF_ID },
+    {   "DoMovLoad",        bs3CpuBasic2Pf_DoMovLoad,                       0 },
+    {   "DoMovStore",       bs3CpuBasic2Pf_DoMovStore,                      X86_TRAP_PF_RW },
+    {   "DoXchg",           bs3CpuBasic2Pf_DoXchg,                          X86_TRAP_PF_RW },
+    {   "DoCmpXchgMiss",    bs3CpuBasic2Pf_DoCmpXchgMiss,                   X86_TRAP_PF_RW },
+    {   "DoCmpXhcgMatch",   bs3CpuBasic2Pf_DoCmpXchgMatch,                  X86_TRAP_PF_RW },
+};
+
+/** @} */
+
+
+/** @name BS3CPUBASIC2PFMODPT::pfnModify implementations.
+ * @{ */
+
+
+static void bs3CpuBasic2Pf_ClearMask(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    if (pThis->PgInfo.cbEntry == 4)
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
+                                         pThis->PgInfo.u.Legacy.pPte[1].u & ~(uint32_t)pEntry->uModifyArg,
+                                         pThis->PgInfo.u.Legacy.pPte[1].u);
+    else
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~(uint32_t)pEntry->uModifyArg,
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+}
+
+static void bs3CpuBasic2Pf_SetBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    if (pThis->PgInfo.cbEntry == 4)
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
+                                         pThis->PgInfo.u.Legacy.pPte[1].u | RT_BIT_32(pEntry->uModifyArg),
+                                         pThis->PgInfo.u.Legacy.pPte[1].u);
+    else if (pEntry->uModifyArg < 32)
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] | RT_BIT_32(pEntry->uModifyArg),
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    else
+        g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[1] | RT_BIT_32(pEntry->uModifyArg - 32),
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[1]);
+}
+
+static void bs3CpuBasic2Pf_ClearBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    if (pThis->PgInfo.cbEntry == 4)
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
+                                         pThis->PgInfo.u.Legacy.pPte[1].u & ~RT_BIT_32(pEntry->uModifyArg),
+                                         pThis->PgInfo.u.Legacy.pPte[1].u);
+    else if (pEntry->uModifyArg < 32)
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~RT_BIT_32(pEntry->uModifyArg),
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    else
+        g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[1] & ~RT_BIT_32(pEntry->uModifyArg - 32),
+                                         pThis->PgInfo.u.Pae.pPte[1].au32[1]);
+}
+
+
+static void bs3CpuBasic2Pf_NoChange(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    RT_NOREF3(pThis, iStore, pEntry);
+}
+
+/** @} */
+
+
+/** @name BS3CPUBASIC2PFMODPT::pfnApplicable implementations.
+ * @{ */
+
+static bool bs3CpuBasic2Pf_IsPteBitReserved(PBS3CPUBASIC2PFSTATE pThis, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    if (pThis->PgInfo.cbEntry == 8)
+    {
+        if (pThis->PgInfo.cEntries == 3)
+        {
+            if ((uint32_t)(pEntry->uModifyArg - 52U) < (uint32_t)(12 - pThis->fNxe))
+                return true;
+        }
+        else if (pEntry->uModifyArg == 63 && !pThis->fNxe)
+            return true;
+    }
+    return false;
+}
+
+static bool bs3CpuBasic2Pf_IsPteBitSoftwareUsable(PBS3CPUBASIC2PFSTATE pThis, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    if (pThis->PgInfo.cbEntry == 8)
+    {
+        if (pThis->PgInfo.cEntries != 3)
+        {
+            if ((uint32_t)(pEntry->uModifyArg - 52U) < (uint32_t)11)
+                return true;
+        }
+    }
+    return false;
+}
+
+
+static bool bs3CpuBasic2Pf_IsNxe(PBS3CPUBASIC2PFSTATE pThis, PCBS3CPUBASIC2PFMODPT pEntry)
+{
+    return pThis->fNxe && pThis->PgInfo.cbEntry == 8;
+}
+
+/** @} */
+
+
+static const BS3CPUBASIC2PFMODPT g_aPteWorkers[] =
+{
+/*  { pszName,     P  U  W  NX RSV   ModiyfArg  pfnModify,                   pfnApplicable }, */
+    { "org",       1, 1, 1, 0, 0,   0,          bs3CpuBasic2Pf_NoChange,     NULL },
+    { "!US",       1, 0, 1, 0, 0,   X86_PTE_US, bs3CpuBasic2Pf_ClearMask,    NULL },
+    { "!RW",       1, 1, 0, 0, 0,   X86_PTE_RW, bs3CpuBasic2Pf_ClearMask,    NULL },
+    { "!RW+!US",   1, 0, 0, 0, 0,   X86_PTE_RW | X86_PTE_US, bs3CpuBasic2Pf_ClearMask,    NULL },
+    { "!P",        0, 0, 0, 0, 0,   X86_PTE_P,  bs3CpuBasic2Pf_ClearMask,    NULL },
+    { "NX",        1, 1, 1, 1, 0,   63,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsNxe },
+    { "RSV[52]",   0, 0, 0, 0, 1,   52,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[53]",   0, 0, 0, 0, 1,   53,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[54]",   0, 0, 0, 0, 1,   54,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[55]",   0, 0, 0, 0, 1,   55,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[56]",   0, 0, 0, 0, 1,   56,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[57]",   0, 0, 0, 0, 1,   57,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[58]",   0, 0, 0, 0, 1,   58,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[59]",   0, 0, 0, 0, 1,   59,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[60]",   0, 0, 0, 0, 1,   60,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[61]",   0, 0, 0, 0, 1,   61,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[62]",   0, 0, 0, 0, 1,   62,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[62]",   0, 0, 0, 0, 1,   62,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSV[63]",   0, 0, 0, 0, 1,   63,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "!RSV[52]",  1, 1, 1, 0, 0,   52,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[53]",  1, 1, 1, 0, 0,   53,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[54]",  1, 1, 1, 0, 0,   54,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[55]",  1, 1, 1, 0, 0,   55,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[56]",  1, 1, 1, 0, 0,   56,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[57]",  1, 1, 1, 0, 0,   57,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[58]",  1, 1, 1, 0, 0,   58,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[59]",  1, 1, 1, 0, 0,   59,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[60]",  1, 1, 1, 0, 0,   60,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[61]",  1, 1, 1, 0, 0,   61,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+    { "!RSV[62]",  1, 1, 1, 0, 0,   62,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitSoftwareUsable },
+
+};
+
+
 /**
  * Worker for bs3CpuBasic2_RaiseXcpt0e_c32 that does the actual testing.
  *
@@ -735,11 +998,19 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
  *
  * @returns Error count.
  * @param   pThis       Test state data.
+ * @param   fNxe        Whether NX is enabled.
  */
-static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThis)
+static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThis, bool const fWp, bool const fNxe)
 {
     unsigned            iRing;
+    unsigned            iStore;
+    unsigned            iAccessor;
+//    uint32_t const      fPfId     = fNxe ? X86_TRAP_PF_ID : 0;
+    uint32_t const      fPfIdMask = fNxe ? UINT32_MAX : ~X86_TRAP_PF_ID;
     BS3REGCTX           aCtxts[4];
+
+    pThis->fWp  = fWp;
+    pThis->fNxe = fNxe;
 
     /** @todo figure out V8086 testing. */
     if ((pThis->bMode & BS3_MODE_CODE_MASK) == BS3_MODE_CODE_V86)
@@ -778,23 +1049,123 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
      * Check basic operation:
      */
     for (iRing = 0; iRing < 4; iRing++)
-    {
-        /* 1. we can execute the test page. */
-        bs3CpuBasic2Pf_DoExec(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
-        /* 2. we can read from the test page. */
-        bs3CpuBasic2Pf_DoMovLoad(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
-        /* 3. we can write to the test page. */
-        bs3CpuBasic2Pf_DoMovStore(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
-        /* 4. we can do locked read+write (a few variants). */
-        bs3CpuBasic2Pf_DoXchg(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
-        bs3CpuBasic2Pf_DoCmpXchg(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/, false /*fMissmatch*/);
-        bs3CpuBasic2Pf_DoCmpXchg(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/, true  /*fMissmatch*/);
-    }
+        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+            g_aAccessors[iAccessor].pfnAccessor(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
 
     /*
-     * Check the U bit on PTE level.
+     * Check the U bit on PTE level.  We only mess with the 2nd page.
      */
+    {
+        bool const  fPgLvl = true;
+        bool const  fWp    = RT_BOOL(ASMGetCR0() & X86_CR0_WP);
+        unsigned    iPteWrk;
 
+        bs3CpuBasic2Pf_FlushAll();
+        for (iPteWrk = 0; iPteWrk < RT_ELEMENTS(g_aPteWorkers); iPteWrk++)
+        {
+            BS3CPUBASIC2PFMODPT         EffWrk;
+            const BS3CPUBASIC2PFMODPT  *pPteWrk = &g_aPteWorkers[iPteWrk];
+            if (   pPteWrk->pfnApplicable && !pPteWrk->pfnApplicable(pThis, pPteWrk))
+                continue;
+            //if (pThis->bMode == BS3_MODE_LM16) Bs3TestPrintf("PteWrk: %s\n", pPteWrk->pszName);
+
+            EffWrk = *pPteWrk;
+
+            /*
+             * Do the modification once, then test all different accesses
+             * without flushing the TLB or anything in-between.
+             */
+            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
+            {
+                pPteWrk->pfnModify(pThis, iStore, pPteWrk);
+
+                for (iRing = 0; iRing < 4; iRing++)
+                {
+                    PBS3REGCTX const pCtx = &aCtxts[iRing];
+                    if (   EffWrk.fReserved
+                        || !EffWrk.fPresent
+                        || (!EffWrk.fUser && iRing == 3))
+                    {
+                        uint32_t const fPfBase = ( EffWrk.fReserved ? X86_TRAP_PF_P | X86_TRAP_PF_RSVD
+                                                  : EffWrk.fPresent ? X86_TRAP_PF_P : 0)
+                                               | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
+                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask), fPgLvl);
+                    }
+                    else
+                    {
+                        uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                            if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
+                                    && EffWrk.fNoExecute)
+                                || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                    && !EffWrk.fWriteable
+                                    && (fWp || iRing == 3)) )
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
+                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask),
+                                                                    fPgLvl);
+                            else
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_UD, UINT8_MAX, fPgLvl);
+
+                    }
+                }
+
+                /* Reset the paging + full flush. */
+                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+            }
+
+            /*
+             * Again, but redoing everything for each accessor.
+             */
+            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
+            {
+                for (iRing = 0; iRing < 4; iRing++)
+                {
+                    PBS3REGCTX const pCtx = &aCtxts[iRing];
+                    if (   EffWrk.fReserved
+                        || !EffWrk.fPresent
+                        || (!EffWrk.fUser && iRing == 3))
+                    {
+                        uint32_t const fPfBase = ( EffWrk.fReserved ? X86_TRAP_PF_P | X86_TRAP_PF_RSVD
+                                                  : EffWrk.fPresent ? X86_TRAP_PF_P : 0)
+                                               | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                        {
+                            pPteWrk->pfnModify(pThis, iStore, pPteWrk);
+                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
+                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask), fPgLvl);
+                            bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+                        }
+                    }
+                    else
+                    {
+                        uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                        {
+                            pPteWrk->pfnModify(pThis, iStore, pPteWrk);
+                            if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
+                                    && EffWrk.fNoExecute)
+                                || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                    && !EffWrk.fWriteable
+                                    && (fWp || iRing == 3)) )
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
+                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask),
+                                                                    fPgLvl);
+                            else
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_UD, UINT8_MAX, fPgLvl);
+                            bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+                        }
+                    }
+                }
+            }
+
+            /*
+             * ...
+             */
+
+        }
+    }
 
     return 0;
 }
@@ -833,13 +1204,14 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
     while ((pvTestUnaligned = Bs3MemAlloc(BS3MEMKIND_FLAT32, cbTestUnaligned)) == NULL)
     {
         cbTestUnaligned >>= 1;
-        if (cbTestUnaligned <= _8K)
+        if (cbTestUnaligned <= _16K)
         {
             Bs3TestFailed("Failed to allocate memory to play around with\n");
             return 1;
         }
     }
 
+    /* align. */
     if ((uintptr_t)pvTestUnaligned & (cbTestUnaligned - 1))
     {
         State.cbTest    = cbTestUnaligned >> 1;
@@ -850,6 +1222,7 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
         State.pbOrgTest = pvTestUnaligned;
         State.cbTest    = cbTestUnaligned;
     }
+    State.cTestPages = State.cbTest >> X86_PAGE_SHIFT;
 
     /*
      * Alias this memory far away from where our code and data lives.
@@ -861,16 +1234,65 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
         rc = Bs3PagingQueryAddressInfo((uintptr_t)State.pbTest, &State.PgInfo);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Setup a 16-bit selector for accessing the alias.
-             */
-            Bs3SelSetup16BitData(&Bs3GdteSpare00, (uintptr_t)State.pbTest);
-            State.uSel16TestData = BS3_SEL_SPARE_00 | 3;
+            /* Set values that derives from the test memory size and paging info. */
+            if (State.PgInfo.cEntries == 2)
+            {
+                State.cTestPdes    = (State.cTestPages + X86_PG_ENTRIES - 1) / X86_PG_ENTRIES;
+                State.cTest1stPtes = RT_MIN(State.cTestPages, X86_PG_ENTRIES);
+                State.cbPdeBackup = State.cTestPdes    * (X86_PAGE_SIZE / X86_PG_ENTRIES);
+                State.cbPteBackup = State.cTest1stPtes * (X86_PAGE_SIZE / X86_PG_ENTRIES);
+            }
+            else
+            {
+                State.cTestPdes    = (State.cTestPages + X86_PG_PAE_ENTRIES - 1) / X86_PG_PAE_ENTRIES;
+                State.cTest1stPtes = RT_MIN(State.cTestPages, X86_PG_PAE_ENTRIES);
+                State.cbPdeBackup  = State.cTestPdes    * (X86_PAGE_SIZE / X86_PG_PAE_ENTRIES);
+                State.cbPteBackup  = State.cTest1stPtes * (X86_PAGE_SIZE / X86_PG_PAE_ENTRIES);
+            }
+            if (State.cTestPdes <= RT_ELEMENTS(State.au64PdeBackup))
+            {
+                uint32_t cr0 = ASMGetCR0();
 
-            //Bs3TestPrintf("RaiseXcpt0e_c32:  bMode=%#x/%#x cbTest=%#x pbTest=%p pbAlias=%p\n",
-            //              bMode, g_bBs3CurrentMode, cbTest, pbTest, pbAlias);
+                /* Back up the structures. */
+                Bs3MemCpy(State.au64PteBackup, State.PgInfo.u.Legacy.pPte, State.cbPteBackup);
+                Bs3MemCpy(State.au64PdeBackup, State.PgInfo.u.Legacy.pPde, State.cbPdeBackup);
+                if (State.PgInfo.cEntries > 2)
+                    State.u64PdpteBackup = State.PgInfo.u.Pae.pPdpe->u;
+                if (State.PgInfo.cEntries > 3)
+                    State.u64Pml4eBackup = State.PgInfo.u.Pae.pPml4e->u;
 
-            bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State);
+                /*
+                 * Setup a 16-bit selector for accessing the alias.
+                 */
+                Bs3SelSetup16BitData(&Bs3GdteSpare00, (uintptr_t)State.pbTest);
+                State.uSel16TestData = BS3_SEL_SPARE_00 | 3;
+
+                /*
+                 * Do the testing.
+                 */
+                ASMSetCR0(ASMGetCR0() & ~X86_CR0_WP);
+                bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State, false /*fWp*/, false /*fNxe*/);
+                if (bRet == 0 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486)
+                {
+                    ASMSetCR0(ASMGetCR0() | X86_CR0_WP);
+                    bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State, true /*fWp*/, false /*fNxe*/);
+                }
+
+                /* Do again with NX enabled. */
+                if (bRet == 0 && (g_uBs3CpuDetected & BS3CPU_F_NX))
+                {
+                    ASMWrMsr(MSR_K6_EFER, ASMRdMsr(MSR_K6_EFER) | MSR_K6_EFER_NXE);
+                    ASMSetCR0(ASMGetCR0() & ~X86_CR0_WP);
+                    bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State, false /*fWp*/, State.PgInfo.cbEntry == 8 /*fNxe*/);
+                    ASMSetCR0(ASMGetCR0() | X86_CR0_WP);
+                    bRet = bs3CpuBasic2_RaiseXcpt0eWorker(&State, true /*fWp*/, State.PgInfo.cbEntry == 8 /*fNxe*/);
+                    ASMWrMsr(MSR_K6_EFER, ASMRdMsr(MSR_K6_EFER) & ~MSR_K6_EFER_NXE);
+                }
+                bs3CpuBasic2Pf_RestoreFromBackups(&State);
+                ASMSetCR0((ASMGetCR0() & ~X86_CR0_WP) | (cr0 & X86_CR0_WP));
+            }
+            else
+                Bs3TestFailedF("cTestPdes=%u!\n", State.cTestPdes);
         }
         else
             Bs3TestFailedF("Bs3PagingQueryAddressInfo failed: %d\n", rc);
