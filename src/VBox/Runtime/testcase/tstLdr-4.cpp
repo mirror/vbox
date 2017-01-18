@@ -79,6 +79,8 @@ static DECLCALLBACK(int) testGetImport(RTLDRMOD hLdrMod, const char *pszModule, 
         *pValue = (uintptr_t)0;
     else if (!strcmp(pszSymbol, "MyPrintf")             || !strcmp(pszSymbol, "_MyPrintf"))
         *pValue = (uintptr_t)RTPrintf;
+    else if (!strcmp(pszSymbol, "SomeImportFunction")   || !strcmp(pszSymbol, "_SomeImportFunction"))
+        *pValue = (uintptr_t)0;
     else
     {
         RTPrintf("tstLdr-4: Unexpected import '%s'!\n", pszSymbol);
