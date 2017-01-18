@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2016 Oracle Corporation
+ * Copyright (C) 2004-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -233,17 +233,28 @@ public:
              * possible destruction */
             RTCritSectEnter(&sLock);
 
-            nsrefcnt count = 0;
+            nsrefcnt count = 1;
 
             /* sInstance is NULL here if it was deleted immediately after
              * creation due to initialization error. See GetInstance(). */
             if (sInstance != NULL)
             {
-                /* Release the guard reference added in GetInstance() */
+                /* Safe way to get current refcount is by first increasing and
+                 * then decreasing. Keep in mind that the Release is overloaded
+                 * (see VirtualBoxClassFactory::Release) and will start the
+                 * timer again if the returned count is 1. It won't do harm,
+                 * but also serves no purpose, so stop it ASAP. */
+                sInstance->AddRef();
                 count = sInstance->Release();
+                if (count == 1)
+                {
+                    RTTimerLRStop(sTimer);
+                    /* Release the guard reference added in GetInstance() */
+                    sInstance->Release();
+                }
             }
 
-            if (count == 0)
+            if (count == 1)
             {
                 if (gAutoShutdown || m_fSignal)
                 {
@@ -261,9 +272,6 @@ public:
                  * connect after this event has been posted to the main queue
                  * but before it started to process it. */
                 LogRel(("Destruction is canceled (refcnt=%d).\n", count));
-                /* Important: restore previous refcount, we decreased it
-                 * above based on the assumption that the object is unused! */
-                sInstance->AddRef();
             }
 
             RTCritSectLeave(&sLock);
@@ -407,7 +415,7 @@ public:
             nsrefcnt count = sInstance->AddRef();
             Assert(count > 1);
 
-            if (count == 2)
+            if (count >= 2)
             {
                 LogFlowFunc(("Another client has requested a reference to VirtualBox, canceling destruction...\n"));
 
