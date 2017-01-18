@@ -408,6 +408,12 @@ class TestVm(object):
               or self.sVmName.find('sp2') >= 0 \
               or self.sVmName.find('sp3') >= 0:
                 return True;
+        # XP x64 on a phyical VIA box hangs exactly like a VM.
+        if self.aInfo[g_iKind] in ['WindowsXP_64', 'Windows2003_64']:
+            return True;
+        # Vista 64 throws BSOD 0x5D (UNSUPPORTED_PROCESSOR)
+        if self.aInfo[g_iKind] in ['Vista_64']:
+            return True;
         return False;
 
 
