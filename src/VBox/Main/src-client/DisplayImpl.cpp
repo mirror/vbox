@@ -3585,7 +3585,7 @@ bool  Display::i_handleCrVRecScreenshotBegin(uint32_t uScreen, uint64_t u64Times
     /** @todo r=bird: u64Timestamp - using the 'u64' prefix add nothing.
      *        However, using one of the prefixes indicating the timestamp unit
      *        would be very valuable!  */
-# if VBOX_WITH_VIDEOREC
+# ifdef VBOX_WITH_VIDEOREC
     return VideoRecIsReady(mpVideoRecCtx, uScreen, u64Timestamp);
 # else
     RT_NOREF(uScreen, u64Timestamp);
@@ -3605,7 +3605,7 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
                                                uint8_t *pu8BufferAddress, uint64_t u64Timestamp)
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
-# if VBOX_WITH_VIDEOREC
+# ifdef VBOX_WITH_VIDEOREC
     int rc = VideoRecCopyToIntBuf(mpVideoRecCtx, uScreen, x, y,
                                   uPixelFormat,
                                   uBitsPerPixel, uBytesPerLine,
