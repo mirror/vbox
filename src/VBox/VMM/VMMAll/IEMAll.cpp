@@ -922,6 +922,7 @@ DECLINLINE(void) iemUninitExec(PVMCPU pVCpu)
 #endif
 #ifdef VBOX_STRICT
 # ifdef IEM_WITH_CODE_TLB
+    NOREF(pVCpu);
 # else
     pVCpu->iem.s.cbOpcode = 0;
 # endif
@@ -1477,9 +1478,6 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
 {
 #ifdef IN_RING3
 //__debugbreak();
-#else
-    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VERR_INTERNAL_ERROR);
-#endif
     for (;;)
     {
         Assert(cbDst <= 8);
@@ -1747,6 +1745,10 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPU pVCpu, size_t cbDst, void *pvDst)
         cbDst -= cbMaxRead;
         pvDst  = (uint8_t *)pvDst + cbMaxRead;
     }
+#else
+    RT_NOREF(pvDst, cbDst);
+    longjmp(*CTX_SUFF(pVCpu->iem.s.pJmpBuf), VERR_INTERNAL_ERROR);
+#endif
 }
 
 #else
@@ -7600,7 +7602,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPU pVCpu, RTGCPTR GCPtrMem, uint32_t fAcce
         /* Write to read only memory? */
         if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
             && !(fFlags & X86_PTE_RW)
-            && (   pVCpu->iem.s.uCpl != 0
+            && (   pVCpu->iem.s.uCpl != 3
                 || (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_WP)))
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
