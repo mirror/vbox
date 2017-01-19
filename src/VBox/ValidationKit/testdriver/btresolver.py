@@ -92,7 +92,7 @@ class BacktraceResolverOsLinux(BacktraceResolverOs):
         """
         fRc = False;
         try:
-            sDbgArchive = os.path.join(self.sScratchPath, 'bin', 'VirtualBox-dbg.tar.bz2');
+            sDbgArchive = os.path.join(self.sBuildRoot, 'bin', 'VirtualBox-dbg.tar.bz2');
 
             # Extract debug symbol archive if it was found.
             if os.path.exists(sDbgArchive):
@@ -191,7 +191,7 @@ class BacktraceResolverOsDarwin(BacktraceResolverOs):
             #
             asDSymPaths = [];
 
-            for sDirPath, asDirs, _ in os.walk(self.sScratchPath):
+            for sDirPath, asDirs, _ in os.walk(self.sBuildRoot):
                 for sDir in asDirs:
                     if sDir.endswith('.dSYM'):
                         asDSymPaths.append(os.path.join(sDirPath, sDir));
@@ -397,7 +397,7 @@ class BacktraceResolverOsSolaris(BacktraceResolverOs):
         """
         fRc = False;
         try:
-            sDbgArchive = os.path.join(self.sScratchPath, 'bin', 'VirtualBoxDebug.tar.bz2');
+            sDbgArchive = os.path.join(self.sBuildRoot, 'bin', 'VirtualBoxDebug.tar.bz2');
 
             # Extract debug symbol archive if it was found.
             if os.path.exists(sDbgArchive):
@@ -544,11 +544,11 @@ class BacktraceResolver(object):
 
         if fRc:
             if self.sTargetOs == 'linux':
-                self.oResolverOs = BacktraceResolverOsLinux(self.sScratchDbgPath, self.sBuildRoot, self.fnLog);
+                self.oResolverOs = BacktraceResolverOsLinux(self.sScratchDbgPath, self.sScratchPath, self.fnLog);
             elif self.sTargetOs == 'darwin':
-                self.oResolverOs = BacktraceResolverOsDarwin(self.sScratchDbgPath, self.sBuildRoot, self.fnLog); # pylint: disable=R0204
+                self.oResolverOs = BacktraceResolverOsDarwin(self.sScratchDbgPath, self.sScratchPath, self.fnLog); # pylint: disable=R0204
             elif self.sTargetOs == 'solaris':
-                self.oResolverOs = BacktraceResolverOsSolaris(self.sScratchDbgPath, self.sBuildRoot, self.fnLog); # pylint: disable=R0204
+                self.oResolverOs = BacktraceResolverOsSolaris(self.sScratchDbgPath, self.sScratchPath, self.fnLog); # pylint: disable=R0204
             else:
                 self.log('The backtrace resolver is not supported on %s' % (self.sTargetOs,));
                 fRc = False;
