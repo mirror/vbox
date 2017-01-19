@@ -66,6 +66,7 @@ ValidationKit-testdriver_MODE = a+r,u+w
 ValidationKit-testdriver_SOURCES := \
 	$(PATH_SUB_CURRENT)/testdriver/__init__.py \
 	$(PATH_SUB_CURRENT)/testdriver/base.py \
+	$(PATH_SUB_CURRENT)/testdriver/btresolver.py \
 	$(PATH_SUB_CURRENT)/testdriver/reporter.py \
 	$(PATH_SUB_CURRENT)/testdriver/tst-txsclient.py \
 	$(PATH_SUB_CURRENT)/testdriver/txsclient.py \
