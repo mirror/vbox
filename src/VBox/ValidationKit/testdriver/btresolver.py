@@ -186,12 +186,12 @@ class BacktraceResolverOsDarwin(BacktraceResolverOs):
         fRc = False;
         try:
             #
-            # Walk the build root directory and look for .dSYM directories, building a
+            # Walk the scratch path directory and look for .dSYM directories, building a
             # list of them.
             #
             asDSymPaths = [];
 
-            for sDirPath, asDirs, _ in os.walk(self.sBuildRoot):
+            for sDirPath, asDirs, _ in os.walk(self.sScratchPath):
                 for sDir in asDirs:
                     if sDir.endswith('.dSYM'):
                         asDSymPaths.append(os.path.join(sDirPath, sDir));
@@ -497,11 +497,15 @@ class BacktraceResolver(object):
         self.oResolverOs     = None;
         self.sScratchDbgPath = os.path.join(self.sScratchPath, 'dbgsymbols');
 
-        if self.sRTLdrFltPath is None:
-            self.sRTLdrFltPath = getRTLdrFltPath([self.sScratchPath, self.sBuildRoot]);
-
         if self.fnLog is None:
             self.fnLog = self.logStub;
+
+        if self.sRTLdrFltPath is None:
+            self.sRTLdrFltPath = getRTLdrFltPath([self.sScratchPath, self.sBuildRoot]);
+            if self.sRTLdrFltPath is not None:
+                self.log('Found RTLdrFlt in %s' % (self.sRTLdrFltPath,));
+            else:
+                self.log('Couldn\'t find RTLdrFlt in either %s or %s' % (self.sScratchPath, self.sBuildRoot));
 
     def log(self, sText):
         """
