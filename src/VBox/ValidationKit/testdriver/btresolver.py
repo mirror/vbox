@@ -46,7 +46,7 @@ def getRTLdrFltPath(asPaths):
     """
 
     for sPath in asPaths:
-        for sDirPath, _, asFiles in os.walk(sPath): 
+        for sDirPath, _, asFiles in os.walk(sPath):
             if 'RTLdrFlt' in asFiles:
                 return os.path.join(sDirPath, 'RTLdrFlt');
 
