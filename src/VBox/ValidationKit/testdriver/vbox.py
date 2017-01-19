@@ -2567,7 +2567,7 @@ class TestDriver(base.TestDriver):                                              
         oSession, _ = self.startVmByNameEx(sName, True, sType, asEnv = asEnv);
         return oSession;
 
-    def terminateVmBySession(self, oSession, oProgress = None, fTakeScreenshot = None):
+    def terminateVmBySession(self, oSession, oProgress = None, fTakeScreenshot = None): # pylint: disable=R0915
         """
         Terminates the VM specified by oSession and adds the release logs to
         the test report.
