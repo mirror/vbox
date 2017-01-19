@@ -158,7 +158,7 @@ class BacktraceResolverOsLinux(BacktraceResolverOs):
                and asCandidate[0].startswith('0x') \
                and asCandidate[1].startswith('0x') \
                and asCandidate[2].startswith('0x') \
-               and asCandidate[3] == '0x0' \
+               and (asCandidate[3] == '0x0' or asCandidate[3] == '0')\
                and 'VirtualBox' in asCandidate[4]:
                 asListBinaries.append((asCandidate[0], os.path.basename(asCandidate[4])));
 
