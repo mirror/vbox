@@ -92,7 +92,7 @@ class BacktraceResolverOsLinux(BacktraceResolverOs):
         """
         fRc = False;
         try:
-            sDbgArchive = os.path.join(self.sBuildRoot, 'bin', 'VirtualBox-dbg.tar.bz2');
+            sDbgArchive = os.path.join(self.sScratchPath, 'bin', 'VirtualBox-dbg.tar.bz2');
 
             # Extract debug symbol archive if it was found.
             if os.path.exists(sDbgArchive):
@@ -397,7 +397,7 @@ class BacktraceResolverOsSolaris(BacktraceResolverOs):
         """
         fRc = False;
         try:
-            sDbgArchive = os.path.join(self.sBuildRoot, 'bin', 'VirtualBoxDebug.tar.bz2');
+            sDbgArchive = os.path.join(self.sScratchPath, 'bin', 'VirtualBoxDebug.tar.bz2');
 
             # Extract debug symbol archive if it was found.
             if os.path.exists(sDbgArchive):
