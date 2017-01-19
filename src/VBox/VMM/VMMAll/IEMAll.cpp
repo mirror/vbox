@@ -7602,7 +7602,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPU pVCpu, RTGCPTR GCPtrMem, uint32_t fAcce
         /* Write to read only memory? */
         if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
             && !(fFlags & X86_PTE_RW)
-            && (   pVCpu->iem.s.uCpl != 3
+            && (   pVCpu->iem.s.uCpl == 3
                 || (IEM_GET_CTX(pVCpu)->cr0 & X86_CR0_WP)))
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
