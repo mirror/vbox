@@ -320,6 +320,8 @@ class TestVm(object):
                     fRc = None; # Skip the test.
                 elif self.isViaIncompatible() and oTestDrv.isHostCpuVia():
                     fRc = None; # Skip the test.
+                elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
+                    fRc = None; # Skip the test.
                 else:
                     oSession = oTestDrv.openSession(oVM);
                     if oSession is not None:
@@ -416,6 +418,19 @@ class TestVm(object):
             return True;
         return False;
 
+    def isP4Incompatible(self):
+        """
+        Identifies VMs that doesn't work on Pentium 4 / Pentium D.
+
+        Returns True if NOT supported on P4, False if it IS supported.
+        """
+        # Stupid 1 kHz timer. Too much for antique CPUs.
+        if self.sVmName.find('rhel5') >= 0:
+            return True;
+        # Due to the boot animation the VM takes forever to boot.
+        if self.aInfo[g_iKind] == 'Windows2000':
+            return True;
+        return False;
 
 
 class BootSectorTestVm(TestVm):
