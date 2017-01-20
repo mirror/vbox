@@ -2670,7 +2670,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
-    NOREF(pu32TagSrc);
+    *pu32TagSrc = 0;    /** @todo do the debug tagging. */
 
     LogFlow(("APIC%u: apicGetInterrupt:\n", pVCpu->idCpu));
 
