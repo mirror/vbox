@@ -19,6 +19,9 @@
 #include <list>
 #include <map>
 #include <stack>
+
+#include <math.h> /* For lround.h. */
+
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/cdefs.h>
@@ -175,11 +178,23 @@ public:
      * Only 8-bytes double precision values are supported
      * by this function.
      */
-    inline Ebml &serializeFloat(EbmlClassId classId, double value)
+    inline Ebml &serializeFloat(EbmlClassId classId, float value)
     {
         writeClassId(classId);
-        writeSize(sizeof(double));
-        writeUnsignedInteger(*reinterpret_cast<uint64_t*>(&value));
+        Assert(sizeof(uint32_t) == sizeof(float));
+        writeSize(sizeof(float));
+
+        union
+        {
+            float   f;
+            uint8_t u8[4];
+        } u;
+
+        u.f = value;
+
+        for (int8_t i = 3; i >= 0; i--) /* Converts values to big endian. */
+            write(&u.u8[i], 1);
+
         return *this;
     }
 
@@ -313,13 +328,19 @@ class WebMWriter_Impl
             struct
             {
                 /** Sample rate of input data. */
-                uint16_t uHzIn;
-                /** Sample rate the codec is using. */
-                uint16_t uHzCodec;
-                /** Frame size (in bytes), based on the codec sample rate.
-                 *  Note: For now this does *not* change dynamically, in other words,
-                 *        we do CBR (and not VBR) here! */
-                size_t   cbFrameSize;
+                uint16_t uHz;
+                /** Duration of the frame in samples (per channel).
+                 *  Valid frame size are:
+                 *
+                 *  ms           Frame size
+                 *  2.5          120
+                 *  5            240
+                 *  10           480
+                 *  20 (Default) 960
+                 *  40           1920
+                 *  60           2880
+                 */
+                uint16_t csFrame;
             } Audio;
         };
         /** This track's track number. Also used as key in track map. */
@@ -345,8 +366,10 @@ class WebMWriter_Impl
             : uID(0)
             , offCluster(0)
             , fOpen(false)
-            , tsStartMs(0)
-            , tsEndMs(0) { }
+            , tcStart(0)
+            , tcLast(0)
+            , cBlocks(0)
+            , cbData(0) { }
 
         /** This cluster's ID. */
         uint64_t      uID;
@@ -355,10 +378,14 @@ class WebMWriter_Impl
         uint64_t      offCluster;
         /** Whether this cluster element is opened currently. */
         bool          fOpen;
-        /** Timestamp (in ms) when starting this  cluster. */
-        uint64_t      tsStartMs;
-        /** Timestamp (in ms) when this cluster ended. */
-        uint64_t      tsEndMs;
+        /** Timecode when starting this cluster. */
+        uint64_t      tcStart;
+        /** Timecode when this cluster was last touched. */
+        uint64_t      tcLast;
+        /** Number of (simple) blocks in this cluster. */
+        uint64_t      cBlocks;
+        /** Size (in bytes) of data already written. */
+        uint64_t      cbData;
     };
 
     /**
@@ -369,11 +396,30 @@ class WebMWriter_Impl
     struct WebMSegment
     {
         WebMSegment(void)
-            : offStart(0)
+            : tcStart(UINT64_MAX)
+            , tcEnd(UINT64_MAX)
+            , offStart(0)
             , offInfo(0)
             , offSeekInfo(0)
             , offTracks(0)
-            , offCues(0) { }
+            , offCues(0)
+        {
+            /* This is the default for WebM -- all timecodes in the segments are expressed in ms.
+             * This allows every cluster to have blocks with positive values up to 32.767 seconds. */
+            uTimecodeScaleFactor = 1000000;
+            //m_uTimecodeScaleFactor = lround(1000000000 /* ns */ / 48000);
+
+            LogFunc(("Default timecode scale is: %RU64ns\n", uTimecodeScaleFactor));
+        }
+
+        /** The timecode scale factor of this segment.
+         *  By default this is 1000000, which is 1ms per timecode unit. */
+        uint64_t                        uTimecodeScaleFactor;
+
+        /** Timecode when starting this segment. */
+        uint64_t                        tcStart;
+        /** Timecode when this segment ended. */
+        uint64_t                        tcEnd;
 
         /** Absolute offset (in bytes) of CurSeg. */
         uint64_t                        offStart;
@@ -433,13 +479,6 @@ class WebMWriter_Impl
     /** Video codec to use. */
     WebMWriter::VideoCodec      m_enmVideoCodec;
 
-    /** This PTS (Presentation Time Stamp) acts as our master clock for synchronizing streams. */
-    uint64_t                    m_uPts;
-    /** Timestamp (in ms) of initial PTS. */
-    int64_t                     m_tsInitialPtsMs;
-    /** Timestamp (in ms) of last written PTS. */
-    int64_t                     m_tsLastPtsMs;
-
     /** Whether we're currently in the tracks section. */
     bool                        m_fInTracksSection;
 
@@ -447,8 +486,6 @@ class WebMWriter_Impl
     size_t                      m_cbTimecode;
     /** Maximum value a timecode can have. */
     uint32_t                    m_uTimecodeMax;
-    /** The timecode scale factor. */
-    uint64_t                    m_uTimecodeScaleNs;
 
     Ebml                        m_Ebml;
 
@@ -459,18 +496,11 @@ public:
 public:
 
     WebMWriter_Impl() :
-          m_uPts(0)
-        , m_tsInitialPtsMs(-1)
-        , m_tsLastPtsMs(-1)
-        , m_fInTracksSection(false)
+        m_fInTracksSection(false)
     {
         /* Size (in bytes) of time code to write. We use 2 bytes (16 bit) by default. */
         m_cbTimecode   = 2;
         m_uTimecodeMax = UINT16_MAX;
-
-        /* This is the default for WebM -- all timecodes in the segments are expressed in ms.
-         * This allows every cluster to have blocks with positive values up to 32.767 seconds. */
-        m_uTimecodeScaleNs = 1000000;
     }
 
     virtual ~WebMWriter_Impl()
@@ -478,9 +508,44 @@ public:
         close();
     }
 
+    /**
+     * Adds an audio track.
+     *
+     * @returns IPRT status code.
+     * @param   uHz             Input sampling rate.
+     * @param   cChannels       Number of input audio channels.
+     * @param   cBits           Number of input bits per channel.
+     * @param   puTrack         Track number on successful creation. Optional.
+     */
     int AddAudioTrack(uint16_t uHz, uint8_t cChannels, uint8_t cBits, uint8_t *puTrack)
     {
 #ifdef VBOX_WITH_LIBOPUS
+        int rc;
+
+        /*
+         * Check if the requested codec rate is supported.
+         *
+         * Only the following values are supported by an Opus standard build
+         * -- every other rate only is supported by a custom build.
+         */
+        switch (uHz)
+        {
+            case 48000:
+            case 24000:
+            case 16000:
+            case 12000:
+            case  8000:
+                rc = VINF_SUCCESS;
+                break;
+
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+
+        if (RT_FAILURE(rc))
+            return rc;
+
         m_Ebml.subStart(MkvElem_TrackEntry);
         m_Ebml.serializeUnsignedInteger(MkvElem_TrackNumber, (uint8_t)CurSeg.mapTracks.size());
         /** @todo Implement track's "Language" property? Currently this defaults to English ("eng"). */
@@ -489,35 +554,29 @@ public:
 
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Audio, uTrack, RTFileTell(m_Ebml.getFile()));
 
-        /* Clamp the codec rate (Hz) value if it reaches a certain threshold. */
-        if      (uHz > 24000) pTrack->Audio.uHzCodec = 48000;
-        else if (uHz > 16000) pTrack->Audio.uHzCodec = 24000;
-        else if (uHz > 12000) pTrack->Audio.uHzCodec = 16000;
-        else if (uHz > 8000 ) pTrack->Audio.uHzCodec = 12000;
-        else                  pTrack->Audio.uHzCodec = 8000;
+        pTrack->Audio.uHz     = uHz;
+        pTrack->Audio.csFrame = pTrack->Audio.uHz / 50; /** @todo 20 ms of audio data. Make this configurable? */
 
-        pTrack->Audio.uHzIn = uHz;
-
-        /** @todo 960 bytes is 20ms worth of audio data. Make this configurable. */
-        pTrack->Audio.cbFrameSize = 960 /* Bytes */ / (48000 /* Hz */ / pTrack->Audio.uHzCodec);
-
-        /** @todo Resolve codec type. */
         OpusPrivData opusPrivData(uHz, cChannels);
 
-        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID, pTrack->uUUID, 4)
-              .serializeUnsignedInteger(MkvElem_TrackType, 2 /* Audio */)
-              .serializeString(MkvElem_CodecID, "A_OPUS")
-              .serializeData(MkvElem_CodecPrivate, &opusPrivData, sizeof(opusPrivData))
-              .serializeUnsignedInteger(MkvElem_CodecDelay,  0)
-              .serializeUnsignedInteger(MkvElem_SeekPreRoll, 80000000) /* 80.000ms */
+        LogFunc(("Opus @ %RU16Hz (Frame size is %RU16 samples / channel))\n", pTrack->Audio.uHz, pTrack->Audio.csFrame));
+
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID,     pTrack->uUUID, 4)
+              .serializeUnsignedInteger(MkvElem_TrackType,    2 /* Audio */)
+              .serializeString(MkvElem_CodecID,               "A_OPUS")
+              .serializeData(MkvElem_CodecPrivate,            &opusPrivData, sizeof(opusPrivData))
+              .serializeUnsignedInteger(MkvElem_CodecDelay,   0)
+              .serializeUnsignedInteger(MkvElem_SeekPreRoll,  80000000) /* 80ms in ns. */
               .subStart(MkvElem_Audio)
-                  .serializeFloat(MkvElem_SamplingFrequency,  (float)pTrack->Audio.uHzCodec)
+                  .serializeFloat(MkvElem_SamplingFrequency,  (float)uHz)
                   .serializeUnsignedInteger(MkvElem_Channels, cChannels)
                   .serializeUnsignedInteger(MkvElem_BitDepth, cBits)
               .subEnd(MkvElem_Audio)
               .subEnd(MkvElem_TrackEntry);
 
         CurSeg.mapTracks[uTrack] = pTrack;
+
+        Assert(uTrack == 0);
 
         if (puTrack)
             *puTrack = uTrack;
@@ -540,13 +599,13 @@ public:
         WebMTrack *pTrack = new WebMTrack(WebMTrackType_Video, uTrack, RTFileTell(m_Ebml.getFile()));
 
         /** @todo Resolve codec type. */
-        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID, pTrack->uUUID /* UID */, 4)
-              .serializeUnsignedInteger(MkvElem_TrackType, 1 /* Video */)
-              .serializeString(MkvElem_CodecID, "V_VP8")
+        m_Ebml.serializeUnsignedInteger(MkvElem_TrackUID,    pTrack->uUUID /* UID */, 4)
+              .serializeUnsignedInteger(MkvElem_TrackType,   1 /* Video */)
+              .serializeString(MkvElem_CodecID,              "V_VP8")
               .subStart(MkvElem_Video)
-              .serializeUnsignedInteger(MkvElem_PixelWidth, uWidth)
+              .serializeUnsignedInteger(MkvElem_PixelWidth,  uWidth)
               .serializeUnsignedInteger(MkvElem_PixelHeight, uHeight)
-              .serializeFloat(MkvElem_FrameRate, dbFPS)
+              .serializeFloat(MkvElem_FrameRate,             dbFPS)
               .subEnd(MkvElem_Video)
               .subEnd(MkvElem_TrackEntry);
 
@@ -629,28 +688,28 @@ public:
         RT_NOREF(a_pTrack);
 
         /* Calculate the PTS of this frame in milliseconds. */
-        int64_t tsPtsMs = a_pPkt->data.frame.pts * 1000
-                        * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
+        uint64_t tcPTS = a_pPkt->data.frame.pts * 1000
+                         * (uint64_t) a_pCfg->g_timebase.num / a_pCfg->g_timebase.den;
 
-        if (tsPtsMs <= m_tsLastPtsMs)
-            tsPtsMs = m_tsLastPtsMs + 1;
+        if (tcPTS <= CurSeg.CurCluster.tcLast)
+            tcPTS = CurSeg.CurCluster.tcLast + 1;
 
-        m_tsLastPtsMs = tsPtsMs;
+        CurSeg.CurCluster.tcLast = tcPTS;
 
-        if (m_tsInitialPtsMs < 0)
-            m_tsInitialPtsMs = m_tsLastPtsMs;
+        if (CurSeg.CurCluster.tcStart == UINT64_MAX)
+            CurSeg.CurCluster.tcStart = CurSeg.CurCluster.tcLast;
 
         /* Calculate the relative time of this block. */
-        uint16_t tsBlockMs     = 0;
+        uint16_t tcBlock       = 0;
         bool     fClusterStart = false;
 
         /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tsPtsMs - CurSeg.CurCluster.tsStartMs > m_uTimecodeMax)
+        if (tcPTS - CurSeg.CurCluster.tcStart > m_uTimecodeMax)
             fClusterStart = true;
         else
         {
             /* Calculate the block's timecode, which is relative to the current cluster's starting timecode. */
-            tsBlockMs = static_cast<uint16_t>(tsPtsMs - CurSeg.CurCluster.tsStartMs);
+            tcBlock = static_cast<uint16_t>(tcPTS - CurSeg.CurCluster.tcStart);
         }
 
         const bool fKeyframe = RT_BOOL(a_pPkt->data.frame.flags & VPX_FRAME_IS_KEY);
@@ -668,25 +727,29 @@ public:
                 Cluster.fOpen = false;
             }
 
-            tsBlockMs = 0;
+            tcBlock = 0;
 
             /* Open a new cluster. */
             Cluster.fOpen      = true;
-            Cluster.tsStartMs    = tsPtsMs;
+            Cluster.tcStart    = tcPTS;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
+            Cluster.cBlocks    = 0;
+            Cluster.cbData     = 0;
 
-            LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
+            LogFunc(("[C%RU64] Start @ tc=%RU64 off=%RU64\n", a_pTrack->cTotalClusters, Cluster.tcStart, Cluster.offCluster));
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStartMs);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStart);
 
             /* Save a cue point if this is a keyframe. */
             if (fKeyframe)
             {
-                WebMCueEntry cue(Cluster.tsStartMs, Cluster.offCluster);
+                WebMCueEntry cue(Cluster.tcStart, Cluster.offCluster);
                 CurSeg.lstCues.push_back(cue);
             }
         }
+
+        LogFunc(("tcPTS=%RU64, s=%RU64, e=%RU64\n", tcPTS, CurSeg.CurCluster.tcStart, CurSeg.CurCluster.tcLast));
 
         uint8_t fFlags = 0;
         if (fKeyframe)
@@ -694,7 +757,7 @@ public:
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
             fFlags |= 0x08; /* Invisible frame. */
 
-        return writeSimpleBlockInternal(a_pTrack, tsBlockMs, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
+        return writeSimpleBlockInternal(a_pTrack, tcBlock, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
 #endif /* VBOX_WITH_LIBVPX */
 
@@ -706,63 +769,70 @@ public:
         AssertPtrReturn(pvData, VERR_INVALID_POINTER);
         AssertReturn(cbData, VERR_INVALID_PARAMETER);
 
-        //static uint64_t s_uTimecode = 0;
-        /* For now this is constant while encoding (CBR), but might change to VBR later. */
-        //s_uTimecode += a_pTrack->Audio.cbFrameSize * 48000 / a_pTrack->Audio.uHzCodec;
-
-        //static uint64_t s_uPts = 0;
-
-        int64_t tsPtsMs = 1000000000 * a_pTrack->cTotalBlocks / 48000;
-
-        m_tsLastPtsMs = tsPtsMs;
-
-        if (m_tsInitialPtsMs < 0)
-            m_tsInitialPtsMs = m_tsLastPtsMs;
-
         WebMCluster &Cluster = CurSeg.CurCluster;
 
-        /* Calculate the relative time of this block. */
-        uint16_t tsBlockMs     = 0;
+        /* Calculate the PTS. */
+        /* Make sure to round the result. This is very important! */
+        uint64_t tcPTSRaw = lround((CurSeg.uTimecodeScaleFactor * 1000 * Cluster.cbData) / a_pTrack->Audio.uHz);
+
+        uint64_t tcPTS = /*Cluster.tcStart +*/ lround(tcPTSRaw / CurSeg.uTimecodeScaleFactor);
+
+        if (Cluster.tcStart == UINT64_MAX)
+            Cluster.tcStart = tcPTS;
+
+        LogFunc(("tcPTSRaw=%RU64, tcPTS=%RU64, cbData=%RU64\n", tcPTSRaw, tcPTS, Cluster.cbData));
+
+        Cluster.tcLast = tcPTS;
+
+        uint16_t tcBlock;
         bool     fClusterStart = false;
 
         if (a_pTrack->cTotalBlocks == 0)
             fClusterStart = true;
 
         /* Did we reach the maximum our timecode can hold? Use a new cluster then. */
-        if (tsPtsMs - Cluster.tsStartMs > m_uTimecodeMax)
+        if (tcPTS - Cluster.tcStart > m_uTimecodeMax)
+        {
+            tcBlock = 0;
+
             fClusterStart = true;
+        }
         else
         {
             /* Calculate the block's timecode, which is relative to the Cluster timecode. */
-            tsBlockMs = static_cast<uint16_t>(tsPtsMs - Cluster.tsStartMs);
+            tcBlock = static_cast<uint16_t>(tcPTS - Cluster.tcStart);
         }
 
         if (fClusterStart)
         {
-            a_pTrack->cTotalClusters++;
-
             if (Cluster.fOpen) /* Close current cluster first. */
             {
                 m_Ebml.subEnd(MkvElem_Cluster);
                 Cluster.fOpen = false;
             }
 
-            tsBlockMs = 0;
+            tcBlock = 0;
 
             Cluster.fOpen      = true;
-            Cluster.tsStartMs    = tsPtsMs;
+            Cluster.tcStart    = tcPTS;
             Cluster.offCluster = RTFileTell(m_Ebml.getFile());
+            Cluster.cBlocks    = 0;
+            Cluster.cbData     = 0;
 
-            LogFunc(("Cluster @ %RU64\n", Cluster.offCluster));
+            LogFunc(("[C%RU64] Start @ tc=%RU64 off=%RU64\n", a_pTrack->cTotalClusters, Cluster.tcStart, Cluster.offCluster));
 
             m_Ebml.subStart(MkvElem_Cluster)
-                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tsStartMs);
+                  .serializeUnsignedInteger(MkvElem_Timecode, Cluster.tcStart);
+
+            a_pTrack->cTotalClusters++;
         }
 
-        LogFunc(("Cluster %RU64 - Block %RU64: -> %RU64ms\n",
-                 a_pTrack->cTotalClusters, a_pTrack->cTotalBlocks, a_pTrack->cTotalBlocks * 20));
+        LogFunc(("tcPTS=%RU64, s=%RU64, e=%RU64\n", tcPTS, CurSeg.CurCluster.tcStart, CurSeg.CurCluster.tcLast));
 
-        return writeSimpleBlockInternal(a_pTrack, tsBlockMs, pvData, cbData, 0 /* Flags */);
+        Cluster.cBlocks += 1;
+        Cluster.cbData  += cbData;
+
+        return writeSimpleBlockInternal(a_pTrack, tcBlock, pvData, cbData, 0x80 /* Flags */);
     }
 #endif /* VBOX_WITH_LIBOPUS */
 
@@ -929,7 +999,7 @@ private:
 
         .subEnd(MkvElem_SeekHead);
 
-        int64_t iFrameTime = (int64_t)1000 * 1 / 25; //m_Framerate.den / m_Framerate.num; /** @todo Fix this! */
+        //int64_t iFrameTime = (int64_t)1000 * 1 / 25; //m_Framerate.den / m_Framerate.num; /** @todo Fix this! */
         CurSeg.offInfo = RTFileTell(m_Ebml.getFile());
 
         LogFunc(("Info @ %RU64\n", CurSeg.offInfo));
@@ -944,9 +1014,11 @@ private:
         char szApp[64];
         RTStrPrintf(szApp, sizeof(szApp), VBOX_PRODUCT " %sr%u", VBOX_VERSION_STRING, RTBldCfgRevision());
 
+        LogFunc(("Duration=%RU64\n", CurSeg.tcEnd - CurSeg.tcStart));
+
         m_Ebml.subStart(MkvElem_Info)
-              .serializeUnsignedInteger(MkvElem_TimecodeScale, m_uTimecodeScaleNs)
-              .serializeFloat(MkvElem_Segment_Duration, m_tsLastPtsMs + iFrameTime - m_tsInitialPtsMs)
+              .serializeUnsignedInteger(MkvElem_TimecodeScale, CurSeg.uTimecodeScaleFactor)
+              .serializeFloat(MkvElem_Segment_Duration, CurSeg.tcEnd /*+ iFrameTime*/ - CurSeg.tcStart)
               .serializeString(MkvElem_MuxingApp, szMux)
               .serializeString(MkvElem_WritingApp, szApp)
               .subEnd(MkvElem_Info);

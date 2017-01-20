@@ -74,7 +74,29 @@ typedef struct AVRECCODEC
         struct
         {
             /** Encoder we're going to use. */
-            OpusEncoder *pEnc;
+            OpusEncoder    *pEnc;
+            /** The encoding rate to use. */
+            uint16_t        uHz;
+            /** Duration of the frame in samples (per channel).
+             *  Valid frame size are:
+             *
+             *  ms           Frame size
+             *  2.5          120
+             *  5            240
+             *  10           480
+             *  20 (Default) 960
+             *  40           1920
+             *  60           2880
+             */
+            uint32_t        csFrame;
+            /** The maximum frame size (in samples) we can handle. */
+            uint32_t        csFrameMax;
+# ifdef DEBUG /** @todo Make these a STAM value? */
+            /** Number of frames encoded. */
+            uint64_t        cEncFrames;
+            /** Total time (in ms) of already encoded audio data. */
+            uint64_t        msEncTotal;
+# endif
         } Opus;
 #endif /* VBOX_WITH_LIBOPUS */
     };
@@ -89,8 +111,6 @@ typedef struct AVRECSTREAMOUT
     PDMAUDIOSTREAM       Stream;
     /** The PCM properties of this stream. */
     PDMAUDIOPCMPROPS     Props;
-    uint64_t             old_ticks;
-    uint64_t             cSamplesSentPerSec;
     /** Codec-specific data.
      *  As every stream can be different, one codec per stream is needed. */
     AVRECCODEC           Codec;
@@ -135,34 +155,57 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
     PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
 
-    int rc;
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
+    if (RT_FAILURE(rc))
+        return rc;
 
 #ifdef VBOX_WITH_LIBOPUS
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
+    uint16_t uHz = pStreamOut->Props.uHz;
+
+    /* Opus only supports certain input sample rates in an efficient manner.
+     * So make sure that we use those by resampling the data to the requested rate. */
+    if      (uHz > 24000) uHz = 48000;
+    else if (uHz > 16000) uHz = 24000;
+    else if (uHz > 12000) uHz = 16000;
+    else if (uHz > 8000 ) uHz = 12000;
+    else     uHz = 8000;
+
+    LogFunc(("%RU16Hz -> %RU16Hz\n", pStreamOut->Props.uHz, uHz));
+
+    pStreamOut->Codec.Opus.uHz        = uHz;
+    pStreamOut->Codec.Opus.csFrame    = uHz / 50;
+#ifdef DEBUG
+    pStreamOut->Codec.Opus.cEncFrames = 0;
+    pStreamOut->Codec.Opus.msEncTotal = 0;
+#endif
+
+    /* Calculate the maximum frame size. */
+    pStreamOut->Codec.Opus.csFrameMax = 48000                        /* Maximum sample rate Opus can handle */
+                                      * pStreamOut->Props.cChannels; /* Number of channels */
+
+    /* If we only record audio, create our own WebM writer instance here. */
     if (pThis->enmMode == AVRECMODE_AUDIO)
     {
         pStreamOut->pWebM = new WebMWriter();
         rc = pStreamOut->pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
                                        WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
         if (RT_SUCCESS(rc))
-            rc = pStreamOut->pWebM->AddAudioTrack(44100, 2, 16, &pStreamOut->uTrack);
+            rc = pStreamOut->pWebM->AddAudioTrack(pStreamOut->Codec.Opus.uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits,
+                                                  &pStreamOut->uTrack);
     }
 
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = RTCircBufCreate(&pStreamOut->pCircBuf, _4K);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
+    rc = RTCircBufCreate(&pStreamOut->pCircBuf, (pStreamOut->Codec.Opus.csFrame * pStreamOut->Props.cChannels) * sizeof(uint16_t));
     if (RT_SUCCESS(rc))
     {
         OpusEncoder *pEnc = NULL;
 
         int orc;
-        pEnc = opus_encoder_create(48000 /* Hz */, 2 /* Stereo */, OPUS_APPLICATION_AUDIO, &orc);
+        pEnc = opus_encoder_create(pStreamOut->Codec.Opus.uHz, pStreamOut->Props.cChannels, OPUS_APPLICATION_AUDIO, &orc);
         if (orc != OPUS_OK)
         {
             LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
@@ -171,8 +214,7 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 
         AssertPtr(pEnc);
 
-#if 0
-        orc = opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(DrvAudioHlpCalcBitrate()));
+        opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(196000)); /** @todo Make this configurable. */
         if (orc != OPUS_OK)
         {
             LogRel(("VideoRec: Audio codec failed to set bitrate: %s\n", opus_strerror(orc)));
@@ -180,11 +222,19 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
         }
         else
         {
-#endif
-        pStreamOut->Codec.Opus.pEnc = pEnc;
+            pStreamOut->Codec.Opus.pEnc = pEnc;
 
-        if (pCfgAcq)
-            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
+            if (pCfgAcq)
+            {
+                /* Make sure to let the driver backend know that we need the audio data in
+                 * a specific sampling rate Opus is optimized for. */
+                pCfgAcq->uHz               = pStreamOut->Codec.Opus.uHz;
+                pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
+            }
+
+            LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 channels, %RU16 bpS\n",
+                    uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits));
+        }
     }
 #else
     rc = VERR_NOT_SUPPORTED;
@@ -314,47 +364,36 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     /* pcbWritten is optional. */
 
     PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    RT_NOREF(pThis);
     PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
 
-    uint32_t cLive = AudioMixBufLive(&pStream->MixBuf);
-
-    uint64_t now = PDMDrvHlpTMGetVirtualTime(pThis->pDrvIns);
-    uint64_t ticks = now  - pStreamOut->old_ticks;
-    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pThis->pDrvIns);
-
-    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    uint32_t cSamplesPlayed = (int)((2 * ticks * pStreamOut->Props.uHz + ticks_per_second) / ticks_per_second / 2);
-
-    /* Don't play more than available. */
-    if (cSamplesPlayed > cLive)
-        cSamplesPlayed = cLive;
-
-    /* Remember when samples were consumed. */
-    pStreamOut->old_ticks = now;
-
-    int cSamplesToSend = cSamplesPlayed;
-
-    LogFlowFunc(("uFreq=%RU32, cChan=%RU8, cBits=%RU8, fSigned=%RTbool, cSamplesToSend=%RU32\n",
-                 pStreamOut->Props.uHz,   pStreamOut->Props.cChannels,
-                 pStreamOut->Props.cBits, pStreamOut->Props.fSigned, cSamplesToSend));
-
-    uint32_t csReadTotal = 0;
+    uint32_t csLive = AudioMixBufUsed(&pStream->MixBuf);
+    if (!csLive)
+    {
+        Log3Func(("No live samples, skipping\n"));
+        if (pcbWritten)
+            *pcbWritten = 0;
+        return VINF_SUCCESS;
+    }
 
     int rc;
+
+    uint32_t csReadTotal = 0;
 
     /*
      * Call the encoder with the data.
      */
 #ifdef VBOX_WITH_LIBOPUS
-
-    uint16_t cbFrameSize = 960; /** @todo 20ms worth of audio data. */
-
     PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
 
-    while (RTCircBufUsed(pCircBuf) < cbFrameSize)
+    void  *pvBuf;
+    size_t cbBuf;
+
+    /*
+     * Fetch as much as we can into our internal ring buffer.
+     */
+    while (RTCircBufFree(pCircBuf))
     {
-        void  *pvBuf;
-        size_t cbBuf;
         RTCircBufAcquireWriteBlock(pCircBuf, RTCircBufFree(pCircBuf), &pvBuf, &cbBuf);
 
         uint32_t cbRead = 0;
@@ -363,11 +402,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
         {
             uint32_t csRead = 0;
             rc = AudioMixBufReadCirc(&pStream->MixBuf, pvBuf, cbBuf, &csRead);
-            if (RT_SUCCESS(rc))
+            if (   RT_SUCCESS(rc)
+                && csRead)
             {
-                AudioMixBufFinish(&pStream->MixBuf, csRead);
-
-                cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
+                cbRead       = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
                 csReadTotal += csRead;
             }
         }
@@ -379,63 +417,96 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
         {
             break;
         }
+    }
 
-        if (RTCircBufUsed(pCircBuf) >= cbFrameSize)
+    if (csReadTotal)
+        AudioMixBufFinish(&pStream->MixBuf, csReadTotal);
+
+    /*
+     * Process our internal ring buffer and encode the data.
+     */
+
+    uint8_t abSrc[_64K]; /** @todo Fix! */
+    size_t  cbSrc;
+
+    const uint32_t csFrame = pStreamOut->Codec.Opus.csFrame;
+    const uint32_t cbFrame = AUDIOMIXBUF_S2B(&pStream->MixBuf, csFrame);
+
+    while (RTCircBufUsed(pCircBuf) >= cbFrame)
+    {
+        cbSrc = 0;
+
+        while (cbSrc < cbFrame)
         {
-            uint8_t abSrc[_4K];
-            size_t  cbSrc = 0;
+            RTCircBufAcquireReadBlock(pCircBuf, cbFrame - cbSrc, &pvBuf, &cbBuf);
 
-            while (cbSrc < cbFrameSize)
+            if (cbBuf)
             {
-                RTCircBufAcquireReadBlock(pCircBuf, cbFrameSize - cbSrc, &pvBuf, &cbBuf);
+                memcpy(&abSrc[cbSrc], pvBuf, cbBuf);
 
-                if (cbBuf)
-                {
-                    memcpy(&abSrc[cbSrc], pvBuf, cbBuf);
-
-                    cbSrc += cbBuf;
-                    Assert(cbSrc <= sizeof(abSrc));
-                }
-
-                RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
-
-                if (!cbBuf)
-                    break;
+                cbSrc += cbBuf;
+                Assert(cbSrc <= sizeof(abSrc));
             }
 
-            /*
-             * Opus always encodes PER FRAME, that is, 2.5, 5, 10, 20, 40 or 60 ms of audio data.
-             *
-             * A packet can have up to 120ms worth of audio data.
-             * Anything > 120ms of data will result in a "corrupted package" error message by
-             * by decoding application.
-             */
-            uint8_t abDst[_4K];
-            size_t  cbDst = sizeof(abDst);
+            RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
 
-            /* Call the encoder to encode one frame per iteration. */
-            opus_encoder_ctl(pStreamOut->Codec.Opus.pEnc, OPUS_SET_BITRATE(196000)); /** @todo Only needed for VBR encoding. */
-            opus_int32 cbWritten = opus_encode(pStreamOut->Codec.Opus.pEnc,
-                                               (opus_int16 *)abSrc, cbSrc, abDst, cbDst);
-            if (cbWritten > 0)
-            {
-                cbDst = cbWritten;
-                Assert(cbDst <= sizeof(abDst));
-
-                /* Call the WebM writer to actually write the encoded audio data. */
-                WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
-                rc = pStreamOut->pWebM->WriteBlock(pStreamOut->uTrack, &blockData, sizeof(blockData));
-                AssertRC(rc);
-            }
-            else if (cbWritten < 0)
-            {
-                AssertMsgFailed(("Encoding failed: %s\n", opus_strerror(cbWritten)));
-                rc = VERR_INVALID_PARAMETER;
-            }
-
-            if (RT_FAILURE(rc))
+            if (!cbBuf)
                 break;
         }
+
+#ifdef DEBUG_andy
+        RTFILE fh;
+        RTFileOpen(&fh, "/tmp/acap.pcm", RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        RTFileWrite(fh, abSrc, cbSrc, NULL);
+        RTFileClose(fh);
+#endif
+
+        Assert(cbSrc == cbFrame);
+
+        /*
+         * Opus always encodes PER FRAME, that is, exactly 2.5, 5, 10, 20, 40 or 60 ms of audio data.
+         *
+         * A packet can have up to 120ms worth of audio data.
+         * Anything > 120ms of data will result in a "corrupted package" error message by
+         * by decoding application.
+         */
+        uint8_t abDst[_64K]; /** @todo Fix! */
+        size_t  cbDst = sizeof(abDst);
+
+        /* Call the encoder to encode one frame per iteration. */
+        opus_int32 cbWritten = opus_encode(pStreamOut->Codec.Opus.pEnc,
+                                           (opus_int16 *)abSrc, csFrame, abDst, cbDst);
+        if (cbWritten > 0)
+        {
+#ifdef DEBUG
+            /* Get overall frames encoded. */
+            uint32_t cEncFrames          = opus_packet_get_nb_frames(abDst, cbDst);
+            uint32_t cEncSamplesPerFrame = opus_packet_get_samples_per_frame(abDst, pStreamOut->Codec.Opus.uHz);
+            uint32_t csEnc               = cEncFrames * cEncSamplesPerFrame;
+
+            pStreamOut->Codec.Opus.cEncFrames += cEncFrames;
+            pStreamOut->Codec.Opus.msEncTotal += 20 /* Default 20 ms */ * cEncFrames;
+
+            LogFunc(("%RU64ms [%RU64 frames]: cbSrc=%zu, cbDst=%zu, cEncFrames=%RU32, cEncSamplesPerFrame=%RU32, csEnc=%RU32\n",
+                     pStreamOut->Codec.Opus.msEncTotal, pStreamOut->Codec.Opus.cEncFrames,
+                     cbSrc, cbDst, cEncFrames, cEncSamplesPerFrame, csEnc));
+#endif
+            Assert((uint32_t)cbWritten <= cbDst);
+            cbDst = RT_MIN((uint32_t)cbWritten, cbDst); /* Update cbDst to actual bytes encoded (written). */
+
+            /* Call the WebM writer to actually write the encoded audio data. */
+            WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
+            rc = pStreamOut->pWebM->WriteBlock(pStreamOut->uTrack, &blockData, sizeof(blockData));
+            AssertRC(rc);
+        }
+        else if (cbWritten < 0)
+        {
+            AssertMsgFailed(("Encoding failed: %s\n", opus_strerror(cbWritten)));
+            rc = VERR_INVALID_PARAMETER;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
     }
 #else
     rc = VERR_NOT_SUPPORTED;
