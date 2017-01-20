@@ -182,7 +182,7 @@ static int testLdrOne(const char *pszFilename)
         {
             /* VERR_ELF_EXE_NOT_SUPPORTED in the previous loop? */
             if (!aLoads[i].hLdrMod)
-                continue; /* VERR_ELF_EXE_NOT_SUPPORTED in the previous loop */
+                continue;
             /* get the pointer. */
             RTUINTPTR Value;
             rc = RTLdrGetSymbolEx(aLoads[i].hLdrMod, aLoads[i].pvBits, (uintptr_t)aLoads[i].pvBits,
