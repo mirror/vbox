@@ -42,6 +42,18 @@
                             g_usBs3TestStep, (a_pszMode), (a_Actual), (a_Expected)); \
     } while (0)
 
+#define BS3CPUBASIC2PF_HALT(pThis) \
+    do { \
+        Bs3TestPrintf("Halting: pteworker=%s store=%s accessor=%s\n", \
+                      pThis->pszPteWorker, pThis->pszStore, pThis->pszAccessor); \
+        ASMHalt(); \
+    } while (0)
+
+
+/** @def BS3CPUBASIC2PF_FASTER
+ * This is useful for IEM execution. */
+#define BS3CPUBASIC2PF_FASTER
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -52,17 +64,18 @@ typedef struct FNBS3CPUBASIC2PFTSTCODE
 {
     FNBS3CPUBASIC2PFSNIPPET    *pfn;
     uint8_t                     offUd2;
-    uint8_t                     cbTmpl;
+
 } FNBS3CPUBASIC2PFTSTCODE;
 typedef FNBS3CPUBASIC2PFTSTCODE const *PCFNBS3CPUBASIC2PFTSTCODE;
 
 typedef struct BS3CPUBASIC2PFTTSTCMNMODE
 {
-    uint8_t                 bMode;
-    FNBS3CPUBASIC2PFTSTCODE MovLoad;
-    FNBS3CPUBASIC2PFTSTCODE MovStore;
-    FNBS3CPUBASIC2PFTSTCODE Xchg;
-    FNBS3CPUBASIC2PFTSTCODE CmpXchg;
+    uint8_t                     bMode;
+    FNBS3CPUBASIC2PFTSTCODE     MovLoad;
+    FNBS3CPUBASIC2PFTSTCODE     MovStore;
+    FNBS3CPUBASIC2PFTSTCODE     Xchg;
+    FNBS3CPUBASIC2PFTSTCODE     CmpXchg;
+    FNBS3CPUBASIC2PFTSTCODE     DivMem;
 } BS3CPUBASIC2PFTTSTCMNMODE;
 typedef BS3CPUBASIC2PFTTSTCMNMODE const *PCBS3CPUBASIC2PFTTSTCMNMODE;
 
@@ -107,6 +120,10 @@ typedef struct BS3CPUBASIC2PFSTATE
     /** Reflects EFER.NXE & CR4.PAE. */
     bool                        fNxe;
 
+    const char                 *pszAccessor;
+    const char                 *pszPteWorker;
+    const char                 *pszStore;
+
     /** Trap context frame. */
     BS3TRAPFRAME                TrapCtx;
     /** Expected result context. */
@@ -138,11 +155,16 @@ typedef struct BS3CPUBASIC2PFMODPT
     uint32_t fNoExecute  : 1;
     uint32_t fReserved   : 1;
     uint32_t uModifyArg  : 24;
-    void   (*pfnModify)(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, struct BS3CPUBASIC2PFMODPT const *pEntry);
+    void   (*pfnModify)(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, struct BS3CPUBASIC2PFMODPT const *pEntry,
+                        uint32_t fClearMask, uint32_t fSetMask);
     bool   (*pfnApplicable)(PBS3CPUBASIC2PFSTATE pThis, struct BS3CPUBASIC2PFMODPT const *pEntry);
 } BS3CPUBASIC2PFMODPT;
 typedef BS3CPUBASIC2PFMODPT const *PCBS3CPUBASIC2PFMODPT;
 
+/** Page level protection.  Alternative is page directory or higher level. */
+#define BS3CB2PFACC_F_PAGE_LEVEL    RT_BIT(0)
+/** Directly access the boobytrapped page, no edging on or off it. */
+#define BS3CB2PFACC_F_DIRECT        RT_BIT(1)
 
 /**
  * Memory accessor.
@@ -152,10 +174,11 @@ typedef struct BS3CPUBASIC2PFACCESSOR
     /** Accessor name.   */
     const char *pszName;
     /** The accessor. */
-    void      (*pfnAccessor)(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd, bool fPageLevel);
+    void      (*pfnAccessor)(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags, uint8_t bXcpt, uint8_t uPfErrCd);
     /** The X86_TRAP_PF_XXX access flags this access sets.   */
     uint32_t    fAccess;
-
+    /** The exception when things are fine. */
+    uint8_t     bOkayXcpt;
 } BS3CPUBASIC2PFACCESSOR;
 typedef const BS3CPUBASIC2PFACCESSOR *PCBS3CPUBASIC2PFACCESSOR;
 
@@ -176,16 +199,19 @@ FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c16;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c16;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_div_ds_bx__ud2_c16;
 
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c32;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c32;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c32;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c32;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_div_ds_bx__ud2_c32;
 
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ax_ds_bx__ud2_c64;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_mov_ds_bx_ax__ud2_c64;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_xchg_ds_bx_ax__ud2_c64;
 FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c64;
+FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_div_ds_bx__ud2_c64;
 
 
 /*********************************************************************************************************************************
@@ -194,7 +220,7 @@ FNBS3CPUBASIC2PFSNIPPET bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c64;
 /** Page table access functions. */
 static const struct
 {
-    const char     *pszStore;
+    const char     *pszName;
     void (BS3_CALL *pfnStore)(void *pvDst, uint32_t uValue, uint32_t uOld);
 } g_aStoreMethods[] =
 {
@@ -212,6 +238,7 @@ static const BS3CPUBASIC2PFTTSTCMNMODE g_aCmnModes[] =
         {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c16,     2 },
         {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16,    2 },
         {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16, 3 },
+        {   bs3CpuBasic2_div_ds_bx__ud2_c16,        2 },
     },
     {
         BS3_MODE_CODE_32,
@@ -219,6 +246,7 @@ static const BS3CPUBASIC2PFTTSTCMNMODE g_aCmnModes[] =
         {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c32,     2 },
         {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c32,    2 },
         {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c32, 3 },
+        {   bs3CpuBasic2_div_ds_bx__ud2_c32,        2 },
     },
     {
         BS3_MODE_CODE_64,
@@ -226,6 +254,7 @@ static const BS3CPUBASIC2PFTTSTCMNMODE g_aCmnModes[] =
         {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c64,     2 + 1 },
         {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c64,    2 + 1 },
         {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c64, 3 + 1 },
+        {   bs3CpuBasic2_div_ds_bx__ud2_c64,        2 + 1 },
     },
     {
         BS3_MODE_CODE_V86,
@@ -233,6 +262,7 @@ static const BS3CPUBASIC2PFTTSTCMNMODE g_aCmnModes[] =
         {   bs3CpuBasic2_mov_ds_bx_ax__ud2_c16,     2 },
         {   bs3CpuBasic2_xchg_ds_bx_ax__ud2_c16,    2 },
         {   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2_c16, 3 },
+        {   bs3CpuBasic2_div_ds_bx__ud2_c16,        2 },
     },
 };
 
@@ -262,7 +292,7 @@ static void bs3CpuBasic2Pf_CompareCtx(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pEx
 #if 1
         Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
         Bs3TestPrintf("Halting: bXcpt=%#x uErrCd=%#x\n", bXcpt, uErrCd);
-        ASMHalt();
+        BS3CPUBASIC2PF_HALT(pThis);
 #endif
     }
 }
@@ -296,7 +326,7 @@ static void bs3CpuBasic2Pf_CompareSimpleCtx(PBS3CPUBASIC2PFSTATE pThis, PBS3REGC
 #if 1
         Bs3TestPrintf("Halting: g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
         Bs3TestPrintf("Halting: bXcpt=%#x uErrCd=%#x\n", bXcpt, uErrCd);
-        ASMHalt();
+        BS3CPUBASIC2PF_HALT(pThis);
 #endif
     }
 }
@@ -360,7 +390,7 @@ static void bs3CpuBasic2Pf_RestoreFromBackups(PBS3CPUBASIC2PFSTATE pThis)
 /** @name BS3CPUBASIC2PFACCESSOR::pfnAccessor Implementations
  * @{ */
 
-static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd, bool fPageLevel)
+static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags, uint8_t bXcpt, uint8_t uPfErrCd)
 {
     uint8_t *pbOrgTest = pThis->pbOrgTest;
     unsigned off;
@@ -394,9 +424,9 @@ static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
         Bs3TrapSetJmpAndRestore(pCtx, &pThis->TrapCtx);
         //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
         if (   bXcpt != X86_XCPT_PF
-            || (fPageLevel && off < X86_PAGE_SIZE - 4))
+            || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off < X86_PAGE_SIZE - 4))
             bs3CpuBasic2Pf_CompareSimpleUd(pThis, pCtx, 3);
-        else if (!fPageLevel || off >= X86_PAGE_SIZE)
+        else if (!(fFlags & BS3CB2PFACC_F_PAGE_LEVEL) || off >= X86_PAGE_SIZE)
             bs3CpuBasic2Pf_CompareSimplePf(pThis, pCtx, 0, uPfErrCd, (uintptr_t)pThis->pbTest + off);
         else
             bs3CpuBasic2Pf_CompareSimplePf(pThis, pCtx,
@@ -440,13 +470,12 @@ static void bs3CpuBasic2Pf_SetCsEip(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx,
  *
  * @param   pThis           The test stat data.
  * @param   pCtx            The test context.
+ * @param   fFlags          BS3CB2PFACC_F_XXX.
  * @param   bXcpt           X86_XCPT_PF if this can cause \#PFs, otherwise
  *                          X86_XCPT_UD.
  * @param   uPfErrCd        The error code for \#PFs.
- * @param   fPageLevel      Set if we're pushing PTE level bits.
  */
-static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
-                                     bool fPageLevel)
+static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags, uint8_t bXcpt, uint8_t uPfErrCd)
 {
     static uint64_t const s_uValue = UINT64_C(0x7c4d0114428d);
     uint64_t uExpectRax;
@@ -495,8 +524,8 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
             //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
 
             if (   bXcpt != X86_XCPT_PF
-                || (fPageLevel && off >= X86_PAGE_SIZE * 2)
-                || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off >= X86_PAGE_SIZE * 2)
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 pThis->ExpectCtx.rax.u = uExpectRax;
                 bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovLoad.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
@@ -521,13 +550,13 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
  *
  * @param   pThis           The test stat data.
  * @param   pCtx            The test context.
+ * @param   fFlags          BS3CB2PFACC_F_XXX.
  * @param   bXcpt           X86_XCPT_PF if this can cause \#PFs, otherwise
  *                          X86_XCPT_UD.
  * @param   uPfErrCd        The error code for \#PFs.
- * @param   fPageLevel      Set if we're pushing PTE level bits.
  */
-static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
-                                      bool fPageLevel)
+static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags,
+                                      uint8_t bXcpt, uint8_t uPfErrCd)
 {
     static uint64_t const s_uValue        = UINT64_C(0x3af45ead86a34a26);
     static uint64_t const s_uValueFlipped = UINT64_C(0xc50ba152795cb5d9);
@@ -580,8 +609,8 @@ static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCt
             //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
 
             if (   bXcpt != X86_XCPT_PF
-                || (fPageLevel && off >= X86_PAGE_SIZE * 2)
-                || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off >= X86_PAGE_SIZE * 2)
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->MovStore.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
                 if (*(uint64_t *)&pThis->pbOrgTest[off] != uExpectStored)
@@ -613,12 +642,12 @@ static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCt
  *
  * @param   pThis           The test stat data.
  * @param   pCtx            The test context.
+ * @param   fFlags          BS3CB2PFACC_F_XXX.
  * @param   bXcpt           X86_XCPT_PF if this can cause \#PFs, otherwise
  *                          X86_XCPT_UD.
  * @param   uPfErrCd        The error code for \#PFs.
- * @param   fPageLevel      Set if we're pushing PTE level bits.
  */
-static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd, bool fPageLevel)
+static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags, uint8_t bXcpt, uint8_t uPfErrCd)
 {
     static uint64_t const s_uValue        = UINT64_C(0xea58699648e2f32c);
     static uint64_t const s_uValueFlipped = UINT64_C(0x15a79669b71d0cd3);
@@ -677,8 +706,8 @@ static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
             //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
 
             if (   bXcpt != X86_XCPT_PF
-                || (fPageLevel && off >= X86_PAGE_SIZE * 2)
-                || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off >= X86_PAGE_SIZE * 2)
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 pThis->ExpectCtx.rax.u = uExpectedRax;
                 bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, pThis->pCmnMode->Xchg.offUd2, X86_XCPT_UD, 0 /*uErrCd*/);
@@ -711,15 +740,15 @@ static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
  *
  * @param   pThis           The test stat data.
  * @param   pCtx            The test context.
+ * @param   fFlags          BS3CB2PFACC_F_XXX.
  * @param   bXcpt           X86_XCPT_PF if this can cause \#PFs, otherwise
  *                          X86_XCPT_UD.
  * @param   uPfErrCd        The error code for \#PFs.
- * @param   fPageLevel      Set if we're pushing PTE level bits.
  * @param   fMissmatch      Whether to fail and not store (@c true), or succeed
  *                          and do the store.
  */
-static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
-                                     bool fPageLevel, bool fMissmatch)
+static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags,
+                                     uint8_t bXcpt, uint8_t uPfErrCd, bool fMissmatch)
 {
     static uint64_t const s_uValue        = UINT64_C(0xea58699648e2f32c);
     static uint64_t const s_uValueFlipped = UINT64_C(0x15a79669b71d0cd3);
@@ -798,8 +827,8 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
             //Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
 
             if (   bXcpt != X86_XCPT_PF
-                || (fPageLevel && off >= X86_PAGE_SIZE * 2)
-                || (fPageLevel && off <= X86_PAGE_SIZE - pThis->cbAccess) )
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off >= X86_PAGE_SIZE * 2)
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off <= X86_PAGE_SIZE - pThis->cbAccess) )
             {
                 pThis->ExpectCtx.rax.u = uExpectedRax;
                 pThis->ExpectCtx.rflags.u32 = uExpectedFlags;
@@ -830,28 +859,106 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
 }
 
 
-static void bs3CpuBasic2Pf_DoCmpXchgMiss(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
-                                         bool fPageLevel)
+static void bs3CpuBasic2Pf_DoCmpXchgMiss(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags,
+                                         uint8_t bXcpt, uint8_t uPfErrCd)
 {
-    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, bXcpt, uPfErrCd, fPageLevel, true /*fMissmatch*/ );
+    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, fFlags, bXcpt, uPfErrCd, true /*fMissmatch*/ );
 }
 
 
-static void bs3CpuBasic2Pf_DoCmpXchgMatch(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint8_t bXcpt, uint8_t uPfErrCd,
-                                          bool fPageLevel)
+static void bs3CpuBasic2Pf_DoCmpXchgMatch(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags,
+                                          uint8_t bXcpt, uint8_t uPfErrCd)
 {
-    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, bXcpt, uPfErrCd, fPageLevel, false /*fMissmatch*/ );
+    bs3CpuBasic2Pf_DoCmpXchg(pThis, pCtx, fFlags, bXcpt, uPfErrCd , false /*fMissmatch*/ );
+}
+
+
+/**
+ * @interface_method_impl{BS3CPUBASIC2PFACCESSOR,pfnAccessor,
+ *      DIV [MEM=0] for checking the accessed bit}
+ */
+static void bs3CpuBasic2Pf_DoDivByZero(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags,
+                                       uint8_t bXcpt, uint8_t uPfErrCd)
+{
+    static uint64_t const   s_uFiller = UINT64_C(0x9856703711f4069e);
+    uint64_t                uZeroAndFill;
+    unsigned i;
+
+    /*
+     * Adjust the incoming context and calculate our expections.
+     */
+    bs3CpuBasic2Pf_SetCsEip(pThis, pCtx, &pThis->pCmnMode->DivMem);
+
+    Bs3MemCpy(&pThis->ExpectCtx, pCtx, sizeof(pThis->ExpectCtx));
+    switch (pThis->bMode & BS3_MODE_CODE_MASK)
+    {
+        case BS3_MODE_CODE_16:
+        case BS3_MODE_CODE_V86:
+            uZeroAndFill = s_uFiller & UINT64_C(0xffffffffffff0000);
+            break;
+        case BS3_MODE_CODE_32:
+            uZeroAndFill = s_uFiller & UINT64_C(0xffffffff00000000);
+            break;
+        case BS3_MODE_CODE_64:
+            uZeroAndFill = 0;
+            break;
+    }
+
+    /*
+     * Make two approaches to the test page (the 2nd one):
+     *  - i=0: Start on the 1st page and edge into the 2nd.
+     *  - i=1: Start at the end of the 2nd page and edge off it and into the 3rd.
+     */
+    for (i = 0; i < 2; i++)
+    {
+        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        for (; off < offEnd; off++)
+        {
+            *(uint64_t *)&pThis->pbOrgTest[off] = uZeroAndFill;
+            if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                pThis->ExpectCtx.rbx.u = pCtx->rbx.u = off;
+            else
+                pThis->ExpectCtx.rbx.u = pCtx->rbx.u = (uintptr_t)pThis->pbTest + off;
+
+            Bs3TrapSetJmpAndRestore(pCtx, &pThis->TrapCtx);
+            //if (pThis->bMode == BS3_MODE_PP16_32) Bs3TestPrintf("off=%#06x bXcpt=%#x uErrCd=%#RX64\n", off, pThis->TrapCtx.bXcpt, pThis->TrapCtx.uErrCd);
+
+            if (   bXcpt != X86_XCPT_PF
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off >= X86_PAGE_SIZE * 2)
+                || ((fFlags & BS3CB2PFACC_F_PAGE_LEVEL) && off <= X86_PAGE_SIZE - pThis->cbAccess) )
+            {
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, 0 /*cbPcAdjust*/, X86_XCPT_DE, 0 /*uErrCd*/);
+                if (*(uint64_t *)&pThis->pbOrgTest[off] != uZeroAndFill)
+                    Bs3TestFailedF("%u - %s: Modified source op: %#RX64, expected %#RX64",
+                                   g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uZeroAndFill);
+            }
+            else
+            {
+                if (off < X86_PAGE_SIZE)
+                    pThis->ExpectCtx.cr2.u = (uintptr_t)pThis->pbTest + X86_PAGE_SIZE;
+                else
+                    pThis->ExpectCtx.cr2.u = (uintptr_t)pThis->pbTest + off;
+                bs3CpuBasic2Pf_CompareCtx(pThis, &pThis->ExpectCtx, 0 /*cbPcAdjust*/, bXcpt, uPfErrCd);
+                pThis->ExpectCtx.cr2 = pCtx->cr2;
+                if (*(uint64_t *)&pThis->pbOrgTest[off] != uZeroAndFill)
+                    Bs3TestFailedF("%u - %s: Modified source op: %#RX64, expected %#RX64",
+                                   g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uZeroAndFill);
+            }
+        }
+    }
 }
 
 
 static BS3CPUBASIC2PFACCESSOR const g_aAccessors[] =
 {
-    {   "DoExec",           bs3CpuBasic2Pf_DoExec,                          X86_TRAP_PF_ID },
-    {   "DoMovLoad",        bs3CpuBasic2Pf_DoMovLoad,                       0 },
-    {   "DoMovStore",       bs3CpuBasic2Pf_DoMovStore,                      X86_TRAP_PF_RW },
-    {   "DoXchg",           bs3CpuBasic2Pf_DoXchg,                          X86_TRAP_PF_RW },
-    {   "DoCmpXchgMiss",    bs3CpuBasic2Pf_DoCmpXchgMiss,                   X86_TRAP_PF_RW },
-    {   "DoCmpXhcgMatch",   bs3CpuBasic2Pf_DoCmpXchgMatch,                  X86_TRAP_PF_RW },
+    {   "DoExec",           bs3CpuBasic2Pf_DoExec,                          X86_TRAP_PF_ID,     X86_XCPT_UD },
+    {   "DoMovLoad",        bs3CpuBasic2Pf_DoMovLoad,                       0,                  X86_XCPT_UD },
+    {   "DoMovStore",       bs3CpuBasic2Pf_DoMovStore,                      X86_TRAP_PF_RW,     X86_XCPT_UD },
+    {   "DoXchg",           bs3CpuBasic2Pf_DoXchg,                          X86_TRAP_PF_RW,     X86_XCPT_UD },
+    {   "DoCmpXchgMiss",    bs3CpuBasic2Pf_DoCmpXchgMiss,                   X86_TRAP_PF_RW,     X86_XCPT_UD },
+    {   "DoCmpXhcgMatch",   bs3CpuBasic2Pf_DoCmpXchgMatch,                  X86_TRAP_PF_RW,     X86_XCPT_UD },
+    {   "DoDivByZero",      bs3CpuBasic2Pf_DoDivByZero,                     0,                  X86_XCPT_DE },
 };
 
 /** @} */
@@ -861,54 +968,75 @@ static BS3CPUBASIC2PFACCESSOR const g_aAccessors[] =
  * @{ */
 
 
-static void bs3CpuBasic2Pf_ClearMask(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+static void bs3CpuBasic2Pf_ClearMask(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
+                                     uint32_t fClearMask, uint32_t fSetMask)
 {
     if (pThis->PgInfo.cbEntry == 4)
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         pThis->PgInfo.u.Legacy.pPte[1].u & ~(uint32_t)pEntry->uModifyArg,
+                                         ((pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask) & ~(uint32_t)pEntry->uModifyArg,
                                          pThis->PgInfo.u.Legacy.pPte[1].u);
     else
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~(uint32_t)pEntry->uModifyArg,
+                                         ((pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask) & ~(uint32_t)pEntry->uModifyArg,
                                          pThis->PgInfo.u.Pae.pPte[1].au32[0]);
 }
 
-static void bs3CpuBasic2Pf_SetBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+static void bs3CpuBasic2Pf_SetBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
+                                  uint32_t fClearMask, uint32_t fSetMask)
 {
     if (pThis->PgInfo.cbEntry == 4)
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         pThis->PgInfo.u.Legacy.pPte[1].u | RT_BIT_32(pEntry->uModifyArg),
+                                         (pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask | RT_BIT_32(pEntry->uModifyArg),
                                          pThis->PgInfo.u.Legacy.pPte[1].u);
     else if (pEntry->uModifyArg < 32)
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] | RT_BIT_32(pEntry->uModifyArg),
+                                         (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask | RT_BIT_32(pEntry->uModifyArg),
                                          pThis->PgInfo.u.Pae.pPte[1].au32[0]);
     else
+    {
         g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
                                          pThis->PgInfo.u.Pae.pPte[1].au32[1] | RT_BIT_32(pEntry->uModifyArg - 32),
                                          pThis->PgInfo.u.Pae.pPte[1].au32[1]);
+        if (fSetMask || fClearMask)
+            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
+                                             (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask,
+                                             pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    }
 }
 
-static void bs3CpuBasic2Pf_ClearBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+#if 0
+static void bs3CpuBasic2Pf_ClearBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
+                                    uint32_t fClearMask, uint32_t fSetMask)
 {
     if (pThis->PgInfo.cbEntry == 4)
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         pThis->PgInfo.u.Legacy.pPte[1].u & ~RT_BIT_32(pEntry->uModifyArg),
+                                         ((pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask) & ~RT_BIT_32(pEntry->uModifyArg),
                                          pThis->PgInfo.u.Legacy.pPte[1].u);
     else if (pEntry->uModifyArg < 32)
         g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~RT_BIT_32(pEntry->uModifyArg),
+                                         ((pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask) & ~RT_BIT_32(pEntry->uModifyArg),
                                          pThis->PgInfo.u.Pae.pPte[1].au32[0]);
     else
         g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
                                          pThis->PgInfo.u.Pae.pPte[1].au32[1] & ~RT_BIT_32(pEntry->uModifyArg - 32),
                                          pThis->PgInfo.u.Pae.pPte[1].au32[1]);
 }
+#endif
 
-
-static void bs3CpuBasic2Pf_NoChange(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry)
+static void bs3CpuBasic2Pf_NoChange(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
+                                    uint32_t fClearMask, uint32_t fSetMask)
 {
-    RT_NOREF3(pThis, iStore, pEntry);
+    if (fClearMask || fSetMask)
+    {
+        if (pThis->PgInfo.cbEntry == 4)
+            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
+                                             (pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask,
+                                             pThis->PgInfo.u.Legacy.pPte[1].u);
+        else
+            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
+                                             (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask,
+                                             pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    }
 }
 
 /** @} */
@@ -1050,15 +1178,15 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
      */
     for (iRing = 0; iRing < 4; iRing++)
         for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
-            g_aAccessors[iAccessor].pfnAccessor(pThis, &aCtxts[iRing], X86_XCPT_UD, UINT8_MAX, true /*fPageLevel*/);
+            g_aAccessors[iAccessor].pfnAccessor(pThis, &aCtxts[iRing], BS3CB2PFACC_F_PAGE_LEVEL, X86_XCPT_UD, UINT8_MAX);
 
     /*
      * Check the U bit on PTE level.  We only mess with the 2nd page.
      */
     {
-        bool const  fPgLvl = true;
-        bool const  fWp    = RT_BOOL(ASMGetCR0() & X86_CR0_WP);
-        unsigned    iPteWrk;
+        uint32_t const  fAccessor = BS3CB2PFACC_F_PAGE_LEVEL;
+        bool const      fWp       = RT_BOOL(ASMGetCR0() & X86_CR0_WP);
+        unsigned        iPteWrk;
 
         bs3CpuBasic2Pf_FlushAll();
         for (iPteWrk = 0; iPteWrk < RT_ELEMENTS(g_aPteWorkers); iPteWrk++)
@@ -1067,59 +1195,21 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
             const BS3CPUBASIC2PFMODPT  *pPteWrk = &g_aPteWorkers[iPteWrk];
             if (   pPteWrk->pfnApplicable && !pPteWrk->pfnApplicable(pThis, pPteWrk))
                 continue;
-            //if (pThis->bMode == BS3_MODE_LM16) Bs3TestPrintf("PteWrk: %s\n", pPteWrk->pszName);
+
+            pThis->pszPteWorker = pPteWrk->pszName;
 
             EffWrk = *pPteWrk;
 
+#if 1
             /*
              * Do the modification once, then test all different accesses
              * without flushing the TLB or anything in-between.
              */
             for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
             {
-                pPteWrk->pfnModify(pThis, iStore, pPteWrk);
+                pThis->pszStore = g_aStoreMethods[iStore].pszName;
+                pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, 0);
 
-                for (iRing = 0; iRing < 4; iRing++)
-                {
-                    PBS3REGCTX const pCtx = &aCtxts[iRing];
-                    if (   EffWrk.fReserved
-                        || !EffWrk.fPresent
-                        || (!EffWrk.fUser && iRing == 3))
-                    {
-                        uint32_t const fPfBase = ( EffWrk.fReserved ? X86_TRAP_PF_P | X86_TRAP_PF_RSVD
-                                                  : EffWrk.fPresent ? X86_TRAP_PF_P : 0)
-                                               | (iRing == 3 ? X86_TRAP_PF_US : 0);
-                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
-                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
-                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask), fPgLvl);
-                    }
-                    else
-                    {
-                        uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
-                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
-                            if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
-                                    && EffWrk.fNoExecute)
-                                || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
-                                    && !EffWrk.fWriteable
-                                    && (fWp || iRing == 3)) )
-                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
-                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask),
-                                                                    fPgLvl);
-                            else
-                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_UD, UINT8_MAX, fPgLvl);
-
-                    }
-                }
-
-                /* Reset the paging + full flush. */
-                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
-            }
-
-            /*
-             * Again, but redoing everything for each accessor.
-             */
-            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
-            {
                 for (iRing = 0; iRing < 4; iRing++)
                 {
                     PBS3REGCTX const pCtx = &aCtxts[iRing];
@@ -1132,9 +1222,79 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
                                                | (iRing == 3 ? X86_TRAP_PF_US : 0);
                         for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
                         {
-                            pPteWrk->pfnModify(pThis, iStore, pPteWrk);
-                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
-                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask), fPgLvl);
+                            pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
+                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                        }
+                    }
+                    else
+                    {
+                        uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                        {
+                            pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
+                            if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
+                                    && EffWrk.fNoExecute)
+                                || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                    && !EffWrk.fWriteable
+                                    && (fWp || iRing == 3)) )
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                            else
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                        }
+                    }
+                }
+
+                /* Reset the paging + full flush. */
+                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+            }
+#endif
+
+            /*
+             * Again, but redoing everything for each accessor.
+             */
+            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
+            {
+                pThis->pszStore = g_aStoreMethods[iStore].pszName;
+
+                for (iRing = 0; iRing < 4; iRing++)
+                {
+                    PBS3REGCTX const pCtx = &aCtxts[iRing];
+#define CHECK_AD_BITS(a_fExpectedAD) \
+    do { \
+        uint32_t fActualAD = (   pThis->PgInfo.cbEntry == 8 \
+                              ? pThis->PgInfo.u.Pae.pPte[1].au32[0] : pThis->PgInfo.u.Legacy.pPte[1].au32[0]) \
+                           & (X86_PTE_A | X86_PTE_D); \
+        if (fActualAD != (a_fExpectedAD)) \
+        { \
+            Bs3TestFailedF("%u - %s/%u: unexpected A/D bits: %#x, expected %#x\n", \
+                           g_usBs3TestStep, "xxxx", __LINE__, fActualAD, a_fExpectedAD); \
+            BS3CPUBASIC2PF_HALT(pThis); \
+        } \
+    } while (0)
+
+                    if (   EffWrk.fReserved
+                        || !EffWrk.fPresent
+                        || (!EffWrk.fUser && iRing == 3))
+                    {
+                        uint32_t const fPfBase = ( EffWrk.fReserved ? X86_TRAP_PF_P | X86_TRAP_PF_RSVD
+                                                  : EffWrk.fPresent ? X86_TRAP_PF_P : 0)
+                                               | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                        for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                        {
+                            pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
+
+                            pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, 0);
+                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                            CHECK_AD_BITS(0);
+                            bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                            pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                            g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                            CHECK_AD_BITS(0);
                             bs3CpuBasic2Pf_RestoreFromBackups(pThis);
                         }
                     }
@@ -1143,18 +1303,60 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
                         uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
                         for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
                         {
-                            pPteWrk->pfnModify(pThis, iStore, pPteWrk);
+                            pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
                             if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
                                     && EffWrk.fNoExecute)
                                 || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
                                     && !EffWrk.fWriteable
                                     && (fWp || iRing == 3)) )
-                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_PF,
-                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask),
-                                                                    fPgLvl);
+                            {
+                                uint32_t const fErrCd = fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                CHECK_AD_BITS(0);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, X86_PTE_A | X86_PTE_D);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                CHECK_AD_BITS(X86_PTE_A | X86_PTE_D);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A, X86_PTE_D);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                CHECK_AD_BITS(X86_PTE_D);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_D, X86_PTE_A);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                CHECK_AD_BITS(X86_PTE_A);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+                            }
                             else
-                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, X86_XCPT_UD, UINT8_MAX, fPgLvl);
-                            bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+                            {
+                                uint32_t const fExpectedAD = (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                                           ? X86_PTE_A | X86_PTE_D : X86_PTE_A;
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                CHECK_AD_BITS(fExpectedAD);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, X86_PTE_A | X86_PTE_D);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                CHECK_AD_BITS(X86_PTE_A | X86_PTE_D);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A, X86_PTE_D);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                CHECK_AD_BITS(fExpectedAD | X86_PTE_D);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_D, X86_PTE_A);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                CHECK_AD_BITS(fExpectedAD | X86_PTE_A);
+                                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+                            }
                         }
                     }
                 }
@@ -1249,6 +1451,9 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
                 State.cbPdeBackup  = State.cTestPdes    * (X86_PAGE_SIZE / X86_PG_PAE_ENTRIES);
                 State.cbPteBackup  = State.cTest1stPtes * (X86_PAGE_SIZE / X86_PG_PAE_ENTRIES);
             }
+#ifdef BS3CPUBASIC2PF_FASTER
+            State.cbPteBackup = State.PgInfo.cbEntry * 4;
+#endif
             if (State.cTestPdes <= RT_ELEMENTS(State.au64PdeBackup))
             {
                 uint32_t cr0 = ASMGetCR0();

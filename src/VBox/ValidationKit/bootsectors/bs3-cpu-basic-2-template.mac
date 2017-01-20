@@ -356,6 +356,49 @@ AssertCompile(.again - BS3_LAST_LABEL == 3 + (TMPL_BITS == 64))
 BS3_PROC_END_CMN   bs3CpuBasic2_cmpxchg_ds_bx_cx__ud2
 
 
+; For testing read access from an aborted instruction: DIV by zero
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_div_ds_bx__ud2, BS3_PBC_NEAR
+        div     xPRE [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 2 + (TMPL_BITS == 64))
+BS3_PROC_END_CMN   bs3CpuBasic2_div_ds_bx__ud2
+
+
+; Two memory operands: push [mem]
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_push_ds_bx__ud2, BS3_PBC_NEAR
+        push    xPRE [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 2)
+BS3_PROC_END_CMN   bs3CpuBasic2_push_ds_bx__ud2
+
+; Two memory operands: pop  [mem]
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_push_ax__pop_ds_bx__ud2, BS3_PBC_NEAR
+        push    xAX
+        pop     xPRE [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 3)
+BS3_PROC_END_CMN   bs3CpuBasic2_push_ax__pop_ds_bx__ud2
+
+; Two memory operands: call [mem]
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_call_ds_bx__ud2, BS3_PBC_NEAR
+        call    xPRE [xBX]
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 2)
+BS3_PROC_END_CMN   bs3CpuBasic2_call_ds_bx__ud2
+
+; For testing #GP vs #PF write
+BS3_PROC_BEGIN_CMN bs3CpuBasic2_insb__ud2, BS3_PBC_NEAR
+        insb
+.again: ud2
+        jmp     .again
+AssertCompile(.again - BS3_LAST_LABEL == 1)
+BS3_PROC_END_CMN   bs3CpuBasic2_insb__ud2
+
+
 %endif ; BS3_INSTANTIATING_CMN
 
 %include "bs3kit-template-footer.mac"   ; reset environment
