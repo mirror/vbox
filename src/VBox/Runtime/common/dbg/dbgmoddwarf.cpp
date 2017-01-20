@@ -2526,14 +2526,13 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                 case DW_LNS_const_add_pc:
                 {
                     uint8_t u8Adv = (255 - pLnState->Hdr.u8OpcodeBase) / pLnState->Hdr.u8LineRange;
-
-                    if (pLnState->Hdr.cMaxOpsPerInstr < 2)
-                        pLnState->Regs.uAddress += pLnState->Hdr.cbMinInstr * u8Adv;
+                    if (pLnState->Hdr.cMaxOpsPerInstr <= 1)
+                        pLnState->Regs.uAddress += (uint32_t)pLnState->Hdr.cbMinInstr * u8Adv;
                     else
                     {
-                        pLnState->Regs.uAddress += pLnState->Hdr.cbMinInstr
-                                                 * ((pLnState->Regs.idxOp + u8Adv) / pLnState->Hdr.cMaxOpsPerInstr);
-                        pLnState->Regs.idxOp = (pLnState->Regs.idxOp + u8Adv) % pLnState->Hdr.cMaxOpsPerInstr;
+                        pLnState->Regs.uAddress += (pLnState->Regs.idxOp + u8Adv) / pLnState->Hdr.cMaxOpsPerInstr
+                                                 * pLnState->Hdr.cbMinInstr;
+                        pLnState->Regs.idxOp     = (pLnState->Regs.idxOp + u8Adv) % pLnState->Hdr.cMaxOpsPerInstr;
                     }
                     Log2(("%08x: DW_LNS_const_add_pc\n", offOpCode));
                     break;
