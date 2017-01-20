@@ -1295,6 +1295,8 @@ typedef struct APICCPU
     bool volatile               fActiveLint1;
     /** Alignment padding. */
     uint8_t                     auAlignment0[6];
+    /** The source tags corresponding to each interrupt vector (debugging). */
+    uint32_t                    auSrcTags[256];
     /** @} */
 
     /** @name The APIC timer.
@@ -1439,9 +1441,9 @@ APICBOTHCBDECL(VBOXSTRICTRC)  apicWriteMsr(PPDMDEVINS pDevIns, PVMCPU pVCpu, uin
 APICBOTHCBDECL(int)           apicGetInterrupt(PPDMDEVINS pDevIns,  PVMCPU pVCpu, uint8_t *puVector, uint32_t *puTagSrc);
 APICBOTHCBDECL(VBOXSTRICTRC)  apicLocalInterrupt(PPDMDEVINS pDevIns, PVMCPU pVCpu, uint8_t u8Pin, uint8_t u8Level, int rcRZ);
 APICBOTHCBDECL(int)           apicBusDeliver(PPDMDEVINS pDevIns, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode,
-                                             uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc);
+                                             uint8_t uVector, uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uSrcTag);
 
-VMM_INT_DECL(bool)            apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode);
+VMM_INT_DECL(bool)            apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag);
 VMM_INT_DECL(void)            apicStartTimer(PVMCPU pVCpu, uint32_t uInitialCount);
 VMM_INT_DECL(void)            apicStopTimer(PVMCPU pVCpu);
 VMM_INT_DECL(void)            apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType);

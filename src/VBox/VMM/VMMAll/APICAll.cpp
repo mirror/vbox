@@ -600,11 +600,13 @@ static VBOXSTRICTRC apicSetSvr(PVMCPU pVCpu, uint32_t uSvr)
  * @param   pfIntrAccepted      Where to store whether this interrupt was
  *                              accepted by the target APIC(s) or not.
  *                              Optional, can be NULL.
+ * @param   uSrcTag             The interrupt source tag (debugging).
  * @param   rcRZ                The return code if the operation cannot be
  *                              performed in the current context.
  */
 static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode,
-                                 XAPICDELIVERYMODE enmDeliveryMode, PCVMCPUSET pDestCpuSet, bool *pfIntrAccepted, int rcRZ)
+                                 XAPICDELIVERYMODE enmDeliveryMode, PCVMCPUSET pDestCpuSet, bool *pfIntrAccepted,
+                                 uint32_t uSrcTag, int rcRZ)
 {
     VBOXSTRICTRC  rcStrict  = VINF_SUCCESS;
     VMCPUID const cCpus     = pVM->cCpus;
@@ -617,7 +619,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             {
                 if (   VMCPUSET_IS_PRESENT(pDestCpuSet, idCpu)
                     && APICIsEnabled(&pVM->aCpus[idCpu]))
-                    fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+                    fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode, uSrcTag);
             }
             break;
         }
@@ -627,7 +629,7 @@ static VBOXSTRICTRC apicSendIntr(PVM pVM, PVMCPU pVCpu, uint8_t uVector, XAPICTR
             VMCPUID const idCpu = VMCPUSET_FIND_FIRST_PRESENT(pDestCpuSet);
             if (   idCpu < pVM->cCpus
                 && APICIsEnabled(&pVM->aCpus[idCpu]))
-                fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode);
+                fAccepted = apicPostInterrupt(&pVM->aCpus[idCpu], uVector, enmTriggerMode, uSrcTag);
             else
                 AssertMsgFailed(("APIC: apicSendIntr: No CPU found for lowest-priority delivery mode! idCpu=%u\n", idCpu));
             break;
@@ -1028,7 +1030,7 @@ DECLINLINE(VBOXSTRICTRC) apicSendIpi(PVMCPU pVCpu, int rcRZ)
     }
 
     return apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
-                        NULL /* pfIntrAccepted */, rcRZ);
+                        NULL /* pfIntrAccepted */, 0 /* uSrcTag */, rcRZ);
 }
 
 
@@ -2085,7 +2087,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
             case MSR_IA32_X2APIC_SELF_IPI:
             {
                 uint8_t const uVector = XAPIC_SELF_IPI_GET_VECTOR(u32Value);
-                apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
+                apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE, 0 /* uSrcTag */);
                 rcStrict = VINF_SUCCESS;
                 break;
             }
@@ -2448,13 +2450,12 @@ VMM_INT_DECL(int) APICGetTimerFreq(PVM pVM, uint64_t *pu64Value)
  * @param   uVector         The interrupt vector.
  * @param   uPolarity       The interrupt line polarity.
  * @param   uTriggerMode    The trigger mode.
- * @param   uTagSrc         The interrupt tag (debugging).
+ * @param   uSrcTag         The interrupt source tag (debugging).
  */
 VMM_INT_DECL(int) APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint8_t uDeliveryMode, uint8_t uVector,
-                                 uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uTagSrc)
+                                 uint8_t uPolarity, uint8_t uTriggerMode, uint32_t uSrcTag)
 {
     NOREF(uPolarity);
-    NOREF(uTagSrc);
 
     /*
      * If the APIC isn't enabled, do nothing and pretend success.
@@ -2483,7 +2484,7 @@ VMM_INT_DECL(int) APICBusDeliver(PVM pVM, uint8_t uDest, uint8_t uDestMode, uint
     VMCPUSET DestCpuSet;
     apicGetDestCpuSet(pVM, fDestMask, fBroadcastMask, enmDestMode, enmDeliveryMode, &DestCpuSet);
     VBOXSTRICTRC rcStrict = apicSendIntr(pVM, NULL /* pVCpu */, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
-                                         &fIntrAccepted, VINF_SUCCESS /* rcRZ */);
+                                         &fIntrAccepted, uSrcTag, VINF_SUCCESS /* rcRZ */);
     if (fIntrAccepted)
         return VBOXSTRICTRC_VAL(rcStrict);
     return VERR_APIC_INTR_DISCARDED;
@@ -2591,7 +2592,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
                         VMCPUSET_EMPTY(&DestCpuSet);
                         VMCPUSET_ADD(&DestCpuSet, pVCpu->idCpu);
                         rcStrict = apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode,
-                                                &DestCpuSet, NULL /* pfIntrAccepted */, rcRZ);
+                                                &DestCpuSet, NULL /* pfIntrAccepted */, 0 /* uSrcTag */, rcRZ);
                     }
                     break;
                 }
@@ -2604,7 +2605,7 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
                     VMCPUSET_ADD(&DestCpuSet, pVCpu->idCpu);
                     uint8_t const uVector = XAPIC_LVT_GET_VECTOR(uLvt);
                     rcStrict = apicSendIntr(pVCpu->CTX_SUFF(pVM), pVCpu, uVector, enmTriggerMode, enmDeliveryMode, &DestCpuSet,
-                                            NULL /* pfIntrAccepted */, rcRZ);
+                                            NULL /* pfIntrAccepted */, 0 /* uSrcTag */, rcRZ);
                     break;
                 }
 
@@ -2664,13 +2665,12 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pu8Vector   Where to store the vector.
- * @param   pu32TagSrc  The source tag (debugging).
+ * @param   puSrcTag    Where to store the interrupt source tag (debugging).
  */
-VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *pu32TagSrc)
+VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *puSrcTag)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pu8Vector);
-    *pu32TagSrc = 0;    /** @todo do the debug tagging. */
 
     LogFlow(("APIC%u: apicGetInterrupt:\n", pVCpu->idCpu));
 
@@ -2696,6 +2696,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
                 Log2(("APIC%u: apicGetInterrupt: Interrupt masked. uVector=%#x uTpr=%#x SpuriousVector=%#x\n", pVCpu->idCpu,
                       uVector, uTpr, pXApicPage->svr.u.u8SpuriousVector));
                 *pu8Vector = uVector;
+                *puSrcTag  = 0;
                 STAM_COUNTER_INC(&pVCpu->apic.s.StatMaskedByTpr);
                 return VERR_APIC_INTR_MASKED_BY_TPR;
             }
@@ -2713,6 +2714,11 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
                 apicSetVectorInReg(&pXApicPage->isr, uVector);
                 apicUpdatePpr(pVCpu);
                 apicSignalNextPendingIntr(pVCpu);
+
+                /* Retrieve the interrupt source tag associated with this interrupt. */
+                PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+                *puSrcTag = pApicCpu->auSrcTags[uVector];
+                pApicCpu->auSrcTags[uVector] = 0;
 
                 Log2(("APIC%u: apicGetInterrupt: Valid Interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
                 *pu8Vector = uVector;
@@ -2732,6 +2738,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
         Log2(("APIC%u: apicGetInterrupt: APIC %s disabled\n", pVCpu->idCpu, !fApicHwEnabled ? "hardware" : "software"));
 
     *pu8Vector = 0;
+    *puSrcTag  = 0;
     return VERR_APIC_INTR_NOT_PENDING;
 }
 
@@ -2875,10 +2882,11 @@ VMM_INT_DECL(void) apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uVector             The vector of the interrupt to be posted.
  * @param   enmTriggerMode      The trigger mode of the interrupt.
+ * @param   uSrcTag             The interrupt source tag (debugging).
  *
  * @thread  Any.
  */
-VMM_INT_DECL(bool) apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode)
+VMM_INT_DECL(bool) apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGERMODE enmTriggerMode, uint32_t uSrcTag)
 {
     Assert(pVCpu);
     Assert(uVector > XAPIC_ILLEGAL_VECTOR_END);
@@ -2903,6 +2911,12 @@ VMM_INT_DECL(bool) apicPostInterrupt(PVMCPU pVCpu, uint8_t uVector, XAPICTRIGGER
         PCXAPICPAGE pXApicPage = VMCPU_TO_CXAPICPAGE(pVCpu);
         if (!apicTestVectorInReg(&pXApicPage->irr, uVector))     /* PAV */
         {
+            /* Update the interrupt source tag (debugging). */
+            if (!pApicCpu->auSrcTags[uVector])
+                pApicCpu->auSrcTags[uVector]  = uSrcTag;
+            else
+                pApicCpu->auSrcTags[uVector] |= RT_BIT_32(31);
+
             Log2(("APIC: apicPostInterrupt: SrcCpu=%u TargetCpu=%u uVector=%#x\n", VMMGetCpuId(pVM), pVCpu->idCpu, uVector));
             if (enmTriggerMode == XAPICTRIGGERMODE_EDGE)
             {
@@ -3188,7 +3202,7 @@ VMM_INT_DECL(void) APICHvSendInterrupt(PVMCPU pVCpu, uint8_t uVector, bool fAuto
     Assert(pVCpu);
     Assert(!fAutoEoi);    /** @todo AutoEOI.  */
     RT_NOREF(fAutoEoi);
-    apicPostInterrupt(pVCpu, uVector, enmTriggerMode);
+    apicPostInterrupt(pVCpu, uVector, enmTriggerMode, 0 /* uSrcTag */);
 }
 
 

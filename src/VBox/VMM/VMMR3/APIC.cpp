@@ -1285,7 +1285,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     {
         uint8_t uVector = XAPIC_LVT_GET_VECTOR(uLvtTimer);
         Log2(("APIC%u: apicR3TimerCallback: Raising timer interrupt. uVector=%#x\n", pVCpu->idCpu, uVector));
-        apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE);
+        apicPostInterrupt(pVCpu, uVector, XAPICTRIGGERMODE_EDGE, 0 /* uSrcTag */);
     }
 
     XAPICTIMERMODE enmTimerMode = XAPIC_LVT_GET_TIMER_MODE(uLvtTimer);
