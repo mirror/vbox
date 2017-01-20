@@ -2349,6 +2349,11 @@ VBOX_PATH_X11_XORG_7_1  = $(VBOX_PATH_X11_ROOT)/7.1
 
 
 #
+# Graphics includes
+#
+VBOX_GRAPHICS_INCS = $(PATH_ROOT)/include/VBox/Graphics
+
+#
 # crOpenGL related paths and variables.
 #
 ifdef VBOX_WITH_CROGL
