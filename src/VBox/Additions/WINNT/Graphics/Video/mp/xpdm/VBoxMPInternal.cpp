@@ -16,7 +16,7 @@
  */
 
 #include "VBoxMPInternal.h"
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include <VBox/VBoxGuestLib.h>
 #include <iprt/asm.h>
 

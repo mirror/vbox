@@ -330,7 +330,8 @@ VBoxSVC_INCS = \
 	$(VBoxSVC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
-	.
+	. \
+	$(VBOX_GRAPHICS_INCS)
 VBoxSVC_INCS.win = \
 	$(VBoxCOM_0_OUTDIR)
 ifdef VBOX_WITH_USB
@@ -733,7 +734,8 @@ VBoxC_INCS          = \
 	$(VBoxC_0_OUTDIR) \
 	$(VBOX_MAIN_APIWRAPPER_INCS) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
-       $(VBOX_MAIN_APIWRAPPER_DIR)/dtrace
+	$(VBOX_MAIN_APIWRAPPER_DIR)/dtrace \
+	$(VBOX_GRAPHICS_INCS)
 VBoxC_INCS.win      = \
 	$(VBoxCOM_0_OUTDIR) \
 	.

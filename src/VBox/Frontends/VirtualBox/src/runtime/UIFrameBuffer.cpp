@@ -54,7 +54,7 @@
 
 /* Other VBox includes: */
 #include <iprt/critsect.h>
-#include <VBox/VBoxVideo3D.h>
+#include <VBoxVideo3D.h>
 
 /* Other includes: */
 #include <math.h>

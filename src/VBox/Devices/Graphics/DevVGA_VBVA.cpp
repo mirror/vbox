@@ -25,7 +25,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>

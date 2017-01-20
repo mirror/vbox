@@ -20,7 +20,7 @@
 #define VBOXVIDEOIOCTL_H
 
 #include <VBox/VMMDev.h>
-#include <VBox/HGSMI/HGSMI.h>
+#include <HGSMI.h>
 
 /* ==================== Virtual Box specific VRP's ==================== */
 

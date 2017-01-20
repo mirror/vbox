@@ -55,7 +55,7 @@
 #include <string.h>
 #include <graphic_driver.h>
 #include <VBoxGuest-haiku.h>
-#include <VBox/VBoxVideoGuest.h>
+#include <VBoxVideoGuest.h>
 #include "../common/VBoxVideo_common.h"
 
 #define VENDOR_ID 0x80ee

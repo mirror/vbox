@@ -22,7 +22,7 @@
 #define ___VBox_VBoxCrHgsmi_h
 
 #include <iprt/cdefs.h>
-#include <VBox/VBoxUhgsmi.h>
+#include <VBoxUhgsmi.h>
 
 RT_C_DECLS_BEGIN
 

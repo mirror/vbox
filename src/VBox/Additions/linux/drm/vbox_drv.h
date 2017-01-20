@@ -50,7 +50,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VGA
 
-#include <VBox/VBoxVideoGuest.h>
+#include <VBoxVideoGuest.h>
 
 #include <drm/drmP.h>
 #include <drm/drm_fb_helper.h>

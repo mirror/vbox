@@ -84,7 +84,7 @@
 # define VBoxTlsRefGetImpl(_tls) (TlsGetValue((DWORD)(_tls)))
 # define VBoxTlsRefSetImpl(_tls, _val) (TlsSetValue((DWORD)(_tls), (_val)))
 # define VBoxTlsRefAssertImpl Assert
-# include <VBox/VBoxVideo3D.h>
+# include <VBoxVideo3D.h>
 #endif
 
 /* Driver quirks */

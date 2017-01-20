@@ -20,9 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "VBoxMPInternal.h"
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBoxVideoVBE.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include "common/VBoxMPHGSMI.h"
 #include "common/VBoxMPCommon.h"
 #include "VBoxDisplay.h"

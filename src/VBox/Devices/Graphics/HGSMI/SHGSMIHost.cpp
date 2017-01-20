@@ -16,7 +16,7 @@
  */
 
 #include "SHGSMIHost.h"
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 /*
  * VBOXSHGSMI made on top HGSMI and allows receiving notifications

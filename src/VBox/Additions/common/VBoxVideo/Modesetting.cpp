@@ -16,9 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VBoxVideoGuest.h>
-#include <VBox/VBoxVideo.h>
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBoxVideoGuest.h>
+#include <VBoxVideoVBE.h>
 
 #ifndef VBOX_GUESTR3XF86MOD
 # include <iprt/string.h>

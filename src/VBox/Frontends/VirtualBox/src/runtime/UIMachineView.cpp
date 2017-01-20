@@ -90,7 +90,7 @@
 
 /* Other VBox includes: */
 #include <VBox/VBoxOGL.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #ifdef VBOX_WS_MAC
 # include <VBox/err.h>
 #endif /* VBOX_WS_MAC */

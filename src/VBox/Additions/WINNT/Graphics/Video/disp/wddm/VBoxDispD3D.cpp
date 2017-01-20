@@ -27,7 +27,7 @@
 
 #include "VBoxDispD3DCmn.h"
 #include "VBoxDispD3D.h"
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 
 #include <Psapi.h>
 

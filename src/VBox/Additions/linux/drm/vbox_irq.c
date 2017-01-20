@@ -45,7 +45,7 @@
 
 #include "vbox_drv.h"
 
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 #include <drm/drm_crtc_helper.h>
 

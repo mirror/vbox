@@ -18,7 +18,7 @@
 #include "wined3d_private.h"
 #include "vboxext.h"
 #ifdef VBOX_WITH_WDDM
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 #include <iprt/err.h>
 #endif
 

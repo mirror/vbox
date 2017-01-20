@@ -71,8 +71,8 @@
 #include <VBox/vmm/ssm.h>
 
 #include "HGSMIHost.h"
-#include <VBox/HGSMI/HGSMIChannels.h>
-#include <VBox/HGSMI/HGSMIChSetup.h>
+#include <HGSMIChannels.h>
+#include <HGSMIChSetup.h>
 
 #include "../DevVGASavedState.h"
 

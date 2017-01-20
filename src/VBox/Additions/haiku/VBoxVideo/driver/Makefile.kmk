@@ -68,7 +68,8 @@ vboxvideo_DEFS            = \
 vboxvideo_INCS            = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuestLib \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/haiku
+	$(PATH_ROOT)/src/VBox/Runtime/r0drv/haiku \
+	$(VBOX_GRAPHICS_INCS)
 vboxvideo_SOURCES         = \
 	driver.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \

@@ -29,6 +29,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  VBoxVgaBios386_ASFLAGS = -0
  VBoxVgaBios386_CFLAGS = -3
  VBoxVgaBios386_DEFS = VBE VBOX_BIOS_CPU=80386
+ VBoxVgaBios386_INCS = $(VBOX_GRAPHICS_INCS)
  VBoxVgaBios386_SOURCES = \
  	vgarom.asm \
  	vberom.asm \

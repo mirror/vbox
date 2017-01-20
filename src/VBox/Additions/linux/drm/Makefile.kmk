@@ -52,7 +52,8 @@ vboxvideo_drm_DEFS            = \
 	DEBUG_HASH=2 DEBUG_HASH2=3
 vboxvideo_drm_INCS           += \
   ../../../Runtime/include \
-  ../../../Runtime/r0drv/linux
+  ../../../Runtime/r0drv/linux \
+  $(VBOX_GRAPHICS_INCS)
 vboxvideo_drm_SOURCES         = \
   ../../common/VBoxVideo/HGSMIBase.cpp \
   ../../common/VBoxVideo/Modesetting.cpp \

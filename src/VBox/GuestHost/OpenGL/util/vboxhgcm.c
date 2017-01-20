@@ -46,7 +46,7 @@
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 #endif
 
 /*@todo move define somewhere else, and make sure it's less than VBGLR0_MAX_HGCM_KERNEL_PARM*/

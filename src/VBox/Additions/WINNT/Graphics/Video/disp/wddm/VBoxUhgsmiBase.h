@@ -18,8 +18,8 @@
 #ifndef ___VBoxUhgsmiBase_h__
 #define ___VBoxUhgsmiBase_h__
 
-#include <VBox/VBoxUhgsmi.h>
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxUhgsmi.h>
+#include <VBoxCrHgsmi.h>
 
 #include <iprt/win/windows.h>
 #include <D3dkmthk.h>

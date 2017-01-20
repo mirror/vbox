@@ -20,7 +20,7 @@
 #include <iprt/log.h>
 #include <VBox/err.h>
 #include <VBox/vmm/ssm.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 int readSavedDisplayScreenshot(const Utf8Str &strStateFilePath, uint32_t u32Type, uint8_t **ppu8Data, uint32_t *pcbData,
                                uint32_t *pu32Width, uint32_t *pu32Height)

@@ -114,7 +114,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  Storage/DrvHostDVD.cpp_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK)
  VBoxDD_INCS             = \
  	build \
- 	Network/slirp
+ 	Network/slirp \
+ 	$(VBOX_GRAPHICS_INCS)
  VBoxDD_DEFS             = \
  	VBOX_ACPI \
  	VBOX_HGCM_HOST_CODE \
@@ -900,7 +901,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  Bus/DevPciRaw.cpp_INCS   = Bus
 
  # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
- Graphics/DevVGA.cpp_INCS = $(VgaBiosBin_0_OUTDIR)
+ Graphics/DevVGA.cpp_INCS = $(VgaBiosBin_0_OUTDIR) $(VBOX_GRAPHICS_INCS)
  Graphics/DevVGA.cpp_DEPS = $(VgaBiosBin_0_OUTDIR)/vbetables.h
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD,VirtualBox VMM Devices and Drivers) # (last!)
@@ -915,7 +916,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDDRC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
   endif
   VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
-  VBoxDDRC_INCS           = build
+  VBoxDDRC_INCS           = build $(VBOX_GRAPHICS_INCS)
   VBoxDDRC_SOURCES        = \
   	Bus/DevPCI.cpp \
   	Bus/DevPciIch9.cpp \
@@ -1074,7 +1075,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_TEMPLATE       = VBoxR0
  VBoxDDR0_DEFS           = IN_RT_R0 $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) # - WTF is IN_RT_R0 doing here?
  VBoxDDR0_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
- VBoxDDR0_INCS           = build
+ VBoxDDR0_INCS           = build $(VBOX_GRAPHICS_INCS)
  VBoxDDR0_SDKS.win 	  = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxDDR0_SOURCES        = \
  	build/VBoxDDR0.cpp \
@@ -1480,6 +1481,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	__builtin_ms_va_list=va_list \
  	__stdcall= \
  	ms_abi=
+ VBoxSVGA3D_INCS = $(VBOX_GRAPHICS_INCS)
  VBoxSVGA3D_INCS.win    := \
  	Graphics/shaderlib/libWineStub/include
  VBoxSVGA3D_INCS.linux  := \

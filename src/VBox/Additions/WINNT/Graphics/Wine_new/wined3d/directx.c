@@ -38,7 +38,7 @@
 #include "wined3d_private.h"
 #include "winternl.h"
 #ifdef VBOX_WITH_WDDM
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 #endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);

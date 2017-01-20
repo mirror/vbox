@@ -193,7 +193,8 @@ wined3d_DEFS        += \
 	VBOX_WITH_WINE_DBG
 #wined3d_DEFS        += VBOX_WITH_WINE_FIXES
 wined3d_INCS        := \
-	vbox/libWineStub/include
+	vbox/libWineStub/include \
+	$(VBOX_GRAPHICS_INCS)
 wined3d_SOURCES     := \
 	wined3d/arb_program_shader.c \
 	wined3d/ati_fragment_shader.c \

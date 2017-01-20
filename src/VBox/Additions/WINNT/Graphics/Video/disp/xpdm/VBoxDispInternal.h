@@ -34,9 +34,9 @@
 #include "common/VBoxVideoLog.h"
 #include "common/xpdm/VBoxVideoPortAPI.h"
 #include "common/xpdm/VBoxVideoIOCTL.h"
-#include <VBox/HGSMI/HGSMI.h>
-#include <VBox/VBoxVideo.h>
-#include <VBox/VBoxVideoGuest.h>
+#include <HGSMI.h>
+#include <VBoxVideo.h>
+#include <VBoxVideoGuest.h>
 #include <VBoxDisplay.h>
 
 typedef struct _VBOXDISPDEV *PVBOXDISPDEV;

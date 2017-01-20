@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VBoxVideo3D_h
-#define ___VBox_VBoxVideo3D_h
+#ifndef ___VBox_Graphics_VBoxVideo3D_h
+#define ___VBox_Graphics_VBoxVideo3D_h
 
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
@@ -143,4 +143,4 @@ struct VBOXTLSREFDATA_DUMMY
 #define VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_HIDDEN   5
 
 
-#endif /* #ifndef ___VBox_VBoxVideo3D_h */
+#endif /* #ifndef ___VBox_Graphics_VBoxVideo3D_h */

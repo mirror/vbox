@@ -18,9 +18,9 @@
 
 #include "VBoxMPInternal.h"
 #include "common/VBoxMPCommon.h"
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBoxVideoVBE.h>
 #include <VBox/VBoxGuestLib.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 /* Note: in/out parameters passed to VBoxDrvStartIO point to the same memory location.
  * That means we can't read anything from the input one after first write to the output.

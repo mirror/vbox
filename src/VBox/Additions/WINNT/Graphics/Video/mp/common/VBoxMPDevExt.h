@@ -19,7 +19,7 @@
 #define VBOXMPDEVEXT_H
 
 #include "VBoxMPUtils.h"
-#include <VBox/VBoxVideoGuest.h>
+#include <VBoxVideoGuest.h>
 
 #ifdef VBOX_XPDM_MINIPORT
 # include <iprt/nt/miniport.h>

@@ -49,7 +49,7 @@
  */
 #include "vbox_drv.h"
 
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>

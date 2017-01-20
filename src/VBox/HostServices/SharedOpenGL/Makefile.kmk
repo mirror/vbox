@@ -58,6 +58,7 @@ ifdef VBOX_WITH_XPCOM
 endif
 VBoxSharedCrOpenGL_INTERMEDIATES = \
 	$(TEMPLATE_VBOXMAINEXE_INTERMEDIATES)
+VBoxSharedCrOpenGL_INCS = $(VBOX_GRAPHICS_INCS)
 VBoxSharedCrOpenGL_INCS.win = \
 	$(VBOX_PATH_SDK)/bindings/mscom/include
 ifdef VBOX_WITH_XPCOM
@@ -105,7 +106,8 @@ endif
 VBoxOGLcrserverlib_TEMPLATE = VBOXCROGLR3HOSTLIB
 VBoxOGLcrserverlib_INCS  = \
 	. \
-	crserverlib
+	crserverlib \
+	$(VBOX_GRAPHICS_INCS)
 VBoxOGLcrserverlib_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h \
@@ -211,7 +213,8 @@ $(VBOX_PATH_CROGL_GENFILES)/server_simpleget.c: $(addprefix $(PATH_SUB_CURRENT)/
 #
 VBoxOGLcrunpacker_TEMPLATE       = VBOXCROGLR3HOSTLIB
 VBoxOGLcrunpacker_INCS           = \
-	unpacker
+	unpacker \
+	$(VBOX_GRAPHICS_INCS)
 VBoxOGLcrunpacker_INTERMEDIATES  = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
@@ -363,6 +366,7 @@ VBoxOGLrenderspu_TEMPLATE = VBOXCROGLR3HOSTDLL
 VBoxOGLrenderspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+VBoxOGLrenderspu_INCS = $(VBOX_GRAPHICS_INCS)
 VBoxOGLrenderspu_SOURCES = \
 	render/renderspu.c \
 	render/renderspu_config.c \

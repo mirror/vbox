@@ -3,7 +3,7 @@
 
 #include "vgabios.h"
 
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBoxVideoVBE.h>
 
 // DISPI helper function
 //void dispi_set_enable(Boolean enable);

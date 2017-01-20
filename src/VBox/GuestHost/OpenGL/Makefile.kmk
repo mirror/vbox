@@ -52,6 +52,8 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
 endif
 VBoxOGLcrutil_SDKS.win      = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
+VBoxOGLcrutil_INCS += \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrutil_INCS += \
 	$(VBOX_GL_INCS)
@@ -196,7 +198,8 @@ endif
 #
 VBoxOGLcrpacker_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrpacker_INCS = \
-	packer
+	packer \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrpacker_INCS += \
 	$(VBOX_GL_INCS)
@@ -348,6 +351,8 @@ $(VBOX_PATH_CROGL_GENFILES)/%_swap.c: $(PATH_SUB_CURRENT)/packer/%.c $(PATH_SUB_
 VBoxOGLspuload_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLspuload_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLspuload_INCS += \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLspuload_INCS += \
 	$(VBOX_GL_INCS)
@@ -420,7 +425,8 @@ $(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h: $(PATH_SUB_CURRENT)/spu_loader
 #
 VBoxOGLcrstate_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrstate_INCS = \
-	state_tracker
+	state_tracker \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLcrstate_INCS += \
 	$(VBOX_GL_INCS)
@@ -622,6 +628,8 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
 endif
 VBoxOGLerrorspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h
+VBoxOGLerrorspu_INCS += \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLerrorspu_INCS += \
 	$(VBOX_GL_INCS)

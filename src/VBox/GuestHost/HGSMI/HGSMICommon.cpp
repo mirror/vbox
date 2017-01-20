@@ -24,7 +24,7 @@
 
 #include <iprt/string.h>
 
-#include <VBox/HGSMI/HGSMI.h>
+#include <HGSMI.h>
 // #include <VBox/log.h>
 
 

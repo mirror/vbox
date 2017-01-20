@@ -26,10 +26,10 @@
 #ifndef ___VBoxMPIf_h___
 #define ___VBoxMPIf_h___
 
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include "../../../../include/VBoxDisplay.h"
 #include "../VBoxVideoTools.h"
-#include <VBox/VBoxUhgsmi.h>
+#include <VBoxUhgsmi.h>
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */

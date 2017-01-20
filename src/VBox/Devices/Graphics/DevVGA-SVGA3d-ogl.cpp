@@ -38,7 +38,7 @@
 #include <iprt/uuid.h>
 #include <iprt/mem.h>
 
-#include <VBox/VBoxVideo.h> /* required by DevVGA.h */
+#include <VBoxVideo.h> /* required by DevVGA.h */
 
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
 #include "DevVGA.h"

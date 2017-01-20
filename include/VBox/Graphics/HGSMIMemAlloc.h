@@ -26,10 +26,10 @@
  */
 
 
-#ifndef ___VBox_HGSMI_HGSMIMemAlloc_h
-#define ___VBox_HGSMI_HGSMIMemAlloc_h
+#ifndef ___VBox_Graphics_HGSMIMemAlloc_h
+#define ___VBox_Graphics_HGSMIMemAlloc_h
 
-#include <VBox/HGSMI/HGSMIDefs.h>
+#include <HGSMIDefs.h>
 #include <iprt/list.h>
 
 
@@ -99,4 +99,4 @@ DECLINLINE(HGSMIOFFSET) HGSMIMASize2Order(HGSMISIZE cb)
 
 RT_C_DECLS_END
 
-#endif /* !___VBox_HGSMI_HGSMIMemAlloc_h */
+#endif /* !___VBox_Graphics_HGSMIMemAlloc_h */

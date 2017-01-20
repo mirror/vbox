@@ -26,15 +26,15 @@
  */
 
 
-#ifndef ___VBox_HGSMI_HGSMI_h
-#define ___VBox_HGSMI_HGSMI_h
+#ifndef ___VBox_Graphics_HGSMI_h
+#define ___VBox_Graphics_HGSMI_h
 
 #include <iprt/assert.h>
 #include <iprt/types.h>
 
-#include <VBox/HGSMI/HGSMIDefs.h>
-#include <VBox/HGSMI/HGSMIChannels.h>
-#include <VBox/HGSMI/HGSMIMemAlloc.h>
+#include <HGSMIDefs.h>
+#include <HGSMIChannels.h>
+#include <HGSMIMemAlloc.h>
 
 /*
  * Basic mechanism for the HGSMI is to prepare and pass data buffer to the host and the guest.
@@ -260,5 +260,5 @@ int HGSMIBufferProcess(const HGSMIAREA *pArea,
                        HGSMIOFFSET offBuffer);
 RT_C_DECLS_END
 
-#endif /* !___VBox_HGSMI_HGSMI_h */
+#endif /* !___VBox_Graphics_HGSMI_h */
 

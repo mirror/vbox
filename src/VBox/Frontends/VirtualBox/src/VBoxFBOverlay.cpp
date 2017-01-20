@@ -61,7 +61,7 @@
 #include <VBox/err.h>
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-# include <VBox/VBoxVideo.h>
+# include <VBoxVideo.h>
 # include <VBox/vmm/ssm.h>
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 

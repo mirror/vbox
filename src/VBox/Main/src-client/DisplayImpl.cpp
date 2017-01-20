@@ -41,7 +41,7 @@
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-# include <VBox/VBoxVideo.h>
+# include <VBoxVideo.h>
 #endif
 
 #if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_CRHGSMI)

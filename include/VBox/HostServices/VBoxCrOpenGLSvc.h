@@ -31,8 +31,8 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest2.h>
 #include <VBox/hgcmsvc.h>
-#include <VBox/VBoxVideo.h>
-#include <VBox/VBoxVideoHost3D.h>
+#include <VBoxVideo.h>
+#include <VBoxVideoHost3D.h>
 
 /* crOpenGL host functions */
 #define SHCRGL_HOST_FN_SET_CONSOLE (1)

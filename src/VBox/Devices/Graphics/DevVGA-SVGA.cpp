@@ -145,7 +145,7 @@
 #endif
 
 #include <VBox/VMMDev.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include <VBox/bioslogo.h>
 
 /* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */

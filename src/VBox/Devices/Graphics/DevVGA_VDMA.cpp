@@ -22,7 +22,7 @@
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>
@@ -33,8 +33,8 @@
 #include "DevVGA.h"
 #include "HGSMI/SHGSMIHost.h"
 
-#include <VBox/VBoxVideo3D.h>
-#include <VBox/VBoxVideoHost3D.h>
+#include <VBoxVideo3D.h>
+#include <VBoxVideoHost3D.h>
 
 #ifdef DEBUG_misha
 # define VBOXVDBG_MEMCACHE_DISABLE

@@ -17,7 +17,7 @@
 
 #include "VBoxDisp.h"
 #include "VBoxDispMini.h"
-#include <VBox/HGSMI/HGSMIChSetup.h>
+#include <HGSMIChSetup.h>
 
 #ifdef VBOX_VBVA_ADJUST_RECT
 static ULONG vbvaConvertPixel(BYTE *pu8PixelFrom, int cbPixelFrom, int cbPixelTo)

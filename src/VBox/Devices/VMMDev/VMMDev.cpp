@@ -82,7 +82,7 @@
 *********************************************************************************************************************************/
 /* Enable dev_vmm Log3 statements to get IRQ-related logging. */
 #define LOG_GROUP LOG_GROUP_DEV_VMM
-#include <VBox/VBoxVideo.h>  /* For VBVA definitions. */
+#include <VBoxVideo.h>  /* For VBVA definitions. */
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/log.h>

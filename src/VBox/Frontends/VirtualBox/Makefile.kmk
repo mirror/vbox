@@ -209,7 +209,8 @@ endif
 
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
-	$(VirtualBox_0_OUTDIR)/include
+	$(VirtualBox_0_OUTDIR)/include \
+	$(VBOX_GRAPHICS_INCS)
 
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)

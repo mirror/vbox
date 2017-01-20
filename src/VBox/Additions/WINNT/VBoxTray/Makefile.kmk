@@ -28,7 +28,7 @@ VBoxTray_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST)
 VBoxTray_DEFS     = \
 	VBOX_WITH_HGCM \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
-VBoxTray_INCS     = ../include
+VBoxTray_INCS     = ../include $(VBOX_GRAPHICS_INCS)
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
 	VBoxDispIf.cpp \

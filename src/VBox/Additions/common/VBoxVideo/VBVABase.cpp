@@ -16,8 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VBoxVideoGuest.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideoGuest.h>
 #include <VBox/err.h>
 // #include <VBox/log.h>
 #include <iprt/string.h>

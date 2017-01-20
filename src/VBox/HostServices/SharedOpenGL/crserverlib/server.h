@@ -18,7 +18,7 @@
 #include <cr_compositor.h>
 
 #ifdef VBOX_WITH_CRHGSMI
-# include <VBox/VBoxVideo.h>
+# include <VBoxVideo.h>
 
 #include <iprt/cdefs.h>
 

@@ -347,7 +347,7 @@ typedef struct VMMDevReqMousePointer
 {
     /** Header. */
     VMMDevRequestHeader header;
-    /** VBOX_MOUSE_POINTER_* bit flags from VBox/VBoxVideo.h. */
+    /** VBOX_MOUSE_POINTER_* bit flags from VBox/Graphics/VBoxVideo.h. */
     uint32_t fFlags;
     /** x coordinate of hot spot. */
     uint32_t xHot;

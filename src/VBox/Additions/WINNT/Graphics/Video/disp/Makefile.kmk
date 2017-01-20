@@ -37,7 +37,7 @@ ifdef VBOX_WITH_CROGL
  VBoxDisp_DEFS        += VBOX_WITH_CROGL
 endif
 #VBoxDisp_DEFS         += VBOX_VBVA_ADJUST_RECT
-VBoxDisp_INCS          = ../../../include ..
+VBoxDisp_INCS          = ../../../include .. $(VBOX_GRAPHICS_INCS)
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
 VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
 VBoxDisp_SOURCES     = \
@@ -107,7 +107,8 @@ endif
 VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \
-	$(VBOX_PATH_CROGL_INCLUDE)
+	$(VBOX_PATH_CROGL_INCLUDE) \
+	$(VBOX_GRAPHICS_INCS)
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
@@ -150,7 +151,11 @@ VBoxCrHgsmi_TEMPLATE    = VBoxGuestR3Lib
 VBoxCrHgsmi_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 #use same defines as VBoxDispD3D to ensure structure definitions match
 VBoxCrHgsmi_DEFS        = $(subst VBOXWDDMDISP,IN_VBOXCRHGSMI,$(VBoxDispD3D_DEFS))
-VBoxCrHgsmi_INCS        = ../../../include .. $(VBOX_PATH_CROGL_INCLUDE)
+VBoxCrHgsmi_INCS        = \
+	../../../include \
+	.. \
+	$(VBOX_PATH_CROGL_INCLUDE) \
+	$(VBOX_GRAPHICS_INCS)
 VBoxCrHgsmi_SOURCES     = \
 	wddm/VBoxCrHgsmi.cpp \
 	wddm/VBoxDispKmt.cpp \
@@ -176,7 +181,7 @@ LIBRARIES += VBoxDispMpLogger
 VBoxDispMpLogger_TEMPLATE    = VBoxGuestR3Lib
 VBoxDispMpLogger_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
-VBoxDispMpLogger_INCS        = ../../../include ..
+VBoxDispMpLogger_INCS        = ../../../include .. $(VBOX_GRAPHICS_INCS)
 VBoxDispMpLogger_SOURCES     = \
     wddm/VBoxDispMpLogger.cpp
 

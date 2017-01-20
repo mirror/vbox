@@ -31,10 +31,10 @@
 
 #include <VBox/vmm/ssm.h>
 
-#include <VBox/VBoxVideo.h>
-#include <VBox/Hardware/VBoxVideoVBE.h>
-#include <VBox/VBoxVideo3D.h>
-#include <VBox/VBoxVideoHost3D.h>
+#include <VBoxVideo.h>
+#include <VBoxVideoVBE.h>
+#include <VBoxVideo3D.h>
+#include <VBoxVideoHost3D.h>
 
 #ifdef __cplusplus
 extern "C" {

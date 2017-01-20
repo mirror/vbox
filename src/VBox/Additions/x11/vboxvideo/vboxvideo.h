@@ -52,8 +52,8 @@
 #ifndef _VBOXVIDEO_H_
 #define _VBOXVIDEO_H_
 
-#include <VBox/VBoxVideoGuest.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideoGuest.h>
+#include <VBoxVideo.h>
 #include "version-generated.h"
 
 #ifndef VBVA_SCREEN_F_BLANK
@@ -102,7 +102,7 @@ if (!(expr)) \
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBoxVideoVBE.h>
 
 #include "xf86str.h"
 #include "xf86Cursor.h"

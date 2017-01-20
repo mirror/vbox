@@ -26,8 +26,8 @@
  */
 
 
-#ifndef ___VBox_HGSMI_HGSMIDefs_h
-#define ___VBox_HGSMI_HGSMIDefs_h
+#ifndef ___VBox_Graphics_HGSMIDefs_h
+#define ___VBox_Graphics_HGSMIDefs_h
 
 #include <iprt/assert.h>
 #include <iprt/types.h>
@@ -120,4 +120,4 @@ typedef struct HGSMIENV
     DECLCALLBACKMEMBER(void, pfnFree)(void *pvEnv, void *pv);
 } HGSMIENV;
 
-#endif /* !___VBox_HGSMI_HGSMIDefs_h */
+#endif /* !___VBox_Graphics_HGSMIDefs_h */

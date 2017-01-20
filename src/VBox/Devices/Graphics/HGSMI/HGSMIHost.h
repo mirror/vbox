@@ -23,8 +23,8 @@
 
 #include <VBox/vmm/vm.h>
 
-#include <VBox/HGSMI/HGSMI.h>
-#include <VBox/HGSMI/HGSMIChSetup.h>
+#include <HGSMI.h>
+#include <HGSMIChSetup.h>
 
 struct HGSMIINSTANCE;
 typedef struct HGSMIINSTANCE *PHGSMIINSTANCE;

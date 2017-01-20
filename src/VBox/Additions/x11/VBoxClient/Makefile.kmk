@@ -29,6 +29,7 @@ ifdef VBOX_WITH_DBUS
  VBoxClient_DEFS += VBOX_WITH_DBUS
 endif
 VBoxClient_DEFS.linux += _GNU_SOURCE
+VBoxClient_INCS = $(VBOX_GRAPHICS_INCS)
 VBoxClient_SOURCES = \
 	main.cpp
 VBoxClient_SOURCES += \

@@ -32,7 +32,7 @@ VBoxVideo_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
-VBoxVideo_INCS          = ../../../include .. .
+VBoxVideo_INCS          = ../../../include .. . $(VBOX_GRAPHICS_INCS)
 VBoxVideo_LDFLAGS.x86   = /Entry:DriverEntry@8
 VBoxVideo_LDFLAGS.amd64 = /Entry:DriverEntry
 VBoxVideo_SOURCES       = \
@@ -98,7 +98,8 @@ ifdef VBOX_WITH_WDDM
  	. \
  	$(VBOX_PATH_CROGL_INCLUDE) \
  	$(VBOX_PATH_CROGL_GENFILES) \
- 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer
+ 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer \
+ 	$(VBOX_GRAPHICS_INCS)
 
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry

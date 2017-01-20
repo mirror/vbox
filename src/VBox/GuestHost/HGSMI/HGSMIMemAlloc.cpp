@@ -52,8 +52,8 @@
  *  * larger free blocks are splitted when there are no smaller free blocks;
  *  * smaller free blocks are merged if they can build a requested larger block.
  */
-#include <VBox/HGSMI/HGSMIMemAlloc.h>
-#include <VBox/HGSMI/HGSMI.h>
+#include <HGSMIMemAlloc.h>
+#include <HGSMI.h>
 
 #include <iprt/err.h>
 #include <iprt/string.h>

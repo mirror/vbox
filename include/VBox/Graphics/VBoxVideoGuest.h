@@ -25,12 +25,12 @@
  */
 
 
-#ifndef ___VBox_VBoxVideoGuest_h___
-#define ___VBox_VBoxVideoGuest_h___
+#ifndef ___VBox_Graphics_VBoxVideoGuest_h___
+#define ___VBox_Graphics_VBoxVideoGuest_h___
 
-#include <VBox/HGSMI/HGSMI.h>
-#include <VBox/HGSMI/HGSMIChSetup.h>
-#include <VBox/VBoxVideo.h>
+#include <HGSMI.h>
+#include <HGSMIChSetup.h>
+#include <VBoxVideo.h>
 
 #include <iprt/err.h>  /* The functions in here return IPRT errors. */
 

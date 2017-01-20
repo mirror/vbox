@@ -23,14 +23,15 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_VBoxVideo_h
-#define ___VBox_VBoxVideo_h
-
-#include <VBox/Hardware/VBoxVideoVBE.h>
+#ifndef ___VBox_Graphics_VBoxVideo_h
+#define ___VBox_Graphics_VBoxVideo_h
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 #include <iprt/assert.h>
+
+/* this should be in sync with monitorCount <xsd:maxInclusive value="64"/> in src/VBox/Main/xml/VirtualBox-settings-common.xsd */
+#define VBOX_VIDEO_MAX_SCREENS 64
 
 /*
  * The last 4096 bytes of the guest VRAM contains the generic info for all

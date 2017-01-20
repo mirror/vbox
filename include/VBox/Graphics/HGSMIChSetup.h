@@ -23,10 +23,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_HGSMI_HGSMIChSetup_h
-#define ___VBox_HGSMI_HGSMIChSetup_h
+#ifndef ___VBox_Graphics_HGSMIChSetup_h
+#define ___VBox_Graphics_HGSMIChSetup_h
 
-#include <VBox/HGSMI/HGSMI.h>
+#include <HGSMI.h>
 
 /* HGSMI setup and configuration channel commands and data structures. */
 #define HGSMI_CC_HOST_FLAGS_LOCATION 0 /* Tell the host the location of HGSMIHOSTFLAGS structure,

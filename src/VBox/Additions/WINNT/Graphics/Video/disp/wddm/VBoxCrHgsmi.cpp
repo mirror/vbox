@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 #include <iprt/err.h>
 
 #include "VBoxUhgsmiKmt.h"

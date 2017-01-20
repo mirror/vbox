@@ -20,8 +20,8 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/asm.h>
-#include <VBox/VBoxVideo.h>
-#include <VBox/HGSMI/HGSMI.h>
+#include <VBoxVideo.h>
+#include <HGSMI.h>
 
 typedef struct _VBOXMP_DEVEXT *PVBOXMP_DEVEXT;
 

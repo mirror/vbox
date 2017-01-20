@@ -36,7 +36,8 @@ vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/randrproto-1.3.0 \
 	$(VBOX_PATH_X11_ROOT)/renderproto-0.11 \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
-	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
+	$(VBOX_GRAPHICS_INCS)
 
 vboxvideo.c_DEPS = $(VBOX_SVN_REV_HEADER)
 
@@ -92,7 +93,9 @@ vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
-vboxvideo_drv_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
+vboxvideo_drv_INCS += \
+	$(PATH_ROOT)/src/VBox/Runtime/include \
+	$(VBOX_GRAPHICS_INCS)
 vboxvideo_drv_SOURCES = \
 	getmode.c \
 	helpers.c \
@@ -380,6 +383,7 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  vboxvideo_drv_system_DEFS := $(filter-out _XORG_SERVER_H_ _DIX_CONFIG_H_, $(vboxvideo_15_DEFS))
  vboxvideo_drv_system_INCS += \
         $(PATH_ROOT)/src/VBox/Runtime/include \
+        $(VBOX_GRAPHICS_INCS) \
         /usr/include/x11 \
         /usr/include/xorg \
         /usr/include/pixman-1

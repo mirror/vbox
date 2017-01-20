@@ -27,8 +27,8 @@ CRmutex _PackMutex;
 #endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-# include <VBox/VBoxCrHgsmi.h>
-# include <VBox/VBoxUhgsmi.h>
+# include <VBoxCrHgsmi.h>
+# include <VBoxUhgsmi.h>
 #endif
 
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_WDDM)

@@ -42,7 +42,7 @@
 #include <iprt/thread.h>
 #include <iprt/assert.h>
 
-#include <VBox/VBoxCrHgsmi.h>
+#include <VBoxCrHgsmi.h>
 #if 1 /** @todo Try use the Vbgl interface instead of talking directly to the driver? */
 # include <VBox/VBoxGuest.h>
 #else

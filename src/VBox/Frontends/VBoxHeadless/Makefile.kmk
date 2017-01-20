@@ -45,6 +45,7 @@ VBoxHeadlessHardened_NAME = VBoxHeadless
 #
 VBoxHeadless_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
 VBoxHeadless_DEFS      += $(if $(VBOX_WITH_VIDEOREC),VBOX_WITH_VIDEOREC,)
+VBoxHeadless_INCS      = $(VBOX_GRAPHICS_INCS)
 VBoxHeadless_SOURCES    = VBoxHeadless.cpp
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxHeadless_DEFS     += VBOX_WITH_GUEST_PROPS

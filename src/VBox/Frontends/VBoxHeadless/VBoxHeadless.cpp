@@ -41,7 +41,7 @@ using namespace com;
 #include <iprt/getopt.h>
 #include <iprt/env.h>
 #include <VBox/err.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 #ifdef VBOX_WITH_VIDEOREC
 # include <cstdlib>

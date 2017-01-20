@@ -65,7 +65,7 @@ endif
 # VBoxOGL
 #
 VBoxOGL_TEMPLATE       = VBOXCROGLR3GUESTDLL
-VBoxOGL_INCS           = .
+VBoxOGL_INCS           = . $(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  ifndef VBOX_USE_SYSTEM_GL_HEADERS
   VBoxOGL_INCS     += \
@@ -447,7 +447,8 @@ endif
 #
 VBoxOGLarrayspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLarrayspu_INCS          = \
-	array
+	array \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLarrayspu_INCS += \
         $(VBOX_GL_INCS)
@@ -495,7 +496,8 @@ endif
 #
 VBoxOGLpassthroughspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
 VBoxOGLpassthroughspu_INCS        = \
-	passthrough
+	passthrough \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLpassthroughspu_INCS += \
         $(VBOX_GL_INCS)
@@ -544,7 +546,8 @@ $(VBOX_PATH_CROGL_GENFILES)/passthroughspu.c: $(PATH_SUB_CURRENT)/passthrough/pa
 VBoxOGLpackspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLpackspu_DEFS          = TRACKS_STATE=1 PACKS=1
 VBoxOGLpackspu_INCS          = \
-	pack
+	pack \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLpackspu_INCS += \
         $(VBOX_GL_INCS)
@@ -650,7 +653,8 @@ $(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h: $(addprefix $(PATH_SUB_CURRENT)/pac
 #
 VBoxOGLfeedbackspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
 VBoxOGLfeedbackspu_INCS        = \
-	feedback
+	feedback \
+	$(VBOX_GRAPHICS_INCS)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGLfeedbackspu_INCS += \
         $(VBOX_GL_INCS)

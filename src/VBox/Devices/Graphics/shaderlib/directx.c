@@ -37,7 +37,7 @@
 #include "wined3d_private.h"
 
 #ifdef VBOX_WITH_WDDM
-# include <VBox/VBoxCrHgsmi.h>
+# include <VBoxCrHgsmi.h>
 #endif
 
 #ifdef VBOX_WITH_VMSVGA

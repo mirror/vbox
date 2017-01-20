@@ -20,7 +20,7 @@
 #define ___VBoxMPShgsmi_h___
 
 #include <iprt/cdefs.h>
-#include <VBox/VBoxVideo.h>
+#include <VBoxVideo.h>
 
 #include "common/VBoxMPUtils.h"
 
