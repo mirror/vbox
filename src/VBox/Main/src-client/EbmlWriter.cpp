@@ -328,7 +328,7 @@ class WebMWriter_Impl
             struct
             {
                 /** Sample rate of input data. */
-                uint16_t uHz;
+                uint32_t uHz;
                 /** Duration of the frame in samples (per channel).
                  *  Valid frame size are:
                  *
@@ -513,6 +513,7 @@ public:
      *
      * @returns IPRT status code.
      * @param   uHz             Input sampling rate.
+     *                          Must be supported by the selected audio codec.
      * @param   cChannels       Number of input audio channels.
      * @param   cBits           Number of input bits per channel.
      * @param   puTrack         Track number on successful creation. Optional.

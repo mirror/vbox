@@ -76,7 +76,7 @@ typedef struct AVRECCODEC
             /** Encoder we're going to use. */
             OpusEncoder    *pEnc;
             /** The encoding rate to use. */
-            uint16_t        uHz;
+            uint32_t        uHz;
             /** Duration of the frame in samples (per channel).
              *  Valid frame size are:
              *
@@ -162,7 +162,7 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 #ifdef VBOX_WITH_LIBOPUS
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
-    uint16_t uHz = pStreamOut->Props.uHz;
+    uint32_t uHz = pStreamOut->Props.uHz;
 
     /* Opus only supports certain input sample rates in an efficient manner.
      * So make sure that we use those by resampling the data to the requested rate. */
