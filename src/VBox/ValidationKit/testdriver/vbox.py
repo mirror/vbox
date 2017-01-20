@@ -2911,7 +2911,7 @@ class TestDriver(base.TestDriver):                                              
 
         Returns True / False.
         """
-        if not self.isHostCpuIntel():
+        if not self.isHostCpuIntel(fQuiet):
             return False;
 
         (uFamilyModel, _, _, _) = self.oVBox.host.getProcessorCPUIDLeaf(0, 0x1, 0);
