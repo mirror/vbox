@@ -278,6 +278,13 @@ private:
 
 };
 
+/** No flags specified. */
+#define VBOX_WEBM_BLOCK_FLAG_NONE           0
+/** Invisible block which can be skipped. */
+#define VBOX_WEBM_BLOCK_FLAG_INVISIBLE      0x08
+/** The block marks a key frame. */
+#define VBOX_WEBM_BLOCK_FLAG_KEY_FRAME      0x80
+
 class WebMWriter_Impl
 {
     /**
@@ -754,9 +761,9 @@ public:
 
         uint8_t fFlags = 0;
         if (fKeyframe)
-            fFlags |= 0x80; /* Key frame. */
+            fFlags |= VBOX_WEBM_BLOCK_FLAG_KEY_FRAME;
         if (a_pPkt->data.frame.flags & VPX_FRAME_IS_INVISIBLE)
-            fFlags |= 0x08; /* Invisible frame. */
+            fFlags |= VBOX_WEBM_BLOCK_FLAG_INVISIBLE;
 
         return writeSimpleBlockInternal(a_pTrack, tcBlock, a_pPkt->data.frame.buf, a_pPkt->data.frame.sz, fFlags);
     }
@@ -833,7 +840,7 @@ public:
         Cluster.cBlocks += 1;
         Cluster.cbData  += cbData;
 
-        return writeSimpleBlockInternal(a_pTrack, tcBlock, pvData, cbData, 0x80 /* Flags */);
+        return writeSimpleBlockInternal(a_pTrack, tcBlock, pvData, cbData, VBOX_WEBM_BLOCK_FLAG_KEY_FRAME);
     }
 #endif /* VBOX_WITH_LIBOPUS */
 
