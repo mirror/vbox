@@ -2717,6 +2717,7 @@ VMM_INT_DECL(int) APICGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Vector, uint32_t *p
 
                 /* Retrieve the interrupt source tag associated with this interrupt. */
                 PAPICCPU pApicCpu = VMCPU_TO_APICCPU(pVCpu);
+                AssertCompile(RT_ELEMENTS(pApicCpu->auSrcTags) > UINT8_MAX);
                 *puSrcTag = pApicCpu->auSrcTags[uVector];
                 pApicCpu->auSrcTags[uVector] = 0;
 
