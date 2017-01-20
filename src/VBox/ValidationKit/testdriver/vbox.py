@@ -2905,6 +2905,18 @@ class TestDriver(base.TestDriver):                                              
         sCpuDesc = self._getHostCpuDesc(fQuiet);
         return sCpuDesc.startswith("VIA") or sCpuDesc == 'CentaurHauls';
 
+    def isHostCpuP4(self, fQuiet = False):
+        """
+        Checks if the host CPU is a Pentium 4 / Pentium D.
+
+        Returns True / False.
+        """
+        if not self.isHostCpuIntel():
+            return False;
+
+        (uFamilyModel, _, _, _) = self.oVBox.host.getProcessorCPUIDLeaf(0, 0x1, 0);
+        return ((uFamilyModel >> 8) & 0xf) == 0xf;
+
     def hasRawModeSupport(self, fQuiet = False):
         """
         Checks if raw-mode is supported by VirtualBox that the testbox is
