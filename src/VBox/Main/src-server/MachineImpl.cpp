@@ -12586,7 +12586,9 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      *  accessing any members (and before AutoUninitSpan that does it as well).
      *  This self reference will be released as the very last step on return.
      */
-    ComObjPtr<SessionMachine> selfRef = this;
+    ComObjPtr<SessionMachine> selfRef;
+    if (aReason != Uninit::Unexpected)
+        selfRef = this;
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);

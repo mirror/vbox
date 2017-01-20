@@ -1591,7 +1591,7 @@ void Medium::uninit()
      * object locks, i.e. the medium caller may have to be released and be
      * re-acquired in the right place later. See Medium::getParent() for sample
      * code how to do this safely. */
-    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+    VirtualBox *pVirtualBox = m->pVirtualBox;
     if (!pVirtualBox)
         return;
 
