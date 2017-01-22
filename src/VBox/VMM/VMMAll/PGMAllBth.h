@@ -120,7 +120,8 @@ PGM_BTH_DECL(VBOXSTRICTRC, Trap0eHandlerGuestFault)(PVMCPU pVCpu, PGSTPTWALK pGs
     uint32_t uNewErr = GST_IS_NX_ACTIVE(pVCpu)
                      ? uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US | X86_TRAP_PF_ID)
                      : uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US);
-    if (pGstWalk->Core.fBadPhysAddr)
+    if (   pGstWalk->Core.fRsvdError
+        || pGstWalk->Core.fBadPhysAddr)
     {
         uNewErr |= X86_TRAP_PF_RSVD | X86_TRAP_PF_P;
         Assert(!pGstWalk->Core.fNotPresent);
