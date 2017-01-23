@@ -138,7 +138,7 @@ This is default for newer versions of Windows (Vista and newer).</String>
     <String Id="FatalErrorDlg_Desc">L'installazione di [ProductName] è stata terminata in anticipo a causa di un errore. Il sistema non è stato modificato. Per installare questo programma successivamente, esegui nuovamente l'installazione.</String>
     <String Id="FatalErrorDlg_Footer">Fai clic sul pulsante Fine per uscire dalla procedura guidata.</String>
     <!---->
-    <String Id="FilesInUse_Text">The following applications are using files that need to be updated by this setup. Close these applications and then click &amp;Retry to continue the installation or Cancel to exit it.</String>
+    <String Id="FilesInUse_Text">The following applications are using files that need to be updated by this setup. Close these applications and then click &amp;Retry to continue the installation or Exit to exit it.</String>
     <String Id="FilesInUse_Description">Alcuni file che devono essere aggiornati sono attualmente utilizzati.</String>
     <String Id="FilesInUse_Title">File in uso</String>
     <!---->
