@@ -391,7 +391,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
             g_HmR0.vmx.u64HostEfer          = ASMRdMsr(MSR_K6_EFER);
             g_HmR0.vmx.Msrs.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
             /* KVM workaround: Intel SDM section 34.15.5 describes that MSR_IA32_SMM_MONITOR_CTL
-             * depends on bit 49 MSR_IA32_VMX_BASIC_INFO while table 35-2 says that this MSR
+             * depends on bit 49 of MSR_IA32_VMX_BASIC_INFO while table 35-2 says that this MSR
              * is available if either VMX or SMX is supported. */
             if (MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(g_HmR0.vmx.Msrs.u64BasicInfo))
                 g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
