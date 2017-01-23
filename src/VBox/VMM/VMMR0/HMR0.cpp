@@ -388,9 +388,13 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
              * Read all relevant registers and MSRs.
              */
             g_HmR0.vmx.u64HostCr4           = ASMGetCR4();
-            g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
             g_HmR0.vmx.u64HostEfer          = ASMRdMsr(MSR_K6_EFER);
             g_HmR0.vmx.Msrs.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
+            /* KVM workaround: Intel SDM section 34.15.5 describes that MSR_IA32_SMM_MONITOR_CTL
+             * depends on bit 49 MSR_IA32_VMX_BASIC_INFO while table 35-2 says that this MSR
+             * is available if either VMX or SMX is supported. */
+            if (MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(g_HmR0.vmx.Msrs.u64BasicInfo))
+                g_HmR0.vmx.u64HostSmmMonitorCtl = ASMRdMsr(MSR_IA32_SMM_MONITOR_CTL);
             g_HmR0.vmx.Msrs.VmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
             g_HmR0.vmx.Msrs.VmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
             g_HmR0.vmx.Msrs.VmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
