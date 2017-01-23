@@ -2348,17 +2348,10 @@ int Display::i_VideoCaptureStart()
         char *pszName = NULL;
         if (RT_SUCCESS(rc))
         {
-#ifndef DEUBG_andy
             if (mcMonitors > 1)
                 rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszSuff);
             else
                 rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszSuff);
-#else
-            if (mcMonitors > 1)
-                rc = RTStrAPrintf(&pszName, "/tmp/avcap-%u.webm", uScreen+1);
-            else
-                rc = RTStrAPrintf(&pszName, "/tmp/avcap.webm");
-#endif
         }
         if (RT_SUCCESS(rc))
         {
@@ -2391,13 +2384,11 @@ int Display::i_VideoCaptureStart()
 
         if (RT_SUCCESS(rc))
         {
-            LogRel(("Display::VideoCaptureStart: WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' "
-                    "enabled\n", uScreen, ulWidth, ulHeight, ulRate, ulFPS, pszName));
-
             videoCaptureScreenChanged(uScreen);
         }
         else
-            LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
+            LogRel(("Display::VideoCaptureStart: Failed to initialize video recording context #%u, (%Rrc)\n", uScreen, rc));
+
         RTStrFree(pszName);
         RTStrFree(pszSuff);
         RTStrFree(pszAbsPath);
@@ -2414,8 +2405,9 @@ int Display::i_VideoCaptureStart()
 void Display::i_VideoCaptureStop()
 {
 #ifdef VBOX_WITH_VIDEOREC
-    if (VideoRecIsEnabled(mpVideoRecCtx))
-        LogRel(("Display::VideoCaptureStop: WebM/VP8 video recording stopped\n"));
+    if (!VideoRecIsEnabled(mpVideoRecCtx))
+        return;
+
     VideoRecContextDestroy(mpVideoRecCtx);
     mpVideoRecCtx = NULL;
 
@@ -2428,19 +2420,24 @@ void Display::i_VideoCaptureStop()
 #ifdef VBOX_WITH_VIDEOREC
 void Display::videoCaptureScreenChanged(unsigned uScreenId)
 {
-    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
-
-    if (VideoRecIsEnabled(mpVideoRecCtx) && maVideoRecEnabled[uScreenId])
+    if (   !VideoRecIsEnabled(mpVideoRecCtx)
+        || !maVideoRecEnabled[uScreenId])
     {
-        /* Get a new source bitmap which will be used by video capture code. */
-        QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+        /* Skip recording this screen. */
+        return;
     }
 
-    int rc = RTCritSectEnter(&mVideoCaptureLock);
-    if (RT_SUCCESS(rc))
+    /* Get a new source bitmap which will be used by video capture code. */
+    ComPtr<IDisplaySourceBitmap> pSourceBitmap;
+    QuerySourceBitmap(uScreenId, pSourceBitmap.asOutParam());
+
+    int rc2 = RTCritSectEnter(&mVideoCaptureLock);
+    if (RT_SUCCESS(rc2))
     {
         maFramebuffers[uScreenId].videoCapture.pSourceBitmap = pSourceBitmap;
-        RTCritSectLeave(&mVideoCaptureLock);
+
+        rc2 = RTCritSectLeave(&mVideoCaptureLock);
+        AssertRC(rc2);
     }
 }
 #endif /* VBOX_WITH_VIDEOREC */
@@ -3185,7 +3182,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                 if (!pDisplay->maVideoRecEnabled[uScreenId])
                     continue;
 
-                if (VideoRecIsFull(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
+                if (VideoRecLimitReached(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
                 {
                     pDisplay->i_VideoCaptureStop();
                     pDisplay->mParent->i_machine()->COMSETTER(VideoCaptureEnabled)(false);

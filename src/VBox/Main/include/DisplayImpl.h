@@ -503,8 +503,8 @@ private:
 #endif
 
 #ifdef VBOX_WITH_VIDEOREC
-    VIDEORECCONTEXT *mpVideoRecCtx;
-    bool maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
+    VIDEORECCONTEXT     *mpVideoRecCtx;
+    bool                 maVideoRecEnabled[SchemaDefs::MaxGuestMonitors];
 #endif
 
 private:
