@@ -163,7 +163,6 @@ typedef struct VIDEORECCONTEXT
     bool                fEnabled;
     /** Worker thread. */
     RTTHREAD            Thread;
-    uint64_t            tsStartMs;
     /** Maximal time (in ms) to record. */
     uint64_t            uMaxTimeMs;
     /** Maximal file size (in MB) to record. */
@@ -922,7 +921,7 @@ bool VideoRecLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNo
     }
 
     if (   pCtx->uMaxTimeMs
-        && (tsNowMs - pCtx->tsStartMs) >= pCtx->uMaxTimeMs)
+        && tsNowMs >= pCtx->uMaxTimeMs)
     {
         return true;
     }
