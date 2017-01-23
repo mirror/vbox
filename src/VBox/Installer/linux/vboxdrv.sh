@@ -388,7 +388,6 @@ cleanup()
 setup()
 {
     begin_msg "Building VirtualBox kernel modules" console
-    cleanup
     if ! $BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
@@ -472,6 +471,7 @@ setup)
     ## todo Do we need a udev rule to create /dev/vboxdrv[u] at all?  We have
     ## working fall-back code here anyway, and the "right" code is more complex
     ## than the fall-back.  Unnecessary duplication?
+    stop && cleanup
     setup_usb "$GROUP" "$DEVICE_MODE" "$INSTALL_DIR"
     setup && start
     ;;
