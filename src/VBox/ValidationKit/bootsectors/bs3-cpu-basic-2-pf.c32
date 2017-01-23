@@ -114,6 +114,8 @@ typedef struct BS3CPUBASIC2PFSTATE
 
     /** Set if we can use the INVLPG instruction. */
     bool                        fUseInvlPg;
+    /** Physical addressing width. */
+    uint8_t                     cBitsPhysWidth;
 
     /** Reflects CR0.WP. */
     bool                        fWp;
@@ -136,7 +138,11 @@ typedef struct BS3CPUBASIC2PFSTATE
     /** The PDE backup. */
     uint64_t                    au64PdeBackup[16];
     /** The PTE backup. */
-    uint64_t                    au64PteBackup[X86_PG_PAE_ENTRIES];
+    union
+    {
+        uint32_t                Legacy[X86_PG_ENTRIES];
+        uint64_t                Pae[X86_PG_PAE_ENTRIES];
+    } PteBackup;
 
 } BS3CPUBASIC2PFSTATE;
 /** Pointer to state for the \#PF test. */
@@ -377,7 +383,7 @@ static void bs3CpuBasic2Pf_FlushAll(void)
  */
 static void bs3CpuBasic2Pf_RestoreFromBackups(PBS3CPUBASIC2PFSTATE pThis)
 {
-    Bs3MemCpy(pThis->PgInfo.u.Legacy.pPte, pThis->au64PteBackup, pThis->cbPteBackup);
+    Bs3MemCpy(pThis->PgInfo.u.Legacy.pPte, &pThis->PteBackup, pThis->cbPteBackup);
     Bs3MemCpy(pThis->PgInfo.u.Legacy.pPde, pThis->au64PdeBackup, pThis->cbPdeBackup);
     if (pThis->PgInfo.cEntries > 2)
         pThis->PgInfo.u.Pae.pPdpe->u  = pThis->u64PdpteBackup;
@@ -393,9 +399,10 @@ static void bs3CpuBasic2Pf_RestoreFromBackups(PBS3CPUBASIC2PFSTATE pThis)
 static void bs3CpuBasic2Pf_DoExec(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, uint32_t fFlags, uint8_t bXcpt, uint8_t uPfErrCd)
 {
     uint8_t *pbOrgTest = pThis->pbOrgTest;
-    unsigned off;
+    unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE + 1 : X86_PAGE_SIZE + 2;
+    unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? offEnd - 1        : X86_PAGE_SIZE - 5;
 
-    for (off = X86_PAGE_SIZE - 5; off < X86_PAGE_SIZE + 2; off++)
+    for (; off < offEnd; off++)
     {
         /* Emit a little bit of code (using the original allocation mapping) and point pCtx to it. */
         pbOrgTest[off + 0] = X86_OP_PRF_SIZE_ADDR;
@@ -509,8 +516,8 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
      */
     for (i = 0; i < 2; i++)
     {
-        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
-        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE : X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? off + 1       : X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
 
         for (; off < offEnd; off++)
         {
@@ -541,6 +548,9 @@ static void bs3CpuBasic2Pf_DoMovLoad(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
                 pThis->ExpectCtx.cr2 = pCtx->cr2;
             }
         }
+
+        if (fFlags & BS3CB2PFACC_F_DIRECT)
+            break;
     }
 }
 
@@ -595,8 +605,8 @@ static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCt
      */
     for (i = 0; i < 2; i++)
     {
-        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
-        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE : X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? off + 1       : X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
         for (; off < offEnd; off++)
         {
             *(uint64_t *)&pThis->pbOrgTest[off] = s_uValueFlipped;
@@ -631,6 +641,9 @@ static void bs3CpuBasic2Pf_DoMovStore(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCt
 
             }
         }
+
+        if (fFlags & BS3CB2PFACC_F_DIRECT)
+            break;
     }
 
     pCtx->rax.u = uRaxSaved;
@@ -691,8 +704,8 @@ static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
      */
     for (i = 0; i < 2; i++)
     {
-        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
-        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE : X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? off + 1       : X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
         for (; off < offEnd; off++)
         {
             *(uint64_t *)&pThis->pbOrgTest[off] = s_uValueFlipped;
@@ -729,6 +742,9 @@ static void bs3CpuBasic2Pf_DoXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx, u
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], s_uValueFlipped);
             }
         }
+
+        if (fFlags & BS3CB2PFACC_F_DIRECT)
+            break;
     }
 
     pCtx->rax.u = uRaxSaved;
@@ -812,8 +828,8 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
      */
     for (i = 0; i < 2; i++)
     {
-        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
-        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE : X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? off + 1       : X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
         for (; off < offEnd; off++)
         {
             *(uint64_t *)&pThis->pbOrgTest[off] = s_uValueFlipped;
@@ -852,6 +868,9 @@ static void bs3CpuBasic2Pf_DoCmpXchg(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pCtx
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], s_uValueFlipped);
             }
         }
+
+        if (fFlags & BS3CB2PFACC_F_DIRECT)
+            break;
     }
 
     pCtx->rax.u = uRaxSaved;
@@ -911,8 +930,8 @@ static void bs3CpuBasic2Pf_DoDivByZero(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pC
      */
     for (i = 0; i < 2; i++)
     {
-        unsigned off    = X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
-        unsigned offEnd = X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
+        unsigned off    = fFlags & BS3CB2PFACC_F_DIRECT ? X86_PAGE_SIZE : X86_PAGE_SIZE * (i + 1) - pThis->cbAccess;
+        unsigned offEnd = fFlags & BS3CB2PFACC_F_DIRECT ? off + 1       : X86_PAGE_SIZE * (i + 1) + (i == 0 ? 8 : 7);
         for (; off < offEnd; off++)
         {
             *(uint64_t *)&pThis->pbOrgTest[off] = uZeroAndFill;
@@ -946,6 +965,9 @@ static void bs3CpuBasic2Pf_DoDivByZero(PBS3CPUBASIC2PFSTATE pThis, PBS3REGCTX pC
                                    g_usBs3TestStep, "xxxx", *(uint64_t *)&pThis->pbOrgTest[off], uZeroAndFill);
             }
         }
+
+        if (fFlags & BS3CB2PFACC_F_DIRECT)
+            break;
     }
 }
 
@@ -972,70 +994,73 @@ static void bs3CpuBasic2Pf_ClearMask(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore
                                      uint32_t fClearMask, uint32_t fSetMask)
 {
     if (pThis->PgInfo.cbEntry == 4)
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         ((pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask) & ~(uint32_t)pEntry->uModifyArg,
-                                         pThis->PgInfo.u.Legacy.pPte[1].u);
+    {
+        uint32_t const uOrg = pThis->PteBackup.Legacy[1];
+        uint32_t       uNew = ((uOrg & ~fClearMask) | fSetMask) & ~(uint32_t)pEntry->uModifyArg;
+        uint32_t const uOld = pThis->PgInfo.u.Legacy.pPte[1].u;
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1, uNew, uOld);
+    }
     else
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         ((pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask) & ~(uint32_t)pEntry->uModifyArg,
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    {
+        uint64_t const uOrg = pThis->PteBackup.Pae[1];
+        uint64_t       uNew = ((uOrg & ~(uint64_t)fClearMask) | fSetMask) & ~(uint64_t)pEntry->uModifyArg;
+        uint64_t const uOld = pThis->PgInfo.u.Pae.pPte[1].u;
+
+        g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[0], (uint32_t)uNew, (uint32_t)uOld);
+        if ((uint32_t)(uNew >> 32) != (uint32_t)(uOld >> 32))
+            g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
+                                             (uint32_t)(uNew >> 32), (uint32_t)(uOld >> 32));
+    }
 }
 
 static void bs3CpuBasic2Pf_SetBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
                                   uint32_t fClearMask, uint32_t fSetMask)
 {
     if (pThis->PgInfo.cbEntry == 4)
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         (pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask | RT_BIT_32(pEntry->uModifyArg),
-                                         pThis->PgInfo.u.Legacy.pPte[1].u);
-    else if (pEntry->uModifyArg < 32)
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask | RT_BIT_32(pEntry->uModifyArg),
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+    {
+        uint32_t const uOrg = pThis->PteBackup.Legacy[1];
+        uint32_t       uNew = (uOrg & ~fClearMask) | fSetMask | RT_BIT_32(pEntry->uModifyArg);
+        uint32_t const uOld = pThis->PgInfo.u.Legacy.pPte[1].u;
+        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1, uNew, uOld);
+    }
     else
     {
-        g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[1] | RT_BIT_32(pEntry->uModifyArg - 32),
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[1]);
-        if (fSetMask || fClearMask)
-            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                             (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask,
-                                             pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+        uint64_t const uOrg = pThis->PteBackup.Pae[1];
+        uint64_t       uNew = ((uOrg & ~(uint64_t)fClearMask) | fSetMask) | RT_BIT_64(pEntry->uModifyArg);
+        uint64_t const uOld = pThis->PgInfo.u.Pae.pPte[1].u;
+
+        if (pEntry->uModifyArg < 32 || (uint32_t)uNew != (uint32_t)uOld)
+            g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[0], (uint32_t)uNew, (uint32_t)uOld);
+        if (pEntry->uModifyArg >= 32 || (uint32_t)(uNew >> 32) != (uint32_t)(uOld >> 32))
+            g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
+                                             (uint32_t)(uNew >> 32), (uint32_t)(uOld >> 32));
     }
 }
-
-#if 0
-static void bs3CpuBasic2Pf_ClearBit(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
-                                    uint32_t fClearMask, uint32_t fSetMask)
-{
-    if (pThis->PgInfo.cbEntry == 4)
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                         ((pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask) & ~RT_BIT_32(pEntry->uModifyArg),
-                                         pThis->PgInfo.u.Legacy.pPte[1].u);
-    else if (pEntry->uModifyArg < 32)
-        g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                         ((pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask) & ~RT_BIT_32(pEntry->uModifyArg),
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[0]);
-    else
-        g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[1] & ~RT_BIT_32(pEntry->uModifyArg - 32),
-                                         pThis->PgInfo.u.Pae.pPte[1].au32[1]);
-}
-#endif
 
 static void bs3CpuBasic2Pf_NoChange(PBS3CPUBASIC2PFSTATE pThis, unsigned iStore, PCBS3CPUBASIC2PFMODPT pEntry,
                                     uint32_t fClearMask, uint32_t fSetMask)
 {
-    if (fClearMask || fSetMask)
+    if (pThis->PgInfo.cbEntry == 4)
     {
-        if (pThis->PgInfo.cbEntry == 4)
-            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Legacy.pPte + 1,
-                                             (pThis->PgInfo.u.Legacy.pPte[1].u    & ~fClearMask) | fSetMask,
-                                             pThis->PgInfo.u.Legacy.pPte[1].u);
-        else
-            g_aStoreMethods[iStore].pfnStore(pThis->PgInfo.u.Pae.pPte + 1,
-                                             (pThis->PgInfo.u.Pae.pPte[1].au32[0] & ~fClearMask) | fSetMask,
-                                             pThis->PgInfo.u.Pae.pPte[1].au32[0]);
+        uint32_t const uOrg = pThis->PteBackup.Legacy[1];
+        uint32_t       uNew = (uOrg & ~fClearMask) | fSetMask;
+        uint32_t const uOld = pThis->PgInfo.u.Legacy.pPte[1].u;
+        if (uNew != uOld)
+            g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Legacy.pPte[1], uNew, uOld);
+    }
+    else
+    {
+        uint64_t const uOrg = pThis->PteBackup.Pae[1];
+        uint64_t       uNew = (uOrg & ~(uint64_t)fClearMask) | fSetMask;
+        uint64_t const uOld = pThis->PgInfo.u.Pae.pPte[1].u;
+        if (uNew != uOld)
+        {
+            if ((uint32_t)uNew != (uint32_t)uOld)
+                g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[0], (uint32_t)uNew, (uint32_t)uOld);
+            if ((uint32_t)(uNew >> 32) != (uint32_t)(uOld >> 32))
+                g_aStoreMethods[iStore].pfnStore(&pThis->PgInfo.u.Pae.pPte[1].au32[1],
+                                                 (uint32_t)(uNew >> 32), (uint32_t)(uOld >> 32));
+        }
     }
 }
 
@@ -1049,6 +1074,7 @@ static bool bs3CpuBasic2Pf_IsPteBitReserved(PBS3CPUBASIC2PFSTATE pThis, PCBS3CPU
 {
     if (pThis->PgInfo.cbEntry == 8)
     {
+        /* Bits 52..63 or 62 (NXE=1). */
         if (pThis->PgInfo.cEntries == 3)
         {
             if ((uint32_t)(pEntry->uModifyArg - 52U) < (uint32_t)(12 - pThis->fNxe))
@@ -1056,6 +1082,13 @@ static bool bs3CpuBasic2Pf_IsPteBitReserved(PBS3CPUBASIC2PFSTATE pThis, PCBS3CPU
         }
         else if (pEntry->uModifyArg == 63 && !pThis->fNxe)
             return true;
+
+        /* Reserved physical address bits. */
+        if (pEntry->uModifyArg < 52)
+        {
+            if ((uint32_t)pEntry->uModifyArg >= (uint32_t)pThis->cBitsPhysWidth)
+                return true;
+        }
     }
     return false;
 }
@@ -1091,6 +1124,26 @@ static const BS3CPUBASIC2PFMODPT g_aPteWorkers[] =
     { "!RW+!US",   1, 0, 0, 0, 0,   X86_PTE_RW | X86_PTE_US, bs3CpuBasic2Pf_ClearMask,    NULL },
     { "!P",        0, 0, 0, 0, 0,   X86_PTE_P,  bs3CpuBasic2Pf_ClearMask,    NULL },
     { "NX",        1, 1, 1, 1, 0,   63,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsNxe },
+    { "RSVPH[32]", 0, 0, 0, 0, 1,   32,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[33]", 0, 0, 0, 0, 1,   33,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[34]", 0, 0, 0, 0, 1,   34,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[35]", 0, 0, 0, 0, 1,   35,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[36]", 0, 0, 0, 0, 1,   36,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[37]", 0, 0, 0, 0, 1,   37,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[38]", 0, 0, 0, 0, 1,   38,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[39]", 0, 0, 0, 0, 1,   39,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[40]", 0, 0, 0, 0, 1,   40,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[41]", 0, 0, 0, 0, 1,   41,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[42]", 0, 0, 0, 0, 1,   42,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[43]", 0, 0, 0, 0, 1,   43,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[44]", 0, 0, 0, 0, 1,   44,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[45]", 0, 0, 0, 0, 1,   45,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[46]", 0, 0, 0, 0, 1,   46,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[47]", 0, 0, 0, 0, 1,   47,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[48]", 0, 0, 0, 0, 1,   48,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[49]", 0, 0, 0, 0, 1,   49,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[50]", 0, 0, 0, 0, 1,   50,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
+    { "RSVPH[51]", 0, 0, 0, 0, 1,   51,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
     { "RSV[52]",   0, 0, 0, 0, 1,   52,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
     { "RSV[53]",   0, 0, 0, 0, 1,   53,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
     { "RSV[54]",   0, 0, 0, 0, 1,   54,         bs3CpuBasic2Pf_SetBit,       bs3CpuBasic2Pf_IsPteBitReserved },
@@ -1133,7 +1186,7 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
     unsigned            iRing;
     unsigned            iStore;
     unsigned            iAccessor;
-//    uint32_t const      fPfId     = fNxe ? X86_TRAP_PF_ID : 0;
+    unsigned            iOuter;
     uint32_t const      fPfIdMask = fNxe ? UINT32_MAX : ~X86_TRAP_PF_ID;
     BS3REGCTX           aCtxts[4];
 
@@ -1183,8 +1236,9 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
     /*
      * Check the U bit on PTE level.  We only mess with the 2nd page.
      */
+    for (iOuter = 0; iOuter < 2; iOuter++)
     {
-        uint32_t const  fAccessor = BS3CB2PFACC_F_PAGE_LEVEL;
+        uint32_t const  fAccessor = (iOuter == 0 ? BS3CB2PFACC_F_DIRECT : 0) | BS3CB2PFACC_F_PAGE_LEVEL;
         bool const      fWp       = RT_BOOL(ASMGetCR0() & X86_CR0_WP);
         unsigned        iPteWrk;
 
@@ -1193,7 +1247,7 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
         {
             BS3CPUBASIC2PFMODPT         EffWrk;
             const BS3CPUBASIC2PFMODPT  *pPteWrk = &g_aPteWorkers[iPteWrk];
-            if (   pPteWrk->pfnApplicable && !pPteWrk->pfnApplicable(pThis, pPteWrk))
+            if (pPteWrk->pfnApplicable && !pPteWrk->pfnApplicable(pThis, pPteWrk))
                 continue;
 
             pThis->pszPteWorker = pPteWrk->pszName;
@@ -1251,16 +1305,6 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
             }
 #endif
 
-            /*
-             * Again, but redoing everything for each accessor.
-             */
-            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
-            {
-                pThis->pszStore = g_aStoreMethods[iStore].pszName;
-
-                for (iRing = 0; iRing < 4; iRing++)
-                {
-                    PBS3REGCTX const pCtx = &aCtxts[iRing];
 #define CHECK_AD_BITS(a_fExpectedAD) \
     do { \
         uint32_t fActualAD = (   pThis->PgInfo.cbEntry == 8 \
@@ -1273,6 +1317,17 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
             BS3CPUBASIC2PF_HALT(pThis); \
         } \
     } while (0)
+
+            /*
+             * Again, but redoing everything for each accessor.
+             */
+            for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
+            {
+                pThis->pszStore = g_aStoreMethods[iStore].pszName;
+
+                for (iRing = 0; iRing < 4; iRing++)
+                {
+                    PBS3REGCTX const pCtx = &aCtxts[iRing];
 
                     if (   EffWrk.fReserved
                         || !EffWrk.fPresent
@@ -1363,9 +1418,110 @@ static uint8_t bs3CpuBasic2_RaiseXcpt0eWorker(PBS3CPUBASIC2PFSTATE register pThi
             }
 
             /*
-             * ...
+             * Again, but using invalidate page.
              */
+            if (pThis->fUseInvlPg)
+            {
+                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
 
+                for (iStore = 0; iStore < RT_ELEMENTS(g_aStoreMethods); iStore++)
+                {
+                    pThis->pszStore = g_aStoreMethods[iStore].pszName;
+
+                    for (iRing = 0; iRing < 4; iRing++)
+                    {
+                        PBS3REGCTX const pCtx = &aCtxts[iRing];
+
+                        if (   EffWrk.fReserved
+                            || !EffWrk.fPresent
+                            || (!EffWrk.fUser && iRing == 3))
+                        {
+                            uint32_t const fPfBase = ( EffWrk.fReserved ? X86_TRAP_PF_P | X86_TRAP_PF_RSVD
+                                                      : EffWrk.fPresent ? X86_TRAP_PF_P : 0)
+                                                   | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                            for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                            {
+                                pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, 0);
+                                ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                                CHECK_AD_BITS(0);
+
+                                pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                                ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF,
+                                                                    fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask));
+                                CHECK_AD_BITS(0);
+                            }
+                        }
+                        else
+                        {
+                            uint32_t const fPfBase = X86_TRAP_PF_P | (iRing == 3 ? X86_TRAP_PF_US : 0);
+                            for (iAccessor = 0; iAccessor < RT_ELEMENTS(g_aAccessors); iAccessor++)
+                            {
+                                pThis->pszAccessor = g_aAccessors[iAccessor].pszName;
+                                if (   (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_ID)
+                                        && EffWrk.fNoExecute)
+                                    || (   (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                        && !EffWrk.fWriteable
+                                        && (fWp || iRing == 3)) )
+                                {
+                                    uint32_t const fErrCd = fPfBase | (g_aAccessors[iAccessor].fAccess & fPfIdMask);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                    CHECK_AD_BITS(0);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, X86_PTE_A | X86_PTE_D);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                    CHECK_AD_BITS(X86_PTE_A | X86_PTE_D);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A, X86_PTE_D);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                    CHECK_AD_BITS(X86_PTE_D);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_D, X86_PTE_A);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_PF, fErrCd);
+                                    CHECK_AD_BITS(X86_PTE_A);
+                                }
+                                else
+                                {
+                                    uint32_t const fExpectedAD = (g_aAccessors[iAccessor].fAccess & X86_TRAP_PF_RW)
+                                                               ? X86_PTE_A | X86_PTE_D : X86_PTE_A;
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A | X86_PTE_D, 0);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                    CHECK_AD_BITS(fExpectedAD);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, 0, X86_PTE_A | X86_PTE_D);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                    CHECK_AD_BITS(X86_PTE_A | X86_PTE_D);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_A, X86_PTE_D);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                    CHECK_AD_BITS(fExpectedAD | X86_PTE_D);
+
+                                    pPteWrk->pfnModify(pThis, iStore, pPteWrk, X86_PTE_D, X86_PTE_A);
+                                    ASMInvalidatePage((uintptr_t)pThis->pbTest + X86_PAGE_SIZE);
+                                    g_aAccessors[iAccessor].pfnAccessor(pThis, pCtx, fAccessor, X86_XCPT_UD, UINT8_MAX);
+                                    CHECK_AD_BITS(fExpectedAD | X86_PTE_A);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                bs3CpuBasic2Pf_RestoreFromBackups(pThis);
+            }
         }
     }
 
@@ -1397,6 +1553,23 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
     while (State.pCmnMode->bMode != (bMode & BS3_MODE_CODE_MASK))
         State.pCmnMode++;
     State.fUseInvlPg = (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80486;
+
+    /* Figure physical addressing width. */
+    State.cBitsPhysWidth = 32;
+    if (   (g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        && (ASMCpuId_EDX(1) & (X86_CPUID_FEATURE_EDX_PSE36 | X86_CPUID_FEATURE_EDX_PAE)) )
+        State.cBitsPhysWidth = 36;
+
+    if (   (g_uBs3CpuDetected & BS3CPU_F_CPUID_EXT_LEAVES)
+        && ASMCpuId_EAX(0x80000000) >= 0x80000008)
+    {
+        uint8_t cBits = (uint8_t)ASMCpuId_EAX(0x80000008);
+        if (cBits >= 32 && cBits <= 52)
+            State.cBitsPhysWidth = cBits;
+        else
+            Bs3TestPrintf("CPUID 0x80000008: Physical bitcount out of range: %u\n", cBits);
+    }
+    //Bs3TestPrintf("Physical bitcount: %u\n", State.cBitsPhysWidth);
 
     /*
      * Allocate a some memory we can play around with, then carve a size aligned
@@ -1459,7 +1632,7 @@ BS3_DECL_CALLBACK(uint8_t)  bs3CpuBasic2_RaiseXcpt0e_c32(uint8_t bMode)
                 uint32_t cr0 = ASMGetCR0();
 
                 /* Back up the structures. */
-                Bs3MemCpy(State.au64PteBackup, State.PgInfo.u.Legacy.pPte, State.cbPteBackup);
+                Bs3MemCpy(&State.PteBackup, State.PgInfo.u.Legacy.pPte, State.cbPteBackup);
                 Bs3MemCpy(State.au64PdeBackup, State.PgInfo.u.Legacy.pPde, State.cbPdeBackup);
                 if (State.PgInfo.cEntries > 2)
                     State.u64PdpteBackup = State.PgInfo.u.Pae.pPdpe->u;
