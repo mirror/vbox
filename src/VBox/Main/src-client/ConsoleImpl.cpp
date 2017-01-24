@@ -6576,6 +6576,14 @@ HRESULT Console::i_cancelSaveState()
 }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
+/**
+ * Sends audio (frame) data to the display's video capturing routines.
+ *
+ * @returns HRESULT
+ * @param   pvData              Audio data to send.
+ * @param   cbData              Size (in bytes) of audio data to send.
+ * @param   uTimestampMs        Time stamp (in ms) of audio data.
+ */
 HRESULT Console::i_audioVideoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
     if (mDisplay)
