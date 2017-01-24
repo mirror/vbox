@@ -917,7 +917,7 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSt
  * @param   tsNowMs             Current time stamp (in ms).
  */
 
-bool VideoRecLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs)
+bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs)
 {
     PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
     if (   !pStream
@@ -1046,6 +1046,15 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
     return VINF_SUCCESS;
 }
 
+/**
+ * Sends an audio frame to the video encoding thread.
+ *
+ * @returns IPRT status code.
+ * @param   pCtx                Pointer to the video recording context.
+ * @param   pvData              Audio frame data to send.
+ * @param   cbData              Size (in bytes) of audio frame data.
+ * @param   uTimestampMs        Time stamp (in ms) of audio playback.
+ */
 int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
     RT_NOREF(pCtx, pvData, cbData, uTimestampMs);
