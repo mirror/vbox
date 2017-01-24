@@ -28,17 +28,17 @@ int  VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx);
 void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx);
 
 int  VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
-                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps,
-                        uint32_t uMaxTime, uint32_t uMaxFileSize, const char *pszOptions);
+                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFPS,
+                        uint32_t uMaxTimeS, uint32_t uMaxFileSizeMB, const char *pszOptions);
 
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx);
 int  VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs);
 int  VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
-                            uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
-                            uint32_t uBytesPerLine, uint32_t uGuestWidth, uint32_t uGuestHeight,
-                            uint8_t *pu8BufferAddress, uint64_t u64TimeStampMs);
-bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStampMs);
-bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStampMs);
+                            uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBPP,
+                            uint32_t uBytesPerLine, uint32_t uSrcWidth, uint32_t uSrcHeight,
+                            uint8_t *puSrcData, uint64_t uTimeStampMs);
+bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs);
+bool VideoRecIsLimitReached(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t tsNowMs);
 
 #endif /* !____H_VIDEOREC */
 

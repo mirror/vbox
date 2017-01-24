@@ -126,6 +126,9 @@ typedef struct VIDEORECSTREAM
     /** Time stamp (in ms) of the current frame. */
     uint64_t            uCurTimeStampMs;
 
+    /** Whether the RGB buffer is filled or not. */
+    bool                fHasVideoData;
+
     struct
     {
         /** Target X resolution (in pixels). */
@@ -136,22 +139,17 @@ typedef struct VIDEORECSTREAM
         uint32_t            uSrcLastWidth;
         /** Y resolution of the last encoded frame. */
         uint32_t            uSrcLastHeight;
-        /** Current frame number. */
-        uint64_t            cFrame;
-        /** RGB buffer containing the most recent frame of the framebuffer. */
+        /** RGB buffer containing the most recent frame of Main's framebuffer. */
         uint8_t            *pu8RgbBuf;
         /** YUV buffer the encode function fetches the frame from. */
         uint8_t            *pu8YuvBuf;
-        /** Whether the RGB buffer is filled or not. */
-        bool                fRgbFilled;
         /** Pixel format of the current frame. */
         uint32_t            uPixelFormat;
-        /** Minimal delay between two frames. */
-        uint32_t            uDelay;
+        /** Minimal delay (in ms) between two frames. */
+        uint32_t            uDelayMs;
         /** Encoder deadline. */
         unsigned int        uEncoderDeadline;
     } Video;
-
 } VIDEORECSTREAM, *PVIDEORECSTREAM;
 
 /** Vector of video recording streams. */
@@ -176,6 +174,13 @@ typedef struct VIDEORECCONTEXT
     uint32_t            uMaxSizeMB;
     /** Vector of current video recording stream contexts. */
     VideoRecStreams     vecStreams;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    bool                fHasAudioData;
+    struct
+    {
+        uint8_t         buf[_64K];
+    } Audio;
+#endif
 } VIDEORECCONTEXT, *PVIDEORECCONTEXT;
 
 
@@ -460,16 +465,24 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         if (ASMAtomicReadU32(&g_enmState) == VIDEORECSTS_TERMINATING)
             break;
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        const bool fHasAudioData = ASMAtomicReadBool(&pCtx->fHasAudioData);
+#endif
+        /** @todo r=andy This is inefficient -- as we already wake up this thread
+         *               for every screen from Main, we here go again (on every wake up) through
+         *               all screens.  */
         for (VideoRecStreams::iterator it = pCtx->vecStreams.begin(); it != pCtx->vecStreams.end(); it++)
         {
             PVIDEORECSTREAM pStream = (*it);
 
-            if (   pStream->fEnabled
-                && ASMAtomicReadBool(&pStream->Video.fRgbFilled))
+            if (!pStream->fEnabled)
+                continue;
+
+            if (ASMAtomicReadBool(&pStream->fHasVideoData))
             {
                 rc = videoRecRGBToYUV(pStream);
 
-                ASMAtomicWriteBool(&pStream->Video.fRgbFilled, false);
+                ASMAtomicWriteBool(&pStream->fHasVideoData, false);
 
                 if (RT_SUCCESS(rc))
                     rc = videoRecEncodeAndWrite(pStream);
@@ -484,7 +497,20 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
                     }
                 }
             }
-        }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+            /* Each (enabled) screen has to get the audio data. */
+            if (fHasAudioData)
+            {
+                WebMWriter::BlockData_Opus blockData = { pCtx->Audio.buf,  };
+                rc = pStream->pEBML->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
+            }
+#endif
+        } /* for */
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        ASMAtomicWriteBool(&pCtx->fHasAudioData, false);
+#endif
     }
 
     return VINF_SUCCESS;
@@ -649,9 +675,9 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 /**
  * Retrieves a specific recording stream of a recording context.
  *
- * @returns Pointer to recording if found, or NULL if not found.
- * @param                       Recording context to look up stream for.
- * @param                       Screen number of recording stream to look up.
+ * @returns Pointer to recording stream if found, or NULL if not found.
+ * @param   pCtx                Recording context to look up stream for.
+ * @param   uScreen             Screen number of recording stream to look up.
  */
 DECLINLINE(PVIDEORECSTREAM) videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uScreen)
 {
@@ -800,7 +826,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         return rc;
     }
 
-    pStream->Video.uDelay = 1000 / uFPS;
+    pStream->Video.uDelayMs = 1000 / uFPS;
 
     if (fHasVideoTrack)
     {
@@ -862,8 +888,6 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pCtx->fEnabled = true;
     pStream->fEnabled = true;
 
-
-
     return VINF_SUCCESS;
 }
 
@@ -888,9 +912,9 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
  * @returns true if recording engine is ready
  * @param   pCtx                Pointer to video recording context.
  * @param   uScreen             Screen ID.
- * @param   u64TimeStampMs      Current time stamp (in ms).
+ * @param   uTimeStampMs        Current time stamp (in ms).
  */
-bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeStampMs)
+bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs)
 {
     uint32_t enmState = ASMAtomicReadU32(&g_enmState);
     if (enmState != VIDEORECSTS_IDLE)
@@ -903,10 +927,10 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSt
         return false;
     }
 
-    if (u64TimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelay)
+    if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelayMs)
         return false;
 
-    if (ASMAtomicReadBool(&pStream->Video.fRgbFilled))
+    if (ASMAtomicReadBool(&pStream->fHasVideoData))
         return false;
 
     return true;
@@ -970,7 +994,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     vpx_codec_err_t rcv = vpx_codec_encode(&pStream->Codec.VPX.CodecCtx,
                                            &pStream->Codec.VPX.RawImage,
                                            pts                           /* Time stamp */,
-                                           pStream->Video.uDelay               /* How long to show this frame */,
+                                           pStream->Video.uDelayMs               /* How long to show this frame */,
                                            0                             /* Flags */,
                                            pStream->Video.uEncoderDeadline     /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
@@ -1002,8 +1026,6 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
                 break;
         }
     }
-
-    pStream->Video.cFrame++;
 #else
     RT_NOREF(pStream);
     rc = VERR_NOT_SUPPORTED;
@@ -1015,7 +1037,7 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
  * VideoRec utility function to convert RGB to YUV.
  *
  * @returns IPRT status code.
- * @param   pStrm      Strm.
+ * @param   pStream             Recording stream to convert RGB to YUV video frame buffer for.
  */
 static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
 {
@@ -1054,6 +1076,8 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
 /**
  * Sends an audio frame to the video encoding thread.
  *
+ * @thread  EMT
+ *
  * @returns IPRT status code.
  * @param   pCtx                Pointer to the video recording context.
  * @param   pvData              Audio frame data to send.
@@ -1063,6 +1087,14 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
 int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
     RT_NOREF(pCtx, pvData, cbData, uTimestampMs);
+
+    /* To save time spent in EMT, do the required audio multiplexing in the encoding thread.
+     *
+     * The multiplexing is needed to supply all recorded (enabled) screens with the same
+     * audio data at the same given point in time.
+     */
+
+
     return VINF_SUCCESS;
 }
 
@@ -1083,7 +1115,7 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
  * @param   uSrcWidth          Width of the video frame.
  * @param   uSrcHeight         Height of the video frame.
  * @param   puSrcData          Pointer to video frame data.
- * @param   u64TimeStampMs     Time stamp (in ms).
+ * @param   uTimeStampMs       Time stamp (in ms).
  */
 int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, uint32_t y,
                            uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
@@ -1111,17 +1143,19 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
         if (!pStream->fEnabled)
         {
-            rc = VINF_TRY_AGAIN; /* not (yet) enabled */
+            rc = VINF_TRY_AGAIN; /* Not (yet) enabled. */
             break;
         }
-        if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelay)
+
+        if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelayMs)
         {
-            rc = VINF_TRY_AGAIN; /* respect maximum frames per second */
+            rc = VINF_TRY_AGAIN; /* Respect maximum frames per second. */
             break;
         }
-        if (ASMAtomicReadBool(&pStream->Video.fRgbFilled))
+
+        if (ASMAtomicReadBool(&pStream->fHasVideoData))
         {
-            rc = VERR_TRY_AGAIN; /* previous frame not yet encoded */
+            rc = VERR_TRY_AGAIN; /* Previous frame not yet encoded. */
             break;
         }
 
@@ -1129,7 +1163,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
         int xDiff = ((int)pStream->Video.uDstWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
-        if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
+        if ((int)w + xDiff + (int)x <= 0)  /* Nothing visible. */
         {
             rc = VERR_INVALID_PARAMETER;
             break;
@@ -1147,7 +1181,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
         uint32_t h = uSrcHeight;
         int yDiff = ((int)pStream->Video.uDstHeight - (int)uSrcHeight) / 2;
-        if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
+        if ((int)h + yDiff + (int)y <= 0)  /* Nothing visible. */
         {
             rc = VERR_INVALID_PARAMETER;
             break;
@@ -1166,7 +1200,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         if (   destX > pStream->Video.uDstWidth
             || destY > pStream->Video.uDstHeight)
         {
-            rc = VERR_INVALID_PARAMETER;  /* nothing visible */
+            rc = VERR_INVALID_PARAMETER;  /* Nothing visible. */
             break;
         }
 
@@ -1218,17 +1252,19 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         /* Do the copy. */
         for (unsigned int i = 0; i < h; i++)
         {
-            /* Overflow check */
+            /* Overflow check. */
             Assert(offSrc + w * bpp <= uSrcHeight * uBytesPerLine);
             Assert(offDst + w * bpp <= pStream->Video.uDstHeight * pStream->Video.uDstWidth * bpp);
+
             memcpy(pStream->Video.pu8RgbBuf + offDst, puSrcData + offSrc, w * bpp);
+
             offSrc += uBytesPerLine;
             offDst += pStream->Video.uDstWidth * bpp;
         }
 
         pStream->uCurTimeStampMs = uTimeStampMs;
 
-        ASMAtomicWriteBool(&pStream->Video.fRgbFilled, true);
+        ASMAtomicWriteBool(&pStream->fHasVideoData, true);
         RTSemEventSignal(pCtx->WaitEvent);
 
     } while (0);

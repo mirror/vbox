@@ -542,11 +542,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf2, uint32_t cbBuf2,
+                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
                                                     uint32_t *pcbWritten)
 {
-    RT_NOREF2(pvBuf2, cbBuf2);
-
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbWritten is optional. */
@@ -554,6 +552,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
     PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
+
+    RT_NOREF(pvBuf, cbBuf);
 
     uint32_t csLive = AudioMixBufUsed(&pStream->MixBuf);
     if (!csLive)
@@ -577,22 +577,22 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
     AssertPtr(pCircBuf);
 
-    void  *pvBuf;
-    size_t cbBuf;
+    void  *pvCircBuf;
+    size_t cbCircBuf;
 
     /*
      * Fetch as much as we can into our internal ring buffer.
      */
     while (RTCircBufFree(pCircBuf))
     {
-        RTCircBufAcquireWriteBlock(pCircBuf, RTCircBufFree(pCircBuf), &pvBuf, &cbBuf);
+        RTCircBufAcquireWriteBlock(pCircBuf, RTCircBufFree(pCircBuf), &pvCircBuf, &cbCircBuf);
 
         uint32_t cbRead = 0;
 
-        if (cbBuf)
+        if (cbCircBuf)
         {
             uint32_t csRead = 0;
-            rc = AudioMixBufReadCirc(&pStream->MixBuf, pvBuf, cbBuf, &csRead);
+            rc = AudioMixBufReadCirc(&pStream->MixBuf, pvCircBuf, cbCircBuf, &csRead);
             if (   RT_SUCCESS(rc)
                 && csRead)
             {
@@ -629,19 +629,19 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 
         while (cbSrc < cbFrame)
         {
-            RTCircBufAcquireReadBlock(pCircBuf, cbFrame - cbSrc, &pvBuf, &cbBuf);
+            RTCircBufAcquireReadBlock(pCircBuf, cbFrame - cbSrc, &pvCircBuf, &cbCircBuf);
 
-            if (cbBuf)
+            if (cbCircBuf)
             {
-                memcpy(&abSrc[cbSrc], pvBuf, cbBuf);
+                memcpy(&abSrc[cbSrc], pvCircBuf, cbCircBuf);
 
-                cbSrc += cbBuf;
+                cbSrc += cbCircBuf;
                 Assert(cbSrc <= sizeof(abSrc));
             }
 
-            RTCircBufReleaseReadBlock(pCircBuf, cbBuf);
+            RTCircBufReleaseReadBlock(pCircBuf, cbCircBuf);
 
-            if (!cbBuf)
+            if (!cbCircBuf)
                 break;
         }
 
