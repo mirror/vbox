@@ -916,7 +916,6 @@ $(VBOX_CORE_DOXYFILE_OUTPUT)/docs.Core: $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Co
                -e '/^ *$(DOLLAR)/d' \
                -e '/\/src\/VBox\/Main\/.* warning: documented symbol.*::~.* was not declared or defined/b ignore' \
                -e '/\/src\/VBox\/Main\/.* warning: explicit link request to.* could not be resolved/b ignore' \
-               -e '/\/src\/VBox\/Additions\/WINNT\/VBoxTray\/VBoxDispIf\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/common\/crOpenGL\/.* warning/b ignore' \
                -e '/\/src\/VBox\/Additions\/x11\/VBoxClient\/seamless-x11\.h.* warning/b ignore' \
                -e '/\/src\/VBox\/HostDrivers\/Support\/win\/SUPR3HardenedMain-win\.cpp.* warning/b ignore' \
