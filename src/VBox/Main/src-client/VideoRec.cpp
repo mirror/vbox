@@ -57,8 +57,8 @@ enum VIDEORECSTS
     VIDEORECSTS_UNINITIALIZED = 0,
     /** Initialized, idle. */
     VIDEORECSTS_IDLE          = 1,
-    /** Currently in VideoRecCopyToIntBuf(), delay termination. */
-    VIDEORECSTS_COPYING       = 2,
+    /** Currently busy, delay termination. */
+    VIDEORECSTS_BUSY          = 2,
     /** Signal that we are terminating. */
     VIDEORECSTS_TERMINATING   = 3
 };
@@ -109,8 +109,10 @@ typedef struct VIDEORECSTREAM
 {
     /** Container context. */
     WebMWriter         *pEBML;
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
     /** Track number of audio stream. */
     uint8_t             uTrackAudio;
+#endif
     /** Track number of video stream. */
     uint8_t             uTrackVideo;
     /** Codec data. */
@@ -587,7 +589,7 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
             return;
     }
 
-    if (enmState == VIDEORECSTS_COPYING)
+    if (enmState == VIDEORECSTS_BUSY)
     {
         int rc = RTSemEventWait(pCtx->TermEvent, RT_INDEFINITE_WAIT);
         AssertRC(rc);
@@ -803,17 +805,22 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             LogRel(("VideoRec: Failed to add video track to output file '%s' (%Rrc)\n", pszFile, rc));
             return rc;
         }
+
+        LogRel(("VideoRec: Recording screen #%u with %ux%u @ %u kbps, %u fps to '%s'\n",
+                uScreen, uWidth, uHeight, uRate, uFPS, pszFile));
     }
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     if (fHasAudioTrack)
     {
-        rc = pStream->pEBML->AddAudioTrack(48000, 2, 16, &pStream->uTrackAudio);
+        rc = pStream->pEBML->AddAudioTrack(48000, 2, 16, &pStream->uTrackAudio); /** @todo Make this configurable. */
         if (RT_FAILURE(rc))
         {
             LogRel(("VideoRec: Failed to add audio track to output file '%s' (%Rrc)\n", pszFile, rc));
             return rc;
         }
+
+        LogRel(("VideoRec: Recording audio enabled\n"));
     }
 #endif
 
@@ -850,8 +857,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pCtx->fEnabled = true;
     pStream->fEnabled = true;
 
-    LogRel(("VideoRec: Recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' started\n",
-            uScreen, uWidth, uHeight, uRate, uFPS, pszFile));
+
 
     return VINF_SUCCESS;
 }
@@ -867,7 +873,7 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
     RT_NOREF(pCtx);
     uint32_t enmState = ASMAtomicReadU32(&g_enmState);
     return (   enmState == VIDEORECSTS_IDLE
-            || enmState == VIDEORECSTS_COPYING);
+            || enmState == VIDEORECSTS_BUSY);
 }
 
 /**
@@ -1047,7 +1053,7 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
 }
 
 /**
- * VideoRec utility function to copy a source image (FrameBuf) to the intermediate
+ * VideoRec utility function to copy a source video frame to the intermediate
  * RGB buffer. This function is executed only once per time.
  *
  * @thread  EMT
@@ -1055,23 +1061,23 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
  * @returns IPRT status code.
  * @param   pCtx               Pointer to the video recording context.
  * @param   uScreen            Screen number.
- * @param   x                  Starting x coordinate of the source buffer (Framebuffer).
- * @param   y                  Starting y coordinate of the source buffer (Framebuffer).
- * @param   uPixelFormat       Pixel Format.
- * @param   uBitsPerPixel      Bits Per Pixel
- * @param   uBytesPerLine      Bytes per source scanlineName.
- * @param   uSrcWidth          Width of the source frame.
- * @param   uSrcHeight         Height of the source frame.
- * @param   puSrcData          Pointer to source frame data.
+ * @param   x                  Starting x coordinate of the video frame.
+ * @param   y                  Starting y coordinate of the video frame.
+ * @param   uPixelFormat       Pixel format.
+ * @param   uBPP               Bits Per Pixel (BPP).
+ * @param   uBytesPerLine      Bytes per scanline.
+ * @param   uSrcWidth          Width of the video frame.
+ * @param   uSrcHeight         Height of the video frame.
+ * @param   puSrcData          Pointer to video frame data.
  * @param   u64TimeStampMs     Time stamp (in ms).
  */
 int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, uint32_t y,
-                           uint32_t uPixelFormat, uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
+                           uint32_t uPixelFormat, uint32_t uBPP, uint32_t uBytesPerLine,
                            uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
                            uint64_t uTimeStampMs)
 {
     /* Do not execute during termination and guard against termination */
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_COPYING, VIDEORECSTS_IDLE))
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
         return VINF_TRY_AGAIN;
 
     int rc = VINF_SUCCESS;
@@ -1160,7 +1166,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         uint32_t bpp = 1;
         if (uPixelFormat == BitmapFormat_BGR)
         {
-            switch (uBitsPerPixel)
+            switch (uBPP)
             {
                 case 32:
                     pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB32;
@@ -1175,7 +1181,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
                     bpp = 2;
                     break;
                 default:
-                    AssertMsgFailed(("Unknown color depth! mBitsPerPixel=%d\n", uBitsPerPixel));
+                    AssertMsgFailed(("Unknown color depth! mBitsPerPixel=%d\n", uBPP));
                     break;
             }
         }
@@ -1211,7 +1217,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         RTSemEventSignal(pCtx->WaitEvent);
     } while (0);
 
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_IDLE, VIDEORECSTS_COPYING))
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_IDLE, VIDEORECSTS_BUSY))
     {
         rc = RTSemEventSignal(pCtx->TermEvent);
         AssertRC(rc);
