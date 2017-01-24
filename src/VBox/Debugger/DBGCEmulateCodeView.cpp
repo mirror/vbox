@@ -4420,11 +4420,11 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             else
                 DBGCCmdHlpPrintf(pCmdHlp, "TSS64 at %Dv (min=%04x)\n", &VarTssAddr, cbTssMin);
             DBGCCmdHlpPrintf(pCmdHlp,
-                             "rsp0=%016RX16 rsp1=%016RX16 rsp2=%016RX16\n"
-                             "ist1=%016RX16 ist2=%016RX16\n"
-                             "ist3=%016RX16 ist4=%016RX16\n"
-                             "ist5=%016RX16 ist6=%016RX16\n"
-                             "ist7=%016RX16 iomap=%04x\n"
+                             "rsp0=%016RX64 rsp1=%016RX64 rsp2=%016RX64\n"
+                             "ist1=%016RX64 ist2=%016RX64\n"
+                             "ist3=%016RX64 ist4=%016RX64\n"
+                             "ist5=%016RX64 ist6=%016RX64\n"
+                             "ist7=%016RX64 iomap=%04x\n"
                              ,
                              pTss->rsp0, pTss->rsp1, pTss->rsp2,
                              pTss->ist1, pTss->ist2,
