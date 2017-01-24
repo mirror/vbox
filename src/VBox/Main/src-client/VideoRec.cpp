@@ -118,13 +118,13 @@ typedef struct VIDEORECSTREAM
     /** Screen ID. */
     uint16_t            uScreen;
     /** Target X resolution (in pixels). */
-    uint32_t            uTargetWidth;
+    uint32_t            uDstWidth;
     /** Target Y resolution (in pixels). */
-    uint32_t            uTargetHeight;
+    uint32_t            uDstHeight;
     /** X resolution of the last encoded frame. */
-    uint32_t            uLastSourceWidth;
+    uint32_t            uSrcLastWidth;
     /** Y resolution of the last encoded frame. */
-    uint32_t            uLastSourceHeight;
+    uint32_t            uSrcLastHeight;
     /** Current frame number. */
     uint64_t            cFrame;
     /** RGB buffer containing the most recent frame of the framebuffer. */
@@ -698,8 +698,8 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pCtx->uMaxTimeMs = (uMaxTimeS > 0 ? RTTimeProgramMilliTS() + uMaxTimeS * 1000 : 0);
     pCtx->uMaxSizeMB = uMaxSizeMB;
 
-    pStream->uTargetWidth  = uWidth;
-    pStream->uTargetHeight = uHeight;
+    pStream->uDstWidth  = uWidth;
+    pStream->uDstHeight = uHeight;
     pStream->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pStream->pu8RgbBuf, VERR_NO_MEMORY);
 
@@ -1012,24 +1012,24 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
     {
         case VIDEORECPIXELFMT_RGB32:
             LogFlow(("32 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStrm->uTargetWidth,
-                                                            pStrm->uTargetHeight,
+            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStrm->uDstWidth,
+                                                            pStrm->uDstHeight,
                                                             pStrm->pu8YuvBuf,
                                                             pStrm->pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB24:
             LogFlow(("24 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStrm->uTargetWidth,
-                                                           pStrm->uTargetHeight,
+            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStrm->uDstWidth,
+                                                           pStrm->uDstHeight,
                                                            pStrm->pu8YuvBuf,
                                                            pStrm->pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB565:
             LogFlow(("565 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStrm->uTargetWidth,
-                                                            pStrm->uTargetHeight,
+            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStrm->uDstWidth,
+                                                            pStrm->uDstHeight,
                                                             pStrm->pu8YuvBuf,
                                                             pStrm->pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
@@ -1040,7 +1040,7 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
     return VINF_SUCCESS;
 }
 
-int VideoRecSendAudio(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
+int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
 {
     RT_NOREF(pCtx, pvData, cbData, uTimestampMs);
     return VINF_SUCCESS;
@@ -1060,15 +1060,15 @@ int VideoRecSendAudio(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, 
  * @param   uPixelFormat       Pixel Format.
  * @param   uBitsPerPixel      Bits Per Pixel
  * @param   uBytesPerLine      Bytes per source scanlineName.
- * @param   uSourceWidth       Width of the source image (framebuffer).
- * @param   uSourceHeight      Height of the source image (framebuffer).
- * @param   pu8BufAddr         Pointer to source image(framebuffer).
+ * @param   uSrcWidth          Width of the source frame.
+ * @param   uSrcHeight         Height of the source frame.
+ * @param   puSrcData          Pointer to source frame data.
  * @param   u64TimeStampMs     Time stamp (in ms).
  */
-int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, uint32_t y,
-                         uint32_t uPixelFormat, uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
-                         uint32_t uSourceWidth, uint32_t uSourceHeight, uint8_t *pu8BufAddr,
-                         uint64_t uTimeStampMs)
+int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, uint32_t y,
+                           uint32_t uPixelFormat, uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
+                           uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
+                           uint64_t uTimeStampMs)
 {
     /* Do not execute during termination and guard against termination */
     if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_COPYING, VIDEORECSTS_IDLE))
@@ -1077,10 +1077,10 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
     int rc = VINF_SUCCESS;
     do
     {
-        AssertPtrBreakStmt(pCtx,       rc = VERR_INVALID_POINTER);
-        AssertPtrBreakStmt(pu8BufAddr, rc = VERR_INVALID_POINTER);
-        AssertBreakStmt(uSourceWidth,  rc = VERR_INVALID_PARAMETER);
-        AssertBreakStmt(uSourceHeight, rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(pCtx,      rc = VERR_INVALID_POINTER);
+        AssertBreakStmt(uSrcWidth,    rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uSrcHeight,   rc = VERR_INVALID_PARAMETER);
+        AssertPtrBreakStmt(puSrcData, rc = VERR_INVALID_POINTER);
 
         PVIDEORECSTREAM pStream = videoRecStreamGet(pCtx, uScreen);
         if (!pStream)
@@ -1107,8 +1107,8 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
 
         pStream->uLastTimeStampMs = uTimeStampMs;
 
-        int xDiff = ((int)pStream->uTargetWidth - (int)uSourceWidth) / 2;
-        uint32_t w = uSourceWidth;
+        int xDiff = ((int)pStream->uDstWidth - (int)uSrcWidth) / 2;
+        uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1125,8 +1125,8 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
         else
             destX = x + xDiff;
 
-        uint32_t h = uSourceHeight;
-        int yDiff = ((int)pStream->uTargetHeight - (int)uSourceHeight) / 2;
+        uint32_t h = uSrcHeight;
+        int yDiff = ((int)pStream->uDstHeight - (int)uSrcHeight) / 2;
         if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1143,18 +1143,18 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
         else
             destY = y + yDiff;
 
-        if (   destX > pStream->uTargetWidth
-            || destY > pStream->uTargetHeight)
+        if (   destX > pStream->uDstWidth
+            || destY > pStream->uDstHeight)
         {
             rc = VERR_INVALID_PARAMETER;  /* nothing visible */
             break;
         }
 
-        if (destX + w > pStream->uTargetWidth)
-            w = pStream->uTargetWidth - destX;
+        if (destX + w > pStream->uDstWidth)
+            w = pStream->uDstWidth - destX;
 
-        if (destY + h > pStream->uTargetHeight)
-            h = pStream->uTargetHeight - destY;
+        if (destY + h > pStream->uDstHeight)
+            h = pStream->uDstHeight - destY;
 
         /* Calculate bytes per pixel */
         uint32_t bpp = 1;
@@ -1184,25 +1184,25 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
 
         /* One of the dimensions of the current frame is smaller than before so
          * clear the entire buffer to prevent artifacts from the previous frame */
-        if (   uSourceWidth  < pStream->uLastSourceWidth
-            || uSourceHeight < pStream->uLastSourceHeight)
-            memset(pStream->pu8RgbBuf, 0, pStream->uTargetWidth * pStream->uTargetHeight * 4);
+        if (   uSrcWidth  < pStream->uSrcLastWidth
+            || uSrcHeight < pStream->uSrcLastHeight)
+            memset(pStream->pu8RgbBuf, 0, pStream->uDstWidth * pStream->uDstHeight * 4);
 
-        pStream->uLastSourceWidth  = uSourceWidth;
-        pStream->uLastSourceHeight = uSourceHeight;
+        pStream->uSrcLastWidth  = uSrcWidth;
+        pStream->uSrcLastHeight = uSrcHeight;
 
         /* Calculate start offset in source and destination buffers */
         uint32_t offSrc = y * uBytesPerLine + x * bpp;
-        uint32_t offDst = (destY * pStream->uTargetWidth + destX) * bpp;
+        uint32_t offDst = (destY * pStream->uDstWidth + destX) * bpp;
         /* do the copy */
         for (unsigned int i = 0; i < h; i++)
         {
             /* Overflow check */
-            Assert(offSrc + w * bpp <= uSourceHeight * uBytesPerLine);
-            Assert(offDst + w * bpp <= pStream->uTargetHeight * pStream->uTargetWidth * bpp);
-            memcpy(pStream->pu8RgbBuf + offDst, pu8BufAddr + offSrc, w * bpp);
+            Assert(offSrc + w * bpp <= uSrcHeight * uBytesPerLine);
+            Assert(offDst + w * bpp <= pStream->uDstHeight * pStream->uDstWidth * bpp);
+            memcpy(pStream->pu8RgbBuf + offDst, puSrcData + offSrc, w * bpp);
             offSrc += uBytesPerLine;
-            offDst += pStream->uTargetWidth * bpp;
+            offDst += pStream->uDstWidth * bpp;
         }
 
         pStream->uCurTimeStampMs = uTimeStampMs;

@@ -2300,7 +2300,7 @@ int Display::i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t
     if (!VideoRecIsEnabled(mpVideoRecCtx))
         return VINF_SUCCESS;
 
-    return VideoRecSendAudio(mpVideoRecCtx, pvData, cbData, uTimestampMs);
+    return VideoRecSendAudioFrame(mpVideoRecCtx, pvData, cbData, uTimestampMs);
 #else
     RT_NOREF(pvData, cbData, uTimestampMs);
     return VERR_NOT_SUPPORTED;
@@ -3240,10 +3240,10 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
                                                                     &ulBytesPerLine,
                                                                     &bitmapFormat);
                         if (SUCCEEDED(hr) && pbAddress)
-                            rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
-                                                      BitmapFormat_BGR,
-                                                      ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight,
-                                                      pbAddress, u64Now);
+                            rc = VideoRecSendVideoFrame(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                                        BitmapFormat_BGR,
+                                                        ulBitsPerPixel, ulBytesPerLine, ulWidth, ulHeight,
+                                                        pbAddress, u64Now);
                         else
                             rc = VERR_NOT_SUPPORTED;
 
@@ -3628,11 +3628,11 @@ void  Display::i_handleCrVRecScreenshotPerform(uint32_t uScreen,
 {
     Assert(mfCrOglVideoRecState == CRVREC_STATE_SUBMITTED);
 # ifdef VBOX_WITH_VIDEOREC
-    int rc = VideoRecCopyToIntBuf(mpVideoRecCtx, uScreen, x, y,
-                                  uPixelFormat,
-                                  uBitsPerPixel, uBytesPerLine,
-                                  uGuestWidth, uGuestHeight,
-                                  pu8BufferAddress, u64Timestamp);
+    int rc = VideoRecSendVideoFrame(mpVideoRecCtx, uScreen, x, y,
+                                    uPixelFormat,
+                                    uBitsPerPixel, uBytesPerLine,
+                                    uGuestWidth, uGuestHeight,
+                                    pu8BufferAddress, u64Timestamp);
     NOREF(rc);
     Assert(rc == VINF_SUCCESS /* || rc == VERR_TRY_AGAIN || rc == VINF_TRY_AGAIN*/);
 # else
