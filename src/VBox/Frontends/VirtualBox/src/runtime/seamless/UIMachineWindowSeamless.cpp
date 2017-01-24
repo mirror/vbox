@@ -51,6 +51,9 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     , m_pMiniToolBar(0)
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     , m_fWasMinimized(false)
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+    , m_fIsMinimized(false)
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 {
 }
 
@@ -296,6 +299,46 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
     }
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::WindowStateChange:
+        {
+            /* Watch for window state changes: */
+            QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
+            LogRel2(("GUI: UIMachineWindowSeamless::changeEvent: Window state changed from %d to %d\n",
+                     (int)pChangeEvent->oldState(), (int)windowState()));
+            if (   windowState() == Qt::WindowMinimized
+                && pChangeEvent->oldState() == Qt::WindowNoState
+                && !m_fIsMinimized)
+            {
+                /* Mark window minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                LogRel2(("GUI: UIMachineWindowSeamless::changeEvent: Window minimized\n"));
+                m_fIsMinimized = true;
+            }
+            else
+            if (   windowState() == Qt::WindowNoState
+                && pChangeEvent->oldState() == Qt::WindowMinimized
+                && m_fIsMinimized)
+            {
+                /* Mark window restored, and do manual restoring with showInNecessaryMode(): */
+                LogRel2(("GUI: UIMachineWindowSeamless::changeEvent: Window restored\n"));
+                m_fIsMinimized = false;
+                showInNecessaryMode();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    UIMachineWindow::changeEvent(pEvent);
+}
+#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
 
 #ifdef VBOX_WS_WIN
 # if QT_VERSION >= 0x050000
