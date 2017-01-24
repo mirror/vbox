@@ -165,6 +165,7 @@ int USBProxyBackendOs2::releaseDevice(HostUSBDevice *aDevice)
 }
 
 
+#if 0
 bool USBProxyBackendOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBDevice, bool *aRunFilters,
                                            SessionMachine **aIgnoreMachine)
 {
@@ -172,6 +173,7 @@ bool USBProxyBackendOs2::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aU
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), false);
     return updateDeviceStateFake(aDevice, aUSBDevice, aRunFilters, aIgnoreMachine);
 }
+#endif
 
 
 

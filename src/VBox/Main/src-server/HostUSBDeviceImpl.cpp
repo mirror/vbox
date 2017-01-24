@@ -1139,7 +1139,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
     const USBDEVICESTATE enmOldState = mUsb->enmState; NOREF(enmOldState);
     if (mUsb != aDev)
     {
-#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+#if defined(RT_OS_WINDOWS)
         /* we used this logic of string comparison in HostUSBDevice::compare
          * now we need to preserve strings from the old device if the new device has zero strings
          * this ensures the device is correctly matched later on
@@ -1195,10 +1195,10 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
         mUsb = aDev;
     }
 
-/** @def HOSTUSBDEVICE_FUZZY_STATE
+/*
  * Defined on hosts where we have a driver that keeps proper device states.
  */
-# if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
+# if defined(RT_OS_LINUX)
 #  define HOSTUSBDEVICE_FUZZY_STATE 1
 # else
 #  undef  HOSTUSBDEVICE_FUZZY_STATE
