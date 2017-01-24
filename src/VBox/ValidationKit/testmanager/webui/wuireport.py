@@ -288,7 +288,7 @@ class WuiReportFailuresBase(WuiReportBase):
                        '&#x25bc;' if iPeriod == iSortColumn else '');
         if fWithTotals:
             sHtml += u'<th colspan="%d"><a href="javascript:ahrefActionSortByColumns(\'%s\',[%s]);">Total</a>%s</th>' \
-                   % ( cColsPerSeries, self._oDisp.ksParamSortColumns, iPeriod,
+                   % ( cColsPerSeries, self._oDisp.ksParamSortColumns, len(oSet.aoPeriods),
                        '&#x25bc;' if iSortColumn == len(oSet.aoPeriods) else '');
         sHtml += u'</thead></td>\n';
 
