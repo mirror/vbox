@@ -842,7 +842,8 @@ int main(int argc, char **argv)
             sigaction(SIGINT, &sa, NULL);
             sigaction(SIGQUIT, &sa, NULL);
             sigaction(SIGTERM, &sa, NULL);
-            sigaction(SIGTRAP, &sa, NULL);
+// XXX Temporary allow release assertions to terminate VBoxSVC
+//            sigaction(SIGTRAP, &sa, NULL);
             sigaction(SIGUSR1, &sa, NULL);
         }
 
