@@ -682,7 +682,11 @@ class TestBoxLogic(ModelLogicBase):
     kiSortColumn_fCpuNestedPaging   = 10;
     kiSortColumn_iTestBoxScriptRev  = 11;
     kiSortColumn_iPythonHexVersion  = 12;
-    kcMaxSortColumns                = 13;
+    kiSortColumn_enmPendingCmd      = 13;
+    kiSortColumn_fEnabled           = 14;
+    kiSortColumn_enmState           = 15;
+    kiSortColumn_tsUpdated          = 16;
+    kcMaxSortColumns                = 17;
     kdSortColumnMap                 = {
         0:                               'TestBoxesWithStrings.sName',
         kiSortColumn_sName:              'TestBoxesWithStrings.sName',
@@ -709,6 +713,14 @@ class TestBoxLogic(ModelLogicBase):
         -kiSortColumn_iTestBoxScriptRev: 'TestBoxesWithStrings.iTestBoxScriptRev DESC',
         kiSortColumn_iPythonHexVersion:  'TestBoxesWithStrings.iPythonHexVersion',
         -kiSortColumn_iPythonHexVersion: 'TestBoxesWithStrings.iPythonHexVersion DESC',
+        kiSortColumn_enmPendingCmd:      'TestBoxesWithStrings.enmPendingCmd',
+        -kiSortColumn_enmPendingCmd:     'TestBoxesWithStrings.enmPendingCmd DESC',
+        kiSortColumn_fEnabled:           'TestBoxesWithStrings.fEnabled',
+        -kiSortColumn_fEnabled:          'TestBoxesWithStrings.fEnabled DESC',
+        kiSortColumn_enmState:           'TestBoxStatuses.enmState',
+        -kiSortColumn_enmState:          'TestBoxStatuses.enmState DESC',
+        kiSortColumn_tsUpdated:          'TestBoxStatuses.tsUpdated',
+        -kiSortColumn_tsUpdated:         'TestBoxStatuses.tsUpdated DESC',
     };
 
     def __init__(self, oDb):

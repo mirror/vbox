@@ -195,8 +195,8 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         self._aaiColumnSorting.extend([
             (TestBoxLogic.kiSortColumn_sName,),
             None, # LOM
-            None, # Status
-            None, # Cmd
+            (-TestBoxLogic.kiSortColumn_fEnabled, TestBoxLogic.kiSortColumn_enmState, -TestBoxLogic.kiSortColumn_tsUpdated,),
+            (TestBoxLogic.kiSortColumn_enmPendingCmd,),
             None, # Note
             (TestBoxLogic.kiSortColumn_iTestBoxScriptRev,),
             (TestBoxLogic.kiSortColumn_iPythonHexVersion,),
