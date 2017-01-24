@@ -697,7 +697,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 
                 case AVRECCONTAINERTYPE_WEBM:
                 {
-                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
+                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst, RTTimeMilliTS() };
                     rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
                     AssertRC(rc);
 

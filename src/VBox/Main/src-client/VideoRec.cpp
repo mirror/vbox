@@ -517,7 +517,8 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
         } /* for */
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-        ASMAtomicWriteBool(&pCtx->fHasAudioData, false);
+        if (fHasAudioData)
+            ASMAtomicWriteBool(&pCtx->fHasAudioData, false);
 #endif
     }
 
@@ -906,8 +907,11 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
  */
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 {
-    RT_NOREF(pCtx);
+    if (!pCtx)
+        return false;
+
     uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
+
     return (   enmState == VIDEORECSTS_IDLE
             || enmState == VIDEORECSTS_BUSY);
 }
@@ -923,6 +927,8 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
  */
 bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs)
 {
+    AssertPtrReturn(pCtx, false);
+
     uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
     if (enmState != VIDEORECSTS_IDLE)
         return false;
@@ -1117,6 +1123,8 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
         return VERR_TRY_AGAIN; /* Previous frame not yet encoded. */
 
     memcpy(pCtx->Audio.abBuf, pvData, RT_MIN(_64K, cbData));
+
+    pCtx->Audio.cbBuf        = cbData;
     pCtx->Audio.uTimeStampMs = uTimeStampMs;
 
     ASMAtomicWriteBool(&pCtx->fHasAudioData, true);
