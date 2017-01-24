@@ -939,14 +939,25 @@ class WuiListContentBase(WuiContentBase):
                        '</div>\n';
         return sNavigation;
 
-    def _isSortingByColumnAscending(self, aiColumns):
-        """ Checks if we're already sorting by this column in ascending order """
-        # Just compare the first sorting column spec for now.
-        #if self._aiSelectedSortColumns is not None and len(aiColumns) <= len(self._aiSelectedSortColumns):
-        if  len(aiColumns) <= len(self._aiSelectedSortColumns):
-            if list(aiColumns) == list(self._aiSelectedSortColumns[:len(aiColumns)]):
-                return True;
-        return False;
+    def _checkSortingByColumnAscending(self, aiColumns):
+        """
+        Checks if we're sorting by this column.
+
+        Returns 0 if not sorting by this, negative if descending, positive if ascending.  The
+        value indicates the priority (nearer to 0 is higher).
+        """
+        if len(aiColumns) <= len(self._aiSelectedSortColumns):
+            aiColumns    = list(aiColumns);
+            aiNegColumns = list([-i for i in aiColumns]);
+            i = 0;
+            while i + len(aiColumns) <= len(self._aiSelectedSortColumns):
+                aiSub = list(self._aiSelectedSortColumns[i : i + len(aiColumns)]);
+                if aiSub == aiColumns:
+                    return 1 + i;
+                if aiSub == aiNegColumns:
+                    return -1 - i;
+                i += 1;
+        return 0;
 
     def _generateTableHeaders(self):
         """
@@ -961,13 +972,18 @@ class WuiListContentBase(WuiContentBase):
                 sHtml += '<th>' + oHeader.toHtml() + '</th>';
             elif iHeader < len(self._aaiColumnSorting) and self._aaiColumnSorting[iHeader] is not None:
                 sHtml += '<th>'
-                if not self._isSortingByColumnAscending(self._aaiColumnSorting[iHeader]):
-                    sSortParams = ','.join([str(i) for i in self._aaiColumnSorting[iHeader]]);
-                else:
+                iSorting = self._checkSortingByColumnAscending(self._aaiColumnSorting[iHeader]);
+                if iSorting > 0:
+                    sDirection  = '&nbsp;&#x25b4;' if iSorting == 1  else '<small>&nbsp;&#x25b5;</small>';
                     sSortParams = ','.join([str(-i) for i in self._aaiColumnSorting[iHeader]]);
+                else:
+                    sDirection = '';
+                    if iSorting < 0:
+                        sDirection  = '&nbsp;&#x25be;' if iSorting == -1 else '<small>&nbsp;&#x25bf;</small>'
+                    sSortParams = ','.join([str(i) for i in self._aaiColumnSorting[iHeader]]);
                 sHtml += '<a href="javascript:ahrefActionSortByColumns(\'%s\',[%s]);">' \
                        % (WuiDispatcherBase.ksParamSortColumns, sSortParams);
-                sHtml += webutils.escapeElem(oHeader) + '</a></th>';
+                sHtml += webutils.escapeElem(oHeader) + '</a>' + sDirection +  '</th>';
             else:
                 sHtml += '<th>' + webutils.escapeElem(oHeader) + '</th>';
         sHtml += '</tr><thead>\n';
