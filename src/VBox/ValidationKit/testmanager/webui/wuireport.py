@@ -66,12 +66,13 @@ class WuiReportBase(WuiContentBase):
     Base class for the reports.
     """
 
-    def __init__(self, oModel, dParams, fSubReport = False, fnDPrint = None, oDisp = None):
+    def __init__(self, oModel, dParams, fSubReport = False, aiSortColumns = None, fnDPrint = None, oDisp = None):
         WuiContentBase.__init__(self, fnDPrint = fnDPrint, oDisp = oDisp);
         self._oModel        = oModel;
         self._dParams       = dParams;
         self._fSubReport    = fSubReport;
         self._sTitle        = None;
+        self._aiSortColumns = aiSortColumns;
 
         # Additional URL parameters for reports
         self._dExtraParams  = {};
@@ -282,11 +283,13 @@ class WuiReportFailuresBase(WuiReportBase):
         sHtml += u' <tr><thead><th>#</th>';
         sHtml += self._formatSeriesNameColumnHeadersForTable();
         for iPeriod, oPeriod in enumerate(reversed(oSet.aoPeriods)):
-            sHtml += u'<th colspan="%d">%s%s</th>' % ( cColsPerSeries, webutils.escapeElem(oPeriod.sDesc),
-                                                       '&#x25bc;' if iPeriod == iSortColumn else '');
+            sHtml += u'<th colspan="%d"><a href="javascript:ahrefActionSortByColumns(\'%s\',[%s]);">%s</a>%s</th>' \
+                   % ( cColsPerSeries, self._oDisp.ksParamSortColumns, iPeriod, webutils.escapeElem(oPeriod.sDesc),
+                       '&#x25bc;' if iPeriod == iSortColumn else '');
         if fWithTotals:
-            sHtml += u'<th colspan="%d">Total%s</th>' % (cColsPerSeries,
-                                                         '&#x25bc;' if iSortColumn == len(oSet.aoPeriods) else '');
+            sHtml += u'<th colspan="%d"><a href="javascript:ahrefActionSortByColumns(\'%s\',[%s]);">Total</a>%s</th>' \
+                   % ( cColsPerSeries, self._oDisp.ksParamSortColumns, iPeriod,
+                       '&#x25bc;' if iSortColumn == len(oSet.aoPeriods) else '');
         sHtml += u'</thead></td>\n';
 
         # Each data series.
@@ -319,30 +322,36 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
         """
         return str(oSubject);
 
-    def _getSortedIds(self, oSet, fByTotal = None):
+    def _getSortedIds(self, oSet):
         """
         Get default sorted subject IDs and which column.
         """
 
-        if fByTotal is None:
-            fByTotal = oSet.cMaxTotal < 10;
+        # Figure the sorting column.
+        if self._aiSortColumns is not None \
+          and len(self._aiSortColumns) > 0 \
+          and abs(self._aiSortColumns[0]) <= len(oSet.aoPeriods):
+            iSortColumn = abs(self._aiSortColumns[0]);
+            fByTotal = iSortColumn >= len(oSet.aoPeriods);
+        elif oSet.cMaxTotal < 10:
+            iSortColumn = len(oSet.aoPeriods);
+        else:
+            iSortColumn = 0;
 
-        if fByTotal is True:
+        if iSortColumn >= len(oSet.aoPeriods):
             # Sort the total.
             aidSortedRaw = sorted(oSet.dSubjects,
                                   key = lambda idKey: oSet.dcHitsPerId[idKey] * 10000 / oSet.dcTotalPerId[idKey],
                                   reverse = True);
-            iColumn = len(oSet.aoPeriods);
         else:
             # Sort by NOW column.
             dTmp = {};
             for idKey in oSet.dSubjects:
-                oRow = oSet.aoPeriods[-1].dRowsById.get(idKey, None);
+                oRow = oSet.aoPeriods[-1 - iSortColumn].dRowsById.get(idKey, None);
                 if oRow is None:    dTmp[idKey] = 0;
                 else:               dTmp[idKey] = oRow.cHits * 10000 / max(1, oRow.cTotal);
             aidSortedRaw = sorted(dTmp, key = lambda idKey: dTmp[idKey], reverse = True);
-            iColumn = 0;
-        return (aidSortedRaw, iColumn);
+        return (aidSortedRaw, iSortColumn);
 
     def _generateGraph(self, oSet, sIdBase, aidSortedRaw):
         """
@@ -628,15 +637,20 @@ class WuiReportSummary(WuiReportBase):
         aoReports = [];
 
         aoReports.append(WuiReportSuccessRate(     self._oModel, self._dParams, fSubReport = True,
+                                                   aiSortColumns = self._aiSortColumns,
                                                    fnDPrint = self._fnDPrint, oDisp = self._oDisp));
         aoReports.append(WuiReportTestCaseFailures(self._oModel, self._dParams, fSubReport = True,
+                                                   aiSortColumns = self._aiSortColumns,
                                                    fnDPrint = self._fnDPrint, oDisp = self._oDisp));
         if self._oModel.sSubject == ReportModelBase.ksSubTestCase:
             aoReports.append(WuiReportTestCaseArgsFailures(self._oModel, self._dParams, fSubReport = True,
+                                                           aiSortColumns = self._aiSortColumns,
                                                            fnDPrint = self._fnDPrint, oDisp = self._oDisp));
         aoReports.append(WuiReportTestBoxFailures( self._oModel, self._dParams, fSubReport = True,
+                                                   aiSortColumns = self._aiSortColumns,
                                                    fnDPrint = self._fnDPrint, oDisp = self._oDisp));
         aoReports.append(WuiReportFailureReasons(  self._oModel, self._dParams, fSubReport = True,
+                                                   aiSortColumns = self._aiSortColumns,
                                                    fnDPrint = self._fnDPrint, oDisp = self._oDisp));
 
         for oReport in aoReports:

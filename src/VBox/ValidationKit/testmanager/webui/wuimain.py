@@ -1255,6 +1255,15 @@ class WuiMain(WuiDispatcherBase):
             aidSubjects = self.getListOfIntParams(self.ksParamReportSubjectIds, iMin = 1);
             if aidSubjects is None:
                 raise WuiException('Missing parameter %s' % (self.ksParamReportSubjectIds,));
+
+        aiSortColumnsDup = self.getListOfIntParams(self.ksParamSortColumns,
+                                                   iMin = -getattr(oReportType, 'kcMaxSortColumns', cPeriods) + 1,
+                                                   iMax = getattr(oReportType, 'kcMaxSortColumns', cPeriods), aiDefaults = []);
+        aiSortColumns   = [];
+        for iSortColumn in aiSortColumnsDup:
+            if iSortColumn not in aiSortColumns:
+                aiSortColumns.append(iSortColumn);
+
         oFilter = oFilterType().initFromParams(self);
         self._checkForUnknownParameters();
 
@@ -1269,7 +1278,8 @@ class WuiMain(WuiDispatcherBase):
         ## @todo oFilter.
 
         oModel   = oModelType(self._oDb, tsEffective, cPeriods, cHoursPerPeriod, sSubject, aidSubjects, oFilter);
-        oContent = oReportType(oModel, dParams, fSubReport = False, fnDPrint = self._oSrvGlue.dprint, oDisp = self);
+        oContent = oReportType(oModel, dParams, fSubReport = False, aiSortColumns = aiSortColumns,
+                               fnDPrint = self._oSrvGlue.dprint, oDisp = self);
         (self._sPageTitle, self._sPageBody) = oContent.show();
         sNavi = self._generateReportNavigation(tsEffective, cHoursPerPeriod, cPeriods);
         self._sPageBody = sNavi + self._sPageBody;

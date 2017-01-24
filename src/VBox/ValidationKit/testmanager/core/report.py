@@ -531,7 +531,6 @@ class ReportLazyModel(ReportModelBase): # pylint: disable=R0903
     if/when it becomes necessary.
     """
 
-
     kdsStatusSimplificationMap = {
         ReportModelBase.ksTestStatus_Running:       ReportModelBase.ksTestStatus_Running,
         ReportModelBase.ksTestStatus_Success:       ReportModelBase.ksTestStatus_Success,
