@@ -227,6 +227,15 @@ void UIMachineViewNormal::adjustGuestScreenSize()
             fAdjust = false;
         }
     }
+    /* Step 5: Is another visual representation mode requested? */
+    if (fAdjust)
+    {
+        if (uisession()->requestedVisualState() == UIVisualStateType_Seamless) // Seamless only for now.
+        {
+            LogRel2(("GUI: UIMachineViewNormal::adjustGuestScreenSize: Seamless mode is requested, adjustment is omitted.\n"));
+            fAdjust = false;
+        }
+    }
 
     /* Final step: Adjust if requested/allowed. */
     if (fAdjust)
