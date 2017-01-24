@@ -95,9 +95,7 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
 
                 /* Recalculate max guest size: */
                 setMaxGuestSize();
-                /* And resize guest to that size: */
-                if (uisession()->isGuestSupportsGraphics())
-                    QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
+
                 break;
             }
             default:
