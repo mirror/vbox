@@ -119,34 +119,39 @@ typedef struct VIDEORECSTREAM
     VIDEORECCODEC       Codec;
     /** Screen ID. */
     uint16_t            uScreen;
-    /** Target X resolution (in pixels). */
-    uint32_t            uDstWidth;
-    /** Target Y resolution (in pixels). */
-    uint32_t            uDstHeight;
-    /** X resolution of the last encoded frame. */
-    uint32_t            uSrcLastWidth;
-    /** Y resolution of the last encoded frame. */
-    uint32_t            uSrcLastHeight;
-    /** Current frame number. */
-    uint64_t            cFrame;
-    /** RGB buffer containing the most recent frame of the framebuffer. */
-    uint8_t            *pu8RgbBuf;
-    /** YUV buffer the encode function fetches the frame from. */
-    uint8_t            *pu8YuvBuf;
     /** Whether video recording is enabled or not. */
     bool                fEnabled;
-    /** Whether the RGB buffer is filled or not. */
-    bool                fRgbFilled;
-    /** Pixel format of the current frame. */
-    uint32_t            u32PixelFormat;
-    /** Minimal delay between two frames. */
-    uint32_t            uDelay;
     /** Time stamp (in ms) of the last frame we encoded. */
     uint64_t            uLastTimeStampMs;
     /** Time stamp (in ms) of the current frame. */
     uint64_t            uCurTimeStampMs;
-    /** Encoder deadline. */
-    unsigned int        uEncoderDeadline;
+
+    struct
+    {
+        /** Target X resolution (in pixels). */
+        uint32_t            uDstWidth;
+        /** Target Y resolution (in pixels). */
+        uint32_t            uDstHeight;
+        /** X resolution of the last encoded frame. */
+        uint32_t            uSrcLastWidth;
+        /** Y resolution of the last encoded frame. */
+        uint32_t            uSrcLastHeight;
+        /** Current frame number. */
+        uint64_t            cFrame;
+        /** RGB buffer containing the most recent frame of the framebuffer. */
+        uint8_t            *pu8RgbBuf;
+        /** YUV buffer the encode function fetches the frame from. */
+        uint8_t            *pu8YuvBuf;
+        /** Whether the RGB buffer is filled or not. */
+        bool                fRgbFilled;
+        /** Pixel format of the current frame. */
+        uint32_t            uPixelFormat;
+        /** Minimal delay between two frames. */
+        uint32_t            uDelay;
+        /** Encoder deadline. */
+        unsigned int        uEncoderDeadline;
+    } Video;
+
 } VIDEORECSTREAM, *PVIDEORECSTREAM;
 
 /** Vector of video recording streams. */
@@ -460,22 +465,22 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
             PVIDEORECSTREAM pStream = (*it);
 
             if (   pStream->fEnabled
-                && ASMAtomicReadBool(&pStream->fRgbFilled))
+                && ASMAtomicReadBool(&pStream->Video.fRgbFilled))
             {
                 rc = videoRecRGBToYUV(pStream);
 
-                ASMAtomicWriteBool(&pStream->fRgbFilled, false);
+                ASMAtomicWriteBool(&pStream->Video.fRgbFilled, false);
 
                 if (RT_SUCCESS(rc))
                     rc = videoRecEncodeAndWrite(pStream);
 
                 if (RT_FAILURE(rc))
                 {
-                    static unsigned cErrors = 100;
-                    if (cErrors > 0)
+                    static unsigned s_cErrEnc = 100;
+                    if (s_cErrEnc > 0)
                     {
                         LogRel(("VideoRec: Error %Rrc encoding / writing video frame\n", rc));
-                        cErrors--;
+                        s_cErrEnc--;
                     }
                 }
             }
@@ -614,10 +619,10 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
             vpx_codec_err_t rcv = vpx_codec_destroy(&pStream->Codec.VPX.CodecCtx);
             Assert(rcv == VPX_CODEC_OK); RT_NOREF(rcv);
 
-            if (pStream->pu8RgbBuf)
+            if (pStream->Video.pu8RgbBuf)
             {
-                RTMemFree(pStream->pu8RgbBuf);
-                pStream->pu8RgbBuf = NULL;
+                RTMemFree(pStream->Video.pu8RgbBuf);
+                pStream->Video.pu8RgbBuf = NULL;
             }
 
             LogRel(("VideoRec: Recording screen #%u stopped\n", pStream->uScreen));
@@ -700,17 +705,17 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
     pCtx->uMaxTimeMs = (uMaxTimeS > 0 ? RTTimeProgramMilliTS() + uMaxTimeS * 1000 : 0);
     pCtx->uMaxSizeMB = uMaxSizeMB;
 
-    pStream->uDstWidth  = uWidth;
-    pStream->uDstHeight = uHeight;
-    pStream->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
-    AssertReturn(pStream->pu8RgbBuf, VERR_NO_MEMORY);
+    pStream->Video.uDstWidth  = uWidth;
+    pStream->Video.uDstHeight = uHeight;
+    pStream->Video.pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
+    AssertReturn(pStream->Video.pu8RgbBuf, VERR_NO_MEMORY);
 
     /* Play safe: the file must not exist, overwriting is potentially
      * hazardous as nothing prevents the user from picking a file name of some
      * other important file, causing unintentional data loss. */
 
 #ifdef VBOX_WITH_LIBVPX
-    pStream->uEncoderDeadline = VPX_DL_REALTIME;
+    pStream->Video.uEncoderDeadline = VPX_DL_REALTIME;
 
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStream->Codec.VPX.Config, 0);
     if (rcv != VPX_CODEC_OK)
@@ -737,23 +742,23 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
             if (value.compare("realtime", Utf8Str::CaseInsensitive) == 0)
             {
 #ifdef VBOX_WITH_LIBVPX
-                pStream->uEncoderDeadline = VPX_DL_REALTIME;
+                pStream->Video.uEncoderDeadline = VPX_DL_REALTIME;
 #endif
             }
             else if (value.compare("good", Utf8Str::CaseInsensitive) == 0)
             {
-                pStream->uEncoderDeadline = 1000000 / uFPS;
+                pStream->Video.uEncoderDeadline = 1000000 / uFPS;
             }
             else if (value.compare("best", Utf8Str::CaseInsensitive) == 0)
             {
 #ifdef VBOX_WITH_LIBVPX
-                pStream->uEncoderDeadline = VPX_DL_BEST_QUALITY;
+                pStream->Video.uEncoderDeadline = VPX_DL_BEST_QUALITY;
 #endif
             }
             else
             {
                 LogRel(("VideoRec: Setting quality deadline to '%s'\n", value.c_str()));
-                pStream->uEncoderDeadline = value.toUInt32();
+                pStream->Video.uEncoderDeadline = value.toUInt32();
             }
         }
         else if (key.compare("vc_enabled", Utf8Str::CaseInsensitive) == 0)
@@ -795,7 +800,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         return rc;
     }
 
-    pStream->uDelay = 1000 / uFPS;
+    pStream->Video.uDelay = 1000 / uFPS;
 
     if (fHasVideoTrack)
     {
@@ -851,7 +856,7 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
         return VERR_NO_MEMORY;
     }
 
-    pStream->pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
+    pStream->Video.pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
 #endif
 
     pCtx->fEnabled = true;
@@ -898,10 +903,10 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t u64TimeSt
         return false;
     }
 
-    if (u64TimeStampMs < pStream->uLastTimeStampMs + pStream->uDelay)
+    if (u64TimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelay)
         return false;
 
-    if (ASMAtomicReadBool(&pStream->fRgbFilled))
+    if (ASMAtomicReadBool(&pStream->Video.fRgbFilled))
         return false;
 
     return true;
@@ -960,17 +965,17 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
     int rc;
 
 #ifdef VBOX_WITH_LIBVPX
-    /* presentation time stamp */
+    /* Presentation Time Stamp (PTS). */
     vpx_codec_pts_t pts = pStream->uCurTimeStampMs;
     vpx_codec_err_t rcv = vpx_codec_encode(&pStream->Codec.VPX.CodecCtx,
                                            &pStream->Codec.VPX.RawImage,
-                                           pts /* time stamp */,
-                                           pStream->uDelay  /* how long to show this frame */,
-                                           0   /* flags */,
-                                           pStream->uEncoderDeadline /* quality setting */);
+                                           pts                           /* Time stamp */,
+                                           pStream->Video.uDelay               /* How long to show this frame */,
+                                           0                             /* Flags */,
+                                           pStream->Video.uEncoderDeadline     /* Quality setting */);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to encode:%s\n", vpx_codec_err_to_string(rcv)));
+        LogFunc(("Failed to encode video frame: %s\n", vpx_codec_err_to_string(rcv)));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -993,12 +998,12 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
 
             default:
                 AssertFailed();
-                LogFunc(("Unexpected CODEC packet kind %ld\n", pPacket->kind));
+                LogFunc(("Unexpected video packet type %ld\n", pPacket->kind));
                 break;
         }
     }
 
-    pStream->cFrame++;
+    pStream->Video.cFrame++;
 #else
     RT_NOREF(pStream);
     rc = VERR_NOT_SUPPORTED;
@@ -1012,32 +1017,32 @@ static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStream)
  * @returns IPRT status code.
  * @param   pStrm      Strm.
  */
-static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
+static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
 {
-    switch (pStrm->u32PixelFormat)
+    switch (pStream->Video.uPixelFormat)
     {
         case VIDEORECPIXELFMT_RGB32:
             LogFlow(("32 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStrm->uDstWidth,
-                                                            pStrm->uDstHeight,
-                                                            pStrm->pu8YuvBuf,
-                                                            pStrm->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStream->Video.uDstWidth,
+                                                            pStream->Video.uDstHeight,
+                                                            pStream->Video.pu8YuvBuf,
+                                                            pStream->Video.pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB24:
             LogFlow(("24 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStrm->uDstWidth,
-                                                           pStrm->uDstHeight,
-                                                           pStrm->pu8YuvBuf,
-                                                           pStrm->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStream->Video.uDstWidth,
+                                                           pStream->Video.uDstHeight,
+                                                           pStream->Video.pu8YuvBuf,
+                                                           pStream->Video.pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
             break;
         case VIDEORECPIXELFMT_RGB565:
             LogFlow(("565 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStrm->uDstWidth,
-                                                            pStrm->uDstHeight,
-                                                            pStrm->pu8YuvBuf,
-                                                            pStrm->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStream->Video.uDstWidth,
+                                                            pStream->Video.uDstHeight,
+                                                            pStream->Video.pu8YuvBuf,
+                                                            pStream->Video.pu8RgbBuf))
                 return VERR_INVALID_PARAMETER;
             break;
         default:
@@ -1085,7 +1090,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
                            uint32_t uSrcWidth, uint32_t uSrcHeight, uint8_t *puSrcData,
                            uint64_t uTimeStampMs)
 {
-    /* Do not execute during termination and guard against termination */
+    /* Do not execute during termination and guard against termination. */
     if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
         return VINF_TRY_AGAIN;
 
@@ -1109,12 +1114,12 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
             rc = VINF_TRY_AGAIN; /* not (yet) enabled */
             break;
         }
-        if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->uDelay)
+        if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelay)
         {
             rc = VINF_TRY_AGAIN; /* respect maximum frames per second */
             break;
         }
-        if (ASMAtomicReadBool(&pStream->fRgbFilled))
+        if (ASMAtomicReadBool(&pStream->Video.fRgbFilled))
         {
             rc = VERR_TRY_AGAIN; /* previous frame not yet encoded */
             break;
@@ -1122,7 +1127,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
         pStream->uLastTimeStampMs = uTimeStampMs;
 
-        int xDiff = ((int)pStream->uDstWidth - (int)uSrcWidth) / 2;
+        int xDiff = ((int)pStream->Video.uDstWidth - (int)uSrcWidth) / 2;
         uint32_t w = uSrcWidth;
         if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
         {
@@ -1141,7 +1146,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
             destX = x + xDiff;
 
         uint32_t h = uSrcHeight;
-        int yDiff = ((int)pStream->uDstHeight - (int)uSrcHeight) / 2;
+        int yDiff = ((int)pStream->Video.uDstHeight - (int)uSrcHeight) / 2;
         if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
         {
             rc = VERR_INVALID_PARAMETER;
@@ -1158,35 +1163,35 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
         else
             destY = y + yDiff;
 
-        if (   destX > pStream->uDstWidth
-            || destY > pStream->uDstHeight)
+        if (   destX > pStream->Video.uDstWidth
+            || destY > pStream->Video.uDstHeight)
         {
             rc = VERR_INVALID_PARAMETER;  /* nothing visible */
             break;
         }
 
-        if (destX + w > pStream->uDstWidth)
-            w = pStream->uDstWidth - destX;
+        if (destX + w > pStream->Video.uDstWidth)
+            w = pStream->Video.uDstWidth - destX;
 
-        if (destY + h > pStream->uDstHeight)
-            h = pStream->uDstHeight - destY;
+        if (destY + h > pStream->Video.uDstHeight)
+            h = pStream->Video.uDstHeight - destY;
 
-        /* Calculate bytes per pixel */
+        /* Calculate bytes per pixel. */
         uint32_t bpp = 1;
         if (uPixelFormat == BitmapFormat_BGR)
         {
             switch (uBPP)
             {
                 case 32:
-                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB32;
+                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB32;
                     bpp = 4;
                     break;
                 case 24:
-                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB24;
+                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB24;
                     bpp = 3;
                     break;
                 case 16:
-                    pStream->u32PixelFormat = VIDEORECPIXELFMT_RGB565;
+                    pStream->Video.uPixelFormat = VIDEORECPIXELFMT_RGB565;
                     bpp = 2;
                     break;
                 default:
@@ -1195,35 +1200,37 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
             }
         }
         else
-            AssertMsgFailed(("Unknown pixel format! mPixelFormat=%d\n", uPixelFormat));
+            AssertMsgFailed(("Unknown pixel format! mPixelFormat=%d\n", pStream->Video.uPixelFormat));
 
         /* One of the dimensions of the current frame is smaller than before so
-         * clear the entire buffer to prevent artifacts from the previous frame */
-        if (   uSrcWidth  < pStream->uSrcLastWidth
-            || uSrcHeight < pStream->uSrcLastHeight)
-            memset(pStream->pu8RgbBuf, 0, pStream->uDstWidth * pStream->uDstHeight * 4);
+         * clear the entire buffer to prevent artifacts from the previous frame. */
+        if (   uSrcWidth  < pStream->Video.uSrcLastWidth
+            || uSrcHeight < pStream->Video.uSrcLastHeight)
+            memset(pStream->Video.pu8RgbBuf, 0, pStream->Video.uDstWidth * pStream->Video.uDstHeight * 4);
 
-        pStream->uSrcLastWidth  = uSrcWidth;
-        pStream->uSrcLastHeight = uSrcHeight;
+        pStream->Video.uSrcLastWidth  = uSrcWidth;
+        pStream->Video.uSrcLastHeight = uSrcHeight;
 
-        /* Calculate start offset in source and destination buffers */
+        /* Calculate start offset in source and destination buffers. */
         uint32_t offSrc = y * uBytesPerLine + x * bpp;
-        uint32_t offDst = (destY * pStream->uDstWidth + destX) * bpp;
-        /* do the copy */
+        uint32_t offDst = (destY * pStream->Video.uDstWidth + destX) * bpp;
+
+        /* Do the copy. */
         for (unsigned int i = 0; i < h; i++)
         {
             /* Overflow check */
             Assert(offSrc + w * bpp <= uSrcHeight * uBytesPerLine);
-            Assert(offDst + w * bpp <= pStream->uDstHeight * pStream->uDstWidth * bpp);
-            memcpy(pStream->pu8RgbBuf + offDst, puSrcData + offSrc, w * bpp);
+            Assert(offDst + w * bpp <= pStream->Video.uDstHeight * pStream->Video.uDstWidth * bpp);
+            memcpy(pStream->Video.pu8RgbBuf + offDst, puSrcData + offSrc, w * bpp);
             offSrc += uBytesPerLine;
-            offDst += pStream->uDstWidth * bpp;
+            offDst += pStream->Video.uDstWidth * bpp;
         }
 
         pStream->uCurTimeStampMs = uTimeStampMs;
 
-        ASMAtomicWriteBool(&pStream->fRgbFilled, true);
+        ASMAtomicWriteBool(&pStream->Video.fRgbFilled, true);
         RTSemEventSignal(pCtx->WaitEvent);
+
     } while (0);
 
     if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_IDLE, VIDEORECSTS_BUSY))
