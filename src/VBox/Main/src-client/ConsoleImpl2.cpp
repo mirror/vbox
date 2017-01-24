@@ -2967,6 +2967,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pCfg, "AudioDriver", "AudioVideoRec");
             InsertConfigString(pCfg, "StreamName", bstr);
             InsertConfigInteger(pCfg, "Object", (uintptr_t)mAudioVideoRec);
+            InsertConfigInteger(pCfg, "ObjectConsole", (uintptr_t)this /* Console */);
 #endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
 #ifdef VBOX_WITH_AUDIO_DEBUG

@@ -1040,6 +1040,12 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
     return VINF_SUCCESS;
 }
 
+int VideoRecSendAudio(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
+{
+    RT_NOREF(pCtx, pvData, cbData, uTimestampMs);
+    return VINF_SUCCESS;
+}
+
 /**
  * VideoRec utility function to copy a source image (FrameBuf) to the intermediate
  * RGB buffer. This function is executed only once per time.

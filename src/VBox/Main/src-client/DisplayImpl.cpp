@@ -130,6 +130,7 @@ HRESULT Display::FinalConstruct()
     mfGuestVBVACapabilities = 0;
     mfHostCursorCapabilities = 0;
 #endif
+
 #ifdef VBOX_WITH_VIDEOREC
     rc = RTCritSectInit(&mVideoCaptureLock);
     AssertRC(rc);
@@ -144,6 +145,7 @@ HRESULT Display::FinalConstruct()
     rc = RTCritSectRwInit(&mCrOglLock);
     AssertRC(rc);
 #endif
+
 #ifdef VBOX_WITH_CROGL
     RT_ZERO(mCrOglCallbacks);
     RT_ZERO(mCrOglScreenshotData);
@@ -2262,8 +2264,7 @@ HRESULT Display::takeScreenShotToArray(ULONG aScreenId,
     return rc;
 }
 
-
-int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
+int Display::i_videoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
 {
 #ifdef VBOX_WITH_VIDEOREC
     com::SafeArray<BOOL> Screens(ComSafeArrayInArg(aScreens));
@@ -2285,9 +2286,33 @@ int Display::i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
 }
 
 /**
- * Start video capturing. Does nothing if capturing is already active.
+ * Sends belonging audio samples to the video capturing code.
+ * Does nothing if capturing is disabled or if audio support for video capturing is disabled.
+ *
+ * @returns IPRT status code.
+ * @param   pvData              Audio data.
+ * @param   cbData              Size (in bytes) of audio data.
+ * @param   uTimestampMs        Timestamp (in ms) of the audio data.
  */
-int Display::i_VideoCaptureStart()
+int Display::i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
+{
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    if (!VideoRecIsEnabled(mpVideoRecCtx))
+        return VINF_SUCCESS;
+
+    return VideoRecSendAudio(mpVideoRecCtx, pvData, cbData, uTimestampMs);
+#else
+    RT_NOREF(pvData, cbData, uTimestampMs);
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+/**
+ * Start video capturing. Does nothing if capturing is already active.
+ *
+ * @returns IPRT status code.
+ */
+int Display::i_videoCaptureStart(void)
 {
 #ifdef VBOX_WITH_VIDEOREC
     if (VideoRecIsEnabled(mpVideoRecCtx))
@@ -2402,7 +2427,7 @@ int Display::i_VideoCaptureStart()
 /**
  * Stop video capturing. Does nothing if video capturing is not active.
  */
-void Display::i_VideoCaptureStop()
+void Display::i_videoCaptureStop()
 {
 #ifdef VBOX_WITH_VIDEOREC
     if (!VideoRecIsEnabled(mpVideoRecCtx))
@@ -3184,7 +3209,7 @@ DECLCALLBACK(void) Display::i_displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInter
 
                 if (VideoRecLimitReached(pDisplay->mpVideoRecCtx, uScreenId, u64Now))
                 {
-                    pDisplay->i_VideoCaptureStop();
+                    pDisplay->i_videoCaptureStop();
                     pDisplay->mParent->i_machine()->COMSETTER(VideoCaptureEnabled)(false);
                     break;
                 }
@@ -4286,7 +4311,7 @@ DECLCALLBACK(void) Display::i_drvDestruct(PPDMDRVINS pDrvIns)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
 #ifdef VBOX_WITH_VIDEOREC
-        pThis->pDisplay->i_VideoCaptureStop();
+        pThis->pDisplay->i_videoCaptureStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->i_destructCrHgsmiData();
@@ -4404,7 +4429,7 @@ DECLCALLBACK(int) Display::i_drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     if (fEnabled)
     {
-        rc = pDisplay->i_VideoCaptureStart();
+        rc = pDisplay->i_videoCaptureStart();
         fireVideoCaptureChangedEvent(pDisplay->mParent->i_getEventSource());
     }
 #endif

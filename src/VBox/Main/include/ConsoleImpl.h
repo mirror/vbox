@@ -138,7 +138,8 @@ public:
     AudioVRDE *i_getAudioVRDE() const { return mAudioVRDE; }
 #endif
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
-    AudioVideoRec *getAudioVideoRec() const { return mAudioVideoRec; }
+    AudioVideoRec *i_audioVideoRecGet() const { return mAudioVideoRec; }
+    HRESULT i_audioVideoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
 #endif
 
     const ComPtr<IMachine> &i_machine() const { return mMachine; }

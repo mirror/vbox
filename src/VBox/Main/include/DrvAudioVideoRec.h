@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2017 Oracle Corporation
+ * Copyright (C) 2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,7 +36,7 @@ public:
 
     static const PDMDRVREG DrvReg;
 
-    Console *getParent(void) { return mParent; }
+    Console *getParent(void) { return mpConsole; }
 
 public:
 
@@ -48,7 +48,7 @@ private:
     /** Pointer to the associated video recording audio driver. */
     struct DRVAUDIOVIDEOREC *mpDrv;
     /** Pointer to parent. */
-    Console * const mParent;
+    Console * const          mpConsole;
 };
 
 #endif /* !____H_DRVAUDIOVIDEOREC */

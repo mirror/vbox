@@ -201,9 +201,10 @@ public:
     int  VideoAccelEnableVMMDev(bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlushVMMDev(void);
 
-    int  i_VideoCaptureStart();
-    void i_VideoCaptureStop();
-    int  i_VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
+    int  i_videoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens));
+    int  i_videoCaptureSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs);
+    int  i_videoCaptureStart();
+    void i_videoCaptureStop();
 #ifdef VBOX_WITH_VIDEOREC
     void videoCaptureScreenChanged(unsigned uScreenId);
 #endif

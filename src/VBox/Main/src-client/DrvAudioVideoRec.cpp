@@ -15,6 +15,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/**
+ * This driver is part of Main and is responsible for providing audio
+ * data to Main's video capturing feature.
+ *
+ * The driver itself implements a PDM host audio backend, which in turn
+ * provides the driver with the required audio data and audio events.
+ *
+ * For now there is support for the following destinations (called "sinks"):
+ *
+ * - Direct writing of .webm files to the host.
+ * - Communicating with Main via the Console object to send the encoded audio data to.
+ *   The Console object in turn then will route the data to the Display / video capturing interface then.
+ */
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -47,27 +60,88 @@
 *********************************************************************************************************************************/
 
 /**
- * Enumeration for audio/video recording driver recording mode.
+ * Enumeration for specifying the recording container type.
  */
-typedef enum AVRECMODE
+typedef enum AVRECCONTAINERTYPE
 {
-    /** Unknown / invalid recording mode. */
-    AVRECMODE_UNKNOWN     = 0,
-    /** Only record audio.
-     *  This mode does not need to talk to the video recording driver,
-     *  as this driver then simply creates an own WebM container. */
-    AVRECMODE_AUDIO       = 1,
-    /** Records audio and video.
-     *  Needs to work together with the video recording driver in
-     *  order to get a full-featured WebM container. */
-    AVRECMODE_AUDIO_VIDEO = 2
-} AVRECMODE;
+    /** Unknown / invalid container type. */
+    AVRECCONTAINERTYPE_UNKNOWN      = 0,
+    /** Recorded data goes to Main / Console. */
+    AVRECCONTAINERTYPE_MAIN_CONSOLE = 1,
+    /** Recorded data will be written a .webm file. */
+    AVRECCONTAINERTYPE_WEBM         = 2
+} AVRECCONTAINERTYPE;
 
 /**
- * Structure for keeping codec specific data.
+ * Structure for keeping generic container parameters.
+ */
+typedef struct AVRECCONTAINERPARMS
+{
+    /** The container's type. */
+    AVRECCONTAINERTYPE      enmType;
+
+} AVRECCONTAINERPARMS, *PAVRECCONTAINERPARMS;
+
+/**
+ * Structure for keeping container-specific data.
+ */
+typedef struct AVRECCONTAINER
+{
+    /** Generic container parameters. */
+    AVRECCONTAINERPARMS     Parms;
+
+    union
+    {
+        struct
+        {
+            /** Pointer to Console. */
+            Console        *pConsole;
+        } Main;
+
+        struct
+        {
+            /** Pointer to WebM container to write recorded audio data to.
+             *  See the AVRECMODE enumeration for more information. */
+            WebMWriter     *pWebM;
+            /** Assigned track number from WebM container. */
+            uint8_t         uTrack;
+        } WebM;
+    };
+} AVRECCONTAINER, *PAVRECCONTAINER;
+
+/**
+ * Structure for keeping generic codec parameters.
+ */
+typedef struct AVRECCODECPARMS
+{
+    /** The encoding rate to use. */
+    uint32_t                uHz;
+    /** Duration of the frame in samples (per channel).
+     *
+     *  For Opus, valid frame size are:
+     *  ms           Frame size
+     *  2.5          120
+     *  5            240
+     *  10           480
+     *  20 (Default) 960
+     *  40           1920
+     *  60           2880
+     */
+    /** Number of audio channels to encode.
+     *  Currently we only supported stereo (2) channels. */
+    uint8_t                 cChannels;
+    /** The codec's bitrate. 0 if not used / cannot be specified. */
+    uint32_t                uBitrate;
+
+} AVRECCODECPARMS, *PAVRECCODECPARMS;
+
+/**
+ * Structure for keeping codec-specific data.
  */
 typedef struct AVRECCODEC
 {
+    /** Generic codec parameters. */
+    AVRECCODECPARMS         Parms;
     union
     {
 #ifdef VBOX_WITH_LIBOPUS
@@ -75,32 +149,34 @@ typedef struct AVRECCODEC
         {
             /** Encoder we're going to use. */
             OpusEncoder    *pEnc;
-            /** The encoding rate to use. */
-            uint32_t        uHz;
-            /** Duration of the frame in samples (per channel).
-             *  Valid frame size are:
-             *
-             *  ms           Frame size
-             *  2.5          120
-             *  5            240
-             *  10           480
-             *  20 (Default) 960
-             *  40           1920
-             *  60           2880
-             */
             uint32_t        csFrame;
             /** The maximum frame size (in samples) we can handle. */
             uint32_t        csFrameMax;
-# ifdef DEBUG /** @todo Make these a STAM value? */
-            /** Number of frames encoded. */
-            uint64_t        cEncFrames;
-            /** Total time (in ms) of already encoded audio data. */
-            uint64_t        msEncTotal;
-# endif
         } Opus;
 #endif /* VBOX_WITH_LIBOPUS */
     };
+
+#ifdef VBOX_WITH_STATISTICS /** @todo Make these real STAM values. */
+    struct
+    {
+        /** Number of frames encoded. */
+        uint64_t        cEncFrames;
+        /** Total time (in ms) of already encoded audio data. */
+        uint64_t        msEncTotal;
+    } STAM;
+#endif /* VBOX_WITH_STATISTICS */
+
 } AVRECCODEC, *PAVRECCODEC;
+
+typedef struct AVRECSINK
+{
+    /** @todo Add types for container / codec as soon as we implement more stuff. */
+
+    /** Container data to use for data processing. */
+    AVRECCONTAINER       Con;
+    /** Codec data this stream uses for encoding. */
+    AVRECCODEC           Codec;
+} AVRECSINK, *PAVRECSINK;
 
 /**
  * Audio video recording output stream.
@@ -111,16 +187,10 @@ typedef struct AVRECSTREAMOUT
     PDMAUDIOSTREAM       Stream;
     /** The PCM properties of this stream. */
     PDMAUDIOPCMPROPS     Props;
-    /** Codec-specific data.
-     *  As every stream can be different, one codec per stream is needed. */
-    AVRECCODEC           Codec;
     /** (Audio) frame buffer. */
     PRTCIRCBUF           pCircBuf;
-    /** Pointer to WebM container to write recorded audio data to.
-     *  See the AVRECMODE enumeration for more information. */
-    WebMWriter          *pWebM;
-    /** Assigned track number from WebM container. */
-    uint8_t              uTrack;
+    /** Pointer to sink to use for writing. */
+    PAVRECSINK           pSink;
 } AVRECSTREAMOUT, *PAVRECSTREAMOUT;
 
 /**
@@ -134,35 +204,30 @@ typedef struct DRVAUDIOVIDEOREC
     PPDMDRVINS           pDrvIns;
     /** Pointer to host audio interface. */
     PDMIHOSTAUDIO        IHostAudio;
+    /** Pointer to the console object. */
+    ComObjPtr<Console>   pConsole;
     /** Pointer to the DrvAudio port interface that is above us. */
     PPDMIAUDIOCONNECTOR  pDrvAudio;
-    /** Recording mode. */
-    AVRECMODE            enmMode;
+    /** The driver's sink for writing output to. */
+    AVRECSINK            Sink;
 } DRVAUDIOVIDEOREC, *PDRVAUDIOVIDEOREC;
 
 /** Makes DRVAUDIOVIDEOREC out of PDMIHOSTAUDIO. */
 #define PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface) \
     ( (PDRVAUDIOVIDEOREC)((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIOVIDEOREC, IHostAudio)) )
 
-
-static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
-                                PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+/**
+ * Initializes a recording sink.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pSink               Sink to initialize.
+ * @param   pConParms           Container parameters to set.
+ * @param   pCodecParms         Codec parameters to set.
+ */
+static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAINERPARMS pConParms, PAVRECCODECPARMS pCodecParms)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
-
-    PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
-
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
-    if (RT_FAILURE(rc))
-        return rc;
-
-#ifdef VBOX_WITH_LIBOPUS
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
-
-    uint32_t uHz = pStreamOut->Props.uHz;
+    uint32_t uHz = pCodecParms->uHz;
 
     /* Opus only supports certain input sample rates in an efficient manner.
      * So make sure that we use those by resampling the data to the requested rate. */
@@ -172,71 +237,186 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     else if (uHz > 8000 ) uHz = 12000;
     else     uHz = 8000;
 
-    LogFunc(("%RU16Hz -> %RU16Hz\n", pStreamOut->Props.uHz, uHz));
+    OpusEncoder *pEnc = NULL;
 
-    pStreamOut->Codec.Opus.uHz        = uHz;
-    pStreamOut->Codec.Opus.csFrame    = uHz / 50;
-#ifdef DEBUG
-    pStreamOut->Codec.Opus.cEncFrames = 0;
-    pStreamOut->Codec.Opus.msEncTotal = 0;
+    int orc;
+    pEnc = opus_encoder_create(pCodecParms->uHz, pCodecParms->cChannels, OPUS_APPLICATION_AUDIO, &orc);
+    if (orc != OPUS_OK)
+    {
+        LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
+    AssertPtr(pEnc);
+
+    opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(pCodecParms->uBitrate));
+    if (orc != OPUS_OK)
+    {
+        LogRel(("VideoRec: Audio codec failed to set bitrate (%RU32): %s\n", pCodecParms->uBitrate, opus_strerror(orc)));
+        return VERR_AUDIO_BACKEND_INIT_FAILED;
+    }
+
+    LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 channels, %RU32 bpS\n",
+            pCodecParms->uHz, pCodecParms->cChannels, pCodecParms->uBitrate / 1000));
+
+    int rc;
+
+    try
+    {
+        switch (pConParms->enmType)
+        {
+            case AVRECCONTAINERTYPE_MAIN_CONSOLE:
+            {
+                pSink->Con.Main.pConsole = pThis->pConsole;
+
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            case AVRECCONTAINERTYPE_WEBM:
+            {
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+    }
+    catch (std::bad_alloc)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pSink->Codec.Parms.uHz       = uHz;
+        pSink->Codec.Parms.cChannels = pCodecParms->cChannels;
+        pSink->Codec.Parms.uBitrate  = pCodecParms->uBitrate;
+
+        pSink->Codec.Opus.pEnc       = pEnc;
+        pSink->Codec.Opus.csFrame    = uHz / 50;
+
+#ifdef VBOX_WITH_STATISTICS
+        pSink->Codec.STAM.cEncFrames = 0;
+        pSink->Codec.STAM.msEncTotal = 0;
 #endif
 
-    /* Calculate the maximum frame size. */
-    pStreamOut->Codec.Opus.csFrameMax = 48000                        /* Maximum sample rate Opus can handle */
-                                      * pStreamOut->Props.cChannels; /* Number of channels */
+        /* Calculate the maximum frame size. */
+        pSink->Codec.Opus.csFrameMax = 48000                   /* Maximum sample rate Opus can handle */
+                                     * pCodecParms->cChannels; /* Number of channels */
+    }
 
-    /* If we only record audio, create our own WebM writer instance here. */
-    if (pThis->enmMode == AVRECMODE_AUDIO)
+    return rc;
+}
+
+
+/**
+ * Shuts down (closes) a recording sink,
+ *
+ * @returns IPRT status code.
+ * @param   pSink               Recording sink to shut down.
+ */
+static void avRecSinkShutdown(PAVRECSINK pSink)
+{
+    AssertPtrReturnVoid(pSink);
+
+#ifdef VBOX_WITH_LIBOPUS
+    if (pSink->Codec.Opus.pEnc)
     {
-        pStreamOut->pWebM = new WebMWriter();
-        rc = pStreamOut->pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
-                                       WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
+        opus_encoder_destroy(pSink->Codec.Opus.pEnc);
+        pSink->Codec.Opus.pEnc = NULL;
+    }
+#endif
+    switch (pSink->Con.Parms.enmType)
+    {
+        case AVRECCONTAINERTYPE_WEBM:
+        {
+            if (pSink->Con.WebM.pWebM)
+            {
+                int rc2 = pSink->Con.WebM.pWebM->Close();
+                AssertRC(rc2);
+
+                delete pSink->Con.WebM.pWebM;
+                pSink->Con.WebM.pWebM = NULL;
+            }
+            break;
+        }
+
+        case AVRECCONTAINERTYPE_MAIN_CONSOLE:
+        default:
+            break;
+    }
+}
+
+
+/**
+ * Creates an audio output stream and associates it with the specified recording sink.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pStream             Audio output stream to create.
+ * @param   pSink               Recording sink to associate audio output stream to.
+ * @param   pCfgReq             Requested configuration by the audio backend.
+ * @param   pCfgAcq             Acquired configuration by the audio output stream.
+ */
+static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream,
+                                PAVRECSINK pSink, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+{
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSink,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
+
+    PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
+
+    if (pCfgReq->DestSource.Dest != PDMAUDIOPLAYBACKDEST_FRONT)
+    {
+        AssertFailed();
+
+        if (pCfgAcq)
+            pCfgAcq->cSampleBufferSize = 0;
+
+        LogRel2(("VideoRec: Support for surround audio not implemented yet\n"));
+        return VERR_NOT_SUPPORTED;
+    }
+
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
+    if (RT_FAILURE(rc))
+        return rc;
+
+#ifdef VBOX_WITH_LIBOPUS
+    /* If we only record audio, create our own WebM writer instance here. */
+    if (pSink->Con.Parms.enmType == AVRECCONTAINERTYPE_WEBM)
+    {
+        pSink->Con.WebM.pWebM = new WebMWriter();
+        rc = pSink->Con.WebM.pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
+                                           WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
         if (RT_SUCCESS(rc))
-            rc = pStreamOut->pWebM->AddAudioTrack(pStreamOut->Codec.Opus.uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits,
-                                                  &pStreamOut->uTrack);
+            rc = pSink->Con.WebM.pWebM->AddAudioTrack(pSink->Codec.Parms.uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits,
+                                                      &pSink->Con.WebM.uTrack);
     }
 
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = RTCircBufCreate(&pStreamOut->pCircBuf, (pStreamOut->Codec.Opus.csFrame * pStreamOut->Props.cChannels) * sizeof(uint16_t));
+    rc = RTCircBufCreate(&pStreamOut->pCircBuf, (pSink->Codec.Opus.csFrame * pSink->Codec.Parms.cChannels) * sizeof(uint16_t));
     if (RT_SUCCESS(rc))
     {
-        OpusEncoder *pEnc = NULL;
+        pStreamOut->pSink = pSink; /* Assign sink to stream. */
 
-        int orc;
-        pEnc = opus_encoder_create(pStreamOut->Codec.Opus.uHz, pStreamOut->Props.cChannels, OPUS_APPLICATION_AUDIO, &orc);
-        if (orc != OPUS_OK)
+        if (pCfgAcq)
         {
-            LogRel(("VideoRec: Audio codec failed to initialize: %s\n", opus_strerror(orc)));
-            return VERR_AUDIO_BACKEND_INIT_FAILED;
-        }
-
-        AssertPtr(pEnc);
-
-        opus_encoder_ctl(pEnc, OPUS_SET_BITRATE(196000)); /** @todo Make this configurable. */
-        if (orc != OPUS_OK)
-        {
-            LogRel(("VideoRec: Audio codec failed to set bitrate: %s\n", opus_strerror(orc)));
-            rc = VERR_AUDIO_BACKEND_INIT_FAILED;
-        }
-        else
-        {
-            pStreamOut->Codec.Opus.pEnc = pEnc;
-
-            if (pCfgAcq)
-            {
-                /* Make sure to let the driver backend know that we need the audio data in
-                 * a specific sampling rate Opus is optimized for. */
-                pCfgAcq->uHz               = pStreamOut->Codec.Opus.uHz;
-                pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
-            }
-
-            LogRel(("VideoRec: Recording audio in %RU16Hz, %RU8 channels, %RU16 bpS\n",
-                    uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits));
+            /* Make sure to let the driver backend know that we need the audio data in
+             * a specific sampling rate Opus is optimized for. */
+            pCfgAcq->uHz               = pSink->Codec.Parms.uHz;
+            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
         }
     }
 #else
+    RT_NOREF(pThis, pSink, pStream, pCfgReq, pCfgAcq);
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
@@ -245,14 +425,43 @@ static int avRecCreateStreamOut(PPDMIHOSTAUDIO pInterface,
 }
 
 
-static int avRecControlStreamOut(PPDMIHOSTAUDIO pInterface,
+/**
+ * Destroys (closes) an audio output stream.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pStream             Audio output stream to destroy.
+ */
+static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream)
+{
+    RT_NOREF(pThis);
+    PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
+
+    if (pStreamOut->pCircBuf)
+    {
+        RTCircBufDestroy(pStreamOut->pCircBuf);
+        pStreamOut->pCircBuf = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Controls an audio output stream
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Driver instance.
+ * @param   pStream             Audio output stream to control.
+ * @param   enmStreamCmd        Stream command to issue.
+ */
+static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
                                  PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
     RT_NOREF(enmStreamCmd);
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
 
     LogFlowFunc(("enmStreamCmd=%ld\n", enmStreamCmd));
@@ -292,38 +501,15 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
 
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
-    pThis->enmMode = AVRECMODE_AUDIO; /** @todo Fix mode! */
+    AVRECCONTAINERPARMS ContainerParms;
+    ContainerParms.enmType = AVRECCONTAINERTYPE_MAIN_CONSOLE; /** @todo Make this configurable. */
 
-    int rc;
+    AVRECCODECPARMS CodecParms;
+    CodecParms.uHz       = 48000;  /** @todo Make this configurable. */
+    CodecParms.cChannels = 2;      /** @todo Make this configurable. */
+    CodecParms.uBitrate  = 196000; /** @todo Make this configurable. */
 
-    try
-    {
-        switch (pThis->enmMode)
-        {
-            /* In audio-only mode we're creating our own WebM writer instance,
-             * as we don't have to synchronize with any external source, such as video recording data.*/
-            case AVRECMODE_AUDIO:
-            {
-                rc = VINF_SUCCESS;
-                break;
-            }
-
-            case AVRECMODE_AUDIO_VIDEO:
-            {
-                rc = VERR_NOT_SUPPORTED;
-                break;
-            }
-
-            default:
-                rc = VERR_NOT_SUPPORTED;
-                break;
-        }
-    }
-    catch (std::bad_alloc)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
+    int rc = avRecSinkInit(pThis, &pThis->Sink, &ContainerParms, &CodecParms);
     if (RT_FAILURE(rc))
     {
         LogRel(("VideoRec: Audio recording driver failed to initialize, rc=%Rrc\n", rc));
@@ -384,7 +570,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
      * Call the encoder with the data.
      */
 #ifdef VBOX_WITH_LIBOPUS
+    PAVRECSINK pSink    = pStreamOut->pSink;
+    AssertPtr(pSink);
     PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
+    AssertPtr(pCircBuf);
 
     void  *pvBuf;
     size_t cbBuf;
@@ -429,7 +618,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     uint8_t abSrc[_64K]; /** @todo Fix! */
     size_t  cbSrc;
 
-    const uint32_t csFrame = pStreamOut->Codec.Opus.csFrame;
+    const uint32_t csFrame = pSink->Codec.Opus.csFrame;
     const uint32_t cbFrame = AUDIOMIXBUF_S2B(&pStream->MixBuf, csFrame);
 
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
@@ -454,12 +643,12 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
                 break;
         }
 
-#ifdef DEBUG_andy
+# ifdef DEBUG_andy
         RTFILE fh;
         RTFileOpen(&fh, "/tmp/acap.pcm", RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
         RTFileWrite(fh, abSrc, cbSrc, NULL);
         RTFileClose(fh);
-#endif
+# endif
 
         Assert(cbSrc == cbFrame);
 
@@ -474,30 +663,49 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
         size_t  cbDst = sizeof(abDst);
 
         /* Call the encoder to encode one frame per iteration. */
-        opus_int32 cbWritten = opus_encode(pStreamOut->Codec.Opus.pEnc,
+        opus_int32 cbWritten = opus_encode(pSink->Codec.Opus.pEnc,
                                            (opus_int16 *)abSrc, csFrame, abDst, cbDst);
         if (cbWritten > 0)
         {
-#ifdef DEBUG
+# ifdef VBOX_WITH_STATISTICS
             /* Get overall frames encoded. */
             uint32_t cEncFrames          = opus_packet_get_nb_frames(abDst, cbDst);
-            uint32_t cEncSamplesPerFrame = opus_packet_get_samples_per_frame(abDst, pStreamOut->Codec.Opus.uHz);
+            uint32_t cEncSamplesPerFrame = opus_packet_get_samples_per_frame(abDst, pSink->Codec.Parms.uHz);
             uint32_t csEnc               = cEncFrames * cEncSamplesPerFrame;
 
-            pStreamOut->Codec.Opus.cEncFrames += cEncFrames;
-            pStreamOut->Codec.Opus.msEncTotal += 20 /* Default 20 ms */ * cEncFrames;
+            pSink->Codec.STAM.cEncFrames += cEncFrames;
+            pSink->Codec.STAM.msEncTotal += 20 /* Default 20 ms */ * cEncFrames;
 
             LogFunc(("%RU64ms [%RU64 frames]: cbSrc=%zu, cbDst=%zu, cEncFrames=%RU32, cEncSamplesPerFrame=%RU32, csEnc=%RU32\n",
-                     pStreamOut->Codec.Opus.msEncTotal, pStreamOut->Codec.Opus.cEncFrames,
+                     pSink->Codec.STAM.msEncTotal, pSink->Codec.STAM.cEncFrames,
                      cbSrc, cbDst, cEncFrames, cEncSamplesPerFrame, csEnc));
-#endif
+# endif
             Assert((uint32_t)cbWritten <= cbDst);
             cbDst = RT_MIN((uint32_t)cbWritten, cbDst); /* Update cbDst to actual bytes encoded (written). */
 
-            /* Call the WebM writer to actually write the encoded audio data. */
-            WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
-            rc = pStreamOut->pWebM->WriteBlock(pStreamOut->uTrack, &blockData, sizeof(blockData));
-            AssertRC(rc);
+            switch (pSink->Con.Parms.enmType)
+            {
+                case AVRECCONTAINERTYPE_MAIN_CONSOLE:
+                {
+                    HRESULT hr = pSink->Con.Main.pConsole->i_audioVideoRecSendAudio(abDst, cbDst, RTTimeMilliTS() /* Now */);
+                    Assert(hr == S_OK);
+
+                    break;
+                }
+
+                case AVRECCONTAINERTYPE_WEBM:
+                {
+                    WebMWriter::BlockData_Opus blockData = { abDst, cbDst };
+                    rc = pSink->Con.WebM.pWebM->WriteBlock(pSink->Con.WebM.uTrack, &blockData, sizeof(blockData));
+                    AssertRC(rc);
+
+                    break;
+                }
+
+                default:
+                    AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+                    break;
+            }
         }
         else if (cbWritten < 0)
         {
@@ -521,44 +729,6 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", csReadTotal, rc));
     return rc;
-}
-
-
-static int avRecDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
-{
-    PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
-    RT_NOREF(pThis);
-    PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
-
-    if (pStreamOut->pCircBuf)
-    {
-        RTCircBufDestroy(pStreamOut->pCircBuf);
-        pStreamOut->pCircBuf = NULL;
-    }
-
-#ifdef VBOX_WITH_LIBOPUS
-    if (pStreamOut->Codec.Opus.pEnc)
-    {
-        opus_encoder_destroy(pStreamOut->Codec.Opus.pEnc);
-        pStreamOut->Codec.Opus.pEnc = NULL;
-    }
-#endif
-
-    switch (pThis->enmMode)
-    {
-        case AVRECMODE_AUDIO:
-        {
-            if (pStreamOut->pWebM)
-                pStreamOut->pWebM->Close();
-            break;
-        }
-
-        case AVRECMODE_AUDIO_VIDEO:
-        default:
-            break;
-    }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -588,13 +758,7 @@ static DECLCALLBACK(void) drvAudioVideoRecShutdown(PPDMIHOSTAUDIO pInterface)
 
     PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
 
-    switch (pThis->enmMode)
-    {
-        case AVRECMODE_AUDIO:
-        case AVRECMODE_AUDIO_VIDEO:
-        default:
-            break;
-    }
+    avRecSinkShutdown(&pThis->Sink);
 }
 
 
@@ -621,8 +785,14 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCreate(PPDMIHOSTAUDIO pInterface,
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
 
+    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+
+    /* For now we only have one sink, namely the driver's one.
+     * Later each stream could have its own one, to e.g. router different stream to different sinks .*/
+    PAVRECSINK pSink = &pThis->Sink;
+
     if (pCfgReq->enmDir == PDMAUDIODIR_OUT)
-        return avRecCreateStreamOut(pInterface, pStream, pCfgReq, pCfgAcq);
+        return avRecCreateStreamOut(pThis, pStream, pSink, pCfgReq, pCfgAcq);
 
     return VERR_NOT_SUPPORTED;
 }
@@ -636,8 +806,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamDestroy(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
+    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+
     if (pStream->enmDir == PDMAUDIODIR_OUT)
-        return avRecDestroyStreamOut(pInterface, pStream);
+        return avRecDestroyStreamOut(pThis, pStream);
 
     return VINF_SUCCESS;
 }
@@ -652,10 +824,12 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamControl(PPDMIHOSTAUDIO pInterface
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
+    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+
     Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
 
     if (pStream->enmDir == PDMAUDIODIR_OUT)
-        return avRecControlStreamOut(pInterface,  pStream, enmStreamCmd);
+        return avRecControlStreamOut(pThis,  pStream, enmStreamCmd);
 
     return VINF_SUCCESS;
 }
@@ -704,8 +878,8 @@ static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface,
 
 
 AudioVideoRec::AudioVideoRec(Console *pConsole)
-    : mpDrv(NULL),
-      mParent(pConsole)
+    : mpDrv(NULL)
+    , mpConsole(pConsole)
 {
 }
 
@@ -753,10 +927,19 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvAudioVideoRec);
 
     /*
-     * Get the AudioVideoRec object pointer.
+     * Get the Console object pointer.
      */
-    void *pvUser = NULL;
-    int rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
+    void *pvUser;
+    int rc = CFGMR3QueryPtr(pCfg, "ObjectConsole", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
+    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectConsole\" value, rc=%Rrc\n", rc), rc);
+
+    /* CFGM tree saves the pointer to Console in the Object node of AudioVideoRec. */
+    pThis->pConsole = (Console *)pvUser;
+
+    /*
+     * Get the pointer to the audio driver instance.
+     */
+    rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
 
     pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;

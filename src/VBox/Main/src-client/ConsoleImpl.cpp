@@ -5393,17 +5393,17 @@ HRESULT Console::i_onVideoCaptureChange()
         {
             int vrc = VINF_SUCCESS;
             if (SUCCEEDED(rc))
-                vrc = mDisplay->i_VideoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
+                vrc = mDisplay->i_videoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
             if (RT_SUCCESS(vrc))
             {
                 if (fEnabled)
                 {
-                    vrc = mDisplay->i_VideoCaptureStart();
+                    vrc = mDisplay->i_videoCaptureStart();
                     if (RT_FAILURE(vrc))
                         rc = setError(E_FAIL, tr("Unable to start video capturing (%Rrc)"), vrc);
                 }
                 else
-                    mDisplay->i_VideoCaptureStop();
+                    mDisplay->i_videoCaptureStop();
             }
             else
                 rc = setError(E_FAIL, tr("Unable to set screens for capturing (%Rrc)"), vrc);
@@ -6574,6 +6574,19 @@ HRESULT Console::i_cancelSaveState()
     LogFlowFuncLeave();
     return S_OK;
 }
+
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+HRESULT Console::i_audioVideoRecSendAudio(const void *pvData, size_t cbData, uint64_t uTimestampMs)
+{
+    if (mDisplay)
+    {
+        int rc2 = mDisplay->i_videoCaptureSendAudio(pvData, cbData, uTimestampMs);
+        AssertRC(rc2);
+    }
+
+    return S_OK;
+}
+#endif /* VBOX_WITH_AUDIO_VIDEOREC */
 
 /**
  * Gets called by Session::UpdateMachineState()
