@@ -59,8 +59,8 @@ enum VIDEORECSTS
     VIDEORECSTS_IDLE          = 1,
     /** Currently busy, delay termination. */
     VIDEORECSTS_BUSY          = 2,
-    /** Signal that we are terminating. */
-    VIDEORECSTS_TERMINATING   = 3
+    /** The usual 32-bit hack. */
+    VIDEORECSTS_32BIT_HACK    = 0x7fffffff
 };
 
 /**
@@ -77,9 +77,6 @@ enum VIDEORECPIXELFMT
     /** RGB 565. */
     VIDEORECPIXELFMT_RGB565  = 3
 };
-
-/* Must be always accessible and therefore cannot be part of VIDEORECCONTEXT */
-static uint32_t g_enmState = VIDEORECSTS_UNINITIALIZED; /** @todo r=andy Make this part of VIDEORECCONTEXT + remove busy waiting. */
 
 /**
  * Structure for keeping specific video recording codec data.
@@ -152,6 +149,16 @@ typedef struct VIDEORECSTREAM
     } Video;
 } VIDEORECSTREAM, *PVIDEORECSTREAM;
 
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+typedef struct VIDEORECAUDIOFRAME
+{
+    uint8_t             abBuf[_64K]; /** @todo Fix! */
+    uint32_t            cbBuf;
+    /** Time stamp (in ms). */
+    uint64_t            uTimeStampMs;
+} VIDEORECAUDIOFRAME, *PVIDEORECAUDIOFRAME;
+#endif
+
 /** Vector of video recording streams. */
 typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
 
@@ -160,12 +167,14 @@ typedef std::vector <PVIDEORECSTREAM> VideoRecStreams;
  */
 typedef struct VIDEORECCONTEXT
 {
+    /** The current state. */
+    uint32_t            enmState;
     /** Semaphore to signal the encoding worker thread. */
     RTSEMEVENT          WaitEvent;
-    /** Semaphore required during termination. */
-    RTSEMEVENT          TermEvent;
     /** Whether video recording is enabled or not. */
     bool                fEnabled;
+    /** Shutdown indicator. */
+    bool                fShutdown;
     /** Worker thread. */
     RTTHREAD            Thread;
     /** Maximal time (in ms) to record. */
@@ -176,10 +185,7 @@ typedef struct VIDEORECCONTEXT
     VideoRecStreams     vecStreams;
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
     bool                fHasAudioData;
-    struct
-    {
-        uint8_t         buf[_64K];
-    } Audio;
+    VIDEORECAUDIOFRAME  Audio;
 #endif
 } VIDEORECCONTEXT, *PVIDEORECCONTEXT;
 
@@ -454,15 +460,17 @@ inline bool colorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  */
 static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    RT_NOREF(hThreadSelf);
     PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)pvUser;
+
+    /* Signal that we're up and rockin'. */
+    RTThreadUserSignal(hThreadSelf);
 
     for (;;)
     {
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
-        if (ASMAtomicReadU32(&g_enmState) == VIDEORECSTS_TERMINATING)
+        if (ASMAtomicReadBool(&pCtx->fShutdown))
             break;
 
 #ifdef VBOX_WITH_AUDIO_VIDEOREC
@@ -502,7 +510,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD hThreadSelf, void *pvUser)
             /* Each (enabled) screen has to get the audio data. */
             if (fHasAudioData)
             {
-                WebMWriter::BlockData_Opus blockData = { pCtx->Audio.buf,  };
+                WebMWriter::BlockData_Opus blockData = { pCtx->Audio.abBuf, pCtx->Audio.cbBuf, pCtx->Audio.uTimeStampMs };
                 rc = pStream->pEBML->WriteBlock(pStream->uTrackAudio, &blockData, sizeof(blockData));
             }
 #endif
@@ -527,8 +535,6 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 {
     AssertReturn(cScreens, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppCtx, VERR_INVALID_POINTER);
-
-    Assert(ASMAtomicReadU32(&g_enmState) == VIDEORECSTS_UNINITIALIZED);
 
     int rc = VINF_SUCCESS;
 
@@ -562,22 +568,29 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
 
     if (RT_SUCCESS(rc))
     {
+        pCtx->enmState  = VIDEORECSTS_UNINITIALIZED;
+        pCtx->fShutdown = false;
+
         rc = RTSemEventCreate(&pCtx->WaitEvent);
         AssertRCReturn(rc, rc);
 
-        rc = RTSemEventCreate(&pCtx->TermEvent);
-        AssertRCReturn(rc, rc);
-
-        rc = RTThreadCreate(&pCtx->Thread, videoRecThread, (void*)pCtx, 0,
+        rc = RTThreadCreate(&pCtx->Thread, videoRecThread, (void *)pCtx, 0,
                             RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
-        AssertRCReturn(rc, rc);
 
-        ASMAtomicWriteU32(&g_enmState, VIDEORECSTS_IDLE);
+        if (RT_SUCCESS(rc)) /* Wait for the thread to start. */
+            rc = RTThreadUserWait(pCtx->Thread, 30 * 1000 /* 30s timeout */);
 
-        if (ppCtx)
-            *ppCtx = pCtx;
+        if (RT_SUCCESS(rc))
+        {
+            pCtx->enmState = VIDEORECSTS_IDLE;
+            pCtx->fEnabled = true;
+
+            if (ppCtx)
+                *ppCtx = pCtx;
+        }
     }
-    else
+
+    if (RT_FAILURE(rc))
     {
         /* Roll back allocations on error. */
         VideoRecStreams::iterator it = pCtx->vecStreams.begin();
@@ -605,31 +618,25 @@ int VideoRecContextCreate(uint32_t cScreens, PVIDEORECCONTEXT *ppCtx)
  *
  * @param pCtx                  Video recording context to destroy.
  */
-void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
+int VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
 {
     if (!pCtx)
-        return;
+        return VINF_SUCCESS;
 
-    uint32_t enmState = VIDEORECSTS_IDLE;
+    /* Set shutdown indicator. */
+    ASMAtomicWriteBool(&pCtx->fShutdown, true);
 
-    for (;;) /** @todo r=andy Remove busy waiting! */
-    {
-        if (ASMAtomicCmpXchgExU32(&g_enmState, VIDEORECSTS_TERMINATING, enmState, &enmState))
-            break;
-        if (enmState == VIDEORECSTS_UNINITIALIZED)
-            return;
-    }
-
-    if (enmState == VIDEORECSTS_BUSY)
-    {
-        int rc = RTSemEventWait(pCtx->TermEvent, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-    }
-
+    /* Signal the thread. */
     RTSemEventSignal(pCtx->WaitEvent);
-    RTThreadWait(pCtx->Thread, 10 * 1000, NULL);
-    RTSemEventDestroy(pCtx->WaitEvent);
-    RTSemEventDestroy(pCtx->TermEvent);
+
+    int rc = RTThreadWait(pCtx->Thread, 10 * 1000 /* 10s timeout */, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTSemEventDestroy(pCtx->WaitEvent);
+    AssertRC(rc);
+
+    pCtx->WaitEvent = NIL_RTSEMEVENT;
 
     VideoRecStreams::iterator it = pCtx->vecStreams.begin();
     while (it != pCtx->vecStreams.end())
@@ -667,9 +674,11 @@ void VideoRecContextDestroy(PVIDEORECCONTEXT pCtx)
     }
 
     Assert(pCtx->vecStreams.empty());
-    RTMemFree(pCtx);
 
-    ASMAtomicWriteU32(&g_enmState, VIDEORECSTS_UNINITIALIZED);
+    RTMemFree(pCtx);
+    pCtx = NULL;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -884,8 +893,6 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 
     pStream->Video.pu8YuvBuf = pStream->Codec.VPX.RawImage.planes[0];
 #endif
-
-    pCtx->fEnabled = true;
     pStream->fEnabled = true;
 
     return VINF_SUCCESS;
@@ -894,13 +901,13 @@ int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszF
 /**
  * VideoRec utility function to check if recording is enabled.
  *
- * @returns true if recording is enabled
+ * @returns true if recording is enabled.
  * @param   pCtx                Pointer to video recording context.
  */
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 {
     RT_NOREF(pCtx);
-    uint32_t enmState = ASMAtomicReadU32(&g_enmState);
+    uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
     return (   enmState == VIDEORECSTS_IDLE
             || enmState == VIDEORECSTS_BUSY);
 }
@@ -909,14 +916,14 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
  * VideoRec utility function to check if recording engine is ready to accept a new frame
  * for the given screen.
  *
- * @returns true if recording engine is ready
+ * @returns true if recording engine is ready.
  * @param   pCtx                Pointer to video recording context.
  * @param   uScreen             Screen ID.
  * @param   uTimeStampMs        Current time stamp (in ms).
  */
 bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStampMs)
 {
-    uint32_t enmState = ASMAtomicReadU32(&g_enmState);
+    uint32_t enmState = ASMAtomicReadU32(&pCtx->enmState);
     if (enmState != VIDEORECSTS_IDLE)
         return false;
 
@@ -930,8 +937,15 @@ bool VideoRecIsReady(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint64_t uTimeStam
     if (uTimeStampMs < pStream->uLastTimeStampMs + pStream->Video.uDelayMs)
         return false;
 
-    if (ASMAtomicReadBool(&pStream->fHasVideoData))
+    if (   ASMAtomicReadBool(&pStream->fHasVideoData)
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+        /* Check if we have audio data left for the current frame. */
+        || ASMAtomicReadBool(&pCtx->fHasAudioData)
+#endif
+       )
+    {
         return false;
+    }
 
     return true;
 }
@@ -1082,11 +1096,16 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStream)
  * @param   pCtx                Pointer to the video recording context.
  * @param   pvData              Audio frame data to send.
  * @param   cbData              Size (in bytes) of audio frame data.
- * @param   uTimestampMs        Time stamp (in ms) of audio playback.
+ * @param   uTimeStampMs        Time stamp (in ms) of audio playback.
  */
-int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimestampMs)
+int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbData, uint64_t uTimeStampMs)
 {
-    RT_NOREF(pCtx, pvData, cbData, uTimestampMs);
+#ifdef VBOX_WITH_AUDIO_VIDEOREC
+    AssertReturn(cbData <= _64K, VERR_INVALID_PARAMETER);
+
+    /* Do not execute during termination and guard against termination. */
+    if (!ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
+        return VINF_TRY_AGAIN;
 
     /* To save time spent in EMT, do the required audio multiplexing in the encoding thread.
      *
@@ -1094,7 +1113,17 @@ int VideoRecSendAudioFrame(PVIDEORECCONTEXT pCtx, const void *pvData, size_t cbD
      * audio data at the same given point in time.
      */
 
+    if (ASMAtomicReadBool(&pCtx->fHasAudioData))
+        return VERR_TRY_AGAIN; /* Previous frame not yet encoded. */
 
+    memcpy(pCtx->Audio.abBuf, pvData, RT_MIN(_64K, cbData));
+    pCtx->Audio.uTimeStampMs = uTimeStampMs;
+
+    ASMAtomicWriteBool(&pCtx->fHasAudioData, true);
+    RTSemEventSignal(pCtx->WaitEvent);
+#else
+    RT_NOREF(pCtx, pvData, cbData, uTimeStampMs);
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1123,7 +1152,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
                            uint64_t uTimeStampMs)
 {
     /* Do not execute during termination and guard against termination. */
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
+    if (!ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_BUSY, VIDEORECSTS_IDLE))
         return VINF_TRY_AGAIN;
 
     int rc = VINF_SUCCESS;
@@ -1269,11 +1298,7 @@ int VideoRecSendVideoFrame(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, 
 
     } while (0);
 
-    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDEORECSTS_IDLE, VIDEORECSTS_BUSY))
-    {
-        rc = RTSemEventSignal(pCtx->TermEvent);
-        AssertRC(rc);
-    }
+    ASMAtomicCmpXchgU32(&pCtx->enmState, VIDEORECSTS_IDLE, VIDEORECSTS_BUSY);
 
     return rc;
 }

@@ -81,6 +81,8 @@ public:
         const void *pvData;
         /** Size (in bytes) of encoded Opus audio data. */
         size_t      cbData;
+        /** Timestamp (in ms). */
+        uint64_t    uTimestampMs;
     };
 #endif /* VBOX_WITH_LIBOPUS */
 

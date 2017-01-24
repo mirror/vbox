@@ -584,8 +584,6 @@ public:
 
         CurSeg.mapTracks[uTrack] = pTrack;
 
-        Assert(uTrack == 0);
-
         if (puTrack)
             *puTrack = uTrack;
 
@@ -783,7 +781,8 @@ public:
         /* Make sure to round the result. This is very important! */
         uint64_t tcPTSRaw = lround((CurSeg.uTimecodeScaleFactor * 1000 * Cluster.cbData) / a_pTrack->Audio.uHz);
 
-        uint64_t tcPTS = /*Cluster.tcStart +*/ lround(tcPTSRaw / CurSeg.uTimecodeScaleFactor);
+        /* Calculate the absolute PTS. */
+        uint64_t tcPTS = lround(tcPTSRaw / CurSeg.uTimecodeScaleFactor);
 
         if (Cluster.tcStart == UINT64_MAX)
             Cluster.tcStart = tcPTS;
