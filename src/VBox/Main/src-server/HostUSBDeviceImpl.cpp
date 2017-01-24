@@ -1139,7 +1139,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
     const USBDEVICESTATE enmOldState = mUsb->enmState; NOREF(enmOldState);
     if (mUsb != aDev)
     {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
         /* we used this logic of string comparison in HostUSBDevice::compare
          * now we need to preserve strings from the old device if the new device has zero strings
          * this ensures the device is correctly matched later on

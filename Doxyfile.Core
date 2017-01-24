@@ -658,6 +658,7 @@ PREDEFINED          += \
     "PURE= = 0" \
     THIS_= \
     THIS= \
+    NTSTATUS=long \
     DECLARE_REGISTRY_RESOURCEID=// \
     DECLARE_PROTECT_FINAL_CONSTRUCT=// \
     "DECLARE_AGGREGATABLE(Class)= " \

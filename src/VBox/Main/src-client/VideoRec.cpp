@@ -681,9 +681,9 @@ DECLINLINE(PVIDEORECSTREAM) videoRecStreamGet(PVIDEORECCONTEXT pCtx, uint32_t uS
  * @param   uWidth              Target video resolution (width).
  * @param   uHeight             Target video resolution (height).
  * @param   uRate               Target encoding bit rate.
- * @param   uFps                Target FPS (Frame Per Second).
+ * @param   uFPS                Target FPS (Frame Per Second).
  * @param   uMaxTimeS           Maximum time (in s) to record, or 0 for no time limit.
- * @param   uMaxFileSizeMB      Maximum file size (in MB) to record, or 0 for no limit.
+ * @param   uMaxSizeMB          Maximum file size (in MB) to record, or 0 for no limit.
  * @param   pszOptions          Additional options in "key=value" array format. Optional.
  */
 int VideoRecStreamInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,

@@ -56,7 +56,7 @@ public:
     void FinalRelease();
 
 private:
-    // wrapped ICertificate properties
+    // Wrapped ICertificate properties
     HRESULT getVersionNumber(CertificateVersion_T *aVersionNumber);
     HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
     HRESULT getSignatureAlgorithmOID(com::Utf8Str &aSignatureAlgorithmOID);
@@ -78,18 +78,17 @@ private:
     HRESULT getSelfSigned(BOOL *aSelfSigned);
     HRESULT getTrusted(BOOL *aTrusted);
     HRESULT getExpired(BOOL *aExpired);
-    // wrapped ICertificate methods
+
+    // Wrapped ICertificate methods
     HRESULT isCurrentlyExpired(BOOL *aResult);
     HRESULT queryInfo(LONG aWhat, com::Utf8Str &aResult);
 
-    /** @name Methods extracting COM data from the certificate object
-     * @{  */
+    // Methods extracting COM data from the certificate object
     HRESULT i_getAlgorithmName(PCRTCRX509ALGORITHMIDENTIFIER a_pAlgId, com::Utf8Str &a_rReturn);
     HRESULT i_getX509Name(PCRTCRX509NAME a_pName, std::vector<com::Utf8Str> &a_rReturn);
     HRESULT i_getTime(PCRTASN1TIME a_pTime, com::Utf8Str &a_rReturn);
     HRESULT i_getUniqueIdentifier(PCRTCRX509UNIQUEIDENTIFIER a_pUniqueId, com::Utf8Str &a_rReturn);
     HRESULT i_getEncodedBytes(PRTASN1CORE a_pAsn1Obj, std::vector<BYTE> &a_rReturn);
-    /** @} */
 
     struct Data;
     /** Pointer to the private instance data   */

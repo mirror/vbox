@@ -133,7 +133,7 @@ void Certificate::uninit()
 }
 
 
-/** @name wrapped ICertificate properties
+/** @name Wrapped ICertificate properties
  * @{
  */
 
