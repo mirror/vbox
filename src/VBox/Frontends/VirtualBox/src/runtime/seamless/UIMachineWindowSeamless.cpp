@@ -171,14 +171,50 @@ void UIMachineWindowSeamless::cleanupVisualState()
 
 void UIMachineWindowSeamless::placeOnScreen()
 {
+    /* Make sure this window has seamless logic: */
+    UIMachineLogicSeamless *pSeamlessLogic = qobject_cast<UIMachineLogicSeamless*>(machineLogic());
+    AssertPtrReturnVoid(pSeamlessLogic);
+
     /* Get corresponding host-screen: */
-    const int iHostScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
+    const int iHostScreen = pSeamlessLogic->hostScreenForGuestScreen(m_uScreenId);
     /* And corresponding working area: */
     const QRect workingArea = gpDesktop->availableGeometry(iHostScreen);
+    Q_UNUSED(workingArea);
 
-    /* Set appropriate geometry for window: */
-    resize(workingArea.size());
-    move(workingArea.topLeft());
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+
+    /* Make sure we are located on corresponding host-screen: */
+    if (   gpDesktop->screenCount() > 1
+        && (x() != workingArea.x() || y() != workingArea.y()))
+    {
+        // WORKAROUND:
+        // With Qt5 on X11 we can't just move the window onto desired host-screen if
+        // window size is more than the available geometry (working area) of that
+        // host-screen. So we are resizing it to a smaller size first of all:
+        const QSize newSize = workingArea.size() * .9;
+        LogRel(("GUI: UIMachineWindowSeamless::placeOnScreen: Resize window: %d to smaller size: %dx%d\n",
+                m_uScreenId, newSize.width(), newSize.height()));
+        resize(newSize);
+        /* Move window onto required screen: */
+        const QPoint newPosition = workingArea.topLeft();
+        LogRel(("GUI: UIMachineWindowSeamless::placeOnScreen: Move window: %d to: %dx%d\n",
+                m_uScreenId, newPosition.x(), newPosition.y()));
+        move(newPosition);
+    }
+
+#else
+
+    /* Set appropriate window geometry: */
+    const QSize newSize = workingArea.size();
+    LogRel(("GUI: UIMachineWindowSeamless::placeOnScreen: Resize window: %d to: %dx%d\n",
+            m_uScreenId, newSize.width(), newSize.height()));
+    resize(newSize);
+    const QPoint newPosition = workingArea.topLeft();
+    LogRel(("GUI: UIMachineWindowSeamless::placeOnScreen: Move window: %d to: %dx%d\n",
+            m_uScreenId, newPosition.x(), newPosition.y()));
+    move(newPosition);
+
+#endif
 }
 
 void UIMachineWindowSeamless::showInNecessaryMode()
@@ -211,8 +247,14 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
 
-        /* Show window in normal mode: */
+#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+        /* Show window: */
+        if (!isMaximized())
+            showMaximized();
+#else
+        /* Show window: */
         show();
+#endif
 
         /* Restore minimized state if necessary: */
         if (m_fWasMinimized || fWasMinimized)
