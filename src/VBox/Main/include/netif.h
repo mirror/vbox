@@ -92,8 +92,8 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox, IHostNetworkInterface
 int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId, IProgress **aProgress);
 int NetIfGetConfig(HostNetworkInterface * pIf, NETIFINFO *);
 int NetIfGetConfigByName(PNETIFINFO pInfo);
-int NetIfGetState(const char *pszIfName, NETIFSTATUS *penmState);
-int NetIfGetLinkSpeed(const char *pszIfName, uint32_t *puMbits);
+int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState);
+int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits);
 int NetIfDhcpRediscover(VirtualBox *pVBox, HostNetworkInterface * pIf);
 int NetIfAdpCtlOut(const char *pszName, const char *pszCmd, char *pszBuffer, size_t cBufSize);
 
@@ -152,11 +152,11 @@ DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
 {
     /* Get the index from the name */
     Utf8Str strTmp = bstrIfName;
-    const char *pszIfName = strTmp.c_str();
+    const char *pcszIfName = strTmp.c_str();
     int iInstance = 0;
-    size_t iPos = strcspn(pszIfName, "0123456789");
-    if (pszIfName[iPos])
-        iInstance = RTStrToUInt32(pszIfName + iPos);
+    size_t iPos = strcspn(pcszIfName, "0123456789");
+    if (pcszIfName[iPos])
+        iInstance = RTStrToUInt32(pcszIfName + iPos);
 
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)

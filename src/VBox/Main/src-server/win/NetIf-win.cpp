@@ -1111,12 +1111,12 @@ int NetIfGetConfigByName(PNETIFINFO)
  *
  * @returns VBox status code.
  *
- * @param   pszIfName   Interface name.
+ * @param   pcszIfName  Interface name.
  * @param   penmState   Where to store the retrieved state.
  */
-int NetIfGetState(const char *pszIfName, NETIFSTATUS *penmState)
+int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
 {
-    RT_NOREF(pszIfName, penmState);
+    RT_NOREF(pcszIfName, penmState);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1126,12 +1126,12 @@ int NetIfGetState(const char *pszIfName, NETIFSTATUS *penmState)
  *
  * @returns VBox status code.
  *
- * @param   pszIfName  Interface name.
+ * @param   pcszIfName  Interface name.
  * @param   puMbits     Where to store the link speed.
  */
-int NetIfGetLinkSpeed(const char *pszIfName, uint32_t *puMbits)
+int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits)
 {
-    RT_NOREF(pszIfName, puMbits);
+    RT_NOREF(pcszIfName, puMbits);
     return VERR_NOT_IMPLEMENTED;
 }
 
