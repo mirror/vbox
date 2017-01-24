@@ -63,6 +63,11 @@ RT_C_DECLS_END
 # define PAGE_OFFSET_MASK (PAGE_SIZE - 1)
 #endif
 
+/* Missing if we're compiling against older WDKs. */
+#ifndef NonPagedPoolNx
+# define NonPagedPoolNx     ((POOL_TYPE)512)
+#endif
+
 /*
  * When targeting NT4 we have to undo some of the nice macros
  * installed by the later DDKs.
@@ -76,6 +81,8 @@ RT_C_DECLS_END
   NTKERNELAPI PVOID NTAPI ExAllocatePool(IN POOL_TYPE PoolType, IN SIZE_T NumberOfBytes);
 # undef ExFreePool
   NTKERNELAPI VOID NTAPI ExFreePool(IN PVOID P);
+# undef NonPagedPoolNx
+# define NonPagedPoolNx NonPagedPool
 #endif /* IPRT_TARGET_NT4 */
 
 /** @def IPRT_NT_POOL_TAG

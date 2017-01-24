@@ -91,6 +91,14 @@ extern uint32_t                                g_offrtNtPbQuantumEnd;
 extern uint32_t                                g_cbrtNtPbQuantumEnd;
 extern uint32_t                                g_offrtNtPbDpcQueueDepth;
 
+/** Makes an NT version for checking against g_uRtNtVersion. */
+#define RTNT_MAKE_VERSION(uMajor, uMinor)       RT_MAKE_U32(uMinor, uMajor)
+
+extern uint32_t                                g_uRtNtVersion;
+extern uint8_t                                 g_uRtNtMajorVer;
+extern uint8_t                                 g_uRtNtMinorVer;
+extern uint32_t                                g_uRtNtBuildNo;
+
 
 int __stdcall rtMpPokeCpuUsingDpc(RTCPUID idCpu);
 int __stdcall rtMpPokeCpuUsingBroadcastIpi(RTCPUID idCpu);
