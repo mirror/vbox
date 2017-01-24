@@ -660,6 +660,7 @@ PREDEFINED          += \
     THIS= \
     NTSTATUS=long \
     LONG=long \
+    NTAPI= \
     WINAPI= \
     DECLARE_REGISTRY_RESOURCEID=// \
     DECLARE_PROTECT_FINAL_CONSTRUCT=// \
