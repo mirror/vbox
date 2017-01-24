@@ -103,6 +103,8 @@ uint32_t                                g_cbrtNtPbQuantumEnd;
 /** Offset of the _KPRCB::DpcQueueDepth field. 0 if not found. */
 uint32_t                                g_offrtNtPbDpcQueueDepth;
 
+/** The combined NT version, see RTNT_MAKE_VERSION. */
+uint32_t                                g_uRtNtVersion;
 /** The major version number. */
 uint8_t                                 g_uRtNtMajorVer;
 /** The minor version number. */
