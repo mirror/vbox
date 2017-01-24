@@ -291,6 +291,8 @@ static int avRecSinkInit(PDRVAUDIOVIDEOREC pThis, PAVRECSINK pSink, PAVRECCONTAI
 
     if (RT_SUCCESS(rc))
     {
+        pSink->Con.Parms.enmType     = pConParms->enmType;
+
         pSink->Codec.Parms.uHz       = uHz;
         pSink->Codec.Parms.cChannels = pCodecParms->cChannels;
         pSink->Codec.Parms.uBitrate  = pCodecParms->uBitrate;
