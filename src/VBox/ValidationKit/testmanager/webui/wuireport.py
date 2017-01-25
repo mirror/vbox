@@ -332,7 +332,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
           and len(self._aiSortColumns) > 0 \
           and abs(self._aiSortColumns[0]) <= len(oSet.aoPeriods):
             iSortColumn = abs(self._aiSortColumns[0]);
-            fByTotal = iSortColumn >= len(oSet.aoPeriods);
+            fByTotal = iSortColumn >= len(oSet.aoPeriods); # pylint: disable=unused-variable
         elif oSet.cMaxTotal < 10:
             iSortColumn = len(oSet.aoPeriods);
         else:
