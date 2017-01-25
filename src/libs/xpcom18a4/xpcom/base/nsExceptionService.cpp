@@ -44,8 +44,8 @@
 #include "prlock.h"
 static const PRUintn BAD_TLS_INDEX = (PRUintn) -1;
 
-#define CHECK_SERVICE_USE_OK() if (!lock) return NS_ERROR_NOT_INITIALIZED
-#define CHECK_MANAGER_USE_OK() if (!mService || !nsExceptionService::lock) return NS_ERROR_NOT_INITIALIZED
+#define CHECK_SERVICE_USE_OK() if (tlsIndex == BAD_TLS_INDEX) return NS_ERROR_NOT_INITIALIZED
+#define CHECK_MANAGER_USE_OK() if (!mService || nsExceptionService::tlsIndex == BAD_TLS_INDEX) return NS_ERROR_NOT_INITIALIZED
 
 // A key for our registered module providers hashtable
 class nsProviderKey : public nsHashKey {
@@ -224,7 +224,9 @@ void nsExceptionService::ThreadDestruct( void *data )
 
 void nsExceptionService::Shutdown()
 {
-  PR_SetThreadPrivate(tlsIndex, nsnull);
+  PRUintn tmp = tlsIndex;
+  tlsIndex = BAD_TLS_INDEX;
+  PR_SetThreadPrivate(tmp, nsnull);
   mProviders.Reset();
   if (lock) {
     DropAllThreads();
