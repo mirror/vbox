@@ -116,7 +116,7 @@ public:
      * pointer p does not support the ComPtr interface T.
      *
      * Does not call AddRef explicitly because if QueryInterface succeeded, then
-     * the refcount will have been increased by one already .
+     * the refcount will have been increased by one already.
      */
     template <class T2>
     ComPtr(const ComPtr<T2> &that)
@@ -141,7 +141,7 @@ public:
      * pointer p does not support the ComPtr interface T.
      *
      * Does not call AddRef explicitly because if QueryInterface succeeded, then
-     * the refcount will have been increased by one already .
+     * the refcount will have been increased by one already.
      */
     template <class T2>
     ComPtr(T2 *p)
@@ -166,7 +166,7 @@ public:
      * pointer p does not support the ComPtr interface T.
      *
      * Does not call AddRef explicitly because if QueryInterface succeeded, then
-     * the refcount will have been increased by one already .
+     * the refcount will have been increased by one already.
      */
     template <class T2>
     ComPtr& operator=(const ComPtr<T2> &that)
@@ -190,7 +190,7 @@ public:
      * pointer p does not support the ComPtr interface T.
      *
      * Does not call AddRef explicitly because if QueryInterface succeeded, then
-     * the refcount will have been increased by one already .
+     * the refcount will have been increased by one already.
      */
     template <class T2>
     ComPtr& operator=(T2 *p)
