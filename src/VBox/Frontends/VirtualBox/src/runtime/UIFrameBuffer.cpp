@@ -1148,8 +1148,12 @@ void UIFrameBufferPrivate::handlePaintEvent(QPaintEvent *pEvent)
 
 void UIFrameBufferPrivate::handleSetVisibleRegion(const QRegion &region)
 {
-    /* Make sure async visible-region has changed: */
-    if (m_asyncVisibleRegion == region)
+    /* Make sure async visible-region has changed or wasn't yet applied: */
+    if (   m_asyncVisibleRegion == region
+#ifdef VBOX_WITH_MASKED_SEAMLESS
+        && m_asyncVisibleRegion == m_pMachineView->machineWindow()->mask()
+#endif /* VBOX_WITH_MASKED_SEAMLESS */
+           )
         return;
 
     /* We are accounting async visible-regions one-by-one
