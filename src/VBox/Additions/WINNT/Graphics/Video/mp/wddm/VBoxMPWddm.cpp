@@ -7265,14 +7265,24 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 
     for (UINT i = 0; i < pPresentDisplayOnly->NumDirtyRects; ++i)
     {
-        vboxVdmaGgDmaBltPerform(pDevExt, &SrcAllocData, &pPresentDisplayOnly->pDirtyRect[i], &pSource->AllocData, &pPresentDisplayOnly->pDirtyRect[i]);
+        RECT *pDirtyRect = &pPresentDisplayOnly->pDirtyRect[i];
+
+        if (pDirtyRect->left >= pDirtyRect->right || pDirtyRect->top >= pDirtyRect->bottom)
+        {
+            WARN(("Wrong dirty rect (%d, %d)-(%d, %d)",
+                pDirtyRect->left, pDirtyRect->top, pDirtyRect->right, pDirtyRect->bottom));
+            continue;
+        }
+
+        vboxVdmaGgDmaBltPerform(pDevExt, &SrcAllocData, pDirtyRect, &pSource->AllocData, pDirtyRect);
+
         if (!bUpdateRectInited)
         {
-            UpdateRect = pPresentDisplayOnly->pDirtyRect[i];
+            UpdateRect = *pDirtyRect;
             bUpdateRectInited = TRUE;
         }
         else
-            vboxWddmRectUnite(&UpdateRect, &pPresentDisplayOnly->pDirtyRect[i]);
+            vboxWddmRectUnite(&UpdateRect, pDirtyRect);
     }
 
     if (bUpdateRectInited && pSource->bVisible)
