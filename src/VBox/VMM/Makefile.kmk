@@ -328,6 +328,7 @@ VMMR3/SSM.cpp_DEFS +=	\
 
 if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
  VBoxVMM_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+ VBoxVMM_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  VBoxVMM_VMMAll/PDMAllCritSect.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
 endif
 
@@ -593,6 +594,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
 
  if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
   VMMRC_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+  VMMRC_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
 
  VMMRC_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
@@ -751,6 +753,7 @@ ifndef VBOX_ONLY_EXTPACKS
 
  if "$(USERNAME)" == "bird" && "$(KBUILD_TARGET)" == "win"
   VMMR0_VMMAll/IEMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
+  VMMR0_VMMAll/PGMAll.cpp_CXXFLAGS = /FAcs /Fa$(subst /,\\,$(outbase).cod)
  endif
 
  VMMR0_INTERMEDIATES += $(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
