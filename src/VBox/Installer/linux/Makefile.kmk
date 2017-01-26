@@ -399,7 +399,7 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 	$(QUIET)$(VBOX_MAKESELF) --follow --nocomp $(VBOX_LNX_INST_STAGE_DIR) $@ \
 		"VirtualBox for Linux installation" ./install.sh "\$$0 1> /dev/null"
 
-$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_KMK).ts | $$(dir $$@)
+$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_VERSION_STAMP) $(wildcard $(VBOX_SVN_REV_KMK).ts) | $$(dir $$@)
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 		-e "s;_SVNREV_;$(VBOX_SVN_REV);g" \
