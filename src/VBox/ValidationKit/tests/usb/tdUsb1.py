@@ -107,6 +107,9 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         self.sHostname             = socket.gethostname().lower();
         self.sGadgetHostnameDef    = 'usbtest.de.oracle.com';
         self.uGadgetPortDef        = None;
+        self.sUsbCapturePathDef    = self.sScratchPath;
+        self.sUsbCapturePath       = self.sUsbCapturePathDef;
+        self.fUsbCapture           = False;
 
     #
     # Overridden methods.
@@ -139,6 +142,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         reporter.log('      Default: %s' % (self.sGadgetHostnameDef));
         reporter.log('  --default-gadget-port <port>');
         reporter.log('      Default: %s' % (6042));
+        reporter.log('  --usb-capture-path <path>');
+        reporter.log('      Default: %s' % (self.sUsbCapturePathDef));
+        reporter.log('  --usb-capture');
+        reporter.log('      Whether to capture the USB traffic for each test');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -221,6 +228,11 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             if self.uGadgetPortDef <= 0:
                 raise base.InvalidOption('The "--default-gadget-port" value "%s" is zero or negative.' \
                     % (self.uGadgetPortDef,));
+        elif asArgs[iArg] == '--usb-capture-path':
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--usb-capture-path" takes a path argument');
+            self.sUsbCapturePath = asArgs[iArg];
+        elif asArgs[iArg] == '--usb-capture':
+            self.fUsbCapture = True;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -305,10 +317,59 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         return (self.sGadgetHostnameDef, self.uGadgetPortDef);
 
+    def getCaptureFilePath(self, sUsbCtrl, sSpeed):
+        """
+        Returns capture filename from the given data.
+        """
+
+        return '%s/%s-%s.pcap' % (self.sUsbCapturePath, sUsbCtrl, sSpeed);
+
+    def attachUsbDeviceToVm(self, oSession, sVendorId, sProductId, iBusId,
+                            sCaptureFile = None):
+        """
+        Attaches the given USB device to the VM either via a filter
+        or directly if capturing the USB traffic is enabled.
+
+        Returns True on success, False on failure.
+        """
+        fRc = False;
+        if sCaptureFile is None:
+            fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = sVendorId, sProductId = sProductId, \
+                                              sPort = format(iBusId, 'x'));
+        else:
+            # Search for the correct device in the USB device list waiting for some time
+            # to let it appear.
+            iVendorId = int(sVendorId, 16);
+            iProductId = int(sProductId, 16);
+
+            # Try a few times to give VBoxSVC a chance to detect the new device.
+            for _ in xrange(5):
+                fFound = False;
+                aoUsbDevs = self.oVBoxMgr.getArray(self.oVBox.host, 'USBDevices');
+                for oUsbDev in aoUsbDevs:
+                    if     oUsbDev.vendorId == iVendorId \
+                       and oUsbDev.productId == iProductId \
+                       and oUsbDev.port == iBusId:
+                        fFound = True;
+                        fRc = oSession.attachUsbDevice(oUsbDev.id, sCaptureFile);
+                        break;
+
+                if fFound:
+                    break;
+
+                # Wait a moment until the next try.
+                self.sleep(1);
+
+        if fRc:
+            # Wait a moment to let the USB device appear
+            self.sleep(3);
+
+        return fRc;
+
     #
     # Test execution helpers.
     #
-    def testUsbCompliance(self, oSession, oTxsSession, sUsbCtrl, sSpeed):
+    def testUsbCompliance(self, oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile = None):
         """
         Test VirtualBoxs USB stack in a VM.
         """
@@ -330,13 +391,8 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
-                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
-                                                  sPort = format(iBusId, 'x'));
+                fRc = self.attachUsbDeviceToVm(oSession, '0525', 'a4a0', iBusId, sCaptureFile);
                 if fRc is True:
-
-                    # Wait a moment to let the USB device appear
-                    self.sleep(3);
-
                     tupCmdLine = ('UsbTest', );
                     # Exclude a few tests which hang and cause a timeout, need investigation.
                     lstTestsExclude = self.kdUsbTestsDisabled.get(sSpeed);
@@ -361,7 +417,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         _ = sUsbCtrl;
         return fRc;
 
-    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed): # pylint: disable=W0613
+    def testUsbReattach(self, oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile = None): # pylint: disable=W0613
         """
         Tests that rapid connect/disconnect cycles work.
         """
@@ -382,8 +438,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
             fRc = oUsbGadget.impersonate(usbgadget.g_ksGadgetImpersonationTest, fSuperSpeed);
             if fRc is True:
                 iBusId, _ = oUsbGadget.getGadgetBusAndDevId();
-                fRc = oSession.addUsbDeviceFilter('Compliance device', sVendorId = '0525', sProductId = 'a4a0', \
-                                                  sPort = str(iBusId));
+                fRc = self.attachUsbDeviceToVm(oSession, '0525', 'a4a0', iBusId, sCaptureFile);
                 if fRc is True:
 
                     # Wait a moment to let the USB device appear
@@ -455,14 +510,24 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                 # Fudge factor - Allow the guest to finish starting up.
                 self.sleep(5);
 
+                sCaptureFile = None;
+                if self.fUsbCapture:
+                    sCaptureFile = self.getCaptureFilePath(sUsbCtrl, sSpeed);
+
                 if sUsbTest == 'Compliance':
-                    fRc = self.testUsbCompliance(oSession, oTxsSession, sUsbCtrl, sSpeed);
+                    fRc = self.testUsbCompliance(oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile);
                 elif sUsbTest == 'Reattach':
-                    fRc = self.testUsbReattach(oSession, oTxsSession, sUsbCtrl, sSpeed);
+                    fRc = self.testUsbReattach(oSession, oTxsSession, sUsbCtrl, sSpeed, sCaptureFile);
 
                 # cleanup.
                 self.removeTask(oTxsSession);
                 self.terminateVmBySession(oSession)
+
+                # Add the traffic dump if it exists and the test failed
+                if reporter.testErrorCount() > 0 \
+                   and sCaptureFile is not None \
+                   and os.path.exists(sCaptureFile):
+                    reporter.addLogFile(sCaptureFile, 'misc/other', 'USB traffic dump');
             else:
                 fRc = False;
         return fRc;
@@ -471,6 +536,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         """
         Runs one VM thru the various configurations.
         """
+        fRc = False;
         reporter.testStart(sVmName);
         for sUsbCtrl in self.asUsbCtrls:
             reporter.testStart(sUsbCtrl)
