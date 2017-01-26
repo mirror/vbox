@@ -142,7 +142,7 @@
 # define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       PGM_A20_APPLY(pVCpu, pgmGstGet4MBPhysPage((pVM), Pde))
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (X86_PDE_P | X86_PDE_RW | X86_PDE_US | X86_PDE_A))
 # define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde) \
-    ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A))
+    ( ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A)) | PGM_PDFLAGS_BIG_PAGE )
 # define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde) \
     ((Pde).u & (X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A | X86_PDE4M_D | X86_PDE4M_G))
 # define GST_PD_SHIFT                           X86_PD_SHIFT
@@ -182,7 +182,7 @@
 # define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_BIG_PG_MASK))
 # define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (pVCpu)->pgm.s.fGst64ShadowedPteMask )
 # define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedPdeMask )
-# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPdeMask )
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  ( ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPdeMask ) | PGM_PDFLAGS_BIG_PAGE)
 # define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPde4PteMask )
 
 # define GST_PD_SHIFT                           X86_PD_PAE_SHIFT
