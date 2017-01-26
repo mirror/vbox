@@ -140,7 +140,7 @@ ip_input(PNATState pData, struct mbuf *m)
 
     hlen = ip->ip_hl << 2;
     if (   hlen < sizeof(struct ip)
-        || hlen > m->m_len)
+        || hlen > mlen)
     {
         /* min header length */
         ipstat.ips_badhlen++;                     /* or packet too short */
@@ -184,7 +184,7 @@ ip_input(PNATState pData, struct mbuf *m)
 
     /* Should drop packet if mbuf too long? hmmm... */
     if (mlen > ip->ip_len)
-        m_adj(m, ip->ip_len - m->m_len);
+        m_adj(m, ip->ip_len - mlen);
 
     /* source must be unicast */
     if ((ip->ip_src.s_addr & RT_N2H_U32_C(0xe0000000)) == RT_N2H_U32_C(0xe0000000))
