@@ -1178,18 +1178,21 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPU pVCpu, bool fByp
     {
         cbToTryRead = PAGE_SIZE;
         GCPtrPC     = pCtx->rip;
-        if (!IEM_IS_CANONICAL(GCPtrPC))
+        if (IEM_IS_CANONICAL(GCPtrPC))
+            cbToTryRead = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+        else
             return iemRaiseGeneralProtectionFault0(pVCpu);
-        cbToTryRead = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
     }
     else
     {
         uint32_t GCPtrPC32 = pCtx->eip;
         AssertMsg(!(GCPtrPC32 & ~(uint32_t)UINT16_MAX) || pVCpu->iem.s.enmCpuMode == IEMMODE_32BIT, ("%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip));
-        if (GCPtrPC32 > pCtx->cs.u32Limit)
+        if (GCPtrPC32 <= pCtx->cs.u32Limit)
+            cbToTryRead = pCtx->cs.u32Limit - GCPtrPC32 + 1;
+        else
             return iemRaiseSelectorBounds(pVCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
-        cbToTryRead = pCtx->cs.u32Limit - GCPtrPC32 + 1;
-        if (!cbToTryRead) /* overflowed */
+        if (cbToTryRead) { /* likely */ }
+        else /* overflowed */
         {
             Assert(GCPtrPC32 == 0); Assert(pCtx->cs.u32Limit == UINT32_MAX);
             cbToTryRead = UINT32_MAX;
@@ -1214,17 +1217,20 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPU pVCpu, bool fByp
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
     int rc = PGMGstGetPage(pVCpu, GCPtrPC, &fFlags, &GCPhys);
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc)) { /* probable */ }
+    else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
     }
-    if (!(fFlags & X86_PTE_US) && pVCpu->iem.s.uCpl == 3)
+    if ((fFlags & X86_PTE_US) || pVCpu->iem.s.uCpl != 3) { /* likely */ }
+    else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - supervisor page\n", GCPtrPC));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    if ((fFlags & X86_PTE_PAE_NX) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
+    if (!(fFlags & X86_PTE_PAE_NX) || !(pCtx->msrEFER & MSR_K6_EFER_NXE)) { /* likely */ }
+    else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - NX\n", GCPtrPC));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
