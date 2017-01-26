@@ -222,9 +222,9 @@ static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertReturn(pVM,  VERR_INVALID_PARAMETER);
     AssertReturn(pSSM, VERR_SSM_INVALID_STATE);
 
-    /** @todo Save per-CPU data. */
     int rc = VINF_SUCCESS;
 #if 0
+    /* Save per-CPU data. */
     SSMR3PutU32(pSSM, pVM->cCpus);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -271,9 +271,9 @@ static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     if (uVersion != GIM_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    /** @todo Load per-CPU data. */
     int rc;
 #if 0
+    /* Load per-CPU data. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         rc = SSMR3PutXYZ(pSSM, pVM->aCpus[i].gim.s.XYZ);
