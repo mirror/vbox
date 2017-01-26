@@ -78,7 +78,7 @@
 #define HMVMX_UPDATED_GUEST_LDTR                  RT_BIT(8)
 #define HMVMX_UPDATED_GUEST_TR                    RT_BIT(9)
 #define HMVMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(10)
-#define HMVMX_UPDATED_GUEST_DEBUG                 RT_BIT(11)
+#define HMVMX_UPDATED_GUEST_DR7                   RT_BIT(11)
 #define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(12)
 #define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(13)
 #define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(14)
@@ -98,7 +98,7 @@
                                                    | HMVMX_UPDATED_GUEST_LDTR                  \
                                                    | HMVMX_UPDATED_GUEST_TR                    \
                                                    | HMVMX_UPDATED_GUEST_SEGMENT_REGS          \
-                                                   | HMVMX_UPDATED_GUEST_DEBUG                 \
+                                                   | HMVMX_UPDATED_GUEST_DR7                   \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      \
                                                    | HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      \
@@ -1005,7 +1005,7 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         if (RT_FAILURE(rc))
             goto cleanup;
 
-        /* Allocate the Virtual-APIC page for transparent TPR accesses. */
+        /* Get the allocated virtual-APIC page from the APIC device for transparent TPR accesses. */
         if (pVM->hm.s.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         {
             rc = APICGetApicPageForCpu(pVCpu, &pVCpu->hm.s.vmx.HCPhysVirtApic, (PRTR0PTR)&pVCpu->hm.s.vmx.pbVirtApic,
@@ -6031,6 +6031,7 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR0));
         uint32_t uVal    = 0;
         uint32_t uShadow = 0;
         int rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
@@ -6066,6 +6067,7 @@ static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR4))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR4));
         uint32_t uVal    = 0;
         uint32_t uShadow = 0;
         rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &uVal);
@@ -6096,6 +6098,7 @@ static int hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RIP))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_RIP));
         uint64_t u64Val = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);
         AssertRCReturn(rc, rc);
@@ -6123,6 +6126,7 @@ static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RSP))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_RSP));
         uint64_t u64Val = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &u64Val);
         AssertRCReturn(rc, rc);
@@ -6149,6 +6153,7 @@ static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_RFLAGS))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_RFLAGS));
         uint32_t uVal = 0;
         int rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &uVal);
         AssertRCReturn(rc, rc);
@@ -6273,29 +6278,32 @@ static int hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = VINF_SUCCESS;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR))
     {
+        Assert(!HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_CS_MSR));
         uint32_t u32Val = 0;
-        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, &u32Val);     AssertRCReturn(rc, rc);
+        int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, &u32Val);     AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.cs = u32Val;
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR);
     }
 
-    uint64_t u64Val = 0;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &u64Val);    AssertRCReturn(rc, rc);
+        Assert(!HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_EIP_MSR));
+        uint64_t u64Val = 0;
+        int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &u64Val);    AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.eip = u64Val;
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR);
     }
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, &u64Val);    AssertRCReturn(rc, rc);
+        Assert(!HMCPU_CF_IS_SET(pVCpu, HM_CHANGED_GUEST_SYSENTER_ESP_MSR));
+        uint64_t u64Val = 0;
+        int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, &u64Val);    AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.esp = u64Val;
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR);
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -6320,6 +6328,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS));
         hmR0VmxLazySaveGuestMsrs(pVCpu, pMixedCtx);
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
     }
@@ -6348,6 +6357,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS))
         return VINF_SUCCESS;
 
+    Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS));
     PVMXAUTOMSR pMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
     uint32_t    cMsrs = pVCpu->hm.s.vmx.cMsrs;
     Log4(("hmR0VmxSaveGuestAutoLoadStoreMsrs: cMsrs=%u\n", cMsrs));
@@ -6403,6 +6413,7 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest CR3. Only changes with Nested Paging. This must be done -after- saving CR0 and CR4 from the guest! */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR3))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR3));
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0));
         Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR4));
 
@@ -6588,6 +6599,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest segment registers. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_SEGMENT_REGS))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS));
         int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
 
@@ -6635,6 +6647,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest LDTR. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LDTR))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LDTR));
         rc = VMXLOCAL_READ_SEG(LDTR, ldtr);
         AssertRCReturn(rc, rc);
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LDTR);
@@ -6645,6 +6658,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     uint32_t u32Val = 0;
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_GDTR))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_GDTR));
         rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
         rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);      AssertRCReturn(rc, rc);
         pMixedCtx->gdtr.pGdt  = u64Val;
@@ -6655,6 +6669,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest IDTR. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_IDTR))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_IDTR));
         rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
         rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);      AssertRCReturn(rc, rc);
         pMixedCtx->idtr.pIdt  = u64Val;
@@ -6665,6 +6680,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest TR. */
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_TR))
     {
+        Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_TR));
         rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
 
@@ -6696,7 +6712,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestDR7(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_DEBUG))
+    if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_DR7))
     {
         if (!pVCpu->hm.s.fUsingHyperDR7)
         {
@@ -6706,7 +6722,7 @@ static int hmR0VmxSaveGuestDR7(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             pMixedCtx->dr[7] = u32Val;
         }
 
-        HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_DEBUG);
+        HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_DR7);
     }
     return VINF_SUCCESS;
 }
@@ -8431,7 +8447,7 @@ static VBOXSTRICTRC hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     /* This needs to be done after hmR0VmxLoadGuestEntryCtls() and hmR0VmxLoadGuestExitCtls() as it may alter controls if we
        determine we don't have to swap EFER after all. */
     rc = hmR0VmxLoadGuestMsrs(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadSharedMsrs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestMsrs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     rc = hmR0VmxLoadGuestApicState(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
