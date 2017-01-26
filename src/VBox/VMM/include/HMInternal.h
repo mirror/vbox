@@ -145,8 +145,12 @@ RT_C_DECLS_BEGIN
 #define MASK_INJECT_IRQ_STAT       0xff
 
 /** @name HM changed flags.
- * These flags are used to keep track of which important registers that
- * have been changed since last they were reset.
+ * These flags are used to keep track of which important registers that have
+ * been changed since last they were reset.
+ *
+ * Flags marked "shared" are used for registers that are common to both the host
+ * and guest (i.e. without dedicated VMCS/VMCB fields for guest bits).
+ *
  * @{
  */
 #define HM_CHANGED_GUEST_CR0                     RT_BIT(0)      /* Shared */
@@ -166,7 +170,7 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_SYSENTER_EIP_MSR        RT_BIT(14)
 #define HM_CHANGED_GUEST_SYSENTER_ESP_MSR        RT_BIT(15)
 #define HM_CHANGED_GUEST_EFER_MSR                RT_BIT(16)
-#define HM_CHANGED_GUEST_LAZY_MSRS               RT_BIT(17)     /* Shared */
+#define HM_CHANGED_GUEST_LAZY_MSRS               RT_BIT(17)     /* Shared */ /** @todo Move this to VT-x specific? */
 #define HM_CHANGED_GUEST_XCPT_INTERCEPTS         RT_BIT(18)
 /* VT-x specific state. */
 #define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(19)
