@@ -2272,6 +2272,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
 
+    //pgmLogState(pVM);
     LogRel(("PGM: PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
 }
@@ -2655,6 +2656,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
         }
     }
 
+    //pgmLogState(pVM);
     pgmUnlock(pVM);
 }
 
