@@ -2485,6 +2485,42 @@ class SessionWrapper(TdTaskBase):
 
         return True
 
+    def attachUsbDevice(self, sUuid, sCaptureFilename = None):
+        """
+        Attach given USB device UUID to the VM.
+
+        Returns True on success
+        Returns False on failure.
+        """
+        fRc = True;
+        try:
+            if sCaptureFilename is None:
+                self.o.console.attachUSBDevice(sUuid, '');
+            else:
+                self.o.console.attachUSBDevice(sUuid, sCaptureFilename);
+        except:
+            reporter.logXcpt('Unable to attach USB device %s' % (sUuid,));
+            fRc = False;
+
+        return fRc;
+
+    def detachUsbDevice(self, sUuid):
+        """
+        Detach given USB device UUID from the VM.
+
+        Returns True on success
+        Returns False on failure.
+        """
+        fRc = True;
+        try:
+            _ = self.o.console.detachUSBDevice(sUuid);
+        except:
+            reporter.logXcpt('Unable to detach USB device %s' % (sUuid,));
+            fRc = False;
+
+        return fRc;
+
+
     #
     # IMachineDebugger wrappers.
     #
