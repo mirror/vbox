@@ -1232,16 +1232,28 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE    pShwPde = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
+#  ifdef IN_RING3 /* Possible we didn't resync yet when called from REM. */
+    if (!pShwPde)
+    {
+        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
+        return VINF_SUCCESS;
+    }
+#  else
     Assert(pShwPde);
+#  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT);
     PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
 
     /* If the shadow PDPE isn't present, then skip the invalidate. */
+#  ifdef IN_RING3 /* Possible we didn't resync yet when called from REM. */
+    if (!pPdptDst || !pPdptDst->a[iPdpt].n.u1Present)
+#  else
     if (!pPdptDst->a[iPdpt].n.u1Present)
+#  endif
     {
-        Assert(!(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING));
+        Assert(!pPdptDst || !(pPdptDst->a[iPdpt].u & PGM_PLXFLAGS_MAPPING));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
         PGM_INVL_PG(pVCpu, GCPtrPage);
         return VINF_SUCCESS;
