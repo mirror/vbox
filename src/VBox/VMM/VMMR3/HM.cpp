@@ -1877,8 +1877,6 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
     pVCpu->hm.s.vmx.u64MsrApicBase    = 0;
     pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
 
-
-
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
     for (unsigned j = 0; j < pCache->Read.cValidEntries; j++)
