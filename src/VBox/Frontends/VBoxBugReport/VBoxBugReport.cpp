@@ -330,6 +330,84 @@ PRTSTREAM BugReportCommand::getStream(void)
 }
 
 
+BugReportCommandTemp::BugReportCommandTemp(const char *pszTitle, const char *pszExec, ...)
+    : BugReportItem(pszTitle), m_Strm(NULL)
+{
+    handleRtError(RTPathTemp(m_szFileName, RTPATH_MAX),
+                  "Failed to obtain path to temporary folder");
+    handleRtError(RTPathAppend(m_szFileName, RTPATH_MAX, "BugRepXXXXX.tmp"),
+                  "Failed to append path");
+    handleRtError(RTFileCreateTemp(m_szFileName, 0600),
+                  "Failed to create temporary file '%s'", m_szFileName);
+
+    unsigned cArgs = 0;
+    m_papszArgs[cArgs++] = RTStrDup(pszExec);
+
+    const char *pszArg;
+    va_list va;
+    va_start(va, pszExec);
+    do
+    {
+        if (cArgs >= RT_ELEMENTS(m_papszArgs) - 1)
+        {
+            va_end(va);
+            throw RTCError(com::Utf8StrFmt("Too many arguments (%u > %u)\n", cArgs+1, RT_ELEMENTS(m_papszArgs)));
+        }
+        pszArg = va_arg(va, const char *);
+        m_papszArgs[cArgs++] = RTStrDup(pszArg ? pszArg : m_szFileName);
+    } while (pszArg);
+    va_end(va);
+
+    m_papszArgs[cArgs++] = NULL;
+}
+
+BugReportCommandTemp::~BugReportCommandTemp()
+{
+    if (m_Strm)
+        RTStrmClose(m_Strm);
+    RTFileDelete(m_szErrFileName);
+    RTFileDelete(m_szFileName);
+    for (size_t i = 0; i < RT_ELEMENTS(m_papszArgs) && m_papszArgs[i]; ++i)
+        RTStrFree(m_papszArgs[i]);
+}
+
+PRTSTREAM BugReportCommandTemp::getStream(void)
+{
+    handleRtError(RTPathTemp(m_szErrFileName, RTPATH_MAX),
+                  "Failed to obtain path to temporary folder");
+    handleRtError(RTPathAppend(m_szErrFileName, RTPATH_MAX, "BugRepErrXXXXX.tmp"),
+                  "Failed to append path");
+    handleRtError(RTFileCreateTemp(m_szErrFileName, 0600),
+                  "Failed to create temporary file '%s'", m_szErrFileName);
+
+    RTHANDLE hStdOutErr;
+    hStdOutErr.enmType = RTHANDLETYPE_FILE;
+    handleRtError(RTFileOpen(&hStdOutErr.u.hFile, m_szErrFileName,
+                             RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE),
+                  "Failed to open temporary file '%s'", m_szErrFileName);
+
+    /* Remove the output file to prevent errors or confirmation prompts */
+    handleRtError(RTFileDelete(m_szFileName),
+                  "Failed to delete temporary file '%s'", m_szFileName);
+
+    RTPROCESS hProcess;
+    handleRtError(RTProcCreateEx(m_papszArgs[0], m_papszArgs, RTENV_DEFAULT, 0,
+                                 NULL, &hStdOutErr, &hStdOutErr,
+                                 NULL, NULL, &hProcess),
+                  "Failed to create process '%s'", m_papszArgs[0]);
+    RTPROCSTATUS status;
+    handleRtError(RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &status),
+                  "Process wait failed");
+    RTFileClose(hStdOutErr.u.hFile);
+
+    if (status.enmReason == RTPROCEXITREASON_NORMAL && status.iStatus == 0)
+        handleRtError(RTStrmOpen(m_szFileName, "r", &m_Strm), "Failed to open '%s'", m_szFileName);
+    else
+        handleRtError(RTStrmOpen(m_szErrFileName, "r", &m_Strm), "Failed to open '%s'", m_szErrFileName);
+    return m_Strm;
+}
+
+
 BugReportText::BugReportText(const char *pszFileName) : BugReport(pszFileName)
 {
     handleRtError(RTStrmOpen(pszFileName, "w", &m_StrmTxt),

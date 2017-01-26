@@ -223,6 +223,21 @@ private:
     char *m_papszArgs[32];
 };
 
+/*
+ * A base class for item classes that provide temp output file to a command.
+ */
+class BugReportCommandTemp : public BugReportItem
+{
+public:
+    BugReportCommandTemp(const char *pszTitle, const char *pszExec, ...);
+    virtual ~BugReportCommandTemp();
+    virtual PRTSTREAM getStream(void);
+private:
+    PRTSTREAM m_Strm;
+    char m_szFileName[RTPATH_MAX];
+    char m_szErrFileName[RTPATH_MAX];
+    char *m_papszArgs[32];
+};
 
 /* Platform-specific */
 
