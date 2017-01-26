@@ -853,6 +853,13 @@ class RemoteReporter(ReporterBase):
             g_oLock.release();
             self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
             g_oLock.acquire();
+        elif sKind.startswith('misc/'):
+            self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
+                        % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
+            self.xmlFlush();
+            g_oLock.release();
+            self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'application/octet-stream');
+            g_oLock.acquire();
         else:
             self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
                      % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
