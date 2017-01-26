@@ -945,7 +945,7 @@ HRESULT USBProxyService::setError(HRESULT aResultCode, const char *aText, ...)
     HRESULT rc = VirtualBoxBase::setErrorInternal(aResultCode,
                                                     COM_IIDOF(IHost),
                                                     "USBProxyService",
-                                                    Utf8StrFmt(aText, va),
+                                                    Utf8Str(aText, va),
                                                     false /* aWarning*/,
                                                     true /* aLogIt*/);
     va_end(va);
