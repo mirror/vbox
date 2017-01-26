@@ -10267,14 +10267,15 @@ iemMemFetchSelDescWithErr(PVMCPU pVCpu, PIEMSELDESC pDesc, uint16_t uSel, uint8_
         rcStrict = iemMemFetchSysU64(pVCpu, &pDesc->Legacy.u, UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK));
     else
     {
-        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[0], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 0);
-        if (rcStrict != VINF_SUCCESS)
+        rcStrict     = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[0], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 0);
+        if (rcStrict == VINF_SUCCESS)
+            rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[1], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 2);
+        if (rcStrict == VINF_SUCCESS)
+            rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[2], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 4);
+        if (rcStrict == VINF_SUCCESS)
+            pDesc->Legacy.au16[3] = 0;
+        else
             return rcStrict;
-        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[1], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 2);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-        rcStrict = iemMemFetchSysU16(pVCpu, &pDesc->Legacy.au16[2], UINT8_MAX, GCPtrBase + (uSel & X86_SEL_MASK) + 4);
-        pDesc->Legacy.au16[3] = 0;
     }
 
     if (rcStrict == VINF_SUCCESS)
