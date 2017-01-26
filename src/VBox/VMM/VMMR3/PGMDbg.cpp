@@ -2485,7 +2485,7 @@ VMMR3_INT_DECL(int) PGMR3DumpHierarchyGst(PVM pVM, uint64_t cr3, uint32_t fFlags
  */
 void pgmLogState(PVM pVM)
 {
-#if 1
+#if 0
     RTLogRelPrintf("\npgmLogState pgmLogState pgmLogState pgmLogState pgmLogState\n");
 
     /*
