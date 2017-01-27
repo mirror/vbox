@@ -545,8 +545,10 @@ VBOX_WITH_PLUGIN_CRYPT = 1
 VBOX_WITH_VIRTUALKD = 1
 # NVMe device emulation
 VBOX_WITH_NVME_IMPL = 1
-# Storage related debug driver
-VBOX_WITH_DRV_DISK_INTEGRITY = 1
+# Storage related debug driver - Windows disabled because of some linker issue
+ifn1of ($(KBUILD_TARGET), win)
+ VBOX_WITH_DRV_DISK_INTEGRITY = 1
+endif
 ## @}
 
 # legacy
