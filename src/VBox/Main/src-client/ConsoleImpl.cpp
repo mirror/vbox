@@ -10003,19 +10003,21 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 /**
  * Reconfigures a medium attachment (part of taking or deleting an online snapshot).
  *
- * @param   pThis         Reference to the console object.
- * @param   pUVM          The VM handle.
- * @param   pcszDevice    The name of the controller type.
- * @param   uInstance     The instance of the controller.
- * @param   enmBus        The storage bus type of the controller.
- * @param   fUseHostIOCache Use the host I/O cache (disable async I/O).
- * @param   fBuiltinIOCache Use the builtin I/O cache.
- * @param   fSetupMerge   Whether to set up a medium merge
- * @param   uMergeSource  Merge source image index
- * @param   uMergeTarget  Merge target image index
- * @param   aMediumAtt    The medium attachment.
- * @param   aMachineState The current machine state.
- * @param   phrc          Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
+ * @param   pThis                   Reference to the console object.
+ * @param   pUVM                    The VM handle.
+ * @param   pcszDevice              The name of the controller type.
+ * @param   uInstance               The instance of the controller.
+ * @param   enmBus                  The storage bus type of the controller.
+ * @param   fUseHostIOCache         Use the host I/O cache (disable async I/O).
+ * @param   fBuiltinIOCache         Use the builtin I/O cache.
+ * @param   fInsertDiskIntegrityDrv Flag whether to insert the disk integrity driver into the chain
+ *                                  for additionalk debugging aids.
+ * @param   fSetupMerge             Whether to set up a medium merge
+ * @param   uMergeSource            Merge source image index
+ * @param   uMergeTarget            Merge target image index
+ * @param   aMediumAtt              The medium attachment.
+ * @param   aMachineState           The current machine state.
+ * @param   phrc                    Where to store com error - only valid if we return VERR_GENERAL_FAILURE.
  * @return  VBox status code.
  */
 /* static */
