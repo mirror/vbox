@@ -996,6 +996,8 @@ typedef struct CPUMFEATURES
     uint32_t        fMonitorMWait : 1;
     /** MWAIT Extensions present. */
     uint32_t        fMWaitExtensions : 1;
+    /** Supports CMPXCHG16B in 64-bit mode. */
+    uint32_t        fMovCmpXchg16b : 1;
 
     /** Supports AMD 3DNow instructions. */
     uint32_t        f3DNow : 1;
@@ -1021,7 +1023,7 @@ typedef struct CPUMFEATURES
     uint32_t        fLeakyFxSR : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 29;
+    uint32_t        fPadding : 28;
     uint32_t        auPadding[3];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB

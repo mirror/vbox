@@ -1629,6 +1629,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         pFeatures->fSysEnter            = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_SEP);
         pFeatures->fHypervisorPresent   = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_HVP);
         pFeatures->fMonitorMWait        = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_MONITOR);
+        pFeatures->fMovCmpXchg16b       = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_CX16);
 
         /* Structured extended features. */
         PCCPUMCPUIDLEAF const pSxfLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 7, 0);
