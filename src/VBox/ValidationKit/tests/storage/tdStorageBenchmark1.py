@@ -471,6 +471,9 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         self.fRecreateStorCfg        = True;
         self.fReportBenchmarkResults = True;
         self.oStorCfg                = None;
+        self.sIoLogPathDef           = self.sScratchPath;
+        self.sIoLogPath              = self.sIoLogPathDef;
+        self.fIoLog                  = False;
 
     #
     # Overridden methods.
@@ -519,6 +522,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         reporter.log('      Report all benchmark results');
         reporter.log('  --dont-report-benchmark-results');
         reporter.log('      Don\'t report any benchmark results');
+        reporter.log('  --io-log-path <path>');
+        reporter.log('      Default: %s' % (self.sIoLogPathDef));
+        reporter.log('  --enable-io-log');
+        reporter.log('      Whether to enable I/O logging for each test');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
@@ -603,6 +610,11 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
             self.fReportBenchmarkResults = True;
         elif asArgs[iArg] == '--dont-report-benchmark-results':
             self.fReportBenchmarkResults = False;
+        elif asArgs[iArg] == '--io-log-path':
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--io-log-path" takes a path argument');
+            self.sIoLogPath = asArgs[iArg];
+        elif asArgs[iArg] == '--enable-io-log':
+            self.fIoLog = True;
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -785,6 +797,29 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return eStorageCtrl;
 
+    def getStorageDriverFromEnum(self, eStorageCtrl, fHardDisk):
+        """
+        Returns the appropriate driver name for the given storage controller
+        and a flag whether the driver has the generic SCSI driver attached.
+        """
+        if eStorageCtrl == vboxcon.StorageControllerType_IntelAhci:
+            if fHardDisk:
+                return ('ahci', False);
+            else:
+                return ('ahci', True);
+        elif eStorageCtrl == vboxcon.StorageControllerType_PIIX4:
+            return ('piix3ide', False);
+        elif eStorageCtrl == vboxcon.StorageControllerType_LsiLogicSas:
+            return ('lsilogicsas', True);
+        elif eStorageCtrl == vboxcon.StorageControllerType_LsiLogic:
+            return ('lsilogicscsi', True);
+        elif eStorageCtrl == vboxcon.StorageControllerType_BusLogic:
+            return ('buslogic', True);
+        elif eStorageCtrl == vboxcon.StorageControllerType_NVMe:
+            return ('nvme', False);
+
+        return ('<invalid>', False);
+
     def isTestCfgSupported(self, asTestCfg):
         """
         Returns whether a specific test config is supported.
@@ -899,7 +934,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
         return oHd;
 
-    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0915
+    def testOneCfg(self, sVmName, eStorageController, sHostIoCache, sDiskFormat, # pylint: disable=R0913,R0914,R0915
                    sDiskVariant, sDiskPath, cCpus, sIoTest, sVirtMode, sTestSet):
         """
         Runs the specified VM thru test #1.
@@ -938,6 +973,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
         lstDisks = []; # List of disks we have to delete afterwards.
 
         for iDiffLvl in range(self.cDiffLvls + 1):
+            sIoLogFile = None;
 
             if iDiffLvl == 0:
                 reporter.testStart('Base');
@@ -982,6 +1018,29 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         reporter.log('attached "%s" to %s' % (sDiskPath, oSession.sName));
                 else:
                     fRc = False;
+
+                # Set up the I/O logging config if enabled
+                if fRc and self.fIoLog:
+                    try:
+                        oSession.o.machine.setExtraData('VBoxInternal2/EnableDiskIntegrityDriver', '1');
+
+                        iLun = 0;
+                        if eStorageController == vboxcon.StorageControllerType_PIIX3 or \
+                           eStorageController == vboxcon.StorageControllerType_PIIX4:
+                            iLun = 1
+                        sDrv, fDrvScsi = self.getStorageDriverFromEnum(eStorageController, True);
+                        if fDrvScsi:
+                            sCfgmPath = 'VBoxInternal/Devices/%s/0/LUN#%u/AttachedDriver/Config' % (sDrv, iLun);
+                        else:
+                            sCfgmPath = 'VBoxInternal/Devices/%s/0/LUN#%u/Config' % (sDrv, iLun);
+
+                        sIoLogFile = '%s/%s.iolog' % (self.sIoLogPath, sDrv);
+                        print sCfgmPath;
+                        print sIoLogFile;
+                        oSession.o.machine.setExtraData('%s/IoLog' % (sCfgmPath,), sIoLogFile);
+                    except:
+                        reporter.logXcpt();
+
                 fRc = fRc and oSession.enableVirtEx(fHwVirt);
                 fRc = fRc and oSession.enableNestedPaging(fNestedPaging);
                 fRc = fRc and oSession.setCpuCount(cCpus);
@@ -1017,7 +1076,15 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
 
                     # cleanup.
                     self.removeTask(oTxsSession);
-                    self.terminateVmBySession(oSession)
+                    self.terminateVmBySession(oSession);
+
+                    # Add the I/O log if it exists and the test failed
+                    if reporter.testErrorCount() > 0 \
+                       and sIoLogFile is not None \
+                       and os.path.exists(sIoLogFile):
+                        reporter.addLogFile(sIoLogFile, 'misc/other', 'I/O log');
+                        os.remove(sIoLogFile);
+
                 else:
                     fRc = False;
 
