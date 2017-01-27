@@ -867,7 +867,7 @@ static DECLCALLBACK(bool) drvdiskintIsReadOnly(PPDMIMEDIA pInterface)
 static DECLCALLBACK(bool) drvdiskintBiosIsVisible(PPDMIMEDIA pInterface)
 {
     PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
-    return pThis->pDrvMedia->pfnBiosIsVisible(pInterface);
+    return pThis->pDrvMedia->pfnBiosIsVisible(pThis->pDrvMedia);
 }
 
 /** @interface_method_impl{PDMIMEDIA,pfnGetType} */
@@ -1646,6 +1646,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                     "CheckDoubleCompletions\0"
                                     "HistorySize\0"
                                     "IoLog\0"
+                                    "IoLogData\0"
                                     "PrepopulateRamDisk\0"
                                     "ReadAfterWrite\0"
                                     "RecordWriteBeforeCompletion\0"
@@ -1670,9 +1671,12 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     AssertRC(rc);
     rc = CFGMR3QueryBoolDef(pCfg, "RecordWriteBeforeCompletion", &pThis->fRecordWriteBeforeCompletion, false);
     AssertRC(rc);
-    rc = CFGMR3QueryBoolDef(pCfg, "ValidateMemoryBuffers", &pThis->fValidateMemBufs, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "ValidateMemoryBuffers", &pThis->fValidateMemBufs, false);
     AssertRC(rc);
 
+    bool fIoLogData = false;
+    rc = CFGMR3QueryBoolDef(pCfg, "IoLogData", &fIoLogData, false);
+    AssertRC(rc);
     char *pszIoLogFilename = NULL;
     rc = CFGMR3QueryStringAlloc(pCfg, "IoLog", &pszIoLogFilename);
     Assert(RT_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND);
@@ -1796,7 +1800,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
 
     if (pszIoLogFilename)
     {
-        rc = VDDbgIoLogCreate(&pThis->hIoLogger, pszIoLogFilename, VDDBG_IOLOG_LOG_DATA);
+        rc = VDDbgIoLogCreate(&pThis->hIoLogger, pszIoLogFilename, fIoLogData ? VDDBG_IOLOG_LOG_DATA : 0);
         MMR3HeapFree(pszIoLogFilename);
     }
 
