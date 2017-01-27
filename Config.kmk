@@ -545,6 +545,8 @@ VBOX_WITH_PLUGIN_CRYPT = 1
 VBOX_WITH_VIRTUALKD = 1
 # NVMe device emulation
 VBOX_WITH_NVME_IMPL = 1
+# Storage related debug driver
+VBOX_WITH_DRV_DISK_INTEGRITY = 1
 ## @}
 
 # legacy
