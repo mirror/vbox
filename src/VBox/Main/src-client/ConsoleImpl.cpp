@@ -3572,6 +3572,7 @@ DECLCALLBACK(int) Console::i_changeRemovableMedium(Console *pThis,
                                              fUseHostIOCache,
                                              false /* fSetupMerge */,
                                              false /* fBuiltinIOCache */,
+                                             false /* fInsertDiskIntegrityDrv. */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
                                              aMediumAtt,
@@ -3750,6 +3751,7 @@ DECLCALLBACK(int) Console::i_attachStorageDevice(Console *pThis,
                                              fUseHostIOCache,
                                              false /* fSetupMerge */,
                                              false /* fBuiltinIOCache */,
+                                             false /* fInsertDiskIntegrityDrv. */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
                                              aMediumAtt,
@@ -6090,12 +6092,20 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     if (FAILED(rc))
         return rc;
 
+    bool fInsertDiskIntegrityDrv = false;
+    Bstr strDiskIntegrityFlag;
+    rc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(),
+                                strDiskIntegrityFlag.asOutParam());
+    if (   rc   == S_OK
+        && strDiskIntegrityFlag == "1")
+        fInsertDiskIntegrityDrv = true;
+
     alock.release();
     vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                           (PFNRT)i_reconfigureMediumAttachment, 13,
+                           (PFNRT)i_reconfigureMediumAttachment, 14,
                            this, ptrVM.rawUVM(), pcszDevice, uInstance, enmBus, fUseHostIOCache,
-                           fBuiltinIOCache, true /* fSetupMerge */, aSourceIdx, aTargetIdx,
-                           aMediumAttachment, mMachineState, &rc);
+                           fBuiltinIOCache, fInsertDiskIntegrityDrv, true /* fSetupMerge */,
+                           aSourceIdx, aTargetIdx, aMediumAttachment, mMachineState, &rc);
     /* error handling is after resuming the VM */
 
     if (fResume)
@@ -6137,10 +6147,11 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     rc = mControl->FinishOnlineMergeMedium();
 
     vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                           (PFNRT)i_reconfigureMediumAttachment, 13,
+                           (PFNRT)i_reconfigureMediumAttachment, 14,
                            this, ptrVM.rawUVM(), pcszDevice, uInstance, enmBus, fUseHostIOCache,
-                           fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
-                           0 /* uMergeTarget */, aMediumAttachment, mMachineState, &rc);
+                           fBuiltinIOCache, fInsertDiskIntegrityDrv, false /* fSetupMerge */,
+                           0 /* uMergeSource */, 0 /* uMergeTarget */, aMediumAttachment,
+                           mMachineState, &rc);
     /* error handling is after resuming the VM */
 
     if (fResume)
@@ -10015,6 +10026,7 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
                                                          StorageBus_T enmBus,
                                                          bool fUseHostIOCache,
                                                          bool fBuiltinIOCache,
+                                                         bool fInsertDiskIntegrityDrv,
                                                          bool fSetupMerge,
                                                          unsigned uMergeSource,
                                                          unsigned uMergeTarget,
@@ -10042,6 +10054,7 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
                                              enmBus,
                                              fUseHostIOCache,
                                              fBuiltinIOCache,
+                                             fInsertDiskIntegrityDrv,
                                              fSetupMerge,
                                              uMergeSource,
                                              uMergeTarget,

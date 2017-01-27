@@ -2370,6 +2370,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             BOOL fBuiltinIOCache = true;
             hrc = pMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);                    H();
 
+            bool fInsertDiskIntegrityDrv = false;
+            Bstr strDiskIntegrityFlag;
+            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EnableDiskIntegrityDriver").raw(),
+                                         strDiskIntegrityFlag.asOutParam());
+            if (   hrc   == S_OK
+                && strDiskIntegrityFlag == "1")
+                fInsertDiskIntegrityDrv = true;
 
             for (size_t j = 0; j < atts.size(); ++j)
             {
@@ -2379,6 +2386,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                               enmBus,
                                               !!fUseHostIOCache,
                                               enmCtrlType == StorageControllerType_NVMe ? false : !!fBuiltinIOCache,
+                                              fInsertDiskIntegrityDrv,
                                               false /* fSetupMerge */,
                                               0 /* uMergeSource */,
                                               0 /* uMergeTarget */,
@@ -4222,6 +4230,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                                       StorageBus_T enmBus,
                                       bool fUseHostIOCache,
                                       bool fBuiltinIOCache,
+                                      bool fInsertDiskIntegrityDrv,
                                       bool fSetupMerge,
                                       unsigned uMergeSource,
                                       unsigned uMergeTarget,
@@ -4395,6 +4404,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                             lType,
                             fUseHostIOCache,
                             fBuiltinIOCache,
+                            fInsertDiskIntegrityDrv,
                             fSetupMerge,
                             uMergeSource,
                             uMergeTarget,
@@ -4480,6 +4490,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                             DeviceType_T enmType,
                             bool fUseHostIOCache,
                             bool fBuiltinIOCache,
+                            bool fInsertDiskIntegrityDrv,
                             bool fSetupMerge,
                             unsigned uMergeSource,
                             unsigned uMergeTarget,
@@ -4533,13 +4544,16 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
         }
         else
         {
-#if 0 /* Enable for I/O debugging */
-            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-            InsertConfigString(pLunL0, "Driver", "DiskIntegrity");
-            InsertConfigNode(pLunL0, "Config", &pCfg);
-            InsertConfigInteger(pCfg, "CheckConsistency", 0);
-            InsertConfigInteger(pCfg, "CheckDoubleCompletions", 1);
-#endif
+            if (fInsertDiskIntegrityDrv)
+            {
+                /*
+                 * The actual configuration is done through CFGM extra data
+                 * for each inserted driver separately.
+                 */
+                InsertConfigString(pLunL0, "Driver", "DiskIntegrity");
+                InsertConfigNode(pLunL0, "Config", &pCfg);
+                InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+            }
 
             InsertConfigString(pLunL0, "Driver", "VD");
             InsertConfigNode(pLunL0, "Config", &pCfg);
