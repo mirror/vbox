@@ -1115,6 +1115,20 @@ static DECLCALLBACK(int) drvdiskintIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
     {
         /* Update our copy. */
         RTSgBufCopyToBuf(&SgBuf, (uint8_t *)pIoReq->IoSeg.pvSeg + offDst, cbCopy);
+
+        /* Validate the just read data against our copy if possible. */
+        if (   pThis->fValidateMemBufs
+            && pThis->fCheckConsistency
+            && pIoReq->enmTxDir == DRVDISKAIOTXDIR_READ)
+        {
+            RTSGSEG Seg;
+
+            Seg.pvSeg = (uint8_t *)pIoReq->IoSeg.pvSeg + offDst;
+            Seg.cbSeg = cbCopy;
+
+            rc = drvdiskintReadVerify(pThis, &Seg, 1, pIoReq->off + offDst,
+                                      cbCopy);
+        }
     }
 
     return rc;
