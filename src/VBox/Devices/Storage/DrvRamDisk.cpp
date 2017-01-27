@@ -702,12 +702,12 @@ DECLINLINE(int) drvramdiskMediaExIoReqBufSync(PDRVRAMDISK pThis, PPDMMEDIAEXIORE
 
     if (fToIoBuf)
         rc = pThis->pDrvMediaExPort->pfnIoReqCopyToBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
-                                                       pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft,
+                                                       (uint32_t)(pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft),
                                                        &pIoReq->ReadWrite.IoBuf.SgBuf,
                                                        RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
     else
         rc = pThis->pDrvMediaExPort->pfnIoReqCopyFromBuf(pThis->pDrvMediaExPort, pIoReq, &pIoReq->abAlloc[0],
-                                                         pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft,
+                                                         (uint32_t)(pIoReq->ReadWrite.cbReq - pIoReq->ReadWrite.cbReqLeft),
                                                          &pIoReq->ReadWrite.IoBuf.SgBuf,
                                                          RT_MIN(pIoReq->ReadWrite.cbIoBuf, pIoReq->ReadWrite.cbReqLeft));
 

@@ -308,7 +308,7 @@ static int drvdiskintWriteRecord(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsig
                 pSeg->Core.KeyLast  = offCurr + (RTFOFF)cbRange - 1;
                 pSeg->cbSeg         = cbRange;
                 pSeg->pbSeg         = (uint8_t *)RTMemAllocZ(cbRange);
-                pSeg->cIoLogEntries = cbRange / 512;
+                pSeg->cIoLogEntries = (uint32_t)cbRange / 512;
                 if (!pSeg->pbSeg)
                     RTMemFree(pSeg);
                 else
@@ -446,7 +446,7 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
             if (RTSgBufCmpEx(&SgBuf, &SgBufCmp, cbRange, &cbOff, true))
             {
                 /* Corrupted disk, print I/O log entry of the last write which accessed this range. */
-                uint32_t cSector = (offSeg + cbOff) / 512;
+                uint32_t cSector = (offSeg + (uint32_t)cbOff) / 512;
                 AssertMsg(cSector < pSeg->cIoLogEntries, ("Internal bug!\n"));
 
                 RTMsgError("Corrupted disk at offset %llu (%u bytes in the current read buffer)!\n",
@@ -537,12 +537,12 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                     /* Realloc to new size and insert. */
                     LogFlowFunc(("Realloc segment pSeg=%#p\n", pSeg));
                     pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPreLeft);
-                    for (unsigned idx = cbPreLeft / 512; idx < pSeg->cIoLogEntries; idx++)
+                    for (unsigned idx = (uint32_t)(cbPreLeft / 512); idx < pSeg->cIoLogEntries; idx++)
                         drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
                     pSeg = (PDRVDISKSEGMENT)RTMemRealloc(pSeg, RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPreLeft / 512]));
                     pSeg->Core.KeyLast = pSeg->Core.Key + cbPreLeft - 1;
                     pSeg->cbSeg = cbPreLeft;
-                    pSeg->cIoLogEntries = cbPreLeft / 512;
+                    pSeg->cIoLogEntries = (uint32_t)(cbPreLeft / 512);
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
                     Assert(fInserted); RT_NOREF(fInserted);
                 }
@@ -559,7 +559,7 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                     pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPostLeft);
                     pSeg->Core.Key += cbRange;
                     pSeg->cbSeg = cbPostLeft;
-                    pSeg->cIoLogEntries = cbPostLeft / 512;
+                    pSeg->cIoLogEntries = (uint32_t)(cbPostLeft / 512);
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
                     Assert(fInserted); RT_NOREF(fInserted);
                 }
@@ -574,13 +574,13 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
                         pSegPost->Core.KeyLast  = pSeg->Core.KeyLast;
                         pSegPost->cbSeg         = cbPostLeft;
                         pSegPost->pbSeg         = (uint8_t *)RTMemAllocZ(cbPostLeft);
-                        pSegPost->cIoLogEntries = cbPostLeft / 512;
+                        pSegPost->cIoLogEntries = (uint32_t)(cbPostLeft / 512);
                         if (!pSegPost->pbSeg)
                             RTMemFree(pSegPost);
                         else
                         {
                             memcpy(pSegPost->pbSeg, pSeg->pbSeg + cbPreLeft + cbRange, cbPostLeft);
-                            for (unsigned idx = 0; idx < cbPostLeft / 512; idx++)
+                            for (unsigned idx = 0; idx < (uint32_t)(cbPostLeft / 512); idx++)
                                 pSegPost->apIoLog[idx] = pSeg->apIoLog[((cbPreLeft + cbRange) / 512) + idx];
 
                             bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSegPost->Core);
@@ -590,12 +590,12 @@ static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges,
 
                     /* Shrink the current segment. */
                     pSeg->pbSeg = (uint8_t *)RTMemRealloc(pSeg->pbSeg, cbPreLeft);
-                    for (unsigned idx = cbPreLeft / 512; idx < (cbPreLeft + cbRange) / 512; idx++)
+                    for (unsigned idx = (uint32_t)(cbPreLeft / 512); idx < (uint32_t)((cbPreLeft + cbRange) / 512); idx++)
                         drvdiskintIoLogEntryRelease(pSeg->apIoLog[idx]);
                     pSeg = (PDRVDISKSEGMENT)RTMemRealloc(pSeg, RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbPreLeft / 512]));
                     pSeg->Core.KeyLast = pSeg->Core.Key + cbPreLeft - 1;
                     pSeg->cbSeg = cbPreLeft;
-                    pSeg->cIoLogEntries = cbPreLeft / 512;
+                    pSeg->cIoLogEntries = (uint32_t)(cbPreLeft / 512);
                     bool fInserted = RTAvlrFileOffsetInsert(pThis->pTreeSegments, &pSeg->Core);
                     Assert(fInserted); RT_NOREF(fInserted);
                 } /* if (cbPreLeft && cbPostLeft) */
