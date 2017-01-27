@@ -145,17 +145,60 @@ private:
     RTDIRENTRY m_DirEntry;
 };
 
+
+BugReportFilter::BugReportFilter() : m_pvBuffer(0), m_cbBuffer(0)
+{
+}
+
+BugReportFilter::~BugReportFilter()
+{
+    if (m_pvBuffer)
+        RTMemFree(m_pvBuffer);
+}
+
+void *BugReportFilter::allocateBuffer(size_t cbNeeded)
+{
+    if (m_pvBuffer)
+    {
+        if (cbNeeded > m_cbBuffer)
+            RTMemFree(m_pvBuffer);
+        else
+            return m_pvBuffer;
+    }
+    m_pvBuffer = RTMemAlloc(cbNeeded);
+    if (!m_pvBuffer)
+        throw RTCError(com::Utf8StrFmt("Failed to allocate %ld bytes\n", cbNeeded));
+    m_cbBuffer = cbNeeded;
+    return m_pvBuffer;
+}
+
+
 /*
  * An abstract class serving as the root of the bug report item tree.
  */
 BugReportItem::BugReportItem(const char *pszTitle)
 {
     m_pszTitle = RTStrDup(pszTitle);
+    m_filter = 0;
 }
 
 BugReportItem::~BugReportItem()
 {
+    if (m_filter)
+        delete m_filter;
     RTStrFree(m_pszTitle);
+}
+
+void BugReportItem::addFilter(BugReportFilter *filter)
+{
+    m_filter = filter;
+}
+
+void *BugReportItem::applyFilter(void *pvSource, size_t *pcbInOut)
+{
+    if (m_filter)
+        return m_filter->apply(pvSource, pcbInOut);
+    return pvSource;
 }
 
 const char * BugReportItem::getTitle(void)
@@ -183,8 +226,10 @@ int BugReport::getItemCount(void)
     return (int)m_Items.size();
 }
 
-void BugReport::addItem(BugReportItem* item)
+void BugReport::addItem(BugReportItem* item, BugReportFilter *filter)
 {
+    if (filter)
+        item->addFilter(filter);
     if (item)
         m_Items.append(item);
 }
@@ -198,6 +243,11 @@ void BugReport::process(void)
         processItem(pItem);
     }
     RTPrintf("100%% - compressing...\n\n");
+}
+
+void *BugReport::applyFilters(BugReportItem* item, void *pvSource, size_t *pcbInOut)
+{
+    return item->applyFilter(pvSource, pcbInOut);
 }
 
 
@@ -446,7 +496,7 @@ void BugReportText::processItem(BugReportItem* item)
         cbRead = cbWritten = 0;
         while (RT_SUCCESS(rc = RTStrmReadEx(strmIn, buf, sizeof(buf), &cbRead)) && cbRead)
         {
-            rc = RTStrmWriteEx(m_StrmTxt, buf, cbRead, &cbWritten);
+            rc = RTStrmWriteEx(m_StrmTxt, applyFilters(item, buf, &cbRead), cbRead, &cbWritten);
             if (RT_FAILURE(rc) || cbRead != cbWritten)
                 throw RTCError(com::Utf8StrFmt("Write failure (rc=%d, cbRead=%lu, cbWritten=%lu)\n",
                                                rc, cbRead, cbWritten));
@@ -521,7 +571,7 @@ void BugReportTarGzip::processItem(BugReportItem* item)
              RT_SUCCESS(rc = RTStrmReadEx(strmIn, buf, sizeof(buf), &cbRead)) && cbRead;
              offset += cbRead)
         {
-            handleRtError(RTTarFileWriteAt(m_hTarFile, offset, buf, cbRead, NULL),
+            handleRtError(RTTarFileWriteAt(m_hTarFile, offset, applyFilters(item, buf, &cbRead), cbRead, NULL),
                           "Failed to write %u bytes to TAR", cbRead);
         }
     }

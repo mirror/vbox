@@ -533,6 +533,11 @@ void BugReportUsbTreeWin::enumerate()
     deviceInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
     for (int i = 0; SetupDiEnumDeviceInfo(m_hDevInfo, i, &deviceInfoData); ++i)
     {
+        if (m_hHostCtrlDev != INVALID_HANDLE_VALUE)
+            CloseHandle(m_hHostCtrlDev);
+        if (m_pDetailData)
+            RTMemFree(m_pDetailData);
+
         SP_DEVICE_INTERFACE_DATA deviceInterfaceData;
         deviceInterfaceData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
         if (!SetupDiEnumDeviceInterfaces(m_hDevInfo, 0, (LPGUID)&GUID_DEVINTERFACE_USB_HOST_CONTROLLER,
@@ -693,6 +698,41 @@ void BugReportDriversWin::enumerateDrivers()
 }
 
 
+class BugReportFilterRegistryWin : public BugReportFilter
+{
+public:
+    BugReportFilterRegistryWin() {};
+    virtual ~BugReportFilterRegistryWin() {};
+    virtual void *apply(void *pvSource, size_t *pcbInOut);
+};
+
+void *BugReportFilterRegistryWin::apply(void *pvSource, size_t *pcbInOut)
+{
+    /*
+     * The following implementation is not optimal by any means. It serves to
+     * illustrate and test the case when filter's output is longer than its
+     * input.
+     */
+    RT_NOREF(pcbInOut);
+    /* Registry export files are encoded in UTF-16 (little endian on Intel x86). */
+    void *pvDest = pvSource;
+    uint16_t *pwsSource = (uint16_t *)pvSource;
+    if (*pwsSource++ == 0xFEFF && *pcbInOut > 48)
+    {
+        if (!memcmp(pwsSource, L"Windows Registry Editor", 46))
+        {
+            *pcbInOut += 2;
+            pvDest = allocateBuffer(*pcbInOut);
+            uint16_t *pwsDest = (uint16_t *)pvDest;
+            *pwsDest++ = 0xFEFF;
+            *pwsDest++ = '#';
+            /* Leave space for 0xFEFF and '#' */
+            memcpy(pwsDest, pwsSource, *pcbInOut - 4);
+        }
+    }
+    return pvDest;
+}
+
 
 void createBugReportOsSpecific(BugReport* report, const char *pszHome)
 {
@@ -720,11 +760,14 @@ void createBugReportOsSpecific(BugReport* report, const char *pszHome)
                                          "query", "type=", "driver", "state=", "all", NULL));
     report->addItem(new BugReportCommand("DriverStore", PathJoin(WinSysDir.c_str(), "pnputil.exe"), "-e", NULL));
     report->addItem(new BugReportCommandTemp("RegDevKeys", PathJoin(WinSysDir.c_str(), "reg.exe"), "export",
-        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\Root\\NET", NULL));
+                                             "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\Root\\NET", NULL),
+                    new BugReportFilterRegistryWin());
     report->addItem(new BugReportCommandTemp("RegDrvKeys", PathJoin(WinSysDir.c_str(), "reg.exe"), "export",
-        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL));
+        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL),
+                    new BugReportFilterRegistryWin());
     report->addItem(new BugReportCommandTemp("RegNetwork", PathJoin(WinSysDir.c_str(), "reg.exe"), "export",
-        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL));
+        "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}", NULL),
+                    new BugReportFilterRegistryWin());
     report->addItem(new BugReportUsbTreeWin);
     report->addItem(new BugReportDriversWin);
 }

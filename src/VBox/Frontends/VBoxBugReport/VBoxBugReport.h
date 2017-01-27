@@ -85,6 +85,29 @@ private:
 
 
 /*
+ * An abstract class serving as the root of the bug report filter tree.
+ * A child provides an implementation of the 'apply' method. A child
+ * should modify the input buffer (provided via pvSource) in place, or
+ * allocate a new buffer via 'allocateBuffer'. Allocated buffers are
+ * released automatically when another buffer is allocated, which means
+ * that NEXT CALL TO 'APPLY' INVALIDATES BUFFERS RETURNED IN PREVIOUS
+ * CALLS!
+ */
+class BugReportFilter
+{
+public:
+    BugReportFilter();
+    virtual ~BugReportFilter();
+    virtual void *apply(void *pvSource, size_t *pcbInOut) = 0;
+protected:
+    void *allocateBuffer(size_t cbNeeded);
+private:
+    void *m_pvBuffer;
+    size_t m_cbBuffer;
+};
+
+
+/*
  * An abstract class serving as the root of the bug report item tree.
  */
 class BugReportItem
@@ -94,8 +117,11 @@ public:
     virtual ~BugReportItem();
     virtual const char *getTitle(void);
     virtual PRTSTREAM getStream(void) = 0;
+    void addFilter(BugReportFilter *filter);
+    void *applyFilter(void *pvSource, size_t *pcbInOut);
 private:
     char *m_pszTitle;
+    BugReportFilter *m_filter;
 };
 
 /*
@@ -107,9 +133,10 @@ public:
     BugReport(const char *pszFileName);
     virtual ~BugReport();
 
-    void addItem(BugReportItem* item);
+    void addItem(BugReportItem* item, BugReportFilter *filter = 0);
     int  getItemCount(void);
     void process();
+    void *applyFilters(BugReportItem* item, void *pvSource, size_t *pcbInOut);
 
     virtual void processItem(BugReportItem* item) = 0;
     virtual void complete(void) = 0;
