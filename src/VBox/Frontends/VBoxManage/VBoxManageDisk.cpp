@@ -684,6 +684,8 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         // new medium size in MB not Byte. If the operation is started and then
         // aborted by the user, the result is most likely a medium which doesn't
         // work anymore.
+        MediumState_T state;
+        pMedium->RefreshState(&state);
         LONG64 logicalSize;
         pMedium->COMGETTER(LogicalSize)(&logicalSize);
         if (cbResize > (uint64_t)logicalSize * 1000)
@@ -1182,7 +1184,6 @@ HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
         /* check for accessibility */
         MediumState_T enmState;
         CHECK_ERROR_BREAK(pMedium, RefreshState(&enmState));
-        pMedium->RefreshState(&enmState);
         const char *pszState = "unknown";
         switch (enmState)
         {
