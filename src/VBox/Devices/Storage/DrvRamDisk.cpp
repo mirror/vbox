@@ -242,7 +242,7 @@ static int drvramdiskWriteWorker(PDRVRAMDISK pThis, PRTSGBUF pSgBuf,
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("pThis=%#p pSgBuf=%#p cSeg=%u off=%llx cbWrite=%u\n",
+    LogFlowFunc(("pThis=%#p pSgBuf=%#p off=%llx cbWrite=%u\n",
                  pThis, pSgBuf, off, cbWrite));
 
     /* Update the segments */
