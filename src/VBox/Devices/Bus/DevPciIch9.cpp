@@ -97,6 +97,7 @@ static void ich9pciSetIrqInternal(PDEVPCIROOT pPciRoot, uint8_t uDevFn, PPDMPCID
 static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
 DECLINLINE(PPDMPCIDEV) ich9pciFindBridge(PDEVPCIBUS pBus, uint8_t uBus);
 static void ich9pciBiosInitAllDevicesOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus);
+static bool ich9pciBiosInitAllDevicesPrefetchableOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus, bool fUse64Bit, bool fDryrun);
 #endif
 
 
@@ -1623,17 +1624,25 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00, 4);
 }
 
-static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn)
+static int ichpciBiosInitDeviceGetRegions(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn)
 {
     uint8_t uHeaderType = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_HEADER_TYPE, 1) & 0x7f;
-    int cRegions = 0;
     if (uHeaderType == 0x00)
         /* Ignore ROM region here, which is included in VBOX_PCI_NUM_REGIONS. */
-        cRegions = VBOX_PCI_NUM_REGIONS - 1;
+        return VBOX_PCI_NUM_REGIONS - 1;
     else if (uHeaderType == 0x01)
         /* PCI bridges have 2 BARs. */
-        cRegions = 2;
+        return 2;
+    else
+    {
+        AssertMsgFailed(("invalid header type %#x\n", uHeaderType));
+        return 0;
+    }
+}
 
+static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn)
+{
+    int cRegions = ichpciBiosInitDeviceGetRegions(pPciRoot, uBus, uDevFn);
     bool fSuppressMem = false;
     bool fActiveMemRegion = false;
     bool fActiveIORegion = false;
@@ -1772,6 +1781,196 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_COMMAND, uCmd, 2);
 }
 
+static bool ich9pciBiosInitDevicePrefetchableBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn, bool fUse64Bit, bool fDryrun)
+{
+    int cRegions = ichpciBiosInitDeviceGetRegions(pPciRoot, uBus, uDevFn);
+    bool fActiveMemRegion = false;
+    for (int iRegion = 0; iRegion < cRegions; iRegion++)
+    {
+        uint32_t u32Address = ich9pciGetRegionReg(iRegion);
+        uint8_t u8ResourceType = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address, 1);
+        bool fPrefetch =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_IO)))
+                      == PCI_ADDRESS_SPACE_MEM_PREFETCH;
+        bool f64Bit =    (u8ResourceType & ((uint8_t)(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_IO)))
+                      == PCI_ADDRESS_SPACE_BAR64;
+        uint64_t cbRegSize64 = 0;
+
+        /* Everything besides prefetchable regions has been set up already. */
+        if (!fPrefetch)
+            continue;
+
+        if (f64Bit)
+        {
+            ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address,   UINT32_C(0xffffffff), 4);
+            ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address+4, UINT32_C(0xffffffff), 4);
+            cbRegSize64  =            ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address,   4);
+            cbRegSize64 |= ((uint64_t)ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address+4, 4) << 32);
+            cbRegSize64 &= ~UINT64_C(0x0f);
+            cbRegSize64 = (~cbRegSize64) + 1;
+        }
+        else
+        {
+            uint32_t cbRegSize32;
+            ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address, UINT32_C(0xffffffff), 4);
+            cbRegSize32 = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address, 4);
+            cbRegSize32 &= ~UINT32_C(0x0f);
+            cbRegSize32 = (~cbRegSize32) + 1;
+
+            cbRegSize64 = cbRegSize32;
+        }
+        Log2(("%s: Size of region %u for device %d on bus %d is %lld\n", __FUNCTION__, iRegion, uDevFn, uBus, cbRegSize64));
+
+        if (cbRegSize64)
+        {
+            uint64_t uNew;
+            if (!fUse64Bit)
+            {
+                uNew = pPciRoot->uPciBiosMmio;
+                /* Align starting address to region size. */
+                uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
+                /* Unconditionally exclude I/O-APIC/HPET/ROM. Pessimistic, but better than causing a mess. */
+                if (   !uNew
+                    || (uNew <= UINT32_C(0xffffffff) && uNew + cbRegSize64 - 1 >= UINT32_C(0xfec00000))
+                    || uNew >= _4G)
+                {
+                    Assert(fDryrun);
+                    return true;
+                }
+                if (!fDryrun)
+                {
+                    LogFunc(("Start address of MMIO region %u is %#x\n", iRegion, uNew));
+                    ich9pciBiosInitSetRegionAddress(pPciRoot, uBus, uDevFn, iRegion, uNew);
+                    fActiveMemRegion = true;
+                }
+                pPciRoot->uPciBiosMmio = uNew + cbRegSize64;
+            }
+            else
+            {
+                /* Can't handle 32-bit BARs when forcing 64-bit allocs. */
+                if (!f64Bit)
+                {
+                    Assert(fDryrun);
+                    return true;
+                }
+                uNew = pPciRoot->uPciBiosMmio64;
+                /* Align starting address to region size. */
+                uNew = (uNew + cbRegSize64 - 1) & ~(cbRegSize64 - 1);
+                pPciRoot->uPciBiosMmio64 = uNew + cbRegSize64;
+                if (!fDryrun)
+                {
+                    LogFunc(("Start address of 64-bit MMIO region %u/%u is %#llx\n", iRegion, iRegion + 1, uNew));
+                    ich9pciBiosInitSetRegionAddress(pPciRoot, uBus, uDevFn, iRegion, uNew);
+                    fActiveMemRegion = true;
+                }
+            }
+
+            if (f64Bit)
+                iRegion++; /* skip next region */
+        }
+    }
+
+    if (!fDryrun)
+    {
+        /* Update the command word appropriately. */
+        uint8_t uCmd = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_COMMAND, 2);
+        if (fActiveMemRegion)
+            uCmd |= VBOX_PCI_COMMAND_MEMORY; /* Enable MMIO access. */
+        ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_COMMAND, uCmd, 2);
+    }
+    else
+        Assert(!fActiveMemRegion);
+
+    return false;
+}
+
+static bool ich9pciBiosInitBridgePrefetchable(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn, bool fUse64Bit, bool fDryrun)
+{
+    Log(("BIOS init bridge (prefetch): %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+
+    pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024);
+    pPciRoot->uPciBiosMmio64 = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, 1024*1024);
+
+    /* Save values to compare later to. */
+    uint32_t u32MMIOAddressBase = pPciRoot->uPciBiosMmio;
+    uint64_t u64MMIOAddressBase = pPciRoot->uPciBiosMmio64;
+
+    uint8_t uBridgeBus = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_SECONDARY_BUS, 1);
+
+    /* Init all devices behind the bridge (recursing to further buses). */
+    bool fRes = ich9pciBiosInitAllDevicesPrefetchableOnBus(pPciRoot, uBridgeBus, fUse64Bit, fDryrun);
+    if (fDryrun)
+        return fRes;
+    Assert(!fRes);
+
+    /* Set prefetchable MMIO limit register with 1MB boundary. */
+    uint64_t uBase, uLimit;
+    if (fUse64Bit)
+    {
+        if (u64MMIOAddressBase == pPciRoot->uPciBiosMmio64)
+            return false;
+        uBase = u64MMIOAddressBase;
+        uLimit = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, 1024*1024) - 1;
+    }
+    else
+    {
+        if (u32MMIOAddressBase == pPciRoot->uPciBiosMmio)
+            return false;
+        uBase = u32MMIOAddressBase;
+        uLimit = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024) - 1;
+    }
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, uBase >> 32, 4);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, (uint32_t)(uBase >> 16) & UINT32_C(0xfff0), 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, uLimit >> 32, 4);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, (uint32_t)(uLimit >> 16) & UINT32_C(0xfff0), 2);
+
+    return false;
+}
+
+static bool ich9pciBiosInitAllDevicesPrefetchableOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus, bool fUse64Bit, bool fDryrun)
+{
+    /* First pass: assign resources to all devices. */
+    for (uint32_t uDevFn = 0; uDevFn < 256; uDevFn++)
+    {
+        /* check if device is present */
+        uint16_t uVendor = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_VENDOR_ID, 2);
+        if (uVendor == 0xffff)
+            continue;
+
+        Log(("BIOS init device (prefetch): %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+
+        /* prefetchable memory mappings */
+        bool fRes = ich9pciBiosInitDevicePrefetchableBARs(pPciRoot, uBus, uDevFn, fUse64Bit, fDryrun);
+        if (fRes)
+        {
+            Assert(fDryrun);
+            return fRes;
+        }
+    }
+
+    /* Second pass: handle bridges recursively. */
+    for (uint32_t uDevFn = 0; uDevFn < 256; uDevFn++)
+    {
+        /* check if device is present */
+        uint16_t uVendor = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_VENDOR_ID, 2);
+        if (uVendor == 0xffff)
+            continue;
+
+        /* only handle PCI-to-PCI bridges */
+        uint16_t uDevClass = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_CLASS_DEVICE, 2);
+        if (uDevClass != 0x0604)
+            continue;
+
+        Log(("BIOS init bridge (prefetch): %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+        bool fRes = ich9pciBiosInitBridgePrefetchable(pPciRoot, uBus, uDevFn, fUse64Bit, fDryrun);
+        if (fRes)
+        {
+            Assert(fDryrun);
+            return fRes;
+        }
+    }
+    return false;
+}
+
 static void ich9pciBiosInitAllDevicesOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus)
 {
     /* First pass: assign resources to all devices and map the interrupt. */
@@ -1877,6 +2076,44 @@ static void ich9pciBiosInitAllDevicesOnBus(PDEVPCIROOT pPciRoot, uint8_t uBus)
 
         Log(("BIOS init bridge: %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
         ich9pciBiosInitBridge(pPciRoot, uBus, uDevFn);
+    }
+
+    /* Third pass (only for bus 0): set up prefetchable bars recursively. */
+    if (uBus == 0)
+    {
+        for (uint32_t uDevFn = 0; uDevFn < 256; uDevFn++)
+        {
+            /* check if device is present */
+            uint16_t uVendor = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_VENDOR_ID, 2);
+            if (uVendor == 0xffff)
+                continue;
+
+            /* only handle PCI-to-PCI bridges */
+            uint16_t uDevClass = ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_CLASS_DEVICE, 2);
+            if (uDevClass != 0x0604)
+                continue;
+
+            Log(("BIOS init prefetchable memory behind bridge: %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+            /* Save values for the prefetchable dryruns. */
+            uint32_t u32MMIOAddressBase = pPciRoot->uPciBiosMmio;
+            uint64_t u64MMIOAddressBase = pPciRoot->uPciBiosMmio64;
+
+            bool fProbe = ich9pciBiosInitBridgePrefetchable(pPciRoot, uBus, uDevFn, false /* fUse64Bit */, true /* fDryrun */);
+            pPciRoot->uPciBiosMmio = u32MMIOAddressBase;
+            pPciRoot->uPciBiosMmio64 = u64MMIOAddressBase;
+            if (fProbe)
+            {
+                fProbe = ich9pciBiosInitBridgePrefetchable(pPciRoot, uBus, uDevFn, true /* fUse64Bit */, true /* fDryrun */);
+                pPciRoot->uPciBiosMmio = u32MMIOAddressBase;
+                pPciRoot->uPciBiosMmio64 = u64MMIOAddressBase;
+                if (fProbe)
+                    LogRel(("PCI: unresolvable prefetchable memory behind bridge %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
+                else
+                    ich9pciBiosInitBridgePrefetchable(pPciRoot, uBus, uDevFn, true /* fUse64Bit */, false /* fDryrun */);
+            }
+            else
+                ich9pciBiosInitBridgePrefetchable(pPciRoot, uBus, uDevFn, false /* fUse64Bit */, false /* fDryrun */);
+        }
     }
 }
 
@@ -2622,11 +2859,11 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                             (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_BASE) & 0xfff0) << 16,
                             (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_LIMIT) & 0xfff0) << 16 | 0xfffff);
             devpciR3InfoIndent(pHlp, iIndentLvl);
-            pHlp->pfnPrintf(pHlp, "behind bridge: prefetch memory %#018x..%#018x\n",
+            pHlp->pfnPrintf(pHlp, "behind bridge: prefetch memory %#018llx..%#018llx\n",
                             (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
                              | (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE) & 0xfff0) << 16),
                             (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
-                             | (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT) & 0xfff0) << 16)
+                             | (uint32_t)(ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT) & 0xfff0) << 16)
                              | 0xfffff);
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
