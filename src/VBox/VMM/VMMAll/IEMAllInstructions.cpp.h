@@ -6827,7 +6827,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg8b_Mq, uint8_t, bRm)
 
 
 /** Opcode REX.W 0x0f 0xc7 !11/1. */
-FNIEMOP_UD_STUB_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm);
 
 /** Opcode 0x0f 0xc7 11/6. */
 FNIEMOP_UD_STUB_1(iemOp_Grp9_rdrand_Rv, uint8_t, bRm);
