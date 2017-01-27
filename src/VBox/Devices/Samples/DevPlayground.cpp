@@ -104,7 +104,8 @@ static DECLCALLBACK(int) devPlaygroundMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
     {
         case 0:
         case 2:
-            Assert(enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64));
+            Assert(   enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64)
+                   || enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_BAR64));
             if (GCPhysAddress == NIL_RTGCPHYS)
                 return VINF_SUCCESS; /* We ignore the unmap notification. */
             return PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
