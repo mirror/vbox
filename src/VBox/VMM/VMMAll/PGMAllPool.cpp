@@ -1402,11 +1402,15 @@ pgmPoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
     /*
      * Collect stats on the access.
      */
-    AssertCompile(RT_ELEMENTS(pPool->CTX_MID_Z(aStatMonitor,Sizes)) == 17);
+    AssertCompile(RT_ELEMENTS(pPool->CTX_MID_Z(aStatMonitor,Sizes)) == 19);
     if (cbBuf <= 16 && cbBuf > 0)
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(aStatMonitor,Sizes)[cbBuf - 1]);
-    else
+    else if (cbBuf >= 17 && cbBuf < 32)
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(aStatMonitor,Sizes)[16]);
+    else if (cbBuf >= 32 && cbBuf < 64)
+        STAM_COUNTER_INC(&pPool->CTX_MID_Z(aStatMonitor,Sizes)[17]);
+    else if (cbBuf >= 64)
+        STAM_COUNTER_INC(&pPool->CTX_MID_Z(aStatMonitor,Sizes)[18]);
 
     uint8_t cbAlign;
     switch (pPage->enmKind)

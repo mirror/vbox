@@ -377,7 +377,9 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->aStatMonitorRZSizes[13],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0e",          STAMUNIT_OCCURENCES,     "Number of 14 byte accesses.");
     STAM_REG(pVM, &pPool->aStatMonitorRZSizes[14],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0f",          STAMUNIT_OCCURENCES,     "Number of 15 byte accesses.");
     STAM_REG(pVM, &pPool->aStatMonitorRZSizes[15],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size10",          STAMUNIT_OCCURENCES,     "Number of 16 byte accesses.");
-    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size11OrMore",    STAMUNIT_OCCURENCES,     "Number of 17 or more byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size11-2f",       STAMUNIT_OCCURENCES,     "Number of 17-31 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[17],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size20-3f",       STAMUNIT_OCCURENCES,     "Number of 32-63 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[18],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size40+",         STAMUNIT_OCCURENCES,     "Number of 64+ byte accesses.");
     STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[0],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned1",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 1.");
     STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[1],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned2",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 2.");
     STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[2],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned3",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 3.");
@@ -409,7 +411,9 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[13],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0e",              STAMUNIT_OCCURENCES,     "Number of 14 byte accesses (R3).");
     STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[14],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0f",              STAMUNIT_OCCURENCES,     "Number of 15 byte accesses (R3).");
     STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[15],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size10",              STAMUNIT_OCCURENCES,     "Number of 16 byte accesses (R3).");
-    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size11OrMore",        STAMUNIT_OCCURENCES,     "Number of 17 or more byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size11-2f",           STAMUNIT_OCCURENCES,     "Number of 17-31 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[17],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size20-3f",           STAMUNIT_OCCURENCES,     "Number of 32-63 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[18],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size40+",             STAMUNIT_OCCURENCES,     "Number of 64+ byte accesses.");
     STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[0],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned1",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 1 in R3.");
     STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[1],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned2",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 2 in R3.");
     STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[2],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned3",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 3 in R3.");

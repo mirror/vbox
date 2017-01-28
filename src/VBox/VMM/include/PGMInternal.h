@@ -2527,7 +2527,7 @@ typedef struct PGMPOOL
     /** Profiling the pgmPoolFlushPage calls made from the regular access handler in R0/RC. */
     STAMPROFILE                 StatMonitorRZFlushPage;
     /** Per access size counts indexed by size minus 1, last for larger. */
-    STAMCOUNTER                 aStatMonitorRZSizes[17];
+    STAMCOUNTER                 aStatMonitorRZSizes[16+3];
     /** Missaligned access counts indexed by offset - 1. */
     STAMCOUNTER                 aStatMonitorRZMisaligned[7];
 
@@ -2545,7 +2545,7 @@ typedef struct PGMPOOL
     /** Profiling the pgmPoolFlushPage calls made from the R3 access handler. */
     STAMPROFILE                 StatMonitorR3FlushPage;
     /** Per access size counts indexed by size minus 1, last for larger. */
-    STAMCOUNTER                 aStatMonitorR3Sizes[17];
+    STAMCOUNTER                 aStatMonitorR3Sizes[16+3];
     /** Missaligned access counts indexed by offset - 1. */
     STAMCOUNTER                 aStatMonitorR3Misaligned[7];
     /** Nr of handled PT faults. */
