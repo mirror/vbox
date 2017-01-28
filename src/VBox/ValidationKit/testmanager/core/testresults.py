@@ -40,7 +40,7 @@ from testmanager.core.base                  import ModelDataBase, ModelLogicBase
                                                    FilterCriterion, FilterCriterionValueAndDescription, \
                                                    TMExceptionBase, TMTooManyRows, TMRowNotFound;
 from testmanager.core.testgroup             import TestGroupData;
-from testmanager.core.build                 import BuildDataEx, BuildCategoryData, BuildLogic;
+from testmanager.core.build                 import BuildDataEx, BuildCategoryData;
 from testmanager.core.failurereason         import FailureReasonLogic;
 from testmanager.core.testbox               import TestBoxData, TestBoxLogic;
 from testmanager.core.testcase              import TestCaseData;
