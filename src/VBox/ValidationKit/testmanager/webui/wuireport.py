@@ -128,12 +128,12 @@ class WuiReportBase(WuiContentBase):
         return '%.1f%%' % (cHits * 100.0 / cTotal,);
 
     @staticmethod
-    def fmtPctWithTotal(cHits, cTotal):
+    def fmtPctWithHits(cHits, cTotal):
         """
         Formats a percent number with total in parentheses.
         Returns a string.
         """
-        return '%s (%s)' % (WuiReportBase.fmtPct(cHits, cTotal), cTotal);
+        return '%s (%s)' % (WuiReportBase.fmtPct(cHits, cTotal), cHits);
 
     @staticmethod
     def fmtPctWithHitsAndTotal(cHits, cTotal):
@@ -169,9 +169,9 @@ class WuiReportSuccessRate(WuiReportBase):
                               [ dStatuses[ReportModelBase.ksTestStatus_Success] * 100 / cTotal,
                                 dStatuses[ReportModelBase.ksTestStatus_Skipped] * 100 / cTotal,
                                 dStatuses[ReportModelBase.ksTestStatus_Failure] * 100 / cTotal, ],
-                              [ self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Success], cTotal),
-                                self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Skipped], cTotal),
-                                self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Failure], cTotal), ]);
+                              [ self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Success], cTotal),
+                                self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Skipped], cTotal),
+                                self.fmtPctWithHits(dStatuses[ReportModelBase.ksTestStatus_Failure], cTotal), ]);
             else:
                 oTable.addRow(sPeriod, [ 0, 0, 0 ], [ '0%', '0%', '0%' ]);
 
