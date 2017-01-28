@@ -116,6 +116,34 @@ class WuiReportBase(WuiContentBase):
         sReport += '\n\n<!-- HEYYOU: sSubject=%s aidSubjects=%s -->\n\n' % (self._oModel.sSubject, self._oModel.aidSubjects);
         return (sTitle, sReport);
 
+    @staticmethod
+    def fmtPct(cHits, cTotal):
+        """
+        Formats a percent number.
+        Returns a string.
+        """
+        uPct = cHits * 100 / cTotal;
+        if uPct >= 10:
+            return '%s%%' % (uPct,);
+        return '%.1f%%' % (cHits * 100.0 / cTotal,);
+
+    @staticmethod
+    def fmtPctWithTotal(cHits, cTotal):
+        """
+        Formats a percent number with total in parentheses.
+        Returns a string.
+        """
+        return '%s (%s)' % (WuiReportBase.fmtPct(cHits, cTotal), cTotal);
+
+    @staticmethod
+    def fmtPctWithHitsAndTotal(cHits, cTotal):
+        """
+        Formats a percent number with total in parentheses.
+        Returns a string.
+        """
+        return '%s (%s/%s)' % (WuiReportBase.fmtPct(cHits, cTotal), cHits, cTotal);
+
+
 
 class WuiReportSuccessRate(WuiReportBase):
     """
@@ -137,13 +165,13 @@ class WuiReportSuccessRate(WuiReportBase):
             cTotal    = cSuccess + dStatuses[ReportModelBase.ksTestStatus_Failure];
             sPeriod   = self._oModel.getPeriodDesc(i);
             if cTotal > 0:
-                iPctSuccess = dStatuses[ReportModelBase.ksTestStatus_Success] * 100 / cTotal;
-                iPctSkipped = dStatuses[ReportModelBase.ksTestStatus_Skipped] * 100 / cTotal;
-                iPctFailure = dStatuses[ReportModelBase.ksTestStatus_Failure] * 100 / cTotal;
-                oTable.addRow(sPeriod, [ iPctSuccess, iPctSkipped, iPctFailure ],
-                              [ '%s%% (%d)' % (iPctSuccess, dStatuses[ReportModelBase.ksTestStatus_Success]),
-                                '%s%% (%d)' % (iPctSkipped, dStatuses[ReportModelBase.ksTestStatus_Skipped]),
-                                '%s%% (%d)' % (iPctFailure, dStatuses[ReportModelBase.ksTestStatus_Failure]), ]);
+                oTable.addRow(sPeriod,
+                              [ dStatuses[ReportModelBase.ksTestStatus_Success] * 100 / cTotal,
+                                dStatuses[ReportModelBase.ksTestStatus_Skipped] * 100 / cTotal,
+                                dStatuses[ReportModelBase.ksTestStatus_Failure] * 100 / cTotal, ],
+                              [ self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Success], cTotal),
+                                self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Skipped], cTotal),
+                                self.fmtPctWithTotal(dStatuses[ReportModelBase.ksTestStatus_Failure], cTotal), ]);
             else:
                 oTable.addRow(sPeriod, [ 0, 0, 0 ], [ '0%', '0%', '0%' ]);
 
@@ -379,12 +407,8 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
                     for idKey in aidSorted:
                         oRow = oPeriod.dRowsById.get(idKey, None);
                         if oRow is not None:
-                            uPct = oRow.cHits * 100 / oRow.cTotal;
-                            aiValues.append(uPct);
-                            if uPct >= 10:
-                                asValues.append('%u%% (%u/%u)' % (uPct, oRow.cHits, oRow.cTotal));
-                            else:
-                                asValues.append('%.1f%% (%u/%u)' % (oRow.cHits * 100.0 / oRow.cTotal, oRow.cHits, oRow.cTotal));
+                            aiValues.append(oRow.cHits * 100 / oRow.cTotal);
+                            asValues.append(self.fmtPctWithHitsAndTotal(oRow.cHits, oRow.cTotal));
                         else:
                             aiValues.append(0);
                             asValues.append('0');
@@ -397,11 +421,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
                     for idKey in aidSorted:
                         uPct = oSet.dcHitsPerId[idKey] * 100 / oSet.dcTotalPerId[idKey];
                         aiValues.append(uPct);
-                        if uPct >= 10:
-                            asValues.append('%u%% (%u/%u)' % (uPct, oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
-                        else:
-                            asValues.append('%.1f%% (%u/%u)' % ( oSet.dcHitsPerId[idKey] * 100.0 / oSet.dcTotalPerId[idKey],
-                                                                 oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey],));
+                        asValues.append(self.fmtPctWithHitsAndTotal(oSet.dcHitsPerId[idKey], oSet.dcTotalPerId[idKey]));
                     oTable.addRow('Totals', aiValues, asValues);
 
                 oGraph = WuiHlpBarGraph(sIdBase, oTable, self._oDisp);
