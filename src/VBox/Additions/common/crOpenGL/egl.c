@@ -134,14 +134,16 @@ static EGLBoolean setEGLError(EGLint cErr)
 
 static EGLBoolean testValidDisplay(EGLNativeDisplayType hDisplay)
 {
+    void *pSymbol = dlsym(NULL, "gbm_create_device");
+
     if (hDisplay == EGL_DEFAULT_DISPLAY)
         return EGL_TRUE;
     if ((void *)hDisplay == NULL)
         return EGL_FALSE;
     /* This is the test that Mesa uses to see if this is a GBM "display".  Not
      * very pretty, but since no one can afford to break Mesa it should be
-     * safe. Obviously we can't support GBM for now. */
-    if (*(void **)hDisplay == dlsym(NULL, "gbm_create_device"))
+     * safe.  We need this to detect when the X server tries to load us. */
+    if (pSymbol != NULL && *(void **)hDisplay == pSymbol)
         return EGL_FALSE;
     return EGL_TRUE;
 }
