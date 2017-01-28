@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define EGL_ASSERT(expr) \
     if (!(expr)) { printf("Assertion failed: %s\n", #expr); exit(1); }
@@ -148,7 +149,6 @@ static EGLBoolean testValidDisplay(EGLNativeDisplayType hDisplay)
 DECLEXPORT(EGLDisplay) eglGetDisplay(EGLNativeDisplayType hDisplay)
 {
     Display *pDisplay;
-    int cError, cEvent, cMajor, cMinor;
 
     if (!testValidDisplay(hDisplay))
         return EGL_NO_DISPLAY;
@@ -161,10 +161,8 @@ DECLEXPORT(EGLDisplay) eglGetDisplay(EGLNativeDisplayType hDisplay)
         pthread_once(&g_defaultDisplayOnce, defaultDisplayInitOnce);
         pDisplay = g_pDefaultDisplay;
     }
-    if (pDisplay && glXQueryExtension(pDisplay, &cError, &cEvent))
-        if (glXQueryVersion(pDisplay, &cMajor, &cMinor))
-            if (cMajor > 1 || (cMajor == 1 && cMinor >= 3))
-                return (EGLDisplay) pDisplay;
+    if (pDisplay && !strcmp(glXGetClientString(pDisplay, GLX_VENDOR), "Chromium"))
+        return (EGLDisplay) pDisplay;
     return EGL_NO_DISPLAY;
 }
 
