@@ -1960,7 +1960,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                           '              AND Builds.tsEffective <= BuildIDs.tsNow\n'
                           'GROUP BY Builds.iRevision\n'
                           'ORDER BY Builds.iRevision DESC\n' );
-        workerDoFetch(BuildLogic);
+        workerDoFetch(None, fIdIsName = True);
 
         # Build branches.
         oCrit = oFilter.aCriteria[TestResultFilter.kiBranches];
