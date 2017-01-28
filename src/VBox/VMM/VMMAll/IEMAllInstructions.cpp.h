@@ -6832,9 +6832,67 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
     IEMOP_MNEMONIC(cmpxchg16b, "cmpxchg16b Mdq");
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fMovCmpXchg16b)
     {
+#if 1
         RT_NOREF(bRm);
         IEMOP_BITCH_ABOUT_STUB();
         return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+#else
+        IEM_MC_BEGIN(4, 3);
+        IEM_MC_ARG(PRTUINT128U, pu128MemDst,     0);
+        IEM_MC_ARG(PRTUINT128U, pu128RaxRdx,     1);
+        IEM_MC_ARG(PRTUINT128U, pu128RbxRcx,     2);
+        IEM_MC_ARG_LOCAL_EFLAGS(pEFlags, EFlags, 3);
+        IEM_MC_LOCAL(RTUINT128U, u128RaxRdx);
+        IEM_MC_LOCAL(RTUINT128U, u128RbxRcx);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
+        IEMOP_HLP_DONE_DECODING();
+        IEM_MC_MEM_MAP(pu128MemDst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
+
+        IEM_MC_FETCH_GREG_U64(u128RaxRdx.s.Lo, X86_GREG_xAX);
+        IEM_MC_FETCH_GREG_U64(u128RaxRdx.s.Hi, X86_GREG_xDX);
+        IEM_MC_REF_LOCAL(pu128RaxRdx, u128RaxRdx);
+
+        IEM_MC_FETCH_GREG_U64(u128RbxRcx.s.Lo, X86_GREG_xBX);
+        IEM_MC_FETCH_GREG_U64(u128RbxRcx.s.Hi, X86_GREG_xCX);
+        IEM_MC_REF_LOCAL(pu128RbxRcx, u128RbxRcx);
+
+        IEM_MC_FETCH_EFLAGS(EFlags);
+# ifdef RT_ARCH_AMD64
+        if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fMovCmpXchg16b)
+        {
+            if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+            else
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+        }
+        else
+# endif
+        {
+            /* Note! The fallback for 32-bit systems and systems without CX16 is to use
+                     SSE instructions for 16-byte loads and stores.  Since these aren't
+                     atomic and there are cycles between the loading and storing, this
+                     only works correctly in UNI CPU guests.  If guest SMP is active
+                     we have no choice but to use a rendezvous callback here.  Sigh. */
+            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ(); /* HACK ALERT! */
+            if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback_sse, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+            else
+                IEM_MC_CALL_CIMPL_4(iemCImpl_cmpxchg16b_fallback_rendezvous, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+        }
+
+        IEM_MC_MEM_COMMIT_AND_UNMAP(pu128MemDst, IEM_ACCESS_DATA_RW);
+        IEM_MC_COMMIT_EFLAGS(EFlags);
+        IEM_MC_IF_EFL_BIT_NOT_SET(X86_EFL_ZF)
+            IEM_MC_STORE_GREG_U64(X86_GREG_xAX, u128RaxRdx.s.Lo);
+            IEM_MC_STORE_GREG_U64(X86_GREG_xDX, u128RaxRdx.s.Hi);
+        IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+
+        IEM_MC_END();
+        return VINF_SUCCESS;
+#endif
     }
     Log(("cmpxchg16b -> #UD\n"));
     return IEMOP_RAISE_INVALID_OPCODE();

@@ -6361,6 +6361,21 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
 }
 
 
+/**
+ * Implements 'CMPXCHG16B' fallback using rendezvous.
+ */
+IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, PRTUINT128U, pu64RaxRdx,
+                PRTUINT128U, pu64RbxRcx, uint32_t *, pEFlags)
+{
+    RT_NOREF(pVCpu, cbInstr, pu128Dst, pu64RaxRdx, pu64RbxRcx, pEFlags);
+#ifdef IN_RING3
+    /** @todo VMMR3EmtRendezvous() */
+    return VERR_NOT_IMPLEMENTED;
+#else
+    return VINF_EM_RAW_EMULATE_INSTR;
+#endif
+}
+
 
 /**
  * Implements 'FINIT' and 'FNINIT'.
