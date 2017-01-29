@@ -2373,7 +2373,7 @@ class TestDriver(base.TestDriver):                                              
                                     sAltName = '%s-%s' % (sVmName, os.path.basename(sLogFile),));
         return fRc;
 
-    def annotateAndUploadProcessReport(self, sProcessReport):
+    def annotateAndUploadProcessReport(self, sProcessReport, sFilename, sKind, sDesc):
         """
         Annotates the given VM process report and uploads it if successfull.
         """
@@ -2387,7 +2387,7 @@ class TestDriver(base.TestDriver):                                              
                 reporter.log('Successfully prepared environment');
                 sReportDbgSym = oResolver.annotateReport(sProcessReport);
                 if sReportDbgSym is not None:
-                    reporter.addLogString(sReportDbgSym, 'vmprocess.log', 'process/report/vm', 'Annotated VM process state');
+                    reporter.addLogString(sReportDbgSym, sFilename, sKind, sDesc);
                     fRc = True;
                 else:
                     reporter.log('Annotating report failed');
@@ -2597,11 +2597,12 @@ class TestDriver(base.TestDriver):                                              
         # If the host is out of memory, just skip all the info collection as it
         # requires memory too and seems to wedge.
         #
-        sHostProcessInfo    = None;
-        sLastScreenshotPath = None;
-        sOsKernelLog        = None;
-        sVgaText            = None;
-        asMiscInfos         = [];
+        sHostProcessInfo     = None;
+        sHostProcessInfoHung = None;
+        sLastScreenshotPath  = None;
+        sOsKernelLog         = None;
+        sVgaText             = None;
+        asMiscInfos          = [];
 
         if not oSession.fHostMemoryLow:
             # Try to fetch the VM process info before meddling with its state.
@@ -2705,6 +2706,13 @@ class TestDriver(base.TestDriver):                                              
                 fRc = False;
                 uPid = oSession.getPid();
                 if uPid is not None:
+                    #
+                    # Collect some information about the VM process first to have
+                    # some state information for further investigation why powering off failed.
+                    #
+                    sHostProcessInfoHung = utils.processGetInfo(uPid, fSudo = True);
+
+                    # Exterminate...
                     reporter.error('terminateVmBySession: Terminating PID %u (VM %s)' % (uPid, oSession.sName));
                     fClose = base.processTerminate(uPid);
                     if fClose is True:
@@ -2764,11 +2772,23 @@ class TestDriver(base.TestDriver):                                              
         # Add the host process info if we were able to retrieve it.
         if sHostProcessInfo is not None:
             reporter.log('Trying to annotate the VM process report, please stand by...');
-            fRcTmp = self.annotateAndUploadProcessReport(sHostProcessInfo);
+            fRcTmp = self.annotateAndUploadProcessReport(sHostProcessInfo, 'vmprocess.log',
+                                                         'process/report/vm', 'Annotated VM process state');
             # Upload the raw log for manual annotation in case resolving failed.
             if not fRcTmp:
                 reporter.log('Failed to annotate VM process report, uploading raw report');
                 reporter.addLogString(sHostProcessInfo, 'vmprocess.log', 'process/report/vm', 'VM process state');
+
+        # Add the host process info for failed power off attempts if we were able to retrieve it.
+        if sHostProcessInfoHung is not None:
+            reporter.log('Trying to annotate the hung VM process report, please stand by...');
+            fRcTmp = self.annotateAndUploadProcessReport(sHostProcessInfoHung, 'vmprocess-hung.log',
+                                                         'process/report/vm', 'Annotated hung VM process state');
+            # Upload the raw log for manual annotation in case resolving failed.
+            if not fRcTmp:
+                reporter.log('Failed to annotate hung VM process report, uploading raw report');
+                reporter.addLogString(sHostProcessInfoHung, 'vmprocess-hung.log', 'process/report/vm',
+                                      'Hung VM process state');
 
         return fRc;
 
