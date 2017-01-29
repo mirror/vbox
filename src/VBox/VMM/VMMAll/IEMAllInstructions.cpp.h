@@ -6848,6 +6848,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEMOP_HLP_DONE_DECODING();
+        IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(GCPtrEffDst, 16);
         IEM_MC_MEM_MAP(pu128MemDst, IEM_ACCESS_DATA_RW, pVCpu->iem.s.iEffSeg, GCPtrEffDst, 0 /*arg*/);
 
         IEM_MC_FETCH_GREG_U64(u128RaxRdx.s.Lo, X86_GREG_xAX);
@@ -6870,17 +6871,17 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
         else
 # endif
         {
-            /* Note! The fallback for 32-bit systems and systems without CX16 is to use
-                     SSE instructions for 16-byte loads and stores.  Since these aren't
-                     atomic and there are cycles between the loading and storing, this
-                     only works correctly in UNI CPU guests.  If guest SMP is active
-                     we have no choice but to use a rendezvous callback here.  Sigh. */
-            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ(); /* HACK ALERT! */
-
+            /* Note! The fallback for 32-bit systems and systems without CX16 is multiple
+                     accesses and not all all atomic, which works fine on in UNI CPU guest
+                     configuration (ignoring DMA).  If guest SMP is active we have no choice
+                     but to use a rendezvous callback here.  Sigh. */
             if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             else
+            {
                 IEM_MC_CALL_CIMPL_4(iemCImpl_cmpxchg16b_fallback_rendezvous, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+                /* Does not get here, tail code is duplicated in iemCImpl_cmpxchg16b_fallback_rendezvous. */
+            }
         }
 
         IEM_MC_MEM_COMMIT_AND_UNMAP(pu128MemDst, IEM_ACCESS_DATA_RW);

@@ -6405,10 +6405,28 @@ IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, 
     Args.pu128RaxRdx    = pu128RaxRdx;
     Args.pu128RbxRcx    = pu128RbxRcx;
     Args.pEFlags        = pEFlags;
+# ifdef VBOX_STRICT
+    Args.cCalls         = 0;
+# endif
     VBOXSTRICTRC rcStrict = VMMR3EmtRendezvous(pVCpu->CTX_SUFF(pVM), VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE,
                                                iemCImpl_cmpxchg16b_fallback_rendezvous_callback, &Args);
     Assert(Args.cCalls == 1);
-    RT_NOREF(cbInstr);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /* Duplicated tail code. */
+        rcStrict = iemMemCommitAndUnmap(pVCpu, pu128Dst, IEM_ACCESS_DATA_RW);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            PCPUMCTX pCtx = pVCpu->iem.s.CTX_SUFF(pCtx);
+            pCtx->eflags.u = *pEFlags; /* IEM_MC_COMMIT_EFLAGS */
+            if (!(*pEFlags & X86_EFL_ZF))
+            {
+                pCtx->rax = pu128RaxRdx->s.Lo;
+                pCtx->rdx = pu128RaxRdx->s.Hi;
+            }
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        }
+    }
     return rcStrict;
 #else
     RT_NOREF(pVCpu, cbInstr, pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);

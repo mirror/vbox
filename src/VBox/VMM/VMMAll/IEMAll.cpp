@@ -10475,6 +10475,11 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         if (pVCpu->iem.s.uCpl != 0) \
             return iemRaiseGeneralProtectionFault0(pVCpu); \
     } while (0)
+#define IEM_MC_RAISE_GP0_IF_EFF_ADDR_UNALIGNED(a_EffAddr, a_cbAlign) \
+    do { \
+        if (!((a_EffAddr) & ((a_cbAlign) - 1))) { /* likely */ } \
+        else return iemRaiseGeneralProtectionFault0(pVCpu); \
+    } while (0)
 
 
 #define IEM_MC_LOCAL(a_Type, a_Name)                    a_Type a_Name
