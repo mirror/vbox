@@ -652,9 +652,6 @@
     GEN_CHECK_OFF(PGMCPU, pfnRCGstGetPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCGstModifyPage);
     GEN_CHECK_OFF(PGMCPU, pfnRCGstGetPDE);
-    GEN_CHECK_OFF(PGMCPU, pfnR0GstGetPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR0GstModifyPage);
-    GEN_CHECK_OFF(PGMCPU, pfnR0GstGetPDE);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthRelocate);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthSyncCR3);
     GEN_CHECK_OFF(PGMCPU, pfnR3BthInvalidatePage);

@@ -1320,7 +1320,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.b.u1CacheDisable? "CD" : "--",
                                         Pde.b.u1PAT         ? "AT" : "--",
                                         Pde.b.u1NoExecute   ? "NX" : "--",
-                                        Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+                                        Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE2M_PAE_PG_MASK);
@@ -1349,7 +1349,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
                                         Pde.n.u1WriteThru   ? "WT" : "--",
                                         Pde.n.u1CacheDisable? "CD" : "--",
                                         Pde.n.u1NoExecute   ? "NX" : "--",
-                                        Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+                                        Pde.u & RT_BIT_64(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PAE_PG_MASK);
@@ -1636,7 +1636,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.b.u1WriteThru   ? "WT" : "--",
                                         Pde.b.u1CacheDisable? "CD" : "--",
                                         Pde.b.u1PAT         ? "AT" : "--",
-                                        Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+                                        Pde.u & RT_BIT_32(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         u64Phys);
@@ -1657,7 +1657,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                         Pde.n.u1Reserved1   ? '?'  : '.', /* ignored */
                                         Pde.n.u1WriteThru   ? "WT" : "--",
                                         Pde.n.u1CacheDisable? "CD" : "--",
-                                        Pde.u & PGM_PDFLAGS_BIG_PAGE    ? 'b' : '-',
+                                        Pde.u & RT_BIT_32(9)            ? '1' : '0',
                                         Pde.u & PGM_PDFLAGS_MAPPING     ? 'm' : '-',
                                         Pde.u & PGM_PDFLAGS_TRACK_DIRTY ? 'd' : '-',
                                         Pde.u & X86_PDE_PG_MASK);

@@ -2049,7 +2049,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDNAs,         "/PGM/CPU%u/RZ/InvalidatePage/PDNAs",       "The number of times PGMInvalidatePage() was called for a not accessed page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDNPs,         "/PGM/CPU%u/RZ/InvalidatePage/PDNPs",       "The number of times PGMInvalidatePage() was called for a not present page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePagePDOutOfSync,   "/PGM/CPU%u/RZ/InvalidatePage/PDOutOfSync", "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePageSizeChanges,   "/PGM/CPU%u/RZ/InvalidatePage/SizeChanges", "The number of times PGMInvalidatePage() was called on a page size change (4KB <-> 2/4MB).");
         PGM_REG_COUNTER(&pCpuStats->StatRZInvalidatePageSkipped,       "/PGM/CPU%u/RZ/InvalidatePage/Skipped",     "The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3.");
         PGM_REG_COUNTER(&pCpuStats->StatRZPageOutOfSyncSupervisor,     "/PGM/CPU%u/RZ/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pCpuStats->StatRZPageOutOfSyncUser,           "/PGM/CPU%u/RZ/OutOfSync/User",             "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
@@ -2097,7 +2096,6 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDNAs,         "/PGM/CPU%u/R3/InvalidatePage/PDNAs",       "The number of times PGMInvalidatePage() was called for a not accessed page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDNPs,         "/PGM/CPU%u/R3/InvalidatePage/PDNPs",       "The number of times PGMInvalidatePage() was called for a not present page directory.");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePagePDOutOfSync,   "/PGM/CPU%u/R3/InvalidatePage/PDOutOfSync", "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
-        PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePageSizeChanges,   "/PGM/CPU%u/R3/InvalidatePage/SizeChanges", "The number of times PGMInvalidatePage() was called on a page size change (4KB <-> 2/4MB).");
         PGM_REG_COUNTER(&pCpuStats->StatR3InvalidatePageSkipped,       "/PGM/CPU%u/R3/InvalidatePage/Skipped",     "The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3.");
         PGM_REG_COUNTER(&pCpuStats->StatR3PageOutOfSyncSupervisor,     "/PGM/CPU%u/R3/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pCpuStats->StatR3PageOutOfSyncUser,           "/PGM/CPU%u/R3/OutOfSync/User",             "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
@@ -3189,6 +3187,7 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
     pVCpu->pgm.s.pfnR3GstRelocate             = pModeData->pfnR3GstRelocate;
     pVCpu->pgm.s.pfnR3GstExit                 = pModeData->pfnR3GstExit;
     pVCpu->pgm.s.pfnR3GstGetPage              = pModeData->pfnR3GstGetPage;
+    Assert(pVCpu->pgm.s.pfnR3GstGetPage);
     pVCpu->pgm.s.pfnR3GstModifyPage           = pModeData->pfnR3GstModifyPage;
     pVCpu->pgm.s.pfnR3GstGetPDE               = pModeData->pfnR3GstGetPDE;
     pVCpu->pgm.s.pfnRCGstGetPage              = pModeData->pfnRCGstGetPage;
@@ -3197,7 +3196,6 @@ static void pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE e
     pVCpu->pgm.s.pfnR0GstGetPage              = pModeData->pfnR0GstGetPage;
     pVCpu->pgm.s.pfnR0GstModifyPage           = pModeData->pfnR0GstModifyPage;
     pVCpu->pgm.s.pfnR0GstGetPDE               = pModeData->pfnR0GstGetPDE;
-    Assert(pVCpu->pgm.s.pfnR3GstGetPage);
 
     /* both */
     pVCpu->pgm.s.pfnR3BthRelocate             = pModeData->pfnR3BthRelocate;

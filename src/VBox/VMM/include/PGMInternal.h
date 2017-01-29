@@ -177,9 +177,6 @@
  * These are placed in the three bits available for system programs in
  * the page directory entries.
  * @{ */
-/** Indicates the original entry was a big page.
- * @remarks This is currently only used for statistics and can be recycled.  */
-#define PGM_PDFLAGS_BIG_PAGE            RT_BIT_64(9)
 /** Mapping (hypervisor allocated pagetable). */
 #define PGM_PDFLAGS_MAPPING             RT_BIT_64(10)
 /** Made read-only to facilitate dirty bit tracking. */
@@ -2498,39 +2495,28 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatTrackLinearRamSearches;
     /** The number of failing pgmPoolTrackPhysExtAlloc calls. */
     STAMCOUNTER                 StamTrackPhysExtAllocFailures;
-
-    /** Profiling the RC/R0 \#PF access handler. */
-    STAMPROFILE                 StatMonitorPfRZ;
-    /** Profiling the RC/R0 access we've handled (except REP STOSD). */
-    STAMPROFILE                 StatMonitorPfRZHandled;
-    /** Times we've failed interpreting the instruction. */
-    STAMCOUNTER                 StatMonitorPfRZEmulateInstr;
-    /** Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler. */
-    STAMPROFILE                 StatMonitorPfRZFlushPage;
-    /* Times we've detected a page table reinit. */
-    STAMCOUNTER                 StatMonitorPfRZFlushReinit;
-    /** Counting flushes for pages that are modified too often. */
-    STAMCOUNTER                 StatMonitorPfRZFlushModOverflow;
-    /** Times we've detected fork(). */
-    STAMCOUNTER                 StatMonitorPfRZFork;
-    /** Times we've failed interpreting a patch code instruction. */
-    STAMCOUNTER                 StatMonitorPfRZIntrFailPatch1;
-    /** Times we've failed interpreting a patch code instruction during flushing. */
-    STAMCOUNTER                 StatMonitorPfRZIntrFailPatch2;
-    /** The number of times we've seen rep prefixes we can't handle. */
-    STAMCOUNTER                 StatMonitorPfRZRepPrefix;
-    /** Profiling the REP STOSD cases we've handled. */
-    STAMPROFILE                 StatMonitorPfRZRepStosd;
-
-    /** Profiling the R0/RC regular access handler. */
+    /** Profiling the RC/R0 access handler. */
     STAMPROFILE                 StatMonitorRZ;
-    /** Profiling the pgmPoolFlushPage calls made from the regular access handler in R0/RC. */
+    /** Times we've failed interpreting the instruction. */
+    STAMCOUNTER                 StatMonitorRZEmulateInstr;
+    /** Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler. */
     STAMPROFILE                 StatMonitorRZFlushPage;
-    /** Per access size counts indexed by size minus 1, last for larger. */
-    STAMCOUNTER                 aStatMonitorRZSizes[16+3];
-    /** Missaligned access counts indexed by offset - 1. */
-    STAMCOUNTER                 aStatMonitorRZMisaligned[7];
-
+    /* Times we've detected a page table reinit. */
+    STAMCOUNTER                 StatMonitorRZFlushReinit;
+    /** Counting flushes for pages that are modified too often. */
+    STAMCOUNTER                 StatMonitorRZFlushModOverflow;
+    /** Times we've detected fork(). */
+    STAMCOUNTER                 StatMonitorRZFork;
+    /** Profiling the RC/R0 access we've handled (except REP STOSD). */
+    STAMPROFILE                 StatMonitorRZHandled;
+    /** Times we've failed interpreting a patch code instruction. */
+    STAMCOUNTER                 StatMonitorRZIntrFailPatch1;
+    /** Times we've failed interpreting a patch code instruction during flushing. */
+    STAMCOUNTER                 StatMonitorRZIntrFailPatch2;
+    /** The number of times we've seen rep prefixes we can't handle. */
+    STAMCOUNTER                 StatMonitorRZRepPrefix;
+    /** Profiling the REP STOSD cases we've handled. */
+    STAMPROFILE                 StatMonitorRZRepStosd;
     /** Nr of handled PT faults. */
     STAMCOUNTER                 StatMonitorRZFaultPT;
     /** Nr of handled PD faults. */
@@ -2542,12 +2528,22 @@ typedef struct PGMPOOL
 
     /** Profiling the R3 access handler. */
     STAMPROFILE                 StatMonitorR3;
+    /** Times we've failed interpreting the instruction. */
+    STAMCOUNTER                 StatMonitorR3EmulateInstr;
     /** Profiling the pgmPoolFlushPage calls made from the R3 access handler. */
     STAMPROFILE                 StatMonitorR3FlushPage;
-    /** Per access size counts indexed by size minus 1, last for larger. */
-    STAMCOUNTER                 aStatMonitorR3Sizes[16+3];
-    /** Missaligned access counts indexed by offset - 1. */
-    STAMCOUNTER                 aStatMonitorR3Misaligned[7];
+    /* Times we've detected a page table reinit. */
+    STAMCOUNTER                 StatMonitorR3FlushReinit;
+    /** Counting flushes for pages that are modified too often. */
+    STAMCOUNTER                 StatMonitorR3FlushModOverflow;
+    /** Times we've detected fork(). */
+    STAMCOUNTER                 StatMonitorR3Fork;
+    /** Profiling the R3 access we've handled (except REP STOSD). */
+    STAMPROFILE                 StatMonitorR3Handled;
+    /** The number of times we've seen rep prefixes we can't handle. */
+    STAMCOUNTER                 StatMonitorR3RepPrefix;
+    /** Profiling the REP STOSD cases we've handled. */
+    STAMPROFILE                 StatMonitorR3RepStosd;
     /** Nr of handled PT faults. */
     STAMCOUNTER                 StatMonitorR3FaultPT;
     /** Nr of handled PD faults. */
@@ -2556,7 +2552,8 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorR3FaultPDPT;
     /** Nr of handled PML4 faults. */
     STAMCOUNTER                 StatMonitorR3FaultPML4;
-
+    /** The number of times we're called in an async thread an need to flush. */
+    STAMCOUNTER                 StatMonitorR3Async;
     /** Times we've called pgmPoolResetDirtyPages (and there were dirty page). */
     STAMCOUNTER                 StatResetDirtyPages;
     /** Times we've called pgmPoolAddDirtyPage. */
@@ -2794,33 +2791,7 @@ typedef struct PGMPTWALKCORE
     bool            fEffectiveRW;
     /** The effective X86_PTE_NX flag for the address. */
     bool            fEffectiveNX;
-    bool            afPadding1[2];
-    /** Effective flags thus far: RW, US, PWT, PCD, A, ~NX >> 63.
-     * The NX bit is inverted and shifted down 63 places to bit 0. */
-    uint32_t        fEffective;
 } PGMPTWALKCORE;
-
-/** @name PGMPTWALKCORE::fEffective bits.
- * @{ */
-/** Effective execute bit (!NX).   */
-#define PGMPTWALK_EFF_X     UINT32_C(1)
-/** Effective write access bit. */
-#define PGMPTWALK_EFF_RW    X86_PTE_RW
-/** Effective user-mode access bit. */
-#define PGMPTWALK_EFF_US    X86_PTE_US
-/** Effective write through cache bit. */
-#define PGMPTWALK_EFF_PWT   X86_PTE_PWT
-/** Effective cache disabled bit. */
-#define PGMPTWALK_EFF_PCD   X86_PTE_PCD
-/** Effective accessed bit. */
-#define PGMPTWALK_EFF_A     X86_PTE_A
-/** The dirty bit of the final entry. */
-#define PGMPTWALK_EFF_D     X86_PTE_D
-/** The PAT bit of the final entry. */
-#define PGMPTWALK_EFF_PAT   X86_PTE_PAT
-/** The global bit of the final entry. */
-#define PGMPTWALK_EFF_G     X86_PTE_G
-/** @} */
 
 
 /**
@@ -3794,7 +3765,6 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZInvalidatePagePDNAs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not accessed page directory. */
     STAMCOUNTER StatRZInvalidatePagePDNPs;          /**< RC/R0: The number of times PGMInvalidatePage() was called for a not present page directory. */
     STAMCOUNTER StatRZInvalidatePagePDOutOfSync;    /**< RC/R0: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
-    STAMCOUNTER StatRZInvalidatePageSizeChanges ;   /**< RC/R0: The number of times PGMInvalidatePage() was called on a page size change (4KB <-> 2/4MB). */
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in \#PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
@@ -3842,7 +3812,6 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatR3InvalidatePagePDNPs;          /**< R3: The number of times PGMInvalidatePage() was called for a not present page directory. */
     STAMCOUNTER StatR3InvalidatePagePDMappings;     /**< R3: The number of times PGMInvalidatePage() was called for a page directory containing mappings (no conflict). */
     STAMCOUNTER StatR3InvalidatePagePDOutOfSync;    /**< R3: The number of times PGMInvalidatePage() was called for an out of sync page directory. */
-    STAMCOUNTER StatR3InvalidatePageSizeChanges ;   /**< R3: The number of times PGMInvalidatePage() was called on a page size change (4KB <-> 2/4MB). */
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in \#PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
@@ -4291,7 +4260,7 @@ int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPoolAccessHandler;
 #ifndef IN_RING3
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmRZPoolAccessPfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPoolAccessPfHandler;
 #endif
 
 void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
