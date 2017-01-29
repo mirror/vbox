@@ -50,6 +50,10 @@ extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_imul_xCX_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_div_xBX_ud2);
 extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_idiv_xBX_ud2);
+# if ARCH_BITS == 64
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2);
+extern FNBS3FAR     BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2);
+# endif
 #endif
 
 
@@ -534,6 +538,116 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_idiv)(uint8_t bMode)
 
     return 0;
 }
+
+
+# if ARCH_BITS == 64
+BS3_DECL_FAR(uint8_t) BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b)(uint8_t bMode)
+{
+    BS3REGCTX       Ctx;
+    BS3REGCTX       ExpectCtx;
+    BS3TRAPFRAME    TrapFrame;
+    RTUINT128U      au128[3];
+    PRTUINT128U     pau128       = RT_ALIGN_PT(&au128[0], sizeof(RTUINT128U), PRTUINT128U);
+    bool const      fSupportCX16 = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
+    unsigned        iLocked;
+    unsigned        iFlags;
+    unsigned        offBuf;
+    unsigned        iMatch;
+
+    /* Ensure the structures are allocated before we sample the stack pointer. */
+    Bs3MemSet(&Ctx, 0, sizeof(Ctx));
+    Bs3MemSet(&ExpectCtx, 0, sizeof(ExpectCtx));
+    Bs3MemSet(&TrapFrame, 0, sizeof(TrapFrame));
+    Bs3MemSet(pau128, 0, sizeof(pau128[0]) * 2);
+
+    /*
+     * Create test context.
+     */
+    Bs3RegCtxSaveEx(&Ctx, bMode, 512);
+    if (!fSupportCX16)
+        Bs3TestPrintf("Note! CMPXCHG16B is not supported by the CPU!\n");
+
+    /*
+     * One loop with the normal variant and one with the locked one
+     */
+    g_usBs3TestStep = 0;
+    Bs3RegCtxSetRipCsFromCurPtr(&Ctx, BS3_CMN_NM(bs3CpuInstr2_cmpxchg16b_rdi_ud2));
+    for (iLocked = 0; iLocked < 2; iLocked++)
+    {
+        /*
+         * One loop with all status flags set, and one with them clear.
+         */
+        Ctx.rflags.u16 |= X86_EFL_STATUS_BITS;
+        for (iFlags = 0; iFlags < 2; iFlags++)
+        {
+            Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
+
+            for (offBuf = 0; offBuf < sizeof(RTUINT128U); offBuf++)
+            {
+#  define CX16_OLD_LO       UINT64_C(0xabb6345dcc9c4bbd)
+#  define CX16_OLD_HI       UINT64_C(0x7b06ea35749549ab)
+#  define CX16_MISMATCH_LO  UINT64_C(0xbace3e3590f18981)
+#  define CX16_MISMATCH_HI  UINT64_C(0x9b385e8bfd5b4000)
+#  define CX16_STORE_LO     UINT64_C(0x5cbd27d251f6559b)
+#  define CX16_STORE_HI     UINT64_C(0x17ff434ed1b54963)
+
+                PRTUINT128U pBuf = (PRTUINT128U)&pau128->au8[offBuf];
+
+                ExpectCtx.rax.u = Ctx.rax.u = CX16_MISMATCH_LO;
+                ExpectCtx.rdx.u = Ctx.rdx.u = CX16_MISMATCH_HI;
+                for (iMatch = 0; iMatch < 2; iMatch++)
+                {
+                    uint8_t bExpectXcpt;
+                    pBuf->s.Lo = CX16_OLD_LO;
+                    pBuf->s.Hi = CX16_OLD_HI;
+                    ExpectCtx.rdi.u = Ctx.rdi.u = (uintptr_t)pBuf;
+                    Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+                    g_usBs3TestStep++;
+                    //Bs3TestPrintf("Test: iFlags=%d offBuf=%d iMatch=%u\n", iFlags, offBuf, iMatch);
+                    bExpectXcpt = X86_XCPT_UD;
+                    if (fSupportCX16)
+                    {
+                        if (offBuf & 15)
+                        {
+                            bExpectXcpt = X86_XCPT_GP;
+                            ExpectCtx.rip.u = Ctx.rip.u;
+                            ExpectCtx.rflags.u32 = Ctx.rflags.u32;
+                        }
+                        else
+                        {
+                            ExpectCtx.rax.u = CX16_OLD_LO;
+                            ExpectCtx.rdx.u = CX16_OLD_HI;
+                            if (iMatch & 1)
+                                ExpectCtx.rflags.u32 = Ctx.rflags.u32 | X86_EFL_ZF;
+                            else
+                                ExpectCtx.rflags.u32 = Ctx.rflags.u32 & ~X86_EFL_ZF;
+                            ExpectCtx.rip.u = Ctx.rip.u + 4 + (iLocked & 1);
+                        }
+                        ExpectCtx.rflags.u32 |= X86_EFL_RF;
+                    }
+                    if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/,
+                                                 0 /*fExtraEfl*/, "lm64", 0 /*idTestStep*/)
+                        || TrapFrame.bXcpt != bExpectXcpt)
+                    {
+                        if (TrapFrame.bXcpt != bExpectXcpt)
+                            Bs3TestFailedF("Expected bXcpt=#%x, got %#x (%#x)", bExpectXcpt, TrapFrame.bXcpt, TrapFrame.uErrCd);
+                        Bs3TestFailedF("^^^ iLocked=%d iFlags=%d offBuf=%d iMatch=%u\n", iLocked, iFlags, offBuf, iMatch);
+                        ASMHalt();
+                    }
+
+                    ExpectCtx.rax.u = Ctx.rax.u = CX16_OLD_LO;
+                    ExpectCtx.rdx.u = Ctx.rdx.u = CX16_OLD_HI;
+                }
+            }
+            Ctx.rflags.u16 &= ~X86_EFL_STATUS_BITS;
+        }
+        Bs3RegCtxSetRipCsFromCurPtr(&Ctx, BS3_CMN_NM(bs3CpuInstr2_lock_cmpxchg16b_rdi_ud2));
+    }
+
+    return 0;
+
+}
+# endif /* ARCH_BITS == 64 */
 
 
 #endif /* BS3_INSTANTIATING_CMN */
