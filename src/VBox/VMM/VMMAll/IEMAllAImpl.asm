@@ -719,6 +719,8 @@ ENDPROC iemAImpl_xadd_u64_locked
 ; IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx,
 ;                                             uint32_t *pEFlags));
 ;
+; Note! Identical to iemAImpl_cmpxchg16b.
+;
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_cmpxchg8b, 16
 %ifdef RT_ARCH_AMD64
@@ -800,6 +802,74 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg8b_locked, 16
         jmp     NAME_FASTCALL(iemAImpl_cmpxchg8b,16,$@)
 ENDPROC iemAImpl_cmpxchg8b_locked
 
+%ifdef RT_ARCH_AMD64
+
+;
+; CMPXCHG16B.
+;
+; These are tricky register wise, so the code is duplicated for each calling
+; convention.
+;
+; WARNING! This code make ASSUMPTIONS about which registers T1 and T0 are mapped to!
+;
+; C-proto:
+; IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U pu1284RaxRdx, PRTUINT128U pu128RbxRcx,
+;                                              uint32_t *pEFlags));
+;
+; Note! Identical to iemAImpl_cmpxchg8b.
+;
+BEGINCODE
+BEGINPROC_FASTCALL iemAImpl_cmpxchg16b, 16
+ %ifdef ASM_CALL64_MSC
+        push    rbx
+
+        mov     r11, rdx                ; pu64RaxRdx (is also T1)
+        mov     r10, rcx                ; pu64Dst
+
+        mov     rbx, [r8]
+        mov     rcx, [r8 + 8]
+        IEM_MAYBE_LOAD_FLAGS r9, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        mov     rax, [r11]
+        mov     rdx, [r11 + 8]
+
+        lock cmpxchg16b [r10]
+
+        mov     [r11], rax
+        mov     [r11 + 8], rdx
+        IEM_SAVE_FLAGS       r9, (X86_EFL_ZF), 0 ; clobbers T0+T1 (eax, r11)
+
+        pop     rbx
+        ret
+ %else
+        push    rbx
+
+        mov     r10, rcx                ; pEFlags
+        mov     r11, rdx                ; pu64RbxRcx (is also T1)
+
+        mov     rbx, [r11]
+        mov     rcx, [r11 + 8]
+        IEM_MAYBE_LOAD_FLAGS r10, (X86_EFL_ZF), 0 ; clobbers T0 (eax)
+        mov     rax, [rsi]
+        mov     rdx, [rsi + 8]
+
+        lock cmpxchg16b [rdi]
+
+        mov     [rsi], eax
+        mov     [rsi + 8], edx
+        IEM_SAVE_FLAGS       r10, (X86_EFL_ZF), 0 ; clobbers T0+T1 (eax, r11)
+
+        pop     rbx
+        ret
+
+ %endif
+ENDPROC iemAImpl_cmpxchg16b
+
+BEGINPROC_FASTCALL iemAImpl_cmpxchg16b_locked, 16
+        ; Lazy bird always lock prefixes cmpxchg8b.
+        jmp     NAME_FASTCALL(iemAImpl_cmpxchg16b,16,$@)
+ENDPROC iemAImpl_cmpxchg16b_locked
+
+%endif ; RT_ARCH_AMD64
 
 
 ;

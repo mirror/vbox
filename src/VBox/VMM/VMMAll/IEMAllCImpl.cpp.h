@@ -6360,18 +6360,58 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
     return iemRaiseUndefinedOpcode(pVCpu);
 }
 
+#ifdef IN_RING3
+
+/** Argument package for iemCImpl_cmpxchg16b_fallback_rendezvous_callback. */
+struct IEMCIMPLCX16ARGS
+{
+    PRTUINT128U     pu128Dst;
+    PRTUINT128U     pu128RaxRdx;
+    PRTUINT128U     pu128RbxRcx;
+    uint32_t       *pEFlags;
+# ifdef VBOX_STRICT
+    uint32_t        cCalls;
+# endif
+};
+
+/**
+ * @callback_method_impl{FNVMMEMTRENDEZVOUS,
+ *                       Worker for iemCImpl_cmpxchg16b_fallback_rendezvous}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) iemCImpl_cmpxchg16b_fallback_rendezvous_callback(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pVM, pVCpu);
+    struct IEMCIMPLCX16ARGS *pArgs = (struct IEMCIMPLCX16ARGS *)pvUser;
+# ifdef VBOX_STRICT
+    Assert(pArgs->cCalls == 0);
+    pArgs->cCalls++;
+# endif
+
+    iemAImpl_cmpxchg16b_fallback(pArgs->pu128Dst, pArgs->pu128RaxRdx, pArgs->pu128RbxRcx, pArgs->pEFlags);
+    return VINF_SUCCESS;
+}
+
+#endif /* IN_RING3 */
 
 /**
  * Implements 'CMPXCHG16B' fallback using rendezvous.
  */
-IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, PRTUINT128U, pu64RaxRdx,
-                PRTUINT128U, pu64RbxRcx, uint32_t *, pEFlags)
+IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, PRTUINT128U, pu128RaxRdx,
+                PRTUINT128U, pu128RbxRcx, uint32_t *, pEFlags)
 {
-    RT_NOREF(pVCpu, cbInstr, pu128Dst, pu64RaxRdx, pu64RbxRcx, pEFlags);
 #ifdef IN_RING3
-    /** @todo VMMR3EmtRendezvous() */
-    return VERR_NOT_IMPLEMENTED;
+    struct IEMCIMPLCX16ARGS Args;
+    Args.pu128Dst       = pu128Dst;
+    Args.pu128RaxRdx    = pu128RaxRdx;
+    Args.pu128RbxRcx    = pu128RbxRcx;
+    Args.pEFlags        = pEFlags;
+    VBOXSTRICTRC rcStrict = VMMR3EmtRendezvous(pVCpu->CTX_SUFF(pVM), VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE,
+                                               iemCImpl_cmpxchg16b_fallback_rendezvous_callback, &Args);
+    Assert(Args.cCalls == 1);
+    RT_NOREF(cbInstr);
+    return rcStrict;
 #else
+    RT_NOREF(pVCpu, cbInstr, pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);
     return VINF_EM_RAW_EMULATE_INSTR;
 #endif
 }

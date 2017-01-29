@@ -1351,3 +1351,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint3
         *pfEFlags &= ~X86_EFL_ZF;
 }
 
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_fallback,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx,
+                                                      PRTUINT128U pu128RbxRcx, uint32_t *pEFlags))
+{
+    RTUINT128U u128Tmp = *pu128Dst;
+    if (   u128Tmp.s.Lo == pu128RaxRdx->s.Lo
+        && u128Tmp.s.Hi == pu128RaxRdx->s.Hi)
+    {
+        *pu128Dst = *pu128RbxRcx;
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+    {
+        *pu128RaxRdx = u128Tmp;
+        *pEFlags &= ~X86_EFL_ZF;
+    }
+}
+

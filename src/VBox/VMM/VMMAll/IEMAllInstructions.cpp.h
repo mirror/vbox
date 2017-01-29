@@ -6876,8 +6876,9 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
                      only works correctly in UNI CPU guests.  If guest SMP is active
                      we have no choice but to use a rendezvous callback here.  Sigh. */
             IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ(); /* HACK ALERT! */
+
             if (pVCpu->CTX_SUFF(pVM)->cCpus == 1)
-                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback_sse, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
+                IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_fallback, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             else
                 IEM_MC_CALL_CIMPL_4(iemCImpl_cmpxchg16b_fallback_rendezvous, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
         }
