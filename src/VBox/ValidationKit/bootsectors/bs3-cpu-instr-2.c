@@ -46,12 +46,10 @@ BS3TESTMODE_PROTOTYPES_CMN_64(bs3CpuInstr2_cmpxchg16b);
 *********************************************************************************************************************************/
 static const BS3TESTMODEENTRY g_aModeTests[] =
 {
-#if 0
     BS3TESTMODEENTRY_CMN("mul", bs3CpuInstr2_mul),
     BS3TESTMODEENTRY_CMN("imul", bs3CpuInstr2_imul),
     BS3TESTMODEENTRY_CMN("div", bs3CpuInstr2_div),
     BS3TESTMODEENTRY_CMN("idiv", bs3CpuInstr2_idiv),
-#endif
     BS3TESTMODEENTRY_CMN_64("cmpxchg16b", bs3CpuInstr2_cmpxchg16b),
 };
 
