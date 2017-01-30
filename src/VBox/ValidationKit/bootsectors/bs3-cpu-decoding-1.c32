@@ -305,7 +305,6 @@ typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
 CPUDECODE1UDTST const g_aUdTest[] =
 {
     /* Two byte opcodes. */
-#if 1
     {  UD_T_EXACT, 2, { 0x0f, 0x04 }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0a }, UD_F_ANY_PFX },
     {  UD_T_EXACT, 2, { 0x0f, 0x0c }, UD_F_ANY_PFX },
@@ -333,12 +332,105 @@ CPUDECODE1UDTST const g_aUdTest[] =
     {  UD_T_MODRM,      3, { 0x0f, 0x3d, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
     {  UD_T_MODRM_IMM8, 3, { 0x0f, 0x3e, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
     {  UD_T_MODRM_IMM8, 3, { 0x0f, 0x3f, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
-#endif
-
-#if 1
+    {  UD_T_MODRM, 2, { 0x0f, 0x50 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x52 }, UD_F_NOT_NO_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x53 }, UD_F_NOT_NO_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x54 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x55 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x56 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x57 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x5b }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x60 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x61 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x62 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x63 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x64 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x65 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x66 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x67 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x68 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x69 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6a }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6b }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6c }, UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6d }, UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6e }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x6f }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x74 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x75 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x76 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    /* 0f 77: WTF? OZ, RZ and RN are all empty in the intel tables and LK isn't metnioned at all: */
+    {  UD_T_MODRM, 2, { 0x0f, 0x77 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX | UD_F_NOT_LK_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x78 }, UD_F_NOT_NO_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x79 }, UD_F_NOT_NO_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0x7a }, UD_F_ANY_PFX },
     {  UD_T_MODRM, 2, { 0x0f, 0x7b }, UD_F_ANY_PFX },
-#endif
+    {  UD_T_MODRM, 2, { 0x0f, 0x7c }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x7d }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x7e }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x7f }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xa6 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xa7 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xb8 }, UD_F_NOT_RN_PFX },
+    /** @todo f3 0f bb rm and f2 0f bb rm does stuff on skylake even if their are blank in intel and AMD tables! */
+    //{  UD_T_MODRM, 2, { 0x0f, 0xbb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    /** @todo AMD tables indicates that f2 0f bc rm is invalid, but on skylake it works differently (BSF?)  */
+    {  UD_T_MODRM, 2, { 0x0f, 0xbc }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX /* figure: */ | UD_F_NOT_RZ_PFX },
+    /** @todo AMD tables indicates that f3 0f bc rm is invalid, but on skylake it works differently (BSR?) */
+    {  UD_T_MODRM, 2, { 0x0f, 0xbd }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX /* figure: */ | UD_F_NOT_RZ_PFX },
+    /* Note! Intel incorrectly states that XADD (0f c0 and 0f c1) are sensitive to OZ, RN and RZ.  AMD and skylake hw disagrees. */
+    {  UD_T_MODRM, 2, { 0x0f, 0xc3 }, UD_F_NOT_NO_PFX },
+    {  UD_T_MODRM_IMM8, 2, { 0x0f, 0xc4 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM_IMM8, 2, { 0x0f, 0xc5 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM_IMM8, 2, { 0x0f, 0xc6 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd0 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd1 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd2 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd3 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd4 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd5 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd6 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd8 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xd9 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xda }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xdb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xdc }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xdd }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xde }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xdf }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe0 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe1 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe2 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe3 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe4 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe5 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe6 }, UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe8 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xe9 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xea }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xeb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xec }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xed }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xee }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xef }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf0 }, UD_F_NOT_RZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf1 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf2 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf3 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf4 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf5 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf6 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf7 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf8 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xf9 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xfa }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xfb }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xfc }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xfd }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xfe }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0xff }, UD_F_ANY_PFX },
 };
 
 
@@ -355,6 +447,7 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
         BS3REGCTX       Ctx;
         BS3REGCTX       ExpectCtx;
         BS3TRAPFRAME    TrapFrame;
+        uint32_t        iStep;
 
         Bs3MemZero(&Ctx, sizeof(Ctx));
         Bs3MemZero(&ExpectCtx, sizeof(ExpectCtx));
@@ -378,7 +471,7 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
         ExpectCtx.rflags.u32 |= X86_EFL_RF;
 
         /* Loop thru the tests. */
-        g_usBs3TestStep = 0;
+        iStep = g_usBs3TestStep = 0;
         for (iTest = 0; iTest < cTests; iTest++)
         {
             typedef struct CPUDECODE1UDSEQ
@@ -551,6 +644,7 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
 
                                         /* next */
                                         g_usBs3TestStep++;
+                                        iStep++;
                                         cb--;
                                     }
 
@@ -561,6 +655,7 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
                     }
                 }
         }
+        Bs3TestPrintf("%RI32 (%#RX32) test steps\n", iStep, iStep);
 
         Bs3MemGuardedTestPageFree(pbPages);
     }
