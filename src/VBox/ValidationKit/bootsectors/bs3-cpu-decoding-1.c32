@@ -31,15 +31,19 @@
 #include <bs3kit.h>
 #include <iprt/asm-amd64-x86.h>
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * Simple test.
  */
 typedef struct CPUDECODE1TST
 {
-    uint8_t fFlags;
-    uint8_t cbUd;
-    uint8_t cbOpcodes;
-    uint8_t abOpcodes[21];
+    uint16_t fFlags;
+    uint8_t  cbOpcodes;
+    uint8_t  abOpcodes[20];
+    uint8_t  cbUd;
 } CPUDECODE1TST;
 typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
 
@@ -55,76 +59,123 @@ typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
 #define P_RZ  X86_OP_PRF_REPZ
 #define P_RN  X86_OP_PRF_REPNZ
 
-#define RM_EAX_EAX          ((3 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xAX))
-#define RM_EAX_DEREF_EBX    ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
+#define RM_EAX_EAX              ((3 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xAX))
+#define RM_EAX_DEREF_EBX        ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
+#define RM_EAX_DEREF_EBX_DISP8  ((1 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
+#define RM_EAX_DEREF_EBX_DISP32 ((2 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
+#define RM_EAX_SIB              ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
+#define RM_EAX_SIB_DISP8        ((1 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
+#define RM_EAX_SIB_DISP32       ((2 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
 
-#define F_486   0
-#define F_SSE2  1
-#define F_SSE3  2
-#define F_SSE42 4
-#define F_MOVBE 80
+#define SIB_EBX_X1_NONE         ((0 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
+#define SIB_EBX_X2_NONE         ((1 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
+#define SIB_EBX_X4_NONE         ((2 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
+#define SIB_EBX_X8_NONE         ((3 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
 
+#define F_486   UINT16_C(0x0000)
+#define F_SSE2  UINT16_C(0x0001)
+#define F_SSE3  UINT16_C(0x0002)
+#define F_SSE42 UINT16_C(0x0004)
+#define F_MOVBE UINT16_C(0x0080)
+#define F_CBUD  UINT16_C(0x4000)
+#define F_UD    UINT16_C(0x8000)
+#define F_OK    UINT16_C(0x0000)
+
+
+/**
+ * This is an exploratory testcase.  It tries to figure out how exactly the
+ * different Intel and AMD CPUs implements SSE and similar instructions that
+ * uses the size, repz, repnz and lock prefixes in the encoding.
+ */
 CPUDECODE1TST const g_aSimpleTests[] =
 {
     /*
      *  fFlags, cbUd, cbOpcodes, abOpcodes
      */
-#if 1
+#if 0
     /* Using currently undefined 0x0f 0x7a sequences. */
-    {        0, 3,   3,               { 0x0f, 0x7a, RM_EAX_EAX, } },
-    {        0, 3+1, 3+1,       { P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
-    {        0, 3+1, 3+1,       { P_RN, 0x0f, 0x7a, RM_EAX_EAX, } },
-    {        0, 3+1, 3+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_EAX, } },
-    {        0, 3+2, 3+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3,               { 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 4,               { 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 4+1,       { P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 4+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 4+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 4+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 7,               { 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+    {           F_UD, 7+1,       { P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+    {           F_UD, 7+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+    {           F_UD, 7+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+    {           F_UD, 7+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+#endif
+#if 0
+    /* Ditto for currently undefined sequence: 0x0f 0x7b */
+    {           F_UD, 3,               { 0x0f, 0x7b, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_LK, 0x0f, 0x7b, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7b, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RZ, 0x0f, 0x7b, RM_EAX_EAX, } },
+    {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x7b, RM_EAX_EAX, } },
+#endif
+#if 1
+    /* Ditto for currently undefined sequence: 0x0f 0x24 */
+    {           F_UD, 3,               { 0x0f, 0x24, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_LK, 0x0f, 0x24, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x24, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RZ, 0x0f, 0x24, RM_EAX_EAX, } },
+    {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x24, RM_EAX_EAX, } },
 #endif
 #if 0
     /* The XADD instruction has empty lines for 66, f3 and f2 prefixes.
        AMD doesn't do anything special for XADD Ev,Gv as the intel table would indicate. */
-    {    F_486,   99,  3,             { 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  4,       { P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  4,       { P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  5, { P_OZ, P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  5, { P_RN, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  4,       { P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  5, { P_OZ, P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486,   99,  5, { P_RZ, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  3,             { 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  4,       { P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  4,       { P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_OZ, P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_RN, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  4,       { P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_OZ, P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_RZ, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
 #endif
 #if 0
     /* The movnti instruction is confined to the unprefixed lined in the intel manuals. Check how the other lines work. */
-    {   F_SSE2,    3,  3,             { 0x0f, 0xc3, RM_EAX_EAX, } },        /* invalid - reg,reg */
-    {   F_SSE2,   99,  3,             { 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },
-    {   F_SSE2,    4,  4,       { P_OZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2,    4,  4,       { P_RN, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2,    4,  4,       { P_RZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2,    4,  4,       { P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2,    5,  5, { P_RZ, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  3,             { 0x0f, 0xc3, RM_EAX_EAX, } },        /* invalid - reg,reg */
+    {   F_SSE2 | F_OK,  3,             { 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },
+    {   F_SSE2 | F_UD,  4,       { P_OZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  4,       { P_RN, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  4,       { P_RZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  4,       { P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  5, { P_RZ, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
 #endif
-#if 1
+#if 0
     /* The lddqu instruction requires a 0xf2 prefix, intel only lists 0x66 and empty
        prefix for it.  Check what they really mean by that*/
-    {   F_SSE3,    4,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
-    {   F_SSE3,   99,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  5,      { P_RZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    3,  3,      {             0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    4,  4,      {       P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    4,  4,      {       P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    4,  4,      {       P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    5,  5,      { P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  5,      { P_RZ, P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } }, // AMD,why?
-    {   F_SSE3,    5,  5,      { P_RZ, P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  5,      { P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,    5,  5,      { P_LK, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3,   99,  6,{ P_OZ, P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
+    {   F_SSE3 | F_OK,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  3,      {             0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,      {       P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,      {       P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,      {       P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  5,      { P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RZ, P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } }, // AMD,why?
+    {   F_SSE3 | F_UD,  5,      { P_RZ, P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  5,      { P_LK, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  6,{ P_OZ, P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
 #endif
-    {   F_SSE2,   99,  3,            { 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2,   99,  4,      { P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2,    5,  5,{ P_RZ, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } }, // WTF?
-    {   F_SSE2,    5,  5,{ P_OZ, P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2,   99,  5,{ P_RN, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2,   99,  4,      { P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2,    4,  4,      { P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+#if 0
+    {   F_SSE2 | F_OK,  3,            { 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_OK,  4,      { P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_UD,  5,{ P_RZ, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } }, // WTF?
+    {   F_SSE2 | F_UD,  5,{ P_OZ, P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_OK,  5,{ P_RN, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_OK,  4,      { P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_UD,  4,      { P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+#endif
 /** @todo crc32 / movbe  */
 };
 
@@ -152,7 +203,16 @@ void DecodeEdgeTest(void)
 
         for (i = 0; i < RT_ELEMENTS(g_aSimpleTests); i++)
         {
-            unsigned cb = g_aSimpleTests[i].cbOpcodes;
+            unsigned const cbOpcodes = g_aSimpleTests[i].cbOpcodes;
+            uint16_t const fFlags    = g_aSimpleTests[i].fFlags;
+            unsigned cb;
+            /** @todo check if supported. */
+
+            /*
+             * Place the instruction exactly at the page boundrary and proceed to
+             * move it across it and check that we get #PFs then.
+             */
+            cb = cbOpcodes;
             while (cb >= 1)
             {
                 unsigned const   cErrorsBefore = Bs3TestSubErrorCount();
@@ -160,44 +220,39 @@ void DecodeEdgeTest(void)
                 Bs3MemCpy(pbRip, &g_aSimpleTests[i].abOpcodes[0], cb);
                 Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
                 Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
-#if 0
-                Bs3TestPrintf("\ni=%d cb=%#x (cbUd=%#x cbOpcodes=%#x)\n", i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes);
-                Bs3TrapPrintFrame(&TrapFrame);
+#if 1
+                Bs3TestPrintf("\ni=%d cb=%#x (cbOpcodes=%#x fFlags=%#x)\n", i, cb, cbOpcodes, fFlags);
+//                Bs3TrapPrintFrame(&TrapFrame);
 #endif
-                if (cb >= g_aSimpleTests[i].cbUd)
+                if (cb >= cbOpcodes && (g_aSimpleTests[i].fFlags & F_UD))
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_UD)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #UD got %#x at %RX32\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
-                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
+                        Bs3TestFailedF("i=%d cb=%d cbOp=%d fFlags=%#x: expected #UD got %#x at %RX32\n",
+                                       i, cb, cbOpcodes, fFlags, TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                 }
-                else if (cb < g_aSimpleTests[i].cbOpcodes)
+                else if (cb < cbOpcodes)
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_PF)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF (on) got %#x at %RX32\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
-                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
+                        Bs3TestFailedF("i=%d cb=%d cbOp=%d fFlags=%#x: expected #PF (on) got %#x at %RX32\n",
+                                       i, cb, cbOpcodes, fFlags, TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                     else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)pbRip)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF rip of %p (on) got %#RX32\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
-                                       pbRip, TrapFrame.Ctx.rip.u32);
+                        Bs3TestFailedF("i=%d cb=%d cbOp=%d fFlags=%#x: expected #PF rip of %p (on) got %#RX32\n",
+                                       i, cb, cbOpcodes, fFlags, pbRip, TrapFrame.Ctx.rip.u32);
                 }
                 else
                 {
                     if (TrapFrame.bXcpt != X86_XCPT_PF)
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF (after) got %#x at %RX32\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
-                                       TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
+                        Bs3TestFailedF("i=%d cb=%d cbOp=%d fFlags=%#x: expected #PF (after) got %#x at %RX32\n",
+                                       i, cb, cbOpcodes, fFlags, TrapFrame.bXcpt, TrapFrame.Ctx.rip.u32);
                     else if (TrapFrame.Ctx.rip.u32 != (uintptr_t)&pbPages[X86_PAGE_SIZE])
-                        Bs3TestFailedF("i=%d cb=%d cbUd=%d cbOp=%d: expected #PF rip of %p (after) got %#RX32\n",
-                                       i, cb, g_aSimpleTests[i].cbUd, g_aSimpleTests[i].cbOpcodes,
-                                       &pbPages[X86_PAGE_SIZE], TrapFrame.Ctx.rip.u32);
+                        Bs3TestFailedF("i=%d cb=%d cbOp=%d fFlags=%#x: expected #PF rip of %p (after) got %#RX32\n",
+                                       i, cb, cbOpcodes, fFlags, &pbPages[X86_PAGE_SIZE], TrapFrame.Ctx.rip.u32);
                 }
                 if (Bs3TestSubErrorCount() != cErrorsBefore)
                 {
                     Bs3TestPrintf("  %.*Rhxs", cb, &g_aSimpleTests[i].abOpcodes[0]);
-                    if (cb < g_aSimpleTests[i].cbOpcodes)
-                        Bs3TestPrintf("[%.*Rhxs]", g_aSimpleTests[i].cbOpcodes - cb, &g_aSimpleTests[i].abOpcodes[cb]);
+                    if (cb < cbOpcodes)
+                        Bs3TestPrintf("[%.*Rhxs]", cbOpcodes - cb, &g_aSimpleTests[i].abOpcodes[cb]);
                     Bs3TestPrintf("\n");
                 }
 
@@ -219,12 +274,311 @@ void DecodeEdgeTest(void)
 }
 
 
+/**
+ * Undefined opcode test.
+ */
+typedef struct CPUDECODE1UDTST
+{
+    /** Type of undefined opcode decoding logic - UD_T_XXX. */
+    uint8_t     enmType;
+    /** Core opcodes length. */
+    uint8_t     cbOpcodes;
+    /** Core opcodes. */
+    uint8_t     abOpcodes[5];
+    /** UD_F_XXX. */
+    uint8_t     fFlags;
+} CPUDECODE1UDTST;
+typedef CPUDECODE1UDTST const BS3_FAR *PCCPUDECODE1UDTST;
+
+#define UD_T_EXACT          0
+#define UD_T_MODRM          1
+#define UD_T_MODRM_IMM8     2
+
+#define UD_F_ANY_PFX 0
+#define UD_F_NOT_NO_PFX     UINT8_C(0x01)  /**< Must have some kind of prefix to be \#UD. */
+#define UD_F_NOT_OZ_PFX     UINT8_C(0x02)  /**< Skip the size prefix. */
+#define UD_F_NOT_RZ_PFX     UINT8_C(0x04)  /**< Skip the REPZ prefix. */
+#define UD_F_NOT_RN_PFX     UINT8_C(0x08)  /**< Skip the REPNZ prefix. */
+#define UD_F_NOT_LK_PFX     UINT8_C(0x10)  /**< Skip the LOCK prefix. */
+#define UD_F_3BYTE_ESC      UINT8_C(0x20)  /**< Unused 3 byte escape table. Test all 256 entries */
+
+CPUDECODE1UDTST const g_aUdTest[] =
+{
+    /* Two byte opcodes. */
+#if 1
+    {  UD_T_EXACT, 2, { 0x0f, 0x04 }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x0a }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x0c }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x0e }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x0f }, UD_F_ANY_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x13 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x14 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x15 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x16 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x17 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    /** @todo figure when 0f 019 and 0f 0c-0f were made into NOPs. */
+    {  UD_T_EXACT, 2, { 0x0f, 0x24 }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x25 }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x26 }, UD_F_ANY_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x27 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x28 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x29 }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x2b }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x2e }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x2f }, UD_F_NOT_NO_PFX | UD_F_NOT_OZ_PFX },
+    {  UD_T_EXACT, 2, { 0x0f, 0x36 }, UD_F_ANY_PFX },
+    {  UD_T_MODRM,      3, { 0x0f, 0x39, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+    {  UD_T_MODRM_IMM8, 3, { 0x0f, 0x3b, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+    {  UD_T_MODRM,      3, { 0x0f, 0x3c, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+    {  UD_T_MODRM,      3, { 0x0f, 0x3d, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+    {  UD_T_MODRM_IMM8, 3, { 0x0f, 0x3e, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+    {  UD_T_MODRM_IMM8, 3, { 0x0f, 0x3f, 0x00 }, UD_F_3BYTE_ESC | UD_F_ANY_PFX }, /* Three byte escape table, just unused.  */
+#endif
+
+#if 1
+    {  UD_T_MODRM, 2, { 0x0f, 0x7a }, UD_F_ANY_PFX },
+    {  UD_T_MODRM, 2, { 0x0f, 0x7b }, UD_F_ANY_PFX },
+#endif
+};
+
+
+void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
+{
+    /*
+     * Allocate and initialize a page pair
+     */
+    uint8_t BS3_FAR *pbPages;
+    pbPages  = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    if (pbPages)
+    {
+        unsigned        iTest;
+        BS3REGCTX       Ctx;
+        BS3REGCTX       ExpectCtx;
+        BS3TRAPFRAME    TrapFrame;
+
+        Bs3MemZero(&Ctx, sizeof(Ctx));
+        Bs3MemZero(&ExpectCtx, sizeof(ExpectCtx));
+        Bs3MemZero(&TrapFrame, sizeof(TrapFrame));
+
+        /* Enable SSE. */
+        ASMSetCR0((ASMGetCR0() & ~(X86_CR0_EM | X86_CR0_TS)) | X86_CR0_MP);
+        ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR);
+
+        /* Create a test context. */
+        Bs3RegCtxSaveEx(&Ctx, BS3_MODE_CODE_32, 512);
+        Ctx.rbx.u = (uintptr_t)pbPages;
+        Ctx.rcx.u = (uintptr_t)pbPages;
+        Ctx.rdx.u = (uintptr_t)pbPages;
+        Ctx.rax.u = (uintptr_t)pbPages;
+        Ctx.rbp.u = (uintptr_t)pbPages;
+        Ctx.rsi.u = (uintptr_t)pbPages;
+        Ctx.rdi.u = (uintptr_t)pbPages;
+
+        Bs3MemCpy(&ExpectCtx, &Ctx, sizeof(ExpectCtx));
+        ExpectCtx.rflags.u32 |= X86_EFL_RF;
+
+        /* Loop thru the tests. */
+        g_usBs3TestStep = 0;
+        for (iTest = 0; iTest < cTests; iTest++)
+        {
+            typedef struct CPUDECODE1UDSEQ
+            {
+                uint8_t cb;
+                uint8_t ab[10];
+                uint8_t fIncompatible;
+            } CPUDECODE1UDSEQ;
+            typedef CPUDECODE1UDSEQ const BS3_FAR *PCCPUDECODE1UDSEQ;
+
+            static CPUDECODE1UDSEQ const s_aPrefixes[] =
+            {
+                { 0, { 0    },              UD_F_NOT_NO_PFX },
+                { 1, { P_OZ },              UD_F_NOT_OZ_PFX },
+                { 1, { P_RZ },              UD_F_NOT_RZ_PFX },
+                { 1, { P_RN },              UD_F_NOT_RN_PFX },
+                { 1, { P_LK },              UD_F_NOT_LK_PFX },
+                { 2, { P_OZ, P_OZ },        UD_F_NOT_OZ_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_RZ, P_OZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_RN, P_OZ },        UD_F_NOT_RN_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_LK, P_OZ },        UD_F_NOT_LK_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_OZ, P_RZ },        UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_RZ, P_RZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_RN, P_RZ },        UD_F_NOT_RN_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_LK, P_RZ },        UD_F_NOT_LK_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_OZ, P_RN },        UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_RZ, P_RN },        UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_RN, P_RN },        UD_F_NOT_RN_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_LK, P_RN },        UD_F_NOT_LK_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_OZ, P_LK },        UD_F_NOT_OZ_PFX | UD_F_NOT_LK_PFX },
+                { 2, { P_RZ, P_LK },        UD_F_NOT_RZ_PFX | UD_F_NOT_LK_PFX },
+                { 2, { P_RN, P_LK },        UD_F_NOT_RN_PFX | UD_F_NOT_LK_PFX },
+                { 2, { P_LK, P_LK },        UD_F_NOT_LK_PFX | UD_F_NOT_LK_PFX },
+            };
+
+            static CPUDECODE1UDSEQ const s_aExact[] = { { 0, { 0 }, 0 } };
+            static CPUDECODE1UDSEQ const s_aModRm[] =
+            {
+                { 1, { RM_EAX_EAX, },                                       0 },
+                { 2, { RM_EAX_DEREF_EBX_DISP8, 0 },                         0 },
+                { 5, { RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 },               0 },
+                { 2, { RM_EAX_SIB, SIB_EBX_X1_NONE, },                      0 },
+                { 3, { RM_EAX_SIB_DISP8,  SIB_EBX_X1_NONE, 0 },             0 },
+                { 6, { RM_EAX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0 },    0 },
+            };
+            static CPUDECODE1UDSEQ const s_aModRmImm8[] =
+            {
+                { 1 + 1, { RM_EAX_EAX, 0x11 },                                      0 },
+                { 2 + 1, { RM_EAX_DEREF_EBX_DISP8, 0, 0x11 },                       0 },
+                { 5 + 1, { RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0, 0x11 },             0 },
+                { 2 + 1, { RM_EAX_SIB, SIB_EBX_X1_NONE, 0x11 },                     0 },
+                { 3 + 1, { RM_EAX_SIB_DISP8,  SIB_EBX_X1_NONE, 0, 0x11 },           0 },
+                { 6 + 1, { RM_EAX_SIB_DISP32, SIB_EBX_X1_NONE, 0, 0, 0, 0, 0x11 },  0 },
+            };
+            unsigned            iPrefix;
+            unsigned            cSuffixes;
+            PCCPUDECODE1UDSEQ   paSuffixes;
+            unsigned const      cSubTabEntries = paTests[iTest].fFlags & UD_F_3BYTE_ESC ? 256 : 1;
+            unsigned            cImmEntries    = 1;
+
+            /*
+             * Skip if implemented.
+             */
+
+            /*
+             * Produce a number of opcode sequences by varying the prefixes and
+             * ModR/M parts.  Each opcode sequence is then treated to the edge test.
+             */
+            switch (paTests[iTest].enmType)
+            {
+                case UD_T_EXACT:
+                    cSuffixes   = RT_ELEMENTS(s_aExact);
+                    paSuffixes  = s_aExact;
+                    break;
+                case UD_T_MODRM:
+                    cSuffixes   = RT_ELEMENTS(s_aModRm);
+                    paSuffixes  = s_aModRm;
+                    break;
+                case UD_T_MODRM_IMM8:
+                    cSuffixes   = RT_ELEMENTS(s_aModRmImm8);
+                    paSuffixes  = s_aModRmImm8;
+                    cImmEntries = 256;
+                    break;
+                default:
+                    Bs3TestPrintf("#%u: enmType=%d\n", paTests[iTest].enmType);
+                    continue;
+            }
+
+            for (iPrefix = 0; iPrefix < RT_ELEMENTS(s_aPrefixes); iPrefix++)
+                if (!(s_aPrefixes[iPrefix].fIncompatible & paTests[iTest].fFlags))
+                {
+                    unsigned iSubTab;
+                    unsigned cbOpcodesLead;
+                    uint8_t  abOpcodes[32];
+
+                    Bs3MemCpy(&abOpcodes[0], &s_aPrefixes[iPrefix].ab[0], s_aPrefixes[iPrefix].cb);
+                    cbOpcodesLead  = s_aPrefixes[iPrefix].cb;
+                    Bs3MemCpy(&abOpcodes[cbOpcodesLead], &paTests[iTest].abOpcodes[0], paTests[iTest].cbOpcodes);
+                    cbOpcodesLead += paTests[iTest].cbOpcodes;
+
+                    for (iSubTab = 0; iSubTab < cSubTabEntries; iSubTab++)
+                    {
+                        unsigned iSuffix;
+
+                        if (cSubTabEntries > 1)
+                            abOpcodes[cbOpcodesLead - 1] = iSubTab;
+
+                        for (iSuffix = 0; iSuffix < cSuffixes; iSuffix++)
+                            if (!(paSuffixes[iSuffix].fIncompatible & paTests[iTest].fFlags))
+                            {
+                                unsigned const  cbOpcodes    = cbOpcodesLead + paSuffixes[iSuffix].cb;
+                                unsigned        cbOpcodesMin = 1;
+                                unsigned        iImm;
+                                Bs3MemCpy(&abOpcodes[cbOpcodesLead], paSuffixes[iSuffix].ab, paSuffixes[iSuffix].cb);
+
+                                for (iImm = 0; iImm < cImmEntries; iImm++)
+                                {
+                                    unsigned cb;
+
+                                    if (cImmEntries > 1)
+                                        abOpcodes[cbOpcodes - 1] = iImm;
+
+                                    /*
+                                     * Do the edge thing.
+                                     */
+                                    cb = cbOpcodes;
+                                    while (cb >= cbOpcodesMin)
+                                    {
+                                        uint8_t BS3_FAR *pbRip = &pbPages[X86_PAGE_SIZE - cb];
+                                        uint8_t          bXcptExpected;
+
+                                        Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
+                                        ExpectCtx.rip = Ctx.rip;
+                                        ExpectCtx.cs  = Ctx.cs;
+                                        if (cb >= cbOpcodes)
+                                        {
+                                            ExpectCtx.cr2 = Ctx.cr2;
+                                            bXcptExpected = X86_XCPT_UD;
+                                        }
+                                        else
+                                        {
+                                            ExpectCtx.cr2.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+                                            bXcptExpected = X86_XCPT_PF;
+                                        }
+
+                                        Bs3MemCpy(pbRip, &abOpcodes[0], cb);
+                                        Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+#if 0
+                                        Bs3TestPrintf("iTest=%d iPrefix=%d (%d/%#x) iSubTab=%d iSuffix=%d (%d/%#x) iImm=%d cb=%d cbOp=%d: %.*Rhxs\n",
+                                                       iTest, iPrefix, s_aPrefixes[iPrefix].cb, s_aPrefixes[iPrefix].fIncompatible,
+                                                       iSubTab, iSuffix, paSuffixes[iSuffix].cb, paSuffixes[iSuffix].fIncompatible, iImm,
+                                                       cb, cbOpcodes,
+                                                       cbOpcodes, abOpcodes);
+#endif
+
+                                        if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, &ExpectCtx, 0 /*cbPcAdjust*/,
+                                                                     0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, "mode",  0)
+                                            || TrapFrame.bXcpt != bXcptExpected)
+                                        {
+                                            Bs3TestFailedF("iTest=%d iPrefix=%d (%d/%#x) iSubTab=%u iSuffix=%d (%d/%#x) cb=%d cbOp=%d: %.*Rhxs\n",
+                                                           iTest, iPrefix, s_aPrefixes[iPrefix].cb, s_aPrefixes[iPrefix].fIncompatible,
+                                                           iSubTab, iSuffix, paSuffixes[iSuffix].cb, paSuffixes[iSuffix].fIncompatible,
+                                                           cb, cbOpcodes,
+                                                           cbOpcodes, abOpcodes);
+                                            if (TrapFrame.bXcpt != bXcptExpected)
+                                                Bs3TestFailedF("Expected bXcpt=%#x got %#x\n", bXcptExpected, TrapFrame.bXcpt);
+                                            Bs3TrapPrintFrame(&TrapFrame);
+                                            Bs3Shutdown();
+                                        }
+
+                                        /* next */
+                                        g_usBs3TestStep++;
+                                        cb--;
+                                    }
+
+                                    /* For iImm > 0 only test cb == cbOpcode since the byte isn't included when cb < cbOpcode. */
+                                    cbOpcodesMin = cbOpcodes;
+                                }
+                            }
+                    }
+                }
+        }
+
+        Bs3MemGuardedTestPageFree(pbPages);
+    }
+    else
+        Bs3TestFailed("Failed to allocate two pages!\n");
+}
+
+
+
+
 BS3_DECL(void) Main_pp32()
 {
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-    DecodeEdgeTest();
+    //DecodeEdgeTest();
+    Bs3TestSub("undefined opcodes");
+    DecodeUdEdgeTest(g_aUdTest, RT_ELEMENTS(g_aUdTest));
 
     Bs3TestTerm();
 
