@@ -44,11 +44,6 @@
 #include <iprt/string.h>
 
 #include <VBox/com/string.h>
-#ifdef VBOX_WITH_XPCOM
-# include <VirtualBox_XPCOM.h>
-#else
-# include <VirtualBox.h>
-#endif
 
 
 

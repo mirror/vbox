@@ -29,7 +29,13 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 
-class IVirtualBox;
+// VirtualBox COM interfaces declarations (generated header)
+#ifdef VBOX_WITH_XPCOM
+# include <VirtualBox_XPCOM.h>
+#else
+# include <VirtualBox.h>
+#endif
+
 
 class VBoxDbgConsoleOutput : public QTextEdit
 {
