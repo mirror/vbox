@@ -37,6 +37,9 @@
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>
 
+#include <vector>
+#include <algorithm>
+
 #include "VBoxManage.h"
 using namespace com;
 
@@ -924,7 +927,7 @@ enum enmListType
  * @param   fOptLong            Long (@c true) or short list format.
  * @param   pVirtualBox         Reference to the IVirtualBox smart pointer.
  */
-static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const ComPtr<IVirtualBox> &pVirtualBox)
+static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOptSorted, const ComPtr<IVirtualBox> &pVirtualBox)
 {
     HRESULT rc = S_OK;
     switch (enmCommand)
@@ -943,12 +946,35 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             if (SUCCEEDED(rc))
             {
                 /*
-                 * Iterate through the collection
+                 * Display it.
                  */
-                for (size_t i = 0; i < machines.size(); ++i)
+                if (!fOptSorted)
                 {
-                    if (machines[i])
-                        rc = showVMInfo(pVirtualBox, machines[i], NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                    for (size_t i = 0; i < machines.size(); ++i)
+                        if (machines[i])
+                            rc = showVMInfo(pVirtualBox, machines[i], NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                }
+                else
+                {
+                    /*
+                     * Sort the list by name before displaying it.
+                     */
+                    std::vector<std::pair<com::Bstr, IMachine *>> sortedMachines;
+                    for (size_t i = 0; i < machines.size(); ++i)
+                    {
+                        IMachine *pMachine = machines[i];
+                        if (pMachine) /* no idea why we need to do this... */
+                        {
+                            Bstr bstrName;
+                            pMachine->COMGETTER(Name)(bstrName.asOutParam());
+                            sortedMachines.push_back(std::pair<com::Bstr, IMachine *>(bstrName, pMachine));
+                        }
+                    }
+
+                    std::sort(sortedMachines.begin(), sortedMachines.end());
+
+                    for (size_t i = 0; i < sortedMachines.size(); ++i)
+                        rc = showVMInfo(pVirtualBox, sortedMachines[i].second, NULL, fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
                 }
             }
             break;
@@ -1272,12 +1298,14 @@ RTEXITCODE handleList(HandlerArg *a)
 {
     bool                fOptLong      = false;
     bool                fOptMultiple  = false;
+    bool                fOptSorted    = false;
     enum enmListType    enmOptCommand = kListNotSpecified;
 
     static const RTGETOPTDEF s_aListOptions[] =
     {
         { "--long",             'l',                     RTGETOPT_REQ_NOTHING },
         { "--multiple",         'm',                     RTGETOPT_REQ_NOTHING }, /* not offical yet */
+        { "--sorted",           's',                     RTGETOPT_REQ_NOTHING },
         { "vms",                kListVMs,                RTGETOPT_REQ_NOTHING },
         { "runningvms",         kListRunningVMs,         RTGETOPT_REQ_NOTHING },
         { "ostypes",            kListOsTypes,            RTGETOPT_REQ_NOTHING },
@@ -1320,6 +1348,10 @@ RTEXITCODE handleList(HandlerArg *a)
                 fOptLong = true;
                 break;
 
+            case 's':
+                fOptSorted = true;
+                break;
+
             case 'm':
                 fOptMultiple = true;
                 if (enmOptCommand == kListNotSpecified)
@@ -1355,7 +1387,7 @@ RTEXITCODE handleList(HandlerArg *a)
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {
-                    HRESULT hrc = produceList((enum enmListType)ch, fOptLong, a->virtualBox);
+                    HRESULT hrc = produceList((enum enmListType)ch, fOptLong, fOptSorted, a->virtualBox);
                     if (FAILED(hrc))
                         return RTEXITCODE_FAILURE;
                 }
@@ -1376,7 +1408,7 @@ RTEXITCODE handleList(HandlerArg *a)
         return errorSyntax(USAGE_LIST, "Missing subcommand for \"list\" command.\n");
     if (!fOptMultiple)
     {
-        HRESULT hrc = produceList(enmOptCommand, fOptLong, a->virtualBox);
+        HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, a->virtualBox);
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
     }
