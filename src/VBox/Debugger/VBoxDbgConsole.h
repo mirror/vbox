@@ -29,6 +29,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 
+class IVirtualBox;
 
 class VBoxDbgConsoleOutput : public QTextEdit
 {
@@ -41,7 +42,7 @@ public:
      * @param   pParent     Parent Widget.
      * @param   pszName     Widget name.
      */
-    VBoxDbgConsoleOutput(QWidget *pParent = NULL, const char *pszName = NULL);
+    VBoxDbgConsoleOutput(QWidget *pParent = NULL, IVirtualBox *pVirtualBox = NULL, const char *pszName = NULL);
 
     /**
      * Destructor
@@ -89,6 +90,8 @@ protected:
     RTNATIVETHREAD m_hGUIThread;
     /** The current color scheme (foreground on background). */
     VBoxDbgConsoleColor m_enmColorScheme;
+    /** The IVirtualBox object */
+    IVirtualBox *m_pVirtualBox;
 
 private slots:
     /**
@@ -179,7 +182,7 @@ public:
      * @param   a_pDbgGui       Pointer to the debugger gui object.
      * @param   a_pParent       Parent Widget.
      */
-    VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent = NULL);
+    VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent = NULL, IVirtualBox *a_pVirtualBox = NULL);
 
     /**
      * Destructor

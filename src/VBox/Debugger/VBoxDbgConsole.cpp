@@ -43,6 +43,12 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 
+#include <VBox/com/string.h>
+#ifdef VBOX_WITH_XPCOM
+# include <VirtualBox_XPCOM.h>
+#else
+# include <VirtualBox.h>
+#endif
 
 
 
@@ -56,8 +62,9 @@
  */
 
 
-VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const char *pszName/* = NULL*/)
-    : QTextEdit(pParent), m_uCurLine(0), m_uCurPos(0), m_hGUIThread(RTThreadNativeSelf())
+VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, IVirtualBox *a_pVirtualBox /* = NULL */,
+                                           const char *pszName/* = NULL*/)
+    : QTextEdit(pParent), m_uCurLine(0), m_uCurPos(0), m_hGUIThread(RTThreadNativeSelf()), m_pVirtualBox(a_pVirtualBox)
 {
     setReadOnly(true);
     setUndoRedoEnabled(false);
@@ -111,8 +118,24 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     /*
      * Set the defaults (which syncs with the menu item checked state).
      */
-    setFontCourier();
-    setColorGreenOnBlack();
+
+    if (m_pVirtualBox)
+    {
+        com::Bstr strColor;
+        HRESULT hrc = m_pVirtualBox->GetExtraData(com::Bstr("DbgConsole/ColorScheme").raw(), strColor.asOutParam());
+        if (  SUCCEEDED(hrc)
+            && strColor.compareUtf8("blackonwhite", com::Bstr::CaseInsensitive) == 0)
+            setColorBlackOnWhite();
+        else
+            setColorGreenOnBlack();
+        com::Bstr strFont;
+        hrc = m_pVirtualBox->GetExtraData(com::Bstr("DbgConsole/Font").raw(), strFont.asOutParam());
+        if (  SUCCEEDED(hrc)
+            && strFont.compareUtf8("monospace", com::Bstr::CaseInsensitive) == 0)
+            setFontMonospace();
+        else
+            setFontCourier();
+    }
 
     NOREF(pszName);
 }
@@ -121,6 +144,11 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
 VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
+    if (m_pVirtualBox)
+    {
+        m_pVirtualBox->Release();
+        m_pVirtualBox = NULL;
+    }
 }
 
 
@@ -154,6 +182,10 @@ VBoxDbgConsoleOutput::setColorGreenOnBlack()
        When used as a trigger, the checked is done automatically by Qt. */
     if (!m_pGreenOnBlackAction->isChecked())
         m_pGreenOnBlackAction->setChecked(true);
+    
+    /* Make this setting persistent */
+    if (m_pVirtualBox)
+        m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/ColorScheme").raw(), com::Bstr("GreenOnBlack").raw());
 }
 
 
@@ -165,6 +197,10 @@ VBoxDbgConsoleOutput::setColorBlackOnWhite()
 
     if (!m_pBlackOnWhiteAction->isChecked())
         m_pBlackOnWhiteAction->setChecked(true);
+
+    /* Make this setting persistent */
+    if (m_pVirtualBox)
+        m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/ColorScheme").raw(), com::Bstr("BlackOnWhite").raw());
 }
 
 
@@ -183,6 +219,10 @@ VBoxDbgConsoleOutput::setFontCourier()
 
     if (!m_pCourierFontAction->isChecked())
         m_pCourierFontAction->setChecked(true);
+    
+    /* Make this setting persistent */
+    if (m_pVirtualBox)
+        m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/Font").raw(), com::Bstr("Courier").raw());
 }
 
 
@@ -197,6 +237,10 @@ VBoxDbgConsoleOutput::setFontMonospace()
 
     if (!m_pMonospaceFontAction->isChecked())
         m_pMonospaceFontAction->setChecked(true);
+
+    /* Make this setting persistent */
+    if (m_pVirtualBox)
+        m_pVirtualBox->SetExtraData(com::Bstr("DbgConsole/Font").raw(), com::Bstr("Monospace").raw());
 }
 
 
@@ -352,7 +396,7 @@ VBoxDbgConsoleInput::returnPressed()
  */
 
 
-VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NULL*/)
+VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NULL*/, IVirtualBox *a_pVirtualBox/* = NULL */)
     : VBoxDbgBaseWindow(a_pDbgGui, a_pParent), m_pOutput(NULL), m_pInput(NULL), m_fInputRestoreFocus(false),
     m_pszInputBuf(NULL), m_cbInputBuf(0), m_cbInputBufAlloc(0),
     m_pszOutputBuf(NULL), m_cbOutputBuf(0), m_cbOutputBufAlloc(0),
@@ -364,7 +408,7 @@ VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NUL
     /*
      * Create the output text box.
      */
-    m_pOutput = new VBoxDbgConsoleOutput(this);
+    m_pOutput = new VBoxDbgConsoleOutput(this, a_pVirtualBox);
 
     /* try figure a suitable size */
     QLabel *pLabel = new QLabel(      "11111111111111111111111111111111111111111111111111111111111111111111111111111112222222222", this);

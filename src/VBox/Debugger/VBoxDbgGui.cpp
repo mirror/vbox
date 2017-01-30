@@ -195,7 +195,9 @@ VBoxDbgGui::showConsole()
 {
     if (!m_pDbgConsole)
     {
-        m_pDbgConsole = new VBoxDbgConsole(this, m_pParent);
+        IVirtualBox *pVirtualBox = NULL;
+        m_pMachine->COMGETTER(Parent)(&pVirtualBox);
+        m_pDbgConsole = new VBoxDbgConsole(this, m_pParent, pVirtualBox);
         connect(m_pDbgConsole, SIGNAL(destroyed(QObject *)), this, SLOT(notifyChildDestroyed(QObject *)));
         repositionConsole();
     }
