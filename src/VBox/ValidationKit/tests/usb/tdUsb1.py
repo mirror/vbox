@@ -322,7 +322,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
         Returns capture filename from the given data.
         """
 
-        return '%s/%s-%s.pcap' % (self.sUsbCapturePath, sUsbCtrl, sSpeed);
+        return '%s%s%s-%s.pcap' % (self.sUsbCapturePath, os.sep, sUsbCtrl, sSpeed);
 
     def attachUsbDeviceToVm(self, oSession, sVendorId, sProductId, iBusId,
                             sCaptureFile = None):
