@@ -404,11 +404,10 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
                     if not fRc:
                         reporter.testFailure('Running USB test utility failed');
                 else:
-                    reporter.testFailure('Failed to impersonate test device');
-
+                    reporter.testFailure('Failed to attach USB device to VM');
                 oUsbGadget.disconnectFrom();
             else:
-                reporter.testFailure('Failed to create USB device filter');
+                reporter.testFailure('Failed to impersonate test device');
 
             self.oVBox.host.removeUSBDeviceSource(sGadgetHost);
         else:
