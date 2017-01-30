@@ -959,7 +959,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, bool fOpt
                     /*
                      * Sort the list by name before displaying it.
                      */
-                    std::vector<std::pair<com::Bstr, IMachine *>> sortedMachines;
+                    std::vector<std::pair<com::Bstr, IMachine *> > sortedMachines;
                     for (size_t i = 0; i < machines.size(); ++i)
                     {
                         IMachine *pMachine = machines[i];
