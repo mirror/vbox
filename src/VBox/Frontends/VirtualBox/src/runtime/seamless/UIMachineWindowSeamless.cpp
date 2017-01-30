@@ -51,9 +51,9 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     , m_pMiniToolBar(0)
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     , m_fWasMinimized(false)
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     , m_fIsMinimized(false)
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 {
 }
 
@@ -91,19 +91,8 @@ void UIMachineWindowSeamless::prepareVisualState()
     setAttribute(Qt::WA_NoSystemBackground);
 
 #ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
-# if defined(VBOX_WS_MAC) && QT_VERSION < 0x050000
-    /* Using native API to enable translucent background for the Mac host.
-     * - We also want to disable window-shadows which is possible
-     *   using Qt::WA_MacNoShadow only since Qt 4.8,
-     *   while minimum supported version is 4.7.1 for now: */
-    ::darwinSetShowsWindowTransparent(this, true);
-# else /* !VBOX_WS_MAC || QT_VERSION >= 0x050000 */
-    /* Using Qt API to enable translucent background:
-     * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1 for now. */
+    /* Using Qt API to enable translucent background: */
     setAttribute(Qt::WA_TranslucentBackground);
-# endif /* !VBOX_WS_MAC || QT_VERSION >= 0x050000 */
 #endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
@@ -184,7 +173,7 @@ void UIMachineWindowSeamless::placeOnScreen()
     const QRect workingArea = gpDesktop->availableGeometry(iHostScreen);
     Q_UNUSED(workingArea);
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 
     /* Make sure we are located on corresponding host-screen: */
     if (   gpDesktop->screenCount() > 1
@@ -256,7 +245,7 @@ void UIMachineWindowSeamless::showInNecessaryMode()
         /* Make sure window have appropriate geometry: */
         placeOnScreen();
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
         /* Show window: */
         if (!isMaximized())
             showMaximized();
@@ -306,7 +295,7 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -344,10 +333,9 @@ void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
     /* Call to base-class: */
     UIMachineWindow::changeEvent(pEvent);
 }
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WS_WIN
-# if QT_VERSION >= 0x050000
 void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)
 {
     /* Expose workaround again,
@@ -359,7 +347,6 @@ void UIMachineWindowSeamless::showEvent(QShowEvent *pEvent)
     /* Call to base-class: */
     UIMachineWindow::showEvent(pEvent);
 }
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_WIN */
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS

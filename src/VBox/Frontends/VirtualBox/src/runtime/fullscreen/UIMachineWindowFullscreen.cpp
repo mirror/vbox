@@ -23,10 +23,8 @@
 # include <QMenu>
 # include <QTimer>
 # ifdef VBOX_WS_WIN
-#  if QT_VERSION >= 0x050000
-#   include <QWindow>
-#  endif /* QT_VERSION >= 0x050000 */
-# endif /* VBOX_WS_WIN */
+#  include <QWindow>
+# endif
 
 /* GUI includes: */
 # include "VBoxGlobal.h"
@@ -61,9 +59,9 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     , m_fIsInFullscreenTransition(false)
 #endif /* VBOX_WS_MAC */
     , m_fWasMinimized(false)
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     , m_fIsMinimized(false)
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 {
 }
 
@@ -355,16 +353,10 @@ void UIMachineWindowFullscreen::placeOnScreen()
 
 #elif defined(VBOX_WS_WIN)
 
-# if QT_VERSION >= 0x050000
     /* Map window onto required screen: */
     windowHandle()->setScreen(qApp->screens().at(iHostScreen));
-# endif /* QT_VERSION >= 0x050000 */
     /* Set appropriate window size: */
     resize(workingArea.size());
-# if QT_VERSION < 0x050000
-    /* Move window onto required screen: */
-    move(workingArea.topLeft());
-# endif /* QT_VERSION < 0x050000 */
 
 #elif defined(VBOX_WS_X11)
 
@@ -544,7 +536,7 @@ void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
 void UIMachineWindowFullscreen::changeEvent(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -582,10 +574,9 @@ void UIMachineWindowFullscreen::changeEvent(QEvent *pEvent)
     /* Call to base-class: */
     UIMachineWindow::changeEvent(pEvent);
 }
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
 #ifdef VBOX_WS_WIN
-# if QT_VERSION >= 0x050000
 void UIMachineWindowFullscreen::showEvent(QShowEvent *pEvent)
 {
     /* Expose workaround again,
@@ -597,6 +588,5 @@ void UIMachineWindowFullscreen::showEvent(QShowEvent *pEvent)
     /* Call to base-class: */
     UIMachineWindow::showEvent(pEvent);
 }
-# endif /* QT_VERSION >= 0x050000 */
 #endif /* VBOX_WS_WIN */
 

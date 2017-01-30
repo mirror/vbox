@@ -73,17 +73,15 @@ private:
     void updateAppearanceOf(int iElement);
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-    /** Handles @a pEvent about state change. */
+#ifdef VBOX_WS_X11
+    /** X11: Handles @a pEvent about state change. */
     void changeEvent(QEvent *pEvent);
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 
 #ifdef VBOX_WS_WIN
-# if QT_VERSION >= 0x050000
     /** Win: Handles show @a pEvent. */
     void showEvent(QShowEvent *pEvent);
-# endif /* QT_VERSION >= 0x050000 */
-#endif /* VBOX_WS_WIN */
+#endif
 
 #ifdef VBOX_WITH_MASKED_SEAMLESS
     /** Assigns guest seamless mask. */
@@ -105,11 +103,11 @@ private:
     /** Holds whether the window was minimized before became hidden.
       * Used to restore minimized state when the window shown again. */
     bool m_fWasMinimized;
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-    /** Holds whether the window is currently minimized.
+#ifdef VBOX_WS_X11
+    /** X11: Holds whether the window is currently minimized.
       * Used to restore maximized state when the window restored again. */
     bool m_fIsMinimized;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 
     /** Factory support. */
     friend class UIMachineWindow;
