@@ -1619,9 +1619,9 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
      * the base register than in the limit register.
      */
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, 0xfff0, 2);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, 0x0, 2);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, 0x00, 4);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00, 4);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, 0x0000, 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, 0x00000000, 4);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, 0x00000000, 4);
 }
 
 static int ichpciBiosInitDeviceGetRegions(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uDevFn)
@@ -1918,10 +1918,21 @@ static bool ich9pciBiosInitBridgePrefetchable(PDEVPCIROOT pPciRoot, uint8_t uBus
         uBase = u32MMIOAddressBase;
         uLimit = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024) - 1;
     }
+    /*
+     * The bottom 4 bits of both the Prefetchable Memory Base and Prefetchable
+     * Memory Limit are read-only, contain the same value, and encode whether
+     * or not the bridge supports 64-bit addresses. If these four bits have
+     * the value 0h, then the bridge supports only 32-bit addresses. If these
+     * four bits have the value 01h, then the bridge supports 64-bit addresses
+     * and the Prefetchable Base Upper 32 Bits and Prfetchable Limit Upper 32
+     * Bits registers hold the rest of the 64-bit prefetchable base and limit
+     * respectively.
+     */
+    uint32_t uSupports64Bit = fUse64Bit ? 0xf : 0x0;
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, uBase >> 32, 4);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, (uint32_t)(uBase >> 16) & UINT32_C(0xfff0), 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, ((uint32_t)(uBase >> 16) & UINT32_C(0xfff0)) | uSupports64Bit, 2);
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, uLimit >> 32, 4);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, (uint32_t)(uLimit >> 16) & UINT32_C(0xfff0), 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, ((uint32_t)(uLimit >> 16) & UINT32_C(0xfff0)) | uSupports64Bit, 2);
 
     return false;
 }
@@ -2748,10 +2759,10 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                 devpciR3InfoIndent(pHlp, iIndentLvl + 2);
 
                 if (pciDevIsMsiCapable(pPciDev))
-                    pHlp->pfnPrintf(pHlp, "MSI:%s ", MsiIsEnabled(pPciDev) ? "on" : "off");
+                    pHlp->pfnPrintf(pHlp, "MSI: %s ", MsiIsEnabled(pPciDev) ? "on" : "off");
 
                 if (pciDevIsMsixCapable(pPciDev))
-                    pHlp->pfnPrintf(pHlp, "MSI-X:%s ", MsixIsEnabled(pPciDev) ? "on" : "off");
+                    pHlp->pfnPrintf(pHlp, "MSI-X: %s ", MsixIsEnabled(pPciDev) ? "on" : "off");
 
                 pHlp->pfnPrintf(pHlp, "\n");
             }
@@ -2851,20 +2862,37 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                                 PDMPciDevGetByte(&pBusSub->PciDev, VBOX_PCI_SUBORDINATE_BUS));
             }
             devpciR3InfoIndent(pHlp, iIndentLvl);
-            pHlp->pfnPrintf(pHlp, "behind bridge: I/O %#06x..%#06x\n",
-                            (ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_BASE) & 0xf0) << 8,
-                            (ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_LIMIT) & 0xf0) << 8 | 0xfff);
+            pHlp->pfnPrintf(pHlp, "behind bridge: ");
+            uint8_t uIoBase  = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_BASE);
+            uint8_t uIoLimit = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_LIMIT);
+            if (uIoBase > uIoLimit)
+                pHlp->pfnPrintf(pHlp, "no I/O\n");
+            else
+                pHlp->pfnPrintf(pHlp, "I/O %#06x..%#06x\n",
+                               (uIoBase & 0xf0) << 8,
+                               (uIoLimit & 0xf0) << 8 | 0xfff);
             devpciR3InfoIndent(pHlp, iIndentLvl);
-            pHlp->pfnPrintf(pHlp, "behind bridge: memory %#010x..%#010x\n",
-                            (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_BASE) & 0xfff0) << 16,
-                            (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_LIMIT) & 0xfff0) << 16 | 0xfffff);
+            pHlp->pfnPrintf(pHlp, "behind bridge: ");
+            uint32_t uMemoryBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_BASE);
+            uint32_t uMemoryLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_LIMIT);
+            if (uMemoryBase > uMemoryLimit)
+                pHlp->pfnPrintf(pHlp, "no memory\n");
+            else
+                pHlp->pfnPrintf(pHlp, "memory %#010x..%#010x\n",
+                                (uMemoryBase & 0xfff0) << 16,
+                                (uMemoryLimit & 0xfff0) << 16 | 0xfffff);
             devpciR3InfoIndent(pHlp, iIndentLvl);
-            pHlp->pfnPrintf(pHlp, "behind bridge: prefetch memory %#018llx..%#018llx\n",
-                            (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
-                             | (ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE) & 0xfff0) << 16),
-                            (  ((uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
-                             | (uint32_t)(ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT) & 0xfff0) << 16)
-                             | 0xfffff);
+            pHlp->pfnPrintf(pHlp, "behind bridge: ");
+            uint32_t uPrefMemoryBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE);
+            uint32_t uPrefMemoryLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT);
+            if (uPrefMemoryBase > uPrefMemoryLimit)
+                pHlp->pfnPrintf(pHlp, "no prefetch memory\n");
+            else
+                pHlp->pfnPrintf(pHlp, "prefetch memory %#018llx..%#018llx\n",
+                                 ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
+                                  |(uPrefMemoryBase & 0xfff0) << 16,
+                                 ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
+                                  |(uPrefMemoryLimit & 0xfff0) << 16 | 0xfffff);
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
     }
