@@ -191,6 +191,12 @@ void UIMachineWindowSeamless::placeOnScreen()
         && (x() != workingArea.x() || y() != workingArea.y()))
     {
         // WORKAROUND:
+        // With Qt5 on KDE we can't just move the window onto desired host-screen if
+        // window is maximized. So we have to show it normal first of all:
+        if (isVisible() && isMaximized())
+            showNormal();
+
+        // WORKAROUND:
         // With Qt5 on X11 we can't just move the window onto desired host-screen if
         // window size is more than the available geometry (working area) of that
         // host-screen. So we are resizing it to a smaller size first of all:
