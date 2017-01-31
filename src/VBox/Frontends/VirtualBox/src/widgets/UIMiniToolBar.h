@@ -156,6 +156,9 @@ private:
     /** Returns whether the parent is currently minimized. */
     bool isParentMinimized() const;
 
+    /** Holds the parent reference. */
+    QWidget *m_pParent;
+
     /** Holds the geometry type. */
     const GeometryType m_geometryType;
     /** Holds the alignment type. */

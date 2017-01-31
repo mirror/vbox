@@ -134,6 +134,11 @@ private:
     QList<QWidget*> m_margins;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIMiniToolBarPrivate implementation.                                                                                   *
+*********************************************************************************************************************************/
+
 UIMiniToolBarPrivate::UIMiniToolBarPrivate()
     /* Variables: General stuff: */
     : m_fPolished(false)
@@ -390,6 +395,11 @@ void UIMiniToolBarPrivate::rebuildShape()
     update();
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIMiniToolBar implementation.                                                                                          *
+*********************************************************************************************************************************/
+
 /* static */
 Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
 {
@@ -422,6 +432,7 @@ UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              bool fAutoHide /* = true */)
     : QWidget(pParent, defaultWindowFlags(geometryType))
     /* Variables: General stuff: */
+    , m_pParent(pParent)
     , m_geometryType(geometryType)
     , m_alignment(alignment)
     , m_fAutoHide(fAutoHide)
@@ -645,7 +656,7 @@ void UIMiniToolBar::sltAdjust()
     LogRel2(("GUI: UIMiniToolBar::sltAdjust\n"));
 
     /* Get corresponding host-screen: */
-    const int iHostScreen = gpDesktop->screenNumber(parentWidget());
+    const int iHostScreen = gpDesktop->screenNumber(m_pParent);
     Q_UNUSED(iHostScreen);
     /* And corresponding working area: */
     QRect workingArea;
@@ -734,7 +745,7 @@ void UIMiniToolBar::prepare()
 {
     /* Install event-filters: */
     installEventFilter(this);
-    parent()->installEventFilter(this);
+    m_pParent->installEventFilter(this);
 
 #if   defined(VBOX_WS_WIN)
     /* No background until first paint-event: */
@@ -941,7 +952,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif /* VBOX_WS_X11 */
 
     /* If that's parent window event: */
-    if (pWatched == parent())
+    if (pWatched == m_pParent)
     {
         switch (pEvent->type())
         {
@@ -973,7 +984,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
             case QEvent::Resize:
             {
                 /* Skip if parent or we are invisible: */
-                if (   !parentWidget()->isVisible()
+                if (   !m_pParent->isVisible()
                     || !isVisible())
                     break;
                 /* Skip if parent or we are minimized: */
@@ -1002,15 +1013,15 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 /* Watch for parent window state changes: */
                 QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
                 LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window state changed from %d to %d\n",
-                         (int)pChangeEvent->oldState(), (int)parentWidget()->windowState()));
-                if (parentWidget()->windowState() & Qt::WindowMinimized)
+                         (int)pChangeEvent->oldState(), (int)m_pParent->windowState()));
+                if (m_pParent->windowState() & Qt::WindowMinimized)
                 {
                     /* Mark parent window minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
                     LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window minimized\n"));
                     m_fIsParentMinimized = true;
                 }
                 else
-                if (parentWidget()->windowState() == Qt::WindowFullScreen)
+                if (m_pParent->windowState() == Qt::WindowFullScreen)
                 {
                     /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
                     LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is full-screen\n"));
@@ -1066,7 +1077,7 @@ bool UIMiniToolBar::isParentMinimized() const
 #ifdef VBOX_WS_X11
     return m_fIsParentMinimized;
 #else
-    return parentWidget()->isMinimized();
+    return m_pParent->isMinimized();
 #endif
 }
 
