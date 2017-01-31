@@ -878,8 +878,11 @@ static DECLCALLBACK(size_t) MachineDebuggerInfoOutput(void *pvArg, const char *p
     /*
      * Copy the bytes into the buffer and terminate it.
      */
-    memcpy(&pHlp->pszBuf[pHlp->offBuf], pachChars, cbChars);
-    pHlp->offBuf += cbChars;
+    if (cbChars)
+    {
+        memcpy(&pHlp->pszBuf[pHlp->offBuf], pachChars, cbChars);
+        pHlp->offBuf += cbChars;
+    }
     pHlp->pszBuf[pHlp->offBuf] = '\0';
     Assert(pHlp->offBuf < pHlp->cbBuf);
     return cbChars;
