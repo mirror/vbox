@@ -524,19 +524,19 @@ USBProxyBackend::initFilterFromDevice(PUSBFILTER aFilter, HostUSBDevice *aDevice
     if (pDev->pszSerialNumber)
     {
         vrc = USBFilterSetStringExact(aFilter, USBFILTERIDX_SERIAL_NUMBER_STR, pDev->pszSerialNumber,
-                                      true /*fMustBePresent*/, false /*fPurge*/);
+                                      true /*fMustBePresent*/, true /*fPurge*/);
         AssertRC(vrc);
     }
     if (pDev->pszProduct)
     {
         vrc = USBFilterSetStringExact(aFilter, USBFILTERIDX_PRODUCT_STR, pDev->pszProduct,
-                                      true /*fMustBePresent*/, false /*fPurge*/);
+                                      true /*fMustBePresent*/, true /*fPurge*/);
         AssertRC(vrc);
     }
     if (pDev->pszManufacturer)
     {
         vrc = USBFilterSetStringExact(aFilter, USBFILTERIDX_MANUFACTURER_STR, pDev->pszManufacturer,
-                                      true /*fMustBePresent*/, false /*fPurge*/);
+                                      true /*fMustBePresent*/, true /*fPurge*/);
         AssertRC(vrc);
     }
 }
