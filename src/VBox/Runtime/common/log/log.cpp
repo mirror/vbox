@@ -3510,7 +3510,8 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
         size_t cbRet = 0;
         for (;;)
         {
-            size_t      cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+            uint32_t    offScratch = pLogger->offScratch;
+            size_t      cb         = sizeof(pLogger->achScratch) - offScratch - 1;
             const char *pszNewLine;
             char       *psz;
 #ifdef IN_RC
@@ -3528,10 +3529,10 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 
 #if defined(DEBUG) && defined(IN_RING3)
                 /* sanity */
-                if (pLogger->offScratch >= sizeof(pLogger->achScratch))
+                if (offScratch >= sizeof(pLogger->achScratch))
                 {
-                    fprintf(stderr, "pLogger->offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
-                            pLogger->offScratch, (unsigned)sizeof(pLogger->achScratch));
+                    fprintf(stderr, "offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
+                            offScratch, (unsigned)sizeof(pLogger->achScratch));
                     AssertBreakpoint(); AssertBreakpoint();
                 }
 #endif
@@ -3543,14 +3544,15 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 if (cb < 256 + 16)
                 {
                     rtlogFlush(pLogger);
-                    cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+                    offScratch = pLogger->offScratch;
+                    cb = sizeof(pLogger->achScratch) - offScratch - 1;
                 }
 
                 /*
                  * Write the prefixes.
                  * psz is pointing to the current position.
                  */
-                psz = &pLogger->achScratch[pLogger->offScratch];
+                psz = &pLogger->achScratch[offScratch];
                 if (pLogger->fFlags & RTLOGFLAGS_PREFIX_TS)
                 {
                     uint64_t     u64    = RTTimeNanoTS();
@@ -3832,23 +3834,24 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 /*
                  * Done, figure what we've used and advance the buffer and free size.
                  */
-                cb = psz - &pLogger->achScratch[pLogger->offScratch];
+                cb = psz - &pLogger->achScratch[offScratch];
                 AssertMsg(cb <= 223, ("%#zx (%zd) - fFlags=%#x\n", cb, cb, pLogger->fFlags));
-                pLogger->offScratch += (uint32_t)cb;
-                cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+                pLogger->offScratch = offScratch += (uint32_t)cb;
+                cb = sizeof(pLogger->achScratch) - offScratch - 1;
             }
             else if (cb <= 0)
             {
                 rtlogFlush(pLogger);
-                cb = sizeof(pLogger->achScratch) - pLogger->offScratch - 1;
+                offScratch = pLogger->offScratch;
+                cb = sizeof(pLogger->achScratch) - offScratch - 1;
             }
 
 #if defined(DEBUG) && defined(IN_RING3)
             /* sanity */
-            if (pLogger->offScratch >= sizeof(pLogger->achScratch))
+            if (offScratch >= sizeof(pLogger->achScratch))
             {
-                fprintf(stderr, "pLogger->offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
-                        pLogger->offScratch, (unsigned)sizeof(pLogger->achScratch));
+                fprintf(stderr, "offScratch >= sizeof(pLogger->achScratch) (%#x >= %#x)\n",
+                        offScratch, (unsigned)sizeof(pLogger->achScratch));
                 AssertBreakpoint(); AssertBreakpoint();
             }
 #endif
@@ -3871,19 +3874,19 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
             }
 
             /* copy */
-            memcpy(&pLogger->achScratch[pLogger->offScratch], pachChars, cb);
+            memcpy(&pLogger->achScratch[offScratch], pachChars, cb);
 
             /* advance */
-            pLogger->offScratch += (uint32_t)cb;
+            pLogger->offScratch = offScratch += (uint32_t)cb;
             cbRet += cb;
             cbChars -= cb;
 
             if (    pszNewLine
                 &&  (pLogger->fFlags & RTLOGFLAGS_USECRLF)
-                &&  pLogger->offScratch + 2 < sizeof(pLogger->achScratch))
+                &&  offScratch + 2 < sizeof(pLogger->achScratch))
             {
-                memcpy(&pLogger->achScratch[pLogger->offScratch], "\r\n", 2);
-                pLogger->offScratch += 2;
+                memcpy(&pLogger->achScratch[offScratch], "\r\n", 2);
+                pLogger->offScratch = offScratch += 2;
                 cbRet++;
                 cbChars--;
                 cb++;
