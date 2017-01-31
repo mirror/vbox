@@ -270,10 +270,12 @@ stop()
         fail "Cannot unmount vboxsf folders"
     fi
     modprobe -q -r -a vboxvideo vboxsf vboxguest
-    egrep -q 'vboxguest|vboxsf|vboxvideo' /proc/modules &&
+    if egrep -q 'vboxguest|vboxsf|vboxvideo' /proc/modules; then
         info "You may need to restart your guest system to finish removing the guest drivers."
-    rm -f $userdev || fail "Cannot unlink $userdev"
-    rm -f $dev || fail "Cannot unlink $dev"
+    else
+        rm -f $userdev || fail "Cannot unlink $userdev"
+        rm -f $dev || fail "Cannot unlink $dev"
+    fi
     return 0
 }
 
