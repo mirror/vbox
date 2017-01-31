@@ -3757,6 +3757,7 @@ l_skipped:
                      * Again iterate over all given disk images of the virtual system
                      * disks description using the found disk image
                      */
+                    vsdeTargetHD = NULL;
                     for (list<VirtualSystemDescriptionEntry*>::const_iterator itHD = avsdeHDs.begin();
                          itHD != avsdeHDs.end();
                          ++itHD)

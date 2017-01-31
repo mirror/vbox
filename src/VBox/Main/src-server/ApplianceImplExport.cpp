@@ -349,7 +349,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 if (FAILED(rc)) throw rc;
 
                 Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                strTargetImageName = Utf8StrFmt("%s-disk%d.vmdk", strName.c_str(), ++pAppliance->m->cDisks);
+                strTargetImageName = Utf8StrFmt("%s-disk%.3d.vmdk", strName.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach disk '%s' -- file name too long"), strTargetImageName.c_str());
@@ -441,7 +441,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     continue;
 
                 Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                strTargetImageName = Utf8StrFmt("%s-disk%d.iso", strName.c_str(), ++pAppliance->m->cDisks);
+                strTargetImageName = Utf8StrFmt("%s-disk%.3d.iso", strName.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                 tr("Cannot attach image '%s' -- file name too long"), strTargetImageName.c_str());
@@ -935,14 +935,15 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
 
     // Finally, write out the disk info
     list<Utf8Str> diskList;
-    map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
     uint32_t ulFile = 1;
-    for (itS = stack.mapDisks.begin();
-         itS != stack.mapDisks.end();
+    list<Utf8Str>::const_iterator itS;
+
+    for (itS = stack.mapDiskSequence.begin();
+         itS != stack.mapDiskSequence.end();
          ++itS)
     {
-        const Utf8Str &strDiskID = itS->first;
-        const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
+        const Utf8Str &strDiskID = *itS;
+        const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
 
         // source path: where the VBox image is
         const Utf8Str &strSrcFilePath = pDiskEntry->strVBoxCurrent;
@@ -1018,8 +1019,8 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
         Utf8StrFmt strFileRef("file%RI32", ulFile++);
         // <File ovf:href="WindowsXpProfessional-disk1.vmdk" ovf:id="file1" ovf:size="1710381056"/>
         xml::ElementNode *pelmFile = pelmReferences->createChild("File");
-        pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
         pelmFile->setAttribute("ovf:id", strFileRef);
+        pelmFile->setAttribute("ovf:href", strTargetFileNameOnly);
         /// @todo the actual size is not available at this point of time,
         // cause the disk will be compressed. The 1.0 standard says this is
         // optional! 1.1 isn't fully clear if the "gzip" format is used.
@@ -1547,6 +1548,10 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                            desc.strExtraConfigCurrent.c_str());
 
                         stack.mapDisks[strDiskID] = &desc;
+
+                        //use the list stack.mapDiskSequence where the disks go as the "VirtualSystem" should be placed
+                        //in the OVF description file.
+                        stack.mapDiskSequence.push_back(strDiskID);
                     }
                     break;
 
@@ -1572,9 +1577,9 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                         </Item> */
                     if (uLoop == 2)
                     {
-                        //uint32_t cDisks = stack.mapDisks.size();
-                        Utf8Str strDiskID = Utf8StrFmt("iso%RI32", ++cDVDs);
-
+                        uint32_t cDisks = (uint32_t)stack.mapDisks.size();
+                        Utf8Str strDiskID = Utf8StrFmt("iso%RI32", ++cDisks);
+                        ++cDVDs;
                         strDescription = "CD-ROM Drive";
                         strCaption = Utf8StrFmt("cdrom%RI32", cDVDs);     // OVFTool starts with 1
                         type = ovf::ResourceType_CDDrive; // 15
@@ -1619,6 +1624,10 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                            desc.strExtraConfigCurrent.c_str());
 
                         stack.mapDisks[strDiskID] = &desc;
+
+                        //use the list stack.mapDiskSequence where the disks go as the "VirtualSystem" should be placed
+                        //in the OVF description file.
+                        stack.mapDiskSequence.push_back(strDiskID);
                         // there is no DVD drive map to update because it is
                         // handled completely with this entry.
                     }
@@ -2148,12 +2157,18 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         }
 
         // Finally, write out the disks!
-        map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
-        for (itS = stack.mapDisks.begin();
-             itS != stack.mapDisks.end();
-             ++itS)
+        //use the list stack.mapDiskSequence where the disks were put as the "VirtualSystem"s had been placed
+        //in the OVF description file. I.e. we have one "VirtualSystem" in the OVF file, we extract all disks
+        //attached to it. And these disks are stored in the stack.mapDiskSequence. Next we shift to the next
+        //"VirtualSystem" and repeat the operation.
+        //And here we go through the list and extract all disks in the same sequence
+        list<Utf8Str>::const_iterator itS;
+        for (itS = stack.mapDiskSequence.begin();
+              itS != stack.mapDiskSequence.end();
+              ++itS)
         {
-            const VirtualSystemDescriptionEntry *pDiskEntry = itS->second;
+            const Utf8Str &strDiskID = *itS;
+            const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
 
             // source path: where the VBox image is
             const Utf8Str &strSrcFilePath = pDiskEntry->strVBoxCurrent;
