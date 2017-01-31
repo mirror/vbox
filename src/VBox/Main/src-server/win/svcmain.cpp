@@ -22,9 +22,7 @@
 #include <tchar.h>
 
 #include "VBox/com/defs.h"
-
 #include "VBox/com/com.h"
-
 #include "VBox/com/VirtualBox.h"
 
 #include "VirtualBoxImpl.h"
@@ -188,46 +186,46 @@ LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     LRESULT rc = 0;
     switch (msg)
     {
-    case WM_QUERYENDSESSION:
-    {
-        if (g_pModule)
+        case WM_QUERYENDSESSION:
         {
-            rc = !g_pModule->HasActiveConnection();
-            if (!rc)
+            if (g_pModule)
             {
-                /* place the VBoxSVC into system shutdown list */
-                ShutdownBlockReasonCreateAPI(hwnd, L"Has active connections.");
-                /* decrease a latency of MonitorShutdown loop */
-                ASMAtomicXchgU32(&dwTimeOut, 100);
-                Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
-                    g_pModule->bActivity, g_pModule->GetLockCount()));
+                bool fActiveConnection = g_pModule->HasActiveConnection();
+                if (fActiveConnection)
+                {
+                    /* place the VBoxSVC into system shutdown list */
+                    ShutdownBlockReasonCreateAPI(hwnd, L"Has active connections.");
+                    /* decrease a latency of MonitorShutdown loop */
+                    ASMAtomicXchgU32(&dwTimeOut, 100);
+                    Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: VBoxSvc has active connections. bActivity = %d. Loc count = %d\n",
+                         g_pModule->bActivity, g_pModule->GetLockCount()));
+                }
+                rc = !fActiveConnection;
             }
+            else
+                AssertMsgFailed(("VBoxSVCWinMain: WM_QUERYENDSESSION: Error: g_pModule is NULL"));
+            break;
         }
-        else
+        case WM_ENDSESSION:
         {
-            Assert(g_pModule);
-            Log(("VBoxSVCWinMain: WM_QUERYENDSESSION: Error: g_pModule is NULL"));
+            /* Restore timeout of Monitor Shutdown if user canceled system shutdown */
+            if (wParam == FALSE)
+            {
+                ASMAtomicXchgU32(&dwTimeOut, dwNormalTimeout);
+                Log(("VBoxSVCWinMain: user canceled system shutdown.\n"));
+            }
+            break;
         }
-     } break;
-    case WM_ENDSESSION:
-    {
-        /* Restore timeout of Monitor Shutdown if user canceled system shutdown */
-        if (wParam == FALSE)
+        case WM_DESTROY:
         {
-            ASMAtomicXchgU32(&dwTimeOut, dwNormalTimeout);
-            Log(("VBoxSVCWinMain: user canceled system shutdown.\n"));
+            ShutdownBlockReasonDestroyAPI(hwnd);
+            PostQuitMessage(0);
+            break;
         }
-    } break;
-    case WM_DESTROY:
-    {
-        ShutdownBlockReasonDestroyAPI(hwnd);
-        PostQuitMessage(0);
-    } break;
-
-    default:
-    {
-        rc = DefWindowProc(hwnd, msg, wParam, lParam);
-    }
+        default:
+        {
+            rc = DefWindowProc(hwnd, msg, wParam, lParam);
+        }
     }
     return rc;
 }
@@ -252,9 +250,7 @@ int CreateMainWindow()
     wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
     wc.lpszClassName = MAIN_WND_CLASS;
 
-
     ATOM atomWindowClass = RegisterClass(&wc);
-
     if (atomWindowClass == 0)
     {
         Log(("Failed to register main window class\n"));
@@ -264,10 +260,9 @@ int CreateMainWindow()
     {
         /* Create the window. */
         g_hMainWindow = CreateWindowEx(WS_EX_TOOLWINDOW |  WS_EX_TOPMOST,
-            MAIN_WND_CLASS, MAIN_WND_CLASS,
-            WS_POPUPWINDOW,
-            0, 0, 1, 1, NULL, NULL, g_hInstance, NULL);
-
+                                       MAIN_WND_CLASS, MAIN_WND_CLASS,
+                                       WS_POPUPWINDOW,
+                                       0, 0, 1, 1, NULL, NULL, g_hInstance, NULL);
         if (g_hMainWindow == NULL)
         {
             Log(("Failed to create main window\n"));
@@ -276,7 +271,7 @@ int CreateMainWindow()
         else
         {
             SetWindowPos(g_hMainWindow, HWND_TOPMOST, -200, -200, 0, 0,
-                SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
+                         SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
         }
     }
@@ -292,7 +287,6 @@ void DestroyMainWindow()
     {
         DestroyWindow(g_hMainWindow);
         g_hMainWindow = NULL;
-
         if (g_hInstance != NULL)
         {
             UnregisterClass(MAIN_WND_CLASS, g_hInstance);
@@ -564,13 +558,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         _ASSERTE(SUCCEEDED(hRes));
 
         if (RT_SUCCESS(CreateMainWindow()))
-        {
             Log(("SVCMain: Main window succesfully created\n"));
-        }
         else
-        {
             Log(("SVCMain: Failed to create main window\n"));
-        }
 
         MSG msg;
         while (GetMessage(&msg, 0, 0, 0) > 0)
