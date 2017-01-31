@@ -385,7 +385,7 @@ class TestCaseArgsLogic(ModelLogicBase):
             if self._oDb.getRowCount() == 1:
                 aaoRow = self._oDb.fetchOne();
                 oEntry = TestCaseArgsDataEx();
-                tsNow  = oEntry.initFromDbRow(aaoRow).tsEffective if fNeedTsNow else None;
+                tsNow  = TestCaseArgsData().initFromDbRow(aaoRow).tsEffective if fNeedTsNow else None;
                 oEntry.initFromDbRowEx(aaoRow, self._oDb, tsNow, tsNow);
                 self.dCache[idTestCaseArgs] = oEntry;
         return oEntry;
