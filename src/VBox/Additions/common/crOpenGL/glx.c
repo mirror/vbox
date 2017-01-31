@@ -36,8 +36,6 @@
 
 #include <X11/Xregion.h>
 
-//#define VBOX_NO_NATIVEGL
-
 /* Force full pixmap update if there're more damaged regions than this number*/
 #define CR_MAX_DAMAGE_REGIONS_TRACKED 50
 
@@ -73,297 +71,9 @@ struct VisualInfo {
     struct VisualInfo *next;
 };
 
-#ifndef VBOX_NO_NATIVEGL /* Old code */
-static struct VisualInfo *VisualInfoList = NULL;
-#endif
-
 static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t *pGlxPixmap, XRectangle *pRect);
 static void stubQueryXDamageExtension(Display *dpy, ContextInfo *pContext);
 
-#ifndef VBOX_NO_NATIVEGL /* Old code */
-
-static void
-AddVisualInfo(Display *dpy, int screen, VisualID visualid, int visBits)
-{
-    struct VisualInfo *v;
-    for (v = VisualInfoList; v; v = v->next) {
-        if (v->dpy == dpy && v->screen == screen && v->visualid == visualid) {
-            v->visBits |= visBits;
-            return;
-        }
-    }
-    v = (struct VisualInfo *) crAlloc(sizeof(struct VisualInfo));
-    v->dpy = dpy;
-    v->screen = screen;
-    v->visualid = visualid;
-    v->visBits = visBits;
-    v->next = VisualInfoList;
-    VisualInfoList = v;
-}
-
-static struct VisualInfo *
-FindVisualInfo(Display *dpy, int screen, VisualID visualid)
-{
-    struct VisualInfo *v;
-    for (v = VisualInfoList; v; v = v->next) {
-        if (v->dpy == dpy && v->screen == screen && v->visualid == visualid)
-            return v;
-    }
-    return NULL;
-}
-
-/**
- * Return string for a GLX error code
- */
-static const char *glx_error_string(int err)
-{
-    static const char *glxErrors[] = {
-        "none",
-        "GLX_BAD_SCREEN",
-        "GLX_BAD_ATTRIBUTE",
-        "GLX_NO_EXTENSION",
-        "GLX_BAD_VISUAL",
-        "GLX_BAD_CONTEXT",
-        "GLX_BAD_VALUE",
-        "GLX_BAD_ENUM"
-    };
-    if (err > 0 && err < 8) {
-        return glxErrors[err];
-    }
-    else {
-        static char tmp[100];
-        sprintf(tmp, "0x%x", err);
-        return tmp;
-    }
-}
-
-/* Given an XVisualInfo structure, try to figure out what its 
- * OpenGL capabilities are, if we have a native OpenGL.
- * Returns 0 if no information is available.
- */
-static struct {
-    int gl_attrib;
-    char *attrib_name;
-    enum {TEST_TRUE, TEST_GREATER_0} test;
-    int match_vis_bits;
-} attrib_map[] = {
-    {GLX_RGBA, "GLX_RGBA", TEST_TRUE, CR_RGB_BIT},
-    {GLX_DOUBLEBUFFER, "GLX_DOUBLEBUFFER", TEST_TRUE, CR_DOUBLE_BIT},
-    {GLX_STEREO, "GLX_STEREO", TEST_TRUE, CR_STEREO_BIT},
-    {GLX_LEVEL, "GLX_LEVEL", TEST_GREATER_0, CR_OVERLAY_BIT},
-    {GLX_ALPHA_SIZE, "GLX_ALPHA_SIZE", TEST_GREATER_0, CR_ALPHA_BIT},
-    {GLX_DEPTH_SIZE, "GLX_DEPTH_SIZE", TEST_GREATER_0, CR_DEPTH_BIT},
-    {GLX_STENCIL_SIZE, "GLX_STENCIL_SIZE", TEST_GREATER_0, CR_STENCIL_BIT},
-    {GLX_ACCUM_RED_SIZE, "GLX_ACCUM_RED_SIZE", TEST_GREATER_0, CR_ACCUM_BIT},
-    {GLX_SAMPLE_BUFFERS_SGIS, "GLX_SAMPLE_BUFFERS_SGIS", TEST_GREATER_0, CR_MULTISAMPLE_BIT},
-};
-
-static int QueryVisBits(Display *dpy, XVisualInfo *vis)
-{
-    int visBits = 0;
-    int foo, bar, return_val, value;
-    unsigned int i;
-
-    /* We can only query the OpenGL capabilities if we actually
-     * have a native OpenGL underneath us.  Without it, we can't
-     * get at all the actual OpenGL characteristics.
-     */
-    if (!stub.haveNativeOpenGL) return 0;
-
-    if (!stub.wsInterface.glXQueryExtension(dpy, &foo, &bar)) return 0;
-
-    /* If we don't have the GLX_USE_GL attribute, we've failed. */
-    return_val = stub.wsInterface.glXGetConfig(dpy, vis, GLX_USE_GL, &value);
-    if (return_val) {
-        crDebug("native glXGetConfig returned %d (%s) at %s line %d",
-            return_val, glx_error_string(return_val), __FILE__, __LINE__);
-        return 0;
-    }
-    if (value == 0) {
-        crDebug("visual ID 0x%x doesn't support OpenGL at %s line %d",
-            (int) vis->visual->visualid, __FILE__, __LINE__);
-        return 0;
-    }
-
-    for (i = 0; i < sizeof(attrib_map)/sizeof(attrib_map[0]); i++) {
-        return_val = stub.wsInterface.glXGetConfig(dpy, vis, attrib_map[i].gl_attrib, &value);
-        if (return_val) {
-            crDebug("native glXGetConfig(%s) returned %d (%s) at %s line %d",
-                attrib_map[i].attrib_name, return_val, glx_error_string(return_val), __FILE__, __LINE__);
-            return 0;
-        }
-
-        switch(attrib_map[i].test) {
-            case TEST_TRUE:
-                if (value)
-                    visBits |= attrib_map[i].match_vis_bits;
-                break;
-
-            case TEST_GREATER_0:
-                if (value > 0)
-                    visBits |= attrib_map[i].match_vis_bits;
-                break;
-
-            default:
-                crWarning("illegal attribute map test for %s at %s line %d", 
-                    attrib_map[i].attrib_name, __FILE__, __LINE__);
-                return 0;
-        }
-    }
-
-    return visBits;
-}
-
-#endif /* !VBOX_NO_NATIVEGL */
-
-
-
-#ifndef VBOX_NO_NATIVEGL /* Old code */
-DECLEXPORT(XVisualInfo *)
-VBOXGLXTAG(glXChooseVisual)( Display *dpy, int screen, int *attribList )
-{
-    XVisualInfo *vis;
-    int *attrib;
-    int visBits = 0;
-
-    stubInit();
-
-    for (attrib = attribList; *attrib != None; attrib++)
-    {
-        switch (*attrib)
-        {
-            case GLX_USE_GL:
-                /* ignored, this is mandatory */
-                break;
-
-            case GLX_BUFFER_SIZE:
-                /* this is for color-index visuals, which we don't support */
-                attrib++;
-                break;
-
-            case GLX_LEVEL:
-                if (attrib[1] > 0)
-                    visBits |= CR_OVERLAY_BIT;
-                attrib++;
-                break;
-
-            case GLX_RGBA:
-                visBits |= CR_RGB_BIT;
-                break;
-
-            case GLX_DOUBLEBUFFER:
-                visBits |= CR_DOUBLE_BIT;
-                break;
-
-            case GLX_STEREO:
-                visBits |= CR_STEREO_BIT;
-                /*
-                crWarning( "glXChooseVisual: stereo unsupported" );
-                return NULL;
-                */
-                break;
-
-            case GLX_AUX_BUFFERS:
-                {
-                    int aux_buffers = attrib[1];
-                    if (aux_buffers != 0)
-                    {
-                        crWarning("glXChooseVisual: aux_buffers=%d unsupported",
-                                            aux_buffers);
-                        return NULL;
-                    }
-                }
-                attrib++;
-                break;
-
-            case GLX_RED_SIZE:
-            case GLX_GREEN_SIZE:
-            case GLX_BLUE_SIZE:
-                if (attrib[1] > 0)
-                    visBits |= CR_RGB_BIT;
-                attrib++;
-                break;
-
-            case GLX_ALPHA_SIZE:
-                if (attrib[1] > 0)
-                    visBits |= CR_ALPHA_BIT;
-                attrib++;
-                break;
-
-            case GLX_DEPTH_SIZE:
-                if (attrib[1] > 0)
-                    visBits |= CR_DEPTH_BIT;
-                attrib++;
-                break;
-
-            case GLX_STENCIL_SIZE:
-                if (attrib[1] > 0)
-                    visBits |= CR_STENCIL_BIT;
-                attrib++;
-                break;
-
-            case GLX_ACCUM_RED_SIZE:
-            case GLX_ACCUM_GREEN_SIZE:
-            case GLX_ACCUM_BLUE_SIZE:
-            case GLX_ACCUM_ALPHA_SIZE:
-                if (attrib[1] > 0)
-                    visBits |= CR_ACCUM_BIT;
-                attrib++;
-                break;
-
-            case GLX_SAMPLE_BUFFERS_SGIS: /* aka GLX_SAMPLES_ARB */
-                if (attrib[1] > 0)
-                    visBits |= CR_MULTISAMPLE_BIT;
-                attrib++;
-                break;
-            case GLX_SAMPLES_SGIS: /* aka GLX_SAMPLES_ARB */
-                /* just ignore value for now, we'll try to get 4 samples/pixel */
-                if (attrib[1] > 4)
-                    return NULL;
-                visBits |= CR_MULTISAMPLE_BIT;
-                attrib++;
-                break;
-
-#ifdef GLX_VERSION_1_3
-            case GLX_X_VISUAL_TYPE:
-            case GLX_TRANSPARENT_TYPE_EXT:
-            case GLX_TRANSPARENT_INDEX_VALUE_EXT:
-            case GLX_TRANSPARENT_RED_VALUE_EXT:
-            case GLX_TRANSPARENT_GREEN_VALUE_EXT:
-            case GLX_TRANSPARENT_BLUE_VALUE_EXT:
-            case GLX_TRANSPARENT_ALPHA_VALUE_EXT:
-                /* ignore */
-                crWarning("glXChooseVisual: ignoring attribute 0x%x", *attrib);
-                attrib++;
-                break;
-#endif
-
-            default:
-                crWarning( "glXChooseVisual: bad attrib=0x%x", *attrib );
-                return NULL;
-        }
-    }
-
-    if ((visBits & CR_RGB_BIT) == 0 && (visBits & CR_OVERLAY_BIT) == 0)
-    {
-        /* normal layer, color index mode not supported */
-        crWarning( "glXChooseVisual: didn't request RGB visual?" );
-        return NULL;
-    }
-
-    vis = crChooseVisual(&stub.wsInterface, dpy, screen, GL_FALSE, visBits);
-    if (!vis && (visBits & CR_STEREO_BIT)) {
-        /* try non-stereo */
-        visBits &= ~CR_STEREO_BIT;
-        vis = crChooseVisual(&stub.wsInterface, dpy, screen, GL_FALSE, visBits);
-    }
-
-    if (vis) {
-        AddVisualInfo(dpy, screen, vis->visual->visualid, visBits);
-    }
-    return vis;
-}
-#else  /* not 0 */
 DECLEXPORT(XVisualInfo *)
 VBOXGLXTAG(glXChooseVisual)( Display *dpy, int screen, int *attribList )
 {
@@ -497,7 +207,6 @@ err_exit:
     crDebug("glXChooseVisual returning NULL, due to attrib=0x%x, next=0x%x", attrib[0], attrib[1]);
     return NULL;
 }
-#endif
 
 /**
  **  There is a problem with glXCopyContext.
@@ -537,16 +246,8 @@ stubGetDisplayString( Display *dpy, char *nameResult, int maxResult )
 {
     const char *dpyName = DisplayString(dpy);
     char host[1000];
-#ifndef VBOX_NO_NATIVEGL
-    if (dpyName[0] == ':')
-    {
-        crGetHostname(host, 1000);
-    }
-    else
-#endif
-    {
-      host[0] = 0;
-    }
+
+    host[0] = 0;
     if (crStrlen(host) + crStrlen(dpyName) >= maxResult - 1)
     {
         /* return null string */
@@ -590,56 +291,6 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
     */
 
     stubGetDisplayString(dpy, dpyName, MAX_DPY_NAME);
-#ifndef VBOX_NO_NATIVEGL  /* We only care about the host capabilities, not the guest. */
-    if (stub.haveNativeOpenGL) {
-        int foo, bar;
-        if (stub.wsInterface.glXQueryExtension(dpy, &foo, &bar)) {
-            /* If we have real GLX, compute the Chromium visual bitmask now.
-             * otherwise, we'll use the default desiredVisual bitmask.
-             */
-            struct VisualInfo *v = FindVisualInfo(dpy, DefaultScreen(dpy),
-                                                  vis->visual->visualid);
-            if (v) {
-                visBits = v->visBits;
-                /*crDebug("%s visBits=0x%x", __FUNCTION__, visBits);*/
-            }
-            else {
-                /* For some reason, we haven't tested this visual
-                 * before.  This could be because the visual was found 
-                 * through a different display connection to the same
-                 * display (as happens in GeoProbe), or through a
-                 * connection to an external daemon that queries
-                 * visuals.  If we can query it directly, we can still
-                 * find the proper visBits.
-                 */
-                int newVisBits = QueryVisBits(dpy, vis);
-                if (newVisBits > 0) {
-                    AddVisualInfo(dpy, DefaultScreen(dpy), vis->visual->visualid, newVisBits);
-                    crDebug("Application used unexpected but queryable visual id 0x%x", (int) vis->visual->visualid);
-                    visBits = newVisBits;
-                }
-                else {
-                    crWarning("Application used unexpected and unqueryable visual id 0x%x; using default visbits", (int) vis->visual->visualid);
-                }
-            }
-
-            /*crDebug("ComputeVisBits(0x%x) = 0x%x", (int)vis->visual->visualid, visBits);*/
-            if (stub.force_pbuffers) {
-                crDebug("App faker: Forcing use of Pbuffers");
-                visBits |= CR_PBUFFER_BIT;
-            }
-
-            if (!v) {
-                 AddVisualInfo(dpy, DefaultScreen(dpy),
-                               vis->visual->visualid, visBits);
-            }
-
-        }
-    }
-    else {
-        crDebug("No native OpenGL; cannot compute visbits");
-    }
-#endif
 
     context = stubNewContext(dpyName, visBits, UNDECIDED, (unsigned long) share);
     if (!context)
@@ -757,183 +408,6 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyGLXPixmap)( Display *dpy, GLXPixmap pix )
     VBOXGLXTAG(glXDestroyPixmap)(dpy, pix);
 }
 
-#ifndef VBOX_NO_NATIVEGL  /* old code */
-DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int attrib, int *value )
-{
-    struct VisualInfo *v;
-    int visBits;
-
-    if (!vis) {
-        /* SGI OpenGL Performer hits this */
-        crWarning("glXGetConfig called with NULL XVisualInfo");
-        return GLX_BAD_VISUAL;
-    }
-
-    v = FindVisualInfo(dpy, DefaultScreen(dpy), vis->visual->visualid);
-    if (v) {
-        visBits = v->visBits;
-    }
-    else {
-        visBits = 0;
-    }
-
-    stubInit();
-
-    /* try to satisfy this request with the native glXGetConfig() */
-    if (stub.haveNativeOpenGL)
-    {
-        int foo, bar;
-        int return_val;
-
-        if (stub.wsInterface.glXQueryExtension(dpy, &foo, &bar))
-        {
-            return_val = stub.wsInterface.glXGetConfig( dpy, vis, attrib, value );
-            if (return_val)
-            {
-                crDebug("faker native glXGetConfig returned %s",
-                                glx_error_string(return_val));
-            }
-            return return_val;
-        }
-    }
-
-    /*
-     * If the GLX application chooses its visual via a bunch of calls to
-     * glXGetConfig, instead of by calling glXChooseVisual, we need to keep
-     * track of which attributes are queried to help satisfy context creation
-     * later.
-     */
-    switch ( attrib ) {
-
-        case GLX_USE_GL:
-            *value = 1;
-            break;
-
-        case GLX_BUFFER_SIZE:
-            *value = 32;
-            break;
-
-        case GLX_LEVEL:
-            visBits |= CR_OVERLAY_BIT;
-            *value = (visBits & CR_OVERLAY_BIT) ? 1 : 0;
-            break;
-
-        case GLX_RGBA:
-            visBits |= CR_RGB_BIT;
-            *value = 1;
-            break;
-
-        case GLX_DOUBLEBUFFER:
-            *value = 1;
-            break;
-
-        case GLX_STEREO:
-            *value = 1;
-            break;
-
-        case GLX_AUX_BUFFERS:
-            *value = 0;
-            break;
-
-        case GLX_RED_SIZE:
-            *value = 8;
-            break;
-
-        case GLX_GREEN_SIZE:
-            *value = 8;
-            break;
-
-        case GLX_BLUE_SIZE:
-            *value = 8;
-            break;
-
-        case GLX_ALPHA_SIZE:
-            visBits |= CR_ALPHA_BIT;
-            *value = (visBits & CR_ALPHA_BIT) ? 8 : 0;
-            break;
-
-        case GLX_DEPTH_SIZE:
-            visBits |= CR_DEPTH_BIT;
-            *value = 24;
-            break;
-
-        case GLX_STENCIL_SIZE:
-            visBits |= CR_STENCIL_BIT;
-            *value = 8;
-            break;
-
-        case GLX_ACCUM_RED_SIZE:
-            visBits |= CR_ACCUM_BIT;
-            *value = 16;
-            break;
-
-        case GLX_ACCUM_GREEN_SIZE:
-            visBits |= CR_ACCUM_BIT;
-            *value = 16;
-            break;
-
-        case GLX_ACCUM_BLUE_SIZE:
-            visBits |= CR_ACCUM_BIT;
-            *value = 16;
-            break;
-
-        case GLX_ACCUM_ALPHA_SIZE:
-            visBits |= CR_ACCUM_BIT;
-            *value = 16;
-            break;
-
-        case GLX_SAMPLE_BUFFERS_SGIS:
-            visBits |= CR_MULTISAMPLE_BIT;
-            *value = 0;  /* fix someday */
-            break;
-
-        case GLX_SAMPLES_SGIS:
-            visBits |= CR_MULTISAMPLE_BIT;
-            *value = 0;  /* fix someday */
-            break;
-
-        case GLX_VISUAL_CAVEAT_EXT:
-            *value = GLX_NONE_EXT;
-            break;
-#if  defined(SunOS)
-        /*
-          I don't think this is even a valid attribute for glxGetConfig. 
-          No idea why this gets called under SunOS but we simply ignore it
-          -- jw
-        */
-        case GLX_X_VISUAL_TYPE:
-          crWarning ("Ignoring Unsupported GLX Call: glxGetConfig with attrib 0x%x", attrib);
-          break;
-#endif 
-
-        case GLX_TRANSPARENT_TYPE:
-            *value = GLX_NONE_EXT;
-            break;
-        case GLX_TRANSPARENT_INDEX_VALUE:
-            *value = 0;
-            break;
-        case GLX_TRANSPARENT_RED_VALUE:
-            *value = 0;
-            break;
-        case GLX_TRANSPARENT_GREEN_VALUE:
-            *value = 0;
-            break;
-        case GLX_TRANSPARENT_BLUE_VALUE:
-            *value = 0;
-            break;
-        case GLX_TRANSPARENT_ALPHA_VALUE:
-            *value = 0;
-            break;
-        default:
-            crWarning( "Unsupported GLX Call: glXGetConfig with attrib 0x%x", attrib );
-            return GLX_BAD_ATTRIBUTE;
-    }
-
-    AddVisualInfo(dpy, DefaultScreen(dpy), vis->visual->visualid, visBits);
-
-    return 0;
-}
-#else  /* not 0 */
 DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int attrib, int *value )
 {
     (void)dpy;
@@ -1069,7 +543,6 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
 
     return 0;
 }
-#endif
 
 DECLEXPORT(GLXContext) VBOXGLXTAG(glXGetCurrentContext)( void )
 {
@@ -1114,126 +587,12 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXQueryVersion)( Display *dpy, int *major, int *min
     return 1;
 }
 
-#ifdef VBOX_TEST_MEGOO
-static XErrorHandler oldErrorHandler;
-static unsigned char lastXError = Success;
-
-static int 
-errorHandler (Display *dpy, XErrorEvent *e)
-{
-    (void)dpy;
-    lastXError = e->error_code;
-    return 0;
-}
-#endif /* VBOX_TEST_MGEOO */
-
 DECLEXPORT(void) VBOXGLXTAG(glXSwapBuffers)( Display *dpy, GLXDrawable drawable )
 {
     WindowInfo *window = stubGetWindowInfo(dpy, drawable);
     stubSwapBuffers( window, 0 );
-
-#ifdef VBOX_TEST_MEGOO
-    if (!stub.bXExtensionsChecked)
-    {
-        stubCheckXExtensions(window);
-    }
-
-    if (!stub.bHaveXComposite)
-    {
-        return;
-    }
-
-    {
-        Pixmap p;
-        XWindowAttributes attr;
-
-        XLOCK(dpy);
-        XGetWindowAttributes(dpy, window->drawable, &attr);
-        if (attr.override_redirect)
-        {
-            XUNLOCK(dpy);
-            return;
-        }
-
-        crLockMutex(&stub.mutex);
-
-        XSync(dpy, false);
-        oldErrorHandler = XSetErrorHandler(errorHandler);
-        /*@todo this creates new pixmap for window every call*/
-        /*p = XCompositeNameWindowPixmap(dpy, window->drawable);*/
-        XSync(dpy, false);
-        XSetErrorHandler(oldErrorHandler);
-        XUNLOCK(dpy);
-
-        if (lastXError==Success)
-        {
-            char *data, *imgdata;
-            GC gc;
-            XImage *image;
-            XVisualInfo searchvis, *pret;
-            int nvisuals;
-            XGCValues gcValues;
-            int i, rowsize;
-
-            XLOCK(dpy);
-
-            searchvis.visualid = attr.visual->visualid;
-            pret = XGetVisualInfo(dpy, VisualIDMask, &searchvis, &nvisuals);
-            if (nvisuals!=1) crWarning("XGetVisualInfo returned %i visuals for %x", nvisuals, (unsigned int) searchvis.visualid);
-            CRASSERT(pret);
-
-            gc = XCreateGC(dpy, window->drawable, 0, &gcValues);
-            if (!gc) crWarning("Failed to create gc!");                
-            
-            data = crCalloc(window->width * window->height * 4);
-            imgdata = crCalloc(window->width * window->height * 4);
-            CRASSERT(data && imgdata);
-            stub.spu->dispatch_table.ReadPixels(0, 0, window->width, window->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            /*y-invert image*/
-            rowsize = 4*window->width;
-            for (i=0; i<window->height; ++i)
-            {
-                crMemcpy(imgdata+rowsize*i, data+rowsize*(window->height-i-1), rowsize);
-            }
-            crFree(data);
-
-            XSync(dpy, false);
-            image = XCreateImage(dpy, attr.visual, pret->depth, ZPixmap, 0, imgdata, window->width, window->height, 32, 0);
-            XPutImage(dpy, window->drawable, gc, image, 0, 0, 0, 0, window->width, window->height);
-
-            XFree(pret);
-            /*XFreePixmap(dpy, p);*/
-            XFreeGC(dpy, gc);
-            XDestroyImage(image);
-            XUNLOCK(dpy);
-        }
-        lastXError=Success;
-        crUnlockMutex(&stub.mutex);
-    }
-#endif
 }
 
-#ifndef VBOX_NO_NATIVEGL
-DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int listBase )
-{
-    ContextInfo *context = stubGetCurrentContext();
-    if (context->type == CHROMIUM)
-    {
-        Display *dpy = stub.wsInterface.glXGetCurrentDisplay();
-        if (dpy) {
-            stubUseXFont( dpy, font, first, count, listBase );
-        }
-        else {
-            dpy = XOpenDisplay(NULL);
-            if (!dpy)
-                return;
-            stubUseXFont( dpy, font, first, count, listBase );
-            XCloseDisplay(dpy);
-        }
-    } else
-        stub.wsInterface.glXUseXFont( font, first, count, listBase );
-}
-#else /* not 0 */
 DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int listBase )
 {
     ContextInfo *context = stubGetCurrentContext();
@@ -1249,7 +608,6 @@ DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int l
         XCloseDisplay(dpy);
     }
 }
-#endif
 
 DECLEXPORT(void) VBOXGLXTAG(glXWaitGL)( void )
 {

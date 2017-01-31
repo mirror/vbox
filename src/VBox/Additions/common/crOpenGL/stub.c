@@ -499,17 +499,7 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     /* Check for compiz main window */
     if (!pWindow->pVisibleRegions && !cRects)
     {
-#ifdef VBOX_TEST_MEGOO
-        XWindowAttributes attr;
-        XLOCK(dpy);
-        XSync(dpy, false);
-        XGetWindowAttributes(dpy, pWindow->drawable, &attr);
-        XUNLOCK(dpy);
-
-        bNoUpdate = attr.override_redirect;
-#else
         bNoUpdate = true;
-#endif
     }
 
     if (!bNoUpdate
