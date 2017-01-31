@@ -769,11 +769,13 @@ public:
 
 #ifdef VBOX_WITH_LIBOPUS
     /* Audio blocks that have same absolute timecode as video blocks SHOULD be written before the video blocks. */
-    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData)
+    int writeBlockOpus(WebMTrack *a_pTrack, const void *pvData, size_t cbData, uint64_t uTimeStampMs)
     {
         AssertPtrReturn(a_pTrack, VERR_INVALID_POINTER);
         AssertPtrReturn(pvData, VERR_INVALID_POINTER);
         AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+        RT_NOREF(uTimeStampMs);
 
         WebMCluster &Cluster = CurSeg.CurCluster;
 
@@ -787,7 +789,8 @@ public:
         if (Cluster.tcStart == UINT64_MAX)
             Cluster.tcStart = tcPTS;
 
-        LogFunc(("tcPTSRaw=%RU64, tcPTS=%RU64, cbData=%RU64\n", tcPTSRaw, tcPTS, Cluster.cbData));
+        LogFunc(("tcPTSRaw=%RU64, tcPTS=%RU64, cbData=%RU64, uTimeStampMs=%RU64\n",
+                 tcPTSRaw, tcPTS, Cluster.cbData, uTimeStampMs));
 
         Cluster.tcLast = tcPTS;
 
@@ -872,7 +875,7 @@ public:
                 {
                     Assert(cbData == sizeof(WebMWriter::BlockData_Opus));
                     WebMWriter::BlockData_Opus *pData = (WebMWriter::BlockData_Opus *)pvData;
-                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData);
+                    rc = writeBlockOpus(pTrack, pData->pvData, pData->cbData, pData->uTimestampMs);
                 }
                 else
 #endif /* VBOX_WITH_LIBOPUS */
