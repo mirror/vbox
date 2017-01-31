@@ -550,9 +550,6 @@ void UIMiniToolBar::adjustGeometry()
     /* Adjust window mask: */
     setMask(m_pEmbeddedToolbar->geometry());
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
-
-    /* Simulate toolbar auto-hiding: */
-    simulateToolbarAutoHiding();
 }
 
 void UIMiniToolBar::sltHandleToolbarResize()
@@ -649,6 +646,9 @@ void UIMiniToolBar::sltShow()
 # warning "port me"
 
 #endif
+
+    /* Simulate toolbar auto-hiding: */
+    simulateToolbarAutoHiding();
 }
 
 void UIMiniToolBar::sltAdjust()
