@@ -2892,7 +2892,7 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
                              ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
                               |(uPrefMemoryLimit & 0xfff0) << 16 | 0xfffff);
             if (uPrefMemoryBase > uPrefMemoryLimit)
-                pHlp->pfnPrintf(pHlp, " (IGNORED)\n");
+                pHlp->pfnPrintf(pHlp, " (IGNORED)");
             pHlp->pfnPrintf(pHlp, "\n");
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
