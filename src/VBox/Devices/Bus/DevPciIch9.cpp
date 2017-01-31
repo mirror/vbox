@@ -1593,7 +1593,7 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     {
         /* Need again alignment to a 4KB boundary. */
         pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*1024);
-        ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pPciRoot->uPciBiosIo >> 8) & 0xf0) - 1, 1);
+        ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pPciRoot->uPciBiosIo - 1) >> 8) & 0xf0, 1);
     }
     else
     {
@@ -1605,7 +1605,7 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     if (u32MMIOAddressBase != pPciRoot->uPciBiosMmio)
     {
         pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024);
-        ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pPciRoot->uPciBiosMmio >> 16) & UINT32_C(0xfff0)) - 1, 2);
+        ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pPciRoot->uPciBiosMmio - 1) >> 16) & UINT32_C(0xfff0), 2);
     }
     else
     {
@@ -1918,21 +1918,10 @@ static bool ich9pciBiosInitBridgePrefetchable(PDEVPCIROOT pPciRoot, uint8_t uBus
         uBase = u32MMIOAddressBase;
         uLimit = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024) - 1;
     }
-    /*
-     * The bottom 4 bits of both the Prefetchable Memory Base and Prefetchable
-     * Memory Limit are read-only, contain the same value, and encode whether
-     * or not the bridge supports 64-bit addresses. If these four bits have
-     * the value 0h, then the bridge supports only 32-bit addresses. If these
-     * four bits have the value 01h, then the bridge supports 64-bit addresses
-     * and the Prefetchable Base Upper 32 Bits and Prfetchable Limit Upper 32
-     * Bits registers hold the rest of the 64-bit prefetchable base and limit
-     * respectively.
-     */
-    uint32_t uSupports64Bit = fUse64Bit ? 0x1 : 0x0;
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, uBase >> 32, 4);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, ((uint32_t)(uBase >> 16) & UINT32_C(0xfff0)) | uSupports64Bit, 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, (uint32_t)(uBase >> 16) & UINT32_C(0xfff0), 2);
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_LIMIT_UPPER32, uLimit >> 32, 4);
-    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, ((uint32_t)(uLimit >> 16) & UINT32_C(0xfff0)) | uSupports64Bit, 2);
+    ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_LIMIT, (uint32_t)(uLimit >> 16) & UINT32_C(0xfff0), 2);
 
     return false;
 }
@@ -2669,6 +2658,22 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                             devpciR3WriteBarByte(pPciDev, iRegion, uAddress & 0x3, bVal);
                             fUpdateMappings = true;
                             break;
+                        }
+                        else if (   uAddress == VBOX_PCI_IO_BASE
+                                 || uAddress == VBOX_PCI_IO_LIMIT
+                                 || uAddress == VBOX_PCI_MEMORY_BASE
+                                 || uAddress == VBOX_PCI_MEMORY_LIMIT
+                                 || uAddress == VBOX_PCI_PREF_MEMORY_BASE
+                                 || uAddress == VBOX_PCI_PREF_MEMORY_LIMIT)
+                        {
+                            /* All bridge address decoders have the low 4 bits
+                             * as readonly, and all but the prefetchable ones
+                             * have the low 4 bits as 0 (the prefetchable have
+                             * it as 1 to show the 64-bit decoder support. */
+                            bVal &= 0xf0;
+                            if (   uAddress == VBOX_PCI_PREF_MEMORY_BASE
+                                || uAddress == VBOX_PCI_PREF_MEMORY_LIMIT)
+                                bVal |= 0x01;
                         }
                         /* fall thru (bridge config space which isn't a BAR) */
                     default:
