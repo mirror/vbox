@@ -398,6 +398,7 @@ DECLEXPORT(EGLBoolean) eglChooseConfig (EGLDisplay hDisplay, const EGLint *paAtt
                     break;
                 case EGL_RENDERABLE_TYPE:
                     cRenderableType = pAttrib[1];
+                    cAttribs -= 2;  /* We did not add anything to the list. */
                     break;
                 case EGL_SURFACE_TYPE:
                     if (pAttrib[1] & ~(EGL_PBUFFER_BIT | EGL_PIXMAP_BIT | EGL_WINDOW_BIT))
