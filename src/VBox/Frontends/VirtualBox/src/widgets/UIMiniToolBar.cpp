@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,9 +32,9 @@
 # ifdef VBOX_WS_WIN
 #  include <QWindow>
 # endif /* VBOX_WS_WIN */
-# if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+# ifdef VBOX_WS_X11
 #  include <QWindowStateChangeEvent>
-# endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+# endif
 
 /* GUI includes: */
 # include "UIMiniToolBar.h"
@@ -47,6 +47,7 @@
 # endif /* VBOX_WS_X11 */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
+
 
 /** UIToolBar reimplementation
   * providing UIMiniToolBar with mini-toolbar. */
@@ -433,9 +434,9 @@ UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
     , m_pHoverEnterTimer(0)
     , m_pHoverLeaveTimer(0)
     , m_pAnimation(0)
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     , m_fIsParentMinimized(false)
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 {
     /* Prepare: */
     prepare();
@@ -672,17 +673,11 @@ void UIMiniToolBar::sltAdjust()
         }
         case GeometryType_Full:
         {
-# if QT_VERSION >= 0x050000
             /* Map window onto required screen: */
             Assert(iHostScreen < qApp->screens().size());
             windowHandle()->setScreen(qApp->screens().at(iHostScreen));
-# endif /* QT_VERSION >= 0x050000 */
             /* Set appropriate window size: */
             resize(workingArea.size());
-# if QT_VERSION < 0x050000
-            /* Move window onto required screen: */
-            move(workingArea.topLeft());
-# endif /* QT_VERSION < 0x050000 */
             break;
         }
     }
@@ -895,7 +890,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif /* VBOX_WS_X11 */
     }
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     /* If that's window event: */
     if (pWatched == this)
     {
@@ -920,7 +915,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
 
     /* If that's parent window event: */
     if (pWatched == parent())
@@ -978,7 +973,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif
                 break;
             }
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
             case QEvent::WindowStateChange:
             {
                 /* Watch for parent window state changes: */
@@ -1000,7 +995,7 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 }
                 break;
             }
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif /* VBOX_WS_X11 */
             default:
                 break;
         }
@@ -1045,11 +1040,11 @@ QPoint UIMiniToolBar::toolbarPosition() const
 
 bool UIMiniToolBar::isParentMinimized() const
 {
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
+#ifdef VBOX_WS_X11
     return m_fIsParentMinimized;
-#else /* !VBOX_WS_X11 || QT_VERSION < 0x050000 */
+#else
     return parentWidget()->isMinimized();
-#endif /* !VBOX_WS_X11 || QT_VERSION < 0x050000 */
+#endif
 }
 
 #include "UIMiniToolBar.moc"

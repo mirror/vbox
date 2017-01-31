@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,7 @@ enum GeometryType
     GeometryType_Available,
     GeometryType_Full
 };
+
 
 /** QWidget reimplementation
   * providing GUI with slideable mini-toolbar used in full-screen/seamless modes. */
@@ -183,11 +184,12 @@ private:
     /** Holds the animation framework object. */
     UIAnimation *m_pAnimation;
 
-#if defined(VBOX_WS_X11) && QT_VERSION >= 0x050000
-    /** Holds whether the parent is currently minimized.
-      * Used to restore full-screen state when the parent restored again. */
+#ifdef VBOX_WS_X11
+    /** X11: Holds whether the parent is currently minimized.
+      * Used to restore the full-screen/maximized state
+      * when the parent restored again. */
     bool m_fIsParentMinimized;
-#endif /* VBOX_WS_X11 && QT_VERSION >= 0x050000 */
+#endif
 };
 
 #endif /* !___UIMiniToolBar_h___ */
