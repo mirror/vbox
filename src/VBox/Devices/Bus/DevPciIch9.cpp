@@ -2889,13 +2889,20 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
             pHlp->pfnPrintf(pHlp, "\n");
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "behind bridge: ");
-            uint32_t uPrefMemoryBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE);
-            uint32_t uPrefMemoryLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT);
-            pHlp->pfnPrintf(pHlp, "prefetch memory %#018llx..%#018llx",
-                             ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
-                              |(uPrefMemoryBase & 0xfff0) << 16,
-                             ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
-                              |(uPrefMemoryLimit & 0xfff0) << 16 | 0xfffff);
+            uint32_t uPrefMemoryRegBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE);
+            uint32_t uPrefMemoryRegLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT);
+            uint64_t uPrefMemoryBase = (uPrefMemoryRegBase & 0xfff0) << 16;
+            uint64_t uPrefMemoryLimit = (uPrefMemoryRegLimit & 0xfff0) << 16 | 0xfffff;
+            if (   (uPrefMemoryRegBase & 0xf) == 1
+                && (uPrefMemoryRegLimit & 0xf) == 1)
+            {
+                uPrefMemoryBase |= (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32;
+                uPrefMemoryLimit |= (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32;
+                pHlp->pfnPrintf(pHlp, "64-bit ");
+            }
+            else
+                pHlp->pfnPrintf(pHlp, "32-bit ");
+            pHlp->pfnPrintf(pHlp, "prefetch memory %#018llx..%#018llx", uPrefMemoryBase, uPrefMemoryLimit);
             if (uPrefMemoryBase > uPrefMemoryLimit)
                 pHlp->pfnPrintf(pHlp, " (IGNORED)");
             pHlp->pfnPrintf(pHlp, "\n");
