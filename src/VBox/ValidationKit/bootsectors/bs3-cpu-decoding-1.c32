@@ -936,6 +936,160 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
 }
 
 
+/**
+ * Checks various prefix encodings with the MOVBE and CRC32
+ * instructions to try figure out how they are decoded.
+ *
+ * The issue here is that both MOVBE and CRC32 are sensitive to
+ * the operand size prefix, which helps us identify .
+ *
+ */
+static void DecodeMovbeVsCrc32(void)
+{
+    uint8_t BS3_FAR *pbPages;
+
+    /* Check that the instructions are supported. */
+    if (   !(g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        || (ASMCpuId_ECX(1) & (X86_CPUID_FEATURE_ECX_MOVBE | X86_CPUID_FEATURE_ECX_SSE4_2))
+           !=                 (X86_CPUID_FEATURE_ECX_MOVBE | X86_CPUID_FEATURE_ECX_SSE4_2) )
+    {
+        Bs3TestSkipped("not supported");
+        return;
+    }
+
+    /* Setup a guarded page. */
+    pbPages = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    if (pbPages)
+    {
+        unsigned        iTest;
+        BS3REGCTX       Ctx;
+        BS3TRAPFRAME    TrapFrame;
+        BS3REGCTX       ExpectCtxMovbe_m32_eax; /*       0f 38 f1 /r */
+        BS3REGCTX       ExpectCtxMovbe_m16_ax;  /*    66 0f 38 f1 /r */
+        BS3REGCTX       ExpectCtxCrc32_eax_m32; /*    f2 0f 38 f1 /r */
+        BS3REGCTX       ExpectCtxCrc32_eax_m16; /* 66 f2 0f 38 f1 /r */
+        BS3REGCTX       ExpectCtxUd;
+        PBS3REGCTX      apExpectCtxs[5];
+        static const struct
+        {
+            uint32_t    u32Stored;
+            uint8_t     iExpectCtx;
+            uint8_t     bXcpt;
+            uint8_t     cbOpcodes;
+            uint8_t     abOpcodes[18];
+        } s_aTests[] =
+        {
+#define BECRC_EAX           UINT32_C(0x11223344)
+#define BECRC_MEM_ORG       UINT32_C(0x55667788)
+#define BECRC_MEM_BE16      UINT32_C(0x55664433)
+#define BECRC_MEM_BE32      UINT32_C(0x44332211)
+
+            /* base forms. */
+            { BECRC_MEM_BE32, 0, X86_XCPT_PF, 4, {             0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_BE16, 1, X86_XCPT_PF, 5, {       P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  2, X86_XCPT_PF, 5, {       P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 5, {       P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RN) */
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 6, { P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RN) */
+
+            /* CRC32 eax, [word ebx]: Simple variations showing it doesn't matter where the prefixes are placed. */
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RZ, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_SS, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_SS, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_RZ, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_OZ, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_SS, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+
+            /* CRC32 eax, [word ebx]: Throw the F3h prefix into the mix.  The last of F3 and F2 wins on Skylake. */
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RN, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_OZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_RZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_RN, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+        };
+
+        apExpectCtxs[0] = &ExpectCtxMovbe_m32_eax;
+        apExpectCtxs[1] = &ExpectCtxMovbe_m16_ax;
+        apExpectCtxs[2] = &ExpectCtxCrc32_eax_m32;
+        apExpectCtxs[3] = &ExpectCtxCrc32_eax_m16;
+        apExpectCtxs[4] = &ExpectCtxUd;
+
+        Bs3MemZero(&Ctx, sizeof(Ctx));
+        Bs3MemZero(&ExpectCtxMovbe_m32_eax, sizeof(ExpectCtxMovbe_m32_eax));
+        Bs3MemZero(&ExpectCtxMovbe_m16_ax, sizeof(ExpectCtxMovbe_m16_ax));
+        Bs3MemZero(&ExpectCtxCrc32_eax_m32, sizeof(ExpectCtxCrc32_eax_m32));
+        Bs3MemZero(&ExpectCtxCrc32_eax_m16, sizeof(ExpectCtxCrc32_eax_m16));
+        Bs3MemZero(&ExpectCtxUd, sizeof(ExpectCtxUd));
+        Bs3MemZero(&TrapFrame, sizeof(TrapFrame));
+
+        /* Create a test context. */
+        Bs3RegCtxSaveEx(&Ctx, BS3_MODE_CODE_32, 512);
+        Ctx.rax.u = BECRC_EAX;
+        Ctx.rbx.u = (uintptr_t)pbPages;
+
+        /* Create expected result contexts. */
+        Bs3MemCpy(&ExpectCtxMovbe_m32_eax, &Ctx, sizeof(ExpectCtxMovbe_m32_eax));
+        ExpectCtxMovbe_m32_eax.rflags.u32 |= X86_EFL_RF;
+        ExpectCtxMovbe_m32_eax.rip.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+        ExpectCtxMovbe_m32_eax.cr2.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+
+        Bs3MemCpy(&ExpectCtxMovbe_m16_ax, &ExpectCtxMovbe_m32_eax, sizeof(ExpectCtxMovbe_m16_ax));
+
+        Bs3MemCpy(&ExpectCtxCrc32_eax_m32, &Ctx, sizeof(ExpectCtxCrc32_eax_m32));
+        ExpectCtxCrc32_eax_m32.rflags.u32 |= X86_EFL_RF;
+        ExpectCtxCrc32_eax_m32.rip.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+        ExpectCtxCrc32_eax_m32.cr2.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+        ExpectCtxCrc32_eax_m32.rax.u32 = 0x1aa7cd75;
+        Bs3MemCpy(&ExpectCtxCrc32_eax_m16, &ExpectCtxCrc32_eax_m32, sizeof(ExpectCtxCrc32_eax_m16));
+        ExpectCtxCrc32_eax_m16.rax.u32 = 0x51ab0518;
+
+        Bs3MemCpy(&ExpectCtxUd, &Ctx, sizeof(ExpectCtxUd));
+        ExpectCtxUd.rflags.u32 |= X86_EFL_RF;
+
+        /* Loop thru the tests. */
+        g_usBs3TestStep = 0;
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            unsigned const   cbOpcodes = s_aTests[iTest].cbOpcodes;
+            uint8_t BS3_FAR *pbRip     = &pbPages[X86_PAGE_SIZE - cbOpcodes];
+
+            Bs3MemCpy(pbRip, s_aTests[iTest].abOpcodes, cbOpcodes);
+            Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
+            *(uint32_t *)pbPages = BECRC_MEM_ORG;
+
+#if 1
+            Bs3TestPrintf("iTest=%d pbRip=%p cbOpcodes=%d: %.*Rhxs\n",
+                          iTest, pbRip, cbOpcodes, cbOpcodes, s_aTests[iTest].abOpcodes);
+            //Bs3RegCtxPrint(&Ctx);
+#endif
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+            if (s_aTests[iTest].bXcpt == X86_XCPT_UD)
+                ExpectCtxUd.rip = Ctx.rip;
+            if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, apExpectCtxs[s_aTests[iTest].iExpectCtx],
+                                         0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, "mode", iTest)
+                || TrapFrame.bXcpt      != s_aTests[iTest].bXcpt
+                || *(uint32_t *)pbPages != s_aTests[iTest].u32Stored)
+            {
+                Bs3TestFailedF("iTest=%d cbOpcodes=%d: %.*Rhxs\n", iTest, cbOpcodes, cbOpcodes, s_aTests[iTest].abOpcodes);
+                if (TrapFrame.bXcpt != s_aTests[iTest].bXcpt)
+                    Bs3TestFailedF("Expected bXcpt=%#x, got %#x\n", s_aTests[iTest].bXcpt, TrapFrame.bXcpt);
+                if (*(uint32_t *)pbPages != s_aTests[iTest].u32Stored)
+                    Bs3TestFailedF("Expected %#RX32 stored at %p, found: %RX32\n",
+                                   s_aTests[iTest].u32Stored, pbPages, *(uint32_t *)pbPages);
+            }
+        }
+
+        Bs3MemGuardedTestPageFree(pbPages);
+    }
+    else
+        Bs3TestFailed("Failed to allocate two pages!\n");
+}
 
 
 BS3_DECL(void) Main_pp32()
@@ -943,7 +1097,8 @@ BS3_DECL(void) Main_pp32()
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
 
-    //DecodeEdgeTest();
+    Bs3TestSub("MOVBE vs CRC32");
+    DecodeMovbeVsCrc32();
 
 #if 1
     Bs3TestSub("2 byte undefined opcodes 0f");
@@ -952,6 +1107,11 @@ BS3_DECL(void) Main_pp32()
 #if 1
     Bs3TestSub("3 byte undefined opcodes 0f 38");
     DecodeUdEdgeTest(g_aUdTest3Byte_0f_38, RT_ELEMENTS(g_aUdTest3Byte_0f_38));
+#endif
+
+#if 1
+    Bs3TestSub("misc");
+    DecodeEdgeTest();
 #endif
 
     Bs3TestTerm();
