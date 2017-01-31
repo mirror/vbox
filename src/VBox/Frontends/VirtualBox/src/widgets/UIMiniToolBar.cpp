@@ -666,18 +666,33 @@ void UIMiniToolBar::sltAdjust()
     {
         case GeometryType_Available:
         {
-            /* Set appropriate window geometry: */
-            resize(workingArea.size());
-            move(workingArea.topLeft());
+            /* Set appropriate window size: */
+            const QSize newSize = workingArea.size();
+            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
+                     newSize.width(), newSize.height()));
+            resize(newSize);
+
+            /* Move window onto required screen: */
+            const QPoint newPosition = workingArea.topLeft();
+            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
+                     newPosition.x(), newPosition.y()));
+            move(newPosition);
+
             break;
         }
         case GeometryType_Full:
         {
             /* Map window onto required screen: */
-            Assert(iHostScreen < qApp->screens().size());
+            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Map window to screen: %d of: %d\n",
+                     iHostScreen, qApp->screens().size()));
             windowHandle()->setScreen(qApp->screens().at(iHostScreen));
+
             /* Set appropriate window size: */
-            resize(workingArea.size());
+            const QSize newSize = workingArea.size();
+            LogRel2(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
+                     newSize.width(), newSize.height()));
+            resize(newSize);
+
             break;
         }
     }
@@ -693,9 +708,17 @@ void UIMiniToolBar::sltAdjust()
         VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
     }
 
-    /* Set appropriate window geometry: */
-    resize(workingArea.size());
-    move(workingArea.topLeft());
+    /* Set appropriate window size: */
+    const QSize newSize = workingArea.size();
+    LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
+            newSize.width(), newSize.height()));
+    resize(newSize);
+
+    /* Move window onto required screen: */
+    const QPoint newPosition = workingArea.topLeft();
+    LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
+            newPosition.x(), newPosition.y()));
+    move(newPosition);
 
     /* Re-apply the full-screen state lost on above move(): */
     setWindowState(Qt::WindowFullScreen);
