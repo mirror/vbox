@@ -118,6 +118,8 @@ private slots:
     void sltShow();
     /** Adjusts window according to parent. */
     void sltAdjust();
+    /** Adjusts window transience according to parent. */
+    void sltAdjustTransience();
 
 private:
 
