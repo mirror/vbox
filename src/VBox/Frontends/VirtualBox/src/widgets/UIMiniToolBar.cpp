@@ -404,7 +404,7 @@ UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              GeometryType geometryType,
                              Qt::Alignment alignment,
                              bool fAutoHide /* = true */)
-    : QWidget(pParent, Qt::Tool | Qt::FramelessWindowHint)
+    : QWidget(0, Qt::Window | Qt::FramelessWindowHint)
     /* Variables: General stuff: */
     , m_pParent(pParent)
     , m_geometryType(geometryType)
@@ -600,8 +600,18 @@ void UIMiniToolBar::sltShow()
     /* Show window in necessary mode: */
     switch (m_geometryType)
     {
-        case GeometryType_Available: show(); break;
-        case GeometryType_Full:      showFullScreen(); break;
+        case GeometryType_Available:
+        {
+            /* Show normal: */
+            show();
+            break;
+        }
+        case GeometryType_Full:
+        {
+            /* Show full-screen: */
+            showFullScreen();
+            break;
+        }
     }
 
 #elif defined(VBOX_WS_X11)
@@ -609,11 +619,24 @@ void UIMiniToolBar::sltShow()
     /* Show window in necessary mode: */
     switch (m_geometryType)
     {
-        case GeometryType_Available: show(); break;
-        case GeometryType_Full:      showFullScreen(); break;
+        case GeometryType_Available:
+        {
+            /* Adjust window: */
+            sltAdjust();
+            /* Show maximized: */
+            if (!isMaximized())
+                showMaximized();
+            break;
+        }
+        case GeometryType_Full:
+        {
+            /* Show full-screen: */
+            showFullScreen();
+            /* Adjust window: */
+            sltAdjust();
+            break;
+        }
     }
-    /* Adjust window: */
-    sltAdjust();
 
 #else
 
@@ -684,29 +707,67 @@ void UIMiniToolBar::sltAdjust()
 
 #elif defined(VBOX_WS_X11)
 
-    /* Determine whether we should use the native full-screen mode: */
-    const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
-                                      !gEDataManager->legacyFullscreenModeRequested();
-    if (fUseNativeFullScreen)
+    switch (m_geometryType)
     {
-        /* Tell recent window managers which host-screen this window should be mapped to: */
-        VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
+        case GeometryType_Available:
+        {
+            /* Make sure we are located on corresponding host-screen: */
+            if (   gpDesktop->screenCount() > 1
+                && (x() != workingArea.x() || y() != workingArea.y()))
+            {
+                // WORKAROUND:
+                // With Qt5 on KDE we can't just move the window onto desired host-screen if
+                // window is maximized. So we have to show it normal first of all:
+                if (isVisible() && isMaximized())
+                    showNormal();
+
+                // WORKAROUND:
+                // With Qt5 on X11 we can't just move the window onto desired host-screen if
+                // window size is more than the available geometry (working area) of that
+                // host-screen. So we are resizing it to a smaller size first of all:
+                const QSize newSize = workingArea.size() * .9;
+                LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to smaller size: %dx%d\n",
+                        newSize.width(), newSize.height()));
+                resize(newSize);
+
+                /* Move window onto required screen: */
+                const QPoint newPosition = workingArea.topLeft();
+                LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
+                        newPosition.x(), newPosition.y()));
+                move(newPosition);
+            }
+
+            break;
+        }
+        case GeometryType_Full:
+        {
+            /* Determine whether we should use the native full-screen mode: */
+            const bool fUseNativeFullScreen = VBoxGlobal::supportsFullScreenMonitorsProtocolX11() &&
+                                              !gEDataManager->legacyFullscreenModeRequested();
+            if (fUseNativeFullScreen)
+            {
+                /* Tell recent window managers which host-screen this window should be mapped to: */
+                VBoxGlobal::setFullScreenMonitorX11(this, iHostScreen);
+            }
+
+            /* Set appropriate window size: */
+            const QSize newSize = workingArea.size();
+            LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
+                    newSize.width(), newSize.height()));
+            resize(newSize);
+
+            /* Move window onto required screen: */
+            const QPoint newPosition = workingArea.topLeft();
+            LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
+                    newPosition.x(), newPosition.y()));
+            move(newPosition);
+
+            /* Re-apply the full-screen state lost on above move(): */
+            setWindowState(Qt::WindowFullScreen);
+
+            break;
+        }
     }
-
-    /* Set appropriate window size: */
-    const QSize newSize = workingArea.size();
-    LogRel(("GUI: UIMiniToolBar::sltAdjust: Resize window to: %dx%d\n",
-            newSize.width(), newSize.height()));
-    resize(newSize);
-
-    /* Move window onto required screen: */
-    const QPoint newPosition = workingArea.topLeft();
-    LogRel(("GUI: UIMiniToolBar::sltAdjust: Move window to: %dx%d\n",
-            newPosition.x(), newPosition.y()));
-    move(newPosition);
-
-    /* Re-apply the full-screen state lost on above move(): */
-    setWindowState(Qt::WindowFullScreen);
 
 #else
 
@@ -966,19 +1027,9 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                     || isMinimized())
                     break;
 
-#if   defined(VBOX_WS_MAC)
-                // Nothing
-#elif defined(VBOX_WS_WIN)
-                /* Asynchronously call for sltShow() to adjust and expose both: */
+                /* Asynchronously call for sltShow(): */
                 LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move/resize event\n"));
                 QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
-#elif defined(VBOX_WS_X11)
-                /* Asynchronously call for just sltAdjust() because it's enough: */
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent move/resize event\n"));
-                QMetaObject::invokeMethod(this, "sltAdjust", Qt::QueuedConnection);
-#else
-# warning "port me"
-#endif
                 break;
             }
 #ifdef VBOX_WS_X11
