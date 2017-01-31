@@ -73,7 +73,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPU pVCpu, PGSTPTWALK pWalk
  * @param   GCPtr       The guest virtual address to walk by.
  * @param   pWalk       Where to return the walk result. This is always set.
  */
-static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
+DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
 {
     int rc;
 
@@ -92,152 +92,169 @@ static int PGM_GST_NAME(Walk)(PVMCPU pVCpu, RTGCPTR GCPtr, PGSTPTWALK pWalk)
         return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 8);
 # endif
 
+    uint32_t register fEffective = X86_PTE_RW | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | 1;
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
         /*
          * The PMLE4.
          */
         rc = pgmGstGetLongModePML4PtrEx(pVCpu, &pWalk->pPml4);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
 
-        PX86PML4  register  pPml4 = pWalk->pPml4;
-        X86PML4E  register  Pml4e;
         PX86PML4E register  pPml4e;
-
-        pWalk->pPml4e  = pPml4e  = &pPml4->a[(GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK];
+        pWalk->pPml4e  = pPml4e  = &pWalk->pPml4->a[(GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK];
+        X86PML4E  register  Pml4e;
         pWalk->Pml4e.u = Pml4e.u = pPml4e->u;
-        if (!Pml4e.n.u1Present)
-            return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 4);
-        if (RT_UNLIKELY(!GST_IS_PML4E_VALID(pVCpu, Pml4e)))
-            return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
+
+        if (Pml4e.n.u1Present) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 4);
+
+        if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
+        else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 4);
+
+        pWalk->Core.fEffective = fEffective = ((uint32_t)Pml4e.u & (X86_PML4E_RW  | X86_PML4E_US | X86_PML4E_PWT | X86_PML4E_PCD | X86_PML4E_A))
+                                            | ((uint32_t)(Pml4e.u >> 63) ^ 1) /*NX */;
 
         /*
          * The PDPE.
          */
         rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pml4e.u & X86_PML4E_PG_MASK, &pWalk->pPdpt);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
         rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pWalk->pPdpt);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
 # endif
     }
     {
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-        PX86PDPT register   pPdpt = pWalk->pPdpt;
         PX86PDPE register   pPdpe;
+        pWalk->pPdpe  = pPdpe  = &pWalk->pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
         X86PDPE  register   Pdpe;
-
-        pWalk->pPdpe  = pPdpe  = &pPdpt->a[(GCPtr >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
         pWalk->Pdpe.u = Pdpe.u = pPdpe->u;
-        if (!Pdpe.n.u1Present)
-            return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 3);
-        if (RT_UNLIKELY(!GST_IS_PDPE_VALID(pVCpu, Pdpe)))
-            return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 3);
+
+        if (Pdpe.n.u1Present) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 3);
+
+        if (RT_LIKELY(GST_IS_PDPE_VALID(pVCpu, Pdpe))) { /* likely */ }
+        else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 3);
+
+# if PGM_GST_TYPE == PGM_TYPE_AMD64
+        pWalk->Core.fEffective = fEffective &= ((uint32_t)Pdpe.u & (X86_PDPE_RW  | X86_PDPE_US | X86_PDPE_PWT | X86_PDPE_PCD | X86_PDPE_A))
+                                             | ((uint32_t)(Pdpe.u >> 63) ^ 1) /*NX */;
+# else
+        pWalk->Core.fEffective = fEffective  = X86_PDPE_RW  | X86_PDPE_US | X86_PDPE_A
+                                             | ((uint32_t)Pdpe.u & (X86_PDPE_PWT | X86_PDPE_PCD))
+                                             | ((uint32_t)(Pdpe.u >> 63) ^ 1) /*NX */;
+# endif
 
         /*
          * The PDE.
          */
         rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pdpe.u & X86_PDPE_PG_MASK, &pWalk->pPd);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 2, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 2, rc);
 # elif PGM_GST_TYPE == PGM_TYPE_32BIT
         rc = pgmGstGet32bitPDPtrEx(pVCpu, &pWalk->pPd);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 8, rc);
 # endif
     }
     {
-        PGSTPD  register    pPd = pWalk->pPd;
         PGSTPDE register    pPde;
+        pWalk->pPde  = pPde  = &pWalk->pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
         GSTPDE              Pde;
-
-        pWalk->pPde  = pPde  = &pPd->a[(GCPtr >> GST_PD_SHIFT) & GST_PD_MASK];
         pWalk->Pde.u = Pde.u = pPde->u;
-        if (!Pde.n.u1Present)
-            return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 2);
+        if (Pde.n.u1Present) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 2);
         if (Pde.n.u1Size && GST_IS_PSE_ACTIVE(pVCpu))
         {
-            if (RT_UNLIKELY(!GST_IS_BIG_PDE_VALID(pVCpu, Pde)))
-                return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
+            if (RT_LIKELY(GST_IS_BIG_PDE_VALID(pVCpu, Pde))) { /* likely */ }
+            else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
 
-            pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
-                                     | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
-            PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
-            uint8_t fEffectiveXX     = (uint8_t)pWalk->Pde.u
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                     & (uint8_t)pWalk->Pdpe.u
-                                     & (uint8_t)pWalk->Pml4e.u
-#  endif
-                                     ;
-            pWalk->Core.fEffectiveRW = !!(fEffectiveXX & X86_PTE_RW);
-            pWalk->Core.fEffectiveUS = !!(fEffectiveXX & X86_PTE_US);
+            /*
+             * We're done.
+             */
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+            fEffective &= Pde.u & (X86_PDE4M_RW  | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A);
+# else
+            fEffective &= ((uint32_t)Pde.u & (X86_PDE4M_RW  | X86_PDE4M_US | X86_PDE4M_PWT | X86_PDE4M_PCD | X86_PDE4M_A))
+                        | ((uint32_t)(Pde.u >> 63) ^ 1) /*NX */;
+# endif
+            fEffective |= (uint32_t)Pde.u & (X86_PDE4M_D | X86_PDE4M_G);
+            fEffective |= (uint32_t)(Pde.u & X86_PDE4M_PAT) >> X86_PDE4M_PAT_SHIFT;
+            pWalk->Core.fEffective = fEffective;
+
+            pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
+            pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-            pWalk->Core.fEffectiveNX = (   pWalk->Pde.n.u1NoExecute
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                        || pWalk->Pdpe.lm.u1NoExecute
-                                        || pWalk->Pml4e.n.u1NoExecute
-#  endif
-                                       ) && GST_IS_NX_ACTIVE(pVCpu);
+            pWalk->Core.fEffectiveNX = !(fEffective & 1) && GST_IS_NX_ACTIVE(pVCpu);
 # else
             pWalk->Core.fEffectiveNX = false;
 # endif
             pWalk->Core.fBigPage     = true;
             pWalk->Core.fSucceeded   = true;
+
+            pWalk->Core.GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
+                                     | (GCPtr & GST_BIG_PAGE_OFFSET_MASK);
+            PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->Core.GCPhys);
             return VINF_SUCCESS;
         }
 
         if (RT_UNLIKELY(!GST_IS_PDE_VALID(pVCpu, Pde)))
             return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 2);
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+        pWalk->Core.fEffective = fEffective &= Pde.u & (X86_PDE_RW  | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A);
+# else
+        pWalk->Core.fEffective = fEffective &= ((uint32_t)Pde.u & (X86_PDE_RW  | X86_PDE_US | X86_PDE_PWT | X86_PDE_PCD | X86_PDE_A))
+                                             | ((uint32_t)(Pde.u >> 63) ^ 1) /*NX */;
+# endif
 
         /*
          * The PTE.
          */
         rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GST_GET_PDE_GCPHYS(Pde), &pWalk->pPt);
-        if (RT_FAILURE(rc))
-            return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }
     {
-        PGSTPT  register    pPt = pWalk->pPt;
         PGSTPTE register    pPte;
+        pWalk->pPte  = pPte  = &pWalk->pPt->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
         GSTPTE  register    Pte;
-
-        pWalk->pPte  = pPte  = &pPt->a[(GCPtr >> GST_PT_SHIFT) & GST_PT_MASK];
         pWalk->Pte.u = Pte.u = pPte->u;
-        if (!Pte.n.u1Present)
-            return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 1);
-        if (RT_UNLIKELY(!GST_IS_PTE_VALID(pVCpu, Pte)))
-            return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 1);
+
+        if (Pte.n.u1Present) { /* probable */ }
+        else return PGM_GST_NAME(WalkReturnNotPresent)(pVCpu, pWalk, 1);
+
+        if (RT_LIKELY(GST_IS_PTE_VALID(pVCpu, Pte))) { /* likely */ }
+        else return PGM_GST_NAME(WalkReturnRsvdError)(pVCpu, pWalk, 1);
 
         /*
          * We're done.
          */
-        pWalk->Core.GCPhys       = GST_GET_PDE_GCPHYS(Pte)
-                                 | (GCPtr & PAGE_OFFSET_MASK);
-        uint8_t fEffectiveXX     = (uint8_t)pWalk->Pte.u
-                                 & (uint8_t)pWalk->Pde.u
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                 & (uint8_t)pWalk->Pdpe.u
-                                 & (uint8_t)pWalk->Pml4e.u
-#  endif
-                                 ;
-        pWalk->Core.fEffectiveRW = !!(fEffectiveXX & X86_PTE_RW);
-        pWalk->Core.fEffectiveUS = !!(fEffectiveXX & X86_PTE_US);
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+        fEffective &= Pte.u & (X86_PTE_RW  | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A);
+# else
+        fEffective &= ((uint32_t)Pte.u & (X86_PTE_RW  | X86_PTE_US | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A))
+                    | ((uint32_t)(Pte.u >> 63) ^ 1) /*NX */;
+# endif
+        fEffective |= (uint32_t)Pte.u & (X86_PTE_D | X86_PTE_PAT | X86_PTE_G);
+        pWalk->Core.fEffective = fEffective;
+
+        pWalk->Core.fEffectiveRW = !!(fEffective & X86_PTE_RW);
+        pWalk->Core.fEffectiveUS = !!(fEffective & X86_PTE_US);
 # if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-        pWalk->Core.fEffectiveNX = (   pWalk->Pte.n.u1NoExecute
-                                    || pWalk->Pde.n.u1NoExecute
-#  if PGM_GST_TYPE == PGM_TYPE_AMD64
-                                    || pWalk->Pdpe.lm.u1NoExecute
-                                    || pWalk->Pml4e.n.u1NoExecute
-#  endif
-                                   ) && GST_IS_NX_ACTIVE(pVCpu);
+        pWalk->Core.fEffectiveNX = !(fEffective & 1) && GST_IS_NX_ACTIVE(pVCpu);
 # else
         pWalk->Core.fEffectiveNX = false;
 # endif
         pWalk->Core.fSucceeded   = true;
+
+        pWalk->Core.GCPhys       = GST_GET_PDE_GCPHYS(Pte)
+                                 | (GCPtr & PAGE_OFFSET_MASK);
         return VINF_SUCCESS;
     }
 }

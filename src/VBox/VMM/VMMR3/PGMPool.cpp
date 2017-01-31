@@ -282,8 +282,8 @@ int pgmR3PoolInit(PVM pVM)
     pPool->hAccessHandlerType = NIL_PGMPHYSHANDLERTYPE;
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                           pgmPoolAccessHandler,
-                                          NULL, "pgmPoolAccessHandler", "pgmPoolAccessPfHandler",
-                                          NULL, "pgmPoolAccessHandler", "pgmPoolAccessPfHandler",
+                                          NULL, "pgmPoolAccessHandler", "pgmRZPoolAccessPfHandler",
+                                          NULL, "pgmPoolAccessHandler", "pgmRZPoolAccessPfHandler",
                                           "Guest Paging Access Handler",
                                           &pPool->hAccessHandlerType);
     AssertLogRelRCReturn(rc, rc);
@@ -346,35 +346,87 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatTrackDerefGCPhys,         STAMTYPE_PROFILE,   "/PGM/Pool/Track/DrefGCPhys",           STAMUNIT_TICKS_PER_CALL, "Profiling deref activity related tracking GC physical pages.");
     STAM_REG(pVM, &pPool->StatTrackLinearRamSearches,   STAMTYPE_COUNTER,   "/PGM/Pool/Track/LinearRamSearches",    STAMUNIT_OCCURENCES, "The number of times we had to do linear ram searches.");
     STAM_REG(pVM, &pPool->StamTrackPhysExtAllocFailures,STAMTYPE_COUNTER,   "/PGM/Pool/Track/PhysExtAllocFailures", STAMUNIT_OCCURENCES, "The number of failing pgmPoolTrackPhysExtAlloc calls.");
-    STAM_REG(pVM, &pPool->StatMonitorRZ,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ",                 STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorRZEmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFlushReinit,     STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/FlushReinit",     STAMUNIT_OCCURENCES,     "Times we've detected a page table reinit.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFlushModOverflow,STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/FlushOverflow",   STAMUNIT_OCCURENCES,     "Counting flushes for pages that are modified too often.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
-    STAM_REG(pVM, &pPool->StatMonitorRZHandled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 access we've handled (except REP STOSD).");
-    STAM_REG(pVM, &pPool->StatMonitorRZIntrFailPatch1,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/IntrFailPatch1",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorRZIntrFailPatch2,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/IntrFailPatch2",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction during flushing.");
-    STAM_REG(pVM, &pPool->StatMonitorRZRepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
-    STAM_REG(pVM, &pPool->StatMonitorRZRepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/RepStosd",        STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFaultPT,         STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fault/PT",        STAMUNIT_OCCURENCES,     "Nr of handled PT faults.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFaultPD,         STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fault/PD",        STAMUNIT_OCCURENCES,     "Nr of handled PD faults.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFaultPDPT,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fault/PDPT",      STAMUNIT_OCCURENCES,     "Nr of handled PDPT faults.");
-    STAM_REG(pVM, &pPool->StatMonitorRZFaultPML4,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fault/PML4",      STAMUNIT_OCCURENCES,     "Nr of handled PML4 faults.");
-    STAM_REG(pVM, &pPool->StatMonitorR3,                STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3",                 STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorR3EmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
-    STAM_REG(pVM, &pPool->StatMonitorR3FlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the R3 access handler.");
-    STAM_REG(pVM, &pPool->StatMonitorR3FlushReinit,     STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/FlushReinit",     STAMUNIT_OCCURENCES,     "Times we've detected a page table reinit.");
-    STAM_REG(pVM, &pPool->StatMonitorR3FlushModOverflow,STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/FlushOverflow",   STAMUNIT_OCCURENCES,     "Counting flushes for pages that are modified too often.");
-    STAM_REG(pVM, &pPool->StatMonitorR3Fork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
-    STAM_REG(pVM, &pPool->StatMonitorR3Handled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access we've handled (except REP STOSD).");
-    STAM_REG(pVM, &pPool->StatMonitorR3RepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
-    STAM_REG(pVM, &pPool->StatMonitorR3RepStosd,        STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/RepStosd",        STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
+
+    STAM_REG(pVM, &pPool->StatMonitorPfRZ,                STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/#PF",                 STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 #PF access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZEmulateInstr,    STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZFlushPage,       STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/#PF/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZFlushReinit,     STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/FlushReinit",     STAMUNIT_OCCURENCES,     "Times we've detected a page table reinit.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZFlushModOverflow,STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/FlushOverflow",   STAMUNIT_OCCURENCES,     "Counting flushes for pages that are modified too often.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZFork,            STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZHandled,         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/#PF/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 #PF access we've handled (except REP STOSD).");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZIntrFailPatch1,  STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/IntrFailPatch1",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZIntrFailPatch2,  STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/IntrFailPatch2",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction during flushing.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZRepPrefix,       STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/#PF/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");
+    STAM_REG(pVM, &pPool->StatMonitorPfRZRepStosd,        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/#PF/RepStosd",        STAMUNIT_TICKS_PER_CALL, "Profiling the REP STOSD cases we've handled.");
+
+    STAM_REG(pVM, &pPool->StatMonitorRZ,                  STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM",                 STAMUNIT_TICKS_PER_CALL, "Profiling the regular access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFlushPage,         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the regular access handler.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[0],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size01",          STAMUNIT_OCCURENCES,     "Number of 1 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[1],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size02",          STAMUNIT_OCCURENCES,     "Number of 2 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[2],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size03",          STAMUNIT_OCCURENCES,     "Number of 3 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[3],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size04",          STAMUNIT_OCCURENCES,     "Number of 4 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[4],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size05",          STAMUNIT_OCCURENCES,     "Number of 5 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[5],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size06",          STAMUNIT_OCCURENCES,     "Number of 6 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[6],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size07",          STAMUNIT_OCCURENCES,     "Number of 7 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[7],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size08",          STAMUNIT_OCCURENCES,     "Number of 8 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[8],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size09",          STAMUNIT_OCCURENCES,     "Number of 9 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[9],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0a",          STAMUNIT_OCCURENCES,     "Number of 10 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[10],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0b",          STAMUNIT_OCCURENCES,     "Number of 11 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[11],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0c",          STAMUNIT_OCCURENCES,     "Number of 12 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[12],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0d",          STAMUNIT_OCCURENCES,     "Number of 13 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[13],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0e",          STAMUNIT_OCCURENCES,     "Number of 14 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[14],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size0f",          STAMUNIT_OCCURENCES,     "Number of 15 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[15],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size10",          STAMUNIT_OCCURENCES,     "Number of 16 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size11-2f",       STAMUNIT_OCCURENCES,     "Number of 17-31 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[17],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size20-3f",       STAMUNIT_OCCURENCES,     "Number of 32-63 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZSizes[18],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Size40+",         STAMUNIT_OCCURENCES,     "Number of 64+ byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[0],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned1",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 1.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[1],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned2",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 2.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[2],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned3",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 3.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[3],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned4",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 4.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[4],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned5",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 5.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[5],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned6",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 6.");
+    STAM_REG(pVM, &pPool->aStatMonitorRZMisaligned[6],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/RZ/IEM/Misaligned7",     STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 7.");
+
+    STAM_REG(pVM, &pPool->StatMonitorRZFaultPT,           STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/Fault/PT",            STAMUNIT_OCCURENCES,     "Nr of handled PT faults.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFaultPD,           STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/Fault/PD",            STAMUNIT_OCCURENCES,     "Nr of handled PD faults.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFaultPDPT,         STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/Fault/PDPT",          STAMUNIT_OCCURENCES,     "Nr of handled PDPT faults.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFaultPML4,         STAMTYPE_COUNTER, "/PGM/Pool/Monitor/RZ/Fault/PML4",          STAMUNIT_OCCURENCES,     "Nr of handled PML4 faults.");
+
+    STAM_REG(pVM, &pPool->StatMonitorR3,                  STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3",                     STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access handler.");
+    STAM_REG(pVM, &pPool->StatMonitorR3FlushPage,         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/FlushPage",           STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the R3 access handler.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[0],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size01",              STAMUNIT_OCCURENCES,     "Number of 1 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[1],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size02",              STAMUNIT_OCCURENCES,     "Number of 2 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[2],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size03",              STAMUNIT_OCCURENCES,     "Number of 3 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[3],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size04",              STAMUNIT_OCCURENCES,     "Number of 4 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[4],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size05",              STAMUNIT_OCCURENCES,     "Number of 5 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[5],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size06",              STAMUNIT_OCCURENCES,     "Number of 6 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[6],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size07",              STAMUNIT_OCCURENCES,     "Number of 7 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[7],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size08",              STAMUNIT_OCCURENCES,     "Number of 8 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[8],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size09",              STAMUNIT_OCCURENCES,     "Number of 9 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[9],         STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0a",              STAMUNIT_OCCURENCES,     "Number of 10 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[10],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0b",              STAMUNIT_OCCURENCES,     "Number of 11 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[11],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0c",              STAMUNIT_OCCURENCES,     "Number of 12 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[12],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0d",              STAMUNIT_OCCURENCES,     "Number of 13 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[13],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0e",              STAMUNIT_OCCURENCES,     "Number of 14 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[14],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size0f",              STAMUNIT_OCCURENCES,     "Number of 15 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[15],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size10",              STAMUNIT_OCCURENCES,     "Number of 16 byte accesses (R3).");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[16],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size11-2f",           STAMUNIT_OCCURENCES,     "Number of 17-31 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[17],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size20-3f",           STAMUNIT_OCCURENCES,     "Number of 32-63 byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Sizes[18],        STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Size40+",             STAMUNIT_OCCURENCES,     "Number of 64+ byte accesses.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[0],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned1",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 1 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[1],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned2",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 2 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[2],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned3",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 3 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[3],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned4",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 4 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[4],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned5",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 5 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[5],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned6",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 6 in R3.");
+    STAM_REG(pVM, &pPool->aStatMonitorR3Misaligned[6],    STAMTYPE_PROFILE, "/PGM/Pool/Monitor/R3/Misaligned7",         STAMUNIT_OCCURENCES,     "Number of misaligned access with offset 7 in R3.");
+
     STAM_REG(pVM, &pPool->StatMonitorR3FaultPT,         STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fault/PT",        STAMUNIT_OCCURENCES,     "Nr of handled PT faults.");
     STAM_REG(pVM, &pPool->StatMonitorR3FaultPD,         STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fault/PD",        STAMUNIT_OCCURENCES,     "Nr of handled PD faults.");
     STAM_REG(pVM, &pPool->StatMonitorR3FaultPDPT,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fault/PDPT",      STAMUNIT_OCCURENCES,     "Nr of handled PDPT faults.");
     STAM_REG(pVM, &pPool->StatMonitorR3FaultPML4,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fault/PML4",      STAMUNIT_OCCURENCES,     "Nr of handled PML4 faults.");
-    STAM_REG(pVM, &pPool->StatMonitorR3Async,           STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Async",           STAMUNIT_OCCURENCES,     "Times we're called in an async thread and need to flush.");
+
     STAM_REG(pVM, &pPool->cModifiedPages,               STAMTYPE_U16,       "/PGM/Pool/Monitor/cModifiedPages",     STAMUNIT_PAGES,          "The current cModifiedPages value.");
     STAM_REG(pVM, &pPool->cModifiedPagesHigh,           STAMTYPE_U16_RESET, "/PGM/Pool/Monitor/cModifiedPagesHigh", STAMUNIT_PAGES,          "The high watermark for cModifiedPages.");
     STAM_REG(pVM, &pPool->StatResetDirtyPages,          STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/Dirty/Resets",       STAMUNIT_OCCURENCES,     "Times we've called pgmPoolResetDirtyPages (and there were dirty page).");
