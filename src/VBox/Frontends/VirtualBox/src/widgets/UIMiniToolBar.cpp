@@ -29,9 +29,7 @@
 # include <QToolButton>
 # include <QStateMachine>
 # include <QPainter>
-# ifdef VBOX_WS_WIN
-#  include <QWindow>
-# endif /* VBOX_WS_WIN */
+# include <QWindow>
 # ifdef VBOX_WS_X11
 #  include <QWindowStateChangeEvent>
 # endif
@@ -589,6 +587,9 @@ void UIMiniToolBar::sltShow()
 {
     LogRel2(("GUI: UIMiniToolBar::sltShow\n"));
 
+    /* Update transience: */
+    sltAdjustTransience();
+
 #if defined(VBOX_WS_MAC)
 
     // Nothing
@@ -774,6 +775,18 @@ void UIMiniToolBar::sltAdjust()
 # warning "port me"
 
 #endif
+}
+
+void UIMiniToolBar::sltAdjustTransience()
+{
+    // WORKAROUND:
+    // Make sure win id is generated,
+    // else Qt5 can crash otherwise.
+    winId();
+    m_pParent->winId();
+
+    /* Add the transience dependency: */
+    windowHandle()->setTransientParent(m_pParent->windowHandle());
 }
 
 void UIMiniToolBar::prepare()
