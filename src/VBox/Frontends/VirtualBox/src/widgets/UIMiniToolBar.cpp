@@ -972,33 +972,6 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif /* VBOX_WS_X11 */
     }
 
-#ifdef VBOX_WS_X11
-    /* If that's window event: */
-    if (pWatched == this)
-    {
-        switch (pEvent->type())
-        {
-            case QEvent::WindowStateChange:
-            {
-                /* Watch for window state changes: */
-                QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
-                LogRel2(("GUI: UIMiniToolBar::eventFilter: Window state changed from %d to %d\n",
-                         (int)pChangeEvent->oldState(), (int)windowState()));
-                if (   windowState() != Qt::WindowMinimized
-                    && pChangeEvent->oldState() == Qt::WindowMinimized)
-                {
-                    /* Asynchronously call for sltShow(): */
-                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Window restored\n"));
-                    QMetaObject::invokeMethod(this, "sltShow", Qt::QueuedConnection);
-                }
-                break;
-            }
-            default:
-                break;
-        }
-    }
-#endif /* VBOX_WS_X11 */
-
     /* If that's parent window event: */
     if (pWatched == m_pParent)
     {
@@ -1052,18 +1025,42 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
                 QWindowStateChangeEvent *pChangeEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
                 LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window state changed from %d to %d\n",
                          (int)pChangeEvent->oldState(), (int)m_pParent->windowState()));
-                if (m_pParent->windowState() & Qt::WindowMinimized)
+
+                if (   m_pParent->windowState() & Qt::WindowMinimized
+                    && !m_fIsParentMinimized)
                 {
                     /* Mark parent window minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
-                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window minimized\n"));
+                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is minimized\n"));
                     m_fIsParentMinimized = true;
                 }
                 else
-                if (m_pParent->windowState() == Qt::WindowFullScreen)
+                if (m_fIsParentMinimized)
                 {
-                    /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
-                    LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is full-screen\n"));
-                    m_fIsParentMinimized = false;
+                    switch (m_geometryType)
+                    {
+                        case GeometryType_Available:
+                        {
+                            if (   windowState() == Qt::WindowMaximized
+                                && pChangeEvent->oldState() == Qt::WindowNoState)
+                            {
+                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is maximized\n"));
+                                m_fIsParentMinimized = false;
+                            }
+                            break;
+                        }
+                        case GeometryType_Full:
+                        {
+                            if (   windowState() == Qt::WindowFullScreen
+                                && pChangeEvent->oldState() == Qt::WindowNoState)
+                            {
+                                /* Mark parent window non-minimized, isMinimized() is not enough due to Qt5vsX11 fight: */
+                                LogRel2(("GUI: UIMiniToolBar::eventFilter: Parent window is full-screen\n"));
+                                m_fIsParentMinimized = false;
+                            }
+                            break;
+                        }
+                    }
                 }
                 break;
             }
