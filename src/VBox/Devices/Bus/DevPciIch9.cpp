@@ -2866,34 +2866,34 @@ static void devpciR3InfoPciBus(PDEVPCIBUS pBus, PCDBGFINFOHLP pHlp, unsigned iIn
             pHlp->pfnPrintf(pHlp, "behind bridge: ");
             uint8_t uIoBase  = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_BASE);
             uint8_t uIoLimit = ich9pciGetByte(&pBusSub->PciDev, VBOX_PCI_IO_LIMIT);
+            pHlp->pfnPrintf(pHlp, "I/O %#06x..%#06x",
+                            (uIoBase & 0xf0) << 8,
+                            (uIoLimit & 0xf0) << 8 | 0xfff);
             if (uIoBase > uIoLimit)
-                pHlp->pfnPrintf(pHlp, "no I/O\n");
-            else
-                pHlp->pfnPrintf(pHlp, "I/O %#06x..%#06x\n",
-                               (uIoBase & 0xf0) << 8,
-                               (uIoLimit & 0xf0) << 8 | 0xfff);
+                pHlp->pfnPrintf(pHlp, " (IGNORED)");
+            pHlp->pfnPrintf(pHlp, "\n");
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "behind bridge: ");
             uint32_t uMemoryBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_BASE);
             uint32_t uMemoryLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_MEMORY_LIMIT);
+            pHlp->pfnPrintf(pHlp, "memory %#010x..%#010x",
+                            (uMemoryBase & 0xfff0) << 16,
+                            (uMemoryLimit & 0xfff0) << 16 | 0xfffff);
             if (uMemoryBase > uMemoryLimit)
-                pHlp->pfnPrintf(pHlp, "no memory\n");
-            else
-                pHlp->pfnPrintf(pHlp, "memory %#010x..%#010x\n",
-                                (uMemoryBase & 0xfff0) << 16,
-                                (uMemoryLimit & 0xfff0) << 16 | 0xfffff);
+                pHlp->pfnPrintf(pHlp, " (IGNORED)");
+            pHlp->pfnPrintf(pHlp, "\n");
             devpciR3InfoIndent(pHlp, iIndentLvl);
             pHlp->pfnPrintf(pHlp, "behind bridge: ");
             uint32_t uPrefMemoryBase  = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_BASE);
             uint32_t uPrefMemoryLimit = ich9pciGetWord(&pBusSub->PciDev, VBOX_PCI_PREF_MEMORY_LIMIT);
+            pHlp->pfnPrintf(pHlp, "prefetch memory %#018llx..%#018llx",
+                             ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
+                              |(uPrefMemoryBase & 0xfff0) << 16,
+                             ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
+                              |(uPrefMemoryLimit & 0xfff0) << 16 | 0xfffff);
             if (uPrefMemoryBase > uPrefMemoryLimit)
-                pHlp->pfnPrintf(pHlp, "no prefetch memory\n");
-            else
-                pHlp->pfnPrintf(pHlp, "prefetch memory %#018llx..%#018llx\n",
-                                 ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_BASE_UPPER32) << 32)
-                                  |(uPrefMemoryBase & 0xfff0) << 16,
-                                 ( (uint64_t)ich9pciGetDWord(&pBusSub->PciDev, VBOX_PCI_PREF_LIMIT_UPPER32) << 32)
-                                  |(uPrefMemoryLimit & 0xfff0) << 16 | 0xfffff);
+                pHlp->pfnPrintf(pHlp, " (IGNORED)\n");
+            pHlp->pfnPrintf(pHlp, "\n");
             devpciR3InfoPciBus(pBusSub, pHlp, iIndentLvl + 1, fRegisters);
         }
     }
