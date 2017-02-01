@@ -441,17 +441,17 @@ AssertCompile(MSR_GIM_HV_RANGE11_START <= MSR_GIM_HV_RANGE11_END);
 /** An open-source operating system. */
 #define MSR_GIM_HV_GUEST_OS_ID_IS_OPENSOURCE(a)   RT_BOOL((a) & RT_BIT_64(63))
 /** Vendor ID. */
-#define MSR_GIM_HV_GUEST_OS_ID_VENDOR(a)          (((a) >> 48) & 0xfff)
+#define MSR_GIM_HV_GUEST_OS_ID_VENDOR(a)          (uint32_t)(((a) >> 48) & 0xfff)
 /** Guest OS variant, depending on the vendor ID.  */
-#define MSR_GIM_HV_GUEST_OS_ID_OS_VARIANT(a)      (((a) >> 40) & 0xff)
+#define MSR_GIM_HV_GUEST_OS_ID_OS_VARIANT(a)      (uint32_t)(((a) >> 40) & 0xff)
 /** Guest OS major version. */
-#define MSR_GIM_HV_GUEST_OS_ID_MAJOR_VERSION(a)   (((a) >> 32) & 0xff)
+#define MSR_GIM_HV_GUEST_OS_ID_MAJOR_VERSION(a)   (uint32_t)(((a) >> 32) & 0xff)
 /** Guest OS minor version. */
-#define MSR_GIM_HV_GUEST_OS_ID_MINOR_VERSION(a)   (((a) >> 24) & 0xff)
+#define MSR_GIM_HV_GUEST_OS_ID_MINOR_VERSION(a)   (uint32_t)(((a) >> 24) & 0xff)
 /** Guest OS service version (e.g. service pack number in case of Windows). */
-#define MSR_GIM_HV_GUEST_OS_ID_SERVICE_VERSION(a) (((a) >> 16) & 0xff)
+#define MSR_GIM_HV_GUEST_OS_ID_SERVICE_VERSION(a) (uint32_t)(((a) >> 16) & 0xff)
 /** Guest OS build number. */
-#define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           ((a) & 0xffff)
+#define MSR_GIM_HV_GUEST_OS_ID_BUILD(a)           (uint32_t)((a) & 0xffff)
 /** @} */
 
 /** @name Hyper-V MSR - APIC-assist page (MSR_GIM_HV_APIC_ASSIST_PAGE).
