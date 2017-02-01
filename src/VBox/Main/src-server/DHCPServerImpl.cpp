@@ -275,6 +275,14 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
     if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
+    /*
+     * Insist on continuous mask.  May be also accept prefix length
+     * here or address/prefix for aIPAddress?
+     */
+    rc = RTNetMaskToPrefixIPv4(&NetworkMask, NULL);
+    if (RT_FAILURE(rc))
+        return E_INVALIDARG;
+
     /* It's more convenient to convert to host order once */
     IPAddress.u = RT_N2H_U32(IPAddress.u);
     NetworkMask.u = RT_N2H_U32(NetworkMask.u);
@@ -287,26 +295,6 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
         || (UpperIP.u   & 0xe0000000) == 0xe0000000)
     {
         return E_INVALIDARG;
-    }
-
-    /*
-     * Insist on continuous mask.  May be also accept prefix length
-     * here or address/prefix for aIPAddress?
-     */
-    if (NetworkMask.u != 0) {
-        /* TODO: factor out mask<->length to <iptr/cidr.h>? */
-        uint32_t prefixMask = 0xffffffff;
-        int prefixLen = 32;
-
-        while (prefixLen > 0) {
-            if (NetworkMask.u == prefixMask)
-                break;
-            --prefixLen;
-            prefixMask <<= 1;
-        }
-
-        if (prefixLen == 0)
-            return E_INVALIDARG;
     }
 
     /* Addresses should be from the same network */
