@@ -13,7 +13,7 @@
 // VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 // hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
-DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
+DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
 {
     // Declare debugging ports withing SystemIO
     OperationRegion(DBG0, SystemIO, 0x3000, 4)
@@ -1577,9 +1577,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     ReadWrite,
                     0x0000000000000000,       // _GRA: Granularity.
                     0x0000000100000000,       // _MIN: Min address, 4GB, will be overwritten.
-                    0x00000020ffffffff,       // _MAX: Max possible address, will be overwritten.
+                    0x00000080ffffffff,       // _MAX: Max possible address, will be overwritten.
                     0x0000000000000000,       // _TRA: Translation
-                    0x0000002000000000,       // _LEN: Range length (calculated dynamically)
+                    0x0000008000000000,       // _LEN: Range length (def. 512G, calculated dynamically)
                     ,                         // ResourceSourceIndex: Optional field left blank
                     ,                         // ResourceSource:      Optional field left blank
                     MEM4                      // Name declaration for this descriptor.
@@ -1599,18 +1599,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
                 if (LNotEqual (PMEM, 0x00000000))
                 {
-                    Store (PMEM, TM4N)
-                    ShiftLeft (TM4N, 16, TM4N)
-
-                    Store (PMEM, TM4X)
-                    Store (0x10000000, TM4L)      // Size 16TB
-                    Add (TM4X, TM4L, TM4X)
-                    Subtract (TM4X, 1, TM4X)
-                    ShiftLeft (TM4X, 16, TM4X)    // MAX = MIN + LEN - (1 << 16)
-//                    Add (TM4X, 0xffff, TM4X)    // For some reason this operation prevents
-                                                  // at least Linux from determining this
-                                                  // resource!
-                    ShiftLeft (TM4L, 16, TM4L)
+                    Store (0x10000000, Local1)           // 16TB in units of 64KB
+                    Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
+                    Multiply (Local1, 0x10000, TM4L)
+                    Subtract (Add (TM4N, TM4L), 1, TM4X) // MAX = MIN + LEN - 1
 
                     ConcatenateResTemplate (CRS, TOM, Local2)
 
