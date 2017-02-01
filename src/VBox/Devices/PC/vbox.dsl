@@ -346,7 +346,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         SL2I,  32, // Serial2 IRQ
         SL3B,  32, // Serial3 base IO address  
         SL3I,  32, // Serial3 IRQ
-        MEMH,  32,
+        PMEM,  32,
         URTC,  32, // if RTC shown in tables
         CPUL,  32, // flag of CPU lock state
         CPUC,  32, // CPU to check lock status
@@ -388,8 +388,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (USMC)
             DBG ("UFDC: ")
             HEX4 (UFDC)
-            DBG ("MEMH: ")
-            HEX4 (MEMH)
+            DBG ("PMEM: ")
+            HEX4 (PMEM)
         }
 
         // PCI PIC IRQ Routing table
@@ -1566,60 +1566,56 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                      )
             })
 
-//            Name (TOM, ResourceTemplate ()      // Memory above 4GB (aka high), appended when needed.
-//            {
-//                QWORDMemory(
-//                    ResourceProducer,           // bit 0 of general flags is 0
-//                    PosDecode,                  // positive Decode
-//                    MinFixed,                   // Range is fixed
-//                    MaxFixed,                   // Range is fixed
-//                    Cacheable,
-//                    ReadWrite,
-//                    0x0000000000000000,         // _GRA: Granularity.
-//                    0 /*0x0000000100000000*/,   // _MIN: Min address, 4GB.
-//                    0 /*0x00000fffffffffff*/,   // _MAX: Max possible address, 16TB.
-//                    0x0000000000000000,         // _TRA: Translation
-//                    0x0000000000000000,         // _LEN: Range length (calculated dynamically)
-//                    ,                           // ResourceSourceIndex: Optional field left blank
-//                    ,                           // ResourceSource:      Optional field left blank
-//                    MEM4                        // Name declaration for this descriptor.
-//                    )
-//            })
+            Name (TOM, ResourceTemplate ()
+            {
+                QwordMemory(
+                    ResourceProducer,         // bit 0 of general flags is 0
+                    PosDecode,                // positive Decode
+                    MinFixed,                 // Range is fixed
+                    MaxFixed,                 // Range is fixed
+                    Prefetchable,
+                    ReadWrite,
+                    0x0000000000000000,       // _GRA: Granularity.
+                    0x0000000100000000,       // _MIN: Min address, 4GB, will be overwritten.
+                    0x00000020ffffffff,       // _MAX: Max possible address, will be overwritten.
+                    0x0000000000000000,       // _TRA: Translation
+                    0x0000002000000000,       // _LEN: Range length (calculated dynamically)
+                    ,                         // ResourceSourceIndex: Optional field left blank
+                    ,                         // ResourceSource:      Optional field left blank
+                    MEM4                      // Name declaration for this descriptor.
+                    )
+            })
 
             Method (_CRS, 0, NotSerialized)
             {
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._MIN, RAMT)
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._LEN, RAMR)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4N)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4X)
+                CreateQwordField (TOM, \_SB.PCI0.MEM4._MIN, TM4N)
+                CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
+                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
 
                 Store (MEML, RAMT)
                 Subtract (0xffe00000, RAMT, RAMR)
 
-//                If (LNotEqual (MEMH, 0x00000000))
-//                {
-//                    //
-//                    // Update the TOM resource template and append it to CRS.
-//                    // This way old < 4GB guest doesn't see anything different.
-//                    // (MEMH is the memory above 4GB specified in 64KB units.)
-//                    //
-//                    // Note: ACPI v2 doesn't do 32-bit integers. IASL may fail on
-//                    //       seeing 64-bit constants and the code probably wont work.
-//                    //
-//                    Store (1, TM4N)
-//                    ShiftLeft (TM4N, 32, TM4N)
-//
-//                    Store (0x00000fff, TM4X)
-//                    ShiftLeft (TM4X, 32, TM4X)
-//                    Or (TM4X, 0xffffffff, TM4X)
-//
-//                    Store (MEMH, TM4L)
-//                    ShiftLeft (TM4L, 16, TM4L)
-//
-//                    ConcatenateResTemplate (CRS, TOM, Local2)
-//                    Return (Local2)
-//                }
+                if (LNotEqual (PMEM, 0x00000000))
+                {
+                    Store (PMEM, TM4N)
+                    ShiftLeft (TM4N, 16, TM4N)
+
+                    Store (PMEM, TM4X)
+                    Store (0x10000000, TM4L)      // Size 16TB
+                    Add (TM4X, TM4L, TM4X)
+                    Subtract (TM4X, 1, TM4X)
+                    ShiftLeft (TM4X, 16, TM4X)    // MAX = MIN + LEN - (1 << 16)
+//                    Add (TM4X, 0xffff, TM4X)    // For some reason this operation prevents
+                                                  // at least Linux from determining this
+                                                  // resource!
+                    ShiftLeft (TM4L, 16, TM4L)
+
+                    ConcatenateResTemplate (CRS, TOM, Local2)
+
+                    Return (Local2)
+                }
 
                 Return (CRS)
             }

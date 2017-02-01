@@ -170,7 +170,7 @@ enum
     SYSTEM_INFO_INDEX_SERIAL2_IRQ       = 6,
     SYSTEM_INFO_INDEX_SERIAL3_IOBASE    = 7,
     SYSTEM_INFO_INDEX_SERIAL3_IRQ       = 8,
-    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
+    SYSTEM_INFO_INDEX_PREF64_MEMORY_START = 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
@@ -307,8 +307,8 @@ typedef struct ACPIState
 
     uint32_t            uSystemInfoIndex;
     uint64_t            u64RamSize;
-    /** The number of bytes above 4GB. */
-    uint64_t            cbRamHigh;
+    /** Offset of the 64-bit prefetchable memory window. */
+    uint64_t            u64PciPref64;
     /** The number of bytes below 4GB. */
     uint32_t            cbRamLow;
 
@@ -359,6 +359,8 @@ typedef struct ACPIState
     bool                fCpuHotPlug;
     /** If MCFG ACPI table shown to the guest */
     bool                fUseMcfg;
+    /** if the 64-bit prefetchable memory window is shown to the guest */
+    bool                fPciPref64Enabled;
     /** Primary NIC PCI address. */
     uint32_t            u32NicPciAddress;
     /** Primary audio card PCI address. */
@@ -1323,9 +1325,9 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             *pu32 = pThis->cbRamLow;
             break;
 
-        case SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH:
-            *pu32 = pThis->cbRamHigh >> 16; /* 64KB units */
-            Assert(((uint64_t)*pu32 << 16) == pThis->cbRamHigh);
+        case SYSTEM_INFO_INDEX_PREF64_MEMORY_START:
+            *pu32 = pThis->u64PciPref64 >> 16; /* 64KB units */
+            Assert(((uint64_t)*pu32 << 16) == pThis->u64PciPref64);
             break;
 
         case SYSTEM_INFO_INDEX_USE_IOAPIC:
@@ -3128,10 +3130,11 @@ static int acpiR3PlantTables(ACPIState *pThis)
                                 N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
 
     /*
-     * Calculate the sizes for the high and low regions.
+     * Calculate the sizes for the low region and for the 64-bit prefetchable memory.
      */
     const uint64_t offRamHole = _4G - cbRamHole;
-    pThis->cbRamHigh = offRamHole < pThis->u64RamSize ? pThis->u64RamSize - offRamHole : 0;
+    if (pThis->fPciPref64Enabled)
+        pThis->u64PciPref64 = pThis->u64RamSize  < _4G ? _4G : pThis->u64RamSize; /* MEM4 */
     uint64_t cbRamLow = offRamHole < pThis->u64RamSize ? offRamHole : pThis->u64RamSize;
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
     {
@@ -3557,6 +3560,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "McfgEnabled\0"
                               "McfgBase\0"
                               "McfgLength\0"
+                              "PciPref64Enabled\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
                               "ShowRtc\0"
@@ -3623,6 +3627,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"McfgLength\""));
     pThis->fUseMcfg = (pThis->u64PciConfigMMioAddress != 0) && (pThis->u64PciConfigMMioLength != 0);
+
+    /* query whether we are supposed to set up the 64-bit prefetchable memory window */
+    rc = CFGMR3QueryBoolDef(pCfg, "PciPref64Enabled", &pThis->fPciPref64Enabled, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"PciPref64Enabled\""));
 
     /* query whether we are supposed to present custom table */
     pThis->fUseCust = false;
