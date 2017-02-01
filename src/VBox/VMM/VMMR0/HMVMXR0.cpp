@@ -7165,9 +7165,9 @@ static int hmR0VmxLeave(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGuestState)
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
     if (CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu))
     {
-        if (fSaveGuestState)
+        /* We shouldn't reload CR0 without saving it first. */
+        if (!fSaveGuestState)
         {
-            /* We shouldn't reload CR0 without saving it first. */
             int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
         }
