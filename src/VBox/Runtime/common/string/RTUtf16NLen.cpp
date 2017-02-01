@@ -35,7 +35,7 @@
 RTDECL(size_t) RTUtf16NLen(PCRTUTF16 pwszString, size_t cwcMax)
 {
     PCRTUTF16 pwszStart = pwszString;
-    while (cwcMax-- > 0 && pwszString != '\0')
+    while (cwcMax-- > 0 && *pwszString != '\0')
         pwszString++;
     return pwszString - pwszStart;
 }
