@@ -202,19 +202,6 @@ static void coreAudioPCMPropsToASBD(PDMAUDIOPCMPROPS *pPCMProps, AudioStreamBasi
     pASBD->mBytesPerPacket   = pASBD->mFramesPerPacket * pASBD->mBytesPerFrame;
 }
 
-static int coreAudioStreamCfgToASBD(PPDMAUDIOSTREAMCFG pCfg, AudioStreamBasicDescription *pASBD)
-{
-    AssertPtrReturn(pCfg,  VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pASBD, VERR_INVALID_PARAMETER);
-
-    PDMAUDIOPCMPROPS Props;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &Props);
-    if (RT_SUCCESS(rc))
-        coreAudioPCMPropsToASBD(&Props, pASBD);
-
-    return rc;
-}
-
 #ifndef VBOX_WITH_AUDIO_CALLBACKS
 static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -407,6 +394,8 @@ typedef struct COREAUDIOSTREAM
     RTLISTNODE                  Node;
     /** Pointer to driver instance this stream is bound to. */
     PDRVHOSTCOREAUDIO           pDrv;
+    /** The PCM properties of this stream. */
+    PDMAUDIOPCMPROPS            Props;
     /** The stream's direction. */
     PDMAUDIODIR                 enmDir;
     /** The stream's thread handle for maintaining the audio queue. */
@@ -1623,13 +1612,14 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
     const bool fIn = pCAStream->enmDir == PDMAUDIODIR_IN;
 
     /* Create the recording device's out format based on our required audio settings. */
-    int rc = coreAudioStreamCfgToASBD(pCfgReq, &pCAStream->asbdStream);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pCAStream->Props);
     if (RT_FAILURE(rc))
     {
-        LogRel(("CoreAudio: Failed to convert requested %s format to native format (%Rrc)\n",
-                fIn ? "input" : "output", rc));
+        LogRel(("CoreAudio: Failed to convert requested %s format to native format (%Rrc)\n", fIn ? "input" : "output", rc));
         return rc;
     }
+
+    coreAudioPCMPropsToASBD(&pCAStream->Props, &pCAStream->asbdStream);
 
     coreAudioPrintASBD(  fIn
                        ? "Capturing queue format"
@@ -1934,8 +1924,6 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
 static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
-    RT_NOREF(pvBuf, cbBuf); /** @todo r=bird: this looks totally weird at first glance! */
-
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     /* pcbRead is optional. */
@@ -1969,22 +1957,20 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
     }
 
     int rc = VINF_SUCCESS;
-    uint32_t csWrittenTotal = 0;
+
+    uint32_t cbReadTotal = 0;
 
     rc = RTCritSectEnter(&pCAStream->CritSect);
     AssertRC(rc);
 
     do
     {
-        size_t cbMixBuf  = AudioMixBufSizeBytes(&pStream->MixBuf);
-        size_t cbToWrite = RT_MIN(cbMixBuf, RTCircBufUsed(pCAStream->pCircBuf));
-
-        uint32_t csWritten, cbWritten;
+        size_t cbToWrite = RT_MIN(cbBuf, RTCircBufUsed(pCAStream->pCircBuf));
 
         uint8_t *pvChunk;
         size_t   cbChunk;
 
-        Log3Func(("cbMixBuf=%zu, cbToWrite=%zu/%zu\n", cbMixBuf, cbToWrite, RTCircBufSize(pCAStream->pCircBuf)));
+        Log3Func(("cbToWrite=%zu/%zu\n", cbToWrite, RTCircBufSize(pCAStream->pCircBuf)));
 
         while (cbToWrite)
         {
@@ -2004,12 +1990,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
                 else
                     AssertFailed();
 #endif
-                rc = AudioMixBufWriteCirc(&pStream->MixBuf, pvChunk, cbChunk, &csWritten);
-                if (rc == VERR_BUFFER_OVERFLOW)
-                {
-                    LogRel2(("Core Audio: Capturing host buffer full\n"));
-                    rc = VINF_SUCCESS;
-                }
+                memcpy((uint8_t *)pvBuf + cbReadTotal, pvChunk, cbChunk);
             }
 
             /* Release the read buffer, so it could be used for new data. */
@@ -2018,12 +1999,10 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
             if (RT_FAILURE(rc))
                 break;
 
-            cbWritten = AUDIOMIXBUF_S2B(&pStream->MixBuf, csWritten);
+            Assert(cbToWrite >= cbChunk);
+            cbToWrite      -= cbChunk;
 
-            Assert(cbToWrite >= cbWritten);
-            cbToWrite      -= cbWritten;
-
-            csWrittenTotal += csWritten;
+            cbReadTotal    += cbChunk;
         }
     }
     while (0);
@@ -2031,26 +2010,11 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
     int rc2 = RTCritSectLeave(&pCAStream->CritSect);
     AssertRC(rc2);
 
-#ifdef LOG_ENABLED
-    uint32_t cbWrittenTotal = AUDIOMIXBUF_S2B(&pStream->MixBuf, csWrittenTotal);
-    Log3Func(("csWrittenTotal=%RU32 (%RU32 bytes), rc=%Rrc\n", csWrittenTotal, cbWrittenTotal, rc));
-#endif
-
     if (RT_SUCCESS(rc))
     {
-        uint32_t csMixed = 0;
-
-        if (csWrittenTotal)
-            rc = AudioMixBufMixToParent(&pStream->MixBuf, csWrittenTotal, &csMixed);
-
-        Log3Func(("csMixed=%RU32\n", csMixed));
-
         if (pcbRead)
-            *pcbRead = csMixed;
+            *pcbRead = cbReadTotal;
     }
-
-    if (RT_FAILURE(rc))
-        LogFunc(("Failed with rc=%Rrc\n", rc));
 
     return rc;
 }
@@ -2062,8 +2026,6 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                                                     PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
                                                     uint32_t *pcbWritten)
 {
-    RT_NOREF(pvBuf, cbBuf);
-
     PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
     PCOREAUDIOSTREAM  pCAStream = (PCOREAUDIOSTREAM)pStream;
 
@@ -2092,46 +2054,33 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         return VINF_SUCCESS;
     }
 
-    uint32_t cLive = AudioMixBufLive(&pStream->MixBuf);
-    if (!cLive) /* Not live samples to play? Bail out. */
-    {
-        if (pcbWritten)
-            *pcbWritten = 0;
-        return VINF_SUCCESS;
-    }
-
-    size_t cbLive  = AUDIOMIXBUF_S2B(&pStream->MixBuf, cLive);
-
-    uint32_t cbReadTotal = 0;
+    uint32_t cbWrittenTotal = 0;
 
     int rc = VINF_SUCCESS;
 
     rc = RTCritSectEnter(&pCAStream->CritSect);
     AssertRC(rc);
 
-    size_t cbToRead = RT_MIN(cbLive, RTCircBufFree(pCAStream->pCircBuf));
-    Log3Func(("cbLive=%zu, cbToRead=%zu\n", cbLive, cbToRead));
+    size_t cbToWrite = RT_MIN(cbBuf, RTCircBufFree(pCAStream->pCircBuf));
+    Log3Func(("cbToWrite=%zu\n", cbToWrite));
 
     uint8_t *pvChunk;
     size_t   cbChunk;
 
-    while (cbToRead)
+    while (cbToWrite)
     {
-        uint32_t cRead, cbRead;
-
         /* Try to acquire the necessary space from the ring buffer. */
-        RTCircBufAcquireWriteBlock(pCAStream->pCircBuf, cbToRead, (void **)&pvChunk, &cbChunk);
+        RTCircBufAcquireWriteBlock(pCAStream->pCircBuf, cbToWrite, (void **)&pvChunk, &cbChunk);
         if (!cbChunk)
         {
             RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
             break;
         }
 
-        Assert(cbChunk <= cbToRead);
+        Assert(cbChunk <= cbToWrite);
+        Assert(cbWrittenTotal + cbChunk <= cbBuf);
 
-        rc = AudioMixBufReadCirc(&pStream->MixBuf, pvChunk, cbChunk, &cRead);
-
-        cbRead = AUDIOMIXBUF_S2B(&pStream->MixBuf, cRead);
+        memcpy((uint8_t *)pvBuf + cbWrittenTotal, pvChunk, cbChunk);
 
         /* Release the ring buffer, so the read thread could start reading this data. */
         RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
@@ -2139,9 +2088,10 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         if (RT_FAILURE(rc))
             break;
 
-        Assert(cbToRead >= cbRead);
-        cbToRead -= cbRead;
-        cbReadTotal += cbRead;
+        Assert(cbToWrite >= cbChunk);
+        cbToWrite      -= cbChunk;
+
+        cbWrittenTotal += cbChunk;
     }
 
     if (    RT_SUCCESS(rc)
@@ -2162,14 +2112,8 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pStream->MixBuf, cbReadTotal);
-        if (cReadTotal)
-            AudioMixBufFinish(&pStream->MixBuf, cReadTotal);
-
-        Log3Func(("cReadTotal=%RU32 (%RU32 bytes)\n", cReadTotal, cbReadTotal));
-
         if (pcbWritten)
-            *pcbWritten = cReadTotal;
+            *pcbWritten = cbWrittenTotal;
     }
 
     return rc;
