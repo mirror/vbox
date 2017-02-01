@@ -35,4 +35,5 @@
 ; Instantiate code templates.
 ;
 BS3_INSTANTIATE_TEMPLATE_ESSENTIALS      "bs3-cpu-decoding-1-template.mac"
+BS3_INSTANTIATE_COMMON_TEMPLATE          "bs3-cpu-decoding-1-template.mac"
 

@@ -32,6 +32,12 @@
 #include <iprt/asm-amd64-x86.h>
 
 
+/* bs3-cpu-decoding-1-template.mac: */
+BS3_DECL_NEAR(void) BS3_CMN_NM(bs3CpuDecoding1_LoadXmm0)(PCRTUINT128U);
+BS3_DECL_NEAR(void) BS3_CMN_NM(bs3CpuDecoding1_LoadXmm1)(PCRTUINT128U);
+BS3_DECL_NEAR(void) BS3_CMN_NM(bs3CpuDecoding1_SaveXmm0)(PRTUINT128U);
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -66,6 +72,8 @@ typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
 #define RM_EAX_SIB              ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
 #define RM_EAX_SIB_DISP8        ((1 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
 #define RM_EAX_SIB_DISP32       ((2 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | 4)
+
+#define RM_XMM0_XMM1            ((3 << X86_MODRM_MOD_SHIFT) | (0            <<  X86_MODRM_REG_SHIFT) | 1)
 
 #define SIB_EBX_X1_NONE         ((0 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
 #define SIB_EBX_X2_NONE         ((1 << X86_SIB_SCALE_SHIFT) | (4            <<  X86_SIB_INDEX_SHIFT) | (X86_GREG_xBX))
@@ -1092,10 +1100,223 @@ static void DecodeMovbeVsCrc32(void)
 }
 
 
+
+/**
+ * Checks various prefix encodings with the CMPPS, CMPPD, CMPSS and CMPSD
+ * instructions to try figure out how they are decoded.
+ *
+ * The important thing to check here is that unlike CRC32/MOVBE the operand size
+ * prefix (66h) is ignored when the F2h and F3h prefixes are used.  We also
+ * check that the prefix ordering is irrelevant and that the last one of F2h and
+ * F3h wins.
+ *
+ */
+static void DecodeCmppsCmppdCmpssCmpsd(void)
+{
+    uint8_t BS3_FAR *pbPages;
+
+    /* Check that the instructions are supported. */
+    if (   !(g_uBs3CpuDetected & BS3CPU_F_CPUID)
+        ||    (ASMCpuId_EDX(1) & (X86_CPUID_FEATURE_EDX_SSE | X86_CPUID_FEATURE_EDX_SSE2))
+           !=                    (X86_CPUID_FEATURE_EDX_SSE | X86_CPUID_FEATURE_EDX_SSE2) )
+    {
+        Bs3TestSkipped("SSE and/or SSE2 are not supported");
+        return;
+    }
+
+    /* Setup a guarded page. */
+    pbPages = Bs3MemGuardedTestPageAlloc(BS3MEMKIND_FLAT32);
+    if (pbPages)
+    {
+        unsigned        iTest;
+        BS3REGCTX       Ctx;
+        BS3TRAPFRAME    TrapFrame;
+        BS3REGCTX       ExpectCtxPf;
+        BS3REGCTX       ExpectCtxUd;
+        static const struct
+        {
+            RTUINT128U  Xmm0Expect;
+            uint8_t     bXcpt;
+            uint8_t     cbOpcodes;
+            uint8_t     abOpcodes[18];
+        } s_aTests[] =
+        {
+#define BECRC_IN_XMM1       RTUINT128_INIT_C(0x76547654bbaa9988, 0x7766554433221100)
+#define BECRC_IN_XMM0       RTUINT128_INIT_C(0x765476549988bbaa, 0x7766554400112233)
+#define BECRC_OUT_PS        RTUINT128_INIT_C(0xffffffff00000000, 0xffffffff00000000) /* No prefix. */
+#define BECRC_OUT_PD        RTUINT128_INIT_C(0x0000000000000000, 0x0000000000000000) /* P_OZ (66h) */
+#define BECRC_OUT_SS        RTUINT128_INIT_C(0x765476549988bbaa, 0x7766554400000000) /* P_RN (f3h) */
+#define BECRC_OUT_SD        RTUINT128_INIT_C(0x765476549988bbaa, 0x0000000000000000) /* P_RZ (f2h) */
+
+            /* We use imm8=0 which checks for equality, with the subvalue result being all
+               F's if equal and all zeros if not equal.  The input values are choosen such
+               that the 4 variants produces different results in xmm0. */
+            /* CMPPS xmm0, xmm1, 0:    0f c2 /r ib ; Compares four 32-bit subvalues. */
+            /* CMPPD xmm0, xmm1, 0: 66 0f c2 /r ib ; Compares two 64-bit subvalues. */
+            /* CMPSS xmm0, xmm1, 0: f3 0f c2 /r ib ; Compares two 32-bit subvalues, top 64-bit remains unchanged. */
+            /* CMPSD xmm0, xmm1, 0: f2 0f c2 /r ib ; Compares one 64-bit subvalue, top 64-bit remains unchanged. */
+
+            /* base forms. */
+            { BECRC_OUT_PS, X86_XCPT_PF, 4, {                         0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 5, {                   P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 5, {                   P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 5, {                   P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            /* Skylake ignores the 66h prefix with both f3h (P_RN) and f2h (P_RZ). */
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_OZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_OZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            /* Throw in segment prefixes and address size prefixes. */
+            { BECRC_OUT_PS, X86_XCPT_PF, 5, {                   P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PS, X86_XCPT_PF, 6, {             P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PS, X86_XCPT_PF, 5, {                   P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PS, X86_XCPT_PF, 6, {             P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            { BECRC_OUT_PD, X86_XCPT_PF, 6, {             P_ES, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 6, {             P_OZ, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_ES, P_SS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_ES, P_OZ, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_OZ, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 6, {             P_AZ, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 6, {             P_OZ, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_ES, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_RN, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_AZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_RN, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_OZ, P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_ES, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_RZ, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_AZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_RZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_OZ, P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            /* Pit f2h against f3h, on skylake the last prefix wins. */
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+        };
+        RTUINT128U  InXmm0 = BECRC_IN_XMM0;
+        RTUINT128U  InXmm1 = BECRC_IN_XMM1;
+        RTUINT128U  OutXmm0 = RTUINT128_INIT_C(0xeeeeeeeeeeeeeeee, 0xcccccccccccccccc);
+
+        Bs3MemZero(&Ctx, sizeof(Ctx));
+        Bs3MemZero(&ExpectCtxPf, sizeof(ExpectCtxPf));
+        Bs3MemZero(&ExpectCtxUd, sizeof(ExpectCtxUd));
+        Bs3MemZero(&TrapFrame, sizeof(TrapFrame));
+
+        /* Enable SSE. */
+        ASMSetCR0((ASMGetCR0() & ~(X86_CR0_EM | X86_CR0_TS)) | X86_CR0_MP);
+        ASMSetCR4(ASMGetCR4() | X86_CR4_OSFXSR);
+
+        /* Create a test context. */
+        Bs3RegCtxSaveEx(&Ctx, BS3_MODE_CODE_32, 512);
+        Ctx.rax.u = BECRC_EAX;
+        Ctx.rbx.u = (uintptr_t)pbPages;
+
+        /* Create expected result contexts. */
+        Bs3MemCpy(&ExpectCtxPf, &Ctx, sizeof(ExpectCtxPf));
+        ExpectCtxPf.rflags.u32 |= X86_EFL_RF;
+        ExpectCtxPf.rip.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+        ExpectCtxPf.cr2.u = (uintptr_t)&pbPages[X86_PAGE_SIZE];
+
+        Bs3MemCpy(&ExpectCtxUd, &Ctx, sizeof(ExpectCtxUd));
+        ExpectCtxUd.rflags.u32 |= X86_EFL_RF;
+
+        /* Loop thru the tests. */
+        g_usBs3TestStep = 0;
+        for (iTest = 0; iTest < RT_ELEMENTS(s_aTests); iTest++)
+        {
+            unsigned const   cbOpcodes = s_aTests[iTest].cbOpcodes;
+            uint8_t BS3_FAR *pbRip     = &pbPages[X86_PAGE_SIZE - cbOpcodes];
+
+            Bs3MemCpy(pbRip, s_aTests[iTest].abOpcodes, cbOpcodes);
+            Bs3RegCtxSetRipCsFromFlat(&Ctx, (uintptr_t)pbRip);
+            ExpectCtxUd.rip = Ctx.rip;
+#if 0
+            Bs3TestPrintf("iTest=%d pbRip=%p cbOpcodes=%d: %.*Rhxs\n",
+                          iTest, pbRip, cbOpcodes, cbOpcodes, s_aTests[iTest].abOpcodes);
+            //Bs3RegCtxPrint(&Ctx);
+#endif
+            BS3_CMN_NM(bs3CpuDecoding1_LoadXmm0)(&InXmm0);
+            BS3_CMN_NM(bs3CpuDecoding1_LoadXmm1)(&InXmm1);
+            Bs3TrapSetJmpAndRestore(&Ctx, &TrapFrame);
+            BS3_CMN_NM(bs3CpuDecoding1_SaveXmm0)(&OutXmm0);
+
+            if (   !Bs3TestCheckRegCtxEx(&TrapFrame.Ctx, s_aTests[iTest].bXcpt == X86_XCPT_UD ? &ExpectCtxUd : &ExpectCtxPf,
+                                         0 /*cbPcAdjust*/, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/, "mode", iTest)
+                || TrapFrame.bXcpt      != s_aTests[iTest].bXcpt
+                || OutXmm0.s.Lo         != s_aTests[iTest].Xmm0Expect.s.Lo
+                || OutXmm0.s.Hi         != s_aTests[iTest].Xmm0Expect.s.Hi)
+            {
+                Bs3TestFailedF("iTest=%d cbOpcodes=%d: %.*Rhxs\n", iTest, cbOpcodes, cbOpcodes, s_aTests[iTest].abOpcodes);
+                if (TrapFrame.bXcpt != s_aTests[iTest].bXcpt)
+                    Bs3TestFailedF("Expected bXcpt=%#x, got %#x\n", s_aTests[iTest].bXcpt, TrapFrame.bXcpt);
+                if (   OutXmm0.s.Lo         != s_aTests[iTest].Xmm0Expect.s.Lo
+                    || OutXmm0.s.Hi         != s_aTests[iTest].Xmm0Expect.s.Hi)
+                    Bs3TestFailedF("Expected XMM0=%08RX32:%08RX32:%08RX32:%08RX32, not %08RX32:%08RX32:%08RX32:%08RX32\n",
+                                   s_aTests[iTest].Xmm0Expect.DWords.dw3, s_aTests[iTest].Xmm0Expect.DWords.dw2,
+                                   s_aTests[iTest].Xmm0Expect.DWords.dw1, s_aTests[iTest].Xmm0Expect.DWords.dw0,
+                                   OutXmm0.DWords.dw3, OutXmm0.DWords.dw2, OutXmm0.DWords.dw1, OutXmm0.DWords.dw0);
+            }
+        }
+
+        Bs3MemGuardedTestPageFree(pbPages);
+    }
+    else
+        Bs3TestFailed("Failed to allocate two pages!\n");
+}
+
+
 BS3_DECL(void) Main_pp32()
 {
     Bs3TestInit("bs3-cpu-decoding-1");
     Bs3TestPrintf("g_uBs3CpuDetected=%#x\n", g_uBs3CpuDetected);
+
+    Bs3TestSub("CMPPS, CMPPD, CMPSS, CMPSD");
+    DecodeCmppsCmppdCmpssCmpsd();
 
     Bs3TestSub("MOVBE vs CRC32");
     DecodeMovbeVsCrc32();
