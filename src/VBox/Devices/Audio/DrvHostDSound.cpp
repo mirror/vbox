@@ -746,8 +746,7 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoun
     PVOID pv1, pv2;
     DWORD cb1, cb2;
     HRESULT hr = directSoundPlayLock(pThis, pDSoundStream->pDSB, &pDSoundStream->Props,
-                                     0 /* dwOffset */,
-                                     &pDSoundStream->Props, pDSoundStream->cbPlayBuf,
+                                     0 /* dwOffset */, pDSoundStream->cbPlayBuf,
                                      &pv1, &pv2, &cb1, &cb2, DSBLOCK_ENTIREBUFFER);
     if (SUCCEEDED(hr))
     {
@@ -1688,12 +1687,12 @@ static int dsoundCreateStreamIn(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAM pStream,
     if (RT_SUCCESS(rc))
     {
         /* Init the stream structure and save relevant information to it. */
-        pDSoundStream->offCaptureBufRead    = 0;
-        pDSoundStream->cbPlayBuf = 0;
-        pDSoundStream->pDSC                = NULL;
-        pDSoundStream->pDSCB               = NULL;
-        pDSoundStream->enmRecSource        = pCfgReq->DestSource.Source;
-        pDSoundStream->hrLastCapture       = S_OK;
+        pDSoundStream->offCaptureBufRead = 0;
+        pDSoundStream->cbCaptureBuf      = 0;
+        pDSoundStream->pDSC              = NULL;
+        pDSoundStream->pDSCB             = NULL;
+        pDSoundStream->enmRecSource      = pCfgReq->DestSource.Source;
+        pDSoundStream->hrLastCapture     = S_OK;
 
         if (pCfgAcq)
             pCfgAcq->cSampleBufferSize = pThis->cfg.cbBufferIn >> pDSoundStream->Props.cShift;

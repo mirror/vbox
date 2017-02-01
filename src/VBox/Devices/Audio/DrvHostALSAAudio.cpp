@@ -1182,7 +1182,7 @@ static DECLCALLBACK(int) drvHostALSAAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
             break;
         }
 
-        size_t cbToRead = RT_MIN(PDMAUDIOPCMPROPS_S2B(&pStreamALSA->Props, cAvail), cbBuf);
+        size_t cbToRead = RT_MIN((unsigned)PDMAUDIOPCMPROPS_S2B(&pStreamALSA->Props, cAvail), cbBuf);
         if (!cbToRead)
             break;
 
