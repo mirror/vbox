@@ -1680,8 +1680,8 @@ static void ich9pciBiosInitDeviceBARs(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_
         {
             ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address,   UINT32_C(0xffffffff), 4);
             ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address+4, UINT32_C(0xffffffff), 4);
-            cbRegSize64  =            ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address,   4);
-            cbRegSize64 |= ((uint64_t)ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address+4, 4) << 32);
+            cbRegSize64 = RT_MAKE_U64(ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address,   4),
+                                      ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address+4, 4));
             cbRegSize64 &= ~UINT64_C(0x0f);
             cbRegSize64 = (~cbRegSize64) + 1;
 
@@ -1803,8 +1803,8 @@ static bool ich9pciBiosInitDevicePrefetchableBARs(PDEVPCIROOT pPciRoot, uint8_t 
         {
             ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address,   UINT32_C(0xffffffff), 4);
             ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, u32Address+4, UINT32_C(0xffffffff), 4);
-            cbRegSize64  =            ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address,   4);
-            cbRegSize64 |= ((uint64_t)ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address+4, 4) << 32);
+            cbRegSize64 = RT_MAKE_U64(ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address,   4),
+                                      ich9pciBiosInitReadConfig(pPciRoot, uBus, uDevFn, u32Address+4, 4));
             cbRegSize64 &= ~UINT64_C(0x0f);
             cbRegSize64 = (~cbRegSize64) + 1;
         }
