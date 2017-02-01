@@ -152,6 +152,56 @@ RTDECL(bool) RTNetStrIsIPv4AddrAny(const char *pcszAddr)
 RT_EXPORT_SYMBOL(RTNetStrIsIPv4AddrAny);
 
 
+RTDECL(int) RTNetMaskToPrefixIPv4(PCRTNETADDRIPV4 pMask, int *piPrefix)
+{
+    AssertReturn(pMask != NULL, VERR_INVALID_PARAMETER);
+
+    if (pMask->u == 0)
+    {
+	if (piPrefix != NULL)
+	    *piPrefix = 0;
+	return VINF_SUCCESS;
+    }
+
+    const uint32_t uMask = RT_N2H_U32(pMask->u);
+
+    uint32_t uPrefixMask = UINT32_C(0xffffffff);
+    int iPrefixLen = 32;
+
+    while (iPrefixLen > 0) { 
+	if (uMask == uPrefixMask)
+	{
+	    if (piPrefix != NULL)
+		*piPrefix = iPrefixLen;
+	    return VINF_SUCCESS;
+	}
+
+	--iPrefixLen;
+	uPrefixMask <<= 1;
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+RT_EXPORT_SYMBOL(RTNetMaskToPrefixIPv4);
+
+
+RTDECL(int) RTNetPrefixToMaskIPv4(int iPrefix, PRTNETADDRIPV4 pMask)
+{
+    AssertReturn(pMask != NULL, VERR_INVALID_PARAMETER);
+
+    if (RT_UNLIKELY(iPrefix < 0 || 32 < iPrefix))
+	return VERR_INVALID_PARAMETER;
+
+    if (RT_LIKELY(iPrefix != 0))
+	pMask->u = RT_H2N_U32(UINT32_C(0xffffffff) << (32 - iPrefix));
+    else /* avoid UB in the shift */
+	pMask->u = 0;
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTNetPrefixToMaskIPv4);
+
+
 static int rtNetStrToHexGroup(const char *pcszValue, char **ppszNext,
                               uint16_t *pu16)
 {
