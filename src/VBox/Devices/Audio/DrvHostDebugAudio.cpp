@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2016 Oracle Corporation
+ * Copyright (C) 2016-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,6 @@
 #include <VBox/vmm/pdmaudioifs.h>
 
 #include "DrvAudio.h"
-#include "AudioMixBuffer.h"
 #include "VBoxDD.h"
 
 
@@ -49,10 +48,11 @@ typedef struct DEBUGAUDIOSTREAM
         {
             /** Timestamp of last played samples. */
             uint64_t   tsLastPlayed;
-            uint64_t   cMaxSamplesInPlayBuffer;
             uint8_t   *pu8PlayBuffer;
+            size_t     cbPlayBuffer;
         } Out;
     };
+    PDMAUDIOPCMPROPS   Props;
 
 } DEBUGAUDIOSTREAM, *PDEBUGAUDIOSTREAM;
 
@@ -127,9 +127,10 @@ static int debugCreateStreamIn(PPDMIHOSTAUDIO pInterface,
 {
     RT_NOREF(pInterface, pStream);
 
+    PDEBUGAUDIOSTREAM pDbgStream = (PDEBUGAUDIOSTREAM)pStream;
+
     /* Just adopt the wanted stream configuration. */
-    PDMAUDIOPCMPROPS Props;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pDbgStream->Props);
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
@@ -144,18 +145,17 @@ static int debugCreateStreamIn(PPDMIHOSTAUDIO pInterface,
 static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
                                 PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    NOREF(pInterface);
+    RT_NOREF(pInterface);
 
     PDEBUGAUDIOSTREAM pDbgStream = (PDEBUGAUDIOSTREAM)pStream;
 
     /* Just adopt the wanted stream configuration. */
-    PDMAUDIOPCMPROPS Props;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &Props);
+    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pDbgStream->Props);
     if (RT_SUCCESS(rc))
     {
-        pDbgStream->Out.tsLastPlayed            = 0;
-        pDbgStream->Out.cMaxSamplesInPlayBuffer = _1K;
-        pDbgStream->Out.pu8PlayBuffer           = (uint8_t *)RTMemAlloc(pDbgStream->Out.cMaxSamplesInPlayBuffer << Props.cShift);
+        pDbgStream->Out.tsLastPlayed  = 0;
+        pDbgStream->Out.cbPlayBuffer  = _1K * PDMAUDIOPCMPROPS_S2B(&pDbgStream->Props, 1); /** @todo Make this configurable? */
+        pDbgStream->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pDbgStream->Out.cbPlayBuffer);
         if (!pDbgStream->Out.pu8PlayBuffer)
             rc = VERR_NO_MEMORY;
     }
@@ -173,7 +173,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
                 LogFlowFunc(("%s\n", szFile));
                 rc = DrvAudioHlpWAVFileOpen(&pDbgStream->File, szFile,
                                             RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
-                                            &Props, PDMAUDIOFILEFLAG_NONE);
+                                            &pDbgStream->Props, PDMAUDIOFILEFLAG_NONE);
                 if (RT_FAILURE(rc))
                     LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
             }
@@ -187,7 +187,7 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
-            pCfgAcq->cSampleBufferSize = pDbgStream->Out.cMaxSamplesInPlayBuffer;
+            pCfgAcq->cSampleBufferSize = PDMAUDIOPCMPROPS_B2S(&pDbgStream->Props, pDbgStream->Out.cbPlayBuffer);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -246,45 +246,40 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     /*if (cSamplesPlayed > cLive)
         cSamplesPlayed = cLive;*/
 
-    uint32_t cSamplesPlayed = 0;
-    uint32_t cSamplesAvail  = RT_MIN(AudioMixBufUsed(&pStream->MixBuf), pDbgStream->Out.cMaxSamplesInPlayBuffer);
-    while (cSamplesAvail)
+    uint32_t cbWritten = 0;
+
+    uint32_t cbAvail  = RT_MIN(cbBuf, pDbgStream->Out.cbPlayBuffer);
+    while (cbAvail)
     {
-        uint32_t cSamplesRead = 0;
-        int rc2 = AudioMixBufReadCirc(&pStream->MixBuf, pDbgStream->Out.pu8PlayBuffer,
-                                      AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesAvail), &cSamplesRead);
+        uint32_t cbChunk = cbAvail; /** @todo Use chunks? */
 
-        if (RT_FAILURE(rc2))
-            LogRel(("DebugAudio: Reading output failed with %Rrc\n", rc2));
-
-        if (!cSamplesRead)
-            break;
+        memcpy(pDbgStream->Out.pu8PlayBuffer, pvBuf, cbChunk);
 #if 0
         RTFILE fh;
         RTFileOpen(&fh, "/tmp/AudioDebug-Output.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        RTFileWrite(fh, pDbgStream->Out.pu8PlayBuffer, AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesRead), NULL);
+        RTFileWrite(fh, pDbgStream->Out.pu8PlayBuffer, cbChunk, NULL);
         RTFileClose(fh);
 #endif
-        rc2 = DrvAudioHlpWAVFileWrite(&pDbgStream->File,
-                                      pDbgStream->Out.pu8PlayBuffer, AUDIOMIXBUF_S2B(&pStream->MixBuf, cSamplesRead),
-                                      0 /* fFlags */);
+        int rc2 = DrvAudioHlpWAVFileWrite(&pDbgStream->File,
+                                          pDbgStream->Out.pu8PlayBuffer, cbChunk, 0 /* fFlags */);
         if (RT_FAILURE(rc2))
+        {
             LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc2));
+            break;
+        }
 
-        AudioMixBufFinish(&pStream->MixBuf, cSamplesRead);
+        Assert(cbAvail >= cbAvail);
+        cbAvail   -= cbChunk;
 
-        Assert(cSamplesAvail >= cSamplesRead);
-        cSamplesAvail -= cSamplesRead;
-
-        cSamplesPlayed += cSamplesRead;
+        cbWritten += cbChunk;
     }
 
     /* Remember when samples were consumed. */
     pDbgStream->Out.tsLastPlayed = u64TicksNow;
 
     if (pcbWritten)
-        *pcbWritten = cSamplesPlayed;
+        *pcbWritten = cbWritten;
 
     return VINF_SUCCESS;
 }

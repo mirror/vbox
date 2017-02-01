@@ -40,7 +40,6 @@
 #include "Logging.h"
 
 #include "../../Devices/Audio/DrvAudio.h"
-#include "../../Devices/Audio/AudioMixBuffer.h"
 #include "EbmlWriter.h"
 
 #include <iprt/mem.h>
@@ -149,6 +148,7 @@ typedef struct AVRECCODEC
         {
             /** Encoder we're going to use. */
             OpusEncoder    *pEnc;
+            /** Number of samples per frame. */
             uint32_t        csFrame;
             /** The maximum frame size (in samples) we can handle. */
             uint32_t        csFrameMax;
@@ -471,15 +471,8 @@ static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
-        case PDMAUDIOSTREAMCMD_RESUME:
-            break;
-
         case PDMAUDIOSTREAMCMD_DISABLE:
-        {
-            AudioMixBufReset(&pStream->MixBuf);
-            break;
-        }
-
+        case PDMAUDIOSTREAMCMD_RESUME:
         case PDMAUDIOSTREAMCMD_PAUSE:
             break;
 
@@ -547,26 +540,17 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
+    AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
     PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
     PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
 
-    RT_NOREF(pvBuf, cbBuf);
+    int rc = VINF_SUCCESS;
 
-    uint32_t csLive = AudioMixBufUsed(&pStream->MixBuf);
-    if (!csLive)
-    {
-        Log3Func(("No live samples, skipping\n"));
-        if (pcbWritten)
-            *pcbWritten = 0;
-        return VINF_SUCCESS;
-    }
-
-    int rc;
-
-    uint32_t csReadTotal = 0;
+    uint32_t cbWrittenTotal = 0;
 
     /*
      * Call the encoder with the data.
@@ -580,38 +564,30 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     void  *pvCircBuf;
     size_t cbCircBuf;
 
+    uint32_t cbToWrite = cbBuf;
+
     /*
      * Fetch as much as we can into our internal ring buffer.
      */
-    while (RTCircBufFree(pCircBuf))
+    while (   cbToWrite
+           && RTCircBufFree(pCircBuf))
     {
-        RTCircBufAcquireWriteBlock(pCircBuf, RTCircBufFree(pCircBuf), &pvCircBuf, &cbCircBuf);
-
-        uint32_t cbRead = 0;
+        RTCircBufAcquireWriteBlock(pCircBuf, cbToWrite, &pvCircBuf, &cbCircBuf);
 
         if (cbCircBuf)
         {
-            uint32_t csRead = 0;
-            rc = AudioMixBufReadCirc(&pStream->MixBuf, pvCircBuf, cbCircBuf, &csRead);
-            if (   RT_SUCCESS(rc)
-                && csRead)
-            {
-                cbRead       = AUDIOMIXBUF_S2B(&pStream->MixBuf, csRead);
-                csReadTotal += csRead;
-            }
+            memcpy(pvCircBuf, (uint8_t *)pvBuf + cbWrittenTotal, cbCircBuf),
+            cbWrittenTotal += cbCircBuf;
         }
 
-        RTCircBufReleaseWriteBlock(pCircBuf, cbRead);
+        RTCircBufReleaseWriteBlock(pCircBuf, cbCircBuf);
 
         if (   RT_FAILURE(rc)
-            || !cbRead)
+            || !cbCircBuf)
         {
             break;
         }
     }
-
-    if (csReadTotal)
-        AudioMixBufFinish(&pStream->MixBuf, csReadTotal);
 
     /*
      * Process our internal ring buffer and encode the data.
@@ -621,7 +597,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     size_t  cbSrc;
 
     const uint32_t csFrame = pSink->Codec.Opus.csFrame;
-    const uint32_t cbFrame = AUDIOMIXBUF_S2B(&pStream->MixBuf, csFrame);
+    const uint32_t cbFrame = PDMAUDIOPCMPROPS_S2B(&pStreamOut->Props, csFrame);
 
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
     {
@@ -727,9 +703,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
      * encoder actually did process those.
      */
     if (pcbWritten)
-        *pcbWritten = csReadTotal;
+        *pcbWritten = cbWrittenTotal;
 
-    LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", csReadTotal, rc));
+    LogFlowFunc(("csReadTotal=%RU32, rc=%Rrc\n", cbWrittenTotal, rc));
     return rc;
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,8 +22,6 @@
 #include <VBox/log.h>
 
 #include "DrvAudio.h"
-#include "AudioMixBuffer.h"
-
 #include "VBoxDD.h"
 
 #include <iprt/asm.h>
