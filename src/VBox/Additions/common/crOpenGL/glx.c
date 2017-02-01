@@ -851,8 +851,7 @@ VBOXGLXTAG(glXChooseFBConfig)(Display *dpy, int screen, ATTRIB_TYPE *attrib_list
                 break;
 
             case GLX_BUFFER_SIZE:
-                /* this is for color-index visuals, which we don't support */
-                goto err_exit;
+                /* this is ignored except for color-index visuals, which we don't support */
                 attrib++;
                 break;
 
