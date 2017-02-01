@@ -23,6 +23,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/asm.h>
 #include <iprt/net.h>
 #include <iprt/cpp/utils.h>
 
