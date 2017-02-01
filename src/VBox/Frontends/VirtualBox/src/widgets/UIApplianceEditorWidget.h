@@ -96,7 +96,7 @@ public:
     virtual QModelIndex buddy(const QModelIndex &idx) const /* override */;
 
     /** Restores the default values for the item with the given @a parentIdx. */
-    void restoreDefaults(const QModelIndex &parentIdx = QModelIndex());
+    void restoreDefaults(QModelIndex parentIdx = QModelIndex());
 
     /** Cache currently stored values. */
     void putBack();
