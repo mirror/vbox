@@ -2525,7 +2525,9 @@ static int drvAudioStreamDestroyInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
         if (RT_SUCCESS(rc))
         {
             pHstStream->fStatus &= ~PDMAUDIOSTRMSTS_FLAG_INITIALIZED;
+#if 0 /** @todo r=andy Disabled for now -- need to test this on Windows hosts. */
             Assert(pHstStream->fStatus == PDMAUDIOSTRMSTS_FLAG_NONE);
+#endif
         }
     }
 
