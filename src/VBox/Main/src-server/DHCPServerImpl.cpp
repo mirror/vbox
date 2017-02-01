@@ -23,6 +23,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
+#include <iprt/net.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/com/array.h>
@@ -254,10 +255,74 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
                                      const com::Utf8Str &aLowerIP,
                                      const com::Utf8Str &aUpperIP)
 {
-    AssertReturn(!aIPAddress.isEmpty(), E_INVALIDARG);
-    AssertReturn(!aNetworkMask.isEmpty(), E_INVALIDARG);
-    AssertReturn(!aLowerIP.isEmpty(), E_INVALIDARG);
-    AssertReturn(!aUpperIP.isEmpty(), E_INVALIDARG);
+    RTNETADDRIPV4 IPAddress, NetworkMask, LowerIP, UpperIP;
+    int rc;
+
+    rc = RTNetStrToIPv4Addr(aIPAddress.c_str(), &IPAddress);
+    if (RT_FAILURE(rc))
+        return E_INVALIDARG;
+
+    rc = RTNetStrToIPv4Addr(aNetworkMask.c_str(), &NetworkMask);
+    if (RT_FAILURE(rc))
+        return E_INVALIDARG;
+
+    rc = RTNetStrToIPv4Addr(aLowerIP.c_str(), &LowerIP);
+    if (RT_FAILURE(rc))
+        return E_INVALIDARG;
+
+    rc = RTNetStrToIPv4Addr(aUpperIP.c_str(), &UpperIP);
+    if (RT_FAILURE(rc))
+        return E_INVALIDARG;
+
+    /* It's more convenient to convert to host order once */
+    IPAddress.u = RT_N2H_U32(IPAddress.u);
+    NetworkMask.u = RT_N2H_U32(NetworkMask.u);
+    LowerIP.u = RT_N2H_U32(LowerIP.u);
+    UpperIP.u = RT_N2H_U32(UpperIP.u);
+
+    /* Addresses must be unicast */
+    if (   (IPAddress.u & 0xe0000000) == 0xe0000000
+        || (LowerIP.u   & 0xe0000000) == 0xe0000000
+        || (UpperIP.u   & 0xe0000000) == 0xe0000000)
+    {
+        return E_INVALIDARG;
+    }
+
+    /*
+     * Insist on continuous mask.  May be also accept prefix length
+     * here or address/prefix for aIPAddress?
+     */
+    if (NetworkMask.u != 0) {
+        /* TODO: factor out mask<->length to <iptr/cidr.h>? */
+        uint32_t prefixMask = 0xffffffff;
+        int prefixLen = 32;
+
+        while (prefixLen > 0) {
+            if (NetworkMask.u == prefixMask)
+                break;
+            --prefixLen;
+            prefixMask <<= 1;
+        }
+
+        if (prefixLen == 0)
+            return E_INVALIDARG;
+    }
+
+    /* Addresses should be from the same network */
+    if (   (IPAddress.u & NetworkMask.u) != (LowerIP.u &NetworkMask.u)
+        || (LowerIP.u & NetworkMask.u) != (UpperIP.u &NetworkMask.u))
+    {
+        return E_INVALIDARG;
+    }
+
+    /* The range should be valid ... */
+    if (LowerIP.u > UpperIP.u)
+        return E_INVALIDARG;
+
+    /* ... and shouldn't contain the server's address */
+    if (LowerIP.u <= IPAddress.u && IPAddress.u <= UpperIP.u)
+        return E_INVALIDARG;
+
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->IPAddress = aIPAddress;
