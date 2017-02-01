@@ -425,7 +425,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
     switch ( attrib ) {
 
         case GLX_USE_GL:
-            *value = 1;
+            *value = vis->visualid == XVisualIDFromVisual(DefaultVisual(dpy, vis->screen));
             break;
 
         case GLX_BUFFER_SIZE:
@@ -1003,7 +1003,6 @@ DECLEXPORT(GLXPixmap)
 VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, const ATTRIB_TYPE *attrib_list)
 {
     ATTRIB_TYPE *attrib;
-    XVisualInfo *pVis;
     GLX_Pixmap_t *pGlxPixmap;
     (void) dpy;
     (void) config;
@@ -1039,14 +1038,7 @@ VBOXGLXTAG(glXCreatePixmap)(Display *dpy, GLXFBConfig config, Pixmap pixmap, con
         return 0;
     }
 
-    pVis = VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
-    if (!pVis)
-    {
-        crWarning("Unknown config %p in glXCreatePixmap", config);
-        return 0;
-    }
-
-    pGlxPixmap->format = pVis->depth==24 ? GL_RGB:GL_RGBA;
+    pGlxPixmap->format = GL_RGBA;
     pGlxPixmap->target = GL_TEXTURE_2D;
 
     if (attrib_list)
@@ -1223,7 +1215,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             }
             break;
         case GLX_BIND_TO_TEXTURE_RGBA_EXT:
-            *value = pVisual->depth==32;
+            *value = True;
             break;
         case GLX_BIND_TO_TEXTURE_RGB_EXT:
             *value = True;
@@ -1237,11 +1229,11 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             break;
         case GLX_ALPHA_SIZE:
             //crDebug("attribute=GLX_ALPHA_SIZE");
-            *value = pVisual->depth==32 ? 8:0;
+            *value = 8;
             break;
         case GLX_BUFFER_SIZE:
             //crDebug("attribute=GLX_BUFFER_SIZE");
-            *value = pVisual->depth;
+            *value = 32;
             break;
         case GLX_STENCIL_SIZE:
             //crDebug("attribute=GLX_STENCIL_SIZE");
@@ -1312,55 +1304,6 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
     return Success;
 }
 
-#if !defined(VBOX_NO_NATIVEGL) || 1 /* need fbconfigs atleast for depths 24 and 32 */
-DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, int *nelements)
-{
-    GLXFBConfig *pGLXFBConfigs = NULL;
-    /*struct VisualInfo *v; */
-    int i=0;
-    XVisualInfo searchvis, *pVisuals;
-
-    *nelements = 0;
-
-    /*
-    for (v = VisualInfoList; v; v = v->next) {
-        if (v->dpy == dpy && v->screen == screen)
-            ++*nelements;
-    }
-
-    if (*nelements)
-        pGLXFBConfigs = crAlloc(*nelements * sizeof(GLXFBConfig));
-
-    for (v = VisualInfoList; v && i<*nelements; v = v->next) {
-        if (v->dpy == dpy && v->screen == screen)
-            pGLXFBConfigs[i++] = (GLXFBConfig) v->visualid;
-    }
-    */
-
-    /*@todo doesn't really list all the common visuals, have to use some static list*/
-    searchvis.screen = screen;
-    XLOCK(dpy);
-    pVisuals = XGetVisualInfo(dpy, VisualScreenMask, &searchvis, nelements);
-    XUNLOCK(dpy);
-
-    if (*nelements)
-        pGLXFBConfigs = crAlloc(*nelements * sizeof(GLXFBConfig));
-
-    for (i=0; i<*nelements; ++i)
-    {
-        pGLXFBConfigs[i] = (GLXFBConfig) pVisuals[i].visualid;
-    }
-
-    XFree(pVisuals);
-
-    crDebug("glXGetFBConfigs returned %i configs", *nelements);
-    for (i=0; i<*nelements; ++i)
-    {
-        crDebug("glXGetFBConfigs[%i]=%p", i, pGLXFBConfigs[i]);
-    }
-    return pGLXFBConfigs;
-}
-#else /* not 0 */
 DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, int *nelements)
 {
     int i;
@@ -1375,11 +1318,10 @@ DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, 
     crDebug("glXGetFBConfigs returned %i configs", *nelements);
     for (i=0; i<*nelements; ++i)
     {
-        crDebug("glXGetFBConfigs[%i]=0x%x", i, (unsigned int) pGLXFBConfigs[i]);
+        crDebug("glXGetFBConfigs[%i]=0x%x", i, (unsigned)(uintptr_t) pGLXFBConfigs[i]);
     }
     return pGLXFBConfigs;
 }
-#endif
 
 DECLEXPORT(void) VBOXGLXTAG(glXGetSelectedEvent)(Display *dpy, GLXDrawable draw, unsigned long *event_mask)
 {
