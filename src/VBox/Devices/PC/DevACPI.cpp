@@ -3135,7 +3135,13 @@ static int acpiR3PlantTables(ACPIState *pThis)
      */
     const uint64_t offRamHole = _4G - cbRamHole;
     if (pThis->fPciPref64Enabled)
-        pThis->u64PciPref64 = pThis->u64RamSize  < _4G ? _4G : RT_ALIGN_64(pThis->u64RamSize, _1G); /* MEM4 */
+    {
+        /* Activate MEM4 */
+        if (offRamHole >= pThis->u64RamSize)
+            pThis->u64PciPref64 = _4G;
+        else
+            pThis->u64PciPref64 = RT_ALIGN_64(pThis->u64RamSize + offRamHole, _1G);
+    }
     uint64_t cbRamLow = offRamHole < pThis->u64RamSize ? offRamHole : pThis->u64RamSize;
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
     {

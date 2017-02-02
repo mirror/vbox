@@ -1576,10 +1576,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     Prefetchable,
                     ReadWrite,
                     0x0000000000000000,       // _GRA: Granularity.
-                    0x0000000100000000,       // _MIN: Min address, 4GB, will be overwritten.
-                    0x00000080ffffffff,       // _MAX: Max possible address, will be overwritten.
+                    0x0000000100000000,       // _MIN: Min address, def. 4GB, will be overwritten.
+                    0x00000fffffffffff,       // _MAX: Max possible address, 16TB-1, fixed.
                     0x0000000000000000,       // _TRA: Translation
-                    0x0000008000000000,       // _LEN: Range length (def. 512G, calculated dynamically)
+                    0x00000fff00000000,       // _LEN: Range length (calculated from _MIN)
                     ,                         // ResourceSourceIndex: Optional field left blank
                     ,                         // ResourceSource:      Optional field left blank
                     MEM4                      // Name declaration for this descriptor.
@@ -1600,10 +1600,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
                     CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
 
-                    Store (0x10000000, Local1)           // 16TB in units of 64KB
                     Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
-                    Multiply (Local1, 0x10000, TM4L)
-                    Subtract (Add (TM4N, TM4L), 1, TM4X) // MAX = MIN + LEN - 1
+                    Add (Subtract (TM4X, TM4N), 1, TM4L) // determine LEN, MAX is already there
 
                     ConcatenateResTemplate (CRS, TOM, Local2)
 
