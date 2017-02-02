@@ -1903,6 +1903,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
                     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
                     return VINF_SUCCESS;
                 }
+                break;
 
             case TMTIMERSTATE_PENDING_RESCHEDULE:
                 if (tmTimerTry(pTimer, TMTIMERSTATE_PENDING_STOP, enmState))
