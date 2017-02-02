@@ -146,13 +146,13 @@ QString UINativeHotKey::toString(int iKeyCode)
         case optionKey:
         case controlKey:
         case cmdKey:
-            strKeyName = UIHostComboEditor::tr("Left ");
+            strKeyName = UIHostComboEditor::tr("Left %1");
             break;
         case rightShiftKey:
         case rightOptionKey:
         case rightControlKey:
         case kEventKeyModifierRightCmdKeyMask:
-            strKeyName = UIHostComboEditor::tr("Right ");
+            strKeyName = UIHostComboEditor::tr("Right %1");
             break;
         default:
             AssertMsgFailedReturn(("modMask=%#x\n", modMask), QString());
@@ -161,19 +161,19 @@ QString UINativeHotKey::toString(int iKeyCode)
     {
         case shiftKey:
         case rightShiftKey:
-            strKeyName += QChar(kShiftUnicode);
+            strKeyName = strKeyName.arg(QChar(kShiftUnicode));
             break;
         case optionKey:
         case rightOptionKey:
-            strKeyName += QChar(kOptionUnicode);
+            strKeyName = strKeyName.arg(QChar(kOptionUnicode));
             break;
         case controlKey:
         case rightControlKey:
-            strKeyName += QChar(kControlUnicode);
+            strKeyName = strKeyName.arg(QChar(kControlUnicode));
             break;
         case cmdKey:
         case kEventKeyModifierRightCmdKeyMask:
-            strKeyName += QChar(kCommandUnicode);
+            strKeyName = strKeyName.arg(QChar(kCommandUnicode));
             break;
     }
 
