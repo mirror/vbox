@@ -4945,11 +4945,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left </source>
-        <translation>Левый </translation>
+        <translation type="vanished">Левый </translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>Правый </translation>
+        <translation type="vanished">Правый </translation>
     </message>
     <message>
         <source>Left Shift</source>
@@ -5006,6 +5006,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>None</source>
         <translation>Отсутствует</translation>
+    </message>
+    <message>
+        <source>Left %1</source>
+        <translation type="unfinished">Левый %1</translation>
+    </message>
+    <message>
+        <source>Right %1</source>
+        <translation type="unfinished">Правый %1</translation>
     </message>
 </context>
 <context>
