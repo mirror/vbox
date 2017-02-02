@@ -134,17 +134,17 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         // Local6 is the length of Str2.
         // Local7 is the minimum of Str1 or Str2 length.
         //
-    
+
         Store(Arg0, Local0)
         Store(S2BF(Local0), Local0)
-    
+
         Store(S2BF(Arg1), Local1)
         Store(Zero, Local4)
-    
+
         Store(SLEN(Arg0), Local5)
         Store(SLEN(Arg1), Local6)
         Store(MIN(Local5, Local6), Local7)
-    
+
         While (LLess(Local4, Local7))
         {
             Store(Derefof(Index(Local0, Local4)), Local2)
@@ -160,10 +160,10 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     Return(Ones)
                 }
             }
-    
+
             Increment(Local4)
         }
-    
+
         If (LLess(Local4, Local5))
         {
             Return(One)
@@ -241,7 +241,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
             DBG("_OSI exists\n")
             // OS returns non-zero value in response to _OSI query if it
             // supports the interface. Newer Windows releases support older
-            // versions of the ACPI interface. 
+            // versions of the ACPI interface.
             If (_OSI("Windows 2001"))
             {
                 Store(4, MSWV)  // XP
@@ -342,9 +342,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         UHPT,  32, // if HPET enabled
         USMC,  32, // if SMC enabled
         UFDC,  32, // if floppy controller enabled
-        SL2B,  32, // Serial2 base IO address  
+        SL2B,  32, // Serial2 base IO address
         SL2I,  32, // Serial2 IRQ
-        SL3B,  32, // Serial3 base IO address  
+        SL3B,  32, // Serial3 base IO address
         SL3I,  32, // Serial3 IRQ
         PMEM,  32,
         URTC,  32, // if RTC shown in tables
@@ -359,13 +359,13 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         HBCA,  32, // host bus controller address
         PCIB,  32, // PCI MCFG base start
         PCIL,  32, // PCI MCFG length
-        SL0B,  32, // Serial0 base IO address  
+        SL0B,  32, // Serial0 base IO address
         SL0I,  32, // Serial0 IRQ
-        SL1B,  32, // Serial1 base IO address  
+        SL1B,  32, // Serial1 base IO address
         SL1I,  32, // Serial1 IRQ
-        PP0B,  32, // Parallel0 base IO address  
+        PP0B,  32, // Parallel0 base IO address
         PP0I,  32, // Parallel0 IRQ
-        PP1B,  32, // Parallel1 base IO address  
+        PP1B,  32, // Parallel1 base IO address
         PP1I,  32, // Parallel1 IRQ
         Offset (0x80),
         ININ, 32,
@@ -729,7 +729,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         // PCI bus 0
         Device (PCI0)
         {
-            
+
             Name (_HID, EisaId ("PNP0A03")) // PCI bus PNP id
             Method(_ADR, 0, NotSerialized)  // PCI address
             {
@@ -738,7 +738,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
             Name (_BBN, 0x00) // base bus address (bus number)
             Name (_UID, 0x00)
 
-            // Method that returns routing table; also opens PCI to I/O APIC 
+            // Method that returns routing table; also opens PCI to I/O APIC
             // interrupt routing backdoor by writing 0xdead 0xbeef signature
             // to ISA bridge config space. See DevPCI.cpp/pciSetIrqInternal().
             Method (_PRT, 0, NotSerialized)
@@ -773,7 +773,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     Offset (0xde),
                     APDE,   8,
                 }
-              
+
                 // PCI MCFG MMIO ranges
                 Device (^PCIE)
                 {
@@ -803,7 +803,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                         Return (0x0F)
                      }
                     }
-                }               
+                }
 
                 // Keyboard device
                 Device (PS2K)
@@ -965,7 +965,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Name (CRS, ResourceTemplate ()
                     {
-                        IO (Decode16, 0x03F8, 0x03F8, 0x01, 0x08, _Y14) 
+                        IO (Decode16, 0x03F8, 0x03F8, 0x01, 0x08, _Y14)
                         IRQNoFlags (_Y15) {4}
                     })
                     Method (_CRS, 0, NotSerialized)
@@ -979,7 +979,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                         Return (CRS)
                     }
                 }
-                
+
                 // Serial port 1
                 Device (^SRL1)
                 {
@@ -998,7 +998,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Name (CRS, ResourceTemplate ()
                     {
-                        IO (Decode16, 0x02F8, 0x02F8, 0x01, 0x08, _Y16) 
+                        IO (Decode16, 0x02F8, 0x02F8, 0x01, 0x08, _Y16)
                         IRQNoFlags (_Y17) {3}
                     })
                     Method (_CRS, 0, NotSerialized)
@@ -1031,7 +1031,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Name (CRS, ResourceTemplate ()
                     {
-                        IO (Decode16, 0x03E8, 0x03E8, 0x01, 0x08, _Y22) 
+                        IO (Decode16, 0x03E8, 0x03E8, 0x01, 0x08, _Y22)
                         IRQNoFlags (_Y23) {3}
                     })
                     Method (_CRS, 0, NotSerialized)
@@ -1127,7 +1127,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
 
 
                 // Real Time Clock and CMOS (MC146818)
-                Device (RTC) 
+                Device (RTC)
                 {
                     Name (_HID, EisaId ("PNP0B00"))
                     Name (_CRS, ResourceTemplate ()
@@ -1146,18 +1146,18 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                 }
 
                 // High Precision Event Timer
-                Device(HPET) 
+                Device(HPET)
                 {
                   Name (_HID,  EISAID("PNP0103"))
                   Name (_CID, EISAID("PNP0C01"))
                   Name(_UID, 0)
 
-                  Method (_STA, 0, NotSerialized) 
+                  Method (_STA, 0, NotSerialized)
                   {
                        Return(UHPT)
                   }
 
-                  Name(CRS, ResourceTemplate() 
+                  Name(CRS, ResourceTemplate()
                   {
                       IRQNoFlags ()
                             {0}
@@ -1168,7 +1168,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                             0x00000400         // Address Length
                             )
                   })
-                
+
                   Method (_CRS, 0, NotSerialized)
                   {
                      Return (CRS)
@@ -1191,7 +1191,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                            0x0300,             // Range Minimum
                            0x0300,             // Range Maximum
                            0x01,               // Alignment
-                           0x20)               // Length                   
+                           0x20)               // Length
                     IRQNoFlags ()
                             {6}
 
@@ -1200,7 +1200,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     {
                        Return (CRS)
                     }
-                 }                 
+                 }
              }
 
             // NIC
@@ -1297,42 +1297,42 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
             {
                 Method(_DSM, 4, NotSerialized)
                 {
-                    Store (Package (0x04)                                                                                                                              
-                    {                                                                                                                                              
-                        "layout-id",                                                                                                                               
-                        Buffer (0x04)                                                                                                                              
-                        {                                                                                                                                          
-                            /* 04 */    0x04, 0x00, 0x00, 0x00                                                                                                   
-                        },                                                                                                                                         
-                                                                                                                                                                   
-                        "PinConfigurations",                                                                                                                       
-                        Buffer (Zero) {}                                                                                                                           
-                    }, Local0)                                                                                                                                     
+                    Store (Package (0x04)
+                    {
+                        "layout-id",
+                        Buffer (0x04)
+                        {
+                            /* 04 */    0x04, 0x00, 0x00, 0x00
+                        },
+
+                        "PinConfigurations",
+                        Buffer (Zero) {}
+                    }, Local0)
                     if (LEqual (Arg0, ToUUID("a0b5b7c6-1318-441c-b0c9-fe695eaf949b")))
                     {
                         If (LEqual (Arg1, One))
                         {
                             if (LEqual(Arg2, Zero))
                             {
-                                    Store (Buffer (0x01)                                                                                                                              
-                                        {                                                                                                                                          
+                                    Store (Buffer (0x01)
+                                        {
                                             0x03
                                         }
-                                    , Local0)                                                                                                                                     
-                                    Return (Local0)   
+                                    , Local0)
+                                    Return (Local0)
                             }
                             if (LEqual(Arg2, One))
                             {
-                                    Return (Local0)   
+                                    Return (Local0)
                             }
                         }
                     }
-                    Store (Buffer (0x01)                                                                                                                              
-                        {                                                                                                                                          
+                    Store (Buffer (0x01)
+                        {
                             0x0
                         }
-                    , Local0)                                                                                                                                     
-                    Return (Local0)   
+                    , Local0)
+                    Return (Local0)
                 }
 
                 Method(_ADR, 0, NotSerialized)
@@ -1349,7 +1349,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                         Return (0x0F)
                     }
                  }
-            }            
+            }
 
 
             // Control method battery
