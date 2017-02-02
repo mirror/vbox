@@ -1590,24 +1590,25 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
             {
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._MIN, RAMT)
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._LEN, RAMR)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._MIN, TM4N)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
-//                CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
 
                 Store (MEML, RAMT)
                 Subtract (0xffe00000, RAMT, RAMR)
 
-//                if (LNotEqual (PMEM, 0x00000000))
-//                {
-//                    Store (0x10000000, Local1)           // 16TB in units of 64KB
-//                    Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
-//                    Multiply (Local1, 0x10000, TM4L)
-//                    Subtract (Add (TM4N, TM4L), 1, TM4X) // MAX = MIN + LEN - 1
-//
-//                    ConcatenateResTemplate (CRS, TOM, Local2)
-//
-//                    Return (Local2)
-//                }
+                if (LNotEqual (PMEM, 0x00000000))
+                {
+                    CreateQwordField (TOM, \_SB.PCI0.MEM4._MIN, TM4N)
+                    CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
+                    CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
+
+                    Store (0x10000000, Local1)           // 16TB in units of 64KB
+                    Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
+                    Multiply (Local1, 0x10000, TM4L)
+                    Subtract (Add (TM4N, TM4L), 1, TM4X) // MAX = MIN + LEN - 1
+
+                    ConcatenateResTemplate (CRS, TOM, Local2)
+
+                    Return (Local2)
+                }
 
                 Return (CRS)
             }
