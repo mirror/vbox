@@ -148,12 +148,16 @@ static int vrdeControlStreamIn(PDRVAUDIOVRDE pDrv, PVRDESTREAMIN pVRDEStrmIn, PD
                 LogFunc(("No RDP client connected, so no input recording supported\n"));
                 rc = VINF_SUCCESS;
             }
+
+            break;
         }
 
         case PDMAUDIOSTREAMCMD_DISABLE:
         {
             pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
             rc = VINF_SUCCESS;
+
+            break;
         }
 
         case PDMAUDIOSTREAMCMD_PAUSE:
