@@ -12412,6 +12412,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                                           VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
             AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE,
                       ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
             Log4(("CRX LMSW rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
