@@ -42,10 +42,10 @@ BS3_CMN_DEF(void, Bs3Trap16SetGate,(uint8_t iIdt, uint8_t bType, uint8_t bDpl, u
     pIdte->Gate.u16OffsetLow    = (uint16_t)off;
     pIdte->Gate.u16OffsetHigh   = 0;
     pIdte->Gate.u16Sel          = uSel;
-    pIdte->Gate.u4ParmCount     = cParams;
+    pIdte->Gate.u5ParmCount     = cParams;
     pIdte->Gate.u4Type          = bType;
     pIdte->Gate.u2Dpl           = bDpl;
-    pIdte->Gate.u4Reserved      = 0;
+    pIdte->Gate.u3Reserved      = 0;
     pIdte->Gate.u1DescType      = 0; /* system */
     pIdte->Gate.u1Present       = 1;
 }
