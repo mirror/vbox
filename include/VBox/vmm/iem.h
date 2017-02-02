@@ -39,16 +39,13 @@ RT_C_DECLS_BEGIN
  */
 
 
-/**
- * Operand or addressing mode.
- */
-typedef enum IEMMODE
-{
-    IEMMODE_16BIT = 0,
-    IEMMODE_32BIT,
-    IEMMODE_64BIT
-} IEMMODE;
-AssertCompileSize(IEMMODE, 4);
+/** @name Operand or addressing mode.
+ * @{ */
+typedef uint8_t IEMMODE;
+#define IEMMODE_16BIT 0
+#define IEMMODE_32BIT 1
+#define IEMMODE_64BIT 2
+/** @} */
 
 
 /** @name IEMTARGETCPU_XXX - IEM target CPU specification.

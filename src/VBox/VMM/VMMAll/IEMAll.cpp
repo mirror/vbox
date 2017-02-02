@@ -865,15 +865,19 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.uCpl               = CPUMGetGuestCPL(pVCpu);
     pVCpu->iem.s.enmCpuMode         = iemCalcCpuMode(pCtx);
 #ifdef VBOX_STRICT
-    pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xc0fe;
-    pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xc0fe;
-    pVCpu->iem.s.enmDefOpSize       = (IEMMODE)0xc0fe;
-    pVCpu->iem.s.enmEffOpSize       = (IEMMODE)0xc0fe;
+    pVCpu->iem.s.enmDefAddrMode     = (IEMMODE)0xfe;
+    pVCpu->iem.s.enmEffAddrMode     = (IEMMODE)0xfe;
+    pVCpu->iem.s.enmDefOpSize       = (IEMMODE)0xfe;
+    pVCpu->iem.s.enmEffOpSize       = (IEMMODE)0xfe;
     pVCpu->iem.s.fPrefixes          = 0xfeedbeef;
     pVCpu->iem.s.uRexReg            = 127;
     pVCpu->iem.s.uRexB              = 127;
     pVCpu->iem.s.uRexIndex          = 127;
     pVCpu->iem.s.iEffSeg            = 127;
+    pVCpu->iem.s.idxPrefix          = 127;
+    pVCpu->iem.s.uVex3rdReg         = 127;
+    pVCpu->iem.s.uVexLength         = 127;
+    pVCpu->iem.s.fEvexStuff         = 127;
     pVCpu->iem.s.uFpuOpcode         = UINT16_MAX;
 # ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.offInstrNextByte   = UINT16_MAX;
@@ -984,6 +988,10 @@ DECLINLINE(void) iemInitDecoder(PVMCPU pVCpu, bool fBypassHandlers)
     pVCpu->iem.s.uRexReg            = 0;
     pVCpu->iem.s.uRexB              = 0;
     pVCpu->iem.s.uRexIndex          = 0;
+    pVCpu->iem.s.idxPrefix          = 0;
+    pVCpu->iem.s.uVex3rdReg         = 0;
+    pVCpu->iem.s.uVexLength         = 0;
+    pVCpu->iem.s.fEvexStuff         = 0;
     pVCpu->iem.s.iEffSeg            = X86_SREG_DS;
 #ifdef IEM_WITH_CODE_TLB
     pVCpu->iem.s.pbInstrBuf         = NULL;
@@ -1075,6 +1083,10 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     pVCpu->iem.s.uRexReg            = 0;
     pVCpu->iem.s.uRexB              = 0;
     pVCpu->iem.s.uRexIndex          = 0;
+    pVCpu->iem.s.fPrefixes          = 0;
+    pVCpu->iem.s.uVex3rdReg         = 0;
+    pVCpu->iem.s.uVexLength         = 0;
+    pVCpu->iem.s.fEvexStuff         = 0;
     pVCpu->iem.s.iEffSeg            = X86_SREG_DS;
 #ifdef IEM_WITH_CODE_TLB
     if (pVCpu->iem.s.pbInstrBuf)

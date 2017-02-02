@@ -7091,8 +7091,52 @@ FNIEMOP_STUB(iemOp_psrlq_Pq_Qq__psrlq_Vdq_Wdq);
 FNIEMOP_STUB(iemOp_paddq_Pq_Qq__paddq_Vdq_Wdq);
 /** Opcode 0x0f 0xd5. */
 FNIEMOP_STUB(iemOp_pmulq_Pq_Qq__pmullw_Vdq_Wdq);
+
 /** Opcode 0x0f 0xd6. */
-FNIEMOP_STUB(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq); /** @todo Win10 w/o np may need this: 66 0f d6 0a */
+FNIEMOP_STUB(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq);
+#if 0
+FNIEMOP_DEF(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq)
+{
+    /* Docs says register only. */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+    {
+        case IEM_OP_PRF_SIZE_OP: /* SSE */
+            IEMOP_MNEMONIC(movq_Wq_Vq, "movq Wq,Vq");
+            IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_SSE | DISOPTYPE_HARMLESS);
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *,           pDst, 0);
+            IEM_MC_ARG(uint128_t const *,    pSrc, 1);
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+            IEM_MC_PREPARE_SSE_USAGE();
+            IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+            IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case 0: /* MMX */
+            I E M O P _ M N E M O N I C(pmovmskb_Gd_Udq, "pmovmskb Gd,Udq");
+            IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_MMX | DISOPTYPE_HARMLESS);
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *,          pDst, 0);
+            IEM_MC_ARG(uint64_t const *,    pSrc, 1);
+            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+            IEM_MC_PREPARE_FPU_USAGE();
+            IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+            IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
+            IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        default:
+            return IEMOP_RAISE_INVALID_OPCODE();
+    }
+}
+#endif
 
 
 /** Opcode 0x0f 0xd7. */

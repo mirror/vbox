@@ -428,20 +428,22 @@ typedef struct IEMCPU
     /** The current CPU execution mode (CS). */
     IEMMODE                 enmCpuMode;                                                                     /* 0x04 */
     /** The CPL. */
-    uint8_t                 uCpl;                                                                           /* 0x08 */
+    uint8_t                 uCpl;                                                                           /* 0x05 */
 
     /** Whether to bypass access handlers or not. */
-    bool                    fBypassHandlers;                                                                /* 0x09 */
+    bool                    fBypassHandlers;                                                                /* 0x06 */
     /** Indicates that we're interpreting patch code - RC only! */
-    bool                    fInPatchCode;                                                                   /* 0x0a */
+    bool                    fInPatchCode;                                                                   /* 0x07 */
 
     /** @name Decoder state.
      * @{ */
 #ifdef IEM_WITH_CODE_TLB
-    /** Unused. */
-    uint8_t                 bUnused0;                                                                       /* 0x0b */
     /** The offset of the next instruction byte. */
-    uint32_t                offInstrNextByte;                                                               /* 0x0c */
+    uint32_t                offInstrNextByte;                                                               /* 0x08 */
+    /** The number of bytes available at pbInstrBuf for the current instruction.
+     * This takes the max opcode length into account so that doesn't need to be
+     * checked separately. */
+    uint32_t                cbInstrBuf;                                                                     /* 0x0c */
     /** Pointer to the page containing RIP, user specified buffer or abOpcode.
      * This can be NULL if the page isn't mappable for some reason, in which
      * case we'll do fallback stuff.
@@ -455,86 +457,92 @@ typedef struct IEMCPU
      * therefore precludes stuff like <tt>pbInstrBuf[offInstrNextByte + cbInstrBuf - cbCurInstr]</tt>
      */
     uint8_t const          *pbInstrBuf;                                                                     /* 0x10 */
-# if defined(IN_RC) && HC_ARCH_BITS != 32
+# if ARCH_BITS == 32
     uint32_t                uInstrBufHigh; /** The high dword of the host context pbInstrBuf member. */
 # endif
     /** The program counter corresponding to pbInstrBuf.
      * This is set to a non-canonical address when we need to invalidate it. */
     uint64_t                uInstrBufPc;                                                                    /* 0x18 */
-    /** The number of bytes available at pbInstrBuf for the current instruction.
-     * This takes the max opcode length into account so that doesn't need to be
-     * checked separately. */
-    uint32_t                cbInstrBuf;                                                                     /* 0x20 */
     /** The number of bytes available at pbInstrBuf in total (for IEMExecLots).
      * This takes the CS segment limit into account. */
-    uint16_t                cbInstrBufTotal;                                                                /* 0x24 */
+    uint16_t                cbInstrBufTotal;                                                                /* 0x20 */
     /** Offset into pbInstrBuf of the first byte of the current instruction.
      * Can be negative to efficiently handle cross page instructions. */
-    int16_t                 offCurInstrStart;                                                               /* 0x26 */
+    int16_t                 offCurInstrStart;                                                               /* 0x22 */
 
     /** The prefix mask (IEM_OP_PRF_XXX). */
-    uint32_t                fPrefixes;                                                                      /* 0x28 */
+    uint32_t                fPrefixes;                                                                      /* 0x24 */
     /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;                                                                        /* 0x2c */
+    uint8_t                 uRexReg;                                                                        /* 0x28 */
     /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
      * (REX.B << 3). */
-    uint8_t                 uRexB;                                                                          /* 0x2d */
+    uint8_t                 uRexB;                                                                          /* 0x29 */
     /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;                                                                      /* 0x2e */
+    uint8_t                 uRexIndex;                                                                      /* 0x2a */
 
     /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;                                                                        /* 0x2f */
+    uint8_t                 iEffSeg;                                                                        /* 0x2b */
 
 #else
-    /** The current offset into abOpcodes. */
-    uint8_t                 offOpcode;                                                                      /*       0x0b */
     /** The size of what has currently been fetched into abOpcodes. */
-    uint8_t                 cbOpcode;                                                                       /*       0x0c */
+    uint8_t                 cbOpcode;                                                                       /*       0x08 */
+    /** The current offset into abOpcodes. */
+    uint8_t                 offOpcode;                                                                      /*       0x09 */
 
     /** The effective segment register (X86_SREG_XXX). */
-    uint8_t                 iEffSeg;                                                                        /*       0x0d */
+    uint8_t                 iEffSeg;                                                                        /*       0x0a */
 
     /** The extra REX ModR/M register field bit (REX.R << 3). */
-    uint8_t                 uRexReg;                                                                        /*       0x0e */
+    uint8_t                 uRexReg;                                                                        /*       0x0b */
+    /** The prefix mask (IEM_OP_PRF_XXX). */
+    uint32_t                fPrefixes;                                                                      /*       0x0c */
     /** The extra REX ModR/M r/m field, SIB base and opcode reg bit
      * (REX.B << 3). */
-    uint8_t                 uRexB;                                                                          /*       0x0f */
-    /** The prefix mask (IEM_OP_PRF_XXX). */
-    uint32_t                fPrefixes;                                                                      /*       0x10 */
+    uint8_t                 uRexB;                                                                          /*       0x10 */
     /** The extra REX SIB index field bit (REX.X << 3). */
-    uint8_t                 uRexIndex;                                                                      /*       0x14 */
+    uint8_t                 uRexIndex;                                                                      /*       0x11 */
 
-    /** Explicit alignment padding. */
-    uint8_t                 abAlignment1[3];                                                                /*       0x15 */
 #endif
 
-    /** The effective operand mode . */
-    IEMMODE                 enmEffOpSize;                                                                   /* 0x30, 0x18 */
-    /** The default addressing mode . */
-    IEMMODE                 enmDefAddrMode;                                                                 /* 0x34, 0x1c */
-    /** The effective addressing mode . */
-    IEMMODE                 enmEffAddrMode;                                                                 /* 0x38, 0x20 */
-    /** The default operand mode . */
-    IEMMODE                 enmDefOpSize;                                                                   /* 0x3c, 0x24 */
+    /** The effective operand mode. */
+    IEMMODE                 enmEffOpSize;                                                                   /* 0x2c, 0x12 */
+    /** The default addressing mode. */
+    IEMMODE                 enmDefAddrMode;                                                                 /* 0x2d, 0x13 */
+    /** The effective addressing mode. */
+    IEMMODE                 enmEffAddrMode;                                                                 /* 0x2e, 0x14 */
+    /** The default operand mode. */
+    IEMMODE                 enmDefOpSize;                                                                   /* 0x2f, 0x15 */
+
+    /** Prefix index (VEX.pp) for two byte and three byte tables. */
+    uint8_t                 idxPrefix;                                                                      /* 0x30, 0x16 */
+    /** 3rd (E)VEX register. */
+    uint8_t                 uVex3rdReg;                                                                     /* 0x31, 0x17 */
+    /** The VEX/EVEX length field. */
+    uint8_t                 uVexLength;                                                                     /* 0x32, 0x18 */
+    /** Additional EVEX stuff. */
+    uint8_t                 fEvexStuff;                                                                     /* 0x33, 0x19 */
 
     /** The FPU opcode (FOP). */
-    uint16_t                uFpuOpcode;                                                                     /* 0x40, 0x28 */
-    /** Align the opcode buffer on a dword boundrary. */
-    uint8_t                 abAlignment2a[2];                                                               /* 0x42, 0x2a */
+    uint16_t                uFpuOpcode;                                                                     /* 0x34, 0x1a */
 
-    /** The opcode bytes. */
-    uint8_t                 abOpcode[15];                                                                   /* 0x44, 0x2c */
     /** Explicit alignment padding. */
 #ifdef IEM_WITH_CODE_TLB
-    uint8_t                 abAlignment2b[1+4];                                                             /* 0x53 */
+    uint8_t                 abAlignment2a[2];                                                               /* 0x36       */
+#endif
+
+    /** The opcode bytes. */
+    uint8_t                 abOpcode[15];                                                                   /* 0x48, 0x1c */
+    /** Explicit alignment padding. */
+#ifdef IEM_WITH_CODE_TLB
+    uint8_t                 abAlignment2c[0x48 - 0x47];                                                     /* 0x37 */
 #else
-    uint8_t                 abAlignment2b[1+28];                                                            /*       0x3b */
+    uint8_t                 abAlignment2c[0x48 - 0x2b];                                                     /*       0x2b */
 #endif
     /** @} */
 
 
     /** The flags of the current exception / interrupt. */
-    uint32_t                fCurXcpt;                                                                       /* 0x58, 0x58 */
+    uint32_t                fCurXcpt;                                                                       /* 0x48, 0x48 */
     /** The current exception / interrupt. */
     uint8_t                 uCurXcpt;
     /** Exception / interrupt recursion depth. */
@@ -679,7 +687,7 @@ typedef struct IEMCPU
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */
 
-    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 1 + 2 + 8 : 1 + 2]; /**< Alignment padding. */
+    uint32_t                au32Alignment8[HC_ARCH_BITS == 64 ? 1 + 2 + 4 + 8 : 1 + 2 + 4]; /**< Alignment padding. */
 
     /** Data TLB.
      * @remarks Must be 64-byte aligned. */
@@ -718,6 +726,7 @@ typedef struct IEMCPU
     R3PTRTYPE(PIEMVERIFYEVTREC)     pFreeEvtRec;
 #endif
 } IEMCPU;
+AssertCompileMemberOffset(IEMCPU, fCurXcpt, 0x48);
 AssertCompileMemberAlignment(IEMCPU, DataTlb, 64);
 AssertCompileMemberAlignment(IEMCPU, CodeTlb, 64);
 /** Pointer to the per-CPU IEM state. */
