@@ -1173,8 +1173,12 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
         RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()) &&
         RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()) &&
         RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
+    {
         dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
                               data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
+        if (!dhcp.isOk())
+            emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(dhcp));
+    }
 }
 
 void UIGlobalSettingsNetwork::createTreeItemNetworkHost(const UIDataNetworkHost &data, bool fChooseItem)
