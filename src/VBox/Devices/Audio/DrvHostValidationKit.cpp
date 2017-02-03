@@ -36,6 +36,12 @@ typedef struct VAKITAUDIOSTREAM
     PDMAUDIOSTREAM     Stream;
     /** Audio file to dump output to or read input from. */
     PDMAUDIOFILE       File;
+    /** Text file to store timing of audio buffers submittions**/
+    RTFILE             hFileTiming;
+    /** Timestamp of the first play or record request**/
+    uint64_t           tsStarted;
+    /** Total number of samples played or recorded so far**/
+    uint32_t           uSamplesSinceStarted;
     union
     {
         struct
@@ -151,8 +157,10 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &Props);
     if (RT_SUCCESS(rc))
     {
+        pDbgStream->tsStarted                   = 0;
+        pDbgStream->uSamplesSinceStarted        = 0;
         pDbgStream->Out.tsLastPlayed            = 0;
-        pDbgStream->Out.cMaxSamplesInPlayBuffer = _1K;
+        pDbgStream->Out.cMaxSamplesInPlayBuffer = 16 * _1K;
         pDbgStream->Out.pu8PlayBuffer           = (uint8_t *)RTMemAlloc(pDbgStream->Out.cMaxSamplesInPlayBuffer << Props.cShift);
         if (!pDbgStream->Out.pu8PlayBuffer)
             rc = VERR_NO_MEMORY;
@@ -162,6 +170,9 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
     {
         char szTemp[RTPATH_MAX];
         rc = RTPathTemp(szTemp, sizeof(szTemp));
+
+        RTPathAppend(szTemp, sizeof(szTemp), "VBoxAudioValKit");
+
         if (RT_SUCCESS(rc))
         {
             char szFile[RTPATH_MAX];
@@ -172,6 +183,13 @@ static int debugCreateStreamOut(PPDMIHOSTAUDIO pInterface,
                 rc = DrvAudioHlpWAVFileOpen(&pDbgStream->File, szFile,
                                             RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE,
                                             &Props, PDMAUDIOFILEFLAG_NONE);
+                if (RT_FAILURE(rc))
+                    LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+
+                RTStrCat(szFile, sizeof(szFile), ".timing");
+                rc = RTFileOpen(&pDbgStream->hFileTiming, szFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE);
+                
+
                 if (RT_FAILURE(rc))
                     LogRel(("DebugAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
             }
@@ -244,8 +262,35 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
     /*if (cSamplesPlayed > cLive)
         cSamplesPlayed = cLive;*/
 
+    uint64_t tsSinceStart;
+    size_t cch;
+    char szTimingInfo[128];
+
+    if (pDbgStream->tsStarted == 0)
+    {
+        pDbgStream->tsStarted = RTTimeNanoTS();
+        tsSinceStart = 0;
+    }
+    else
+    {
+        tsSinceStart = RTTimeNanoTS() - pDbgStream->tsStarted;
+    }
+
+    uint32_t uSamplesReady = AudioMixBufUsed(&pStream->MixBuf);
+    cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "%d %d %d %d\n", 
+        // Host time (in mcs) elapsed since Guest submitted the first buffer for playback
+        (uint32_t)(tsSinceStart / 1000),
+        // how long (in mcs) all the samples submitted previously were played
+        (uint32_t)(pDbgStream->uSamplesSinceStarted * 1.0E6 / pStream->Cfg.uHz),
+        // how long (in mcs) a new uSamplesReady samples should\will be played
+        (uint32_t)(uSamplesReady * 1.0E6 / pStream->Cfg.uHz),
+        uSamplesReady);
+    RTFileWrite(pDbgStream->hFileTiming, szTimingInfo, cch, NULL);
+    pDbgStream->uSamplesSinceStarted += uSamplesReady;
+
     uint32_t cSamplesPlayed = 0;
     uint32_t cSamplesAvail  = RT_MIN(AudioMixBufUsed(&pStream->MixBuf), pDbgStream->Out.cMaxSamplesInPlayBuffer);
+
     while (cSamplesAvail)
     {
         uint32_t cSamplesRead = 0;
@@ -326,6 +371,9 @@ static int debugDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
     size_t cbDataSize = DrvAudioHlpWAVFileGetDataSize(&pDbgStream->File);
 
     int rc = DrvAudioHlpWAVFileClose(&pDbgStream->File);
+
+    RTFileClose(pDbgStream->hFileTiming);
+
     if (RT_SUCCESS(rc))
     {
         /* Delete the file again if nothing but the header was written to it. */
@@ -334,7 +382,13 @@ static int debugDestroyStreamOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStr
         if (   !cbDataSize
             && fDeleteEmptyFiles)
         {
-            rc = RTFileDelete(pDbgStream->File.szName);
+            char szFile[RTPATH_MAX];
+
+            RTStrCopy(szFile, sizeof(szFile), pDbgStream->File.szName);
+            rc = RTFileDelete(szFile);
+
+            RTStrCat(szFile, sizeof(szFile), ".timing");
+            rc = RTFileDelete(szFile);
         }
         else
             LogRel(("DebugAudio: Created output file '%s' (%zu bytes)\n", pDbgStream->File.szName, cbDataSize));
