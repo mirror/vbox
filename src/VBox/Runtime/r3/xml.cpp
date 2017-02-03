@@ -31,6 +31,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/cpp/lock.h>
@@ -1726,15 +1727,36 @@ ElementNode *Document::createRootElement(const char *pcszRootElementName,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+static void xmlParserBaseGenericError(void *pCtx, const char *pszMsg, ...)
+{
+    NOREF(pCtx);
+    va_list args;
+    va_start(args, pszMsg);
+    RTLogRelPrintfV(pszMsg, args);
+    va_end(args);
+}
+
+static void xmlParserBaseStructuredError(void *pCtx, xmlErrorPtr error)
+{
+    NOREF(pCtx);
+    /* we expect that there is always a trailing NL */
+    LogRel(("XML error at '%s' line %d: %s", error->file, error->line, error->message));
+}
+
 XmlParserBase::XmlParserBase()
 {
     m_ctxt = xmlNewParserCtxt();
     if (m_ctxt == NULL)
         throw std::bad_alloc();
+    /* per-thread so it must be here */
+    xmlSetGenericErrorFunc(NULL, xmlParserBaseGenericError);
+    xmlSetStructuredErrorFunc(NULL, xmlParserBaseStructuredError);
 }
 
 XmlParserBase::~XmlParserBase()
 {
+    xmlSetStructuredErrorFunc(NULL, NULL);
+    xmlSetGenericErrorFunc(NULL, NULL);
     xmlFreeParserCtxt (m_ctxt);
     m_ctxt = NULL;
 }
