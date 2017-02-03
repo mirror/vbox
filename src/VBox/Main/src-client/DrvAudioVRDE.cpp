@@ -280,13 +280,17 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface,
      * Call the VRDP server with the data.
      */
     uint32_t cbWritten = 0;
-
     while (cbToWrite)
     {
-        uint32_t cbChunk = cbToWrite; /** @todo For now write all at once. */
+        /* Make sure that this is even, as we send the number of samples to the VRDP server. */
+        uint32_t cbChunk = (cbToWrite % 2 == 0) ? cbToWrite : cbToWrite - 1; /** @todo For now write all at once. */
+        Assert(cbChunk % 2 == 0);
 
-        pDrv->pConsoleVRDPServer->SendAudioSamples((uint8_t *)pvBuf + cbWritten, cbChunk, format);
+        if (!cbChunk) /* Nothing to send. Bail out. */
+            break;
 
+        pDrv->pConsoleVRDPServer->SendAudioSamples((uint8_t *)pvBuf + cbWritten,
+                                                   PDMAUDIOPCMPROPS_B2S(&pStreamVRDE->Props, cbChunk) /* Samples */, format);
         cbWritten += cbChunk;
         Assert(cbWritten <= cbBuf);
 
@@ -296,12 +300,10 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface,
 
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Always report back all samples acquired, regardless of whether the
-         * VRDP server actually did process those.
-         */
+        Assert(cbWritten % 2 == 0); /* Paranoia. */
+
         if (pcbWritten)
-            *pcbWritten = cbToWrite;
+            *pcbWritten = cbWritten;
     }
 
     return rc;
