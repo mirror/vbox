@@ -162,10 +162,33 @@ void UIGlobalSettingsNetworkDetailsHost::loadServerStuff()
 
     if (fIsManual)
     {
+        /* Load values from COM wrappers: */
         m_pDhcpAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpServerAddress);
         m_pDhcpMaskEditor->setText(m_data.m_dhcpserver.m_strDhcpServerMask);
         m_pDhcpLowerAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpLowerAddress);
         m_pDhcpUpperAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpUpperAddress);
+
+        /* Invent default values where necessary: */
+        const quint32 uAddr = ipv4FromQStringToQuint32(m_data.m_interface.m_strInterfaceAddress);
+        const quint32 uMask = ipv4FromQStringToQuint32(m_data.m_interface.m_strInterfaceMask);
+        const quint32 uProp = uAddr & uMask;
+        const QString strMask = ipv4FromQuint32ToQString(uMask);
+        const QString strProp = ipv4FromQuint32ToQString(uProp);
+        //printf("Proposal is = %s x %s\n",
+        //       strProp.toUtf8().constData(),
+        //       strMask.toUtf8().constData());
+        if (   m_data.m_dhcpserver.m_strDhcpServerAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strDhcpServerAddress == "0.0.0.0")
+            m_pDhcpAddressEditor->setText(strProp);
+        if (   m_data.m_dhcpserver.m_strDhcpServerMask.isEmpty()
+            || m_data.m_dhcpserver.m_strDhcpServerMask == "0.0.0.0")
+            m_pDhcpMaskEditor->setText(strMask);
+        if (   m_data.m_dhcpserver.m_strDhcpLowerAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strDhcpLowerAddress == "0.0.0.0")
+            m_pDhcpLowerAddressEditor->setText(strProp);
+        if (   m_data.m_dhcpserver.m_strDhcpUpperAddress.isEmpty()
+            || m_data.m_dhcpserver.m_strDhcpUpperAddress == "0.0.0.0")
+            m_pDhcpUpperAddressEditor->setText(strProp);
     }
 }
 
@@ -193,5 +216,33 @@ void UIGlobalSettingsNetworkDetailsHost::save()
         m_data.m_dhcpserver.m_strDhcpLowerAddress = m_pDhcpLowerAddressEditor->text();
         m_data.m_dhcpserver.m_strDhcpUpperAddress = m_pDhcpUpperAddressEditor->text();
     }
+}
+
+/* static */
+quint32 UIGlobalSettingsNetworkDetailsHost::ipv4FromQStringToQuint32(const QString &strAddress)
+{
+    quint32 uAddress = 0;
+    foreach (const QString &strPart, strAddress.split('.'))
+    {
+        uAddress = uAddress << 8;
+        bool fOk = false;
+        uint uPart = strPart.toUInt(&fOk);
+        if (fOk)
+            uAddress += uPart;
+    }
+    return uAddress;
+}
+
+/* static */
+QString UIGlobalSettingsNetworkDetailsHost::ipv4FromQuint32ToQString(quint32 uAddress)
+{
+    QStringList address;
+    while (uAddress)
+    {
+        uint uPart = uAddress & 0xFF;
+        address.prepend(QString::number(uPart));
+        uAddress = uAddress >> 8;
+    }
+    return address.join('.');
 }
 

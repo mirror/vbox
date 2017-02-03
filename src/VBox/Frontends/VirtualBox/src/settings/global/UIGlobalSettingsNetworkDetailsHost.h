@@ -58,6 +58,11 @@ private:
     void loadServerStuff();
     void save();
 
+    /** Converts IPv4 address from QString to quint32. */
+    static quint32 ipv4FromQStringToQuint32(const QString &strAddress);
+    /** Converts IPv4 address from quint32 to QString. */
+    static QString ipv4FromQuint32ToQString(quint32 uAddress);
+
     /* Variable: External data reference: */
     UIDataNetworkHost &m_data;
 };
