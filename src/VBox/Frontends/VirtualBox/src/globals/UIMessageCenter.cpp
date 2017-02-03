@@ -1731,7 +1731,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     if (!strErrorMsg.isEmpty())
         formatted.prepend(QString("<p>%1.</p>").arg(vboxGlobal().emphasize(strErrorMsg)));
     if (!strErrorId.isEmpty())
-        formatted += QString("<table bgcolor=#EEEEEE border=0 cellspacing=0 "
+        formatted += QString("<table bgcolor=#EEEEEE border=0 cellspacing=5 "
                              "cellpadding=0 width=100%>"
                              "<tr><td>%1</td><td>%2</td></tr>"
                              "<tr><td>%3</td><td>%4</td></tr>"
@@ -2303,7 +2303,7 @@ bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, co
                              "Extension packs complement the functionality of VirtualBox and can contain system level software "
                              "that could be potentially harmful to your system. Please review the description below and only proceed "
                              "if you have obtained the extension pack from a trusted source.</p>"
-                             "<p><table cellpadding=0 cellspacing=0>"
+                             "<p><table cellpadding=0 cellspacing=5>"
                              "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%1</td></tr>"
                              "<tr><td><b>Version:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
                              "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
@@ -2334,7 +2334,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
         fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>An older version of the extension pack is already installed, would you like to upgrade? "
                                 "<p>%1</p>"
-                                "<p><table cellpadding=0 cellspacing=0>"
+                                "<p><table cellpadding=0 cellspacing=5>"
                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
                                 "<tr><td><b>New Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
                                 "<tr><td><b>Current Version:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
@@ -2347,7 +2347,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
         fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>An newer version of the extension pack is already installed, would you like to downgrade? "
                                 "<p>%1</p>"
-                                "<p><table cellpadding=0 cellspacing=0>"
+                                "<p><table cellpadding=0 cellspacing=5>"
                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
                                 "<tr><td><b>New Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
                                 "<tr><td><b>Current Version:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
@@ -2360,7 +2360,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
         fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>The extension pack is already installed with the same version, would you like reinstall it? "
                                 "<p>%1</p>"
-                                "<p><table cellpadding=0 cellspacing=0>"
+                                "<p><table cellpadding=0 cellspacing=5>"
                                 "<tr><td><b>Name:&nbsp;&nbsp;</b></td><td>%2</td></tr>"
                                 "<tr><td><b>Version:&nbsp;&nbsp;</b></td><td>%3</td></tr>"
                                 "<tr><td><b>Description:&nbsp;&nbsp;</b></td><td>%4</td></tr>"
@@ -2626,7 +2626,7 @@ QString UIMessageCenter::formatErrorInfo(const CProgress &progress)
     if (!errorInfo.isNull())
         return formatErrorInfo(errorInfo);
     /* Handle NULL error-info otherwise: */
-    return QString("<table bgcolor=#EEEEEE border=0 cellspacing=0 cellpadding=0 width=100%>"
+    return QString("<table bgcolor=#EEEEEE border=0 cellspacing=5 cellpadding=0 width=100%>"
                    "<tr><td>%1</td><td><tt>%2</tt></td></tr></table>")
                    .arg(tr("Result&nbsp;Code: ", "error info"))
                    .arg(formatRCFull(progress.GetResultCode()))
@@ -2844,7 +2844,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
             formatted += QString("<p>%1.</p>").arg(vboxGlobal().emphasize(strDetailsInfo));
     }
 
-    formatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=0 "
+    formatted += "<!--EOM--><table bgcolor=#EEEEEE border=0 cellspacing=5 "
                  "cellpadding=0 width=100%>";
 
     bool haveResultCode = false;
