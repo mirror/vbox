@@ -146,6 +146,8 @@ private:
     UISettingsSerializer *m_pSerializeProcess;
     /** Holds whether the serialization is in progress. */
     bool m_fSerializationIsInProgress;
+    /** Holds whether there were no serialization errors. */
+    bool m_fSerializationClean;
 
     /* Status bar widget: */
     QStackedWidget *m_pStatusBar;

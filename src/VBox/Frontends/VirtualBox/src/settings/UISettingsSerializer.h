@@ -165,6 +165,9 @@ public:
     /** Returns the instance of wrapper(s) to load/save the data from/to. */
     QVariant& data();
 
+    /** Returns whether there were no errors. */
+    bool isClean() const { return m_fClean; }
+
 protected:
 
     /** Prepare routine. */
@@ -221,6 +224,9 @@ private:
     QILabel *m_pLabelSubOperationProgress;
     /** Holds the sub-operation progress bar. */
     QProgressBar *m_pBarSubOperationProgress;
+
+    /** Holds whether there were no errors. */
+    bool m_fClean;
 
     /** Holds the template for the sub-operation progress label. */
     static QString m_strProgressDescriptionTemplate;

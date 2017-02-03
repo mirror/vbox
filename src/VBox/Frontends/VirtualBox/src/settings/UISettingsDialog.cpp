@@ -63,6 +63,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Serialization stuff: */
     , m_pSerializeProcess(0)
     , m_fSerializationIsInProgress(false)
+    , m_fSerializationClean(true)
     /* Status-bar stuff: */
     , m_pStatusBar(0)
     /* Process-bar stuff: */
@@ -176,8 +177,12 @@ void UISettingsDialog::accept()
     /* Save data: */
     saveOwnData();
 
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIMainDialog>::accept();
+    /* If serialization was clean: */
+    if (m_fSerializationClean)
+    {
+        /* Call to base-class: */
+        QIWithRetranslateUI<QIMainDialog>::accept();
+    }
 }
 
 void UISettingsDialog::sltCategoryChanged(int cId)
@@ -331,6 +336,9 @@ void UISettingsDialog::saveData(QVariant &data)
          * We have to check if the dialog still valid. */
         if (pDlgSerializeProgress)
         {
+            /* Remember whether the serialization was clean: */
+            m_fSerializationClean = pDlgSerializeProgress->isClean();
+
             /* Upload 'settings saver' data: */
             data = pDlgSerializeProgress->data();
 
