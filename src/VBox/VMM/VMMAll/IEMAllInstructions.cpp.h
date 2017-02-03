@@ -1610,109 +1610,106 @@ FNIEMOP_DEF(iemOp_3Dnow)
 }
 
 
-/** Opcode     0x0f 0x10. */
-FNIEMOP_STUB(iemOp_movups_Vps_Wps);
-
-/** Opcode 66h 0x0f 0x10. */
-FNIEMOP_STUB(iemOp_movupd_Vpd_Wpd);
-
-/** Opcode f3h 0x0f 0x10. */
-FNIEMOP_STUB(iemOp_movss_Vss_Hx_Wss);
-
-/** Opcode f2h 0x0f 0x10. */
-FNIEMOP_STUB(iemOp_movsd_Vsd_Hx_Wsd);
+/** Opcode      0x0f 0x10 - vmovups Vps, Wps */
+FNIEMOP_STUB(iemOp_vmovups_Vps_Wps);
+/** Opcode 0x66 0x0f 0x10 - vmovupd Vpd, Wpd */
+FNIEMOP_STUB(iemOp_vmovupd_Vpd_Wpd);
+/** Opcode 0xf3 0x0f 0x10 - vmovss Vx, Hx, Wss */
+FNIEMOP_STUB(iemOp_vmovss_Vx_Hx_Wss);
+/** Opcode 0xf2 0x0f 0x10 - vmovsd Vx, Hx, Wsd */
+FNIEMOP_STUB(iemOp_vmovsd_Vx_Hx_Wsd);
 
 
-/** Opcode 0x0f 0x11. */
-FNIEMOP_DEF(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd)
+/** Opcode      0x0f 0x11 - vmovups Wps, Vps */
+FNIEMOP_DEF(iemOp_vmovups_Wps_Vps)
 {
-    /* Quick hack. Need to restructure all of this later some time. */
-    uint32_t const fRelevantPrefix = pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ);
-    if (fRelevantPrefix == 0)
+    IEMOP_MNEMONIC(movups_Wps_Vps, "movups Wps,Vps");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC(movups_Wps_Vps, "movups Wps,Vps");
-        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-        if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-        {
-            /*
-             * Register, register.
-             */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
-            IEM_MC_BEGIN(0, 0);
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
-            IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-            IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB,
-                                  ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-        }
-        else
-        {
-            /*
-             * Memory, register.
-             */
-            IEM_MC_BEGIN(0, 2);
-            IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
-            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ - yes it generally is! */
-            IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
-            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-
-            IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-            IEM_MC_STORE_MEM_U128(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
-
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-        }
-    }
-    else if (fRelevantPrefix == IEM_OP_PRF_REPNZ)
-    {
-        IEMOP_MNEMONIC(movsd_Wsd_Vsd, "movsd Wsd,Vsd");
-        uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-        if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-        {
-            /*
-             * Register, register.
-             */
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_BEGIN(0, 1);
-            IEM_MC_LOCAL(uint64_t,                  uSrc);
-
-            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-            IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-            IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-            IEM_MC_STORE_XREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, uSrc);
-
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-        }
-        else
-        {
-            /*
-             * Memory, register.
-             */
-            IEM_MC_BEGIN(0, 2);
-            IEM_MC_LOCAL(uint64_t,                  uSrc);
-            IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-            IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-
-            IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-            IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
-
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-        }
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES();
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB,
+                              ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
     }
     else
     {
-        IEMOP_BITCH_ABOUT_STUB();
-        return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+        /*
+         * Memory, register.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,                 uSrc); /** @todo optimize this one day... */
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_REPZ_OR_REPNZ_PREFIXES(); /** @todo check if this is delayed this long for REPZ/NZ - yes it generally is! */
+        IEM_MC_MAYBE_RAISE_SSE_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U128(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
+/** Opcode 0x66 0x0f 0x11 - vmovupd Wpd,Vpd */
+FNIEMOP_STUB(iemOp_vmovupd_Wpd_Vpd);
+
+/** Opcode 0xf3 0x0f 0x11 - vmovss Wss, Hx, Vss */
+FNIEMOP_STUB(iemOp_vmovss_Wss_Hx_Vss);
+
+/** Opcode 0xf2 0x0f 0x11 - vmovsd Wsd, Hx, Vsd */
+FNIEMOP_DEF(iemOp_vmovsd_Wsd_Hx_Vsd)
+{
+    IEMOP_MNEMONIC(movsd_Wsd_Vsd, "movsd Wsd,Vsd");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_XREG_U64((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Memory, register.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U64(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
     }
     return VINF_SUCCESS;
 }
@@ -7906,8 +7903,8 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x0e */  IEMOP_X4(iemOp_femms),
     /* 0x0f */  IEMOP_X4(iemOp_3Dnow),
 
-    /* 0x10 */  iemOp_movups_Vps_Wps,       iemOp_movupd_Vpd_Wpd,       iemOp_movss_Vss_Hx_Wss,     iemOp_movsd_Vsd_Hx_Wsd,
-    /* 0x11 */  iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd, iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd, iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd, iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd,
+    /* 0x10 */  iemOp_vmovups_Vps_Wps,      iemOp_vmovupd_Vpd_Wpd,      iemOp_vmovss_Vx_Hx_Wss,     iemOp_vmovsd_Vx_Hx_Wsd,
+    /* 0x11 */  iemOp_vmovups_Wps_Vps,      iemOp_vmovupd_Wpd_Vpd,      iemOp_vmovss_Wss_Hx_Vss,    iemOp_vmovsd_Wsd_Hx_Vsd,
     /* 0x12 */  iemOp_vmovlps_Vq_Hq_Mq__vmovhlps, iemOp_vmovlpd_Vq_Hq_Mq, iemOp_vmovsldup_Vx_Wx,    iemOp_vmovddup_Vx_Wx,
     /* 0x13 */  iemOp_movlps_Mq_Vq__movlpd_Mq_Vq, iemOp_movlps_Mq_Vq__movlpd_Mq_Vq, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
     /* 0x14 */  iemOp_vunpcklps_Vx_Hx_Wx,   iemOp_vunpcklpd_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
