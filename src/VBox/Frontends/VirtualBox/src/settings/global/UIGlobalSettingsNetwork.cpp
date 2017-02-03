@@ -501,12 +501,11 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         m_pToolbarNetworkHost->addAction(m_pActionEditNetworkHost);
     }
 
-#ifndef VBOX_WS_WIN
-    /* On Windows host that looks ugly, but
-     * On Mac OS X and X11 that deserves it's place. */
+#ifdef VBOX_WS_MAC
+    /* On macOS we can do a bit of smoothness: */
     m_pLayoutNAT->setContentsMargins(0, 0, 0, 0);
     m_pLayoutHostOnly->setContentsMargins(0, 0, 0, 0);
-#endif /* !VBOX_WS_WIN */
+#endif
 
     /* Apply language settings: */
     retranslateUi();
