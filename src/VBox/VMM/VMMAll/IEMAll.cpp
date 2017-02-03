@@ -1083,7 +1083,7 @@ DECLINLINE(void) iemReInitDecoder(PVMCPU pVCpu)
     pVCpu->iem.s.uRexReg            = 0;
     pVCpu->iem.s.uRexB              = 0;
     pVCpu->iem.s.uRexIndex          = 0;
-    pVCpu->iem.s.fPrefixes          = 0;
+    pVCpu->iem.s.idxPrefix          = 0;
     pVCpu->iem.s.uVex3rdReg         = 0;
     pVCpu->iem.s.uVexLength         = 0;
     pVCpu->iem.s.fEvexStuff         = 0;
