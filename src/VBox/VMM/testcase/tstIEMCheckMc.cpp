@@ -328,6 +328,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_SET_RIP_U64(a_u64NewIP)                  CHK_TYPE(uint64_t, a_u64NewIP)
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return VERR_TRPM_ACTIVE_TRAP
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       do {} while (0)
+#define IEM_MC_MAYBE_RAISE_WAIT_DEVICE_NOT_AVAILABLE()  do {} while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do {} while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT()           do {} while (0)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() do {} while (0)
