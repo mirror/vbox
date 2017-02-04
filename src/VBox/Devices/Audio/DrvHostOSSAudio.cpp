@@ -235,7 +235,7 @@ static int ossOSSToAudioFmt(int fmt, PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEND
 
 static int ossStreamClose(int *phFile)
 {
-    if (!phFile || !*phFile)
+    if (!phFile || !*phFile || *phFile == -1)
         return VINF_SUCCESS;
 
     int rc;
