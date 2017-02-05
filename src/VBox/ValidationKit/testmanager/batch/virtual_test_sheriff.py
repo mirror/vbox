@@ -475,6 +475,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Unknown_Heap_Corruption                   = ( 'Unknown',           'Heap corruption' );
     ktReason_Unknown_Reboot_Loop                       = ( 'Unknown',           'Reboot loop' );
     ktReason_Unknown_File_Not_Found                    = ( 'Unknown',           'File not found' );
+    ktReason_Unknown_VM_Crash                          = ( 'Unknown',           'VM crash' );
     ktReason_Ignore_Buggy_Test_Driver                  = ( 'Ignore',            'Buggy test driver' );
     ktReason_Ignore_Stale_Files                        = ( 'Ignore',            'Stale files' );
     ktReason_Buggy_Build_Broken_Build                  = ( 'Broken Build',      'Buggy build' );
@@ -762,6 +763,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Error: failed to start machine. Error message: File not found. (VERR_FILE_NOT_FOUND)' ),
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
+        ( False, ktReason_Unknown_VM_Crash,                         'Error: txsDoConnectViaTcp: Machine state: Aborted' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
