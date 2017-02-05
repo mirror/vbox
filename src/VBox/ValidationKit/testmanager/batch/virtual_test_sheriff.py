@@ -763,7 +763,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           'Error: failed to start machine. Error message: File not found. (VERR_FILE_NOT_FOUND)' ),
         ( True,  ktReason_Unknown_File_Not_Found, # lump it in with file-not-found for now.
           'Error: failed to start machine. Error message: Not supported. (VERR_NOT_SUPPORTED)' ),
-        ( False, ktReason_Unknown_VM_Crash,                         'Error: txsDoConnectViaTcp: Machine state: Aborted' )
+        ( False, ktReason_Unknown_VM_Crash,                         'txsDoConnectViaTcp: Machine state: Aborted' )
     ];
 
     ## Things we search a VBoxHardening.log file for to figure out why something went bust.
