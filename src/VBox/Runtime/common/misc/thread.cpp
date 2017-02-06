@@ -449,7 +449,7 @@ DECLHIDDEN(void) rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThrea
                     ASMAtomicBitClear(&pThread->fIntFlags, RTTHREADINT_FLAG_IN_TREE_BIT);
                     rtThreadRemoveLocked(pThreadOther);
                     if (pThreadOther->fIntFlags & RTTHREADINT_FLAGS_ALIEN)
-                    rtThreadRelease(pThreadOther);
+                        rtThreadRelease(pThreadOther);
                 }
 
                 /* insert the thread */
