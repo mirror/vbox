@@ -1137,6 +1137,8 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
 #  endif
     rc = PGMPrefetchPage(pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+# else
+    RT_NOREF_PV(pVM); RT_NOREF(GCPhys); RT_NOREF(GCPhysRemapped); RT_NOREF(fPageFlags);
 # endif /* !IEM_VERIFICATION_MODE_FULL */
     return VINF_SUCCESS;
 }
