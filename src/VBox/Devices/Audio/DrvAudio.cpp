@@ -650,7 +650,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Set set host buffer size multiplicator. */
     const unsigned cSampleBufferHostFactor = 10; /** @todo Make this configurable. */
 
-    LogFlowFunc(("[%s] cSamples=%RU32 (x %u)\n", pHstStream->szName, CfgHostAcq.cSampleBufferHint, cSampleBufferHostFactor));
+    LogFunc(("[%s] cSamples=%RU32 (x %u)\n", pHstStream->szName, CfgHostAcq.cSampleBufferHint, cSampleBufferHostFactor));
 
     int rc2 = AudioMixBufInit(&pHstStream->MixBuf, pHstStream->szName, &CfgHostAcq.Props,
                               CfgHostAcq.cSampleBufferHint * cSampleBufferHostFactor);
@@ -673,7 +673,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /* Set set guest buffer size multiplicator. */
     const unsigned cSampleBufferGuestFactor = 10; /** @todo Make this configurable. */
 
-    LogFlowFunc(("[%s] cSamples=%RU32 (x %u)\n", pGstStream->szName, CfgHostAcq.cSampleBufferHint));
+    LogFunc(("[%s] cSamples=%RU32 (x %u)\n", pGstStream->szName, CfgHostAcq.cSampleBufferHint, cSampleBufferGuestFactor));
 
     rc2 = AudioMixBufInit(&pGstStream->MixBuf, pGstStream->szName, &pCfgGuest->Props,
                           CfgHostAcq.cSampleBufferHint * cSampleBufferGuestFactor);
