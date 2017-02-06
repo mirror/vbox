@@ -4573,6 +4573,13 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
         rcStrict = iemMiscValidateNewSS(pVCpu, pCtx, NewSS, uNewCpl, &DescSS);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
+        /* If the new SS is 16-bit, we are only going to use SP, not ESP. */
+        if (!DescSS.Legacy.Gen.u1DefBig)
+        {
+            Log(("iemRaiseXcptOrIntInProtMode: Forcing ESP=%#x to 16 bits\n", uNewEsp));
+            uNewEsp = (uint16_t)uNewEsp;
+        }
+
         Log7(("iemRaiseXcptOrIntInProtMode: New SS=%#x ESP=%#x (from TSS); current SS=%#x ESP=%#x\n", NewSS, uNewEsp, pCtx->ss.Sel, pCtx->esp));
 
         /* Check that there is sufficient space for the stack frame. */
@@ -4593,7 +4600,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
         }
         else
         {
-            if (   uNewEsp - 1 > (DescSS.Legacy.Gen.u4Type & X86_DESC_DB ? UINT32_MAX : UINT32_C(0xffff))
+            if (   uNewEsp - 1 > (DescSS.Legacy.Gen.u1DefBig ? UINT32_MAX : UINT16_MAX)
                 || uNewEsp - cbStackFrame < cbLimitSS + UINT32_C(1))
             {
                 Log(("RaiseXcptOrIntInProtMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x (expand down) is out of bounds -> #GP\n",
