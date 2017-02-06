@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Oracle Corporation
+ * Copyright (C) 2014-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,12 +45,12 @@ static int tstSingle(RTTEST hTest)
         "44100Hz, 2 Channels, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          2,                        /* Channels */
-          44100,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+          2,                                                                  /* Channels */
+          44100,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -149,12 +149,12 @@ static int tstParentChild(RTTEST hTest)
         "44100Hz, 2 Channels, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          2,                        /* Channels */
-          44100,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+          2,                                                                  /* Channels */
+          44100,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -168,12 +168,12 @@ static int tstParentChild(RTTEST hTest)
         "22050Hz, 2 Channels, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          2,                        /* Channels */
-          22050,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+          2,                                                                  /* Channels */
+          22050,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -188,12 +188,12 @@ static int tstParentChild(RTTEST hTest)
         "48000Hz, 2 Channels, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          2,                        /* Channels */
-          48000,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+          2,                                                                  /* Channels */
+          48000,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -275,12 +275,12 @@ static int tstConversion8(RTTEST hTest)
         "44100Hz, 1 Channel, U8",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 8,                        /* Bits */
-          false,                    /* Signed */
-          1,                        /* Shift */
-          1,                        /* Channels */
-          44100,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 8,                                                                 /* Bits */
+          false,                                                             /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
+          1,                                                                 /* Channels */
+          44100,                                                             /* Hz */
+          false                                                              /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -301,12 +301,12 @@ static int tstConversion8(RTTEST hTest)
         "22050Hz, 1 Channel, U8",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 8,                        /* Bits */
-          false,                    /* Signed */
-          1,                        /* Shift */
-          1,                        /* Channels */
-          22050,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 8,                                                                 /* Bits */
+          false,                                                             /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
+          1,                                                                 /* Channels */
+          22050,                                                             /* Hz */
+          false                                                              /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -386,12 +386,12 @@ static int tstConversion16(RTTEST hTest)
         "44100Hz, 1 Channel, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          1,                        /* Channels */
-          44100,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
+          1,                                                                  /* Channels */
+          44100,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -405,12 +405,12 @@ static int tstConversion16(RTTEST hTest)
         "22050Hz, 1 Channel, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          1,                        /* Channels */
-          22050,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
+          1,                                                                  /* Channels */
+          22050,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
@@ -490,12 +490,12 @@ static int tstVolume(RTTEST hTest)
         "44100Hz, 2 Channels, S16",
         PDMAUDIODIR_OUT,
         { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                       /* Bits */
-          true,                     /* Signed */
-          1,                        /* Shift */
-          2,                        /* Channels */
-          44100,                    /* Hz */
-          false                     /* Swap Endian */ },
+        { 16,                                                                 /* Bits */
+          true,                                                               /* Signed */
+          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+          2,                                                                  /* Channels */
+          44100,                                                              /* Hz */
+          false                                                               /* Swap Endian */ },
         0 /* cSampleBufferSize */
     };
 
