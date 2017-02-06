@@ -5302,7 +5302,7 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_ASSIGN(i16AddrAdj, u16Src);
                 IEM_MC_AND_ARG_U16(u16Src, 0x0f);
                 IEM_MC_SAR_LOCAL_S16(i16AddrAdj, 4);
-                IEM_MC_SAR_LOCAL_S16(i16AddrAdj, 1);
+                IEM_MC_SHL_LOCAL_S16(i16AddrAdj, 1);
                 IEM_MC_ADD_LOCAL_S16_TO_EFF_ADDR(GCPtrEffDst, i16AddrAdj);
                 IEM_MC_FETCH_EFLAGS(EFlags);
 
