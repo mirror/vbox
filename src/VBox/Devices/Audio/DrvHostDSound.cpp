@@ -399,7 +399,7 @@ static HRESULT directSoundPlayLock(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
                 return S_OK;
             DSLOGREL(("DSound: Locking playback buffer returned misaligned buffer: cb1=%#RX32, cb2=%#RX32 (alignment: %#RX32)\n",
                       *pcb1, *pcb2, pStreamDS->uAlign));
-            directSoundPlayUnlock(pThis, pStreamDS->uAlign, *ppv1, *ppv2, *pcb1, *pcb2);
+            directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, *ppv1, *ppv2, *pcb1, *pcb2);
             return E_FAIL;
         }
 
@@ -1839,7 +1839,7 @@ int drvHostDSoundStreamCapture(PPDMIHOSTAUDIO pInterface,
         /* Lock relevant range in the DirectSound capture buffer. */
         PVOID pv1, pv2;
         DWORD cb1, cb2;
-        hr = directSoundCaptureLock(pDSCB, &pStreamDS->pCfg->Props,
+        hr = directSoundCaptureLock(pStreamDS,
                                     pStreamDS->In.offCaptureBufRead,  /* dwOffset */
                                     cbToCapture,                      /* dwBytes */
                                     &pv1, &pv2, &cb1, &cb2,
