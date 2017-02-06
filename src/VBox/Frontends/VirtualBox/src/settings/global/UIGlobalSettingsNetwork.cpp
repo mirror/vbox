@@ -538,12 +538,14 @@ void UIGlobalSettingsNetwork::getFromCache()
     /* Fetch NAT networks from cache: */
     foreach (const UIDataNetworkNAT &network, m_cache.m_networksNAT)
         createTreeItemNetworkNAT(network);
+    m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
 
     /* Fetch Host networks from cache: */
     foreach (const UIDataNetworkHost &network, m_cache.m_networksHost)
         createTreeItemNetworkHost(network);
+    m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkHost();
 
@@ -742,6 +744,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
 
     /* Update tree: */
     createTreeItemNetworkNAT(generateDataNetworkNAT(network), true);
+    m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
 void UIGlobalSettingsNetwork::sltDelNetworkNAT()
@@ -832,6 +835,7 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
 
     /* Update tree: */
     createTreeItemNetworkHost(generateDataNetworkHost(iface), true);
+    m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
 
 void UIGlobalSettingsNetwork::sltDelNetworkHost()
