@@ -945,12 +945,13 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
 
 
 /**
- * Checks various prefix encodings with the MOVBE and CRC32
- * instructions to try figure out how they are decoded.
+ * Checks various prefix encodings with the MOVBE and CRC32 instructions to try
+ * figure out how they are decoded.
  *
- * The issue here is that both MOVBE and CRC32 are sensitive to
- * the operand size prefix, which helps us identify .
- *
+ * The issue here is that both MOVBE and CRC32 are sensitive to the operand size
+ * prefix, which helps us identify whether the F2h and F3h prefixes takes
+ * precedence over 66h in this case.  (As it turned out they do and it order
+ * doesn't matter.)
  */
 static void DecodeMovbeVsCrc32(void)
 {
@@ -1109,7 +1110,6 @@ static void DecodeMovbeVsCrc32(void)
  * prefix (66h) is ignored when the F2h and F3h prefixes are used.  We also
  * check that the prefix ordering is irrelevant and that the last one of F2h and
  * F3h wins.
- *
  */
 static void DecodeCmppsCmppdCmpssCmpsd(void)
 {
