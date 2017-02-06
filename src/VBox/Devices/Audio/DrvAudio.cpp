@@ -614,10 +614,10 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     DrvAudioHlpStreamCfgPrint(pCfgHost);
 #else
     LogRel2(("Audio: Creating stream '%s'\n", pStream->szName));
-    LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+    LogRel2(("Audio: Requested %s host format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
              pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback", pStream->szName,
-             pCfgHost->uHz, DrvAudioHlpAudFmtToStr(pCfgHost->enmFormat),
-             pCfgHost->cChannels, pCfgHost->cChannels == 0 ? "Channel" : "Channels"));
+             pCfgHost->Props.uHz, pCfgHost->Props.cBits, pCfgHost->Props.fSigned ? "S" : "U",
+             pCfgHost->Props.cChannels, pCfgHost->Props.cChannels == 0 ? "Channel" : "Channels"));
 #endif
 
     PDMAUDIOSTREAMCFG CfgHostAcq;
@@ -629,10 +629,10 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     LogFunc(("[%s] Acquired host format:\n",  pStream->szName));
     DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
 #else
-    LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %s, %RU8 %s\n",
+    LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
              pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-             CfgHostAcq.uHz, DrvAudioHlpAudFmtToStr(CfgHostAcq.enmFormat),
-             CfgHostAcq.cChannels, CfgHostAcq.cChannels == 0 ? "Channel" : "Channels"));
+             pCfgHost->Props.uHz, pCfgHost->Props.cBits, pCfgHost->Props.fSigned ? "S" : "U",
+             CfgHostAcq.Props.cChannels, CfgHostAcq.Props.cChannels == 0 ? "Channel" : "Channels"));
 #endif
 
     /* No sample buffer size hint given by the backend? Default to some sane value. */
