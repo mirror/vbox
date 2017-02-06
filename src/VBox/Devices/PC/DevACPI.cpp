@@ -3137,12 +3137,12 @@ static int acpiR3PlantTables(ACPIState *pThis)
     if (pThis->fPciPref64Enabled)
     {
         /* Activate MEM4 */
-        if (offRamHole >= pThis->u64RamSize)
-            pThis->u64PciPref64 = _4G;
+        if (pThis->u64RamSize > offRamHole)
+            pThis->u64PciPref64 = RT_ALIGN_64(pThis->u64RamSize + cbRamHole, _1G);
         else
-            pThis->u64PciPref64 = RT_ALIGN_64(pThis->u64RamSize + offRamHole, _1G);
+            pThis->u64PciPref64 = _4G;
     }
-    uint64_t cbRamLow = offRamHole < pThis->u64RamSize ? offRamHole : pThis->u64RamSize;
+    uint64_t cbRamLow = pThis->u64RamSize > offRamHole ? offRamHole : pThis->u64RamSize;
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
     {
         /* Note: This is also enforced by DevPcBios.cpp. */
