@@ -525,7 +525,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_test_u64,(uint64_t *puDst, uint64_t uSrc, uint3
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_add_u64_locked,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    DO_LOCKED_BIN_OP_U64(adc);
+    DO_LOCKED_BIN_OP_U64(add);
 }
 
 
