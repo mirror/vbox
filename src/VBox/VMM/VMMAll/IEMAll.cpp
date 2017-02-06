@@ -5268,14 +5268,6 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorNotPresentWithErr(PVMCP
 }
 
 
-/** \#NP(seg) - 0b.  */
-DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorNotPresentBySegReg(PVMCPU pVCpu, uint32_t iSegReg)
-{
-    return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_NP, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR,
-                             iemSRegFetchU16(pVCpu, iSegReg) & ~X86_SEL_RPL, 0);
-}
-
-
 /** \#NP(sel) - 0b.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseSelectorNotPresentBySelector(PVMCPU pVCpu, uint16_t uSel)
 {
@@ -7432,8 +7424,10 @@ iemMemSegCheckWriteAccessEx(PVMCPU pVCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg,
     {
         if (!pHid->Attr.n.u1Present)
         {
-            Log(("iemMemSegCheckWriteAccessEx: %#x (index %u) - segment not present -> #NP\n", iemSRegFetchU16(pVCpu, iSegReg), iSegReg));
-            return iemRaiseSelectorNotPresentBySegReg(pVCpu, iSegReg);
+            uint16_t    uSel = iemSRegFetchU16(pVCpu, iSegReg);
+            AssertRelease(uSel == 0);
+            Log(("iemMemSegCheckWriteAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
         if (   (   (pHid->Attr.n.u4Type & X86_SEL_TYPE_CODE)
@@ -7468,8 +7462,10 @@ iemMemSegCheckReadAccessEx(PVMCPU pVCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg, 
     {
         if (!pHid->Attr.n.u1Present)
         {
-            Log(("iemMemSegCheckReadAccessEx: %#x (index %u) - segment not present -> #NP\n", iemSRegFetchU16(pVCpu, iSegReg), iSegReg));
-            return iemRaiseSelectorNotPresentBySegReg(pVCpu, iSegReg);
+            uint16_t    uSel = iemSRegFetchU16(pVCpu, iSegReg);
+            AssertRelease(uSel == 0);
+            Log(("iemMemSegCheckReadAccessEx: %#x (index %u) - bad selector -> #GP\n", uSel, iSegReg));
+            return iemRaiseGeneralProtectionFault0(pVCpu);
         }
 
         if ((pHid->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
