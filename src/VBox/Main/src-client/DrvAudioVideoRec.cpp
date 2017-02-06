@@ -179,19 +179,17 @@ typedef struct AVRECSINK
 } AVRECSINK, *PAVRECSINK;
 
 /**
- * Audio video recording output stream.
+ * Audio video recording (output) stream.
  */
-typedef struct AVRECSTREAMOUT
+typedef struct AVRECSTREAM
 {
-    /** Note: Always must come first! */
-    PDMAUDIOSTREAM       Stream;
-    /** The PCM properties of this stream. */
-    PDMAUDIOPCMPROPS     Props;
+    /** The stream's acquired configuration. */
+    PPDMAUDIOSTREAMCFG   pCfg;
     /** (Audio) frame buffer. */
     PRTCIRCBUF           pCircBuf;
     /** Pointer to sink to use for writing. */
     PAVRECSINK           pSink;
-} AVRECSTREAMOUT, *PAVRECSTREAMOUT;
+} AVRECSTREAM, *PAVRECSTREAM;
 
 /**
  * Video recording audio driver instance data.
@@ -358,36 +356,32 @@ static void avRecSinkShutdown(PAVRECSINK pSink)
  *
  * @returns IPRT status code.
  * @param   pThis               Driver instance.
- * @param   pStream             Audio output stream to create.
+ * @param   pStreamAV           Audio output stream to create.
  * @param   pSink               Recording sink to associate audio output stream to.
  * @param   pCfgReq             Requested configuration by the audio backend.
  * @param   pCfgAcq             Acquired configuration by the audio output stream.
  */
-static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream,
+static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV,
                                 PAVRECSINK pSink, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    AssertPtrReturn(pSink,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgReq, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfgAcq, VERR_INVALID_POINTER);
-
-    PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
+    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pStreamAV, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSink,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgReq,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgAcq,   VERR_INVALID_POINTER);
 
     if (pCfgReq->DestSource.Dest != PDMAUDIOPLAYBACKDEST_FRONT)
     {
         AssertFailed();
 
         if (pCfgAcq)
-            pCfgAcq->cSampleBufferSize = 0;
+            pCfgAcq->cSampleBufferHint = 0;
 
         LogRel2(("VideoRec: Support for surround audio not implemented yet\n"));
         return VERR_NOT_SUPPORTED;
     }
 
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pStreamOut->Props);
-    if (RT_FAILURE(rc))
-        return rc;
+    int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_LIBOPUS
     /* If we only record audio, create our own WebM writer instance here. */
@@ -397,28 +391,29 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream
         rc = pSink->Con.WebM.pWebM->Create("/tmp/acap.webm", RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE, /** @todo Fix path! */
                                            WebMWriter::AudioCodec_Opus, WebMWriter::VideoCodec_None);
         if (RT_SUCCESS(rc))
-            rc = pSink->Con.WebM.pWebM->AddAudioTrack(pSink->Codec.Parms.uHz, pStreamOut->Props.cChannels, pStreamOut->Props.cBits,
+            rc = pSink->Con.WebM.pWebM->AddAudioTrack(pSink->Codec.Parms.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBits,
                                                       &pSink->Con.WebM.uTrack);
     }
 
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = RTCircBufCreate(&pStreamOut->pCircBuf, (pSink->Codec.Opus.csFrame * pSink->Codec.Parms.cChannels) * sizeof(uint16_t));
+    rc = RTCircBufCreate(&pStreamAV->pCircBuf, (pSink->Codec.Opus.csFrame * pSink->Codec.Parms.cChannels) * sizeof(uint16_t));
     if (RT_SUCCESS(rc))
     {
-        pStreamOut->pSink = pSink; /* Assign sink to stream. */
+        pStreamAV->pSink = pSink; /* Assign sink to stream. */
 
         if (pCfgAcq)
         {
             /* Make sure to let the driver backend know that we need the audio data in
              * a specific sampling rate Opus is optimized for. */
-            pCfgAcq->uHz               = pSink->Codec.Parms.uHz;
-            pCfgAcq->cSampleBufferSize = _4K; /** @todo Make this configurable. */
+            pCfgAcq->Props.uHz         = pSink->Codec.Parms.uHz;
+            pCfgAcq->Props.cShift      = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgAcq->Props.cBits, pCfgAcq->Props.cChannels);
+            pCfgAcq->cSampleBufferHint = _4K; /** @todo Make this configurable. */
         }
     }
 #else
-    RT_NOREF(pThis, pSink, pStream, pCfgReq, pCfgAcq);
+    RT_NOREF(pThis, pSink, pStreamAV, pCfgReq, pCfgAcq);
     rc = VERR_NOT_SUPPORTED;
 #endif /* VBOX_WITH_LIBOPUS */
 
@@ -432,17 +427,16 @@ static int avRecCreateStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream
  *
  * @returns IPRT status code.
  * @param   pThis               Driver instance.
- * @param   pStream             Audio output stream to destroy.
+ * @param   pStreamAV           Audio output stream to destroy.
  */
-static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStream)
+static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PAVRECSTREAM pStreamAV)
 {
     RT_NOREF(pThis);
-    PAVRECSTREAMOUT pStreamOut = (PAVRECSTREAMOUT)pStream;
 
-    if (pStreamOut->pCircBuf)
+    if (pStreamAV->pCircBuf)
     {
-        RTCircBufDestroy(pStreamOut->pCircBuf);
-        pStreamOut->pCircBuf = NULL;
+        RTCircBufDestroy(pStreamAV->pCircBuf);
+        pStreamAV->pCircBuf = NULL;
     }
 
     return VINF_SUCCESS;
@@ -454,19 +448,13 @@ static int avRecDestroyStreamOut(PDRVAUDIOVIDEOREC pThis, PPDMAUDIOSTREAM pStrea
  *
  * @returns IPRT status code.
  * @param   pThis               Driver instance.
- * @param   pStream             Audio output stream to control.
+ * @param   pStreamAV           Audio output stream to control.
  * @param   enmStreamCmd        Stream command to issue.
  */
 static int avRecControlStreamOut(PDRVAUDIOVIDEOREC pThis,
-                                 PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+                                 PAVRECSTREAM pStreamAV, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
-    RT_NOREF(enmStreamCmd);
-
-    RT_NOREF(pThis);
-
-    LogFlowFunc(("enmStreamCmd=%ld\n", enmStreamCmd));
+    RT_NOREF(pThis, pStreamAV);
 
     switch (enmStreamCmd)
     {
@@ -519,8 +507,8 @@ static DECLCALLBACK(int) drvAudioVideoRecInit(PPDMIHOSTAUDIO pInterface)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                       void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
 
@@ -534,9 +522,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamCapture(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
-static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
-                                                    uint32_t *pcbWritten)
+static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                    const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
@@ -544,9 +531,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
-    PDRVAUDIOVIDEOREC pThis      = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
     RT_NOREF(pThis);
-    PAVRECSTREAMOUT   pStreamOut = (PAVRECSTREAMOUT)pStream;
+    PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
     int rc = VINF_SUCCESS;
 
@@ -556,9 +543,9 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
      * Call the encoder with the data.
      */
 #ifdef VBOX_WITH_LIBOPUS
-    PAVRECSINK pSink    = pStreamOut->pSink;
+    PAVRECSINK pSink    = pStreamAV->pSink;
     AssertPtr(pSink);
-    PRTCIRCBUF pCircBuf = pStreamOut->pCircBuf;
+    PRTCIRCBUF pCircBuf = pStreamAV->pCircBuf;
     AssertPtr(pCircBuf);
 
     void  *pvCircBuf;
@@ -597,7 +584,7 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
     size_t  cbSrc;
 
     const uint32_t csFrame = pSink->Codec.Opus.csFrame;
-    const uint32_t cbFrame = PDMAUDIOPCMPROPS_S2B(&pStreamOut->Props, csFrame);
+    const uint32_t cbFrame = PDMAUDIOSTREAMCFG_S2B(pStreamAV->pCfg, csFrame);
 
     while (RTCircBufUsed(pCircBuf) >= cbFrame)
     {
@@ -715,10 +702,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface,
  */
 static DECLCALLBACK(int) drvAudioVideoRecGetConfig(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDCFG pBackendCfg)
 {
-    NOREF(pInterface);
+    RT_NOREF(pInterface);
     AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
-    pBackendCfg->cbStreamOut    = sizeof(AVRECSTREAMOUT);
+    pBackendCfg->cbStreamOut    = sizeof(AVRECSTREAM);
     pBackendCfg->cbStreamIn     = 0;
     pBackendCfg->cMaxStreamsIn  = 0;
     pBackendCfg->cMaxStreamsOut = UINT32_MAX;
@@ -755,41 +742,63 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvAudioVideoRecGetStatus(PPDMIHOSTAUDIO
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-static DECLCALLBACK(int) drvAudioVideoRecStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+static DECLCALLBACK(int) drvAudioVideoRecStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                       PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    if (pCfgReq->enmDir == PDMAUDIODIR_IN)
+        return VERR_NOT_SUPPORTED;
+
+    AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
     /* For now we only have one sink, namely the driver's one.
      * Later each stream could have its own one, to e.g. router different stream to different sinks .*/
     PAVRECSINK pSink = &pThis->Sink;
 
-    if (pCfgReq->enmDir == PDMAUDIODIR_OUT)
-        return avRecCreateStreamOut(pThis, pStream, pSink, pCfgReq, pCfgAcq);
+    int rc = avRecCreateStreamOut(pThis, pStreamAV, pSink, pCfgReq, pCfgAcq);
+    if (RT_SUCCESS(rc))
+    {
+        pStreamAV->pCfg = DrvAudioHlpStreamCfgDup(pCfgAcq);
+        if (!pStreamAV->pCfg)
+            rc = VERR_NO_MEMORY;
+    }
 
-    return VERR_NOT_SUPPORTED;
+    return rc;
 }
 
 
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvAudioVideoRecStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(int) drvAudioVideoRecStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
-    if (pStream->enmDir == PDMAUDIODIR_OUT)
-        return avRecDestroyStreamOut(pThis, pStream);
+    if (!pStreamAV->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
 
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+
+    if (pStreamAV->pCfg->enmDir == PDMAUDIODIR_OUT)
+        rc = avRecDestroyStreamOut(pThis, pStreamAV);
+
+    if (RT_SUCCESS(rc))
+    {
+        DrvAudioHlpStreamCfgFree(pStreamAV->pCfg);
+        pStreamAV->pCfg = NULL;
+    }
+
+    return rc;
 }
 
 
@@ -797,17 +806,19 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamDestroy(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
 static DECLCALLBACK(int) drvAudioVideoRecStreamControl(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+                                                       PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVAUDIOVIDEOREC pThis = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PDRVAUDIOVIDEOREC pThis     = PDMIHOSTAUDIO_2_DRVAUDIOVIDEOREC(pInterface);
+    PAVRECSTREAM      pStreamAV = (PAVRECSTREAM)pStream;
 
-    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+    if (!pStreamAV->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
 
-    if (pStream->enmDir == PDMAUDIODIR_OUT)
-        return avRecControlStreamOut(pThis,  pStream, enmStreamCmd);
+    if (pStreamAV->pCfg->enmDir == PDMAUDIODIR_OUT)
+        return avRecControlStreamOut(pThis, pStreamAV, enmStreamCmd);
 
     return VINF_SUCCESS;
 }
@@ -816,10 +827,10 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamControl(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioVideoRecStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioVideoRecStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    NOREF(pInterface);
-    NOREF(pStream);
+    RT_NOREF(pInterface);
+    RT_NOREF(pStream);
 
     return (  PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED
             | PDMAUDIOSTRMSTS_FLAG_DATA_READABLE | PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE);
@@ -829,7 +840,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioVideoRecStreamGetStatus(PPDMIHOSTAU
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-static DECLCALLBACK(int) drvAudioVideoRecStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(int) drvAudioVideoRecStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);

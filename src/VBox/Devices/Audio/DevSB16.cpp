@@ -491,12 +491,14 @@ static void continue_dma8(PSB16STATE pThis)
     {
         PDMAUDIOSTREAMCFG streamCfg;
         RT_ZERO(streamCfg);
+
         streamCfg.enmDir          = PDMAUDIODIR_OUT;
         streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-        streamCfg.uHz             = pThis->freq;
-        streamCfg.cChannels       = 1 << pThis->fmt_stereo;
-        streamCfg.enmFormat       = pThis->fmt;
-        streamCfg.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
+
+        streamCfg.Props.uHz             = pThis->freq;
+        streamCfg.Props.cChannels       = 1 << pThis->fmt_stereo;
+        streamCfg.Props.cBits           = pThis->fmt_bits;
+        streamCfg.Props.fSigned         = RT_BOOL(pThis->fmt_signed);
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -629,12 +631,14 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
     {
         PDMAUDIOSTREAMCFG streamCfg;
         RT_ZERO(streamCfg);
+
         streamCfg.enmDir          = PDMAUDIODIR_OUT;
         streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-        streamCfg.uHz             = pThis->freq;
-        streamCfg.cChannels       = 1 << pThis->fmt_stereo;
-        streamCfg.enmFormat       = pThis->fmt;
-        streamCfg.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
+
+        streamCfg.Props.uHz       = pThis->freq;
+        streamCfg.Props.cChannels = 1 << pThis->fmt_stereo;
+        streamCfg.Props.cBits     = pThis->fmt_bits;
+        streamCfg.Props.fSigned   = RT_BOOL(pThis->fmt_signed);
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -1162,12 +1166,14 @@ static void sb16ResetLegacy(PSB16STATE pThis)
 
     PDMAUDIOSTREAMCFG streamCfg;
     RT_ZERO(streamCfg);
+
     streamCfg.enmDir          = PDMAUDIODIR_OUT;
     streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-    streamCfg.uHz             = pThis->freq;
-    streamCfg.cChannels       = 1; /* Mono */
-    streamCfg.enmFormat       = PDMAUDIOFMT_U8;
-    streamCfg.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
+
+    streamCfg.Props.uHz       = pThis->freq;
+    streamCfg.Props.cChannels = 1; /* Mono */
+    streamCfg.Props.cBits     = 8;
+    streamCfg.Props.fSigned   = false;
 
     int rc2 = sb16OpenOut(pThis, &streamCfg);
     AssertRC(rc2);
@@ -1825,12 +1831,14 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
              * SB16 only allows one output configuration per serial data out,
              * so check if all streams have the same configuration.
              */
-            AssertMsg(pStream->Cfg.uHz       == pStreamPrev->Cfg.uHz,
-                      ("%RU32Hz vs. %RU32Hz\n", pStream->Cfg.uHz, pStreamPrev->Cfg.uHz));
-            AssertMsg(pStream->Cfg.cChannels == pStreamPrev->Cfg.cChannels,
-                      ("%RU8 vs. %RU8 channels\n", pStream->Cfg.cChannels, pStreamPrev->Cfg.cChannels));
-            AssertMsg(pStream->Cfg.enmFormat == pStreamPrev->Cfg.enmFormat,
-                      ("%d vs. %d format\n", pStream->Cfg.enmFormat, pStreamPrev->Cfg.enmFormat));
+            AssertMsg(pStream->Cfg.Props.uHz       == pStreamPrev->Cfg.Props.uHz,
+                      ("%RU32Hz vs. %RU32Hz\n", pStream->Cfg.Props.uHz, pStreamPrev->Cfg.Props.uHz));
+            AssertMsg(pStream->Cfg.Props.cChannels == pStreamPrev->Cfg.Props.cChannels,
+                      ("%RU8 vs. %RU8 channels\n", pStream->Cfg.Props.cChannels, pStreamPrev->Cfg.Props.cChannels));
+            AssertMsg(pStream->Cfg.Props.cBits     == pStreamPrev->Cfg.Props.cBits,
+                      ("%d vs. %d bits\n", pStream->Cfg.Props.cBits, pStreamPrev->Cfg.Props.cBits));
+            AssertMsg(pStream->Cfg.Props.fSigned   == pStreamPrev->Cfg.Props.fSigned,
+                      ("%RTbool vs. %RTbool signed\n", pStream->Cfg.Props.fSigned, pStreamPrev->Cfg.Props.fSigned));
         }
 #endif
         PPDMIAUDIOCONNECTOR pConn = pDrv->pConnector;
@@ -2015,12 +2023,14 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
         {
             PDMAUDIOSTREAMCFG streamCfg;
             RT_ZERO(streamCfg);
+
             streamCfg.enmDir          = PDMAUDIODIR_OUT;
             streamCfg.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-            streamCfg.uHz             = pThis->freq;
-            streamCfg.cChannels       = 1 << pThis->fmt_stereo;
-            streamCfg.enmFormat       = pThis->fmt;
-            streamCfg.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
+
+            streamCfg.Props.uHz             = pThis->freq;
+            streamCfg.Props.cChannels       = 1 << pThis->fmt_stereo;
+            streamCfg.Props.cBits           = pThis->fmt_bits;
+            streamCfg.Props.fSigned         = RT_BOOL(pThis->fmt_signed);
 
             int rc = sb16OpenOut(pThis, &streamCfg);
             AssertRC(rc);
@@ -2116,12 +2126,15 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     /* Set a default audio format for the host. */
     PDMAUDIOSTREAMCFG CfgHost;
+    RT_ZERO(CfgHost);
+
     CfgHost.enmDir          = PDMAUDIODIR_OUT;
     CfgHost.DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-    CfgHost.uHz             = pCfg->uHz;
-    CfgHost.cChannels       = pCfg->cChannels;
-    CfgHost.enmFormat       = PDMAUDIOFMT_S16;
-    CfgHost.enmEndianness   = PDMAUDIOHOSTENDIANNESS;
+
+    CfgHost.Props.uHz       = pCfg->Props.uHz;
+    CfgHost.Props.cChannels = pCfg->Props.cChannels;
+    CfgHost.Props.cBits     = pCfg->Props.cBits;
+    CfgHost.Props.fSigned   = pCfg->Props.fSigned;
 
     RTStrPrintf(CfgHost.szName, sizeof(CfgHost.szName), "sb16.po");
 
@@ -2133,7 +2146,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
         if (!RTStrPrintf(pCfg->szName, sizeof(pCfg->szName), "[LUN#%RU8] %s (%RU32Hz, %RU8 %s)",
-                         pDrv->uLUN, CfgHost.szName, pCfg->uHz, pCfg->cChannels, pCfg->cChannels > 1 ? "Channels" : "Channel"))
+                         pDrv->uLUN, CfgHost.szName,
+                         pCfg->Props.uHz, pCfg->Props.cChannels, pCfg->Props.cChannels > 1 ? "Channels" : "Channel"))
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;

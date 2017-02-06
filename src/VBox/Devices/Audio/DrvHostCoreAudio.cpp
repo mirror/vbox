@@ -208,35 +208,13 @@ static int coreAudioASBDToStreamCfg(AudioStreamBasicDescription *pASBD, PPDMAUDI
     AssertPtrReturn(pASBD, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pCfg,  VERR_INVALID_PARAMETER);
 
-    pCfg->cChannels     = pASBD->mChannelsPerFrame;
-    pCfg->uHz           = (uint32_t)pASBD->mSampleRate;
-    pCfg->enmEndianness = PDMAUDIOENDIANNESS_LITTLE;
+    pCfg->Props.cChannels = pASBD->mChannelsPerFrame;
+    pCfg->Props.uHz       = (uint32_t)pASBD->mSampleRate;
+    pCfg->Props.cBits     = pASBD->mBitsPerChannel;
+    pCfg->Props.fSigned   = RT_BOOL(pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger);
+    pCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
 
-    int rc = VINF_SUCCESS;
-
-    if (pASBD->mFormatFlags & kAudioFormatFlagIsSignedInteger)
-    {
-        switch (pASBD->mBitsPerChannel)
-        {
-            case 8:  pCfg->enmFormat = PDMAUDIOFMT_S8;  break;
-            case 16: pCfg->enmFormat = PDMAUDIOFMT_S16; break;
-            case 32: pCfg->enmFormat = PDMAUDIOFMT_S32; break;
-            default: rc = VERR_NOT_SUPPORTED;           break;
-        }
-    }
-    else
-    {
-        switch (pASBD->mBitsPerChannel)
-        {
-            case 8:  pCfg->enmFormat = PDMAUDIOFMT_U8;  break;
-            case 16: pCfg->enmFormat = PDMAUDIOFMT_U16; break;
-            case 32: pCfg->enmFormat = PDMAUDIOFMT_U32; break;
-            default: rc = VERR_NOT_SUPPORTED;           break;
-        }
-    }
-
-    AssertRC(rc);
-    return rc;
+    return VINF_SUCCESS;
 }
 #endif /* !VBOX_WITH_AUDIO_CALLBACKS */
 
@@ -381,9 +359,8 @@ typedef struct COREAUDIOSTREAMOUT
  */
 typedef struct COREAUDIOSTREAM
 {
-    /** PDM audio stream data.
-     *  Note: Always must come first in this structure! */
-    PDMAUDIOSTREAM              Stream;
+    /** The stream's acquired configuration. */
+    PPDMAUDIOSTREAMCFG          pCfg;
     /** Stream-specific data, depending on the stream type. */
     union
     {
@@ -394,10 +371,6 @@ typedef struct COREAUDIOSTREAM
     RTLISTNODE                  Node;
     /** Pointer to driver instance this stream is bound to. */
     PDRVHOSTCOREAUDIO           pDrv;
-    /** The PCM properties of this stream. */
-    PDMAUDIOPCMPROPS            Props;
-    /** The stream's direction. */
-    PDMAUDIODIR                 enmDir;
     /** The stream's thread handle for maintaining the audio queue. */
     RTTHREAD                    hThread;
     /** Flag indicating to start a stream's data processing. */
@@ -1306,14 +1279,17 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
 
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pvUser;
     AssertPtr(pCAStream);
+    AssertPtr(pCAStream->pCfg);
 
     LogFunc(("Starting pCAStream=%p\n", pCAStream));
+
+    const bool fIn = pCAStream->pCfg->enmDir == PDMAUDIODIR_IN;
 
     /*
      * Create audio queue.
      */
     OSStatus err;
-    if (pCAStream->enmDir == PDMAUDIODIR_IN)
+    if (fIn)
         err = AudioQueueNewInput(&pCAStream->asbdStream, coreAudioInputQueueCb, pCAStream /* pvData */,
                                  CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, 0, &pCAStream->audioQueue);
     else
@@ -1355,8 +1331,6 @@ static DECLCALLBACK(int) coreAudioQueueThread(RTTHREAD hThreadSelf, void *pvUser
     /*
      * Enter the main loop.
      */
-    const bool fIn = pCAStream->enmDir == PDMAUDIODIR_IN;
-
     while (!ASMAtomicReadBool(&pCAStream->fShutdown))
     {
         CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.10, 1);
@@ -1562,7 +1536,7 @@ static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pCAStream)
     {
         AudioQueueBufferRef pBuf = pCAStream->audioBuffer[i];
 
-        if (pCAStream->enmDir == PDMAUDIODIR_IN)
+        if (pCAStream->pCfg->enmDir == PDMAUDIODIR_IN)
         {
             int rc2 = coreAudioInputQueueProcBuffer(pCAStream, pBuf);
             if (RT_SUCCESS(rc2))
@@ -1570,7 +1544,7 @@ static int coreAudioStreamInvalidateQueue(PCOREAUDIOSTREAM pCAStream)
                 AudioQueueEnqueueBuffer(pCAStream->audioQueue, pBuf, 0, NULL);
             }
         }
-        else if (pCAStream->enmDir == PDMAUDIODIR_OUT)
+        else if (pCAStream->pCfg->enmDir == PDMAUDIODIR_OUT)
         {
             int rc2 = coreAudioOutputQueueProcBuffer(pCAStream, pBuf);
             if (   RT_SUCCESS(rc2)
@@ -1607,23 +1581,28 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
     if (pCAStream->Unit.pDevice == NULL)
         return VERR_NOT_AVAILABLE;
 
-    pCAStream->enmDir = pCfgReq->enmDir;
+    const bool fIn = pCfgReq->enmDir == PDMAUDIODIR_IN;
 
-    const bool fIn = pCAStream->enmDir == PDMAUDIODIR_IN;
+    int rc = VINF_SUCCESS;
 
     /* Create the recording device's out format based on our required audio settings. */
-    int rc = DrvAudioHlpStreamCfgToProps(pCfgReq, &pCAStream->Props);
+    Assert(pCAStream->pCfg == NULL);
+    pCAStream->pCfg = DrvAudioHlpStreamCfgDup(pCfgReq);
+    if (!pCAStream->pCfg)
+        rc = VERR_NO_MEMORY;
+
+    coreAudioPCMPropsToASBD(&pCfgReq->Props, &pCAStream->asbdStream);
+    /** @todo Do some validation? */
+
+    coreAudioPrintASBD(  fIn
+                       ? "Capturing queue format"
+                       : "Playback queue format", &pCAStream->asbdStream);
+
     if (RT_FAILURE(rc))
     {
         LogRel(("CoreAudio: Failed to convert requested %s format to native format (%Rrc)\n", fIn ? "input" : "output", rc));
         return rc;
     }
-
-    coreAudioPCMPropsToASBD(&pCAStream->Props, &pCAStream->asbdStream);
-
-    coreAudioPrintASBD(  fIn
-                       ? "Capturing queue format"
-                       : "Playback queue format", &pCAStream->asbdStream);
 
     rc = RTCircBufCreate(&pCAStream->pCircBuf, 8096 << 1 /*pHstStrmIn->Props.cShift*/); /** @todo FIX THIS !!! */
     if (RT_FAILURE(rc))
@@ -1921,7 +1900,7 @@ static int coreAudioEnumerateDevices(PDRVHOSTCOREAUDIO pThis)
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream,
+static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
@@ -2023,7 +2002,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCapture(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamPlay}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
-                                                    PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
+                                                    PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
                                                     uint32_t *pcbWritten)
 {
     PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
@@ -2080,7 +2059,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         Assert(cbChunk <= cbToWrite);
         Assert(cbWrittenTotal + cbChunk <= cbBuf);
 
-        memcpy((uint8_t *)pvBuf + cbWrittenTotal, pvChunk, cbChunk);
+        memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk);
 
         /* Release the ring buffer, so the read thread could start reading this data. */
         RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
@@ -2137,6 +2116,9 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
         return VINF_SUCCESS;
     }
 
+    if (!pCAStream->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
+
     int rc = VINF_SUCCESS;
 
     switch (enmStreamCmd)
@@ -2145,7 +2127,7 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
         case PDMAUDIOSTREAMCMD_RESUME:
         {
             LogFunc(("Queue enable\n"));
-            if (pCAStream->enmDir == PDMAUDIODIR_IN)
+            if (pCAStream->pCfg->enmDir == PDMAUDIODIR_IN)
             {
                 rc = coreAudioStreamInvalidateQueue(pCAStream);
                 if (RT_SUCCESS(rc))
@@ -2154,7 +2136,7 @@ static DECLCALLBACK(int) coreAudioStreamControl(PDRVHOSTCOREAUDIO pThis,
                     AudioQueueStart(pCAStream->audioQueue, NULL);
                 }
             }
-            if (pCAStream->enmDir == PDMAUDIODIR_OUT)
+            else if (pCAStream->pCfg->enmDir == PDMAUDIODIR_OUT)
             {
                 /* Touch the run flag to start the audio queue as soon as
                  * we have anough data to actually play something. */
@@ -2287,7 +2269,7 @@ static DECLCALLBACK(int) drvHostCoreAudioSetCallback(PPDMIHOSTAUDIO pInterface, 
  */
 static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioGetStatus(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
-    RT_NOREF(enmDir);
+    RT_NOREF(pInterface, enmDir);
     AssertPtrReturn(pInterface, PDMAUDIOBACKENDSTS_UNKNOWN);
 
     return PDMAUDIOBACKENDSTS_RUNNING;
@@ -2297,19 +2279,16 @@ static DECLCALLBACK(PDMAUDIOBACKENDSTS) drvHostCoreAudioGetStatus(PPDMIHOSTAUDIO
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCreate}
  */
-static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
-                                                      PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
+static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                      PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgReq,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCfgAcq,    VERR_INVALID_POINTER);
 
-    PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
-
-    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
-
-    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
+    PDRVHOSTCOREAUDIO pThis     = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
+    PCOREAUDIOSTREAM  pCAStream = (PCOREAUDIOSTREAM)pStream;
 
     int rc = RTCritSectInit(&pCAStream->CritSect);
     if (RT_FAILURE(rc))
@@ -2343,7 +2322,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
             rc = coreAudioStreamInitQueue(pCAStream, pCfgReq, pCfgAcq);
             if (RT_SUCCESS(rc))
             {
-                pCfgAcq->cSampleBufferSize = _4K; /** @todo FIX THIS !!! */
+                pCfgAcq->cSampleBufferHint = _4K; /** @todo FIX THIS !!! */
             }
             if (RT_SUCCESS(rc))
             {
@@ -2371,14 +2350,12 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamDestroy}
  */
-static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
     PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
-
-    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
 
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
@@ -2392,6 +2369,9 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
         AssertFailed();
         return VINF_SUCCESS;
     }
+
+    if (!pCAStream->pCfg) /* Not (yet) configured? Skip. */
+        return VINF_SUCCESS;
 
     int rc = coreAudioStreamControl(pThis, pCAStream, PDMAUDIOSTREAMCMD_DISABLE);
     if (RT_SUCCESS(rc))
@@ -2419,15 +2399,12 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamDestroy(PPDMIHOSTAUDIO pInterface
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamControl}
  */
 static DECLCALLBACK(int) drvHostCoreAudioStreamControl(PPDMIHOSTAUDIO pInterface,
-                                                       PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
+                                                       PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
 
-    PDRVHOSTCOREAUDIO pThis = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
-
-    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
-
+    PDRVHOSTCOREAUDIO pThis    = PDMIHOSTAUDIO_2_DRVHOSTCOREAUDIO(pInterface);
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
     return coreAudioStreamControl(pThis, pCAStream, enmStreamCmd);
@@ -2437,26 +2414,27 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamControl(PPDMIHOSTAUDIO pInterface
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface);
     AssertPtrReturn(pStream, VERR_INVALID_POINTER);
 
-    Assert(pStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
     PDMAUDIOSTRMSTS strmSts = PDMAUDIOSTRMSTS_FLAG_NONE;
 
-    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
+    if (!pCAStream->pCfg) /* Not (yet) configured? Skip. */
+        return strmSts;
 
     if (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
         strmSts |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED;
 
-    if (pStream->enmDir == PDMAUDIODIR_IN)
+    if (pCAStream->pCfg->enmDir == PDMAUDIODIR_IN)
     {
         if (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
             strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
     }
-    else if (pStream->enmDir == PDMAUDIODIR_OUT)
+    else if (pCAStream->pCfg->enmDir == PDMAUDIODIR_OUT)
     {
         if (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
             strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
@@ -2471,10 +2449,12 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAU
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamIterate}
  */
-static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream)
+static DECLCALLBACK(int) drvHostCoreAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,    VERR_INVALID_POINTER);
+
+    RT_NOREF(pInterface, pStream);
 
     /* Nothing to do here for Core Audio. */
     return VINF_SUCCESS;

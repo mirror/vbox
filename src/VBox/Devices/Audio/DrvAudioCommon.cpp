@@ -155,8 +155,8 @@ void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf,
     if (cbBuf < cbToClear)
         cbToClear = cbBuf;
 
-    Log2Func(("pPCMInfo=%p, pvBuf=%p, cSamples=%RU32, fSigned=%RTbool, cBits=%RU8, cShift=%RU8\n",
-              pPCMProps, pvBuf, cSamples, pPCMProps->fSigned, pPCMProps->cBits, pPCMProps->cShift));
+    Log2Func(("pPCMProps=%p, pvBuf=%p, cSamples=%RU32, fSigned=%RTbool, cBits=%RU8\n",
+              pPCMProps, pvBuf, cSamples, pPCMProps->fSigned, pPCMProps->cBits));
 
     if (pPCMProps->fSigned)
     {
@@ -760,54 +760,6 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
 }
 
 /**
- * Checks whether the given PCM properties are equal with the given
- * stream configuration.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pProps              PCM properties to compare.
- * @param   pCfg                Stream configuration to compare.
- */
-bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
-{
-    AssertPtrReturn(pProps, false);
-    AssertPtrReturn(pCfg,   false);
-
-    int cBits = 8;
-    bool fSigned = false;
-
-    switch (pCfg->enmFormat)
-    {
-        case PDMAUDIOFMT_S8:
-            fSigned = true;
-        case PDMAUDIOFMT_U8:
-            break;
-
-        case PDMAUDIOFMT_S16:
-            fSigned = true;
-        case PDMAUDIOFMT_U16:
-            cBits = 16;
-            break;
-
-        case PDMAUDIOFMT_S32:
-            fSigned = true;
-        case PDMAUDIOFMT_U32:
-            cBits = 32;
-            break;
-
-        default:
-            AssertMsgFailed(("Unknown format %ld\n", pCfg->enmFormat));
-            break;
-    }
-
-    bool fEqual =    pProps->uHz         == pCfg->uHz
-                  && pProps->cChannels   == pCfg->cChannels
-                  && pProps->fSigned     == fSigned
-                  && pProps->cBits       == cBits
-                  && pProps->fSwapEndian == !(pCfg->enmEndianness == PDMAUDIOHOSTENDIANNESS);
-    return fEqual;
-}
-
-/**
  * Checks whether two given PCM properties are equal.
  *
  * @returns @c true if equal, @c false if not.
@@ -824,9 +776,25 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps1, PPDMAUDIOPCMPROPS pP
 
     return    pProps1->uHz         == pProps2->uHz
            && pProps1->cChannels   == pProps2->cChannels
-           && pProps1->fSigned     == pProps2->fSigned
            && pProps1->cBits       == pProps2->cBits
+           && pProps1->fSigned     == pProps2->fSigned
            && pProps1->fSwapEndian == pProps2->fSwapEndian;
+}
+
+/**
+ * Checks whether the given PCM properties are equal with the given
+ * stream configuration.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pProps              PCM properties to compare.
+ * @param   pCfg                Stream configuration to compare.
+ */
+bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pProps, false);
+    AssertPtrReturn(pCfg,   false);
+
+    return DrvAudioHlpPCMPropsAreEqual(pProps, &pCfg->Props);
 }
 
 /**
@@ -841,12 +809,7 @@ int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMC
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
 
-    pCfg->uHz           = pPCMProps->uHz;
-    pCfg->cChannels     = pPCMProps->cChannels;
-    pCfg->enmFormat     = DrvAudioAudFmtBitsToAudFmt(pPCMProps->cBits, pPCMProps->fSigned);
-
-    /** @todo We assume little endian is the default for now. */
-    pCfg->enmEndianness = pPCMProps->fSwapEndian == false ? PDMAUDIOENDIANNESS_LITTLE : PDMAUDIOENDIANNESS_BIG;
+    memcpy(&pCfg->Props, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
     return VINF_SUCCESS;
 }
 
@@ -855,28 +818,28 @@ int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMC
  *
  * Returns @c true if configuration is valid, @c false if not.
  * @param   pCfg                Stream configuration to check.
+ *
+ * @remarks Does *not* support surround (> 2 channels) yet! This is intentional, as
+ *          we consider surround support as experimental / not enabled by default for now.
  */
-bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg)
 {
-    bool fValid = (   pCfg->cChannels == 1
-                   || pCfg->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
+    AssertPtrReturn(pCfg, false);
 
-    fValid |= (   pCfg->enmEndianness == PDMAUDIOENDIANNESS_LITTLE
-               || pCfg->enmEndianness == PDMAUDIOENDIANNESS_BIG);
+    bool fValid = (   pCfg->Props.cChannels == 1
+                   || pCfg->Props.cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
 
     fValid |= (   pCfg->enmDir == PDMAUDIODIR_IN
                || pCfg->enmDir == PDMAUDIODIR_OUT);
 
     if (fValid)
     {
-        switch (pCfg->enmFormat)
+        switch (pCfg->Props.cBits)
         {
-            case PDMAUDIOFMT_S8:
-            case PDMAUDIOFMT_U8:
-            case PDMAUDIOFMT_S16:
-            case PDMAUDIOFMT_U16:
-            case PDMAUDIOFMT_S32:
-            case PDMAUDIOFMT_U32:
+            case 8:
+            case 16:
+            /** @todo Do we need support for 24-bit samples? */
+            case 32:
                 break;
             default:
                 fValid = false;
@@ -884,69 +847,79 @@ bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
         }
     }
 
-    fValid |= pCfg->uHz > 0;
-    /** @todo Check for defined frequencies supported. */
+    if (!fValid)
+        return false;
+
+    fValid |= pCfg->Props.uHz > 0;
+    fValid |= pCfg->Props.cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
+
+    fValid |= pCfg->Props.fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
 
     return fValid;
 }
 
 /**
- * Converts an audio stream configuration to matching PCM properties.
+ * Frees an allocated audio stream configuration.
  *
- * @return  IPRT status code.
- * @param   pCfg                    Audio stream configuration to convert.
- * @param   pProps                  PCM properties to save result to.
+ * @param   pCfg                Audio stream configuration to free.
  */
-int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOPCMPROPS pProps)
+void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
-
-    int rc = VINF_SUCCESS;
-
-    int cBits = 8, cShift = 0;
-    bool fSigned = false;
-
-    switch (pCfg->enmFormat)
+    if (pCfg)
     {
-        case PDMAUDIOFMT_S8:
-            fSigned = true;
-        case PDMAUDIOFMT_U8:
-            break;
+        RTMemFree(pCfg);
+        pCfg = NULL;
+    }
+}
 
-        case PDMAUDIOFMT_S16:
-            fSigned = true;
-        case PDMAUDIOFMT_U16:
-            cBits = 16;
-            cShift = 1;
-            break;
+/**
+ * Copies a source stream configuration to a destination stream configuration.
+ *
+ * @returns IPRT status code.
+ * @param   pDstCfg             Destination stream configuration to copy source to.
+ * @param   pSrcCfg             Source stream configuration to copy to destination.
+ */
+int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg)
+{
+    AssertPtrReturn(pDstCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrcCfg, VERR_INVALID_POINTER);
 
-        case PDMAUDIOFMT_S32:
-            fSigned = true;
-        case PDMAUDIOFMT_U32:
-            cBits = 32;
-            cShift = 2;
-            break;
+#ifdef VBOX_STRICT
+    if (!DrvAudioHlpStreamCfgIsValid(pSrcCfg))
+    {
+        AssertMsgFailed(("Stream config '%s' (%p) is invalid\n", pSrcCfg->szName, pSrcCfg));
+        return VERR_INVALID_PARAMETER;
+    }
+#endif
 
-        default:
-            AssertMsgFailed(("Unknown format %ld\n", pCfg->enmFormat));
-            rc = VERR_NOT_SUPPORTED;
-            break;
+    memcpy(pDstCfg, pSrcCfg, sizeof(PDMAUDIOSTREAMCFG));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Duplicates an audio stream configuration.
+ * Must be free'd with DrvAudioHlpStreamCfgFree().
+ *
+ * @return  Duplicates audio stream configuration on success, or NULL on failure.
+ * @param   pCfg                    Audio stream configuration to duplicate.
+ */
+PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
+{
+    AssertPtrReturn(pCfg, NULL);
+
+    PPDMAUDIOSTREAMCFG pDst = (PPDMAUDIOSTREAMCFG)RTMemAllocZ(sizeof(PDMAUDIOSTREAMCFG));
+    if (!pDst)
+        return NULL;
+
+    int rc2 = DrvAudioHlpStreamCfgCopy(pDst, pCfg);
+    if (RT_FAILURE(rc2))
+    {
+        DrvAudioHlpStreamCfgFree(pDst);
+        pDst = NULL;
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        pProps->uHz         = pCfg->uHz;
-        pProps->cBits       = cBits;
-        pProps->fSigned     = fSigned;
-        pProps->cShift      = (pCfg->cChannels == 2) + cShift;
-        pProps->cChannels   = pCfg->cChannels;
-        pProps->cbBitrate   = DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels) / 8 /* Convert to bytes */;
-        pProps->uAlign      = (1 << pProps->cShift) - 1;
-        pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANNESS;
-    }
-
-    return rc;
+    return pDst;
 }
 
 /**
@@ -958,46 +931,8 @@ void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturnVoid(pCfg);
 
-    LogFlowFunc(("uHz=%RU32, cChannels=%RU8, enmFormat=", pCfg->uHz, pCfg->cChannels));
-
-    switch (pCfg->enmFormat)
-    {
-        case PDMAUDIOFMT_S8:
-            LogFlow(("S8"));
-            break;
-        case PDMAUDIOFMT_U8:
-            LogFlow(("U8"));
-            break;
-        case PDMAUDIOFMT_S16:
-            LogFlow(("S16"));
-            break;
-        case PDMAUDIOFMT_U16:
-            LogFlow(("U16"));
-            break;
-        case PDMAUDIOFMT_S32:
-            LogFlow(("S32"));
-            break;
-        case PDMAUDIOFMT_U32:
-            LogFlow(("U32"));
-            break;
-        default:
-            LogFlow(("invalid(%d)", pCfg->enmFormat));
-            break;
-    }
-
-    LogFlow((", endianness="));
-    switch (pCfg->enmEndianness)
-    {
-        case PDMAUDIOENDIANNESS_LITTLE:
-            LogFlow(("little\n"));
-            break;
-        case PDMAUDIOENDIANNESS_BIG:
-            LogFlow(("big\n"));
-            break;
-        default:
-            LogFlow(("invalid\n"));
-            break;
-    }
+    LogFlowFunc(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
+                 pCfg->Props.uHz, pCfg->Props.cChannels, pCfg->Props.cBits, pCfg->Props.fSigned ? "S" : "U"));
 }
 
 /**
@@ -1044,13 +979,13 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  * Divide the result by 8 to get the byte rate.
  *
  * @returns The calculated bit rate.
- * @param   pCfg                Audio stream configuration to calculate bit rate for.
+ * @param   pProps              PCM properties to calculate bitrate for.
  *
  * @remark
  */
-uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOSTREAMCFG pCfg)
+uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOPCMPROPS pProps)
 {
-    return DrvAudioHlpCalcBitrate(DrvAudioHlpAudFmtToBits(pCfg->enmFormat), pCfg->uHz, pCfg->cChannels);
+    return DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels);
 }
 
 /**

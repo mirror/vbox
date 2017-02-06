@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2646,32 +2646,33 @@ static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
             break;
     }
 
-    PDMAUDIOFMT enmFmt;
+    uint8_t cBits = 0;
     switch (EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
-            enmFmt = PDMAUDIOFMT_S8;
+            cBits = 8;
             break;
         case 1:
-            enmFmt = PDMAUDIOFMT_S16;
+            cBits = 16;
             break;
         case 4:
-            enmFmt = PDMAUDIOFMT_S32;
+            cBits = 32;
             break;
         default:
             AssertMsgFailed(("Unsupported bits per sample %x\n",
                              EXTRACT_VALUE(u32SDFMT, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT)));
-            enmFmt = PDMAUDIOFMT_INVALID;
             rc = VERR_NOT_SUPPORTED;
             break;
     }
 
     if (RT_SUCCESS(rc))
     {
-        pStrmCfg->uHz           = u32Hz * u32HzMult / u32HzDiv;
-        pStrmCfg->cChannels     = (u32SDFMT & 0xf) + 1;
-        pStrmCfg->enmFormat     = enmFmt;
-        pStrmCfg->enmEndianness = PDMAUDIOHOSTENDIANNESS;
+        RT_ZERO(pStrmCfg->Props);
+
+        pStrmCfg->Props.uHz       = u32Hz * u32HzMult / u32HzDiv;
+        pStrmCfg->Props.cChannels = (u32SDFMT & 0xf) + 1;
+        pStrmCfg->Props.cBits     = cBits;
+        pStrmCfg->Props.fSigned   = true;
     }
 
 # undef EXTRACT_VALUE
@@ -2739,8 +2740,8 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
     }
 #else /* !VBOX_WITH_AUDIO_HDA_51_SURROUND */
     /* Only support mono or stereo channels. */
-    if (   pCfg->cChannels != 1 /* Mono */
-        && pCfg->cChannels != 2 /* Stereo */)
+    if (   pCfg->Props.cChannels != 1 /* Mono */
+        && pCfg->Props.cChannels != 2 /* Stereo */)
     {
         rc = VERR_NOT_SUPPORTED;
     }
@@ -2748,8 +2749,8 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     if (rc == VERR_NOT_SUPPORTED)
     {
-        LogRel(("HDA: Unsupported channel count (%RU8), falling back to stereo channels\n", pCfg->cChannels));
-        pCfg->cChannels = 2;
+        LogRel(("HDA: Unsupported channel count (%RU8), falling back to stereo channels\n", pCfg->Props.cChannels));
+        pCfg->Props.cChannels = 2;
 
         rc = VINF_SUCCESS;
     }
@@ -2763,7 +2764,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Front");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_FRONT;
-            pCfg->cChannels       = 2;
+            pCfg->Props.cChannels = 2;
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_FRONT);
             if (RT_SUCCESS(rc))
@@ -2776,7 +2777,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Center/LFE");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_CENTER_LFE;
-            pCfg->cChannels       = (fUseCenter && fUseLFE) ? 2 : 1;
+            pCfg->Props.cChannels = (fUseCenter && fUseLFE) ? 2 : 1;
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_CENTER_LFE);
             if (RT_SUCCESS(rc))
@@ -2788,7 +2789,7 @@ static int hdaAddStreamOut(PHDASTATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         {
             RTStrPrintf(pCfg->szName, RT_ELEMENTS(pCfg->szName), "Rear");
             pCfg->DestSource.Dest = PDMAUDIOPLAYBACKDEST_REAR;
-            pCfg->cChannels       = 2;
+            pCfg->Props.cChannels = 2;
 
             rc = hdaCodecRemoveStream(pThis->pCodec,  PDMAUDIOMIXERCTL_REAR);
             if (RT_SUCCESS(rc))
@@ -2859,8 +2860,8 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         return hdaRegWriteU16(pThis, iReg, u32Value);
     }
 
-    LogFunc(("[SD%RU8]: Hz=%RU32, Channels=%RU8, enmFmt=%RU32\n",
-             pStream->u8SD, strmCfg.uHz, strmCfg.cChannels, strmCfg.enmFormat));
+    LogFunc(("[SD%RU8]: Hz=%RU32, Channels=%RU8, cBits=%RU8\n",
+             pStream->u8SD, strmCfg.Props.uHz, strmCfg.Props.cChannels, strmCfg.Props.cBits));
 
     /* Set audio direction. */
     strmCfg.enmDir = hdaGetDirFromSD(pStream->u8SD);
@@ -3296,28 +3297,28 @@ static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg)
     AssertPtrReturn(pMapping, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
-    AssertReturn(pCfg->cChannels, VERR_INVALID_PARAMETER);
+    AssertReturn(pCfg->Props.cChannels, VERR_INVALID_PARAMETER);
 
     hdaStreamMapReset(pMapping);
 
-    pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pCfg->cChannels);
+    pMapping->paChannels = (PPDMAUDIOSTREAMCHANNEL)RTMemAlloc(sizeof(PDMAUDIOSTREAMCHANNEL) * pCfg->Props.cChannels);
     if (!pMapping->paChannels)
         return VERR_NO_MEMORY;
 
-    PDMAUDIOPCMPROPS Props;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &Props);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+        return VERR_INVALID_PARAMETER;
 
-    Assert(RT_IS_POWER_OF_TWO(Props.cBits));
+    int rc = VINF_SUCCESS;
+
+    Assert(RT_IS_POWER_OF_TWO(pCfg->Props.cBits));
 
     /** @todo We assume all channels in a stream have the same format. */
     PPDMAUDIOSTREAMCHANNEL pChan = pMapping->paChannels;
-    for (uint8_t i = 0; i < pCfg->cChannels; i++)
+    for (uint8_t i = 0; i < pCfg->Props.cChannels; i++)
     {
         pChan->uChannel = i;
-        pChan->cbStep   = (Props.cBits / 2);
-        pChan->cbFrame  = pChan->cbStep * pCfg->cChannels;
+        pChan->cbStep   = (pCfg->Props.cBits / 2);
+        pChan->cbFrame  = pChan->cbStep * pCfg->Props.cChannels;
         pChan->cbFirst  = i * pChan->cbStep;
         pChan->cbOff    = pChan->cbFirst;
 
@@ -3340,7 +3341,7 @@ static int hdaStreamMapInit(PHDASTREAMMAPPING pMapping, PPDMAUDIOSTREAMCFG pCfg)
 
     if (RT_SUCCESS(rc))
     {
-        pMapping->cChannels = pCfg->cChannels;
+        pMapping->cChannels = pCfg->Props.cChannels;
 #ifdef VBOX_WITH_HDA_AUDIO_INTERLEAVING_STREAMS_SUPPORT
         pMapping->enmLayout = PDMAUDIOSTREAMLAYOUT_INTERLEAVED;
 #else
@@ -3526,12 +3527,10 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
 
     LogFunc(("Sink=%s, Stream=%s\n", pSink->pMixSink->pszName, pCfg->szName));
 
-    /* Update the sink's format. */
-    PDMAUDIOPCMPROPS PCMProps;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &PCMProps);
-    if (RT_SUCCESS(rc))
-        rc = AudioMixerSinkSetFormat(pSink->pMixSink, &PCMProps);
+    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+        return VERR_INVALID_PARAMETER;
 
+    int rc = AudioMixerSinkSetFormat(pSink->pMixSink, &pCfg->Props);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -3541,7 +3540,7 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
         int rc2 = VINF_SUCCESS;
         PHDADRIVERSTREAM pDrvStream = NULL;
 
-        PPDMAUDIOSTREAMCFG pStreamCfg = (PPDMAUDIOSTREAMCFG)RTMemDup(pCfg, sizeof(PDMAUDIOSTREAMCFG));
+        PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
         if (!pStreamCfg)
         {
             rc = VERR_NO_MEMORY;
@@ -4697,10 +4696,9 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
                 cbDMALeft -= (uint32_t)cbDst;
             }
 
-#ifdef DEBUG_andy
             AssertMsg(cbDMALeft == 0, ("%RU32 bytes of DMA data left, CircBuf=%zu/%zu\n",
                                        cbDMALeft, RTCircBufUsed(pCircBuf), RTCircBufSize(pCircBuf)));
-#endif
+
             /*
              * Process backends.
              */
@@ -4781,10 +4779,14 @@ static int hdaStreamUpdate(PHDASTATE pThis, PHDASTREAM pStream)
         else
             AssertFailed();
 
-        if (++cTransfers > 32) /* Failsafe counter. */
+        if (++cTransfers == UINT8_MAX) /* Failsafe counter. */
             fDone = true;
 
     } /* while !fDone */
+
+#ifdef VBOX_STRICT
+    AssertMsg(cTransfers < UINT8_MAX, ("HDA: Update for SD#%RU8 ran for too long\n", pStream->u8SD));
+#endif
 
     Log2Func(("[SD%RU8] End\n", pStream->u8SD));
 

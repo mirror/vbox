@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -600,7 +600,7 @@ typedef struct DACNODE
     uint32_t    u32F0c_param;
 
     uint32_t    u32A_param;
-    AMPLIFIER B_params;
+    AMPLIFIER   B_params;
 
 } DACNODE, *PDACNODE;
 AssertNodeSize(DACNODE, 6 + 60);
@@ -1583,8 +1583,10 @@ DECLISNODEOFTYPE(Reserved)
 /*
  * Misc helpers.
  */
-static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL enmMixerCtl)
+static int hdaCodecToAudVolume(PHDACODEC pThis, PCODECNODE pNode, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL enmMixerCtl)
 {
+    RT_NOREF(pNode);
+
     uint8_t iDir;
     switch (enmMixerCtl)
     {
@@ -1620,6 +1622,9 @@ static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCT
     rVol = (rVol + 1) * (2 * 255) / 256;
 
     PDMAUDIOVOLUME Vol = { RT_BOOL(iMute), lVol, rVol };
+
+    LogFunc(("[NID0x%02x] %RU8/%RU8 (%s)\n",
+             pNode->node.uID, lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
 
     LogRel2(("HDA: Setting volume for mixer control '%s' to %RU8/%RU8 (%s)\n",
              DrvAudioHlpAudMixerCtlToStr(enmMixerCtl), lVol, rVol, RT_BOOL(iMute) ? "Muted" : "Unmuted"));
@@ -1743,13 +1748,16 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
 
     bool fIsOut     = CODEC_SET_AMP_IS_OUT_DIRECTION(cmd);
     bool fIsIn      = CODEC_SET_AMP_IS_IN_DIRECTION(cmd);
-    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
     bool fIsLeft    = CODEC_SET_AMP_IS_LEFT_SIDE(cmd);
+    bool fIsRight   = CODEC_SET_AMP_IS_RIGHT_SIDE(cmd);
     uint8_t u8Index = CODEC_SET_AMP_INDEX(cmd);
 
     if (   (!fIsLeft && !fIsRight)
         || (!fIsOut && !fIsIn))
         return VINF_SUCCESS;
+
+    LogFunc(("[NID0x%02x] fIsOut=%RTbool, fIsIn=%RTbool, fIsLeft=%RTbool, fIsRight=%RTbool, Idx=%RU8\n",
+             CODEC_NID(cmd), fIsOut, fIsIn, fIsLeft, fIsRight, u8Index));
 
     if (fIsIn)
     {
@@ -1758,8 +1766,10 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
-        /** @todo Fix ID of u8AdcVolsLineIn! */
-        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+    //    if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn)
+    //    {
+            hdaCodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+    //    }
     }
     if (fIsOut)
     {
@@ -1769,7 +1779,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
         if (CODEC_NID(cmd) == pThis->u8DacLineOut)
-            hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
+            hdaCodecToAudVolume(pThis, pNode, pAmplifier, PDMAUDIOMIXERCTL_FRONT);
     }
 
     return VINF_SUCCESS;
@@ -2324,6 +2334,7 @@ static DECLCALLBACK(int) vrbProcSetPowerState(PHDACODEC pThis, uint32_t cmd, uin
 }
 #endif
 
+/* F06 */
 static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
@@ -2347,13 +2358,18 @@ static DECLCALLBACK(int) vrbProcGetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     return VINF_SUCCESS;
 }
 
-/* F06 */
+/* 706 */
 static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint64_t *pResp)
 {
     *pResp = 0;
 
-    PDMAUDIODIR enmDir;
+    uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
+    uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
 
+    LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8\n",
+                 CODEC_NID(cmd), uSD, uChannel));
+
+    PDMAUDIODIR enmDir;
     uint32_t *pu32Addr = NULL;
     if (hdaCodecIsDacNode(pThis, CODEC_NID(cmd)))
     {
@@ -2384,12 +2400,6 @@ static DECLCALLBACK(int) vrbProcSetStreamId(PHDACODEC pThis, uint32_t cmd, uint6
     /* Do we (re-)assign our input/output SDn (SDI/SDO) IDs? */
     if (enmDir != PDMAUDIODIR_UNKNOWN)
     {
-        uint8_t uSD      = CODEC_F00_06_GET_STREAM_ID(cmd);
-        uint8_t uChannel = CODEC_F00_06_GET_CHANNEL_ID(cmd);
-
-        LogFlowFunc(("[NID0x%02x] Setting to stream ID=%RU8, channel=%RU8, enmDir=%RU32\n",
-                     CODEC_NID(cmd), uSD, uChannel, enmDir));
-
         pThis->paNodes[CODEC_NID(cmd)].node.uSD      = uSD;
         pThis->paNodes[CODEC_NID(cmd)].node.uChannel = uChannel;
 
@@ -3113,8 +3123,10 @@ int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM)
 
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    PCSSMFIELD pFields;
-    uint32_t   fFlags;
+    int rc = VINF_SUCCESS;
+
+    PCSSMFIELD pFields = NULL;
+    uint32_t   fFlags  = 0;
     switch (uVersion)
     {
         case HDA_SSM_VERSION_1:
@@ -3148,32 +3160,53 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
         }
 
         default:
-            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+            break;
     }
 
-    for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
+    if (RT_SUCCESS(rc))
     {
-        uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
-        int rc = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
-                                  sizeof(pThis->paNodes[idxNode].SavedState),
-                                  fFlags, pFields, NULL);
-        if (RT_FAILURE(rc))
-            return rc;
-        AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
-                              ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
-                              VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        for (unsigned idxNode = 0; idxNode < pThis->cTotalNodes; ++idxNode)
+        {
+            uint8_t idOld = pThis->paNodes[idxNode].SavedState.Core.uID;
+            int rc2 = SSMR3GetStructEx(pSSM, &pThis->paNodes[idxNode].SavedState,
+                                       sizeof(pThis->paNodes[idxNode].SavedState),
+                                       fFlags, pFields, NULL);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+
+            if (RT_FAILURE(rc))
+                break;
+
+            AssertLogRelMsgReturn(idOld == pThis->paNodes[idxNode].SavedState.Core.uID,
+                                  ("loaded %#x, expected %#x\n", pThis->paNodes[idxNode].SavedState.Core.uID, idOld),
+                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Update stuff after changing the state.
+             */
+            PCODECNODE pNode;
+            if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
+            {
+                pNode = &pThis->paNodes[pThis->u8DacLineOut];
+                hdaCodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
+            }
+            else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
+            {
+                pNode = &pThis->paNodes[pThis->u8DacLineOut];
+                hdaCodecToAudVolume(pThis, pNode, &pNode->spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
+            }
+
+            pNode = &pThis->paNodes[pThis->u8AdcVolsLineIn];
+            hdaCodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+        }
     }
 
-    /*
-     * Update stuff after changing the state.
-     */
-    if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_FRONT);
-    else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_FRONT);
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
-
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
@@ -3257,10 +3290,11 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
          * The codec's (fixed) delivery rate is 48kHz, so a frame will be delivered every 20.83us. */
         PDMAUDIOSTREAMCFG strmCfg;
         RT_ZERO(strmCfg);
-        strmCfg.uHz           = 44100;
-        strmCfg.cChannels     = 2;
-        strmCfg.enmFormat     = PDMAUDIOFMT_S16;
-        strmCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+
+        strmCfg.Props.uHz       = 44100;
+        strmCfg.Props.cChannels = 2;
+        strmCfg.Props.cBits     = 16;
+        strmCfg.Props.fSigned   = true;
 
         /* Note: Adding the default input/output streams is *not* critical for the overall
          *       codec construction result. */
@@ -3317,10 +3351,13 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     /*
      * Set initial volume.
      */
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params,       PDMAUDIOMIXERCTL_FRONT);
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
+    PCODECNODE pNode = &pThis->paNodes[pThis->u8DacLineOut];
+    hdaCodecToAudVolume(pThis, pNode, &pNode->dac.B_params, PDMAUDIOMIXERCTL_FRONT);
+
+    pNode = &pThis->paNodes[pThis->u8AdcVolsLineIn];
+    hdaCodecToAudVolume(pThis, pNode, &pNode->adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-    #error "Implement mic-in support!"
+# error "Implement mic-in support!"
 #endif
 
     LogFlowFuncLeaveRC(rc);

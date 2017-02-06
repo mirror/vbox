@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -154,14 +154,16 @@ uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
 const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
 void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
-uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOSTREAMCFG pCfg);
+uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOPCMPROPS pProps);
 bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps1, PPDMAUDIOPCMPROPS pPCMProps2);
 bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
 void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
-bool DrvAudioHlpStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg);
-int DrvAudioHlpStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOPCMPROPS pProps);
+bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg);
+PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg);
+void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
 PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt);
 

@@ -1474,19 +1474,17 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
     AssertPtrReturn(pMixSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,     VERR_INVALID_POINTER);
 
-    /* Update the sink's format. */
-    PDMAUDIOPCMPROPS PCMProps;
-    int rc = DrvAudioHlpStreamCfgToProps(pCfg, &PCMProps);
-    if (RT_SUCCESS(rc))
-        rc = AudioMixerSinkSetFormat(pMixSink, &PCMProps);
+    if (!DrvAudioHlpStreamCfgIsValid(pCfg))
+        return VERR_INVALID_PARAMETER;
 
+    int rc = AudioMixerSinkSetFormat(pMixSink, &pCfg->Props);
     if (RT_FAILURE(rc))
         return rc;
 
     PAC97DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
-        PPDMAUDIOSTREAMCFG pStreamCfg = (PPDMAUDIOSTREAMCFG)RTMemDup(pCfg, sizeof(PDMAUDIOSTREAMCFG));
+        PPDMAUDIOSTREAMCFG pStreamCfg = DrvAudioHlpStreamCfgDup(pCfg);
         if (!pStreamCfg)
         {
             rc = VERR_NO_MEMORY;
@@ -1592,7 +1590,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
     {
         case AC97SOUNDSOURCE_PI_INDEX:
         {
-            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
+            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_LR_ADC_Rate);
             streamCfg.enmDir            = PDMAUDIODIR_IN;
             streamCfg.DestSource.Source = PDMAUDIORECSOURCE_LINE;
 
@@ -1604,7 +1602,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
         case AC97SOUNDSOURCE_MC_INDEX:
         {
-            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
+            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_MIC_ADC_Rate);
             streamCfg.enmDir            = PDMAUDIODIR_IN;
             streamCfg.DestSource.Source = PDMAUDIORECSOURCE_MIC;
 
@@ -1616,7 +1614,7 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 
         case AC97SOUNDSOURCE_PO_INDEX:
         {
-            streamCfg.uHz               = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
+            streamCfg.Props.uHz         = ichac97MixerGet(pThis, AC97_PCM_Front_DAC_Rate);
             streamCfg.enmDir            = PDMAUDIODIR_OUT;
             streamCfg.DestSource.Dest   = PDMAUDIOPLAYBACKDEST_FRONT;
 
@@ -1635,13 +1633,13 @@ static int ichac97StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
     {
         ichac97MixerRemoveDrvStreams(pThis, pMixSink, streamCfg.enmDir, streamCfg.DestSource);
 
-        if (streamCfg.uHz)
+        if (streamCfg.Props.uHz)
         {
             Assert(streamCfg.enmDir != PDMAUDIODIR_UNKNOWN);
 
-            streamCfg.cChannels     = 2;
-            streamCfg.enmFormat     = PDMAUDIOFMT_S16;
-            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
+            streamCfg.Props.cChannels = 2;
+            streamCfg.Props.cBits     = 16;
+            streamCfg.Props.fSigned   = true;
 
             rc = ichac97MixerAddDrvStreams(pThis, pMixSink, &streamCfg);
         }

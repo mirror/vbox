@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -336,6 +336,45 @@ typedef union PDMAUDIODESTSOURCE
 } PDMAUDIODESTSOURCE, *PPDMAUDIODESTSOURCE;
 
 /**
+ * Properties of audio streams for host/guest
+ * for in or out directions.
+ */
+typedef struct PDMAUDIOPCMPROPS
+{
+    /** Sample width. Bits per sample. */
+    uint8_t     cBits;
+    /** Signed or unsigned sample. */
+    bool        fSigned;
+    /** Shift count used for faster calculation of various
+     *  values, such as the alignment, bytes to samples and so on.
+     *  Depends on number of stream channels and the stream format
+     *  being used.
+     *
+     ** @todo Use some RTAsmXXX functions instead?
+     */
+    uint8_t     cShift;
+    /** Number of audio channels. */
+    uint8_t     cChannels;
+    /** Sample frequency in Hertz (Hz). */
+    uint32_t    uHz;
+    /** Whether the endianness is swapped or not. */
+    bool        fSwapEndian;
+} PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
+
+/** Calculates the cShift value of given samples bits and audio channels.
+ *  Note: Does only support mono/stereo channels for now. */
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + cBits / 16)
+/** Calculates the cShift value of a PDMAUDIOPCMPROPS structure.
+ *  Note: Does only support mono/stereo channels for now. */
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)                     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cChannels == 2) + (pProps)->cBits / 16)
+/** Converts (audio) samples to bytes.
+ *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
+#define PDMAUDIOPCMPROPS_S2B(pProps, samples)                   ((samples) << (pProps)->cShift)
+/** Converts bytes to (audio) samples.
+ *  Needs the cShift value set correctly, using PDMAUDIOPCMPROPS_MAKE_SHIFT. */
+#define PDMAUDIOPCMPROPS_B2S(pProps, cb)                        (cb >> (pProps)->cShift)
+
+/**
  * Structure for keeping an audio stream configuration.
  */
 typedef struct PDMAUDIOSTREAMCFG
@@ -346,18 +385,17 @@ typedef struct PDMAUDIOSTREAMCFG
     PDMAUDIODIR              enmDir;
     /** Destination / source indicator, depending on enmDir. */
     PDMAUDIODESTSOURCE       DestSource;
-    /** Frequency in Hertz (Hz). */
-    uint32_t                 uHz;
-    /** Number of audio channels (2 for stereo, 1 for mono). */
-    uint8_t                  cChannels;
-    /** Audio format. */
-    PDMAUDIOFMT              enmFormat;
-    /** @todo Use RT_LE2H_*? */
-    PDMAUDIOENDIANNESS       enmEndianness;
+    /** The stream's PCM properties. */
+    PDMAUDIOPCMPROPS         Props;
     /** Hint about the optimal sample buffer size (in audio samples).
      *  0 if no hint is given. */
-    uint32_t                 cSampleBufferSize;
+    uint32_t                 cSampleBufferHint;
 } PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
+
+/** Converts (audio) samples to bytes. */
+#define PDMAUDIOSTREAMCFG_S2B(pCfg, samples) ((samples) << (pCfg->Props).cShift)
+/** Converts bytes to (audio) samples. */
+#define PDMAUDIOSTREAMCFG_B2S(pCfg, cb)  (cb >> (pCfg->Props).cShift)
 
 #if defined(RT_LITTLE_ENDIAN)
 # define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
@@ -409,41 +447,6 @@ typedef enum PDMAUDIOSTREAMCMD
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMCMD_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMCMD;
-
-/**
- * Properties of audio streams for host/guest
- * for in or out directions.
- */
-typedef struct PDMAUDIOPCMPROPS
-{
-    /** Sample width. Bits per sample. */
-    uint8_t     cBits;
-    /** Signed or unsigned sample. */
-    bool        fSigned;
-    /** Shift count used for faster calculation of various
-     *  values, such as the alignment, bytes to samples and so on.
-     *  Depends on number of stream channels and the stream format
-     *  being used.
-     *
-     ** @todo Use some RTAsmXXX functions instead?
-     */
-    uint8_t     cShift;
-    /** Number of audio channels. */
-    uint8_t     cChannels;
-    /** Alignment mask. */
-    uint32_t    uAlign;
-    /** Sample frequency in Hertz (Hz). */
-    uint32_t    uHz;
-    /** Bitrate (in bytes/s). */
-    uint32_t    cbBitrate;
-    /** Whether the endianness is swapped or not. */
-    bool        fSwapEndian;
-} PDMAUDIOPCMPROPS, *PPDMAUDIOPCMPROPS;
-
-/** Converts (audio) samples to bytes. */
-#define PDMAUDIOPCMPROPS_S2B(pProps, samples) ((samples) << (pProps)->cShift)
-/** Converts bytes to (audio) samples. */
-#define PDMAUDIOPCMPROPS_B2S(pProps, cb)  (cb >> (pProps)->cShift)
 
 /**
  * Audio volume parameters.
@@ -785,6 +788,13 @@ typedef struct PDMAUDIOSTREAM
         PDMAUDIOSTREAMIN   In;
         PDMAUDIOSTREAMOUT  Out;
     };
+    /** Data to backend-specific stream data.
+     *  This data block will be casted by the backend to access its backend-dependent data.
+     *
+     *  That way the backends do not have access to the audio connector's data. */
+    void                  *pvBackend;
+    /** Size (in bytes) of the backend-specific stream data. */
+    size_t                 cbBackend;
 } PDMAUDIOSTREAM, *PPDMAUDIOSTREAM;
 
 /** Pointer to a audio connector interface. */
@@ -866,6 +876,8 @@ typedef struct PDMAUDIOCALLBACK
     PFNPDMAUDIOCALLBACK pFn;
 } PDMAUDIOCALLBACK, *PPDMAUDIOCALLBACK;
 #endif /* VBOX_WITH_AUDIO_DEVICE_CALLBACKS */
+
+#define PPDMAUDIOBACKENDSTREAM void *
 
 /**
  * Audio connector interface (up).
@@ -1127,7 +1139,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pCfgReq             Pointer to requested stream configuration.
      * @param   pCfgAcq             Pointer to acquired stream configuration.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCreate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq));
 
     /**
      * Destroys an audio stream.
@@ -1136,7 +1148,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(int, pfnStreamDestroy, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Controls an audio stream.
@@ -1146,7 +1158,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pStream             Pointer to audio stream.
      * @param   enmStreamCmd        The stream command to issue.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
+    DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
      * Returns whether the specified audio direction in the backend is enabled or not.
@@ -1155,7 +1167,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(PDMAUDIOSTRMSTS, pfnStreamGetStatus, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Gives the host backend the chance to do some (necessary) iteration work.
@@ -1164,7 +1176,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      * @param   pStream             Pointer to audio stream.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream));
+    DECLR3CALLBACKMEMBER(int, pfnStreamIterate, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
 
     /**
      * Plays (writes to) an audio (output) stream.
@@ -1176,7 +1188,7 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of audio data buffer.
      * @param   pcbWritten          Returns number of bytes written.  Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnStreamPlay, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten));
 
     /**
      * Captures (reads from) an audio (input) stream.
@@ -1188,12 +1200,12 @@ typedef struct PDMIHOSTAUDIO
      * @param   cbBuf               Size (in bytes) of buffer.
      * @param   pcbRead             Returns number of bytes read.  Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnStreamCapture, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead));
 
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "C45550DE-03C0-4A45-9A96-C5EB956F806D"
+#define PDMIHOSTAUDIO_IID                           "1F1C3DEB-AEA3-4E32-8405-EC7E7661E888"
 
 /** @} */
 

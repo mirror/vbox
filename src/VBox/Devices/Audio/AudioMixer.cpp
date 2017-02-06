@@ -29,7 +29,7 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Oracle Corporation
+ * Copyright (C) 2014-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -599,8 +599,8 @@ int AudioMixerSinkCreateStream(PAUDMIXSINK pSink,
     if (RT_FAILURE(rc))
         return rc;
 
-    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%d, %s, %RU8 channels, %RU32Hz)\n",
-                 pSink->pszName, fFlags, pCfg->enmDir, DrvAudioHlpAudFmtToStr(pCfg->enmFormat), pCfg->cChannels, pCfg->uHz));
+    LogFlowFunc(("[%s]: fFlags=0x%x (enmDir=%ld, %RU8 bits, %RU8 channels, %RU32Hz)\n",
+                 pSink->pszName, fFlags, pCfg->enmDir, pCfg->Props.cBits, pCfg->Props.cChannels, pCfg->Props.uHz));
 
     /*
      * Initialize the host-side configuration for the stream to be created.
@@ -838,10 +838,10 @@ uint32_t AudioMixerSinkGetReadable(PAUDMIXSINK pSink)
      */
     uint64_t tsDeltaMS  = RTTimeMilliTS() - pSink->tsLastUpdatedMS;
 
-    cbReadable = (pSink->PCMProps.cbBitrate / 1000 /* s to ms */) * tsDeltaMS;
+    cbReadable = ((DrvAudioHlpCalcBitrate(&pSink->PCMProps) / 8) / 1000 /* s to ms */) * tsDeltaMS;
 
     Log3Func(("[%s] Bitrate is %RU32 bytes/s -> %RU64ms / %RU32 bytes elapsed\n",
-              pSink->pszName, pSink->PCMProps.cbBitrate, tsDeltaMS, cbReadable));
+              pSink->pszName, DrvAudioHlpCalcBitrate(&pSink->PCMProps) / 8, tsDeltaMS, cbReadable));
 #endif
 
     Log3Func(("[%s] cbReadable=%RU32\n", pSink->pszName, cbReadable));
@@ -889,10 +889,10 @@ uint32_t AudioMixerSinkGetWritable(PAUDMIXSINK pSink)
          */
         uint64_t tsDeltaMS  = RTTimeMilliTS() - pSink->tsLastUpdatedMS;
 
-        cbWritable = (pSink->PCMProps.cbBitrate / 1000 /* s to ms */) * tsDeltaMS;
+        cbWritable = ((DrvAudioHlpCalcBitrate(&pSink->PCMProps) / 8) / 1000 /* s to ms */) * tsDeltaMS;
 
         Log3Func(("[%s] Bitrate is %RU32 bytes/s -> %RU64ms / %RU32 bytes elapsed\n",
-                  pSink->pszName, pSink->PCMProps.cbBitrate, tsDeltaMS, cbWritable));
+                  pSink->pszName, DrvAudioHlpCalcBitrate(&pSink->PCMProps) / 8, tsDeltaMS, cbWritable));
 #endif
     }
 
