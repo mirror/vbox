@@ -94,7 +94,7 @@ struct UIDataSettingsMachineGeneral
     /** Holds the encryption passwords. */
     EncryptionPasswordMap m_encryptionPasswords;
 };
-typedef UISettingsCache<UIDataSettingsMachineGeneral> UICacheSettingsMachineGeneral;
+typedef UISettingsCache<UIDataSettingsMachineGeneral> UISettingsCacheMachineGeneral;
 
 /** Machine settings: General page. */
 class UIMachineSettingsGeneral : public UISettingsPageMachine,
@@ -171,7 +171,7 @@ private:
     void polishPage();
 
     /** Holds the page cache. */
-    UICacheSettingsMachineGeneral m_cache;
+    UISettingsCacheMachineGeneral m_cache;
 
     /** Holds whether HW virtualization extension is enabled. */
     bool m_fHWVirtExEnabled;

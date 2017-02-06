@@ -626,7 +626,7 @@ struct UIDataSettingsMachineStorageAttachment
     bool m_fAttachmentNonRotational;
     bool m_fAttachmentHotPluggable;
 };
-typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UICacheSettingsMachineStorageAttachment;
+typedef UISettingsCache<UIDataSettingsMachineStorageAttachment> UISettingsCacheMachineStorageAttachment;
 
 /* Machine settings / Storage page / Storage controller data: */
 struct UIDataSettingsMachineStorageController
@@ -657,7 +657,7 @@ struct UIDataSettingsMachineStorageController
     uint m_uPortCount;
     bool m_fUseHostIOCache;
 };
-typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UICacheSettingsMachineStorageAttachment> UICacheSettingsMachineStorageController;
+typedef UISettingsCachePool<UIDataSettingsMachineStorageController, UISettingsCacheMachineStorageAttachment> UISettingsCacheMachineStorageController;
 
 /* Machine settings / Storage page / Storage data: */
 struct UIDataSettingsMachineStorage
@@ -668,7 +668,7 @@ struct UIDataSettingsMachineStorage
     bool operator==(const UIDataSettingsMachineStorage& /* other */) const { return true; }
     bool operator!=(const UIDataSettingsMachineStorage& /* other */) const { return false; }
 };
-typedef UISettingsCachePool<UIDataSettingsMachineStorage, UICacheSettingsMachineStorageController> UICacheSettingsMachineStorage;
+typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachineStorageController> UISettingsCacheMachineStorage;
 
 /* Machine settings / Storage page: */
 class UIMachineSettingsStorage : public UISettingsPageMachine,
@@ -777,17 +777,17 @@ private:
     void addRecentMediumActions(QMenu *pOpenMediumMenu, UIMediumType recentMediumType);
 
     bool updateStorageData();
-    bool removeStorageController(const UICacheSettingsMachineStorageController &controllerCache);
-    bool createStorageController(const UICacheSettingsMachineStorageController &controllerCache);
-    bool updateStorageController(const UICacheSettingsMachineStorageController &controllerCache);
-    bool removeStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
-    bool createStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
-    bool updateStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                 const UICacheSettingsMachineStorageAttachment &attachmentCache);
-    bool isControllerCouldBeUpdated(const UICacheSettingsMachineStorageController &controllerCache) const;
-    bool isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const;
+    bool removeStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    bool createStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    bool updateStorageController(const UISettingsCacheMachineStorageController &controllerCache);
+    bool removeStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                 const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    bool createStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                 const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    bool updateStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                 const UISettingsCacheMachineStorageAttachment &attachmentCache);
+    bool isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const;
+    bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
     /** Defines configuration access level. */
     void setConfigurationAccessLevel(ConfigurationAccessLevel configurationAccessLevel);
@@ -825,7 +825,7 @@ private:
     bool mDisableStaticControls;
 
     /* Cache: */
-    UICacheSettingsMachineStorage m_cache;
+    UISettingsCacheMachineStorage m_cache;
 };
 
 #endif // __UIMachineSettingsStorage_h__

@@ -46,7 +46,7 @@ struct UIDataSettingsMachineAudio
     KAudioDriverType m_audioDriverType;
     KAudioControllerType m_audioControllerType;
 };
-typedef UISettingsCache<UIDataSettingsMachineAudio> UICacheSettingsMachineAudio;
+typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
 /* Machine settings / Audio page: */
 class UIMachineSettingsAudio : public UISettingsPageMachine, public Ui::UIMachineSettingsAudio
@@ -93,7 +93,7 @@ private:
     void prepareComboboxes();
 
     /* Cache: */
-    UICacheSettingsMachineAudio m_cache;
+    UISettingsCacheMachineAudio m_cache;
 };
 
 #endif // __UIMachineSettingsAudio_h__

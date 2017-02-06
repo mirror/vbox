@@ -83,7 +83,7 @@ struct UIDataSettingsMachineNetworkAdapter
     bool m_fCableConnected;
     UIPortForwardingDataList m_redirects;
 };
-typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UICacheSettingsMachineNetworkAdapter;
+typedef UISettingsCache<UIDataSettingsMachineNetworkAdapter> UISettingsCacheMachineNetworkAdapter;
 
 /* Machine settings / Network page / Network data: */
 struct UIDataSettingsMachineNetwork
@@ -94,7 +94,7 @@ struct UIDataSettingsMachineNetwork
     bool operator==(const UIDataSettingsMachineNetwork& /* other */) const { return true; }
     bool operator!=(const UIDataSettingsMachineNetwork& /* other */) const { return false; }
 };
-typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UICacheSettingsMachineNetworkAdapter> UICacheSettingsMachineNetwork;
+typedef UISettingsCachePool<UIDataSettingsMachineNetwork, UISettingsCacheMachineNetworkAdapter> UISettingsCacheMachineNetwork;
 
 /* Machine settings / Network page / Adapter tab: */
 class UIMachineSettingsNetwork : public QIWithRetranslateUI<QWidget>, public Ui::UIMachineSettingsNetwork
@@ -107,8 +107,8 @@ public:
     UIMachineSettingsNetwork(UIMachineSettingsNetworkPage *pParent);
 
     /* Load / Save API: */
-    void fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache);
-    void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
+    void fetchAdapterCache(const UISettingsCacheMachineNetworkAdapter &adapterCache);
+    void uploadAdapterCache(UISettingsCacheMachineNetworkAdapter &adapterCache);
 
     /* API: Validation stuff: */
     bool validate(QList<UIValidationMessage> &messages);
@@ -260,7 +260,7 @@ private:
     QStringList m_natNetworkList;
 
     /* Cache: */
-    UICacheSettingsMachineNetwork m_cache;
+    UISettingsCacheMachineNetwork m_cache;
 };
 
 #endif // __UIMachineSettingsNetwork_h__

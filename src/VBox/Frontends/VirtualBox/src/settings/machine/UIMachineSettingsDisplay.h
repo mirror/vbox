@@ -120,7 +120,7 @@ struct UIDataSettingsMachineDisplay
     int m_iVideoCaptureBitRate;
     QVector<BOOL> m_screens;
 };
-typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
+typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
 
 /* Machine settings / Display page: */
 class UIMachineSettingsDisplay : public UISettingsPageMachine,
@@ -237,7 +237,7 @@ private:
 #endif /* VBOX_WITH_CRHGSMI */
 
     /* Cache: */
-    UICacheSettingsMachineDisplay m_cache;
+    UISettingsCacheMachineDisplay m_cache;
 };
 
 #endif // __UIMachineSettingsDisplay_h__

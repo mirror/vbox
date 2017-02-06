@@ -90,7 +90,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     retranslateUi();
 }
 
-void UIMachineSettingsNetwork::fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache)
+void UIMachineSettingsNetwork::fetchAdapterCache(const UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
     /* Get adapter data: */
     const UIDataSettingsMachineNetworkAdapter &adapterData = adapterCache.base();
@@ -129,7 +129,7 @@ void UIMachineSettingsNetwork::fetchAdapterCache(const UICacheSettingsMachineNet
     m_portForwardingRules = adapterData.m_redirects;
 }
 
-void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache)
+void UIMachineSettingsNetwork::uploadAdapterCache(UISettingsCacheMachineNetworkAdapter &adapterCache)
 {
     /* Prepare adapter data: */
     UIDataSettingsMachineNetworkAdapter adapterData = adapterCache.base();
@@ -965,7 +965,7 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
         for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
         {
             /* Check if adapter data was changed: */
-            const UICacheSettingsMachineNetworkAdapter &adapterCache = m_cache.child(iSlot);
+            const UISettingsCacheMachineNetworkAdapter &adapterCache = m_cache.child(iSlot);
             if (adapterCache.wasChanged())
             {
                 /* Check if adapter still valid: */

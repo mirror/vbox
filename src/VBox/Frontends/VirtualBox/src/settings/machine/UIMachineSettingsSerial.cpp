@@ -100,7 +100,7 @@ void UIMachineSettingsSerial::polishTab()
     mLePath->setEnabled(mode != KPortMode_Disconnected && m_pParent->isMachineOffline());
 }
 
-void UIMachineSettingsSerial::fetchPortData(const UICacheSettingsMachineSerialPort &portCache)
+void UIMachineSettingsSerial::fetchPortData(const UISettingsCacheMachineSerialPort &portCache)
 {
     /* Get port data: */
     const UIDataSettingsMachineSerialPort &portData = portCache.base();
@@ -121,7 +121,7 @@ void UIMachineSettingsSerial::fetchPortData(const UICacheSettingsMachineSerialPo
     mGbSerialToggled(mGbSerial->isChecked());
 }
 
-void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &portCache)
+void UIMachineSettingsSerial::uploadPortData(UISettingsCacheMachineSerialPort &portCache)
 {
     /* Prepare port data: */
     UIDataSettingsMachineSerialPort portData = portCache.base();
@@ -343,7 +343,7 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
         for (int iPort = 0; iPort < mTabWidget->count(); ++iPort)
         {
             /* Check if port data was changed: */
-            const UICacheSettingsMachineSerialPort &portCache = m_cache.child(iPort);
+            const UISettingsCacheMachineSerialPort &portCache = m_cache.child(iPort);
             if (portCache.wasChanged())
             {
                 /* Check if port still valid: */

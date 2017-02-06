@@ -111,7 +111,7 @@ struct UIDataSettingsMachineInterface
     bool m_fMiniToolBarAtTop;
 #endif /* !VBOX_WS_MAC */
 };
-typedef UISettingsCache<UIDataSettingsMachineInterface> UICacheSettingsMachineInterface;
+typedef UISettingsCache<UIDataSettingsMachineInterface> UISettingsCacheMachineInterface;
 
 /* Machine settings / User Interface page: */
 class UIMachineSettingsInterface : public UISettingsPageMachine,
@@ -163,7 +163,7 @@ private:
     void cleanup();
 
     /* Cache: */
-    UICacheSettingsMachineInterface m_cache;
+    UISettingsCacheMachineInterface m_cache;
 
     /** Holds the machine ID copy. */
     const QString m_strMachineID;

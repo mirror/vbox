@@ -53,8 +53,8 @@ public:
     UIItemNetworkNAT();
 
     /* API: Get/return data to/form items: */
-    void fetchNetworkData(const UIDataNetworkNAT &data);
-    void uploadNetworkData(UIDataNetworkNAT &data);
+    void fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data);
+    void uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data);
 
     /* API: Validation stuff: */
     bool validate(UIValidationMessage &message);
@@ -73,7 +73,7 @@ public:
 private:
 
     /* Variable: Network data: */
-    UIDataNetworkNAT m_data;
+    UIDataSettingsGlobalNetworkNAT m_data;
 };
 
 
@@ -86,8 +86,8 @@ public:
     UIItemNetworkHost();
 
     /* API: Get/return data to/form items: */
-    void fetchNetworkData(const UIDataNetworkHost &data);
-    void uploadNetworkData(UIDataNetworkHost &data);
+    void fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data);
+    void uploadNetworkData(UIDataSettingsGlobalNetworkHost &data);
 
     /* API: Validation stuff: */
     bool validate(UIValidationMessage &message);
@@ -101,7 +101,7 @@ public:
 private:
 
     /* Variable: Network data: */
-    UIDataNetworkHost m_data;
+    UIDataSettingsGlobalNetworkHost m_data;
 };
 
 
@@ -110,7 +110,7 @@ UIItemNetworkNAT::UIItemNetworkNAT()
 {
 }
 
-void UIItemNetworkNAT::fetchNetworkData(const UIDataNetworkNAT &data)
+void UIItemNetworkNAT::fetchNetworkData(const UIDataSettingsGlobalNetworkNAT &data)
 {
     /* Get from cache: */
     m_data = data;
@@ -119,7 +119,7 @@ void UIItemNetworkNAT::fetchNetworkData(const UIDataNetworkNAT &data)
     updateInfo();
 }
 
-void UIItemNetworkNAT::uploadNetworkData(UIDataNetworkNAT &data)
+void UIItemNetworkNAT::uploadNetworkData(UIDataSettingsGlobalNetworkNAT &data)
 {
     /* Put to cache: */
     data = m_data;
@@ -232,7 +232,7 @@ UIItemNetworkHost::UIItemNetworkHost()
 {
 }
 
-void UIItemNetworkHost::fetchNetworkData(const UIDataNetworkHost &data)
+void UIItemNetworkHost::fetchNetworkData(const UIDataSettingsGlobalNetworkHost &data)
 {
     /* Get from cache: */
     m_data = data;
@@ -241,7 +241,7 @@ void UIItemNetworkHost::fetchNetworkData(const UIDataNetworkHost &data)
     updateInfo();
 }
 
-void UIItemNetworkHost::uploadNetworkData(UIDataNetworkHost &data)
+void UIItemNetworkHost::uploadNetworkData(UIDataSettingsGlobalNetworkHost &data)
 {
     /* Put to cache: */
     data = m_data;
@@ -536,14 +536,14 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsNetwork::getFromCache()
 {
     /* Fetch NAT networks from cache: */
-    foreach (const UIDataNetworkNAT &network, m_cache.m_networksNAT)
+    foreach (const UIDataSettingsGlobalNetworkNAT &network, m_cache.m_networksNAT)
         createTreeItemNetworkNAT(network);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
 
     /* Fetch Host networks from cache: */
-    foreach (const UIDataNetworkHost &network, m_cache.m_networksHost)
+    foreach (const UIDataSettingsGlobalNetworkHost &network, m_cache.m_networksHost)
         createTreeItemNetworkHost(network);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
@@ -559,7 +559,7 @@ void UIGlobalSettingsNetwork::putToCache()
     m_cache.m_networksNAT.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
     {
-        UIDataNetworkNAT data;
+        UIDataSettingsGlobalNetworkNAT data;
         UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
         pItem->uploadNetworkData(data);
         m_cache.m_networksNAT << data;
@@ -569,7 +569,7 @@ void UIGlobalSettingsNetwork::putToCache()
     m_cache.m_networksHost.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
     {
-        UIDataNetworkHost data;
+        UIDataSettingsGlobalNetworkHost data;
         UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
         pItem->uploadNetworkData(data);
         m_cache.m_networksHost << data;
@@ -586,11 +586,11 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save NAT networks from cache: */
-    foreach (const UIDataNetworkNAT &data, m_cache.m_networksNAT)
+    foreach (const UIDataSettingsGlobalNetworkNAT &data, m_cache.m_networksNAT)
         saveCacheItemNetworkNAT(data);
 
     /* Save Host networks from cache: */
-    foreach (const UIDataNetworkHost &data, m_cache.m_networksHost)
+    foreach (const UIDataSettingsGlobalNetworkHost &data, m_cache.m_networksHost)
         saveCacheItemNetworkHost(data);
 
     /* Upload properties & settings to data: */
@@ -782,7 +782,7 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
     AssertMsg(pItem, ("Current item should present!\n"));
 
     /* Edit current item data: */
-    UIDataNetworkNAT data;
+    UIDataSettingsGlobalNetworkNAT data;
     pItem->uploadNetworkData(data);
     UIGlobalSettingsNetworkDetailsNAT details(this, data);
     if (details.exec() == QDialog::Accepted)
@@ -886,7 +886,7 @@ void UIGlobalSettingsNetwork::sltEditNetworkHost()
     AssertMsg(pItem, ("Current item should present!\n"));
 
     /* Edit current item data: */
-    UIDataNetworkHost data;
+    UIDataSettingsGlobalNetworkHost data;
     pItem->uploadNetworkData(data);
     UIGlobalSettingsNetworkDetailsHost details(this, data);
     if (details.exec() == QDialog::Accepted)
@@ -952,10 +952,10 @@ void UIGlobalSettingsNetwork::sltShowContextMenuNetworkHost(const QPoint &pos)
     menu.exec(m_pTreeNetworkHost->mapToGlobal(pos));
 }
 
-UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network)
+UIDataSettingsGlobalNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network)
 {
     /* Prepare data: */
-    UIDataNetworkNAT data;
+    UIDataSettingsGlobalNetworkNAT data;
 
     /* Load NAT network settings: */
     data.m_fEnabled = network.GetEnabled();
@@ -1018,7 +1018,7 @@ UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwo
     return data;
 }
 
-void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataNetworkNAT &data)
+void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data)
 {
     /* Make sure corresponding NAT network exists: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1054,7 +1054,7 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataNetworkNAT &da
                                    newRule.guestIp, newRule.guestPort.value());
 }
 
-void UIGlobalSettingsNetwork::createTreeItemNetworkNAT(const UIDataNetworkNAT &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkNAT *pItem = new UIItemNetworkNAT;
@@ -1071,10 +1071,10 @@ void UIGlobalSettingsNetwork::removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem)
     delete pItem;
 }
 
-UIDataNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterface &iface)
+UIDataSettingsGlobalNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterface &iface)
 {
     /* Prepare data: */
-    UIDataNetworkHost data;
+    UIDataSettingsGlobalNetworkHost data;
 
     /* Get DHCP server (create if necessary): */
     CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
@@ -1113,7 +1113,7 @@ UIDataNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNe
     return data;
 }
 
-void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &data)
+void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data)
 {
     /* Make sure corresponding Host interface exists: */
     CHost host = vboxGlobal().host();
@@ -1184,7 +1184,7 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataNetworkHost &
     }
 }
 
-void UIGlobalSettingsNetwork::createTreeItemNetworkHost(const UIDataNetworkHost &data, bool fChooseItem)
+void UIGlobalSettingsNetwork::createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)
 {
     /* Add new item to the tree: */
     UIItemNetworkHost *pItem = new UIItemNetworkHost;

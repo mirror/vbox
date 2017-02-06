@@ -61,7 +61,7 @@ struct UIDataSettingsMachineSerialPort
     bool m_fServer;
     QString m_strPath;
 };
-typedef UISettingsCache<UIDataSettingsMachineSerialPort> UICacheSettingsMachineSerialPort;
+typedef UISettingsCache<UIDataSettingsMachineSerialPort> UISettingsCacheMachineSerialPort;
 
 /* Machine settings / Serial page / Ports data: */
 struct UIDataSettingsMachineSerial
@@ -72,7 +72,7 @@ struct UIDataSettingsMachineSerial
     bool operator==(const UIDataSettingsMachineSerial& /* other */) const { return true; }
     bool operator!=(const UIDataSettingsMachineSerial& /* other */) const { return false; }
 };
-typedef UISettingsCachePool<UIDataSettingsMachineSerial, UICacheSettingsMachineSerialPort> UICacheSettingsMachineSerial;
+typedef UISettingsCachePool<UIDataSettingsMachineSerial, UISettingsCacheMachineSerialPort> UISettingsCacheMachineSerial;
 
 class UIMachineSettingsSerial : public QIWithRetranslateUI<QWidget>,
                              public Ui::UIMachineSettingsSerial
@@ -85,8 +85,8 @@ public:
 
     void polishTab();
 
-    void fetchPortData(const UICacheSettingsMachineSerialPort &data);
-    void uploadPortData(UICacheSettingsMachineSerialPort &data);
+    void fetchPortData(const UISettingsCacheMachineSerialPort &data);
+    void uploadPortData(UISettingsCacheMachineSerialPort &data);
 
     QWidget* setOrderAfter (QWidget *aAfter);
 
@@ -152,7 +152,7 @@ private:
     QITabWidget *mTabWidget;
 
     /* Cache: */
-    UICacheSettingsMachineSerial m_cache;
+    UISettingsCacheMachineSerial m_cache;
 };
 
 #endif // __UIMachineSettingsSerial_h__

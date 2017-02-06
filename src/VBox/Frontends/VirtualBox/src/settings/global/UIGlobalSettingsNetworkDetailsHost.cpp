@@ -29,7 +29,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGlobalSettingsNetworkDetailsHost::UIGlobalSettingsNetworkDetailsHost(QWidget *pParent, UIDataNetworkHost &data)
+UIGlobalSettingsNetworkDetailsHost::UIGlobalSettingsNetworkDetailsHost(QWidget *pParent, UIDataSettingsGlobalNetworkHost &data)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_data(data)
 {

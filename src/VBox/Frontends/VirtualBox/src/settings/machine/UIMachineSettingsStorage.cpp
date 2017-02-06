@@ -2289,7 +2289,7 @@ void UIMachineSettingsStorage::getFromCache()
     for (int iControllerIndex = 0; iControllerIndex < m_cache.childCount(); ++iControllerIndex)
     {
         /* Get storage controller cache: */
-        const UICacheSettingsMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+        const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
         /* Get storage controller data from cache: */
         const UIDataSettingsMachineStorageController &controllerData = controllerCache.base();
 
@@ -2305,7 +2305,7 @@ void UIMachineSettingsStorage::getFromCache()
         for (int iAttachmentIndex = 0; iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
         {
             /* Get storage attachment cache: */
-            const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+            const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
             /* Get storage controller data from cache: */
             const UIDataSettingsMachineStorageAttachment &attachmentData = attachmentCache.base();
 
@@ -3589,7 +3589,7 @@ bool UIMachineSettingsStorage::updateStorageData()
             for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_cache.childCount(); ++iControllerIndex)
             {
                 /* Get controller cache: */
-                const UICacheSettingsMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+                const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
 
                 /* Remove controllers marked for 'remove' and 'update' (if they can't be updated): */
                 if (controllerCache.wasRemoved() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
@@ -3604,7 +3604,7 @@ bool UIMachineSettingsStorage::updateStorageData()
                     for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
                     {
                         /* Get attachment cache: */
-                        const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+                        const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
 
                         /* Remove attachments marked for 'remove' and 'update' (if they can't be updated): */
                         if (attachmentCache.wasRemoved() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
@@ -3617,7 +3617,7 @@ bool UIMachineSettingsStorage::updateStorageData()
             for (int iControllerIndex = 0; fSuccess && iControllerIndex < m_cache.childCount(); ++iControllerIndex)
             {
                 /* Get controller cache: */
-                const UICacheSettingsMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
+                const UISettingsCacheMachineStorageController &controllerCache = m_cache.child(iControllerIndex);
 
                 /* Create controllers marked for 'create' or 'update' (if they can't be updated): */
                 if (controllerCache.wasCreated() || (controllerCache.wasUpdated() && !isControllerCouldBeUpdated(controllerCache)))
@@ -3635,7 +3635,7 @@ bool UIMachineSettingsStorage::updateStorageData()
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::removeStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+bool UIMachineSettingsStorage::removeStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3664,7 +3664,7 @@ bool UIMachineSettingsStorage::removeStorageController(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3707,7 +3707,7 @@ bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMach
                 for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
                 {
                     /* Get storage attachment cache: */
-                    const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+                    const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
 
                     /* Create attachment if it was not just 'removed': */
                     if (!attachmentCache.wasRemoved())
@@ -3720,7 +3720,7 @@ bool UIMachineSettingsStorage::createStorageController(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMachineStorageController &controllerCache)
+bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMachineStorageController &controllerCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3756,7 +3756,7 @@ bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMach
             for (int iAttachmentIndex = 0; fSuccess && iAttachmentIndex < controllerCache.childCount(); ++iAttachmentIndex)
             {
                 /* Get storage attachment cache: */
-                const UICacheSettingsMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
+                const UISettingsCacheMachineStorageAttachment &attachmentCache = controllerCache.child(iAttachmentIndex);
 
                 /* Create attachments marked for 'create' and 'update' (if they can't be updated): */
                 if (attachmentCache.wasCreated() || (attachmentCache.wasUpdated() && !isAttachmentCouldBeUpdated(attachmentCache)))
@@ -3774,8 +3774,8 @@ bool UIMachineSettingsStorage::updateStorageController(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::removeStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+bool UIMachineSettingsStorage::removeStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                                       const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3809,8 +3809,8 @@ bool UIMachineSettingsStorage::removeStorageAttachment(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+bool UIMachineSettingsStorage::createStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                                       const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3898,8 +3898,8 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMachineStorageController &controllerCache,
-                                                       const UICacheSettingsMachineStorageAttachment &attachmentCache)
+bool UIMachineSettingsStorage::updateStorageAttachment(const UISettingsCacheMachineStorageController &controllerCache,
+                                                       const UISettingsCacheMachineStorageAttachment &attachmentCache)
 {
     /* Prepare result: */
     bool fSuccess = m_machine.isOk();
@@ -3987,7 +3987,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
     return fSuccess;
 }
 
-bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UICacheSettingsMachineStorageController &controllerCache) const
+bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UISettingsCacheMachineStorageController &controllerCache) const
 {
     /* IController interface doesn't allows to change 'name' and 'bus' attributes.
      * But those attributes could be changed in GUI directly or indirectly.
@@ -3999,7 +3999,7 @@ bool UIMachineSettingsStorage::isControllerCouldBeUpdated(const UICacheSettingsM
            newControllerData.m_strControllerName == oldControllerData.m_strControllerName;
 }
 
-bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsMachineStorageAttachment &attachmentCache) const
+bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const
 {
     /* IMediumAttachment could be indirectly updated through IMachine
      * only if attachment type, device and port were NOT changed and is one of the next types:

@@ -376,7 +376,7 @@ void UIMachineSettingsSF::saveFromCacheTo(UISharedFolderType sharedFoldersType)
     for (int iSharedFolderIndex = 0; iSharedFolderIndex < m_cache.childCount(); ++iSharedFolderIndex)
     {
         /* Check if this shared folder data was actually changed: */
-        const UICacheSettingsSharedFolder &sharedFolderCache = m_cache.child(iSharedFolderIndex);
+        const UISettingsCacheSharedFolder &sharedFolderCache = m_cache.child(iSharedFolderIndex);
         if (sharedFolderCache.wasChanged())
         {
             /* If shared folder was removed: */
@@ -748,7 +748,7 @@ CSharedFolderVector UIMachineSettingsSF::getSharedFolders(UISharedFolderType sha
     return sharedFolders;
 }
 
-bool UIMachineSettingsSF::removeSharedFolder(const UICacheSettingsSharedFolder &folderCache)
+bool UIMachineSettingsSF::removeSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
     /* Get shared folder data: */
     const UIDataSettingsSharedFolder &folderData = folderCache.base();
@@ -803,7 +803,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UICacheSettingsSharedFolder &
     return true;
 }
 
-bool UIMachineSettingsSF::createSharedFolder(const UICacheSettingsSharedFolder &folderCache)
+bool UIMachineSettingsSF::createSharedFolder(const UISettingsCacheSharedFolder &folderCache)
 {
     /* Get shared folder data: */
     const UIDataSettingsSharedFolder &folderData = folderCache.data();

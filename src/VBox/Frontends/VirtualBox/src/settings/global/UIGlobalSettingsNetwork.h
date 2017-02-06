@@ -29,7 +29,7 @@ class UIItemNetworkHost;
 
 
 /* Global settings / Network page / NAT network data: */
-struct UIDataNetworkNAT
+struct UIDataSettingsGlobalNetworkNAT
 {
     /* NAT Network: */
     bool m_fEnabled;
@@ -41,7 +41,7 @@ struct UIDataNetworkNAT
     bool m_fAdvertiseDefaultIPv6Route;
     UIPortForwardingDataList m_ipv4rules;
     UIPortForwardingDataList m_ipv6rules;
-    bool operator==(const UIDataNetworkNAT &other) const
+    bool operator==(const UIDataSettingsGlobalNetworkNAT &other) const
     {
         return m_fEnabled == other.m_fEnabled &&
                m_strName == other.m_strName &&
@@ -57,7 +57,7 @@ struct UIDataNetworkNAT
 
 
 /* Global settings / Network page / Host interface data: */
-struct UIDataNetworkHostInterface
+struct UIDataSettingsGlobalNetworkHostInterface
 {
     /* Host Interface: */
     QString m_strName;
@@ -67,7 +67,7 @@ struct UIDataNetworkHostInterface
     bool m_fIpv6Supported;
     QString m_strInterfaceAddress6;
     QString m_strInterfaceMaskLength6;
-    bool operator==(const UIDataNetworkHostInterface &other) const
+    bool operator==(const UIDataSettingsGlobalNetworkHostInterface &other) const
     {
         return m_strName == other.m_strName &&
                m_fDhcpClientEnabled == other.m_fDhcpClientEnabled &&
@@ -80,7 +80,7 @@ struct UIDataNetworkHostInterface
 };
 
 /* Global settings / Network page / Host DHCP server data: */
-struct UIDataNetworkDHCPServer
+struct UIDataSettingsGlobalNetworkDHCPServer
 {
     /* DHCP Server: */
     bool m_fDhcpServerEnabled;
@@ -88,7 +88,7 @@ struct UIDataNetworkDHCPServer
     QString m_strDhcpServerMask;
     QString m_strDhcpLowerAddress;
     QString m_strDhcpUpperAddress;
-    bool operator==(const UIDataNetworkDHCPServer &other) const
+    bool operator==(const UIDataSettingsGlobalNetworkDHCPServer &other) const
     {
         return m_fDhcpServerEnabled == other.m_fDhcpServerEnabled &&
                m_strDhcpServerAddress == other.m_strDhcpServerAddress &&
@@ -99,11 +99,11 @@ struct UIDataNetworkDHCPServer
 };
 
 /* Global settings / Network page / Host network data: */
-struct UIDataNetworkHost
+struct UIDataSettingsGlobalNetworkHost
 {
-    UIDataNetworkHostInterface m_interface;
-    UIDataNetworkDHCPServer m_dhcpserver;
-    bool operator==(const UIDataNetworkHost &other) const
+    UIDataSettingsGlobalNetworkHostInterface m_interface;
+    UIDataSettingsGlobalNetworkDHCPServer m_dhcpserver;
+    bool operator==(const UIDataSettingsGlobalNetworkHost &other) const
     {
         return m_interface == other.m_interface &&
                m_dhcpserver == other.m_dhcpserver;
@@ -114,8 +114,8 @@ struct UIDataNetworkHost
 /* Global settings / Network page / Global network cache: */
 struct UISettingsCacheGlobalNetwork
 {
-    QList<UIDataNetworkNAT> m_networksNAT;
-    QList<UIDataNetworkHost> m_networksHost;
+    QList<UIDataSettingsGlobalNetworkNAT> m_networksNAT;
+    QList<UIDataSettingsGlobalNetworkHost> m_networksHost;
 };
 
 
@@ -178,19 +178,19 @@ private slots:
 private:
 
     /* Helpers: NAT network cache stuff: */
-    UIDataNetworkNAT generateDataNetworkNAT(const CNATNetwork &network);
-    void saveCacheItemNetworkNAT(const UIDataNetworkNAT &data);
+    UIDataSettingsGlobalNetworkNAT generateDataNetworkNAT(const CNATNetwork &network);
+    void saveCacheItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data);
 
     /* Helpers: NAT network tree stuff: */
-    void createTreeItemNetworkNAT(const UIDataNetworkNAT &data, bool fChooseItem = false);
+    void createTreeItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data, bool fChooseItem = false);
     void removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem);
 
     /* Helpers: Host network cache stuff: */
-    UIDataNetworkHost generateDataNetworkHost(const CHostNetworkInterface &iface);
-    void saveCacheItemNetworkHost(const UIDataNetworkHost &data);
+    UIDataSettingsGlobalNetworkHost generateDataNetworkHost(const CHostNetworkInterface &iface);
+    void saveCacheItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data);
 
     /* Helpers: Host network tree stuff: */
-    void createTreeItemNetworkHost(const UIDataNetworkHost &data, bool fChooseItem = false);
+    void createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem = false);
     void removeTreeItemNetworkHost(UIItemNetworkHost *pItem);
 
     /* Variables: NAT network actions: */

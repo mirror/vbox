@@ -30,7 +30,7 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataNetworkNAT &data)
+UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataSettingsGlobalNetworkNAT &data)
     : QIWithRetranslateUI2<QIDialog>(pParent)
     , m_data(data)
 {

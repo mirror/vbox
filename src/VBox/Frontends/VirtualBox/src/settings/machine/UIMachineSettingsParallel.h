@@ -55,7 +55,7 @@ struct UIDataSettingsMachineParallelPort
     ulong m_uIOBase;
     QString m_strPath;
 };
-typedef UISettingsCache<UIDataSettingsMachineParallelPort> UICacheSettingsMachineParallelPort;
+typedef UISettingsCache<UIDataSettingsMachineParallelPort> UISettingsCacheMachineParallelPort;
 
 /* Machine settings / Parallel page / Ports data: */
 struct UIDataSettingsMachineParallel
@@ -66,7 +66,7 @@ struct UIDataSettingsMachineParallel
     bool operator==(const UIDataSettingsMachineParallel& /* other */) const { return true; }
     bool operator!=(const UIDataSettingsMachineParallel& /* other */) const { return false; }
 };
-typedef UISettingsCachePool<UIDataSettingsMachineParallel, UICacheSettingsMachineParallelPort> UICacheSettingsMachineParallel;
+typedef UISettingsCachePool<UIDataSettingsMachineParallel, UISettingsCacheMachineParallelPort> UISettingsCacheMachineParallel;
 
 class UIMachineSettingsParallel : public QIWithRetranslateUI<QWidget>,
                                public Ui::UIMachineSettingsParallel
@@ -79,8 +79,8 @@ public:
 
     void polishTab();
 
-    void fetchPortData(const UICacheSettingsMachineParallelPort &portCache);
-    void uploadPortData(UICacheSettingsMachineParallelPort &portCache);
+    void fetchPortData(const UISettingsCacheMachineParallelPort &portCache);
+    void uploadPortData(UISettingsCacheMachineParallelPort &portCache);
 
     QWidget* setOrderAfter (QWidget *aAfter);
 
@@ -145,7 +145,7 @@ private:
     QITabWidget *mTabWidget;
 
     /* Cache: */
-    UICacheSettingsMachineParallel m_cache;
+    UISettingsCacheMachineParallel m_cache;
 };
 
 #endif // __UIMachineSettingsParallel_h__

@@ -24,7 +24,7 @@
 #include "UIGlobalSettingsNetworkDetailsNAT.gen.h"
 
 /* Forward decalrations: */
-struct UIDataNetworkNAT;
+struct UIDataSettingsGlobalNetworkNAT;
 
 /* Global settings / Network page / Details sub-dialog: */
 class UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetailsNAT
@@ -34,7 +34,7 @@ class UIGlobalSettingsNetworkDetailsNAT : public QIWithRetranslateUI2<QIDialog>,
 public:
 
     /* Constructor: */
-    UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataNetworkNAT &data);
+    UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataSettingsGlobalNetworkNAT &data);
 
 protected:
 
@@ -59,7 +59,7 @@ private:
     void save();
 
     /* Variable: External data reference: */
-    UIDataNetworkNAT &m_data;
+    UIDataSettingsGlobalNetworkNAT &m_data;
 };
 
 #endif /* __UIGlobalSettingsNetworkDetailsNAT_h__ */

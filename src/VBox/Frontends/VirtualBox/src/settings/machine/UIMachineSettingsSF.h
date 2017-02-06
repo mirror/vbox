@@ -61,7 +61,7 @@ struct UIDataSettingsSharedFolder
     bool m_fAutoMount;
     bool m_fWritable;
 };
-typedef UISettingsCache<UIDataSettingsSharedFolder> UICacheSettingsSharedFolder;
+typedef UISettingsCache<UIDataSettingsSharedFolder> UISettingsCacheSharedFolder;
 
 /* Machine settings / Shared Folders page / Shared Folders data: */
 struct UIDataSettingsSharedFolders
@@ -72,7 +72,7 @@ struct UIDataSettingsSharedFolders
     bool operator==(const UIDataSettingsSharedFolders& /* other */) const { return true; }
     bool operator!=(const UIDataSettingsSharedFolders& /* other */) const { return false; }
 };
-typedef UISettingsCachePool<UIDataSettingsSharedFolders, UICacheSettingsSharedFolder> UICacheSettingsSharedFolders;
+typedef UISettingsCachePool<UIDataSettingsSharedFolders, UISettingsCacheSharedFolder> UISettingsCacheSharedFolders;
 
 class UIMachineSettingsSF : public UISettingsPageMachine,
                          public Ui::UIMachineSettingsSF
@@ -138,8 +138,8 @@ private:
 
     CSharedFolderVector getSharedFolders(UISharedFolderType sharedFoldersType);
 
-    bool removeSharedFolder(const UICacheSettingsSharedFolder &folderCache);
-    bool createSharedFolder(const UICacheSettingsSharedFolder &folderCache);
+    bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
+    bool createSharedFolder(const UISettingsCacheSharedFolder &folderCache);
 
     QAction  *mNewAction;
     QAction  *mEdtAction;
@@ -149,7 +149,7 @@ private:
     QString   mTrYes;
 
     /* Cache: */
-    UICacheSettingsSharedFolders m_cache;
+    UISettingsCacheSharedFolders m_cache;
 };
 
 #endif // __UIMachineSettingsSF_h__
