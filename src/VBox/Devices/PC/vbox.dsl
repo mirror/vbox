@@ -1596,16 +1596,20 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
 
                 if (LNotEqual (PMEM, 0x00000000))
                 {
-                    CreateQwordField (TOM, \_SB.PCI0.MEM4._MIN, TM4N)
-                    CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
-                    CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
+                    // Not for Windows < 7!
+                    If (LOr (LLess (MSWN(), 0x01), LGreater (MSWN(), 0x06)))
+                    {
+                        CreateQwordField (TOM, \_SB.PCI0.MEM4._MIN, TM4N)
+                        CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
+                        CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
 
-                    Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
-                    Add (Subtract (TM4X, TM4N), 1, TM4L) // determine LEN, MAX is already there
+                        Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
+                        Add (Subtract (TM4X, TM4N), 1, TM4L) // determine LEN, MAX is already there
 
-                    ConcatenateResTemplate (CRS, TOM, Local2)
+                        ConcatenateResTemplate (CRS, TOM, Local2)
 
-                    Return (Local2)
+                        Return (Local2)
+                    }
                 }
 
                 Return (CRS)
