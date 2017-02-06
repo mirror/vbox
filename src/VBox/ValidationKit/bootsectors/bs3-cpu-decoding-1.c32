@@ -1011,7 +1011,7 @@ static void DecodeMovbeVsCrc32(void)
             { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_OZ, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
             { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_SS, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
 
-            /* CRC32 eax, [word ebx]: Throw the F3h prefix into the mix.  The last of F3 and F2 wins on Skylake. */
+            /* CRC32 eax, [word ebx]: Throw the F3h prefix into the mix.  The last of F3 and F2 wins on skylake+jaguar. */
             { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RN, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
             { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_OZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
             { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
@@ -1162,7 +1162,7 @@ static void DecodeCmppsCmppdCmpssCmpsd(void)
             { BECRC_OUT_SS, X86_XCPT_PF, 5, {                   P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SD, X86_XCPT_PF, 5, {                   P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            /* Skylake ignores the 66h prefix with both f3h (P_RN) and f2h (P_RZ). */
+            /* Skylake+jaguar ignores the 66h prefix with both f3h (P_RN) and f2h (P_RZ). */
             { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_OZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_OZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
@@ -1215,7 +1215,7 @@ static void DecodeCmppsCmppdCmpssCmpsd(void)
             { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            /* Pit f2h against f3h, on skylake the last prefix wins. */
+            /* Pit f2h against f3h, on skylake+jaguar the last prefix wins. */
             { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
