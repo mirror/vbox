@@ -556,10 +556,13 @@ FNIEMOP_DEF(iemOp_InvalidNeedRM)
     {
         uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm); RT_NOREF(bRm);
 #ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            RTGCPTR      GCPtrEff;
+            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
 #endif
         IEMOP_HLP_DONE_DECODING();
     }
@@ -576,10 +579,13 @@ FNIEMOP_DEF(iemOp_InvalidNeedRMImm8)
     {
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
 #ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            RTGCPTR      GCPtrEff;
+            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
 #endif
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); RT_NOREF(bImm);
         IEMOP_HLP_DONE_DECODING();
@@ -598,10 +604,13 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRM)
         uint8_t b3rd; IEM_OPCODE_GET_NEXT_U8(&b3rd); RT_NOREF(b3rd);
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
 #ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            RTGCPTR      GCPtrEff;
+            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
 #endif
         IEMOP_HLP_DONE_DECODING();
     }
@@ -619,10 +628,13 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
         uint8_t b3rd; IEM_OPCODE_GET_NEXT_U8(&b3rd); RT_NOREF(b3rd);
         uint8_t bRm;  IEM_OPCODE_GET_NEXT_U8(&bRm);  RT_NOREF(bRm);
 #ifndef TST_IEM_CHECK_MC
-        RTGCPTR      GCPtrEff;
-        VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 0, &GCPtrEff);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            RTGCPTR      GCPtrEff;
+            VBOXSTRICTRC rcStrict = iemOpHlpCalcRmEffAddr(pVCpu, bRm, 1, &GCPtrEff);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+        }
 #endif
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); RT_NOREF(bImm);
         IEMOP_HLP_DONE_DECODING();
