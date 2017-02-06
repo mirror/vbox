@@ -139,54 +139,55 @@ static uint64_t s_cSamplesMixedTotal = 0;
 
 
 /**
- * Acquires (reads) a mutable pointer to the mixing buffer's audio samples without
- * any conversion done.
- ** @todo Rename to AudioMixBufPeek(Mutable/Raw)?
- ** @todo Protect the buffer's data?
+ * Peeks for audio samples without any conversion done.
+ * This will get the raw sample data out of a mixing buffer.
  *
  * @return  IPRT status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
  * @param   pMixBuf                 Mixing buffer to acquire audio samples from.
  * @param   cSamplesToRead          Number of audio samples to read.
- * @param   ppvSamples              Returns a mutable pointer to the buffer's audio sample data.
- * @param   pcSamplesRead           Number of audio samples read (acquired).
+ * @param   paSampleBuf             Buffer where to store the returned audio samples.
+ * @param   cSampleBuf              Size (in samples) of the buffer to store audio samples into.
+ * @param   pcSamplesRead           Returns number of read audio samples. Optional.
  *
  * @remark  This function is not thread safe!
  */
-int AudioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
-                       PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesRead)
+int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
+                    PPDMAUDIOSAMPLE paSampleBuf, uint32_t cSampleBuf, uint32_t *pcSamplesRead)
 {
-    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvSamples, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcSamplesRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(pMixBuf,     VERR_INVALID_POINTER);
+    AssertPtrReturn(paSampleBuf, VERR_INVALID_POINTER);
+    AssertReturn(cSampleBuf,     VERR_INVALID_PARAMETER);
+    /* pcRead is optional. */
 
     int rc;
 
     if (!cSamplesToRead)
     {
-        *pcSamplesRead = 0;
+        if (pcSamplesRead)
+            *pcSamplesRead = 0;
         return VINF_SUCCESS;
     }
 
-    uint32_t cSamplesRead;
+    uint32_t csRead;
     if (pMixBuf->offRead + cSamplesToRead > pMixBuf->cSamples)
     {
-        cSamplesRead = pMixBuf->cSamples - pMixBuf->offRead;
+        csRead = pMixBuf->cSamples - pMixBuf->offRead;
         rc = VINF_TRY_AGAIN;
     }
     else
     {
-        cSamplesRead = cSamplesToRead;
+        csRead = cSamplesToRead;
         rc = VINF_SUCCESS;
     }
 
-    *ppvSamples = &pMixBuf->pSamples[pMixBuf->offRead];
-    AssertPtr(ppvSamples);
+    memcpy(paSampleBuf, &pMixBuf->pSamples[pMixBuf->offRead], sizeof(PDMAUDIOSAMPLE) * csRead);
 
-    pMixBuf->offRead = (pMixBuf->offRead + cSamplesRead) % pMixBuf->cSamples;
+    pMixBuf->offRead = (pMixBuf->offRead + csRead) % pMixBuf->cSamples;
     Assert(pMixBuf->offRead <= pMixBuf->cSamples);
-    pMixBuf->cUsed -= RT_MIN(cSamplesRead, pMixBuf->cUsed);
+    pMixBuf->cUsed -= RT_MIN(csRead, pMixBuf->cUsed);
 
-    *pcSamplesRead = cSamplesRead;
+    if (pcSamplesRead)
+        *pcSamplesRead = csRead;
 
     return rc;
 }
