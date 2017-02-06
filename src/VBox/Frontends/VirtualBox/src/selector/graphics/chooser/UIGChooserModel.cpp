@@ -1594,6 +1594,7 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                             return true;
                         }
                     }
+                    /* fall thru */
                     case UIGChooserItemType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */
@@ -1624,6 +1625,7 @@ bool UIGChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pE
                             return true;
                         }
                     }
+                    /* fall thru */
                     case UIGChooserItemType_Machine:
                     {
                         /* Machine context menu for other Group/Machine cases: */

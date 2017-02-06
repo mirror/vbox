@@ -444,6 +444,7 @@ void UIGMachinePreview::setUpdateInterval(PreviewUpdateIntervalType interval, bo
             m_pUpdateTimer->stop();
             /* And continue with other cases: */
         }
+        /* fall thru */
         case PreviewUpdateIntervalType_500ms:
         case PreviewUpdateIntervalType_1000ms:
         case PreviewUpdateIntervalType_2000ms:

@@ -750,6 +750,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     }
 
                     /* This event should be also processed using next 'case': */
+                    /* fall thru */
                 }
                 case QEvent::MouseButtonPress:
                 case QEvent::MouseButtonDblClick:
