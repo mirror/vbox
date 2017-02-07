@@ -179,6 +179,11 @@ int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
         csRead = cSamplesToRead;
         rc = VINF_SUCCESS;
     }
+    if (csRead > cSampleBuf)
+    {
+        csRead = cSampleBuf;
+        rc = VINF_TRY_AGAIN;
+    }
 
     memcpy(paSampleBuf, &pMixBuf->pSamples[pMixBuf->offRead], sizeof(PDMAUDIOSAMPLE) * csRead);
 
