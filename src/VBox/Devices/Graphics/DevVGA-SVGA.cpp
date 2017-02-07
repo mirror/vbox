@@ -2543,6 +2543,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                 pbDst += cbDstAndLine;
                 pbSrc += cbSrcAndLine;
             }
+            break;
         case 32:
             for (uint32_t y = 0; y < cy; y++)
             {
@@ -2634,6 +2635,7 @@ static void vmsvgaR3CmdDefineCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, 
                     *pu32Dst++ = RT_MAKE_U32_FROM_U8(pbSrc[x*3], pbSrc[x*3 + 1], pbSrc[x*3 + 2], 0);
                 pbSrc += cbSrcXorLine;
             }
+            break;
         case 32:
             for (uint32_t y = 0; y < cy; y++)
             {
