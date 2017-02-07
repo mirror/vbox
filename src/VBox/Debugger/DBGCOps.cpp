@@ -225,8 +225,8 @@ static int dbgcOpHelperGetNumber(PDBGC pDbgc, PCDBGCVAR pArg, uint64_t *pu64Ret)
             int rc = dbgcSymbolGet(pDbgc, Var.u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
             if (RT_FAILURE(rc))
                 return rc;
-            /* fall thru */
         }
+        /* fall thru */
         case DBGCVAR_TYPE_STRING:
         default:
             return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
@@ -806,6 +806,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
+                    /* fall thru */
                 case DBGCVAR_TYPE_NUMBER:
                     pResult->u.u64Number += pArg2->u.u64Number;
                     break;
@@ -1025,6 +1026,7 @@ static DECLCALLBACK(int) dbgcOpSub(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
                     rc = dbgcSymbolGet(pDbgc, pArg2->u.pszString, DBGCVAR_TYPE_NUMBER, &Var);
                     if (RT_FAILURE(rc))
                         return rc;
+                    /* fall thru */
                 case DBGCVAR_TYPE_NUMBER:
                     pResult->u.u64Number -= pArg2->u.u64Number;
                     break;
