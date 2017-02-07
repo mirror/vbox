@@ -27,7 +27,8 @@
 
 /* QM File Magic Number */
 static const size_t MagicLength = 16;
-static const uint8_t Magic[MagicLength] = {
+static const uint8_t Magic[MagicLength] =
+{
     0x3c, 0xb8, 0x64, 0x18, 0xca, 0xef, 0x9c, 0x95,
     0xcd, 0x21, 0x1c, 0xbf, 0x60, 0xa1, 0xbd, 0xdd
 };
@@ -234,18 +235,18 @@ public:
             switch (sectionCode)
             {
                 case Messages:
-                parseMessages(stream, &hashSet, &messageArray, sLen);
-                break;
+                    parseMessages(stream, &hashSet, &messageArray, sLen);
+                    break;
                 case Hashes:
-                /* Only get size information to speed-up vector filling
-                 * if Hashes section goes in the file before Message section */
-                m_messageArray.reserve(sLen >> 3);
-                /* NB! NO BREAK HERE */
+                    /* Only get size information to speed-up vector filling
+                     * if Hashes section goes in the file before Message section */
+                    m_messageArray.reserve(sLen >> 3);
+                    /* fall thru */
                 case Context:
-                stream.seek(sLen);
-                break;
+                    stream.seek(sLen);
+                    break;
                 default:
-                throw QMException("Unkown section");
+                    throw QMException("Unkown section");
             }
         }
         /* Store the data into member variables.
@@ -302,18 +303,18 @@ private:
     /* Parse one message from the stream */
     static void parseMessageRecord(QMBytesStream &stream, QMMessage * const message)
     {
-        while(!stream.hasFinished())
+        while (!stream.hasFinished())
         {
             uint8_t type = stream.read8();
-            switch(type)
+            switch (type)
             {
                 case End:
-                return;
+                    return;
                 /* Ignored as obsolete */
                 case Context16:
                 case SourceText16:
-                stream.seek(stream.read32());
-                break;
+                    stream.seek(stream.read32());
+                    break;
                 case Translation:
                 {
                     com::Utf8Str str = stream.readUtf16String();
@@ -321,8 +322,8 @@ private:
                     break;
                 }
                 case Hash:
-                message->hash = stream.read32();
-                break;
+                    message->hash = stream.read32();
+                    break;
 
                 case SourceText:
                 {
@@ -346,9 +347,9 @@ private:
                 }
 
                 default:
-                /* Ignore unknown block */
-                LogRel(("QMTranslator::parseMessageRecord(): Unkown message block %x\n", type));
-                break;
+                    /* Ignore unknown block */
+                    LogRel(("QMTranslator::parseMessageRecord(): Unkown message block %x\n", type));
+                    break;
             }
         }
     }
