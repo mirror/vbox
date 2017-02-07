@@ -3109,6 +3109,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                         }
                         /* Not breaking unconditionally is intentional. See comment above. */
                     }
+                    /* fall thru */
                     case DragAndDropSvc::HOST_DND_HG_EVT_MOVE:
                     {
                         rc = m_pCurDnD->hgMove(e.hgcm.u.a.uXpos, e.hgcm.u.a.uYpos, e.hgcm.u.a.uDefAction);

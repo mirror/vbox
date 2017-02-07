@@ -414,6 +414,7 @@ main(int argc, char **argv)
         {
             default:
                 fprintf(stderr, "unknown option `%c:%#x'\n", c, c);
+                /* fall thru */
             case '?':
             case 'h':
                 return usage(argv[0]);
@@ -424,6 +425,7 @@ main(int argc, char **argv)
 
             case 'w':
                 opts.ronly = 0;
+                break;
 
             case 's':
                 opts.sloppy = 1;
