@@ -363,7 +363,7 @@ typedef struct PDMAUDIOPCMPROPS
 
 /** Calculates the cShift value of given samples bits and audio channels.
  *  Note: Does only support mono/stereo channels for now. */
-#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + cBits / 16)
+#define PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(cBits, cChannels)     ((cChannels == 2) + (cBits / 16))
 /** Calculates the cShift value of a PDMAUDIOPCMPROPS structure.
  *  Note: Does only support mono/stereo channels for now. */
 #define PDMAUDIOPCMPROPS_MAKE_SHIFT(pProps)                     PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS((pProps)->cChannels == 2) + (pProps)->cBits / 16)
