@@ -75,14 +75,14 @@ static DECLCALLBACK(size_t) rtStrPrintf2Output(void *pvArg, const char *pachChar
             default:
                 memcpy(pszCur, pachChars, cbChars);
                 break;
-            case 8: pszCur[7] = pachChars[7];
-            case 7: pszCur[6] = pachChars[6];
-            case 6: pszCur[5] = pachChars[5];
-            case 5: pszCur[4] = pachChars[4];
-            case 4: pszCur[3] = pachChars[3];
-            case 3: pszCur[2] = pachChars[2];
-            case 2: pszCur[1] = pachChars[1];
-            case 1: pszCur[0] = pachChars[0];
+            case 8: pszCur[7] = pachChars[7]; /* fall thru */
+            case 7: pszCur[6] = pachChars[6]; /* fall thru */
+            case 6: pszCur[5] = pachChars[5]; /* fall thru */
+            case 5: pszCur[4] = pachChars[4]; /* fall thru */
+            case 4: pszCur[3] = pachChars[3]; /* fall thru */
+            case 3: pszCur[2] = pachChars[2]; /* fall thru */
+            case 2: pszCur[1] = pachChars[1]; /* fall thru */
+            case 1: pszCur[0] = pachChars[0]; /* fall thru */
             case 0:
                 break;
         }
