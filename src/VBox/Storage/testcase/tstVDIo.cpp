@@ -2552,6 +2552,7 @@ static DECLCALLBACK(void) tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, i
                                  &pIoReq->SgBuf))
                     RTTestFailed(pDisk->pTestGlob->hTest, "Corrupted disk at offset %llu!\n", pIoReq->off);
                 RTCritSectLeave(&pDisk->CritSectVerify);
+                break;
             }
             case VDIOREQTXDIR_WRITE:
             {
