@@ -430,7 +430,7 @@ extern int wborder ( WINDOW *, chtype, chtype, chtype, chtype, chtype, chtype,
 extern int wclrtobot ( WINDOW * ) __nonnull;
 extern int wclrtoeol ( WINDOW * ) __nonnull;
 extern void wcursyncup ( WINDOW * );
-extern int wcolour_set ( WINDOW *, short, void * ) __nonnull;
+extern int wcolour_set ( WINDOW *, short, void * ) /*__nonnull*/;
 #define wcolor_set(w,s,v) wcolour_set((w),(s),(v))
 extern int wdelch ( WINDOW * ) __nonnull;
 extern int wdeleteln ( WINDOW * ) __nonnull;
