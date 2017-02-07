@@ -1153,6 +1153,7 @@ static DECLCALLBACK(int) vdiDiscardBlockAsyncUpdate(void *pBackendData, PVDIOCTX
             vdIfIoIntMetaXferRelease(pImage->pIfIo, pMetaXfer);
             pDiscardAsync->enmState = VDIBLOCKDISCARDSTATE_WRITE_BLOCK;
         }
+        /* fall thru */
         case VDIBLOCKDISCARDSTATE_WRITE_BLOCK:
         {
             /* Block read complete. Write to the new location (discarded block). */
@@ -1165,6 +1166,7 @@ static DECLCALLBACK(int) vdiDiscardBlockAsyncUpdate(void *pBackendData, PVDIOCTX
             if (RT_FAILURE(rc))
                 break;
         }
+        /* fall thru */
         case VDIBLOCKDISCARDSTATE_UPDATE_METADATA:
         {
             int rc2;
