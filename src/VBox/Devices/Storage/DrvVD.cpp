@@ -5667,6 +5667,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                 case PDMMEDIATYPE_FLOPPY_FAKE_15_6:
                     if (cbFloppyImg > 255 * 2 * 63 * 512)
                         pThis->enmType = PDMMEDIATYPE_FLOPPY_FAKE_63_5;
+                    /* fall thru */
                 case PDMMEDIATYPE_FLOPPY_FAKE_63_5:
                     if (cbFloppyImg > 255 * 2 * 255 * 512)
                         LogRel(("Warning: Floppy image is larger that 63.5 MB! (%llu bytes)\n", cbFloppyImg));

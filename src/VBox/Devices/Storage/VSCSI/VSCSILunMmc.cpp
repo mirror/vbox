@@ -588,6 +588,7 @@ static int vscsiLunMmcReadDvdStructure(PVSCSILUNMMC pVScsiLunMmc, PVSCSIREQINT p
                 break;
             }
             /** @todo BD support, fall through for now */
+            /* fall thru */
 
         /* Generic disk structures */
         case 0x80: /** @todo AACS volume identifier */
@@ -1075,6 +1076,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                             break;
                         }
                     }
+                    /* fall thru */
                     default:
                         rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
                 }

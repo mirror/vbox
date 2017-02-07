@@ -777,6 +777,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             /* Fall through only to handle unrecognized commands. */
             if (fHandled)
                 break;
+            /* fall thru */
 
         case ACMD_INVALID_1:
         case ACMD_INVALID_2:

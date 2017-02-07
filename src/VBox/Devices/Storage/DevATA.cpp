@@ -2275,6 +2275,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                 break;
             }
             /** @todo BD support, fall through for now */
+            /* fall thru */
 
         /* Generic disk structures */
         case 0x80: /** @todo AACS volume identifier */
@@ -3930,6 +3931,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_VERIFY_SECTORS_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_READ_VERIFY_SECTORS:
         case ATA_READ_VERIFY_SECTORS_WITHOUT_RETRIES:
             /* do sector number check ? */
@@ -3938,6 +3940,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_SECTORS_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_READ_SECTORS:
         case ATA_READ_SECTORS_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -3947,6 +3950,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_SECTORS_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_WRITE_SECTORS:
         case ATA_WRITE_SECTORS_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -3956,6 +3960,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_MULTIPLE_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_READ_MULTIPLE:
             if (!s->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
@@ -3964,6 +3969,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_MULTIPLE_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_WRITE_MULTIPLE:
             if (!s->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
@@ -3972,6 +3978,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_READ_DMA_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_READ_DMA:
         case ATA_READ_DMA_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)
@@ -3982,6 +3989,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_WRITE_DMA_EXT:
             s->fLBA48 = true;
+            /* fall thru */
         case ATA_WRITE_DMA:
         case ATA_WRITE_DMA_WITHOUT_RETRIES:
             if (!s->pDrvMedia || s->fATAPI)

@@ -4167,6 +4167,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             break;
         case ATA_READ_DMA_EXT:
             fLBA48 = true;
+            /* fall through */
         case ATA_READ_DMA:
         {
             pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
@@ -4176,6 +4177,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
         }
         case ATA_WRITE_DMA_EXT:
             fLBA48 = true;
+            /* fall through */
         case ATA_WRITE_DMA:
         {
             pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
@@ -4283,6 +4285,7 @@ static PDMMEDIAEXIOREQTYPE ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq
             }
             /* else: fall through and report error to the guest. */
         }
+        /* fall thru */
         /* All not implemented commands go below. */
         case ATA_SECURITY_FREEZE_LOCK:
         case ATA_SMART:

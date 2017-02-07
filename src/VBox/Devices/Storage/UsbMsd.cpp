@@ -1821,9 +1821,8 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 Log(("usbMsd: Failed sending SCSI request to driver: %Rrc\n", rc));
                 return usbMsdCompleteStall(pThis, NULL, pUrb, "SCSI Submit #3");
             }
-
-            /* fall thru */
         }
+        /* fall thru */
 
         /*
          * The SCSI command is still pending, queue the URB awaiting its
