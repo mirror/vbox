@@ -1289,6 +1289,7 @@ bool HostUSBDevice::i_updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMa
                     /* Changed! */
                     case kHostUSBDeviceState_UsedByHost:
                         fIsImportant = true;
+                        /* fall thru */
                     case kHostUSBDeviceState_Unused:
                         LogThisFunc(("{%s} %s -> %s\n", mName, i_getStateName(), i_stateName(kHostUSBDeviceState_Capturable)));
                         *aRunFilters = i_setState(kHostUSBDeviceState_Capturable);

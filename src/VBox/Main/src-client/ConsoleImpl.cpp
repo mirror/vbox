@@ -1144,7 +1144,8 @@ int Console::i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const 
             LogRel(("AUTH: Delegated to guest.\n"));
 
             LogFlowFunc(("External auth asked for guest judgement\n"));
-        } /* pass through */
+        }
+        /* fall thru */
 
         case AuthType_Guest:
         {

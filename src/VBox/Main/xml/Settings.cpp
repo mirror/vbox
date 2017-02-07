@@ -5910,7 +5910,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 case PortMode_TCP:
                 case PortMode_HostPipe:
                     pelmPort->setAttribute("server", port.fServer);
-                    /* no break */
+                    /* fall thru */
                 case PortMode_HostDevice:
                 case PortMode_RawFile:
                     pelmPort->setAttribute("path", port.strPath);
