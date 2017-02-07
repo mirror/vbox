@@ -210,6 +210,7 @@ VMMRC_INT_DECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pCtxCore)
                             return VINF_SUCCESS;
                         }
                         AssertFailed();
+                        return rc;
                     }
                     else
                     {
