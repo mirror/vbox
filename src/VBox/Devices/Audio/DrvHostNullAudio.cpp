@@ -63,16 +63,7 @@ typedef struct NULLAUDIOSTREAM
 {
     /** The stream's acquired configuration. */
     PPDMAUDIOSTREAMCFG pCfg;
-    union
-    {
-        struct
-        {
-            /** Timestamp of last played samples. */
-            uint64_t   u64TicksLast;
-        } Out;
-    };
-} NULLAUDIOSTREAM;
-typedef NULLAUDIOSTREAM *PNULLAUDIOSTREAM;
+} NULLAUDIOSTREAM, *PNULLAUDIOSTREAM;
 
 /**
  * NULL audio driver instance data.
@@ -150,33 +141,12 @@ static DECLCALLBACK(int) drvHostNullAudioStreamPlay(PPDMIHOSTAUDIO pInterface, P
     AssertPtrReturn(pvBuf,      VERR_INVALID_POINTER);
     AssertReturn(cbBuf,         VERR_INVALID_PARAMETER);
 
-    PDRVHOSTNULLAUDIO pDrv        = RT_FROM_MEMBER(pInterface, DRVHOSTNULLAUDIO, IHostAudio);
-    PNULLAUDIOSTREAM  pStreamNull = (PNULLAUDIOSTREAM)pStream;
-
-    /* Consume as many samples as would be played at the current frequency since last call. */
-    uint32_t csLive          = PDMAUDIOPCMPROPS_B2S(&pStreamNull->pCfg->Props, cbBuf);
-
-    uint64_t u64TicksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-    uint64_t u64TicksElapsed = u64TicksNow  - pStreamNull->Out.u64TicksLast;
-    uint64_t u64TicksFreq    = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
-
-    /* Remember when samples were consumed. */
-    pStreamNull->Out.u64TicksLast = u64TicksNow;
-
-    /*
-     * Minimize the rounding error by adding 0.5: samples = int((u64TicksElapsed * samplesFreq) / u64TicksFreq + 0.5).
-     * If rounding is not taken into account then the playback rate will be consistently lower that expected.
-     */
-    uint64_t csPlayed = (2 * u64TicksElapsed * pStreamNull->pCfg->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
-
-    /* Don't play more than available. */
-    if (csPlayed > csLive)
-        csPlayed = csLive;
+    RT_NOREF(pInterface, pStream, pvBuf);
 
     /* Note: No copying of samples needed here, as this a NULL backend. */
 
     if (pcbWritten)
-        *pcbWritten = PDMAUDIOPCMPROPS_S2B(&pStreamNull->pCfg->Props, csPlayed);
+        *pcbWritten = cbBuf; /* Return all bytes as written. */
 
     return VINF_SUCCESS;
 }
@@ -213,9 +183,7 @@ static int nullCreateStreamIn(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG p
 
 static int nullCreateStreamOut(PNULLAUDIOSTREAM pStreamNull, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
-    RT_NOREF(pCfgReq);
-
-    pStreamNull->Out.u64TicksLast  = 0;
+    RT_NOREF(pStreamNull, pCfgReq);
 
     if (pCfgAcq)
         pCfgAcq->cSampleBufferHint = _1K; /** @todo Make this configurable. */
