@@ -2561,8 +2561,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                             ProcessKey(&event.key);
                             break;
                         }
-                        /* fall through if no two-key sequence is used */
                     }
+                    /* fall through */
 
                     case HKEYSTATE_DOWN:
                     {

@@ -4868,6 +4868,8 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
             Assert(!mGlOn == !mOverlayImage.hasSurfaces());
             initGl();
             Assert(!mGlOn == !mOverlayImage.hasSurfaces());
+            pCmd->rc = VINF_SUCCESS;
+            break;
         case VBOXVHWACMD_TYPE_DISABLE:
             pCmd->rc = VINF_SUCCESS;
             break;
