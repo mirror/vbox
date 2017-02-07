@@ -417,12 +417,12 @@ int main(int argc, char *argv[])
 #endif
                 return rc;
             }
-            /* Fall through */
         }
+        /* fall thru */
 
         default:
             fprintf(stderr, "Invalid number of arguments.\n\n");
-            /* Fall through */
+            /* fall thru */
         case 1:
             showUsage();
             return 1;
