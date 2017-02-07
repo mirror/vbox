@@ -889,6 +889,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pSt
 {
     AssertPtrReturn(pThis,     NULL);
     AssertPtrReturn(pStreamDS, NULL);
+    AssertPtrReturn(pStreamDS->pCfg, NULL);
 
     int rc = VINF_SUCCESS;
 
