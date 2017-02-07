@@ -174,7 +174,7 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
     /*
      * We've got a match!
      */
-    *pcb = pUdpHdr->uh_ulen - sizeof(*pUdpHdr);
+    *pcb = RT_N2H_U16(pUdpHdr->uh_ulen) - sizeof(*pUdpHdr);
     return (void *)(pUdpHdr + 1);
 }
 
