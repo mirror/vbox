@@ -1548,7 +1548,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                              // (all of low memory space)
                      ResourceProducer,        // bit 0 of general flags is 0
                      PosDecode,               // positive Decode
-                     MinNotFixed,             // Range is not fixed
+                     MinFixed,                // Range is fixed
                      MaxFixed,                // Range is fixed
                      Cacheable,
                      ReadWrite,
@@ -1557,7 +1557,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
 
                      0xffdfffff,              // Max = 4GB - 2MB
                      0x00000000,              // Translation
-                     0x00000000,              // Range Length (calculated
+                     0xffe00000,              // Range Length (calculated
                                               // dynamically)
                      ,                        // Optional field left blank
                      ,                        // Optional field left blank
