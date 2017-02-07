@@ -598,8 +598,10 @@ static int drvAudioStreamControlInternalBackend(PDRVAUDIO pThis, PPDMAUDIOSTREAM
 static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
                                       PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgHost, PPDMAUDIOSTREAMCFG pCfgGuest)
 {
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgHost,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfgGuest, VERR_INVALID_POINTER);
 
     PPDMAUDIOSTREAM pHstStream = drvAudioGetHostStream(pStream);
     PPDMAUDIOSTREAM pGstStream = pHstStream ? pHstStream->pPair : pStream;
@@ -608,6 +610,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     /*
      * Init host stream.
      */
+
+    /* Set the host's default audio data layout. */
+    pCfgHost->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
 #ifdef DEBUG
     LogFunc(("[%s] Requested host format:\n", pStream->szName));
@@ -630,8 +635,8 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     DrvAudioHlpStreamCfgPrint(&CfgHostAcq);
 #else
     LogRel2(("Audio: Acquired %s host format for '%s': %RU32Hz, %RU8%s, %RU8 %s\n",
-             pCfgGuest->enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
-             pCfgHost->Props.uHz, pCfgHost->Props.cBits, pCfgHost->Props.fSigned ? "S" : "U",
+             CfgHostAcq.enmDir == PDMAUDIODIR_IN ? "recording" : "playback",  pStream->szName,
+             CfgHostAcq.Props.uHz, CfgHostAcq.Props.cBits, CfgHostAcq.Props.fSigned ? "S" : "U",
              CfgHostAcq.Props.cChannels, CfgHostAcq.Props.cChannels == 0 ? "Channel" : "Channels"));
 #endif
 
@@ -657,7 +662,7 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
     AssertRC(rc2);
 
     /* Make a copy of the acquired host stream configuration. */
-    rc2 = DrvAudioHlpStreamCfgCopy(&pHstStream->Cfg, pCfgHost);
+    rc2 = DrvAudioHlpStreamCfgCopy(&pHstStream->Cfg, &CfgHostAcq);
     AssertRC(rc2);
 
     /*
@@ -666,6 +671,9 @@ static int drvAudioStreamInitInternal(PDRVAUDIO pThis,
 
     /* Destroy any former mixing buffer. */
     AudioMixBufDestroy(&pGstStream->MixBuf);
+
+    /* Set the guests's default audio data layout. */
+    pCfgHost->enmLayout = PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED;
 
     /* Make sure to (re-)set the guest buffer's shift size. */
     pCfgGuest->Props.cShift = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfgGuest->Props.cBits, pCfgGuest->Props.cChannels);
@@ -1304,24 +1312,46 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
             && (stsBackend & PDMAUDIOSTRMSTS_FLAG_ENABLED)
             && (stsBackend & PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE))
         {
-            uint8_t u8Buf[_4K]; /** @todo Get rid of this here. */
-
-            uint32_t cRead = 0;
-            int rc2 = AudioMixBufReadCirc(&pHstStream->MixBuf, u8Buf, sizeof(u8Buf), &cRead);
-            AssertRC(rc2);
-
-            uint32_t cbBuf = AUDIOMIXBUF_S2B(&pHstStream->MixBuf, cRead);
             uint32_t cbPlayed = 0;
 
             AssertPtr(pThis->pHostDrvAudio->pfnStreamPlay);
-            rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend, u8Buf, cbBuf, &cbPlayed);
-            if (RT_SUCCESS(rc))
+
+            if (RT_LIKELY(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
             {
+                uint8_t u8Buf[_4K]; /** @todo Get rid of this here. */
+
+                uint32_t csRead = 0;
+                int rc2 = AudioMixBufReadCirc(&pHstStream->MixBuf, u8Buf, sizeof(u8Buf), &csRead);
+                AssertRC(rc2);
+
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                         u8Buf, AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csRead),
+                                                         &cbPlayed);
                 AssertMsg(cbPlayed % 2 == 0,
-                          ("Backend for stream '%s' returned uneven played bytes count (%RU32)\n", pHstStream->szName, cbPlayed));
+                          ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
+                           pHstStream->szName, csRead, cbPlayed));
 
                 csPlayed = AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbPlayed);
+            }
+            else if (pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
+            {
+                PDMAUDIOSAMPLE aSampleBuf[128]; /** @todo Get rid of this here. */
 
+                uint32_t csRead = 0;
+                int rc2 = AudioMixBufPeek(&pHstStream->MixBuf, csLive, aSampleBuf,
+                                          RT_MIN(csLive, RT_ELEMENTS(aSampleBuf)), &csRead);
+                AssertRC(rc2);
+
+                Assert(csRead <= RT_ELEMENTS(aSampleBuf));
+
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                         aSampleBuf, csRead, &csPlayed);
+            }
+            else
+                AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+            if (RT_SUCCESS(rc))
+            {
                 AudioMixBufFinish(&pHstStream->MixBuf, csPlayed);
 
 #ifdef VBOX_WITH_STATISTICS

@@ -284,6 +284,8 @@ typedef enum PDMAUDIOSTREAMLAYOUT
     /** Complex layout, which does not fit into the
      *  interleaved / non-interleaved layouts. */
     PDMAUDIOSTREAMLAYOUT_COMPLEX,
+    /** Raw (pass through) data, with no data layout processing done. */
+    PDMAUDIOSTREAMLAYOUT_RAW,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOSTREAMLAYOUT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOSTREAMLAYOUT, *PPDMAUDIOSTREAMLAYOUT;
@@ -387,6 +389,19 @@ typedef struct PDMAUDIOSTREAMCFG
     PDMAUDIODESTSOURCE       DestSource;
     /** The stream's PCM properties. */
     PDMAUDIOPCMPROPS         Props;
+    /** The stream's audio data layout.
+     *  This indicates how the audio data buffers to/from the backend is being layouted.
+     *
+     *  Currently, the following layouts are supported by the audio connector:
+     *
+     *  PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED:
+     *      One stream at once. The consecutive audio data is exactly in the format and sample width
+     *      like defined in the PCM properties. This is the default.
+     *
+     *  PDMAUDIOSTREAMLAYOUT_RAW:
+     *      Can be one or many streams at once, depending on the stream's mixing buffer setup.
+     *      The audio data will get handled as PDMAUDIOSAMPLE samples without any modification done. */
+    PDMAUDIOSTREAMLAYOUT     enmLayout;
     /** Hint about the optimal sample buffer size (in audio samples).
      *  0 if no hint is given. */
     uint32_t                 cSampleBufferHint;

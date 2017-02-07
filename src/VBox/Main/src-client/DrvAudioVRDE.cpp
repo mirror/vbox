@@ -81,6 +81,8 @@ typedef struct VRDESTREAM
     };
 } VRDESTREAM, *PVRDESTREAM;
 
+/* Sanity. */
+AssertCompileSize(PDMAUDIOSAMPLE, sizeof(int64_t) * 2 /* st_sample_t using by VRDP server */);
 
 static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
 {
@@ -90,7 +92,17 @@ static int vrdeCreateStreamIn(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgRe
     if (RT_SUCCESS(rc))
     {
         if (pCfgAcq)
+        {
+            /*
+             * Because of historical reasons the VRDP server operates on st_sample_t structures internally,
+             * which is 2 * int64_t for left/right (stereo) channels.
+             *
+             * As the audio connector also uses this format, set the layout to "raw" and just let pass through
+             * the data without any layout modification needed.
+             */
+            pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
             pCfgAcq->cSampleBufferHint = pStreamVRDE->In.cSamplesMax;
+        }
     }
 
     return rc;
@@ -102,7 +114,17 @@ static int vrdeCreateStreamOut(PVRDESTREAM pStreamVRDE, PPDMAUDIOSTREAMCFG pCfgR
     RT_NOREF(pStreamVRDE, pCfgReq);
 
     if (pCfgAcq)
+    {
+        /*
+         * Because of historical reasons the VRDP server operates on st_sample_t structures internally,
+         * which is 2 * int64_t for left/right (stereo) channels.
+         *
+         * As the audio connector also uses this format, set the layout to "raw" and just let pass through
+         * the data without any layout modification needed.
+         */
+        pCfgAcq->enmLayout         = PDMAUDIOSTREAMLAYOUT_RAW;
         pCfgAcq->cSampleBufferHint = _4K; /** @todo Make this configurable. */
+    }
 
     return VINF_SUCCESS;
 }
@@ -240,7 +262,9 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
-    uint32_t cbLive           = cbBuf;
+    /* Note: We get the number of *samples* in cbBuf
+     *       (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout) on stream creation. */
+    uint32_t csLive           = cbBuf;
 
     uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
@@ -249,7 +273,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
 
     /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    uint32_t cbToWrite = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
+    uint32_t csToWrite = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
 
     /* Remember when samples were consumed. */
     pStreamVRDE->Out.old_ticks = now;
@@ -259,43 +283,44 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
                                                  pProps->cBits,
                                                  pProps->fSigned);
 
-    Log2Func(("uFreq=%RU32, cChan=%RU8, cBits=%RU8, fSigned=%RTbool, enmFormat=%ld, cbLive=%RU32, cbToWrite=%RU32\n",
-              pProps->uHz,   pProps->cChannels, pProps->cBits, pProps->fSigned, format, cbLive, cbToWrite));
+    Log3Func(("uFreq=%RU32, cChan=%RU8, cBits=%RU8 (%d BPP), fSigned=%RTbool, enmFormat=%ld, csLive=%RU32, csToWrite=%RU32\n",
+              pProps->uHz, pProps->cChannels, pProps->cBits, VRDE_AUDIO_FMT_BYTES_PER_SAMPLE(format),
+              pProps->fSigned, format, csLive, csToWrite));
 
     /* Don't play more than available. */
-    if (cbToWrite > cbLive)
-        cbToWrite = cbLive;
+    if (csToWrite > csLive)
+        csToWrite = csLive;
 
     int rc = VINF_SUCCESS;
 
     /*
      * Call the VRDP server with the data.
      */
-    uint32_t cbWritten = 0;
-    while (cbToWrite)
+    uint32_t csWritten = 0;
+    while (csToWrite)
     {
-        /* Make sure that this is even, as we send the number of samples to the VRDP server. */
-        uint32_t cbChunk = (cbToWrite % 2 == 0) ? cbToWrite : cbToWrite - 1; /** @todo For now write all at once. */
-        Assert(cbChunk % 2 == 0);
+        uint32_t csChunk = csToWrite; /** @todo For now write all at once. */
 
-        if (!cbChunk) /* Nothing to send. Bail out. */
+        if (!csChunk) /* Nothing to send. Bail out. */
             break;
 
-        pDrv->pConsoleVRDPServer->SendAudioSamples((uint8_t *)pvBuf + cbWritten,
-                                                   PDMAUDIOSTREAMCFG_B2S(pStreamVRDE->pCfg, cbChunk) /* Samples */, format);
-        cbWritten += cbChunk;
-        Assert(cbWritten <= cbBuf);
+        /* Note: The VRDP server expects int64_t samples per channel, regardless of the actual
+         *       sample bits (e.g 8 or 16 bits). */
+        pDrv->pConsoleVRDPServer->SendAudioSamples((PPDMAUDIOSAMPLE)pvBuf + csWritten, csChunk /* Samples */, format);
 
-        Assert(cbToWrite >= cbChunk);
-        cbToWrite -= cbChunk;
+        csWritten += csChunk;
+        Assert(csWritten <= csLive);
+
+        Assert(csToWrite >= csChunk);
+        csToWrite -= csChunk;
     }
 
     if (RT_SUCCESS(rc))
     {
-        Assert(cbWritten % 2 == 0); /* Paranoia. */
-
+        /* Return samples instead of bytes here
+         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
         if (pcbWritten)
-            *pcbWritten = cbWritten;
+            *pcbWritten = csWritten;
     }
 
     return rc;
