@@ -4236,6 +4236,7 @@ static bool collectOmfDetails(const char *pszFile, uint8_t const *pbFile, size_t
             case OMF_PUBDEF32:
             case OMF_LPUBDEF32:
                 pOmfStuff->fProbably32bit = true;
+                /* fall thru */
             case OMF_PUBDEF16:
             case OMF_LPUBDEF16:
                 if (g_cVerbose > 0)

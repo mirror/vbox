@@ -1918,8 +1918,8 @@ bool CidetCoreAssembleLength(PCIDETCORE pThis)
     //uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
     switch (pThis->pCurInstr->cbOpcode)
     {
-        case 3: off++;
-        case 2: off++;
+        case 3: off++; /* fall thru */
+        case 2: off++; /* fall thru */
         case 1: off++;
             break;
         default:
@@ -2036,8 +2036,8 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
     uint8_t const *pbOpcode = pThis->pCurInstr->abOpcode;
     switch (pThis->pCurInstr->cbOpcode)
     {
-        case 3: pThis->abInstr[off++] = *pbOpcode++;
-        case 2: pThis->abInstr[off++] = *pbOpcode++;
+        case 3: pThis->abInstr[off++] = *pbOpcode++; /* fall thru */
+        case 2: pThis->abInstr[off++] = *pbOpcode++; /* fall thru */
         case 1: pThis->abInstr[off++] = *pbOpcode++;
             break;
         default:
@@ -2058,13 +2058,13 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
             switch (pThis->aOperands[pThis->idxMrmRmOp].cbMemDisp)
             {
                 case 0: break;
-                case 8: pThis->abInstr[off + 3] = (uDispValue >> 56) & UINT8_C(0xff);
-                case 7: pThis->abInstr[off + 3] = (uDispValue >> 48) & UINT8_C(0xff);
-                case 6: pThis->abInstr[off + 3] = (uDispValue >> 40) & UINT8_C(0xff);
-                case 5: pThis->abInstr[off + 3] = (uDispValue >> 32) & UINT8_C(0xff);
-                case 4: pThis->abInstr[off + 3] = (uDispValue >> 24) & UINT8_C(0xff);
-                case 3: pThis->abInstr[off + 2] = (uDispValue >> 16) & UINT8_C(0xff);
-                case 2: pThis->abInstr[off + 1] = (uDispValue >>  8) & UINT8_C(0xff);
+                case 8: pThis->abInstr[off + 3] = (uDispValue >> 56) & UINT8_C(0xff); /* fall thru */
+                case 7: pThis->abInstr[off + 3] = (uDispValue >> 48) & UINT8_C(0xff); /* fall thru */
+                case 6: pThis->abInstr[off + 3] = (uDispValue >> 40) & UINT8_C(0xff); /* fall thru */
+                case 5: pThis->abInstr[off + 3] = (uDispValue >> 32) & UINT8_C(0xff); /* fall thru */
+                case 4: pThis->abInstr[off + 3] = (uDispValue >> 24) & UINT8_C(0xff); /* fall thru */
+                case 3: pThis->abInstr[off + 2] = (uDispValue >> 16) & UINT8_C(0xff); /* fall thru */
+                case 2: pThis->abInstr[off + 1] = (uDispValue >>  8) & UINT8_C(0xff); /* fall thru */
                 case 1: pThis->abInstr[off] = uDispValue & UINT8_C(0xff);
                     break;
                 default: AssertReleaseFailedReturn(false);
@@ -2083,13 +2083,13 @@ bool CidetCoreAssemble(PCIDETCORE pThis)
             uint64_t uImmValue = pThis->aOperands[iOp].uImmDispValue;
             switch (pThis->aOperands[iOp].cb)
             {
-                case 8: pThis->abInstr[off + 3] = (uImmValue >> 56) & UINT8_C(0xff);
-                case 7: pThis->abInstr[off + 3] = (uImmValue >> 48) & UINT8_C(0xff);
-                case 6: pThis->abInstr[off + 3] = (uImmValue >> 40) & UINT8_C(0xff);
-                case 5: pThis->abInstr[off + 3] = (uImmValue >> 32) & UINT8_C(0xff);
-                case 4: pThis->abInstr[off + 3] = (uImmValue >> 24) & UINT8_C(0xff);
-                case 3: pThis->abInstr[off + 2] = (uImmValue >> 16) & UINT8_C(0xff);
-                case 2: pThis->abInstr[off + 1] = (uImmValue >>  8) & UINT8_C(0xff);
+                case 8: pThis->abInstr[off + 3] = (uImmValue >> 56) & UINT8_C(0xff); /* fall thru */
+                case 7: pThis->abInstr[off + 3] = (uImmValue >> 48) & UINT8_C(0xff); /* fall thru */
+                case 6: pThis->abInstr[off + 3] = (uImmValue >> 40) & UINT8_C(0xff); /* fall thru */
+                case 5: pThis->abInstr[off + 3] = (uImmValue >> 32) & UINT8_C(0xff); /* fall thru */
+                case 4: pThis->abInstr[off + 3] = (uImmValue >> 24) & UINT8_C(0xff); /* fall thru */
+                case 3: pThis->abInstr[off + 2] = (uImmValue >> 16) & UINT8_C(0xff); /* fall thru */
+                case 2: pThis->abInstr[off + 1] = (uImmValue >>  8) & UINT8_C(0xff); /* fall thru */
                 case 1: pThis->abInstr[off] = uImmValue & UINT8_C(0xff);
                     break;
                 default: AssertReleaseFailedReturn(false);
