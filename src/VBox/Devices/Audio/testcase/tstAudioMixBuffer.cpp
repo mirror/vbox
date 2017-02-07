@@ -40,21 +40,18 @@ static int tstSingle(RTTEST hTest)
 {
     RTTestSubF(hTest, "Single buffer");
 
-    PDMAUDIOSTREAMCFG config =
+    /* 44100Hz, 2 Channels, S16 */
+    PDMAUDIOPCMPROPS config =
     {
-        "44100Hz, 2 Channels, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
-          2,                                                                  /* Channels */
-          44100,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+        2,                                                                  /* Channels */
+        44100,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&config));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&config));
 
     uint32_t cBufSize = _1K;
 
@@ -62,7 +59,7 @@ static int tstSingle(RTTEST hTest)
      * General stuff.
      */
     PDMAUDIOMIXBUF mb;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&mb, "Single", &config.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&mb, "Single", &config, cBufSize));
     RTTESTI_CHECK(AudioMixBufSize(&mb) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_B2S(&mb, AudioMixBufSizeBytes(&mb)) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_S2B(&mb, AudioMixBufSize(&mb)) == AudioMixBufSizeBytes(&mb));
@@ -144,63 +141,54 @@ static int tstParentChild(RTTEST hTest)
     uint32_t cSamples = 16;
     uint32_t cBufSize = RTRandU32Ex(cSamples /* Min */, 256 /* Max */);
 
-    PDMAUDIOSTREAMCFG cfg_p =
+    /* 44100Hz, 2 Channels, S16 */
+    PDMAUDIOPCMPROPS cfg_p =
     {
-        "44100Hz, 2 Channels, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
-          2,                                                                  /* Channels */
-          44100,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+        2,                                                                  /* Channels */
+        44100,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_p));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
 
-    PDMAUDIOSTREAMCFG cfg_c1 = /* Upmixing to parent */
+    /* 22050Hz, 2 Channels, S16 */
+    PDMAUDIOPCMPROPS cfg_c1 = /* Upmixing to parent */
     {
-        "22050Hz, 2 Channels, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
-          2,                                                                  /* Channels */
-          22050,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+        2,                                                                  /* Channels */
+        22050,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_c1));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c1));
 
     PDMAUDIOMIXBUF child1;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child1, "Child1", &cfg_c1.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child1, "Child1", &cfg_c1, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child1, &parent));
 
-    PDMAUDIOSTREAMCFG cfg_c2 = /* Downmixing to parent */
+    /* 48000Hz, 2 Channels, S16 */
+    PDMAUDIOPCMPROPS cfg_c2 = /* Downmixing to parent */
     {
-        "48000Hz, 2 Channels, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
-          2,                                                                  /* Channels */
-          48000,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+        2,                                                                  /* Channels */
+        48000,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_c2));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c2));
 
     PDMAUDIOMIXBUF child2;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child2, "Child2", &cfg_c2, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child2, &parent));
 
     /*
@@ -270,24 +258,21 @@ static int tstConversion8(RTTEST hTest)
 
     RTTestSubF(hTest, "Sample conversion (U8)");
 
-    PDMAUDIOSTREAMCFG cfg_p =
+    /* 44100Hz, 1 Channel, U8 */
+    PDMAUDIOPCMPROPS cfg_p =
     {
-        "44100Hz, 1 Channel, U8",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 8,                                                                 /* Bits */
-          false,                                                             /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
-          1,                                                                 /* Channels */
-          44100,                                                             /* Hz */
-          false                                                              /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        8,                                                                 /* Bits */
+        false,                                                             /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
+        1,                                                                 /* Channels */
+        44100,                                                             /* Hz */
+        false                                                              /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_p));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
 
     /* Child uses half the sample rate; that ensures the mixing engine can't
      * take shortcuts and performs conversion. Because conversion to double
@@ -296,24 +281,22 @@ static int tstConversion8(RTTEST hTest)
      * samples. However, the last source sample will be saved for later
      * interpolation and not immediately output.
      */
-    PDMAUDIOSTREAMCFG cfg_c =   /* Upmixing to parent */
+
+    /* 22050Hz, 1 Channel, U8 */
+    PDMAUDIOPCMPROPS cfg_c =   /* Upmixing to parent */
     {
-        "22050Hz, 1 Channel, U8",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 8,                                                                 /* Bits */
-          false,                                                             /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
-          1,                                                                 /* Channels */
-          22050,                                                             /* Hz */
-          false                                                              /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        8,                                                                 /* Bits */
+        false,                                                             /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(8 /* Bits */, 1 /* Channels */), /* Shift */
+        1,                                                                 /* Channels */
+        22050,                                                             /* Hz */
+        false                                                              /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_c));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c));
 
     PDMAUDIOMIXBUF child;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 
     /* 8-bit unsigned samples. Often used with SB16 device. */
@@ -332,7 +315,7 @@ static int tstConversion8(RTTEST hTest)
     uint32_t cSamplesTotalRead   = 0;
 
     /**** 8-bit unsigned samples ****/
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Conversion test %uHz %uch 8-bit\n", cfg_c.Props.uHz, cfg_c.Props.cChannels);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Conversion test %uHz %uch 8-bit\n", cfg_c.uHz, cfg_c.cChannels);
     RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&child, &samples, sizeof(samples), &cSamplesWritten));
     RTTESTI_CHECK_MSG(cSamplesWritten == cSamplesChild, ("Child: Expected %RU32 written samples, got %RU32\n", cSamplesChild, cSamplesWritten));
     RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, cSamplesWritten, &cSamplesMixed));
@@ -381,43 +364,37 @@ static int tstConversion16(RTTEST hTest)
 
     RTTestSubF(hTest, "Sample conversion (S16)");
 
-    PDMAUDIOSTREAMCFG cfg_p =
+    /* 44100Hz, 1 Channel, S16 */
+    PDMAUDIOPCMPROPS cfg_p =
     {
-        "44100Hz, 1 Channel, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
-          1,                                                                  /* Channels */
-          44100,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
+        1,                                                                  /* Channels */
+        44100,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_p));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_p));
 
     PDMAUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg_p, cBufSize));
 
-    PDMAUDIOSTREAMCFG cfg_c =   /* Upmixing to parent */
+    /* 22050Hz, 1 Channel, S16 */
+    PDMAUDIOPCMPROPS cfg_c =   /* Upmixing to parent */
     {
-        "22050Hz, 1 Channel, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
-          1,                                                                  /* Channels */
-          22050,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 1 /* Channels */), /* Shift */
+        1,                                                                  /* Channels */
+        22050,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg_c));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg_c));
 
     PDMAUDIOMIXBUF child;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg_c, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 
     /* 16-bit signed. More or less exclusively used as output, and usually as input, too. */
@@ -436,7 +413,7 @@ static int tstConversion16(RTTEST hTest)
     uint32_t cSamplesTotalRead   = 0;
 
     /**** 16-bit signed samples ****/
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Conversion test %uHz %uch 16-bit\n", cfg_c.Props.uHz, cfg_c.Props.cChannels);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Conversion test %uHz %uch 16-bit\n", cfg_c.uHz, cfg_c.cChannels);
     RTTESTI_CHECK_RC_OK(AudioMixBufWriteCirc(&child, &samples, sizeof(samples), &cSamplesWritten));
     RTTESTI_CHECK_MSG(cSamplesWritten == cSamplesChild, ("Child: Expected %RU32 written samples, got %RU32\n", cSamplesChild, cSamplesWritten));
     RTTESTI_CHECK_RC_OK(AudioMixBufMixToParent(&child, cSamplesWritten, &cSamplesMixed));
@@ -485,28 +462,25 @@ static int tstVolume(RTTEST hTest)
     RTTestSubF(hTest, "Volume control");
 
     /* Same for parent/child. */
-    PDMAUDIOSTREAMCFG cfg =
+    /* 44100Hz, 2 Channels, S16 */
+    PDMAUDIOPCMPROPS cfg =
     {
-        "44100Hz, 2 Channels, S16",
-        PDMAUDIODIR_OUT,
-        { PDMAUDIOPLAYBACKDEST_UNKNOWN },
-        { 16,                                                                 /* Bits */
-          true,                                                               /* Signed */
-          PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
-          2,                                                                  /* Channels */
-          44100,                                                              /* Hz */
-          false                                                               /* Swap Endian */ },
-        0 /* cSampleBufferSize */
+        16,                                                                 /* Bits */
+        true,                                                               /* Signed */
+        PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(16 /* Bits */, 2 /* Channels */), /* Shift */
+        2,                                                                  /* Channels */
+        44100,                                                              /* Hz */
+        false                                                               /* Swap Endian */
     };
 
-    RTTESTI_CHECK(DrvAudioHlpStreamCfgIsValid(&cfg));
+    RTTESTI_CHECK(DrvAudioHlpPCMPropsAreValid(&cfg));
 
     PDMAUDIOVOLUME vol = { false, 0, 0 };   /* Not muted. */
     PDMAUDIOMIXBUF parent;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&parent, "Parent", &cfg, cBufSize));
 
     PDMAUDIOMIXBUF child;
-    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg.Props, cBufSize));
+    RTTESTI_CHECK_RC_OK(AudioMixBufInit(&child, "Child", &cfg, cBufSize));
     RTTESTI_CHECK_RC_OK(AudioMixBufLinkTo(&child, &parent));
 
     /* A few 16-bit signed samples. */
@@ -527,7 +501,7 @@ static int tstVolume(RTTEST hTest)
     int16_t *pDst16;
 
     /**** Volume control test ****/
-    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Volume control test %uHz %uch \n", cfg.Props.uHz, cfg.Props.cChannels);
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Volume control test %uHz %uch \n", cfg.uHz, cfg.cChannels);
 
     /* 1) Full volume/0dB attenuation (255). */
     vol.uLeft = vol.uRight = 255;

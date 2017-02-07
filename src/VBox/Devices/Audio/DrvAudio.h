@@ -157,6 +157,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
 uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOPCMPROPS pProps);
 bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps1, PPDMAUDIOPCMPROPS pPCMProps2);
 bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps);
 int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
 void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);

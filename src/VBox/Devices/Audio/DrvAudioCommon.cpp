@@ -782,6 +782,48 @@ bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps1, PPDMAUDIOPCMPROPS pP
 }
 
 /**
+ * Checks whether given PCM properties are valid or not.
+ *
+ * Returns @c true if properties are valid, @c false if not.
+ * @param   pProps              PCM properties to check.
+ *
+ * @remarks Does *not* support surround (> 2 channels) yet! This is intentional, as
+ *          we consider surround support as experimental / not enabled by default for now.
+ */
+bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, false);
+
+    bool fValid = (   pProps->cChannels == 1
+                   || pProps->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
+
+    if (fValid)
+    {
+        switch (pProps->cBits)
+        {
+            case 8:
+            case 16:
+            /** @todo Do we need support for 24-bit samples? */
+            case 32:
+                break;
+            default:
+                fValid = false;
+                break;
+        }
+    }
+
+    if (!fValid)
+        return false;
+
+    fValid |= pProps->uHz > 0;
+    fValid |= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
+
+    fValid |= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
+
+    return fValid;
+}
+
+/**
  * Checks whether the given PCM properties are equal with the given
  * stream configuration.
  *
@@ -826,34 +868,11 @@ bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pCfg, false);
 
-    bool fValid = (   pCfg->Props.cChannels == 1
-                   || pCfg->Props.cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
-
-    fValid |= (   pCfg->enmDir == PDMAUDIODIR_IN
-               || pCfg->enmDir == PDMAUDIODIR_OUT);
+    bool fValid = (   pCfg->enmDir == PDMAUDIODIR_IN
+                   || pCfg->enmDir == PDMAUDIODIR_OUT);
 
     if (fValid)
-    {
-        switch (pCfg->Props.cBits)
-        {
-            case 8:
-            case 16:
-            /** @todo Do we need support for 24-bit samples? */
-            case 32:
-                break;
-            default:
-                fValid = false;
-                break;
-        }
-    }
-
-    if (!fValid)
-        return false;
-
-    fValid |= pCfg->Props.uHz > 0;
-    fValid |= pCfg->Props.cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pCfg->Props.cBits, pCfg->Props.cChannels);
-
-    fValid |= pCfg->Props.fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
+        fValid = DrvAudioHlpPCMPropsAreValid(&pCfg->Props);
 
     return fValid;
 }
