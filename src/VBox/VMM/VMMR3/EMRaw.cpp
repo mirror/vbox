@@ -1030,6 +1030,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                             pCtx->eip = pOrgInstrGC;
                     }
                     /* no break; we could just return VINF_EM_HALT here */
+                    /* fall thru */
 
                 case OP_MOV_CR:
                 case OP_MOV_DR:

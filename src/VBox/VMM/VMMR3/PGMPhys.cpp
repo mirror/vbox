@@ -2016,7 +2016,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                             case PGM_PAGE_STATE_WRITE_MONITORED:
                                 rc = pgmPhysPageMakeWritable(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                                 AssertLogRelRCReturn(rc, rc);
-                                /* no break */
+                                /* fall thru */
 
                             case PGM_PAGE_STATE_ALLOCATED:
                                 if (pVM->pgm.s.fZeroRamPagesOnReset)
@@ -4857,8 +4857,8 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
                         pgmR3PhysUnmapChunkRendezvous(pVM, pVCpu, NULL);
                         break;
                     }
-                    /* fall thru */
                 }
+                /* fall thru */
                 default:
                     rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
                     AssertRC(rc);
@@ -5416,6 +5416,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                     case PGM_PAGE_STATE_SHARED:
                         if (rc == VINF_PGM_PHYS_TLB_CATCH_WRITE)
                             break;
+                        /* fall thru */
                     case PGM_PAGE_STATE_WRITE_MONITORED:
                         rc2 = pgmPhysPageMakeWritable(pVM, pPage, GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
                         AssertLogRelRCReturn(rc2, rc2);

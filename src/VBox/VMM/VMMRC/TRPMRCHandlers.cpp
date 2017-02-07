@@ -898,6 +898,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
             if (    !PATMIsPatchGCAddr(pVM, PC)
                 &&  !CSAMIsKnownDangerousInstr(pVM, PC))
                 break;
+            /* fall thru */
         case OP_INVLPG:
         case OP_LLDT:
         case OP_STI:

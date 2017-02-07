@@ -282,8 +282,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
                 ||  !*pszMsg2
                 ||  strchr(pszMsg2, '\0')[-1] != '\n')
                 pHlp->pfnPrintf(pHlp, "\n");
-            /* fall thru */
         }
+        /* fall thru */
         case VERR_TRPM_DONT_PANIC:
         case VERR_TRPM_PANIC:
         case VINF_EM_RAW_STALE_SELECTOR:

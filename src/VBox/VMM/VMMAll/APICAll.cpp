@@ -2121,8 +2121,8 @@ VMM_INT_DECL(VBOXSTRICTRC) APICWriteMsr(PVMCPU pVCpu, uint32_t u32Reg, uint64_t 
                     rcStrict = apicSetLdr(pVCpu, u32Value);
                     break;
                 }
-                /* fallthru */
             }
+            /* fall thru */
             /* Read-only MSRs: */
             case MSR_IA32_X2APIC_ID:
             case MSR_IA32_X2APIC_VERSION:

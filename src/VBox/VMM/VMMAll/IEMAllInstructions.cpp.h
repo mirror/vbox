@@ -3099,6 +3099,7 @@ FNIEMOP_DEF(iemOp_movq_Pq_Qq__movdqa_Vdq_Wdq__movdqu_Vdq_Wdq)
     {
         case IEM_OP_PRF_SIZE_OP: /* SSE aligned */
             fAligned = true;
+            /* fall thru */
         case IEM_OP_PRF_REPZ: /* SSE unaligned */
             if (fAligned)
                 IEMOP_MNEMONIC(movdqa_Vdq_Wdq, "movdqa Vdq,Wdq");
@@ -3790,6 +3791,7 @@ FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
     {
         case IEM_OP_PRF_SIZE_OP: /* SSE aligned */
             fAligned = true;
+            /* fall thru */
         case IEM_OP_PRF_REPZ: /* SSE unaligned */
             if (fAligned)
                 IEMOP_MNEMONIC(movdqa_Wdq_Vdq, "movdqa Wdq,Vdq");
@@ -18631,6 +18633,7 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
                 return VINF_SUCCESS;
             }
             /* AMD falls thru. */
+            /* fall thru */
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(3, 1);

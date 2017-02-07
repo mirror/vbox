@@ -7032,7 +7032,7 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
             case X86_XCPT_GP:
             case X86_XCPT_AC:
                 u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-                /* no break! */
+                /* fall thru */
             default:
                 u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 break;

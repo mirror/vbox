@@ -683,8 +683,8 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                     }
                 }
                 /* fall thru */
-
 #ifdef PGM_WITH_LARGE_PAGES
+                /* fall thru */
                 default_case:
 #endif
                 default:

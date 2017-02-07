@@ -4399,6 +4399,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
 
         case X86_SEL_TYPE_SYS_286_INT_GATE:
             f32BitGate = false;
+            /* fall thru */
         case X86_SEL_TYPE_SYS_386_INT_GATE:
             fEflToClear |= X86_EFL_IF;
             break;

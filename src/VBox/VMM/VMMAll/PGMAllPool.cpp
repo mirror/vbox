@@ -3974,8 +3974,8 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
              * non-present PDPT will continue to cause page faults.
              */
             ASMReloadCR3();
-            /* no break */
 #endif
+            /* fall thru */
         case PGMPOOLKIND_PAE_PD_PHYS:
         case PGMPOOLKIND_PAE_PDPT_PHYS:
         case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
