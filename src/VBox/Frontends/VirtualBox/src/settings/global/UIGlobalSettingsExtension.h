@@ -23,9 +23,37 @@
 #include "UIGlobalSettingsExtension.gen.h"
 
 
-/** Global settings: Extension page item cache structure. */
-struct UISettingsCacheGlobalExtensionItem
+/** Global settings: Extension page item data structure. */
+struct UIDataSettingsGlobalExtensionItem
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalExtensionItem()
+        : m_strName(QString())
+        , m_strDescription(QString())
+        , m_strVersion(QString())
+        , m_uRevision(0)
+        , m_fIsUsable(false)
+        , m_strWhyUnusable(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalExtensionItem &other) const
+    {
+        return true
+               && (m_strName == other.m_strName)
+               && (m_strDescription == other.m_strDescription)
+               && (m_strVersion == other.m_strVersion)
+               && (m_uRevision == other.m_uRevision)
+               && (m_fIsUsable == other.m_fIsUsable)
+               && (m_strWhyUnusable == other.m_strWhyUnusable)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalExtensionItem &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalExtensionItem &other) const { return !equal(other); }
+
     /** Holds the extension item name. */
     QString m_strName;
     /** Holds the extension item description. */
@@ -41,12 +69,31 @@ struct UISettingsCacheGlobalExtensionItem
 };
 
 
-/** Global settings: Extension page cache structure. */
-struct UISettingsCacheGlobalExtension
+/** Global settings: Extension page data structure. */
+struct UIDataSettingsGlobalExtension
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalExtension()
+        : m_items(QList<UIDataSettingsGlobalExtensionItem>())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalExtension &other) const
+    {
+        return true
+               && (m_items == other.m_items)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalExtension &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalExtension &other) const { return !equal(other); }
+
     /** Holds the extension items. */
-    QList<UISettingsCacheGlobalExtensionItem> m_items;
+    QList<UIDataSettingsGlobalExtensionItem> m_items;
 };
+typedef UISettingsCache<UIDataSettingsGlobalExtension> UISettingsCacheGlobalExtension;
 
 
 /** Global settings: Extension page. */
@@ -95,8 +142,8 @@ private slots:
 
 private:
 
-    /* Prepare UISettingsCacheGlobalExtensionItem basing on CExtPack: */
-    UISettingsCacheGlobalExtensionItem fetchData(const CExtPack &package) const;
+    /* Prepare UIDataSettingsGlobalExtensionItem basing on CExtPack: */
+    UIDataSettingsGlobalExtensionItem fetchData(const CExtPack &package) const;
 
     /* Variables: Actions: */
     QAction *m_pActionAdd;
@@ -104,6 +151,7 @@ private:
 
     /* Cache: */
     UISettingsCacheGlobalExtension m_cache;
+    UIDataSettingsGlobalExtension m_data;
 };
 
 #endif /* !___UIGlobalSettingsExtension_h___ */

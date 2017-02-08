@@ -44,7 +44,7 @@ class UIExtensionPackageItem : public QITreeWidgetItem
 public:
 
     /* Extension package item constructor: */
-    UIExtensionPackageItem(QITreeWidget *pParent, const UISettingsCacheGlobalExtensionItem &data)
+    UIExtensionPackageItem(QITreeWidget *pParent, const UIDataSettingsGlobalExtensionItem &data)
         : QITreeWidgetItem(pParent)
         , m_data(data)
     {
@@ -93,7 +93,7 @@ public:
 
 private:
 
-    UISettingsCacheGlobalExtensionItem m_data;
+    UIDataSettingsGlobalExtensionItem m_data;
 };
 
 
@@ -241,11 +241,20 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
+    /* Clear cache initially: */
+    m_cache.clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalExtension oldData;
+
+    /* Gather old data: */
     const CExtPackManager &manager = vboxGlobal().virtualBox().GetExtensionPackManager();
     const CExtPackVector &packages = manager.GetInstalledExtPacks();
     for (int i = 0; i < packages.size(); ++i)
-        m_cache.m_items << fetchData(packages[i]);
+        oldData.m_items << fetchData(packages[i]);
+
+    /* Cache old data: */
+    m_cache.cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -253,9 +262,12 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsExtension::getFromCache()
 {
-    /* Fetch from cache: */
-    for (int i = 0; i < m_cache.m_items.size(); ++i)
-        new UIExtensionPackageItem(m_pPackagesTree, m_cache.m_items[i]);
+    /* Get old/new data from cache: */
+    m_data = m_cache.base();
+
+    /* Load old data from cache: */
+    for (int i = 0; i < m_data.m_items.size(); ++i)
+        new UIExtensionPackageItem(m_pPackagesTree, m_data.m_items[i]);
     /* If at least one item present: */
     if (m_pPackagesTree->topLevelItemCount())
         m_pPackagesTree->setCurrentItem(m_pPackagesTree->topLevelItem(0));
@@ -365,10 +377,10 @@ void UIGlobalSettingsExtension::sltInstallPackage()
         if (!strExtPackName.isNull())
         {
             /* Remove it from the cache. */
-            for (int i = 0; i < m_cache.m_items.size(); i++)
-                if (!strExtPackName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
+            for (int i = 0; i < m_data.m_items.size(); i++)
+                if (!strExtPackName.compare(m_data.m_items[i].m_strName, Qt::CaseInsensitive))
                 {
-                    m_cache.m_items.removeAt(i);
+                    m_data.m_items.removeAt(i);
                     break;
                 }
 
@@ -389,9 +401,9 @@ void UIGlobalSettingsExtension::sltInstallPackage()
             const CExtPack &package = manager.Find(strExtPackName);
             if (package.isOk())
             {
-                m_cache.m_items << fetchData(package);
+                m_data.m_items << fetchData(package);
 
-                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_cache.m_items.last());
+                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_data.m_items.last());
                 m_pPackagesTree->setCurrentItem(pItem);
                 m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
             }
@@ -432,11 +444,11 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 if (progress.isOk() && progress.GetResultCode() == 0)
                 {
                     /* Remove selected package from cache: */
-                    for (int i = 0; i < m_cache.m_items.size(); ++i)
+                    for (int i = 0; i < m_data.m_items.size(); ++i)
                     {
-                        if (!strSelectedPackageName.compare(m_cache.m_items[i].m_strName, Qt::CaseInsensitive))
+                        if (!strSelectedPackageName.compare(m_data.m_items[i].m_strName, Qt::CaseInsensitive))
                         {
-                            m_cache.m_items.removeAt(i);
+                            m_data.m_items.removeAt(i);
                             break;
                         }
                     }
@@ -452,9 +464,9 @@ void UIGlobalSettingsExtension::sltRemovePackage()
     }
 }
 
-UISettingsCacheGlobalExtensionItem UIGlobalSettingsExtension::fetchData(const CExtPack &package) const
+UIDataSettingsGlobalExtensionItem UIGlobalSettingsExtension::fetchData(const CExtPack &package) const
 {
-    UISettingsCacheGlobalExtensionItem item;
+    UIDataSettingsGlobalExtensionItem item;
     item.m_strName = package.GetName();
     item.m_strDescription = package.GetDescription();
     item.m_strVersion = package.GetVersion();
