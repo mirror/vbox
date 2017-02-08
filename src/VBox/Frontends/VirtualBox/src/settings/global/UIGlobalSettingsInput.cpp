@@ -53,8 +53,8 @@ enum UIHotKeyColumnIndex
 };
 
 
-/** Global settings: Input page: Shortcut cell cache structure. */
-class UIShortcutCacheCell : public QITableViewCell
+/** Global settings: Input page: Shortcut cell data structure. */
+class UIDataShortcutCell : public QITableViewCell
 {
     Q_OBJECT;
 
@@ -63,7 +63,7 @@ public:
     /** Constructs table cell.
       * @param  pParent  Brings the row this cell belongs too.
       * @param  strText  Brings the text describing this cell. */
-    UIShortcutCacheCell(QITableViewRow *pParent, const QString &strText)
+    UIDataShortcutCell(QITableViewRow *pParent, const QString &strText)
         : QITableViewCell(pParent)
         , m_strText(strText)
     {}
@@ -78,8 +78,8 @@ private:
 };
 
 
-/** Global settings: Input page: Shortcut cache structure. */
-class UIShortcutCacheRow : public QITableViewRow
+/** Global settings: Input page: Shortcut data structure. */
+class UIDataShortcutRow : public QITableViewRow
 {
     Q_OBJECT;
 
@@ -91,7 +91,7 @@ public:
       * @param  strDescription      Brings the deescription for the held sequence.
       * @param  strCurrentSequence  Brings the current held sequence.
       * @param  strDefaultSequence  Brings the default held sequence. */
-    UIShortcutCacheRow(QITableView *pParent,
+    UIDataShortcutRow(QITableView *pParent,
                        const QString &strKey,
                        const QString &strDescription,
                        const QString &strCurrentSequence,
@@ -107,7 +107,7 @@ public:
     }
 
     /** Constructs table row on the basis of @a other one. */
-    UIShortcutCacheRow(const UIShortcutCacheRow &other)
+    UIDataShortcutRow(const UIDataShortcutRow &other)
         : QITableViewRow(other.table())
         , m_strKey(other.key())
         , m_strDescription(other.description())
@@ -119,14 +119,14 @@ public:
     }
 
     /** Destructs table row. */
-    ~UIShortcutCacheRow()
+    ~UIDataShortcutRow()
     {
         /* Destroy cells: */
         destroyCells();
     }
 
     /** Copies a table row from @a other one. */
-    UIShortcutCacheRow &operator=(const UIShortcutCacheRow &other)
+    UIDataShortcutRow &operator=(const UIDataShortcutRow &other)
     {
         /* Reassign variables: */
         setTable(other.table());
@@ -144,7 +144,7 @@ public:
     }
 
     /** Returns whether this row equals to @a other. */
-    bool operator==(const UIShortcutCacheRow &other) const
+    bool operator==(const UIDataShortcutRow &other) const
     {
         /* Compare by the key only: */
         return m_strKey == other.key();
@@ -188,8 +188,8 @@ private:
     void createCells()
     {
         /* Create cells on the basis of description and current sequence: */
-        m_cells = qMakePair(new UIShortcutCacheCell(this, m_strDescription),
-                            new UIShortcutCacheCell(this, m_strCurrentSequence));
+        m_cells = qMakePair(new UIDataShortcutCell(this, m_strDescription),
+                            new UIDataShortcutCell(this, m_strCurrentSequence));
     }
 
     /** Destroys cells. */
@@ -212,28 +212,42 @@ private:
     QString m_strDefaultSequence;
 
     /** Holds the cell instances. */
-    QPair<UIShortcutCacheCell*, UIShortcutCacheCell*> m_cells;
+    QPair<UIDataShortcutCell*, UIDataShortcutCell*> m_cells;
 };
-typedef QList<UIShortcutCacheRow> UIShortcutCache;
+typedef QList<UIDataShortcutRow> UIShortcutCache;
 
 
-/** Global settings: Input page cache structure. */
-class UISettingsCacheGlobalInput
+/** Global settings: Input page data structure. */
+class UIDataSettingsGlobalInput
 {
 public:
 
     /** Constructs cache. */
-    UISettingsCacheGlobalInput()
+    UIDataSettingsGlobalInput()
         : m_fAutoCapture(false)
     {}
 
     /** Returns the shortcuts cache [full access]. */
     UIShortcutCache &shortcuts() { return m_shortcuts; }
+    /** Returns the shortcuts cache [read-only access]. */
+    const UIShortcutCache &shortcuts() const { return m_shortcuts; }
 
     /** Defines whether the keyboard auto-capture is @a fEnabled. */
     void setAutoCapture(bool fEnabled) { m_fAutoCapture = fEnabled; }
     /** Returns whether the keyboard auto-capture is enabled. */
     bool autoCapture() const { return m_fAutoCapture; }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalInput &other) const
+    {
+        return (m_shortcuts == other.m_shortcuts) &&
+               (m_fAutoCapture == other.m_fAutoCapture);
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalInput &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalInput &other) const { return !equal(other); }
 
 private:
 
@@ -260,7 +274,7 @@ public:
 
     /** Returns whether the @a item1 is more/less than the @a item2.
       * @note  Order depends on the one set through constructor, stored in m_order. */
-    bool operator()(const UIShortcutCacheRow &item1, const UIShortcutCacheRow &item2)
+    bool operator()(const UIDataShortcutRow &item1, const UIDataShortcutRow &item2)
     {
         switch (m_iColumn)
         {
@@ -400,7 +414,7 @@ QITableViewRow *UIHotKeyTableModel::childItem(int iIndex)
 void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
 {
     /* Load shortcuts: */
-    foreach (const UIShortcutCacheRow &item, shortcuts)
+    foreach (const UIDataShortcutRow &item, shortcuts)
     {
         /* Filter out unnecessary shortcuts: */
         if ((m_type == UIActionPoolType_Selector && item.key().startsWith(GUI_Input_MachineShortcuts)) ||
@@ -418,7 +432,7 @@ void UIHotKeyTableModel::load(const UIShortcutCache &shortcuts)
 void UIHotKeyTableModel::save(UIShortcutCache &shortcuts)
 {
     /* Save model items: */
-    foreach (const UIShortcutCacheRow &item, m_shortcuts)
+    foreach (const UIDataShortcutRow &item, m_shortcuts)
     {
         /* Search for corresponding cache item index: */
         int iIndexOfCacheItem = shortcuts.indexOf(item);
@@ -434,7 +448,7 @@ bool UIHotKeyTableModel::isAllShortcutsUnique()
 {
     /* Enumerate all the sequences: */
     QMap<QString, QString> usedSequences;
-    foreach (const UIShortcutCacheRow &item, m_shortcuts)
+    foreach (const UIDataShortcutRow &item, m_shortcuts)
         if (!item.currentSequence().isEmpty())
             usedSequences.insertMulti(item.currentSequence(), item.key());
     /* Enumerate all the duplicated sequences: */
@@ -623,7 +637,7 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
                     /* Get index: */
                     int iIndex = index.row();
                     /* Set sequence to shortcut: */
-                    UIShortcutCacheRow &filteredShortcut = m_filteredShortcuts[iIndex];
+                    UIDataShortcutRow &filteredShortcut = m_filteredShortcuts[iIndex];
                     int iShortcutIndex = m_shortcuts.indexOf(filteredShortcut);
                     if (iShortcutIndex != -1)
                     {
@@ -651,11 +665,11 @@ void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /* = Qt::Ascendin
     /* Sort whole the list: */
     qStableSort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutCacheItemFunctor(iColumn, order));
     /* Make sure host-combo item is always the first one: */
-    UIShortcutCacheRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+    UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
     int iIndexOfHostComboItem = m_shortcuts.indexOf(fakeHostComboItem);
     if (iIndexOfHostComboItem != -1)
     {
-        UIShortcutCacheRow hostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
+        UIDataShortcutRow hostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
         m_shortcuts.prepend(hostComboItem);
     }
     /* Apply the filter: */
@@ -683,7 +697,7 @@ void UIHotKeyTableModel::applyFilter()
     else
     {
         /* Check if the description matches the filter: */
-        foreach (const UIShortcutCacheRow &item, m_shortcuts)
+        foreach (const UIDataShortcutRow &item, m_shortcuts)
         {
             /* If neither description nor sequence matches the filter, skip item: */
             if (!item.description().contains(m_strFilter, Qt::CaseInsensitive) &&
@@ -875,9 +889,15 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
-    m_pCache->shortcuts() << UIShortcutCacheRow(m_pMachineTable, UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
-    const QMap<QString, UIShortcut>& shortcuts = gShortcutPool->shortcuts();
+    /* Clear cache initially: */
+    m_pCache->clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalInput oldData;
+
+    /* Gather old data: */
+    oldData.shortcuts() << UIDataShortcutRow(m_pMachineTable, UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
+    const QMap<QString, UIShortcut> &shortcuts = gShortcutPool->shortcuts();
     const QList<QString> shortcutKeys = shortcuts.keys();
     foreach (const QString &strShortcutKey, shortcutKeys)
     {
@@ -885,11 +905,14 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
         QITableView *pParent = strShortcutKey.startsWith(GUI_Input_MachineShortcuts) ? m_pMachineTable :
                                strShortcutKey.startsWith(GUI_Input_SelectorShortcuts) ? m_pSelectorTable : 0;
         AssertPtr(pParent);
-        m_pCache->shortcuts() << UIShortcutCacheRow(pParent, strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
-                                                    shortcut.sequence().toString(QKeySequence::NativeText),
-                                                    shortcut.defaultSequence().toString(QKeySequence::NativeText));
+        oldData.shortcuts() << UIDataShortcutRow(pParent, strShortcutKey, VBoxGlobal::removeAccelMark(shortcut.description()),
+                                                 shortcut.sequence().toString(QKeySequence::NativeText),
+                                                 shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
-    m_pCache->setAutoCapture(m_settings.autoCapture());
+    oldData.setAutoCapture(m_settings.autoCapture());
+
+    /* Cache old data: */
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -897,10 +920,13 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsInput::getFromCache()
 {
-    /* Fetch from cache: */
-    m_pSelectorModel->load(m_pCache->shortcuts());
-    m_pMachineModel->load(m_pCache->shortcuts());
-    m_pEnableAutoGrabCheckbox->setChecked(m_pCache->autoCapture());
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalInput &oldData = m_pCache->base();
+
+    /* Load old data from cache: */
+    m_pSelectorModel->load(oldData.shortcuts());
+    m_pMachineModel->load(oldData.shortcuts());
+    m_pEnableAutoGrabCheckbox->setChecked(oldData.autoCapture());
 
     /* Revalidate: */
     revalidate();
@@ -908,10 +934,16 @@ void UIGlobalSettingsInput::getFromCache()
 
 void UIGlobalSettingsInput::putToCache()
 {
-    /* Upload to cache: */
-    m_pSelectorModel->save(m_pCache->shortcuts());
-    m_pMachineModel->save(m_pCache->shortcuts());
-    m_pCache->setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
+    /* Prepare new data: */
+    UIDataSettingsGlobalInput newData = m_pCache->base();
+
+    /* Gather new data: */
+    m_pSelectorModel->save(newData.shortcuts());
+    m_pMachineModel->save(newData.shortcuts());
+    newData.setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
+
+    /* Cache new data: */
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
@@ -919,16 +951,40 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    UIShortcutCacheRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
-    int iIndexOfHostComboItem = m_pCache->shortcuts().indexOf(fakeHostComboItem);
-    if (iIndexOfHostComboItem != -1)
-        m_settings.setHostCombo(m_pCache->shortcuts()[iIndexOfHostComboItem].currentSequence());
-    QMap<QString, QString> sequences;
-    foreach (const UIShortcutCacheRow &item, m_pCache->shortcuts())
-        sequences.insert(item.key(), item.currentSequence());
-    gShortcutPool->setOverrides(sequences);
-    m_settings.setAutoCapture(m_pCache->autoCapture());
+    // WORKAROUND:
+    // For now we are using out-of-the-box Qt functions to search for a corresponding shortcuts.
+    // Those functions assumes that container elements implement operator==() which we can use
+    // either for "index-match" (to just find shortcut item independent on parameters) or for
+    // "full-match" (to find exact shortcut item including all parameters) but not for both,
+    // so since "index-match" is most commonly used, we need separate "full-match" functor
+    // to check whether the shortcut item was changed, for now we can't do that.
+
+    /* Save host-combo shortcut from cache: */
+    UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+    //const int iIndexOfHostComboItemBase = m_pCache->base().shortcuts().indexOf(fakeHostComboItem);
+    const int iIndexOfHostComboItemData = m_pCache->data().shortcuts().indexOf(fakeHostComboItem);
+    if (   iIndexOfHostComboItemData != -1
+        //&& iIndexOfHostComboItemData != iIndexOfHostComboItemBase
+        )
+        m_settings.setHostCombo(m_pCache->data().shortcuts().at(iIndexOfHostComboItemData).currentSequence());
+
+    /* Save other shortcut sequences from cache: */
+    QMap<QString, QString> sequencesBase;
+    QMap<QString, QString> sequencesData;
+    foreach (const UIDataShortcutRow &item, m_pCache->base().shortcuts())
+        sequencesBase.insert(item.key(), item.currentSequence());
+    foreach (const UIDataShortcutRow &item, m_pCache->data().shortcuts())
+        sequencesData.insert(item.key(), item.currentSequence());
+    if (sequencesData != sequencesBase)
+        gShortcutPool->setOverrides(sequencesData);
+
+    /* Save new data from cache: */
+    if (m_pCache->wasChanged())
+    {
+        /* Save other things from cache: */
+        if (m_pCache->data().autoCapture() != m_pCache->base().autoCapture())
+            m_settings.setAutoCapture(m_pCache->data().autoCapture());
+    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -963,14 +1019,12 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-/* Navigation stuff: */
 void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pTabWidget);
     setTabOrder(m_pMachineTable, m_pEnableAutoGrabCheckbox);
 }
 
-/* Translation stuff: */
 void UIGlobalSettingsInput::retranslateUi()
 {
     /* Translate uic generated strings: */

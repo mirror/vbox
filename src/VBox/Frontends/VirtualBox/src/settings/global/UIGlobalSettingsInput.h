@@ -25,9 +25,10 @@
 /* Forward declartions: */
 class QTabWidget;
 class QLineEdit;
-class UISettingsCacheGlobalInput;
+class UIDataSettingsGlobalInput;
 class UIHotKeyTableModel;
 class UIHotKeyTable;
+typedef UISettingsCache<UIDataSettingsGlobalInput> UISettingsCacheGlobalInput;
 
 
 /** Global settings: Input page. */
