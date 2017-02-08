@@ -468,6 +468,9 @@ static void directSoundPlayInterfaceRelease(PDSOUNDSTREAM pStreamDS)
 
 static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
+    AssertPtrReturn(pThis,     E_POINTER);
+    AssertPtrReturn(pStreamDS, E_POINTER);
+
     if (pStreamDS->Out.pDS != NULL)
     {
         DSLOG(("DSound: DirectSound instance already exists\n"));
@@ -508,7 +511,7 @@ static HRESULT directSoundPlayInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREA
 
 static HRESULT directSoundPlayClose(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    AssertPtrReturn(pThis, E_POINTER);
+    AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
 
     DSLOG(("DSound: Closing playback stream %p, buffer %p\n", pStreamDS, pStreamDS->Out.pDSB));
@@ -635,6 +638,7 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         DSBCAPS bc;
         RT_ZERO(bc);
         bc.dwSize = sizeof(bc);
+
         hr = IDirectSoundBuffer8_GetCaps(pStreamDS->Out.pDSB, &bc);
         if (FAILED(hr))
         {
@@ -769,8 +773,9 @@ static void dsoundPlayClearSamples(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
 static HRESULT directSoundPlayGetStatus(PDRVHOSTDSOUND pThis, LPDIRECTSOUNDBUFFER8 pDSB, DWORD *pdwStatus)
 {
-    AssertPtr(pThis);
+    AssertPtrReturn(pThis, E_POINTER);
     AssertPtrReturn(pDSB,  E_POINTER);
+
     AssertPtrNull(pdwStatus);
 
     DWORD dwStatus = 0;
@@ -842,7 +847,7 @@ static HRESULT directSoundPlayStop(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
 
 static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 {
-    AssertPtrReturn(pThis,         E_POINTER);
+    AssertPtrReturn(pThis,     E_POINTER);
     AssertPtrReturn(pStreamDS, E_POINTER);
 
     HRESULT hr;
@@ -885,11 +890,10 @@ static HRESULT directSoundPlayStart(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamD
  * DirectSoundCapture
  */
 
-static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pThis,     NULL);
-    AssertPtrReturn(pStreamDS, NULL);
-    AssertPtrReturn(pStreamDS->pCfg, NULL);
+    AssertPtrReturn(pThis, NULL);
+    AssertPtrReturn(pCfg,  NULL);
 
     int rc = VINF_SUCCESS;
 
@@ -898,7 +902,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pSt
     {
         PDSOUNDDEV pDev = NULL;
 
-        switch (pStreamDS->pCfg->DestSource.Source)
+        switch (pCfg->DestSource.Source)
         {
             case PDMAUDIORECSOURCE_LINE:
                 /*
@@ -931,7 +935,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pSt
             && pDev)
         {
             DSLOG(("DSound: Guest source '%s' is using host recording device '%s'\n",
-                   DrvAudioHlpRecSrcToStr(pStreamDS->pCfg->DestSource.Source), pDev->pszName));
+                   DrvAudioHlpRecSrcToStr(pCfg->DestSource.Source), pDev->pszName));
 
             pGUID = &pDev->Guid;
         }
@@ -947,7 +951,7 @@ static LPCGUID dsoundCaptureSelectDevice(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pSt
 
     /* This always has to be in the release log. */
     LogRel(("DSound: Guest source '%s' is using host recording device with GUID '%s'\n",
-            DrvAudioHlpRecSrcToStr(pStreamDS->pCfg->DestSource.Source), pszGUID ? pszGUID: "{?}"));
+            DrvAudioHlpRecSrcToStr(pCfg->DestSource.Source), pszGUID ? pszGUID: "{?}"));
 
     if (pszGUID)
     {
@@ -970,8 +974,12 @@ static void directSoundCaptureInterfaceRelease(PDSOUNDSTREAM pStreamDS)
 }
 
 
-static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
+static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, PPDMAUDIOSTREAMCFG pCfg)
 {
+    AssertPtrReturn(pThis,     E_POINTER);
+    AssertPtrReturn(pStreamDS, E_POINTER);
+    AssertPtrReturn(pCfg,      E_POINTER);
+
     if (pStreamDS->In.pDSC != NULL)
     {
         DSLOG(("DSound: DirectSoundCapture instance already exists\n"));
@@ -986,7 +994,7 @@ static HRESULT directSoundCaptureInterfaceCreate(PDRVHOSTDSOUND pThis, PDSOUNDST
     }
     else
     {
-        LPCGUID pGUID = dsoundCaptureSelectDevice(pThis, pStreamDS);
+        LPCGUID pGUID = dsoundCaptureSelectDevice(pThis, pCfg);
         hr = IDirectSoundCapture_Initialize(pStreamDS->In.pDSC, pGUID);
         if (FAILED(hr))
         {
@@ -1060,7 +1068,7 @@ static HRESULT directSoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStrea
     if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
-    HRESULT hr = directSoundCaptureInterfaceCreate(pThis, pStreamDS);
+    HRESULT hr = directSoundCaptureInterfaceCreate(pThis, pStreamDS, pCfgReq);
     if (FAILED(hr))
         return hr;
 
@@ -1279,6 +1287,7 @@ static void dsoundDeviceRemove(PDSOUNDDEV pDev)
         RTListNodeRemove(&pDev->Node);
 
         RTMemFree(pDev);
+        pDev = NULL;
     }
 }
 
@@ -1618,11 +1627,10 @@ int drvHostDSoundStreamPlay(PPDMIHOSTAUDIO pInterface,
 
         directSoundPlayUnlock(pThis, pDSB, pv1, pv2, cb1, cb2);
 
-        pStreamDS->Out.offPlayWritePos = (pStreamDS->Out.offPlayWritePos + PDMAUDIOPCMPROPS_S2B(pProps, cbWrittenTotal))
-                                       % cbBuffer;
+        pStreamDS->Out.offPlayWritePos = (pStreamDS->Out.offPlayWritePos + cbWrittenTotal) % cbBuffer;
 
         DSLOGF(("DSound: %RU32/%RU32, buffer write pos %ld, rc=%Rrc\n",
-                PDMAUDIOPCMPROPS_S2B(pProps, cbWrittenTotal), cbLive, pStreamDS->Out.offPlayWritePos, rc));
+                cbWrittenTotal, cbLive, pStreamDS->Out.offPlayWritePos, rc));
 
         if (pStreamDS->Out.fRestartPlayback)
         {
