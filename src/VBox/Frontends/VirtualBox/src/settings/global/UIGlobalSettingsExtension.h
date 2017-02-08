@@ -151,7 +151,6 @@ private:
 
     /* Cache: */
     UISettingsCacheGlobalExtension m_cache;
-    UIDataSettingsGlobalExtension m_data;
 };
 
 #endif /* !___UIGlobalSettingsExtension_h___ */

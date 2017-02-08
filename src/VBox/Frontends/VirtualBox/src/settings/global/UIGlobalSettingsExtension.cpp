@@ -262,12 +262,12 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsExtension::getFromCache()
 {
-    /* Get old/new data from cache: */
-    m_data = m_cache.base();
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalExtension &oldData = m_cache.base();
 
     /* Load old data from cache: */
-    for (int i = 0; i < m_data.m_items.size(); ++i)
-        new UIExtensionPackageItem(m_pPackagesTree, m_data.m_items[i]);
+    for (int i = 0; i < oldData.m_items.size(); ++i)
+        new UIExtensionPackageItem(m_pPackagesTree, oldData.m_items.at(i));
     /* If at least one item present: */
     if (m_pPackagesTree->topLevelItemCount())
         m_pPackagesTree->setCurrentItem(m_pPackagesTree->topLevelItem(0));
@@ -377,12 +377,14 @@ void UIGlobalSettingsExtension::sltInstallPackage()
         if (!strExtPackName.isNull())
         {
             /* Remove it from the cache. */
-            for (int i = 0; i < m_data.m_items.size(); i++)
-                if (!strExtPackName.compare(m_data.m_items[i].m_strName, Qt::CaseInsensitive))
+            for (int i = 0; i < m_cache.data().m_items.size(); ++i)
+            {
+                if (!strExtPackName.compare(m_cache.data().m_items.at(i).m_strName, Qt::CaseInsensitive))
                 {
-                    m_data.m_items.removeAt(i);
+                    m_cache.data().m_items.removeAt(i);
                     break;
                 }
+            }
 
             /* Remove it from the tree. */
             const int cItems = m_pPackagesTree->topLevelItemCount();
@@ -401,9 +403,9 @@ void UIGlobalSettingsExtension::sltInstallPackage()
             const CExtPack &package = manager.Find(strExtPackName);
             if (package.isOk())
             {
-                m_data.m_items << fetchData(package);
+                m_cache.data().m_items << fetchData(package);
 
-                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_data.m_items.last());
+                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_cache.data().m_items.last());
                 m_pPackagesTree->setCurrentItem(pItem);
                 m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
             }
@@ -444,11 +446,11 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 if (progress.isOk() && progress.GetResultCode() == 0)
                 {
                     /* Remove selected package from cache: */
-                    for (int i = 0; i < m_data.m_items.size(); ++i)
+                    for (int i = 0; i < m_cache.data().m_items.size(); ++i)
                     {
-                        if (!strSelectedPackageName.compare(m_data.m_items[i].m_strName, Qt::CaseInsensitive))
+                        if (!strSelectedPackageName.compare(m_cache.data().m_items.at(i).m_strName, Qt::CaseInsensitive))
                         {
-                            m_data.m_items.removeAt(i);
+                            m_cache.data().m_items.removeAt(i);
                             break;
                         }
                     }

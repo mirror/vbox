@@ -62,6 +62,8 @@ public:
     const CacheData& base() const { return m_value.first; }
     /* Returns the NON-modifiable REFERENCE to the current cached data: */
     const CacheData& data() const { return m_value.second; }
+    /* Returns the modifiable REFERENCE to the current cached data: */
+    CacheData &data() { return m_value.second; }
 
     /* We assume that old cache item was removed if
      * initial data was set but current data was NOT set.
