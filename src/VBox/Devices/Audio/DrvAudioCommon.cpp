@@ -140,7 +140,7 @@ PDMAUDIOFMT DrvAudioAudFmtBitsToAudFmt(uint8_t cBits, bool fSigned)
  * @param   cbBuf                   Size (in bytes) of the buffer.
  * @param   cSamples                Number of audio samples to clear in the buffer.
  */
-void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
+void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMProps, void *pvBuf, size_t cbBuf, uint32_t cSamples)
 {
     AssertPtrReturnVoid(pPCMProps);
     AssertPtrReturnVoid(pvBuf);
@@ -272,7 +272,7 @@ void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev)
  * @param   pDev                Audio device entry to duplicate.
  * @param   fCopyUserData       Whether to also copy the user data portion or not.
  */
-PPDMAUDIODEVICE DrvAudioHlpDeviceDup(const PPDMAUDIODEVICE pDev, bool fCopyUserData)
+PPDMAUDIODEVICE DrvAudioHlpDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData)
 {
     AssertPtrReturn(pDev, NULL);
 
@@ -362,7 +362,7 @@ int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev)
  *          Must be free'd with DrvAudioHlpDeviceEnumFree().
  * @param   pDevEnm             Device enumeration to duplicate.
  */
-PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
+PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(PPDMAUDIODEVICEENUM pDevEnm)
 {
     AssertPtrReturn(pDevEnm, NULL);
 
@@ -409,7 +409,7 @@ PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm)
  * @param   enmUsage            Which entries to copy. Specify PDMAUDIODIR_ANY to copy all entries.
  * @param   fCopyUserData       Whether to also copy the user data portion or not.
  */
-int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm,
+int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm,
                                 PDMAUDIODIR enmUsage, bool fCopyUserData)
 {
     AssertPtrReturn(pDstDevEnm, VERR_INVALID_POINTER);
@@ -451,7 +451,7 @@ int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIOD
  * @param   pDstDevEnm          Destination enumeration to store enumeration entries into.
  * @param   pSrcDevEnm          Source enumeration to use.
  */
-int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm)
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm)
 {
     return DrvAudioHlpDeviceEnumCopyEx(pDstDevEnm, pSrcDevEnm, PDMAUDIODIR_ANY, false /* fCopyUserData */);
 }
@@ -464,7 +464,7 @@ int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEV
  * @param   pDevEnm             Device enumeration to get default device for.
  * @param   enmUsage            Usage to get default device for.
  */
-PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
+PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmUsage)
 {
     AssertPtrReturn(pDevEnm, NULL);
 
@@ -490,7 +490,7 @@ PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM 
  * @param  pszDesc              Logging description.
  * @param  pDevEnm              Device enumeration to log.
  */
-void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM pDevEnm)
+void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm)
 {
     AssertPtrReturnVoid(pszDesc);
     AssertPtrReturnVoid(pDevEnm);
@@ -617,7 +617,7 @@ char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags)
  * @returns Stringified recording source, or "Unknown", if not found.
  * @param   enmRecSrc           Recording source to convert.
  */
-const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSOURCE enmRecSrc)
+const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSrc)
 {
     switch (enmRecSrc)
     {
@@ -766,7 +766,7 @@ PDMAUDIOFMT DrvAudioHlpStrToAudFmt(const char *pszFmt)
  * @param   pProps1             First properties to compare.
  * @param   pProps2             Second properties to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps1, const PPDMAUDIOPCMPROPS pProps2)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps1, PPDMAUDIOPCMPROPS pProps2)
 {
     AssertPtrReturn(pProps1, false);
     AssertPtrReturn(pProps2, false);
@@ -815,10 +815,10 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
     if (!fValid)
         return false;
 
-    fValid &= pProps->uHz > 0;
-    fValid &= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
+    fValid |= pProps->uHz > 0;
+    fValid |= pProps->cShift == PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pProps->cBits, pProps->cChannels);
 
-    fValid &= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
+    fValid |= pProps->fSwapEndian == false; /** @todo Handling Big Endian audio data is not supported yet. */
 
     return fValid;
 }
@@ -831,7 +831,7 @@ bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps)
  * @param   pProps              PCM properties to compare.
  * @param   pCfg                Stream configuration to compare.
  */
-bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIOSTREAMCFG pCfg)
+bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pProps, false);
     AssertPtrReturn(pCfg,   false);
@@ -846,7 +846,7 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
  * @param   pPCMProps           Pointer to PCM properties to convert.
  * @param   pCfg                Pointer to audio stream configuration to store result into.
  */
-int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
+int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
@@ -938,7 +938,6 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
         pDst = NULL;
     }
 
-    AssertPtr(pDst);
     return pDst;
 }
 
@@ -947,7 +946,7 @@ PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg)
  *
  * @param   pCfg                Stream configuration to log.
  */
-void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg)
+void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturnVoid(pCfg);
 
@@ -1003,7 +1002,7 @@ uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels)
  *
  * @remark
  */
-uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps)
+uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOPCMPROPS pProps)
 {
     return DrvAudioHlpCalcBitrate(pProps->cBits, pProps->uHz, pProps->cChannels);
 }
@@ -1137,7 +1136,7 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
  * @param   pProps              PCM properties to use.
  * @param   fFlags              Audio file flags.
  */
-int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, const PPDMAUDIOPCMPROPS pProps,
+int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMAUDIOPCMPROPS pProps,
                            PDMAUDIOFILEFLAGS fFlags)
 {
     AssertPtrReturn(pFile,   VERR_INVALID_POINTER);

@@ -2673,7 +2673,6 @@ static int hdaSDFMTToStrmCfg(uint32_t u32SDFMT, PPDMAUDIOSTREAMCFG pStrmCfg)
         pStrmCfg->Props.cChannels = (u32SDFMT & 0xf) + 1;
         pStrmCfg->Props.cBits     = cBits;
         pStrmCfg->Props.fSigned   = true;
-        pStrmCfg->Props.cShift    = PDMAUDIOPCMPROPS_MAKE_SHIFT_PARMS(pStrmCfg->Props.cBits, pStrmCfg->Props.cChannels);
     }
 
 # undef EXTRACT_VALUE
