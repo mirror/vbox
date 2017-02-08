@@ -24,9 +24,33 @@
 #include "UIUpdateDefs.h"
 
 
-/** Global settings: Update page cache structure. */
-struct UISettingsCacheGlobalUpdate
+/** Global settings: Update page data structure. */
+struct UIDataSettingsGlobalUpdate
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalUpdate()
+        : m_fCheckEnabled(false)
+        , m_periodIndex(VBoxUpdateData::PeriodUndefined)
+        , m_branchIndex(VBoxUpdateData::BranchStable)
+        , m_strDate(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalUpdate &other) const
+    {
+        return true
+               && (m_fCheckEnabled == other.m_fCheckEnabled)
+               && (m_periodIndex == other.m_periodIndex)
+               && (m_branchIndex == other.m_branchIndex)
+               && (m_strDate == other.m_strDate)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalUpdate &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalUpdate &other) const { return !equal(other); }
+
     /** Holds whether the update check is enabled. */
     bool m_fCheckEnabled;
     /** Holds the update check period. */
@@ -36,6 +60,7 @@ struct UISettingsCacheGlobalUpdate
     /** Holds the next update date. */
     QString m_strDate;
 };
+typedef UISettingsCache<UIDataSettingsGlobalUpdate> UISettingsCacheGlobalUpdate;
 
 
 /** Global settings: Update page. */
@@ -75,7 +100,6 @@ private slots:
     /* Handlers: */
     void sltUpdaterToggled(bool fEnabled);
     void sltPeriodActivated();
-    void sltBranchToggled();
 
 private:
 
@@ -85,7 +109,6 @@ private:
 
     /* Variables: */
     QRadioButton *m_pLastChosenRadio;
-    bool m_fChanged;
 
     /* Cache: */
     UISettingsCacheGlobalUpdate m_cache;
