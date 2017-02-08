@@ -180,7 +180,6 @@ private:
 /* Language page constructor: */
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_fPolished(false)
-    , m_fIsLanguageChanged(false)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsLanguage::setupUi(this);
@@ -209,8 +208,17 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
-    m_cache.m_strLanguageId = m_settings.languageId();
+    /* Clear cache initially: */
+    m_cache.clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalLanguage oldData;
+
+    /* Gather old data: */
+    oldData.m_strLanguageId = m_settings.languageId();
+
+    /* Cache old data: */
+    m_cache.cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -218,17 +226,26 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsLanguage::getFromCache()
 {
-    /* Fetch from cache: */
-    reload(m_cache.m_strLanguageId);
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalLanguage &oldData = m_cache.base();
+
+    /* Load old data from cache: */
+    reload(oldData.m_strLanguageId);
 }
 
 void UIGlobalSettingsLanguage::putToCache()
 {
-    /* Upload to cache: */
+    /* Prepare new data: */
+    UIDataSettingsGlobalLanguage newData = m_cache.base();
+
+    /* Gather new data: */
     QTreeWidgetItem *pCurrentItem = m_pLanguageTree->currentItem();
     Assert(pCurrentItem);
     if (pCurrentItem)
-        m_cache.m_strLanguageId = pCurrentItem->text(1);
+        newData.m_strLanguageId = pCurrentItem->text(1);
+
+    /* Cache new data: */
+    m_cache.cacheCurrentData(newData);
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -238,9 +255,13 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    if (m_fIsLanguageChanged)
-        m_settings.setLanguageId(m_cache.m_strLanguageId);
+    /* Save new data from cache: */
+    if (m_cache.wasChanged())
+    {
+        /* Save from cache: */
+        if (m_cache.data().m_strLanguageId != m_cache.base().m_strLanguageId)
+            m_settings.setLanguageId(m_cache.data().m_strLanguageId);
+    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -338,7 +359,6 @@ void UIGlobalSettingsLanguage::reload(const QString &strLangId)
 
     m_pLanguageTree->sortItems(0, Qt::AscendingOrder);
     m_pLanguageTree->scrollToItem(pItem);
-    m_fIsLanguageChanged = false;
 }
 
 void UIGlobalSettingsLanguage::sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter)
@@ -372,7 +392,5 @@ void UIGlobalSettingsLanguage::sltCurrentLanguageChanged(QTreeWidgetItem *pItem)
                              .arg(pItem->text(2))
                              .arg(tr("Author(s):"))
                              .arg(pItem->text(3)));
-
-    m_fIsLanguageChanged = true;
 }
 

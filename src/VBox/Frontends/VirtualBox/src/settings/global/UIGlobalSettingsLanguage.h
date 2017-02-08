@@ -23,12 +23,31 @@
 #include "UIGlobalSettingsLanguage.gen.h"
 
 
-/** Global settings: Language page cache structure. */
-struct UISettingsCacheGlobalLanguage
+/** Global settings: Language page data structure. */
+struct UIDataSettingsGlobalLanguage
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalLanguage()
+        : m_strLanguageId(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalLanguage &other) const
+    {
+        return true
+               && (m_strLanguageId == other.m_strLanguageId)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalLanguage &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalLanguage &other) const { return !equal(other); }
+
     /** Holds the current language id. */
     QString m_strLanguageId;
 };
+typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLanguage;
 
 
 /** Global settings: Language page. */
@@ -82,7 +101,6 @@ private:
 
     /* Variables: */
     bool m_fPolished;
-    bool m_fIsLanguageChanged;
 
     /* Cache: */
     UISettingsCacheGlobalLanguage m_cache;
