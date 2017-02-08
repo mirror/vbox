@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2016 Oracle Corporation
+ * Copyright (C) 2012-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,21 +15,25 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsDisplay_h__
-#define __UIGlobalSettingsDisplay_h__
+#ifndef ___UIGlobalSettingsDisplay_h___
+#define ___UIGlobalSettingsDisplay_h___
 
-/* Local includes: */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsDisplay.gen.h"
 
-/* Global settings / Display page / Cache: */
+
+/** Global settings: Display page cache structure. */
 struct UISettingsCacheGlobalDisplay
 {
+    /** Holds the maximum guest resolution or preset name. */
     QString m_strMaxGuestResolution;
+    /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool m_fActivateHoveredMachineWindow;
 };
 
-/* Global settings / Display page: */
+
+/** Global settings: Display page. */
 class UIGlobalSettingsDisplay : public UISettingsPageGlobal, public Ui::UIGlobalSettingsDisplay
 {
     Q_OBJECT;
@@ -75,5 +79,5 @@ private:
     UISettingsCacheGlobalDisplay m_cache;
 };
 
-#endif // __UIGlobalSettingsDisplay_h__
+#endif /* !___UIGlobalSettingsDisplay_h___ */
 

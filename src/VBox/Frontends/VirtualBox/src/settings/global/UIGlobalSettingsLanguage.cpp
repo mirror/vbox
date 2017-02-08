@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,7 @@ extern const char *gVBoxLangFileBase;
 extern const char *gVBoxLangFileExt;
 extern const char *gVBoxLangIDRegExp;
 extern const char *gVBoxBuiltInLangName;
+
 
 /* Language item: */
 class UILanguageItem : public QITreeWidgetItem
@@ -175,6 +176,7 @@ private:
     bool m_fBuiltIn : 1;
 };
 
+
 /* Language page constructor: */
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_fPolished(false)
@@ -202,8 +204,6 @@ UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -216,16 +216,12 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsLanguage::getFromCache()
 {
     /* Fetch from cache: */
     reload(m_cache.m_strLanguageId);
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsLanguage::putToCache()
 {
     /* Upload to cache: */

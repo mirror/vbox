@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,16 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsInput_h__
-#define __UIGlobalSettingsInput_h__
-
-/* Qt includes: */
-#include <QAbstractTableModel>
+#ifndef ___UIGlobalSettingsInput_h___
+#define ___UIGlobalSettingsInput_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsInput.gen.h"
-#include "UIActionPool.h"
 
 /* Forward declartions: */
 class QTabWidget;
@@ -34,7 +30,7 @@ class UIHotKeyTableModel;
 class UIHotKeyTable;
 
 
-/* Global settings / Input page: */
+/** Global settings: Input page. */
 class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSettingsInput
 {
     Q_OBJECT;
@@ -93,5 +89,5 @@ private:
     UISettingsCacheGlobalInput *m_pCache;
 };
 
-#endif // __UIGlobalSettingsInput_h__
+#endif /* !___UIGlobalSettingsInput_h___ */
 

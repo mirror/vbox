@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,22 +15,27 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsGeneral_h__
-#define __UIGlobalSettingsGeneral_h__
+#ifndef ___UIGlobalSettingsGeneral_h___
+#define ___UIGlobalSettingsGeneral_h___
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsGeneral.gen.h"
 
-/* Global settings / General page / Cache: */
+
+/** Global settings: General page cache structure. */
 struct UISettingsCacheGlobalGeneral
 {
+    /** Holds the default machine folder path. */
     QString m_strDefaultMachineFolder;
+    /** Holds the VRDE authentication library name. */
     QString m_strVRDEAuthLibrary;
+    /** Holds whether host screen-saver should be disabled. */
     bool m_fHostScreenSaverDisabled;
 };
 
-/* Global settings / General page: */
+
+/** Global settings: General page. */
 class UIGlobalSettingsGeneral : public UISettingsPageGlobal, public Ui::UIGlobalSettingsGeneral
 {
     Q_OBJECT;
@@ -68,4 +73,5 @@ private:
     UISettingsCacheGlobalGeneral m_cache;
 };
 
-#endif // __UIGlobalSettingsGeneral_h__
+#endif /* !___UIGlobalSettingsGeneral_h___ */
+

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2016 Oracle Corporation
+ * Copyright (C) 2012-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,6 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* Display page constructor: */
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
 {
     /* Apply UI decorations: */
@@ -48,8 +47,6 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -63,8 +60,6 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsDisplay::getFromCache()
 {
     /* Fetch from cache: */
@@ -90,12 +85,9 @@ void UIGlobalSettingsDisplay::getFromCache()
         m_pResolutionWidthSpin->setValue(iWidth);
         m_pResolutionHeightSpin->setValue(iHeight);
     }
-    /* Set state for corresponding check-box: */
     m_pCheckBoxActivateOnMouseHover->setChecked(m_cache.m_fActivateHoveredMachineWindow);
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsDisplay::putToCache()
 {
     /* Upload to cache: */
@@ -116,12 +108,9 @@ void UIGlobalSettingsDisplay::putToCache()
         /* Else if both field attributes are non-zeroes => resolution set to "fixed": */
         m_cache.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
     }
-    /* Acquire state from corresponding check-box: */
     m_cache.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */

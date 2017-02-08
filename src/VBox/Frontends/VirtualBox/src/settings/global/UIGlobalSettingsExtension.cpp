@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@ public:
         /* workaround for http://qt.gitorious.org/qt/qt/commit/7fc63dd0ff368a637dcd17e692b9d6b26278b538 */
         if (m_data.m_strVersion.contains(QRegExp("[-_]")))
             strAppend = m_data.m_strVersion.section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
-        setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_strRevision).arg(strAppend));
+        setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_uRevision).arg(strAppend));
 
         /* Tool-tip: */
         QString strTip = m_data.m_strDescription;
@@ -96,7 +96,7 @@ private:
     UISettingsCacheGlobalExtensionItem m_data;
 };
 
-/* Extension page constructor: */
+
 UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     : m_pActionAdd(0), m_pActionRemove(0)
 {
@@ -236,8 +236,6 @@ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QStri
         *pstrExtPackName = strPackName;
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -253,8 +251,6 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsExtension::getFromCache()
 {
     /* Fetch from cache: */
@@ -267,15 +263,11 @@ void UIGlobalSettingsExtension::getFromCache()
     sltHandleCurrentItemChange(m_pPackagesTree->currentItem());
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsExtension::putToCache()
 {
-    /* Nothing to put to cache... */
+    /* Nothing to upload to cache... */
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -466,7 +458,7 @@ UISettingsCacheGlobalExtensionItem UIGlobalSettingsExtension::fetchData(const CE
     item.m_strName = package.GetName();
     item.m_strDescription = package.GetDescription();
     item.m_strVersion = package.GetVersion();
-    item.m_strRevision = package.GetRevision();
+    item.m_uRevision = package.GetRevision();
     item.m_fIsUsable = package.GetUsable();
     if (!item.m_fIsUsable)
         item.m_strWhyUnusable = package.GetWhyUnusable();

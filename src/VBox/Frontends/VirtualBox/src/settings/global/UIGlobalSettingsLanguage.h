@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,20 +15,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsLanguage_h__
-#define __UIGlobalSettingsLanguage_h__
+#ifndef ___UIGlobalSettingsLanguage_h___
+#define ___UIGlobalSettingsLanguage_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsLanguage.gen.h"
 
-/* Global settings / Language page / Cache: */
+
+/** Global settings: Language page cache structure. */
 struct UISettingsCacheGlobalLanguage
 {
+    /** Holds the current language id. */
     QString m_strLanguageId;
 };
 
-/* Global settings / Language page: */
+
+/** Global settings: Language page. */
 class UIGlobalSettingsLanguage : public UISettingsPageGlobal, public Ui::UIGlobalSettingsLanguage
 {
     Q_OBJECT;
@@ -85,4 +88,5 @@ private:
     UISettingsCacheGlobalLanguage m_cache;
 };
 
-#endif // __UIGlobalSettingsLanguage_h__
+#endif /* !___UIGlobalSettingsLanguage_h___ */
+

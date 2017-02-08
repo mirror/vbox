@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,8 +47,6 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -63,8 +61,6 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsGeneral::getFromCache()
 {
     /* Fetch from cache: */
@@ -73,8 +69,6 @@ void UIGlobalSettingsGeneral::getFromCache()
     m_pCheckBoxHostScreenSaver->setChecked(m_cache.m_fHostScreenSaverDisabled);
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsGeneral::putToCache()
 {
     /* Upload to cache: */
@@ -83,8 +77,6 @@ void UIGlobalSettingsGeneral::putToCache()
     m_cache.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,26 +15,35 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsProxy_h__
-#define __UIGlobalSettingsProxy_h__
+#ifndef ___UIGlobalSettingsProxy_h___
+#define ___UIGlobalSettingsProxy_h___
 
-/* Local includes */
-#include "VBoxUtils.h"
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsProxy.gen.h"
+#include "VBoxUtils.h"
 
-/* Global settings / Proxy page / Cache: */
+
+/** Global settings: Proxy page cache structure. */
 struct UISettingsCacheGlobalProxy
 {
+    /** Constructs data. */
     UISettingsCacheGlobalProxy()
         : m_enmProxyState(UIProxyManager::ProxyState_Auto)
+        , m_strProxyHost(QString())
+        , m_strProxyPort(QString())
     {}
+
+    /** Holds the proxy state. */
     UIProxyManager::ProxyState m_enmProxyState;
+    /** Holds the proxy host. */
     QString m_strProxyHost;
+    /** Holds the proxy port. */
     QString m_strProxyPort;
 };
 
-/* Global settings / Proxy page: */
+
+/** Global settings: Proxy page. */
 class UIGlobalSettingsProxy : public UISettingsPageGlobal, public Ui::UIGlobalSettingsProxy
 {
     Q_OBJECT;
@@ -80,5 +89,5 @@ private:
     UISettingsCacheGlobalProxy m_cache;
 };
 
-#endif // __UIGlobalSettingsProxy_h__
+#endif /* !___UIGlobalSettingsProxy_h___ */
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,14 +45,12 @@ UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Fill internal variables with corresponding values: */
+    /* Load to cache: */
     VBoxUpdateData updateData(gEDataManager->applicationUpdateData());
     m_cache.m_fCheckEnabled = !updateData.isNoNeedToCheck();
     m_cache.m_periodIndex = updateData.periodIndex();
@@ -63,11 +61,9 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsUpdate::getFromCache()
 {
-    /* Apply internal variables data to QWidget(s): */
+    /* Fetch from cache: */
     m_pCheckBoxUpdate->setChecked(m_cache.m_fCheckEnabled);
     if (m_pCheckBoxUpdate->isChecked())
     {
@@ -86,17 +82,13 @@ void UIGlobalSettingsUpdate::getFromCache()
     m_fChanged = false;
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsUpdate::putToCache()
 {
-    /* Gather internal variables data from QWidget(s): */
+    /* Upload to cache: */
     m_cache.m_periodIndex = periodType();
     m_cache.m_branchIndex = branchType();
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
 {
     /* Test settings altering flag: */
@@ -106,7 +98,7 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Gather corresponding values from internal variables: */
+    /* Save from cache: */
     VBoxUpdateData newData(m_cache.m_periodIndex, m_cache.m_branchIndex);
     gEDataManager->setApplicationUpdateData(newData.data());
 

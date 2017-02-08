@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2016 Oracle Corporation
+ * Copyright (C) 2011-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,10 +19,10 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Global includes */
+/* Qt includes: */
 # include <QRegExpValidator>
 
-/* Local includes */
+/* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIGlobalSettingsProxy.h"
 # include "VBoxUtils.h"
@@ -30,7 +30,6 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
-/* General page constructor: */
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
 {
     /* Apply UI decorations: */
@@ -54,8 +53,6 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
@@ -71,8 +68,6 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsProxy::getFromCache()
 {
     /* Fetch from cache: */
@@ -90,8 +85,6 @@ void UIGlobalSettingsProxy::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsProxy::putToCache()
 {
     /* Upload to cache: */
@@ -102,13 +95,12 @@ void UIGlobalSettingsProxy::putToCache()
     m_cache.m_strProxyPort = m_pPortEditor->text();
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
+    /* Save from cache: */
     UIProxyManager proxyManager;
     proxyManager.setProxyState(m_cache.m_enmProxyState);
     proxyManager.setProxyHost(m_cache.m_strProxyHost);

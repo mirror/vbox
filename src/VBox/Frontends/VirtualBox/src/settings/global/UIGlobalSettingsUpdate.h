@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,24 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsUpdate_h__
-#define __UIGlobalSettingsUpdate_h__
+#ifndef ___UIGlobalSettingsUpdate_h___
+#define ___UIGlobalSettingsUpdate_h___
 
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsUpdate.gen.h"
 #include "UIUpdateDefs.h"
 
-/* Global settings / Update page / Cache: */
+
+/** Global settings: Update page cache structure. */
 struct UISettingsCacheGlobalUpdate
 {
+    /** Holds whether the update check is enabled. */
     bool m_fCheckEnabled;
+    /** Holds the update check period. */
     VBoxUpdateData::PeriodType m_periodIndex;
+    /** Holds the update branch type. */
     VBoxUpdateData::BranchType m_branchIndex;
+    /** Holds the next update date. */
     QString m_strDate;
 };
 
-/* Global settings / Update page: */
+
+/** Global settings: Update page. */
 class UIGlobalSettingsUpdate : public UISettingsPageGlobal, public Ui::UIGlobalSettingsUpdate
 {
     Q_OBJECT;
@@ -85,4 +91,5 @@ private:
     UISettingsCacheGlobalUpdate m_cache;
 };
 
-#endif // __UIGlobalSettingsUpdate_h__
+#endif /* !___UIGlobalSettingsUpdate_h___ */
+

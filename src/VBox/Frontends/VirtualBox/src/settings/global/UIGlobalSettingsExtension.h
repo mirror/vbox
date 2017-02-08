@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2016 Oracle Corporation
+ * Copyright (C) 2010-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,31 +15,41 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIGlobalSettingsExtension_h__
-#define __UIGlobalSettingsExtension_h__
+#ifndef ___UIGlobalSettingsExtension_h___
+#define ___UIGlobalSettingsExtension_h___
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsExtension.gen.h"
 
-/* Global settings / Extension page / Cache Item: */
+
+/** Global settings: Extension page item cache structure. */
 struct UISettingsCacheGlobalExtensionItem
 {
+    /** Holds the extension item name. */
     QString m_strName;
+    /** Holds the extension item description. */
     QString m_strDescription;
+    /** Holds the extension item version. */
     QString m_strVersion;
-    ULONG m_strRevision;
+    /** Holds the extension item revision. */
+    ULONG m_uRevision;
+    /** Holds whether the extension item usable. */
     bool m_fIsUsable;
+    /** Holds why the extension item is unusable. */
     QString m_strWhyUnusable;
 };
 
-/* Global settings / Extension page / Cache: */
+
+/** Global settings: Extension page cache structure. */
 struct UISettingsCacheGlobalExtension
 {
+    /** Holds the extension items. */
     QList<UISettingsCacheGlobalExtensionItem> m_items;
 };
 
-/* Global settings / Extension page: */
+
+/** Global settings: Extension page. */
 class UIGlobalSettingsExtension : public UISettingsPageGlobal, public Ui::UIGlobalSettingsExtension
 {
     Q_OBJECT;
@@ -96,5 +106,5 @@ private:
     UISettingsCacheGlobalExtension m_cache;
 };
 
-#endif // __UIGlobalSettingsExtension_h__
+#endif /* !___UIGlobalSettingsExtension_h___ */
 

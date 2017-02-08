@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2016 Oracle Corporation
+ * Copyright (C) 2009-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,8 +40,8 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+/* COM includes: */
 #include "CDHCPServer.h"
-
 
 
 /* Global settings / Network page / NAT network item: */
@@ -516,13 +516,11 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load NAT networks to cache: */
+    /* Load to cache: */
     m_cache.m_networksNAT.clear();
     const CNATNetworkVector &networks = vboxGlobal().virtualBox().GetNATNetworks();
     foreach (const CNATNetwork &network, networks)
         m_cache.m_networksNAT << generateDataNetworkNAT(network);
-
-    /* Load Host networks to cache: */
     m_cache.m_networksHost.clear();
     const CHostNetworkInterfaceVector &interfaces = vboxGlobal().host().GetNetworkInterfaces();
     foreach (const CHostNetworkInterface &iface, interfaces)
@@ -535,14 +533,12 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsNetwork::getFromCache()
 {
-    /* Fetch NAT networks from cache: */
+    /* Fetch from cache: */
     foreach (const UIDataSettingsGlobalNetworkNAT &network, m_cache.m_networksNAT)
         createTreeItemNetworkNAT(network);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
-
-    /* Fetch Host networks from cache: */
     foreach (const UIDataSettingsGlobalNetworkHost &network, m_cache.m_networksHost)
         createTreeItemNetworkHost(network);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
@@ -555,7 +551,7 @@ void UIGlobalSettingsNetwork::getFromCache()
 
 void UIGlobalSettingsNetwork::putToCache()
 {
-    /* Upload NAT networks to cache: */
+    /* Upload to cache: */
     m_cache.m_networksNAT.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
     {
@@ -564,8 +560,6 @@ void UIGlobalSettingsNetwork::putToCache()
         pItem->uploadNetworkData(data);
         m_cache.m_networksNAT << data;
     }
-
-    /* Upload Host networks to cache: */
     m_cache.m_networksHost.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
     {
@@ -585,11 +579,9 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save NAT networks from cache: */
+    /* Save from cache: */
     foreach (const UIDataSettingsGlobalNetworkNAT &data, m_cache.m_networksNAT)
         saveCacheItemNetworkNAT(data);
-
-    /* Save Host networks from cache: */
     foreach (const UIDataSettingsGlobalNetworkHost &data, m_cache.m_networksHost)
         saveCacheItemNetworkHost(data);
 

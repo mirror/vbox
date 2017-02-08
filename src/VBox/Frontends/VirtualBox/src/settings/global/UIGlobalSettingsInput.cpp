@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 # include "QIWidgetValidator.h"
 # include "QIStyledItemDelegate.h"
 # include "QITableView.h"
+# include "UIActionPool.h"
 # include "UIGlobalSettingsInput.h"
 # include "UIShortcutPool.h"
 # include "UIHotKeyEditor.h"
@@ -52,7 +53,7 @@ enum UIHotKeyColumnIndex
 };
 
 
-/** Global settings / Input page / Shortcut table cell. */
+/** Global settings: Input page: Shortcut cell cache structure. */
 class UIShortcutCacheCell : public QITableViewCell
 {
     Q_OBJECT;
@@ -77,7 +78,7 @@ private:
 };
 
 
-/** Global settings / Input page / Shortcut table row. */
+/** Global settings: Input page: Shortcut cache structure. */
 class UIShortcutCacheRow : public QITableViewRow
 {
     Q_OBJECT;
@@ -213,13 +214,10 @@ private:
     /** Holds the cell instances. */
     QPair<UIShortcutCacheCell*, UIShortcutCacheCell*> m_cells;
 };
-
-
-/** Global settings / Input page / Cache / Shortcut cache. */
 typedef QList<UIShortcutCacheRow> UIShortcutCache;
 
 
-/** Global settings / Input page / Cache. */
+/** Global settings: Input page cache structure. */
 class UISettingsCacheGlobalInput : public QObject
 {
     Q_OBJECT;
@@ -250,7 +248,7 @@ private:
 };
 
 
-/** Global settings / Input page / Cache / Shortcut cache item sort functor. */
+/** Global settings: Input page: Shortcut cache sort functor. */
 class UIShortcutCacheItemFunctor
 {
 public:
@@ -868,16 +866,13 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     retranslateUi();
 }
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load host-combo shortcut to cache: */
+    /* Load to cache: */
     m_pCache->shortcuts() << UIShortcutCacheRow(m_pMachineTable, UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
-    /* Load all other shortcuts to cache: */
     const QMap<QString, UIShortcut>& shortcuts = gShortcutPool->shortcuts();
     const QList<QString> shortcutKeys = shortcuts.keys();
     foreach (const QString &strShortcutKey, shortcutKeys)
@@ -890,15 +885,12 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
                                                     shortcut.sequence().toString(QKeySequence::NativeText),
                                                     shortcut.defaultSequence().toString(QKeySequence::NativeText));
     }
-    /* Load other things to cache: */
     m_pCache->setAutoCapture(m_settings.autoCapture());
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsInput::getFromCache()
 {
     /* Fetch from cache: */
@@ -910,8 +902,6 @@ void UIGlobalSettingsInput::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIGlobalSettingsInput::putToCache()
 {
     /* Upload to cache: */
@@ -920,25 +910,20 @@ void UIGlobalSettingsInput::putToCache()
     m_pCache->setAutoCapture(m_pEnableAutoGrabCheckbox->isChecked());
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save host-combo shortcut from cache: */
+    /* Save from cache: */
     UIShortcutCacheRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
     int iIndexOfHostComboItem = m_pCache->shortcuts().indexOf(fakeHostComboItem);
     if (iIndexOfHostComboItem != -1)
         m_settings.setHostCombo(m_pCache->shortcuts()[iIndexOfHostComboItem].currentSequence());
-    /* Iterate over cached shortcuts: */
     QMap<QString, QString> sequences;
     foreach (const UIShortcutCacheRow &item, m_pCache->shortcuts())
         sequences.insert(item.key(), item.currentSequence());
-    /* Save shortcut sequences from cache: */
     gShortcutPool->setOverrides(sequences);
-    /* Save other things from cache: */
     m_settings.setAutoCapture(m_pCache->autoCapture());
 
     /* Upload properties & settings to data: */
