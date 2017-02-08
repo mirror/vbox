@@ -31,6 +31,22 @@ class UIItemNetworkHost;
 /** Global settings: Network page: NAT network cache structure. */
 struct UIDataSettingsGlobalNetworkNAT
 {
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalNetworkNAT &other) const
+    {
+        return true
+               && (m_fEnabled == other.m_fEnabled)
+               && (m_strName == other.m_strName)
+               && (m_strNewName == other.m_strNewName)
+               && (m_strCIDR == other.m_strCIDR)
+               && (m_fSupportsDHCP == other.m_fSupportsDHCP)
+               && (m_fSupportsIPv6 == other.m_fSupportsIPv6)
+               && (m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route)
+               && (m_ipv4rules == other.m_ipv4rules)
+               && (m_ipv6rules == other.m_ipv6rules)
+               ;
+    }
+
     /** Holds whether this network enabled. */
     bool m_fEnabled;
     /** Holds network name. */
@@ -49,28 +65,26 @@ struct UIDataSettingsGlobalNetworkNAT
     UIPortForwardingDataList m_ipv4rules;
     /** Holds IPv6 port forwarding rules. */
     UIPortForwardingDataList m_ipv6rules;
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalNetworkNAT &other) const
-    {
-        return true
-               && (m_fEnabled == other.m_fEnabled)
-               && (m_strName == other.m_strName)
-               && (m_strNewName == other.m_strNewName)
-               && (m_strCIDR == other.m_strCIDR)
-               && (m_fSupportsDHCP == other.m_fSupportsDHCP)
-               && (m_fSupportsIPv6 == other.m_fSupportsIPv6)
-               && (m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route)
-               && (m_ipv4rules == other.m_ipv4rules)
-               && (m_ipv6rules == other.m_ipv6rules)
-               ;
-    }
 };
 
 
 /** Global settings: Network page: Host interface cache structure. */
 struct UIDataSettingsGlobalNetworkHostInterface
 {
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalNetworkHostInterface &other) const
+    {
+        return true
+               && (m_strName == other.m_strName)
+               && (m_fDhcpClientEnabled == other.m_fDhcpClientEnabled)
+               && (m_strInterfaceAddress == other.m_strInterfaceAddress)
+               && (m_strInterfaceMask == other.m_strInterfaceMask)
+               && (m_fIpv6Supported == other.m_fIpv6Supported)
+               && (m_strInterfaceAddress6 == other.m_strInterfaceAddress6)
+               && (m_strInterfaceMaskLength6 == other.m_strInterfaceMaskLength6)
+               ;
+    }
+
     /** Holds host interface name. */
     QString m_strName;
     /** Holds whether DHCP client enabled. */
@@ -85,37 +99,12 @@ struct UIDataSettingsGlobalNetworkHostInterface
     QString m_strInterfaceAddress6;
     /** Holds IPv6 interface mask length. */
     QString m_strInterfaceMaskLength6;
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalNetworkHostInterface &other) const
-    {
-        return true
-               && (m_strName == other.m_strName)
-               && (m_fDhcpClientEnabled == other.m_fDhcpClientEnabled)
-               && (m_strInterfaceAddress == other.m_strInterfaceAddress)
-               && (m_strInterfaceMask == other.m_strInterfaceMask)
-               && (m_fIpv6Supported == other.m_fIpv6Supported)
-               && (m_strInterfaceAddress6 == other.m_strInterfaceAddress6)
-               && (m_strInterfaceMaskLength6 == other.m_strInterfaceMaskLength6)
-               ;
-    }
 };
 
 
 /** Global settings: Network page: DHCP server cache structure. */
 struct UIDataSettingsGlobalNetworkDHCPServer
 {
-    /** Holds whether DHCP server enabled. */
-    bool m_fDhcpServerEnabled;
-    /** Holds DHCP server address. */
-    QString m_strDhcpServerAddress;
-    /** Holds DHCP server mask. */
-    QString m_strDhcpServerMask;
-    /** Holds DHCP server lower address. */
-    QString m_strDhcpLowerAddress;
-    /** Holds DHCP server upper address. */
-    QString m_strDhcpUpperAddress;
-
     /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsGlobalNetworkDHCPServer &other) const
     {
@@ -127,17 +116,23 @@ struct UIDataSettingsGlobalNetworkDHCPServer
                && (m_strDhcpUpperAddress == other.m_strDhcpUpperAddress)
                ;
     }
+
+    /** Holds whether DHCP server enabled. */
+    bool m_fDhcpServerEnabled;
+    /** Holds DHCP server address. */
+    QString m_strDhcpServerAddress;
+    /** Holds DHCP server mask. */
+    QString m_strDhcpServerMask;
+    /** Holds DHCP server lower address. */
+    QString m_strDhcpLowerAddress;
+    /** Holds DHCP server upper address. */
+    QString m_strDhcpUpperAddress;
 };
 
 
 /** Global settings: Network page: Host network cache structure. */
 struct UIDataSettingsGlobalNetworkHost
 {
-    /** Holds the host interface data. */
-    UIDataSettingsGlobalNetworkHostInterface m_interface;
-    /** Holds the DHCP server data. */
-    UIDataSettingsGlobalNetworkDHCPServer m_dhcpserver;
-
     /** Returns whether the @a other passed data is equal to this one. */
     bool operator==(const UIDataSettingsGlobalNetworkHost &other) const
     {
@@ -146,6 +141,11 @@ struct UIDataSettingsGlobalNetworkHost
                && (m_dhcpserver == other.m_dhcpserver)
                ;
     }
+
+    /** Holds the host interface data. */
+    UIDataSettingsGlobalNetworkHostInterface m_interface;
+    /** Holds the DHCP server data. */
+    UIDataSettingsGlobalNetworkDHCPServer m_dhcpserver;
 };
 
 
