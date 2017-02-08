@@ -1500,11 +1500,11 @@ class SessionWrapper(TdTaskBase):
             sHostName = ''
             try:
                 sHostName = socket.getfqdn()
-                if '.' not in sHostName:
+                if '.' not in sHostName and not sHostName.startswith('localhost'):
                     # somewhat misconfigured system, needs expensive approach to guessing FQDN
                     for aAI in socket.getaddrinfo(sHostName, None):
                         sName, _ = socket.getnameinfo(aAI[4], 0)
-                        if '.' in sName and not set(sName).issubset(set('0123456789.')):
+                        if '.' in sName and not set(sName).issubset(set('0123456789.')) and not sName.startswith('localhost'):
                             sHostName = sName
                             break
 
