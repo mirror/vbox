@@ -23,9 +23,31 @@
 #include "UIGlobalSettingsGeneral.gen.h"
 
 
-/** Global settings: General page cache structure. */
-struct UISettingsCacheGlobalGeneral
+/** Global settings: General page data structure. */
+struct UIDataSettingsGlobalGeneral
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalGeneral()
+        : m_strDefaultMachineFolder(QString())
+        , m_strVRDEAuthLibrary(QString())
+        , m_fHostScreenSaverDisabled(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalGeneral &other) const
+    {
+        return true
+               && (m_strDefaultMachineFolder == other.m_strDefaultMachineFolder)
+               && (m_strVRDEAuthLibrary == other.m_strVRDEAuthLibrary)
+               && (m_fHostScreenSaverDisabled == other.m_fHostScreenSaverDisabled)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalGeneral &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalGeneral &other) const { return !equal(other); }
+
     /** Holds the default machine folder path. */
     QString m_strDefaultMachineFolder;
     /** Holds the VRDE authentication library name. */
@@ -33,6 +55,7 @@ struct UISettingsCacheGlobalGeneral
     /** Holds whether host screen-saver should be disabled. */
     bool m_fHostScreenSaverDisabled;
 };
+typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGeneral;
 
 
 /** Global settings: General page. */
