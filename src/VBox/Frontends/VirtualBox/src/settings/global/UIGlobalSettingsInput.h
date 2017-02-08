@@ -46,6 +46,8 @@ public:
 
     /* Constructor: */
     UIGlobalSettingsInput();
+    /* Destructor: */
+    ~UIGlobalSettingsInput();
 
 protected:
 

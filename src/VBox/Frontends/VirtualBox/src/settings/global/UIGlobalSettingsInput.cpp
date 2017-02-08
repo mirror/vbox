@@ -218,16 +218,13 @@ typedef QList<UIShortcutCacheRow> UIShortcutCache;
 
 
 /** Global settings: Input page cache structure. */
-class UISettingsCacheGlobalInput : public QObject
+class UISettingsCacheGlobalInput
 {
-    Q_OBJECT;
-
 public:
 
-    /** Constructs cache passing @a pParent to the base-class. */
-    UISettingsCacheGlobalInput(QObject *pParent)
-        : QObject(pParent)
-        , m_fAutoCapture(false)
+    /** Constructs cache. */
+    UISettingsCacheGlobalInput()
+        : m_fAutoCapture(false)
     {}
 
     /** Returns the shortcuts cache [full access]. */
@@ -805,7 +802,7 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pTabWidget(0)
     , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
     , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
-    , m_pCache(new UISettingsCacheGlobalInput(this))
+    , m_pCache(new UISettingsCacheGlobalInput)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi(this);
@@ -864,6 +861,13 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+UIGlobalSettingsInput::~UIGlobalSettingsInput()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
