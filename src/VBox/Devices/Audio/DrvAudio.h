@@ -152,15 +152,15 @@ typedef struct DRVAUDIO
 bool DrvAudioHlpAudFmtIsSigned(PDMAUDIOFMT enmFmt);
 uint8_t DrvAudioHlpAudFmtToBits(PDMAUDIOFMT enmFmt);
 const char *DrvAudioHlpAudFmtToStr(PDMAUDIOFMT enmFmt);
-void DrvAudioHlpClearBuf(PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
+void DrvAudioHlpClearBuf(const PPDMAUDIOPCMPROPS pPCMInfo, void *pvBuf, size_t cbBuf, uint32_t cSamples);
 uint32_t DrvAudioHlpCalcBitrate(uint8_t cBits, uint32_t uHz, uint8_t cChannels);
-uint32_t DrvAudioHlpCalcBitrate(PPDMAUDIOPCMPROPS pProps);
-bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps1, PPDMAUDIOPCMPROPS pPCMProps2);
-bool DrvAudioHlpPCMPropsAreEqual(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+uint32_t DrvAudioHlpCalcBitrate(const PPDMAUDIOPCMPROPS pProps);
+bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps1, const PPDMAUDIOPCMPROPS pPCMProps2);
+bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pPCMProps, const PPDMAUDIOSTREAMCFG pCfg);
 bool DrvAudioHlpPCMPropsAreValid(const PPDMAUDIOPCMPROPS pProps);
-int DrvAudioHlpPCMPropsToStreamCfg(PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
-const char *DrvAudioHlpRecSrcToStr(PDMAUDIORECSOURCE enmRecSource);
-void DrvAudioHlpStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg);
+int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
+const char *DrvAudioHlpRecSrcToStr(const PDMAUDIORECSOURCE enmRecSource);
+void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg);
 bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg);
 int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg);
 PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg);
@@ -173,24 +173,24 @@ int DrvAudioHlpGetFileName(char *pszFile, size_t cchFile, const char *pszPath, c
 
 PPDMAUDIODEVICE DrvAudioHlpDeviceAlloc(size_t cbData);
 void DrvAudioHlpDeviceFree(PPDMAUDIODEVICE pDev);
-PPDMAUDIODEVICE DrvAudioHlpDeviceDup(PPDMAUDIODEVICE pDev, bool fCopyUserData);
+PPDMAUDIODEVICE DrvAudioHlpDeviceDup(const PPDMAUDIODEVICE pDev, bool fCopyUserData);
 
 int DrvAudioHlpDeviceEnumInit(PPDMAUDIODEVICEENUM pDevEnm);
 void DrvAudioHlpDeviceEnumFree(PPDMAUDIODEVICEENUM pDevEnm);
 int DrvAudioHlpDeviceEnumAdd(PPDMAUDIODEVICEENUM pDevEnm, PPDMAUDIODEVICE pDev);
-int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm, PDMAUDIODIR enmUsage);
-int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm);
-PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(PPDMAUDIODEVICEENUM pDevEnm);
-int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm);
-int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, PPDMAUDIODEVICEENUM pSrcDevEnm, PDMAUDIODIR enmUsage, bool fCopyUserData);
-PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmDir);
-void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, PPDMAUDIODEVICEENUM pDevEnm);
+int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm, PDMAUDIODIR enmUsage);
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm);
+PPDMAUDIODEVICEENUM DrvAudioHlpDeviceEnumDup(const PPDMAUDIODEVICEENUM pDevEnm);
+int DrvAudioHlpDeviceEnumCopy(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm);
+int DrvAudioHlpDeviceEnumCopyEx(PPDMAUDIODEVICEENUM pDstDevEnm, const PPDMAUDIODEVICEENUM pSrcDevEnm, PDMAUDIODIR enmUsage, bool fCopyUserData);
+PPDMAUDIODEVICE DrvAudioHlpDeviceEnumGetDefaultDevice(const PPDMAUDIODEVICEENUM pDevEnm, PDMAUDIODIR enmDir);
+void DrvAudioHlpDeviceEnumPrint(const char *pszDesc, const PPDMAUDIODEVICEENUM pDevEnm);
 
 const char *DrvAudioHlpAudDirToStr(PDMAUDIODIR enmDir);
 const char *DrvAudioHlpAudMixerCtlToStr(PDMAUDIOMIXERCTL enmMixerCtl);
 char *DrvAudioHlpAudDevFlagsToStrA(PDMAUDIODEVFLAG fFlags);
 
-int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, PPDMAUDIOPCMPROPS pProps, PDMAUDIOFILEFLAGS fFlags);
+int DrvAudioHlpWAVFileOpen(PPDMAUDIOFILE pFile, const char *pszFile, uint32_t fOpen, const PPDMAUDIOPCMPROPS pProps, PDMAUDIOFILEFLAGS fFlags);
 int DrvAudioHlpWAVFileClose(PPDMAUDIOFILE pFile);
 size_t DrvAudioHlpWAVFileGetDataSize(PPDMAUDIOFILE pFile);
 int DrvAudioHlpWAVFileWrite(PPDMAUDIOFILE pFile, const void *pvBuf, size_t cbBuf, uint32_t fFlags);
