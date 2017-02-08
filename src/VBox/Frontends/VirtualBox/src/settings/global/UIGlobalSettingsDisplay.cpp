@@ -52,9 +52,18 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
-    m_cache.m_strMaxGuestResolution = m_settings.maxGuestRes();
-    m_cache.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+    /* Clear cache initially: */
+    m_cache.clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalDisplay oldData;
+
+    /* Gather old data: */
+    oldData.m_strMaxGuestResolution = m_settings.maxGuestRes();
+    oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
+
+    /* Cache old data: */
+    m_cache.cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -62,14 +71,17 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsDisplay::getFromCache()
 {
-    /* Fetch from cache: */
-    if ((m_cache.m_strMaxGuestResolution.isEmpty()) ||
-        (m_cache.m_strMaxGuestResolution == "auto"))
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalDisplay &oldData = m_cache.base();
+
+    /* Load old data from cache: */
+    if ((oldData.m_strMaxGuestResolution.isEmpty()) ||
+        (oldData.m_strMaxGuestResolution == "auto"))
     {
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("auto"));
     }
-    else if (m_cache.m_strMaxGuestResolution == "any")
+    else if (oldData.m_strMaxGuestResolution == "any")
     {
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("any"));
@@ -79,36 +91,42 @@ void UIGlobalSettingsDisplay::getFromCache()
         /* Switch combo-box item: */
         m_pMaxResolutionCombo->setCurrentIndex(m_pMaxResolutionCombo->findData("fixed"));
         /* Trying to parse text into 2 sections by ',' symbol: */
-        int iWidth  = m_cache.m_strMaxGuestResolution.section(',', 0, 0).toInt();
-        int iHeight = m_cache.m_strMaxGuestResolution.section(',', 1, 1).toInt();
+        int iWidth  = oldData.m_strMaxGuestResolution.section(',', 0, 0).toInt();
+        int iHeight = oldData.m_strMaxGuestResolution.section(',', 1, 1).toInt();
         /* And set values if they are present: */
         m_pResolutionWidthSpin->setValue(iWidth);
         m_pResolutionHeightSpin->setValue(iHeight);
     }
-    m_pCheckBoxActivateOnMouseHover->setChecked(m_cache.m_fActivateHoveredMachineWindow);
+    m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
 }
 
 void UIGlobalSettingsDisplay::putToCache()
 {
-    /* Upload to cache: */
+    /* Prepare new data: */
+    UIDataSettingsGlobalDisplay newData = m_cache.base();
+
+    /* Gather new data: */
     if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "auto")
     {
         /* If resolution current combo item is "auto" => resolution set to "auto": */
-        m_cache.m_strMaxGuestResolution = QString();
+        newData.m_strMaxGuestResolution = QString();
     }
     else if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "any" ||
              m_pResolutionWidthSpin->value() == 0 || m_pResolutionHeightSpin->value() == 0)
     {
         /* Else if resolution current combo item is "any"
          * or any of the resolution field attributes is zero => resolution set to "any": */
-        m_cache.m_strMaxGuestResolution = "any";
+        newData.m_strMaxGuestResolution = "any";
     }
     else if (m_pResolutionWidthSpin->value() != 0 && m_pResolutionHeightSpin->value() != 0)
     {
         /* Else if both field attributes are non-zeroes => resolution set to "fixed": */
-        m_cache.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
+        newData.m_strMaxGuestResolution = QString("%1,%2").arg(m_pResolutionWidthSpin->value()).arg(m_pResolutionHeightSpin->value());
     }
-    m_cache.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+    newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
+
+    /* Cache new data: */
+    m_cache.cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
@@ -116,9 +134,14 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    m_settings.setMaxGuestRes(m_cache.m_strMaxGuestResolution);
-    gEDataManager->setActivateHoveredMachineWindow(m_cache.m_fActivateHoveredMachineWindow);
+    /* Save new data from cache: */
+    if (m_cache.wasChanged())
+    {
+        if (m_cache.data().m_strMaxGuestResolution != m_cache.base().m_strMaxGuestResolution)
+            m_settings.setMaxGuestRes(m_cache.data().m_strMaxGuestResolution);
+        if (m_cache.data().m_fActivateHoveredMachineWindow != m_cache.base().m_fActivateHoveredMachineWindow)
+            gEDataManager->setActivateHoveredMachineWindow(m_cache.data().m_fActivateHoveredMachineWindow);
+    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);

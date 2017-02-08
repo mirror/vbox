@@ -23,14 +23,35 @@
 #include "UIGlobalSettingsDisplay.gen.h"
 
 
-/** Global settings: Display page cache structure. */
-struct UISettingsCacheGlobalDisplay
+/** Global settings: Display page data structure. */
+struct UIDataSettingsGlobalDisplay
 {
+    /** Constructs data. */
+    UIDataSettingsGlobalDisplay()
+        : m_strMaxGuestResolution(QString())
+        , m_fActivateHoveredMachineWindow(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalDisplay &other) const
+    {
+        return true
+               && (m_strMaxGuestResolution == other.m_strMaxGuestResolution)
+               && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalDisplay &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalDisplay &other) const { return !equal(other); }
+
     /** Holds the maximum guest resolution or preset name. */
     QString m_strMaxGuestResolution;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool m_fActivateHoveredMachineWindow;
 };
+typedef UISettingsCache<UIDataSettingsGlobalDisplay> UISettingsCacheGlobalDisplay;
 
 
 /** Global settings: Display page. */
