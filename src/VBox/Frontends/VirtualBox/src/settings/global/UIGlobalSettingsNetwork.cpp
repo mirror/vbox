@@ -392,7 +392,6 @@ void UIItemNetworkHost::updateInfo()
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     : m_pActionAddNetworkNAT(0), m_pActionDelNetworkNAT(0), m_pActionEditNetworkNAT(0)
     , m_pActionAddNetworkHost(0), m_pActionDelNetworkHost(0), m_pActionEditNetworkHost(0)
-    , m_fChanged(false)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsNetwork::setupUi(this);
@@ -516,16 +515,21 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
-    m_cache.m_networksNAT.clear();
-    const CNATNetworkVector &networks = vboxGlobal().virtualBox().GetNATNetworks();
-    foreach (const CNATNetwork &network, networks)
-        m_cache.m_networksNAT << generateDataNetworkNAT(network);
-    m_cache.m_networksHost.clear();
-    const CHostNetworkInterfaceVector &interfaces = vboxGlobal().host().GetNetworkInterfaces();
-    foreach (const CHostNetworkInterface &iface, interfaces)
+    /* Clear cache initially: */
+    m_cache.clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalNetwork oldData;
+
+    /* Gather old data: */
+    foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
+        oldData.m_networksNAT << generateDataNetworkNAT(network);
+    foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-            m_cache.m_networksHost << generateDataNetworkHost(iface);
+            oldData.m_networksHost << generateDataNetworkHost(iface);
+
+    /* Cache old data: */
+    m_cache.cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -533,13 +537,16 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsNetwork::getFromCache()
 {
-    /* Fetch from cache: */
-    foreach (const UIDataSettingsGlobalNetworkNAT &network, m_cache.m_networksNAT)
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalNetwork &oldData = m_cache.base();
+
+    /* Load old data from cache: */
+    foreach (const UIDataSettingsGlobalNetworkNAT &network, oldData.m_networksNAT)
         createTreeItemNetworkNAT(network);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
     m_pTreeNetworkNAT->setCurrentItem(m_pTreeNetworkNAT->topLevelItem(0));
     sltHandleCurrentItemChangeNetworkNAT();
-    foreach (const UIDataSettingsGlobalNetworkHost &network, m_cache.m_networksHost)
+    foreach (const UIDataSettingsGlobalNetworkHost &network, oldData.m_networksHost)
         createTreeItemNetworkHost(network);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
     m_pTreeNetworkHost->setCurrentItem(m_pTreeNetworkHost->topLevelItem(0));
@@ -551,39 +558,46 @@ void UIGlobalSettingsNetwork::getFromCache()
 
 void UIGlobalSettingsNetwork::putToCache()
 {
-    /* Upload to cache: */
-    m_cache.m_networksNAT.clear();
+    /* Prepare new data: */
+    UIDataSettingsGlobalNetwork newData = m_cache.base();
+
+    /* Gather new data: */
+    newData.m_networksNAT.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkNAT->topLevelItemCount(); ++iNetworkIndex)
     {
         UIDataSettingsGlobalNetworkNAT data;
         UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(m_pTreeNetworkNAT->topLevelItem(iNetworkIndex));
         pItem->uploadNetworkData(data);
-        m_cache.m_networksNAT << data;
+        newData.m_networksNAT << data;
     }
-    m_cache.m_networksHost.clear();
+    newData.m_networksHost.clear();
     for (int iNetworkIndex = 0; iNetworkIndex < m_pTreeNetworkHost->topLevelItemCount(); ++iNetworkIndex)
     {
         UIDataSettingsGlobalNetworkHost data;
         UIItemNetworkHost *pItem = static_cast<UIItemNetworkHost*>(m_pTreeNetworkHost->topLevelItem(iNetworkIndex));
         pItem->uploadNetworkData(data);
-        m_cache.m_networksHost << data;
+        newData.m_networksHost << data;
     }
+
+    /* Cache new data: */
+    m_cache.cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
 {
-    /* Ensure settings were changed: */
-    if (!m_fChanged)
-        return;
-
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    foreach (const UIDataSettingsGlobalNetworkNAT &data, m_cache.m_networksNAT)
-        saveCacheItemNetworkNAT(data);
-    foreach (const UIDataSettingsGlobalNetworkHost &data, m_cache.m_networksHost)
-        saveCacheItemNetworkHost(data);
+    /* Save new data from cache: */
+    if (m_cache.wasChanged())
+    {
+        if (m_cache.data().m_networksNAT != m_cache.base().m_networksNAT)
+            foreach (const UIDataSettingsGlobalNetworkNAT &data, m_cache.data().m_networksNAT)
+                saveCacheItemNetworkNAT(data);
+        if (m_cache.data().m_networksHost != m_cache.base().m_networksHost)
+            foreach (const UIDataSettingsGlobalNetworkHost &data, m_cache.data().m_networksHost)
+                saveCacheItemNetworkHost(data);
+    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -782,7 +796,6 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
         /* Put data back: */
         pItem->fetchNetworkData(data);
         sltHandleCurrentItemChangeNetworkNAT();
-        m_fChanged = true;
         /* Revalidate: */
         revalidate();
     }
@@ -796,7 +809,6 @@ void UIGlobalSettingsNetwork::sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pCh
 
     /* Update item data: */
     pItem->updateData();
-    m_fChanged = true;
 }
 
 void UIGlobalSettingsNetwork::sltAddNetworkHost()
@@ -886,7 +898,6 @@ void UIGlobalSettingsNetwork::sltEditNetworkHost()
         /* Put data back: */
         pItem->fetchNetworkData(data);
         sltHandleCurrentItemChangeNetworkHost();
-        m_fChanged = true;
         /* Revalidate: */
         revalidate();
     }
