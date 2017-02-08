@@ -18,6 +18,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <stdlib.h>       /* For exit */
 #include <stdio.h>
 #include <string.h>
