@@ -58,11 +58,20 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Load to cache: */
+    /* Clear cache initially: */
+    m_cache.clear();
+
+    /* Prepare old data: */
+    UIDataSettingsGlobalProxy oldData;
+
+    /* Gather old data: */
     UIProxyManager proxyManager(m_settings.proxySettings());
-    m_cache.m_enmProxyState = proxyManager.proxyState();
-    m_cache.m_strProxyHost = proxyManager.proxyHost();
-    m_cache.m_strProxyPort = proxyManager.proxyPort();
+    oldData.m_enmProxyState = proxyManager.proxyState();
+    oldData.m_strProxyHost = proxyManager.proxyHost();
+    oldData.m_strProxyPort = proxyManager.proxyPort();
+
+    /* Cache old data: */
+    m_cache.cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -70,15 +79,18 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsProxy::getFromCache()
 {
-    /* Fetch from cache: */
-    switch (m_cache.m_enmProxyState)
+    /* Get old data from cache: */
+    const UIDataSettingsGlobalProxy &oldData = m_cache.base();
+
+    /* Load old data from cache: */
+    switch (oldData.m_enmProxyState)
     {
         case UIProxyManager::ProxyState_Auto:     m_pRadioProxyAuto->setChecked(true); break;
         case UIProxyManager::ProxyState_Disabled: m_pRadioProxyDisabled->setChecked(true); break;
         case UIProxyManager::ProxyState_Enabled:  m_pRadioProxyEnabled->setChecked(true); break;
     }
-    m_pHostEditor->setText(m_cache.m_strProxyHost);
-    m_pPortEditor->setText(m_cache.m_strProxyPort);
+    m_pHostEditor->setText(oldData.m_strProxyHost);
+    m_pPortEditor->setText(oldData.m_strProxyPort);
     sltProxyToggled();
 
     /* Revalidate: */
@@ -87,12 +99,18 @@ void UIGlobalSettingsProxy::getFromCache()
 
 void UIGlobalSettingsProxy::putToCache()
 {
-    /* Upload to cache: */
-    m_cache.m_enmProxyState = m_pRadioProxyEnabled->isChecked()  ? UIProxyManager::ProxyState_Enabled :
+    /* Prepare new data: */
+    UIDataSettingsGlobalProxy newData = m_cache.base();
+
+    /* Gather new data: */
+    newData.m_enmProxyState = m_pRadioProxyEnabled->isChecked()  ? UIProxyManager::ProxyState_Enabled :
                               m_pRadioProxyDisabled->isChecked() ? UIProxyManager::ProxyState_Disabled :
                                                                    UIProxyManager::ProxyState_Auto;
-    m_cache.m_strProxyHost = m_pHostEditor->text();
-    m_cache.m_strProxyPort = m_pPortEditor->text();
+    newData.m_strProxyHost = m_pHostEditor->text();
+    newData.m_strProxyPort = m_pPortEditor->text();
+
+    /* Cache new data: */
+    m_cache.cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
@@ -100,12 +118,15 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    /* Save from cache: */
-    UIProxyManager proxyManager;
-    proxyManager.setProxyState(m_cache.m_enmProxyState);
-    proxyManager.setProxyHost(m_cache.m_strProxyHost);
-    proxyManager.setProxyPort(m_cache.m_strProxyPort);
-    m_settings.setProxySettings(proxyManager.toString());
+    /* Save new data from cache: */
+    if (m_cache.wasChanged())
+    {
+        UIProxyManager proxyManager;
+        proxyManager.setProxyState(m_cache.data().m_enmProxyState);
+        proxyManager.setProxyHost(m_cache.data().m_strProxyHost);
+        proxyManager.setProxyPort(m_cache.data().m_strProxyPort);
+        m_settings.setProxySettings(proxyManager.toString());
+    }
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
