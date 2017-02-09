@@ -395,7 +395,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/DrvHostWebcam.cpp \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/JPEGEnc.cpp
     $(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/JPEGEnc.cpp_INCS = \
-	$(PATH_ROOT)/src/libs/jpeg-8a
+	$(VBOX_JPEG_INCS)
     VBoxDD_SOURCES.linux += \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/HostWebcam-v4l2.cpp
     VBoxDD_LIBS += \
