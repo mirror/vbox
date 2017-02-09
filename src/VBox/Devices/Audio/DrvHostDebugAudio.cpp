@@ -46,9 +46,7 @@ typedef struct DEBUGAUDIOSTREAM
         } In;
         struct
         {
-            /** Timestamp of last played samples. */
-            uint64_t   tsLastPlayed;
-            uint8_t   *pu8PlayBuffer;
+            uint8_t   *auPlayBuffer;
             uint32_t   cbPlayBuffer;
         } Out;
     };
@@ -139,10 +137,9 @@ static int debugCreateStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStre
 
     int rc = VINF_SUCCESS;
 
-    pStreamDbg->Out.tsLastPlayed  = 0;
     pStreamDbg->Out.cbPlayBuffer  = _1K * PDMAUDIOSTREAMCFG_S2B(pCfgReq, 1); /** @todo Make this configurable? */
-    pStreamDbg->Out.pu8PlayBuffer = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
-    if (!pStreamDbg->Out.pu8PlayBuffer)
+    pStreamDbg->Out.auPlayBuffer  = (uint8_t *)RTMemAlloc(pStreamDbg->Out.cbPlayBuffer);
+    if (!pStreamDbg->Out.auPlayBuffer)
         rc = VERR_NO_MEMORY;
 
     if (RT_SUCCESS(rc))
@@ -218,36 +215,17 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
                                                      PPDMAUDIOBACKENDSTREAM pStream, const void *pvBuf, uint32_t cbBuf,
                                                      uint32_t *pcbWritten)
 {
-    RT_NOREF(pvBuf, cbBuf);
-
-    PDRVHOSTDEBUGAUDIO pDrv       = RT_FROM_MEMBER(pInterface, DRVHOSTDEBUGAUDIO, IHostAudio);
+    RT_NOREF(pInterface);
     PDEBUGAUDIOSTREAM  pStreamDbg = (PDEBUGAUDIOSTREAM)pStream;
 
-    /* Consume as many samples as would be played at the current frequency since last call. */
-    /*uint32_t cLive           = AudioMixBufLive(&pStream->MixBuf);*/
+    uint32_t cbWrittenTotal = 0;
 
-    uint64_t u64TicksNow     = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-   // uint64_t u64TicksElapsed = u64TicksNow  - pStreamDbg->Out.tsLastPlayed;
-   // uint64_t u64TicksFreq    = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
-
-    /*
-     * Minimize the rounding error by adding 0.5: samples = int((u64TicksElapsed * samplesFreq) / u64TicksFreq + 0.5).
-     * If rounding is not taken into account then the playback rate will be consistently lower that expected.
-     */
-   // uint64_t cSamplesPlayed = (2 * u64TicksElapsed * pStream->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
-
-    /* Don't play more than available. */
-    /*if (cSamplesPlayed > cLive)
-        cSamplesPlayed = cLive;*/
-
-    uint32_t cbWritten = 0;
-
-    uint32_t cbAvail  = RT_MIN(cbBuf, pStreamDbg->Out.cbPlayBuffer);
+    uint32_t cbAvail = cbBuf;
     while (cbAvail)
     {
-        uint32_t cbChunk = cbAvail; /** @todo Use chunks? */
+        uint32_t cbChunk = RT_MIN(cbAvail, pStreamDbg->Out.cbPlayBuffer);
 
-        memcpy(pStreamDbg->Out.pu8PlayBuffer, pvBuf, cbChunk);
+        memcpy(pStreamDbg->Out.auPlayBuffer, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk);
 #if 0
         RTFILE fh;
         RTFileOpen(&fh, "/tmp/AudioDebug-Output.pcm",
@@ -256,7 +234,7 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         RTFileClose(fh);
 #endif
         int rc2 = DrvAudioHlpWAVFileWrite(&pStreamDbg->File,
-                                          pStreamDbg->Out.pu8PlayBuffer, cbChunk, 0 /* fFlags */);
+                                          pStreamDbg->Out.auPlayBuffer, cbChunk, 0 /* fFlags */);
         if (RT_FAILURE(rc2))
         {
             LogRel(("DebugAudio: Writing output failed with %Rrc\n", rc2));
@@ -264,16 +242,13 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
         }
 
         Assert(cbAvail >= cbAvail);
-        cbAvail   -= cbChunk;
+        cbAvail        -= cbChunk;
 
-        cbWritten += cbChunk;
+        cbWrittenTotal += cbChunk;
     }
 
-    /* Remember when samples were consumed. */
-    pStreamDbg->Out.tsLastPlayed = u64TicksNow;
-
     if (pcbWritten)
-        *pcbWritten = cbWritten;
+        *pcbWritten = cbWrittenTotal;
 
     return VINF_SUCCESS;
 }
@@ -306,10 +281,10 @@ static int debugDestroyStreamOut(PDRVHOSTDEBUGAUDIO pDrv, PDEBUGAUDIOSTREAM pStr
 {
     RT_NOREF(pDrv);
 
-    if (pStreamDbg->Out.pu8PlayBuffer)
+    if (pStreamDbg->Out.auPlayBuffer)
     {
-        RTMemFree(pStreamDbg->Out.pu8PlayBuffer);
-        pStreamDbg->Out.pu8PlayBuffer = NULL;
+        RTMemFree(pStreamDbg->Out.auPlayBuffer);
+        pStreamDbg->Out.auPlayBuffer = NULL;
     }
 
     size_t cbDataSize = DrvAudioHlpWAVFileGetDataSize(&pStreamDbg->File);

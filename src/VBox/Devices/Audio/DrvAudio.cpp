@@ -1280,7 +1280,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 
     int rc = VINF_SUCCESS;
 
-    uint32_t csPlayed = 0;
+    uint32_t csPlayedTotal = 0;
 
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetWritable);
     uint32_t cbWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pHstStream->pvBackend);
@@ -1291,36 +1291,49 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
 
         if (csToPlay)
         {
-            uint8_t u8Buf[_4K]; /** @todo Get rid of this here. */
-            AssertReleaseReturn(sizeof(u8Buf) >= AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csToPlay), /** @todo Get rid of this here. */
-                                VERR_BUFFER_OVERFLOW);
+            uint8_t auBuf[256]; /** @todo Get rid of this here. */
 
-            uint32_t csRead = 0;
-            rc = AudioMixBufReadCirc(&pHstStream->MixBuf, u8Buf, AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csToPlay), &csRead);
-            if (RT_SUCCESS(rc))
+            uint32_t cbLeft  = AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csToPlay);
+            uint32_t cbChunk = sizeof(auBuf);
+
+            while (cbLeft)
             {
-                uint32_t cbPlayed;
-
-                AssertPtr(pThis->pHostDrvAudio->pfnStreamPlay);
-                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
-                                                         u8Buf, AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csRead),
-                                                         &cbPlayed);
-                if (RT_SUCCESS(rc))
+                uint32_t csRead = 0;
+                rc = AudioMixBufReadCirc(&pHstStream->MixBuf, auBuf, RT_MIN(cbChunk, cbLeft), &csRead);
+                if (   !csRead
+                    || RT_FAILURE(rc))
                 {
-                    AssertMsg(cbPlayed % 2 == 0,
-                              ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
-                               pHstStream->szName, csRead, cbPlayed));
-
-                    csPlayed = AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbPlayed);
+                    break;
                 }
+
+                uint32_t cbRead = AUDIOMIXBUF_S2B(&pHstStream->MixBuf, csRead);
+                Assert(cbRead <= cbChunk);
+
+                uint32_t cbPlayed = 0;
+                rc = pThis->pHostDrvAudio->pfnStreamPlay(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                         auBuf, cbRead, &cbPlayed);
+                if (RT_FAILURE(rc))
+                    break;
+
+                Assert(cbPlayed <= cbRead);
+                AssertMsg(cbPlayed % 2 == 0,
+                          ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
+                           pHstStream->szName, csRead, cbPlayed));
+
+                csPlayedTotal += AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbPlayed);
+                Assert(cbLeft >= cbPlayed);
+                cbLeft        -= cbPlayed;
             }
         }
     }
 
-    Log3Func(("Played %RU32/%RU32 samples, rc=%Rrc\n", csPlayed, csToPlay, rc));
+    Log3Func(("[%s] Played %RU32/%RU32 samples, rc=%Rrc\n", pHstStream->szName, csPlayedTotal, csToPlay, rc));
 
-    if (pcsPlayed)
-        *pcsPlayed = csPlayed;
+    if (RT_SUCCESS(rc))
+    {
+        if (pcsPlayed)
+            *pcsPlayed = csPlayedTotal;
+    }
 
     return rc;
 }
@@ -1355,7 +1368,7 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
 
     int rc = VINF_SUCCESS;
 
-    uint32_t csPlayed = 0;
+    uint32_t csPlayedTotal = 0;
 
     AssertPtr(pThis->pHostDrvAudio->pfnStreamGetWritable);
     uint32_t csWritable = pThis->pHostDrvAudio->pfnStreamGetWritable(pThis->pHostDrvAudio, pHstStream->pvBackend);
@@ -1384,8 +1397,8 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
                 if (RT_FAILURE(rc))
                     break;
 
-                csPlayed += csPlayedChunk;
-                Assert(csPlayed <= csToPlay);
+                csPlayedTotal += csPlayedChunk;
+                Assert(csPlayedTotal <= csToPlay);
 
                 Assert(csLeft >= csRead);
                 csLeft        -= csRead;
@@ -1395,10 +1408,14 @@ static int drvAudioStreamPlayRaw(PDRVAUDIO pThis,
         }
     }
 
-    Log3Func(("Played %RU32/%RU32 samples, rc=%Rrc\n", csPlayed, csToPlay, rc));
+    Log3Func(("[%s] Played %RU32/%RU32 samples, rc=%Rrc\n", pHstStream->szName, csPlayedTotal, csToPlay, rc));
 
-    if (pcsPlayed)
-        *pcsPlayed = csPlayed;
+    if (RT_SUCCESS(rc))
+    {
+        if (pcsPlayed)
+            *pcsPlayed = csPlayedTotal;
+
+    }
 
     return rc;
 }

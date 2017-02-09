@@ -563,6 +563,8 @@ static DECLCALLBACK(int) drvAudioVideoRecStreamPlay(PPDMIHOSTAUDIO pInterface, P
         {
             memcpy(pvCircBuf, (uint8_t *)pvBuf + cbWrittenTotal, cbCircBuf),
             cbWrittenTotal += cbCircBuf;
+            Assert(cbToWrite >= cbCircBuf);
+            cbToWrite      -= cbCircBuf;
         }
 
         RTCircBufReleaseWriteBlock(pCircBuf, cbCircBuf);
