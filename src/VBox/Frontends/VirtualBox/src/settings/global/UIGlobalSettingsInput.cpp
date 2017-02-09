@@ -146,8 +146,11 @@ public:
     /** Returns whether this row equals to @a other. */
     bool operator==(const UIDataShortcutRow &other) const
     {
-        /* Compare by the key only: */
-        return m_strKey == other.key();
+        /* Compare by the key and the current sequence: */
+        return true
+               && (m_strKey == other.key())
+               && (m_strCurrentSequence == other.currentSequence())
+               ;
     }
 
     /** Returns the key. */
@@ -296,6 +299,54 @@ private:
 };
 
 
+/** Global settings: Input page: Shortcut search functor. */
+class UIFunctorFindShortcut
+{
+public:
+
+    /** Search match level enumerator. */
+    enum UIMatchLevel { Base, Full };
+
+    /** Constructs shortcut search functor.
+      * @param  matchLevel  Brings the search match level. */
+    UIFunctorFindShortcut(UIMatchLevel enmMatchLevel)
+        : m_enmMatchLevel(enmMatchLevel)
+    {}
+
+    /** Returns the position of the 1st occurrence of the
+      * @a shortcut in the @a shortcuts list, or -1 otherwise. */
+    int operator()(const UIShortcutCache &shortcuts, const UIDataShortcutRow &shortcut)
+    {
+        for (int i = 0; i < shortcuts.size(); ++i)
+        {
+            const UIDataShortcutRow &iteratedShortcut = shortcuts.at(i);
+            switch (m_enmMatchLevel)
+            {
+                case Base:
+                {
+                    if (iteratedShortcut.key() == shortcut.key())
+                        return i;
+                    break;
+                }
+                case Full:
+                {
+                    if (   iteratedShortcut.key() == shortcut.key()
+                        && iteratedShortcut.currentSequence() == shortcut.currentSequence())
+                        return i;
+                    break;
+                }
+            }
+        }
+        return -1;
+    }
+
+private:
+
+    /** Holds the search match level. */
+    const UIMatchLevel m_enmMatchLevel;
+};
+
+
 /* A model representing hot-key combination table: */
 class UIHotKeyTableModel : public QAbstractTableModel
 {
@@ -435,7 +486,7 @@ void UIHotKeyTableModel::save(UIShortcutCache &shortcuts)
     foreach (const UIDataShortcutRow &item, m_shortcuts)
     {
         /* Search for corresponding cache item index: */
-        int iIndexOfCacheItem = shortcuts.indexOf(item);
+        int iIndexOfCacheItem = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(shortcuts, item);
         /* Make sure index is valid: */
         if (iIndexOfCacheItem == -1)
             continue;
@@ -638,7 +689,7 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
                     int iIndex = index.row();
                     /* Set sequence to shortcut: */
                     UIDataShortcutRow &filteredShortcut = m_filteredShortcuts[iIndex];
-                    int iShortcutIndex = m_shortcuts.indexOf(filteredShortcut);
+                    int iShortcutIndex = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_shortcuts, filteredShortcut);
                     if (iShortcutIndex != -1)
                     {
                         filteredShortcut.setCurrentSequence(filteredShortcut.key() == UIHostCombo::hostComboCacheKey() ?
@@ -666,7 +717,7 @@ void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /* = Qt::Ascendin
     qStableSort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutCacheItemFunctor(iColumn, order));
     /* Make sure host-combo item is always the first one: */
     UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
-    int iIndexOfHostComboItem = m_shortcuts.indexOf(fakeHostComboItem);
+    int iIndexOfHostComboItem = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_shortcuts, fakeHostComboItem);
     if (iIndexOfHostComboItem != -1)
     {
         UIDataShortcutRow hostComboItem = m_shortcuts.takeAt(iIndexOfHostComboItem);
@@ -951,36 +1002,28 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
-    // WORKAROUND:
-    // For now we are using out-of-the-box Qt functions to search for a corresponding shortcuts.
-    // Those functions assumes that container elements implement operator==() which we can use
-    // either for "index-match" (to just find shortcut item independent on parameters) or for
-    // "full-match" (to find exact shortcut item including all parameters) but not for both,
-    // so since "index-match" is most commonly used, we need separate "full-match" functor
-    // to check whether the shortcut item was changed, for now we can't do that.
-
-    /* Save host-combo shortcut from cache: */
-    UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
-    //const int iIndexOfHostComboItemBase = m_pCache->base().shortcuts().indexOf(fakeHostComboItem);
-    const int iIndexOfHostComboItemData = m_pCache->data().shortcuts().indexOf(fakeHostComboItem);
-    if (   iIndexOfHostComboItemData != -1
-        //&& iIndexOfHostComboItemData != iIndexOfHostComboItemBase
-        )
-        m_settings.setHostCombo(m_pCache->data().shortcuts().at(iIndexOfHostComboItemData).currentSequence());
-
-    /* Save other shortcut sequences from cache: */
-    QMap<QString, QString> sequencesBase;
-    QMap<QString, QString> sequencesData;
-    foreach (const UIDataShortcutRow &item, m_pCache->base().shortcuts())
-        sequencesBase.insert(item.key(), item.currentSequence());
-    foreach (const UIDataShortcutRow &item, m_pCache->data().shortcuts())
-        sequencesData.insert(item.key(), item.currentSequence());
-    if (sequencesData != sequencesBase)
-        gShortcutPool->setOverrides(sequencesData);
-
     /* Save new data from cache: */
     if (m_pCache->wasChanged())
     {
+        /* Save host-combo shortcut from cache: */
+        UIDataShortcutRow fakeHostComboItem(0, UIHostCombo::hostComboCacheKey(), QString(), QString(), QString());
+        const int iHostComboItemBase = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->base().shortcuts(), fakeHostComboItem);
+        const int iHostComboItemData = UIFunctorFindShortcut(UIFunctorFindShortcut::Base)(m_pCache->data().shortcuts(), fakeHostComboItem);
+        const QString strHostComboBase = iHostComboItemBase != -1 ? m_pCache->base().shortcuts().at(iHostComboItemBase).currentSequence() : QString();
+        const QString strHostComboData = iHostComboItemData != -1 ? m_pCache->data().shortcuts().at(iHostComboItemData).currentSequence() : QString();
+        if (strHostComboData != strHostComboBase)
+            m_settings.setHostCombo(strHostComboData);
+
+        /* Save other shortcut sequences from cache: */
+        QMap<QString, QString> sequencesBase;
+        QMap<QString, QString> sequencesData;
+        foreach (const UIDataShortcutRow &item, m_pCache->base().shortcuts())
+            sequencesBase.insert(item.key(), item.currentSequence());
+        foreach (const UIDataShortcutRow &item, m_pCache->data().shortcuts())
+            sequencesData.insert(item.key(), item.currentSequence());
+        if (sequencesData != sequencesBase)
+            gShortcutPool->setOverrides(sequencesData);
+
         /* Save other things from cache: */
         if (m_pCache->data().autoCapture() != m_pCache->base().autoCapture())
             m_settings.setAutoCapture(m_pCache->data().autoCapture());
