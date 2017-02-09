@@ -3921,6 +3921,7 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
 
 #ifdef VBOX_WITH_HGCM
     vmmdevHGCMDestroy(pThis);
+    RTCritSectDelete(&pThis->critsectHGCMCmdList);
 #endif
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
