@@ -6875,9 +6875,13 @@ VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixed
              in the VT-x part of the sources instead of the generic stuff. */
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
     {
-        /* For now, imply that the caller might change everything too. */
+        int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+        /*
+         * For now, imply that the caller might change everything too. Do this after
+         * saving the guest state so as to not trigger assertions.
+         */
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
-        return hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+        return rc;
     }
     return VINF_SUCCESS;
 }
