@@ -64,7 +64,7 @@ endif
 
 # libjpeg for VRDP video redirection and ExtPack's DrvHostWebcam
 if defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_EXTPACK_PUEL)
- include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/jpeg-9b/Makefile.kmk
 endif
 
 # Main related things - XPCOM and XSLT.
