@@ -1069,7 +1069,7 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                     sMountPoint = self.prepareStorage(oStorCfgVm);
                     if sMountPoint is not None:
                         self.testBenchmark('linux', sIoTest, sMountPoint, oExecVm, dTestSet, \
-                                           cMsTimeout = 2 * 3600 * 1000); # 2 hours max (Benchmark and QCOW takes some time)
+                                           cMsTimeout = 3 * 3600 * 1000); # 3 hours max (Benchmark and QED takes a lot of time)
                         self.cleanupStorage(oStorCfgVm);
                     else:
                         reporter.testFailure('Failed to prepare storage for the guest benchmark');
