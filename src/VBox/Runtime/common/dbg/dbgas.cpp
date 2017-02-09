@@ -341,6 +341,8 @@ static void rtDbgAsDestroy(PRTDBGASINT pDbgAs)
         }
         pDbgAs->papModules[i] = NULL;
     }
+    RTSemRWDestroy(pDbgAs->hLock);
+    pDbgAs->hLock = NIL_RTSEMRW;
     RTMemFree(pDbgAs->papModules);
     pDbgAs->papModules = NULL;
 
