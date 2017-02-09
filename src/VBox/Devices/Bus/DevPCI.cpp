@@ -1388,6 +1388,21 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int)   pciR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    if (pGlobals->PciBus.papBridgesR3)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pGlobals->PciBus.papBridgesR3);
+        pGlobals->PciBus.papBridgesR3 = NULL;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * The device registration structure.
  */
 const PDMDEVREG g_DevicePCI =
@@ -1413,7 +1428,7 @@ const PDMDEVREG g_DevicePCI =
     /* pfnConstruct */
     pciR3Construct,
     /* pfnDestruct */
-    NULL,
+    pciR3Destruct,
     /* pfnRelocate */
     devpciR3RootRelocate,
     /* pfnMemSetup */
@@ -1703,6 +1718,21 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int)   pcibridgeR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    if (pBus->papBridgesR3)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pBus->papBridgesR3);
+        pBus->papBridgesR3 = NULL;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * The device registration structure
  * for the PCI-to-PCI bridge.
  */
@@ -1729,7 +1759,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* pfnConstruct */
     pcibridgeR3Construct,
     /* pfnDestruct */
-    NULL,
+    pcibridgeR3Destruct,
     /* pfnRelocate */
     devpciR3BusRelocate,
     /* pfnMemSetup */
