@@ -1900,7 +1900,7 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 
     if (pThis->pbDeviceProps)
     {
-        MMR3HeapFree(pThis->pbDeviceProps);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pbDeviceProps);
         pThis->pbDeviceProps = NULL;
         pThis->cbDeviceProps = 0;
     }
