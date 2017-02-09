@@ -1478,6 +1478,9 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     RTReqQueueDestroy(pThis->hUrgRecvReqQueue);
     pThis->hUrgRecvReqQueue = NIL_RTREQQUEUE;
 
+    RTReqQueueDestroy(pThis->hRecvReqQueue);
+    pThis->hRecvReqQueue = NIL_RTREQQUEUE;
+
     RTSemEventDestroy(pThis->EventRecv);
     pThis->EventRecv = NIL_RTSEMEVENT;
 
