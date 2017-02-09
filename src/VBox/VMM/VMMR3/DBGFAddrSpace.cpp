@@ -232,7 +232,6 @@ int dbgfR3AsInit(PUVM pUVM)
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
-    RTDbgAsRetain(hDbgAs);
     pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_GLOBAL)] = hDbgAs;
 
     RTDbgAsRetain(hDbgAs);
@@ -242,14 +241,12 @@ int dbgfR3AsInit(PUVM pUVM)
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
-    RTDbgAsRetain(hDbgAs);
     pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_PHYS)] = hDbgAs;
 
     rc = RTDbgAsCreate(&hDbgAs, 0, RTRCPTR_MAX, "HyperRawMode");
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
-    RTDbgAsRetain(hDbgAs);
     pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC)] = hDbgAs;
     RTDbgAsRetain(hDbgAs);
     pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC_AND_GC_GLOBAL)] = hDbgAs;
@@ -258,7 +255,6 @@ int dbgfR3AsInit(PUVM pUVM)
     AssertRCReturn(rc, rc);
     rc = DBGFR3AsAdd(pUVM, hDbgAs, NIL_RTPROCESS);
     AssertRCReturn(rc, rc);
-    RTDbgAsRetain(hDbgAs);
     pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_R0)] = hDbgAs;
 
     return VINF_SUCCESS;
@@ -307,6 +303,12 @@ void dbgfR3AsTerm(PUVM pUVM)
         RTDbgAsRelease(pUVM->dbgf.s.ahAsAliases[i]);
         pUVM->dbgf.s.ahAsAliases[i] = NIL_RTDBGAS;
     }
+
+    /*
+     * Release the reference to the debugging config.
+     */
+    rc = RTDbgCfgRelease(pUVM->dbgf.s.hDbgCfg);
+    AssertRC(rc);
 }
 
 
