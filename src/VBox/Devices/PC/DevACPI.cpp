@@ -3501,7 +3501,7 @@ static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     if (pThis->pu8CustBin)
     {
-        MMR3HeapFree(pThis->pu8CustBin);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8CustBin);
         pThis->pu8CustBin = NULL;
     }
     return VINF_SUCCESS;
@@ -3895,7 +3895,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                     if (RT_FAILURE(rc))
                     {
                         AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", pThis->cbCustBin, rc));
-                        MMR3HeapFree(pThis->pu8CustBin);
+                        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8CustBin);
                         pThis->pu8CustBin = NULL;
                     }
                     else

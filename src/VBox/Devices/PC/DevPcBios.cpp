@@ -987,49 +987,49 @@ static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
      */
     if (pThis->pu8PcBios)
     {
-        MMR3HeapFree(pThis->pu8PcBios);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8PcBios);
         pThis->pu8PcBios = NULL;
     }
 
     if (pThis->pszPcBiosFile)
     {
-        MMR3HeapFree(pThis->pszPcBiosFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszPcBiosFile);
         pThis->pszPcBiosFile = NULL;
     }
 
     if (pThis->pu8LanBoot)
     {
-        MMR3HeapFree(pThis->pu8LanBoot);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pu8LanBoot);
         pThis->pu8LanBoot = NULL;
     }
 
     if (pThis->pszLanBootFile)
     {
-        MMR3HeapFree(pThis->pszLanBootFile);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszLanBootFile);
         pThis->pszLanBootFile = NULL;
     }
 
     if (pThis->pszHDDevice)
     {
-        MMR3HeapFree(pThis->pszHDDevice);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszHDDevice);
         pThis->pszHDDevice = NULL;
     }
 
     if (pThis->pszFDDevice)
     {
-        MMR3HeapFree(pThis->pszFDDevice);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszFDDevice);
         pThis->pszFDDevice = NULL;
     }
 
     if (pThis->pszSataDevice)
     {
-        MMR3HeapFree(pThis->pszSataDevice);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszSataDevice);
         pThis->pszSataDevice = NULL;
     }
 
     if (pThis->pszScsiDevice)
     {
-        MMR3HeapFree(pThis->pszScsiDevice);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszScsiDevice);
         pThis->pszScsiDevice = NULL;
     }
 
