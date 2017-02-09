@@ -538,6 +538,7 @@ static void pdmacFileAioMgrDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile, 
     /* Free the resources. */
     RTCritSectDelete(&pAioMgr->CritSectBlockingEvent);
     RTSemEventDestroy(pAioMgr->EventSem);
+    RTSemEventDestroy(pAioMgr->EventSemBlock);
     if (pAioMgr->enmMgrType != PDMACEPFILEMGRTYPE_SIMPLE)
         pdmacFileAioMgrNormalDestroy(pAioMgr);
 
@@ -1152,6 +1153,8 @@ static DECLCALLBACK(int) pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 
     /* Destroy the locked ranges tree now. */
     RTAvlrFileOffsetDestroy(pEpFile->AioMgr.pTreeRangesLocked, pdmacFileEpRangesLockedDestroy, NULL);
+    RTMemFree(pEpFile->AioMgr.pTreeRangesLocked);
+    pEpFile->AioMgr.pTreeRangesLocked = NULL;
 
     RTFileClose(pEpFile->hFile);
 
