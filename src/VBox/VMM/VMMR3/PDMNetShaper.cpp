@@ -475,6 +475,8 @@ int pdmR3NetShaperTerm(PVM pVM)
     }
 
     RTCritSectDelete(&pShaper->Lock);
+    MMR3HeapFree(pShaper);
+    pUVM->pdm.s.pNetShaper = NULL;
     return VINF_SUCCESS;
 }
 
