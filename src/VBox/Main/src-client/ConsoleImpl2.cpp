@@ -4829,28 +4829,6 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
 }
 
 
-#ifdef RT_OS_WINDOWS
-DECLINLINE(bool) IsNdis6(void)
-{
-    LogFlowFunc(("entry\n"));
-    HANDLE hFile = CreateFile(L"\\\\.\\VBoxNetLwf",
-                              0,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE,
-                              NULL,
-                              OPEN_EXISTING,
-                              0,
-                              NULL);
-    bool fNdis6 = hFile != INVALID_HANDLE_VALUE;
-    if (fNdis6)
-        CloseHandle(hFile);
-    else
-        LogFunc(("CreateFile failed with 0x%x\n", GetLastError()));
-    LogFlowFunc(("return %s\n", fNdis6 ? "true" : "false"));
-    return fNdis6;
-}
-#endif /* RT_OS_WINDOWS */
-
-
 /**
  *  Construct the Network configuration tree
  *
@@ -5664,56 +5642,74 @@ int Console::i_configNetwork(const char *pszDevice,
                 }
 #  define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
                 char szTrunkName[INTNET_MAX_TRUNK_NAME];
-                char *pszTrunkName = szTrunkName;
-                wchar_t * pswzBindName;
-                hrc = pAdaptorComponent->GetBindName(&pswzBindName);
+                bool fNdis6 = false;
+                wchar_t * pwszHelpText;
+                hrc = pAdaptorComponent->GetHelpText(&pwszHelpText);
                 Assert(hrc == S_OK);
                 if (hrc == S_OK)
                 {
-                    int cwBindName = (int)wcslen(pswzBindName) + 1;
-                    int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
-                    if (sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
+                    Log(("help-text=%ls\n", pwszHelpText));
+                    if (!wcscmp(pwszHelpText, L"VirtualBox NDIS 6.0 Miniport Driver"))
+                        fNdis6 = true;
+                    CoTaskMemFree(pwszHelpText);
+                }
+                if (fNdis6)
+                {
+                    strncpy(szTrunkName, pszHostOnlyName, sizeof(szTrunkName) - 1);
+                    Log(("trunk=%s\n", szTrunkName));
+                }
+                else
+                {
+                    char *pszTrunkName = szTrunkName;
+                    wchar_t * pswzBindName;
+                    hrc = pAdaptorComponent->GetBindName(&pswzBindName);
+                    Assert(hrc == S_OK);
+                    if (hrc == S_OK)
                     {
-                        strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
-                        pszTrunkName += cbFullBindNamePrefix-1;
-                        if (!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
-                                                sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
+                        int cwBindName = (int)wcslen(pswzBindName) + 1;
+                        int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
+                        if (sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
                         {
-                            DWORD err = GetLastError();
-                            hrc = HRESULT_FROM_WIN32(err);
-                            AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
+                            strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
+                            pszTrunkName += cbFullBindNamePrefix-1;
+                            if (!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
+                                                     sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
+                            {
+                                DWORD err = GetLastError();
+                                hrc = HRESULT_FROM_WIN32(err);
+                                AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                       hrc, hrc, err));
+                            }
+                        }
+                        else
+                        {
+                            AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: insufficient szTrunkName buffer space\n"));
+                            /** @todo set appropriate error code */
+                            hrc = E_FAIL;
+                        }
+
+                        if (hrc != S_OK)
+                        {
+                            AssertFailed();
+                            CoTaskMemFree(pswzBindName);
+                            VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                            H();
                         }
                     }
                     else
                     {
-                        AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: insufficient szTrunkName buffer space\n"));
-                        /** @todo set appropriate error code */
-                        hrc = E_FAIL;
-                    }
-
-                    if (hrc != S_OK)
-                    {
-                        AssertFailed();
-                        CoTaskMemFree(pswzBindName);
                         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                        AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n",
+                                               hrc, hrc));
                         H();
                     }
-                }
-                else
-                {
-                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
-                    AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n",
-                                           hrc, hrc));
-                    H();
+
+
+                    CoTaskMemFree(pswzBindName);
                 }
 
-
-                CoTaskMemFree(pswzBindName);
-
-                /* The old NDIS5.1 version of driver uses TRUNKTYPE_NETADP */
-                trunkType = IsNdis6() ? TRUNKTYPE_NETFLT : TRUNKTYPE_NETADP;
-                InsertConfigInteger(pCfg, "TrunkType", trunkType == TRUNKTYPE_NETFLT ? kIntNetTrunkType_NetFlt : kIntNetTrunkType_NetAdp);
+                trunkType = TRUNKTYPE_NETADP;
+                InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
 
                 pAdaptorComponent.setNull();
                 /* release the pNc finally */
