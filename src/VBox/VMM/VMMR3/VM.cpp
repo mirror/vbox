@@ -2669,6 +2669,9 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     PDMR3TermUVM(pUVM);
 
+    RTCritSectDelete(&pUVM->vm.s.AtErrorCritSect);
+    RTCritSectDelete(&pUVM->vm.s.AtStateCritSect);
+
     /*
      * Terminate the support library if initialized.
      */
@@ -3094,6 +3097,9 @@ static void vmR3DoReleaseUVM(PUVM pUVM)
      * Free the UVM.
      */
     Assert(!pUVM->pVM);
+
+    MMR3HeapFree(pUVM->vm.s.pszName);
+    pUVM->vm.s.pszName = NULL;
 
     MMR3TermUVM(pUVM);
     STAMR3TermUVM(pUVM);
