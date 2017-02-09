@@ -1042,6 +1042,8 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
                                paPages,
                                MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmGetTagName(enmTag)),
                                &GCPtr);
+        /* not needed anymore */
+        RTMemTmpFree(paPages);
         if (RT_SUCCESS(rc))
         {
             *ppv = pvPages;
