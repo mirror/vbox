@@ -30,6 +30,7 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 
+#include <iprt/nt/ntddk.h>
 #include <iprt/nt/ndis.h>
 
 #include "VBoxNetAdp-win.h"
