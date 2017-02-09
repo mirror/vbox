@@ -1445,6 +1445,8 @@ VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache)
 
     pdmBlkCacheLockLeave(pCache);
 
+    RTMemFree(pBlkCache->pTree);
+    pBlkCache->pTree = NULL;
     RTSemRWDestroy(pBlkCache->SemRWEntries);
 
 #ifdef VBOX_WITH_STATISTICS
