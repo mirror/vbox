@@ -67,7 +67,7 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
 #endif
     guiFeatures = QString::null;
     languageId  = QString::null;
-    maxGuestRes = "auto";
+    maxGuestRes = QString::null;
     remapScancodes = QString::null;
     proxySettings = QString::null;
     hostScreenSaverDisabled = false;
