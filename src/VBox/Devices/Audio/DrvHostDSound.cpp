@@ -2257,15 +2257,60 @@ static DECLCALLBACK(int) drvHostDSoundStreamControl(PPDMIHOSTAUDIO pInterface,
 
 
 /**
- * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
  */
-static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, PDMAUDIOSTRMSTS_FLAG_NONE);
+
+    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
+
+    if (pStreamDS->In.fEnabled)
+        return UINT32_MAX;
+
+    return 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHostDSoundStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+
     AssertPtrReturn(pInterface, PDMAUDIOSTRMSTS_FLAG_NONE);
     AssertPtrReturn(pStream,    PDMAUDIOSTRMSTS_FLAG_NONE);
 
     PDRVHOSTDSOUND pThis     = PDMIHOSTAUDIO_2_DRVHOSTDSOUND(pInterface);
     PDSOUNDSTREAM  pStreamDS = (PDSOUNDSTREAM)pStream;
+
+    if (pStreamDS->Out.fEnabled)
+    {
+        DWORD cbFree;
+        int rc = dsoundGetPosOut(pThis, pStreamDS, NULL /* cbBuffer */, &cbFree, NULL /* cbPlayPos */);
+        if (   RT_SUCCESS(rc)
+            && cbFree)
+        {
+            Log3Func(("cbFree=%ld\n", cbFree));
+            return (uint32_t)cbFree;
+        }
+    }
+
+    return 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
+ */
+static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, PDMAUDIOSTRMSTS_FLAG_NONE);
+
+    PDSOUNDSTREAM pStreamDS = (PDSOUNDSTREAM)pStream;
 
     if (!pStreamDS->pCfg) /* Not (yet) configured? Skip. */
         return PDMAUDIOSTRMSTS_FLAG_NONE;
@@ -2274,23 +2319,12 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostDSoundStreamGetStatus(PPDMIHOSTAUDIO
     if (pStreamDS->pCfg->enmDir == PDMAUDIODIR_IN)
     {
         if (pStreamDS->In.fEnabled)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED | PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
+            strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED;
     }
     else
     {
         if (pStreamDS->Out.fEnabled)
-        {
             strmSts |= PDMAUDIOSTRMSTS_FLAG_ENABLED;
-
-            DWORD cbFree;
-            int rc = dsoundGetPosOut(pThis, pStreamDS, NULL /* cbBuffer */, &cbFree, NULL /* cbPlayPos */);
-            if (   RT_SUCCESS(rc)
-                && cbFree)
-            {
-                LogFlowFunc(("cbFree=%ld\n", cbFree));
-                strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
-            }
-        }
     }
 
     return strmSts;

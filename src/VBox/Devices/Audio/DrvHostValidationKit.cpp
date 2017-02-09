@@ -98,7 +98,7 @@ static DECLCALLBACK(int) drvHostVaKitAudioGetConfig(PPDMIHOSTAUDIO pInterface, P
 static DECLCALLBACK(int) drvHostVaKitAudioInit(PPDMIHOSTAUDIO pInterface)
 {
     RT_NOREF(pInterface);
-    
+
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
@@ -371,12 +371,32 @@ static DECLCALLBACK(int) drvHostVaKitAudioStreamControl(PPDMIHOSTAUDIO pInterfac
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHostVaKitAudioStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+
+    return UINT32_MAX;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHostVaKitAudioStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+
+    return UINT32_MAX;
+}
+
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostVaKitAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
     RT_NOREF(pInterface, pStream);
 
-    return (  PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED
-            | PDMAUDIOSTRMSTS_FLAG_DATA_READABLE | PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE);
+    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED;
 }
 
 static DECLCALLBACK(int) drvHostVaKitAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)

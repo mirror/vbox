@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2761,6 +2761,9 @@
 #define VERR_AUDIO_NO_FREE_OUTPUT_STREAMS           (-6602)
 /** Pending stream disable operation in progress.  */
 #define VERR_AUDIO_STREAM_PENDING_DISABLE           (-6603)
+/** There is more data available.
+ *  This can happen due to a buffer wraparound of a buffer read/write operation. */
+#define VINF_AUDIO_MORE_DATA_AVAILABLE              (6604)
 /** @} */
 
 

@@ -689,15 +689,11 @@ typedef uint32_t PDMAUDIOSTRMSTS;
  *  but there are still associated guest output streams
  *  which rely on its data. */
 #define PDMAUDIOSTRMSTS_FLAG_PENDING_DISABLE RT_BIT_32(3)
-/** Data can be read from the stream. */
-#define PDMAUDIOSTRMSTS_FLAG_DATA_READABLE   RT_BIT_32(4)
-/** Data can be written to the stream. */
-#define PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE   RT_BIT_32(5)
 /** Whether this stream is in re-initialization phase.
  *  All other bits remain untouched to be able to restore
  *  the stream's state after the re-initialization bas been
  *  finished. */
-#define PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT  RT_BIT_32(6)
+#define PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT  RT_BIT_32(4)
 /** Validation mask. */
 #define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000007F)
 
@@ -1071,19 +1067,21 @@ typedef struct PDMIAUDIOCONNECTOR
  */
 #define PDMAUDIO_IHOSTAUDIO_CALLBACKS(a_Prefix) \
     do { \
-        pThis->IHostAudio.pfnInit            = RT_CONCAT(a_Prefix,Init); \
-        pThis->IHostAudio.pfnShutdown        = RT_CONCAT(a_Prefix,Shutdown); \
-        pThis->IHostAudio.pfnGetConfig       = RT_CONCAT(a_Prefix,GetConfig); \
+        pThis->IHostAudio.pfnInit              = RT_CONCAT(a_Prefix,Init); \
+        pThis->IHostAudio.pfnShutdown          = RT_CONCAT(a_Prefix,Shutdown); \
+        pThis->IHostAudio.pfnGetConfig         = RT_CONCAT(a_Prefix,GetConfig); \
         /** @todo Add pfnGetDevices here as soon as supported by all backends. */ \
-        pThis->IHostAudio.pfnGetStatus       = RT_CONCAT(a_Prefix,GetStatus); \
+        pThis->IHostAudio.pfnGetStatus         = RT_CONCAT(a_Prefix,GetStatus); \
         /** @todo Ditto for pfnSetCallback. */ \
-        pThis->IHostAudio.pfnStreamCreate    = RT_CONCAT(a_Prefix,StreamCreate); \
-        pThis->IHostAudio.pfnStreamDestroy   = RT_CONCAT(a_Prefix,StreamDestroy); \
-        pThis->IHostAudio.pfnStreamControl   = RT_CONCAT(a_Prefix,StreamControl); \
-        pThis->IHostAudio.pfnStreamGetStatus = RT_CONCAT(a_Prefix,StreamGetStatus); \
-        pThis->IHostAudio.pfnStreamIterate   = RT_CONCAT(a_Prefix,StreamIterate); \
-        pThis->IHostAudio.pfnStreamPlay      = RT_CONCAT(a_Prefix,StreamPlay); \
-        pThis->IHostAudio.pfnStreamCapture   = RT_CONCAT(a_Prefix,StreamCapture); \
+        pThis->IHostAudio.pfnStreamCreate      = RT_CONCAT(a_Prefix,StreamCreate); \
+        pThis->IHostAudio.pfnStreamDestroy     = RT_CONCAT(a_Prefix,StreamDestroy); \
+        pThis->IHostAudio.pfnStreamControl     = RT_CONCAT(a_Prefix,StreamControl); \
+        pThis->IHostAudio.pfnStreamGetReadable = RT_CONCAT(a_Prefix,StreamGetReadable); \
+        pThis->IHostAudio.pfnStreamGetWritable = RT_CONCAT(a_Prefix,StreamGetWritable); \
+        pThis->IHostAudio.pfnStreamGetStatus   = RT_CONCAT(a_Prefix,StreamGetStatus); \
+        pThis->IHostAudio.pfnStreamIterate     = RT_CONCAT(a_Prefix,StreamIterate); \
+        pThis->IHostAudio.pfnStreamPlay        = RT_CONCAT(a_Prefix,StreamPlay); \
+        pThis->IHostAudio.pfnStreamCapture     = RT_CONCAT(a_Prefix,StreamCapture); \
     } while (0)
 
 /**
@@ -1176,6 +1174,24 @@ typedef struct PDMIHOSTAUDIO
     DECLR3CALLBACKMEMBER(int, pfnStreamControl, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream, PDMAUDIOSTREAMCMD enmStreamCmd));
 
     /**
+     * Returns the number of bytes which are readable from the audio (input) stream.
+     *
+     * @returns Number of readable bytes.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetReadable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
+     * Returns the number of bytes which are writable to the audio (output) stream.
+     *
+     * @returns Number of writable bytes.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   pStream             Pointer to audio stream.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnStreamGetWritable, (PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream));
+
+    /**
      * Returns whether the specified audio direction in the backend is enabled or not.
      *
      * @returns PDMAUDIOSTRMSTS
@@ -1220,7 +1236,7 @@ typedef struct PDMIHOSTAUDIO
 } PDMIHOSTAUDIO;
 
 /** PDMIHOSTAUDIO interface ID. */
-#define PDMIHOSTAUDIO_IID                           "1F1C3DEB-AEA3-4E32-8405-EC7E7661E888"
+#define PDMIHOSTAUDIO_IID                           "12DF859E-416A-4332-9980-A049AC70D187"
 
 /** @} */
 

@@ -2412,6 +2412,36 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamControl(PPDMIHOSTAUDIO pInterface
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvHostCoreAudioStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
+
+    return   (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
+           ? UINT32_MAX : 0;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvHostCoreAudioStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+
+    PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
+
+    return   (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
+           ? UINT32_MAX : 0;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -2428,19 +2458,6 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostCoreAudioStreamGetStatus(PPDMIHOSTAU
 
     if (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
         strmSts |= PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED;
-
-    if (pCAStream->pCfg->enmDir == PDMAUDIODIR_IN)
-    {
-        if (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_READABLE;
-    }
-    else if (pCAStream->pCfg->enmDir == PDMAUDIODIR_OUT)
-    {
-        if (strmSts & PDMAUDIOSTRMSTS_FLAG_ENABLED)
-            strmSts |= PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE;
-    }
-    else
-        AssertFailed();
 
     return strmSts;
 }

@@ -19,13 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_VRDE_AUDIO
+#define LOG_GROUP LOG_GROUP_DRV_HOST_AUDIO
 #include <VBox/log.h>
 #include "DrvAudioVRDE.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
-
-#include "Logging.h"
 
 #include "../../Devices/Audio/DrvAudio.h"
 
@@ -76,7 +74,7 @@ typedef struct VRDESTREAM
         struct
         {
             uint64_t    old_ticks;
-            uint64_t    cSamplesSentPerSec;
+            uint64_t    csToWrite;
         } Out;
     };
 } VRDESTREAM, *PVRDESTREAM;
@@ -262,36 +260,53 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
     PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
 
+    if (!pDrv->pConsoleVRDPServer)
+        return VERR_NOT_AVAILABLE;
+
     /* Note: We get the number of *samples* in cbBuf
      *       (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout) on stream creation. */
     uint32_t csLive           = cbBuf;
 
-    uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
-    uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
-    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
-
     PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
-
-    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    uint32_t csToWrite = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
-
-    /* Remember when samples were consumed. */
-    pStreamVRDE->Out.old_ticks = now;
 
     VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(pProps->uHz,
                                                  pProps->cChannels,
                                                  pProps->cBits,
                                                  pProps->fSigned);
 
-    Log3Func(("uFreq=%RU32, cChan=%RU8, cBits=%RU8 (%d BPP), fSigned=%RTbool, enmFormat=%ld, csLive=%RU32, csToWrite=%RU32\n",
+#ifdef DEBUG
+    uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
+    uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
+    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
+
+    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
+    uint32_t csExpected = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
+    LogFunc(("csExpected=%RU32\n", csExpected));
+#endif
+
+    uint32_t csToWrite = pStreamVRDE->Out.csToWrite;
+
+    Log2Func(("uFreq=%RU32, cChan=%RU8, cBits=%RU8 (%d BPP), fSigned=%RTbool, enmFormat=%ld, csLive=%RU32, csToWrite=%RU32\n",
               pProps->uHz, pProps->cChannels, pProps->cBits, VRDE_AUDIO_FMT_BYTES_PER_SAMPLE(format),
               pProps->fSigned, format, csLive, csToWrite));
 
     /* Don't play more than available. */
     if (csToWrite > csLive)
+    {
+        LogFunc(("Expected at least %RU32 audio samples, but only got %RU32\n", csToWrite, csLive));
         csToWrite = csLive;
+    }
+
+    /* Reset to-write sample count. */
+    pStreamVRDE->Out.csToWrite = 0;
+
+    /* Remember when samples were consumed. */
+    pStreamVRDE->Out.old_ticks = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
 
     int rc = VINF_SUCCESS;
+
+    PPDMAUDIOSAMPLE paSampleBuf = (PPDMAUDIOSAMPLE)pvBuf;
+    AssertPtr(paSampleBuf);
 
     /*
      * Call the VRDP server with the data.
@@ -306,7 +321,7 @@ static DECLCALLBACK(int) drvAudioVRDEStreamPlay(PPDMIHOSTAUDIO pInterface, PPDMA
 
         /* Note: The VRDP server expects int64_t samples per channel, regardless of the actual
          *       sample bits (e.g 8 or 16 bits). */
-        pDrv->pConsoleVRDPServer->SendAudioSamples((PPDMAUDIOSAMPLE)pvBuf + csWritten, csChunk /* Samples */, format);
+        pDrv->pConsoleVRDPServer->SendAudioSamples(paSampleBuf + csWritten, csChunk /* Samples */, format);
 
         csWritten += csChunk;
         Assert(csWritten <= csLive);
@@ -480,15 +495,47 @@ static DECLCALLBACK(int) drvAudioVRDEStreamControl(PPDMIHOSTAUDIO pInterface,
 
 
 /**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetReadable}
+ */
+static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    RT_NOREF(pInterface, pStream);
+
+    return UINT32_MAX;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetWritable}
+ */
+static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetWritable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
+{
+    PDRVAUDIOVRDE pDrv        = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    PVRDESTREAM   pStreamVRDE = (PVRDESTREAM)pStream;
+
+    uint64_t now              = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
+    uint64_t ticks            = now  - pStreamVRDE->Out.old_ticks;
+    uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
+
+    PPDMAUDIOPCMPROPS pProps  = &pStreamVRDE->pCfg->Props;
+
+    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
+    pStreamVRDE->Out.csToWrite = (int)((2 * ticks * pProps->uHz + ticks_per_second) / ticks_per_second / 2);
+
+    /* Return samples instead of bytes here
+     * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
+    return pStreamVRDE->Out.csToWrite;
+}
+
+
+/**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamGetStatus}
  */
 static DECLCALLBACK(PDMAUDIOSTRMSTS) drvAudioVRDEStreamGetStatus(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface);
-    RT_NOREF(pStream);
+    RT_NOREF(pInterface, pStream);
 
-    return (  PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED
-            | PDMAUDIOSTRMSTS_FLAG_DATA_READABLE | PDMAUDIOSTRMSTS_FLAG_DATA_WRITABLE);
+    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
 

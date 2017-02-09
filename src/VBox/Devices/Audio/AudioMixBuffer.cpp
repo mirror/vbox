@@ -142,7 +142,8 @@ static uint64_t s_cSamplesMixedTotal = 0;
  * Peeks for audio samples without any conversion done.
  * This will get the raw sample data out of a mixing buffer.
  *
- * @return  IPRT status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
+ * @return  IPRT status code or VINF_AUDIO_MORE_DATA_AVAILABLE if more data is available to read.
+ *
  * @param   pMixBuf                 Mixing buffer to acquire audio samples from.
  * @param   cSamplesToRead          Number of audio samples to read.
  * @param   paSampleBuf             Buffer where to store the returned audio samples.
@@ -172,7 +173,7 @@ int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
     if (pMixBuf->offRead + cSamplesToRead > pMixBuf->cSamples)
     {
         cRead = pMixBuf->cSamples - pMixBuf->offRead;
-        rc = VINF_TRY_AGAIN;
+        rc = VINF_AUDIO_MORE_DATA_AVAILABLE;
     }
     else
     {
@@ -183,7 +184,7 @@ int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
     if (cRead > cSampleBuf)
     {
         cRead = cSampleBuf;
-        rc = VINF_TRY_AGAIN;
+        rc = VINF_AUDIO_MORE_DATA_AVAILABLE;
     }
 
     if (cRead)
@@ -192,7 +193,7 @@ int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
 
         pMixBuf->offRead = (pMixBuf->offRead + cRead) % pMixBuf->cSamples;
         Assert(pMixBuf->offRead <= pMixBuf->cSamples);
-        pMixBuf->cUsed -= RT_MIN(cRead, pMixBuf->cUsed);
+        pMixBuf->cUsed  -= RT_MIN(cRead, pMixBuf->cUsed);
     }
 
     if (pcSamplesRead)
