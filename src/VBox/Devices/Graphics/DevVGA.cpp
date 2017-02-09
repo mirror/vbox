@@ -6019,18 +6019,22 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         vmsvgaDestruct(pDevIns);
 #endif
 
+#ifdef VBOX_WITH_HGSMI
+    VBVADestroy(pThis);
+#endif
+
     /*
      * Free MM heap pointers.
      */
     if (pThis->pbVBEExtraData)
     {
-        MMR3HeapFree(pThis->pbVBEExtraData);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pbVBEExtraData);
         pThis->pbVBEExtraData = NULL;
     }
 #endif /* VBE_NEW_DYN_LIST */
     if (pThis->pbVgaBios)
     {
-        MMR3HeapFree(pThis->pbVgaBios);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pbVgaBios);
         pThis->pbVgaBios = NULL;
     }
 
@@ -6044,6 +6048,12 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     {
         MMR3HeapFree(pThis->pszLogoFile);
         pThis->pszLogoFile = NULL;
+    }
+
+    if (pThis->pbLogo)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pbLogo);
+        pThis->pbLogo = NULL;
     }
 
     PDMR3CritSectDelete(&pThis->CritSectIRQ);
@@ -6590,7 +6600,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", pThis->cbVgaBios, rc));
-                MMR3HeapFree(pThis->pbVgaBios);
+                PDMDevHlpMMHeapFree(pDevIns, pThis->pbVgaBios);
                 pThis->pbVgaBios = NULL;
             }
             rc = VINF_SUCCESS;
