@@ -695,7 +695,7 @@ typedef uint32_t PDMAUDIOSTRMSTS;
  *  finished. */
 #define PDMAUDIOSTRMSTS_FLAG_PENDING_REINIT  RT_BIT_32(4)
 /** Validation mask. */
-#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000007F)
+#define PDMAUDIOSTRMSTS_VALID_MASK           UINT32_C(0x0000001F)
 
 /**
  * Enumeration presenting a backend's current status.
