@@ -1634,6 +1634,7 @@ static DECLCALLBACK(void) drvramdiskDestruct(PPDMDRVINS pDrvIns)
         RTAvlrFileOffsetDestroy(pThis->pTreeSegments, drvramdiskTreeDestroy, NULL);
         RTMemFree(pThis->pTreeSegments);
     }
+    RTReqQueueDestroy(pThis->hReqQ);
 }
 
 /**
