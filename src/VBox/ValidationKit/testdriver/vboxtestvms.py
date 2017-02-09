@@ -414,7 +414,7 @@ class TestVm(object):
         if self.aInfo[g_iKind] in ['WindowsXP_64', 'Windows2003_64']:
             return True;
         # Vista 64 throws BSOD 0x5D (UNSUPPORTED_PROCESSOR)
-        if self.aInfo[g_iKind] in ['Vista_64']:
+        if self.aInfo[g_iKind] in ['WindowsVista_64']:
             return True;
         return False;
 
