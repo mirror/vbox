@@ -396,7 +396,7 @@ static DECLCALLBACK(PDMAUDIOSTRMSTS) drvHostVaKitAudioStreamGetStatus(PPDMIHOSTA
 {
     RT_NOREF(pInterface, pStream);
 
-    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED;
+    return (PDMAUDIOSTRMSTS_FLAG_INITIALIZED | PDMAUDIOSTRMSTS_FLAG_ENABLED);
 }
 
 static DECLCALLBACK(int) drvHostVaKitAudioStreamIterate(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
@@ -452,13 +452,13 @@ const PDMDRVREG g_DrvHostValidationKitAudio =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szName */
-    "VaKitAudio",
+    "ValidationKitAudio",
     /* szRCMod */
     "",
     /* szR0Mod */
     "",
     /* pszDescription */
-    "VaKit audio host driver",
+    "ValidationKitAudio audio host driver",
     /* fFlags */
     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
     /* fClass. */
