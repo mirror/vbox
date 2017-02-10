@@ -467,6 +467,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
+    ktReason_Panic_BootManagerC000000F                 = ( 'Panic',             'Hardware Changed' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
     ktReason_Panic_HugeMemory                          = ( 'Panic',             'Huge memory assertion' );
     ktReason_Panic_IOAPICDoesntWork                    = ( 'Panic',             'IO-APIC + timer doesn''t work' );
@@ -797,6 +798,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
           "\n" ),
         ( True,  ktReason_OSInstall_GRUB_hang,
           "-----\nGRUB Loading stage2..\n\n\n\n" ),
+        ( True,  ktReason_Panic_BootManagerC000000F,
+          "Windows failed to start. A recent hardware or software change might be the" ),
     ];
 
     ## Mapping screenshot/failure SHA-256 hashes to failure reasons.
