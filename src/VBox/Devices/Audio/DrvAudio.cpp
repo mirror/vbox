@@ -1583,7 +1583,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         }
 
         if (cbFree > cbBuf) /* Limit to buffer size. */
-            cbFree = cbBuf;
+            cbFree = (uint32_t)cbBuf;
 
         uint32_t cbCaptured;
         rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream->pvBackend,
@@ -1597,7 +1597,7 @@ static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM 
         {
             Assert(cbCaptured <= cbBuf);
             if (cbCaptured > cbBuf) /* Paranoia. */
-                cbCaptured = cbBuf;
+                cbCaptured = (uint32_t)cbBuf;
 
             uint32_t csCaptured = 0;
             rc = AudioMixBufWriteCirc(&pHstStream->MixBuf, auBuf, cbCaptured, &csCaptured);
