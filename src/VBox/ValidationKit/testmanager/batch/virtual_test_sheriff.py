@@ -860,7 +860,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             #
             if sKrnlLog is not None:
                 for fStopOnHit, tReason, sNeedle in self.katSimpleKernelLogReasons:
-                    if sNtKrnlLog.find(sNeedle) > 0:
+                    if sKrnlLog.find(sNeedle) > 0:
                         oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
                         if fStopOnHit:
                             return True;
