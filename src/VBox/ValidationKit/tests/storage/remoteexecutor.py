@@ -122,7 +122,7 @@ class RemoteExecutor(object):
         """
         reporter.log('Executing [sudo]: %s' % (asArgs, ));
         reporter.flushall();
-        fRc = False;
+        fRc = True;
         sOutput = '';
         sError = '';
         try:
