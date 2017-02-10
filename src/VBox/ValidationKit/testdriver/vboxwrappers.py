@@ -1516,27 +1516,27 @@ class SessionWrapper(TdTaskBase):
                     reporter.log('warning: host IP for "%s" is %s, most likely not unique.' % (sHostName, sHostIP))
             except:
                 reporter.errorXcpt('failed to determine the host IP for "%s".' % (sHostName,))
-                abHostIP = array.array('B', (0x80, 0x86, 0x00, 0x00)).tostring()
+                return False
             sDefaultMac = '%02X%02X%02X%02X%02X%02X' \
                 % (0x02, ord(abHostIP[0]), ord(abHostIP[1]), ord(abHostIP[2]), ord(abHostIP[3]), iNic)
             sMacAddr = sDefaultMac[0:(12 - cchMacAddr)] + sMacAddr
 
         # Get the NIC object and try set it address.
         try:
-            oNic = self.o.machine.getNetworkAdapter(iNic);
+            oNic = self.o.machine.getNetworkAdapter(iNic)
         except:
-            reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName));
-            return False;
+            reporter.errorXcpt('getNetworkAdapter(%s) failed for "%s"' % (iNic, self.sName))
+            return False
 
         try:
-            oNic.MACAddress = sMacAddr;
+            oNic.MACAddress = sMacAddr
         except:
             reporter.errorXcpt('failed to set the MAC address on slot %s to "%s" for VM "%s"' \
-                % (iNic, sMacAddr, self.sName));
-            return False;
+                % (iNic, sMacAddr, self.sName))
+            return False
 
-        reporter.log('set MAC address on slot %s to %s for VM "%s"' % (iNic, sMacAddr, self.sName));
-        return True;
+        reporter.log('set MAC address on slot %s to %s for VM "%s"' % (iNic, sMacAddr, self.sName))
+        return True
 
     def setRamSize(self, cMB):
         """
