@@ -468,6 +468,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
     ktReason_Networking_Nonexistent_host_nic           = ( 'Networking',        'Nonexistent host networking interface' );
     ktReason_OSInstall_GRUB_hang                       = ( 'O/S Install',       'GRUB hang' );
     ktReason_Panic_MP_BIOS_IO_APIC                     = ( 'Panic',             'MP-BIOS/IO-APIC' );
+    ktReason_Panic_HugeMemory                          = ( 'Panic',             'Huge memory assertion' );
+    ktReason_Panic_IOAPICDoesntWork                    = ( 'Panic',             'IO-APIC + timer doesn''t work' );
     ktReason_XPCOM_Exit_Minus_11                       = ( 'API / (XP)COM',     'exit -11' );
     ktReason_XPCOM_VBoxSVC_Hang                        = ( 'API / (XP)COM',     'VBoxSVC hang' );
     ktReason_XPCOM_VBoxSVC_Hang_Plus_Heap_Corruption   = ( 'API / (XP)COM',     'VBoxSVC hang + heap corruption' );
@@ -773,6 +775,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_NotSignedWithBuildCert,              'Not signed with the build certificate' ),
     ];
 
+    ## Things we search a kernel.log file for to figure out why something went bust.
+    katSimpleKernelLogReasons = [
+        # (  Whether to stop on hit, reason tuple, needle text. )
+        ( True,  ktReason_Panic_HugeMemory,                         'mm/huge_memory.c:1988' ),
+        ( True,  ktReason_Panic_IOAPICDoesntWork,                   'IO-APIC + timer doesn''t work' ),
+    ];
 
     ## Things we search the _RIGHT_ _STRIPPED_ vgatext for.
     katSimpleVgaTextReasons = [
@@ -851,7 +859,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # Look for linux panic.
             #
             if sKrnlLog is not None:
-                pass; ## @todo
+                for fStopOnHit, tReason, sNeedle in self.katSimpleKernelLogReasons:
+                    if sNtKrnlLog.find(sNeedle) > 0:
+                        oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
+                        if fStopOnHit:
+                            return True;
+                        fFoundSomething = True;
 
             #
             # Loop thru the simple stuff.
