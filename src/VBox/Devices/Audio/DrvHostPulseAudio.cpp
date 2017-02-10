@@ -262,7 +262,7 @@ static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pP
 #endif
 
         default:
-            AssertLogRelMsg(("PulseAudio: Format (%ld) not supported\n", pulsefmt));
+            AssertLogRelMsgFailed(("PulseAudio: Format (%ld) not supported\n", pulsefmt));
             return VERR_NOT_SUPPORTED;
     }
 
