@@ -257,8 +257,8 @@ static DECLCALLBACK(int) drvHostDebugAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 /**
  * @interface_method_impl{PDMIHOSTAUDIO,pfnStreamCapture}
  */
-static DECLCALLBACK(int) drvHostDebugAudioStreamCapture(PPDMIHOSTAUDIO pInterface,
-                                                        PPDMAUDIOBACKENDSTREAM pStream, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+static DECLCALLBACK(int) drvHostDebugAudioStreamCapture(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream,
+                                                        void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     RT_NOREF(pInterface, pStream, pvBuf, cbBuf);
 
@@ -358,7 +358,7 @@ static DECLCALLBACK(uint32_t) drvHostDebugAudioStreamGetReadable(PPDMIHOSTAUDIO 
 {
     RT_NOREF(pInterface, pStream);
 
-    return UINT32_MAX;
+    return 0; /* Never capture anything. */
 }
 
 
