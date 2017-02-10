@@ -262,8 +262,7 @@ static int paPulseToAudioProps(pa_sample_format_t pulsefmt, PPDMAUDIOPCMPROPS pP
 #endif
 
         default:
-            AssertFailed();
-            LogRel(("PulseAudio: Format (%ld) not supported\n", pulsefmt));
+            AssertLogRelMsg(("PulseAudio: Format (%ld) not supported\n", pulsefmt));
             return VERR_NOT_SUPPORTED;
     }
 
@@ -419,7 +418,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
 
     if (!pa_sample_spec_valid(pSampleSpec))
     {
-        LogRel(("PulseAudio: Unsupported sample specification for stream \"%s\"\n",
+        LogRel(("PulseAudio: Unsupported sample specification for stream '%s'\n",
                 pszName));
         return VERR_NOT_SUPPORTED;
     }
@@ -429,7 +428,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
     pa_stream *pStream = NULL;
     uint32_t   flags = PA_STREAM_NOFLAGS;
 
-    LogFunc(("Opening \"%s\", rate=%dHz, channels=%d, format=%s\n",
+    LogFunc(("Opening '%s', rate=%dHz, channels=%d, format=%s\n",
              pszName, pSampleSpec->rate, pSampleSpec->channels,
              pa_sample_format_to_string(pSampleSpec->format)));
 
@@ -441,7 +440,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
         if (!(pStream = pa_stream_new(pThis->pContext, pszName, pSampleSpec,
                                       NULL /* pa_channel_map */)))
         {
-            LogRel(("PulseAudio: Could not create stream \"%s\"\n", pszName));
+            LogRel(("PulseAudio: Could not create stream '%s'\n", pszName));
             rc = VERR_NO_MEMORY;
             break;
         }
@@ -467,7 +466,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
 
             if (pa_stream_connect_record(pStream, /*dev=*/NULL, pBufAttr, (pa_stream_flags_t)flags) < 0)
             {
-                LogRel(("PulseAudio: Could not connect input stream \"%s\": %s\n",
+                LogRel(("PulseAudio: Could not connect input stream '%s': %s\n",
                         pszName, pa_strerror(pa_context_errno(pThis->pContext))));
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
@@ -481,7 +480,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
             if (pa_stream_connect_playback(pStream, /*dev=*/NULL, pBufAttr, (pa_stream_flags_t)flags,
                                            /*cvolume=*/NULL, /*sync_stream=*/NULL) < 0)
             {
-                LogRel(("PulseAudio: Could not connect playback stream \"%s\": %s\n",
+                LogRel(("PulseAudio: Could not connect playback stream '%s': %s\n",
                         pszName, pa_strerror(pa_context_errno(pThis->pContext))));
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
@@ -501,7 +500,7 @@ static int paStreamOpen(PDRVHOSTPULSEAUDIO pThis, bool fIn, const char *pszName,
             else if (   streamSt == PA_STREAM_FAILED
                      || streamSt == PA_STREAM_TERMINATED)
             {
-                LogRel(("PulseAudio: Failed to initialize stream \"%s\" (state %ld)\n", pszName, streamSt));
+                LogRel(("PulseAudio: Failed to initialize stream '%s' (state %ld)\n", pszName, streamSt));
                 rc = VERR_AUDIO_BACKEND_INIT_FAILED;
                 break;
             }
