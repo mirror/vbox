@@ -88,11 +88,11 @@ class RemoteExecutor(object):
     """
 
     def __init__(self, oTxsSession = None, asBinaryPaths = None, sScratchPath = None):
-        self.oTxsSession = oTxsSession;
-        self.asPaths = asBinaryPaths;
+        self.oTxsSession  = oTxsSession;
+        self.asPaths      = asBinaryPaths;
+        self.sScratchPath = sScratchPath;
         if self.asPaths is None:
             self.asPaths = [ ];
-        self.sScratchPath = sScratchPath
 
     def _isFile(self, sFile):
         """
@@ -122,21 +122,23 @@ class RemoteExecutor(object):
         """
         reporter.log('Executing [sudo]: %s' % (asArgs, ));
         reporter.flushall();
+        fRc = False;
+        sOutput = '';
+        sError = '';
         try:
             oProcess = utils.sudoProcessPopen(asArgs, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                              shell = False, close_fds = False);
+                                              stderr=subprocess.PIPE, shell = False, close_fds = False);
 
-            sOutput, _ = oProcess.communicate(sInput);
+            sOutput, sError = oProcess.communicate(sInput);
             iExitCode  = oProcess.poll();
 
             if iExitCode is not 0:
-                print(sOutput);
-                raise subprocess.CalledProcessError(iExitCode, asArgs);
+                fRc = False;
         except:
             reporter.errorXcpt();
-            return (False, None);
-        reporter.log('Exit code [sudo]: %s (%s)' % (True, asArgs));
-        return (True, str(sOutput));
+            fRc = False;
+        reporter.log('Exit code [sudo]: %s (%s)' % (fRc, asArgs));
+        return (fRc, str(sOutput), str(sError));
 
     def _execLocallyOrThroughTxs(self, sExec, asArgs, sInput, cMsTimeout):
         """
@@ -147,6 +149,7 @@ class RemoteExecutor(object):
         sOutput = None;
         if self.oTxsSession is not None:
             oStdOut = StdInOutBuffer();
+            oStdErr = StdInOutBuffer();
             oStdIn = None;
             if sInput is not None:
                 oStdIn = StdInOutBuffer(sInput);
@@ -154,11 +157,12 @@ class RemoteExecutor(object):
                 oStdIn = '/dev/null'; # pylint: disable=R0204
             fRc = self.oTxsSession.syncExecEx(sExec, (sExec,) + asArgs,
                                               oStdIn = oStdIn, oStdOut = oStdOut,
-                                              cMsTimeout = cMsTimeout);
+                                              oStdErr = oStdErr, cMsTimeout = cMsTimeout);
             sOutput = oStdOut.getOutput();
+            sError = oStdErr.getOutput();
         else:
-            fRc, sOutput = self._sudoExecuteSync([sExec, ] + list(asArgs), sInput);
-        return (fRc, sOutput);
+            fRc, sOutput, sError = self._sudoExecuteSync([sExec, ] + list(asArgs), sInput);
+        return (fRc, sOutput, sError);
 
     def execBinary(self, sExec, asArgs, sInput = None, cMsTimeout = 3600000):
         """
@@ -170,12 +174,13 @@ class RemoteExecutor(object):
 
         fRc = True;
         sOutput = None;
+        sError = None;
         sBinary = self._getBinaryPath(sExec);
         if sBinary is not None:
-            fRc, sOutput = self._execLocallyOrThroughTxs(sBinary, asArgs, sInput, cMsTimeout);
+            fRc, sOutput, sError = self._execLocallyOrThroughTxs(sBinary, asArgs, sInput, cMsTimeout);
         else:
             fRc = False;
-        return (fRc, sOutput);
+        return (fRc, sOutput, sError);
 
     def execBinaryNoStdOut(self, sExec, asArgs, sInput = None):
         """
@@ -183,7 +188,7 @@ class RemoteExecutor(object):
         providing some optional input through stdin and
         returning whether the process exited successfully.
         """
-        fRc, _ = self.execBinary(sExec, asArgs, sInput);
+        fRc, _, _ = self.execBinary(sExec, asArgs, sInput);
         return fRc;
 
     def copyFile(self, sLocalFile, sFilename, cMsTimeout = 30000):

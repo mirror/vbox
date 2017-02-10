@@ -83,6 +83,8 @@ class FioTest(object):
         self.oExecutor  = oExecutor;
         self.sCfgFileId = None;
         self.dCfg       = dCfg;
+        self.sError     = None;
+        self.sResult    = None;
 
     def prepare(self, cMsTimeout = 30000):
         """ Prepares the testcase """
@@ -126,9 +128,15 @@ class FioTest(object):
     def run(self, cMsTimeout = 30000):
         """ Runs the testcase """
         _ = cMsTimeout
-        fRc, sOutput = self.oExecutor.execBinary('fio', (self.sCfgFileId,), cMsTimeout = cMsTimeout);
-        # @todo: Parse output.
-        _ = sOutput;
+        fRc, sOutput, sError = self.oExecutor.execBinary('fio', (self.sCfgFileId,), cMsTimeout = cMsTimeout);
+        if fRc:
+            self.sResult = sOutput;
+        else:
+            self.sError = ('Binary: fio\n' +
+                           '\nOutput:\n\n' +
+                           sOutput +
+                           '\nError:\n\n' +
+                           sError);
         return fRc;
 
     def cleanup(self):
@@ -140,6 +148,12 @@ class FioTest(object):
         """
         return True;
 
+    def getErrorReport(self):
+        """
+        Returns the error report in case the testcase failed.
+        """
+        return self.sError;
+
 class IozoneTest(object):
     """
     I/O zone testcase.
@@ -147,6 +161,7 @@ class IozoneTest(object):
     def __init__(self, oExecutor, dCfg = None):
         self.oExecutor = oExecutor;
         self.sResult = None;
+        self.sError = None;
         self.lstTests = [ ('initial writers', 'FirstWrite'),
                           ('rewriters',       'Rewrite'),
                           ('re-readers',      'ReRead'),
@@ -181,9 +196,15 @@ class IozoneTest(object):
                    '-t', '1', '-T', '-F', self.sFilePath + '/iozone.tmp');
         if self.fDirectIo:
             tupArgs += ('-I',);
-        fRc, sOutput = self.oExecutor.execBinary('iozone', tupArgs, cMsTimeout = cMsTimeout);
+        fRc, sOutput, sError = self.oExecutor.execBinary('iozone', tupArgs, cMsTimeout = cMsTimeout);
         if fRc:
             self.sResult = sOutput;
+        else:
+            self.sError = ('Binary: iozone\n' +
+                           '\nOutput:\n\n' +
+                           sOutput +
+                           '\nError:\n\n' +
+                           sError);
 
         _ = cMsTimeout;
         return fRc;
@@ -232,6 +253,11 @@ class IozoneTest(object):
 
         return fRc;
 
+    def getErrorReport(self):
+        """
+        Returns the error report in case the testcase failed.
+        """
+        return self.sError;
 
 class StorTestCfgMgr(object):
     """
@@ -893,6 +919,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                         fRc = oTst.reportResult();
                 else:
                     reporter.testFailure('Running the testcase failed');
+                    reporter.addLogString(oTst.getErrorReport(), sBenchmark + '.log',
+                                          'log/release/client', 'Benchmark raw output');
             else:
                 reporter.testFailure('Preparing the testcase failed');
 

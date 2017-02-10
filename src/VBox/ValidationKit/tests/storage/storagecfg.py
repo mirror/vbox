@@ -149,7 +149,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
 
         fRc = True;
         if sZPoolRaid is not None:
-            fRc = oExec.execBinary('zpool', ('create', '-f', sPool, sZPoolRaid,) + tuple(asDisks));
+            fRc = oExec.execBinaryNoStdOut('zpool', ('create', '-f', sPool, sZPoolRaid,) + tuple(asDisks));
         else:
             fRc = False;
 
@@ -162,9 +162,9 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         fRc = True;
         if cbVol is not None:
-            fRc, _ = oExec.execBinary('zfs', ('create', '-o', 'mountpoint='+sMountPoint, '-V', cbVol, sPool + '/' + sVol));
+            fRc = oExec.execBinaryNoStdOut('zfs', ('create', '-o', 'mountpoint='+sMountPoint, '-V', cbVol, sPool + '/' + sVol));
         else:
-            fRc, _ = oExec.execBinary('zfs', ('create', '-o', 'mountpoint='+sMountPoint, sPool + '/' + sVol));
+            fRc = oExec.execBinaryNoStdOut('zfs', ('create', '-o', 'mountpoint='+sMountPoint, sPool + '/' + sVol));
 
         return fRc;
 
@@ -172,14 +172,14 @@ class StorageConfigOsSolaris(StorageConfigOs):
         """
         Destroys the given volume.
         """
-        fRc, _ = oExec.execBinary('zfs', ('destroy', sPool + '/' + sVol));
+        fRc = oExec.execBinaryNoStdOut('zfs', ('destroy', sPool + '/' + sVol));
         return fRc;
 
     def destroyPool(self, oExec, sPool):
         """
         Destroys the given storage pool.
         """
-        fRc, _ = oExec.execBinary('zpool', ('destroy', sPool));
+        fRc = oExec.execBinaryNoStdOut('zpool', ('destroy', sPool));
         return fRc;
 
     def cleanupPoolsAndVolumes(self, oExec, sPoolIdStart, sVolIdStart):
@@ -288,7 +288,7 @@ class StorageConfigOsLinux(StorageConfigOs):
             sFdiskScript = ';\n'; # Single partition filling everything
             if cbVol is not None:
                 sFdiskScript = ',' + str(cbVol / 512) + '\n'; # Get number of sectors
-            fRc, _ = oExec.execBinary('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), sFdiskScript);
+            fRc = oExec.execBinaryNoStdOut('sfdisk', ('--no-reread', '--wipe', 'always', '-q', '-f', sDiskPath), sFdiskScript);
             if fRc:
                 if sDiskPath.find('nvme') is not -1:
                     sBlkDev = sDiskPath + 'p1';
@@ -317,7 +317,7 @@ class StorageConfigOsLinux(StorageConfigOs):
         """
         # Unmount first
         sMountPoint = self.dMounts[sPool + '/' + sVol];
-        fRc, _ = oExec.execBinary('umount', (sMountPoint,));
+        fRc = oExec.execBinaryNoStdOut('umount', (sMountPoint,));
         self.dMounts.pop(sPool + '/' + sVol);
         oExec.rmDir(sMountPoint);
         if self.dSimplePools.has_key(sPool):
