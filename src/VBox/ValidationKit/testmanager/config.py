@@ -135,9 +135,9 @@ g_kcchMaxTestMsg        = 128;
 ## The max size of the main log file.
 g_kcMbMaxMainLog        = 32;
 ## The max size of an uploaded file (individual).
-g_kcMbMaxUploadSingle   = 16;
+g_kcMbMaxUploadSingle   = 150;
 ## The max size of all uploaded file.
-g_kcMbMaxUploadTotal    = 128;
+g_kcMbMaxUploadTotal    = 200;
 ## The max number of files that can be uploaded.
 g_kcMaxUploads          = 256;
 ## @}
