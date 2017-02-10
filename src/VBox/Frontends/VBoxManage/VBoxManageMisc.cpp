@@ -1440,9 +1440,6 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     }
     while (0);
 
-    a->session->UnlockMachine();
-//  CHECK_ERROR_RET(sessionMachine, UnlockMachine(), RTEXITCODE_FAILURE);
-
     RTPrintf("Unattended installation OS %s has been running on virtual machine '%ls'.\n"
              "UUID: %s\n",
              installedOSStr.c_str(),
