@@ -840,18 +840,31 @@ bool DrvAudioHlpPCMPropsAreEqual(const PPDMAUDIOPCMPROPS pProps, const PPDMAUDIO
 }
 
 /**
+ * Prints PCM properties to the debug log.
+ *
+ * @param   pProps              Stream configuration to log.
+ */
+void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturnVoid(pProps);
+
+    Log(("uHz=%RU32, cChannels=%RU8, cBits=%RU8%s",
+         pProps->uHz, pProps->cChannels, pProps->cBits, pProps->fSigned ? "S" : "U"));
+}
+
+/**
  * Converts PCM properties to a audio stream configuration.
  *
  * @return  IPRT status code.
- * @param   pPCMProps           Pointer to PCM properties to convert.
+ * @param   pProps              Pointer to PCM properties to convert.
  * @param   pCfg                Pointer to audio stream configuration to store result into.
  */
-int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg)
+int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
-    AssertPtrReturn(pPCMProps, VERR_INVALID_POINTER);
-    AssertPtrReturn(pCfg,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pProps, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,   VERR_INVALID_POINTER);
 
-    memcpy(&pCfg->Props, pPCMProps, sizeof(PDMAUDIOPCMPROPS));
+    memcpy(&pCfg->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
     return VINF_SUCCESS;
 }
 
