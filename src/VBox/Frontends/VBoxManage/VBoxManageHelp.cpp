@@ -1028,7 +1028,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            --password <password>\n"
                      "                            --key <key>\n"
                      "                            --isopath <OS ISO path>\n"
-                     "                            [--addisopath <additions ISO path>]"
+                     "                            [--addisopath <additions ISO path>]\n"
                      "                            [--imageindex <number>]\n"
                      "\n", SEP);
     }
