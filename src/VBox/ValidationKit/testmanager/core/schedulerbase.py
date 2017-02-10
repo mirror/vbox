@@ -1021,7 +1021,7 @@ class SchedulerBase(object):
         # Create a SQL values table out of them.
         sPreReqSet = ''
         if len(dPreReqs) > 0:
-            for idPreReq in sorted(dPreReqs.keys()):
+            for idPreReq in sorted(dPreReqs):
                 sPreReqSet += ', (' + str(idPreReq) + ')';
             sPreReqSet = sPreReqSet[2:]; # drop the leading ', '.
 

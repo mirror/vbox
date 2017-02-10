@@ -30,10 +30,10 @@ __version__ = "$Revision$"
 
 
 # Standard python imports.
-import cgi;
 import cgitb;
 import os;
 import sys;
+import cgi;
 
 # Validation Kit imports.
 from testmanager.core.webservergluebase import WebServerGlueBase;

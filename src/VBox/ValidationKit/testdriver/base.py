@@ -876,7 +876,7 @@ class TestDriverBase(object): # pylint: disable=R0902
         print >> sys.stderr, "testdriver.base: asNormalActions   = '%s'" % self.asNormalActions;
         print >> sys.stderr, "testdriver.base: asActions         = '%s'" % self.asActions;
         print >> sys.stderr, "testdriver.base: secTimeoutAbs     = '%s'" % self.secTimeoutAbs;
-        for sVar in sorted(os.environ.keys()):
+        for sVar in sorted(os.environ):
             print >> sys.stderr, "os.environ[%s] = '%s'" % (sVar, os.environ[sVar],);
 
     #
