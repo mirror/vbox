@@ -99,7 +99,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
         Returns a list of pools starting with the given ID or None on failure.
         """
         lstPools = None;
-        fRc, sOutput = oExec.execBinary('zpool', ('list', '-H'));
+        fRc, sOutput, _ = oExec.execBinary('zpool', ('list', '-H'));
         if fRc:
             lstPools = [];
             asPools = sOutput.splitlines();
@@ -116,7 +116,7 @@ class StorageConfigOsSolaris(StorageConfigOs):
         identifier or None on failure.
         """
         lstVolumes = None;
-        fRc, sOutput = oExec.execBinary('zfs', ('list', '-H'));
+        fRc, sOutput, _ = oExec.execBinary('zfs', ('list', '-H'));
         if fRc:
             lstVolumes = [];
             asVolumes = sOutput.splitlines();
