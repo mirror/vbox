@@ -499,9 +499,18 @@ static DECLCALLBACK(int) drvAudioVRDEStreamControl(PPDMIHOSTAUDIO pInterface,
  */
 static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetReadable(PPDMIHOSTAUDIO pInterface, PPDMAUDIOBACKENDSTREAM pStream)
 {
-    RT_NOREF(pInterface, pStream);
+    RT_NOREF(pInterface);
 
-    return UINT32_MAX;
+    PVRDESTREAM pStreamVRDE = (PVRDESTREAM)pStream;
+
+    if (pStreamVRDE->pCfg->enmDir == PDMAUDIODIR_IN)
+    {
+        /* Return samples instead of bytes here
+         * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
+        return PDMAUDIOSTREAMCFG_B2S(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
+    }
+
+    return 0;
 }
 
 
