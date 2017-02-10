@@ -1315,7 +1315,7 @@ static int drvAudioStreamPlayNonInterleaved(PDRVAUDIO pThis,
                 if (RT_FAILURE(rc))
                     break;
 
-                Assert(cbPlayed <= cbRead);
+                AssertMsg(cbPlayed <= cbRead, ("Played more than available (%RU32 available but got %RU32)\n", cbRead, cbPlayed));
                 AssertMsg(cbPlayed % 2 == 0,
                           ("Backend for stream '%s' returned uneven played bytes count (csRead=%RU32, cbPlayed=%RU32)\n",
                            pHstStream->szName, csRead, cbPlayed));
@@ -1547,6 +1547,159 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
     return rc;
 }
 
+static int drvAudioStreamCaptureNonInterleaved(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream, uint32_t *pcsCaptured)
+{
+    AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pHstStream, VERR_INVALID_POINTER);
+    /* pcsCaptured is optional. */
+
+    /* Sanity. */
+    Assert(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+    Assert(pHstStream->enmDir == PDMAUDIODIR_IN);
+    Assert(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED);
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t csCapturedTotal = 0;
+
+    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
+
+    uint8_t auBuf[_1K]; /** @todo Get rid of this. */
+    size_t  cbBuf = sizeof(auBuf);
+
+    for (;;)
+    {
+        uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
+        if (!cbReadable)
+            break;
+
+        uint32_t cbFree = AUDIOMIXBUF_S2B(&pHstStream->MixBuf, AudioMixBufFree(&pHstStream->MixBuf));
+        if (!cbFree)
+            break;
+
+        if (cbFree < cbReadable) /* More data captured than we can read? */
+        {
+            /** @todo Warn? */
+        }
+
+        if (cbFree > cbBuf) /* Limit to buffer size. */
+            cbFree = cbBuf;
+
+        uint32_t cbCaptured;
+        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                    auBuf, cbFree, &cbCaptured);
+        if (RT_FAILURE(rc))
+        {
+            int rc2 = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
+            AssertRC(rc2);
+        }
+        else if (cbCaptured)
+        {
+            Assert(cbCaptured <= cbBuf);
+            if (cbCaptured > cbBuf) /* Paranoia. */
+                cbCaptured = cbBuf;
+
+            uint32_t csCaptured = 0;
+            rc = AudioMixBufWriteCirc(&pHstStream->MixBuf, auBuf, cbCaptured, &csCaptured);
+            if (RT_SUCCESS(rc))
+                csCapturedTotal += csCaptured;
+        }
+        else /* Nothing captured -- bail out. */
+        {
+#ifdef VBOX_STRICT
+            AssertMsgFailed(("[%s] Captured anything, even if announced readable data (%RU32 captured samples so far) -- backend buggy?\n",
+                             pHstStream->szName, csCapturedTotal));
+#endif
+            break;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    Log2Func(("[%s] %RU32 samples captured, rc=%Rrc\n", pHstStream->szName, csCapturedTotal, rc));
+
+    if (pcsCaptured)
+        *pcsCaptured = csCapturedTotal;
+
+    return rc;
+}
+
+static int drvAudioStreamCaptureRaw(PDRVAUDIO pThis, PPDMAUDIOSTREAM pHstStream, uint32_t *pcsCaptured)
+{
+    AssertPtrReturn(pThis,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pHstStream, VERR_INVALID_POINTER);
+    /* pcsCaptured is optional. */
+
+    /* Sanity. */
+    Assert(pHstStream->enmCtx == PDMAUDIOSTREAMCTX_HOST);
+    Assert(pHstStream->enmDir == PDMAUDIODIR_IN);
+    Assert(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW);
+
+    int rc = VINF_SUCCESS;
+
+    uint32_t csCapturedTotal = 0;
+
+    AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
+
+    for (;;)
+    {
+        uint32_t csReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
+        if (!csReadable)
+            break;
+
+        uint32_t csFree = AudioMixBufFree(&pHstStream->MixBuf);
+        if (!csFree)
+            break;
+
+        if (csFree < csReadable) /* More data captured than we can read? */
+        {
+            /** @todo Warn? */
+        }
+
+        PPDMAUDIOSAMPLE paSamples;
+        uint32_t csWritable;
+        rc = AudioMixBufPeekMutable(&pHstStream->MixBuf, csReadable, &paSamples, &csWritable);
+        if (RT_FAILURE(rc))
+            break;
+
+        uint32_t csCaptured;
+        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream->pvBackend,
+                                                    paSamples, csWritable, &csCaptured);
+        if (RT_FAILURE(rc))
+        {
+            int rc2 = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
+            AssertRC(rc2);
+        }
+        else if (csCaptured)
+        {
+            Assert(csCaptured <= csWritable);
+            if (csCaptured > csWritable) /* Paranoia. */
+                csCaptured = csWritable;
+
+            csCapturedTotal += csCaptured;
+        }
+        else /* Nothing captured -- bail out. */
+        {
+#ifdef VBOX_STRICT
+            AssertMsgFailed(("[%s] Captured anything, even if announced readable data (%RU32 captured samples so far) -- backend buggy?\n",
+                             pHstStream->szName, csCapturedTotal));
+#endif
+            break;
+        }
+
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    Log2Func(("[%s] %RU32 samples captured, rc=%Rrc\n", pHstStream->szName, csCapturedTotal, rc));
+
+    if (pcsCaptured)
+        *pcsCaptured = csCapturedTotal;
+
+    return rc;
+}
+
 /**
  * @interface_method_impl{PDMIAUDIOCONNECTOR,pfnStreamCapture}
  */
@@ -1596,60 +1749,41 @@ static DECLCALLBACK(int) drvAudioStreamCapture(PPDMIAUDIOCONNECTOR pInterface,
             break;
 
         /*
-         * Check how much audio data the backend has captured so far.
+         * Do the actual capturing.
          */
 
-        AssertPtr(pThis->pHostDrvAudio->pfnStreamGetReadable);
-        uint32_t cbReadable = pThis->pHostDrvAudio->pfnStreamGetReadable(pThis->pHostDrvAudio, pHstStream->pvBackend);
-        if (!cbReadable) /* Nothing captured? Bail out. */
-            break;
-
-        /*
-         * Check if we have space and limit.
-         */
-
-        uint32_t csFree = AudioMixBufFree(&pHstStream->MixBuf);
-        if (csFree)
-            break;
-
-        if (csFree < AUDIOMIXBUF_B2S(&pHstStream->MixBuf, cbReadable)) /* More data captured than we can read? */
+        if (RT_LIKELY(pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_NON_INTERLEAVED))
         {
-            /** @todo Warn? */
+            rc = drvAudioStreamCaptureNonInterleaved(pThis, pHstStream, &csCaptured);
         }
-
-        uint8_t  auBuf[_1K]; /** @todo Get rid of this. */
-
-        uint32_t cbCaptured;
-        rc = pThis->pHostDrvAudio->pfnStreamCapture(pThis->pHostDrvAudio, pHstStream->pvBackend,
-                                                    auBuf, sizeof(auBuf), &cbCaptured);
-        if (RT_FAILURE(rc))
+        else if (pHstStream->Cfg.enmLayout == PDMAUDIOSTREAMLAYOUT_RAW)
         {
-            int rc2 = drvAudioStreamControlInternalBackend(pThis, pHstStream, PDMAUDIOSTREAMCMD_DISABLE);
-            AssertRC(rc2);
+            rc = drvAudioStreamCaptureRaw(pThis, pHstStream, &csCaptured);
         }
         else
+            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+
+#ifdef LOG_ENABLED
+        pszBackendSts = dbgAudioStreamStatusToStr(stsBackend);
+        Log3Func(("[%s] End: stsBackend=%s, csCaptured=%RU32, rc=%Rrc\n",
+                  pHstStream->szName, pszBackendSts, csCaptured, rc));
+        RTStrFree(pszBackendSts);
+#endif /* LOG_ENABLED */
+
+        if (RT_SUCCESS(rc))
         {
-            Assert(cbCaptured <= sizeof(auBuf));
-            rc = AudioMixBufWriteCirc(&pHstStream->MixBuf, auBuf, cbCaptured, &csCaptured);
-            if (RT_SUCCESS(rc))
-            {
 #ifdef VBOX_WITH_STATISTICS
-                STAM_COUNTER_ADD(&pThis->Stats.TotalSamplesIn,        csCaptured);
-                STAM_COUNTER_ADD(&pHstStream->In.StatSamplesCaptured, csCaptured);
+            STAM_COUNTER_ADD(&pThis->Stats.TotalSamplesIn,        csCaptured);
+            STAM_COUNTER_ADD(&pHstStream->In.StatSamplesCaptured, csCaptured);
 #endif
-                Log3Func(("[%s] %RU32 samples captured\n", pHstStream->szName, csCaptured));
-            }
         }
+        else
+            LogRel2(("Audio: Capturing stream '%s' failed with %Rrc\n", pHstStream->szName, rc));
 
     } while (0);
 
-    if (RT_SUCCESS(rc))
-    {
-        if (pcSamplesCaptured)
-            *pcSamplesCaptured = csCaptured;
-    }
-    else
-        LogFunc(("Failed with %Rrc\n", rc));
+    if (pcSamplesCaptured)
+        *pcSamplesCaptured = csCaptured;
 
     int rc2 = RTCritSectLeave(&pThis->CritSect);
     if (RT_SUCCESS(rc))
@@ -2683,22 +2817,22 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     int rc = DrvAudioHlpStreamCfgCopy(&CfgAcq, pCfgReq);
     if (RT_FAILURE(rc))
     {
-        LogRel2(("Audio: Creating stream '%s' with an invalid backend configuration not possible, skipping\n",
-                 pHstStream->szName));
+        LogRel(("Audio: Creating stream '%s' with an invalid backend configuration not possible, skipping\n",
+                pHstStream->szName));
         return rc;
     }
 
     rc = pThis->pHostDrvAudio->pfnStreamCreate(pThis->pHostDrvAudio, pHstStream->pvBackend, pCfgReq, &CfgAcq);
     if (RT_FAILURE(rc))
     {
-        LogRel2(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
+        LogRel(("Audio: Creating stream '%s' in backend failed with %Rrc\n", pHstStream->szName, rc));
         return rc;
     }
 
     /* Validate acquired configuration. */
     if (!DrvAudioHlpStreamCfgIsValid(&CfgAcq))
     {
-        LogRel2(("Audio: Creating stream '%s' returned an invalid backend configuration, skipping\n", pHstStream->szName));
+        LogRel(("Audio: Creating stream '%s' returned an invalid backend configuration, skipping\n", pHstStream->szName));
         return VERR_INVALID_PARAMETER;
     }
 
