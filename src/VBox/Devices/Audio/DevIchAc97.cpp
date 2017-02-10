@@ -1518,10 +1518,9 @@ static int ichac97MixerAddDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSink, PPD
 
             if (RT_SUCCESS(rc2))
                 pDrvStream->pMixStrm = pMixStrm;
-        }
 
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+            /* If creating a stream fails, be forgiving and continue -- don't pass rc2 to rc here. */
+        }
 
         if (pStreamCfg)
         {

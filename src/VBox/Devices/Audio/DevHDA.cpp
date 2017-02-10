@@ -3614,10 +3614,9 @@ static DECLCALLBACK(int) hdaMixerAddStream(PHDASTATE pThis, PHDAMIXERSINK pSink,
 
             if (RT_SUCCESS(rc2))
                 pDrvStream->pMixStrm = pMixStrm;
-        }
 
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+            /* If creating a stream fails, be forgiving and continue -- don't pass rc2 to rc here. */
+        }
 
         if (pStreamCfg)
         {
