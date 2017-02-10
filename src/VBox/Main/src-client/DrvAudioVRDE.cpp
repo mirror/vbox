@@ -507,7 +507,7 @@ static DECLCALLBACK(uint32_t) drvAudioVRDEStreamGetReadable(PPDMIHOSTAUDIO pInte
     {
         /* Return samples instead of bytes here
          * (since we specified PDMAUDIOSTREAMLAYOUT_RAW as the audio data layout). */
-        return PDMAUDIOSTREAMCFG_B2S(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
+        return (uint32_t)PDMAUDIOSTREAMCFG_B2S(pStreamVRDE->pCfg, RTCircBufUsed(pStreamVRDE->In.pCircBuf));
     }
 
     return 0;
