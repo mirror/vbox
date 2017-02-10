@@ -31,7 +31,6 @@ __version__ = "$Revision$"
 
 
 # Standard Python imports.
-import array
 import os
 import socket
 
