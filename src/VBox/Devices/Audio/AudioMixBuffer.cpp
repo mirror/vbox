@@ -203,6 +203,57 @@ int AudioMixBufPeek(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
 }
 
 /**
+ * Returns a mutable pointer to the mixing buffer's audio sample buffer for writing raw
+ * audio samples.
+ *
+ * @return  IPRT status code. VINF_TRY_AGAIN for getting next pointer at beginning (circular).
+ * @param   pMixBuf                 Mixing buffer to acquire audio samples from.
+ * @param   cSamples                Number of requested audio samples to write.
+ * @param   ppvSamples              Returns a mutable pointer to the buffer's audio sample data.
+ * @param   pcSamplesToWrite        Number of available audio samples to write.
+ *
+ * @remark  This function is not thread safe!
+ */
+int AudioMixBufPeekMutable(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples,
+                           PPDMAUDIOSAMPLE *ppvSamples, uint32_t *pcSamplesToWrite)
+{
+    AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvSamples, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcSamplesToWrite, VERR_INVALID_POINTER);
+
+    int rc;
+
+    if (!cSamples)
+    {
+        *pcSamplesToWrite = 0;
+        return VINF_SUCCESS;
+    }
+
+    uint32_t cSamplesToWrite;
+    if (pMixBuf->offWrite + cSamples > pMixBuf->cSamples)
+    {
+        cSamplesToWrite = pMixBuf->cSamples - pMixBuf->offWrite;
+        rc = VINF_TRY_AGAIN;
+    }
+    else
+    {
+        cSamplesToWrite = cSamples;
+        rc = VINF_SUCCESS;
+    }
+
+    *ppvSamples = &pMixBuf->pSamples[pMixBuf->offWrite];
+    AssertPtr(ppvSamples);
+
+    pMixBuf->offWrite = (pMixBuf->offWrite + cSamplesToWrite) % pMixBuf->cSamples;
+    Assert(pMixBuf->offWrite <= pMixBuf->cSamples);
+    pMixBuf->cUsed += RT_MIN(cSamplesToWrite, pMixBuf->cUsed);
+
+    *pcSamplesToWrite = cSamplesToWrite;
+
+    return rc;
+}
+
+/**
  * Clears the entire sample buffer.
  *
  * @param   pMixBuf                 Mixing buffer to clear.
