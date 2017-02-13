@@ -2939,7 +2939,7 @@ FNIEMOP_STUB_1(iemOp_Grp12_vpsllw_Hx_Ux_Ib, uint8_t, bRm);
 /**
  * Group 12 jump table for register variant.
  */
-IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[8*4] =
+IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[] =
 {
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
@@ -2950,6 +2950,7 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[8*4] =
     /* /6 */ iemOp_Grp12_psllw_Nq_Ib,   iemOp_Grp12_vpsllw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
+AssertCompile(RT_ELEMENTS(g_apfnGroup12RegReg) == 8*4);
 
 
 /** Opcode 0x0f 0x71. */
@@ -2986,7 +2987,7 @@ FNIEMOP_STUB_1(iemOp_Grp13_vpslld_Hx_Ux_Ib, uint8_t, bRm);
 /**
  * Group 13 jump table for register variant.
  */
-IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[8*4] =
+IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[] =
 {
     /** @todo decode imm8? */
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
@@ -2998,6 +2999,7 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[8*4] =
     /* /6 */ iemOp_Grp13_pslld_Nq_Ib,   iemOp_Grp13_vpslld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
+AssertCompile(RT_ELEMENTS(g_apfnGroup13RegReg) == 8*4);
 
 /** Opcode 0x0f 0x72. */
 FNIEMOP_DEF(iemOp_Grp13)
@@ -3032,7 +3034,7 @@ FNIEMOP_STUB_1(iemOp_Grp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
 /**
  * Group 14 jump table for register variant.
  */
-IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[8*4] =
+IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[] =
 {
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
@@ -3043,6 +3045,7 @@ IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[8*4] =
     /* /6 */ iemOp_Grp14_psllq_Nq_Ib,     iemOp_Grp14_vpsllq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
     /* /7 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_vpslldq_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
 };
+AssertCompile(RT_ELEMENTS(g_apfnGroup14RegReg) == 8*4);
 
 
 /** Opcode 0x0f 0x73. */
