@@ -19,6 +19,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEV_VGA
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
@@ -1918,6 +1919,9 @@ AssertCompile(!(PAGE_SIZE % sizeof (VBOXCMDVBVAPAGEIDX)));
 
 static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMDVBVA_HDR *pCmd, uint32_t cbCmd)
 {
+    LogRelFlow(("VDMA: vboxVDMACrCmdVbvaProcess: ENTER, opCode(%i)\n", pCmd->u8OpCode));
+    int8_t i8Result = 0;
+
     switch (pCmd->u8OpCode)
     {
         case VBOXCMDVBVA_OPTYPE_SYSMEMCMD:
@@ -1957,7 +1961,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             if (cbRealCmd <= cbCmdPart)
             {
                 pRealCmdHdr = (const VBOXCMDVBVA_HDR *)pvCmd;
-                uint8_t i8Result = vboxVDMACrCmdVbvaProcessCmdData(pVdma, pRealCmdHdr, cbRealCmd);
+                i8Result = vboxVDMACrCmdVbvaProcessCmdData(pVdma, pRealCmdHdr, cbRealCmd);
                 PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
                 return i8Result;
             }
@@ -1993,8 +1997,6 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
 
             if (cbCurCmdTail > cbRealCmd - sizeof (*pRealCmdHdr))
                 cbCurCmdTail = cbRealCmd - sizeof (*pRealCmdHdr);
-
-            int8_t i8Result = 0;
 
             switch (pRealCmdHdr->u8OpCode)
             {
@@ -2093,7 +2095,7 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
                     return -1;
                 }
 
-                int8_t i8Result = vboxVDMACrCmdVbvaProcess(pVdma, pCmd, cbCurCmd);
+                i8Result = vboxVDMACrCmdVbvaProcess(pVdma, pCmd, cbCurCmd);
                 if (i8Result < 0)
                 {
                     WARN(("vboxVDMACrCmdVbvaProcess failed"));
@@ -2103,7 +2105,9 @@ static int8_t vboxVDMACrCmdVbvaProcess(struct VBOXVDMAHOST *pVdma, const VBOXCMD
             return 0;
         }
         default:
-            return vboxVDMACrCmdVbvaProcessCmdData(pVdma, pCmd, cbCmd);
+            i8Result = vboxVDMACrCmdVbvaProcessCmdData(pVdma, pCmd, cbCmd);
+            LogRelFlow(("VDMA: vboxVDMACrCmdVbvaProcess: LEAVE, opCode(%i)\n", pCmd->u8OpCode));
+            return i8Result;
     }
 }
 
