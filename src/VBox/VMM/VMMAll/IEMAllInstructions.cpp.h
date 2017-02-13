@@ -643,6 +643,9 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRMImm8)
 }
 
 
+/** Repeats a_fn four times.  For decoding tables. */
+#define IEMOP_X4(a_fn) a_fn, a_fn, a_fn, a_fn
+
 /*
  * Include the tables.
  */
