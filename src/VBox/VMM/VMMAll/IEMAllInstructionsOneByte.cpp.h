@@ -3564,7 +3564,7 @@ FNIEMOP_DEF(iemOp_Grp1A_xop)
             pVCpu->iem.s.uVexLength = (bXop2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bXop2 & 0x3;
 
-            /** @todo VEX: Just use new tables and decoders. */
+            /** @todo XOP: Just use new tables and decoders. */
             switch (bRm & 0x1f)
             {
                 case 8: /* xop opcode map 8. */
@@ -5325,10 +5325,9 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
                 pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
                 pVCpu->iem.s.idxPrefix  = bRm & 0x3;
 
-                /** @todo VEX: Just use new tables and decoders. */
-                IEMOP_BITCH_ABOUT_STUB();
-                return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+                return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
             }
+
             Log(("VEX2: Invalid prefix mix!\n"));
         }
         else
@@ -5382,18 +5381,18 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
             pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
             pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
 
-            /** @todo VEX: Just use new tables and decoders. */
             switch (bRm & 0x1f)
             {
                 case 1: /* 0x0f lead opcode byte. */
-                    IEMOP_BITCH_ABOUT_STUB();
-                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+                    return FNIEMOP_CALL(g_apfnVexMap1[(uintptr_t)bOpcode * 4 + pVCpu->iem.s.idxPrefix]);
 
                 case 2: /* 0x0f 0x38 lead opcode bytes. */
+                    /** @todo VEX: Just use new tables and decoders. */
                     IEMOP_BITCH_ABOUT_STUB();
                     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 
                 case 3: /* 0x0f 0x3a lead opcode bytes. */
+                    /** @todo VEX: Just use new tables and decoders. */
                     IEMOP_BITCH_ABOUT_STUB();
                     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 
