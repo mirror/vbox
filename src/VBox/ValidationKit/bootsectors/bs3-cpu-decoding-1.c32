@@ -62,8 +62,8 @@ typedef CPUDECODE1TST BS3_FAR *PCPUDECODE1TST;
 #define P_OZ  X86_OP_PRF_SIZE_OP
 #define P_AZ  X86_OP_PRF_SIZE_ADDR
 #define P_LK  X86_OP_PRF_LOCK
-#define P_RZ  X86_OP_PRF_REPZ
 #define P_RN  X86_OP_PRF_REPNZ
+#define P_RZ  X86_OP_PRF_REPZ
 
 #define RM_EAX_EAX              ((3 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xAX))
 #define RM_EAX_DEREF_EBX        ((0 << X86_MODRM_MOD_SHIFT) | (X86_GREG_xAX <<  X86_MODRM_REG_SHIFT) | (X86_GREG_xBX))
@@ -104,34 +104,34 @@ CPUDECODE1TST const g_aSimpleTests[] =
     /* Using currently undefined 0x0f 0x7a sequences. */
     {           F_UD, 3,               { 0x0f, 0x7a, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
-    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7a, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7a, RM_EAX_EAX, } },
     {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_EAX, } },
     {           F_UD, 4,               { 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
     {           F_UD, 4+1,       { P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
-    {           F_UD, 4+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
     {           F_UD, 4+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
+    {           F_UD, 4+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
     {           F_UD, 4+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP8, 0 } },
     {           F_UD, 7,               { 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
     {           F_UD, 7+1,       { P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
-    {           F_UD, 7+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
     {           F_UD, 7+1,       { P_RZ, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
+    {           F_UD, 7+1,       { P_RN, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
     {           F_UD, 7+2, { P_LK, P_LK, 0x0f, 0x7a, RM_EAX_DEREF_EBX_DISP32, 0, 0, 0, 0 } },
 #endif
 #if 0
     /* Ditto for currently undefined sequence: 0x0f 0x7b */
     {           F_UD, 3,               { 0x0f, 0x7b, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_LK, 0x0f, 0x7b, RM_EAX_EAX, } },
-    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7b, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_RZ, 0x0f, 0x7b, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x7b, RM_EAX_EAX, } },
     {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x7b, RM_EAX_EAX, } },
 #endif
 #if 1
     /* Ditto for currently undefined sequence: 0x0f 0x24 */
     {           F_UD, 3,               { 0x0f, 0x24, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_LK, 0x0f, 0x24, RM_EAX_EAX, } },
-    {           F_UD, 3+1,       { P_RN, 0x0f, 0x24, RM_EAX_EAX, } },
     {           F_UD, 3+1,       { P_RZ, 0x0f, 0x24, RM_EAX_EAX, } },
+    {           F_UD, 3+1,       { P_RN, 0x0f, 0x24, RM_EAX_EAX, } },
     {           F_UD, 3+2, { P_LK, P_LK, 0x0f, 0x24, RM_EAX_EAX, } },
 #endif
 #if 0
@@ -139,50 +139,50 @@ CPUDECODE1TST const g_aSimpleTests[] =
        AMD doesn't do anything special for XADD Ev,Gv as the intel table would indicate. */
     {    F_486 | F_OK,  3,             { 0x0f, 0xc1, RM_EAX_EAX, } },
     {    F_486 | F_OK,  4,       { P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486 | F_OK,  4,       { P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486 | F_OK,  5, { P_OZ, P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
-    {    F_486 | F_OK,  5, { P_RN, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
     {    F_486 | F_OK,  4,       { P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
     {    F_486 | F_OK,  5, { P_OZ, P_RZ, 0x0f, 0xc1, RM_EAX_EAX, } },
     {    F_486 | F_OK,  5, { P_RZ, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  4,       { P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_OZ, P_RN, 0x0f, 0xc1, RM_EAX_EAX, } },
+    {    F_486 | F_OK,  5, { P_RN, P_OZ, 0x0f, 0xc1, RM_EAX_EAX, } },
 #endif
 #if 0
     /* The movnti instruction is confined to the unprefixed lined in the intel manuals. Check how the other lines work. */
     {   F_SSE2 | F_UD,  3,             { 0x0f, 0xc3, RM_EAX_EAX, } },        /* invalid - reg,reg */
     {   F_SSE2 | F_OK,  3,             { 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },
     {   F_SSE2 | F_UD,  4,       { P_OZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2 | F_UD,  4,       { P_RN, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
     {   F_SSE2 | F_UD,  4,       { P_RZ, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  4,       { P_RN, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
     {   F_SSE2 | F_UD,  4,       { P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
-    {   F_SSE2 | F_UD,  5, { P_RZ, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
+    {   F_SSE2 | F_UD,  5, { P_RN, P_LK, 0x0f, 0xc3, RM_EAX_DEREF_EBX, } },  /* invalid */
 #endif
 #if 0
     /* The lddqu instruction requires a 0xf2 prefix, intel only lists 0x66 and empty
        prefix for it.  Check what they really mean by that*/
-    {   F_SSE3 | F_UD,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
-    {   F_SSE3 | F_OK,  4,            { P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  5,      { P_RZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,            { P_RN, 0x0f, 0xf0, RM_EAX_EAX, } },          /* invalid - reg, reg  */
+    {   F_SSE3 | F_OK,  4,            { P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RN, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
     {   F_SSE3 | F_UD,  3,      {             0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_UD,  4,      {       P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  4,      {       P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
     {   F_SSE3 | F_UD,  4,      {       P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
     {   F_SSE3 | F_UD,  4,      {       P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_UD,  5,      { P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  5,      { P_RZ, P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } }, // AMD,why?
-    {   F_SSE3 | F_UD,  5,      { P_RZ, P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  5,      { P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_UD,  5,      { P_LK, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
-    {   F_SSE3 | F_OK,  6,{ P_OZ, P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  5,      { P_RN, P_RZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RN, P_OZ, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } }, // AMD,why?
+    {   F_SSE3 | F_UD,  5,      { P_RN, P_LK, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_UD,  5,      { P_LK, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  5,      { P_OZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
+    {   F_SSE3 | F_OK,  6,{ P_OZ, P_RZ, P_RN, 0x0f, 0xf0, RM_EAX_DEREF_EBX, } },
 #endif
 #if 0
     {   F_SSE2 | F_OK,  3,            { 0x0f, 0x7e, RM_EAX_EAX, } },
     {   F_SSE2 | F_OK,  4,      { P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2 | F_UD,  5,{ P_RZ, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } }, // WTF?
-    {   F_SSE2 | F_UD,  5,{ P_OZ, P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2 | F_OK,  5,{ P_RN, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2 | F_OK,  4,      { P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
-    {   F_SSE2 | F_UD,  4,      { P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_UD,  5,{ P_RN, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } }, // WTF?
+    {   F_SSE2 | F_UD,  5,{ P_OZ, P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_OK,  5,{ P_RZ, P_OZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_OK,  4,      { P_RZ, 0x0f, 0x7e, RM_EAX_EAX, } },
+    {   F_SSE2 | F_UD,  4,      { P_RN, 0x0f, 0x7e, RM_EAX_EAX, } },
 #endif
 /** @todo crc32 / movbe  */
 };
@@ -766,24 +766,24 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
             {
                 { 0, { 0    },              UD_F_NOT_NO_PFX },
                 { 1, { P_OZ },              UD_F_NOT_OZ_PFX },
-                { 1, { P_RZ },              UD_F_NOT_RZ_PFX },
-                { 1, { P_RN },              UD_F_NOT_RN_PFX },
+                { 1, { P_RN },              UD_F_NOT_RZ_PFX },
+                { 1, { P_RZ },              UD_F_NOT_RN_PFX },
                 { 1, { P_LK },              UD_F_NOT_LK_PFX },
                 { 2, { P_OZ, P_OZ },        UD_F_NOT_OZ_PFX | UD_F_NOT_OZ_PFX },
-                { 2, { P_RZ, P_OZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_OZ_PFX },
-                { 2, { P_RN, P_OZ },        UD_F_NOT_RN_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_RN, P_OZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_OZ_PFX },
+                { 2, { P_RZ, P_OZ },        UD_F_NOT_RN_PFX | UD_F_NOT_OZ_PFX },
                 { 2, { P_LK, P_OZ },        UD_F_NOT_LK_PFX | UD_F_NOT_OZ_PFX },
-                { 2, { P_OZ, P_RZ },        UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
-                { 2, { P_RZ, P_RZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_RZ_PFX },
-                { 2, { P_RN, P_RZ },        UD_F_NOT_RN_PFX | UD_F_NOT_RZ_PFX },
-                { 2, { P_LK, P_RZ },        UD_F_NOT_LK_PFX | UD_F_NOT_RZ_PFX },
-                { 2, { P_OZ, P_RN },        UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
-                { 2, { P_RZ, P_RN },        UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX },
-                { 2, { P_RN, P_RN },        UD_F_NOT_RN_PFX | UD_F_NOT_RN_PFX },
-                { 2, { P_LK, P_RN },        UD_F_NOT_LK_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_OZ, P_RN },        UD_F_NOT_OZ_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_RN, P_RN },        UD_F_NOT_RZ_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_RZ, P_RN },        UD_F_NOT_RN_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_LK, P_RN },        UD_F_NOT_LK_PFX | UD_F_NOT_RZ_PFX },
+                { 2, { P_OZ, P_RZ },        UD_F_NOT_OZ_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_RN, P_RZ },        UD_F_NOT_RZ_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_RZ, P_RZ },        UD_F_NOT_RN_PFX | UD_F_NOT_RN_PFX },
+                { 2, { P_LK, P_RZ },        UD_F_NOT_LK_PFX | UD_F_NOT_RN_PFX },
                 { 2, { P_OZ, P_LK },        UD_F_NOT_OZ_PFX | UD_F_NOT_LK_PFX },
-                { 2, { P_RZ, P_LK },        UD_F_NOT_RZ_PFX | UD_F_NOT_LK_PFX },
-                { 2, { P_RN, P_LK },        UD_F_NOT_RN_PFX | UD_F_NOT_LK_PFX },
+                { 2, { P_RN, P_LK },        UD_F_NOT_RZ_PFX | UD_F_NOT_LK_PFX },
+                { 2, { P_RZ, P_LK },        UD_F_NOT_RN_PFX | UD_F_NOT_LK_PFX },
                 { 2, { P_LK, P_LK },        UD_F_NOT_LK_PFX | UD_F_NOT_LK_PFX },
             };
 
@@ -996,31 +996,31 @@ static void DecodeMovbeVsCrc32(void)
             /* base forms. */
             { BECRC_MEM_BE32, 0, X86_XCPT_PF, 4, {             0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
             { BECRC_MEM_BE16, 1, X86_XCPT_PF, 5, {       P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  2, X86_XCPT_PF, 5, {       P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 5, {       P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RN) */
-            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 6, { P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RN) */
+            { BECRC_MEM_ORG,  2, X86_XCPT_PF, 5, {       P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 5, {       P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RZ) */
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 6, { P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } }, /* undefined F3 (P_RZ) */
 
             /* CRC32 eax, [word ebx]: Simple variations showing it doesn't matter where the prefixes are placed. */
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RZ, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_SS, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_SS, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_RZ, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_OZ, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_SS, P_ES, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 6, { P_RN, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RN, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RN, P_SS, P_OZ, P_ES, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RN, P_SS, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_RN, P_ES, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_RN, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_ES, P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_SS, P_OZ, P_ES, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_SS, P_ES, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
 
             /* CRC32 eax, [word ebx]: Throw the F3h prefix into the mix.  The last of F3 and F2 wins on skylake+jaguar. */
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RN, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_OZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_RZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_RN, P_OZ, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
-            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RZ, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_RZ, P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_OZ, P_RN, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RN, P_RZ, P_OZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  3, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RN, P_OZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
 
-            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RZ, P_RN, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
+            { BECRC_MEM_ORG,  4, X86_XCPT_UD, 7, { P_OZ, P_RN, P_RZ, 0x0f, 0x38, 0xf1, RM_EAX_DEREF_EBX } },
         };
 
         apExpectCtxs[0] = &ExpectCtxMovbe_m32_eax;
@@ -1145,8 +1145,8 @@ static void DecodeCmppsCmppdCmpssCmpsd(void)
 #define BECRC_IN_XMM0       RTUINT128_INIT_C(0x765476549988bbaa, 0x7766554400112233)
 #define BECRC_OUT_PS        RTUINT128_INIT_C(0xffffffff00000000, 0xffffffff00000000) /* No prefix. */
 #define BECRC_OUT_PD        RTUINT128_INIT_C(0x0000000000000000, 0x0000000000000000) /* P_OZ (66h) */
-#define BECRC_OUT_SS        RTUINT128_INIT_C(0x765476549988bbaa, 0x7766554400000000) /* P_RN (f3h) */
-#define BECRC_OUT_SD        RTUINT128_INIT_C(0x765476549988bbaa, 0x0000000000000000) /* P_RZ (f2h) */
+#define BECRC_OUT_SS        RTUINT128_INIT_C(0x765476549988bbaa, 0x7766554400000000) /* P_RZ (f3h) */
+#define BECRC_OUT_SD        RTUINT128_INIT_C(0x765476549988bbaa, 0x0000000000000000) /* P_RN (f2h) */
 
             /* We use imm8=0 which checks for equality, with the subvalue result being all
                F's if equal and all zeros if not equal.  The input values are choosen such
@@ -1159,14 +1159,14 @@ static void DecodeCmppsCmppdCmpssCmpsd(void)
             /* base forms. */
             { BECRC_OUT_PS, X86_XCPT_PF, 4, {                         0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_PD, X86_XCPT_PF, 5, {                   P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 5, {                   P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 5, {                   P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 5, {                   P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 5, {                   P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            /* Skylake+jaguar ignores the 66h prefix with both f3h (P_RN) and f2h (P_RZ). */
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_OZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_OZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            /* Skylake+jaguar ignores the 66h prefix with both f3h (P_RZ) and f2h (P_RN). */
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_OZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_OZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RN, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
             /* Throw in segment prefixes and address size prefixes. */
             { BECRC_OUT_PS, X86_XCPT_PF, 5, {                   P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
@@ -1185,58 +1185,58 @@ static void DecodeCmppsCmppdCmpssCmpsd(void)
             { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
             { BECRC_OUT_PD, X86_XCPT_PF, 7, {       P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_ES, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_RN, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_AZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_RN, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_OZ, P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_ES, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_ES, P_RZ, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_AZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_AZ, P_RZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_OZ, P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_ES, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_RZ, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_AZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_RZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_OZ, P_RZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_ES, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RN, P_ES, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_SS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_ES, P_RN, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_ES, P_SS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_AZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RN, P_AZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_CS, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_AZ, P_RN, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_OZ, P_RN, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_OZ, P_AZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_AZ, P_OZ, P_CS, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_AZ, P_CS, P_OZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
             /* Pit f2h against f3h, on skylake+jaguar the last prefix wins. */
-            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 6, {             P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SS, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
 
-            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
-            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RZ, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 6, {             P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 7, {       P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RZ, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RZ, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RN, P_RN, P_RZ, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
+            { BECRC_OUT_SD, X86_XCPT_PF, 8, { P_RZ, P_RN, P_RN, P_RN, 0x0f, 0xc2, RM_XMM0_XMM1, 0 } },
         };
         RTUINT128U  InXmm0 = BECRC_IN_XMM0;
         RTUINT128U  InXmm1 = BECRC_IN_XMM1;
