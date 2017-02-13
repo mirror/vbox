@@ -1281,13 +1281,18 @@ FNIEMOP_DEF(iemOp_pusha)
 /** Opcode 0x61. */
 FNIEMOP_DEF(iemOp_popa)
 {
-    IEMOP_MNEMONIC(popa, "popa");
-    IEMOP_HLP_MIN_186();
-    IEMOP_HLP_NO_64BIT();
-    if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
-        return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_popa_16);
-    Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
-    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_popa_32);
+    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    {
+        IEMOP_MNEMONIC(popa, "popa");
+        IEMOP_HLP_MIN_186();
+        IEMOP_HLP_NO_64BIT();
+        if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
+            return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_popa_16);
+        Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
+        return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_popa_32);
+    }
+    Log(("mvex is not supported!\n"));
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
@@ -3527,15 +3532,63 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 
 
 /** Opcode 0x8f. */
-FNIEMOP_DEF(iemOp_Grp1A)
+FNIEMOP_DEF(iemOp_Grp1A_xop)
 {
+    /*
+     * AMD has defined /1 thru /7 as XOP prefix.  The prefix is similar to the
+     * three byte VEX prefix, except that the mmmmm field cannot have the values
+     * 0 thru 7, because it would then be confused with pop Ev (modrm.reg == 0).
+     */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_REG_MASK) == (0 << X86_MODRM_REG_SHIFT)) /* /0 */
         return FNIEMOP_CALL_1(iemOp_pop_Ev, bRm);
 
-    /* AMD has defined /1 thru /7 as XOP prefix (similar to three byte VEX). */
-    /** @todo XOP decoding. */
-    IEMOP_MNEMONIC(xop_amd, "3-byte-xop");
+    IEMOP_MNEMONIC(xop, "xop");
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fXop)
+    {
+        /** @todo Test when exctly the XOP conformance checks kick in during
+         * instruction decoding and fetching (using \#PF). */
+        uint8_t bXop2;   IEM_OPCODE_GET_NEXT_U8(&bXop2);
+        uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
+        if (   (  pVCpu->iem.s.fPrefixes
+                & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
+            == 0)
+        {
+            pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_XOP;
+            if (bXop2 & 0x80 /* VEX.W */)
+                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
+            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+            pVCpu->iem.s.uRexIndex  = ~bRm >> (6 - 3);
+            pVCpu->iem.s.uRexB      = ~bRm >> (5 - 3);
+            pVCpu->iem.s.uVex3rdReg = (~bXop2 >> 3) & 0xf;
+            pVCpu->iem.s.uVexLength = (bXop2 >> 2) & 1;
+            pVCpu->iem.s.idxPrefix  = bXop2 & 0x3;
+
+            /** @todo VEX: Just use new tables and decoders. */
+            switch (bRm & 0x1f)
+            {
+                case 8: /* xop opcode map 8. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                case 9: /* xop opcode map 9. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                case 10: /* xop opcode map 10. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                default:
+                    Log(("XOP: Invalid vvvv value: %#x!\n", bRm & 0x1f));
+                    return IEMOP_RAISE_INVALID_OPCODE();
+            }
+        }
+        else
+            Log(("XOP: Invalid prefix mix!\n"));
+    }
+    else
+        Log(("XOP: XOP support disabled!\n"));
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -5258,7 +5311,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
     if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
         || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
-        IEMOP_MNEMONIC(vex2_prefix, "2-byte-vex");
+        IEMOP_MNEMONIC(vex2_prefix, "vex2");
         if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
         {
             uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
@@ -5308,7 +5361,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
         IEMOP_HLP_NO_REAL_OR_V86_MODE();
     }
 
-    IEMOP_MNEMONIC(vex3_prefix, "3-byte-vex");
+    IEMOP_MNEMONIC(vex3_prefix, "vex3");
     if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
     {
         /** @todo Test when exctly the VEX conformance checks kick in during
@@ -5330,7 +5383,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
             pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
 
             /** @todo VEX: Just use new tables and decoders. */
-            switch (bRm & 0xf)
+            switch (bRm & 0x1f)
             {
                 case 1: /* 0x0f lead opcode byte. */
                     IEMOP_BITCH_ABOUT_STUB();
@@ -5345,7 +5398,7 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
                     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 
                 default:
-                    Log(("VEX3: Invalid vvvv value: %#x!\n", bRm & 0xf));
+                    Log(("VEX3: Invalid vvvv value: %#x!\n", bRm & 0x1f));
                     return IEMOP_RAISE_INVALID_OPCODE();
             }
         }
@@ -10715,7 +10768,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x80 */  iemOp_Grp1_Eb_Ib_80,    iemOp_Grp1_Ev_Iz,       iemOp_Grp1_Eb_Ib_82,    iemOp_Grp1_Ev_Ib,
     /* 0x84 */  iemOp_test_Eb_Gb,       iemOp_test_Ev_Gv,       iemOp_xchg_Eb_Gb,       iemOp_xchg_Ev_Gv,
     /* 0x88 */  iemOp_mov_Eb_Gb,        iemOp_mov_Ev_Gv,        iemOp_mov_Gb_Eb,        iemOp_mov_Gv_Ev,
-    /* 0x8c */  iemOp_mov_Ev_Sw,        iemOp_lea_Gv_M,         iemOp_mov_Sw_Ev,        iemOp_Grp1A,
+    /* 0x8c */  iemOp_mov_Ev_Sw,        iemOp_lea_Gv_M,         iemOp_mov_Sw_Ev,        iemOp_Grp1A_xop,
     /* 0x90 */  iemOp_nop,              iemOp_xchg_eCX_eAX,     iemOp_xchg_eDX_eAX,     iemOp_xchg_eBX_eAX,
     /* 0x94 */  iemOp_xchg_eSP_eAX,     iemOp_xchg_eBP_eAX,     iemOp_xchg_eSI_eAX,     iemOp_xchg_eDI_eAX,
     /* 0x98 */  iemOp_cbw,              iemOp_cwd,              iemOp_call_Ap,          iemOp_wait,

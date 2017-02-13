@@ -515,9 +515,9 @@ typedef struct IEMCPU
 
     /** Prefix index (VEX.pp) for two byte and three byte tables. */
     uint8_t                 idxPrefix;                                                                      /* 0x30, 0x16 */
-    /** 3rd (E)VEX register. */
+    /** 3rd VEX/EVEX/XOP register. */
     uint8_t                 uVex3rdReg;                                                                     /* 0x31, 0x17 */
-    /** The VEX/EVEX length field. */
+    /** The VEX/EVEX/XOP length field. */
     uint8_t                 uVexLength;                                                                     /* 0x32, 0x18 */
     /** Additional EVEX stuff. */
     uint8_t                 fEvexStuff;                                                                     /* 0x33, 0x19 */
@@ -839,6 +839,7 @@ typedef IEMCPU const *PCIEMCPU;
 
 #define IEM_OP_PRF_VEX                  RT_BIT_32(28) /**< Indiciates VEX prefix. */
 #define IEM_OP_PRF_EVEX                 RT_BIT_32(29) /**< Indiciates EVEX prefix. */
+#define IEM_OP_PRF_XOP                  RT_BIT_32(30) /**< Indiciates XOP prefix. */
 /** @} */
 
 /** @name Opcode forms
