@@ -2984,8 +2984,11 @@ FNIEMOP_DEF(iemOp_vpunpckhdq_Vx_Hx_W)
 /*  Opcode 0xf3 0x0f 0x6a - invalid */
 
 
-/** Opcode 0x0f 0x6b. */
-FNIEMOP_STUB(iemOp_packssdw_Pq_Qd__packssdq_Vdq_Wdq);
+/** Opcode      0x0f 0x6b - packssdw Pq, Qd */
+FNIEMOP_STUB(iemOp_packssdw_Pq_Qd);
+/** Opcode 0x66 0x0f 0x6b - vpackssdw Vx, Hx, Wx */
+FNIEMOP_STUB(iemOp_vpackssdw_Vx_Hx_Wx);
+/*  Opcode 0xf3 0x0f 0x6b - invalid */
 
 
 /*  Opcode      0x0f 0x6c - invalid */
@@ -8119,7 +8122,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x68 */  iemOp_punpckhbw_Pq_Qd,      iemOp_vpunpckhbw_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x69 */  iemOp_punpckhwd_Pq_Qd,      iemOp_vpunpckhwd_Vx_Hx_Wx,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6a */  iemOp_punpckhdq_Pq_Qd,      iemOp_vpunpckhdq_Vx_Hx_W,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
-    /* 0x6b */  IEMOP_X4(iemOp_packssdw_Pq_Qd__packssdq_Vdq_Wdq),
+    /* 0x6b */  iemOp_packssdw_Pq_Qd,       iemOp_vpackssdw_Vx_Hx_Wx,   iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6c */  iemOp_InvalidNeedRM,        iemOp_vpunpcklqdq_Vx_Hx_Wx, iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6d */  iemOp_InvalidNeedRM,        iemOp_vpunpckhqdq_Vx_Hx_W,  iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0x6e */  IEMOP_X4(iemOp_movd_q_Pd_Ey__movd_q_Vy_Ey),
