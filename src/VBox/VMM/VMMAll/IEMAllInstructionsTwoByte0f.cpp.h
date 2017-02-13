@@ -2958,12 +2958,10 @@ FNIEMOP_DEF(iemOp_Grp12)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
         /* register, register */
-        return FNIEMOP_CALL_1(g_apfnGroup12RegReg[((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4 + pVCpu->iem.s.idxPrefix], bRm);
-    }
-
-    /** @todo decode SIB, disp?   */
+        return FNIEMOP_CALL_1(g_apfnGroup12RegReg[  ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                  + pVCpu->iem.s.idxPrefix], bRm);
+    /** @todo decode SIB, disp, Ib? */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -2972,54 +2970,47 @@ FNIEMOP_DEF(iemOp_Grp12)
 FNIEMOP_STUB_1(iemOp_Grp13_psrld_Nq_Ib,  uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp13_psrld_Udq_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_vpsrld_Hx_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x72 11/4. */
 FNIEMOP_STUB_1(iemOp_Grp13_psrad_Nq_Ib,  uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/4. */
-FNIEMOP_STUB_1(iemOp_Grp13_psrad_Udq_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_vpsrad_Hx_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x0f 0x72 11/6. */
 FNIEMOP_STUB_1(iemOp_Grp13_pslld_Nq_Ib,  uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x72 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp13_pslld_Udq_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp13_vpslld_Hx_Ux_Ib, uint8_t, bRm);
 
+
+/**
+ * Group 13 jump table for register variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[8*4] =
+{
+    /** @todo decode imm8? */
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /2 */ iemOp_Grp13_psrld_Nq_Ib,           iemOp_Grp13_vpsrld_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /3 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /4 */ iemOp_Grp13_psrad_Nq_Ib,           iemOp_Grp13_vpsrad_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /6 */ iemOp_Grp13_pslld_Nq_Ib,           iemOp_Grp13_vpslld_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /7 */ IEMOP_X4(iemOp_InvalidWithRM)
+};
 
 /** Opcode 0x0f 0x72. */
 FNIEMOP_DEF(iemOp_Grp13)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-        return IEMOP_RAISE_INVALID_OPCODE();
-    switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-    {
-        case 0: case 1: case 3: case 5: case 7:
-            return IEMOP_RAISE_INVALID_OPCODE();
-        case 2:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case 0:                     return FNIEMOP_CALL_1(iemOp_Grp13_psrld_Nq_Ib, bRm);
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp13_psrld_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 4:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case 0:                     return FNIEMOP_CALL_1(iemOp_Grp13_psrad_Nq_Ib, bRm);
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp13_psrad_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 6:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case 0:                     return FNIEMOP_CALL_1(iemOp_Grp13_pslld_Nq_Ib, bRm);
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp13_pslld_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        /* register, register */
+        return FNIEMOP_CALL_1(g_apfnGroup13RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                  + pVCpu->iem.s.idxPrefix], bRm);
+    /** @todo decode SIB, disp, Ib? */
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
