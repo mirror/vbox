@@ -1445,6 +1445,8 @@ static DECLCALLBACK(void) coreAudioInputQueueCb(void *pvUser, AudioQueueRef audi
  */
 int coreAudioOutputQueueProcBuffer(PCOREAUDIOSTREAM pCAStream, AudioQueueBufferRef audioBuffer)
 {
+    AssertPtr(pCAStream);
+
     PRTCIRCBUF pCircBuf = pCAStream->pCircBuf;
     AssertPtr(pCircBuf);
 
@@ -1604,7 +1606,7 @@ static int coreAudioStreamInitQueue(PCOREAUDIOSTREAM pCAStream, PPDMAUDIOSTREAMC
         return rc;
     }
 
-    rc = RTCircBufCreate(&pCAStream->pCircBuf, 8096 << 1 /*pHstStrmIn->Props.cShift*/); /** @todo FIX THIS !!! */
+    rc = RTCircBufCreate(&pCAStream->pCircBuf, PDMAUDIOSTREAMCFG_S2B(pCfgReq, 4096)); /** @todo Make this configurable. */
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2061,6 +2063,19 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamPlay(PPDMIHOSTAUDIO pInterface,
 
         memcpy(pvChunk, (uint8_t *)pvBuf + cbWrittenTotal, cbChunk);
 
+#ifdef DEBUG_DUMP_PCM_DATA
+        RTFILE fh;
+        rc = RTFileOpen(&fh, DEBUG_DUMP_PCM_DATA_PATH "ca-playback.pcm",
+                        RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            RTFileWrite(fh, pvChunk, cbChunk, NULL);
+            RTFileClose(fh);
+        }
+        else
+            AssertFailed();
+#endif
+
         /* Release the ring buffer, so the read thread could start reading this data. */
         RTCircBufReleaseWriteBlock(pCAStream->pCircBuf, cbChunk);
 
@@ -2322,7 +2337,7 @@ static DECLCALLBACK(int) drvHostCoreAudioStreamCreate(PPDMIHOSTAUDIO pInterface,
             rc = coreAudioStreamInitQueue(pCAStream, pCfgReq, pCfgAcq);
             if (RT_SUCCESS(rc))
             {
-                pCfgAcq->cSampleBufferHint = _4K; /** @todo FIX THIS !!! */
+                pCfgAcq->cSampleBufferHint = _4K; /** @todo Make this configurable. */
             }
             if (RT_SUCCESS(rc))
             {
