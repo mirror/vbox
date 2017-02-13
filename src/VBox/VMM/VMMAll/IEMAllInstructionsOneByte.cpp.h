@@ -1279,7 +1279,7 @@ FNIEMOP_DEF(iemOp_pusha)
 
 
 /** Opcode 0x61. */
-FNIEMOP_DEF(iemOp_popa)
+FNIEMOP_DEF(iemOp_popa__mvex)
 {
     if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
     {
@@ -1291,13 +1291,14 @@ FNIEMOP_DEF(iemOp_popa)
         Assert(pVCpu->iem.s.enmEffOpSize == IEMMODE_32BIT);
         return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_popa_32);
     }
-    Log(("mvex is not supported!\n"));
+    IEMOP_MNEMONIC(mvex, "mvex");
+    Log(("mvex prefix is not supported!\n"));
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
 /** Opcode 0x62. */
-FNIEMOP_STUB(iemOp_bound_Gv_Ma_evex);
+FNIEMOP_STUB(iemOp_bound_Gv_Ma__evex);
 //    IEMOP_HLP_MIN_186();
 
 
@@ -3532,7 +3533,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 
 
 /** Opcode 0x8f. */
-FNIEMOP_DEF(iemOp_Grp1A_xop)
+FNIEMOP_DEF(iemOp_Grp1A__xop)
 {
     /*
      * AMD has defined /1 thru /7 as XOP prefix.  The prefix is similar to the
@@ -3555,7 +3556,7 @@ FNIEMOP_DEF(iemOp_Grp1A_xop)
             == 0)
         {
             pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_XOP;
-            if (bXop2 & 0x80 /* VEX.W */)
+            if (bXop2 & 0x80 /* XOP.W */)
                 pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
             pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
             pVCpu->iem.s.uRexIndex  = ~bRm >> (6 - 3);
@@ -5299,7 +5300,7 @@ FNIEMOP_DEF(iemOp_retn)
 
 
 /** Opcode 0xc4. */
-FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
+FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
 {
     /* The LES instruction is invalid 64-bit mode. In legacy and
        compatability mode it is invalid with MOD=3.
@@ -5342,7 +5343,7 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
 
 
 /** Opcode 0xc5. */
-FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
+FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
 {
     /* The LDS instruction is invalid 64-bit mode. In legacy and
        compatability mode it is invalid with MOD=3.
@@ -10756,7 +10757,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x54 */  iemOp_push_eSP,         iemOp_push_eBP,         iemOp_push_eSI,         iemOp_push_eDI,
     /* 0x58 */  iemOp_pop_eAX,          iemOp_pop_eCX,          iemOp_pop_eDX,          iemOp_pop_eBX,
     /* 0x5c */  iemOp_pop_eSP,          iemOp_pop_eBP,          iemOp_pop_eSI,          iemOp_pop_eDI,
-    /* 0x60 */  iemOp_pusha,            iemOp_popa,             iemOp_bound_Gv_Ma_evex, iemOp_arpl_Ew_Gw_movsx_Gv_Ev,
+    /* 0x60 */  iemOp_pusha,            iemOp_popa__mvex,       iemOp_bound_Gv_Ma__evex, iemOp_arpl_Ew_Gw_movsx_Gv_Ev,
     /* 0x64 */  iemOp_seg_FS,           iemOp_seg_GS,           iemOp_op_size,          iemOp_addr_size,
     /* 0x68 */  iemOp_push_Iz,          iemOp_imul_Gv_Ev_Iz,    iemOp_push_Ib,          iemOp_imul_Gv_Ev_Ib,
     /* 0x6c */  iemOp_insb_Yb_DX,       iemOp_inswd_Yv_DX,      iemOp_outsb_Yb_DX,      iemOp_outswd_Yv_DX,
@@ -10767,7 +10768,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x80 */  iemOp_Grp1_Eb_Ib_80,    iemOp_Grp1_Ev_Iz,       iemOp_Grp1_Eb_Ib_82,    iemOp_Grp1_Ev_Ib,
     /* 0x84 */  iemOp_test_Eb_Gb,       iemOp_test_Ev_Gv,       iemOp_xchg_Eb_Gb,       iemOp_xchg_Ev_Gv,
     /* 0x88 */  iemOp_mov_Eb_Gb,        iemOp_mov_Ev_Gv,        iemOp_mov_Gb_Eb,        iemOp_mov_Gv_Ev,
-    /* 0x8c */  iemOp_mov_Ev_Sw,        iemOp_lea_Gv_M,         iemOp_mov_Sw_Ev,        iemOp_Grp1A_xop,
+    /* 0x8c */  iemOp_mov_Ev_Sw,        iemOp_lea_Gv_M,         iemOp_mov_Sw_Ev,        iemOp_Grp1A__xop,
     /* 0x90 */  iemOp_nop,              iemOp_xchg_eCX_eAX,     iemOp_xchg_eDX_eAX,     iemOp_xchg_eBX_eAX,
     /* 0x94 */  iemOp_xchg_eSP_eAX,     iemOp_xchg_eBP_eAX,     iemOp_xchg_eSI_eAX,     iemOp_xchg_eDI_eAX,
     /* 0x98 */  iemOp_cbw,              iemOp_cwd,              iemOp_call_Ap,          iemOp_wait,
@@ -10781,7 +10782,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xb8 */  iemOp_eAX_Iv,           iemOp_eCX_Iv,           iemOp_eDX_Iv,           iemOp_eBX_Iv,
     /* 0xbc */  iemOp_eSP_Iv,           iemOp_eBP_Iv,           iemOp_eSI_Iv,           iemOp_eDI_Iv,
     /* 0xc0 */  iemOp_Grp2_Eb_Ib,       iemOp_Grp2_Ev_Ib,       iemOp_retn_Iw,          iemOp_retn,
-    /* 0xc4 */  iemOp_les_Gv_Mp_vex2,   iemOp_lds_Gv_Mp_vex3,   iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
+    /* 0xc4 */  iemOp_les_Gv_Mp__vex2,  iemOp_lds_Gv_Mp__vex3,  iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
     /* 0xc8 */  iemOp_enter_Iw_Ib,      iemOp_leave,            iemOp_retf_Iw,          iemOp_retf,
     /* 0xcc */  iemOp_int_3,            iemOp_int_Ib,           iemOp_into,             iemOp_iret,
     /* 0xd0 */  iemOp_Grp2_Eb_1,        iemOp_Grp2_Ev_1,        iemOp_Grp2_Eb_CL,       iemOp_Grp2_Ev_CL,
