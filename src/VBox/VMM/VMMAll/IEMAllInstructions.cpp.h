@@ -3961,106 +3961,136 @@ FNIEMOP_STUB(iemOp_vmovq_Vq_Wq);
 /*  Opcode 0xf2 0x0f 0x7e - invalid */
 
 
-/** Opcode 0x0f 0x7f. */
-FNIEMOP_DEF(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq)
+/** Opcode      0x0f 0x7f - movq Qq, Pq */
+FNIEMOP_DEF(iemOp_movq_Qq_Pq)
+{
+    IEMOP_MNEMONIC(movq_Qq_Pq, "movq Qq,Pq");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
+        /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint64_t, u64Tmp);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
+        IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+        IEM_MC_STORE_MREG_U64(bRm & X86_MODRM_RM_MASK, u64Tmp);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t, u64Tmp);
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+
+        IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+        IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u64Tmp);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+/** Opcode 0x66 0x0f 0x7f - vmovdqa Wx,Vx */
+FNIEMOP_DEF(iemOp_vmovdqa_Wx_Vx)
+{
+    IEMOP_MNEMONIC(vmovdqa_Wdq_Vdq, "vmovdqa Wx,Vx");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB,
+                              ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,  u128Tmp);
+        IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U128(u128Tmp, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u128Tmp);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+/** Opcode 0xf3 0x0f 0x7f - vmovdqu Wx,Vx */
+FNIEMOP_DEF(iemOp_vmovdqu_Wx_Vx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    bool fAligned = false;
-    switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+    IEMOP_MNEMONIC(vmovdqu_Wdq_Vdq, "vmovdqu Wx,Vx");
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
-        case IEM_OP_PRF_SIZE_OP: /* SSE aligned */
-            fAligned = true;
-            /* fall thru */
-        case IEM_OP_PRF_REPZ: /* SSE unaligned */
-            if (fAligned)
-                IEMOP_MNEMONIC(movdqa_Wdq_Vdq, "movdqa Wdq,Vdq");
-            else
-                IEMOP_MNEMONIC(movdqu_Wdq_Vdq, "movdqu Wdq,Vdq");
-            if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-            {
-                /*
-                 * Register, register.
-                 */
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(0, 0);
-                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
-                IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB,
-                                      ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-            }
-            else
-            {
-                /*
-                 * Register, memory.
-                 */
-                IEM_MC_BEGIN(0, 2);
-                IEM_MC_LOCAL(uint128_t,  u128Tmp);
-                IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
-
-                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
-
-                IEM_MC_FETCH_XREG_U128(u128Tmp, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                if (fAligned)
-                    IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u128Tmp);
-                else
-                    IEM_MC_STORE_MEM_U128(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u128Tmp);
-
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-            }
-            return VINF_SUCCESS;
-
-        case 0: /* MMX */
-            IEMOP_MNEMONIC(movq_Qq_Pq, "movq Qq,Pq");
-
-            if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-            {
-                /*
-                 * Register, register.
-                 */
-                /** @todo testcase: REX.B / REX.R and MMX register indexing. Ignored? */
-                /** @todo testcase: REX.B / REX.R and segment register indexing. Ignored? */
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_BEGIN(0, 1);
-                IEM_MC_LOCAL(uint64_t, u64Tmp);
-                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_FPU_STATE_FOR_CHANGE();
-                IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
-                IEM_MC_STORE_MREG_U64(bRm & X86_MODRM_RM_MASK, u64Tmp);
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-            }
-            else
-            {
-                /*
-                 * Register, memory.
-                 */
-                IEM_MC_BEGIN(0, 2);
-                IEM_MC_LOCAL(uint64_t, u64Tmp);
-                IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
-
-                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
-
-                IEM_MC_FETCH_MREG_U64(u64Tmp, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
-                IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u64Tmp);
-
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-            }
-            return VINF_SUCCESS;
-
-        default:
-            return IEMOP_RAISE_INVALID_OPCODE();
+        /*
+         * Register, register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_CHANGE();
+        IEM_MC_COPY_XREG_U128((bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB,
+                              ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
     }
+    else
+    {
+        /*
+         * Register, memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,  u128Tmp);
+        IEM_MC_LOCAL(RTGCPTR,    GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+
+        IEM_MC_FETCH_XREG_U128(u128Tmp, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U128(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, u128Tmp);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
 }
+
+/*  Opcode 0xf2 0x0f 0x7f - invalid */
 
 
 
@@ -8292,7 +8322,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0x7c */  iemOp_InvalidNeedRM,        iemOp_vhaddpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhaddps_Vps_Hps_Wps,
     /* 0x7d */  iemOp_InvalidNeedRM,        iemOp_vhsubpd_Vpd_Hpd_Wpd,  iemOp_InvalidNeedRM,        iemOp_vhsubps_Vps_Hps_Wps,
     /* 0x7e */  iemOp_movd_q_Ey_Pd,         iemOp_vmovd_q_Ey_Vy,        iemOp_vmovq_Vq_Wq,          iemOp_InvalidNeedRM,
-    /* 0x7f */  IEMOP_X4(iemOp_movq_Qq_Pq__movq_movdqa_Wdq_Vdq__movdqu_Wdq_Vdq),
+    /* 0x7f */  iemOp_movq_Qq_Pq,           iemOp_vmovdqa_Wx_Vx,        iemOp_vmovdqu_Wx_Vx,        iemOp_InvalidNeedRM,
 
     /* 0x80 */  IEMOP_X4(iemOp_jo_Jv),
     /* 0x81 */  IEMOP_X4(iemOp_jno_Jv),
