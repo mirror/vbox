@@ -2989,7 +2989,6 @@ FNIEMOP_STUB_1(iemOp_Grp13_vpslld_Hx_Ux_Ib, uint8_t, bRm);
  */
 IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[] =
 {
-    /** @todo decode imm8? */
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /2 */ iemOp_Grp13_psrld_Nq_Ib,   iemOp_Grp13_vpsrld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
