@@ -2421,8 +2421,24 @@ static DECLCALLBACK(uint32_t) drvHostCoreAudioStreamGetReadable(PPDMIHOSTAUDIO p
 
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
-    return   (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
-           ? UINT32_MAX : 0;
+    if (ASMAtomicReadU32(&pCAStream->enmStatus) != COREAUDIOSTATUS_INIT)
+        return 0;
+
+    AssertPtr(pCAStream->pCfg);
+    AssertPtr(pCAStream->pCircBuf);
+
+    switch (pCAStream->pCfg->enmDir)
+    {
+        case PDMAUDIODIR_IN:
+            return (uint32_t)RTCircBufUsed(pCAStream->pCircBuf);
+
+        case PDMAUDIODIR_OUT:
+        default:
+            AssertFailed();
+            break;
+    }
+
+    return 0;
 }
 
 
@@ -2436,8 +2452,24 @@ static DECLCALLBACK(uint32_t) drvHostCoreAudioStreamGetWritable(PPDMIHOSTAUDIO p
 
     PCOREAUDIOSTREAM pCAStream = (PCOREAUDIOSTREAM)pStream;
 
-    return   (ASMAtomicReadU32(&pCAStream->enmStatus) == COREAUDIOSTATUS_INIT)
-           ? UINT32_MAX : 0;
+    if (ASMAtomicReadU32(&pCAStream->enmStatus) != COREAUDIOSTATUS_INIT)
+        return 0;
+
+    AssertPtr(pCAStream->pCfg);
+    AssertPtr(pCAStream->pCircBuf);
+
+    switch (pCAStream->pCfg->enmDir)
+    {
+        case PDMAUDIODIR_OUT:
+            return (uint32_t)RTCircBufFree(pCAStream->pCircBuf);
+
+        case PDMAUDIODIR_IN:
+        default:
+            AssertFailed();
+            break;
+    }
+
+    return 0;
 }
 
 
