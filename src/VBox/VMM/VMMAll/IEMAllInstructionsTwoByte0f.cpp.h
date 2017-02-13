@@ -3015,62 +3015,50 @@ FNIEMOP_DEF(iemOp_Grp13)
 
 
 /** Opcode 0x0f 0x73 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Nq_Ib,   uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/2. */
-FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Udq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_vpsrlq_Hx_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/3. */
-FNIEMOP_STUB_1(iemOp_Grp14_psrldq_Udq_Ib, uint8_t, bRm); //NEXT
+FNIEMOP_STUB_1(iemOp_Grp14_vpsrldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
 
 /** Opcode 0x0f 0x73 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp14_psllq_Nq_Ib,   uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_psllq_Nq_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/6. */
-FNIEMOP_STUB_1(iemOp_Grp14_psllq_Udq_Ib,  uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_vpsllq_Hx_Ux_Ib, uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/7. */
-FNIEMOP_STUB_1(iemOp_Grp14_pslldq_Udq_Ib, uint8_t, bRm); //NEXT
+FNIEMOP_STUB_1(iemOp_Grp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
+
+/**
+ * Group 14 jump table for register variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[8*4] =
+{
+    /** @todo decode imm8? */
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,           iemOp_Grp14_vpsrlq_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /3 */ iemOp_InvalidWithRM,               iemOp_Grp14_vpsrldq_Hx_Ux_Ib,   iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
+    /* /6 */ iemOp_Grp14_psllq_Nq_Ib,           iemOp_Grp14_vpsllq_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /7 */ iemOp_InvalidWithRM,               iemOp_Grp14_vpslldq_Hx_Ux_Ib,   iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+};
 
 
 /** Opcode 0x0f 0x73. */
 FNIEMOP_DEF(iemOp_Grp14)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-        return IEMOP_RAISE_INVALID_OPCODE();
-    switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
-    {
-        case 0: case 1: case 4: case 5:
-            return IEMOP_RAISE_INVALID_OPCODE();
-        case 2:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case 0:                     return FNIEMOP_CALL_1(iemOp_Grp14_psrlq_Nq_Ib, bRm);
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp14_psrlq_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 3:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp14_psrldq_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 6:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case 0:                     return FNIEMOP_CALL_1(iemOp_Grp14_psllq_Nq_Ib, bRm);
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp14_psllq_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        case 7:
-            switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ))
-            {
-                case IEM_OP_PRF_SIZE_OP:    return FNIEMOP_CALL_1(iemOp_Grp14_pslldq_Udq_Ib, bRm);
-                default:                    return IEMOP_RAISE_INVALID_OPCODE();
-            }
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+        /* register, register */
+        return FNIEMOP_CALL_1(g_apfnGroup14RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
+                                                  + pVCpu->iem.s.idxPrefix], bRm);
+    /** @todo decode SIB, disp, Ib? */
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
 
 
