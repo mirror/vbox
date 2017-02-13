@@ -5529,6 +5529,7 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_wrgsbase, uint8_t, bRm);
 /** Opcode 0x0f 0xae. */
 FNIEMOP_DEF(iemOp_Grp15)
 {
+/** @todo continue here tomorrow! (see bs3-cpu-decoding-1.c32 r113507).  */
     IEMOP_HLP_MIN_586(); /* Not entirely accurate nor needed, but useful for debugging 286 code. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
