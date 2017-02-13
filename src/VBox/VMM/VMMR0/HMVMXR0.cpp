@@ -8669,7 +8669,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
         AssertRCReturn(rc, rc);
 
         /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
-        LogRel(("hmR0VmxPreRunGuest: VCPU%u: Mapped HC APIC-access page at %#RGp\n", pVCpu->idCpu, GCPhysApicBase));
+        Log4(("hmR0VmxPreRunGuest: VCPU%u: Mapped HC APIC-access page at %#RGp\n", pVCpu->idCpu, GCPhysApicBase));
         rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
         AssertRCReturn(rc, rc);
 
