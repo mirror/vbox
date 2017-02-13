@@ -7955,64 +7955,65 @@ FNIEMOP_STUB(iemOp_vcvtdq2pd_Vx_Wpd);
 FNIEMOP_STUB(iemOp_vcvtpd2dq_Vx_Wpd);
 
 
-/** Opcode 0x0f 0xe7. */
-FNIEMOP_DEF(iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq)
+/** Opcode      0x0f 0xe7 - movntq Mq, Pq */
+FNIEMOP_DEF(iemOp_movntq_Mq_Pq)
+{
+    IEMOP_MNEMONIC(movntq_Mq_Pq, "movntq Mq,Pq");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* Register, memory. */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t,                  uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
+
+        IEM_MC_FETCH_MREG_U64(uSrc, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+        IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
+
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+    /* The register, register encoding is invalid. */
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+/** Opcode 0x66 0x0f 0xe7 - vmovntdq Mx, Vx */
+FNIEMOP_DEF(iemOp_vmovntdq_Mx_Vx)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        /*
-         * Register, memory.
-         */
-/** @todo check when the REPNZ/Z bits kick in. Same as lock, probably... */
-        switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
-        {
+        /* Register, memory. */
+        IEMOP_MNEMONIC(vmovntdq_Mx_Vx, "vmovntdq Mx,Vx");
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint128_t,                 uSrc);
+        IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
 
-            case IEM_OP_PRF_SIZE_OP: /* SSE */
-                IEMOP_MNEMONIC(movntq_Mq_Pq, "movntq Mq,Pq");
-                IEM_MC_BEGIN(0, 2);
-                IEM_MC_LOCAL(uint128_t,                 uSrc);
-                IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
 
-                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_SSE_STATE_FOR_READ();
+        IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
 
-                IEM_MC_FETCH_XREG_U128(uSrc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-                IEM_MC_STORE_MEM_U128_ALIGN_SSE(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
-
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                break;
-
-            case 0: /* MMX */
-                IEMOP_MNEMONIC(movntdq_Mdq_Vdq, "movntdq Mdq,Vdq");
-                IEM_MC_BEGIN(0, 2);
-                IEM_MC_LOCAL(uint64_t,                  uSrc);
-                IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
-
-                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
-                IEM_MC_ACTUALIZE_FPU_STATE_FOR_READ();
-
-                IEM_MC_FETCH_MREG_U64(uSrc, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
-                IEM_MC_STORE_MEM_U64(pVCpu->iem.s.iEffSeg, GCPtrEffSrc, uSrc);
-
-                IEM_MC_ADVANCE_RIP();
-                IEM_MC_END();
-                break;
-
-            default:
-                return IEMOP_RAISE_INVALID_OPCODE();
-        }
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
     }
+
     /* The register, register encoding is invalid. */
-    else
-        return IEMOP_RAISE_INVALID_OPCODE();
-    return VINF_SUCCESS;
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
+
+/*  Opcode 0xf3 0x0f 0xe7 - invalid */
+/*  Opcode 0xf2 0x0f 0xe7 - invalid */
 
 
 /** Opcode      0x0f 0xe8 - psubsb Pq, Qq */
@@ -8444,7 +8445,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0xe4 */  iemOp_pmulhuw_Pq_Qq,        iemOp_vpmulhuw_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe5 */  iemOp_pmulhw_Pq_Qq,         iemOp_vpmulhw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe6 */  iemOp_InvalidNeedRM,        iemOp_vcvttpd2dq_Vx_Wpd,    iemOp_vcvtdq2pd_Vx_Wpd,     iemOp_vcvtpd2dq_Vx_Wpd,
-    /* 0xe7 */  iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq, iemOp_movntq_Mq_Pq__movntdq_Mdq_Vdq, iemOp_InvalidNeedRM, iemOp_InvalidNeedRM,
+    /* 0xe7 */  iemOp_movntq_Mq_Pq,         iemOp_vmovntdq_Mx_Vx,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe8 */  iemOp_psubsb_Pq_Qq,         iemOp_vpsubsb_Vx_Hx_W,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xe9 */  iemOp_psubsw_Pq_Qq,         iemOp_vpsubsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xea */  iemOp_pminsw_Pq_Qq,         iemOp_vpminsw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
