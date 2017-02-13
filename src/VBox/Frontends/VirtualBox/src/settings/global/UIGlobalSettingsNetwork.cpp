@@ -1167,24 +1167,25 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataSettingsGloba
 
     /* Save DHCP server configuration: */
     dhcp.SetEnabled(data.m_dhcpserver.m_fDhcpServerEnabled);
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()),
-              ("DHCP server IPv4 address must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()),
-              ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()),
-              ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
-    AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()),
-              ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
-    if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()) &&
-        RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
+    if (data.m_dhcpserver.m_fDhcpServerEnabled)
     {
-        dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
-                              data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
-        if (!dhcp.isOk())
-            emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(dhcp));
+        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()),
+                  ("DHCP server IPv4 address must be IPv4-valid!\n"));
+        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()),
+                  ("DHCP server IPv4 network mask must be IPv4-valid!\n"));
+        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()),
+                  ("DHCP server IPv4 lower bound must be IPv4-valid!\n"));
+        AssertMsg(RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()),
+                  ("DHCP server IPv4 upper bound must be IPv4-valid!\n"));
+        if (RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerAddress.toUtf8().constData()) &&
+            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpServerMask.toUtf8().constData()) &&
+            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpLowerAddress.toUtf8().constData()) &&
+            RTNetIsIPv4AddrStr(data.m_dhcpserver.m_strDhcpUpperAddress.toUtf8().constData()))
+            dhcp.SetConfiguration(data.m_dhcpserver.m_strDhcpServerAddress, data.m_dhcpserver.m_strDhcpServerMask,
+                                  data.m_dhcpserver.m_strDhcpLowerAddress, data.m_dhcpserver.m_strDhcpUpperAddress);
     }
+    if (!dhcp.isOk())
+        emit sigOperationProgressError(UIMessageCenter::formatErrorInfo(dhcp));
 }
 
 void UIGlobalSettingsNetwork::createTreeItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data, bool fChooseItem)
