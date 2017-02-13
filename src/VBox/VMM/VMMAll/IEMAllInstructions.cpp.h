@@ -7786,55 +7786,66 @@ FNIEMOP_DEF(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq)
 #endif
 
 
-/** Opcode 0x0f 0xd7. */
-FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq)
+/** Opcode      0x0f 0xd7 - pmovmskb Gd, Nq */
+FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq)
 {
-    /* Docs says register only. */
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
-        return IEMOP_RAISE_INVALID_OPCODE();
-
     /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
     /** @todo testcase: Check that the instruction implicitly clears the high
      *        bits in 64-bit mode.  The REX.W is first necessary when VLMAX > 256
      *        and opcode modifications are made to work with the whole width (not
      *        just 128). */
-    switch (pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+    IEMOP_MNEMONIC(pmovmskb_Gd_Udq, "pmovmskb Gd,Nq");
+    /* Docs says register only. */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
     {
-        case IEM_OP_PRF_SIZE_OP: /* SSE */
-            IEMOP_MNEMONIC(pmovmskb_Gd_Nq, "pmovmskb Gd,Nq");
-            IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_SSE | DISOPTYPE_HARMLESS);
-            IEM_MC_BEGIN(2, 0);
-            IEM_MC_ARG(uint64_t *,           pDst, 0);
-            IEM_MC_ARG(uint128_t const *,    pSrc, 1);
-            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
-            IEM_MC_PREPARE_SSE_USAGE();
-            IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
-            IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
-            IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        case 0: /* MMX */
-            IEMOP_MNEMONIC(pmovmskb_Gd_Udq, "pmovmskb Gd,Udq");
-            IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_MMX | DISOPTYPE_HARMLESS);
-            IEM_MC_BEGIN(2, 0);
-            IEM_MC_ARG(uint64_t *,          pDst, 0);
-            IEM_MC_ARG(uint64_t const *,    pSrc, 1);
-            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
-            IEM_MC_PREPARE_FPU_USAGE();
-            IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
-            IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
-            IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
-            IEM_MC_ADVANCE_RIP();
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        default:
-            return IEMOP_RAISE_INVALID_OPCODE();
+        IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_MMX | DISOPTYPE_HARMLESS);
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint64_t *,          pDst, 0);
+        IEM_MC_ARG(uint64_t const *,    pSrc, 1);
+        IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+        IEM_MC_PREPARE_FPU_USAGE();
+        IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+        IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
+        IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
     }
+    return IEMOP_RAISE_INVALID_OPCODE();
 }
+
+/** Opcode 0x66 0x0f 0xd7 -  */
+FNIEMOP_DEF(iemOp_vpmovmskb_Gd_Ux)
+{
+    /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
+    /** @todo testcase: Check that the instruction implicitly clears the high
+     *        bits in 64-bit mode.  The REX.W is first necessary when VLMAX > 256
+     *        and opcode modifications are made to work with the whole width (not
+     *        just 128). */
+    IEMOP_MNEMONIC(pmovmskb_Gd_Nq, "vpmovmskb Gd, Ux");
+    /* Docs says register only. */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
+    {
+        IEMOP_HLP_DECODED_NL_2(OP_PMOVMSKB, IEMOPFORM_RM_REG, OP_PARM_Gd, OP_PARM_Vdq, DISOPTYPE_SSE | DISOPTYPE_HARMLESS);
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint64_t *,           pDst, 0);
+        IEM_MC_ARG(uint128_t const *,    pSrc, 1);
+        IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+        IEM_MC_PREPARE_SSE_USAGE();
+        IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+        IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pVCpu->iem.s.uRexB);
+        IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+/*  Opcode 0xf3 0x0f 0xd7 - invalid */
+/*  Opcode 0xf2 0x0f 0xd7 - invalid */
 
 
 /** Opcode      0x0f 0xd8 - psubusb Pq, Qq */
@@ -8416,7 +8427,7 @@ IEM_STATIC const PFNIEMOP g_apfnTwoByteMap[] =
     /* 0xd4 */  iemOp_paddq_Pq_Qq,          iemOp_vpaddq_Vx_Hx_W,       iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd5 */  iemOp_pmullw_Pq_Qq,         iemOp_vpmullw_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd6 */  iemOp_InvalidNeedRM,        iemOp_vmovq_Wq_Vq,          iemOp_movq2dq_Vdq_Nq,       iemOp_movdq2q_Pq_Uq,
-    /* 0xd7 */  IEMOP_X4(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq),
+    /* 0xd7 */  iemOp_pmovmskb_Gd_Nq,       iemOp_vpmovmskb_Gd_Ux,      iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd8 */  iemOp_psubusb_Pq_Qq,        iemOp_vpsubusb_Vx_Hx_W,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xd9 */  iemOp_psubusw_Pq_Qq,        iemOp_vpsubusw_Vx_Hx_Wx,    iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
     /* 0xda */  iemOp_pminub_Pq_Qq,         iemOp_vpminub_Vx_Hx_Wx,     iemOp_InvalidNeedRM,        iemOp_InvalidNeedRM,
