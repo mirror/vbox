@@ -345,14 +345,16 @@ VBoxVMM_CLEAN         += \
 	$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h
 $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h.ts \
 +| $$(VBoxVMM_0_OUTDIR)/CommonGenIncs/IEMInstructionStatisticsTmpl.h: \
-		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions.cpp.h
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructions.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsOneByte.cpp.h \
+		$(PATH_SUB_CURRENT)/VMMAll/IEMAllInstructionsTwoByte0f.cpp.h
 	$(QUIET)$(call MSG_GENERATE,VBoxVMM,$@,$<)
 	$(QUIET)$(MKDIR) -p -- "$(dir $@)"
-	$(QUIET)set +e && $(SED) \
+	$(QUIET)$(SED) \
 		-e '/IEMOP_MNEMONIC(/!d' \
                -e 's/^.*IEMOP_MNEMONIC(/IEM_DO_INSTR_STAT(/' \
                -e 's/;.*$(DOLLAR)//' \
-		--output "$@.tmp" $<
+		--output "$@.tmp" $(filter %.cpp.h,$^)
 	$(QUIET)$(REDIRECT) -wto "$@" -- sort "$@.tmp"
 	$(QUIET)$(RM) -f -- "$@.tmp"
 	$(QUIET)$(CP) -v -f --changed -- "$@" "$(patsubst %.ts,%,$@)"
@@ -946,6 +948,8 @@ PGMInline.o 	PGMInline.obj: 			PGMDbg.o
 # Alias the IEM templates to the object in which they are instantiated.
 IEMInternal.o \
 IEMAllInstructions.cpp.o  IEMAllInstructions.cpp.obj \
+IEMAllInstructionsOneByte.cpp.o  IEMAllInstructionsOneByte.cpp.obj \
+IEMAllInstructionsTwoByte0f.cpp.o  IEMAllInstructionsTwoByte0f.cpp.obj \
 IEMAllCImpl.cpp.o         IEMAllCImpl.cpp.obj \
 IEMAllCImplStrInstr.cpp.o IEMAllCImplStrInstr.cpp.obj: IEMAll.o
 
