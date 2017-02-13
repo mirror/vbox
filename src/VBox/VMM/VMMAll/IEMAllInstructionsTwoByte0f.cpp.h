@@ -2941,7 +2941,6 @@ FNIEMOP_STUB_1(iemOp_Grp12_vpsllw_Hx_Ux_Ib, uint8_t, bRm);
  */
 IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[8*4] =
 {
-    /** @todo decode imm8? */
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /2 */ iemOp_Grp12_psrlw_Nq_Ib,   iemOp_Grp12_vpsrlw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
@@ -3035,7 +3034,6 @@ FNIEMOP_STUB_1(iemOp_Grp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
  */
 IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[8*4] =
 {
-    /** @todo decode imm8? */
     /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
     /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,     iemOp_Grp14_vpsrlq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
