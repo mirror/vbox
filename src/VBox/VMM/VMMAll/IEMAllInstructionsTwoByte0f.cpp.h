@@ -596,15 +596,32 @@ FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 }
 
 
+/**
+ * Group 7 jump table, memory variant.
+ */
+IEM_STATIC const PFNIEMOPRM g_apfnGroup7Mem[8] =
+{
+    iemOp_Grp7_sgdt,
+    iemOp_Grp7_sidt,
+    iemOp_Grp7_lgdt,
+    iemOp_Grp7_lidt,
+    iemOp_Grp7_smsw,
+    iemOp_InvalidWithRM,
+    iemOp_Grp7_lmsw,
+    iemOp_Grp7_invlpg
+};
+
+
 /** Opcode 0x0f 0x01. */
 FNIEMOP_DEF(iemOp_Grp7)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        return FNIEMOP_CALL_1(g_apfnGroup7Mem[(bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK], bRm);
+
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
         case 0:
-            if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp7_sgdt, bRm);
             switch (bRm & X86_MODRM_RM_MASK)
             {
                 case 1: return FNIEMOP_CALL(iemOp_Grp7_vmcall);
@@ -615,8 +632,6 @@ FNIEMOP_DEF(iemOp_Grp7)
             return IEMOP_RAISE_INVALID_OPCODE();
 
         case 1:
-            if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp7_sidt, bRm);
             switch (bRm & X86_MODRM_RM_MASK)
             {
                 case 0: return FNIEMOP_CALL(iemOp_Grp7_monitor);
@@ -625,8 +640,6 @@ FNIEMOP_DEF(iemOp_Grp7)
             return IEMOP_RAISE_INVALID_OPCODE();
 
         case 2:
-            if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp7_lgdt, bRm);
             switch (bRm & X86_MODRM_RM_MASK)
             {
                 case 0: return FNIEMOP_CALL(iemOp_Grp7_xgetbv);
@@ -635,8 +648,6 @@ FNIEMOP_DEF(iemOp_Grp7)
             return IEMOP_RAISE_INVALID_OPCODE();
 
         case 3:
-            if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp7_lidt, bRm);
             switch (bRm & X86_MODRM_RM_MASK)
             {
                 case 0: return FNIEMOP_CALL(iemOp_Grp7_Amd_vmrun);
@@ -660,8 +671,6 @@ FNIEMOP_DEF(iemOp_Grp7)
             return FNIEMOP_CALL_1(iemOp_Grp7_lmsw, bRm);
 
         case 7:
-            if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-                return FNIEMOP_CALL_1(iemOp_Grp7_invlpg, bRm);
             switch (bRm & X86_MODRM_RM_MASK)
             {
                 case 0: return FNIEMOP_CALL(iemOp_Grp7_swapgs);
