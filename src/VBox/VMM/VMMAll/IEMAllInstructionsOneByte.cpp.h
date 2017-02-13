@@ -5248,18 +5248,40 @@ FNIEMOP_DEF(iemOp_retn)
 /** Opcode 0xc4. */
 FNIEMOP_DEF(iemOp_les_Gv_Mp_vex2)
 {
+    /* The LES instruction is invalid 64-bit mode. In legacy and
+       compatability mode it is invalid with MOD=3.
+       The use as a VEX prefix is made possible by assigning the inverted
+       REX.R to the top MOD bit, and the top bit in the inverted register
+       specifier to the bottom MOD bit, thereby effectively limiting 32-bit
+       to accessing registers 0..7 in this VEX form. */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if (   pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
         || (bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
         IEMOP_MNEMONIC(vex2_prefix, "2-byte-vex");
-        /* The LES instruction is invalid 64-bit mode. In legacy and
-           compatability mode it is invalid with MOD=3.
-           The use as a VEX prefix is made possible by assigning the inverted
-           REX.R to the top MOD bit, and the top bit in the inverted register
-           specifier to the bottom MOD bit, thereby effectively limiting 32-bit
-           to accessing registers 0..7 in this VEX form. */
-        /** @todo VEX: Just use new tables for it. */
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
+        {
+            uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
+            if (   (  pVCpu->iem.s.fPrefixes
+                    & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
+                == 0)
+            {
+                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+                pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+                pVCpu->iem.s.uVex3rdReg = (~bRm >> 3) & 0xf;
+                pVCpu->iem.s.uVexLength = (bRm >> 2) & 1;
+                pVCpu->iem.s.idxPrefix  = bRm & 0x3;
+
+                /** @todo VEX: Just use new tables and decoders. */
+                IEMOP_BITCH_ABOUT_STUB();
+                return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+            }
+            Log(("VEX2: Invalid prefix mix!\n"));
+        }
+        else
+            Log(("VEX2: AVX support disabled!\n"));
+
+        /* @todo does intel completely decode the sequence with SIB/disp before \#UD? */
         return IEMOP_RAISE_INVALID_OPCODE();
     }
     IEMOP_MNEMONIC(les_Gv_Mp, "les Gv,Mp");
@@ -5287,21 +5309,51 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp_vex3)
     }
 
     IEMOP_MNEMONIC(vex3_prefix, "3-byte-vex");
-    /** @todo Test when exctly the VEX conformance checks kick in during
-     * instruction decoding and fetching (using \#PF). */
-    uint8_t bVex1;   IEM_OPCODE_GET_NEXT_U8(&bVex1);
-    uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
-    uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
-#if 0 /* will make sense of this next week... */
-    if (   !(pVCpu->iem.s.fPrefixes & (IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REX))
-        &&
-        )
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx)
     {
+        /** @todo Test when exctly the VEX conformance checks kick in during
+         * instruction decoding and fetching (using \#PF). */
+        uint8_t bVex2;   IEM_OPCODE_GET_NEXT_U8(&bVex2);
+        uint8_t bOpcode; IEM_OPCODE_GET_NEXT_U8(&bOpcode);
+        if (   (  pVCpu->iem.s.fPrefixes
+                & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_LOCK | IEM_OP_PRF_REX))
+            == 0)
+        {
+            pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_VEX;
+            if (bVex2 & 0x80 /* VEX.W */)
+                pVCpu->iem.s.fPrefixes |= IEM_OP_PRF_SIZE_REX_W;
+            pVCpu->iem.s.uRexReg    = ~bRm >> (7 - 3);
+            pVCpu->iem.s.uRexIndex  = ~bRm >> (6 - 3);
+            pVCpu->iem.s.uRexB      = ~bRm >> (5 - 3);
+            pVCpu->iem.s.uVex3rdReg = (~bVex2 >> 3) & 0xf;
+            pVCpu->iem.s.uVexLength = (bVex2 >> 2) & 1;
+            pVCpu->iem.s.idxPrefix  = bVex2 & 0x3;
 
+            /** @todo VEX: Just use new tables and decoders. */
+            switch (bRm & 0xf)
+            {
+                case 1: /* 0x0f lead opcode byte. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                case 2: /* 0x0f 0x38 lead opcode bytes. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                case 3: /* 0x0f 0x3a lead opcode bytes. */
+                    IEMOP_BITCH_ABOUT_STUB();
+                    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+
+                default:
+                    Log(("VEX3: Invalid vvvv value: %#x!\n", bRm & 0xf));
+                    return IEMOP_RAISE_INVALID_OPCODE();
+            }
+        }
+        else
+            Log(("VEX3: Invalid prefix mix!\n"));
     }
-#endif
-
-    /** @todo VEX: Just use new tables for it. */
+    else
+        Log(("VEX3: AVX support disabled!\n"));
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 

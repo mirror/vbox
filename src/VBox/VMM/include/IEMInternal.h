@@ -836,6 +836,9 @@ typedef IEMCPU const *PCIEMCPU;
  * the first opcode byte.
  * For testing whether any REX prefix is present, use  IEM_OP_PRF_REX instead. */
 #define IEM_OP_PRF_REX_MASK  (IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W )
+
+#define IEM_OP_PRF_VEX                  RT_BIT_32(28) /**< Indiciates VEX prefix. */
+#define IEM_OP_PRF_EVEX                 RT_BIT_32(29) /**< Indiciates EVEX prefix. */
 /** @} */
 
 /** @name Opcode forms
