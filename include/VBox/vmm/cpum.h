@@ -1016,6 +1016,8 @@ typedef struct CPUMFEATURES
     uint32_t        fRdTscP : 1;
     /** AMD64: Supports MOV CR8 in 32-bit code (lock prefix hack). */
     uint32_t        fMovCr8In32Bit : 1;
+    /** AMD64: Supports XOP (similar to VEX3/AVX). */
+    uint32_t        fXop : 1;
 
     /** Indicates that FPU instruction and data pointers may leak.
      * This generally applies to recent AMD CPUs, where the FPU IP and DP pointer
@@ -1023,7 +1025,7 @@ typedef struct CPUMFEATURES
     uint32_t        fLeakyFxSR : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 28;
+    uint32_t        fPadding : 27;
     uint32_t        auPadding[3];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
