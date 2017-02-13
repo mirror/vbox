@@ -2942,14 +2942,14 @@ FNIEMOP_STUB_1(iemOp_Grp12_vpsllw_Hx_Ux_Ib, uint8_t, bRm);
 IEM_STATIC const PFNIEMOPRM g_apfnGroup12RegReg[8*4] =
 {
     /** @todo decode imm8? */
-    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /2 */ iemOp_Grp12_psrlw_Nq_Ib,           iemOp_Grp12_vpsrlw_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /3 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /4 */ iemOp_Grp12_psraw_Nq_Ib,           iemOp_Grp12_vpsraw_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /6 */ iemOp_Grp12_psllw_Nq_Ib,           iemOp_Grp12_vpsllw_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /7 */ IEMOP_X4(iemOp_InvalidWithRM)
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /2 */ iemOp_Grp12_psrlw_Nq_Ib,   iemOp_Grp12_vpsrlw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /3 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /4 */ iemOp_Grp12_psraw_Nq_Ib,   iemOp_Grp12_vpsraw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /6 */ iemOp_Grp12_psllw_Nq_Ib,   iemOp_Grp12_vpsllw_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
 
 
@@ -2961,8 +2961,7 @@ FNIEMOP_DEF(iemOp_Grp12)
         /* register, register */
         return FNIEMOP_CALL_1(g_apfnGroup12RegReg[  ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
                                                   + pVCpu->iem.s.idxPrefix], bRm);
-    /** @todo decode SIB, disp, Ib? */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    return FNIEMOP_CALL_1(iemOp_InvalidWithRMNeedImm8, bRm);
 }
 
 
@@ -2991,14 +2990,14 @@ FNIEMOP_STUB_1(iemOp_Grp13_vpslld_Hx_Ux_Ib, uint8_t, bRm);
 IEM_STATIC const PFNIEMOPRM g_apfnGroup13RegReg[8*4] =
 {
     /** @todo decode imm8? */
-    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /2 */ iemOp_Grp13_psrld_Nq_Ib,           iemOp_Grp13_vpsrld_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /3 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /4 */ iemOp_Grp13_psrad_Nq_Ib,           iemOp_Grp13_vpsrad_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /6 */ iemOp_Grp13_pslld_Nq_Ib,           iemOp_Grp13_vpslld_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /7 */ IEMOP_X4(iemOp_InvalidWithRM)
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /2 */ iemOp_Grp13_psrld_Nq_Ib,   iemOp_Grp13_vpsrld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /3 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /4 */ iemOp_Grp13_psrad_Nq_Ib,   iemOp_Grp13_vpsrad_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /6 */ iemOp_Grp13_pslld_Nq_Ib,   iemOp_Grp13_vpslld_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /7 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8)
 };
 
 /** Opcode 0x0f 0x72. */
@@ -3009,8 +3008,7 @@ FNIEMOP_DEF(iemOp_Grp13)
         /* register, register */
         return FNIEMOP_CALL_1(g_apfnGroup13RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
                                                   + pVCpu->iem.s.idxPrefix], bRm);
-    /** @todo decode SIB, disp, Ib? */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    return FNIEMOP_CALL_1(iemOp_InvalidWithRMNeedImm8, bRm);
 }
 
 
@@ -3038,14 +3036,14 @@ FNIEMOP_STUB_1(iemOp_Grp14_vpslldq_Hx_Ux_Ib, uint8_t, bRm); //NEXT
 IEM_STATIC const PFNIEMOPRM g_apfnGroup14RegReg[8*4] =
 {
     /** @todo decode imm8? */
-    /* /0 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /1 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,           iemOp_Grp14_vpsrlq_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /3 */ iemOp_InvalidWithRM,               iemOp_Grp14_vpsrldq_Hx_Ux_Ib,   iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /4 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /5 */ IEMOP_X4(iemOp_InvalidWithRM),
-    /* /6 */ iemOp_Grp14_psllq_Nq_Ib,           iemOp_Grp14_vpsllq_Hx_Ux_Ib,    iemOp_InvalidWithRM, iemOp_InvalidWithRM,
-    /* /7 */ iemOp_InvalidWithRM,               iemOp_Grp14_vpslldq_Hx_Ux_Ib,   iemOp_InvalidWithRM, iemOp_InvalidWithRM,
+    /* /0 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /1 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /2 */ iemOp_Grp14_psrlq_Nq_Ib,     iemOp_Grp14_vpsrlq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /3 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_vpsrldq_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /4 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /5 */ IEMOP_X4(iemOp_InvalidWithRMNeedImm8),
+    /* /6 */ iemOp_Grp14_psllq_Nq_Ib,     iemOp_Grp14_vpsllq_Hx_Ux_Ib,  iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
+    /* /7 */ iemOp_InvalidWithRMNeedImm8, iemOp_Grp14_vpslldq_Hx_Ux_Ib, iemOp_InvalidWithRMNeedImm8, iemOp_InvalidWithRMNeedImm8,
 };
 
 
@@ -3057,8 +3055,7 @@ FNIEMOP_DEF(iemOp_Grp14)
         /* register, register */
         return FNIEMOP_CALL_1(g_apfnGroup14RegReg[ ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) * 4
                                                   + pVCpu->iem.s.idxPrefix], bRm);
-    /** @todo decode SIB, disp, Ib? */
-    return IEMOP_RAISE_INVALID_OPCODE();
+    return FNIEMOP_CALL_1(iemOp_InvalidWithRMNeedImm8, bRm);
 }
 
 
