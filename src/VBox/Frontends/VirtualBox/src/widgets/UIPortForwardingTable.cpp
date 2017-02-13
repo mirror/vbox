@@ -821,11 +821,10 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     {
         /* Configure layout: */
-#ifndef VBOX_WS_WIN
-        /* On Windows host that looks ugly, but
-         * On Mac OS X and X11 that deserves it's place. */
+#ifdef VBOX_WS_MAC
+        /* On macOS we can do a bit of smoothness: */
         pMainLayout->setContentsMargins(0, 0, 0, 0);
-#endif /* !VBOX_WS_WIN */
+#endif
         pMainLayout->setSpacing(3);
         /* Create table: */
         m_pTableView = new UIPortForwardingView;
