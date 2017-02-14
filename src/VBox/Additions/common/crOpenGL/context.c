@@ -615,6 +615,7 @@ void stubSetPFA( ContextInfo *ctx, CGLPixelFormatAttribute *attribs, int size, G
 
 #endif
 
+#ifndef GLX
 /**
  * This creates a native GLX/WGL context.
  */
@@ -687,6 +688,7 @@ InstantiateNativeContext( WindowInfo *window, ContextInfo *context )
     return context->glxContext ? GL_TRUE : GL_FALSE;
 #endif
 }
+#endif /* !GLX */
 
 
 /**
@@ -1211,19 +1213,21 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 #endif
             }
         }
+#ifndef GLX
         else {
             /*
              * Create a native OpenGL context.
              */
             if (!InstantiateNativeContext(window, context))
             {
-#ifdef CHROMIUM_THREADSAFE
+# ifdef CHROMIUM_THREADSAFE
                 crUnlockMutex(&stub.mutex);
-#endif
+# endif
                 return 0; /* false */
             }
             context->type = NATIVE;
         }
+#endif /* !GLX */
 
 #ifdef CHROMIUM_THREADSAFE
         crUnlockMutex(&stub.mutex);

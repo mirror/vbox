@@ -141,7 +141,6 @@ struct context_info_t
 #elif defined(GLX)
     Display *dpy;
     ContextInfo *share;
-    XVisualInfo *visual;
     Bool direct;
     GLXContext glxContext;
     CRHashTable *pGLXPixmapsHash;

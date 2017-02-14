@@ -59,20 +59,40 @@ static Display *currentDisplay = NULL;
 static GLXDrawable currentDrawable = 0;
 static GLXDrawable currentReadDrawable = 0;
 
-/**
- * Keep a list of structures which associates X visual IDs with
- * Chromium visual bitmasks.
- */
-struct VisualInfo {
-    Display *dpy;
-    int screen;
-    VisualID visualid;
-    int visBits;
-    struct VisualInfo *next;
-};
-
 static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t *pGlxPixmap, XRectangle *pRect);
 static void stubQueryXDamageExtension(Display *dpy, ContextInfo *pContext);
+
+static bool isGLXVisual(Display *dpy, XVisualInfo *vis)
+{
+    return vis->visualid == XVisualIDFromVisual(DefaultVisual(dpy, vis->screen));
+}
+
+static GLXFBConfig fbConfigFromVisual(Display *dpy, XVisualInfo *vis)
+{
+    (void)dpy;
+
+    if (!isGLXVisual(dpy, vis))
+        return 0;
+    return (GLXFBConfig)vis->visualid;
+}
+
+static GLXFBConfig defaultFBConfigForScreen(Display *dpy, int screen)
+{
+    return (GLXFBConfig) XVisualIDFromVisual(DefaultVisual(dpy, screen));
+}
+
+static XVisualInfo *visualInfoFromFBConfig(Display *dpy, GLXFBConfig config)
+{
+    XVisualInfo info, *pret;
+    int nret;
+
+    info.visualid = (VisualID)config;
+    pret = XGetVisualInfo(dpy, VisualIDMask, &info, &nret);
+    if (nret == 1)
+        return pret;
+    XFree(pret);
+    return NULL;
+}
 
 DECLEXPORT(XVisualInfo *)
 VBOXGLXTAG(glXChooseVisual)( Display *dpy, int screen, int *attribList )
@@ -271,6 +291,7 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
     ContextInfo *context;
     int visBits = CR_RGB_BIT | CR_DOUBLE_BIT | CR_DEPTH_BIT; /* default vis */
 
+    (void)vis;
     stubInit();
 
     CRASSERT(stub.contextTable);
@@ -297,7 +318,6 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
         return 0;
 
     context->dpy = dpy;
-    context->visual = vis;
     context->direct = direct;
 
     stubQueryXDamageExtension(dpy, context);
@@ -396,11 +416,10 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
     return retVal;
 }
 
-
 DECLEXPORT(GLXPixmap) VBOXGLXTAG(glXCreateGLXPixmap)( Display *dpy, XVisualInfo *vis, Pixmap pixmap )
 {
     stubInit();
-    return VBOXGLXTAG(glXCreatePixmap)(dpy, (GLXFBConfig)vis->visualid, pixmap, NULL);
+    return VBOXGLXTAG(glXCreatePixmap)(dpy, fbConfigFromVisual(dpy, vis), pixmap, NULL);
 }
 
 DECLEXPORT(void) VBOXGLXTAG(glXDestroyGLXPixmap)( Display *dpy, GLXPixmap pix )
@@ -410,8 +429,6 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyGLXPixmap)( Display *dpy, GLXPixmap pix )
 
 DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int attrib, int *value )
 {
-    (void)dpy;
-
     if (!vis) {
         /* SGI OpenGL Performer hits this */
         crWarning("glXGetConfig called with NULL XVisualInfo");
@@ -425,7 +442,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
     switch ( attrib ) {
 
         case GLX_USE_GL:
-            *value = vis->visualid == XVisualIDFromVisual(DefaultVisual(dpy, vis->screen));
+            *value = isGLXVisual(dpy, vis);
             break;
 
         case GLX_BUFFER_SIZE:
@@ -785,33 +802,20 @@ VBOXGLXTAG(glXCreateContextWithConfigSGIX)(Display *dpy, GLXFBConfig config,
                                            GLXContext share_list,
                                            Bool direct)
 {
+    (void)config;
     if (render_type!=GLX_RGBA_TYPE_SGIX)
     {
         crWarning("glXCreateContextWithConfigSGIX: Unsupported render type %i", render_type);
         return NULL;
     }
-    else
-    {
-        XVisualInfo *vis;
-        GLXContext ret;
-
-        vis = VBOXGLXTAG(glXGetVisualFromFBConfigSGIX)(dpy, config);
-        if (!vis)
-        {
-            crWarning("glXCreateContextWithConfigSGIX: no visuals for %p", config);
-            return NULL;
-        }
-        ret =  VBOXGLXTAG(glXCreateContext)(dpy, vis, share_list, direct);
-        XFree(vis);
-        return ret;
-    }
+    return VBOXGLXTAG(glXCreateContext)(dpy, NULL, share_list, direct);
 }
 
 DECLEXPORT(XVisualInfo *) 
 VBOXGLXTAG(glXGetVisualFromFBConfigSGIX)(Display *dpy,
                                          GLXFBConfig config)
 {
-    return VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
+    return visualInfoFromFBConfig(dpy, config);
 }
 
 DECLEXPORT(GLXFBConfigSGIX)
@@ -822,7 +826,7 @@ VBOXGLXTAG(glXGetFBConfigFromVisualSGIX)(Display *dpy, XVisualInfo *vis)
         return NULL;
     }
     /*Note: Caller is supposed to call XFree on returned value, so can't just return (GLXFBConfig)vis->visualid*/
-    return (GLXFBConfigSGIX) VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, (GLXFBConfig)vis->visualid);
+    return (GLXFBConfigSGIX) visualInfoFromFBConfig(dpy, fbConfigFromVisual(dpy, vis));
 }
 
 /*
@@ -967,8 +971,6 @@ err_exit:
 DECLEXPORT(GLXContext) 
 VBOXGLXTAG(glXCreateNewContext)(Display *dpy, GLXFBConfig config, int render_type, GLXContext share_list, Bool direct)
 {
-    XVisualInfo *vis;
-
     (void) dpy;
     (void) config;
     (void) render_type;
@@ -981,8 +983,7 @@ VBOXGLXTAG(glXCreateNewContext)(Display *dpy, GLXFBConfig config, int render_typ
         return NULL;
     }
 
-    vis = VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
-    return VBOXGLXTAG(glXCreateContext)(dpy, vis, share_list, direct);
+    return VBOXGLXTAG(glXCreateContext)(dpy, NULL, share_list, direct);
 }
 
 DECLEXPORT(GLXPbuffer) 
@@ -1189,15 +1190,6 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
     XVisualInfo * pVisual;
     const char * pExt;
 
-    pVisual =  VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
-    if (!pVisual)
-    {
-        crWarning("glXGetFBConfigAttrib for %p, failed to get XVisualInfo", config);
-        return GLX_BAD_ATTRIBUTE;
-    }
-    //crDebug("glXGetFBConfigAttrib 0x%x for 0x%x, visualid=0x%x, depth=%i", attribute, (int)config, (int)pVisual->visualid, pVisual->depth);
-    
-
     switch (attribute)
     {
         case GLX_DRAWABLE_TYPE:
@@ -1255,10 +1247,17 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             break;
         case GLX_VISUAL_ID:
             //crDebug("attribute=GLX_VISUAL_ID");
+            pVisual = visualInfoFromFBConfig(dpy, config);
+            if (!pVisual)
+            {
+                crWarning("glXGetFBConfigAttrib for %p, failed to get XVisualInfo", config);
+                return GLX_BAD_ATTRIBUTE;
+            }
             *value = pVisual->visualid;
+            XFree(pVisual);
             break;
         case GLX_FBCONFIG_ID:
-            *value = pVisual->visualid; /*or config, though those are the same at the moment but this could change one day?*/
+            *value = config; /*or config, though those are the same at the moment but this could change one day?*/
             break;
         case GLX_RED_SIZE:
         case GLX_GREEN_SIZE:
@@ -1295,11 +1294,9 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             break;
         default:
             crDebug("glXGetFBConfigAttrib: unknown attribute=0x%x", attribute); 
-            XFree(pVisual);
             return GLX_BAD_ATTRIBUTE;
     }
 
-    XFree(pVisual);
     return Success;
 }
 
@@ -1311,7 +1308,7 @@ DECLEXPORT(GLXFBConfig *) VBOXGLXTAG(glXGetFBConfigs)(Display *dpy, int screen, 
 
     *nelements = 1;
     XLOCK(dpy);
-    *pGLXFBConfigs = (GLXFBConfig) XVisualIDFromVisual(DefaultVisual(dpy, screen));
+    *pGLXFBConfigs = defaultFBConfigForScreen(dpy, screen);
     XUNLOCK(dpy);
 
     crDebug("glXGetFBConfigs returned %i configs", *nelements);
@@ -1332,58 +1329,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXGetSelectedEvent)(Display *dpy, GLXDrawable draw,
 
 DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLXFBConfig config)
 {
-    (void) dpy;
-    (void) config;
-    
-    /*
-    struct VisualInfo *v;
-
-    for (v = VisualInfoList; v; v = v->next) {
-        if (v->dpy == dpy && v->visualid == (VisualID)config)
-        {
-            XVisualInfo temp, *pret;
-            int nret;
-
-            temp.visualid = v->visualid;
-            pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
-            
-            if (nret!=1) crWarning("XGetVisualInfo returned %i visuals", nret);
-            crDebug("glXGetVisualFromFBConfig(cfg/visid==0x%x): depth=%i", (int) config, pret->depth);
-            return pret;
-        }
-    }
-    */
-    {
-        XVisualInfo temp, *pret;
-        int nret;
-
-        temp.visualid = (VisualID)config;
-        XLOCK(dpy);
-        pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
-        XUNLOCK(dpy);
-        
-        if (nret!=1)
-        {
-            crWarning("XGetVisualInfo returned %i visuals for %p", nret, config);
-            /* Hack for glut based apps.
-               We fail to patch first call to glXChooseFBConfigSGIX, which ends up in the mesa's fbconfigs being passed to this function later.
-            */
-            if (!nret && config)
-            {
-                temp.visualid = (VisualID) ((__GLcontextModes*)config)->visualID;
-                XLOCK(dpy);
-                pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
-                XUNLOCK(dpy);
-                crWarning("Retry with %#x returned %i visuals", ((__GLcontextModes*)config)->visualID, nret);
-            }
-        }
-        //crDebug("glXGetVisualFromFBConfig(cfg/visid==0x%x): depth=%i", (int) config, pret->depth);
-//crDebug("here");
-        return pret;
-    }
-
-    crDebug("glXGetVisualFromFBConfig unknown fbconfig %p", config);
-    return NULL;
+    return visualInfoFromFBConfig(dpy, config);
 }
 
 DECLEXPORT(Bool) VBOXGLXTAG(glXMakeContextCurrent)(Display *display, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
