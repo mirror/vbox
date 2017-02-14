@@ -1257,7 +1257,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             XFree(pVisual);
             break;
         case GLX_FBCONFIG_ID:
-            *value = config; /*or config, though those are the same at the moment but this could change one day?*/
+            *value = (int)config; /*or config, though those are the same at the moment but this could change one day?*/
             break;
         case GLX_RED_SIZE:
         case GLX_GREEN_SIZE:
