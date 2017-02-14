@@ -21,14 +21,45 @@
 *******************************************************************************/
 extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forward declare it. */
 
-
-
-/** @name One byte opcodes.
- *
+/** @def og_gen     General
  * @{
  */
 
-/** Opcode 0x00. */
+/** @def og_gen_arith   Arithmetic
+ * @{
+ */
+/** @defgroup og_gen_arith_bin      Binary numbers */
+/** @defgroup og_gen_arith_dec      Decimal numbers */
+/** @} */
+
+
+
+/** @name One byte opcodes.
+ * @{
+ */
+
+/*
+ * Instruction specification format - work in progress:
+ *
+ * @opmnemonic  add
+ * @op1         reg:Eb
+ * @op2         rm:Gb
+ * @oppfx       none
+ * @opmaps      none
+ * @opcode      0x00
+ * @openc       ModR/M
+ * @opfltest    none
+ * @opflmodify  of,sz,zf,af,pf,cf
+ * @opflundef   none
+ * @opflset     none
+ * @opflclear   none
+ * @ophints     harmless
+ * @opstats     add_Eb_Gb
+ * @optest                  in1=1 in2=1 -> out1=2 outfl=a?,p?
+ * @optest      oppfx:o32   in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
+ *
+ * @ingroup     op_gen_arith_bin
+ */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {
     IEMOP_MNEMONIC(add_Eb_Gb, "add Eb,Gb");
