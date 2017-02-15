@@ -262,6 +262,52 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Unhalts and wakes up the given CPU.
+ *
+ * This is an API for assisting the KVM hypercall API in implementing KICK_CPU.
+ * It sets VMCPU_FF_UNHALT for @a pVCpuDst and makes sure it is woken up.   If
+ * the CPU isn't currently in a halt, the next HLT instruction it executes will
+ * be affected.
+ *
+ * @returns GVMMR0SchedWakeUpEx result or VINF_SUCCESS depending on context.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpuDst        The cross context virtual CPU structure of the
+ *                          CPU to unhalt and wake up.  This is usually not the
+ *                          same as the caller.
+ * @thread  EMT
+ */
+VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVM pVM, PVMCPU pVCpuDst)
+{
+    /*
+     * Flag the current(/next) HLT to unhalt immediately.
+     */
+    VMCPU_FF_SET(pVCpuDst, VMCPU_FF_UNHALT);
+
+    /*
+     * Wake up the EMT (technically should be abstracted by VMM/VMEmt, but
+     * just do it here for now).
+     */
+#ifdef IN_RING0
+    /* We might be here with preemption disabled or enabled (i.e. depending on
+       thread-context hooks being used), so don't try obtaining the GVMMR0 used
+       lock here. See @bugref{7270#c148}. */
+    int rc = GVMMR0SchedWakeUpEx(pVM, pVCpuDst->idCpu, false /* fTakeUsedLock */);
+    AssertRC(rc);
+
+#elif defined(IN_RING3)
+    int rc = SUPR3CallVMMR0(pVM->pVMR0, pVCpuDst->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL /* pvArg */);
+    AssertRC(rc);
+
+#else
+    /* Nothing to do for raw-mode, shouldn't really be used by raw-mode guests anyway. */
+    Assert(pVM->cCpus == 1); NOREF(pVM);
+    int rc = VINF_SUCCESS;
+#endif
+    return rc;
+}
+
+
+/**
  * Locks REM execution to a single VCPU.
  *
  * @param   pVM         The cross context VM structure.

@@ -409,7 +409,7 @@ typedef struct VMCPU
 #define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(VMCPU_FF_INTERRUPT_SMI_BIT)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
 #define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
-/** This action forces the VCPU out of the halted state. */
+/** This action forces the VCPU out of the halted state, see EMUnhaltAndWakeUp. */
 #define VMCPU_FF_UNHALT                     RT_BIT_32(6)
 /** Pending IEM action (bit number). */
 #define VMCPU_FF_IEM_BIT                    7
