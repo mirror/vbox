@@ -14158,7 +14158,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                                                                 | VMCPU_FF_SELM_SYNC_LDT
 # endif
                                                                 | VMCPU_FF_INHIBIT_INTERRUPTS
-                                                                | VMCPU_FF_BLOCK_NMIS ));
+                                                                | VMCPU_FF_BLOCK_NMIS
+                                                                | VMCPU_FF_UNHALT ));
 
                         if (RT_LIKELY(   (   !fCpu
                                           || (   !(fCpu & ~(VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
