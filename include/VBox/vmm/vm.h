@@ -409,7 +409,10 @@ typedef struct VMCPU
 #define VMCPU_FF_INTERRUPT_SMI              RT_BIT_32(VMCPU_FF_INTERRUPT_SMI_BIT)
 /** PDM critical section unlocking is pending, process promptly upon return to R3. */
 #define VMCPU_FF_PDM_CRITSECT               RT_BIT_32(5)
-/** This action forces the VCPU out of the halted state, see EMUnhaltAndWakeUp. */
+/** Special EM internal force flag that is used by EMUnhaltAndWakeUp() to force
+ * the virtual CPU out of the next (/current) halted state.  It is not processed
+ * nor cleared by emR3ForcedActions (similar to VMCPU_FF_BLOCK_NMIS), instead it
+ * is cleared the next time EM leaves the HALTED state. */
 #define VMCPU_FF_UNHALT                     RT_BIT_32(6)
 /** Pending IEM action (bit number). */
 #define VMCPU_FF_IEM_BIT                    7
@@ -532,7 +535,7 @@ typedef struct VMCPU
 #define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST            | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA \
                                                  | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU actions. */
-#define VMCPU_FF_NORMAL_PRIORITY_MASK           (  VMCPU_FF_REQUEST | VMCPU_FF_UNHALT )
+#define VMCPU_FF_NORMAL_PRIORITY_MASK           (  VMCPU_FF_REQUEST )
 
 /** Flags to clear before resuming guest execution. */
 #define VMCPU_FF_RESUME_GUEST_MASK              (  VMCPU_FF_TO_R3 )

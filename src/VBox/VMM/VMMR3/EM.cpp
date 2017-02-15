@@ -477,7 +477,9 @@ VMMR3_INT_DECL(void) EMR3Relocate(PVM pVM)
  */
 VMMR3_INT_DECL(void) EMR3ResetCpu(PVMCPU pVCpu)
 {
+    /* Reset scheduling state. */
     pVCpu->em.s.fForceRAW = false;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
 
     /* VMR3ResetFF may return VINF_EM_RESET or VINF_EM_SUSPEND, so transition
        out of the HALTED state here so that enmPrevState doesn't end up as
@@ -1342,7 +1344,7 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check for pending actions.
          */
         if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT))
             return VINF_SUCCESS;
     }
 
@@ -1897,23 +1899,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             }
         }
 
-        /*
-         * Forced unhalting of EMT.
-         */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
-        {
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
-            if (rc == VINF_EM_HALT)
-                rc = VINF_EM_RESCHEDULE;
-            else
-            {
-                rc2 = VINF_EM_RESCHEDULE;
-                UPDATE_RC();
-            }
-        }
-
         /* check that we got them all  */
-        Assert(!(VMCPU_FF_NORMAL_PRIORITY_MASK & ~(VMCPU_FF_REQUEST | VMCPU_FF_UNHALT)));
+        Assert(!(VMCPU_FF_NORMAL_PRIORITY_MASK & ~VMCPU_FF_REQUEST));
     }
 
     /*
@@ -2210,7 +2197,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
                 && (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
-                    || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
+                    || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~VMCPU_FF_UNHALT)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
@@ -2485,9 +2472,10 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             {
                 VBOXVMM_EM_STATE_CHANGED(pVCpu, enmOldState, enmNewState, rc);
 
-                /* Clear MWait flags. */
+                /* Clear MWait flags and the unhalt FF. */
                 if (   enmOldState == EMSTATE_HALTED
-                    && (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
+                    && (   (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
+                        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
                     && (   enmNewState == EMSTATE_RAW
                         || enmNewState == EMSTATE_HM
                         || enmNewState == EMSTATE_REM
@@ -2497,8 +2485,16 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         || enmNewState == EMSTATE_DEBUG_GUEST_IEM
                         || enmNewState == EMSTATE_DEBUG_GUEST_REM) )
                 {
-                    LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
-                    pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                    if (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
+                    {
+                        LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
+                        pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                    }
+                    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
+                    {
+                        LogFlow(("EMR3ExecuteVM: Clearing UNHALT\n"));
+                        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
+                    }
                 }
             }
             else
