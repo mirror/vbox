@@ -398,11 +398,41 @@ void UIMiniToolBarPrivate::rebuildShape()
 *   Class UIMiniToolBar implementation.                                                                                          *
 *********************************************************************************************************************************/
 
+/* static */
+Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
+{
+    /* Not everywhere: */
+    Q_UNUSED(geometryType);
+
+#ifdef VBOX_WS_X11
+    /* Depending on current WM: */
+    switch (vboxGlobal().typeOfWindowManager())
+    {
+        // WORKAROUND:
+        // By strange reason, frameless full-screen windows under certain WMs
+        // do not respect the transient relationship between each other.
+        // By nor less strange reason, frameless full-screen *tool* windows
+        // respects such relationship, so we are doing what WM want.
+        case X11WMType_GNOMEShell:
+        case X11WMType_Metacity:
+        case X11WMType_Mutter:
+            printf("hack\n");
+            return geometryType == GeometryType_Full ?
+                   Qt::Tool | Qt::FramelessWindowHint :
+                   Qt::Window | Qt::FramelessWindowHint;
+        default: break;
+    }
+#endif /* VBOX_WS_X11 */
+
+    /* Frameless window by default: */
+    return Qt::Window | Qt::FramelessWindowHint;
+}
+
 UIMiniToolBar::UIMiniToolBar(QWidget *pParent,
                              GeometryType geometryType,
                              Qt::Alignment alignment,
                              bool fAutoHide /* = true */)
-    : QWidget(0, Qt::Window | Qt::FramelessWindowHint)
+    : QWidget(0, defaultWindowFlags(geometryType))
     /* Variables: General stuff: */
     , m_pParent(pParent)
     , m_geometryType(geometryType)
