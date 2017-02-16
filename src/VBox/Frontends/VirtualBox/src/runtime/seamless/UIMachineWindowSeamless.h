@@ -47,6 +47,9 @@ private slots:
     void sltRevokeWindowActivation();
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
 
+    /** Shows window in minimized state. */
+    void sltShowMinimized();
+
 private:
 
     /** Prepare visual-state routine. */
@@ -104,6 +107,9 @@ private:
       * Used to restore minimized state when the window shown again. */
     bool m_fWasMinimized;
 #ifdef VBOX_WS_X11
+    /** X11: Holds whether the window minimization is currently requested.
+      * Used to prevent accidentally restoring to seamless state. */
+    bool m_fIsMinimizationRequested;
     /** X11: Holds whether the window is currently minimized.
       * Used to restore maximized state when the window restored again. */
     bool m_fIsMinimized;

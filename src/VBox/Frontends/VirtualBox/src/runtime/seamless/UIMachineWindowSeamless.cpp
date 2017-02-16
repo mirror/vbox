@@ -52,6 +52,7 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     , m_fWasMinimized(false)
 #ifdef VBOX_WS_X11
+    , m_fIsMinimizationRequested(false)
     , m_fIsMinimized(false)
 #endif
 {
@@ -69,6 +70,14 @@ void UIMachineWindowSeamless::sltMachineStateChanged()
 
 void UIMachineWindowSeamless::sltRevokeWindowActivation()
 {
+#ifdef VBOX_WS_X11
+    // WORKAROUND:
+    // We could be asked to minimize already, but just
+    // not yet executed that order to current moment.
+    if (m_fIsMinimizationRequested)
+        return;
+#endif
+
     /* Make sure window is visible: */
     if (!isVisible() || isMinimized())
         return;
@@ -80,6 +89,16 @@ void UIMachineWindowSeamless::sltRevokeWindowActivation()
     activateWindow();
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+
+void UIMachineWindowSeamless::sltShowMinimized()
+{
+#ifdef VBOX_WS_X11
+    /* Remember that we are asked to minimize: */
+    m_fIsMinimizationRequested = true;
+#endif
+
+    showMinimized();
+}
 
 void UIMachineWindowSeamless::prepareVisualState()
 {
@@ -124,7 +143,7 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
         /* Configure mini-toolbar: */
         m_pMiniToolBar->addMenus(actionPool()->menus());
         connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
-                this, SLOT(showMinimized()), Qt::QueuedConnection);
+                this, SLOT(sltShowMinimized()), Qt::QueuedConnection);
         connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
                 actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SLOT(trigger()));
         connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
@@ -322,6 +341,8 @@ void UIMachineWindowSeamless::changeEvent(QEvent *pEvent)
                 /* Mark window restored, and do manual restoring with showInNecessaryMode(): */
                 LogRel2(("GUI: UIMachineWindowSeamless::changeEvent: Window restored\n"));
                 m_fIsMinimized = false;
+                /* Remember that we no more asked to minimize: */
+                m_fIsMinimizationRequested = false;
                 showInNecessaryMode();
             }
             break;

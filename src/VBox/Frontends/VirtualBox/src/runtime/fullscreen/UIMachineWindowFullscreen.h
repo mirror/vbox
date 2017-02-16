@@ -75,6 +75,9 @@ private slots:
     void sltExitNativeFullscreen(UIMachineWindow *pMachineWindow);
 #endif /* RT_OS_DARWIN */
 
+    /** Shows window in minimized state. */
+    void sltShowMinimized();
+
 private:
 
     /** Prepare visual-state routine. */
@@ -127,6 +130,9 @@ private:
       * Used to restore minimized state when the window shown again. */
     bool m_fWasMinimized;
 #ifdef VBOX_WS_X11
+    /** X11: Holds whether the window minimization is currently requested.
+      * Used to prevent accidentally restoring to full-screen state. */
+    bool m_fIsMinimizationRequested;
     /** X11: Holds whether the window is currently minimized.
       * Used to restore full-screen state when the window restored again. */
     bool m_fIsMinimized;
