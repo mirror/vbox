@@ -285,8 +285,12 @@ bool UISession::powerUp()
         LogRel(("GUI: Aborting startup due to power up issue detected...\n"));
         return false;
     }
-    
+
+    /* Some logging right after we powered up: */
     LogRel(("Qt version: %s\n", VBoxGlobal::qtRTVersionString().toUtf8().constData()));
+#ifdef VBOX_WS_X11
+    LogRel(("X11 Window Manager code: %d\n", (int)vboxGlobal().typeOfWindowManager()));
+#endif
 
     /* Enable 'manual-override',
      * preventing automatic Runtime UI closing
