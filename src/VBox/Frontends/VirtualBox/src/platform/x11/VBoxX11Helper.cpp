@@ -88,6 +88,9 @@ X11WMType X11WindowManagerType()
                 if (QString((const char*)pcData).contains("KWin", Qt::CaseInsensitive))
                     wmType = X11WMType_KWin;
                 else
+                if (QString((const char*)pcData).contains("Metacity", Qt::CaseInsensitive))
+                    wmType = X11WMType_Metacity;
+                else
                 if (QString((const char*)pcData).contains("Mutter", Qt::CaseInsensitive))
                     wmType = X11WMType_Mutter;
                 else
