@@ -416,7 +416,6 @@ Qt::WindowFlags UIMiniToolBar::defaultWindowFlags(GeometryType geometryType)
         case X11WMType_GNOMEShell:
         case X11WMType_Metacity:
         case X11WMType_Mutter:
-            printf("hack\n");
             return geometryType == GeometryType_Full ?
                    Qt::Tool | Qt::FramelessWindowHint :
                    Qt::Window | Qt::FramelessWindowHint;
