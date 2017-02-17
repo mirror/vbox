@@ -744,8 +744,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             return self.caseClosed(oCaseFile);
         return False;
 
-    @staticmethod
-    def extractGuestCpuStack(sInfoText):
+    def extractGuestCpuStack(self, sInfoText):
         """
         Extracts the guest CPU stacks from the input file.
 
@@ -756,29 +755,31 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         dRet = {};
         off = 0;
         while True:
+            # Find the stack.
             offStart = sInfoText.find('=== start guest stack VCPU ', off);
             if offStart < 0:
                 break;
             offEnd  = sInfoText.find('=== end guest stack', offStart + 20);
-            if offEnd < 0:
+            if offEnd >= 0:
+                offEnd += 3;
+            else:
                 offEnd = sInfoText.find('=== start guest stack VCPU', offStart + 20);
-                if offEnd >= 0:
-                    offEnd += 3;
-                else:
+                if offEnd < 0:
                     offEnd = len(sInfoText);
 
             sStack = sInfoText[offStart : offEnd];
             sStack = sStack.replace('\r',''); # paranoia
-            asLines = sStack.split();
+            asLines = sStack.split('\n');
 
-            # figure the CPU.
+            # Figure the CPU.
             asWords = asLines[0].split();
-            if asWords < 6 or not asWords[6].isdigit():
+            if len(asWords) < 6 or not asWords[5].isdigit():
                 break;
-            iCpu = int(asWords[6]);
+            iCpu = int(asWords[5]);
 
-            # add it.
+            # Add it and advance.
             dRet[iCpu] = [sLine.rstrip() for sLine in asLines[2:-1]]
+            off = offEnd;
         return dRet;
 
     def investigateInfoKvmLockSpinning(self, oCaseFile, sInfoText, dLogs):
@@ -799,6 +800,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     if asBacktrace[iFrame].find('kvm_lock_spinning') >= 0:
                         cHits += 1;
                         break;
+            self.dprint('kvm_lock_spinning: %s/%s hits' % (cHits, len(dStacks),));
             if cHits == len(dStacks):
                 return (True, self.ktReason_VMM_kvm_lock_spinning);
 
