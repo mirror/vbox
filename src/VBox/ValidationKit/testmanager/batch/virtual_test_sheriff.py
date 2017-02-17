@@ -788,6 +788,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Extract the stacks.  We need more than one CPU to create a deadlock.
         #
         dStacks = self.extractGuestCpuStack(sInfoText);
+        self.dprint('kvm_lock_spinning: found %s stacks' % (len(dStacks),));
         if len(dStacks) >= 2:
             #
             # Examin each of the stacks.  Each must have kvm_lock_spinning in
