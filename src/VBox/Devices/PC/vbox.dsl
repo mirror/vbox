@@ -3,7 +3,7 @@
 //
 // VirtualBox ACPI
 //
-// Copyright (C) 2006-2015 Oracle Corporation
+// Copyright (C) 2006-2017 Oracle Corporation
 //
 // This file is part of VirtualBox Open Source Edition (OSE), as
 // available from http://www.virtualbox.org. This file is free software;
@@ -396,6 +396,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         // Must match pci.c:pci_slot_get_pirq
         Name (PR00, Package ()
         {
+/** @todo add devices 0/1 to be complete */
             Package (0x04) {0x0002FFFF, 0x00, LNKB, 0x00,},
             Package (0x04) {0x0002FFFF, 0x01, LNKC, 0x00,},
             Package (0x04) {0x0002FFFF, 0x02, LNKD, 0x00,},
@@ -551,6 +552,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         // Must match pci.c:pci_slot_get_acpi_pirq
         Name (PR01, Package ()
         {
+/** @todo add devices 0/1 to be complete */
             Package (0x04) {0x0002FFFF, 0x00, 0x00, 0x12,},
             Package (0x04) {0x0002FFFF, 0x01, 0x00, 0x13,},
             Package (0x04) {0x0002FFFF, 0x02, 0x00, 0x14,},
@@ -1553,11 +1555,11 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                      Cacheable,
                      ReadWrite,
                      0x00000000,              // Granularity
-                     0x00000000,              // Min (calculated dynamically)
+                     0xe0000000,              // Min (calculated dynamically)
 
-                     0xffdfffff,              // Max = 4GB - 2MB
+                     0xfdffffff,              // Max = 4GB - 32MB
                      0x00000000,              // Translation
-                     0xffe00000,              // Range Length (calculated
+                     0x1e000000,              // Range Length (calculated
                                               // dynamically)
                      ,                        // Optional field left blank
                      ,                        // Optional field left blank
@@ -1592,7 +1594,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                 CreateDwordField (CRS, \_SB.PCI0.MEM3._LEN, RAMR)
 
                 Store (MEML, RAMT)
-                Subtract (0xffe00000, RAMT, RAMR)
+                Subtract (0xfe000000, RAMT, RAMR)
 
                 if (LNotEqual (PMEM, 0x00000000))
                 {
