@@ -153,6 +153,7 @@ tcpip_thread(void *arg)
       if (msg->msg.cb.function != NULL) {
 	msg->msg.cb.function(msg->msg.cb.ctx);
       }
+      memp_free(MEMP_TCPIP_MSG_API, msg);
       goto terminate;
 #endif
 

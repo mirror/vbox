@@ -132,7 +132,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
             lwipRc = sys_sem_new(&g_LwipCore.LwipTcpIpSem, 0);
             if (lwipRc != ERR_OK)
             {
-                LogFlow(("%s: sys_sem_new error %d\n", __FUNCTION__, lwipRc));
+                LogFlowFunc(("sys_sem_new error %d\n", lwipRc));
                 goto done;
             }
 
@@ -143,7 +143,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
             lwipRc = tcpip_callback(lwipCoreUserCallback, &callback);
             if (lwipRc != ERR_OK)
             {
-                LogFlow(("%s: tcpip_callback error %d\n", __FUNCTION__, lwipRc));
+                LogFlowFunc(("tcpip_callback error %d\n", lwipRc));
                 goto done;
             }
         }
@@ -190,24 +190,25 @@ void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)
              * is tcpip_msg::sem, but it seems to be unused and may be
              * gone in future versions of lwip.
              */
-            struct tcpip_msg msg;
-            msg.type = TCPIP_MSG_CALLBACK_TERMINATE;
-            msg.msg.cb.function = lwipCoreFiniDone;
-            msg.msg.cb.ctx = &callback;
-
-            lwipRc = tcpip_callbackmsg((struct tcpip_callback_msg *)&msg);
-            if (lwipRc != ERR_OK)
+            struct tcpip_msg *msg = (struct tcpip_msg *)memp_malloc(MEMP_TCPIP_MSG_API);
+            if (msg)
             {
-                LogFlow(("%s: tcpip_callback_msg error %d\n", __FUNCTION__, lwipRc));
+                msg->type = TCPIP_MSG_CALLBACK_TERMINATE;
+                msg->msg.cb.function = lwipCoreFiniDone;
+                msg->msg.cb.ctx = &callback;
+
+                lwipRc = tcpip_callbackmsg((struct tcpip_callback_msg *)msg);
+                if (lwipRc != ERR_OK)
+                    LogFlowFunc(("tcpip_callback_msg error %d\n", lwipRc));
             }
+            else
+                LogFlowFunc(("memp_malloc no memory\n"));
         }
         else
         {
             lwipRc = tcpip_callback(lwipCoreUserCallback, &callback);
             if (lwipRc != ERR_OK)
-            {
-                LogFlow(("%s: tcpip_callback error %d\n", __FUNCTION__, lwipRc));
-            }
+                LogFlowFunc(("tcpip_callback error %d\n", lwipRc));
         }
 
         if (lwipRc == ERR_OK)
