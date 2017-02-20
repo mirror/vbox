@@ -1097,6 +1097,7 @@ static int handleInfo(HandlerArg *a)
 
     /* Open the image */
     rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY, NULL);
+    RTStrFree(pszFormat);
     if (RT_FAILURE(rc))
         return errorRuntime("Error while opening the image: %Rrf (%Rrc)\n", rc, rc);
 
@@ -1256,6 +1257,7 @@ static int handleCompact(HandlerArg *a)
 
     /* Open the image */
     rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
+    RTStrFree(pszFormat);
     if (RT_FAILURE(rc))
         return errorRuntime("Error while opening the image: %Rrf (%Rrc)\n", rc, rc);
 
