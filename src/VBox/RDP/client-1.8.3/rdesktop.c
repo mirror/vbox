@@ -43,9 +43,6 @@
 #include "rdesktop.h"
 
 #ifdef VBOX
-# ifdef OPENSSL_MANGLER
-#  include <iprt/initterm.h>
-# endif
 # include <VBox/version.h>
 # include <iprt/log.h>
 #endif
@@ -66,6 +63,9 @@
 #endif
 
 #include "ssl.h"
+#if defined(VBOX) && defined(OPENSSL_MANGLER)
+# include <iprt/initterm.h>
+#endif
 
 /* Reconnect timeout based on approxiamted cookie life-time */
 #define RECONNECT_TIMEOUT (3600+600)
