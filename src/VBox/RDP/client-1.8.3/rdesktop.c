@@ -43,6 +43,7 @@
 #include "rdesktop.h"
 
 #ifdef VBOX
+# include <iprt/initterm.h>
 # include <VBox/version.h>
 # include <iprt/log.h>
 #endif
@@ -261,7 +262,7 @@ usage(char *program)
 	rdpsnd_show_help();
 #endif
 #ifdef WITH_RDPUSB
-        fprintf(stderr, 
+        fprintf(stderr,
                 "         '-r usb': enable USB redirection\n");
 #endif
 	fprintf(stderr,
@@ -581,6 +582,10 @@ main(int argc, char *argv[])
 	RD_BOOL geometry_option = False;
 #ifdef WITH_RDPSND
 	char *rdpsnd_optarg = NULL;
+#endif
+
+#ifdef VBOX
+    RTR3InitExe(argc, &argv, 0);
 #endif
 
 #ifdef HAVE_LOCALE_H
