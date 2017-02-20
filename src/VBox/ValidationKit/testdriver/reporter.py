@@ -844,22 +844,28 @@ class RemoteReporter(ReporterBase):
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
             g_oLock.release();
-            self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'text/plain');
-            g_oLock.acquire();
+            try:
+                self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'text/plain');
+            finally:
+                g_oLock.acquire();
         elif sKind.startswith('screenshot/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
             g_oLock.release();
-            self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
-            g_oLock.acquire();
+            try:
+                self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'image/png');
+            finally:
+                g_oLock.acquire();
         elif sKind.startswith('misc/'):
             self.log(0, '*** Uploading "%s" - KIND: "%s" - DESC: "%s" ***'
                         % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
             g_oLock.release();
-            self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'application/octet-stream');
-            g_oLock.acquire();
+            try:
+                self._doUploadFile(oSrcFile, sAltName, sDescription, sKind, 'application/octet-stream');
+            finally:
+                g_oLock.acquire();
         else:
             self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
                      % (sSrcFilename, sKind, sDescription),  sCaller, sTsPrf);
@@ -875,8 +881,10 @@ class RemoteReporter(ReporterBase):
                         % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
             self.xmlFlush();
             g_oLock.release();
-            self._doUploadString(sLog, sLogName, sDescription, sKind, 'text/plain');
-            g_oLock.acquire();
+            try:
+                self._doUploadString(sLog, sLogName, sDescription, sKind, 'text/plain');
+            finally:
+                g_oLock.acquire();
         else:
             self.log(0, '*** UNKNOWN FILE "%s" - KIND "%s" - DESC "%s" ***'
                      % (sLogName, sKind, sDescription),  sCaller, sTsPrf);
@@ -894,8 +902,10 @@ class RemoteReporter(ReporterBase):
                 self._fXmlFlushing = True;
 
                 g_oLock.release();
-                (asXml, fIncErrors) = self._xmlDoFlush(asXml, fRetry = fRetry);
-                g_oLock.acquire();
+                try:
+                    (asXml, fIncErrors) = self._xmlDoFlush(asXml, fRetry = fRetry);
+                finally:
+                    g_oLock.acquire();
 
                 if fIncErrors:
                     self.testIncErrors();
@@ -953,18 +963,22 @@ class RemoteReporter(ReporterBase):
         ## @todo should validate the document here and maybe auto terminate things.  Adding some hints to have the server do
         # this instead.
         g_oLock.acquire();
-        self._asXml += [ '<PushHint testdepth="%d"/>' % (len(self.atTests),),
-                         sRawXml,
-                         '<PopHint  testdepth="%d"/>' % (len(self.atTests),),];
-        self._xmlFlushIfNecessary();
-        g_oLock.release();
+        try:
+            self._asXml += [ '<PushHint testdepth="%d"/>' % (len(self.atTests),),
+                             sRawXml,
+                             '<PopHint  testdepth="%d"/>' % (len(self.atTests),),];
+            self._xmlFlushIfNecessary();
+        finally:
+            g_oLock.release();
         return None;
 
     def doPollWork(self, sDebug = None):
         if len(self._asXml) > 0:
             g_oLock.acquire();
-            self._xmlFlushIfNecessary(fPolling = True, sDebug = sDebug);
-            g_oLock.release();
+            try:
+                self._xmlFlushIfNecessary(fPolling = True, sDebug = sDebug);
+            finally:
+                g_oLock.release();
         return None;
 
 
@@ -978,57 +992,60 @@ def logXcptWorker(iLevel, fIncErrors, sPrefix="", sText=None, cFrames=1):
     call frame.
     """
     g_oLock.acquire();
-    if fIncErrors:
-        g_oReporter.testIncErrors();
-
-    ## @todo skip all this if iLevel is too high!
-
-    # Try get exception info.
-    sTsPrf = utils.getTimePrefix();
     try:
-        oType, oValue, oTraceback = sys.exc_info();
-    except:
-        oType = oValue = oTraceback = None;
-    if oType is not None:
 
-        # Try format the info
+        if fIncErrors:
+            g_oReporter.testIncErrors();
+
+        ## @todo skip all this if iLevel is too high!
+
+        # Try get exception info.
+        sTsPrf = utils.getTimePrefix();
         try:
-            rc      = 0;
-            sCaller = utils.getCallerName(oTraceback.tb_frame);
-            if sText is not None:
-                rc = g_oReporter.log(iLevel, "%s%s" % (sPrefix, sText), sCaller, sTsPrf);
-            asInfo = [];
-            try:
-                asInfo = asInfo + traceback.format_exception_only(oType, oValue);
-                if cFrames is not None and cFrames <= 1:
-                    asInfo = asInfo + traceback.format_tb(oTraceback, 1);
-                else:
-                    asInfo.append('Traceback:')
-                    asInfo = asInfo + traceback.format_tb(oTraceback, cFrames);
-                    asInfo.append('Stack:')
-                    asInfo = asInfo + traceback.format_stack(oTraceback.tb_frame.f_back, cFrames);
-            except:
-                g_oReporter.log(0, '** internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
-
-            if len(asInfo) > 0:
-                # Do the logging.
-                for sItem in asInfo:
-                    asLines = sItem.splitlines();
-                    for sLine in asLines:
-                        rc = g_oReporter.log(iLevel, '%s%s' % (sPrefix, sLine), sCaller, sTsPrf);
-
-            else:
-                g_oReporter.log(iLevel, 'No exception info...', sCaller, sTsPrf);
-                rc = -3;
+            oType, oValue, oTraceback = sys.exc_info();
         except:
-            g_oReporter.log(0, '** internal-error: Hit exception! %s' % (traceback.format_exc()), None, sTsPrf);
-            rc = -2;
-    else:
-        g_oReporter.log(0, '** internal-error: No exception! %s'
-                        % (utils.getCallerName(iFrame=3)), utils.getCallerName(iFrame=3), sTsPrf);
-        rc = -1;
+            oType = oValue = oTraceback = None;
+        if oType is not None:
 
-    g_oLock.release();
+            # Try format the info
+            try:
+                rc      = 0;
+                sCaller = utils.getCallerName(oTraceback.tb_frame);
+                if sText is not None:
+                    rc = g_oReporter.log(iLevel, "%s%s" % (sPrefix, sText), sCaller, sTsPrf);
+                asInfo = [];
+                try:
+                    asInfo = asInfo + traceback.format_exception_only(oType, oValue);
+                    if cFrames is not None and cFrames <= 1:
+                        asInfo = asInfo + traceback.format_tb(oTraceback, 1);
+                    else:
+                        asInfo.append('Traceback:')
+                        asInfo = asInfo + traceback.format_tb(oTraceback, cFrames);
+                        asInfo.append('Stack:')
+                        asInfo = asInfo + traceback.format_stack(oTraceback.tb_frame.f_back, cFrames);
+                except:
+                    g_oReporter.log(0, '** internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
+
+                if len(asInfo) > 0:
+                    # Do the logging.
+                    for sItem in asInfo:
+                        asLines = sItem.splitlines();
+                        for sLine in asLines:
+                            rc = g_oReporter.log(iLevel, '%s%s' % (sPrefix, sLine), sCaller, sTsPrf);
+
+                else:
+                    g_oReporter.log(iLevel, 'No exception info...', sCaller, sTsPrf);
+                    rc = -3;
+            except:
+                g_oReporter.log(0, '** internal-error: Hit exception! %s' % (traceback.format_exc()), None, sTsPrf);
+                rc = -2;
+        else:
+            g_oReporter.log(0, '** internal-error: No exception! %s'
+                            % (utils.getCallerName(iFrame=3)), utils.getCallerName(iFrame=3), sTsPrf);
+            rc = -1;
+
+    finally:
+        g_oLock.release();
     return rc;
 
 #
@@ -1068,7 +1085,8 @@ class FileWrapper(object):
                 g_oReporter.log(0, '%s: %s' % (self.sPrefix, sLine), sCaller, sTsPrf);
         except:
             traceback.print_exc();
-        g_oLock.release();
+        finally:
+            g_oLock.release();
         return None;
 
 class FileWrapperTestPipe(object):
@@ -1173,8 +1191,10 @@ class FileWrapperTestPipe(object):
         if idxEndName != -1:
             if sElement[1:idxEndName] == 'Failed':
                 g_oLock.acquire();
-                g_oReporter.testIncErrors();
-                g_oLock.release();
+                try:
+                    g_oReporter.testIncErrors();
+                finally:
+                    g_oLock.release();
         else:
             error('_processXmlElement(%s)' % sElement);
 
@@ -1190,7 +1210,8 @@ def log(sText):
         rc = g_oReporter.log(1, sText, utils.getCallerName(), utils.getTimePrefix());
     except:
         rc = -1;
-    g_oLock.release();
+    finally:
+        g_oLock.release();
     return rc;
 
 def logXcpt(sText=None, cFrames=1):
@@ -1207,7 +1228,8 @@ def log2(sText):
         rc = g_oReporter.log(2, sText, utils.getCallerName(), utils.getTimePrefix());
     except:
         rc = -1;
-    g_oLock.release();
+    finally:
+        g_oLock.release();
     return rc;
 
 def log2Xcpt(sText=None, cFrames=1):
@@ -1251,12 +1273,13 @@ def error(sText):
     success indicators.
     """
     g_oLock.acquire();
-    g_oReporter.testIncErrors();
     try:
+        g_oReporter.testIncErrors();
         g_oReporter.log(0, '** error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass;
-    g_oLock.release();
+    finally:
+        g_oLock.release();
     return False;
 
 def errorXcpt(sText=None, cFrames=1):
@@ -1282,12 +1305,13 @@ def errorTimeout(sText):
     success indicators.
     """
     g_oLock.acquire();
-    g_oReporter.testSetTimedOut();
     try:
+        g_oReporter.testSetTimedOut();
         g_oReporter.log(0, '** timeout-error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass;
-    g_oLock.release();
+    finally:
+        g_oLock.release();
     return False;
 
 def fatal(sText):
@@ -1300,12 +1324,13 @@ def fatal(sText):
     success indicators.
     """
     g_oLock.acquire();
-    g_oReporter.testIncErrors();
     try:
+        g_oReporter.testIncErrors();
         g_oReporter.log(0, '** fatal error: %s' % (sText), utils.getCallerName(), utils.getTimePrefix());
     except:
         pass
-    g_oLock.release();
+    finally:
+        g_oLock.release();
     return False;
 
 def fatalXcpt(sText=None, cFrames=1):
@@ -1350,9 +1375,11 @@ def addLogFile(sFilename, sKind, sDescription = '', sAltName = None):
         logXcpt('addLogFile(%s,%s,%s)' % (sFilename, sDescription, sKind));
     else:
         g_oLock.acquire();
-        fRc = g_oReporter.addLogFile(oSrcFile, sFilename, sAltName, sDescription, sKind, sCaller, sTsPrf);
-        g_oLock.release();
-        oSrcFile.close();
+        try:
+            fRc = g_oReporter.addLogFile(oSrcFile, sFilename, sAltName, sDescription, sKind, sCaller, sTsPrf);
+        finally:
+            g_oLock.release();
+            oSrcFile.close();
     return fRc;
 
 def addLogString(sLog, sLogName, sKind, sDescription = ''):
@@ -1373,8 +1400,10 @@ def addLogString(sLog, sLogName, sKind, sDescription = ''):
     fRc     = False;
 
     g_oLock.acquire();
-    fRc = g_oReporter.addLogString(sLog, sLogName, sDescription, sKind, sCaller, sTsPrf);
-    g_oLock.release();
+    try:
+        fRc = g_oReporter.addLogString(sLog, sLogName, sDescription, sKind, sCaller, sTsPrf);
+    finally:
+        g_oLock.release();
     return fRc;
 
 def isLocal():
@@ -1401,8 +1430,10 @@ def getErrorCount():
     Get the current error count for the entire test run.
     """
     g_oLock.acquire();
-    cErrors = g_oReporter.cErrors;
-    g_oLock.release();
+    try:
+        cErrors = g_oReporter.cErrors;
+    finally:
+        g_oLock.release();
     return cErrors;
 
 def doPollWork(sDebug = None):
@@ -1423,8 +1454,10 @@ def testStart(sName):
     Starts a new test (pushes it).
     """
     g_oLock.acquire();
-    rc = g_oReporter.testStart(sName, utils.getCallerName());
-    g_oLock.release();
+    try:
+        rc = g_oReporter.testStart(sName, utils.getCallerName());
+    finally:
+        g_oLock.release();
     return rc;
 
 def testValue(sName, sValue, sUnit):
@@ -1432,8 +1465,10 @@ def testValue(sName, sValue, sUnit):
     Reports a benchmark value or something simiarlly useful.
     """
     g_oLock.acquire();
-    rc = g_oReporter.testValue(sName, str(sValue), sUnit, utils.getCallerName());
-    g_oLock.release();
+    try:
+        rc = g_oReporter.testValue(sName, str(sValue), sUnit, utils.getCallerName());
+    finally:
+        g_oLock.release();
     return rc;
 
 def testFailure(sDetails):
@@ -1444,8 +1479,10 @@ def testFailure(sDetails):
     Returns False so that a return False line can be saved.
     """
     g_oLock.acquire();
-    g_oReporter.testFailure(sDetails, utils.getCallerName());
-    g_oLock.release();
+    try:
+        g_oReporter.testFailure(sDetails, utils.getCallerName());
+    finally:
+        g_oLock.release();
     return False;
 
 def testFailureXcpt(sDetails = ''):
@@ -1469,11 +1506,13 @@ def testFailureXcpt(sDetails = ''):
 
     # Use testFailure to do the work.
     g_oLock.acquire();
-    if sDetails == '':
-        g_oReporter.testFailure('Exception: %s' % (sXcpt,), sCaller);
-    else:
-        g_oReporter.testFailure('%s: %s' % (sDetails, sXcpt), sCaller);
-    g_oLock.release();
+    try:
+        if sDetails == '':
+            g_oReporter.testFailure('Exception: %s' % (sXcpt,), sCaller);
+        else:
+            g_oReporter.testFailure('%s: %s' % (sDetails, sXcpt), sCaller);
+    finally:
+        g_oLock.release();
     return False;
 
 def testDone(fSkipped = False):
@@ -1483,8 +1522,10 @@ def testDone(fSkipped = False):
     Returns a tuple with the name of the test and its error count.
     """
     g_oLock.acquire();
-    rc = g_oReporter.testDone(fSkipped, utils.getCallerName());
-    g_oLock.release();
+    try:
+        rc = g_oReporter.testDone(fSkipped, utils.getCallerName());
+    finally:
+        g_oLock.release();
     return rc;
 
 def testErrorCount():
@@ -1494,8 +1535,10 @@ def testErrorCount():
     Returns the number of errors.
     """
     g_oLock.acquire();
-    cErrors = g_oReporter.testErrorCount();
-    g_oLock.release();
+    try:
+        cErrors = g_oReporter.testErrorCount();
+    finally:
+        g_oLock.release();
     return cErrors;
 
 def testCleanup():
@@ -1505,9 +1548,11 @@ def testCleanup():
     Returns True if no open tests, False if something had to be closed with failure.
     """
     g_oLock.acquire();
-    fRc = g_oReporter.testCleanup(utils.getCallerName());
-    g_oReporter.xmlFlush(fRetry = False, fForce = True);
-    g_oLock.release();
+    try:
+        fRc = g_oReporter.testCleanup(utils.getCallerName());
+        g_oReporter.xmlFlush(fRetry = False, fForce = True);
+    finally:
+        g_oLock.release();
     return fRc;
 
 
@@ -1583,8 +1628,10 @@ def checkTestManagerConnection():
     Note! This as the sideeffect of flushing XML.
     """
     g_oLock.acquire();
-    fRc = g_oReporter.xmlFlush(fRetry = False, fForce = True);
-    g_oLock.release();
+    try:
+        fRc = g_oReporter.xmlFlush(fRetry = False, fForce = True);
+    finally:
+        g_oLock.release();
     return fRc;
 
 def flushall(fSkipXml = False):
@@ -1599,8 +1646,10 @@ def flushall(fSkipXml = False):
 
     if fSkipXml is not True:
         g_oLock.acquire();
-        g_oReporter.xmlFlush(fRetry = False);
-        g_oLock.release();
+        try:
+            g_oReporter.xmlFlush(fRetry = False);
+        finally:
+            g_oLock.release();
 
     return True;
 
