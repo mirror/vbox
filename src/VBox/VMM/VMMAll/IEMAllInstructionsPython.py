@@ -45,6 +45,10 @@ sys.path.append(g_ksValidationKitDir);
 
 from common import utils;
 
+# Python 3 hacks:
+if sys.version_info[0] >= 3:
+    long = int;     # pylint: disable=redefined-builtin,invalid-name
+
 
 # Annotation example:
 #
@@ -126,10 +130,102 @@ class InstructionMap(object):
 class TestType(object):
     """
     Test value type.
+
+    This base class deals with integer like values.  The fUnsigned constructor
+    parameter indicates the default stance on zero vs sign extending.  It is
+    possible to override fUnsigned=True by prefixing the value with '+' or '-'.
     """
-    def __init__(self, sName, sTodo):
-      self.sName = sName;
-      self.sTodo = sTodo;
+    def __init__(self, sName, fUnsigned = True):
+        self.sName = sName;
+        self.fUnsigned = fUnsigned;
+
+    class BadValue(Exception):
+        """ Bad value exception. """
+        def __init__(self, sMessage):
+            Exception.__init__(sMessage);
+            self.sMessage = sMessage;
+
+    def get(self, sValue):
+        """
+        Get the shortest byte representation of oValue.
+
+        Returns (fSignExtend, bytearray)
+        Raises BadValue if invalid value.
+
+        The returned byte array is a reasonable size, e.g. for an integer type
+        it's for instance 1, 2, 4, or 8 byte in size but never 3, 5 or 7 bytes.
+        """
+        if len(sValue) == 0:
+            raise TestType.BadValue('empty value');
+
+        # Deal with sign and detect hexadecimal or decimal.
+        fSignExtend = not self.fUnsigned;
+        if sValue[0] == '-' or sValue[0] == '+':
+            fSignExtend = True;
+            fHex = len(sValue) > 3 and sValue[1:2].lower() == '0x';
+        else:
+            fHex = len(sValue) > 2 and sValue[0:2].lower() == '0x';
+
+        # try convert it to long integer.
+        try:
+            iValue = long(sValue, 16 if fHex else 10);
+        except:
+            raise TestType.BadValue('failed to convert "%s" to integer' % (iValue,));
+
+        # Convert the hex string and pad it to a decent value.
+        sHex = hex(iValue);
+        assert sHex[:2] == '0x', sHex;
+        if sys.version_info[0] >= 3:
+            sHex = sHex[2:];
+        else:
+            assert sHex[-1] == 'L';
+            sHex = sHex[2:-1];
+
+        cDigits = len(sHex);
+        if cDigits <= 2:
+            cDigits = (cDigits + 1) & ~1;
+        elif cDigits <= 4:
+            cDigits = (cDigits + 3) & ~3;
+        elif cDigits <= 8:
+            cDigits = (cDigits + 7) & ~7;
+        else:
+            cDigits = (cDigits + 15) & ~15;
+
+        if cDigits != len(sHex):
+            if iValue >= 0:
+                sHex = '0' * (cDigits - len(sHex)) + sHex;
+            else:
+                sHex = 'f' * (cDigits - len(sHex)) + sHex;
+
+        # Invert and convert to bytearray and return it.
+        abValue = bytearray([int(sHex[offHex - 2 : offHex], 16) for offHex in xrange(len(sHex), 0, -2)]);
+
+        return (fSignExtend, abValue);
+
+    def validate(self, sValue):
+        """
+        Returns True if value is okay, error message on failure.
+        """
+        try:
+            self.get(sValue);
+        except TestType.BadValue as oXcpt:
+            return oXcpt.sMessage;
+        return True;
+
+
+
+class TestTypeEflags(TestType):
+    """
+    Special value parsing for EFLAGS/RFLAGS/FLAGS.
+    """
+
+    def __init__(self, sName):
+        TestType.__init__(self, sName, fUnsigned = True);
+
+    def get(self, sValue):
+
+        return None;
+
 
 
 class TestInOut(object):
@@ -146,59 +242,107 @@ class TestInOut(object):
         '|=',
         '='
     ];
-    ## CPU context fields.
-    kdFields = {
-        'op1': [],  ## \@op1
-        'op2': [],  ## \@op2
-        'op3': [],  ## \@op3
-        'op4': [],  ## \@op4
-
-        'efl': [],
-
-        'al':  [],
-        'cl':  [],
-        'dl':  [],
-        'bl':  [],
-        'ah':  [],
-        'ch':  [],
-        'dh':  [],
-        'bh':  [],
-
-        'ax':  [],
-        'dx':  [],
-        'cx':  [],
-        'bx':  [],
-        'sp':  [],
-        'bp':  [],
-        'si':  [],
-        'di':  [],
-
-        'eax': [],
-        'edx': [],
-        'ecx': [],
-        'ebx': [],
-        'esp': [],
-        'ebp': [],
-        'esi': [],
-        'edi': [],
-
-        'rax': [],
-        'rdx': [],
-        'rcx': [],
-        'rbx': [],
-        'rsp': [],
-        'rbp': [],
-        'rsi': [],
-        'rdi': [],
-    };
     ## Types
     kdTypes = {
-        'db':    (1, 'unsigned' ),
-        'dw':    (2, 'unsigned' ),
-        'dd':    (4, 'unsigned' ),
-        'dq':    (8, 'unsigned' ),
-        'uint':  (8, 'unsigned' ),
-        'int':   (8, 'unsigned' ),
+        'uint':  TestType('uint', fUnsigned = True),
+        'int':   TestType('int'),
+        'efl':   TestTypeEflags('efl'),
+    };
+    ## CPU context fields.
+    kdFields = {
+        # name:     ( default type, tbd, )
+        # Operands.
+        'op1':      ( 'uint', '', ), ## \@op1
+        'op2':      ( 'uint', '', ), ## \@op2
+        'op3':      ( 'uint', '', ), ## \@op3
+        'op4':      ( 'uint', '', ), ## \@op4
+        # Flags.
+        'efl':      ( 'efl',  '', ),
+        # 8-bit GPRs.
+        'al':       ( 'uint', '', ),
+        'cl':       ( 'uint', '', ),
+        'dl':       ( 'uint', '', ),
+        'bl':       ( 'uint', '', ),
+        'ah':       ( 'uint', '', ),
+        'ch':       ( 'uint', '', ),
+        'dh':       ( 'uint', '', ),
+        'bh':       ( 'uint', '', ),
+        'r8l':      ( 'uint', '', ),
+        'r9l':      ( 'uint', '', ),
+        'r10l':     ( 'uint', '', ),
+        'r11l':     ( 'uint', '', ),
+        'r12l':     ( 'uint', '', ),
+        'r13l':     ( 'uint', '', ),
+        'r14l':     ( 'uint', '', ),
+        'r15l':     ( 'uint', '', ),
+        # 16-bit GPRs.
+        'ax':       ( 'uint', '', ),
+        'dx':       ( 'uint', '', ),
+        'cx':       ( 'uint', '', ),
+        'bx':       ( 'uint', '', ),
+        'sp':       ( 'uint', '', ),
+        'bp':       ( 'uint', '', ),
+        'si':       ( 'uint', '', ),
+        'di':       ( 'uint', '', ),
+        'r8w':      ( 'uint', '', ),
+        'r9w':      ( 'uint', '', ),
+        'r10w':     ( 'uint', '', ),
+        'r11w':     ( 'uint', '', ),
+        'r12w':     ( 'uint', '', ),
+        'r13w':     ( 'uint', '', ),
+        'r14w':     ( 'uint', '', ),
+        'r15w':     ( 'uint', '', ),
+        # 32-bit GPRs.
+        'eax':      ( 'uint', '', ),
+        'edx':      ( 'uint', '', ),
+        'ecx':      ( 'uint', '', ),
+        'ebx':      ( 'uint', '', ),
+        'esp':      ( 'uint', '', ),
+        'ebp':      ( 'uint', '', ),
+        'esi':      ( 'uint', '', ),
+        'edi':      ( 'uint', '', ),
+        'r8d':      ( 'uint', '', ),
+        'r9d':      ( 'uint', '', ),
+        'r10d':     ( 'uint', '', ),
+        'r11d':     ( 'uint', '', ),
+        'r12d':     ( 'uint', '', ),
+        'r13d':     ( 'uint', '', ),
+        'r14d':     ( 'uint', '', ),
+        'r15d':     ( 'uint', '', ),
+        # 64-bit GPRs.
+        'rax':      ( 'uint', '', ),
+        'rdx':      ( 'uint', '', ),
+        'rcx':      ( 'uint', '', ),
+        'rbx':      ( 'uint', '', ),
+        'rsp':      ( 'uint', '', ),
+        'rbp':      ( 'uint', '', ),
+        'rsi':      ( 'uint', '', ),
+        'rdi':      ( 'uint', '', ),
+        'r8':       ( 'uint', '', ),
+        'r9':       ( 'uint', '', ),
+        'r10':      ( 'uint', '', ),
+        'r11':      ( 'uint', '', ),
+        'r12':      ( 'uint', '', ),
+        'r13':      ( 'uint', '', ),
+        'r14':      ( 'uint', '', ),
+        'r15':      ( 'uint', '', ),
+        # 16-bit, 32-bit or 64-bit registers according to operand size.
+        'oz.rax':   ( 'uint', '', ),
+        'oz.rdx':   ( 'uint', '', ),
+        'oz.rcx':   ( 'uint', '', ),
+        'oz.rbx':   ( 'uint', '', ),
+        'oz.rsp':   ( 'uint', '', ),
+        'oz.rbp':   ( 'uint', '', ),
+        'oz.rsi':   ( 'uint', '', ),
+        'oz.rdi':   ( 'uint', '', ),
+        'oz.r8':    ( 'uint', '', ),
+        'oz.r9':    ( 'uint', '', ),
+        'oz.r10':   ( 'uint', '', ),
+        'oz.r11':   ( 'uint', '', ),
+        'oz.r12':   ( 'uint', '', ),
+        'oz.r13':   ( 'uint', '', ),
+        'oz.r14':   ( 'uint', '', ),
+        'oz.r15':   ( 'uint', '', ),
     };
 
     def __init__(self, sField, sOp, sValue, sType):
@@ -254,6 +398,29 @@ class TestSelector(object):
             'on': 'paging_on',
             'off': 'paging_off',
         },
+    };
+    ## Selector shorthand predicates.
+    ## These translates into variable expressions.
+    kdPredicates = {
+        'o16':          'size==o16',
+        'o32':          'size==o32',
+        'o64':          'size==o64',
+        'ring0':        'ring==0',
+        '!ring0':       'ring==1..3',
+        'ring1':        'ring==1',
+        'ring2':        'ring==2',
+        'ring3':        'ring==3',
+        'user':         'ring==3',
+        'supervisor':   'ring==0..2',
+        'real':         'mode==real',
+        'prot':         'mode==prot',
+        'long':         'mode==long',
+        'v86':          'mode==v86',
+        'smm':          'mode==smm',
+        'vmx':          'mode==vmx',
+        'svm':          'mode==svm',
+        'paging':       'paging==on',
+        '!paging':      'paging==off',
     };
 
     def __init__(self, sVariable, sOp, sValue):
@@ -1243,19 +1410,11 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    def validateTestInputValueByType(self, sType, sValue):
-        """
-        Validates the value given the type.
-        """
-        _ = sType;
-        _ = sValue;
-        return True;
-
     def parseTagOpTest(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@optest
         Value:      [<selectors>[ ]?] <inputs> -> <outputs>
-        Example:    mode==64bit ? in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
+        Example:    mode==64bit / in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
 
         The main idea here is to generate basic instruction tests.
 
@@ -1263,7 +1422,7 @@ class SimpleParser(object):
         it to produce size optimized byte code for a simple interpreter that
         modifies the register input and output states.
 
-        There are alternatives to the interpreter would be create multiple tables,
+        An alternative to the interpreter would be creating multiple tables,
         but that becomes rather complicated wrt what goes where and then to use
         them in an efficient manner.
         """
@@ -1293,12 +1452,12 @@ class SimpleParser(object):
                 # Check for array switchers.
                 if sWord == '->':
                     if asCur != asOutputs:
-                        fRc = self.errorComment(iTagLine, '%s: "->" shall only occure once: %s' % ( sTag, sFlatSection));
+                        fRc = self.errorComment(iTagLine, '%s: "->" shall only occure once: %s' % (sTag, sFlatSection,));
                         break;
                     asCur = asInputs;
                 elif sWord == '/':
                     if asCur != asInputs:
-                        fRc = self.errorComment(iTagLine, '%s: "->" shall only occure once: %s' % ( sTag, sFlatSection));
+                        fRc = self.errorComment(iTagLine, '%s: "/" shall only occure once: %s' % (sTag, sFlatSection,));
                         break;
                     asCur = asSelectors;
                 else:
@@ -1308,12 +1467,13 @@ class SimpleParser(object):
             # Validate and add selectors.
             #
             for sCond in asSelectors:
+                sCondExp = TestSelector.kdPredicates.get(sCond, sCond);
                 oSelector = None;
                 for sOp in TestSelector.kasCompareOps:
-                    off = sCond.find(sOp);
+                    off = sCondExp.find(sOp);
                     if off >= 0:
-                        sVariable = sCond[:off];
-                        sValue    = sCond[off + len(sOp):];
+                        sVariable = sCondExp[:off];
+                        sValue    = sCondExp[off + len(sOp):];
                         if sVariable in TestSelector.kdVariables:
                             if sValue in TestSelector.kdVariables[sVariable]:
                                 oSelector = TestSelector(sVariable, sOp, sValue);
@@ -1348,10 +1508,14 @@ class SimpleParser(object):
                             if sField in TestInOut.kdFields:
                                 asSplit = sValueType.split(':', 1);
                                 sValue  = asSplit[0];
-                                sType   = asSplit[1] if len(asSplit) > 1 else 'int'; ## @todo figure the type handling...
+                                sType   = asSplit[1] if len(asSplit) > 1 else TestInOut.kdFields[sField][0];
                                 if sType in TestInOut.kdTypes:
-                                    if self.validateTestInputValueByType(sType, sValue):
+                                    oValid = TestInOut.kdTypes[sType].validate(sValue);
+                                    if oValid is True:
                                         oItem = TestInOut(sField, sOp, sValue, sType);
+                                    else:
+                                        self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s)'
+                                                                    % ( sTag, sDesc, sValue, sItem, sType, ));
                                 else:
                                     self.errorComment(iTagLine, '%s: invalid %s type "%s" in "%s" (valid types: %s)'
                                                                  % ( sTag, sDesc, sType, sItem, TestInOut.kdTypes.keys(),));
@@ -1738,7 +1902,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     try:
         cErrors = SimpleParser(sSrcFile, asLines, sDefaultMap).parse();
     except ParserException as oXcpt:
-        print unicode(oXcpt);
+        print str(oXcpt);
         raise;
     except Exception as oXcpt:
         raise;
@@ -1756,7 +1920,7 @@ def __parseAll():
     cErrors = 0;
     for sDefaultMap, sName in [
         ( 'one',    'IEMAllInstructionsOneByte.cpp.h'),
-        ( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
+        #( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
 
