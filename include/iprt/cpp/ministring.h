@@ -623,7 +623,8 @@ public:
     bool equals(const RTCString &rThat) const
     {
         return rThat.length() == length()
-            && memcmp(rThat.m_psz, m_psz, length()) == 0;
+            && (   length() == 0
+                || memcmp(rThat.m_psz, m_psz, length()) == 0);
     }
 
     /**
