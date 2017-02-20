@@ -657,6 +657,16 @@ DECLINLINE(uint8_t) PDMPciDevGetInterruptPin(PPDMPCIDEV pPciDev)
 /** @} */
 
 
+/* Special purpose "interface" for getting access to the PDMPCIDEV structure
+ * of a ich9pcibridge instance. This is useful for unusual raw or pass-through
+ * implementation which need to provide different PCI configuration space
+ * content for bridges (as long as we don't allow pass-through of bridges or
+ * custom bridge device implementations). */
+typedef PPDMPCIDEV PPDMIICH9BRIDGEPDMPCIDEV;
+
+#define PDMIICH9BRIDGEPDMPCIDEV_IID "785c74b1-8510-4458-9422-56750bf221db"
+
+
 /** @} */
 
 #endif
