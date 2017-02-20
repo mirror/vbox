@@ -178,6 +178,14 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 VMMR3DECL(int)      IEMR3Term(PVM pVM)
 {
     NOREF(pVM);
+#if defined(VBOX_WITH_STATISTICS) && !defined(DOXYGEN_RUNNING)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
+        MMR3HeapFree(pVCpu->iem.s.pStatsR3);
+        pVCpu->iem.s.pStatsR3 = NULL;
+    }
+#endif
     return VINF_SUCCESS;
 }
 
