@@ -561,6 +561,12 @@ void slirp_term(PNATState pData)
         LIST_REMOVE(ac, list);
         RTMemFree(ac);
     }
+    while (!LIST_EMPTY(&pData->port_forward_rule_head))
+    {
+        struct port_forward_rule *rule = LIST_FIRST(&pData->port_forward_rule_head);
+        LIST_REMOVE(rule, list);
+        RTMemFree(rule);
+    }
     slirpTftpTerm(pData);
     bootp_dhcp_fini(pData);
     m_fini(pData);
