@@ -48,23 +48,23 @@ from common import utils;
 
 # Annotation example:
 #
-# @opmnemonic  add
-# @op1         reg:Eb
-# @op2         rm:Gb
-# @opmaps      onebyte
-# @oppfx       none
-# @opcode      0x00
-# @openc       ModR/M
-# @opfltest    none
-# @opflmodify  of,sz,zf,af,pf,cf
-# @opflundef   none
-# @opflset     none
-# @opflclear   none
-# @ophints     harmless
-# @opstats     add_Eb_Gb
-# @opgroup     op_gen_arith_bin
-# @optest                  in1=1 in2=1 -> out1=2 outfl=a?,p?
-# @optest      oppfx:o32   in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
+# \@opmnemonic  add
+# \@op1         reg:Eb
+# \@op2         rm:Gb
+# \@opmaps      onebyte
+# \@oppfx       none
+# \@opcode      0x00
+# \@openc       ModR/M
+# \@opfltest    none
+# \@opflmodify  of,sz,zf,af,pf,cf
+# \@opflundef   none
+# \@opflset     none
+# \@opflclear   none
+# \@ophints     harmless
+# \@opstats     add_Eb_Gb
+# \@opgroup     op_gen_arith_bin
+# \@optest                  in1=1 in2=1 -> out1=2 outfl=a?,p?
+# \@optest      oppfx:o32   in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
 
 
 def _isValidOpcodeByte(sOpcode):
@@ -148,10 +148,10 @@ class TestInOut(object):
     ];
     ## CPU context fields.
     kdFields = {
-        'op1': [],  ## @op1
-        'op2': [],  ## @op2
-        'op3': [],  ## @op3
-        'op4': [],  ## @op4
+        'op1': [],  ## \@op1
+        'op2': [],  ## \@op2
+        'op3': [],  ## \@op3
+        'op4': [],  ## \@op4
 
         'efl': [],
 
@@ -282,13 +282,13 @@ class Operand(object):
     Instruction operand.
     """
 
-    ## @op[1-4]
+    ## \@op[1-4]
     kdLocations = {
         'reg':  [], ## modrm.reg
         'rm':   [], ## modrm.rm
     };
 
-    ## @op[1-4]
+    ## \@op[1-4]
     kdTypes = {
         'Eb':   [],
         'Gb':   [],
@@ -685,7 +685,7 @@ class SimpleParser(object):
 
     def parseTagOpBrief(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Key:    @opbrief
+        Tag:    \@opbrief
         Value:  Text description, multiple sections, appended.
 
         Brief description.  If not given, it's the first sentence from @opdesc.
@@ -715,7 +715,7 @@ class SimpleParser(object):
 
     def parseTagOpDesc(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Key:    @opdesc
+        Tag:    \@opdesc
         Value:  Text description, multiple sections, appended.
 
         It is used to describe instructions.
@@ -753,7 +753,7 @@ class SimpleParser(object):
 
     def parseTagOpOperandN(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tags:  @op1, @op2, @op3, @op4
+        Tags:  \@op1, \@op2, \@op3, \@op4
         Value: where:type
 
         The 'where' value indicates where the operand is found, like the 'reg'
@@ -798,7 +798,7 @@ class SimpleParser(object):
 
     def parseTagOpMaps(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    @opmaps
+        Tag:    \@opmaps
         Value:  map[,map2]
 
         Indicates which maps the instruction is in.  There is a default map
@@ -831,7 +831,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## @oppfx values.
+    ## \@oppfx values.
     kdPrefixes = {
         '0x66': [],
         '0xf3': [],
@@ -840,7 +840,7 @@ class SimpleParser(object):
 
     def parseTagOpPfx(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @oppfx
+        Tag:        \@oppfx
         Value:      none|0x66|0xf3|0xf2
 
         Required prefix for the instruction.  (In a (E)VEX context this is the
@@ -874,7 +874,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## Special @opcode tag values.
+    ## Special \@opcode tag values.
     kdSpecialOpcodes = {
         '/reg':         [],
         'mr/reg':       [],
@@ -886,7 +886,7 @@ class SimpleParser(object):
 
     def parseTagOpcode(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @opcode
+        Tag:        \@opcode
         Value:      0x?? | /reg | mr/reg | 11 /reg | !11 /reg | 11 mr/reg | !11 mr/reg
 
         The opcode byte or sub-byte for the instruction in the context of a map.
@@ -908,14 +908,14 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## Valid values for @openc
+    ## Valid values for \@openc
     kdEncodings = {
         'ModR/M': [],
     };
 
     def parseTagOpEnc(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @openc
+        Tag:        \@openc
         Value:      ModR/M|TBD
 
         The instruction operand encoding style.
@@ -938,7 +938,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## EFlags values allowed in @opfltest, @opflmodify, @opflundef, @opflset, and @opflclear.
+    ## EFlags values allowed in \@opfltest, \@opflmodify, \@opflundef, \@opflset, and \@opflclear.
     kdEFlags = {
         # Debugger flag notation:
         'ov':   'X86_EFL_OF',   ##< OVerflow.
@@ -995,7 +995,11 @@ class SimpleParser(object):
     };
 
     def parseTagOpEFlags(self, sTag, aasSections, iTagLine, iEndLine):
-        """ @opfltest, @opflmodify, @opflundef, @opflset, @opflclear """
+        """
+        Tags:   \@opfltest, \@opflmodify, \@opflundef, \@opflset, \@opflclear
+        Value:  <eflags specifier>
+
+        """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
 
         # Flatten, split up and validate the values.
@@ -1022,7 +1026,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## @ophints values.
+    ## \@ophints values.
     kdHints = {
         'invalid':               'DISOPTYPE_INVALID',                ##<
         'harmless':              'DISOPTYPE_HARMLESS',               ##<
@@ -1056,7 +1060,7 @@ class SimpleParser(object):
 
     def parseTagOpHints(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @ophints
+        Tag:        \@ophints
         Value:      Comma or space separated list of flags and hints.
 
         This covers the disassembler flags table and more.
@@ -1088,7 +1092,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## @opcpuid
+    ## \@opcpuid
     kdCpuIdFlags =  {
         'vme':      'X86_CPUID_FEATURE_EDX_VME',
         'tsc':      'X86_CPUID_FEATURE_EDX_TSC',
@@ -1134,7 +1138,7 @@ class SimpleParser(object):
 
     def parseTagOpCpuId(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @opcpuid
+        Tag:        \@opcpuid
         Value:      none | <CPUID flag specifier>
 
         CPUID feature bit which is required for the instruction to be present.
@@ -1168,7 +1172,7 @@ class SimpleParser(object):
 
     def parseTagOpGroup(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @opgroup
+        Tag:        \@opgroup
         Value:      op_grp1[_subgrp2[_subsubgrp3]]
 
         Instruction grouping.
@@ -1192,7 +1196,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## @opunused, @opinvalid, @opinvlstyle
+    ## \@opunused, \@opinvalid, \@opinvlstyle
     kdInvalidStyles = {
         'immediate':                [], ##< CPU stops decoding immediately after the opcode.
         'intel-modrm':              [], ##< Intel decodes ModR/M.
@@ -1203,17 +1207,17 @@ class SimpleParser(object):
 
     def parseTagOpUnusedInvalid(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    @opunused, @opinvalid, @opinvlstyle
+        Tag:    \@opunused, \@opinvalid, \@opinvlstyle
         Value:  <invalid opcode behaviour style>
 
-        The @opunused indicates the specification is for a currently unused
+        The \@opunused indicates the specification is for a currently unused
         instruction encoding.
 
-        The @opinvalid indicates the specification is for an invalid currently
+        The \@opinvalid indicates the specification is for an invalid currently
         instruction encoding (like UD2).
 
-        The @opinvlstyle just indicates how CPUs decode the instruction when
-        not supported (@opcpuid, @opmincpu) or disabled.
+        The \@opinvlstyle just indicates how CPUs decode the instruction when
+        not supported (\@opcpuid, \@opmincpu) or disabled.
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
 
@@ -1249,7 +1253,7 @@ class SimpleParser(object):
 
     def parseTagOpTest(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @optest
+        Tag:        \@optest
         Value:      [<selectors>[ ]?] <inputs> -> <outputs>
         Example:    mode==64bit ? in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
 
@@ -1379,7 +1383,7 @@ class SimpleParser(object):
 
     def parseTagOpFunction(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @opfunction
+        Tag:        \@opfunction
         Value:      <VMM function name>
 
         This is for explicitly setting the IEM function name.  Normally we pick
@@ -1407,7 +1411,7 @@ class SimpleParser(object):
 
     def parseTagOpStats(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:        @opstats
+        Tag:        \@opstats
         Value:      <VMM statistics base name>
 
         This is for explicitly setting the statistics name.  Normally we pick
@@ -1435,7 +1439,7 @@ class SimpleParser(object):
 
     def parseTagOpDone(self, sTag, aasSections, iTagLine, iEndLine):
         """
-        Tag:    @opdone
+        Tag:    \@opdone
         Value:  none
 
         Used to explictily flush the instructions that have been specified.
