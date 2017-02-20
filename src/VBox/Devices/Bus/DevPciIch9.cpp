@@ -48,6 +48,7 @@
 #include <iprt/string.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
+# include <iprt/uuid.h>
 #endif
 
 #include "PciInline.h"
@@ -3275,6 +3276,20 @@ DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 
 
 /**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) ich9pcibridgeQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPDMDEVINS pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDevIns->IBase);
+    /* Special access to the PDMPCIDEV structure of a ich9pcibridge instance. */
+    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIICH9BRIDGEPDMPCIDEV, &pBus->PciDev);
+    return NULL;
+}
+
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
@@ -3303,6 +3318,8 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("PCI: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
+
+    pDevIns->IBase.pfnQueryInterface = ich9pcibridgeQueryInterface;
 
     /*
      * Init data and register the PCI bus.
