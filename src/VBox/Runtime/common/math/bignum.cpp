@@ -676,6 +676,7 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
                 {
                     default: AssertFailed();
 #if RTBIGNUM_ELEMENT_SIZE == 8
+                                                          /* fall thru */
                     case 7: uLast = (uLast << 8) | pb[6]; /* fall thru */
                     case 6: uLast = (uLast << 8) | pb[5]; /* fall thru */
                     case 5: uLast = (uLast << 8) | pb[4]; /* fall thru */
@@ -714,6 +715,7 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
                 {
                     default: AssertFailed();
 #if RTBIGNUM_ELEMENT_SIZE == 8
+                                                          /* fall thru */
                     case 7: uLast = (uLast << 8) | *pb++; /* fall thru */
                     case 6: uLast = (uLast << 8) | *pb++; /* fall thru */
                     case 5: uLast = (uLast << 8) | *pb++; /* fall thru */
@@ -747,7 +749,7 @@ RTDECL(int) RTBigNumInit(PRTBIGNUM pBigNum, uint32_t fFlags, void const *pvRaw, 
             AssertCompile(RTBIGNUM_ALIGNMENT <= 4);
             switch (pBigNum->cAllocated - pBigNum->cUsed)
             {
-                default: AssertFailed();
+                default: AssertFailed(); /* fall thru */
                 case 3: *puUnused++ = 0; /* fall thru */
                 case 2: *puUnused++ = 0; /* fall thru */
                 case 1: *puUnused++ = 0;

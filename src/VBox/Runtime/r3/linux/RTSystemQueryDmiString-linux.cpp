@@ -67,6 +67,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         {
             case VINF_SUCCESS:
                 AssertFailed();
+                break;
             case VERR_FILE_NOT_FOUND:
             case VERR_PATH_NOT_FOUND:
             case VERR_IS_A_DIRECTORY:
