@@ -126,6 +126,9 @@ The install:
     "Start" -> "All Programs" -> "Startup".
 
     W10: Find startup folder by hitting Win+R and entering "shell:startup".
+    W10: Make old rdesktop connect:
+         \HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp\SecurityLayer
+         Change DWORD Hex '2' -> '1'
 
 26. If this is an Intel box and the CPU is capable of Nested Paging, edit C:\autoexec-testbox.cmd
     and append '--nested-paging'
