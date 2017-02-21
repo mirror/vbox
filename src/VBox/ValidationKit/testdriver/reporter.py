@@ -63,7 +63,7 @@ class LockWrapper(object):
         self.cAcquired = 0;
         self.oReportingError = None;
 
-    def acquire(self, blocking = False):
+    def acquire(self, blocking = True):
         """ Acquire the lock. """
         oSelf = threading.current_thread();
 
