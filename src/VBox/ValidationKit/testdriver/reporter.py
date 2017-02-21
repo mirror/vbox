@@ -87,7 +87,7 @@ class LockWrapper(object):
                 if cMsElapsed > 1:
                     if cMsElapsed > self.kcMsTimeout:
                         self.error('Thread %s has waited more than %u seconds on lock %s to be released by %s'
-                                   % (oSelf, kcMsTimeout / 1000, self.sName, self.oOwner,), fAllThreads = True);
+                                   % (oSelf, self.kcMsTimeout / 1000, self.sName, self.oOwner,), fAllThreads = True);
                     time.sleep(0.001);
 
         # Got it. Update stats.
