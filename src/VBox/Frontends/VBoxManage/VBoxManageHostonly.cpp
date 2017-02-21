@@ -43,18 +43,35 @@
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
 
+static const RTGETOPTDEF g_aHostOnlyCreateOptions[] =
+{
+    { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
+};
+
 #if defined(VBOX_WITH_NETFLT) && !defined(RT_OS_SOLARIS)
 static RTEXITCODE handleCreate(HandlerArg *a)
 {
     /*
      * Parse input.
      */
+    bool fMachineReadable = false;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, a->argc, a->argv, NULL, 0, 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    int ch = RTGetOpt(&GetState, &ValueUnion);
-    if (ch != 0)
-        return errorGetOpt(USAGE_HOSTONLYIFS, ch, &ValueUnion);
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aHostOnlyCreateOptions,
+                 RT_ELEMENTS(g_aHostOnlyCreateOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'M':   // --machinereadable
+                fMachineReadable = true;
+                break;
+
+            default:
+                return errorGetOpt(USAGE_HOSTONLYIFS, c, &ValueUnion);
+        }
+    }
 
     /*
      * Do the work.
@@ -67,14 +84,23 @@ static RTEXITCODE handleCreate(HandlerArg *a)
 
     CHECK_ERROR2I_RET(host, CreateHostOnlyNetworkInterface(hif.asOutParam(), progress.asOutParam()), RTEXITCODE_FAILURE);
 
-    /*HRESULT hrc =*/ showProgress(progress);
-    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create the host-only adapter"), RTEXITCODE_FAILURE);
+    if (fMachineReadable)
+    {
+        CHECK_PROGRESS_ERROR_RET(progress, (""), RTEXITCODE_FAILURE);
+    }
+    else
+    {
+        /*HRESULT hrc =*/ showProgress(progress);
+        CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create the host-only adapter"), RTEXITCODE_FAILURE);
+    }
 
     Bstr bstrName;
     CHECK_ERROR2I(hif, COMGETTER(Name)(bstrName.asOutParam()));
 
-    RTPrintf("Interface '%ls' was successfully created\n", bstrName.raw());
-
+    if (fMachineReadable)
+        RTPrintf("%ls", bstrName.raw());
+    else
+        RTPrintf("Interface '%ls' was successfully created\n", bstrName.raw());
     return RTEXITCODE_SUCCESS;
 }
 
