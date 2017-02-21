@@ -416,6 +416,9 @@ class TestVm(object):
         # Vista 64 throws BSOD 0x5D (UNSUPPORTED_PROCESSOR)
         if self.aInfo[g_iKind] in ['WindowsVista_64']:
             return True;
+        # Solaris 11 hangs on VIA, tested on a physical box (testboxvqc)
+        if self.aInfo[g_iKind] in ['Solaris11_64']:
+            return True;
         return False;
 
     def isP4Incompatible(self):
