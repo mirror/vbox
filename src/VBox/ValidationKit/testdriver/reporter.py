@@ -49,6 +49,158 @@ g_oReporter = None;                     # type: ReporterBase
 g_sReporterName = None;
 g_oLock = threading.Lock();
 
+# Lock wrapper:
+class LockWrapper(object):
+    """ Temporary lock wrapper to debug deadlocks on the macs. """
+
+    kcMsTimeout = 15000;
+
+    def __init__(self, sName):
+        self.sName  = sName;
+        self.oLock  = threading.Lock();
+        self.oOwner = None;
+        self.oPrevOwner = None;
+        self.cAcquired = 0;
+        self.oReportingError = None;
+
+    def acquire(self, blocking = False):
+        """ Acquire the lock. """
+        oSelf = threading.current_thread();
+
+        # Special case for avoiding recursive error reports via the error method.
+        if self.oReportingError == oSelf:
+            return True;
+
+        # Check ownership.
+        if oSelf == self.oOwner:
+            self.error('Recursive lock %s entry on thread %s' % (self.sName, oSelf,));
+
+        # Try acquire it (non-blocking).
+        if not self.oLock.acquire(False):
+            if not blocking:
+                return False;
+            msStart = utils.timestampMilli();
+            while True:
+                if self.oLock.acquire(False):
+                    break;
+                cMsElapsed = utils.timestampMilli() - msStart;
+                if cMsElapsed > 1:
+                    if cMsElapsed > self.kcMsTimeout:
+                        self.error('Thread %s has waited more than %u seconds on lock %s to be released by %s'
+                                   % (oSelf, kcMsTimeout / 1000, self.sName, self.oOwner,), fAllThreads = True);
+                    time.sleep(0.001);
+
+        # Got it. Update stats.
+        self.oOwner = oSelf;
+        self.cAcquired += 1;
+        return True;
+
+    def release(self):
+        """ Release the lock. """
+        oSelf = threading.current_thread();
+        # Skip if we're in the error method (see acquire).
+        if self.oReportingError == oSelf:
+            pass;
+        # Check ownership.
+        elif oSelf != self.oOwner:
+            self.error('Thread %s is trying to release %s without owning it' % (oSelf, self.sName,));
+        # Housekeeping first, then relase for real.
+        else:
+            self.oPrevOwner = oSelf;
+            self.oOwner = None;
+            self.oLock.release();
+
+    def error(self, sMessage, fAllThreads = False):
+        """ Reports a problem. Raises exception."""
+        #
+        # Get the ID of the current thread and the current and previous lock owners.
+        #
+        oSelf = threading.current_thread();
+        try:    idSelf = threading.current_thread().ident;
+        except: idSelf = -1;
+
+        try:    idOwner = self.oOwner.ident if self.oOwner is not None else -2;
+        except: idOwner = -1;
+        try:    sOwnerNm = self.oOwner.name if self.oOwner is not None else '<none>';
+        except: sOwnerNm = -1;
+
+        try:    idPrevOwner = self.oPrevOwner.ident if self.oPrevOwner is not None else -2;
+        except: idPrevOwner = -1;
+        try:    sPrevOwnerNm = self.oPrevOwner.name if self.oPrevOwner is not None else '<none>';
+        except: sPrevOwnerNm = -1;
+
+        # First to stdout.
+        print '!Lock trouble! %s idSelf=%s (%s)' % ( self.sName, idSelf, oSelf,);
+        print '!Lock trouble! %s' % (sMessage,);
+        print '!Lock trouble! %s idOwner=%s sOwnerNm=%s' % (self.sName, idOwner, sOwnerNm,);
+        print '!Lock trouble! %s idPrevOwner=%s sPrevOwnerNm=%s' % (self.sName, idPrevOwner, sPrevOwnerNm,);
+        print '!Lock trouble! %s cAcquired=%d' % (self.sName, self.cAcquired,);
+        sys.stdout.flush()
+
+        # Append to special log file (unbuffered).
+        try:
+            oFile = open('/tmp/reporter-lock-validation.log', 'a', 0)
+        except:
+            oFile = sys.stderr;
+        oFile.write('lock=%s tid=%s (%s) %s\n' % (self.sName, idSelf, oSelf, sMessage,));
+        oFile.write('lock=%s idOwner=%s sOwnerNm=%s idPrevOwner=%s sPrevOwnerNm=%s cAcquired=%s\n'
+                    % (self.sName, idOwner, sOwnerNm, idPrevOwner, sPrevOwnerNm, self.cAcquired));
+
+        #
+        # Get thread stack(s).
+        #
+        asStacks = [];
+        try:
+            for idThread, oStack in sys._current_frames().items(): # >=2.5, a bit ugly - pylint: disable=W0212
+                if not fAllThreads and idThread != idSelf and idSelf != -1:
+                    continue;
+                try:
+                    if asStacks:
+                        asStacks.append('');
+                    asStacks.append('Thread %s (%#x)' % (idThread, idThread));
+                    try:
+                        asInfo = traceback.format_stack(oStack, 20);
+                    except Exception as oXcpt:
+                        asStacks.append('  Stack formatting exception #2: %s' % (oXcpt,));
+                    else:
+                        for sInfo in asInfo:
+                            asStacks.extend(sInfo.splitlines());
+                except Exception as oXcpt:
+                    asStacks.append('  Stack formatting exception #1: %s' % (oXcpt,));
+        except Exception as oXcpt:
+            asStacks.append('  Stack formatting exception #0: %s' % (oXcpt,));
+
+        #
+        # Write the stacks to stdout then to the log file.
+        #
+        for sLine in asStacks:
+            print '!Lock trouble! %s' % (sLine,);
+        sys.stderr.flush()
+
+        for sLine in asStacks:
+            oFile.write('%s\n' % (sLine,));
+
+        if oFile != sys.stderr:
+            try:    oFile.close();
+            except: pass;
+
+        #
+        # Now for the risky part, try log it using the logger.
+        #
+        try:
+            self.oReportingError = oSelf;
+            g_oReporter.log(1, '!Lock %s trouble! %s' % (self.sName, sMessage,));
+            for sLine in asStacks:
+                g_oReporter.log(1, '!Lock %s trouble! %s' % (self.sName, sLine,));
+        except:
+            pass;
+        finally:
+            self.oReportingError = None;
+        raise Exception(sMessage);
+
+if utils.getHostOs() == 'darwin':
+    g_oLock = LockWrapper('reporter');
+
 
 
 class PythonLoggingStream(object):
