@@ -663,6 +663,7 @@ DECLINLINE(uint8_t) PDMPciDevGetInterruptPin(PPDMPCIDEV pPciDev)
  * content for bridges (as long as we don't allow pass-through of bridges or
  * custom bridge device implementations). */
 typedef PPDMPCIDEV PPDMIICH9BRIDGEPDMPCIDEV;
+typedef PDMPCIDEV PDMIICH9BRIDGEPDMPCIDEV;
 
 #define PDMIICH9BRIDGEPDMPCIDEV_IID "785c74b1-8510-4458-9422-56750bf221db"
 
