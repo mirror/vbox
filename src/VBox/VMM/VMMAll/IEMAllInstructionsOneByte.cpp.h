@@ -56,8 +56,8 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @ophints     harmless
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
- * @optest                  op1=1 op2=1 -> op1=2 efl&~=a?,p?
- * @optest      o32 /   op1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw efl&~=a?,p?
+ * @optest                  op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
+ * @optest      o32 /   op1=0xfffffffe op2=1 -> op1=0xffffffff efl=af,pe,up
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {

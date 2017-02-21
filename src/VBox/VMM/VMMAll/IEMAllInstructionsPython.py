@@ -71,6 +71,30 @@ if sys.version_info[0] >= 3:
 # \@optest      oppfx:o32   in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
 
 
+g_kdX86EFlagsConstants = {
+    'X86_EFL_CF':          0x00000001, # RT_BIT_32(0)
+    'X86_EFL_1':           0x00000002, # RT_BIT_32(1)
+    'X86_EFL_PF':          0x00000004, # RT_BIT_32(2)
+    'X86_EFL_AF':          0x00000010, # RT_BIT_32(4)
+    'X86_EFL_ZF':          0x00000040, # RT_BIT_32(6)
+    'X86_EFL_SF':          0x00000080, # RT_BIT_32(7)
+    'X86_EFL_TF':          0x00000100, # RT_BIT_32(8)
+    'X86_EFL_IF':          0x00000200, # RT_BIT_32(9)
+    'X86_EFL_DF':          0x00000400, # RT_BIT_32(10)
+    'X86_EFL_OF':          0x00000800, # RT_BIT_32(11)
+    'X86_EFL_IOPL':        0x00003000, # (RT_BIT_32(12) | RT_BIT_32(13))
+    'X86_EFL_NT':          0x00004000, # RT_BIT_32(14)
+    'X86_EFL_RF':          0x00010000, # RT_BIT_32(16)
+    'X86_EFL_VM':          0x00020000, # RT_BIT_32(17)
+    'X86_EFL_AC':          0x00040000, # RT_BIT_32(18)
+    'X86_EFL_VIF':         0x00080000, # RT_BIT_32(19)
+    'X86_EFL_VIP':         0x00100000, # RT_BIT_32(20)
+    'X86_EFL_ID':          0x00200000, # RT_BIT_32(21)
+    'X86_EFL_LIVE_MASK':   0x003f7fd5, # UINT32_C(0x003f7fd5)
+    'X86_EFL_RA1_MASK':    0x00000002, # RT_BIT_32(1)
+};
+
+
 def _isValidOpcodeByte(sOpcode):
     """
     Checks if sOpcode is a valid lower case opcode byte.
@@ -135,25 +159,26 @@ class TestType(object):
     parameter indicates the default stance on zero vs sign extending.  It is
     possible to override fUnsigned=True by prefixing the value with '+' or '-'.
     """
-    def __init__(self, sName, fUnsigned = True):
+    def __init__(self, sName, acbSizes = None, fUnsigned = True):
         self.sName = sName;
+        self.acbSizes = [1, 2, 4, 8, 16, 32] if acbSizes is None else acbSizes;  # Normal sizes.
         self.fUnsigned = fUnsigned;
 
     class BadValue(Exception):
         """ Bad value exception. """
         def __init__(self, sMessage):
-            Exception.__init__(sMessage);
+            Exception.__init__(self, sMessage);
             self.sMessage = sMessage;
 
     def get(self, sValue):
         """
-        Get the shortest byte representation of oValue.
+        Get the shortest normal sized byte representation of oValue.
 
-        Returns (fSignExtend, bytearray)
+        Returns ((fSignExtend, bytearray), ) or ((fSignExtend, bytearray), (fSignExtend, bytearray), ).
+        The latter form is for AND+OR pairs where the first entry is what to
+        AND with the field and the second the one or OR with.
+
         Raises BadValue if invalid value.
-
-        The returned byte array is a reasonable size, e.g. for an integer type
-        it's for instance 1, 2, 4, or 8 byte in size but never 3, 5 or 7 bytes.
         """
         if len(sValue) == 0:
             raise TestType.BadValue('empty value');
@@ -162,18 +187,21 @@ class TestType(object):
         fSignExtend = not self.fUnsigned;
         if sValue[0] == '-' or sValue[0] == '+':
             fSignExtend = True;
-            fHex = len(sValue) > 3 and sValue[1:2].lower() == '0x';
+            fHex = len(sValue) > 3 and sValue[1:3].lower() == '0x';
         else:
             fHex = len(sValue) > 2 and sValue[0:2].lower() == '0x';
 
         # try convert it to long integer.
         try:
             iValue = long(sValue, 16 if fHex else 10);
-        except:
-            raise TestType.BadValue('failed to convert "%s" to integer' % (iValue,));
+        except Exception as oXcpt:
+            raise TestType.BadValue('failed to convert "%s" to integer (%s)' % (sValue, oXcpt));
 
         # Convert the hex string and pad it to a decent value.
-        sHex = hex(iValue);
+        if iValue >= 0:
+            sHex = hex(iValue);
+        else:
+            sHex = hex(iValue);
         assert sHex[:2] == '0x', sHex;
         if sys.version_info[0] >= 3:
             sHex = sHex[2:];
@@ -182,25 +210,26 @@ class TestType(object):
             sHex = sHex[2:-1];
 
         cDigits = len(sHex);
-        if cDigits <= 2:
-            cDigits = (cDigits + 1) & ~1;
-        elif cDigits <= 4:
-            cDigits = (cDigits + 3) & ~3;
-        elif cDigits <= 8:
-            cDigits = (cDigits + 7) & ~7;
+        if cDigits <= self.acbSizes[-1] * 2:
+            for cb in self.acbSizes:
+                if cDigits <= cb * 2:
+                    cDigits = int((cDigits + cb - 1) / cb) * cb; # Seems like integer division returns a float in python.
+                    break;
         else:
-            cDigits = (cDigits + 15) & ~15;
+            cDigits = int((cDigits + self.acbSizes[-1] - 1) / self.acbSizes[-1]) * self.acbSizes[-1];
+            assert isinstance(cDigits, int)
 
         if cDigits != len(sHex):
+            cNeeded = cDigits - len(sHex);
             if iValue >= 0:
-                sHex = '0' * (cDigits - len(sHex)) + sHex;
+                sHex = ('0' * cNeeded) + sHex;
             else:
-                sHex = 'f' * (cDigits - len(sHex)) + sHex;
+                sHex = ('f' * cNeeded) + sHex;
 
         # Invert and convert to bytearray and return it.
         abValue = bytearray([int(sHex[offHex - 2 : offHex], 16) for offHex in range(len(sHex), 0, -2)]);
 
-        return (fSignExtend, abValue);
+        return ((fSignExtend, abValue),);
 
     def validate(self, sValue):
         """
@@ -212,6 +241,11 @@ class TestType(object):
             return oXcpt.sMessage;
         return True;
 
+    def isAndOrPair(self, sValue):
+        """
+        Checks if sValue is a pair.
+        """
+        return False;
 
 
 class TestTypeEflags(TestType):
@@ -219,12 +253,48 @@ class TestTypeEflags(TestType):
     Special value parsing for EFLAGS/RFLAGS/FLAGS.
     """
 
+    kdZeroValueFlags = { 'nv': 0, 'pl': 0, 'nz': 0, 'na': 0, 'pe': 0, 'nc': 0, 'di': 0, 'up': 0 };
+
     def __init__(self, sName):
-        TestType.__init__(self, sName, fUnsigned = True);
+        TestType.__init__(self, sName, acbSizes = [1, 2, 4, 8], fUnsigned = True);
 
     def get(self, sValue):
+        print('get(%s)' % (sValue,));
+        fClear = 0;
+        fSet   = 0;
+        for sFlag in sValue.split(','):
+            sConstant = SimpleParser.kdEFlags.get(sFlag, None);
+            if sConstant is None:
+                print('get(%s) raise for %s/%s' % (sValue, sFlag,sConstant));
+                raise self.BadValue('Unknown flag "%s" in "%s"' % (sFlag, sValue))
+            if sConstant[0] == '!':
+                fClear |= g_kdX86EFlagsConstants[sConstant[1:]];
+            else:
+                fSet   |= g_kdX86EFlagsConstants[sConstant];
 
-        return None;
+        print('get -> TestType.get');
+        aoSet = TestType.get(self, '0x%x' % (fSet,));
+        print('get: aoSet=%s' % (aoSet,));
+        if fClear != 0:
+            print('get -> TestType.get(%#x)' % (~fClear));
+            try:
+                aoClear = TestType.get(self, '%#x' % (~fClear))
+            except Exception as oXcpt:
+                print( '%s' % (oXcpt,))
+                raise;
+            print('get: aoClear=%s' % (aoSet,));
+            assert self.isAndOrPair(sValue) == True;
+            return (aoClear[0], aoSet[0]);
+        assert self.isAndOrPair(sValue) == False;
+        return aoSet;
+
+    def isAndOrPair(self, sValue):
+        for sZeroFlag in self.kdZeroValueFlags.keys():
+            if sValue.find(sZeroFlag) >= 0:
+                print('isAndOrPair(%s) -> True' % (sValue,));
+                return True;
+        print('isAndOrPair(%s) -> False' % (sValue,));
+        return False;
 
 
 
@@ -426,7 +496,7 @@ class TestSelector(object):
     def __init__(self, sVariable, sOp, sValue):
         assert sVariable in self.kdVariables;
         assert sOp in self.kasCompareOps;
-        assert sValue in self.kdVariables[sValue];
+        assert sValue in self.kdVariables[sVariable];
         self.sVariable  = sVariable;
         self.sOp        = sOp;
         self.sValue     = sValue;
@@ -1513,7 +1583,12 @@ class SimpleParser(object):
                                 if sType in TestInOut.kdTypes:
                                     oValid = TestInOut.kdTypes[sType].validate(sValue);
                                     if oValid is True:
-                                        oItem = TestInOut(sField, sOp, sValue, sType);
+                                        if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '!=':
+                                            oItem = TestInOut(sField, sOp, sValue, sType);
+                                        else:
+                                            self.errorComment(iTagLine,
+                                                              '%s: and-or value "%s" can only be used with the "="'
+                                                                        % ( sTag, sDesc, sValue, sItem, sType, ));
                                     else:
                                         self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s)'
                                                                     % ( sTag, sDesc, sValue, sItem, sType, ));
@@ -1532,7 +1607,7 @@ class SimpleParser(object):
                                                   % ( sTag, oItem.sOp, oItem.sField, oExisting, oItem,));
                         aoDst.append(oItem);
                     else:
-                        fRc = self.errorComment(iTagLine, '%s: failed to parse selector: %s' % ( sTag, sItem,));
+                        fRc = self.errorComment(iTagLine, '%s: failed to parse assignment: %s' % ( sTag, sItem,));
 
             #
             # .
@@ -1691,6 +1766,17 @@ class SimpleParser(object):
                     asCurSection = [];
                 aasSections = [asCurSection, ];
                 iCurTagLine = iLine;
+
+        #
+        # Process the final tag.
+        #
+        if sCurTag in self.dTagHandlers:
+            self.dTagHandlers[sCurTag](sCurTag, aasSections, iCurTagLine, iLine);
+            cOpTags += 1;
+        elif sCurTag.startswith('@op'):
+            self.errorComment(iCurTagLine, 'Unknown tag: %s' % (sCurTag));
+        elif sCurTag == '@default':
+            sFlatDefault = self.flattenAllSections(aasSections);
 
         #
         # Don't allow default text in blocks containing @op*.
