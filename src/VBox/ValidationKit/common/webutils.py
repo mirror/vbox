@@ -167,7 +167,7 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
             oDst.write(oSrc.read());
             oDst.close();
             oSrc.close();
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             fnError('Error downloading "%s" to "%s": %s' % (sUrlFile, sDstFile, oXcpt));
             return False;
     else:
@@ -176,7 +176,7 @@ def downloadFile(sUrlFile, sDstFile, sLocalPrefix, fnLog, fnError = None, fNoPro
         fnLog('Copying "%s" to "%s"...' % (sSrcPath, sDstFile));
         try:
             utils.copyFileSimple(sSrcPath, sDstFile);
-        except Exception, oXcpt:
+        except Exception as oXcpt:
             fnError('Error copying "%s" to "%s": %s' % (sSrcPath, sDstFile, oXcpt));
             return False;
 

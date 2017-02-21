@@ -198,7 +198,7 @@ class TestType(object):
                 sHex = 'f' * (cDigits - len(sHex)) + sHex;
 
         # Invert and convert to bytearray and return it.
-        abValue = bytearray([int(sHex[offHex - 2 : offHex], 16) for offHex in xrange(len(sHex), 0, -2)]);
+        abValue = bytearray([int(sHex[offHex - 2 : offHex], 16) for offHex in range(len(sHex), 0, -2)]);
 
         return (fSignExtend, abValue);
 
@@ -703,7 +703,8 @@ class SimpleParser(object):
         """
         """
         if self.fDebug:
-            print 'debug: %s' % (sMessage,);
+            print('debug: %s' % (sMessage,));
+
 
     def addInstruction(self, iLine = None):
         """
@@ -1902,7 +1903,7 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     try:
         cErrors = SimpleParser(sSrcFile, asLines, sDefaultMap).parse();
     except ParserException as oXcpt:
-        print str(oXcpt);
+        print(str(oXcpt));
         raise;
     except Exception as oXcpt:
         raise;
