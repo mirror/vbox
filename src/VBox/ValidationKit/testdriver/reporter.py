@@ -198,7 +198,7 @@ class LockWrapper(object):
             self.oReportingError = None;
         raise Exception(sMessage);
 
-if utils.getHostOs() == 'darwin':
+if utils.getHostOs() in ['darwin', 'solaris', 'linux']:
     g_oLock = LockWrapper('reporter');
 
 
