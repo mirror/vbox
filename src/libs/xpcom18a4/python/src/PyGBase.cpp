@@ -287,8 +287,15 @@ PyG_Base::MakeInterfaceParam(nsISupports *pis,
 		iid_check = *piid;
 		piswrap = pis;
 	} else {
+		/* HACK ALERT! Dropping the python interpreter lock here while
+		   doing QueryInterface because it may involve IPC to a python
+		   object in the same interpreter and deadlock.  Not at all
+		   sure if this is a good idea or not for the internal PyXPCOM
+		   state, but it might fix the deadloock... Hoping for the best. */
+		Py_BEGIN_ALLOW_THREADS();
 		iid_check = NS_GET_IID(nsISupports);
 		pis->QueryInterface(iid_check, getter_AddRefs(piswrap));
+		Py_END_ALLOW_THREADS();
 	}
 
 	obISupports = Py_nsISupports::PyObjectFromInterface(piswrap, iid_check, PR_FALSE);
