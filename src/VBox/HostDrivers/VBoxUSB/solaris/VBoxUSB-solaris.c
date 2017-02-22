@@ -509,7 +509,10 @@ int _init(void)
     {
         rc = vboxUsbSolarisQuerySymbols();
         if (RT_FAILURE(rc))
+        {
+            RTR0Term();
             return EINVAL;
+        }
 
         rc = ddi_soft_state_init(&g_pVBoxUSBSolarisState, sizeof(vboxusb_state_t), 4 /* pre-alloc */);
         if (!rc)
