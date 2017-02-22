@@ -1563,17 +1563,17 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
      * This does not change anything really as the access to the device is not going
      * through the bridge but we want to be compliant to the spec.
      */
-    if ((pPciRoot->uPciBiosIo % 4096) != 0)
+    if ((pPciRoot->uPciBiosIo % 4*_1K) != 0)
     {
-        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*1024);
+        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*_1K);
         Log(("%s: Aligned I/O start address. New address %#x\n", __FUNCTION__, pPciRoot->uPciBiosIo));
     }
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_BASE, (pPciRoot->uPciBiosIo >> 8) & 0xf0, 1);
 
     /* The MMIO range for the bridge must be aligned to a 1MB boundary. */
-    if ((pPciRoot->uPciBiosMmio % (1024 * 1024)) != 0)
+    if ((pPciRoot->uPciBiosMmio % _1M) != 0)
     {
-        pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024);
+        pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, _1M);
         Log(("%s: Aligned MMIO start address. New address %#x\n", __FUNCTION__, pPciRoot->uPciBiosMmio));
     }
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_MEMORY_BASE, (pPciRoot->uPciBiosMmio >> 16) & UINT32_C(0xffff0), 2);
@@ -1593,7 +1593,7 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     if (u32IoAddressBase != pPciRoot->uPciBiosIo)
     {
         /* Need again alignment to a 4KB boundary. */
-        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*1024);
+        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*_1K);
         ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pPciRoot->uPciBiosIo - 1) >> 8) & 0xf0, 1);
     }
     else
@@ -1605,7 +1605,7 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     /* Same with the MMIO limit register but with 1MB boundary here. */
     if (u32MMIOAddressBase != pPciRoot->uPciBiosMmio)
     {
-        pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024);
+        pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, _1M);
         ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_MEMORY_LIMIT, ((pPciRoot->uPciBiosMmio - 1) >> 16) & UINT32_C(0xfff0), 2);
     }
     else
@@ -1888,8 +1888,8 @@ static bool ich9pciBiosInitBridgePrefetchable(PDEVPCIROOT pPciRoot, uint8_t uBus
 {
     Log(("BIOS init bridge (prefetch): %02x:%02x.%d\n", uBus, uDevFn >> 3, uDevFn & 7));
 
-    pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024);
-    pPciRoot->uPciBiosMmio64 = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, 1024*1024);
+    pPciRoot->uPciBiosMmio = RT_ALIGN_32(pPciRoot->uPciBiosMmio, _1M);
+    pPciRoot->uPciBiosMmio64 = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, _1M);
 
     /* Save values to compare later to. */
     uint32_t u32MMIOAddressBase = pPciRoot->uPciBiosMmio;
@@ -1910,14 +1910,14 @@ static bool ich9pciBiosInitBridgePrefetchable(PDEVPCIROOT pPciRoot, uint8_t uBus
         if (u64MMIOAddressBase == pPciRoot->uPciBiosMmio64)
             return false;
         uBase = u64MMIOAddressBase;
-        uLimit = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, 1024*1024) - 1;
+        uLimit = RT_ALIGN_64(pPciRoot->uPciBiosMmio64, _1M) - 1;
     }
     else
     {
         if (u32MMIOAddressBase == pPciRoot->uPciBiosMmio)
             return false;
         uBase = u32MMIOAddressBase;
-        uLimit = RT_ALIGN_32(pPciRoot->uPciBiosMmio, 1024*1024) - 1;
+        uLimit = RT_ALIGN_32(pPciRoot->uPciBiosMmio, _1M) - 1;
     }
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_BASE_UPPER32, uBase >> 32, 4);
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, (uint32_t)(uBase >> 16) & UINT32_C(0xfff0), 2);
@@ -2281,7 +2281,7 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
     }
     else
     {
-        if (uAddress + cb < 4096)
+        if (uAddress + cb < 4*_1K)
             LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
                     pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
         else
@@ -2696,7 +2696,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                 devpciR3UpdateMappings(pPciDev, fP2PBridge);
         }
     }
-    else if (uAddress + cb <= 4096)
+    else if (uAddress + cb <= 4*_1K)
         LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
                 pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
     else
