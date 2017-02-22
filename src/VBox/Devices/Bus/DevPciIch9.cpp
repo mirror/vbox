@@ -473,7 +473,8 @@ DECLINLINE(int) ich9pciSlotGetPirq(uint8_t uBus, uint8_t uDevFn, int iIrqNum)
     return (iIrqNum + iSlotAddend) & 3;
 }
 
-/* irqs corresponding to PCI irqs A-D, must match pci_irq_list in rombios.c */
+/* irqs corresponding to PCI irqs A-D, must match pci_irq_list in pcibios.inc */
+/** @todo r=klaus inconsistent! ich9 doesn't implement PIRQ yet, so both needs to be addressed and tested thoroughly. */
 static const uint8_t aPciIrqs[4] = { 11, 10, 9, 5 };
 
 #endif /* IN_RING3 */
@@ -567,6 +568,8 @@ static void ich9pciSetIrqInternal(PDEVPCIROOT pPciRoot, uint8_t uDevFn, PPDMPCID
     if (pPciDev->Int.s.uIrqPinState != iLevel)
     {
         pPciDev->Int.s.uIrqPinState = (iLevel & PDM_IRQ_LEVEL_HIGH);
+
+        /** @todo r=klaus: implement PIRQ handling (if APIC isn't active). Needed for legacy OSes which don't use the APIC stuff. */
 
         /* Send interrupt to I/O APIC only now. */
         if (fIsAcpiDevice)
@@ -2203,6 +2206,8 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
     uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
 
+    /** @todo r=klaus this needs to do the same elcr magic as DevPCI.cpp, as the BIOS can't be trusted to do the right thing. Of course it's more difficult than with the old code, as there are bridges to be handled. The interrupt routing needs to be taken into account. Also I highly suspect that the chipset has 8 interrupt lines which we might be able to use for handling things on the root bus better (by treating them as devices on the mainboard). */
+
     /*
      * Set the start addresses.
      */
@@ -2338,13 +2343,14 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
 
 
 /**
- * Worker for devpciR3IsConfigByteWritable that update BAR and ROM mappings.
+ * Worker for devpciR3CommonDefaultConfigWrite that updates BAR and ROM mappings.
  *
  * @param   pPciDev             The PCI device to update the mappings for.
  * @param   fP2PBridge          Whether this is a PCI to PCI bridge or not.
  */
 static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
+    /** @todo r=klaus analyze if it's safe to rely on cached config space data, as that's cheaper to read in the raw pci device and pass-through cases. */
     uint16_t const u16Cmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
@@ -3058,7 +3064,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     /** @todo Disabled for now because this causes error messages with Linux guests.
      *         The guest loads the x38_edac device which tries to map a memory region
-     *         using an address given at place 0x48 - 0x4f in the PCi config space.
+     *         using an address given at place 0x48 - 0x4f in the PCI config space.
      *         This fails. because we don't register such a region.
      */
 #if 0
@@ -3301,7 +3307,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0" "ExpressEnabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* check if RC code is enabled. */
@@ -3319,6 +3325,13 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
     Log(("PCI: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
 
+    /* check if we're supposed to implement a PCIe bridge. */
+    bool fExpress;
+    rc = CFGMR3QueryBoolDef(pCfg, "ExpressEnabled", &fExpress, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to query boolean value \"ExpressEnabled\""));
+
     pDevIns->IBase.pfnQueryInterface = ich9pcibridgeQueryInterface;
 
     /*
@@ -3331,6 +3344,8 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
     pBus->pDevInsR3 = pDevIns;
     pBus->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pBus->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    /** @todo r=klaus figure out how to extend this to allow PCIe config space
+     * extension, which increases the config space frorm 256 bytes to 4K. */
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
     AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
 
@@ -3372,14 +3387,74 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
      * Fill in PCI configs and add them to the bus.
      */
     PDMPciDevSetVendorId(  &pBus->PciDev, 0x8086); /* Intel */
-    PDMPciDevSetDeviceId(  &pBus->PciDev, 0x2448); /* 82801 Mobile PCI bridge. */
-    PDMPciDevSetRevisionId(&pBus->PciDev,   0xf2);
+    if (fExpress)
+    {
+        PDMPciDevSetDeviceId(&pBus->PciDev, 0x29e1); /* 82X38/X48 Express Host-Primary PCI Express Bridge. */
+        PDMPciDevSetRevisionId(&pBus->PciDev, 0x01);
+    }
+    else
+    {
+        PDMPciDevSetDeviceId(&pBus->PciDev, 0x2448); /* 82801 Mobile PCI bridge. */
+        PDMPciDevSetRevisionId(&pBus->PciDev, 0xf2);
+    }
     PDMPciDevSetClassSub(  &pBus->PciDev,   0x04); /* pci2pci */
     PDMPciDevSetClassBase( &pBus->PciDev,   0x06); /* PCI_bridge */
-    PDMPciDevSetClassProg( &pBus->PciDev,   0x01); /* Supports subtractive decoding. */
+    if (fExpress)
+        PDMPciDevSetClassProg(&pBus->PciDev, 0x00); /* Normal decoding. */
+    else
+        PDMPciDevSetClassProg(&pBus->PciDev, 0x01); /* Supports subtractive decoding. */
     PDMPciDevSetHeaderType(&pBus->PciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
-    PDMPciDevSetCommand(   &pBus->PciDev,   0x00);
-    PDMPciDevSetStatus(    &pBus->PciDev,   0x20); /* 66MHz Capable. */
+    if (fExpress)
+    {
+        PDMPciDevSetCommand(&pBus->PciDev, VBOX_PCI_COMMAND_SERR);
+        PDMPciDevSetStatus(&pBus->PciDev, VBOX_PCI_STATUS_CAP_LIST); /* Has capabilities. */
+        PDMPciDevSetByte(&pBus->PciDev, VBOX_PCI_CACHE_LINE_SIZE, 8); /* 32 bytes */
+        /* PCI Express */
+        PDMPciDevSetByte(&pBus->PciDev, 0xa0 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+        PDMPciDevSetByte(&pBus->PciDev, 0xa0 + 1, 0); /* next */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 2,
+                        /* version */ 0x2
+                      | /* Root Complex Integrated Endpoint */ (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4));
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 4, VBOX_PCI_EXP_DEVCAP_RBE); /* Device capabilities. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 8, 0x0000); /* Device control. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 10, 0x0000); /* Device status. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 12,
+                         /* Max Link Speed */ 2
+                       | /* Maximum Link Width */ (16 << 4)
+                       | /* Active State Power Management (ASPM) Sopport */ (0 << 10)
+                       | VBOX_PCI_EXP_LNKCAP_LBNC
+                       | /* Port Number */ ((2 + iInstance) << 24)); /* Link capabilities. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 16, VBOX_PCI_EXP_LNKCTL_CLOCK); /* Link control. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 18,
+                        /* Current Link Speed */ 2
+                      | /* Negotiated Link Width */ (16 << 4)
+                      | VBOX_PCI_EXP_LNKSTA_SL_CLK); /* Link status. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 20,
+                         /* Slot Power Limit Value */ (75 << 7)
+                       | /* Physical Slot Number */ (0 << 19)); /* Slot capabilities. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 24, 0x0000); /* Slot control. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 26, 0x0000); /* Slot status. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 28, 0x0000); /* Root control. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 30, 0x0000); /* Root capabilities. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 32, 0x00000000); /* Root status. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 36, 0x00000000); /* Device capabilities 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 40, 0x0000); /* Device control 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 42, 0x0000); /* Device status 2. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 44,
+                         /* Supported Link Speeds Vector */ (2 << 1)); /* Link capabilities 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 48,
+                        /* Target Link Speed */ 2); /* Link control 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 50, 0x0000); /* Link status 2. */
+        PDMPciDevSetDWord(&pBus->PciDev, 0xa0 + 52, 0x00000000); /* Slot capabilities 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 56, 0x0000); /* Slot control 2. */
+        PDMPciDevSetWord(&pBus->PciDev, 0xa0 + 58, 0x0000); /* Slot status 2. */
+        PDMPciDevSetCapabilityList(&pBus->PciDev, 0xa0);
+    }
+    else
+    {
+        PDMPciDevSetCommand(&pBus->PciDev, 0x00);
+        PDMPciDevSetStatus(&pBus->PciDev, 0x20); /* 66MHz Capable. */
+    }
     PDMPciDevSetInterruptLine(&pBus->PciDev, 0x00); /* This device does not assert interrupts. */
 
     /*
@@ -3387,6 +3462,12 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
      * devices attached to the bus is unaffected.
      */
     PDMPciDevSetInterruptPin (&pBus->PciDev, 0x00);
+
+    if (fExpress)
+    {
+        /** @todo r=klaus set up the PCIe config space beyond the old 256 byte
+         * limit, containing additional capability descriptors. */
+    }
 
     /*
      * Register this PCI bridge. The called function will take care on which bus we will get registered.
