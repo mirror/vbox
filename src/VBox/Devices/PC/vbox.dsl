@@ -337,7 +337,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
 
     IndexField (IDX0, DAT0, DwordAcc, NoLock, Preserve)
     {
-        MEML,  32,
+        MEML,  32, // low-memory length (64KB units)
         UIOA,  32, // if IO APIC enabled
         UHPT,  32, // if HPET enabled
         USMC,  32, // if SMC enabled
@@ -346,7 +346,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         SL2I,  32, // Serial2 IRQ
         SL3B,  32, // Serial3 base IO address
         SL3I,  32, // Serial3 IRQ
-        PMEM,  32,
+        PMNN,  32, // start of 64-bit prefetch window (64KB units)
         URTC,  32, // if RTC shown in tables
         CPUL,  32, // flag of CPU lock state
         CPUC,  32, // CPU to check lock status
@@ -367,6 +367,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
         PP0I,  32, // Parallel0 IRQ
         PP1B,  32, // Parallel1 base IO address
         PP1I,  32, // Parallel1 IRQ
+        PMNX,  32, // limit of 64-bit prefetch window (64KB units)
         Offset (0x80),
         ININ, 32,
         Offset (0x200),
@@ -388,8 +389,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (USMC)
             DBG ("UFDC: ")
             HEX4 (UFDC)
-            DBG ("PMEM: ")
-            HEX4 (PMEM)
+            DBG ("PMNN: ")
+            HEX4 (PMNN)
         }
 
         // PCI PIC IRQ Routing table
@@ -1579,9 +1580,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                     ReadWrite,
                     0x0000000000000000,       // _GRA: Granularity.
                     0x0000000100000000,       // _MIN: Min address, def. 4GB, will be overwritten.
-                    0x00000fffffffffff,       // _MAX: Max possible address, 16TB-1, fixed.
+                    0x0000000fffffffff,       // _MAX: Max address, def. 64GB-1, will be overwritten.
                     0x0000000000000000,       // _TRA: Translation
-                    0x00000fff00000000,       // _LEN: Range length (calculated from _MIN)
+                    0x0000000f00000000,       // _LEN: Range length (_MAX-_MIN+1)
                     ,                         // ResourceSourceIndex: Optional field left blank
                     ,                         // ResourceSource:      Optional field left blank
                     MEM4                      // Name declaration for this descriptor.
@@ -1596,7 +1597,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                 Store (MEML, RAMT)
                 Subtract (0xfe000000, RAMT, RAMR)
 
-                if (LNotEqual (PMEM, 0x00000000))
+                if (LNotEqual (PMNN, 0x00000000))
                 {
                     // Not for Windows < 7!
                     If (LOr (LLess (MSWN(), 0x01), LGreater (MSWN(), 0x06)))
@@ -1605,7 +1606,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 2, "VBOX  ", "VBOXBIOS", 2)
                         CreateQwordField (TOM, \_SB.PCI0.MEM4._MAX, TM4X)
                         CreateQwordField (TOM, \_SB.PCI0.MEM4._LEN, TM4L)
 
-                        Multiply (PMEM, 0x10000, TM4N)       // PMEM in units of 64KB
+                        Multiply (PMNN, 0x10000, TM4N)       // PMNN in units of 64KB
+                        Subtract (Multiply (PMNX, 0x10000), 1, TM4X) // PMNX in units of 64KB
                         Add (Subtract (TM4X, TM4N), 1, TM4L) // determine LEN, MAX is already there
 
                         ConcatenateResTemplate (CRS, TOM, Local2)

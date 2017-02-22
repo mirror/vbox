@@ -3227,7 +3227,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 InsertConfigInteger(pCfg,  "McfgBase",   uMcfgBase);
                 InsertConfigInteger(pCfg,  "McfgLength", cbMcfgLength);
-                InsertConfigInteger(pCfg,  "PciPref64Enabled", 1);
+                /* 64-bit prefetch window root resource:
+                 * Only for ICH9 and if PAE or Long Mode is enabled */
+                if (fEnablePAE || fIsGuest64Bit)
+                    InsertConfigInteger(pCfg,  "PciPref64Enabled", 1);
             }
             InsertConfigInteger(pCfg,  "HostBusPciAddress", uHbcPCIAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);

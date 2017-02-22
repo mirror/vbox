@@ -170,7 +170,7 @@ enum
     SYSTEM_INFO_INDEX_SERIAL2_IRQ       = 6,
     SYSTEM_INFO_INDEX_SERIAL3_IOBASE    = 7,
     SYSTEM_INFO_INDEX_SERIAL3_IRQ       = 8,
-    SYSTEM_INFO_INDEX_PREF64_MEMORY_START = 9,
+    SYSTEM_INFO_INDEX_PREF64_MEMORY_MIN = 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
@@ -191,7 +191,8 @@ enum
     SYSTEM_INFO_INDEX_PARALLEL0_IRQ     = 27,
     SYSTEM_INFO_INDEX_PARALLEL1_IOBASE  = 28,
     SYSTEM_INFO_INDEX_PARALLEL1_IRQ     = 29,
-    SYSTEM_INFO_INDEX_END               = 30,
+    SYSTEM_INFO_INDEX_PREF64_MEMORY_MAX = 30,
+    SYSTEM_INFO_INDEX_END               = 31,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -308,7 +309,9 @@ typedef struct ACPIState
     uint32_t            uSystemInfoIndex;
     uint64_t            u64RamSize;
     /** Offset of the 64-bit prefetchable memory window. */
-    uint64_t            u64PciPref64;
+    uint64_t            u64PciPref64Min;
+    /** Limit of the 64-bit prefetchable memory window. */
+    uint64_t            u64PciPref64Max;
     /** The number of bytes below 4GB. */
     uint32_t            cbRamLow;
 
@@ -1325,9 +1328,15 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             *pu32 = pThis->cbRamLow;
             break;
 
-        case SYSTEM_INFO_INDEX_PREF64_MEMORY_START:
-            *pu32 = pThis->u64PciPref64 >> 16; /* 64KB units */
-            Assert(((uint64_t)*pu32 << 16) == pThis->u64PciPref64);
+        case SYSTEM_INFO_INDEX_PREF64_MEMORY_MIN:
+            *pu32 = pThis->u64PciPref64Min >> 16; /* 64KB units */
+            Assert(((uint64_t)*pu32 << 16) == pThis->u64PciPref64Min);
+            break;
+
+        case SYSTEM_INFO_INDEX_PREF64_MEMORY_MAX:
+            *pu32 = pThis->u64PciPref64Max >> 16; /* 64KB units */
+            Assert(((uint64_t)*pu32 << 16) == pThis->u64PciPref64Max);
+            LogRel(("MAX\n"));
             break;
 
         case SYSTEM_INFO_INDEX_USE_IOAPIC:
@@ -3138,9 +3147,9 @@ static int acpiR3PlantTables(ACPIState *pThis)
     {
         /* Activate MEM4 */
         if (pThis->u64RamSize > offRamHole)
-            pThis->u64PciPref64 = RT_ALIGN_64(pThis->u64RamSize + cbRamHole, _1G);
+            pThis->u64PciPref64Min = RT_ALIGN_64(pThis->u64RamSize + cbRamHole, _1M);
         else
-            pThis->u64PciPref64 = _4G;
+            pThis->u64PciPref64Min = _4G;
     }
     uint64_t cbRamLow = pThis->u64RamSize > offRamHole ? offRamHole : pThis->u64RamSize;
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
@@ -3568,6 +3577,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "McfgBase\0"
                               "McfgLength\0"
                               "PciPref64Enabled\0"
+                              "PciPref64Limit\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
                               "ShowRtc\0"
@@ -3640,6 +3650,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"PciPref64Enabled\""));
+
+    /* query the limit of the the 64-bit prefetchable memory window */
+    rc = CFGMR3QueryU64Def(pCfg, "PciPref64Limit", &pThis->u64PciPref64Max, _1G64*64);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"PciPref64Limit\""));
 
     /* query whether we are supposed to present custom table */
     pThis->fUseCust = false;
