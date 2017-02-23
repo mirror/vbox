@@ -2350,8 +2350,8 @@ static int ich9pciUnmapRegion(PPDMPCIDEV pDev, int iRegion)
  */
 static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
 {
-    /** @todo r=klaus analyze if it's safe to rely on cached config space data, as that's cheaper to read in the raw pci device and pass-through cases. */
-    uint16_t const u16Cmd = ich9pciGetWord(pPciDev, VBOX_PCI_COMMAND);
+    /* safe, only needs to go to the config space array */
+    uint16_t const u16Cmd = PDMPciDevGetWord(pPciDev, VBOX_PCI_COMMAND);
     for (unsigned iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
     {
         /* Skip over BAR2..BAR5 for bridges, as they have a different meaning there. */
@@ -2373,7 +2373,8 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
             {
                 if (u16Cmd & VBOX_PCI_COMMAND_IO)
                 {
-                    uint32_t uIoBase = ich9pciGetDWord(pPciDev, offCfgReg);
+                    /* safe, only needs to go to the config space array */
+                    uint32_t uIoBase = PDMPciDevGetDWord(pPciDev, offCfgReg);
                     uIoBase &= ~(uint32_t)(cbRegion - 1);
 
                     uint64_t uLast = cbRegion - 1 + uIoBase;
@@ -2394,11 +2395,13 @@ static void devpciR3UpdateMappings(PPDMPCIDEV pPciDev, bool fP2PBridge)
              */
             else if (u16Cmd & VBOX_PCI_COMMAND_MEMORY)
             {
-                uint64_t uMemBase = ich9pciGetDWord(pPciDev, offCfgReg);
+                /* safe, only needs to go to the config space array */
+                uint64_t uMemBase = PDMPciDevGetDWord(pPciDev, offCfgReg);
                 if (f64Bit)
                 {
                     Assert(iRegion < VBOX_PCI_ROM_SLOT);
-                    uMemBase |= (uint64_t)ich9pciGetDWord(pPciDev, offCfgReg + 4) << 32;
+                    /* safe, only needs to go to the config space array */
+                    uMemBase |= (uint64_t)PDMPciDevGetDWord(pPciDev, offCfgReg + 4) << 32;
                 }
                 if (   iRegion != PCI_ROM_SLOT
                     || (uMemBase & RT_BIT_32(0))) /* ROM enable bit. */
