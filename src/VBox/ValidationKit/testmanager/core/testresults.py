@@ -865,10 +865,12 @@ class TestResultFilter(ModelFilterBase):
                     else:                                 continue;
                     sQuery += '%s   AND %s (' % (sExtraIndent, sNot,);
                     if len(sLike) <= 3: # do word matching for small substrings (hw, np, smp, uni, ++).
-                        sQuery += 'TestCases.sName ~ \'.*\\y%s\\y.*\' OR TestCaseArgs.sSubName ~ \'.*\\y%s\\y.*\')\n' \
+                        sQuery += 'TestCases.sName ~ \'.*\\y%s\\y.*\' ' \
+                                  'OR COALESCE(TestCaseArgs.sSubName, \'\') ~ \'.*\\y%s\\y.*\')\n' \
                                 % ( sLike, sLike,);
                     else:
-                        sQuery += 'TestCases.sName LIKE \'%%%s%%\' OR TestCaseArgs.sSubName LIKE \'%%%s%%\')\n' \
+                        sQuery += 'TestCases.sName LIKE \'%%%s%%\' ' \
+                                  'OR COALESCE(TestCaseArgs.sSubName, \'\') LIKE \'%%%s%%\')\n' \
                                 % ( sLike, sLike,);
             elif iCrit == self.kiTestboxMisc:
                 dConditions = self.kdTbMiscConditions;
