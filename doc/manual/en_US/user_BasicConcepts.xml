@@ -431,29 +431,6 @@
             </glossdef>
           </glossentry>
 
-          <glossentry>
-            <glossterm>Removable Media</glossterm>
-            <glossdef>
-              <para>If this is checked, VirtualBox will save the state of what
-              media has been mounted between several runs of a virtual machine.</para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Mini ToolBar</glossterm>
-            <glossdef>
-              <para>In full screen or seamless mode, VirtualBox can display a
-              small toolbar that contains some of the items that are normally
-              available from the virtual machine's menu bar. This toolbar
-              reduces itself to a small gray line unless you move the mouse
-              over it. With the toolbar, you can return from full screen or
-              seamless mode, control machine execution or enable certain
-              devices. If you don't want to see the toolbar, disable this
-              setting.</para>
-              <para>The second setting allows to show the toolbar at the top
-              of the screen instead of showing it at the bottom.</para>
-            </glossdef>
-          </glossentry>
         </glosslist></para>
     </sect2>
 
@@ -1385,6 +1362,53 @@
     machine and your host. This feature requires that the VirtualBox Guest
     Additions be installed in a virtual machine and is described in detail in
     <xref linkend="sharedfolders" />.</para>
+  </sect1>
+
+  <sect1>
+    <title>User Interface</title>
+
+    <para>The "User Interface" section allows you to change certain aspects of
+      the user interface of this VM.</para>
+      
+    <para><glosslist>
+      <glossentry>
+        <glossterm>Menu Bar</glossterm>
+        <glossdef>
+          <para>This widget allows you to disable certain menus (click at
+            the menu to release it), certain menu entries (uncheck the
+            checkbox of the entry to disable it) and the complete menu bar
+            (uncheck the rightmost checkbox).
+          </para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Mini ToolBar</glossterm>
+        <glossdef>
+          <para>In full screen or seamless mode, VirtualBox can display a
+          small toolbar that contains some of the items that are normally
+          available from the virtual machine's menu bar. This toolbar
+          reduces itself to a small gray line unless you move the mouse
+          over it. With the toolbar, you can return from full screen or
+          seamless mode, control machine execution or enable certain
+          devices. If you don't want to see the toolbar, disable this
+          setting.</para>
+          <para>The second setting allows to show the toolbar at the top
+          of the screen instead of showing it at the bottom.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Status Bar</glossterm>
+        <glossdef>
+          <para>This widget allows you to disable certain icons of the
+          status bar (uncheck the checkbox of an icon to disable it),
+          to re-arrange icons (drag and drop the icon) and to disable the
+          complete status bar (uncheck the leftmost checkbox).</para>
+        </glossdef>
+      </glossentry>
+    </glosslist></para>
+
   </sect1>
 
   <sect1 id="efi">
