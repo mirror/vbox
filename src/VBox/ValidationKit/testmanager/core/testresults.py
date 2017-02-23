@@ -701,7 +701,8 @@ class TestResultFilter(ModelFilterBase):
         (  7, 'np', ),
         (  8, 'Install', ),
         (  9, 'Benchmark', ),
-        ( 18, 'unit', ),    # NB. out of order.
+        ( 18, 'smoke', ),   # NB. out of order.
+        ( 19, 'unit', ),    # NB. out of order.
         ( 10, 'USB', ),
         ( 11, 'Debian', ),
         ( 12, 'Fedora', ),
