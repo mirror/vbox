@@ -11463,9 +11463,98 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
         Log4(("decode - %04x:%RGv %s%s [#%u]\n", IEM_GET_CTX(pVCpu)->cs.Sel, IEM_GET_CTX(pVCpu)->rip, \
               pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, pVCpu->iem.s.cInstructions)); \
     } while (0)
+
+# define IEMOP_MNEMONIC0EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints) \
+    do { \
+        IEMOP_MNEMONIC(a_Stats, a_szMnemonic); \
+        (void)RT_CONCAT(IEMOPFORM_, a_Form); \
+        (void)RT_CONCAT(OP_,a_Upper); \
+        (void)(a_fDisHints); \
+        (void)(a_fIemHints); \
+    } while (0)
+
+# define IEMOP_MNEMONIC1EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints) \
+    do { \
+        IEMOP_MNEMONIC(a_Stats, a_szMnemonic); \
+        (void)RT_CONCAT(IEMOPFORM_, a_Form); \
+        (void)RT_CONCAT(OP_,a_Upper); \
+        (void)RT_CONCAT(OP_PARM_,a_Op1); \
+        (void)(a_fDisHints); \
+        (void)(a_fIemHints); \
+    } while (0)
+
+# define IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints) \
+    do { \
+        IEMOP_MNEMONIC(a_Stats, a_szMnemonic); \
+        (void)RT_CONCAT(IEMOPFORM_, a_Form); \
+        (void)RT_CONCAT(OP_,a_Upper); \
+        (void)RT_CONCAT(OP_PARM_,a_Op1); \
+        (void)RT_CONCAT(OP_PARM_,a_Op2); \
+        (void)(a_fDisHints); \
+        (void)(a_fIemHints); \
+    } while (0)
+
+# define IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints) \
+    do { \
+        IEMOP_MNEMONIC(a_Stats, a_szMnemonic); \
+        (void)RT_CONCAT(IEMOPFORM_, a_Form); \
+        (void)RT_CONCAT(OP_,a_Upper); \
+        (void)RT_CONCAT(OP_PARM_,a_Op1); \
+        (void)RT_CONCAT(OP_PARM_,a_Op2); \
+        (void)RT_CONCAT(OP_PARM_,a_Op3); \
+        (void)(a_fDisHints); \
+        (void)(a_fIemHints); \
+    } while (0)
+
+# define IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints) \
+    do { \
+        IEMOP_MNEMONIC(a_Stats, a_szMnemonic); \
+        (void)RT_CONCAT(IEMOPFORM_, a_Form); \
+        (void)RT_CONCAT(OP_,a_Upper); \
+        (void)RT_CONCAT(OP_PARM_,a_Op1); \
+        (void)RT_CONCAT(OP_PARM_,a_Op2); \
+        (void)RT_CONCAT(OP_PARM_,a_Op3); \
+        (void)RT_CONCAT(OP_PARM_,a_Op4); \
+        (void)(a_fDisHints); \
+        (void)(a_fIemHints); \
+    } while (0)
+
 #else
 # define IEMOP_MNEMONIC(a_Stats, a_szMnemonic) IEMOP_INC_STATS(a_Stats)
+
+# define IEMOP_MNEMONIC0EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints) \
+         IEMOP_MNEMONIC(a_Stats, a_szMnemonic)
+# define IEMOP_MNEMONIC1EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints) \
+         IEMOP_MNEMONIC(a_Stats, a_szMnemonic)
+# define IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints) \
+         IEMOP_MNEMONIC(a_Stats, a_szMnemonic)
+# define IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints) \
+         IEMOP_MNEMONIC(a_Stats, a_szMnemonic)
+# define IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints) \
+         IEMOP_MNEMONIC(a_Stats, a_szMnemonic)
+
 #endif
+
+#define IEMOP_MNEMONIC0(a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints) \
+    IEMOP_MNEMONIC1EX(a_Lower, \
+                      #a_Lower, \
+                      a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
+#define IEMOP_MNEMONIC1(a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints) \
+    IEMOP_MNEMONIC1EX(RT_CONCAT3(a_Lower,_,a_Op1), \
+                      #a_Lower " " #a_Op1, \
+                      a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints)
+#define IEMOP_MNEMONIC2(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints) \
+    IEMOP_MNEMONIC2EX(RT_CONCAT5(a_Lower,_,a_Op1,_,a_Op2), \
+                      #a_Lower " " #a_Op1 "," #a_Op2, \
+                      a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
+#define IEMOP_MNEMONIC3(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints) \
+    IEMOP_MNEMONIC3EX(RT_CONCAT7(a_Lower,_,a_Op1,_,a_Op2,_,a_Op3), \
+                      #a_Lower " " #a_Op1 "," #a_Op2 "," #a_Op3, \
+                      a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
+#define IEMOP_MNEMONIC4(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints) \
+    IEMOP_MNEMONIC4EX(RT_CONCAT9(a_Lower,_,a_Op1,_,a_Op2,_,a_Op3,_,a_Op4), \
+                      #a_Lower " " #a_Op1 "," #a_Op2 "," #a_Op3 "," #a_Op4, \
+                      a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints)
 
 /** @} */
 

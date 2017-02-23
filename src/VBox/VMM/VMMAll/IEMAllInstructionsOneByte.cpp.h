@@ -39,29 +39,23 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  */
 
 /* Instruction specification format - work in progress:  */
-/*
- *
+
+/**
+ * @opcode      0x00
  * @opmnemonic  add
  * @op1         reg:Eb
  * @op2         rm:Gb
  * @opmaps      one
- * @oppfx       none
- * @opcode      0x00
  * @openc       ModR/M
- * @opfltest    none
  * @opflmodify  of,sf,zf,af,pf,cf
- * @opflundef   none
- * @opflset     none
- * @opflclear   none
- * @ophints     harmless
+ * @ophints     harmless ignores_op_size
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
- * @optest                  op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
- * @optest      o32 /   op1=0xfffffffe op2=1 -> op1=0xffffffff efl=af,pe,up
+ * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {
-    IEMOP_MNEMONIC(add_Eb_Gb, "add Eb,Gb");
+    IEMOP_MNEMONIC2(RM, ADD, add, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_r8, &g_iemAImpl_add);
 }
 
@@ -69,7 +63,7 @@ FNIEMOP_DEF(iemOp_add_Eb_Gb)
 /** Opcode 0x01. */
 FNIEMOP_DEF(iemOp_add_Ev_Gv)
 {
-    IEMOP_MNEMONIC(add_Ev_Gv, "add Ev,Gv");
+    IEMOP_MNEMONIC2(RM, ADD, add, Ev, Gv, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_rv, &g_iemAImpl_add);
 }
 
@@ -77,7 +71,7 @@ FNIEMOP_DEF(iemOp_add_Ev_Gv)
 /** Opcode 0x02. */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
 {
-    IEMOP_MNEMONIC(add_Gb_Eb, "add Gb,Eb");
+    IEMOP_MNEMONIC2(MR, ADD, add, Gb, Ev, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_r8_rm, &g_iemAImpl_add);
 }
 
@@ -209,7 +203,21 @@ FNIEMOP_DEF(iemOp_2byteEscape)
     return FNIEMOP_CALL(g_apfnTwoByteMap[(uintptr_t)b * 4 + pVCpu->iem.s.idxPrefix]);
 }
 
-/** Opcode 0x10. */
+/**
+ * @opcode      0x10
+ * @opmnemonic  adc
+ * @op1         reg:Eb
+ * @op2         rm:Gb
+ * @opmaps      one
+ * @oppfx       none
+ * @openc       ModR/M
+ * @opfltest    cf
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @ophints     harmless
+ * @opgroup     op_gen_arith_bin
+ * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=of,sf,zf,af
+ * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=of,sf,zf,af
+ */
 FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 {
     IEMOP_MNEMONIC(adc_Eb_Gb, "adc Eb,Gb");

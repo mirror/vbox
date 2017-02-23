@@ -842,7 +842,8 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEM_OP_PRF_XOP                  RT_BIT_32(30) /**< Indiciates XOP prefix. */
 /** @} */
 
-/** @name Opcode forms
+/** @name IEMOPFORM_XXX - Opcode forms
+ * @note These are ORed together with IEMOPHINT_XXX.
  * @{ */
 /** ModR/M: reg, r/m */
 #define IEMOPFORM_RM            0
@@ -872,6 +873,13 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEMOPFORM_MOD3          RT_BIT_32(8)
 /** The r/m is a memory access. */
 #define IEMOPFORM_NOT_MOD3      RT_BIT_32(9)
+/** @} */
+
+/** @name IEMOPHINT_XXX - Additional Opcode Hints
+ * @note These are ORed together with IEMOPFORM_XXX.
+ * @{ */
+/** Both the operand size prefixes are ignored. */
+#define IEMOPHINT_IGNORES_OP_SIZE  RT_BIT_32(10)
 /** @} */
 
 /**
