@@ -1947,7 +1947,7 @@ static int vmmdevReqHandler_GetMemBalloonChangeRequest(PVMMDEV pThis, VMMDevRequ
 {
     VMMDevGetMemBalloonChangeRequest *pReq = (VMMDevGetMemBalloonChangeRequest *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
-
+    
     /* just pass on the information */
     Log(("VMMDev: returning memory balloon size =%d\n", pThis->cMbMemoryBalloon));
     pReq->cBalloonChunks = pThis->cMbMemoryBalloon;
