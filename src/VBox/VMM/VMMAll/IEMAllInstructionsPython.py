@@ -50,27 +50,6 @@ if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
 
 
-# Annotation example:
-#
-# \@opmnemonic  add
-# \@op1         reg:Eb
-# \@op2         rm:Gb
-# \@opmaps      onebyte
-# \@oppfx       none
-# \@opcode      0x00
-# \@openc       ModR/M
-# \@opfltest    none
-# \@opflmodify  of,sz,zf,af,pf,cf
-# \@opflundef   none
-# \@opflset     none
-# \@opflclear   none
-# \@ophints     harmless
-# \@opstats     add_Eb_Gb
-# \@opgroup     op_gen_arith_bin
-# \@optest                  in1=1 in2=1 -> out1=2 outfl=a?,p?
-# \@optest      oppfx:o32   in1=0xfffffffe:dw in2=1:dw -> out1=0xffffffff:dw outfl=a?,p?
-
-
 g_kdX86EFlagsConstants = {
     'X86_EFL_CF':          0x00000001, # RT_BIT_32(0)
     'X86_EFL_1':           0x00000002, # RT_BIT_32(1)
@@ -126,13 +105,16 @@ class InstructionMap(object):
         'xop9':     [], ##< XOP prefix with vvvvv = 9
         'xop10':    [], ##< XOP prefix with vvvvv = 10
     };
+    ## Selectors.
+    ## The first value is the number of table entries required by a
+    ## decoder or disassembler for this type of selector.
     kdSelectors = {
-        'byte':     [], ##< next opcode byte selects the instruction (default).
-        '/r':       [], ##< modrm.reg selects the instruction.
-        'mod /r':   [], ##< modrm.reg and modrm.mod selects the instruction.
-        '!11 /r':   [], ##< modrm.reg selects the instruction with modrm.mod != 0y11.
-        '11 /r':    [], ##< modrm.reg select the instruction with modrm.mod == 0y11.
-        '11':       [], ##< modrm.reg and modrm.rm select the instruction with modrm.mod == 0y11.
+        'byte':     [ 256, ], ##< next opcode byte selects the instruction (default).
+        '/r':       [   8, ], ##< modrm.reg selects the instruction.
+        'mod /r':   [  32, ], ##< modrm.reg and modrm.mod selects the instruction.
+        '!11 /r':   [   8, ], ##< modrm.reg selects the instruction with modrm.mod != 0y11.
+        '11 /r':    [   8, ], ##< modrm.reg select the instruction with modrm.mod == 0y11.
+        '11':       [  64, ], ##< modrm.reg and modrm.rm select the instruction with modrm.mod == 0y11.
     };
 
     def __init__(self, sName, asLeadOpcodes = None, sSelector = 'byte', sEncoding = 'legacy'):
@@ -149,6 +131,96 @@ class InstructionMap(object):
         self.sSelector      = sSelector;        ##< The member selector, see kdSelectors.
         self.sEncoding      = sEncoding;        ##< The encoding, see kdSelectors.
         self.aoInstructions = [];               # type: Instruction
+
+    def getTableSize(self):
+        """
+        Number of table entries.   This corresponds directly to the selector.
+        """
+        return self.kdSelectors[self.sSelector][0];
+
+    def getInstructionIndex(self, oInstr):
+        """
+        Returns the table index for the instruction.
+        """
+        bOpcode = oInstr.getOpcodeByte();
+
+        # The byte selector is simple.  We need a full opcode byte and need just return it.
+        if self.sSelector == 'byte':
+            assert oInstr.sOpcode[:2] == '0x' and len(oInstr.sOpcode) == 4, str(oInstr);
+            return bOpcode;
+
+        # The other selectors needs masking and shifting.
+        if self.sSelector == '/r':
+            return (bOpcode >> 3) & 0x7;
+
+        if self.sSelector == 'mod /r':
+            return (bOpcode >> 3) & 0x1f;
+
+        if self.sSelector == '!11 /r':
+            assert (bOpcode & 0xc0) != 0xc, str(oInstr);
+            return (bOpcode >> 3) & 0x7;
+
+        if self.sSelector == '11 /r':
+            assert (bOpcode & 0xc0) == 0xc, str(oInstr);
+            return (bOpcode >> 3) & 0x7;
+
+        if self.sSelector == '11':
+            assert (bOpcode & 0xc0) == 0xc, str(oInstr);
+            return bOpcode & 0x3f;
+
+        assert False, self.sSelector;
+        return -1;
+
+    def getInstructionsInTableOrder(self):
+        """
+        Get instructions in table order.
+
+        Returns array of instructions.  Normally there is exactly one
+        instruction per entry.  However the entry could also be None if
+        not instruction was specified for that opcode value.  Or there
+        could be a list of instructions to deal with special encodings
+        where for instance prefix (e.g. REX.W) encodes a different
+        instruction or different CPUs have different instructions or
+        prefixes in the same place.
+        """
+        # Start with empty table.
+        cTable  = self.getTableSize();
+        aoTable = [None] * cTable;
+
+        # Insert the instructions.
+        for oInstr in self.aoInstructions:
+            if oInstr.sOpcode:
+                idxOpcode = self.getInstructionIndex(oInstr);
+                assert idxOpcode < cTable, str(idxOpcode);
+
+                oExisting = aoTable[idxOpcode];
+                if oExisting is None:
+                    aoTable[idxOpcode] = oInstr;
+                elif not isinstance(oInstance, list):
+                    aoTable[idxOpcode] = list(oExisting, oInstr);
+                else:
+                    oExisting.append(oInstr);
+
+        return aoTable;
+
+
+    def getDisasTableName(self):
+        """
+        Returns the disassembler table name for this map.
+        """
+        sName = 'g_aDisas';
+        for sWord in self.sName.split('_'):
+            if sWord == 'm':            # suffix indicating modrm.mod==mem
+                sName += '_m';
+            elif sWord == 'r':          # suffix indicating modrm.mod==reg
+                sName += '_r';
+            elif len(sWord) == 2 and re.match('^[a-f0-9][a-f0-9]$', sWord):
+                sName += '_' + sWord;
+            else:
+                sWord  = sWord.replace('grp', 'Grp');
+                sWord  = sWord.replace('map', 'Map');
+                sName += sWord[0].upper() + sWord[1:];
+        return sName;
 
 
 class TestType(object):
@@ -284,30 +356,20 @@ class TestTypeEflags(TestType):
         TestType.__init__(self, sName, acbSizes = [1, 2, 4, 8], fUnsigned = True);
 
     def get(self, sValue):
-        print('get(%s)' % (sValue,));
         fClear = 0;
         fSet   = 0;
         for sFlag in sValue.split(','):
             sConstant = SimpleParser.kdEFlags.get(sFlag, None);
             if sConstant is None:
-                print('get(%s) raise for %s/%s' % (sValue, sFlag,sConstant));
                 raise self.BadValue('Unknown flag "%s" in "%s"' % (sFlag, sValue))
             if sConstant[0] == '!':
                 fClear |= g_kdX86EFlagsConstants[sConstant[1:]];
             else:
                 fSet   |= g_kdX86EFlagsConstants[sConstant];
 
-        print('get -> TestType.get');
         aoSet = TestType.get(self, '0x%x' % (fSet,));
-        print('get: aoSet=%s' % (aoSet,));
         if fClear != 0:
-            print('get -> TestType.get(%#x)' % (~fClear));
-            try:
-                aoClear = TestType.get(self, '%#x' % (~fClear))
-            except Exception as oXcpt:
-                print( '%s' % (oXcpt,))
-                raise;
-            print('get: aoClear=%s' % (aoSet,));
+            aoClear = TestType.get(self, '%#x' % (~fClear))
             assert self.isAndOrPair(sValue) == True;
             return (aoClear[0], aoSet[0]);
         assert self.isAndOrPair(sValue) == False;
@@ -316,9 +378,7 @@ class TestTypeEflags(TestType):
     def isAndOrPair(self, sValue):
         for sZeroFlag in self.kdZeroValueFlags.keys():
             if sValue.find(sZeroFlag) >= 0:
-                print('isAndOrPair(%s) -> True' % (sValue,));
                 return True;
-        print('isAndOrPair(%s) -> False' % (sValue,));
         return False;
 
 
@@ -332,6 +392,7 @@ class TestInOut(object):
     """
     ## Assigned operators.
     kasOperators = [
+        '&|=',  # Special AND+OR operator for use with EFLAGS.
         '&~=',
         '&=',
         '|=',
@@ -551,16 +612,58 @@ class Operand(object):
     };
 
     ## \@op[1-4]
+    ## First value entry is the normal IDX_ParseXXX handler (IDX_UseModRM == IDX_ParseModRM).
+    ## Note! See the A.2.1 in SDM vol 2 for the type names.
     kdTypes = {
-        'Eb':   [],
-        'Gb':   [],
+        # Fixed addresses
+        'Ap':   ( 'IDX_ParseImmAddrF',  ),
+
+        # ModR/M.rm
+        'Eb':   ( 'IDX_UseModRM',       ),
+        'Ev':   ( 'IDX_UseModRM',       ),
+
+        # ModR/M.reg
+        'Gb':   ( 'IDX_UseModRM',       ),
+        'Gv':   ( 'IDX_UseModRM',       ),
+
+        # Immediate values.
+        'Ib':   ( 'IDX_ParseImmByte',   ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
+        'Iw':   ( 'IDX_ParseImmUshort', ),
+        'Id':   ( 'IDX_ParseImmUlong',  ),
+        'Iq':   ( 'IDX_ParseImmQword',  ),
+        'Iv':   ( 'IDX_ParseImmV',      ), ##< o16: word, o32: dword, o64: qword
+        'Iz':   ( 'IDX_ParseImmZ',      ), ##< o16: word, o32|o64:dword
+
+        # Address operands (no ModR/M).
+        'Ob':   ( 'IDX_ParseImmAddr',   ),
+        'Ov':   ( 'IDX_ParseImmAddr',   ),
+
+        # Relative jump targets
+        'Jb':   ( 'IDX_ParseImmBRel',   ),
+        'Jv':   ( 'IDX_ParseImmVRel',   ),
+
+        # DS:rSI
+        'Xb':   ( 'IDX_ParseXb',        ),
+        'Xv':   ( 'IDX_ParseXv',        ),
+        # ES:rDI
+        'Yb':   ( 'IDX_ParseYb',        ),
+        'Yv':   ( 'IDX_ParseYv',        ),
+
     };
+
+    # IDX_ParseFixedReg
+    # IDX_ParseVexDest
 
     def __init__(self, sWhere, sType):
         assert sWhere in self.kdLocations;
         assert sType  in self.kdTypes;
         self.sWhere = sWhere;           ##< kdLocations
         self.sType  = sType;            ##< kdTypes
+
+    def usesModRM(self):
+        """ Returns True if using some form of ModR/M encoding. """
+        return self.sType[0] in ['E', 'G'];
+
 
 
 class Instruction(object):
@@ -584,7 +687,8 @@ class Instruction(object):
         self.asFlUndefined  = None;
         self.asFlSet        = None;
         self.asFlClear      = None;
-        self.dHints         = {};       ##< Dictionary of instruction hints, flags, whatnot. (Dictioarny for speed; dummy value).
+        self.dHints         = {};       ##< Dictionary of instruction hints, flags, whatnot. (Dictionary for speed; dummy value).
+        self.sDisEnum       = None;     ##< OP_XXXX value.  Default is based on the uppercased mnemonic.
         self.asCpuIds       = [];       ##< The CPUID feature bit names for this instruction. If multiple, assume AND.
         self.asReqFeatures  = [];       ##< Which features are required to be enabled to run this instruction.
         self.aoTests        = [];       # type: list(InstructionTest)
@@ -618,6 +722,26 @@ class Instruction(object):
         self.sRawIemOpFlags = None;
         self.sRawOldOpcodes = None;
         ## @}
+
+    def getOpcodeByte(self):
+        """
+        Decodes sOpcode into a byte range integer value.
+        Raises exception if sOpcode is None or invalid.
+        """
+        if self.sOpcode is None:
+            raise Exception('No opcode byte for %s!' % (self,));
+
+        # Full hex byte form.
+        if self.sOpcode[:2] == '0x':
+            return int(self.sOpcode, 16);
+
+        # The /r form:
+        if self.sOpcode[0] == '/' and self.sOpcode[1].isdigit() and len(self.sOpcode) == 2:
+            return int(self.sOpcode[1:]) << 3;
+
+        raise Exception('unsupported opcode byte spec "%s" for %s' % (self.sOpcode, self,));
+        return -1;
+
 
 
 ## All the instructions.
@@ -724,6 +848,7 @@ class SimpleParser(object):
         self.oReStatsName   = re.compile('^[A-Za-z_][A-Za-z0-9_]*$');
         self.oReFunctionName= re.compile('^iemOp_[A-Za-z_][A-Za-z0-9_]*$');
         self.oReGroupName   = re.compile('^op_[a-z0-9]+(|_[a-z0-9]+|_[a-z0-9]+_[a-z0-9]+)$');
+        self.oReDisEnum     = re.compile('^OP_[A-Z0-9_]+$');
         self.fDebug         = True;
 
         self.dTagHandlers   = {
@@ -744,6 +869,7 @@ class SimpleParser(object):
             '@opflset':     self.parseTagOpEFlags,
             '@opflclear':   self.parseTagOpEFlags,
             '@ophints':     self.parseTagOpHints,
+            '@opdisenum':   self.parseTagOpDisEnum,
             '@opcpuid':     self.parseTagOpCpuId,
             '@opgroup':     self.parseTagOpGroup,
             '@opunused':    self.parseTagOpUnusedInvalid,
@@ -836,6 +962,30 @@ class SimpleParser(object):
             pass;
 
         #
+        # Common defaults.
+        #
+        if oInstr.sDisEnum is None and oInstr.sMnemonic is not None:
+            oInstr.sDisEnum = 'OP_' + oInstr.sMnemonic.upper();
+
+        if oInstr.sStats is None:
+            if oInstr.sFunction is not None:
+                oInstr.sStats = oInstr.sFunction.replace('iemOp_', '');
+            elif oInstr.sMnemonic is not None:
+                oInstr.sStats = oInstr.sMnemonic;
+                for oOperand in oInstr.aoOperands:
+                    if oOperand.sType:
+                        oInstr.sStats += '_' + oOperand.sType;
+
+        if oInstr.sFunction is None:
+            if oInstr.sMnemonic is not None:
+                oInstr.sFunction = 'iemOp_' + oInstr.sMnemonic;
+                for oOperand in oInstr.aoOperands:
+                    if oOperand.sType:
+                        oInstr.sFunction += '_' + oOperand.sType;
+            elif oInstr.sStats:
+                oInstr.sFunction = 'iemOp_' + oInstr.sStats;
+
+        #
         # Apply default map and then add the instruction to all it's groups.
         #
         if len(oInstr.aoMaps) == 0:
@@ -843,7 +993,7 @@ class SimpleParser(object):
         for oMap in oInstr.aoMaps:
             oMap.aoInstructions.append(oInstr);
 
-        self.debug('%d..%d: %s; %d @op tags' % (oInstr.iLineCreated, oInstr.iLineCompleted, oInstr.sFunction, oInstr.cOpTags));
+        #self.debug('%d..%d: %s; %d @op tags' % (oInstr.iLineCreated, oInstr.iLineCompleted, oInstr.sFunction, oInstr.cOpTags));
         return True;
 
     def doneInstructions(self, iLineInComment = None):
@@ -1173,7 +1323,8 @@ class SimpleParser(object):
 
     ## Valid values for \@openc
     kdEncodings = {
-        'ModR/M': [],
+        'ModR/M': [],       ##< ModR/M
+        'prefix': [],       ##< Prefix
     };
 
     def parseTagOpEnc(self, sTag, aasSections, iTagLine, iEndLine):
@@ -1291,34 +1442,35 @@ class SimpleParser(object):
 
     ## \@ophints values.
     kdHints = {
-        'invalid':               'DISOPTYPE_INVALID',                ##<
-        'harmless':              'DISOPTYPE_HARMLESS',               ##<
-        'controlflow':           'DISOPTYPE_CONTROLFLOW',            ##<
-        'potentially_dangerous': 'DISOPTYPE_POTENTIALLY_DANGEROUS',  ##<
-        'dangerous':             'DISOPTYPE_DANGEROUS',              ##<
-        'portio':                'DISOPTYPE_PORTIO',                 ##<
-        'privileged':            'DISOPTYPE_PRIVILEGED',             ##<
-        'privileged_notrap':     'DISOPTYPE_PRIVILEGED_NOTRAP',      ##<
-        'uncond_controlflow':    'DISOPTYPE_UNCOND_CONTROLFLOW',     ##<
-        'relative_controlflow':  'DISOPTYPE_RELATIVE_CONTROLFLOW',   ##<
-        'cond_controlflow':      'DISOPTYPE_COND_CONTROLFLOW',       ##<
-        'interrupt':             'DISOPTYPE_INTERRUPT',              ##<
-        'illegal':               'DISOPTYPE_ILLEGAL',                ##<
-        'rrm_dangerous':         'DISOPTYPE_RRM_DANGEROUS',          ##< Some additional dangerous ones when recompiling raw r0. */
-        'rrm_dangerous_16':      'DISOPTYPE_RRM_DANGEROUS_16',       ##< Some additional dangerous ones when recompiling 16-bit raw r0. */
-        'inhibit_irqs':          'DISOPTYPE_INHIBIT_IRQS',           ##< Will or can inhibit irqs (sti, pop ss, mov ss) */
-        'portio_read':           'DISOPTYPE_PORTIO_READ',            ##<
-        'portio_write':          'DISOPTYPE_PORTIO_WRITE',           ##<
-        'invalid_64':            'DISOPTYPE_INVALID_64',             ##< Invalid in 64 bits mode */
-        'only_64':               'DISOPTYPE_ONLY_64',                ##< Only valid in 64 bits mode */
-        'default_64_op_size':    'DISOPTYPE_DEFAULT_64_OP_SIZE',     ##< Default 64 bits operand size */
-        'forced_64_op_size':     'DISOPTYPE_FORCED_64_OP_SIZE',      ##< Forced 64 bits operand size; regardless of prefix bytes */
-        'rexb_extends_opreg':    'DISOPTYPE_REXB_EXTENDS_OPREG',     ##< REX.B extends the register field in the opcode byte */
-        'mod_fixed_11':          'DISOPTYPE_MOD_FIXED_11',           ##< modrm.mod is always 11b */
-        'forced_32_op_size_x86': 'DISOPTYPE_FORCED_32_OP_SIZE_X86',  ##< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
-        'sse':                   'DISOPTYPE_SSE',                    ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet! */
-        'mmx':                   'DISOPTYPE_MMX',                    ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet! */
-        'fpu':                   'DISOPTYPE_FPU',                    ##< FPU instruction. Not implemented yet! */
+        'invalid':               'DISOPTYPE_INVALID',               ##<
+        'harmless':              'DISOPTYPE_HARMLESS',              ##<
+        'controlflow':           'DISOPTYPE_CONTROLFLOW',           ##<
+        'potentially_dangerous': 'DISOPTYPE_POTENTIALLY_DANGEROUS', ##<
+        'dangerous':             'DISOPTYPE_DANGEROUS',             ##<
+        'portio':                'DISOPTYPE_PORTIO',                ##<
+        'privileged':            'DISOPTYPE_PRIVILEGED',            ##<
+        'privileged_notrap':     'DISOPTYPE_PRIVILEGED_NOTRAP',     ##<
+        'uncond_controlflow':    'DISOPTYPE_UNCOND_CONTROLFLOW',    ##<
+        'relative_controlflow':  'DISOPTYPE_RELATIVE_CONTROLFLOW',  ##<
+        'cond_controlflow':      'DISOPTYPE_COND_CONTROLFLOW',      ##<
+        'interrupt':             'DISOPTYPE_INTERRUPT',             ##<
+        'illegal':               'DISOPTYPE_ILLEGAL',               ##<
+        'rrm_dangerous':         'DISOPTYPE_RRM_DANGEROUS',         ##< Some additional dangerous ones when recompiling raw r0. */
+        'rrm_dangerous_16':      'DISOPTYPE_RRM_DANGEROUS_16',      ##< Some additional dangerous ones when recompiling 16-bit raw r0. */
+        'inhibit_irqs':          'DISOPTYPE_INHIBIT_IRQS',          ##< Will or can inhibit irqs (sti, pop ss, mov ss) */
+        'portio_read':           'DISOPTYPE_PORTIO_READ',           ##<
+        'portio_write':          'DISOPTYPE_PORTIO_WRITE',          ##<
+        'invalid_64':            'DISOPTYPE_INVALID_64',            ##< Invalid in 64 bits mode */
+        'only_64':               'DISOPTYPE_ONLY_64',               ##< Only valid in 64 bits mode */
+        'default_64_op_size':    'DISOPTYPE_DEFAULT_64_OP_SIZE',    ##< Default 64 bits operand size */
+        'forced_64_op_size':     'DISOPTYPE_FORCED_64_OP_SIZE',     ##< Forced 64 bits operand size; regardless of prefix bytes */
+        'rexb_extends_opreg':    'DISOPTYPE_REXB_EXTENDS_OPREG',    ##< REX.B extends the register field in the opcode byte */
+        'mod_fixed_11':          'DISOPTYPE_MOD_FIXED_11',          ##< modrm.mod is always 11b */
+        'forced_32_op_size_x86': 'DISOPTYPE_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
+        'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet! */
+        'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet! */
+        'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet! */
+        'ignores_op_size':       '',                                ##< Ignores both operand size prefixes.
     };
 
     def parseTagOpHints(self, sTag, aasSections, iTagLine, iEndLine):
@@ -1351,6 +1503,34 @@ class SimpleParser(object):
                 oInstr.dHints[sHint] = True; # (dummy value, using dictionary for speed)
             else:
                 self.errorComment(iTagLine, '%s: duplicate hint: %s' % ( sTag, sHint,));
+
+        _ = iEndLine;
+        return True;
+
+    def parseTagOpDisEnum(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tag:        \@opdisenum
+        Value:      OP_XXXX
+
+        This is for select a specific (legacy) disassembler enum value for the
+        instruction.
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        # Flatten and split.
+        asWords = self.flattenAllSections(aasSections).split();
+        if len(asWords) != 1:
+            self.errorComment(iTagLine, '%s: expected exactly one value: %s' % (sTag, asWords,));
+            if len(asWords) == 0:
+                return False;
+        sDisEnum = asWords[0];
+        if not self.oReGroupName.match(sDisEnum):
+            return self.errorComment(iTagLine, '%s: invalid disassembler OP_XXXX enum: %s' % (sTag, sDisEnum,));
+
+        # Set it.
+        if oInstr.sDisEnum is not None:
+            return self.errorComment(iTagLine, '%s: attempting to overwrite "%s" with "%s"' % (sTag, oInstr.sDisEnum, sDisEnum,));
+        oInstr.sDisEnum = sDisEnum;
 
         _ = iEndLine;
         return True;
@@ -1608,7 +1788,7 @@ class SimpleParser(object):
                                 if sType in TestInOut.kdTypes:
                                     oValid = TestInOut.kdTypes[sType].validate(sValue);
                                     if oValid is True:
-                                        if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '=':
+                                        if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '&|=':
                                             oItem = TestInOut(sField, sOp, sValue, sType);
                                         else:
                                             self.errorComment(iTagLine, '%s: and-or %s value "%s" can only be used with the "="'
@@ -2042,5 +2222,160 @@ def __parseAll():
 
 
 __parseAll();
+
+
+#
+# Generators (may perhaps move later).
+#
+def generateDisassemblerTables(oDstFile = sys.stdout):
+    """
+    Generates disassembler tables.
+    """
+
+    for sName, oMap in sorted(g_dInstructionMaps.iteritems(), key = lambda(k,v): v.sEncoding + ''.join(v.asLeadOpcodes)):
+        asLines = [];
+
+        asLines.append('/* Generated from: %-11s  Selector: %-7s  Encoding: %-7s  Lead bytes opcodes: %s */'
+                       % ( oMap.sName, oMap.sSelector, oMap.sEncoding, ' '.join(oMap.asLeadOpcodes), ));
+        asLines.append('const DISOPCODE %s[] =' % (oMap.getDisasTableName(),));
+        asLines.append('{');
+
+        aoffColumns = [4, 29, 49, 65, 77, 89, 109, 125, 141, 157, 183, 199];
+
+        aoTableOrder = oMap.getInstructionsInTableOrder();
+        for iInstr, oInstr in enumerate(aoTableOrder):
+
+            if (iInstr & 0xf) == 0:
+                if iInstr != 0:
+                    asLines.append('');
+                asLines.append('    /* %x */' % (iInstr >> 4,));
+
+            if oInstr is None:
+                pass;#asLines.append('    /* %#04x */ None,' % (iInstr));
+            elif isinstance(oInstr, list):
+                asLines.append('    /* %#04x */ ComplicatedListStuffNeedingWrapper,' % (iInstr));
+            else:
+                sMacro = 'OP';
+                cMaxOperands = 3;
+                if len(oInstr.aoOperands) > 3:
+                    sMacro = 'OPVEX'
+                    cMaxOperands = 4;
+                    assert len(oInstr.aoOperands) <= cMaxOperands;
+
+                #
+                # Format string.
+                #
+                sTmp = '%s("%s' % (sMacro, oInstr.sMnemonic,);
+                for iOperand, oOperand in enumerate(oInstr.aoOperands):
+                    sTmp += ' ' if iOperand == 0 else ',';
+                    sTmp += '%' + oOperand.sType;
+                sTmp += '",';
+                asColumns = [ sTmp, ];
+
+                #
+                # Decoders.
+                #
+                iStart = len(asColumns);
+                if oInstr.sEncoding == 'ModR/M':
+                    # ASSUME the first operand is using the ModR/M encoding
+                    assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM();
+                    asColumns.append('IDX_ParseModRM,')
+                    ## @todo IDX_ParseVexDest
+                    # Is second operand using ModR/M too?
+                    if len(oInstr.aoOperands) > 1 and oInstr.aoOperands[1].usesModRM():
+                        asColumns.append('IDX_UseModRM,')
+                elif oInstr.sEncoding == 'prefix':
+                    pass;
+                elif oInstr.sEncoding == 'vex2':
+                    asColumns.append('IDX_ParseVex2b,')
+                elif oInstr.sEncoding == 'vex3':
+                    asColumns.append('IDX_ParseVex3b,')
+                else:
+                    ## @todo
+                    #IDX_ParseTwoByteEsc,
+                    #IDX_ParseGrp1,
+                    #IDX_ParseShiftGrp2,
+                    #IDX_ParseGrp3,
+                    #IDX_ParseGrp4,
+                    #IDX_ParseGrp5,
+                    #IDX_Parse3DNow,
+                    #IDX_ParseGrp6,
+                    #IDX_ParseGrp7,
+                    #IDX_ParseGrp8,
+                    #IDX_ParseGrp9,
+                    #IDX_ParseGrp10,
+                    #IDX_ParseGrp12,
+                    #IDX_ParseGrp13,
+                    #IDX_ParseGrp14,
+                    #IDX_ParseGrp15,
+                    #IDX_ParseGrp16,
+                    #IDX_ParseThreeByteEsc4,
+                    #IDX_ParseThreeByteEsc5,
+                    #IDX_ParseModFence,
+                    #IDX_ParseEscFP,
+                    #IDX_ParseNopPause,
+                    #IDX_ParseInvOpModRM,
+                    assert False, str(oInstr);
+
+                # Check for immediates and stuff in the remaining operands.
+                for oOperand in oInstr.aoOperands[len(asColumns) - iStart:]:
+                    sIdx = Operand.kdTypes[oOperand.sType];
+                    if sIdx != 'IDX_UseModRM':
+                        asColumns.append(sIdx + ',');
+                asColumns.extend(['0,'] * (cMaxOperands - (len(asColumns) - iStart)));
+
+                #
+                # Opcode and operands.
+                #
+                asColumns.append(oInstr.sDisEnum + ',');
+                iStart = len(asColumns)
+                for oOperand in oInstr.aoOperands:
+                    asColumns.append('OP_PARM_' + oOperand.sType + ',');
+                asColumns.extend(['OP_PARM_NONE,'] * (cMaxOperands - (len(asColumns) - iStart)));
+
+                #
+                # Flags.
+                #
+                sTmp = '';
+                for sHint in sorted(oInstr.dHints.keys()):
+                    sDefine = SimpleParser.kdHints[sHint];
+                    if sDefine.startswith('DISOPTYPE_'):
+                        if sTmp:
+                            sTmp += ' | ' + sDefine;
+                        else:
+                            sTmp += sDefine;
+                if sTmp:
+                    sTmp += '),';
+                else:
+                    sTmp += '0),';
+                asColumns.append(sTmp);
+
+                #
+                # Format the columns into a line.
+                #
+                sLine = '';
+                for i, s in enumerate(asColumns):
+                    if len(sLine) < aoffColumns[i]:
+                        sLine += ' ' * (aoffColumns[i] - len(sLine));
+                    else:
+                        sLine += ' ';
+                    sLine += s;
+
+                # OP("psrlw %Vdq,%Wdq", IDX_ParseModRM, IDX_UseModRM, 0, OP_PSRLW, OP_PARM_Vdq, OP_PARM_Wdq, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+                # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
+                # { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
+
+                asLines.append(sLine);
+
+        asLines.append('};');
+        asLines.append('AssertCompile(RT_ELEMENTS(%s) == %s);' % (oMap.getDisasTableName(), oMap.getTableSize(),));
+
+        #
+        # Write out the lines.
+        #
+        oDstFile.write('\n'.join(asLines));
+        oDstFile.write('\n');
+        break; #for now
+generateDisassemblerTables();
 
 
