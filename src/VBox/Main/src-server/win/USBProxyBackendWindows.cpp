@@ -52,9 +52,10 @@ USBProxyBackendWindows::~USBProxyBackendWindows()
  *
  * @returns S_OK on success and non-fatal failures, some COM error otherwise.
  */
-int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
+int USBProxyBackendWindows::init(USBProxyService *aUsbProxyService, const com::Utf8Str &strId,
+                                 const com::Utf8Str &strAddress, bool fLoadingSettings)
 {
-    USBProxyBackend::init(aUsbProxyService, strId, strAddress);
+    USBProxyBackend::init(aUsbProxyService, strId, strAddress, fLoadingSettings);
 
     unconst(m_strBackend) = Utf8Str("host");
 

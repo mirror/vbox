@@ -79,9 +79,10 @@ USBProxyBackendLinux::~USBProxyBackendLinux()
  *
  * @returns VBox status code.
  */
-int USBProxyBackendLinux::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
+int USBProxyBackendLinux::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+                              const com::Utf8Str &strAddress, bool fLoadingSettings)
 {
-    USBProxyBackend::init(pUsbProxyService, strId, strAddress);
+    USBProxyBackend::init(pUsbProxyService, strId, strAddress, fLoadingSettings);
 
     unconst(m_strBackend) = Utf8Str("host");
 

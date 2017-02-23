@@ -47,7 +47,8 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    virtual int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    virtual int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+                     const com::Utf8Str &strAddress, bool fLoadingSettings);
     virtual void uninit();
 
     bool isActive(void);
@@ -146,7 +147,8 @@ class USBProxyBackendDarwin : public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendDarwin)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual void *insertFilter(PCUSBFILTER aFilter);
@@ -195,7 +197,8 @@ class USBProxyBackendLinux: public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendLinux)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);
@@ -286,7 +289,8 @@ class USBProxyBackendSolaris : public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendSolaris)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual void *insertFilter (PCUSBFILTER aFilter);
@@ -321,7 +325,8 @@ class USBProxyBackendWindows : public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendWindows)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual void *insertFilter (PCUSBFILTER aFilter);
@@ -352,7 +357,8 @@ class USBProxyBackendFreeBSD : public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendFreeBSD)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);
@@ -403,7 +409,8 @@ class USBProxyBackendUsbIp: public USBProxyBackend
 public:
     DECLARE_EMPTY_CTOR_DTOR(USBProxyBackendUsbIp)
 
-    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress);
+    int init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+             const com::Utf8Str &strAddress, bool fLoadingSettings);
     void uninit();
 
     virtual int captureDevice(HostUSBDevice *aDevice);

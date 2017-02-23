@@ -105,7 +105,7 @@ protected:
 
     HRESULT createUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8Str &aId,
                                   const com::Utf8Str &aAddress, const std::vector<com::Utf8Str> &aPropertyNames,
-                                  const std::vector<com::Utf8Str> &aPropertyValues);
+                                  const std::vector<com::Utf8Str> &aPropertyValues, bool fLoadingSettings);
 
 private:
 

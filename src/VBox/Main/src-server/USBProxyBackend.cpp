@@ -65,8 +65,11 @@ void USBProxyBackend::FinalRelease()
 /**
  * Stub needed as long as the class isn't virtual
  */
-int USBProxyBackend::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId, const com::Utf8Str &strAddress)
+int USBProxyBackend::init(USBProxyService *pUsbProxyService, const com::Utf8Str &strId,
+                          const com::Utf8Str &strAddress, bool fLoadingSettings)
 {
+    RT_NOREF1(fLoadingSettings);
+
     m_pUsbProxyService    = pUsbProxyService;
     mThread               = NIL_RTTHREAD;
     mTerminate            = false;

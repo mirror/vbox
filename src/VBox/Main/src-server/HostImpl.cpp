@@ -1783,6 +1783,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.llUSBDeviceFilters.clear();
+    data.llUSBDeviceSources.clear();
 
     for (USBDeviceFilterList::const_iterator it = m->llUSBDeviceFilters.begin();
          it != m->llUSBDeviceFilters.end();
