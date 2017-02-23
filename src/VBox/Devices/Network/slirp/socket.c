@@ -1132,7 +1132,7 @@ sofcantrcvmore(struct  socket *so)
          * indication.  As far as I can tell the only way to detect
          * this on Linux is to check if shutdown() succeeds here (but
          * see below).
-         * 
+         *
          * OTOH on OS X shutdown() "helpfully" checks if remote has
          * already closed and then always returns ENOTCONN
          * immediately.

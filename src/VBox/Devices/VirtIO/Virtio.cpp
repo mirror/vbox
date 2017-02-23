@@ -164,7 +164,7 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemov
             }
             break;
         }
-        
+
         vringReadDesc(pState, &pQueue->VRing, idx, &desc);
         if (desc.u16Flags & VRINGDESC_F_WRITE)
         {

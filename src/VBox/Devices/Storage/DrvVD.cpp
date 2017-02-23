@@ -2542,7 +2542,7 @@ static DECLCALLBACK(void) drvvdBlkCacheReqComplete(void *pvUser1, void *pvUser2,
     PVBOXDISK pThis = (PVBOXDISK)pvUser1;
 
     AssertPtr(pThis->pBlkCache);
-    PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);    
+    PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);
 }
 
 
@@ -3230,7 +3230,7 @@ static int drvvdMediaExIoReqDiscardWrapper(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT 
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
-    return rc; 
+    return rc;
 }
 
 /**
