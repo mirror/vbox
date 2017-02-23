@@ -626,15 +626,15 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      */
     /* base memory. */
     u32 = cbRamSize > 640 ? 640 : (uint32_t)cbRamSize / _1K; /* <-- this test is wrong, but it doesn't matter since we never assign less than 1MB */
-    pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);     /* 15h - Base Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);       /* 16h - Base Memory in K, High Byte */
+    pcbiosCmosWrite(pDevIns, 0x15, RT_BYTE1(u32));  /* 15h - Base Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x16, RT_BYTE2(u32));  /* 16h - Base Memory in K, High Byte */
 
     /* Extended memory, up to 65MB */
     u32 = cbRamSize >= 65 * _1M ? 0xffff : ((uint32_t)cbRamSize - _1M) / _1K;
-    pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);     /* 17h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);       /* 18h - Extended Memory in K, High Byte */
-    pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);     /* 30h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);       /* 31h - Extended Memory in K, High Byte */
+    pcbiosCmosWrite(pDevIns, 0x17, RT_BYTE1(u32));  /* 17h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x18, RT_BYTE2(u32));  /* 18h - Extended Memory in K, High Byte */
+    pcbiosCmosWrite(pDevIns, 0x30, RT_BYTE1(u32));  /* 30h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x31, RT_BYTE2(u32));  /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
        and below 4GB (as it can only hold 4GB+16M). We have to chop off the
@@ -645,8 +645,8 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         u32 = (RT_MIN(cbBelow4GB, UINT32_C(0xffe00000)) - 16U * _1M) / _64K;
     else
         u32 = 0;
-    pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x35, u32 >> 8);
+    pcbiosCmosWrite(pDevIns, 0x34, RT_BYTE1(u32));
+    pcbiosCmosWrite(pDevIns, 0x35, RT_BYTE2(u32));
 
     /* Bochs/VBox BIOS specific way of specifying memory above 4GB in 64KB units.
        Bochs got these in a different location which we've already used for SATA,
@@ -654,11 +654,11 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     uint64_t c64KBAbove4GB = cbAbove4GB / _64K;
     /* Make sure it doesn't hit the limits of the current BIOS code (RAM limit of ~255TB). */
     AssertLogRelMsgReturn((c64KBAbove4GB >> (3 * 8)) < 255, ("%#RX64\n", c64KBAbove4GB), VERR_OUT_OF_RANGE);
-    pcbiosCmosWrite(pDevIns, 0x61,  c64KBAbove4GB        & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x62, (c64KBAbove4GB >>  8) & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x63, (c64KBAbove4GB >> 16) & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x64, (c64KBAbove4GB >> 24) & 0xff);
-    pcbiosCmosWrite(pDevIns, 0x65, (c64KBAbove4GB >> 32) & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x61, RT_BYTE1(c64KBAbove4GB));
+    pcbiosCmosWrite(pDevIns, 0x62, RT_BYTE2(c64KBAbove4GB));
+    pcbiosCmosWrite(pDevIns, 0x63, RT_BYTE3(c64KBAbove4GB));
+    pcbiosCmosWrite(pDevIns, 0x64, RT_BYTE4(c64KBAbove4GB));
+    pcbiosCmosWrite(pDevIns, 0x65, RT_BYTE5(c64KBAbove4GB));
 
     /*
      * Number of CPUs.
@@ -694,8 +694,8 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      */
     for (i = 0; i < NET_BOOT_DEVS; ++i)
     {
-        pcbiosCmosWrite(pDevIns, 0x82 + i * 2, pThis->au16NetBootDev[i] & 0xff);
-        pcbiosCmosWrite(pDevIns, 0x83 + i * 2, pThis->au16NetBootDev[i] >> 8);
+        pcbiosCmosWrite(pDevIns, 0x82 + i * 2, RT_BYTE1(pThis->au16NetBootDev[i]));
+        pcbiosCmosWrite(pDevIns, 0x83 + i * 2, RT_BYTE2(pThis->au16NetBootDev[i]));
     }
 
     /*
@@ -911,8 +911,8 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     uint16_t    cksum = 0;
     for (i = 0x10; i < 0x2e; ++i)
         cksum += pcbiosCmosRead(pDevIns, i);
-    pcbiosCmosWrite(pDevIns, 0x2e, cksum >> 8);
-    pcbiosCmosWrite(pDevIns, 0x2f, cksum & 0xff);
+    pcbiosCmosWrite(pDevIns, 0x2e, RT_BYTE1(cksum));
+    pcbiosCmosWrite(pDevIns, 0x2f, RT_BYTE2(cksum));
 
     LogFlow(("%s: returns VINF_SUCCESS\n", __FUNCTION__));
     return VINF_SUCCESS;
