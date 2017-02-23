@@ -75,9 +75,10 @@ class ReporterLock(object):
         self.cRecursion += 1;
 
         # Disable GC to avoid __del__ w/ log statement randomly reenter the logger.
-        self.fRestoreGC  = gc.isenabled();
-        if self.fRestoreGC:
-            gc.disable();
+        if cRecursion == 1:
+            self.fRestoreGC = gc.isenabled();
+            if self.fRestoreGC:
+                gc.disable();
 
         return True;
 
