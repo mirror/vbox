@@ -412,8 +412,6 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PUVM pUVM, PVM pVM, void *pvUser)
     UPDATERC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              cbMem);
-    UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice0",          "IDE");
     UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice1",          "NONE");
@@ -446,7 +444,6 @@ static DECLCALLBACK(int) cfgmR3CreateDefault(PUVM pUVM, PVM pVM, void *pvUser)
     rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               UPDATERC();
     rc = CFGMR3InsertInteger(pInst, "Trusted", 1);              /* boolean */   UPDATERC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              cbMem);             UPDATERC();
     rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         UPDATERC();
     rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          7);                 UPDATERC();
     rc = CFGMR3InsertInteger(pInst, "PCIFunctionNo",        0);                 UPDATERC();
