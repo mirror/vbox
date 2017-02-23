@@ -1040,10 +1040,6 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
     UPDATERC();
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              128U * _1M);
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamHoleSize",          512U * _1M);
-    UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice0",          "IDE");
     UPDATERC();
     rc = CFGMR3InsertString(pCfg,   "BootDevice1",          "NONE");
@@ -1204,8 +1200,6 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
     rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);
     UPDATERC();
     rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */
-    UPDATERC();
-    rc = CFGMR3InsertInteger(pCfg,  "RamSize",              128U * _1M);
     UPDATERC();
 
 
