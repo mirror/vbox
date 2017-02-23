@@ -819,11 +819,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         /***************************************
          * DMI Physical Memory Array (Type 16) *
          ***************************************/
-        uint64_t u64RamSize;
-        rc = CFGMR3QueryU64(pCfg, "RamSize", &u64RamSize);
-        if (RT_FAILURE (rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc,
-                                    N_("Configuration error: Failed to read \"RamSize\""));
+        uint64_t const  cbRamSize = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
 
         PDMIRAMARRAY pMemArray = (PDMIRAMARRAY)pszStr;
         DMI_CHECK_SIZE(sizeof(*pMemArray));
@@ -837,7 +833,16 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pMemArray->u8Location            = 0x03;   /* Motherboard */
         pMemArray->u8Use                 = 0x03;   /* System memory */
         pMemArray->u8MemErrorCorrection  = 0x01;   /* Other */
-        pMemArray->u32MaxCapacity        = (uint32_t)(u64RamSize / _1K); /* RAM size in K */
+        if (cbRamSize / _1K > INT32_MAX)
+        {
+            /** @todo 2TB-1K limit. In such cases we probably need to provide multiple type-16 descriptors.
+             * Or use 0x8000'0000 = 'capacity unknown'? */
+            AssertLogRelMsgFailed(("DMI: RAM size %#RX64 does not fit into type-16 descriptor, clipping to %#RX64\n",
+                                   cbRamSize, (uint64_t)INT32_MAX * _1K));
+            pMemArray->u32MaxCapacity    = INT32_MAX;
+        }
+        else
+            pMemArray->u32MaxCapacity    = (int32_t)(cbRamSize / _1K); /* RAM size in K */
         pMemArray->u16MemErrorHandle     = 0xfffe; /* No error info structure */
         pMemArray->u16NumberOfMemDevices = 1;
         DMI_TERM_STRUCT;
@@ -858,7 +863,17 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pMemDev->u16MemErrHandle         = 0xfffe; /* system doesn't provide this information */
         pMemDev->u16TotalWidth           = 0xffff; /* Unknown */
         pMemDev->u16DataWidth            = 0xffff; /* Unknown */
-        int16_t u16RamSizeM = (uint16_t)(u64RamSize / _1M);
+        int16_t u16RamSizeM;
+        if (cbRamSize / _1M > INT16_MAX)
+        {
+            /** @todo 32G-1M limit. Provide multiple type-17 descriptors.
+             * The highest bit of u16Size must be 0 to specify 'GB' units / 1 would be 'KB' */
+            AssertLogRelMsgFailed(("DMI: RAM size %#RX64 too big for one type-17 descriptor, clipping to %#RX64\n",
+                                   cbRamSize, (uint64_t)INT16_MAX * _1M));
+            u16RamSizeM = INT16_MAX;
+        }
+        else
+            u16RamSizeM = (uint16_t)(cbRamSize / _1M);
         if (u16RamSizeM == 0)
             u16RamSizeM = 0x400; /* 1G */
         pMemDev->u16Size                 = u16RamSizeM; /* RAM size */

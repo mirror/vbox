@@ -154,10 +154,6 @@ typedef struct DEVPCBIOS
 
     /** Boot devices (ordered). */
     DEVPCBIOSBOOT   aenmBootDevice[4];
-    /** RAM size (in bytes). */
-    uint64_t        cbRam;
-    /** RAM hole size (in bytes). */
-    uint32_t        cbRamHole;
     /** Bochs shutdown index. */
     uint32_t        iShutdown;
     /** Floppy device. */
@@ -620,29 +616,33 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     PPDMIMEDIA      apHDs[4] = {0};
     LogFlow(("pcbiosInitComplete:\n"));
 
+    PVM pVM                    = PDMDevHlpGetVM(pDevIns);
+    uint64_t const  cbRamSize  = MMR3PhysGetRamSize(pVM);
+    uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
+    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+
     /*
      * Memory sizes.
      */
     /* base memory. */
-    u32 = pThis->cbRam > 640 ? 640 : (uint32_t)pThis->cbRam / _1K; /* <-- this test is wrong, but it doesn't matter since we never assign less than 1MB */
-    pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);                                 /* 15h - Base Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);                                   /* 16h - Base Memory in K, High Byte */
+    u32 = cbRamSize > 640 ? 640 : (uint32_t)cbRamSize / _1K; /* <-- this test is wrong, but it doesn't matter since we never assign less than 1MB */
+    pcbiosCmosWrite(pDevIns, 0x15, u32 & 0xff);     /* 15h - Base Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x16, u32 >> 8);       /* 16h - Base Memory in K, High Byte */
 
     /* Extended memory, up to 65MB */
-    u32 = pThis->cbRam >= 65 * _1M ? 0xffff : ((uint32_t)pThis->cbRam - _1M) / _1K;
-    pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);                                 /* 17h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);                                   /* 18h - Extended Memory in K, High Byte */
-    pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);                                 /* 30h - Extended Memory in K, Low Byte */
-    pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);                                   /* 31h - Extended Memory in K, High Byte */
+    u32 = cbRamSize >= 65 * _1M ? 0xffff : ((uint32_t)cbRamSize - _1M) / _1K;
+    pcbiosCmosWrite(pDevIns, 0x17, u32 & 0xff);     /* 17h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x18, u32 >> 8);       /* 18h - Extended Memory in K, High Byte */
+    pcbiosCmosWrite(pDevIns, 0x30, u32 & 0xff);     /* 30h - Extended Memory in K, Low Byte */
+    pcbiosCmosWrite(pDevIns, 0x31, u32 >> 8);       /* 31h - Extended Memory in K, High Byte */
 
     /* Bochs BIOS specific? Anyway, it's the amount of memory above 16MB
        and below 4GB (as it can only hold 4GB+16M). We have to chop off the
        top 2MB or it conflict with what the ACPI tables return. (Should these
        be adjusted, we still have to chop it at 0xfffc0000 or it'll conflict
        with the high BIOS mapping.) */
-    uint64_t const offRamHole = _4G - pThis->cbRamHole;
-    if (pThis->cbRam > 16 * _1M)
-        u32 = (uint32_t)( (RT_MIN(RT_MIN(pThis->cbRam, offRamHole), UINT32_C(0xffe00000)) - 16U * _1M) / _64K );
+    if (cbRamSize > 16 * _1M)
+        u32 = (RT_MIN(cbBelow4GB, UINT32_C(0xffe00000)) - 16U * _1M) / _64K;
     else
         u32 = 0;
     pcbiosCmosWrite(pDevIns, 0x34, u32 & 0xff);
@@ -651,15 +651,9 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /* Bochs/VBox BIOS specific way of specifying memory above 4GB in 64KB units.
        Bochs got these in a different location which we've already used for SATA,
        it also lacks the last two. */
-    uint64_t c64KBAbove4GB;
-    if (pThis->cbRam <= offRamHole)
-        c64KBAbove4GB = 0;
-    else
-    {
-        c64KBAbove4GB = (pThis->cbRam - offRamHole) / _64K;
-        /* Make sure it doesn't hit the limits of the current BIOS code. */
-        AssertLogRelMsgReturn((c64KBAbove4GB >> (3 * 8)) < 255, ("%#RX64\n", c64KBAbove4GB), VERR_OUT_OF_RANGE);
-    }
+    uint64_t c64KBAbove4GB = cbAbove4GB / _64K;
+    /* Make sure it doesn't hit the limits of the current BIOS code (RAM limit of ~255TB). */
+    AssertLogRelMsgReturn((c64KBAbove4GB >> (3 * 8)) < 255, ("%#RX64\n", c64KBAbove4GB), VERR_OUT_OF_RANGE);
     pcbiosCmosWrite(pDevIns, 0x61,  c64KBAbove4GB        & 0xff);
     pcbiosCmosWrite(pDevIns, 0x62, (c64KBAbove4GB >>  8) & 0xff);
     pcbiosCmosWrite(pDevIns, 0x63, (c64KBAbove4GB >> 16) & 0xff);
@@ -1096,8 +1090,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "BootDevice1\0"
                               "BootDevice2\0"
                               "BootDevice3\0"
-                              "RamSize\0"
-                              "RamHoleSize\0"
                               "HardDiskDevice\0"
                               "SataHardDiskDevice\0"
                               "SataLUN1\0"
@@ -1162,16 +1154,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init the data.
      */
-    rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbRam);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"RamSize\" as integer failed"));
-
-    rc = CFGMR3QueryU32Def(pCfg, "RamHoleSize", &pThis->cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
-
     rc = CFGMR3QueryU16Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,

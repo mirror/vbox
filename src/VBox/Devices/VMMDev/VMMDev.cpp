@@ -4017,7 +4017,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "BackdoorLogDisabled|"
                                   "KeepCredentials|"
                                   "HeapEnabled|"
-                                  "RamSize|"
                                   "RZEnabled|"
                                   "GuestCoreDumpEnabled|"
                                   "GuestCoreDumpDir|"
@@ -4029,11 +4028,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "TestintXmlOutputFile"
                                   ,
                                   "");
-
-    rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbGuestRAM);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed querying \"RamSize\" as a 64-bit unsigned integer"));
 
     rc = CFGMR3QueryBoolDef(pCfg, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
     if (RT_FAILURE(rc))
@@ -4114,6 +4108,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /** @todo image-to-load-filename? */
 #endif
+
+    pThis->cbGuestRAM = MMR3PhysGetRamSize(PDMDevHlpGetVM(pDevIns));
 
     /*
      * We do our own locking entirely. So, install NOP critsect for the device

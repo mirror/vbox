@@ -1336,7 +1336,6 @@ PDMBOTHCBDECL(int) acpiR3SysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         case SYSTEM_INFO_INDEX_PREF64_MEMORY_MAX:
             *pu32 = pThis->u64PciPref64Max >> 16; /* 64KB units */
             Assert(((uint64_t)*pu32 << 16) == pThis->u64PciPref64Max);
-            LogRel(("MAX\n"));
             break;
 
         case SYSTEM_INFO_INDEX_USE_IOAPIC:
@@ -3127,38 +3126,29 @@ static int acpiR3PlantTables(ACPIState *pThis)
     cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
     cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
 
-    rc = CFGMR3QueryU64(pThis->pDevInsR3->pCfg, "RamSize", &pThis->u64RamSize);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
-                                N_("Configuration error: Querying \"RamSize\" as integer failed"));
-
-    uint32_t cbRamHole;
-    rc = CFGMR3QueryU32Def(pThis->pDevInsR3->pCfg, "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevInsR3, rc,
-                                N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
-
     /*
      * Calculate the sizes for the low region and for the 64-bit prefetchable memory.
-     * The latter starts never below 4G and is 1G-aligned.
+     * The latter starts never below 4G.
      */
-    const uint64_t offRamHole = _4G - cbRamHole;
+    PVM pVM                    = PDMDevHlpGetVM(pThis->pDevInsR3);
+    uint32_t        cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
+    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+
+    pThis->u64RamSize = MMR3PhysGetRamSize(pVM);
     if (pThis->fPciPref64Enabled)
     {
-        /* Activate MEM4 */
-        if (pThis->u64RamSize > offRamHole)
-            pThis->u64PciPref64Min = RT_ALIGN_64(pThis->u64RamSize + cbRamHole, _1M);
-        else
-            pThis->u64PciPref64Min = _4G;
+        /* Activate MEM4. See also DevPciIch9.cpp / ich9pciFakePCIBIOS() / uPciBiosMmio64 */
+        pThis->u64PciPref64Min = _4G + cbAbove4GB;
+        LogRel(("ACPI: enabling 64-bit prefetch root bus resource %#018RX64..%#018RX64\n",
+               pThis->u64PciPref64Min, pThis->u64PciPref64Max-1));
     }
-    uint64_t cbRamLow = pThis->u64RamSize > offRamHole ? offRamHole : pThis->u64RamSize;
-    if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
+    if (cbBelow4GB > UINT32_C(0xffe00000)) /* See MEM3. */
     {
         /* Note: This is also enforced by DevPcBios.cpp. */
-        LogRel(("ACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbRamLow));
-        cbRamLow = UINT32_C(0xffe00000);
+        LogRel(("ACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbBelow4GB));
+        cbBelow4GB = UINT32_C(0xffe00000);
     }
-    pThis->cbRamLow = (uint32_t)cbRamLow;
+    pThis->cbRamLow = cbBelow4GB;
 
     GCPhysCur = 0;
     GCPhysRsdt = GCPhysCur;
@@ -3566,8 +3556,6 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Validate and read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg,
-                              "RamSize\0"
-                              "RamHoleSize\0"
                               "IOAPIC\0"
                               "NumCPUs\0"
                               "GCEnabled\0"
@@ -3577,7 +3565,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "McfgBase\0"
                               "McfgLength\0"
                               "PciPref64Enabled\0"
-                              "PciPref64Limit\0"
+                              "PciPref64LimitGB\0"
                               "SmcEnabled\0"
                               "FdcEnabled\0"
                               "ShowRtc\0"
@@ -3652,10 +3640,12 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 N_("Configuration error: Failed to read \"PciPref64Enabled\""));
 
     /* query the limit of the the 64-bit prefetchable memory window */
-    rc = CFGMR3QueryU64Def(pCfg, "PciPref64Limit", &pThis->u64PciPref64Max, _1G64*64);
+    uint64_t u64PciPref64MaxGB;
+    rc = CFGMR3QueryU64Def(pCfg, "PciPref64LimitGB", &u64PciPref64MaxGB, 64);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"PciPref64Limit\""));
+                                N_("Configuration error: Failed to read \"PciPref64LimitGB\""));
+    pThis->u64PciPref64Max = _1G64 * u64PciPref64MaxGB;
 
     /* query whether we are supposed to present custom table */
     pThis->fUseCust = false;

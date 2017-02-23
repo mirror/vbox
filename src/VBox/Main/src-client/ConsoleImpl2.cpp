@@ -1683,8 +1683,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pBiosCfg);
-            InsertConfigInteger(pBiosCfg,  "RamSize",              cbRam);
-            InsertConfigInteger(pBiosCfg,  "RamHoleSize",          cbRamHole);
             InsertConfigInteger(pBiosCfg,  "NumCPUs",              cCpus);
             InsertConfigString(pBiosCfg,   "HardDiskDevice",       "piix3ide");
             InsertConfigString(pBiosCfg,   "FloppyDevice",         "i82078");
@@ -1787,8 +1785,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
-            InsertConfigInteger(pCfg,  "RamSize",          cbRam);
-            InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
             InsertConfigInteger(pCfg,  "NumCPUs",          cCpus);
             InsertConfigString(pCfg,   "EfiRom",           efiRomFile);
             InsertConfigString(pCfg,   "BootArgs",         bootArgs);
@@ -2764,7 +2760,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         Bstr hwVersion;
         hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
-        InsertConfigInteger(pCfg, "RamSize",              cbRam);
         if (hwVersion.compare(Bstr("1").raw()) == 0) /* <= 2.0.x */
             InsertConfigInteger(pCfg, "HeapEnabled", 0);
         Bstr snapshotFolder;
@@ -3198,8 +3193,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pInst,    "Config", &pCfg);
             hrc = pBusMgr->assignPCIDevice("acpi", pInst);                                  H();
 
-            InsertConfigInteger(pCfg,  "RamSize",          cbRam);
-            InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
             InsertConfigInteger(pCfg,  "NumCPUs",          cCpus);
 
             InsertConfigInteger(pCfg,  "IOAPIC", fIOAPIC);

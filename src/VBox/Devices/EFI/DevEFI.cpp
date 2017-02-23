@@ -190,14 +190,6 @@ typedef struct DEVEFI
 
     /** Number of virtual CPUs. (Config) */
     uint32_t                cCpus;
-    /** RAM below 4GB (in bytes). (Config) */
-    uint32_t                cbBelow4GB;
-    /** RAM above 4GB (in bytes). (Config) */
-    uint64_t                cbAbove4GB;
-    /** The total amount of memory. */
-    uint64_t                cbRam;
-    /** The size of the RAM hole below 4GB. */
-    uint64_t                cbRamHole;
 
     /** The size of the DMI tables. */
     uint16_t                cbDmiTables;
@@ -1743,23 +1735,28 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
 {
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
+    PVM pVM                    = PDMDevHlpGetVM(pDevIns);
+    uint64_t const  cbRamSize  = MMR3PhysGetRamSize(pVM);
+    uint32_t const  cbBelow4GB = MMR3PhysGetRamSizeBelow4GB(pVM);
+    uint64_t const  cbAbove4GB = MMR3PhysGetRamSizeAbove4GB(pVM);
+    NOREF(cbAbove4GB);
+
     /*
      * Memory sizes.
      */
-    uint64_t const offRamHole = _4G - pThis->cbRamHole;
     uint32_t u32Low = 0;
     uint32_t u32Chunks = 0;
-    if (pThis->cbRam > 16 * _1M)
+    if (cbRamSize > 16 * _1M)
     {
-        u32Low = (uint32_t)RT_MIN(RT_MIN(pThis->cbRam, offRamHole), UINT32_C(0xffe00000));
+        u32Low = RT_MIN(cbBelow4GB, UINT32_C(0xffe00000));
         u32Chunks = (u32Low - 16U * _1M) / _64K;
     }
     cmosWrite(pDevIns, 0x34, RT_BYTE1(u32Chunks));
     cmosWrite(pDevIns, 0x35, RT_BYTE2(u32Chunks));
 
-    if (u32Low < pThis->cbRam)
+    if (u32Low < cbRamSize)
     {
-        uint64_t u64 = pThis->cbRam - u32Low;
+        uint64_t u64 = cbRamSize - u32Low;
         u32Chunks = (uint32_t)(u64 / _64K);
         cmosWrite(pDevIns, 0x5b, RT_BYTE1(u32Chunks));
         cmosWrite(pDevIns, 0x5c, RT_BYTE2(u32Chunks));
@@ -2141,8 +2138,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
     if (!CFGMR3AreValuesValid(pCfg,
                               "EfiRom\0"
-                              "RamSize\0"
-                              "RamHoleSize\0"
                               "NumCPUs\0"
                               "UUID\0"
                               "IOAPIC\0"
@@ -2220,16 +2215,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
-
-    /*
-     * RAM sizes
-     */
-    rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbRam);
-    AssertLogRelRCReturn(rc, rc);
-    rc = CFGMR3QueryU64(pCfg, "RamHoleSize", &pThis->cbRamHole);
-    AssertLogRelRCReturn(rc, rc);
-    pThis->cbBelow4GB = RT_MIN(pThis->cbRam, _4G - pThis->cbRamHole);
-    pThis->cbAbove4GB = pThis->cbRam - pThis->cbBelow4GB;
 
     /*
      * Get the system EFI ROM file name.
