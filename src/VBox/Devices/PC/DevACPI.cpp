@@ -1901,6 +1901,7 @@ PDMBOTHCBDECL(int) acpiR3DhexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
             break;
         case 2:
             Log(("%#6x\n", u32 & 0xffff));
+            break;
         case 4:
             Log(("%#10x\n", u32));
             break;
