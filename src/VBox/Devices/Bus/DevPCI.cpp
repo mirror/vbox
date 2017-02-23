@@ -614,8 +614,8 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                  * This does not change anything really as the access to the device is not going
                  * through the bridge but we want to be compliant to the spec.
                  */
-                if ((pGlobals->uPciBiosIo % 4*_1K) != 0)
-                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, 4*_1K);
+                if ((pGlobals->uPciBiosIo % _4K) != 0)
+                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, _4K);
                 Log(("%s: Aligned I/O start address. New address %#x\n", __FUNCTION__, pGlobals->uPciBiosIo));
                 pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_BASE, (pGlobals->uPciBiosIo >> 8) & 0xf0);
 
@@ -642,10 +642,10 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, uint8_t uBus, uint8_t uDe
                  * The result with a real bridge is that no I/O transactions are passed to the secondary
                  * interface. Again this doesn't really matter here but we want to be compliant to the spec.
                  */
-                if ((u32IoAddressBase != pGlobals->uPciBiosIo) && ((pGlobals->uPciBiosIo % 4*_1K) != 0))
+                if ((u32IoAddressBase != pGlobals->uPciBiosIo) && ((pGlobals->uPciBiosIo % _4K) != 0))
                 {
                     /* The upper boundary must be one byte less than a 4KB boundary. */
-                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, 4*_1K);
+                    pGlobals->uPciBiosIo = RT_ALIGN_32(pGlobals->uPciBiosIo, _4K);
                 }
                 pci_config_writeb(pGlobals, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pGlobals->uPciBiosIo >> 8) & 0xf0) - 1);
 

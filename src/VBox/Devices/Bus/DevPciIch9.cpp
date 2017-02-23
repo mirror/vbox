@@ -1566,9 +1566,9 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
      * This does not change anything really as the access to the device is not going
      * through the bridge but we want to be compliant to the spec.
      */
-    if ((pPciRoot->uPciBiosIo % 4*_1K) != 0)
+    if ((pPciRoot->uPciBiosIo % _4K) != 0)
     {
-        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*_1K);
+        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, _4K);
         Log(("%s: Aligned I/O start address. New address %#x\n", __FUNCTION__, pPciRoot->uPciBiosIo));
     }
     ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_BASE, (pPciRoot->uPciBiosIo >> 8) & 0xf0, 1);
@@ -1596,7 +1596,7 @@ static void ich9pciBiosInitBridge(PDEVPCIROOT pPciRoot, uint8_t uBus, uint8_t uD
     if (u32IoAddressBase != pPciRoot->uPciBiosIo)
     {
         /* Need again alignment to a 4KB boundary. */
-        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, 4*_1K);
+        pPciRoot->uPciBiosIo = RT_ALIGN_32(pPciRoot->uPciBiosIo, _4K);
         ich9pciBiosInitWriteConfig(pPciRoot, uBus, uDevFn, VBOX_PCI_IO_LIMIT, ((pPciRoot->uPciBiosIo - 1) >> 8) & 0xf0, 1);
     }
     else
@@ -2286,7 +2286,7 @@ DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMP
     }
     else
     {
-        if (uAddress + cb < 4*_1K)
+        if (uAddress + cb < _4K)
             LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
                     pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
         else
@@ -2702,7 +2702,7 @@ DECLCALLBACK(void) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCID
                 devpciR3UpdateMappings(pPciDev, fP2PBridge);
         }
     }
-    else if (uAddress + cb <= 4*_1K)
+    else if (uAddress + cb <= _4K)
         LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
                 pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
     else
