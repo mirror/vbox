@@ -123,7 +123,7 @@ class WuiReportBase(WuiContentBase):
         Returns a string.
         """
         uPct = cHits * 100 / cTotal;
-        if uPct >= 10:
+        if uPct >= 10 and (uPct > 103 or uPct <= 95):
             return '%s%%' % (uPct,);
         return '%.1f%%' % (cHits * 100.0 / cTotal,);
 
