@@ -206,10 +206,10 @@ const DISOPCODE g_aOneByteMapX64[256] =
     OP("jnle %Jb",           IDX_ParseImmBRel,   0,          0,          OP_JNLE,    OP_PARM_Jb  ,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_CONTROLFLOW | DISOPTYPE_RELATIVE_CONTROLFLOW | DISOPTYPE_COND_CONTROLFLOW | DISOPTYPE_FORCED_64_OP_SIZE),
 
     /* 8 */
-    OP("Imm Grp1 %Eb,%Ib",   IDX_ParseImmGrpl,   0,             0,          OP_IMM_GRP1,OP_PARM_Eb,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("Imm Grp1 %Ev,%Iz",   IDX_ParseImmGrpl,   0,             0,          OP_IMM_GRP1,OP_PARM_Ev,         OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("Imm Grp1 %Eb,%Ib",   IDX_ParseGrp1,      0,             0,          OP_IMM_GRP1,OP_PARM_Eb,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("Imm Grp1 %Ev,%Iz",   IDX_ParseGrp1,      0,             0,          OP_IMM_GRP1,OP_PARM_Ev,         OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE,
-    OP("Imm Grp1 %Ev,%Ib",   IDX_ParseImmGrpl,   0,             0,          OP_IMM_GRP1,OP_PARM_Ev,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("Imm Grp1 %Ev,%Ib",   IDX_ParseGrp1,      0,             0,          OP_IMM_GRP1,OP_PARM_Ev,         OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("test %Eb,%Gb",       IDX_ParseModRM,     IDX_UseModRM,  0,          OP_TEST,    OP_PARM_Eb,         OP_PARM_Gb,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("test %Ev,%Gv",       IDX_ParseModRM,     IDX_UseModRM,  0,          OP_TEST,    OP_PARM_Ev,         OP_PARM_Gv,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("xchg %Eb,%Gb",       IDX_ParseModRM,     IDX_UseModRM,  0,          OP_XCHG,    OP_PARM_Eb,         OP_PARM_Gb,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -221,6 +221,7 @@ const DISOPCODE g_aOneByteMapX64[256] =
     OP("mov %Ev,%Sw",        IDX_ParseModRM,     IDX_UseModRM,  0,          OP_MOV,     OP_PARM_Ev,         OP_PARM_Sw,     OP_PARM_NONE,   DISOPTYPE_POTENTIALLY_DANGEROUS),
     OP("lea %Gv,%M",         IDX_ParseModRM,     IDX_UseModRM,  0,          OP_LEA,     OP_PARM_Gv,         OP_PARM_M,      OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mov %Sw,%Ev",        IDX_ParseModRM,     IDX_UseModRM,  0,          OP_MOV,     OP_PARM_Sw,         OP_PARM_Ev,     OP_PARM_NONE,   DISOPTYPE_POTENTIALLY_DANGEROUS | DISOPTYPE_INHIBIT_IRQS),
+    /** @todo this is grp 1a, actually */
     OP("pop %Ev",            IDX_ParseModRM,     0,             0,          OP_POP,     OP_PARM_Ev,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 
     /* 9 */

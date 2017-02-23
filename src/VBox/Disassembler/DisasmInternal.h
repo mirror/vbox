@@ -44,7 +44,7 @@ enum IDX_Parse
   IDX_ParseImmUlong,
   IDX_ParseImmQword,
   IDX_ParseTwoByteEsc,
-  IDX_ParseImmGrpl,
+  IDX_ParseGrp1,
   IDX_ParseShiftGrp2,
   IDX_ParseGrp3,
   IDX_ParseGrp4,

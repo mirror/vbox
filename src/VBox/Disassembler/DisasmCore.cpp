@@ -82,7 +82,7 @@ static FNDISPARSE ParseInvOpModRm;
 static FNDISPARSE ParseTwoByteEsc;
 static FNDISPARSE ParseThreeByteEsc4;
 static FNDISPARSE ParseThreeByteEsc5;
-static FNDISPARSE ParseImmGrpl;
+static FNDISPARSE ParseGrp1;
 static FNDISPARSE ParseShiftGrp2;
 static FNDISPARSE ParseGrp3;
 static FNDISPARSE ParseGrp4;
@@ -133,7 +133,7 @@ static PFNDISPARSE const g_apfnFullDisasm[IDX_ParseMax] =
     ParseImmUlong,
     ParseImmQword,
     ParseTwoByteEsc,
-    ParseImmGrpl,
+    ParseGrp1,
     ParseShiftGrp2,
     ParseGrp3,
     ParseGrp4,
@@ -183,7 +183,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
     ParseImmUlong_SizeOnly,
     ParseImmQword_SizeOnly,
     ParseTwoByteEsc,
-    ParseImmGrpl,
+    ParseGrp1,
     ParseShiftGrp2,
     ParseGrp3,
     ParseGrp4,
@@ -2205,7 +2205,7 @@ static size_t ParseNopPause(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
 }
 //*****************************************************************************
 //*****************************************************************************
-static size_t ParseImmGrpl(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
+static size_t ParseGrp1(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
     RT_NOREF_PV(pParam);
 
