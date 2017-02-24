@@ -454,6 +454,10 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
     int rc = VINF_SUCCESS;
     bool fDeviceListChangedOrWokenUp = false;
 
+    /* Don't start any possibly lengthy operation if we are supposed to return immediately again. */
+    if (!aMillies)
+        return VINF_SUCCESS;
+
     /* Try to reconnect once when we enter if we lost the connection earlier. */
     if (m->hSocket == NIL_RTSOCKET)
         reconnect();
@@ -484,7 +488,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
 
         /* Limit the waiting time to 3sec so we can either reconnect or get a new device list. */
         if (m->hSocket == NIL_RTSOCKET || m->enmRecvState == kUsbIpRecvState_None)
-            msWait = RT_MIN(3000, aMillies);
+            msWait = RT_MIN(1000, aMillies);
 
         rc = RTPoll(m->hPollSet, msWait, &fEventsRecv, &uIdReady);
         if (RT_SUCCESS(rc))
@@ -559,6 +563,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                              || rc == VERR_NET_CONNECTION_REFUSED)
                     {
                         /* Make sure the device list is clear. */
+#if 0
                         RTSemFastMutexRequest(m->hMtxDevices);
                         if (m->pUsbDevicesCur)
                         {
@@ -568,6 +573,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                             m->pUsbDevicesCur = NULL;
                         }
                         RTSemFastMutexRelease(m->hMtxDevices);
+#endif
                         rc = VINF_SUCCESS;
                     }
                 }
