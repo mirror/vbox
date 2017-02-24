@@ -1799,7 +1799,7 @@
 /** RT_CONCAT8 helper, don't use.  */
 #define RT_CONCAT8_HLP(a,b,c,d,e,f,g,h) a##b##c##d##e##f##g##h
 
-/** @def RT_CONCAT8
+/** @def RT_CONCAT9
  * Concatenate the expanded arguments without any extra spaces in between.
  *
  * @param   a       The 1st part.
