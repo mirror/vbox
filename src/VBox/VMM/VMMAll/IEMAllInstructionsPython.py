@@ -2495,11 +2495,13 @@ class SimpleParser(object):
                     if self.iState == self.kiCode:
                         offHit = sLine.find('/*', offLine); # only multiline comments for now.
                         if offHit >= 0:
+                            self.checkCodeForMacro(sLine[offLine:offHit]);
                             self.sComment     = '';
                             self.iCommentLine = self.iLine;
                             self.iState       = self.kiCommentMulti;
                             offLine = offHit + 2;
                         else:
+                            self.checkCodeForMacro(sLine[offLine:]);
                             offLine = len(sLine);
 
                     elif self.iState == self.kiCommentMulti:
@@ -2647,18 +2649,20 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                 # Decoders.
                 #
                 iStart = len(asColumns);
-                #print 'debug: %s' % (oInstr,);
                 if oInstr.sEncoding is None:
                     pass;
                 elif oInstr.sEncoding == 'ModR/M':
                     # ASSUME the first operand is using the ModR/M encoding
                     assert len(oInstr.aoOperands) >= 1 and oInstr.aoOperands[0].usesModRM();
-                    asColumns.append('IDX_ParseModRM,')
+                    asColumns.append('IDX_ParseModRM,');
                     ## @todo IDX_ParseVexDest
                     # Is second operand using ModR/M too?
                     if len(oInstr.aoOperands) > 1 and oInstr.aoOperands[1].usesModRM():
                         asColumns.append('IDX_UseModRM,')
-                elif oInstr.sEncoding in ['prefix', 'fixed' ]:
+                elif oInstr.sEncoding in [ 'prefix', ]:
+                    for oOperand in oInstr.aoOperands:
+                        asColumns.append('0,');
+                elif oInstr.sEncoding in [ 'fixed' ]:
                     pass;
                 elif oInstr.sEncoding == 'vex2':
                     asColumns.append('IDX_ParseVex2b,')

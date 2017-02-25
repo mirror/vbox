@@ -500,10 +500,14 @@ FNIEMOP_DEF(iemOp_pop_DS)
 
 /**
  * @opcode      0x20
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_Eb_Gb)
 {
-    IEMOP_MNEMONIC(and_Eb_Gb, "and Eb,Gb");
+    IEMOP_MNEMONIC2(MR, AND, and, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_r8, &g_iemAImpl_and);
 }
@@ -511,10 +515,14 @@ FNIEMOP_DEF(iemOp_and_Eb_Gb)
 
 /**
  * @opcode      0x21
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_Ev_Gv)
 {
-    IEMOP_MNEMONIC(and_Ev_Gv, "and Ev,Gv");
+    IEMOP_MNEMONIC2(MR, AND, and, Ev, Gv, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_rv, &g_iemAImpl_and);
 }
@@ -522,10 +530,14 @@ FNIEMOP_DEF(iemOp_and_Ev_Gv)
 
 /**
  * @opcode      0x22
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_Gb_Eb)
 {
-    IEMOP_MNEMONIC(and_Gb_Eb, "and Gb,Eb");
+    IEMOP_MNEMONIC2(RM, AND, and, Gb, Eb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_r8_rm, &g_iemAImpl_and);
 }
@@ -533,10 +545,14 @@ FNIEMOP_DEF(iemOp_and_Gb_Eb)
 
 /**
  * @opcode      0x23
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_Gv_Ev)
 {
-    IEMOP_MNEMONIC(and_Gv_Ev, "and Gv,Ev");
+    IEMOP_MNEMONIC2(RM, AND, and, Gv, Ev, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_and);
 }
@@ -544,10 +560,14 @@ FNIEMOP_DEF(iemOp_and_Gv_Ev)
 
 /**
  * @opcode      0x24
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_Al_Ib)
 {
-    IEMOP_MNEMONIC(and_al_Ib, "and al,Ib");
+    IEMOP_MNEMONIC2(FIXED, AND, and, AL, Ib, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_AL_Ib, &g_iemAImpl_and);
 }
@@ -555,10 +575,14 @@ FNIEMOP_DEF(iemOp_and_Al_Ib)
 
 /**
  * @opcode      0x25
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
  */
 FNIEMOP_DEF(iemOp_and_eAX_Iz)
 {
-    IEMOP_MNEMONIC(and_rAX_Iz, "and rAX,Iz");
+    IEMOP_MNEMONIC2(FIXED, AND, and, rAX, Iz, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rAX_Iz, &g_iemAImpl_and);
 }
@@ -566,6 +590,12 @@ FNIEMOP_DEF(iemOp_and_eAX_Iz)
 
 /**
  * @opcode      0x26
+ * @opmnemonic  SEG
+ * @op1         ES
+ * @opgroup     op_prefix
+ * @openc       prefix
+ * @opdisenum   OP_SEG
+ * @ophints     harmless
  */
 FNIEMOP_DEF(iemOp_seg_ES)
 {
@@ -580,10 +610,13 @@ FNIEMOP_DEF(iemOp_seg_ES)
 
 /**
  * @opcode      0x27
+ * @opfltest    af,cf
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   of
  */
 FNIEMOP_DEF(iemOp_daa)
 {
-    IEMOP_MNEMONIC(daa_AL, "daa AL");
+    IEMOP_MNEMONIC0(FIXED, DAA, daa, DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64, 0); /* express implicit AL register use */
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
@@ -593,66 +626,84 @@ FNIEMOP_DEF(iemOp_daa)
 
 /**
  * @opcode      0x28
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 {
-    IEMOP_MNEMONIC(sub_Eb_Gb, "sub Eb,Gb");
+    IEMOP_MNEMONIC2(MR, SUB, sub, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_r8, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x29
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 {
-    IEMOP_MNEMONIC(sub_Ev_Gv, "sub Ev,Gv");
+    IEMOP_MNEMONIC2(MR, SUB, sub, Ev, Gv, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_rv, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x2a
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 {
-    IEMOP_MNEMONIC(sub_Gb_Eb, "sub Gb,Eb");
+    IEMOP_MNEMONIC2(RM, SUB, sub, Gb, Eb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_r8_rm, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x2b
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 {
-    IEMOP_MNEMONIC(sub_Gv_Ev, "sub Gv,Ev");
+    IEMOP_MNEMONIC2(RM, SUB, sub, Gv, Ev, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x2c
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_Al_Ib)
 {
-    IEMOP_MNEMONIC(sub_al_Ib, "sub al,Ib");
+    IEMOP_MNEMONIC2(FIXED, SUB, sub, AL, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_AL_Ib, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x2d
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
  */
 FNIEMOP_DEF(iemOp_sub_eAX_Iz)
 {
-    IEMOP_MNEMONIC(sub_rAX_Iz, "sub rAX,Iz");
+    IEMOP_MNEMONIC2(FIXED, SUB, sub, rAX, Iz, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rAX_Iz, &g_iemAImpl_sub);
 }
 
 
 /**
  * @opcode      0x2e
+ * @opmnemonic  SEG
+ * @op1         CS
+ * @opgroup     op_prefix
+ * @openc       prefix
+ * @opdisenum   OP_SEG
+ * @ophints     harmless
  */
 FNIEMOP_DEF(iemOp_seg_CS)
 {
@@ -667,10 +718,13 @@ FNIEMOP_DEF(iemOp_seg_CS)
 
 /**
  * @opcode      0x2f
+ * @opfltest    af,cf
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   of
  */
 FNIEMOP_DEF(iemOp_das)
 {
-    IEMOP_MNEMONIC(das_AL, "das AL");
+    IEMOP_MNEMONIC0(FIXED, DAS, das, DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64, 0); /* express implicit AL register use */
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF);
