@@ -362,7 +362,7 @@ class tdUsbBenchmark(vbox.TestDriver):                                      # py
 
         if fRc:
             # Wait a moment to let the USB device appear
-            self.sleep(3);
+            self.sleep(9);
 
         return fRc;
 
