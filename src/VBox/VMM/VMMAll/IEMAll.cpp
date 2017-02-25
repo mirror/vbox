@@ -11536,7 +11536,7 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
 #endif
 
 #define IEMOP_MNEMONIC0(a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints) \
-    IEMOP_MNEMONIC1EX(a_Lower, \
+    IEMOP_MNEMONIC0EX(a_Lower, \
                       #a_Lower, \
                       a_Form, a_Upper, a_Lower, a_fDisHints, a_fIemHints)
 #define IEMOP_MNEMONIC1(a_Form, a_Upper, a_Lower, a_Op1, a_fDisHints, a_fIemHints) \
