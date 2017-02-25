@@ -4812,7 +4812,6 @@ FNIEMOP_DEF(iemOp_push_fs)
 {
     IEMOP_MNEMONIC(push_fs, "push fs");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_FS);
 }
@@ -5347,7 +5346,6 @@ FNIEMOP_DEF(iemOp_push_gs)
 {
     IEMOP_MNEMONIC(push_gs, "push gs");
     IEMOP_HLP_MIN_386();
-    IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_GS);
 }
