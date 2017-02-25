@@ -43,8 +43,8 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
 /**
  * @opcode      0x00
  * @opmnemonic  add
- * @op1         reg:Eb
- * @op2         rm:Gb
+ * @op1         rm:Eb
+ * @op2         reg:Gb
  * @opmaps      one
  * @openc       ModR/M
  * @opflmodify  of,sf,zf,af,pf,cf
@@ -55,135 +55,210 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {
-    IEMOP_MNEMONIC2(RM, ADD, add, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+    IEMOP_MNEMONIC2(MR, ADD, add, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_r8, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x01. */
+/**
+ * @opcode      0x01
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ */
 FNIEMOP_DEF(iemOp_add_Ev_Gv)
 {
-    IEMOP_MNEMONIC2(RM, ADD, add, Ev, Gv, DISOPTYPE_HARMLESS, 0);
+    IEMOP_MNEMONIC2(MR, ADD, add, Ev, Gv, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_rv, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x02. */
+/**
+ * @opcode      0x02
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
 {
-    IEMOP_MNEMONIC2(MR, ADD, add, Gb, Ev, DISOPTYPE_HARMLESS, 0);
+    IEMOP_MNEMONIC2(RM, ADD, add, Gb, Eb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_r8_rm, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x03. */
+/**
+ * @opcode      0x03
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ */
 FNIEMOP_DEF(iemOp_add_Gv_Ev)
 {
-    IEMOP_MNEMONIC(add_Gv_Ev, "add Gv,Ev");
+    IEMOP_MNEMONIC2(RM, ADD, add, Gv, Ev, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x04. */
+/**
+ * @opcode      0x04
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
 {
-    IEMOP_MNEMONIC(add_al_Ib, "add al,Ib");
+    IEMOP_MNEMONIC2(FIXED, ADD, add, AL, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_AL_Ib, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x05. */
+/**
+ * @opcode      0x05
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ */
 FNIEMOP_DEF(iemOp_add_eAX_Iz)
 {
-    IEMOP_MNEMONIC(add_rAX_Iz, "add rAX,Iz");
+    IEMOP_MNEMONIC2(FIXED, ADD, add, rAX, Iz, DISOPTYPE_HARMLESS, 0);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rAX_Iz, &g_iemAImpl_add);
 }
 
 
-/** Opcode 0x06. */
+/**
+ * @opcode      0x06
+ * @opgroup     op_stack_sreg
+ */
 FNIEMOP_DEF(iemOp_push_ES)
 {
-    IEMOP_MNEMONIC(push_es, "push es");
+    IEMOP_MNEMONIC1(FIXED, PUSH, push, ES, DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64, 0);
+    IEMOP_HLP_NO_64BIT();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_ES);
 }
 
 
-/** Opcode 0x07. */
+/**
+ * @opcode      0x07
+ * @opgroup     op_stack_sreg
+ */
 FNIEMOP_DEF(iemOp_pop_ES)
 {
-    IEMOP_MNEMONIC(pop_es, "pop es");
+    IEMOP_MNEMONIC1(FIXED, POP, pop, ES, DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64, 0);
     IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_pop_Sreg, X86_SREG_ES, pVCpu->iem.s.enmEffOpSize);
 }
 
 
-/** Opcode 0x08. */
+/**
+ * @opcode      0x08
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_Eb_Gb)
 {
-    IEMOP_MNEMONIC(or_Eb_Gb, "or  Eb,Gb");
+    IEMOP_MNEMONIC2(MR, OR, or, Eb, Gb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_r8, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x09. */
+/**
+ * @opcode      0x09
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_Ev_Gv)
 {
-    IEMOP_MNEMONIC(or_Ev_Gv, "or  Ev,Gv");
+    IEMOP_MNEMONIC2(MR, OR, or, Ev, Gv, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rm_rv, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x0a. */
+/**
+ * @opcode      0x0a
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_Gb_Eb)
 {
-    IEMOP_MNEMONIC(or_Gb_Eb, "or  Gb,Eb");
+    IEMOP_MNEMONIC2(RM, OR, or, Gb, Eb, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_r8_rm, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x0b. */
+/**
+ * @opcode      0x0b
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_Gv_Ev)
 {
-    IEMOP_MNEMONIC(or_Gv_Ev, "or  Gv,Ev");
+    IEMOP_MNEMONIC2(RM, OR, or, Gv, Ev, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x0c. */
+/**
+ * @opcode      0x0c
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_Al_Ib)
 {
-    IEMOP_MNEMONIC(or_al_Ib, "or  al,Ib");
+    IEMOP_MNEMONIC2(FIXED, OR, or, AL, Ib, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_AL_Ib, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x0d. */
+/**
+ * @opcode      0x0d
+ * @opgroup     op_gen_arith_bin
+ * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflundef   af
+ * @opflclear   of,cf
+ */
 FNIEMOP_DEF(iemOp_or_eAX_Iz)
 {
-    IEMOP_MNEMONIC(or_rAX_Iz, "or  rAX,Iz");
+    IEMOP_MNEMONIC2(FIXED, OR, or, rAX, Iz, DISOPTYPE_HARMLESS, 0);
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_AF);
     return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rAX_Iz, &g_iemAImpl_or);
 }
 
 
-/** Opcode 0x0e. */
+/**
+ * @opcode      0x0e
+ * @opgroup     op_stack_sreg
+ */
 FNIEMOP_DEF(iemOp_push_CS)
 {
-    IEMOP_MNEMONIC(push_cs, "push cs");
+    IEMOP_MNEMONIC1(FIXED, PUSH, push, CS, DISOPTYPE_HARMLESS | DISOPTYPE_POTENTIALLY_DANGEROUS | DISOPTYPE_INVALID_64, 0);
+    IEMOP_HLP_NO_64BIT();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_CS);
 }
 
 
-/** Opcode 0x0f. */
+/**
+ * @opcode      0x0f
+ * @mnemonic    2byteescape
+ * @encoding    two0f
+ * @opdisenum   OP_2B_ESC
+ * @ophints     harmless
+ * @opgroup     op_escapes
+ */
 FNIEMOP_DEF(iemOp_2byteEscape)
 {
 #ifdef VBOX_STRICT
+    /* Sanity check the table the first time around. */
     static bool s_fTested = false;
     if (RT_LIKELY(s_fTested)) { /* likely */  }
     else
@@ -196,11 +271,21 @@ FNIEMOP_DEF(iemOp_2byteEscape)
     }
 #endif
 
-    uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+    if (RT_LIKELY(IEM_GET_TARGET_CPU(pVCpu) >= IEMTARGETCPU_286))
+    {
+        uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
+        IEMOP_HLP_MIN_286();
+        return FNIEMOP_CALL(g_apfnTwoByteMap[(uintptr_t)b * 4 + pVCpu->iem.s.idxPrefix]);
+    }
 
-    /** @todo PUSH CS on 8086, undefined on 80186. */
-    IEMOP_HLP_MIN_286();
-    return FNIEMOP_CALL(g_apfnTwoByteMap[(uintptr_t)b * 4 + pVCpu->iem.s.idxPrefix]);
+    /*
+     * On the 8086 this is a POP CS instruction.
+     * For the time being we don't specify this this.
+     */
+    IEMOP_MNEMONIC1(FIXED, POP, pop, CS, DISOPTYPE_HARMLESS | DISOPTYPE_POTENTIALLY_DANGEROUS | DISOPTYPE_INVALID_64, IEMOPHINT_SKIP_PYTHON);
+    IEMOP_HLP_NO_64BIT();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_pop_Sreg, X86_SREG_ES, pVCpu->iem.s.enmEffOpSize);
 }
 
 /**
@@ -225,7 +310,9 @@ FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 }
 
 
-/** Opcode 0x11. */
+/**
+ * @opcode      0x11
+ */
 FNIEMOP_DEF(iemOp_adc_Ev_Gv)
 {
     IEMOP_MNEMONIC(adc_Ev_Gv, "adc Ev,Gv");
@@ -233,7 +320,9 @@ FNIEMOP_DEF(iemOp_adc_Ev_Gv)
 }
 
 
-/** Opcode 0x12. */
+/**
+ * @opcode      0x12
+ */
 FNIEMOP_DEF(iemOp_adc_Gb_Eb)
 {
     IEMOP_MNEMONIC(adc_Gb_Eb, "adc Gb,Eb");
@@ -241,7 +330,9 @@ FNIEMOP_DEF(iemOp_adc_Gb_Eb)
 }
 
 
-/** Opcode 0x13. */
+/**
+ * @opcode      0x13
+ */
 FNIEMOP_DEF(iemOp_adc_Gv_Ev)
 {
     IEMOP_MNEMONIC(adc_Gv_Ev, "adc Gv,Ev");
@@ -249,7 +340,9 @@ FNIEMOP_DEF(iemOp_adc_Gv_Ev)
 }
 
 
-/** Opcode 0x14. */
+/**
+ * @opcode      0x14
+ */
 FNIEMOP_DEF(iemOp_adc_Al_Ib)
 {
     IEMOP_MNEMONIC(adc_al_Ib, "adc al,Ib");
@@ -257,7 +350,9 @@ FNIEMOP_DEF(iemOp_adc_Al_Ib)
 }
 
 
-/** Opcode 0x15. */
+/**
+ * @opcode      0x15
+ */
 FNIEMOP_DEF(iemOp_adc_eAX_Iz)
 {
     IEMOP_MNEMONIC(adc_rAX_Iz, "adc rAX,Iz");
@@ -265,15 +360,20 @@ FNIEMOP_DEF(iemOp_adc_eAX_Iz)
 }
 
 
-/** Opcode 0x16. */
+/**
+ * @opcode      0x16
+ */
 FNIEMOP_DEF(iemOp_push_SS)
 {
     IEMOP_MNEMONIC(push_ss, "push ss");
+    IEMOP_HLP_NO_64BIT();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_SS);
 }
 
 
-/** Opcode 0x17. */
+/**
+ * @opcode      0x17
+ */
 FNIEMOP_DEF(iemOp_pop_SS)
 {
     IEMOP_MNEMONIC(pop_ss, "pop ss"); /** @todo implies instruction fusing? */
@@ -283,7 +383,9 @@ FNIEMOP_DEF(iemOp_pop_SS)
 }
 
 
-/** Opcode 0x18. */
+/**
+ * @opcode      0x18
+ */
 FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
 {
     IEMOP_MNEMONIC(sbb_Eb_Gb, "sbb Eb,Gb");
@@ -291,7 +393,9 @@ FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
 }
 
 
-/** Opcode 0x19. */
+/**
+ * @opcode      0x19
+ */
 FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
 {
     IEMOP_MNEMONIC(sbb_Ev_Gv, "sbb Ev,Gv");
@@ -299,7 +403,9 @@ FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
 }
 
 
-/** Opcode 0x1a. */
+/**
+ * @opcode      0x1a
+ */
 FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
 {
     IEMOP_MNEMONIC(sbb_Gb_Eb, "sbb Gb,Eb");
@@ -307,7 +413,9 @@ FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
 }
 
 
-/** Opcode 0x1b. */
+/**
+ * @opcode      0x1b
+ */
 FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 {
     IEMOP_MNEMONIC(sbb_Gv_Ev, "sbb Gv,Ev");
@@ -315,7 +423,9 @@ FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 }
 
 
-/** Opcode 0x1c. */
+/**
+ * @opcode      0x1c
+ */
 FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 {
     IEMOP_MNEMONIC(sbb_al_Ib, "sbb al,Ib");
@@ -323,7 +433,9 @@ FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 }
 
 
-/** Opcode 0x1d. */
+/**
+ * @opcode      0x1d
+ */
 FNIEMOP_DEF(iemOp_sbb_eAX_Iz)
 {
     IEMOP_MNEMONIC(sbb_rAX_Iz, "sbb rAX,Iz");
@@ -331,15 +443,20 @@ FNIEMOP_DEF(iemOp_sbb_eAX_Iz)
 }
 
 
-/** Opcode 0x1e. */
+/**
+ * @opcode      0x1e
+ */
 FNIEMOP_DEF(iemOp_push_DS)
 {
     IEMOP_MNEMONIC(push_ds, "push ds");
+    IEMOP_HLP_NO_64BIT();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_DS);
 }
 
 
-/** Opcode 0x1f. */
+/**
+ * @opcode      0x1f
+ */
 FNIEMOP_DEF(iemOp_pop_DS)
 {
     IEMOP_MNEMONIC(pop_ds, "pop ds");
@@ -349,7 +466,9 @@ FNIEMOP_DEF(iemOp_pop_DS)
 }
 
 
-/** Opcode 0x20. */
+/**
+ * @opcode      0x20
+ */
 FNIEMOP_DEF(iemOp_and_Eb_Gb)
 {
     IEMOP_MNEMONIC(and_Eb_Gb, "and Eb,Gb");
@@ -358,7 +477,9 @@ FNIEMOP_DEF(iemOp_and_Eb_Gb)
 }
 
 
-/** Opcode 0x21. */
+/**
+ * @opcode      0x21
+ */
 FNIEMOP_DEF(iemOp_and_Ev_Gv)
 {
     IEMOP_MNEMONIC(and_Ev_Gv, "and Ev,Gv");
@@ -367,7 +488,9 @@ FNIEMOP_DEF(iemOp_and_Ev_Gv)
 }
 
 
-/** Opcode 0x22. */
+/**
+ * @opcode      0x22
+ */
 FNIEMOP_DEF(iemOp_and_Gb_Eb)
 {
     IEMOP_MNEMONIC(and_Gb_Eb, "and Gb,Eb");
@@ -376,7 +499,9 @@ FNIEMOP_DEF(iemOp_and_Gb_Eb)
 }
 
 
-/** Opcode 0x23. */
+/**
+ * @opcode      0x23
+ */
 FNIEMOP_DEF(iemOp_and_Gv_Ev)
 {
     IEMOP_MNEMONIC(and_Gv_Ev, "and Gv,Ev");
@@ -385,7 +510,9 @@ FNIEMOP_DEF(iemOp_and_Gv_Ev)
 }
 
 
-/** Opcode 0x24. */
+/**
+ * @opcode      0x24
+ */
 FNIEMOP_DEF(iemOp_and_Al_Ib)
 {
     IEMOP_MNEMONIC(and_al_Ib, "and al,Ib");
@@ -394,7 +521,9 @@ FNIEMOP_DEF(iemOp_and_Al_Ib)
 }
 
 
-/** Opcode 0x25. */
+/**
+ * @opcode      0x25
+ */
 FNIEMOP_DEF(iemOp_and_eAX_Iz)
 {
     IEMOP_MNEMONIC(and_rAX_Iz, "and rAX,Iz");
@@ -403,7 +532,9 @@ FNIEMOP_DEF(iemOp_and_eAX_Iz)
 }
 
 
-/** Opcode 0x26. */
+/**
+ * @opcode      0x26
+ */
 FNIEMOP_DEF(iemOp_seg_ES)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg es");
@@ -415,7 +546,9 @@ FNIEMOP_DEF(iemOp_seg_ES)
 }
 
 
-/** Opcode 0x27. */
+/**
+ * @opcode      0x27
+ */
 FNIEMOP_DEF(iemOp_daa)
 {
     IEMOP_MNEMONIC(daa_AL, "daa AL");
@@ -426,7 +559,9 @@ FNIEMOP_DEF(iemOp_daa)
 }
 
 
-/** Opcode 0x28. */
+/**
+ * @opcode      0x28
+ */
 FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 {
     IEMOP_MNEMONIC(sub_Eb_Gb, "sub Eb,Gb");
@@ -434,7 +569,9 @@ FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 }
 
 
-/** Opcode 0x29. */
+/**
+ * @opcode      0x29
+ */
 FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 {
     IEMOP_MNEMONIC(sub_Ev_Gv, "sub Ev,Gv");
@@ -442,7 +579,9 @@ FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 }
 
 
-/** Opcode 0x2a. */
+/**
+ * @opcode      0x2a
+ */
 FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 {
     IEMOP_MNEMONIC(sub_Gb_Eb, "sub Gb,Eb");
@@ -450,7 +589,9 @@ FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 }
 
 
-/** Opcode 0x2b. */
+/**
+ * @opcode      0x2b
+ */
 FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 {
     IEMOP_MNEMONIC(sub_Gv_Ev, "sub Gv,Ev");
@@ -458,7 +599,9 @@ FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 }
 
 
-/** Opcode 0x2c. */
+/**
+ * @opcode      0x2c
+ */
 FNIEMOP_DEF(iemOp_sub_Al_Ib)
 {
     IEMOP_MNEMONIC(sub_al_Ib, "sub al,Ib");
@@ -466,7 +609,9 @@ FNIEMOP_DEF(iemOp_sub_Al_Ib)
 }
 
 
-/** Opcode 0x2d. */
+/**
+ * @opcode      0x2d
+ */
 FNIEMOP_DEF(iemOp_sub_eAX_Iz)
 {
     IEMOP_MNEMONIC(sub_rAX_Iz, "sub rAX,Iz");
@@ -474,7 +619,9 @@ FNIEMOP_DEF(iemOp_sub_eAX_Iz)
 }
 
 
-/** Opcode 0x2e. */
+/**
+ * @opcode      0x2e
+ */
 FNIEMOP_DEF(iemOp_seg_CS)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg cs");
@@ -486,7 +633,9 @@ FNIEMOP_DEF(iemOp_seg_CS)
 }
 
 
-/** Opcode 0x2f. */
+/**
+ * @opcode      0x2f
+ */
 FNIEMOP_DEF(iemOp_das)
 {
     IEMOP_MNEMONIC(das_AL, "das AL");
@@ -497,7 +646,9 @@ FNIEMOP_DEF(iemOp_das)
 }
 
 
-/** Opcode 0x30. */
+/**
+ * @opcode      0x30
+ */
 FNIEMOP_DEF(iemOp_xor_Eb_Gb)
 {
     IEMOP_MNEMONIC(xor_Eb_Gb, "xor Eb,Gb");
@@ -506,7 +657,9 @@ FNIEMOP_DEF(iemOp_xor_Eb_Gb)
 }
 
 
-/** Opcode 0x31. */
+/**
+ * @opcode      0x31
+ */
 FNIEMOP_DEF(iemOp_xor_Ev_Gv)
 {
     IEMOP_MNEMONIC(xor_Ev_Gv, "xor Ev,Gv");
@@ -515,7 +668,9 @@ FNIEMOP_DEF(iemOp_xor_Ev_Gv)
 }
 
 
-/** Opcode 0x32. */
+/**
+ * @opcode      0x32
+ */
 FNIEMOP_DEF(iemOp_xor_Gb_Eb)
 {
     IEMOP_MNEMONIC(xor_Gb_Eb, "xor Gb,Eb");
@@ -524,7 +679,9 @@ FNIEMOP_DEF(iemOp_xor_Gb_Eb)
 }
 
 
-/** Opcode 0x33. */
+/**
+ * @opcode      0x33
+ */
 FNIEMOP_DEF(iemOp_xor_Gv_Ev)
 {
     IEMOP_MNEMONIC(xor_Gv_Ev, "xor Gv,Ev");
@@ -533,7 +690,9 @@ FNIEMOP_DEF(iemOp_xor_Gv_Ev)
 }
 
 
-/** Opcode 0x34. */
+/**
+ * @opcode      0x34
+ */
 FNIEMOP_DEF(iemOp_xor_Al_Ib)
 {
     IEMOP_MNEMONIC(xor_al_Ib, "xor al,Ib");
@@ -542,7 +701,9 @@ FNIEMOP_DEF(iemOp_xor_Al_Ib)
 }
 
 
-/** Opcode 0x35. */
+/**
+ * @opcode      0x35
+ */
 FNIEMOP_DEF(iemOp_xor_eAX_Iz)
 {
     IEMOP_MNEMONIC(xor_rAX_Iz, "xor rAX,Iz");
@@ -551,7 +712,9 @@ FNIEMOP_DEF(iemOp_xor_eAX_Iz)
 }
 
 
-/** Opcode 0x36. */
+/**
+ * @opcode      0x36
+ */
 FNIEMOP_DEF(iemOp_seg_SS)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg ss");
@@ -563,11 +726,15 @@ FNIEMOP_DEF(iemOp_seg_SS)
 }
 
 
-/** Opcode 0x37. */
+/**
+ * @opcode      0x37
+ */
 FNIEMOP_STUB(iemOp_aaa);
 
 
-/** Opcode 0x38. */
+/**
+ * @opcode      0x38
+ */
 FNIEMOP_DEF(iemOp_cmp_Eb_Gb)
 {
     IEMOP_MNEMONIC(cmp_Eb_Gb, "cmp Eb,Gb");
@@ -575,7 +742,9 @@ FNIEMOP_DEF(iemOp_cmp_Eb_Gb)
 }
 
 
-/** Opcode 0x39. */
+/**
+ * @opcode      0x39
+ */
 FNIEMOP_DEF(iemOp_cmp_Ev_Gv)
 {
     IEMOP_MNEMONIC(cmp_Ev_Gv, "cmp Ev,Gv");
@@ -583,7 +752,9 @@ FNIEMOP_DEF(iemOp_cmp_Ev_Gv)
 }
 
 
-/** Opcode 0x3a. */
+/**
+ * @opcode      0x3a
+ */
 FNIEMOP_DEF(iemOp_cmp_Gb_Eb)
 {
     IEMOP_MNEMONIC(cmp_Gb_Eb, "cmp Gb,Eb");
@@ -591,7 +762,9 @@ FNIEMOP_DEF(iemOp_cmp_Gb_Eb)
 }
 
 
-/** Opcode 0x3b. */
+/**
+ * @opcode      0x3b
+ */
 FNIEMOP_DEF(iemOp_cmp_Gv_Ev)
 {
     IEMOP_MNEMONIC(cmp_Gv_Ev, "cmp Gv,Ev");
@@ -599,7 +772,9 @@ FNIEMOP_DEF(iemOp_cmp_Gv_Ev)
 }
 
 
-/** Opcode 0x3c. */
+/**
+ * @opcode      0x3c
+ */
 FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 {
     IEMOP_MNEMONIC(cmp_al_Ib, "cmp al,Ib");
@@ -607,7 +782,9 @@ FNIEMOP_DEF(iemOp_cmp_Al_Ib)
 }
 
 
-/** Opcode 0x3d. */
+/**
+ * @opcode      0x3d
+ */
 FNIEMOP_DEF(iemOp_cmp_eAX_Iz)
 {
     IEMOP_MNEMONIC(cmp_rAX_Iz, "cmp rAX,Iz");
@@ -615,7 +792,9 @@ FNIEMOP_DEF(iemOp_cmp_eAX_Iz)
 }
 
 
-/** Opcode 0x3e. */
+/**
+ * @opcode      0x3e
+ */
 FNIEMOP_DEF(iemOp_seg_DS)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg ds");
@@ -627,7 +806,9 @@ FNIEMOP_DEF(iemOp_seg_DS)
 }
 
 
-/** Opcode 0x3f. */
+/**
+ * @opcode      0x3f
+ */
 FNIEMOP_STUB(iemOp_aas);
 
 /**
@@ -676,7 +857,9 @@ FNIEMOP_DEF_2(iemOpCommonUnaryGReg, PCIEMOPUNARYSIZES, pImpl, uint8_t, iReg)
 }
 
 
-/** Opcode 0x40. */
+/**
+ * @opcode      0x40
+ */
 FNIEMOP_DEF(iemOp_inc_eAX)
 {
     /*
@@ -696,7 +879,9 @@ FNIEMOP_DEF(iemOp_inc_eAX)
 }
 
 
-/** Opcode 0x41. */
+/**
+ * @opcode      0x41
+ */
 FNIEMOP_DEF(iemOp_inc_eCX)
 {
     /*
@@ -717,7 +902,9 @@ FNIEMOP_DEF(iemOp_inc_eCX)
 }
 
 
-/** Opcode 0x42. */
+/**
+ * @opcode      0x42
+ */
 FNIEMOP_DEF(iemOp_inc_eDX)
 {
     /*
@@ -739,7 +926,9 @@ FNIEMOP_DEF(iemOp_inc_eDX)
 
 
 
-/** Opcode 0x43. */
+/**
+ * @opcode      0x43
+ */
 FNIEMOP_DEF(iemOp_inc_eBX)
 {
     /*
@@ -761,7 +950,9 @@ FNIEMOP_DEF(iemOp_inc_eBX)
 }
 
 
-/** Opcode 0x44. */
+/**
+ * @opcode      0x44
+ */
 FNIEMOP_DEF(iemOp_inc_eSP)
 {
     /*
@@ -782,7 +973,9 @@ FNIEMOP_DEF(iemOp_inc_eSP)
 }
 
 
-/** Opcode 0x45. */
+/**
+ * @opcode      0x45
+ */
 FNIEMOP_DEF(iemOp_inc_eBP)
 {
     /*
@@ -804,7 +997,9 @@ FNIEMOP_DEF(iemOp_inc_eBP)
 }
 
 
-/** Opcode 0x46. */
+/**
+ * @opcode      0x46
+ */
 FNIEMOP_DEF(iemOp_inc_eSI)
 {
     /*
@@ -826,7 +1021,9 @@ FNIEMOP_DEF(iemOp_inc_eSI)
 }
 
 
-/** Opcode 0x47. */
+/**
+ * @opcode      0x47
+ */
 FNIEMOP_DEF(iemOp_inc_eDI)
 {
     /*
@@ -849,7 +1046,9 @@ FNIEMOP_DEF(iemOp_inc_eDI)
 }
 
 
-/** Opcode 0x48. */
+/**
+ * @opcode      0x48
+ */
 FNIEMOP_DEF(iemOp_dec_eAX)
 {
     /*
@@ -870,7 +1069,9 @@ FNIEMOP_DEF(iemOp_dec_eAX)
 }
 
 
-/** Opcode 0x49. */
+/**
+ * @opcode      0x49
+ */
 FNIEMOP_DEF(iemOp_dec_eCX)
 {
     /*
@@ -892,7 +1093,9 @@ FNIEMOP_DEF(iemOp_dec_eCX)
 }
 
 
-/** Opcode 0x4a. */
+/**
+ * @opcode      0x4a
+ */
 FNIEMOP_DEF(iemOp_dec_eDX)
 {
     /*
@@ -914,7 +1117,9 @@ FNIEMOP_DEF(iemOp_dec_eDX)
 }
 
 
-/** Opcode 0x4b. */
+/**
+ * @opcode      0x4b
+ */
 FNIEMOP_DEF(iemOp_dec_eBX)
 {
     /*
@@ -937,7 +1142,9 @@ FNIEMOP_DEF(iemOp_dec_eBX)
 }
 
 
-/** Opcode 0x4c. */
+/**
+ * @opcode      0x4c
+ */
 FNIEMOP_DEF(iemOp_dec_eSP)
 {
     /*
@@ -959,7 +1166,9 @@ FNIEMOP_DEF(iemOp_dec_eSP)
 }
 
 
-/** Opcode 0x4d. */
+/**
+ * @opcode      0x4d
+ */
 FNIEMOP_DEF(iemOp_dec_eBP)
 {
     /*
@@ -982,7 +1191,9 @@ FNIEMOP_DEF(iemOp_dec_eBP)
 }
 
 
-/** Opcode 0x4e. */
+/**
+ * @opcode      0x4e
+ */
 FNIEMOP_DEF(iemOp_dec_eSI)
 {
     /*
@@ -1005,7 +1216,9 @@ FNIEMOP_DEF(iemOp_dec_eSI)
 }
 
 
-/** Opcode 0x4f. */
+/**
+ * @opcode      0x4f
+ */
 FNIEMOP_DEF(iemOp_dec_eDI)
 {
     /*
@@ -1076,7 +1289,9 @@ FNIEMOP_DEF_1(iemOpCommonPushGReg, uint8_t, iReg)
 }
 
 
-/** Opcode 0x50. */
+/**
+ * @opcode      0x50
+ */
 FNIEMOP_DEF(iemOp_push_eAX)
 {
     IEMOP_MNEMONIC(push_rAX, "push rAX");
@@ -1084,7 +1299,9 @@ FNIEMOP_DEF(iemOp_push_eAX)
 }
 
 
-/** Opcode 0x51. */
+/**
+ * @opcode      0x51
+ */
 FNIEMOP_DEF(iemOp_push_eCX)
 {
     IEMOP_MNEMONIC(push_rCX, "push rCX");
@@ -1092,7 +1309,9 @@ FNIEMOP_DEF(iemOp_push_eCX)
 }
 
 
-/** Opcode 0x52. */
+/**
+ * @opcode      0x52
+ */
 FNIEMOP_DEF(iemOp_push_eDX)
 {
     IEMOP_MNEMONIC(push_rDX, "push rDX");
@@ -1100,7 +1319,9 @@ FNIEMOP_DEF(iemOp_push_eDX)
 }
 
 
-/** Opcode 0x53. */
+/**
+ * @opcode      0x53
+ */
 FNIEMOP_DEF(iemOp_push_eBX)
 {
     IEMOP_MNEMONIC(push_rBX, "push rBX");
@@ -1108,7 +1329,9 @@ FNIEMOP_DEF(iemOp_push_eBX)
 }
 
 
-/** Opcode 0x54. */
+/**
+ * @opcode      0x54
+ */
 FNIEMOP_DEF(iemOp_push_eSP)
 {
     IEMOP_MNEMONIC(push_rSP, "push rSP");
@@ -1126,7 +1349,9 @@ FNIEMOP_DEF(iemOp_push_eSP)
 }
 
 
-/** Opcode 0x55. */
+/**
+ * @opcode      0x55
+ */
 FNIEMOP_DEF(iemOp_push_eBP)
 {
     IEMOP_MNEMONIC(push_rBP, "push rBP");
@@ -1134,7 +1359,9 @@ FNIEMOP_DEF(iemOp_push_eBP)
 }
 
 
-/** Opcode 0x56. */
+/**
+ * @opcode      0x56
+ */
 FNIEMOP_DEF(iemOp_push_eSI)
 {
     IEMOP_MNEMONIC(push_rSI, "push rSI");
@@ -1142,7 +1369,9 @@ FNIEMOP_DEF(iemOp_push_eSI)
 }
 
 
-/** Opcode 0x57. */
+/**
+ * @opcode      0x57
+ */
 FNIEMOP_DEF(iemOp_push_eDI)
 {
     IEMOP_MNEMONIC(push_rDI, "push rDI");
@@ -1198,7 +1427,9 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
 }
 
 
-/** Opcode 0x58. */
+/**
+ * @opcode      0x58
+ */
 FNIEMOP_DEF(iemOp_pop_eAX)
 {
     IEMOP_MNEMONIC(pop_rAX, "pop rAX");
@@ -1206,7 +1437,9 @@ FNIEMOP_DEF(iemOp_pop_eAX)
 }
 
 
-/** Opcode 0x59. */
+/**
+ * @opcode      0x59
+ */
 FNIEMOP_DEF(iemOp_pop_eCX)
 {
     IEMOP_MNEMONIC(pop_rCX, "pop rCX");
@@ -1214,7 +1447,9 @@ FNIEMOP_DEF(iemOp_pop_eCX)
 }
 
 
-/** Opcode 0x5a. */
+/**
+ * @opcode      0x5a
+ */
 FNIEMOP_DEF(iemOp_pop_eDX)
 {
     IEMOP_MNEMONIC(pop_rDX, "pop rDX");
@@ -1222,7 +1457,9 @@ FNIEMOP_DEF(iemOp_pop_eDX)
 }
 
 
-/** Opcode 0x5b. */
+/**
+ * @opcode      0x5b
+ */
 FNIEMOP_DEF(iemOp_pop_eBX)
 {
     IEMOP_MNEMONIC(pop_rBX, "pop rBX");
@@ -1230,7 +1467,9 @@ FNIEMOP_DEF(iemOp_pop_eBX)
 }
 
 
-/** Opcode 0x5c. */
+/**
+ * @opcode      0x5c
+ */
 FNIEMOP_DEF(iemOp_pop_eSP)
 {
     IEMOP_MNEMONIC(pop_rSP, "pop rSP");
@@ -1279,7 +1518,9 @@ FNIEMOP_DEF(iemOp_pop_eSP)
 }
 
 
-/** Opcode 0x5d. */
+/**
+ * @opcode      0x5d
+ */
 FNIEMOP_DEF(iemOp_pop_eBP)
 {
     IEMOP_MNEMONIC(pop_rBP, "pop rBP");
@@ -1287,7 +1528,9 @@ FNIEMOP_DEF(iemOp_pop_eBP)
 }
 
 
-/** Opcode 0x5e. */
+/**
+ * @opcode      0x5e
+ */
 FNIEMOP_DEF(iemOp_pop_eSI)
 {
     IEMOP_MNEMONIC(pop_rSI, "pop rSI");
@@ -1295,7 +1538,9 @@ FNIEMOP_DEF(iemOp_pop_eSI)
 }
 
 
-/** Opcode 0x5f. */
+/**
+ * @opcode      0x5f
+ */
 FNIEMOP_DEF(iemOp_pop_eDI)
 {
     IEMOP_MNEMONIC(pop_rDI, "pop rDI");
@@ -1303,7 +1548,9 @@ FNIEMOP_DEF(iemOp_pop_eDI)
 }
 
 
-/** Opcode 0x60. */
+/**
+ * @opcode      0x60
+ */
 FNIEMOP_DEF(iemOp_pusha)
 {
     IEMOP_MNEMONIC(pusha, "pusha");
@@ -1316,7 +1563,9 @@ FNIEMOP_DEF(iemOp_pusha)
 }
 
 
-/** Opcode 0x61. */
+/**
+ * @opcode      0x61
+ */
 FNIEMOP_DEF(iemOp_popa__mvex)
 {
     if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
@@ -1335,7 +1584,14 @@ FNIEMOP_DEF(iemOp_popa__mvex)
 }
 
 
-/** Opcode 0x62. */
+/**
+ * @opcode      0x62
+ * @opmnemonic  bound
+ * @op1         Gv
+ * @op2         Ma
+ * @opmincpu    80186
+ * @ophints     harmless invalid_64
+ */
 FNIEMOP_STUB(iemOp_bound_Gv_Ma__evex);
 //    IEMOP_HLP_MIN_186();
 
@@ -1391,7 +1647,9 @@ FNIEMOP_DEF(iemOp_arpl_Ew_Gw)
 }
 
 
-/** Opcode 0x63.
+/**
+ * @opcode 0x63
+ *
  * @note This is a weird one. It works like a regular move instruction if
  *       REX.W isn't set, at least according to AMD docs (rev 3.15, 2009-11).
  * @todo This definitely needs a testcase to verify the odd cases.  */
@@ -1434,7 +1692,12 @@ FNIEMOP_DEF(iemOp_movsxd_Gv_Ev)
 }
 
 
-/** Opcode 0x64. */
+/**
+ * @opcode      0x64
+ * @opmnemonic  segfs
+ * @opmincpu    80386
+ * @opgroup     op_prefixes
+ */
 FNIEMOP_DEF(iemOp_seg_FS)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg fs");
@@ -1448,7 +1711,12 @@ FNIEMOP_DEF(iemOp_seg_FS)
 }
 
 
-/** Opcode 0x65. */
+/**
+ * @opcode      0x65
+ * @opmnemonic  seggs
+ * @opmincpu    80386
+ * @opgroup     op_prefixes
+ */
 FNIEMOP_DEF(iemOp_seg_GS)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("seg gs");
@@ -1462,7 +1730,14 @@ FNIEMOP_DEF(iemOp_seg_GS)
 }
 
 
-/** Opcode 0x66. */
+/**
+ * @opcode      0x66
+ * @opmnemonic  opsize
+ * @openc       prefix
+ * @opmincpu    80386
+ * @ophints     harmless
+ * @opgroup     op_prefixes
+ */
 FNIEMOP_DEF(iemOp_op_size)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("op size");
@@ -1481,7 +1756,14 @@ FNIEMOP_DEF(iemOp_op_size)
 }
 
 
-/** Opcode 0x67. */
+/**
+ * @opcode      0x67
+ * @opmnemonic  addrsize
+ * @openc       prefix
+ * @opmincpu    80386
+ * @ophints     harmless
+ * @opgroup     op_prefixes
+ */
 FNIEMOP_DEF(iemOp_addr_size)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("addr size");
@@ -1501,7 +1783,9 @@ FNIEMOP_DEF(iemOp_addr_size)
 }
 
 
-/** Opcode 0x68. */
+/**
+ * @opcode      0x68
+ */
 FNIEMOP_DEF(iemOp_push_Iz)
 {
     IEMOP_MNEMONIC(push_Iz, "push Iz");
@@ -1547,7 +1831,9 @@ FNIEMOP_DEF(iemOp_push_Iz)
 }
 
 
-/** Opcode 0x69. */
+/**
+ * @opcode      0x69
+ */
 FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
 {
     IEMOP_MNEMONIC(imul_Gv_Ev_Iz, "imul Gv,Ev,Iz"); /* Gv = Ev * Iz; */
@@ -1708,7 +1994,9 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Iz)
 }
 
 
-/** Opcode 0x6a. */
+/**
+ * @opcode      0x6a
+ */
 FNIEMOP_DEF(iemOp_push_Ib)
 {
     IEMOP_MNEMONIC(push_Ib, "push Ib");
@@ -1736,7 +2024,9 @@ FNIEMOP_DEF(iemOp_push_Ib)
 }
 
 
-/** Opcode 0x6b. */
+/**
+ * @opcode      0x6b
+ */
 FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
 {
     IEMOP_MNEMONIC(imul_Gv_Ev_Ib, "imul Gv,Ev,Ib"); /* Gv = Ev * Iz; */
@@ -1891,7 +2181,9 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev_Ib)
 }
 
 
-/** Opcode 0x6c. */
+/**
+ * @opcode      0x6c
+ */
 FNIEMOP_DEF(iemOp_insb_Yb_DX)
 {
     IEMOP_HLP_MIN_186();
@@ -1921,7 +2213,9 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
 }
 
 
-/** Opcode 0x6d. */
+/**
+ * @opcode      0x6d
+ */
 FNIEMOP_DEF(iemOp_inswd_Yv_DX)
 {
     IEMOP_HLP_MIN_186();
@@ -1983,7 +2277,9 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
 }
 
 
-/** Opcode 0x6e. */
+/**
+ * @opcode      0x6e
+ */
 FNIEMOP_DEF(iemOp_outsb_Yb_DX)
 {
     IEMOP_HLP_MIN_186();
@@ -2013,7 +2309,9 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
 }
 
 
-/** Opcode 0x6f. */
+/**
+ * @opcode      0x6f
+ */
 FNIEMOP_DEF(iemOp_outswd_Yv_DX)
 {
     IEMOP_HLP_MIN_186();
@@ -2075,7 +2373,9 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
 }
 
 
-/** Opcode 0x70. */
+/**
+ * @opcode      0x70
+ */
 FNIEMOP_DEF(iemOp_jo_Jb)
 {
     IEMOP_MNEMONIC(jo_Jb, "jo  Jb");
@@ -2094,7 +2394,9 @@ FNIEMOP_DEF(iemOp_jo_Jb)
 }
 
 
-/** Opcode 0x71. */
+/**
+ * @opcode      0x71
+ */
 FNIEMOP_DEF(iemOp_jno_Jb)
 {
     IEMOP_MNEMONIC(jno_Jb, "jno Jb");
@@ -2112,7 +2414,9 @@ FNIEMOP_DEF(iemOp_jno_Jb)
     return VINF_SUCCESS;
 }
 
-/** Opcode 0x72. */
+/**
+ * @opcode      0x72
+ */
 FNIEMOP_DEF(iemOp_jc_Jb)
 {
     IEMOP_MNEMONIC(jc_Jb, "jc/jnae Jb");
@@ -2131,7 +2435,9 @@ FNIEMOP_DEF(iemOp_jc_Jb)
 }
 
 
-/** Opcode 0x73. */
+/**
+ * @opcode      0x73
+ */
 FNIEMOP_DEF(iemOp_jnc_Jb)
 {
     IEMOP_MNEMONIC(jnc_Jb, "jnc/jnb Jb");
@@ -2150,7 +2456,9 @@ FNIEMOP_DEF(iemOp_jnc_Jb)
 }
 
 
-/** Opcode 0x74. */
+/**
+ * @opcode      0x74
+ */
 FNIEMOP_DEF(iemOp_je_Jb)
 {
     IEMOP_MNEMONIC(je_Jb, "je/jz   Jb");
@@ -2169,7 +2477,9 @@ FNIEMOP_DEF(iemOp_je_Jb)
 }
 
 
-/** Opcode 0x75. */
+/**
+ * @opcode      0x75
+ */
 FNIEMOP_DEF(iemOp_jne_Jb)
 {
     IEMOP_MNEMONIC(jne_Jb, "jne/jnz Jb");
@@ -2188,7 +2498,9 @@ FNIEMOP_DEF(iemOp_jne_Jb)
 }
 
 
-/** Opcode 0x76. */
+/**
+ * @opcode      0x76
+ */
 FNIEMOP_DEF(iemOp_jbe_Jb)
 {
     IEMOP_MNEMONIC(jbe_Jb, "jbe/jna Jb");
@@ -2207,7 +2519,9 @@ FNIEMOP_DEF(iemOp_jbe_Jb)
 }
 
 
-/** Opcode 0x77. */
+/**
+ * @opcode      0x77
+ */
 FNIEMOP_DEF(iemOp_jnbe_Jb)
 {
     IEMOP_MNEMONIC(ja_Jb, "ja/jnbe Jb");
@@ -2226,7 +2540,9 @@ FNIEMOP_DEF(iemOp_jnbe_Jb)
 }
 
 
-/** Opcode 0x78. */
+/**
+ * @opcode      0x78
+ */
 FNIEMOP_DEF(iemOp_js_Jb)
 {
     IEMOP_MNEMONIC(js_Jb, "js  Jb");
@@ -2245,7 +2561,9 @@ FNIEMOP_DEF(iemOp_js_Jb)
 }
 
 
-/** Opcode 0x79. */
+/**
+ * @opcode      0x79
+ */
 FNIEMOP_DEF(iemOp_jns_Jb)
 {
     IEMOP_MNEMONIC(jns_Jb, "jns Jb");
@@ -2264,7 +2582,9 @@ FNIEMOP_DEF(iemOp_jns_Jb)
 }
 
 
-/** Opcode 0x7a. */
+/**
+ * @opcode      0x7a
+ */
 FNIEMOP_DEF(iemOp_jp_Jb)
 {
     IEMOP_MNEMONIC(jp_Jb, "jp  Jb");
@@ -2283,7 +2603,9 @@ FNIEMOP_DEF(iemOp_jp_Jb)
 }
 
 
-/** Opcode 0x7b. */
+/**
+ * @opcode      0x7b
+ */
 FNIEMOP_DEF(iemOp_jnp_Jb)
 {
     IEMOP_MNEMONIC(jnp_Jb, "jnp Jb");
@@ -2302,7 +2624,9 @@ FNIEMOP_DEF(iemOp_jnp_Jb)
 }
 
 
-/** Opcode 0x7c. */
+/**
+ * @opcode      0x7c
+ */
 FNIEMOP_DEF(iemOp_jl_Jb)
 {
     IEMOP_MNEMONIC(jl_Jb, "jl/jnge Jb");
@@ -2321,7 +2645,9 @@ FNIEMOP_DEF(iemOp_jl_Jb)
 }
 
 
-/** Opcode 0x7d. */
+/**
+ * @opcode      0x7d
+ */
 FNIEMOP_DEF(iemOp_jnl_Jb)
 {
     IEMOP_MNEMONIC(jge_Jb, "jnl/jge Jb");
@@ -2340,7 +2666,9 @@ FNIEMOP_DEF(iemOp_jnl_Jb)
 }
 
 
-/** Opcode 0x7e. */
+/**
+ * @opcode      0x7e
+ */
 FNIEMOP_DEF(iemOp_jle_Jb)
 {
     IEMOP_MNEMONIC(jle_Jb, "jle/jng Jb");
@@ -2359,7 +2687,9 @@ FNIEMOP_DEF(iemOp_jle_Jb)
 }
 
 
-/** Opcode 0x7f. */
+/**
+ * @opcode      0x7f
+ */
 FNIEMOP_DEF(iemOp_jnle_Jb)
 {
     IEMOP_MNEMONIC(jg_Jb, "jnle/jg Jb");
@@ -2378,7 +2708,9 @@ FNIEMOP_DEF(iemOp_jnle_Jb)
 }
 
 
-/** Opcode 0x80. */
+/**
+ * @opcode      0x80
+ */
 FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2449,7 +2781,9 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_80)
 }
 
 
-/** Opcode 0x81. */
+/**
+ * @opcode      0x81
+ */
 FNIEMOP_DEF(iemOp_Grp1_Ev_Iz)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2638,7 +2972,11 @@ FNIEMOP_DEF(iemOp_Grp1_Ev_Iz)
 }
 
 
-/** Opcode 0x82. */
+/**
+ * @opcode      0x82
+ * @opmnemonic  grp1_82
+ * @opgroup     op_groups
+ */
 FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
 {
     IEMOP_HLP_NO_64BIT(); /** @todo do we need to decode the whole instruction or is this ok? */
@@ -2646,7 +2984,9 @@ FNIEMOP_DEF(iemOp_Grp1_Eb_Ib_82)
 }
 
 
-/** Opcode 0x83. */
+/**
+ * @opcode      0x83
+ */
 FNIEMOP_DEF(iemOp_Grp1_Ev_Ib)
 {
     uint8_t bRm;   IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2830,7 +3170,9 @@ FNIEMOP_DEF(iemOp_Grp1_Ev_Ib)
 }
 
 
-/** Opcode 0x84. */
+/**
+ * @opcode      0x84
+ */
 FNIEMOP_DEF(iemOp_test_Eb_Gb)
 {
     IEMOP_MNEMONIC(test_Eb_Gb, "test Eb,Gb");
@@ -2839,7 +3181,9 @@ FNIEMOP_DEF(iemOp_test_Eb_Gb)
 }
 
 
-/** Opcode 0x85. */
+/**
+ * @opcode      0x85
+ */
 FNIEMOP_DEF(iemOp_test_Ev_Gv)
 {
     IEMOP_MNEMONIC(test_Ev_Gv, "test Ev,Gv");
@@ -2848,7 +3192,9 @@ FNIEMOP_DEF(iemOp_test_Ev_Gv)
 }
 
 
-/** Opcode 0x86. */
+/**
+ * @opcode      0x86
+ */
 FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -2897,7 +3243,9 @@ FNIEMOP_DEF(iemOp_xchg_Eb_Gb)
 }
 
 
-/** Opcode 0x87. */
+/**
+ * @opcode      0x87
+ */
 FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
 {
     IEMOP_MNEMONIC(xchg_Ev_Gv, "xchg Ev,Gv");
@@ -3020,7 +3368,9 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
 }
 
 
-/** Opcode 0x88. */
+/**
+ * @opcode      0x88
+ */
 FNIEMOP_DEF(iemOp_mov_Eb_Gb)
 {
     IEMOP_MNEMONIC(mov_Eb_Gb, "mov Eb,Gb");
@@ -3061,7 +3411,9 @@ FNIEMOP_DEF(iemOp_mov_Eb_Gb)
 }
 
 
-/** Opcode 0x89. */
+/**
+ * @opcode      0x89
+ */
 FNIEMOP_DEF(iemOp_mov_Ev_Gv)
 {
     IEMOP_MNEMONIC(mov_Ev_Gv, "mov Ev,Gv");
@@ -3152,7 +3504,9 @@ FNIEMOP_DEF(iemOp_mov_Ev_Gv)
 }
 
 
-/** Opcode 0x8a. */
+/**
+ * @opcode      0x8a
+ */
 FNIEMOP_DEF(iemOp_mov_Gb_Eb)
 {
     IEMOP_MNEMONIC(mov_Gb_Eb, "mov Gb,Eb");
@@ -3191,7 +3545,9 @@ FNIEMOP_DEF(iemOp_mov_Gb_Eb)
 }
 
 
-/** Opcode 0x8b. */
+/**
+ * @opcode      0x8b
+ */
 FNIEMOP_DEF(iemOp_mov_Gv_Ev)
 {
     IEMOP_MNEMONIC(mov_Gv_Ev, "mov Gv,Ev");
@@ -3282,7 +3638,10 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
 }
 
 
-/** Opcode 0x63. */
+/**
+ * opcode      0x63
+ * @todo Table fixme
+ */
 FNIEMOP_DEF(iemOp_arpl_Ew_Gw_movsx_Gv_Ev)
 {
     if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
@@ -3293,7 +3652,9 @@ FNIEMOP_DEF(iemOp_arpl_Ew_Gw_movsx_Gv_Ev)
 }
 
 
-/** Opcode 0x8c. */
+/**
+ * @opcode      0x8c
+ */
 FNIEMOP_DEF(iemOp_mov_Ev_Sw)
 {
     IEMOP_MNEMONIC(mov_Ev_Sw, "mov Ev,Sw");
@@ -3370,7 +3731,9 @@ FNIEMOP_DEF(iemOp_mov_Ev_Sw)
 
 
 
-/** Opcode 0x8d. */
+/**
+ * @opcode      0x8d
+ */
 FNIEMOP_DEF(iemOp_lea_Gv_M)
 {
     IEMOP_MNEMONIC(lea_Gv_M, "lea Gv,M");
@@ -3418,7 +3781,9 @@ FNIEMOP_DEF(iemOp_lea_Gv_M)
 }
 
 
-/** Opcode 0x8e. */
+/**
+ * @opcode      0x8e
+ */
 FNIEMOP_DEF(iemOp_mov_Sw_Ev)
 {
     IEMOP_MNEMONIC(mov_Sw_Ev, "mov Sw,Ev");
@@ -3570,7 +3935,9 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
 }
 
 
-/** Opcode 0x8f. */
+/**
+ * @opcode      0x8f
+ */
 FNIEMOP_DEF(iemOp_Grp1A__xop)
 {
     /*
@@ -3683,7 +4050,9 @@ FNIEMOP_DEF_1(iemOpCommonXchgGRegRax, uint8_t, iReg)
 }
 
 
-/** Opcode 0x90. */
+/**
+ * @opcode      0x90
+ */
 FNIEMOP_DEF(iemOp_nop)
 {
     /* R8/R8D and RAX/EAX can be exchanged. */
@@ -3704,7 +4073,9 @@ FNIEMOP_DEF(iemOp_nop)
 }
 
 
-/** Opcode 0x91. */
+/**
+ * @opcode      0x91
+ */
 FNIEMOP_DEF(iemOp_xchg_eCX_eAX)
 {
     IEMOP_MNEMONIC(xchg_rCX_rAX, "xchg rCX,rAX");
@@ -3712,7 +4083,9 @@ FNIEMOP_DEF(iemOp_xchg_eCX_eAX)
 }
 
 
-/** Opcode 0x92. */
+/**
+ * @opcode      0x92
+ */
 FNIEMOP_DEF(iemOp_xchg_eDX_eAX)
 {
     IEMOP_MNEMONIC(xchg_rDX_rAX, "xchg rDX,rAX");
@@ -3720,7 +4093,9 @@ FNIEMOP_DEF(iemOp_xchg_eDX_eAX)
 }
 
 
-/** Opcode 0x93. */
+/**
+ * @opcode      0x93
+ */
 FNIEMOP_DEF(iemOp_xchg_eBX_eAX)
 {
     IEMOP_MNEMONIC(xchg_rBX_rAX, "xchg rBX,rAX");
@@ -3728,7 +4103,9 @@ FNIEMOP_DEF(iemOp_xchg_eBX_eAX)
 }
 
 
-/** Opcode 0x94. */
+/**
+ * @opcode      0x94
+ */
 FNIEMOP_DEF(iemOp_xchg_eSP_eAX)
 {
     IEMOP_MNEMONIC(xchg_rSX_rAX, "xchg rSX,rAX");
@@ -3736,7 +4113,9 @@ FNIEMOP_DEF(iemOp_xchg_eSP_eAX)
 }
 
 
-/** Opcode 0x95. */
+/**
+ * @opcode      0x95
+ */
 FNIEMOP_DEF(iemOp_xchg_eBP_eAX)
 {
     IEMOP_MNEMONIC(xchg_rBP_rAX, "xchg rBP,rAX");
@@ -3744,7 +4123,9 @@ FNIEMOP_DEF(iemOp_xchg_eBP_eAX)
 }
 
 
-/** Opcode 0x96. */
+/**
+ * @opcode      0x96
+ */
 FNIEMOP_DEF(iemOp_xchg_eSI_eAX)
 {
     IEMOP_MNEMONIC(xchg_rSI_rAX, "xchg rSI,rAX");
@@ -3752,7 +4133,9 @@ FNIEMOP_DEF(iemOp_xchg_eSI_eAX)
 }
 
 
-/** Opcode 0x97. */
+/**
+ * @opcode      0x97
+ */
 FNIEMOP_DEF(iemOp_xchg_eDI_eAX)
 {
     IEMOP_MNEMONIC(xchg_rDI_rAX, "xchg rDI,rAX");
@@ -3760,7 +4143,9 @@ FNIEMOP_DEF(iemOp_xchg_eDI_eAX)
 }
 
 
-/** Opcode 0x98. */
+/**
+ * @opcode      0x98
+ */
 FNIEMOP_DEF(iemOp_cbw)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -3807,7 +4192,9 @@ FNIEMOP_DEF(iemOp_cbw)
 }
 
 
-/** Opcode 0x99. */
+/**
+ * @opcode      0x99
+ */
 FNIEMOP_DEF(iemOp_cwd)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -3854,7 +4241,9 @@ FNIEMOP_DEF(iemOp_cwd)
 }
 
 
-/** Opcode 0x9a. */
+/**
+ * @opcode      0x9a
+ */
 FNIEMOP_DEF(iemOp_call_Ap)
 {
     IEMOP_MNEMONIC(call_Ap, "call Ap");
@@ -3887,7 +4276,9 @@ FNIEMOP_DEF(iemOp_wait)
 }
 
 
-/** Opcode 0x9c. */
+/**
+ * @opcode      0x9c
+ */
 FNIEMOP_DEF(iemOp_pushf_Fv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -3896,7 +4287,9 @@ FNIEMOP_DEF(iemOp_pushf_Fv)
 }
 
 
-/** Opcode 0x9d. */
+/**
+ * @opcode      0x9d
+ */
 FNIEMOP_DEF(iemOp_popf_Fv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -3905,7 +4298,9 @@ FNIEMOP_DEF(iemOp_popf_Fv)
 }
 
 
-/** Opcode 0x9e. */
+/**
+ * @opcode      0x9e
+ */
 FNIEMOP_DEF(iemOp_sahf)
 {
     IEMOP_MNEMONIC(sahf, "sahf");
@@ -3929,7 +4324,9 @@ FNIEMOP_DEF(iemOp_sahf)
 }
 
 
-/** Opcode 0x9f. */
+/**
+ * @opcode      0x9f
+ */
 FNIEMOP_DEF(iemOp_lahf)
 {
     IEMOP_MNEMONIC(lahf, "lahf");
@@ -3948,7 +4345,7 @@ FNIEMOP_DEF(iemOp_lahf)
 
 
 /**
- * Macro used by iemOp_mov_Al_Ob, iemOp_mov_rAX_Ov, iemOp_mov_Ob_AL and
+ * Macro used by iemOp_mov_AL_Ob, iemOp_mov_rAX_Ov, iemOp_mov_Ob_AL and
  * iemOp_mov_Ov_rAX to fetch the moffsXX bit of the opcode and fend of lock
  * prefixes.  Will return on failures.
  * @param   a_GCPtrMemOff   The variable to store the offset in.
@@ -3972,8 +4369,10 @@ FNIEMOP_DEF(iemOp_lahf)
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); \
     } while (0)
 
-/** Opcode 0xa0. */
-FNIEMOP_DEF(iemOp_mov_Al_Ob)
+/**
+ * @opcode      0xa0
+ */
+FNIEMOP_DEF(iemOp_mov_AL_Ob)
 {
     /*
      * Get the offset and fend of lock prefixes.
@@ -3994,7 +4393,9 @@ FNIEMOP_DEF(iemOp_mov_Al_Ob)
 }
 
 
-/** Opcode 0xa1. */
+/**
+ * @opcode      0xa1
+ */
 FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 {
     /*
@@ -4041,7 +4442,9 @@ FNIEMOP_DEF(iemOp_mov_rAX_Ov)
 }
 
 
-/** Opcode 0xa2. */
+/**
+ * @opcode      0xa2
+ */
 FNIEMOP_DEF(iemOp_mov_Ob_AL)
 {
     /*
@@ -4063,7 +4466,9 @@ FNIEMOP_DEF(iemOp_mov_Ob_AL)
 }
 
 
-/** Opcode 0xa3. */
+/**
+ * @opcode      0xa3
+ */
 FNIEMOP_DEF(iemOp_mov_Ov_rAX)
 {
     /*
@@ -4127,7 +4532,9 @@ FNIEMOP_DEF(iemOp_mov_Ov_rAX)
         IEM_MC_ADVANCE_RIP(); \
         IEM_MC_END();
 
-/** Opcode 0xa4. */
+/**
+ * @opcode      0xa4
+ */
 FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4162,7 +4569,9 @@ FNIEMOP_DEF(iemOp_movsb_Xb_Yb)
 }
 
 
-/** Opcode 0xa5. */
+/**
+ * @opcode      0xa5
+ */
 FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4274,7 +4683,9 @@ FNIEMOP_DEF(iemOp_movswd_Xv_Yv)
         IEM_MC_ADVANCE_RIP(); \
         IEM_MC_END(); \
 
-/** Opcode 0xa6. */
+/**
+ * @opcode      0xa6
+ */
 FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4321,7 +4732,9 @@ FNIEMOP_DEF(iemOp_cmpsb_Xb_Yb)
 }
 
 
-/** Opcode 0xa7. */
+/**
+ * @opcode      0xa7
+ */
 FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4442,7 +4855,9 @@ FNIEMOP_DEF(iemOp_cmpswd_Xv_Yv)
 
 #undef IEM_CMPS_CASE
 
-/** Opcode 0xa8. */
+/**
+ * @opcode      0xa8
+ */
 FNIEMOP_DEF(iemOp_test_AL_Ib)
 {
     IEMOP_MNEMONIC(test_al_Ib, "test al,Ib");
@@ -4451,7 +4866,9 @@ FNIEMOP_DEF(iemOp_test_AL_Ib)
 }
 
 
-/** Opcode 0xa9. */
+/**
+ * @opcode      0xa9
+ */
 FNIEMOP_DEF(iemOp_test_eAX_Iz)
 {
     IEMOP_MNEMONIC(test_rAX_Iz, "test rAX,Iz");
@@ -4476,7 +4893,9 @@ FNIEMOP_DEF(iemOp_test_eAX_Iz)
         IEM_MC_ADVANCE_RIP(); \
         IEM_MC_END(); \
 
-/** Opcode 0xaa. */
+/**
+ * @opcode      0xaa
+ */
 FNIEMOP_DEF(iemOp_stosb_Yb_AL)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4511,7 +4930,9 @@ FNIEMOP_DEF(iemOp_stosb_Yb_AL)
 }
 
 
-/** Opcode 0xab. */
+/**
+ * @opcode      0xab
+ */
 FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4612,7 +5033,9 @@ FNIEMOP_DEF(iemOp_stoswd_Yv_eAX)
         IEM_MC_ADVANCE_RIP(); \
         IEM_MC_END();
 
-/** Opcode 0xac. */
+/**
+ * @opcode      0xac
+ */
 FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4647,7 +5070,9 @@ FNIEMOP_DEF(iemOp_lodsb_AL_Xb)
 }
 
 
-/** Opcode 0xad. */
+/**
+ * @opcode      0xad
+ */
 FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4754,7 +5179,9 @@ FNIEMOP_DEF(iemOp_lodswd_eAX_Xv)
         IEM_MC_ADVANCE_RIP(); \
         IEM_MC_END();
 
-/** Opcode 0xae. */
+/**
+ * @opcode      0xae
+ */
 FNIEMOP_DEF(iemOp_scasb_AL_Xb)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4800,7 +5227,9 @@ FNIEMOP_DEF(iemOp_scasb_AL_Xb)
 }
 
 
-/** Opcode 0xaf. */
+/**
+ * @opcode      0xaf
+ */
 FNIEMOP_DEF(iemOp_scaswd_eAX_Xv)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -4936,7 +5365,9 @@ FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iReg)
 }
 
 
-/** Opcode 0xb0. */
+/**
+ * @opcode      0xb0
+ */
 FNIEMOP_DEF(iemOp_mov_AL_Ib)
 {
     IEMOP_MNEMONIC(mov_AL_Ib, "mov AL,Ib");
@@ -4944,7 +5375,9 @@ FNIEMOP_DEF(iemOp_mov_AL_Ib)
 }
 
 
-/** Opcode 0xb1. */
+/**
+ * @opcode      0xb1
+ */
 FNIEMOP_DEF(iemOp_CL_Ib)
 {
     IEMOP_MNEMONIC(mov_CL_Ib, "mov CL,Ib");
@@ -4952,7 +5385,9 @@ FNIEMOP_DEF(iemOp_CL_Ib)
 }
 
 
-/** Opcode 0xb2. */
+/**
+ * @opcode      0xb2
+ */
 FNIEMOP_DEF(iemOp_DL_Ib)
 {
     IEMOP_MNEMONIC(mov_DL_Ib, "mov DL,Ib");
@@ -4960,7 +5395,9 @@ FNIEMOP_DEF(iemOp_DL_Ib)
 }
 
 
-/** Opcode 0xb3. */
+/**
+ * @opcode      0xb3
+ */
 FNIEMOP_DEF(iemOp_BL_Ib)
 {
     IEMOP_MNEMONIC(mov_BL_Ib, "mov BL,Ib");
@@ -4968,7 +5405,9 @@ FNIEMOP_DEF(iemOp_BL_Ib)
 }
 
 
-/** Opcode 0xb4. */
+/**
+ * @opcode      0xb4
+ */
 FNIEMOP_DEF(iemOp_mov_AH_Ib)
 {
     IEMOP_MNEMONIC(mov_AH_Ib, "mov AH,Ib");
@@ -4976,7 +5415,9 @@ FNIEMOP_DEF(iemOp_mov_AH_Ib)
 }
 
 
-/** Opcode 0xb5. */
+/**
+ * @opcode      0xb5
+ */
 FNIEMOP_DEF(iemOp_CH_Ib)
 {
     IEMOP_MNEMONIC(mov_CH_Ib, "mov CH,Ib");
@@ -4984,7 +5425,9 @@ FNIEMOP_DEF(iemOp_CH_Ib)
 }
 
 
-/** Opcode 0xb6. */
+/**
+ * @opcode      0xb6
+ */
 FNIEMOP_DEF(iemOp_DH_Ib)
 {
     IEMOP_MNEMONIC(mov_DH_Ib, "mov DH,Ib");
@@ -4992,7 +5435,9 @@ FNIEMOP_DEF(iemOp_DH_Ib)
 }
 
 
-/** Opcode 0xb7. */
+/**
+ * @opcode      0xb7
+ */
 FNIEMOP_DEF(iemOp_BH_Ib)
 {
     IEMOP_MNEMONIC(mov_BH_Ib, "mov BH,Ib");
@@ -5050,7 +5495,9 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
 }
 
 
-/** Opcode 0xb8. */
+/**
+ * @opcode      0xb8
+ */
 FNIEMOP_DEF(iemOp_eAX_Iv)
 {
     IEMOP_MNEMONIC(mov_rAX_IV, "mov rAX,IV");
@@ -5058,7 +5505,9 @@ FNIEMOP_DEF(iemOp_eAX_Iv)
 }
 
 
-/** Opcode 0xb9. */
+/**
+ * @opcode      0xb9
+ */
 FNIEMOP_DEF(iemOp_eCX_Iv)
 {
     IEMOP_MNEMONIC(mov_rCX_IV, "mov rCX,IV");
@@ -5066,7 +5515,9 @@ FNIEMOP_DEF(iemOp_eCX_Iv)
 }
 
 
-/** Opcode 0xba. */
+/**
+ * @opcode      0xba
+ */
 FNIEMOP_DEF(iemOp_eDX_Iv)
 {
     IEMOP_MNEMONIC(mov_rDX_IV, "mov rDX,IV");
@@ -5074,7 +5525,9 @@ FNIEMOP_DEF(iemOp_eDX_Iv)
 }
 
 
-/** Opcode 0xbb. */
+/**
+ * @opcode      0xbb
+ */
 FNIEMOP_DEF(iemOp_eBX_Iv)
 {
     IEMOP_MNEMONIC(mov_rBX_IV, "mov rBX,IV");
@@ -5082,7 +5535,9 @@ FNIEMOP_DEF(iemOp_eBX_Iv)
 }
 
 
-/** Opcode 0xbc. */
+/**
+ * @opcode      0xbc
+ */
 FNIEMOP_DEF(iemOp_eSP_Iv)
 {
     IEMOP_MNEMONIC(mov_rSP_IV, "mov rSP,IV");
@@ -5090,7 +5545,9 @@ FNIEMOP_DEF(iemOp_eSP_Iv)
 }
 
 
-/** Opcode 0xbd. */
+/**
+ * @opcode      0xbd
+ */
 FNIEMOP_DEF(iemOp_eBP_Iv)
 {
     IEMOP_MNEMONIC(mov_rBP_IV, "mov rBP,IV");
@@ -5098,7 +5555,9 @@ FNIEMOP_DEF(iemOp_eBP_Iv)
 }
 
 
-/** Opcode 0xbe. */
+/**
+ * @opcode      0xbe
+ */
 FNIEMOP_DEF(iemOp_eSI_Iv)
 {
     IEMOP_MNEMONIC(mov_rSI_IV, "mov rSI,IV");
@@ -5106,7 +5565,9 @@ FNIEMOP_DEF(iemOp_eSI_Iv)
 }
 
 
-/** Opcode 0xbf. */
+/**
+ * @opcode      0xbf
+ */
 FNIEMOP_DEF(iemOp_eDI_Iv)
 {
     IEMOP_MNEMONIC(mov_rDI_IV, "mov rDI,IV");
@@ -5114,7 +5575,9 @@ FNIEMOP_DEF(iemOp_eDI_Iv)
 }
 
 
-/** Opcode 0xc0. */
+/**
+ * @opcode      0xc0
+ */
 FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
 {
     IEMOP_HLP_MIN_186();
@@ -5175,7 +5638,9 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
 }
 
 
-/** Opcode 0xc1. */
+/**
+ * @opcode      0xc1
+ */
 FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 {
     IEMOP_HLP_MIN_186();
@@ -5316,7 +5781,9 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
 }
 
 
-/** Opcode 0xc2. */
+/**
+ * @opcode      0xc2
+ */
 FNIEMOP_DEF(iemOp_retn_Iw)
 {
     IEMOP_MNEMONIC(retn_Iw, "retn Iw");
@@ -5327,7 +5794,9 @@ FNIEMOP_DEF(iemOp_retn_Iw)
 }
 
 
-/** Opcode 0xc3. */
+/**
+ * @opcode      0xc3
+ */
 FNIEMOP_DEF(iemOp_retn)
 {
     IEMOP_MNEMONIC(retn, "retn");
@@ -5337,7 +5806,9 @@ FNIEMOP_DEF(iemOp_retn)
 }
 
 
-/** Opcode 0xc4. */
+/**
+ * @opcode      0xc4
+ */
 FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
 {
     /* The LES instruction is invalid 64-bit mode. In legacy and
@@ -5380,7 +5851,9 @@ FNIEMOP_DEF(iemOp_les_Gv_Mp__vex2)
 }
 
 
-/** Opcode 0xc5. */
+/**
+ * @opcode      0xc5
+ */
 FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
 {
     /* The LDS instruction is invalid 64-bit mode. In legacy and
@@ -5449,7 +5922,9 @@ FNIEMOP_DEF(iemOp_lds_Gv_Mp__vex3)
 }
 
 
-/** Opcode 0xc6. */
+/**
+ * @opcode      0xc6
+ */
 FNIEMOP_DEF(iemOp_Grp11_Eb_Ib)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -5483,7 +5958,9 @@ FNIEMOP_DEF(iemOp_Grp11_Eb_Ib)
 }
 
 
-/** Opcode 0xc7. */
+/**
+ * @opcode      0xc7
+ */
 FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -5572,7 +6049,9 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
 
 
 
-/** Opcode 0xc8. */
+/**
+ * @opcode      0xc8
+ */
 FNIEMOP_DEF(iemOp_enter_Iw_Ib)
 {
     IEMOP_MNEMONIC(enter_Iw_Ib, "enter Iw,Ib");
@@ -5585,7 +6064,9 @@ FNIEMOP_DEF(iemOp_enter_Iw_Ib)
 }
 
 
-/** Opcode 0xc9. */
+/**
+ * @opcode      0xc9
+ */
 FNIEMOP_DEF(iemOp_leave)
 {
     IEMOP_MNEMONIC(leave, "leave");
@@ -5596,7 +6077,9 @@ FNIEMOP_DEF(iemOp_leave)
 }
 
 
-/** Opcode 0xca. */
+/**
+ * @opcode      0xca
+ */
 FNIEMOP_DEF(iemOp_retf_Iw)
 {
     IEMOP_MNEMONIC(retf_Iw, "retf Iw");
@@ -5607,7 +6090,9 @@ FNIEMOP_DEF(iemOp_retf_Iw)
 }
 
 
-/** Opcode 0xcb. */
+/**
+ * @opcode      0xcb
+ */
 FNIEMOP_DEF(iemOp_retf)
 {
     IEMOP_MNEMONIC(retf, "retf");
@@ -5617,15 +6102,19 @@ FNIEMOP_DEF(iemOp_retf)
 }
 
 
-/** Opcode 0xcc. */
-FNIEMOP_DEF(iemOp_int_3)
+/**
+ * @opcode      0xcc
+ */
+FNIEMOP_DEF(iemOp_int3)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_BP, true /*fIsBpInstr*/);
 }
 
 
-/** Opcode 0xcd. */
+/**
+ * @opcode      0xcd
+ */
 FNIEMOP_DEF(iemOp_int_Ib)
 {
     uint8_t u8Int; IEM_OPCODE_GET_NEXT_U8(&u8Int);
@@ -5634,7 +6123,9 @@ FNIEMOP_DEF(iemOp_int_Ib)
 }
 
 
-/** Opcode 0xce. */
+/**
+ * @opcode      0xce
+ */
 FNIEMOP_DEF(iemOp_into)
 {
     IEMOP_MNEMONIC(into, "into");
@@ -5649,7 +6140,9 @@ FNIEMOP_DEF(iemOp_into)
 }
 
 
-/** Opcode 0xcf. */
+/**
+ * @opcode      0xcf
+ */
 FNIEMOP_DEF(iemOp_iret)
 {
     IEMOP_MNEMONIC(iret, "iret");
@@ -5658,7 +6151,9 @@ FNIEMOP_DEF(iemOp_iret)
 }
 
 
-/** Opcode 0xd0. */
+/**
+ * @opcode      0xd0
+ */
 FNIEMOP_DEF(iemOp_Grp2_Eb_1)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -5716,7 +6211,9 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
 
 
 
-/** Opcode 0xd1. */
+/**
+ * @opcode      0xd1
+ */
 FNIEMOP_DEF(iemOp_Grp2_Ev_1)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -5849,7 +6346,9 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
 }
 
 
-/** Opcode 0xd2. */
+/**
+ * @opcode      0xd2
+ */
 FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -5908,7 +6407,9 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
 }
 
 
-/** Opcode 0xd3. */
+/**
+ * @opcode      0xd3
+ */
 FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -6046,7 +6547,9 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
     }
 }
 
-/** Opcode 0xd4. */
+/**
+ * @opcode      0xd4
+ */
 FNIEMOP_DEF(iemOp_aam_Ib)
 {
     IEMOP_MNEMONIC(aam_Ib, "aam Ib");
@@ -6059,7 +6562,9 @@ FNIEMOP_DEF(iemOp_aam_Ib)
 }
 
 
-/** Opcode 0xd5. */
+/**
+ * @opcode      0xd5
+ */
 FNIEMOP_DEF(iemOp_aad_Ib)
 {
     IEMOP_MNEMONIC(aad_Ib, "aad Ib");
@@ -6070,7 +6575,9 @@ FNIEMOP_DEF(iemOp_aad_Ib)
 }
 
 
-/** Opcode 0xd6. */
+/**
+ * @opcode      0xd6
+ */
 FNIEMOP_DEF(iemOp_salc)
 {
     IEMOP_MNEMONIC(salc, "salc");
@@ -6091,7 +6598,9 @@ FNIEMOP_DEF(iemOp_salc)
 }
 
 
-/** Opcode 0xd7. */
+/**
+ * @opcode      0xd7
+ */
 FNIEMOP_DEF(iemOp_xlat)
 {
     IEMOP_MNEMONIC(xlat, "xlat");
@@ -6452,7 +6961,9 @@ FNIEMOP_DEF_1(iemOp_fdivr_m32r, uint8_t, bRm)
 }
 
 
-/** Opcode 0xd8. */
+/**
+ * @opcode      0xd8
+ */
 FNIEMOP_DEF(iemOp_EscF0)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -7238,7 +7749,9 @@ IEM_STATIC const PFNIEMOP g_apfnEscF1_E0toFF[32] =
 };
 
 
-/** Opcode 0xd9. */
+/**
+ * @opcode      0xd9
+ */
 FNIEMOP_DEF(iemOp_EscF1)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -7588,7 +8101,9 @@ FNIEMOP_DEF_1(iemOp_fidivr_m32i, uint8_t, bRm)
 }
 
 
-/** Opcode 0xda. */
+/**
+ * @opcode      0xda
+ */
 FNIEMOP_DEF(iemOp_EscF2)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8048,7 +8563,9 @@ FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
 }
 
 
-/** Opcode 0xdb. */
+/**
+ * @opcode      0xdb
+ */
 FNIEMOP_DEF(iemOp_EscF3)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8332,7 +8849,9 @@ FNIEMOP_DEF_1(iemOp_fdivr_m64r, uint8_t, bRm)
 }
 
 
-/** Opcode 0xdc. */
+/**
+ * @opcode      0xdc
+ */
 FNIEMOP_DEF(iemOp_EscF4)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8642,7 +9161,9 @@ FNIEMOP_DEF_1(iemOp_fucomp_stN,  uint8_t, bRm)
 }
 
 
-/** Opcode 0xdd. */
+/**
+ * @opcode      0xdd
+ */
 FNIEMOP_DEF(iemOp_EscF5)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -8889,7 +9410,9 @@ FNIEMOP_DEF_1(iemOp_fidivr_m16i, uint8_t, bRm)
 }
 
 
-/** Opcode 0xde. */
+/**
+ * @opcode      0xde
+ */
 FNIEMOP_DEF(iemOp_EscF6)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -9204,7 +9727,9 @@ FNIEMOP_DEF_1(iemOp_fistp_m64i,  uint8_t, bRm)
 }
 
 
-/** Opcode 0xdf. */
+/**
+ * @opcode      0xdf
+ */
 FNIEMOP_DEF(iemOp_EscF7)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -9243,7 +9768,9 @@ FNIEMOP_DEF(iemOp_EscF7)
 }
 
 
-/** Opcode 0xe0. */
+/**
+ * @opcode      0xe0
+ */
 FNIEMOP_DEF(iemOp_loopne_Jb)
 {
     IEMOP_MNEMONIC(loopne_Jb, "loopne Jb");
@@ -9291,7 +9818,9 @@ FNIEMOP_DEF(iemOp_loopne_Jb)
 }
 
 
-/** Opcode 0xe1. */
+/**
+ * @opcode      0xe1
+ */
 FNIEMOP_DEF(iemOp_loope_Jb)
 {
     IEMOP_MNEMONIC(loope_Jb, "loope Jb");
@@ -9339,7 +9868,9 @@ FNIEMOP_DEF(iemOp_loope_Jb)
 }
 
 
-/** Opcode 0xe2. */
+/**
+ * @opcode      0xe2
+ */
 FNIEMOP_DEF(iemOp_loop_Jb)
 {
     IEMOP_MNEMONIC(loop_Jb, "loop Jb");
@@ -9414,7 +9945,9 @@ FNIEMOP_DEF(iemOp_loop_Jb)
 }
 
 
-/** Opcode 0xe3. */
+/**
+ * @opcode      0xe3
+ */
 FNIEMOP_DEF(iemOp_jecxz_Jb)
 {
     IEMOP_MNEMONIC(jecxz_Jb, "jecxz Jb");
@@ -9499,7 +10032,9 @@ FNIEMOP_DEF(iemOp_out_Ib_eAX)
 }
 
 
-/** Opcode 0xe8. */
+/**
+ * @opcode      0xe8
+ */
 FNIEMOP_DEF(iemOp_call_Jv)
 {
     IEMOP_MNEMONIC(call_Jv, "call Jv");
@@ -9529,7 +10064,9 @@ FNIEMOP_DEF(iemOp_call_Jv)
 }
 
 
-/** Opcode 0xe9. */
+/**
+ * @opcode      0xe9
+ */
 FNIEMOP_DEF(iemOp_jmp_Jv)
 {
     IEMOP_MNEMONIC(jmp_Jv, "jmp Jv");
@@ -9560,7 +10097,9 @@ FNIEMOP_DEF(iemOp_jmp_Jv)
 }
 
 
-/** Opcode 0xea. */
+/**
+ * @opcode      0xea
+ */
 FNIEMOP_DEF(iemOp_jmp_Ap)
 {
     IEMOP_MNEMONIC(jmp_Ap, "jmp Ap");
@@ -9578,7 +10117,9 @@ FNIEMOP_DEF(iemOp_jmp_Ap)
 }
 
 
-/** Opcode 0xeb. */
+/**
+ * @opcode      0xeb
+ */
 FNIEMOP_DEF(iemOp_jmp_Jb)
 {
     IEMOP_MNEMONIC(jmp_Jb, "jmp Jb");
@@ -9629,7 +10170,9 @@ FNIEMOP_DEF(iemOp_out_DX_eAX)
 }
 
 
-/** Opcode 0xf0. */
+/**
+ * @opcode      0xf0
+ */
 FNIEMOP_DEF(iemOp_lock)
 {
     IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE("lock");
@@ -9640,8 +10183,10 @@ FNIEMOP_DEF(iemOp_lock)
 }
 
 
-/** Opcode 0xf1. */
-FNIEMOP_DEF(iemOp_int_1)
+/**
+ * @opcode      0xf1
+ */
+FNIEMOP_DEF(iemOp_int1)
 {
     IEMOP_MNEMONIC(int1, "int1"); /* icebp */
     IEMOP_HLP_MIN_386(); /** @todo does not generate #UD on 286, or so they say... */
@@ -9650,7 +10195,9 @@ FNIEMOP_DEF(iemOp_int_1)
 }
 
 
-/** Opcode 0xf2. */
+/**
+ * @opcode      0xf2
+ */
 FNIEMOP_DEF(iemOp_repne)
 {
     /* This overrides any previous REPE prefix. */
@@ -9667,7 +10214,9 @@ FNIEMOP_DEF(iemOp_repne)
 }
 
 
-/** Opcode 0xf3. */
+/**
+ * @opcode      0xf3
+ */
 FNIEMOP_DEF(iemOp_repe)
 {
     /* This overrides any previous REPNE prefix. */
@@ -9684,7 +10233,9 @@ FNIEMOP_DEF(iemOp_repe)
 }
 
 
-/** Opcode 0xf4. */
+/**
+ * @opcode      0xf4
+ */
 FNIEMOP_DEF(iemOp_hlt)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
@@ -9692,7 +10243,9 @@ FNIEMOP_DEF(iemOp_hlt)
 }
 
 
-/** Opcode 0xf5. */
+/**
+ * @opcode      0xf5
+ */
 FNIEMOP_DEF(iemOp_cmc)
 {
     IEMOP_MNEMONIC(cmc, "cmc");
@@ -10256,7 +10809,9 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
     }
 }
 
-/** Opcode 0xf6. */
+/**
+ * @opcode      0xf6
+ */
 FNIEMOP_DEF(iemOp_Grp3_Eb)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -10294,7 +10849,9 @@ FNIEMOP_DEF(iemOp_Grp3_Eb)
 }
 
 
-/** Opcode 0xf7. */
+/**
+ * @opcode      0xf7
+ */
 FNIEMOP_DEF(iemOp_Grp3_Ev)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -10332,7 +10889,9 @@ FNIEMOP_DEF(iemOp_Grp3_Ev)
 }
 
 
-/** Opcode 0xf8. */
+/**
+ * @opcode      0xf8
+ */
 FNIEMOP_DEF(iemOp_clc)
 {
     IEMOP_MNEMONIC(clc, "clc");
@@ -10345,7 +10904,9 @@ FNIEMOP_DEF(iemOp_clc)
 }
 
 
-/** Opcode 0xf9. */
+/**
+ * @opcode      0xf9
+ */
 FNIEMOP_DEF(iemOp_stc)
 {
     IEMOP_MNEMONIC(stc, "stc");
@@ -10358,7 +10919,9 @@ FNIEMOP_DEF(iemOp_stc)
 }
 
 
-/** Opcode 0xfa. */
+/**
+ * @opcode      0xfa
+ */
 FNIEMOP_DEF(iemOp_cli)
 {
     IEMOP_MNEMONIC(cli, "cli");
@@ -10375,7 +10938,9 @@ FNIEMOP_DEF(iemOp_sti)
 }
 
 
-/** Opcode 0xfc. */
+/**
+ * @opcode      0xfc
+ */
 FNIEMOP_DEF(iemOp_cld)
 {
     IEMOP_MNEMONIC(cld, "cld");
@@ -10388,7 +10953,9 @@ FNIEMOP_DEF(iemOp_cld)
 }
 
 
-/** Opcode 0xfd. */
+/**
+ * @opcode      0xfd
+ */
 FNIEMOP_DEF(iemOp_std)
 {
     IEMOP_MNEMONIC(std, "std");
@@ -10401,7 +10968,9 @@ FNIEMOP_DEF(iemOp_std)
 }
 
 
-/** Opcode 0xfe. */
+/**
+ * @opcode      0xfe
+ */
 FNIEMOP_DEF(iemOp_Grp4)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -10738,7 +11307,9 @@ FNIEMOP_DEF_1(iemOp_Grp5_push_Ev, uint8_t, bRm)
 }
 
 
-/** Opcode 0xff. */
+/**
+ * @opcode      0xff
+ */
 FNIEMOP_DEF(iemOp_Grp5)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -10811,7 +11382,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x94 */  iemOp_xchg_eSP_eAX,     iemOp_xchg_eBP_eAX,     iemOp_xchg_eSI_eAX,     iemOp_xchg_eDI_eAX,
     /* 0x98 */  iemOp_cbw,              iemOp_cwd,              iemOp_call_Ap,          iemOp_wait,
     /* 0x9c */  iemOp_pushf_Fv,         iemOp_popf_Fv,          iemOp_sahf,             iemOp_lahf,
-    /* 0xa0 */  iemOp_mov_Al_Ob,        iemOp_mov_rAX_Ov,       iemOp_mov_Ob_AL,        iemOp_mov_Ov_rAX,
+    /* 0xa0 */  iemOp_mov_AL_Ob,        iemOp_mov_rAX_Ov,       iemOp_mov_Ob_AL,        iemOp_mov_Ov_rAX,
     /* 0xa4 */  iemOp_movsb_Xb_Yb,      iemOp_movswd_Xv_Yv,     iemOp_cmpsb_Xb_Yb,      iemOp_cmpswd_Xv_Yv,
     /* 0xa8 */  iemOp_test_AL_Ib,       iemOp_test_eAX_Iz,      iemOp_stosb_Yb_AL,      iemOp_stoswd_Yv_eAX,
     /* 0xac */  iemOp_lodsb_AL_Xb,      iemOp_lodswd_eAX_Xv,    iemOp_scasb_AL_Xb,      iemOp_scaswd_eAX_Xv,
@@ -10822,7 +11393,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xc0 */  iemOp_Grp2_Eb_Ib,       iemOp_Grp2_Ev_Ib,       iemOp_retn_Iw,          iemOp_retn,
     /* 0xc4 */  iemOp_les_Gv_Mp__vex2,  iemOp_lds_Gv_Mp__vex3,  iemOp_Grp11_Eb_Ib,      iemOp_Grp11_Ev_Iz,
     /* 0xc8 */  iemOp_enter_Iw_Ib,      iemOp_leave,            iemOp_retf_Iw,          iemOp_retf,
-    /* 0xcc */  iemOp_int_3,            iemOp_int_Ib,           iemOp_into,             iemOp_iret,
+    /* 0xcc */  iemOp_int3,             iemOp_int_Ib,           iemOp_into,             iemOp_iret,
     /* 0xd0 */  iemOp_Grp2_Eb_1,        iemOp_Grp2_Ev_1,        iemOp_Grp2_Eb_CL,       iemOp_Grp2_Ev_CL,
     /* 0xd4 */  iemOp_aam_Ib,           iemOp_aad_Ib,           iemOp_salc,             iemOp_xlat,
     /* 0xd8 */  iemOp_EscF0,            iemOp_EscF1,            iemOp_EscF2,            iemOp_EscF3,
@@ -10831,7 +11402,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0xe4 */  iemOp_in_AL_Ib,         iemOp_in_eAX_Ib,        iemOp_out_Ib_AL,        iemOp_out_Ib_eAX,
     /* 0xe8 */  iemOp_call_Jv,          iemOp_jmp_Jv,           iemOp_jmp_Ap,           iemOp_jmp_Jb,
     /* 0xec */  iemOp_in_AL_DX,         iemOp_eAX_DX,           iemOp_out_DX_AL,        iemOp_out_DX_eAX,
-    /* 0xf0 */  iemOp_lock,             iemOp_int_1,            iemOp_repne,            iemOp_repe,
+    /* 0xf0 */  iemOp_lock,             iemOp_int1,             iemOp_repne,            iemOp_repe,
     /* 0xf4 */  iemOp_hlt,              iemOp_cmc,              iemOp_Grp3_Eb,          iemOp_Grp3_Ev,
     /* 0xf8 */  iemOp_clc,              iemOp_stc,              iemOp_cli,              iemOp_sti,
     /* 0xfc */  iemOp_cld,              iemOp_std,              iemOp_Grp4,             iemOp_Grp5,

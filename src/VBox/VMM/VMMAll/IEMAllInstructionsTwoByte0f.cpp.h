@@ -4770,8 +4770,7 @@ FNIEMOP_DEF(iemOp_setnle_Eb)
 FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
 {
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    if (iReg < X86_SREG_FS)
-        IEMOP_HLP_NO_64BIT();
+    Assert(iReg < X86_SREG_FS || pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT);
     IEMOP_HLP_DEFAULT_64BIT_OP_SIZE();
 
     switch (pVCpu->iem.s.enmEffOpSize)
@@ -4813,6 +4812,7 @@ FNIEMOP_DEF(iemOp_push_fs)
 {
     IEMOP_MNEMONIC(push_fs, "push fs");
     IEMOP_HLP_MIN_386();
+    IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_FS);
 }
@@ -5347,6 +5347,7 @@ FNIEMOP_DEF(iemOp_push_gs)
 {
     IEMOP_MNEMONIC(push_gs, "push gs");
     IEMOP_HLP_MIN_386();
+    IEMOP_HLP_NO_64BIT();
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return FNIEMOP_CALL_1(iemOpCommonPushSReg, X86_SREG_GS);
 }

@@ -866,8 +866,14 @@ typedef IEMCPU const *PCIEMCPU;
 /** ModR/M: reg only */
 #define IEMOPFORM_R             3
 
+/** ModR/M + VEX.vvvv: reg, vvvv, r/m */
+#define IEMOPFORM_RVM           4
+
+/** ModR/M + VEX.vvvv: r/m, vvvv, reg */
+#define IEMOPFORM_MVR           5
+
 /** Fixed register instruction, no R/M. */
-#define IEMOPFORM_FIXED         4
+#define IEMOPFORM_FIXED         6
 
 /** The r/m is a register. */
 #define IEMOPFORM_MOD3          RT_BIT_32(8)
@@ -879,7 +885,9 @@ typedef IEMCPU const *PCIEMCPU;
  * @note These are ORed together with IEMOPFORM_XXX.
  * @{ */
 /** Both the operand size prefixes are ignored. */
-#define IEMOPHINT_IGNORES_OP_SIZE  RT_BIT_32(10)
+#define IEMOPHINT_IGNORES_OP_SIZE   RT_BIT_32(10)
+/** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
+#define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)
 /** @} */
 
 /**

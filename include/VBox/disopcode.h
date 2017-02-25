@@ -879,6 +879,28 @@ enum OP_PARM
     OP_PARM_REG_GEN64_END = OP_PARM_REG_R15
 };
 
+
+/* 8-bit GRP aliases (for IEM). */
+#define OP_PARM_AL OP_PARM_REG_AL
+
+/* GPR aliases for op-size specified register sizes (for IEM). */
+#define OP_PARM_rAX OP_PARM_REG_EAX
+#define OP_PARM_rCX OP_PARM_REG_ECX
+#define OP_PARM_rDX OP_PARM_REG_EDX
+#define OP_PARM_rBX OP_PARM_REG_EBX
+#define OP_PARM_rSP OP_PARM_REG_ESP
+#define OP_PARM_rBP OP_PARM_REG_EBP
+#define OP_PARM_rSI OP_PARM_REG_ESI
+#define OP_PARM_rDI OP_PARM_REG_EDI
+
+/* SREG aliases (for IEM). */
+#define OP_PARM_ES  OP_PARM_REG_ES
+#define OP_PARM_CS  OP_PARM_REG_CS
+#define OP_PARM_SS  OP_PARM_REG_SS
+#define OP_PARM_DS  OP_PARM_REG_DS
+#define OP_PARM_FS  OP_PARM_REG_FS
+#define OP_PARM_GS  OP_PARM_REG_GS
+
 /*
  * Note! We don't document anything here if we can help it, because it we love
  *       wasting other peoples time figuring out crypting crap.  The new VEX
