@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2015-2016 Oracle Corporation
+ * Copyright (C) 2015-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,7 @@
 #include <iprt/pipe.h>
 #include <iprt/asm.h>
 #include <iprt/cdefs.h>
+#include <iprt/time.h>
 
 /** The USB/IP default port to connect to. */
 #define USBIP_PORT_DEFAULT    3240
@@ -243,6 +244,8 @@ struct USBProxyBackendUsbIp::Data
     PUSBDEVICE              *ppNext;
     /** Current amount of devices in the list. */
     uint32_t                 cDevicesCur;
+    /** Timestamp of the last time we successfully connected. */
+    uint64_t                 tsConnectSuccessLast;
 };
 
 /**
@@ -289,6 +292,8 @@ int USBProxyBackendUsbIp::init(USBProxyService *pUsbProxyService, const com::Utf
     unconst(m_strBackend) = Utf8Str("USBIP");
 
     m = new Data;
+
+    m->tsConnectSuccessLast = 0;
 
     /* Split address into hostname and port. */
     RTCList<RTCString> lstAddress = strAddress.split(":");
@@ -488,7 +493,7 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
 
         /* Limit the waiting time to 3sec so we can either reconnect or get a new device list. */
         if (m->hSocket == NIL_RTSOCKET || m->enmRecvState == kUsbIpRecvState_None)
-            msWait = RT_MIN(1000, aMillies);
+            msWait = RT_MIN(3000, aMillies);
 
         rc = RTPoll(m->hPollSet, msWait, &fEventsRecv, &uIdReady);
         if (RT_SUCCESS(rc))
@@ -562,18 +567,8 @@ int USBProxyBackendUsbIp::wait(RTMSINTERVAL aMillies)
                              || rc == VERR_NET_CONNECTION_RESET_BY_PEER
                              || rc == VERR_NET_CONNECTION_REFUSED)
                     {
-                        /* Make sure the device list is clear. */
-#if 0
-                        RTSemFastMutexRequest(m->hMtxDevices);
-                        if (m->pUsbDevicesCur)
-                        {
-                            freeDeviceList(m->pUsbDevicesCur);
+                        if (hasDevListChanged(m->pHead))
                             fDeviceListChangedOrWokenUp = true;
-                            m->cUsbDevicesCur = 0;
-                            m->pUsbDevicesCur = NULL;
-                        }
-                        RTSemFastMutexRelease(m->hMtxDevices);
-#endif
                         rc = VINF_SUCCESS;
                     }
                 }
@@ -738,7 +733,22 @@ int USBProxyBackendUsbIp::reconnect()
             m->hSocket = NIL_RTSOCKET;
         }
         else
+        {
             LogFlowFunc(("Connected to host \"%s\"\n", m->pszHost));
+            m->tsConnectSuccessLast = RTTimeMilliTS();
+        }
+    }
+    else if (m->tsConnectSuccessLast + 10 * RT_MS_1SEC < RTTimeMilliTS())
+    {
+        /* Make sure the device list is clear if we failed to reconnect for some time. */
+        RTSemFastMutexRequest(m->hMtxDevices);
+        if (m->pUsbDevicesCur)
+        {
+            freeDeviceList(m->pUsbDevicesCur);
+            m->cUsbDevicesCur = 0;
+            m->pUsbDevicesCur = NULL;
+        }
+        RTSemFastMutexRelease(m->hMtxDevices);
     }
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
