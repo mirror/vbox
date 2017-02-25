@@ -96,62 +96,64 @@ g_kdOpLocations = {
 
 ## \@op[1-4] types
 ##
-## First value entry is the normal IDX_ParseXXX handler (IDX_UseModRM == IDX_ParseModRM).
-## Second value entry is the location (g_kdOpLocations).
-## Third value entry is disassembler format string version of the type.
+## Value fields:
+##    - 0: the normal IDX_ParseXXX handler (IDX_UseModRM == IDX_ParseModRM).
+##    - 1: the location (g_kdOpLocations).
+##    - 2: disassembler format string version of the type.
+##    - 3: disassembler OP_PARAM_XXX (XXX only).
 ##
 ## Note! See the A.2.1 in SDM vol 2 for the type names.
 g_kdOpTypes = {
     # Fixed addresses
-    'Ap':   ( 'IDX_ParseImmAddrF',  'imm', '%Ap',  ),
+    'Ap':   ( 'IDX_ParseImmAddrF',  'imm',    '%Ap',  'Ap',      ),
 
     # ModR/M.rm
-    'Eb':   ( 'IDX_UseModRM',       'rm',  '%Eb',  ),
-    'Ew':   ( 'IDX_UseModRM',       'rm',  '%Ew',  ),
-    'Ev':   ( 'IDX_UseModRM',       'rm',  '%Ev',  ),
+    'Eb':   ( 'IDX_UseModRM',       'rm',     '%Eb',  'Eb',      ),
+    'Ew':   ( 'IDX_UseModRM',       'rm',     '%Ew',  'Ew',      ),
+    'Ev':   ( 'IDX_UseModRM',       'rm',     '%Ev',  'Ev',      ),
 
     # ModR/M.rm - memory only.
-    'Ma':   ( 'IDX_UseModRM',        'rm', '%Ma',  ), ##< Only used by BOUND.
+    'Ma':   ( 'IDX_UseModRM',        'rm',    '%Ma',  'Ma',      ), ##< Only used by BOUND.
 
     # ModR/M.reg
-    'Gb':   ( 'IDX_UseModRM',       'reg', '%Gb',  ),
-    'Gw':   ( 'IDX_UseModRM',       'reg', '%Gw',  ),
-    'Gv':   ( 'IDX_UseModRM',       'reg', '%Gv',  ),
+    'Gb':   ( 'IDX_UseModRM',       'reg',    '%Gb',  'Gb',      ),
+    'Gw':   ( 'IDX_UseModRM',       'reg',    '%Gw',  'Gw',      ),
+    'Gv':   ( 'IDX_UseModRM',       'reg',    '%Gv',  'Gv',      ),
 
     # Immediate values.
-    'Ib':   ( 'IDX_ParseImmByte',   'imm', '%Ib',  ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
-    'Iw':   ( 'IDX_ParseImmUshort', 'imm', '%Iw',  ),
-    'Id':   ( 'IDX_ParseImmUlong',  'imm', '%Id',  ),
-    'Iq':   ( 'IDX_ParseImmQword',  'imm', '%Iq',  ),
-    'Iv':   ( 'IDX_ParseImmV',      'imm', '%Iv',  ), ##< o16: word, o32: dword, o64: qword
-    'Iz':   ( 'IDX_ParseImmZ',      'imm', '%Iz',  ), ##< o16: word, o32|o64:dword
+    'Ib':   ( 'IDX_ParseImmByte',   'imm',    '%Ib',  'Ib',      ), ##< NB! Could be IDX_ParseImmByteSX for some instructions.
+    'Iw':   ( 'IDX_ParseImmUshort', 'imm',    '%Iw',  'Iw',      ),
+    'Id':   ( 'IDX_ParseImmUlong',  'imm',    '%Id',  'Id',      ),
+    'Iq':   ( 'IDX_ParseImmQword',  'imm',    '%Iq',  'Iq',      ),
+    'Iv':   ( 'IDX_ParseImmV',      'imm',    '%Iv',  'Iv',      ), ##< o16: word, o32: dword, o64: qword
+    'Iz':   ( 'IDX_ParseImmZ',      'imm',    '%Iz',  'Iz',      ), ##< o16: word, o32|o64:dword
 
     # Address operands (no ModR/M).
-    'Ob':   ( 'IDX_ParseImmAddr',   'imm', '%Ob',  ),
-    'Ov':   ( 'IDX_ParseImmAddr',   'imm', '%Ov',  ),
+    'Ob':   ( 'IDX_ParseImmAddr',   'imm',    '%Ob',  'Ob',      ),
+    'Ov':   ( 'IDX_ParseImmAddr',   'imm',    '%Ov',  'Ov',      ),
 
     # Relative jump targets
-    'Jb':   ( 'IDX_ParseImmBRel',   'imm', '%Jb',  ),
-    'Jv':   ( 'IDX_ParseImmVRel',   'imm', '%Jv',  ),
+    'Jb':   ( 'IDX_ParseImmBRel',   'imm',    '%Jb',  'Jb',      ),
+    'Jv':   ( 'IDX_ParseImmVRel',   'imm',    '%Jv',  'Jv',      ),
 
     # DS:rSI
-    'Xb':   ( 'IDX_ParseXb',        'rSI', '%eSI', ),
-    'Xv':   ( 'IDX_ParseXv',        'rSI', '%eSI', ),
+    'Xb':   ( 'IDX_ParseXb',        'rSI',    '%eSI', 'Xb',      ),
+    'Xv':   ( 'IDX_ParseXv',        'rSI',    '%eSI', 'Xv',      ),
     # ES:rDI
-    'Yb':   ( 'IDX_ParseYb',        'rDI', '%eDI', ),
-    'Yv':   ( 'IDX_ParseYv',        'rDI', '%eDI', ),
+    'Yb':   ( 'IDX_ParseYb',        'rDI',    '%eDI', 'Yb',      ),
+    'Yv':   ( 'IDX_ParseYv',        'rDI',    '%eDI', 'Yv',      ),
 
-    'Fv':   ( 'IDX_ParseFixedReg',  'rFLAGS', '%Fv', ),
+    'Fv':   ( 'IDX_ParseFixedReg',  'rFLAGS', '%Fv',  'Fv',      ),
 
     # Fixed registers.
-    'AL':   ( 'IDX_ParseFixedReg',  'AL',  'al'   ),
-    'rAX':  ( 'IDX_ParseFixedReg',  'rAX', '%eAX', ),
-    'CS':   ( 'IDX_ParseFixedReg',  'CS',  'cs'   ), # 8086: push CS
-    'DS':   ( 'IDX_ParseFixedReg',  'DS',  'ds'   ),
-    'ES':   ( 'IDX_ParseFixedReg',  'ES',  'es'   ),
-    'FS':   ( 'IDX_ParseFixedReg',  'FS',  'fs'   ),
-    'GS':   ( 'IDX_ParseFixedReg',  'GS',  'gs'   ),
-    'SS':   ( 'IDX_ParseFixedReg',  'SS',  'ss'   ),
+    'AL':   ( 'IDX_ParseFixedReg',  'AL',     'al',   'REG_AL',  ),
+    'rAX':  ( 'IDX_ParseFixedReg',  'rAX',    '%eAX', 'REG_EAX', ),
+    'CS':   ( 'IDX_ParseFixedReg',  'CS',     'cs',   'REG_CS',  ), # 8086: push CS
+    'DS':   ( 'IDX_ParseFixedReg',  'DS',     'ds',   'REG_DS',  ),
+    'ES':   ( 'IDX_ParseFixedReg',  'ES',     'es',   'REG_ES',  ),
+    'FS':   ( 'IDX_ParseFixedReg',  'FS',     'fs',   'REG_FS',  ),
+    'GS':   ( 'IDX_ParseFixedReg',  'GS',     'gs',   'REG_GS',  ),
+    'SS':   ( 'IDX_ParseFixedReg',  'SS',     'ss',   'REG_SS',  ),
 };
 
 # IDX_ParseFixedReg
@@ -337,7 +339,7 @@ class InstructionMap(object):
         '11':       [  64, ], ##< modrm.reg and modrm.rm select the instruction with modrm.mod == 0y11.
     };
 
-    def __init__(self, sName, asLeadOpcodes = None, sSelector = 'byte', sEncoding = 'legacy'):
+    def __init__(self, sName, asLeadOpcodes = None, sSelector = 'byte', sEncoding = 'legacy', sDisParse = None):
         assert sSelector in self.kdSelectors;
         assert sEncoding in self.kdEncodings;
         if asLeadOpcodes is None:
@@ -345,12 +347,14 @@ class InstructionMap(object):
         else:
             for sOpcode in asLeadOpcodes:
                 assert _isValidOpcodeByte(sOpcode);
+        assert sDisParse is None or sDisParse.startswith('IDX_Parse');
 
         self.sName          = sName;
         self.asLeadOpcodes  = asLeadOpcodes;    ##< Lead opcode bytes formatted as hex strings like '0x0f'.
         self.sSelector      = sSelector;        ##< The member selector, see kdSelectors.
         self.sEncoding      = sEncoding;        ##< The encoding, see kdSelectors.
         self.aoInstructions = [];               # type: Instruction
+        self.sDisParse      = sDisParse;        ##< IDX_ParseXXX.
 
     def getTableSize(self):
         """
@@ -994,7 +998,7 @@ g_dInstructionMaps = {
     'grp11_c7_m':   InstructionMap('grp11_c7_m',asLeadOpcodes = ['0xc7',], sSelector = '!11 /r'),
     'grp11_c7_r':   InstructionMap('grp11_c7_r',asLeadOpcodes = ['0xc7',], sSelector = '11'),    # xbegin
 
-    'two0f':        InstructionMap('two0f',     asLeadOpcodes = ['0x0f',]),
+    'two0f':        InstructionMap('two0f',     asLeadOpcodes = ['0x0f',], sDisParse = 'IDX_ParseTwoByteEsc'),
     'grp6':         InstructionMap('grp6',      asLeadOpcodes = ['0x0f', '0x00',], sSelector = '/r'),
     'grp7_m':       InstructionMap('grp7_m',    asLeadOpcodes = ['0x0f', '0x01',], sSelector = '!11 /r'),
     'grp7_r':       InstructionMap('grp7_r',    asLeadOpcodes = ['0x0f', '0x01',], sSelector = '11'),
@@ -1574,7 +1578,7 @@ class SimpleParser(object):
     def parseTagOpEnc(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@openc
-        Value:      ModR/M|TBD
+        Value:      ModR/M|fixed|prefix|<map name>
 
         The instruction operand encoding style.
         """
@@ -1583,6 +1587,8 @@ class SimpleParser(object):
         # Flatten and validate the value.
         sEncoding = self.flattenAllSections(aasSections);
         if sEncoding in g_kdEncodings:
+            pass;
+        elif sEncoding in g_dInstructionMaps:
             pass;
         elif not _isValidOpcodeByte(sEncoding):
             return self.errorComment(iTagLine, '%s: invalid encoding: %s' % (sTag, sEncoding,));
@@ -2147,6 +2153,10 @@ class SimpleParser(object):
                     self.errorComment(iCurTagLine, 'Unknown tag: %s' % (sCurTag));
                 elif sCurTag == '@default':
                     sFlatDefault = self.flattenAllSections(aasSections);
+                elif '@op' + sCurTag[1:] in self.dTagHandlers:
+                    self.errorComment(iCurTagLine, 'Did you mean "@op%s" rather than "%s"?' % (sCurTag[1:], sCurTag));
+                elif sCurTag in ['@encoding', '@opencoding']:
+                    self.errorComment(iCurTagLine, 'Did you mean "@openc" rather than "%s"?' % (sCurTag,));
 
                 #
                 # New tag.
@@ -2573,7 +2583,8 @@ def __parseAll():
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
 
     if cErrors != 0:
-        raise Exception('%d parse errors' % (cErrors,));
+        #raise Exception('%d parse errors' % (cErrors,));
+        sys.exit(1);
     return True;
 
 
@@ -2625,7 +2636,10 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                 sTmp = '%s("%s' % (sMacro, oInstr.sMnemonic,);
                 for iOperand, oOperand in enumerate(oInstr.aoOperands):
                     sTmp += ' ' if iOperand == 0 else ',';
-                    sTmp += g_kdOpTypes[oOperand.sType][2];
+                    if g_kdOpTypes[oOperand.sType][2][0] != '%':        ## @todo remove upper() later.
+                        sTmp += g_kdOpTypes[oOperand.sType][2].upper(); ## @todo remove upper() later.
+                    else:
+                        sTmp += g_kdOpTypes[oOperand.sType][2];
                 sTmp += '",';
                 asColumns = [ sTmp, ];
 
@@ -2633,6 +2647,7 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                 # Decoders.
                 #
                 iStart = len(asColumns);
+                #print 'debug: %s' % (oInstr,);
                 if oInstr.sEncoding is None:
                     pass;
                 elif oInstr.sEncoding == 'ModR/M':
@@ -2649,6 +2664,8 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                     asColumns.append('IDX_ParseVex2b,')
                 elif oInstr.sEncoding == 'vex3':
                     asColumns.append('IDX_ParseVex3b,')
+                elif oInstr.sEncoding in g_dInstructionMaps:
+                    asColumns.append(g_dInstructionMaps[oInstr.sEncoding].sDisParse + ',');
                 else:
                     ## @todo
                     #IDX_ParseTwoByteEsc,
@@ -2690,7 +2707,7 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                 asColumns.append(oInstr.sDisEnum + ',');
                 iStart = len(asColumns)
                 for oOperand in oInstr.aoOperands:
-                    asColumns.append('OP_PARM_' + oOperand.sType + ',');
+                    asColumns.append('OP_PARM_' + g_kdOpTypes[oOperand.sType][3] + ',');
                 asColumns.extend(['OP_PARM_NONE,'] * (cMaxOperands - (len(asColumns) - iStart)));
 
                 #

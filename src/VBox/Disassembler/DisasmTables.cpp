@@ -100,7 +100,7 @@ const DISOPCODE g_aOneByteMapX86[256] =
     OP("or AL,%Ib",          IDX_ParseFixedReg,  IDX_ParseImmByte, 0,        OP_OR,      OP_PARM_REG_AL,     OP_PARM_Ib,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("or %eAX,%Iz",        IDX_ParseFixedReg,  IDX_ParseImmZ,  0,          OP_OR,      OP_PARM_REG_EAX,    OP_PARM_Iz,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("push CS",            IDX_ParseFixedReg,  0,              0,          OP_PUSH,    OP_PARM_REG_CS,     OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64 | DISOPTYPE_POTENTIALLY_DANGEROUS),
-    OP("2-BYTE ESCAPE",      IDX_ParseTwoByteEsc, 0,             0,          OP_2B_ESC,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("EscTwo0f",           IDX_ParseTwoByteEsc, 0,             0,          OP_2B_ESC,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
 
     /* 1 */
     OP("adc %Eb,%Gb",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_ADC,     OP_PARM_Eb,         OP_PARM_Gb,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
