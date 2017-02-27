@@ -809,7 +809,7 @@ private:
     /** User-level object lock for subclasses */
     RWLockHandle *mObjectLock;
 
-    /** Slot of this object in the saFactoryStats array */
+    /** Slot of this object in the g_aClassFactoryStats array */
     uint32_t iFactoryStat;
 
 private:
