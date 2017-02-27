@@ -3305,7 +3305,8 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 
     if (   (   pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ
             || pIoReq->enmType == PDMMEDIAEXIOREQTYPE_WRITE)
-        && !pIoReq->ReadWrite.fDirectBuf)
+        && !pIoReq->ReadWrite.fDirectBuf
+        && pIoReq->ReadWrite.cbIoBuf > 0)
     {
         IOBUFMgrFreeBuf(&pIoReq->ReadWrite.IoBuf);
 
@@ -3313,7 +3314,9 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
         if (cIoReqsWaiting > 0)
         {
             RTLISTANCHOR LstIoReqProcess;
+            RTLISTANCHOR LstIoReqCanceled;
             RTListInit(&LstIoReqProcess);
+            RTListInit(&LstIoReqCanceled);
 
             /* Try to process as many requests as possible. */
             RTCritSectEnter(&pThis->CritSectIoReqsIoBufWait);
@@ -3337,7 +3340,23 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
                     pIoReqCur->ReadWrite.fDirectBuf = false;
                     pIoReqCur->ReadWrite.pSgBuf     = &pIoReqCur->ReadWrite.IoBuf.SgBuf;
 
-                    RTListAppend(&LstIoReqProcess, &pIoReqCur->NdLstWait);
+                    bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReqCur->enmState,
+                                                     VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
+                    if (RT_UNLIKELY(!fXchg))
+                    {
+                        /* Must have been canceled inbetween. */
+                        Assert(pIoReqCur->enmState == VDIOREQSTATE_CANCELED);
+
+                        /* Free the buffer here already again to let other requests get a chance to allocate the memory. */
+                        IOBUFMgrFreeBuf(&pIoReq->ReadWrite.IoBuf);
+                        pIoReqCur->ReadWrite.cbIoBuf = 0;
+                        RTListAppend(&LstIoReqCanceled, &pIoReqCur->NdLstWait);
+                    }
+                    else
+                    {
+                        ASMAtomicIncU32(&pThis->cIoReqsActive);
+                        RTListAppend(&LstIoReqProcess, &pIoReqCur->NdLstWait);
+                    }
                 }
                 else
                 {
@@ -3349,19 +3368,16 @@ DECLINLINE(void) drvvdMediaExIoReqBufFree(PVBOXDISK pThis, PPDMMEDIAEXIOREQINT p
 
             ASMAtomicAddU32(&pThis->cIoReqsWaiting, cIoReqsWaiting);
 
-            /* Process the requests we could allocate memory for outside the lock now. */
+            /* Process the requests we could allocate memory for and the ones which got canceled outside the lock now. */
+            RTListForEachSafe(&LstIoReqCanceled, pIoReqCur, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
+            {
+                RTListNodeRemove(&pIoReqCur->NdLstWait);
+                drvvdMediaExIoReqCompleteWorker(pThis, pIoReqCur, VERR_PDM_MEDIAEX_IOREQ_CANCELED, true /* fUpNotify */);
+            }
+
             RTListForEachSafe(&LstIoReqProcess, pIoReqCur, pIoReqNext, PDMMEDIAEXIOREQINT, NdLstWait)
             {
                 RTListNodeRemove(&pIoReqCur->NdLstWait);
-
-                bool fXchg = ASMAtomicCmpXchgU32((volatile uint32_t *)&pIoReqCur->enmState, VDIOREQSTATE_ACTIVE, VDIOREQSTATE_ALLOCATED);
-                if (RT_UNLIKELY(!fXchg))
-                {
-                    /* Must have been canceled inbetween. */
-                    Assert(pIoReqCur->enmState == VDIOREQSTATE_CANCELED);
-                    drvvdMediaExIoReqCompleteWorker(pThis, pIoReqCur, VERR_PDM_MEDIAEX_IOREQ_CANCELED, true /* fUpNotify */);
-                }
-                ASMAtomicIncU32(&pThis->cIoReqsActive);
                 drvvdMediaExIoReqReadWriteProcess(pThis, pIoReqCur, true /* fUpNotify */);
             }
         }
