@@ -402,7 +402,7 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
         {
             UITextTable p_text;
 
-            ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+            ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
             for (ulong slot = 0; slot < count; slot++)
             {
                 CNetworkAdapter adapter = m_machine.GetNetworkAdapter(slot);
@@ -803,7 +803,7 @@ UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMa
     : UIInformationDataItem(InformationElementType_NetworkStatistics, machine, console, pModel)
 {
     /* Network statistics: */
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
     for (ulong i = 0; i < count; ++i)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter(i);

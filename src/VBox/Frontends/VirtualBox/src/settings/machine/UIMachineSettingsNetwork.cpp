@@ -825,6 +825,10 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage()
     pMainLayout->addWidget(m_pTwAdapters);
 
     /* How many adapters to display: */
+    /** @todo r=klaus this needs to be done based on the actual chipset type of the VM,
+     * but in this place the m_machine field isn't set yet. My observation (on Linux)
+     * is that the limitation to 4 isn't necessary any more, but this needs to be checked
+     * on all platforms to be certain that it's usable everywhere. */
     ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3));
     /* Add corresponding tab pages to parent tab widget: */
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)

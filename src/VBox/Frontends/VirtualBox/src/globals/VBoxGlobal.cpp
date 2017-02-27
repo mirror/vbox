@@ -1256,7 +1256,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+        ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(aMachine.GetChipsetType());
         int rows = 2; /* including section header and footer */
         for (ulong slot = 0; slot < count; slot ++)
         {

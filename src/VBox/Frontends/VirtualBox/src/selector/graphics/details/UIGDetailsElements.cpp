@@ -591,8 +591,8 @@ void UIGDetailsUpdateTaskNetwork::run()
     {
         /* Iterate over all the adapters: */
         bool fSomeInfo = false;
-        ulong uSount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-        for (ulong uSlot = 0; uSlot < uSount; ++uSlot)
+        ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
+        for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
         {
             const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
             if (adapter.GetEnabled())

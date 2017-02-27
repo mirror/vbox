@@ -210,7 +210,7 @@ void UIVMInfoDialog::retranslateUi()
     }
 
     /* Network statistics: */
-    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(machine.GetChipsetType());
     for (ulong i = 0; i < count; ++i)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter(i);
