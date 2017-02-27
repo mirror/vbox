@@ -3272,20 +3272,29 @@ static int drvvdMediaExIoReqReadWriteProcess(PVBOXDISK pThis, PPDMMEDIAEXIOREQIN
             rc = VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS;
         else if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
-            if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
-                rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, false /* fToIoBuf */);
+            /*
+             * Don't sync the buffer or update the I/O state for the last chunk as it is done
+             * already in the completion worker called below.
+             */
+            if (cbReqIo < pIoReq->ReadWrite.cbReqLeft)
+            {
+                if (pIoReq->enmType == PDMMEDIAEXIOREQTYPE_READ)
+                    rc = drvvdMediaExIoReqBufSync(pThis, pIoReq, false /* fToIoBuf */);
+                else
+                    rc = VINF_SUCCESS;
+                pIoReq->ReadWrite.offStart  += cbReqIo;
+                pIoReq->ReadWrite.cbReqLeft -= cbReqIo;
+            }
             else
+            {
                 rc = VINF_SUCCESS;
-            pIoReq->ReadWrite.offStart  += cbReqIo;
-            pIoReq->ReadWrite.cbReqLeft -= cbReqIo;
+                break;
+            }
         }
     }
 
     if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
-    {
-        Assert(!pIoReq->ReadWrite.cbReqLeft || RT_FAILURE(rc));
         rc = drvvdMediaExIoReqCompleteWorker(pThis, pIoReq, rc, fUpNotify);
-    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
