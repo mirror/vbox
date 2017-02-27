@@ -176,7 +176,18 @@ static int debugCreateStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStre
                 rc = RTFileOpen(&pStreamDbg->hFileTiming, szFile, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE);
 
                 if (RT_FAILURE(rc))
+                {
                     LogRel(("VaKitAudio: Creating output file '%s' failed with %Rrc\n", szFile, rc));
+                }
+                else
+                {
+                    size_t cch;
+                    char szTimingInfo[128];
+                    cch = RTStrPrintf(szTimingInfo, sizeof(szTimingInfo), "# %dHz %dch %dbps\n",
+                        pCfgReq->Props.uHz, pCfgReq->Props.cChannels, pCfgReq->Props.cBits);
+
+                    RTFileWrite(pStreamDbg->hFileTiming, szTimingInfo, cch, NULL);
+                }
             }
             else
                 LogRel(("VaKitAudio: Unable to build file name for temp dir '%s': %Rrc\n", szTemp, rc));
@@ -311,6 +322,8 @@ static int debugDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStr
     size_t cbDataSize = DrvAudioHlpWAVFileGetDataSize(&pStreamDbg->File);
 
     int rc = DrvAudioHlpWAVFileClose(&pStreamDbg->File);
+    RTFileClose(pStreamDbg->hFileTiming);
+
     if (RT_SUCCESS(rc))
     {
         /* Delete the file again if nothing but the header was written to it. */
@@ -322,11 +335,10 @@ static int debugDestroyStreamOut(PDRVHOSTVAKITAUDIO pDrv, PVAKITAUDIOSTREAM pStr
             char szFile[RTPATH_MAX];
 
             RTStrCopy(szFile, sizeof(szFile), pStreamDbg->File.szName);
-            rc = RTFileDelete(szFile);
+            RTFileDelete(szFile);
 
             RTStrCat(szFile, sizeof(szFile), ".timing");
-            rc = RTFileDelete(szFile);
-
+            RTFileDelete(szFile);
         }
         else
             LogRel(("VaKitAudio: Created output file '%s' (%zu bytes)\n", pStreamDbg->File.szName, cbDataSize));
