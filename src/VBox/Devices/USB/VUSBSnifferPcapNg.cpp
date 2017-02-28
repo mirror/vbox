@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014-2016 Oracle Corporation
+ * Copyright (C) 2014-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -449,7 +449,7 @@ static int vusbSnifferAddOption(PVUSBSNIFFERFMTINT pThis, uint16_t u16OptionCode
 
 
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnInit} */
-static DECLCALLBACK(int) vusbSnifferFmtPcanNgInit(PVUSBSNIFFERFMTINT pThis, PVUSBSNIFFERSTRM pStrm)
+static DECLCALLBACK(int) vusbSnifferFmtPcapNgInit(PVUSBSNIFFERFMTINT pThis, PVUSBSNIFFERSTRM pStrm)
 {
     pThis->pStrm       = pStrm;
     pThis->cbBlockCur  = 0;
@@ -547,7 +547,7 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgInit(PVUSBSNIFFERFMTINT pThis, PVUS
 
 
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnDestroy} */
-static DECLCALLBACK(void) vusbSnifferFmtPcanNgDestroy(PVUSBSNIFFERFMTINT pThis)
+static DECLCALLBACK(void) vusbSnifferFmtPcapNgDestroy(PVUSBSNIFFERFMTINT pThis)
 {
     if (pThis->pbBlockData)
         RTMemFree(pThis->pbBlockData);
@@ -555,7 +555,7 @@ static DECLCALLBACK(void) vusbSnifferFmtPcanNgDestroy(PVUSBSNIFFERFMTINT pThis)
 
 
 /** @interface_method_impl{VUSBSNIFFERFMT,pfnRecordEvent} */
-static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
+static DECLCALLBACK(int) vusbSnifferFmtPcapNgRecordEvent(PVUSBSNIFFERFMTINT pThis, PVUSBURB pUrb, VUSBSNIFFEREVENT enmEvent)
 {
     DumpFileEpb Epb;
     DumpFileUsbHeaderLnxMmapped UsbHdr;
@@ -642,7 +642,8 @@ static DECLCALLBACK(int) vusbSnifferFmtPcanNgRecordEvent(PVUSBSNIFFERFMTINT pThi
             || pUrb->enmType == VUSBXFERTYPE_MSG)
             cbDataLength = 0;
     }
-    else if (pUrb->enmDir == VUSBDIRECTION_SETUP)
+    else if (   pUrb->enmDir == VUSBDIRECTION_SETUP
+             && cbDataLength >= sizeof(VUSBSETUP))
         cbDataLength -= sizeof(VUSBSETUP);
 
     Epb.u32CapturedLen = cbCapturedLength + cbDataLength;
@@ -720,10 +721,10 @@ const VUSBSNIFFERFMT g_VUsbSnifferFmtPcapNg =
     /** cbFmt */
     sizeof(VUSBSNIFFERFMTINT),
     /** pfnInit */
-    vusbSnifferFmtPcanNgInit,
+    vusbSnifferFmtPcapNgInit,
     /** pfnDestroy */
-    vusbSnifferFmtPcanNgDestroy,
+    vusbSnifferFmtPcapNgDestroy,
     /** pfnRecordEvent */
-    vusbSnifferFmtPcanNgRecordEvent
+    vusbSnifferFmtPcapNgRecordEvent
 };
 
