@@ -2630,11 +2630,12 @@ VMMR3DECL(int) TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM)
     int rc = SSMR3GetU8(pSSM, &u8State);
     if (RT_FAILURE(rc))
         return rc;
-#if 1 /* Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */  /** @todo remove this in a few weeks! */
+
+    /* TMTIMERSTATE_SAVED_XXX: Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */
     if (    u8State == TMTIMERSTATE_SAVED_PENDING_STOP + 1
         ||  u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE + 1)
         u8State--;
-#endif
+
     if (    u8State != TMTIMERSTATE_SAVED_PENDING_STOP
         &&  u8State != TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
     {
@@ -2708,11 +2709,12 @@ VMMR3DECL(int) TMR3TimerSkip(PSSMHANDLE pSSM, bool *pfActive)
     int rc = SSMR3GetU8(pSSM, &u8State);
     if (RT_FAILURE(rc))
         return rc;
-#if 1 /* Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */  /** @todo remove this in a few weeks! */
+
+    /* TMTIMERSTATE_SAVED_XXX: Workaround for accidental state shift in r47786 (2009-05-26 19:12:12). */
     if (    u8State == TMTIMERSTATE_SAVED_PENDING_STOP + 1
         ||  u8State == TMTIMERSTATE_SAVED_PENDING_SCHEDULE + 1)
         u8State--;
-#endif
+
     if (    u8State != TMTIMERSTATE_SAVED_PENDING_STOP
         &&  u8State != TMTIMERSTATE_SAVED_PENDING_SCHEDULE)
     {
@@ -2728,15 +2730,8 @@ VMMR3DECL(int) TMR3TimerSkip(PSSMHANDLE pSSM, bool *pfActive)
          */
         uint64_t u64Expire;
         rc = SSMR3GetU64(pSSM, &u64Expire);
-        if (RT_FAILURE(rc))
-            return rc;
     }
 
-    /*
-     * On failure set SSM status.
-     */
-    if (RT_FAILURE(rc))
-        rc = SSMR3HandleSetStatus(pSSM, rc);
     return rc;
 }
 
