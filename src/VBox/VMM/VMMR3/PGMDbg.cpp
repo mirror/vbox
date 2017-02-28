@@ -2809,6 +2809,22 @@ void pgmLogState(PVM pVM)
 # ifdef VBOX_STRICT
         LOG_PAGE_MEMBER("RGv",      GCPtrDirtyFault);
 # endif
+        if (   pPage->enmKind == PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT
+            || pPage->enmKind == PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB
+            || pPage->enmKind == PGMPOOLKIND_32BIT_PD
+            || pPage->enmKind == PGMPOOLKIND_32BIT_PD_PHYS)
+        {
+            uint32_t const *pu32Page = (uint32_t const *)pPage->pvPageR3;
+            for (uint32_t i = 0; i < 1024/2; i += 4)
+                RTLogRelPrintf(" %#05x: %RX32 %RX32 %RX32 %RX32\n", i, pu32Page[i], pu32Page[i+1], pu32Page[i+2], pu32Page[i+3]);
+        }
+        else if (   pPage->enmKind != PGMPOOLKIND_FREE
+                 && pPage->enmKind != PGMPOOLKIND_INVALID)
+        {
+            uint64_t const *pu64Page = (uint64_t const *)pPage->pvPageR3;
+            for (uint32_t i = 0; i < 512/2; i += 2)
+                RTLogRelPrintf(" %#05x: %RX64 %RX64\n", i, pu64Page[i], pu64Page[i+1]);
+        }
     }
 
     RTLogRelPrintf("pgmLogState pgmLogState pgmLogState pgmLogState pgmLogState\n\n");
