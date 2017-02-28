@@ -4322,6 +4322,8 @@ FNDBGCCMD       pgmR3CmdCheckDuplicatePages;
 FNDBGCCMD       pgmR3CmdShowSharedModules;
 # endif
 
+void            pgmLogState(PVM pVM);
+
 RT_C_DECLS_END
 
 /** @} */
