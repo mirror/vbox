@@ -624,9 +624,14 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pVCpu->vmm.s.hCtxHook == NIL_RTTHREADCTXHOOK);
 
+#if 1 /* To disable this stuff change to zero. */
     int rc = RTThreadCtxHookCreate(&pVCpu->vmm.s.hCtxHook, 0, vmmR0ThreadCtxCallback, pVCpu);
     if (RT_SUCCESS(rc))
         return rc;
+#else
+    RT_NOREF(vmmR0ThreadCtxCallback);
+    int rc = VERR_NOT_SUPPORTED;
+#endif
 
     pVCpu->vmm.s.hCtxHook = NIL_RTTHREADCTXHOOK;
     if (rc == VERR_NOT_SUPPORTED)
