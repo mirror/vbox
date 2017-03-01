@@ -2589,6 +2589,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 }
 
 
+#if 0
 /**
  * Clears the virtual interrupt intercept control in the VMCB as
  * we are figured the guest is unable process any interrupts
@@ -2605,6 +2606,7 @@ DECLINLINE(void) hmR0SvmClearVirtIntrIntercept(PSVMVMCB pVmcb)
         Log4(("Clearing VINTR intercept\n"));
     }
 }
+#endif
 
 
 /**
