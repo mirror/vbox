@@ -559,7 +559,7 @@ VMM_INT_DECL(void) HMTrapXcptUDForGIMDisable(PVMCPU pVCpu)
 
 
 /**
- * SVM nested-guest #VMEXIT handler.
+ * SVM nested-guest \#VMEXIT handler.
  * 
  * @param   pVCpu       The cross context virtual CPU structure. 
  * @param   uExitCode   The exit reason.
