@@ -169,6 +169,8 @@ class WuiDispatcherBase(object):
         """
         Generates the two menus, returning them as (sTopMenuItems, sSideMenuItems).
         """
+        fReadOnly = self.isReadOnlyUser();
+
         #
         # We use the action to locate the side menu.
         #
@@ -206,12 +208,13 @@ class WuiDispatcherBase(object):
         if aasSideMenu is not None:
             for asSubItem in aasSideMenu:
                 if asSubItem[1] is not None:
-                    if self._isSideMenuMatch(asSubItem[1], sActionParam):
-                        sSideMenuItems += '<li class="current_page_item">';
-                    else:
-                        sSideMenuItems += '<li>';
-                    sSideMenuItems += '<a href="' + webutils.escapeAttr(asSubItem[1]) + '">' \
-                                    + webutils.escapeElem(asSubItem[0]) + '</a></li>\n';
+                    if not asSubItem[2] or not fReadOnly:
+                        if self._isSideMenuMatch(asSubItem[1], sActionParam):
+                            sSideMenuItems += '<li class="current_page_item">';
+                        else:
+                            sSideMenuItems += '<li>';
+                        sSideMenuItems += '<a href="' + webutils.escapeAttr(asSubItem[1]) + '">' \
+                                        + webutils.escapeElem(asSubItem[0]) + '</a></li>\n';
                 else:
                     sSideMenuItems += '<li class="subheader_item">' + webutils.escapeElem(asSubItem[0]) + '</li>';
         return (sTopMenuItems, sSideMenuItems);

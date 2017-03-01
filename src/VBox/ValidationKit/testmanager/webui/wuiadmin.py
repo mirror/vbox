@@ -318,54 +318,54 @@ class WuiAdmin(WuiDispatcherBase):
             [
                 'Builds',       self._sActionUrlBase + self.ksActionBuildList,
                 [
-                    [ 'Builds',                 self._sActionUrlBase + self.ksActionBuildList ],
-                    [ 'Blacklist',              self._sActionUrlBase + self.ksActionBuildBlacklist ],
-                    [ 'Build sources',          self._sActionUrlBase + self.ksActionBuildSrcList ],
-                    [ 'Build categories',       self._sActionUrlBase + self.ksActionBuildCategoryList ],
-                    [ 'New build',              self._sActionUrlBase + self.ksActionBuildAdd ],
-                    [ 'New blacklisting',       self._sActionUrlBase + self.ksActionBuildBlacklistAdd ],
-                    [ 'New build source',       self._sActionUrlBase + self.ksActionBuildSrcAdd],
-                    [ 'New build category',     self._sActionUrlBase + self.ksActionBuildCategoryAdd ],
+                    [ 'Builds',                 self._sActionUrlBase + self.ksActionBuildList,              False ],
+                    [ 'Blacklist',              self._sActionUrlBase + self.ksActionBuildBlacklist,         False ],
+                    [ 'Build sources',          self._sActionUrlBase + self.ksActionBuildSrcList,           False ],
+                    [ 'Build categories',       self._sActionUrlBase + self.ksActionBuildCategoryList,      False ],
+                    [ 'New build',              self._sActionUrlBase + self.ksActionBuildAdd,               True ],
+                    [ 'New blacklisting',       self._sActionUrlBase + self.ksActionBuildBlacklistAdd,      True  ],
+                    [ 'New build source',       self._sActionUrlBase + self.ksActionBuildSrcAdd,            True ],
+                    [ 'New build category',     self._sActionUrlBase + self.ksActionBuildCategoryAdd,       True  ],
                 ]
             ],
             [
                 'Failure Reasons',       self._sActionUrlBase + self.ksActionFailureReasonList,
                 [
-                    [ 'Failure categories',     self._sActionUrlBase + self.ksActionFailureCategoryList ],
-                    [ 'Failure reasons',        self._sActionUrlBase + self.ksActionFailureReasonList ],
-                    [ 'New failure category',   self._sActionUrlBase + self.ksActionFailureCategoryAdd ],
-                    [ 'New failure reason',     self._sActionUrlBase + self.ksActionFailureReasonAdd ],
+                    [ 'Failure categories',     self._sActionUrlBase + self.ksActionFailureCategoryList,    False ],
+                    [ 'Failure reasons',        self._sActionUrlBase + self.ksActionFailureReasonList,      False ],
+                    [ 'New failure category',   self._sActionUrlBase + self.ksActionFailureCategoryAdd,     True  ],
+                    [ 'New failure reason',     self._sActionUrlBase + self.ksActionFailureReasonAdd,       True  ],
                 ]
             ],
             [
                 'System',      self._sActionUrlBase + self.ksActionSystemChangelogList,
                 [
-                    [ 'Changelog',              self._sActionUrlBase + self.ksActionSystemChangelogList ],
-                    [ 'System log',             self._sActionUrlBase + self.ksActionSystemLogList ],
-                    [ 'User accounts',          self._sActionUrlBase + self.ksActionUserList ],
-                    [ 'New user',               self._sActionUrlBase + self.ksActionUserAdd ],
+                    [ 'Changelog',              self._sActionUrlBase + self.ksActionSystemChangelogList,    False ],
+                    [ 'System log',             self._sActionUrlBase + self.ksActionSystemLogList,          False ],
+                    [ 'User accounts',          self._sActionUrlBase + self.ksActionUserList,               False ],
+                    [ 'New user',               self._sActionUrlBase + self.ksActionUserAdd,                True  ],
                 ]
             ],
             [
                 'Testboxes',   self._sActionUrlBase + self.ksActionTestBoxList,
                 [
-                    [ 'Testboxes',              self._sActionUrlBase + self.ksActionTestBoxList ],
-                    [ 'Scheduling groups',      self._sActionUrlBase + self.ksActionSchedGroupList ],
-                    [ 'New testbox',            self._sActionUrlBase + self.ksActionTestBoxAdd ],
-                    [ 'New scheduling group',   self._sActionUrlBase + self.ksActionSchedGroupAdd ],
-                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestBoxesRegenQueues ],
+                    [ 'Testboxes',              self._sActionUrlBase + self.ksActionTestBoxList,            False ],
+                    [ 'Scheduling groups',      self._sActionUrlBase + self.ksActionSchedGroupList,         False ],
+                    [ 'New testbox',            self._sActionUrlBase + self.ksActionTestBoxAdd,             True  ],
+                    [ 'New scheduling group',   self._sActionUrlBase + self.ksActionSchedGroupAdd,          True  ],
+                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestBoxesRegenQueues, True  ],
                 ]
             ],
             [
                 'Test Config', self._sActionUrlBase + self.ksActionTestGroupList,
                 [
-                    [ 'Test cases',             self._sActionUrlBase + self.ksActionTestCaseList ],
-                    [ 'Test groups',            self._sActionUrlBase + self.ksActionTestGroupList ],
-                    [ 'Global resources',       self._sActionUrlBase + self.ksActionGlobalRsrcShowAll ],
-                    [ 'New test case',          self._sActionUrlBase + self.ksActionTestCaseAdd ],
-                    [ 'New test group',         self._sActionUrlBase + self.ksActionTestGroupAdd ],
-                    [ 'New global resource',    self._sActionUrlBase + self.ksActionGlobalRsrcShowAdd ],
-                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestCfgRegenQueues ],
+                    [ 'Test cases',             self._sActionUrlBase + self.ksActionTestCaseList,           False ],
+                    [ 'Test groups',            self._sActionUrlBase + self.ksActionTestGroupList,          False ],
+                    [ 'Global resources',       self._sActionUrlBase + self.ksActionGlobalRsrcShowAll,      False  ],
+                    [ 'New test case',          self._sActionUrlBase + self.ksActionTestCaseAdd,            True  ],
+                    [ 'New test group',         self._sActionUrlBase + self.ksActionTestGroupAdd,           True  ],
+                    [ 'New global resource',    self._sActionUrlBase + self.ksActionGlobalRsrcShowAdd,      True  ],
+                    [ 'Regenerate all scheduling queues', self._sActionUrlBase + self.ksActionTestCfgRegenQueues, True  ],
                 ]
             ],
             [
