@@ -52,6 +52,7 @@ class UserAccountData(ModelDataBase):
     ksParam_sUsername           = 'UserAccount_sUsername'
     ksParam_sEmail              = 'UserAccount_sEmail'
     ksParam_sFullName           = 'UserAccount_sFullName'
+    ksParam_fReadOnly           = 'UserAccount_fReadOnly'
 
     kasAllowNullAttributes      = ['uid', 'tsEffective', 'tsExpire', 'uidAuthor'];
 
@@ -67,6 +68,7 @@ class UserAccountData(ModelDataBase):
         self.sEmail         = None;
         self.sFullName      = None;
         self.sLoginName     = None;
+        self.fReadOnly      = None;
 
     def initFromDbRow(self, aoRow):
         """
@@ -84,6 +86,7 @@ class UserAccountData(ModelDataBase):
         self.sEmail         = aoRow[5];
         self.sFullName      = aoRow[6];
         self.sLoginName     = aoRow[7];
+        self.fReadOnly      = aoRow[8];
         return self;
 
     def initFromDbWithId(self, oDb, uid, tsNow = None, sPeriodBack = None):
@@ -156,7 +159,7 @@ class UserAccountLogic(ModelLogicBase):
         Add user account entry to the DB.
         """
         self._oDb.callProc('UserAccountLogic_addEntry',
-                           (uidAuthor, oData.sUsername, oData.sEmail, oData.sFullName, oData.sLoginName,));
+                           (uidAuthor, oData.sUsername, oData.sEmail, oData.sFullName, oData.sLoginName, oData.fReadOnly));
         self._oDb.maybeCommit(fCommit);
         return True;
 
@@ -165,7 +168,8 @@ class UserAccountLogic(ModelLogicBase):
         Modify user account.
         """
         self._oDb.callProc('UserAccountLogic_editEntry',
-                           (uidAuthor, oData.uid, oData.sUsername, oData.sEmail, oData.sFullName, oData.sLoginName,));
+                           ( uidAuthor, oData.uid, oData.sUsername, oData.sEmail,
+                             oData.sFullName, oData.sLoginName, oData.fReadOnly));
         self._oDb.maybeCommit(fCommit);
         return True;
 

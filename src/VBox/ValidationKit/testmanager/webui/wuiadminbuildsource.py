@@ -117,21 +117,24 @@ class WuiAdminBuildSrcList(WuiListContentBase):
                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcDetails,
                         BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc,
                         WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
-            WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcClone,
-                        BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc,
-                        WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
         ];
-        if isDbTimestampInfinity(oEntry.tsExpire):
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
             aoActions += [
-                WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcEdit,
-                            BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc } ),
-                WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcDoRemove,
-                            BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc },
-                          sConfirm = 'Are you sure you want to remove build source #%d?' % (oEntry.idBuildSrc,) )
+                WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcClone,
+                            BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc,
+                            WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
             ];
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions += [
+                    WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcEdit,
+                                BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc } ),
+                    WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildSrcDoRemove,
+                                BuildSourceData.ksParam_idBuildSrc: oEntry.idBuildSrc },
+                              sConfirm = 'Are you sure you want to remove build source #%d?' % (oEntry.idBuildSrc,) )
+                ];
 
         return [ oEntry.idBuildSrc,
                  oEntry.sName,

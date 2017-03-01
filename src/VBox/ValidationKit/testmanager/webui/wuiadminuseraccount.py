@@ -56,6 +56,7 @@ class WuiUserAccount(WuiFormContentBase):
         oForm.addText(       UserAccountData.ksParam_sUsername,   oData.sUsername,   'User name')
         oForm.addText(       UserAccountData.ksParam_sFullName,   oData.sFullName,   'Full name')
         oForm.addText(       UserAccountData.ksParam_sEmail,      oData.sEmail,      'E-mail')
+        oForm.addCheckBox(   UserAccountData.ksParam_fReadOnly,   oData.fReadOnly,   'Only read access')
         if self._sMode != WuiFormContentBase.ksMode_Show:
             oForm.addSubmit('Add User' if self._sMode == WuiFormContentBase.ksMode_Add else 'Change User');
         return True;
@@ -70,20 +71,30 @@ class WuiUserAccountList(WuiListContentBase):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective,
                                     sTitle = 'Registered User Accounts', sId = 'users', fnDPrint = fnDPrint, oDisp = oDisp,
                                     aiSelectedSortColumns = aiSelectedSortColumns);
-        self._asColumnHeaders = ['User ID', 'Name', 'E-mail', 'Full Name', 'Login Name', 'Actions'];
+        self._asColumnHeaders = ['User ID', 'Name', 'E-mail', 'Full Name', 'Login Name', 'Access', 'Actions'];
         self._asColumnAttribs = ['align="center"', 'align="center"', 'align="center"', 'align="center"', 'align="center"',
-                                 'align="center"'];
+                                 'align="center"', 'align="center"', ];
 
     def _formatListEntry(self, iEntry):
         from testmanager.webui.wuiadmin import WuiAdmin;
         oEntry  = self._aoEntries[iEntry];
+        aoActions = [
+            WuiTmLink('Details', WuiAdmin.ksScriptName,
+                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionUserDetails,
+                        UserAccountData.ksParam_uid: oEntry.uid } ),
+        ];
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            aoActions += [
+                WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionUserEdit,
+                            UserAccountData.ksParam_uid: oEntry.uid } ),
+                WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionUserDelPost,
+                            UserAccountData.ksParam_uid: oEntry.uid },
+                          sConfirm = 'Are you sure you want to remove user #%d?' % (oEntry.uid,)),
+            ];
+
         return [ oEntry.uid, oEntry.sUsername, oEntry.sEmail, oEntry.sFullName, oEntry.sLoginName,
-                 [ WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionUserEdit,
-                               UserAccountData.ksParam_uid: oEntry.uid } ),
-                   WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionUserDelPost,
-                               UserAccountData.ksParam_uid: oEntry.uid },
-                             sConfirm = 'Are you sure you want to remove user #%d?' % (oEntry.uid,)),
-               ] ];
+                 'read only' if oEntry.fReadOnly else 'full',
+                 aoActions, ];
 

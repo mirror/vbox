@@ -157,20 +157,22 @@ class WuiAdminSchedGroupList(WuiListContentBase):
                                 { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupDetails,
                                   SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup,
                                   WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, } ),];
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupEdit,
-                                         SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup } ));
-        aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                                   { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupClone,
-                                     SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup,
-                                     WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, } ));
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupDoRemove,
-                                         SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup },
-                                       sConfirm = 'Are you sure you want to remove scheduling group #%d?'
-                                                % (oEntry.idSchedGroup,)));
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupEdit,
+                                             SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup } ));
+            aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupClone,
+                                         SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup,
+                                         WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, } ));
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionSchedGroupDoRemove,
+                                             SchedGroupData.ksParam_idSchedGroup: oEntry.idSchedGroup },
+                                           sConfirm = 'Are you sure you want to remove scheduling group #%d?'
+                                                    % (oEntry.idSchedGroup,)));
 
         return [
             oEntry.idSchedGroup,
@@ -184,3 +186,4 @@ class WuiAdminSchedGroupList(WuiListContentBase):
             self._formatCommentCell(oEntry.sComment),
             aoActions,
         ];
+

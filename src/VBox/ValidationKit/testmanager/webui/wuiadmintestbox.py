@@ -356,19 +356,20 @@ class WuiTestBoxList(WuiListContentWithActionBase):
                          WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, } ),
             ]
 
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions += [
-                WuiTmLink('Edit', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestBoxEdit,
-                            TestBoxData.ksParam_idTestBox: oEntry.idTestBox, } ),
-                WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestBoxRemovePost,
-                            TestBoxData.ksParam_idTestBox: oEntry.idTestBox },
-                          sConfirm = 'Are you sure that you want to remove %s (%s)?' % (oEntry.sName, oEntry.ip) ),
-            ]
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions += [
+                    WuiTmLink('Edit', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestBoxEdit,
+                                TestBoxData.ksParam_idTestBox: oEntry.idTestBox, } ),
+                    WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestBoxRemovePost,
+                                TestBoxData.ksParam_idTestBox: oEntry.idTestBox },
+                              sConfirm = 'Are you sure that you want to remove %s (%s)?' % (oEntry.sName, oEntry.ip) ),
+                ]
 
-        if oEntry.sOs not in [ 'win', 'os2', ] and oEntry.ip is not None:
-            aoActions.append(WuiLinkBase('ssh', 'ssh://vbox@%s' % (oEntry.ip,),));
+            if oEntry.sOs not in [ 'win', 'os2', ] and oEntry.ip is not None:
+                aoActions.append(WuiLinkBase('ssh', 'ssh://vbox@%s' % (oEntry.ip,),));
 
         return [ self._getCheckBoxColumn(iEntry, oEntry.idTestBox),
                  [ WuiSpanText('tmspan-name', oEntry.sName), WuiRawHtml('<br>'), '%s' % (oEntry.ip,),],

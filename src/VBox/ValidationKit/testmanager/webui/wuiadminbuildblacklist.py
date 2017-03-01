@@ -120,8 +120,27 @@ class WuiAdminListOfBlacklistItems(WuiListContentBase):
         from testmanager.webui.wuiadmin import WuiAdmin
         oEntry = self._aoEntries[iEntry]
 
-        sShortFailReason = \
-            FailureReasonLogic(TMDatabaseConnection()).getById(oEntry.idFailureReason).sShort
+        sShortFailReason = FailureReasonLogic(TMDatabaseConnection()).getById(oEntry.idFailureReason).sShort
+
+        aoActions = [
+            WuiTmLink('Details', WuiAdmin.ksScriptName,
+                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistDetails,
+                        BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting }),
+        ];
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            aoActions += [
+              WuiTmLink('Edit', WuiAdmin.ksScriptName,
+                        { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistEdit,
+                          BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting }),
+              WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                        { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistClone,
+                          BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting,
+                          WuiAdmin.ksParamEffectiveDate: oEntry.tsEffective,  }),
+              WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                        { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistDoRemove,
+                          BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting },
+                        sConfirm = 'Are you sure you want to remove black list entry #%d?' % (oEntry.idBlacklisting,)),
+             ];
 
         return [ oEntry.idBlacklisting,
                  sShortFailReason,
@@ -131,19 +150,5 @@ class WuiAdminListOfBlacklistItems(WuiListContentBase):
                  oEntry.asOsArches,
                  oEntry.iFirstRevision,
                  oEntry.iLastRevision,
-                 [ WuiTmLink('Details', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistDetails,
-                               BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting }),
-                   WuiTmLink('Edit', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistEdit,
-                               BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting }),
-                   WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistClone,
-                               BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting,
-                               WuiAdmin.ksParamEffectiveDate: oEntry.tsEffective,  }),
-                   WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildBlacklistDoRemove,
-                               BuildBlacklistData.ksParam_idBlacklisting: oEntry.idBlacklisting },
-                             sConfirm = 'Are you sure you want to remove black list entry #%d?' % (oEntry.idBlacklisting,)),
-                  ]
+                 aoActions
         ];

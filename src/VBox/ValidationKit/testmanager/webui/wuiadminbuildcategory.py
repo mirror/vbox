@@ -56,13 +56,16 @@ class WuiAdminBuildCatList(WuiListContentBase):
             WuiTmLink('Details', WuiAdmin.ksScriptName,
                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildCategoryDetails,
                         BuildCategoryData.ksParam_idBuildCategory: oEntry.idBuildCategory, }),
-            WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildCategoryClone,
-                        BuildCategoryData.ksParam_idBuildCategory: oEntry.idBuildCategory, }),
-            WuiTmLink('Try Remove', WuiAdmin.ksScriptName,
-                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildCategoryDoRemove,
-                        BuildCategoryData.ksParam_idBuildCategory: oEntry.idBuildCategory, }),
         ];
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            aoActions += [
+                WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildCategoryClone,
+                            BuildCategoryData.ksParam_idBuildCategory: oEntry.idBuildCategory, }),
+                WuiTmLink('Try Remove', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildCategoryDoRemove,
+                            BuildCategoryData.ksParam_idBuildCategory: oEntry.idBuildCategory, }),
+            ];
 
         sHtml = '<ul class="tmshowall">\n';
         for sOsArch in oEntry.asOsArches:

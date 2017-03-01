@@ -160,18 +160,19 @@ class WuiTestCaseList(WuiListContentBase):
         aoActions = [ WuiTmLink('Details', WuiAdmin.ksScriptName,
                                 { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseDetails,
                                   TestCaseData.ksParam_idGenTestCase: oEntry.idGenTestCase }), ];
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseEdit,
-                                         TestCaseData.ksParam_idTestCase: oEntry.idTestCase }));
-        aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                                   { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseClone,
-                                     TestCaseData.ksParam_idGenTestCase: oEntry.idGenTestCase }));
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseDoRemove,
-                                         TestCaseData.ksParam_idTestCase: oEntry.idTestCase },
-                                       sConfirm = 'Are you sure you want to remove test case #%d?' % (oEntry.idTestCase,)));
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseEdit,
+                                             TestCaseData.ksParam_idTestCase: oEntry.idTestCase }));
+            aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseClone,
+                                         TestCaseData.ksParam_idGenTestCase: oEntry.idGenTestCase }));
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseDoRemove,
+                                             TestCaseData.ksParam_idTestCase: oEntry.idTestCase },
+                                           sConfirm = 'Are you sure you want to remove test case #%d?' % (oEntry.idTestCase,)));
         aoRet.append(aoActions);
 
         return aoRet;

@@ -124,6 +124,8 @@ CREATE TABLE Users (
     sFullName           text        NOT NULL,
     --- The login name used by apache.
     sLoginName          text        NOT NULL,
+    --- Read access only.
+    fReadOnly           BOOLEAN     NOT NULL DEFAULT FALSE,
 
     PRIMARY KEY (uid, tsExpire)
 );

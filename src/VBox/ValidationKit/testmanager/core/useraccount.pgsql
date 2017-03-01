@@ -107,7 +107,7 @@ $$ LANGUAGE plpgsql;
 -- Adds a new user.
 --
 CREATE OR REPLACE FUNCTION UserAccountLogic_addEntry(a_uidAuthor INTEGER, a_sUsername TEXT, a_sEmail TEXT, a_sFullName TEXT, 
-                                                     a_sLoginName TEXT) 
+                                                     a_sLoginName TEXT, a_fReadOnly BOOLEAN)
     RETURNS VOID AS $$
     DECLARE
         v_cRows INTEGER;
@@ -119,15 +119,15 @@ CREATE OR REPLACE FUNCTION UserAccountLogic_addEntry(a_uidAuthor INTEGER, a_sUse
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION UserAccountLogic_editEntry(a_uidAuthor INTEGER, a_uid INTEGER, a_sUsername TEXT, a_sEmail TEXT, 
-                                                      a_sFullName TEXT, a_sLoginName TEXT)  
+                                                      a_sFullName TEXT, a_sLoginName TEXT, a_fReadOnly BOOLEAN)
     RETURNS VOID AS $$
     BEGIN
         PERFORM UserAccountLogic_checkExists(a_uid);
         PERFORM UserAccountLogic_checkUniqueUser(a_sUsername, a_sLoginName, a_uid);
 
         PERFORM UserAccountLogic_historizeEntry(a_uid, CURRENT_TIMESTAMP);
-        INSERT INTO Users (uid, uidAuthor, sUsername, sEmail, sFullName, sLoginName)
-            VALUES (a_uid, a_uidAuthor, a_sUsername, a_sEmail, a_sFullName, a_sLoginName);
+        INSERT INTO Users (uid, uidAuthor, sUsername, sEmail, sFullName, sLoginName, fReadOnly)
+            VALUES (a_uid, a_uidAuthor, a_sUsername, a_sEmail, a_sFullName, a_sLoginName, a_fReadOnly);
     END;
 $$ LANGUAGE plpgsql;
 

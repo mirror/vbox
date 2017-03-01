@@ -57,10 +57,11 @@ class WuiAdmin(WuiDispatcherBase):
 
     ksActionUserList                = 'UserList'
     ksActionUserAdd                 = 'UserAdd'
-    ksActionUserEdit                = 'UserEdit'
     ksActionUserAddPost             = 'UserAddPost'
+    ksActionUserEdit                = 'UserEdit'
     ksActionUserEditPost            = 'UserEditPost'
     ksActionUserDelPost             = 'UserDelPost'
+    ksActionUserDetails             = 'UserDetails'
 
     ksActionTestBoxList             = 'TestBoxList'
     ksActionTestBoxListPost         = 'TestBoxListPost'
@@ -177,6 +178,7 @@ class WuiAdmin(WuiDispatcherBase):
         self._dDispatch[self.ksActionUserEdit]                  = self._actionUserEdit;
         self._dDispatch[self.ksActionUserAddPost]               = self._actionUserAddPost;
         self._dDispatch[self.ksActionUserEditPost]              = self._actionUserEditPost;
+        self._dDispatch[self.ksActionUserDetails]               = self._actionUserDetails;
         self._dDispatch[self.ksActionUserDelPost]               = self._actionUserDelPost;
 
         #
@@ -456,6 +458,12 @@ class WuiAdmin(WuiDispatcherBase):
         from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
         return self._actionGenericFormAdd(UserAccountData, WuiUserAccount)
 
+    def _actionUserDetails(self):
+        """ Action wrapper. """
+        from testmanager.core.useraccount              import UserAccountData, UserAccountLogic;
+        from testmanager.webui.wuiadminuseraccount     import WuiUserAccount;
+        return self._actionGenericFormDetails(UserAccountData, UserAccountLogic, WuiUserAccount, 'uid');
+
     def _actionUserEdit(self):
         """ Action wrapper. """
         from testmanager.core.useraccount              import UserAccountData;
@@ -642,34 +650,38 @@ class WuiAdmin(WuiDispatcherBase):
         ## @todo should also be changed to a POST with a confirmation dialog preceeding it.
 
         self._sPageTitle = 'Regenerate All Scheduling Queues';
-        self._sPageBody  = '';
-        aoGroups = SchedGroupLogic(self._oDb).getAll();
-        for oGroup in aoGroups:
-            self._sPageBody += '<h3>%s (ID %#d)</h3>' % (webutils.escapeElem(oGroup.sName), oGroup.idSchedGroup);
-            try:
-                (aoErrors, asMessages) = SchedulerBase.recreateQueue(self._oDb, self._oCurUser.uid, oGroup.idSchedGroup, 2);
-            except Exception as oXcpt:
-                self._oDb.rollback();
-                self._sPageBody += '<p>SchedulerBase.recreateQueue threw an exception: %s</p>' \
-                                % (webutils.escapeElem(str(oXcpt)),);
-                self._sPageBody += cgitb.html(sys.exc_info());
-            else:
-                if len(aoErrors) == 0:
-                    self._sPageBody += '<p>Successfully regenerated.</p>';
+        if not self.isReadOnlyUser():
+            self._sPageBody  = '';
+            aoGroups = SchedGroupLogic(self._oDb).getAll();
+            for oGroup in aoGroups:
+                self._sPageBody += '<h3>%s (ID %#d)</h3>' % (webutils.escapeElem(oGroup.sName), oGroup.idSchedGroup);
+                try:
+                    (aoErrors, asMessages) = SchedulerBase.recreateQueue(self._oDb, self._oCurUser.uid, oGroup.idSchedGroup, 2);
+                except Exception as oXcpt:
+                    self._oDb.rollback();
+                    self._sPageBody += '<p>SchedulerBase.recreateQueue threw an exception: %s</p>' \
+                                    % (webutils.escapeElem(str(oXcpt)),);
+                    self._sPageBody += cgitb.html(sys.exc_info());
                 else:
-                    for oError in aoErrors:
-                        if oError[1] is None:
-                            self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
-                        ## @todo links.
-                        #elif isinstance(oError[1], TestGroupData):
-                        #    self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
-                        #elif isinstance(oError[1], TestGroupCase):
-                        #    self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
-                        else:
-                            self._sPageBody += '<p>%s. [Cannot link to %s]</p>' \
-                                             % (webutils.escapeElem(oError[0]), webutils.escapeElem(str(oError[1])));
-                for sMsg in asMessages:
-                    self._sPageBody += '<p>%s<p>\n' % (webutils.escapeElem(sMsg),);
+                    if len(aoErrors) == 0:
+                        self._sPageBody += '<p>Successfully regenerated.</p>';
+                    else:
+                        for oError in aoErrors:
+                            if oError[1] is None:
+                                self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
+                            ## @todo links.
+                            #elif isinstance(oError[1], TestGroupData):
+                            #    self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
+                            #elif isinstance(oError[1], TestGroupCase):
+                            #    self._sPageBody += '<p>%s.</p>' % (webutils.escapeElem(oError[0]),);
+                            else:
+                                self._sPageBody += '<p>%s. [Cannot link to %s]</p>' \
+                                                 % (webutils.escapeElem(oError[0]), webutils.escapeElem(str(oError[1])));
+                    for sMsg in asMessages:
+                        self._sPageBody += '<p>%s<p>\n' % (webutils.escapeElem(sMsg),);
+        else:
+            self._sPageBody = webutils.escapeElem('%s is a read only user and may not regenerate the scheduling queues!'
+                                                  % (self._oCurUser.sUsername,));
         return True;
 
 

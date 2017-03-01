@@ -104,27 +104,29 @@ class WuiAdminBuildList(WuiListContentBase):
                     BuildBlacklistData.ksParam_asOsArches:     oEntry.oCat.asOsArches,
                     BuildBlacklistData.ksParam_iFirstRevision: oEntry.iRevision,
                     BuildBlacklistData.ksParam_iLastRevision:  oEntry.iRevision }
-        aoActions += [
-            WuiTmLink('Blacklist', WuiAdmin.ksScriptName, dParams),
-            WuiTmLink('Details', WuiAdmin.ksScriptName,
-                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildDetails,
-                        BuildData.ksParam_idBuild: oEntry.idBuild,
-                        WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
-            WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildClone,
-                        BuildData.ksParam_idBuild: oEntry.idBuild,
-                        WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
-        ];
-        if isDbTimestampInfinity(oEntry.tsExpire):
+
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
             aoActions += [
-                WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildEdit,
-                            BuildData.ksParam_idBuild: oEntry.idBuild }),
-                WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildDoRemove,
-                            BuildData.ksParam_idBuild: oEntry.idBuild },
-                          sConfirm = 'Are you sure you want to remove build #%d?' % (oEntry.idBuild,) ),
+                WuiTmLink('Blacklist', WuiAdmin.ksScriptName, dParams),
+                WuiTmLink('Details', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildDetails,
+                            BuildData.ksParam_idBuild: oEntry.idBuild,
+                            WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
+                WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildClone,
+                            BuildData.ksParam_idBuild: oEntry.idBuild,
+                            WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }),
             ];
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions += [
+                    WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildEdit,
+                                BuildData.ksParam_idBuild: oEntry.idBuild }),
+                    WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                              { WuiAdmin.ksParamAction: WuiAdmin.ksActionBuildDoRemove,
+                                BuildData.ksParam_idBuild: oEntry.idBuild },
+                              sConfirm = 'Are you sure you want to remove build #%d?' % (oEntry.idBuild,) ),
+                ];
 
         return [ oEntry.idBuild,
                  oEntry.oCat.sProduct,

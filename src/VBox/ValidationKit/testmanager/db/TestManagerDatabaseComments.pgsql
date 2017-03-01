@@ -56,6 +56,10 @@ COMMENT ON COLUMN Users.sLoginName IS
   'The login name used by apache.';
 
 
+COMMENT ON COLUMN Users.fReadOnly IS
+  'Read access only.';
+
+
 COMMENT ON TABLE GlobalResources IS
   'Global resource configuration.
 

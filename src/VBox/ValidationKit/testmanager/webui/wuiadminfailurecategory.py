@@ -120,17 +120,25 @@ class WuiFailureCategoryList(WuiListContentBase):
         from testmanager.webui.wuiadmin import WuiAdmin
         oEntry = self._aoEntries[iEntry]
 
+        aoActions = [
+            WuiTmLink('Details', WuiAdmin.ksScriptName,
+                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDetails,
+                        FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory }),
+        ];
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            aoActions += [
+                WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryEdit,
+                            FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory }),
+                WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDoRemove,
+                            FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory },
+                          sConfirm = 'Do you really want to remove failure cateogry #%d?' % (oEntry.idFailureCategory,)),
+            ]
+
         return [ oEntry.idFailureCategory,
                  oEntry.sShort,
                  oEntry.sFull,
-                 [ WuiTmLink('Details', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDetails,
-                               FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory }),
-                   WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryEdit,
-                               FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory }),
-                   WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureCategoryDoRemove,
-                               FailureCategoryData.ksParam_idFailureCategory: oEntry.idFailureCategory },
-                             sConfirm = 'Do you really want to remove failure cateogry #%d?' % (oEntry.idFailureCategory,)),
-        ] ];
+                 aoActions,
+        ];
+

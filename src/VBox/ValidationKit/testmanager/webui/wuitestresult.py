@@ -174,7 +174,7 @@ class WuiTestResult(WuiContentBase):
 
         # Format bits for adding or editing the failure reason.  Level 0 is handled at the top of the page.
         sChangeReason = '';
-        if oTestResult.cErrors > 0 and iDepth > 0:
+        if oTestResult.cErrors > 0 and iDepth > 0 and self._oDisp is not None and not self._oDisp.isReadOnlyUser():
             dTmp = {
                 self._oDisp.ksParamAction: self._oDisp.ksActionTestResultFailureAdd if oTestResult.oReason is None else
                                            self._oDisp.ksActionTestResultFailureEdit,
@@ -405,15 +405,17 @@ class WuiTestResult(WuiContentBase):
             sFormActionUrl = '%s?%s=%s' % ( self._oDisp.ksScriptName, self._oDisp.ksParamAction,
                                             WuiMain.ksActionTestResultFailureAddPost if oData is None else
                                             WuiMain.ksActionTestResultFailureEditPost )
+            fReadOnly = not self._oDisp or self._oDisp.isReadOnlyUser();
             oForm = WuiHlpForm('failure-reason', sFormActionUrl,
-                               sOnSubmit = WuiHlpForm.ksOnSubmit_AddReturnToFieldWithCurrentUrl);
+                               sOnSubmit = WuiHlpForm.ksOnSubmit_AddReturnToFieldWithCurrentUrl, fReadOnly = fReadOnly);
             oForm.addTextHidden(TestResultFailureData.ksParam_idTestResult, oTestResultTree.idTestResult);
             oForm.addTextHidden(TestResultFailureData.ksParam_idTestSet, oTestSet.idTestSet);
             if oData is not None:
                 oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, oData.idFailureReason, 'Reason',
                                   aoFailureReasons,
                                   sPostHtml = u' ' + WuiFailureReasonDetailsLink(oData.idFailureReason).toHtml()
-                                            + u' ' + WuiFailureReasonAddLink('New', fBracketed = False).toHtml());
+                                            + (u' ' + WuiFailureReasonAddLink('New', fBracketed = False).toHtml()
+                                               if not fReadOnly else u''));
                 oForm.addMultilineText(TestResultFailureData.ksParam_sComment, oData.sComment, 'Comment')
 
                 oForm.addNonText(u'%s (%s), %s'
@@ -428,7 +430,7 @@ class WuiTestResult(WuiContentBase):
                 oForm.addSubmit('Change Reason');
             else:
                 oForm.addComboBox(TestResultFailureData.ksParam_idFailureReason, -1, 'Reason', aoFailureReasons,
-                                  sPostHtml = ' ' + WuiFailureReasonAddLink('New').toHtml());
+                                  sPostHtml = ' ' + WuiFailureReasonAddLink('New').toHtml() if not fReadOnly else '');
                 oForm.addMultilineText(TestResultFailureData.ksParam_sComment, '', 'Comment');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsEffective, '');
                 oForm.addTextHidden(TestResultFailureData.ksParam_tsExpire, '');

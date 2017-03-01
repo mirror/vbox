@@ -112,7 +112,9 @@ class WuiTestGroupList(WuiListContentBase):
                            WuiTmLink('Edit', WuiAdmin.ksScriptName,
                                      { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestCaseEdit,
                                        TestCaseData.ksParam_idTestCase: oMember.oTestCase.idTestCase, } ).toHtml()
-                           if isDbTimestampInfinity(oMember.oTestCase.tsExpire) else '',
+                           if     isDbTimestampInfinity(oMember.oTestCase.tsExpire)
+                              and self._oDisp is not None
+                              and not self._oDisp.isReadOnlyUser() else '',
                            );
 
                 sHtml += '  <dt>\n';
@@ -154,23 +156,25 @@ class WuiTestGroupList(WuiListContentBase):
                                 { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupDetails,
                                   TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup,
                                   WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }) ];
-        if isDbTimestampInfinity(oEntry.tsExpire):
-            aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupEdit,
-                                         TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup }));
-            aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupClone,
-                                         TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup,
-                                         WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }));
-            aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupDoRemove,
-                                         TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup },
-                                       sConfirm = 'Do you really want to remove test group #%d?' % (oEntry.idTestGroup,)));
-        else:
-            aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
-                                       { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupClone,
-                                         TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup,
-                                         WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }));
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+
+            if isDbTimestampInfinity(oEntry.tsExpire):
+                aoActions.append(WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupEdit,
+                                             TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup }));
+                aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupClone,
+                                             TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup,
+                                             WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }));
+                aoActions.append(WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupDoRemove,
+                                             TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup },
+                                           sConfirm = 'Do you really want to remove test group #%d?' % (oEntry.idTestGroup,)));
+            else:
+                aoActions.append(WuiTmLink('Clone', WuiAdmin.ksScriptName,
+                                           { WuiAdmin.ksParamAction: WuiAdmin.ksActionTestGroupClone,
+                                             TestGroupData.ksParam_idTestGroup: oEntry.idTestGroup,
+                                             WuiAdmin.ksParamEffectiveDate: self._tsEffectiveDate, }));
 
 
 

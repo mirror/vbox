@@ -100,16 +100,21 @@ class WuiGlobalResourceList(WuiListContentBase):
         from testmanager.webui.wuiadmin import WuiAdmin
         oEntry = self._aoEntries[iEntry]
 
+        aoActions = [ ];
+        if self._oDisp is None or not self._oDisp.isReadOnlyUser():
+            aoActions += [
+                WuiTmLink('Modify', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionGlobalRsrcShowEdit,
+                            GlobalResourceData.ksParam_idGlobalRsrc: oEntry.idGlobalRsrc }),
+                WuiTmLink('Remove', WuiAdmin.ksScriptName,
+                          { WuiAdmin.ksParamAction: WuiAdmin.ksActionGlobalRsrcDel,
+                            GlobalResourceData.ksParam_idGlobalRsrc: oEntry.idGlobalRsrc },
+                          sConfirm = 'Are you sure you want to remove global resource #%d?' % (oEntry.idGlobalRsrc,)),
+            ];
+
         return [ oEntry.idGlobalRsrc,
                  oEntry.sName,
                  oEntry.sDescription,
                  oEntry.fEnabled,
-                 [ WuiTmLink('Modify', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionGlobalRsrcShowEdit,
-                               GlobalResourceData.ksParam_idGlobalRsrc: oEntry.idGlobalRsrc }),
-                   WuiTmLink('Remove', WuiAdmin.ksScriptName,
-                             { WuiAdmin.ksParamAction: WuiAdmin.ksActionGlobalRsrcDel,
-                               GlobalResourceData.ksParam_idGlobalRsrc: oEntry.idGlobalRsrc },
-                             sConfirm = 'Are you sure you want to remove global resource #%d?' % (oEntry.idGlobalRsrc,)),
-               ] ]
+                 aoActions, ];
 
