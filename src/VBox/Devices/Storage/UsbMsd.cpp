@@ -1440,7 +1440,7 @@ static DECLCALLBACK(int) usbMsdLoadExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uin
             SSMR3GetU32(pSSM, &pReq->offBuf);
             SSMR3GetMem(pSSM, &pReq->Cbw, sizeof(pReq->Cbw));
 
-            if (uVersion >= USB_MSD_SAVED_STATE_VERSION_PRE_CLEANUP)
+            if (uVersion > USB_MSD_SAVED_STATE_VERSION_PRE_CLEANUP)
                 rc = SSMR3GetU8(pSSM, &pReq->iScsiReqStatus);
             else
             {
