@@ -225,7 +225,11 @@ struc CPUMCPU
     .Guest.pXStateR3      RTR3PTR_RES 1
     .Guest.pXStateRC      RTRCPTR_RES 1
     .Guest.aoffXState         resw    64
-    alignb 8
+%if HC_ARCH_BITS == 64
+    .Guest.abPadding          resb    4
+%else
+    .Guest.abPadding          resb    12
+%endif
     .Guest.hwvirt.svm.uMsrHSavePa         resq    1
     .Guest.hwvirt.svm.u64InterceptCtrl    resq    1
     .Guest.hwvirt.svm.u32InterceptXcpt    resd    1
@@ -492,7 +496,11 @@ struc CPUMCPU
     .Hyper.pXStateR3      RTR3PTR_RES 1
     .Hyper.pXStateRC      RTRCPTR_RES 1
     .Hyper.aoffXState         resw    64
-    alignb 8
+%if HC_ARCH_BITS == 64
+    .Hyper.abPadding          resb    4
+%else
+    .Hyper.abPadding          resb    12
+%endif
     .Hyper.hwvirt.svm.uMsrHSavePa         resq    1
     .Hyper.hwvirt.svm.u64InterceptCtrl    resq    1
     .Hyper.hwvirt.svm.u32InterceptXcpt    resd    1
