@@ -1262,7 +1262,7 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pCtx          Pointer to the context. 
- * @param   Intercept     The SVM control/instruction intercept,
+ * @param   fIntercept    The SVM control/instruction intercept,
  *                        see SVM_CTRL_INTERCEPT_*.
  */
 DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fIntercept)
