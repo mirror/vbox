@@ -433,6 +433,7 @@ static DECLCALLBACK(int) dmaReadCtl(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT p
             case CTL_R_MODE:
                 val = dc->ChState[dc->u8ModeCtr].u8Mode | 3;
                 dc->u8ModeCtr = (dc->u8ModeCtr + 1) & 3;
+                break;
             case CTL_R_SETBPTR:
                 dc->fHiByte = true;
                 break;
