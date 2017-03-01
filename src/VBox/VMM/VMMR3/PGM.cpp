@@ -2548,9 +2548,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
 {
     int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
     AssertRC(rc);
-#ifdef REMEMBER_TO_ENABLE_THESE_GCPhycCR3_NIL_ASSIGNMENTS /** @todo Enable r113096 and fix. */
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
-#endif
 
     rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
     AssertRC(rc);
@@ -2605,9 +2603,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
         PVMCPU  pVCpu = &pVM->aCpus[i];
         int rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
         AssertReleaseRC(rc);
-#ifdef REMEMBER_TO_ENABLE_THESE_GCPhycCR3_NIL_ASSIGNMENTS /** @todo Enable r113096 and fix. */
         pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
-#endif
     }
 
 #ifdef DEBUG
