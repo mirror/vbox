@@ -430,8 +430,13 @@ typedef struct CPUMCTX
     /** State component offsets into pXState, UINT16_MAX if not present. */
     uint16_t                    aoffXState[64];
 
+#if HC_ARCH_BITS == 64
     /** 724 - Size padding. */
     uint32_t                    u32Padding;
+#else
+    /** 716 - Size padding. */
+    uint8_t                     auPadding[12];
+#endif
 
     /** 728 - Hardware virtualization state.   */
     struct
