@@ -397,7 +397,7 @@ VBOX_WITH_2ND_IEM_STEP = 1
 # Enables the third step using IEM (the interpreter).
 VBOX_WITH_3RD_IEM_STEP = 1
 # Enables nested hardware virtualization support (mainly for IEM)
-VBOX_WITH_NESTED_HWVIRT = 1
+#VBOX_WITH_NESTED_HWVIRT = 1
 ## @}
 
 
