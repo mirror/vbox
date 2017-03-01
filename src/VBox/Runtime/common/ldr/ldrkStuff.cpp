@@ -710,6 +710,7 @@ static DECLCALLBACK(int) rtkldr_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENU
         {
             default:
                 AssertMsgFailed(("%d\n", paSegments[iSeg].enmProt));
+                /* fall thru */
             case KPROT_NOACCESS:
                 Seg.fProt = 0;
                 break;

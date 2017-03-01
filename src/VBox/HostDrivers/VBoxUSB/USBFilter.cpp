@@ -1680,6 +1680,7 @@ USBLIB_DECL(bool) USBFilterIsNumericField(USBFILTERIDX enmFieldIdx)
 
         default:
             AssertMsgFailed(("%d\n", enmFieldIdx));
+            /* fall thru */
         case USBFILTERIDX_MANUFACTURER_STR:
         case USBFILTERIDX_PRODUCT_STR:
         case USBFILTERIDX_SERIAL_NUMBER_STR:
@@ -1700,6 +1701,7 @@ USBLIB_DECL(bool) USBFilterIsStringField(USBFILTERIDX enmFieldIdx)
     {
         default:
             AssertMsgFailed(("%d\n", enmFieldIdx));
+            /* fall thru */
         case USBFILTERIDX_VENDOR_ID:
         case USBFILTERIDX_PRODUCT_ID:
         case USBFILTERIDX_DEVICE:
@@ -1730,6 +1732,7 @@ USBLIB_DECL(bool) USBFilterIsMethodUsingNumericValue(USBFILTERMATCH enmMatchingM
     {
         default:
             AssertMsgFailed(("%d\n", enmMatchingMethod));
+            /* fall thru */
         case USBFILTERMATCH_IGNORE:
         case USBFILTERMATCH_PRESENT:
         case USBFILTERMATCH_NUM_EXPRESSION:
@@ -1759,6 +1762,7 @@ USBLIB_DECL(bool) USBFilterIsMethodUsingStringValue(USBFILTERMATCH enmMatchingMe
     {
         default:
             AssertMsgFailed(("%d\n", enmMatchingMethod));
+            /* fall thru */
         case USBFILTERMATCH_IGNORE:
         case USBFILTERMATCH_PRESENT:
         case USBFILTERMATCH_NUM_EXACT:
