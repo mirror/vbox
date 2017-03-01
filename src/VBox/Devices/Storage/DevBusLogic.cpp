@@ -1792,6 +1792,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             break;
 #else
             AssertMsgFailed(("Must never get here!\n"));
+            break;
 #endif
         }
         case BUSLOGICCOMMAND_INQUIRE_BOARD_ID:
@@ -2141,6 +2142,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         }
         default:
             AssertMsgFailed(("Invalid command %#x\n", pBusLogic->uOperationCode));
+            /* fall thru */
         case BUSLOGICCOMMAND_EXT_BIOS_INFO:
         case BUSLOGICCOMMAND_UNLOCK_MAILBOX:
             /* Commands valid for Adaptec 154xC which we don't handle since

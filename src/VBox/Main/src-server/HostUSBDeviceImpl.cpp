@@ -1857,6 +1857,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
                 case kHostUSBDeviceState_Capturable:
                 case kHostUSBDeviceState_Unused:
                     fFilters = true;
+                    /* fall thru */
                 case kHostUSBDeviceState_PhysDetached:
                     Assert(aNewPendingState == kHostUSBDeviceState_Invalid);
                     Assert(aNewSubState == kHostUSBDeviceSubState_Default);
@@ -1876,6 +1877,7 @@ bool HostUSBDevice::i_setState(HostUSBDeviceState aNewState,
                 /* Host changes. */
                 case kHostUSBDeviceState_Unused:
                     fFilters = true; /* Wildcard only... */
+                    /* fall thru */
                 case kHostUSBDeviceState_UsedByHost:
                 case kHostUSBDeviceState_PhysDetached:
                     Assert(aNewPendingState == kHostUSBDeviceState_Invalid);

@@ -132,6 +132,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     {
         default:
             AssertFailed();
+            /* fall thru */
         case DBGF_DISAS_FLAGS_DEFAULT_MODE:
             enmCpuMode   = pState->f64Bits
                          ? DISCPUMODE_64BIT

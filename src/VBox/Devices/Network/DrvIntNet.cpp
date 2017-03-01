@@ -574,6 +574,7 @@ static DECLCALLBACK(void) drvR3IntNetUp_NotifyLinkChanged(PPDMINETWORKUP pInterf
             break;
         default:
             AssertMsgFailed(("enmLinkState=%d\n", enmLinkState));
+            /* fall thru */
         case PDMNETWORKLINKSTATE_UP:
             fLinkDown = false;
             break;
@@ -918,6 +919,7 @@ static DECLCALLBACK(int) drvR3IntNetRecvThread(RTTHREAD hThreadSelf, void *pvUse
 
             default:
                 AssertMsgFailed(("Invalid state %d\n", enmRecvState));
+                /* fall thru */
             case RECVSTATE_TERMINATE:
                 LogFlow(("drvR3IntNetRecvThread: returns VINF_SUCCESS\n"));
                 return VINF_SUCCESS;

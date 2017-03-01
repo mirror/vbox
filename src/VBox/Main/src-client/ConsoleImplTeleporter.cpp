@@ -888,6 +888,7 @@ Console::i_teleporterSrcThreadWrapper(RTTHREAD hThreadSelf, void *pvUser)
 
                 default:
                     AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
+                    /* fall thru */
                 case VMSTATE_SUSPENDED:
                 case VMSTATE_SUSPENDED_LS:
                 case VMSTATE_SUSPENDING:

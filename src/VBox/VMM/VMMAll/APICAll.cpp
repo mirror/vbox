@@ -2535,8 +2535,8 @@ VMM_INT_DECL(VBOXSTRICTRC) APICLocalInterrupt(PVMCPU pVCpu, uint8_t u8Pin, uint8
                 {
                     /** @todo won't work in R0/RC because callers don't care about rcRZ. */
                     AssertMsgFailed(("INIT through LINT0/LINT1 is not yet supported\n"));
-                    /* fallthru */
                 }
+                /* fall thru */
                 case XAPICDELIVERYMODE_FIXED:
                 {
                     PAPICCPU       pApicCpu = VMCPU_TO_APICCPU(pVCpu);

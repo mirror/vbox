@@ -4432,6 +4432,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
                             break;
                         case PGM_PAGE_STATE_BALLOONED:
                             AssertFailed();
+                            /* fall thru */
                         case PGM_PAGE_STATE_ZERO:
                         case PGM_PAGE_STATE_SHARED:
                         case PGM_PAGE_STATE_WRITE_MONITORED:
@@ -4472,6 +4473,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2PtrNoLock(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
                                 break;
                             case PGM_PAGE_STATE_BALLOONED:
                                 AssertFailed();
+                                /* fall thru */
                             case PGM_PAGE_STATE_ZERO:
                             case PGM_PAGE_STATE_SHARED:
                             case PGM_PAGE_STATE_WRITE_MONITORED:
@@ -4587,6 +4589,7 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, b
                         break;
                     case PGM_PAGE_STATE_BALLOONED:
                         AssertFailed();
+                        break;
                     case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:
                     case PGM_PAGE_STATE_WRITE_MONITORED:

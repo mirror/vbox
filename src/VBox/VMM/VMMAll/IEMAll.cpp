@@ -3246,7 +3246,7 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PVMCPU pVCpu, PCCPUMCTX p
         /*
          * 16-bit TSS (X86TSS16).
          */
-        case X86_SEL_TYPE_SYS_286_TSS_AVAIL: AssertFailed();
+        case X86_SEL_TYPE_SYS_286_TSS_AVAIL: AssertFailed(); /* fall thru */
         case X86_SEL_TYPE_SYS_286_TSS_BUSY:
         {
             uint32_t off = uCpl * 4 + 2;
@@ -3273,7 +3273,7 @@ IEM_STATIC VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PVMCPU pVCpu, PCCPUMCTX p
         /*
          * 32-bit TSS (X86TSS32).
          */
-        case X86_SEL_TYPE_SYS_386_TSS_AVAIL: AssertFailed();
+        case X86_SEL_TYPE_SYS_386_TSS_AVAIL: AssertFailed(); /* fall thru */
         case X86_SEL_TYPE_SYS_386_TSS_BUSY:
         {
             uint32_t off = uCpl * 8 + 4;
@@ -5439,6 +5439,7 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaisePageFault(PVMCPU pVCpu, RTGCPTR
 
         default:
             AssertMsgFailed(("%Rrc\n", rc));
+            /* fall thru */
         case VERR_ACCESS_DENIED:
             uErr = X86_TRAP_PF_P;
             break;

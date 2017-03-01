@@ -504,6 +504,7 @@ static int vdScriptInterpreterEvaluateExpression(PVDSCRIPTINTERPCTX pThis, PVDSC
         case VDSCRIPTEXPRTYPE_POSTFIX_INCREMENT:
         case VDSCRIPTEXPRTYPE_POSTFIX_DECREMENT:
             AssertMsgFailed(("TODO\n"));
+            /* fall thru */
         case VDSCRIPTEXPRTYPE_POSTFIX_FNCALL:
         {
             PVDSCRIPTFN pFn = (PVDSCRIPTFN)RTStrSpaceGet(&pThis->pScriptCtx->hStrSpaceFn, pExpr->FnCall.pFnIde->pIde->aszIde);
@@ -570,6 +571,7 @@ static int vdScriptInterpreterEvaluateExpression(PVDSCRIPTINTERPCTX pThis, PVDSC
         case VDSCRIPTEXPRTYPE_ASSIGN_OR:
         case VDSCRIPTEXPRTYPE_ASSIGNMENT_LIST:
             AssertMsgFailed(("TODO\n"));
+            /* fall thru */
         default:
             AssertMsgFailed(("Invalid expression type: %d\n", pExpr->enmType));
     }

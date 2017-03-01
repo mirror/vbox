@@ -111,6 +111,7 @@ void UIWizardImportAppPageBasic2::retranslateUi()
             break;
         default:
             AssertFailed();
+            /* fall thru */
         case kCertText_Uninitialized:
             m_pCertLabel->setText("<uninitialized page>");
             break;

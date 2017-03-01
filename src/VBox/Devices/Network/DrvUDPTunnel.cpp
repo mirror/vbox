@@ -292,6 +292,7 @@ static DECLCALLBACK(void) drvUDPTunnelUp_NotifyLinkChanged(PPDMINETWORKUP pInter
             break;
         default:
             AssertMsgFailed(("enmLinkState=%d\n", enmLinkState));
+            /* fall thru */
         case PDMNETWORKLINKSTATE_UP:
             fLinkDown = false;
             break;

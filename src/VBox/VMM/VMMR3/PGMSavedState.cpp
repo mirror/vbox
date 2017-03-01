@@ -1178,6 +1178,7 @@ static int pgmR3PrepRamPages(PVM pVM)
 
                         default:
                             AssertMsgFailed(("%R[pgmpage]", pPage));
+                            /* fall thru */
                         case PGMPAGETYPE_MMIO2:
                         case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                             paLSPages[iPage].fZero   = 0;

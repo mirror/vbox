@@ -1366,6 +1366,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
         {
             default:
                 AssertFailed();
+                /* fall thru */
             case CPUMUNKNOWNCPUID_DEFAULTS:
             case CPUMUNKNOWNCPUID_LAST_STD_LEAF: /* ASSUME this is executed */
             case CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX: /** @todo Implement CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX */

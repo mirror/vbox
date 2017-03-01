@@ -495,7 +495,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
             if (RT_SUCCESS(rc))
                 Log(("TRPMForwardTrap: caller=%RGv\n", pCallerGC));
         }
-        /* no break */
+        /* fall thru */
     case X86_XCPT_DF:
     case X86_XCPT_TS:
     case X86_XCPT_NP:

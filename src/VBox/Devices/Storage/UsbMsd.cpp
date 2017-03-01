@@ -1957,6 +1957,7 @@ static DECLCALLBACK(int) usbMsdQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 
         case 0x81:
             AssertFailed();
+            /* fall thru */
         case 0x01:
             rc = usbMsdHandleBulkDevToHost(pThis, &pThis->aEps[1], pUrb);
             break;

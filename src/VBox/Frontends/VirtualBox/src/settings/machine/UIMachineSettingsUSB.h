@@ -119,6 +119,7 @@ public:
     };
 
     UIMachineSettingsUSB();
+    ~UIMachineSettingsUSB();
 
     bool isUSBEnabled() const;
 

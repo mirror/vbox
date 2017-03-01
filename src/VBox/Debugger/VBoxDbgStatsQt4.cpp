@@ -2223,6 +2223,7 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
 
         default:
             AssertMsgFailed(("%d\n", pNode->enmType));
+            /* fall thru */
         case STAMTYPE_INVALID:
             return "";
     }
