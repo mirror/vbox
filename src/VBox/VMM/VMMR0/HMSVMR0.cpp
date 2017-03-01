@@ -307,6 +307,10 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmExitXcptAC;
 static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
+#ifdef VBOX_WITH_NESTED_HWVIRT
+static FNSVMEXITHANDLER hmR0SvmExitClgi;
+static FNSVMEXITHANDLER hmR0SvmExitStgi;
+#endif
 /** @} */
 
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
@@ -721,30 +725,29 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #endif
 
         /* Set up unconditional intercepts and conditions. */
-        pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_NMI           /* Non-maskable interrupts causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_RDPMC         /* RDPMC causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_CPUID         /* CPUID causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_RSM           /* RSM causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_HLT           /* HLT causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_INOUT_BITMAP  /* Use the IOPM to cause IOIO #VMEXITs. */
-                                        | SVM_CTRL1_INTERCEPT_MSR_SHADOW    /* MSR access not covered by MSRPM causes a #VMEXIT.*/
-                                        | SVM_CTRL1_INTERCEPT_INVLPGA       /* INVLPGA causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* Shutdown events causes a #VMEXIT. */
-                                        | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Intercept "freezing" during legacy FPU handling. */
-
-        pVmcb->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* VMRUN causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_VMMCALL       /* VMMCALL causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_VMLOAD        /* VMLOAD causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_VMSAVE        /* VMSAVE causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_STGI          /* STGI causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_CLGI          /* CLGI causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_MWAIT         /* MWAIT causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_XSETBV;       /* XSETBV causes a #VMEXIT. */
+        pVmcb->ctrl.u64InterceptCtrl = SVM_CTRL_INTERCEPT_INTR         /* External interrupt causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_NMI          /* Non-maskable interrupts causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_INIT         /* INIT signal causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_RDPMC        /* RDPMC causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_CPUID        /* CPUID causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_RSM          /* RSM causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_HLT          /* HLT causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_INOUT_BITMAP /* Use the IOPM to cause IOIO #VMEXITs. */
+                                     | SVM_CTRL_INTERCEPT_MSR_SHADOW   /* MSR access not covered by MSRPM causes a #VMEXIT.*/
+                                     | SVM_CTRL_INTERCEPT_INVLPGA      /* INVLPGA causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_SHUTDOWN     /* Shutdown events causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_FERR_FREEZE  /* Intercept "freezing" during legacy FPU handling. */
+                                     | SVM_CTRL_INTERCEPT_VMRUN        /* VMRUN causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_VMMCALL      /* VMMCALL causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_VMLOAD       /* VMLOAD causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_VMSAVE       /* VMSAVE causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_STGI         /* STGI causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_CLGI         /* CLGI causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_SKINIT       /* SKINIT causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_WBINVD       /* WBINVD causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_MONITOR      /* MONITOR causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_MWAIT        /* MWAIT causes a #VMEXIT. */
+                                     | SVM_CTRL_INTERCEPT_XSETBV;      /* XSETBV causes a #VMEXIT. */
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -794,15 +797,15 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
             pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(3);
 
             /* Intercept INVLPG and task switches (may change CR3, EFLAGS, LDT). */
-            pVmcb->ctrl.u32InterceptCtrl1 |=   SVM_CTRL1_INTERCEPT_INVLPG
-                                             | SVM_CTRL1_INTERCEPT_TASK_SWITCH;
+            pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_INVLPG
+                                         |  SVM_CTRL_INTERCEPT_TASK_SWITCH;
 
             /* Page faults must be intercepted to implement shadow paging. */
             pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_PF);
         }
 
 #ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
-        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_TASK_SWITCH;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_TASK_SWITCH;
 #endif
 
         /* Apply the exceptions intercepts needed by the GIM provider. */
@@ -2325,14 +2328,14 @@ static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu)
     bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
     if (fCanUseRealTsc)
     {
-        pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
-        pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
+        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSC;
+        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
     else
     {
-        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
-        pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSC;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_RDTSCP;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
     pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
@@ -2574,14 +2577,32 @@ DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 {
-    if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_VINTR))
+    if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR))
     {
         pVmcb->ctrl.IntCtrl.n.u1VIrqValid  = 1;     /* A virtual interrupt is pending. */
         pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;     /* Not necessary as we #VMEXIT for delivering the interrupt. */
-        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
         Log4(("Setting VINTR intercept\n"));
+    }
+}
+
+
+/**
+ * Clears the virtual interrupt intercept control in the VMCB as
+ * we are figured the guest is unable process any interrupts
+ * at this point of time.
+ *
+ * @param   pVmcb       Pointer to the VM control block.
+ */
+DECLINLINE(void) hmR0SvmClearVirtIntrIntercept(PSVMVMCB pVmcb)
+{
+    if (pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR)
+    {
+        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
+        Log4(("Clearing VINTR intercept\n"));
     }
 }
 
@@ -2595,9 +2616,9 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
  */
 DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
 {
-    if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_IRET))
+    if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET))
     {
-        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_IRET;
+        pVmcb->ctrl.u64InterceptCtrl |= SVM_CTRL_INTERCEPT_IRET;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
 
         Log4(("Setting IRET intercept\n"));
@@ -2612,9 +2633,9 @@ DECLINLINE(void) hmR0SvmSetIretIntercept(PSVMVMCB pVmcb)
  */
 DECLINLINE(void) hmR0SvmClearIretIntercept(PSVMVMCB pVmcb)
 {
-    if (pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_IRET)
+    if (pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_IRET)
     {
-        pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_IRET;
+        pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_IRET;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS);
 
         Log4(("Clearing IRET intercept\n"));
@@ -2779,8 +2800,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
         Log4(("ctrl.u16InterceptWrDRx            %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
         Log4(("ctrl.u32InterceptException        %#x\n",      pVmcb->ctrl.u32InterceptException));
-        Log4(("ctrl.u32InterceptCtrl1            %#x\n",      pVmcb->ctrl.u32InterceptCtrl1));
-        Log4(("ctrl.u32InterceptCtrl2            %#x\n",      pVmcb->ctrl.u32InterceptCtrl2));
+        Log4(("ctrl.u64InterceptCtrl             %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl)); 
         Log4(("ctrl.u64IOPMPhysAddr              %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
         Log4(("ctrl.u64MSRPMPhysAddr             %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
         Log4(("ctrl.u64TSCOffset                 %#RX64\n",   pVmcb->ctrl.u64TSCOffset));
@@ -3188,7 +3208,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-        && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
+        && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP)) 
     {
         hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
@@ -3262,7 +3282,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
     /* TSC read must be done early for maximum accuracy. */
-    if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
+    if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSC))
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);
 
     if (pSvmTransient->fRestoreTscAuxMsr)
@@ -3664,13 +3684,18 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                     return VERR_SVM_UNEXPECTED_EXIT;
                 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+                case SVM_EXIT_CLGI: return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_STGI: return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
+#else
+                case SVM_EXIT_CLGI:
+                case SVM_EXIT_STGI:
+#endif
                 case SVM_EXIT_INVLPGA:
                 case SVM_EXIT_RSM:
                 case SVM_EXIT_VMRUN:
                 case SVM_EXIT_VMLOAD:
                 case SVM_EXIT_VMSAVE:
-                case SVM_EXIT_STGI:
-                case SVM_EXIT_CLGI:
                 case SVM_EXIT_SKINIT:
                     return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
 
@@ -5191,7 +5216,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;
 
     /* Indicate that we no longer need to #VMEXIT when the guest is ready to receive interrupts/NMIs, it is now ready. */
-    pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_VINTR;
+    pVmcb->ctrl.u64InterceptCtrl &= ~SVM_CTRL_INTERCEPT_VINTR;
     pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
     /* Deliver the pending interrupt/NMI via hmR0SvmEvaluatePendingEvent() and resume guest execution. */
@@ -5665,6 +5690,47 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
     return rc;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * \#VMEXIT handler for RDPMC (SVM_EXIT_CLGI). Conditional 
+ * \#VMEXIT. 
+ */
+HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        /** @todo Stat. */
+        /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
+        VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, 3);
+        return VBOXSTRICTRC_VAL(rcStrict);
+    }
+    return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+}
+
+
+/**
+ * \#VMEXIT handler for RDPMC (SVM_EXIT_STGI). Conditional
+ * \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->cpum.ro.GuestFeatures.fSvm)
+    {
+        /** @todo Stat. */
+        /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */
+        VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, 3);
+        return VBOXSTRICTRC_VAL(rcStrict);
+    }
+    return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT */
+
 
 /** @} */
 

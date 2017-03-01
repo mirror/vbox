@@ -130,6 +130,11 @@
 #endif
 
     GEN_CHECK_SIZE(CPUMCTX);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.uMsrHSavePa);
+    GEN_CHECK_OFF(CPUMCTX, hwvirt.svm.fGif);
+    /** @todo add rest of hwvirt fields when code is more
+     *        finalized. */
     GEN_CHECK_OFF(CPUMCTX, pXStateR0);
     GEN_CHECK_OFF(CPUMCTX, pXStateR3);
     GEN_CHECK_OFF(CPUMCTX, pXStateRC);

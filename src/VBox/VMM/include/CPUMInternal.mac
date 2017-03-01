@@ -225,8 +225,17 @@ struc CPUMCPU
     .Guest.pXStateR3      RTR3PTR_RES 1
     .Guest.pXStateRC      RTRCPTR_RES 1
     .Guest.aoffXState         resw    64
-
+    alignb 8
+    .Guest.hwvirt.svm.uMsrHSavePa         resq    1
+    .Guest.hwvirt.svm.u64InterceptCtrl    resq    1
+    .Guest.hwvirt.svm.u32InterceptXcpt    resd    1
+    .Guest.hwvirt.svm.u16InterceptRdCRx   resw    1
+    .Guest.hwvirt.svm.u16InterceptWrCRx   resw    1
+    .Guest.hwvirt.svm.u16InterceptRdDRx   resw    1
+    .Guest.hwvirt.svm.u16InterceptWrDRx   resw    1
+    .Guest.hwvirt.svm.fGif                resb    1
     alignb 64
+
     .GuestMsrs                resq    0
     .GuestMsrs.au64           resq    64
 
@@ -483,6 +492,15 @@ struc CPUMCPU
     .Hyper.pXStateR3      RTR3PTR_RES 1
     .Hyper.pXStateRC      RTRCPTR_RES 1
     .Hyper.aoffXState         resw    64
+    alignb 8
+    .Hyper.hwvirt.svm.uMsrHSavePa         resq    1
+    .Hyper.hwvirt.svm.u64InterceptCtrl    resq    1
+    .Hyper.hwvirt.svm.u32InterceptXcpt    resd    1
+    .Hyper.hwvirt.svm.u16InterceptRdCRx   resw    1
+    .Hyper.hwvirt.svm.u16InterceptWrCRx   resw    1
+    .Hyper.hwvirt.svm.u16InterceptRdDRx   resw    1
+    .Hyper.hwvirt.svm.u16InterceptWrDRx   resw    1
+    .Hyper.hwvirt.svm.fGif                resb    1
     alignb 64
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC

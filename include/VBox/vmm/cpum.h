@@ -1024,8 +1024,11 @@ typedef struct CPUMFEATURES
      * is only saved and restored if an exception is pending. */
     uint32_t        fLeakyFxSR : 1;
 
+    /** AMD64: Supports AMD SVM. */
+    uint32_t        fSvm : 1;
+
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 27;
+    uint32_t        fPadding : 26;
     uint32_t        auPadding[3];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
@@ -1251,6 +1254,85 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
     return (   (pCtx->cr4 & X86_CR4_PAE)
             && CPUMIsGuestPagingEnabledEx(pCtx)
             && !(pCtx->msrEFER & MSR_K6_EFER_LMA));
+}
+
+/**
+ * Checks if the guest has the specified ctrl/instruction
+ * intercept active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pCtx          Pointer to the context. 
+ * @param   Intercept     The SVM control/instruction intercept,
+ *                        see SVM_CTRL_INTERCEPT_*.
+ */
+DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fIntercept)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u64InterceptCtrl & fIntercept);
+}
+
+/**
+ * Checks if the guest has the specified CR read intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pCtx          Pointer to the context. 
+ * @param   uCr           The CR register number (0 to 15).
+ */
+DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptRdCRx & (1 << uCr));
+}
+
+/**
+ * Checks if the guest has the specified CR write intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pCtx          Pointer to the context. 
+ * @param   uCr           The CR register number (0 to 15).
+ */
+DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptWrCRx & (1 << uCr)); 
+}
+
+/**
+ * Checks if the guest has the specified DR read intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pCtx    Pointer to the context. 
+ * @param   uDr     The DR register number (0 to 15).
+ */
+DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptRdDRx & (1 << uDr)); 
+}
+
+/**
+ * Checks if the guest has the specified DR write intercept
+ * active.
+ *
+ * @returns @c true if in intercept is set, @c false otherwise.
+ * @param   pCtx    Pointer to the context. 
+ * @param   uDr     The DR register number (0 to 15).
+ */
+DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptWrDRx & (1 << uDr)); 
+}
+
+/**
+ * Checks if the guest has the specified exception
+ * intercept active.
+ *
+ * @returns true if in intercept is active, false otherwise.
+ * @param   pCtx        Pointer to the context. 
+ * @param   enmXcpt     The exception.
+ */
+DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
+{
+    return RT_BOOL(pCtx->hwvirt.svm.u32InterceptXcpt & enmXcpt); 
 }
 
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */

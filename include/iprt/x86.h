@@ -1458,7 +1458,21 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Hypertransport interrupt pending register.
  * "BIOS and Kernel Developer's Guide for AMD NPT Family 0Fh Processors" */
 #define MSR_K8_INT_PENDING                  UINT32_C(0xc0010055)
+
+/** SVM Control. */
 #define MSR_K8_VM_CR                        UINT32_C(0xc0010114)
+/** Disables HDT (Hardware Debug Tool) and certain internal debug
+ *  features. */
+#define MSR_K8_VM_CR_DPD                    RT_BIT_32(0)
+/** If set, non-intercepted INIT signals are converted to \#SX
+ *  exceptions. */
+#define MSR_K8_VM_CR_R_INIT                 RT_BIT_32(1)
+/** Disables A20 masking.  */
+#define MSR_K8_VM_CR_DIS_A20M               RT_BIT_32(2)
+/** Lock bit for this MSR controlling bits 3 (LOCK) and 4 (SVMDIS). */
+#define MSR_K8_VM_CR_LOCK                   RT_BIT_32(3)
+/** SVM disable. When set, writes to EFER.SVME are treated as MBZ. When
+ *  clear, EFER.SVME can be written normally. */
 #define MSR_K8_VM_CR_SVM_DISABLE            RT_BIT_32(4)
 
 #define MSR_K8_IGNNE                        UINT32_C(0xc0010115)

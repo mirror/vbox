@@ -1452,6 +1452,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
         fMask |= MSR_K6_EFER_SCE;
     if (fExtFeatures & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
         fMask |= MSR_K6_EFER_FFXSR;
+    if (pVM->cpum.s.GuestFeatures.fSvm)
+        fMask |= MSR_K6_EFER_SVME;
 
     /* #GP(0) If anything outside the allowed bits is set. */
     if (uValue & ~(fIgnoreMask | fMask))
@@ -1470,8 +1472,13 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
     }
 
     /* There are a few more: e.g. MSR_K6_EFER_LMSLE */
-    AssertMsg(!(uValue & ~(MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA /* ignored anyway */ | MSR_K6_EFER_SCE | MSR_K6_EFER_FFXSR)),
-              ("Unexpected value %RX64\n", uValue));
+    AssertMsg(!(uValue & ~(  MSR_K6_EFER_NXE
+                           | MSR_K6_EFER_LME
+                           | MSR_K6_EFER_LMA /* ignored anyway */
+                           | MSR_K6_EFER_SCE
+                           | MSR_K6_EFER_FFXSR
+                           | MSR_K6_EFER_SVME)),
+              ("Unexpected value %#RX64\n", uValue));
     pVCpu->cpum.s.Guest.msrEFER = (uOldEfer & ~fMask) | (uValue & fMask);
 
     /* AMD64 Architecture Programmer's Manual: 15.15 TLB Control; flush the TLB
@@ -3742,9 +3749,12 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmMask(PVMCPU pVCpu, uint32_t 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    /** @todo AMD SVM. */
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->cpum.s.GuestFeatures.fSvm)
+        *puValue = MSR_K8_VM_CR_LOCK;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -3752,9 +3762,16 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmCr(PVMCPU pVCpu, uint32_t idM
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmCr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
-    /** @todo AMD SVM. */
-    return VINF_SUCCESS;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->cpum.s.GuestFeatures.fSvm)
+    {
+        /* Silently ignore writes to LOCK and SVM_DISABLE bit when the LOCK bit is set (see cpumMsrRd_AmdK8VmCr). */
+        if (uValue & (MSR_K8_VM_CR_DPD | MSR_K8_VM_CR_R_INIT | MSR_K8_VM_CR_DIS_A20M))
+            return VERR_CPUM_RAISE_GP_0;
+        return VINF_SUCCESS;
+    }
+    return VERR_CPUM_RAISE_GP_0;
 }
 
 
@@ -3800,8 +3817,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8SmmCtl(PVMCPU pVCpu, uint32_t i
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    /** @todo AMD SVM. */
-    *puValue = 0;
+    *puValue = pVCpu->cpum.s.Guest.hwvirt.svm.uMsrHSavePa;
     return VINF_SUCCESS;
 }
 
@@ -3809,8 +3825,22 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_
 /** @callback_method_impl{FNCPUMWRMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_AmdK8VmHSavePa(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uValue); RT_NOREF_PV(uRawValue);
-    /** @todo AMD SVM. */
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
+    if (uValue & UINT64_C(0xfff))
+    {
+        Log(("CPUM: Invalid setting of low 12 bits set writing host-state save area MSR %#x: %#llx\n", idMsr, uValue));
+        return VERR_CPUM_RAISE_GP_0;
+    }
+
+    uint64_t fInvPhysMask = ~(RT_BIT_64(pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.cMaxPhysAddrWidth) - 1U);
+    if (fInvPhysMask & uValue)
+    {
+        Log(("CPUM: Invalid physical address bits set writing host-state save area MSR %#x: %#llx (%#llx)\n",
+             idMsr, uValue, uValue & fInvPhysMask));
+        return VERR_CPUM_RAISE_GP_0;
+    }
+
+    pVCpu->cpum.s.Guest.hwvirt.svm.uMsrHSavePa = uValue;
     return VINF_SUCCESS;
 }
 

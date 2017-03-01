@@ -1678,6 +1678,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             pFeatures->fTsc            |= RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_TSC);
             pFeatures->fAmdMmxExts      = RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
             pFeatures->fXop             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_XOP);
+            pFeatures->fSvm             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM);
         }
 
         /*
@@ -2211,6 +2212,7 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmMisAlnSse;
     CPUMISAEXTCFG   enm3dNowPrf;
     CPUMISAEXTCFG   enmAmdExtMmx;
+    CPUMISAEXTCFG   enmSvm;
 
     uint32_t        uMaxStdLeaf;
     uint32_t        uMaxExtLeaf;
@@ -2695,7 +2697,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                ;
         pExtFeatureLeaf->uEcx &= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF
                                //| X86_CPUID_AMD_FEATURE_ECX_CMPL   - set below if applicable.
-                               //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
+                               | (pConfig->enmSvm       ? X86_CPUID_AMD_FEATURE_ECX_SVM : 0)
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
@@ -2736,6 +2738,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         if (pCpum->u8PortableCpuIdLevel > 0)
         {
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, CR8L,       X86_CPUID_AMD_FEATURE_ECX_CR8L);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SVM,        X86_CPUID_AMD_FEATURE_ECX_SVM,       pConfig->enmSvm);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, ABM,        X86_CPUID_AMD_FEATURE_ECX_ABM,       pConfig->enmAbm);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SSE4A,      X86_CPUID_AMD_FEATURE_ECX_SSE4A,     pConfig->enmSse4A);
             PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, MISALNSSE,  X86_CPUID_AMD_FEATURE_ECX_MISALNSSE, pConfig->enmMisAlnSse);
@@ -2778,12 +2781,16 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_ABM;
         if (pConfig->enmSse4A     == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SSE4A;
+        if (pConfig->enmSvm       == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SVM;
         if (pConfig->enmMisAlnSse == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_MISALNSSE;
         if (pConfig->enm3dNowPrf  == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF;
         if (pConfig->enmAmdExtMmx  == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_AXMMX;
+        if (pConfig->enmSvm        == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SVM;
     }
     pExtFeatureLeaf = NULL; /* Must refetch! */
 
@@ -3347,9 +3354,18 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      *      EBX - Number of ASIDs.
      *      ECX - Reserved.
      *      EDX - SVM Feature identification.
-     * We clear all as we currently does not virtualize SVM.
      */
-    cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));
+    pExtFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000001), 0);
+    if (pExtFeatureLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
+    {
+        PCPUMCPUIDLEAF pSvmFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 0x8000000a, 0);
+        pSvmFeatureLeaf->uEax = 0x1;
+        pSvmFeatureLeaf->uEbx = 0x8000;
+        pSvmFeatureLeaf->uEcx = 0;
+        pSvmFeatureLeaf->uEdx = 0; /** @todo Support SVM features */
+    }
+    else
+        cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));
 
     /* Cpuid 0x8000000b thru 0x80000018: Reserved
      * We clear these as we don't know what purpose they might have. */
@@ -3721,6 +3737,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
                                   "|MISALNSSE"
                                   "|3DNOWPRF"
                                   "|AXMMX"
+                                  "|SVM"
                                   , "" /*pszValidNodes*/, "CPUM" /*pszWho*/, 0 /*uInstance*/);
         if (RT_FAILURE(rc))
             return rc;
@@ -3894,6 +3911,16 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      */
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "AXMMX", &pConfig->enmAmdExtMmx, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+    /** @cfgm{/CPUM/IsaExts/SVM, isaextcfg, depends}
+     * Whether to expose the AMD's hardware virtualization (SVM) instructions to the
+     * guest. For the time being, the default is to only do this for VMs with nested
+     * paging and AMD-V.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "SVM", &pConfig->enmSvm, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -5831,7 +5858,7 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
 {
     DBGFREGSUBFIELD_RO("LahfSahf\0"     "LAHF/SAHF support in 64-bit mode",              0, 1, 0),
     DBGFREGSUBFIELD_RO("CmpLegacy\0"    "Core multi-processing legacy mode",             1, 1, 0),
-    DBGFREGSUBFIELD_RO("SVM\0"          "AMD VM extensions",                             2, 1, 0),
+    DBGFREGSUBFIELD_RO("SVM\0"          "AMD Secure Virtual Machine extensions",         2, 1, 0),
     DBGFREGSUBFIELD_RO("EXTAPIC\0"      "AMD Extended APIC registers",                   3, 1, 0),
     DBGFREGSUBFIELD_RO("CR8L\0"         "AMD LOCK MOV CR0 means MOV CR8",                4, 1, 0),
     DBGFREGSUBFIELD_RO("ABM\0"          "AMD Advanced Bit Manipulation",                 5, 1, 0),

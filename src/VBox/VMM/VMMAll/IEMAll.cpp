@@ -101,6 +101,9 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
+#ifdef VBOX_WITH_NESTED_HWVIRT
+# include <VBox/vmm/hm_svm.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgftrace.h>
@@ -361,6 +364,38 @@ typedef IEMSELDESC *PIEMSELDESC;
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(DOXYGEN_RUNNING)
 # define IEM_USE_UNALIGNED_DATA_ACCESS
 #endif
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/** 
+ * Check if an SVM control/instruction intercept is set.
+ */ 
+#define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_Intercept)))
+
+/** 
+ * Check if an SVM read CRx intercept is set.
+ */ 
+#define IEM_IS_SVM_READ_CR_INTERCEPT_SET(a_pVCpu, a_uCr)    (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+
+/** 
+ * Check if an SVM write CRx intercept is set.
+ */ 
+#define IEM_IS_SVM_WRITE_CR_INTERCEPT_SET(a_pVCpu, a_uCr)   (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uCr)))
+
+/** 
+ * Check if an SVM read DRx intercept is set.
+ */ 
+#define IEM_IS_SVM_READ_DR_INTERCEPT_SET(a_pVCpu, a_uDr)    (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+
+/** 
+ * Check if an SVM write DRx intercept is set.
+ */ 
+#define IEM_IS_SVM_WRITE_DR_INTERCEPT_SET(a_pVCpu, a_uDr)   (CPUMIsGuestSvmWriteDRxInterceptSet(IEM_GET_CTX(a_pVCpu), (a_uDr)))
+
+/** 
+ * Check if an SVM exception intercept is set.
+ */ 
+#define IEM_IS_SVM_XCPT_INTERCEPT_SET(a_pVCpu, a_enmXcpt)   (CPUMIsGuestSvmXcptInterceptSet(IEM_GET_CTX(a_pVCpu), (a_enmXcpt)))
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 
 /*********************************************************************************************************************************
@@ -14874,6 +14909,44 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_xsetbv);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Interface for HM and EM to emulate the STGI instruction.
+ *  
+ * @returns Strict VBox status code. 
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes. 
+ * @thread  EMT(pVCpu) 
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClgi(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clgi);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate the STGI instruction.
+ *  
+ * @returns Strict VBox status code. 
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes. 
+ * @thread  EMT(pVCpu) 
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT */
 
 #ifdef IN_RING3
 

@@ -300,107 +300,137 @@
 #define SVM_EXIT1_MSR_WRITE                   0x1
 /** @} */
 
-/** @name SVMVMCB.ctrl.u32InterceptCtrl1
+
+/** @name SVMVMCB.ctrl.u64InterceptCtrl
  * @{
  */
-/** 0 Intercept INTR (physical maskable interrupt). */
-#define SVM_CTRL1_INTERCEPT_INTR              RT_BIT(0)
-/** 1 Intercept NMI. */
-#define SVM_CTRL1_INTERCEPT_NMI               RT_BIT(1)
-/** 2 Intercept SMI. */
-#define SVM_CTRL1_INTERCEPT_SMI               RT_BIT(2)
-/** 3 Intercept INIT. */
-#define SVM_CTRL1_INTERCEPT_INIT              RT_BIT(3)
-/** 4 Intercept VINTR (virtual maskable interrupt). */
-#define SVM_CTRL1_INTERCEPT_VINTR             RT_BIT(4)
-/** 5 Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
-#define SVM_CTRL1_INTERCEPT_CR0               RT_BIT(5)
-/** 6 Intercept reads of IDTR. */
-#define SVM_CTRL1_INTERCEPT_IDTR_READS        RT_BIT(6)
-/** 7 Intercept reads of GDTR. */
-#define SVM_CTRL1_INTERCEPT_GDTR_READS        RT_BIT(7)
-/** 8 Intercept reads of LDTR. */
-#define SVM_CTRL1_INTERCEPT_LDTR_READS        RT_BIT(8)
-/** 9 Intercept reads of TR. */
-#define SVM_CTRL1_INTERCEPT_TR_READS          RT_BIT(9)
-/** 10 Intercept writes of IDTR. */
-#define SVM_CTRL1_INTERCEPT_IDTR_WRITES       RT_BIT(10)
-/** 11 Intercept writes of GDTR. */
-#define SVM_CTRL1_INTERCEPT_GDTR_WRITES       RT_BIT(11)
-/** 12 Intercept writes of LDTR. */
-#define SVM_CTRL1_INTERCEPT_LDTR_WRITES       RT_BIT(12)
-/** 13 Intercept writes of TR. */
-#define SVM_CTRL1_INTERCEPT_TR_WRITES         RT_BIT(13)
-/** 14 Intercept RDTSC instruction. */
-#define SVM_CTRL1_INTERCEPT_RDTSC             RT_BIT(14)
-/** 15 Intercept RDPMC instruction. */
-#define SVM_CTRL1_INTERCEPT_RDPMC             RT_BIT(15)
-/** 16 Intercept PUSHF instruction. */
-#define SVM_CTRL1_INTERCEPT_PUSHF             RT_BIT(16)
-/** 17 Intercept POPF instruction. */
-#define SVM_CTRL1_INTERCEPT_POPF              RT_BIT(17)
-/** 18 Intercept CPUID instruction. */
-#define SVM_CTRL1_INTERCEPT_CPUID             RT_BIT(18)
-/** 19 Intercept RSM instruction. */
-#define SVM_CTRL1_INTERCEPT_RSM               RT_BIT(19)
-/** 20 Intercept IRET instruction. */
-#define SVM_CTRL1_INTERCEPT_IRET              RT_BIT(20)
-/** 21 Intercept INTn instruction. */
-#define SVM_CTRL1_INTERCEPT_INTN              RT_BIT(21)
-/** 22 Intercept INVD instruction. */
-#define SVM_CTRL1_INTERCEPT_INVD              RT_BIT(22)
-/** 23 Intercept PAUSE instruction. */
-#define SVM_CTRL1_INTERCEPT_PAUSE             RT_BIT(23)
-/** 24 Intercept HLT instruction. */
-#define SVM_CTRL1_INTERCEPT_HLT               RT_BIT(24)
-/** 25 Intercept INVLPG instruction. */
-#define SVM_CTRL1_INTERCEPT_INVLPG            RT_BIT(25)
-/** 26 Intercept INVLPGA instruction. */
-#define SVM_CTRL1_INTERCEPT_INVLPGA           RT_BIT(26)
-/** 27 IOIO_PROT Intercept IN/OUT accesses to selected ports. */
-#define SVM_CTRL1_INTERCEPT_INOUT_BITMAP      RT_BIT(27)
-/** 28 MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
-#define SVM_CTRL1_INTERCEPT_MSR_SHADOW        RT_BIT(28)
-/** 29 Intercept task switches. */
-#define SVM_CTRL1_INTERCEPT_TASK_SWITCH       RT_BIT(29)
-/** 30 FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
-#define SVM_CTRL1_INTERCEPT_FERR_FREEZE       RT_BIT(30)
-/** 31 Intercept shutdown events. */
-#define SVM_CTRL1_INTERCEPT_SHUTDOWN          RT_BIT(31)
-/** @} */
-
-
-/** @name SVMVMCB.ctrl.u32InterceptCtrl2
- * @{
- */
-/** 0 Intercept VMRUN instruction. */
-#define SVM_CTRL2_INTERCEPT_VMRUN             RT_BIT(0)
-/** 1 Intercept VMMCALL instruction. */
-#define SVM_CTRL2_INTERCEPT_VMMCALL           RT_BIT(1)
-/** 2 Intercept VMLOAD instruction. */
-#define SVM_CTRL2_INTERCEPT_VMLOAD            RT_BIT(2)
-/** 3 Intercept VMSAVE instruction. */
-#define SVM_CTRL2_INTERCEPT_VMSAVE            RT_BIT(3)
-/** 4 Intercept STGI instruction. */
-#define SVM_CTRL2_INTERCEPT_STGI              RT_BIT(4)
-/** 5 Intercept CLGI instruction. */
-#define SVM_CTRL2_INTERCEPT_CLGI              RT_BIT(5)
-/** 6 Intercept SKINIT instruction. */
-#define SVM_CTRL2_INTERCEPT_SKINIT            RT_BIT(6)
-/** 7 Intercept RDTSCP instruction. */
-#define SVM_CTRL2_INTERCEPT_RDTSCP            RT_BIT(7)
-/** 8 Intercept ICEBP instruction. */
-#define SVM_CTRL2_INTERCEPT_ICEBP             RT_BIT(8)
-/** 9 Intercept WBINVD instruction. */
-#define SVM_CTRL2_INTERCEPT_WBINVD            RT_BIT(9)
-/** 10 Intercept MONITOR instruction. */
-#define SVM_CTRL2_INTERCEPT_MONITOR           RT_BIT(10)
-/** 11 Intercept MWAIT instruction unconditionally. */
-#define SVM_CTRL2_INTERCEPT_MWAIT             RT_BIT(11)
-/** 12 Intercept MWAIT instruction when armed. */
-#define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
-/** 13 Intercept XSETBV instruction. */
-#define SVM_CTRL2_INTERCEPT_XSETBV            RT_BIT(13)
+/** Intercept INTR (physical maskable interrupt). */
+#define SVM_CTRL_INTERCEPT_INTR               RT_BIT_64(0)
+/** Intercept NMI. */
+#define SVM_CTRL_INTERCEPT_NMI                RT_BIT_64(1)
+/** Intercept SMI. */
+#define SVM_CTRL_INTERCEPT_SMI                RT_BIT_64(2)
+/** Intercept INIT. */ 
+#define SVM_CTRL_INTERCEPT_INIT               RT_BIT_64(3)
+/** Intercept VINTR (virtual maskable interrupt). */
+#define SVM_CTRL_INTERCEPT_VINTR              RT_BIT_64(4)
+/** Intercept CR0 writes that change bits other than CR0.TS or CR0.MP */
+#define SVM_CTRL_INTERCEPT_CR0                RT_BIT_64(5)
+/** Intercept reads of IDTR. */
+#define SVM_CTRL_INTERCEPT_IDTR_READS         RT_BIT_64(6)
+/** Intercept reads of GDTR. */
+#define SVM_CTRL_INTERCEPT_GDTR_READS         RT_BIT_64(7)
+/** Intercept reads of LDTR. */
+#define SVM_CTRL_INTERCEPT_LDTR_READS         RT_BIT_64(8)
+/** Intercept reads of TR. */
+#define SVM_CTRL_INTERCEPT_TR_READS           RT_BIT_64(9)
+/** Intercept writes of IDTR. */           
+#define SVM_CTRL_INTERCEPT_IDTR_WRITES        RT_BIT_64(10)
+/** Intercept writes of GDTR. */           
+#define SVM_CTRL_INTERCEPT_GDTR_WRITES        RT_BIT_64(11)
+/** Intercept writes of LDTR. */           
+#define SVM_CTRL_INTERCEPT_LDTR_WRITES        RT_BIT_64(12)
+/** Intercept writes of TR. */             
+#define SVM_CTRL_INTERCEPT_TR_WRITES          RT_BIT_64(13)
+/** Intercept RDTSC instruction. */        
+#define SVM_CTRL_INTERCEPT_RDTSC              RT_BIT_64(14)
+/** Intercept RDPMC instruction. */        
+#define SVM_CTRL_INTERCEPT_RDPMC              RT_BIT_64(15)
+/** Intercept PUSHF instruction. */        
+#define SVM_CTRL_INTERCEPT_PUSHF              RT_BIT_64(16)
+/** Intercept POPF instruction. */         
+#define SVM_CTRL_INTERCEPT_POPF               RT_BIT_64(17)
+/** Intercept CPUID instruction. */        
+#define SVM_CTRL_INTERCEPT_CPUID              RT_BIT_64(18)
+/** Intercept RSM instruction. */          
+#define SVM_CTRL_INTERCEPT_RSM                RT_BIT_64(19)
+/** Intercept IRET instruction. */         
+#define SVM_CTRL_INTERCEPT_IRET               RT_BIT_64(20)
+/** Intercept INTn instruction. */         
+#define SVM_CTRL_INTERCEPT_INTN               RT_BIT_64(21)
+/** Intercept INVD instruction. */         
+#define SVM_CTRL_INTERCEPT_INVD               RT_BIT_64(22)
+/** Intercept PAUSE instruction. */        
+#define SVM_CTRL_INTERCEPT_PAUSE              RT_BIT_64(23)
+/** Intercept HLT instruction. */          
+#define SVM_CTRL_INTERCEPT_HLT                RT_BIT_64(24)
+/** Intercept INVLPG instruction. */       
+#define SVM_CTRL_INTERCEPT_INVLPG             RT_BIT_64(25)
+/** Intercept INVLPGA instruction. */      
+#define SVM_CTRL_INTERCEPT_INVLPGA            RT_BIT_64(26)
+/** IOIO_PROT Intercept IN/OUT accesses to selected ports. */
+#define SVM_CTRL_INTERCEPT_INOUT_BITMAP       RT_BIT_64(27)
+/** MSR_PROT Intercept RDMSR or WRMSR accesses to selected MSRs. */
+#define SVM_CTRL_INTERCEPT_MSR_SHADOW         RT_BIT_64(28)
+/** Intercept task switches. */
+#define SVM_CTRL_INTERCEPT_TASK_SWITCH        RT_BIT_64(29)
+/** FERR_FREEZE: intercept processor "freezing" during legacy FERR handling. */
+#define SVM_CTRL_INTERCEPT_FERR_FREEZE        RT_BIT_64(30)
+/** Intercept shutdown events. */                
+#define SVM_CTRL_INTERCEPT_SHUTDOWN           RT_BIT_64(31)
+/** Intercept VMRUN instruction. */              
+#define SVM_CTRL_INTERCEPT_VMRUN              RT_BIT_64(32 + 0)
+/** Intercept VMMCALL instruction. */            
+#define SVM_CTRL_INTERCEPT_VMMCALL            RT_BIT_64(32 + 1)
+/** Intercept VMLOAD instruction. */                  
+#define SVM_CTRL_INTERCEPT_VMLOAD             RT_BIT_64(32 + 2)
+/** Intercept VMSAVE instruction. */             
+#define SVM_CTRL_INTERCEPT_VMSAVE             RT_BIT_64(32 + 3)
+/** Intercept STGI instruction. */               
+#define SVM_CTRL_INTERCEPT_STGI               RT_BIT_64(32 + 4)
+/** Intercept CLGI instruction. */               
+#define SVM_CTRL_INTERCEPT_CLGI               RT_BIT_64(32 + 5)
+/** Intercept SKINIT instruction. */             
+#define SVM_CTRL_INTERCEPT_SKINIT             RT_BIT_64(32 + 6)
+/** Intercept RDTSCP instruction. */             
+#define SVM_CTRL_INTERCEPT_RDTSCP             RT_BIT_64(32 + 7)
+/** Intercept ICEBP instruction. */              
+#define SVM_CTRL_INTERCEPT_ICEBP              RT_BIT_64(32 + 8)
+/** Intercept WBINVD instruction. */             
+#define SVM_CTRL_INTERCEPT_WBINVD             RT_BIT_64(32 + 9)
+/** Intercept MONITOR instruction. */            
+#define SVM_CTRL_INTERCEPT_MONITOR            RT_BIT_64(32 + 10)
+/** Intercept MWAIT instruction unconditionally. */   
+#define SVM_CTRL_INTERCEPT_MWAIT              RT_BIT_64(32 + 11)
+/** Intercept MWAIT instruction when armed. */   
+#define SVM_CTRL_INTERCEPT_MWAIT_ARMED        RT_BIT_64(32 + 12)
+/** Intercept XSETBV instruction. */
+#define SVM_CTRL_INTERCEPT_XSETBV             RT_BIT_64(32 + 13)
+/* Bit 14 - Reserved, SBZ. */
+/** Intercept EFER writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_EFER_WRITES_TRAP   RT_BIT_64(32 + 15)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR0_WRITES_TRAP    RT_BIT_64(32 + 16)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR1_WRITES_TRAP    RT_BIT_64(32 + 17)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR2_WRITES_TRAP    RT_BIT_64(32 + 18)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR3_WRITES_TRAP    RT_BIT_64(32 + 19)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR4_WRITES_TRAP    RT_BIT_64(32 + 20)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR5_WRITES_TRAP    RT_BIT_64(32 + 21)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR6_WRITES_TRAP    RT_BIT_64(32 + 22)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR7_WRITES_TRAP    RT_BIT_64(32 + 23)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR8_WRITES_TRAP    RT_BIT_64(32 + 24)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR9_WRITES_TRAP    RT_BIT_64(32 + 25)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR10_WRITES_TRAP   RT_BIT_64(32 + 26)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR11_WRITES_TRAP   RT_BIT_64(32 + 27)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR12_WRITES_TRAP   RT_BIT_64(32 + 28)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR13_WRITES_TRAP   RT_BIT_64(32 + 29)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR14_WRITES_TRAP   RT_BIT_64(32 + 30)
+/** Intercept CR0 writes after guest instruction finishes. */
+#define SVM_CTRL_INTERCEPT_CR15_WRITES_TRAP   RT_BIT_64(32 + 31)
 /** @} */
 
 /** @name SVMVMCB.ctrl.u64NestedPaging
@@ -602,25 +632,24 @@ AssertCompileSize(SVMAVICPHYS, 8);
 /**
  * SVM VM Control Block. (VMCB)
  */
+#pragma pack(1)
 typedef struct SVMVMCB
 {
     /** Control Area. */
     struct
     {
-        /** Offset 0x00 - Intercept reads of CR0-15. */
+        /** Offset 0x00 - Intercept reads of CR0-CR15. */
         uint16_t    u16InterceptRdCRx;
-        /** Offset 0x02 - Intercept writes to CR0-15. */
+        /** Offset 0x02 - Intercept writes to CR0-CR15. */
         uint16_t    u16InterceptWrCRx;
-        /** Offset 0x04 - Intercept reads of DR0-15. */
+        /** Offset 0x04 - Intercept reads of DR0-DR15. */
         uint16_t    u16InterceptRdDRx;
-        /** Offset 0x06 - Intercept writes to DR0-15. */
+        /** Offset 0x06 - Intercept writes to DR0-DR15. */
         uint16_t    u16InterceptWrDRx;
         /** Offset 0x08 - Intercept exception vectors 0-31. */
         uint32_t    u32InterceptException;
-        /** Offset 0x0C - Intercept control field 1. */
-        uint32_t    u32InterceptCtrl1;
-        /** Offset 0x10 - Intercept control field 2. */
-        uint32_t    u32InterceptCtrl2;
+        /** Offset 0x0C - Intercept control. */
+        uint64_t    u64InterceptCtrl;
         /** Offset 0x14-0x3F - Reserved. */
         uint8_t     u8Reserved[0x3c - 0x14];
         /** Offset 0x3c - PAUSE filter threshold.  */
@@ -772,6 +801,7 @@ typedef struct SVMVMCB
     /** Offset 0x698-0xFFF- Reserved. */
     uint8_t     u8Reserved10[0x1000-0x698];
 } SVMVMCB;
+#pragma pack()
 /** Pointer to the SVMVMCB structure. */
 typedef SVMVMCB *PSVMVMCB;
 AssertCompileMemberOffset(SVMVMCB, ctrl, 0x00);
@@ -780,8 +810,7 @@ AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrCRx, 0x02);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdDRx, 0x04);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrDRx, 0x06);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptException, 0x08);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptCtrl1, 0x0C);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptCtrl2, 0x10);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u64InterceptCtrl, 0x0C);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved, 0x14);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterThreshold, 0x3c);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount, 0x3e);

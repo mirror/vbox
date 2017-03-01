@@ -5874,6 +5874,89 @@ IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Implements 'CLGI'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_clgi)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvm)
+    {
+        Log2(("clgi: Not in CPUID -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (!(pCtx->msrEFER & MSR_K6_EFER_SVME))
+    {
+        Log2(("clgi: EFER.SVME not enabled -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    {
+        Log2(("clgi: Real or v8086 mode -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log2(("clgi: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
+    {
+        Log2(("clgi: Guest intercept -> VMexit\n"));
+        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_CLGI);
+        return VINF_EM_RESCHEDULE;
+    }
+#endif
+
+    pCtx->hwvirt.svm.fGif = 0;
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'STGI'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_stgi)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fSvm)
+    {
+        Log2(("stgi: Not in CPUID -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (!(pCtx->msrEFER & MSR_K6_EFER_SVME))
+    {
+        Log2(("stgi: EFER.SVME not enabled -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
+    {
+        Log2(("stgi: Real or v8086 mode -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log2(("stgi: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
+    {
+        Log2(("stgi: Guest intercept -> VMexit\n"));
+        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_STGI);
+        return VINF_EM_RESCHEDULE;
+    }
+#endif
+
+    pCtx->hwvirt.svm.fGif = 1;
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT */
+
 /**
  * Implements 'CLI'.
  */

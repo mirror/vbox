@@ -430,8 +430,46 @@ typedef struct CPUMCTX
     /** State component offsets into pXState, UINT16_MAX if not present. */
     uint16_t                    aoffXState[64];
 
-    /** Size padding. */
-    uint32_t        au32SizePadding[HC_ARCH_BITS == 32 ? 13 : 11];
+    /** 724 - Size padding. */
+    uint32_t                    u32Padding;
+
+    /** 728 - Hardware virtualization state.   */
+    struct
+    {
+        union   /* no tag! */
+        {
+            struct
+            {
+                /** 728 - MSR holding physical address of the Guest's 'host-state'. */
+                uint64_t            uMsrHSavePa;
+
+                /** @name Cache of the nested-guest VMCB controls.
+                 * @{ */
+                /** 736 - Control intercepts. */
+                uint64_t            u64InterceptCtrl;
+                /** 744 - Exception intercepts. */
+                uint32_t            u32InterceptXcpt;
+                /** 748 - CR0-CR15 read intercepts. */
+                uint16_t            u16InterceptRdCRx;
+                /** 750 - CR0-CR15 write intercepts. */
+                uint16_t            u16InterceptWrCRx;
+                /** 752 - DR0-DR15 read intercepts. */
+                uint16_t            u16InterceptRdDRx;
+                /** 754 - DR0-DR15 write intercepts. */
+                uint16_t            u16InterceptWrDRx;
+                /** @} */
+
+                /** 756 - Global interrupt flag. */
+                uint8_t            fGif;
+                /** 757 - Padding. */
+                uint8_t            abPadding[11];
+            } svm;
+            struct
+            {
+            } vmx;
+        } CPUM_UNION_NM(s); 
+    } hwvirt;
+    /** @} */
 } CPUMCTX;
 #pragma pack()
 
@@ -484,6 +522,16 @@ AssertCompileMemberOffset(CPUMCTX,                  pXStateR0, 576);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, HC_ARCH_BITS == 64 ? 584 : 580);
 AssertCompileMemberOffset(CPUMCTX,                  pXStateRC, HC_ARCH_BITS == 64 ? 592 : 584);
 AssertCompileMemberOffset(CPUMCTX,                 aoffXState, HC_ARCH_BITS == 64 ? 596 : 588);
+AssertCompileMemberOffset(CPUMCTX, hwvirt, 728);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,       728);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u64InterceptCtrl,  736);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u32InterceptXcpt,  744);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptRdCRx, 748);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptWrCRx, 750);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptRdDRx, 752);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptWrDRx, 754);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,              756);
+
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rcx, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r1);

@@ -252,6 +252,15 @@ struc CPUMCTX
     .pXStateR3      RTR3PTR_RES 1
     .pXStateRC      RTRCPTR_RES 1
     .aoffXState         resw    64
+    alignb 8
+    .hwvirt.svm.uMsrHSavePa         resq    1
+    .hwvirt.svm.u64InterceptCtrl    resq    1
+    .hwvirt.svm.u32InterceptXcpt    resd    1
+    .hwvirt.svm.u16InterceptRdCRx   resw    1
+    .hwvirt.svm.u16InterceptWrCRx   resw    1
+    .hwvirt.svm.u16InterceptRdDRx   resw    1
+    .hwvirt.svm.u16InterceptWrDRx   resw    1
+    .hwvirt.svm.fGif                resb    1
     alignb 64
 endstruc
 

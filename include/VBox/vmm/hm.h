@@ -147,6 +147,9 @@ VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bo
 VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
 VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 
+VMM_INT_DECL(void)              HMNstGstSvmVmExit(PVMCPU pVCpu, uint64_t uExitCode);
+VMM_INT_DECL(void)              HMNstGstVmxVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
+
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
