@@ -3360,7 +3360,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     {
         PCPUMCPUIDLEAF pSvmFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 0x8000000a, 0);
         pSvmFeatureLeaf->uEax = 0x1;
-        pSvmFeatureLeaf->uEbx = 0x8000;
+        pSvmFeatureLeaf->uEbx = 0x8000;     /** @todo figure out virtual NASID. */
         pSvmFeatureLeaf->uEcx = 0;
         pSvmFeatureLeaf->uEdx = 0; /** @todo Support SVM features */
     }
