@@ -464,9 +464,11 @@ typedef struct CPUMCTX
                 /** 757 - Padding. */
                 uint8_t            abPadding[11];
             } svm;
+#if 0
             struct
             {
             } vmx;
+#endif
         } CPUM_UNION_NM(s); 
     } hwvirt;
     /** @} */
