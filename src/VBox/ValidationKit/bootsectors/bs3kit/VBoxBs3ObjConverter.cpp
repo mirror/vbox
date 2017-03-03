@@ -1608,6 +1608,8 @@ static bool convertElfSymbolsToPubDefsAndExtDefs(POMFWRITER pThis, PCELFDETAILS 
                                  bBind, iSym, pszSymName);
             }
         }
+        else if (idxSection == SHN_COMMON)
+            return error(pThis->pszSrc, "Symbol #%u (%s) is in the unsupported 'common' section.\n", iSym, pszSymName);
         else
             return error(pThis->pszSrc, "Unsupported or invalid section number %#x for symbol #%u (%s)\n",
                          idxSection, iSym, pszSymName);
