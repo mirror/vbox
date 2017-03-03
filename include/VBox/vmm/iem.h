@@ -134,6 +134,8 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr);
 #ifdef VBOX_WITH_NESTED_HWVIRT
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedClgi(PVMCPU pVCpu, uint8_t cbInstr);
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmload(PVMCPU pVCpu, uint8_t cbInstr);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedVmsave(PVMCPU pVCpu, uint8_t cbInstr);
 #endif
 /** @}  */
 

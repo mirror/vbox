@@ -804,6 +804,8 @@ typedef struct SVMVMCB
 #pragma pack()
 /** Pointer to the SVMVMCB structure. */
 typedef SVMVMCB *PSVMVMCB;
+/** Pointer to a const SVMVMCB structure. */
+typedef const SVMVMCB *PCSVMVMCB;
 AssertCompileMemberOffset(SVMVMCB, ctrl, 0x00);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx, 0x00);
 AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrCRx, 0x02);
@@ -888,6 +890,63 @@ AssertCompileSize(SVMVMCB, 0x1000);
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 #endif /* IN_RING0 */
+
+/** 
+ * Segment attribute conversion between CPU and AMD-V VMCB format. 
+ *
+ * The CPU format of the segment attribute is described in X86DESCATTRBITS
+ * which is 16-bits (i.e. includes 4 bits of the segment limit).
+ *
+ * The AMD-V VMCB format the segment attribute is compact 12-bits (strictly
+ * only the attribute bits and nothing else). Upper 4-bits are unused.
+ */
+#define HMSVM_CPU_2_VMCB_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0xf000) >> 4) )
+#define HMSVM_VMCB_2_CPU_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0x0f00) << 4) )
+
+/** @def HMSVM_SEG_REG_COPY_TO_VMCB
+ * Copies the specified segment register to a VMCB from a virtual CPU context.
+ *  
+ * @param   a_pCtx      The virtual-CPU context. 
+ * @param   a_pVmcb     The VMCB. 
+ * @param   REG         The segment register in the VMCB struct. (CS, DS, FS 
+ *                      etc.)
+ * @param   reg         The segment register in the virtual CPU struct (cs, ds, 
+ *                      fs etc.)
+ */
+#define HMSVM_SEG_REG_COPY_TO_VMCB(a_pCtx, a_pVmcb, REG, reg) \
+    do \
+    { \
+        Assert((a_pCtx)->reg.fFlags & CPUMSELREG_FLAGS_VALID);  \
+        Assert((a_pCtx)->reg.ValidSel == (a_pCtx)->reg.Sel);    \
+        (a_pVmcb)->guest.REG.u16Sel    = (a_pCtx)->reg.Sel;      \
+        (a_pVmcb)->guest.REG.u32Limit  = (a_pCtx)->reg.u32Limit; \
+        (a_pVmcb)->guest.REG.u64Base   = (a_pCtx)->reg.u64Base;  \
+        (a_pVmcb)->guest.REG.u16Attr   = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->reg.Attr.u); \
+    } while (0)
+
+/** @def HMSVM_SEG_REG_COPY_TO_VMCB
+ * Copies the specified segment register from the VMCB to a virtual CPU 
+ * context. 
+ *  
+ * @param   a_pCtx      The virtual-CPU context. 
+ * @param   a_pVmcb     The VMCB. 
+ * @param   REG         The segment register in the VMCB struct. (CS, DS, FS 
+ *                      etc.)
+ * @param   reg         The segment register in the virtual CPU struct (cs, ds, 
+ *                      fs etc.)
+ */
+#define HMSVM_SEG_REG_COPY_FROM_VMCB(a_pCtx, a_pVmcb, REG, reg) \
+    do \
+    { \
+        (a_pCtx)->reg.Sel       = (a_pVmcb)->guest.REG.u16Sel;   \
+        (a_pCtx)->reg.ValidSel  = (a_pVmcb)->guest.REG.u16Sel;   \
+        (a_pCtx)->reg.fFlags    = CPUMSELREG_FLAGS_VALID;    \
+        (a_pCtx)->reg.u32Limit  = (a_pVmcb)->guest.REG.u32Limit; \
+        (a_pCtx)->reg.u64Base   = (a_pVmcb)->guest.REG.u64Base;  \
+        (a_pCtx)->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR((a_pVmcb)->guest.REG.u16Attr); \
+    } while (0)
+/** @} */
+
 
 /** @} */
 

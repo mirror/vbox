@@ -366,7 +366,34 @@ typedef IEMSELDESC *PIEMSELDESC;
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-/** 
+/**
+ * Check the common SVM instruction preconditions.
+ */
+#define IEM_SVM_INSTR_COMMON_CHECKS(a_pVCpu, a_Instr) \
+    do { \
+        if (!IEM_IS_SVM_ENABLED(a_pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": EFER.SVME not enabled -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
+        if (IEM_IS_REAL_OR_V86_MODE(pVCpu)) \
+        { \
+            Log((RT_STR(a_Instr) ": Real or v8086 mode -> #UD\n")); \
+            return iemRaiseUndefinedOpcode(pVCpu); \
+        } \
+        if (pVCpu->iem.s.uCpl != 0) \
+        { \
+            Log((RT_STR(a_Instr) ": CPL != 0 -> #GP(0)\n")); \
+            return iemRaiseGeneralProtectionFault0(pVCpu); \
+        } \
+    } while (0)
+
+/**
+ * Check if an SVM is enabled.
+ */
+#define IEM_IS_SVM_ENABLED(a_pVCpu)                         (CPUMIsGuestSvmEnabled(IEM_GET_CTX(a_pVCpu)))
+
+/**
  * Check if an SVM control/instruction intercept is set.
  */ 
 #define IEM_IS_SVM_CTRL_INTERCEPT_SET(a_pVCpu, a_Intercept) (CPUMIsGuestSvmCtrlInterceptSet(IEM_GET_CTX(a_pVCpu), (a_Intercept)))
@@ -11672,8 +11699,20 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPU pVCpu, uint16_t uSel)
     do \
     { \
         if (IEM_IS_REAL_OR_V86_MODE(pVCpu)) \
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
+
+#if 0
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/** The instruction raises an \#UD when SVM is not enabled. */
+#define IEMOP_HLP_NEEDS_SVM_ENABLED() \
+    do \
+    { \
+        if (IEM_IS_SVM_ENABLED(pVCpu)) \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+#endif
+#endif
 
 /** The instruction is not available in 64-bit mode, throw \#UD if we're in
  * 64-bit mode. */
@@ -14945,6 +14984,42 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedStgi(PVMCPU pVCpu, uint8_t cbInstr)
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_stgi);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate the VMLOAD instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmload(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmload);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate the VMSAVE instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmsave(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_vmsave);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */

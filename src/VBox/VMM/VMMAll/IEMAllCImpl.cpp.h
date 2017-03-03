@@ -5876,30 +5876,118 @@ IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
+ * Implements 'VMLOAD'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmload)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
+    {
+        Log(("vmload: Guest intercept -> VMexit\n"));
+        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_VMLOAD);
+        return VINF_EM_RESCHEDULE;
+    }
+#endif
+
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    if (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+    {
+        Log(("vmload: VMCB physaddr (%#RGp) not 4K aligned -> #GP(0)\n", GCPhysVmcb));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    void *pvVmcb;
+    PGMPAGEMAPLOCK PgLockVmcb;
+    VBOXSTRICTRC rcStrict = iemMemPageMap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_R, &pvVmcb, &PgLockVmcb);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pvVmcb;
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, FS, fs);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, GS, gs);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, TR, tr);
+        HMSVM_SEG_REG_COPY_FROM_VMCB(pCtx, pVmcb, LDTR, ldtr);
+
+        pCtx->msrKERNELGSBASE = pVmcb->guest.u64KernelGSBase;
+        pCtx->msrSTAR         = pVmcb->guest.u64STAR;
+        pCtx->msrLSTAR        = pVmcb->guest.u64LSTAR;
+        pCtx->msrCSTAR        = pVmcb->guest.u64CSTAR;
+        pCtx->msrSFMASK       = pVmcb->guest.u64SFMASK;
+
+        pCtx->SysEnter.cs     = pVmcb->guest.u64SysEnterCS;
+        pCtx->SysEnter.esp    = pVmcb->guest.u64SysEnterESP;
+        pCtx->SysEnter.eip    = pVmcb->guest.u64SysEnterEIP;
+
+        iemMemPageUnmap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_R, pvVmcb, &PgLockVmcb);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Implements 'VMSAVE'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmsave)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmsave);
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
+    {
+        Log(("vmsave: Guest intercept -> VMexit\n"));
+        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_VMSAVE);
+        return VINF_EM_RESCHEDULE;
+    }
+#endif
+
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    if (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+    {
+        Log(("vmsave: VMCB physaddr (%#RGp) not 4K aligned -> #GP(0)\n", GCPhysVmcb));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    void *pvVmcb;
+    PGMPAGEMAPLOCK PgLockVmcb;
+    VBOXSTRICTRC rcStrict = iemMemPageMap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, &pvVmcb, &PgLockVmcb);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        PSVMVMCB pVmcb = (PSVMVMCB)pvVmcb;
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, FS, fs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, TR, tr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, LDTR, ldtr);
+
+        pVmcb->guest.u64KernelGSBase  = pCtx->msrKERNELGSBASE;
+        pVmcb->guest.u64STAR          = pCtx->msrSTAR;
+        pVmcb->guest.u64LSTAR         = pCtx->msrLSTAR;
+        pVmcb->guest.u64CSTAR         = pCtx->msrCSTAR;
+        pVmcb->guest.u64SFMASK        = pCtx->msrSFMASK;
+
+        pVmcb->guest.u64SysEnterCS    = pCtx->SysEnter.cs;
+        pVmcb->guest.u64SysEnterESP   = pCtx->SysEnter.esp;
+        pVmcb->guest.u64SysEnterEIP   = pCtx->SysEnter.eip;
+
+        iemMemPageUnmap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_R, pvVmcb, &PgLockVmcb);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    }
+    return rcStrict;
+}
+
+
+/**
  * Implements 'CLGI'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_clgi)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-    if (!(pCtx->msrEFER & MSR_K6_EFER_SVME))
-    {
-        Log2(("clgi: EFER.SVME not enabled -> #UD\n"));
-        return iemRaiseUndefinedOpcode(pVCpu);
-    }
-    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
-    {
-        Log2(("clgi: Real or v8086 mode -> #UD\n"));
-        return iemRaiseUndefinedOpcode(pVCpu);
-    }
-    if (pVCpu->iem.s.uCpl != 0)
-    {
-        Log2(("clgi: CPL != 0 -> #GP(0)\n"));
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, clgi);
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
-        Log2(("clgi: Guest intercept -> VMexit\n"));
+        Log(("clgi: Guest intercept -> VMexit\n"));
         HMNstGstSvmVmExit(pVCpu, SVM_EXIT_CLGI);
         return VINF_EM_RESCHEDULE;
     }
@@ -5917,21 +6005,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
 IEM_CIMPL_DEF_0(iemCImpl_stgi)
 {
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
-    if (!(pCtx->msrEFER & MSR_K6_EFER_SVME))
-    {
-        Log2(("stgi: EFER.SVME not enabled -> #UD\n"));
-        return iemRaiseUndefinedOpcode(pVCpu);
-    }
-    if (IEM_IS_REAL_OR_V86_MODE(pVCpu))
-    {
-        Log2(("stgi: Real or v8086 mode -> #UD\n"));
-        return iemRaiseUndefinedOpcode(pVCpu);
-    }
-    if (pVCpu->iem.s.uCpl != 0)
-    {
-        Log2(("stgi: CPL != 0 -> #GP(0)\n"));
-        return iemRaiseGeneralProtectionFault0(pVCpu);
-    }
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, stgi);
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
@@ -5942,6 +6016,33 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 #endif
 
     pCtx->hwvirt.svm.fGif = 1;
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'INVLPGA'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_invlpga)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, invlpga);
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
+    {
+        Log2(("invlpga: Guest intercept -> VMexit\n"));
+        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_INVLPGA);
+        return VINF_EM_RESCHEDULE;
+    }
+#endif
+
+    RTGCPTR  const GCPtrPage = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    /** @todo PGM needs virtual ASID support. */
+#if 0
+    uint32_t const uAsid     = pCtx->ecx;
+#endif
+    PGMInvalidatePage(pVCpu, GCPtrPage);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     return VINF_SUCCESS;
 }

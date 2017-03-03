@@ -62,44 +62,6 @@
  *  switch to a "static DECLCALLBACK(int)". */
 #define HMSVM_EXIT_DECL                 static int
 
-/** @name Segment attribute conversion between CPU and AMD-V VMCB format.
- *
- * The CPU format of the segment attribute is described in X86DESCATTRBITS
- * which is 16-bits (i.e. includes 4 bits of the segment limit).
- *
- * The AMD-V VMCB format the segment attribute is compact 12-bits (strictly
- * only the attribute bits and nothing else). Upper 4-bits are unused.
- *
- * @{ */
-#define HMSVM_CPU_2_VMCB_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0xf000) >> 4) )
-#define HMSVM_VMCB_2_CPU_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0x0f00) << 4) )
-/** @} */
-
-/** @name Macros for loading, storing segment registers to/from the VMCB.
- *  @{ */
-#define HMSVM_LOAD_SEG_REG(REG, reg) \
-    do \
-    { \
-        Assert(pCtx->reg.fFlags & CPUMSELREG_FLAGS_VALID); \
-        Assert(pCtx->reg.ValidSel == pCtx->reg.Sel); \
-        pVmcb->guest.REG.u16Sel     = pCtx->reg.Sel; \
-        pVmcb->guest.REG.u32Limit   = pCtx->reg.u32Limit; \
-        pVmcb->guest.REG.u64Base    = pCtx->reg.u64Base; \
-        pVmcb->guest.REG.u16Attr    = HMSVM_CPU_2_VMCB_SEG_ATTR(pCtx->reg.Attr.u); \
-    } while (0)
-
-#define HMSVM_SAVE_SEG_REG(REG, reg) \
-    do \
-    { \
-        pMixedCtx->reg.Sel       = pVmcb->guest.REG.u16Sel; \
-        pMixedCtx->reg.ValidSel  = pVmcb->guest.REG.u16Sel; \
-        pMixedCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
-        pMixedCtx->reg.u32Limit  = pVmcb->guest.REG.u32Limit; \
-        pMixedCtx->reg.u64Base   = pVmcb->guest.REG.u64Base; \
-        pMixedCtx->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR(pVmcb->guest.REG.u16Attr); \
-    } while (0)
-/** @} */
-
 /** Macro for checking and returning from the using function for
  * \#VMEXIT intercepts that maybe caused during delivering of another
  * event in the guest. */
@@ -310,6 +272,8 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
 #ifdef VBOX_WITH_NESTED_HWVIRT
 static FNSVMEXITHANDLER hmR0SvmExitClgi;
 static FNSVMEXITHANDLER hmR0SvmExitStgi;
+static FNSVMEXITHANDLER hmR0SvmExitVmload;
+static FNSVMEXITHANDLER hmR0SvmExitVmsave;
 #endif
 /** @} */
 
@@ -1335,12 +1299,12 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_SEGMENT_REGS))
     {
-        HMSVM_LOAD_SEG_REG(CS, cs);
-        HMSVM_LOAD_SEG_REG(SS, ss);
-        HMSVM_LOAD_SEG_REG(DS, ds);
-        HMSVM_LOAD_SEG_REG(ES, es);
-        HMSVM_LOAD_SEG_REG(FS, fs);
-        HMSVM_LOAD_SEG_REG(GS, gs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, CS, cs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, SS, ss);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, DS, ds);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, ES, es);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, FS, fs);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs); 
 
         pVmcb->guest.u8CPL = pCtx->ss.Attr.n.u2Dpl;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
@@ -1350,14 +1314,14 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
     /* Guest TR. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_TR))
     {
-        HMSVM_LOAD_SEG_REG(TR, tr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, TR, tr);
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_TR);
     }
 
     /* Guest LDTR. */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_LDTR))
     {
-        HMSVM_LOAD_SEG_REG(LDTR, ldtr);
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, LDTR, ldtr);
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LDTR);
     }
 
@@ -1985,12 +1949,12 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest segment registers (includes FS, GS base MSRs for 64-bit guests).
      */
-    HMSVM_SAVE_SEG_REG(CS, cs);
-    HMSVM_SAVE_SEG_REG(SS, ss);
-    HMSVM_SAVE_SEG_REG(DS, ds);
-    HMSVM_SAVE_SEG_REG(ES, es);
-    HMSVM_SAVE_SEG_REG(FS, fs);
-    HMSVM_SAVE_SEG_REG(GS, gs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, CS, cs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, SS, ss);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, DS, ds);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, ES, es);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, FS, fs);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, GS, gs);
 
     /*
      * Correct the hidden CS granularity bit. Haven't seen it being wrong in any other
@@ -2040,7 +2004,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * between Intel and AMD. See @bugref{6208#c39}.
      * ASSUME that it's normally correct and that we're in 32-bit or 64-bit mode.
      */
-    HMSVM_SAVE_SEG_REG(TR, tr);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, TR, tr);
     if (pMixedCtx->tr.Attr.n.u4Type != X86_SEL_TYPE_SYS_386_TSS_BUSY)
     {
         if (   pMixedCtx->tr.Attr.n.u4Type == X86_SEL_TYPE_SYS_386_TSS_AVAIL
@@ -2053,7 +2017,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Descriptor-Table registers.
      */
-    HMSVM_SAVE_SEG_REG(LDTR, ldtr);
+    HMSVM_SEG_REG_COPY_FROM_VMCB(pMixedCtx, pVmcb, LDTR, ldtr);
     pMixedCtx->gdtr.cbGdt = pVmcb->guest.GDTR.u32Limit;
     pMixedCtx->gdtr.pGdt  = pVmcb->guest.GDTR.u64Base;
 
@@ -3687,17 +3651,19 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
-                case SVM_EXIT_CLGI: return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
-                case SVM_EXIT_STGI: return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_CLGI:     return hmR0SvmExitClgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_STGI:     return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMLOAD:   return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_VMSAVE:   return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
 #else
                 case SVM_EXIT_CLGI:
                 case SVM_EXIT_STGI:
+                case SVM_EXIT_VMLOAD:
+                case SVM_EXIT_VMSAVE:
 #endif
                 case SVM_EXIT_INVLPGA:
                 case SVM_EXIT_RSM:
                 case SVM_EXIT_VMRUN:
-                case SVM_EXIT_VMLOAD:
-                case SVM_EXIT_VMSAVE:
                 case SVM_EXIT_SKINIT:
                     return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
 
@@ -5696,40 +5662,54 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
- * \#VMEXIT handler for RDPMC (SVM_EXIT_CLGI). Conditional 
- * \#VMEXIT. 
+ * \#VMEXIT handler for CLGI (SVM_EXIT_CLGI). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->cpum.ro.GuestFeatures.fSvm)
-    {
-        /** @todo Stat. */
-        /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
-        VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, 3);
-        return VBOXSTRICTRC_VAL(rcStrict);
-    }
-    return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, 3);
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
 /**
- * \#VMEXIT handler for RDPMC (SVM_EXIT_STGI). Conditional
- * \#VMEXIT.
+ * \#VMEXIT handler for STGI (SVM_EXIT_STGI). Conditional \#VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->cpum.ro.GuestFeatures.fSvm)
-    {
-        /** @todo Stat. */
-        /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */
-        VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, 3);
-        return VBOXSTRICTRC_VAL(rcStrict);
-    }
-    return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, 3);
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * \#VMEXIT handler for VMLOAD (SVM_EXIT_VMLOAD). Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmload); */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmload(pVCpu, 3);
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * \#VMEXIT handler for VMSAVE (SVM_EXIT_VMSAVE). Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmsave); */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmsave(pVCpu, 3);
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
 

@@ -1161,7 +1161,7 @@ VMM_INT_DECL(bool)  CPUMIsGuestInRawMode(PVMCPU pVCpu);
  * Tests if the guest is running in real mode or not.
  *
  * @returns true if in real mode, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
 {
@@ -1172,7 +1172,7 @@ DECLINLINE(bool) CPUMIsGuestInRealModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in real or virtual 8086 mode.
  *
  * @returns @c true if it is, @c false if not.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
 {
@@ -1184,7 +1184,7 @@ DECLINLINE(bool) CPUMIsGuestInRealOrV86ModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in virtual 8086 mode.
  *
  * @returns @c true if it is, @c false if not.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCPUMCTX pCtx)
 {
@@ -1195,7 +1195,7 @@ DECLINLINE(bool) CPUMIsGuestInV86ModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in paged protected or not.
  *
  * @returns true if in paged protected mode, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
 {
@@ -1206,7 +1206,7 @@ DECLINLINE(bool) CPUMIsGuestInPagedProtectedModeEx(PCPUMCTX pCtx)
  * Tests if the guest is running in long mode or not.
  *
  * @returns true if in long mode, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInLongModeEx(PCPUMCTX pCtx)
 {
@@ -1219,7 +1219,7 @@ VMM_INT_DECL(bool) CPUMIsGuestIn64BitCodeSlow(PCPUMCTX pCtx);
  * Tests if the guest is running in 64 bits mode or not.
  *
  * @returns true if in 64 bits protected mode, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
 {
@@ -1234,7 +1234,7 @@ DECLINLINE(bool) CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
  * Tests if the guest has paging enabled or not.
  *
  * @returns true if paging is enabled, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
 {
@@ -1245,7 +1245,7 @@ DECLINLINE(bool) CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
  * Tests if the guest is running in PAE mode or not.
  *
  * @returns true if in PAE mode, otherwise false.
- * @param   pCtx    Current CPU context
+ * @param   pCtx    Current CPU context.
  */
 DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
 {
@@ -1254,6 +1254,17 @@ DECLINLINE(bool) CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
     return (   (pCtx->cr4 & X86_CR4_PAE)
             && CPUMIsGuestPagingEnabledEx(pCtx)
             && !(pCtx->msrEFER & MSR_K6_EFER_LMA));
+}
+
+/**
+ * Tests is if the guest has AMD SVM enabled or not.
+ *
+ * @returns true if SMV is enabled, otherwise false.
+ * @param   pCtx    Current CPU context.
+ */
+DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
+{
+    return RT_BOOL(pCtx->msrEFER & MSR_K6_EFER_SVME);
 }
 
 /**

@@ -444,13 +444,23 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
 /** Opcode 0x0f 0x01 0xd9. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmmcall);
 
+#ifdef VBOX_WITH_NESTED_HWVIRT
 /** Opcode 0x0f 0x01 0xda. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
+FNIEMOP_DEF(iemOp_Grp7_Amd_vmload)
+{
+    IEMOP_MNEMONIC(vmload, "vmload");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmload);
+}
+
 
 /** Opcode 0x0f 0x01 0xdb. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
+FNIEMOP_DEF(iemOp_Grp7_Amd_vmsave)
+{
+    IEMOP_MNEMONIC(vmsave, "vmsave");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmsave);
+}
 
-#ifdef VBOX_WITH_NESTED_HWVIRT
+
 /** Opcode 0x0f 0x01 0xdc. */
 FNIEMOP_DEF(iemOp_Grp7_Amd_stgi)
 {
@@ -458,25 +468,40 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_stgi)
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_stgi);
 }
 
+
 /** Opcode 0x0f 0x01 0xdd. */
 FNIEMOP_DEF(iemOp_Grp7_Amd_clgi)
 {
     IEMOP_MNEMONIC(clgi, "clgi");
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_clgi);
 }
+
+
+/** Opcode 0x0f 0x01 0xdf. */
+FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
+{
+    IEMOP_MNEMONIC(invlpga, "invlpga");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invlpga);
+}
 #else
+/** Opcode 0x0f 0x01 0xda. */
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
+
+/** Opcode 0x0f 0x01 0xdb. */
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmsave);
+
 /** Opcode 0x0f 0x01 0xdc. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_stgi);
 
 /** Opcode 0x0f 0x01 0xdd. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_clgi);
+
+/** Opcode 0x0f 0x01 0xdf. */
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
 #endif /* VBOX_WITH_NESTED_HWVIRT */
 
 /** Opcode 0x0f 0x01 0xde. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_skinit);
-
-/** Opcode 0x0f 0x01 0xdf. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
 
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
