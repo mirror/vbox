@@ -4245,6 +4245,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
     return rc;
 }
 
+
 /**
  * Updates interrupt shadow for the current RIP.
  */
@@ -4255,6 +4256,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             && pCtx->rip != EMGetInhibitInterruptsPC(pVCpu)) \
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS); \
     } while (0)
+
 
 /**
  * Advances the guest RIP making use of the CPU's NRIP_SAVE feature if
@@ -4273,7 +4275,7 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
 {
     if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         Assert(pVmcb->ctrl.u64NextRIP);
         Assert(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);
         pCtx->rip = pVmcb->ctrl.u64NextRIP;
@@ -4284,6 +4286,29 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
     HMSVM_UPDATE_INTR_SHADOW(pVCpu, pCtx);
 }
 
+/* Currently only used by nested hw.virt instructions, so ifdef'd as such, otherwise compilers start whining. */
+#ifdef VBOX_WITH_NESTED_HWVIRT
+/**
+ * Gets the length of the current instruction if the CPU supports the NRIP_SAVE
+ * feature. Otherwise, returns the value in @a cbLikely.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   cbLikely    The likely instruction length.
+ */
+DECLINLINE(uint8_t) hmR0SvmGetInstrLengthHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint8_t cbLikely)
+{
+    Assert(cbLikely <= 15);   /* See Intel spec. 2.3.11 "AVX Instruction Length" */
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+    {
+        PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        uint8_t const cbInstr = pVmcb->ctrl.u64NextRIP - pCtx->rip;
+        Assert(cbInstr == cbLikely);
+        return cbInstr;
+    }
+    return cbLikely;
+}
+#endif
 
 /**
  * Advances the guest RIP by the number of bytes specified in @a cb. This does
@@ -5671,8 +5696,8 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, 3);
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -5685,8 +5710,8 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, 3);
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -5699,8 +5724,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmload); */
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecDecodedVmload(pVCpu, 3);
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmload(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -5713,8 +5738,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmsave); */
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecDecodedVmsave(pVCpu, 3);
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedVmsave(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -5727,8 +5752,8 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpga); */
-    /** @todo Decode Assist. */
-    VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpga(pVCpu, 3);
+    uint8_t const cbInstr = hmR0SvmGetInstrLengthHwAssist(pVCpu, pCtx, 3);
+    VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpga(pVCpu, cbInstr);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
