@@ -1807,7 +1807,7 @@ BEGINPROC SVMR0VMRun
     push    xAX                                     ; save for the vmload after vmrun
     vmsave
 
-    ; Setup eax for VMLOAD.
+    ; Setup xAX for VMLOAD.
     mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Load guest general purpose registers.
@@ -1970,7 +1970,7 @@ BEGINPROC SVMR0VMRun64
     push    rax                                     ; Save for the vmload after vmrun
     vmsave
 
-    ; Setup eax for VMLOAD.
+    ; Setup rax for VMLOAD.
     mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Load guest general purpose registers.
