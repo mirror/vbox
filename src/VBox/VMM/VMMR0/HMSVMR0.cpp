@@ -4422,10 +4422,8 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     int rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
         pSvmTransient->fUpdateTscOffsetting = true;
-
-        /* Single step check. */
+        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
@@ -4447,8 +4445,8 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     int rc = EMInterpretRdtscp(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3);
         pSvmTransient->fUpdateTscOffsetting = true;
+        hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3);
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
@@ -4690,8 +4688,8 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
                 AssertRC(rc2);
                 HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
             }
-            hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
             rc = VINF_SUCCESS;
+            hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 2);
             HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
             return rc;
         }
@@ -5286,6 +5284,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                    we would need to reload the guest changed bits here before VM-entry. */
             }
             rc = VBOXSTRICTRC_VAL(rcStrict);
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         }
         else
             Log4(("hmR0SvmExitVmmCall: Hypercalls not enabled\n"));
