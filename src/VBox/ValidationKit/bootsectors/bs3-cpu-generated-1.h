@@ -50,7 +50,7 @@ typedef enum BS3CG1OP
     BS3CG1OP_END
 } BS3CG1OP;
 /** Pointer to a const operand enum. */
-typedef const BS3_FAR *PCBS3CG1OP;
+typedef const BS3CG1OP BS3_FAR *PCBS3CG1OP;
 
 
 /**
