@@ -32,17 +32,6 @@
 #include <iprt/assert.h>
 
 
-
-/** Instruction encoding format. */
-typedef enum BS3CG1ENC
-{
-    BS3CG1ENC_INVALID = 0,
-    BS3CG1ENC_FIXED,
-    BS3CG1ENC_MODRM,
-    BS3CG1ENC_END
-} BS3CG1ENC;
-
-
 /**
  * Operand details.
  *
@@ -60,6 +49,29 @@ typedef enum BS3CG1OP
 
     BS3CG1OP_END
 } BS3CG1OP;
+/** Pointer to a const operand enum. */
+typedef const BS3_FAR *PCBS3CG1OP;
+
+
+/**
+ * Instruction encoding format.
+ *
+ * This duplicates some of the info in the operand array, however it makes it
+ * easier to figure out encoding variations.
+ */
+typedef enum BS3CG1ENC
+{
+    BS3CG1ENC_INVALID = 0,
+
+    BS3CG1ENC_FIXED_Iz,
+    BS3CG1ENC_FIXED_FIRST = BS3CG1ENC_FIXED_Iz,
+    BS3CG1ENC_FIXED_Iv,
+
+    BS3CG1ENC_MODRM_Eb_Gb,
+    BS3CG1ENC_MODRM_Ev_Gv,
+
+    BS3CG1ENC_END
+} BS3CG1ENC;
 
 
 /**
@@ -67,24 +79,24 @@ typedef enum BS3CG1OP
  */
 typedef struct BS3CG1INSTR
 {
-    /** Opcode bytes. */
-    uint8_t     abOpcode[4];
-    /** BS3CG1OP values for each operand. */
-    uint8_t     aenmOperands[4];
     /** The opcode size.   */
     uint32_t    cbOpcode : 2;
     /** The number of operands.   */
     uint32_t    cOperands : 2;
-    /** BS3CG1ENC values. */
-    uint32_t    enmEncoding : 5;
     /** The length of the mnemonic. */
-    uint32_t    cchMnemonic : 4;
-    /** Index of the test header into g_aBs3Cg1Tests */
-    uint32_t    idxTestHdr : 19;
+    uint32_t    cchMnemonic : 3;
+    /** Whether to advance the mnemonic array pointer. */
+    uint32_t    fAdvanceMnemonic : 1;
+    /** Offset into g_abBs3Cg1Tests of the first test. */
+    uint32_t    offTests : 23;
+    /** BS3CG1ENC values. */
+    uint32_t    enmEncoding : 10;
+    /** BS3CG1ENC values. */
+    uint32_t    uUnused : 22;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;
-AssertCompileSize(BS3CG1INSTR, 16);
+AssertCompileSize(BS3CG1INSTR, 12);
 /** Pointer to a const instruction. */
 typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 
@@ -102,10 +114,10 @@ typedef struct BS3CG1TESTHDR
 {
     /** The size of the selector program in bytes.
      * This is also the offset of the input context modification program.  */
-    uint32_t    cbSelector : 9;
+    uint32_t    cbSelector : 8;
     /** The size of the input context modification program in bytes.
      * This immediately follows the selector program.  */
-    uint32_t    cbInput    : 11;
+    uint32_t    cbInput    : 12;
     /** The size of the output context modification program in bytes.
      * This immediately follows the input context modification program.  The
      * program takes the result of the input program as starting point. */
@@ -127,12 +139,12 @@ typedef BS3CG1TESTHDR const BS3_FAR *PCBS3CG1TESTHDR;
  * @{ */
 #define BS3CG1_CTXOP_SIZE_MASK      UINT8_C(0x07)
 #define BS3CG1_CTXOP_1_BYTE         UINT8_C(0x00)
-#define BS3CG1_CTXOP_2_BYTE         UINT8_C(0x01)
-#define BS3CG1_CTXOP_4_BYTE         UINT8_C(0x02)
-#define BS3CG1_CTXOP_8_BYTE         UINT8_C(0x03)
-#define BS3CG1_CTXOP_16_BYTE        UINT8_C(0x04)
-#define BS3CG1_CTXOP_32_BYTE        UINT8_C(0x05)
-#define BS3CG1_CTXOP_12_BYTE        UINT8_C(0x06)
+#define BS3CG1_CTXOP_2_BYTES        UINT8_C(0x01)
+#define BS3CG1_CTXOP_4_BYTES        UINT8_C(0x02)
+#define BS3CG1_CTXOP_8_BYTES        UINT8_C(0x03)
+#define BS3CG1_CTXOP_16_BYTES       UINT8_C(0x04)
+#define BS3CG1_CTXOP_32_BYTES       UINT8_C(0x05)
+#define BS3CG1_CTXOP_12_BYTES       UINT8_C(0x06)
 #define BS3CG1_CTXOP_SIZE_ESC       UINT8_C(0x07)   /**< Separate byte encoding the value size follows immediately. */
 
 #define BS3CG1_CTXOP_DST_MASK       UINT8_C(0x18)
@@ -308,16 +320,25 @@ typedef enum BS3CG1PRED
 } BS3CG1PRED;
 
 
-/** The number of test instructions (generated). */
-extern uint16_t BS3_FAR_DATA        g_cBs3Cg1Instructions;
 /** The test instructions (generated). */
-extern const char BS3_FAR_DATA      g_aBs3Cg1Instructions[];
-/** The test data that BS3CG1INSTR. */
-extern BS3CG1TESTHDR BS3_FAR_DATA   g_aBs3Cg1Tests[];
+extern const BS3CG1INSTR BS3_FAR_DATA   g_aBs3Cg1Instructions[];
+/** The number of test instructions (generated). */
+extern const uint16_t BS3_FAR_DATA      g_cBs3Cg1Instructions;
 /** The mnemonics (generated).
  * Variable length sequence of mnemonics that runs in parallel to
  * g_aBs3Cg1Instructions. */
-extern const char BS3_FAR_DATA      g_achBs3Cg1Mnemonics[];
+extern const char BS3_FAR_DATA          g_achBs3Cg1Mnemonics[];
+/** The opcodes (generated).
+ * Variable length sequence of opcode bytes that runs in parallel to
+ * g_aBs3Cg1Instructions, advancing by BS3CG1INSTR::cbOpcode each time. */
+extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Opcodes[];
+/** The operands (generated).
+ * Variable length sequence of opcode values (BS3CG1OP) that runs in
+ * parallel to g_aBs3Cg1Instructions, advancing by BS3CG1INSTR::cOperands. */
+extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Operands[];
+/** The test data that BS3CG1INSTR.
+ * In order to simplify generating these, we use a byte array. */
+extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Tests[];
 
 
 #endif

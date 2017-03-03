@@ -161,7 +161,7 @@ g_kdOpTypes = {
 
 
 ## IEMFORM_XXX mappings.
-g_kdIemForms = { # sEncoding,    [sWhere,]
+g_kdIemForms = { # sEncoding,   [ sWhere1, ... ]
     'RM':       ( 'ModR/M',     [ 'reg', 'rm' ], ),
     'RM_REG':   ( 'ModR/M',     [ 'reg', 'rm' ], ),
     'RM_MEM':   ( 'ModR/M',     [ 'reg', 'rm' ], ),
@@ -196,9 +196,9 @@ g_kdSpecialOpcodes = {
 
 ## Valid values for \@openc
 g_kdEncodings = {
-    'ModR/M': [],       ##< ModR/M
-    'fixed':  [],       ##< Fixed encoding (address, registers, etc).
-    'prefix': [],       ##< Prefix
+    'ModR/M':   [ 'BS3CG1ENC_MODRM', ],     ##< ModR/M
+    'fixed':    [ 'BS3CG1ENC_FIXED', ],     ##< Fixed encoding (address, registers, etc).
+    'prefix':   [ None, ],                  ##< Prefix
 };
 
 ## \@opunused, \@opinvalid, \@opinvlstyle
@@ -2757,7 +2757,9 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
         oDstFile.write('\n'.join(asLines));
         oDstFile.write('\n');
         break; #for now
-generateDisassemblerTables();
+
+if __name__ == '__main__':
+    generateDisassemblerTables();
 
 
 

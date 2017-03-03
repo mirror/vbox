@@ -316,13 +316,30 @@ bs3-cpu-instr-2-template.o:: \
 # CPU generated instruction tests #1
 MISCBINS += bs3-cpu-generated-1
 bs3-cpu-generated-1_TEMPLATE = VBoxBS3KitImg
-bs3-cpu-generated-1_INCS  = .
+bs3-cpu-generated-1_INCS = .
+bs3-cpu-generated-1_DEFS = BS3_CMN_INSTANTIATE_FILE1=bs3-cpu-generated-1-template.c
 bs3-cpu-generated-1_SOURCES = \
 	bs3kit/bs3-first-rm.asm \
 	bs3-cpu-generated-1.c \
-	bs3-cpu-generated-1-asm.asm
+	bs3-cpu-generated-1-asm.asm \
+       bs3kit/bs3-cmn-instantiate.c16 \
+       bs3kit/bs3-cmn-instantiate.c32 \
+       bs3kit/bs3-cmn-instantiate.c64 \
+	$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
+bs3-cpu-generated-1_CLEAN = $(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16
+
 bs3-cpu-generated-1-template.o:: \
+	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o16 \
+	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o32 \
+	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3kit/bs3-cmn-instantiate.o64 \
 	$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-asm.o16
+
+$$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
+		$(PATH_SUB_CURRENT)/bs3-cpu-generated-1-data.py \
+		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructionsPython.py \
+		$(PATH_SUB_CURRENT)/../../VMM/VMMAll/IEMAllInstructions*.cpp.h \
+               | $$(dir $$@)
+	$(VBOX_BLD_PYTHON) $< $@
 
 endif # VBOX_WITH_BS3KIT
 
