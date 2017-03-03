@@ -3659,7 +3659,7 @@ VBOXLNX32GUEST_SUFF_LIB = .a
 # SDKs for external libraries.
 #
 SDK_VBOX_LIBXML2          = .
-SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.9.2/include
+SDK_VBOX_LIBXML2_INCS   ?= $(PATH_ROOT)/src/libs/libxml2-2.9.4/include
 SDK_VBOX_LIBXML2_DEFS  ?= _REENTRANT
 SDK_VBOX_LIBXML2_DEFS.win += WIN32 _WINDOWS _MBCS
 # note: no linking to LIB here, we do that explicitly in src/VBox/Runtime/Makefile.kmk to link
