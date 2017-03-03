@@ -4277,7 +4277,7 @@ DECLINLINE(void) hmR0SvmAdvanceRipHwAssist(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t
     {
         PCSVMVMCB pVmcb = (PCSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         Assert(pVmcb->ctrl.u64NextRIP);
-        Assert(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);
+        AssertRelease(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);    /* temporary, remove later */
         pCtx->rip = pVmcb->ctrl.u64NextRIP;
     }
     else
