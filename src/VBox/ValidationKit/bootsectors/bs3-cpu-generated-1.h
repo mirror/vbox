@@ -168,7 +168,7 @@ typedef BS3CG1TESTHDR const BS3_FAR *PCBS3CG1TESTHDR;
  * These are just uppercased versions of TestInOut.kdFields, where dots are
  * replaced by underscores.
  */
-enum BS3CG1DST
+typedef enum BS3CG1DST
 {
     BS3CG1DST_INVALID = 0,
     /* Operands. */
