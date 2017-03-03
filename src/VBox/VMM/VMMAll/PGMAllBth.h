@@ -1227,7 +1227,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      * (Guessing that it is frequent for a shadow PDE to not be present, do this first.)
      */
 # if PGM_SHW_TYPE == PGM_TYPE_32BIT
-    const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
+    const unsigned  iPDDst    = (uint32_t)GCPtrPage >> SHW_PD_SHIFT;
     PX86PDE         pPdeDst   = pgmShwGet32BitPDEPtr(pVCpu, GCPtrPage);
 
     /* Fetch the pgm pool shadow descriptor. */
@@ -1243,7 +1243,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 #  endif
 
 # elif PGM_SHW_TYPE == PGM_TYPE_PAE
-    const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT);
+    const unsigned  iPdpt     = (uint32_t)GCPtrPage >> X86_PDPT_SHIFT;
     PX86PDPT        pPdptDst  = pgmShwGetPaePDPTPtr(pVCpu);
 
     /* If the shadow PDPE isn't present, then skip the invalidate. */
