@@ -5527,6 +5527,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             /* #UD #VMEXIT does not have valid NRIP information, manually advance RIP. See @bugref{7270#c170}. */
             hmR0SvmAdvanceRipDumb(pVCpu, pCtx, cbInstr);
             rc = VINF_SUCCESS;
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         }
         else if (rcStrict == VINF_GIM_HYPERCALL_CONTINUING)
             rc = VINF_SUCCESS;
