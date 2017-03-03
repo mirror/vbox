@@ -274,6 +274,7 @@ static FNSVMEXITHANDLER hmR0SvmExitClgi;
 static FNSVMEXITHANDLER hmR0SvmExitStgi;
 static FNSVMEXITHANDLER hmR0SvmExitVmload;
 static FNSVMEXITHANDLER hmR0SvmExitVmsave;
+static FNSVMEXITHANDLER hmR0SvmExitInvlpga;
 #endif
 /** @} */
 
@@ -3655,13 +3656,14 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_STGI:     return hmR0SvmExitStgi(pVCpu, pCtx, pSvmTransient);
                 case SVM_EXIT_VMLOAD:   return hmR0SvmExitVmload(pVCpu, pCtx, pSvmTransient);
                 case SVM_EXIT_VMSAVE:   return hmR0SvmExitVmsave(pVCpu, pCtx, pSvmTransient);
+                case SVM_EXIT_INVLPGA:  return hmR0SvmExitInvlpga(pVCpu, pCtx, pSvmTransient);
 #else
                 case SVM_EXIT_CLGI:
                 case SVM_EXIT_STGI:
                 case SVM_EXIT_VMLOAD:
                 case SVM_EXIT_VMSAVE:
-#endif
                 case SVM_EXIT_INVLPGA:
+#endif
                 case SVM_EXIT_RSM:
                 case SVM_EXIT_VMRUN:
                 case SVM_EXIT_SKINIT:
@@ -5669,6 +5671,7 @@ HMSVM_EXIT_DECL hmR0SvmExitClgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClgi); */
+    /** @todo Decode Assist. */
     VBOXSTRICTRC rcStrict = IEMExecDecodedClgi(pVCpu, 3);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
@@ -5682,6 +5685,7 @@ HMSVM_EXIT_DECL hmR0SvmExitStgi(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitStgi); */
+    /** @todo Decode Assist. */
     VBOXSTRICTRC rcStrict = IEMExecDecodedStgi(pVCpu, 3);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
@@ -5695,6 +5699,7 @@ HMSVM_EXIT_DECL hmR0SvmExitVmload(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmload); */
+    /** @todo Decode Assist. */
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmload(pVCpu, 3);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
@@ -5708,7 +5713,22 @@ HMSVM_EXIT_DECL hmR0SvmExitVmsave(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /** @todo Stat. */
     /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmsave); */
+    /** @todo Decode Assist. */
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmsave(pVCpu, 3);
+    return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * \#VMEXIT handler for INVLPGA (SVM_EXIT_INVLPGA). Conditional \#VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitInvlpga(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Stat. */
+    /* STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpga); */
+    /** @todo Decode Assist. */
+    VBOXSTRICTRC rcStrict = IEMExecDecodedInvlpga(pVCpu, 3);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT */
