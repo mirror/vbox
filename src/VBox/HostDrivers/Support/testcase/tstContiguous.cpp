@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 #if defined(RT_ARCH_X86) && defined(RT_OS_LINUX)
                         /* With 32-bit address spaces it's sometimes difficult
                          * to find bigger chunks of contiguous memory */
-                        if (i % 11 < 8)
+                        if (i % 11 > 7)
                             RTPrintf(" => ignoring (32-bit host)");
                         else
 #endif
