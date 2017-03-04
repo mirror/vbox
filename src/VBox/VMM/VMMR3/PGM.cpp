@@ -3596,9 +3596,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    AssertMsgFailed(("Should use PAE shadow mode!\n"));
-                    /* fall thru */
-                default: AssertFailed(); break;
+                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
+                default: AssertFailedBreak();
             }
             break;
 
@@ -3621,9 +3620,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    AssertMsgFailed(("Should use PAE shadow mode!\n"));
-                    /* fall thru */
-                default: AssertFailed(); break;
+                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
+                default: AssertFailedBreak();
             }
             break;
 
@@ -3647,9 +3645,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                     break;
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    AssertMsgFailed(("Should use PAE shadow mode!\n"));
-                    /* fall thru */
-                default: AssertFailed(); break;
+                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
+                default: AssertFailedBreak();
             }
             break;
 
@@ -3680,9 +3677,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                 case PGMMODE_32_BIT:
                 case PGMMODE_AMD64:
                 case PGMMODE_AMD64_NX:
-                    AssertMsgFailed(("Should use PAE shadow mode!\n"));
-                    /* fall thru */
-                default: AssertFailed(); break;
+                    AssertMsgFailedBreak(("Should use PAE shadow mode!\n"));
+                default: AssertFailedBreak();
             }
             break;
         }
@@ -3707,9 +3703,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
                 case PGMMODE_32_BIT:
                 case PGMMODE_PAE:
                 case PGMMODE_PAE_NX:
-                    AssertMsgFailed(("Should use AMD64 shadow mode!\n"));
-                    /* fall thru */
-                default: AssertFailed(); break;
+                    AssertMsgFailedBreak(("Should use AMD64 shadow mode!\n"));
+                default: AssertFailedBreak();
             }
             break;
 #endif
