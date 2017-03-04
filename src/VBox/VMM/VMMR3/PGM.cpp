@@ -3515,9 +3515,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             return rc;
         }
     }
-#ifdef REMEMBER_TO_ENABLE_THESE_GCPhycCR3_NIL_ASSIGNMENTS /** @todo Enable r113096 and fix. */
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
-#endif
 
     /*
      * Load new paging mode data.
