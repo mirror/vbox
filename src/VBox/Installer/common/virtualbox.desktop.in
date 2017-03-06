@@ -26,5 +26,5 @@ Comment[sv]=Kör flera virtuella system på en enda värddator
 
 [Desktop Action Manager]
 Exec=VirtualBox
-Name=Open VirtualBox Manager
-Name[de]=VirtualBox Manager öffnen
+Name=Open VM Manager
+Name[de]=VM Manager öffnen
