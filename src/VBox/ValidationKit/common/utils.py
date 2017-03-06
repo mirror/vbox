@@ -830,7 +830,7 @@ def processGetInfo(uPid, fSudo = False):
         #     .detach -> Detach from target process
         #     q       -> Quit CDB
         #
-        aasCmd = [sWinCdb, '-p', '%u' % (uPid,), '-c', '~* f; ~* k; lm -v; ~* u; .detach; q'];
+        aasCmd = [[sWinCdb, '-p', '%u' % (uPid,), '-c', '~* f; ~* k; lm -v; ~* u; .detach; q'],];
     else:
         aasCmd = [];
 
