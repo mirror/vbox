@@ -692,7 +692,8 @@ RT_C_DECLS_END
         RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertBreak(expr) \
     if (RT_LIKELY(!!(expr))) \
@@ -966,7 +967,8 @@ RT_C_DECLS_END
         RTAssertMsg2Weak a; \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertMsgBreak(expr, a) \
     if (RT_LIKELY(!!(expr))) \
@@ -994,7 +996,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertMsgBreakStmt(expr, a, stmt) \
     if (RT_LIKELY(!!(expr))) \
@@ -1003,7 +1006,8 @@ RT_C_DECLS_END
     { \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #endif
 
 /** @def AssertFailed
@@ -1124,12 +1128,14 @@ RT_C_DECLS_END
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertFailedBreak()  \
     if (1) \
         break; \
-    else do {} while (0)
+    else \
+        break
 #endif
 
 /** @def AssertFailedBreakStmt
@@ -1145,13 +1151,15 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertFailedBreakStmt(stmt) \
     if (1) { \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #endif
 
 
@@ -1225,12 +1233,14 @@ RT_C_DECLS_END
         RTAssertMsg2Weak a; \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertMsgFailedBreak(a)  \
     if (1) \
         break; \
-    else do {} while (0)
+    else \
+        break
 #endif
 
 /** @def AssertMsgFailedBreakStmt
@@ -1248,13 +1258,15 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #else
 # define AssertMsgFailedBreakStmt(a, stmt) \
     if (1) { \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 #endif
 
 /** @} */
@@ -1361,7 +1373,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         break; \
     } \
-    else do {} while (0)
+    else \
+        break
 
 /** @def AssertLogRelBreakStmt
  * Assert that an expression is true, execute \a stmt and break if it isn't.
@@ -1379,7 +1392,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertLogRelMsg
  * Assert that an expression is true.
@@ -1504,7 +1518,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         break; \
     } \
-    else do {} while (0)
+    else \
+        break
 
 /** @def AssertLogRelMsgBreakStmt
  * Assert that an expression is true, execute \a stmt and break if it isn't.
@@ -1524,7 +1539,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertLogRelFailed
  * An assertion failed.
@@ -1570,7 +1586,8 @@ RT_C_DECLS_END
         RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertLogRelFailedBreakStmt
  * An assertion failed, execute \a stmt and break.
@@ -1585,7 +1602,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertLogRelMsgFailed
  * An assertion failed.
@@ -1694,7 +1712,8 @@ RT_C_DECLS_END
         RTAssertLogRelMsg2(a); \
         RTAssertPanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertLogRelMsgFailedBreakStmt
  * An assertion failed, execute \a stmt and break.
@@ -1711,7 +1730,8 @@ RT_C_DECLS_END
         RTAssertPanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @} */
 
@@ -1798,7 +1818,8 @@ RT_C_DECLS_END
         RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertReleaseBreakStmt
  * Assert that an expression is true, hit a breakpoint and break if it isn't.
@@ -1815,7 +1836,8 @@ RT_C_DECLS_END
         RTAssertReleasePanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 
 /** @def AssertReleaseMsg
@@ -1891,7 +1913,8 @@ RT_C_DECLS_END
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertReleaseMsgBreakStmt
  * Assert that an expression is true, print the message and hit a breakpoint and break if it isn't.
@@ -1910,7 +1933,8 @@ RT_C_DECLS_END
         RTAssertReleasePanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 
 /** @def AssertReleaseFailed
@@ -1953,7 +1977,8 @@ RT_C_DECLS_END
         RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
         RTAssertReleasePanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertReleaseFailedBreakStmt
  * An assertion failed, hit a breakpoint and break.
@@ -1966,7 +1991,8 @@ RT_C_DECLS_END
         RTAssertReleasePanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 
 /** @def AssertReleaseMsgFailed
@@ -2020,7 +2046,8 @@ RT_C_DECLS_END
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @def AssertReleaseMsgFailedBreakStmt
  * An assertion failed, print a message, hit a breakpoint and break.
@@ -2035,7 +2062,8 @@ RT_C_DECLS_END
         RTAssertReleasePanic(); \
         stmt; \
         break; \
-    } else do {} while (0)
+    } else \
+        break
 
 /** @} */
 
