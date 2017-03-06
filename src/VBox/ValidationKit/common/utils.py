@@ -237,6 +237,13 @@ def openNoInherit(sFile, sMode = 'r'):
     try:
         from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=F0401
     except:
+        # On windows, use the 'N' flag introduces in Visual C++ 7.0 or 7.1.
+        if getHostOs() == 'win':
+            offComma = sMode.find(',');
+            if offComma < 0:
+                return open(sFile, sMode + 'N');
+            return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]);
+        # Just in case.
         return open(sFile, sMode);
 
     oFile = open(sFile, sMode)
