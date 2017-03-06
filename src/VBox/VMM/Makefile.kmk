@@ -921,6 +921,31 @@ $(foreach base,$(notdir $(basename $(wildcard $(PATH_SUB_CURRENT)/VMMR3/cpus/*.h
 
 
 #
+# Process python source(s).
+#
+BLDDIRS += $(PATH_TARGET)/pylint
+
+define def_vbox_vmm_py_check
+$(eval name:=$(basename $(notdir $(py))))
+
+pylint::   $(name)-py-phony.o
+$(name).o: $(name)-py-phony.o
+$(PATH_TARGET)/pylint/$(name).o $(name)-py-phony.o:: $(py) | $(PATH_TARGET)/pylint/
+ifdef VBOX_WITH_PYLINT
+	$(QUIET2)$(call MSG_L1,Subjecting $(py) to pylint...)
+	$(QUIET)$(REDIRECT) -C "$(dir $(py))" -E LC_ALL=C -- \
+		$(VBOX_PYLINT) --rcfile=$(PATH_TARGET)/no-such-pylintrc \
+			$$(VBOX_PYLINT_FLAGS) $$($(py)_VBOX_PYLINT_FLAGS) ./$(notdir $(py))
+endif
+	$(QUIET)$(APPEND) -t "$(PATH_TARGET)/pylint/$(name).o"
+
+TESTING += $(name)-py-phony.o
+endef # def_vbox_vmm_py_check
+
+$(foreach py, $(addprefix $(PATH_SUB_CURRENT)/VMMAll/, IEMAllInstructionsPython.py ) , $(eval $(def_vbox_vmm_py_check)))
+
+
+#
 # Test for undefined symbols.
 #
 if1of ($(SYSMODS),VMMRC)
