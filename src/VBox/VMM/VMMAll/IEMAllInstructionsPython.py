@@ -604,7 +604,7 @@ class TestTypeEflags(TestType):
         return aoSet;
 
     def isAndOrPair(self, sValue):
-        for sZeroFlag in self.kdZeroValueFlags.keys():
+        for sZeroFlag in self.kdZeroValueFlags:
             if sValue.find(sZeroFlag) >= 0:
                 return True;
         return False;
@@ -2770,6 +2770,4 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
 
 if __name__ == '__main__':
     generateDisassemblerTables();
-
-
 
