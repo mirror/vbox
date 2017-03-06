@@ -63,7 +63,6 @@
 #include <VBox/scsiinline.h>
 #include <VBox/ata.h>
 
-#include "PIIX3ATABmDma.h"
 #include "ATAPIPassthrough.h"
 #include "VBoxDD.h"
 
@@ -109,10 +108,64 @@
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
 #define ATA_MEDIA_NO_DISC                    0x70    /**< Door closed, no medium */
 
+/** @defgroup grp_piix3atabmdma     PIIX3 ATA Bus Master DMA
+ * @{
+ */
+
+/** @name BM_STATUS
+ * @{
+ */
+/** Currently performing a DMA operation. */
+#define BM_STATUS_DMAING 0x01
+/** An error occurred during the DMA operation. */
+#define BM_STATUS_ERROR  0x02
+/** The DMA unit has raised the IDE interrupt line. */
+#define BM_STATUS_INT    0x04
+/** User-defined bit 0, commonly used to signal that drive 0 supports DMA. */
+#define BM_STATUS_D0DMA  0x20
+/** User-defined bit 1, commonly used to signal that drive 1 supports DMA. */
+#define BM_STATUS_D1DMA  0x40
+/** @} */
+
+/** @name BM_CMD
+ * @{
+ */
+/** Start the DMA operation. */
+#define BM_CMD_START     0x01
+/** Data transfer direction: from device to memory if set. */
+#define BM_CMD_WRITE     0x08
+/** @} */
+
+/** @} */
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** @defgroup grp_piix3atabmdma     PIIX3 ATA Bus Master DMA
+ * @{
+ */
+/** PIIX3 Bus Master DMA unit state. */
+typedef struct BMDMAState
+{
+    /** Command register. */
+    uint8_t    u8Cmd;
+    /** Status register. */
+    uint8_t    u8Status;
+    /** Address of the MMIO region in the guest's memory space. */
+    RTGCPHYS32 GCPhysAddr;
+} BMDMAState;
+
+/** PIIX3 Bus Master DMA descriptor entry. */
+typedef struct BMDMADesc
+{
+    /** Address of the DMA source/target buffer. */
+    RTGCPHYS32 GCPhysBuffer;
+    /** Size of the DMA source/target buffer. */
+    uint32_t   cbBuffer;
+} BMDMADesc;
+/** @} */
+
+
 /**
  * The state of an ATA device.
  *
@@ -123,173 +176,173 @@
 typedef struct ATADevState
 {
     /** Flag indicating whether the current command uses LBA48 mode. */
-    bool fLBA48;
+    bool                                fLBA48;
     /** Flag indicating whether this drive implements the ATAPI command set. */
-    bool fATAPI;
+    bool                                fATAPI;
     /** Set if this interface has asserted the IRQ. */
-    bool fIrqPending;
+    bool                                fIrqPending;
     /** Currently configured number of sectors in a multi-sector transfer. */
-    uint8_t cMultSectors;
+    uint8_t                             cMultSectors;
     /** PCHS disk geometry. */
-    PDMMEDIAGEOMETRY PCHSGeometry;
+    PDMMEDIAGEOMETRY                    PCHSGeometry;
     /** Total number of sectors on this disk. */
-    uint64_t cTotalSectors;
+    uint64_t                            cTotalSectors;
     /** Sector size of the medium. */
-    uint32_t cbSector;
+    uint32_t                            cbSector;
     /** Number of sectors to transfer per IRQ. */
-    uint32_t cSectorsPerIRQ;
+    uint32_t                            cSectorsPerIRQ;
 
     /** ATA/ATAPI register 1: feature (write-only). */
-    uint8_t uATARegFeature;
+    uint8_t                             uATARegFeature;
     /** ATA/ATAPI register 1: feature, high order byte. */
-    uint8_t uATARegFeatureHOB;
+    uint8_t                             uATARegFeatureHOB;
     /** ATA/ATAPI register 1: error (read-only). */
-    uint8_t uATARegError;
+    uint8_t                             uATARegError;
     /** ATA/ATAPI register 2: sector count (read/write). */
-    uint8_t uATARegNSector;
+    uint8_t                             uATARegNSector;
     /** ATA/ATAPI register 2: sector count, high order byte. */
-    uint8_t uATARegNSectorHOB;
+    uint8_t                             uATARegNSectorHOB;
     /** ATA/ATAPI register 3: sector (read/write). */
-    uint8_t uATARegSector;
+    uint8_t                             uATARegSector;
     /** ATA/ATAPI register 3: sector, high order byte. */
-    uint8_t uATARegSectorHOB;
+    uint8_t                             uATARegSectorHOB;
     /** ATA/ATAPI register 4: cylinder low (read/write). */
-    uint8_t uATARegLCyl;
+    uint8_t                             uATARegLCyl;
     /** ATA/ATAPI register 4: cylinder low, high order byte. */
-    uint8_t uATARegLCylHOB;
+    uint8_t                             uATARegLCylHOB;
     /** ATA/ATAPI register 5: cylinder high (read/write). */
-    uint8_t uATARegHCyl;
+    uint8_t                             uATARegHCyl;
     /** ATA/ATAPI register 5: cylinder high, high order byte. */
-    uint8_t uATARegHCylHOB;
+    uint8_t                             uATARegHCylHOB;
     /** ATA/ATAPI register 6: select drive/head (read/write). */
-    uint8_t uATARegSelect;
+    uint8_t                             uATARegSelect;
     /** ATA/ATAPI register 7: status (read-only). */
-    uint8_t uATARegStatus;
+    uint8_t                             uATARegStatus;
     /** ATA/ATAPI register 7: command (write-only). */
-    uint8_t uATARegCommand;
+    uint8_t                             uATARegCommand;
     /** ATA/ATAPI drive control register (write-only). */
-    uint8_t uATARegDevCtl;
+    uint8_t                             uATARegDevCtl;
 
     /** Currently active transfer mode (MDMA/UDMA) and speed. */
-    uint8_t uATATransferMode;
+    uint8_t                             uATATransferMode;
     /** Current transfer direction. */
-    uint8_t uTxDir;
+    uint8_t                             uTxDir;
     /** Index of callback for begin transfer. */
-    uint8_t iBeginTransfer;
+    uint8_t                             iBeginTransfer;
     /** Index of callback for source/sink of data. */
-    uint8_t iSourceSink;
+    uint8_t                             iSourceSink;
     /** Flag indicating whether the current command transfers data in DMA mode. */
-    bool fDMA;
+    bool                                fDMA;
     /** Set to indicate that ATAPI transfer semantics must be used. */
-    bool fATAPITransfer;
+    bool                                fATAPITransfer;
 
     /** Total ATA/ATAPI transfer size, shared PIO/DMA. */
-    uint32_t cbTotalTransfer;
+    uint32_t                            cbTotalTransfer;
     /** Elementary ATA/ATAPI transfer size, shared PIO/DMA. */
-    uint32_t cbElementaryTransfer;
+    uint32_t                            cbElementaryTransfer;
     /** Maximum ATAPI elementary transfer size, PIO only. */
-    uint32_t cbPIOTransferLimit;
+    uint32_t                            cbPIOTransferLimit;
     /** ATAPI passthrough transfer size, shared PIO/DMA */
-    uint32_t cbAtapiPassthroughTransfer;
+    uint32_t                            cbAtapiPassthroughTransfer;
     /** Current read/write buffer position, shared PIO/DMA. */
-    uint32_t iIOBufferCur;
+    uint32_t                            iIOBufferCur;
     /** First element beyond end of valid buffer content, shared PIO/DMA. */
-    uint32_t iIOBufferEnd;
+    uint32_t                            iIOBufferEnd;
     /** Align the following fields correctly. */
-    uint32_t Alignment0;
+    uint32_t                            Alignment0;
 
     /** ATA/ATAPI current PIO read/write transfer position. Not shared with DMA for safety reasons. */
-    uint32_t iIOBufferPIODataStart;
+    uint32_t                            iIOBufferPIODataStart;
     /** ATA/ATAPI current PIO read/write transfer end. Not shared with DMA for safety reasons. */
-    uint32_t iIOBufferPIODataEnd;
+    uint32_t                            iIOBufferPIODataEnd;
 
     /** ATAPI current LBA position. */
-    uint32_t iATAPILBA;
+    uint32_t                            iATAPILBA;
     /** ATAPI current sector size. */
-    uint32_t cbATAPISector;
+    uint32_t                            cbATAPISector;
     /** ATAPI current command. */
-    uint8_t aATAPICmd[ATAPI_PACKET_SIZE];
+    uint8_t                             aATAPICmd[ATAPI_PACKET_SIZE];
     /** ATAPI sense data. */
-    uint8_t abATAPISense[ATAPI_SENSE_SIZE];
+    uint8_t                             abATAPISense[ATAPI_SENSE_SIZE];
     /** HACK: Countdown till we report a newly unmounted drive as mounted. */
-    uint8_t cNotifiedMediaChange;
+    uint8_t                             cNotifiedMediaChange;
     /** The same for GET_EVENT_STATUS for mechanism */
-    volatile uint32_t MediaEventStatus;
+    volatile uint32_t                   MediaEventStatus;
 
     /** Media type if known. */
-    volatile uint32_t MediaTrackType;
+    volatile uint32_t                   MediaTrackType;
 
     /** The status LED state for this drive. */
-    PDMLED Led;
+    PDMLED                              Led;
 
     /** Size of I/O buffer. */
-    uint32_t cbIOBuffer;
+    uint32_t                            cbIOBuffer;
     /** Pointer to the I/O buffer. */
-    R3PTRTYPE(uint8_t *) pbIOBufferR3;
+    R3PTRTYPE(uint8_t *)                pbIOBufferR3;
     /** Pointer to the I/O buffer. */
-    R0PTRTYPE(uint8_t *) pbIOBufferR0;
+    R0PTRTYPE(uint8_t *)                pbIOBufferR0;
     /** Pointer to the I/O buffer. */
-    RCPTRTYPE(uint8_t *) pbIOBufferRC;
+    RCPTRTYPE(uint8_t *)                pbIOBufferRC;
 
-    RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundary. */
+    RTRCPTR                             Aligmnent1; /**< Align the statistics at an 8-byte boundary. */
 
     /*
      * No data that is part of the saved state after this point!!!!!
      */
 
     /* Release statistics: number of ATA DMA commands. */
-    STAMCOUNTER StatATADMA;
+    STAMCOUNTER                         StatATADMA;
     /* Release statistics: number of ATA PIO commands. */
-    STAMCOUNTER StatATAPIO;
+    STAMCOUNTER                         StatATAPIO;
     /* Release statistics: number of ATAPI PIO commands. */
-    STAMCOUNTER StatATAPIDMA;
+    STAMCOUNTER                         StatATAPIDMA;
     /* Release statistics: number of ATAPI PIO commands. */
-    STAMCOUNTER StatATAPIPIO;
+    STAMCOUNTER                         StatATAPIPIO;
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
     /* Release statistics: number of DMA sector writes and the time spent. */
-    STAMPROFILEADV StatInstrVDWrites;
+    STAMPROFILEADV                      StatInstrVDWrites;
 #endif
 
     /** Statistics: number of read operations and the time spent reading. */
-    STAMPROFILEADV  StatReads;
+    STAMPROFILEADV                      StatReads;
     /** Statistics: number of bytes read. */
-    STAMCOUNTER     StatBytesRead;
+    STAMCOUNTER                         StatBytesRead;
     /** Statistics: number of write operations and the time spent writing. */
-    STAMPROFILEADV  StatWrites;
+    STAMPROFILEADV                      StatWrites;
     /** Statistics: number of bytes written. */
-    STAMCOUNTER     StatBytesWritten;
+    STAMCOUNTER                         StatBytesWritten;
     /** Statistics: number of flush operations and the time spend flushing. */
-    STAMPROFILE     StatFlushes;
+    STAMPROFILE                         StatFlushes;
 
     /** Enable passing through commands directly to the ATAPI drive. */
-    bool            fATAPIPassthrough;
+    bool                                fATAPIPassthrough;
     /** Flag whether to overwrite inquiry data in passthrough mode. */
-    bool            fOverwriteInquiry;
+    bool                                fOverwriteInquiry;
     /** Number of errors we've reported to the release log.
      * This is to prevent flooding caused by something going horribly wrong.
      * this value against MAX_LOG_REL_ERRORS in places likely to cause floods
      * like the ones we currently seeing on the linux smoke tests (2006-11-10). */
-    uint32_t        cErrors;
+    uint32_t                            cErrors;
     /** Timestamp of last started command. 0 if no command pending. */
-    uint64_t        u64CmdTS;
+    uint64_t                            u64CmdTS;
 
     /** Pointer to the attached driver's base interface. */
-    R3PTRTYPE(PPDMIBASE)            pDrvBase;
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
     /** Pointer to the attached driver's block interface. */
-    R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
+    R3PTRTYPE(PPDMIMEDIA)               pDrvMedia;
     /** Pointer to the attached driver's mount interface.
      * This is NULL if the driver isn't a removable unit. */
-    R3PTRTYPE(PPDMIMOUNT)           pDrvMount;
+    R3PTRTYPE(PPDMIMOUNT)               pDrvMount;
     /** The base interface. */
-    PDMIBASE                        IBase;
+    PDMIBASE                            IBase;
     /** The block port interface. */
-    PDMIMEDIAPORT                   IPort;
+    PDMIMEDIAPORT                       IPort;
     /** The mount notify interface. */
-    PDMIMOUNTNOTIFY                 IMountNotify;
+    PDMIMOUNTNOTIFY                     IMountNotify;
     /** The LUN #. */
-    RTUINT                          iLUN;
+    RTUINT                              iLUN;
 #if HC_ARCH_BITS == 64
-    RTUINT                          Alignment2; /**< Align pDevInsR3 correctly. */
+    RTUINT                              Alignment2; /**< Align pDevInsR3 correctly. */
 #endif
     /** Pointer to device instance. */
     PPDMDEVINSR3                        pDevInsR3;
@@ -329,23 +382,39 @@ AssertCompileMemberAlignment(ATADevState, szSerialNumber, 8);
 AssertCompileSizeAlignment(ATADevState, 8);
 
 
+/**
+ * Transfer request forwarded to the async I/O thread.
+ */
 typedef struct ATATransferRequest
 {
-    uint8_t iIf;
-    uint8_t iBeginTransfer;
-    uint8_t iSourceSink;
+    /** The interface index the request is for. */
+    uint8_t  iIf;
+    /** The index of the begin transfer callback to call. */
+    uint8_t  iBeginTransfer;
+    /** The index of the source sink callback to call for doing the transfer. */
+    uint8_t  iSourceSink;
+    /** How many bytes to transfer. */
     uint32_t cbTotalTransfer;
-    uint8_t uTxDir;
+    /** Transfer direction. */
+    uint8_t  uTxDir;
 } ATATransferRequest;
 
 
+/**
+ * Abort request forwarded to the async I/O thread.
+ */
 typedef struct ATAAbortRequest
 {
+    /** The interface index the request is for. */
     uint8_t iIf;
-    bool fResetDrive;
+    /** Flag whether to reset the drive. */
+    bool    fResetDrive;
 } ATAAbortRequest;
 
 
+/**
+ * Request type indicator.
+ */
 typedef enum
 {
     /** Begin a new transfer. */
@@ -363,57 +432,68 @@ typedef enum
 } ATAAIO;
 
 
+/**
+ * Combining structure for an ATA request to the async I/O thread
+ * started with the request type insicator.
+ */
 typedef struct ATARequest
 {
-    ATAAIO ReqType;
+    /** Request type. */
+    ATAAIO                 ReqType;
+    /** Request type dependent data. */
     union
     {
+        /** Transfer request specific data. */
         ATATransferRequest t;
-        ATAAbortRequest a;
+        /** Abort request specific data. */
+        ATAAbortRequest    a;
     } u;
 } ATARequest;
 
 
+/**
+ * The state of an ATA controller containing to devices (master and slave).
+ */
 typedef struct ATACONTROLLER
 {
     /** The base of the first I/O Port range. */
-    RTIOPORT    IOPortBase1;
+    RTIOPORT            IOPortBase1;
     /** The base of the second I/O Port range. (0 if none) */
-    RTIOPORT    IOPortBase2;
+    RTIOPORT            IOPortBase2;
     /** The assigned IRQ. */
-    RTUINT      irq;
+    RTUINT              irq;
     /** Access critical section */
-    PDMCRITSECT lock;
+    PDMCRITSECT         lock;
 
     /** Selected drive. */
-    uint8_t     iSelectedIf;
+    uint8_t             iSelectedIf;
     /** The interface on which to handle async I/O. */
-    uint8_t     iAIOIf;
+    uint8_t             iAIOIf;
     /** The state of the async I/O thread. */
-    uint8_t     uAsyncIOState;
+    uint8_t             uAsyncIOState;
     /** Flag indicating whether the next transfer is part of the current command. */
-    bool        fChainedTransfer;
+    bool                fChainedTransfer;
     /** Set when the reset processing is currently active on this controller. */
-    bool        fReset;
+    bool                fReset;
     /** Flag whether the current transfer needs to be redone. */
-    bool        fRedo;
+    bool                fRedo;
     /** Flag whether the redo suspend has been finished. */
-    bool        fRedoIdle;
+    bool                fRedoIdle;
     /** Flag whether the DMA operation to be redone is the final transfer. */
-    bool        fRedoDMALastDesc;
+    bool                fRedoDMALastDesc;
     /** The BusMaster DMA state. */
-    BMDMAState  BmDma;
+    BMDMAState          BmDma;
     /** Pointer to first DMA descriptor. */
-    RTGCPHYS32  pFirstDMADesc;
+    RTGCPHYS32          GCPhysFirstDMADesc;
     /** Pointer to last DMA descriptor. */
-    RTGCPHYS32  pLastDMADesc;
+    RTGCPHYS32          GCPhysLastDMADesc;
     /** Pointer to current DMA buffer (for redo operations). */
-    RTGCPHYS32  pRedoDMABuffer;
+    RTGCPHYS32          GCPhysRedoDMABuffer;
     /** Size of current DMA buffer (for redo operations). */
-    uint32_t    cbRedoDMABuffer;
+    uint32_t            cbRedoDMABuffer;
 
     /** The ATA/ATAPI interfaces of this controller. */
-    ATADevState aIfs[2];
+    ATADevState         aIfs[2];
 
     /** Pointer to device instance. */
     PPDMDEVINSR3        pDevInsR3;
@@ -445,20 +525,17 @@ typedef struct ATACONTROLLER
     RTSEMEVENT          SuspendIOSem;
     /** The lock protecting the request queue. */
     PDMCRITSECT         AsyncIORequestLock;
-#if 0 /*HC_ARCH_BITS == 32*/
-    uint32_t            Alignment0;
-#endif
 
     /** Timestamp we started the reset. */
     uint64_t            u64ResetTime;
 
     /* Statistics */
-    STAMCOUNTER     StatAsyncOps;
-    uint64_t        StatAsyncMinWait;
-    uint64_t        StatAsyncMaxWait;
-    STAMCOUNTER     StatAsyncTimeUS;
-    STAMPROFILEADV  StatAsyncTime;
-    STAMPROFILE     StatLockWait;
+    STAMCOUNTER         StatAsyncOps;
+    uint64_t            StatAsyncMinWait;
+    uint64_t            StatAsyncMaxWait;
+    STAMCOUNTER         StatAsyncTimeUS;
+    STAMPROFILEADV      StatAsyncTime;
+    STAMPROFILE         StatLockWait;
 } ATACONTROLLER, *PATACONTROLLER;
 AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);
@@ -485,42 +562,33 @@ typedef enum CHIPSET
  */
 typedef struct PCIATAState
 {
-    PDMPCIDEV           dev;
+    PDMPCIDEV                       dev;
     /** The controllers. */
-    ATACONTROLLER       aCts[2];
+    ATACONTROLLER                   aCts[2];
     /** Pointer to device instance. */
-    PPDMDEVINSR3        pDevIns;
+    PPDMDEVINSR3                    pDevIns;
     /** Status LUN: Base interface. */
-    PDMIBASE            IBase;
+    PDMIBASE                        IBase;
     /** Status LUN: Leds interface. */
-    PDMILEDPORTS        ILeds;
+    PDMILEDPORTS                    ILeds;
     /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
     /** Status LUN: Media Notify. */
     R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
     /** Flag whether RC is enabled. */
-    bool                fRCEnabled;
+    bool                            fRCEnabled;
     /** Flag whether R0 is enabled. */
-    bool                fR0Enabled;
+    bool                            fR0Enabled;
     /** Flag indicating chipset being emulated. */
-    uint8_t             u8Type;
-    bool                Alignment0[HC_ARCH_BITS == 64 ? 5 : 1 ]; /**< Align the struct size. */
+    uint8_t                         u8Type;
+    bool                            Alignment0[HC_ARCH_BITS == 64 ? 5 : 1 ]; /**< Align the struct size. */
 } PCIATAState;
-
-#define PDMIBASE_2_PCIATASTATE(pInterface)      ( (PCIATAState *)((uintptr_t)(pInterface) - RT_OFFSETOF(PCIATAState, IBase)) )
-#define PDMILEDPORTS_2_PCIATASTATE(pInterface)  ( (PCIATAState *)((uintptr_t)(pInterface) - RT_OFFSETOF(PCIATAState, ILeds)) )
-#define PDMIMEDIAPORT_2_ATASTATE(pInterface)    ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IPort)) )
-#define PDMIMOUNT_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IMount)) )
-#define PDMIMOUNTNOTIFY_2_ATASTATE(pInterface)  ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IMountNotify)) )
-#define PCIDEV_2_PCIATASTATE(pPciDev)           ( (PCIATAState *)(pPciDev) )
 
 #define ATACONTROLLER_IDX(pController) ( (pController) - PDMINS_2_DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
 
 #define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTX_SUFF(pController) )
 #define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTX_SUFF(pDevIns) )
 #define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTX_SUFF(pDevIns) )
-#define PDMIBASE_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IBase)) )
-#define PDMIMEDIAPORT_2_ATASTATE(pInterface)   ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IPort)) )
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -3706,7 +3774,7 @@ static void ataR3MediumInserted(ATADevState *s)
  */
 static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
-    ATADevState *pIf = PDMIMOUNTNOTIFY_2_ATASTATE(pInterface);
+    ATADevState *pIf = RT_FROM_MEMBER(pInterface, ATADevState, IMountNotify);
     Log(("%s: changing LUN#%d\n", __FUNCTION__, pIf->iLUN));
 
     /* Ignore the call if we're called while being attached. */
@@ -3732,7 +3800,7 @@ static DECLCALLBACK(void) ataR3MountNotify(PPDMIMOUNTNOTIFY pInterface)
  */
 static DECLCALLBACK(void) ataR3UnmountNotify(PPDMIMOUNTNOTIFY pInterface)
 {
-    ATADevState *pIf = PDMIMOUNTNOTIFY_2_ATASTATE(pInterface);
+    ATADevState *pIf = RT_FROM_MEMBER(pInterface, ATADevState, IMountNotify);
     Log(("%s:\n", __FUNCTION__));
     pIf->cTotalSectors = 0;
 
@@ -5112,10 +5180,9 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
     PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
     ATADevState *s = &pCtl->aIfs[pCtl->iAIOIf];
     bool fRedo;
-    RTGCPHYS32 pDesc;
+    RTGCPHYS32 GCPhysDesc;
     uint32_t cbTotalTransfer, cbElementaryTransfer;
     uint32_t iIOBufferCur, iIOBufferEnd;
-    uint32_t dmalen;
     PDMMEDIATXDIR uTxDir;
     bool fLastDesc = false;
 
@@ -5139,23 +5206,25 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
          __FUNCTION__, uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "T2I" : "I2T",
          cbTotalTransfer, cbElementaryTransfer,
          iIOBufferCur, iIOBufferEnd));
-    for (pDesc = pCtl->pFirstDMADesc; pDesc <= pCtl->pLastDMADesc; pDesc += sizeof(BMDMADesc))
+    for (GCPhysDesc = pCtl->GCPhysFirstDMADesc;
+         GCPhysDesc <= pCtl->GCPhysLastDMADesc;
+         GCPhysDesc += sizeof(BMDMADesc))
     {
         BMDMADesc DMADesc;
-        RTGCPHYS32 pBuffer;
+        RTGCPHYS32 GCPhysBuffer;
         uint32_t cbBuffer;
 
         if (RT_UNLIKELY(fRedo))
         {
-            pBuffer = pCtl->pRedoDMABuffer;
+            GCPhysBuffer = pCtl->GCPhysRedoDMABuffer;
             cbBuffer = pCtl->cbRedoDMABuffer;
             fLastDesc = pCtl->fRedoDMALastDesc;
-            DMADesc.pBuffer = DMADesc.cbBuffer = 0; /* Shut up MSC. */
+            DMADesc.GCPhysBuffer = DMADesc.cbBuffer = 0; /* Shut up MSC. */
         }
         else
         {
-            PDMDevHlpPhysRead(pDevIns, pDesc, &DMADesc, sizeof(BMDMADesc));
-            pBuffer = RT_LE2H_U32(DMADesc.pBuffer);
+            PDMDevHlpPhysRead(pDevIns, GCPhysDesc, &DMADesc, sizeof(BMDMADesc));
+            GCPhysBuffer = RT_LE2H_U32(DMADesc.GCPhysBuffer);
             cbBuffer = RT_LE2H_U32(DMADesc.cbBuffer);
             fLastDesc = !!(cbBuffer & 0x80000000);
             cbBuffer &= 0xfffe;
@@ -5169,19 +5238,19 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
         {
             if (RT_LIKELY(!fRedo))
             {
-                dmalen = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
+                uint32_t cbXfer = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x orig_size=%#010x\n", __FUNCTION__,
-                       (int)pDesc, pBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
+                       (int)GCPhysDesc, GCPhysBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
 
                 if (uTxDir == PDMMEDIATXDIR_FROM_DEVICE)
-                    PDMDevHlpPCIPhysWrite(pDevIns, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, cbXfer);
                 else
-                    PDMDevHlpPCIPhysRead(pDevIns, pBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, dmalen);
+                    PDMDevHlpPCIPhysRead(pDevIns, GCPhysBuffer, s->CTX_SUFF(pbIOBuffer) + iIOBufferCur, cbXfer);
 
-                iIOBufferCur += dmalen;
-                cbTotalTransfer -= dmalen;
-                cbBuffer -= dmalen;
-                pBuffer += dmalen;
+                iIOBufferCur    += cbXfer;
+                cbTotalTransfer -= cbXfer;
+                cbBuffer        -= cbXfer;
+                GCPhysBuffer    += cbXfer;
             }
             if (    iIOBufferCur == iIOBufferEnd
                 &&  (uTxDir == PDMMEDIATXDIR_TO_DEVICE || cbTotalTransfer))
@@ -5209,8 +5278,8 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                     fRedo = g_apfnSourceSinkFuncs[s->iSourceSink](s);
                     if (RT_UNLIKELY(fRedo))
                     {
-                        pCtl->pFirstDMADesc = pDesc;
-                        pCtl->pRedoDMABuffer = pBuffer;
+                        pCtl->GCPhysFirstDMADesc = GCPhysDesc;
+                        pCtl->GCPhysRedoDMABuffer = GCPhysBuffer;
                         pCtl->cbRedoDMABuffer = cbBuffer;
                         pCtl->fRedoDMALastDesc = fLastDesc;
                     }
@@ -5229,7 +5298,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                 else
                 {
                     /* This forces the loop to exit immediately. */
-                    pDesc = pCtl->pLastDMADesc + 1;
+                    GCPhysDesc = pCtl->GCPhysLastDMADesc + 1;
                 }
 
                 PDMCritSectLeave(&pCtl->lock);
@@ -5257,7 +5326,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
             if (!pCtl->fReset)
                 ataR3DMATransferStop(s);
             /* This forces the loop to exit immediately. */
-            pDesc = pCtl->pLastDMADesc + 1;
+            GCPhysDesc = pCtl->GCPhysLastDMADesc + 1;
         }
 
         PDMCritSectLeave(&pCtl->lock);
@@ -5559,8 +5628,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 {
                     /* The specs say that the descriptor table must not cross a
                      * 4K boundary. */
-                    pCtl->pFirstDMADesc = bm->pvAddr;
-                    pCtl->pLastDMADesc = RT_ALIGN_32(bm->pvAddr + 1, _4K) - sizeof(BMDMADesc);
+                    pCtl->GCPhysFirstDMADesc = bm->GCPhysAddr;
+                    pCtl->GCPhysLastDMADesc = RT_ALIGN_32(bm->GCPhysAddr + 1, _4K) - sizeof(BMDMADesc);
                 }
                 ataR3DMATransfer(pCtl);
 
@@ -5876,7 +5945,7 @@ static void ataBMDMAStatusWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t va
 
 static uint32_t ataBMDMAAddrReadL(PATACONTROLLER pCtl, uint32_t addr)
 {
-    uint32_t val = (uint32_t)pCtl->BmDma.pvAddr;
+    uint32_t val = (uint32_t)pCtl->BmDma.GCPhysAddr;
     RT_NOREF1(addr);
     Log2(("%s: addr=%#06x val=%#010x\n", __FUNCTION__, addr, val));
     return val;
@@ -5886,14 +5955,14 @@ static void ataBMDMAAddrWriteL(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
     RT_NOREF1(addr);
     Log2(("%s: addr=%#06x val=%#010x\n", __FUNCTION__, addr, val));
-    pCtl->BmDma.pvAddr = val & ~3;
+    pCtl->BmDma.GCPhysAddr = val & ~3;
 }
 
 static void ataBMDMAAddrWriteLowWord(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
     RT_NOREF1(addr);
     Log2(("%s: addr=%#06x val=%#010x\n", __FUNCTION__, addr, val));
-    pCtl->BmDma.pvAddr = (pCtl->BmDma.pvAddr & 0xFFFF0000) | RT_LOWORD(val & ~3);
+    pCtl->BmDma.GCPhysAddr = (pCtl->BmDma.GCPhysAddr & 0xFFFF0000) | RT_LOWORD(val & ~3);
 
 }
 
@@ -5901,7 +5970,7 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
 {
     Log2(("%s: addr=%#06x val=%#010x\n", __FUNCTION__, addr, val));
     RT_NOREF1(addr);
-    pCtl->BmDma.pvAddr = (RT_LOWORD(val) << 16) | RT_LOWORD(pCtl->BmDma.pvAddr);
+    pCtl->BmDma.GCPhysAddr = (RT_LOWORD(val) << 16) | RT_LOWORD(pCtl->BmDma.GCPhysAddr);
 }
 
 #define VAL(port, size)   ( ((port) & 7) | ((size) << 3) )
@@ -5984,8 +6053,8 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, cb, enmType);
-    PCIATAState *pThis = PCIDEV_2_PCIATASTATE(pPciDev);
+    RT_NOREF(iRegion, cb, enmType, pPciDev);
+    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int         rc = VINF_SUCCESS;
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(iRegion == 4);
@@ -6031,7 +6100,7 @@ static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPc
  */
 static DECLCALLBACK(void *) ataR3Status_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PCIATAState *pThis = PDMIBASE_2_PCIATASTATE(pInterface);
+    PCIATAState *pThis = RT_FROM_MEMBER(pInterface, PCIATAState, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
@@ -6050,7 +6119,7 @@ static DECLCALLBACK(void *) ataR3Status_QueryInterface(PPDMIBASE pInterface, con
  */
 static DECLCALLBACK(int) ataR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PCIATAState *pThis = PDMILEDPORTS_2_PCIATASTATE(pInterface);
+    PCIATAState *pThis = RT_FROM_MEMBER(pInterface, PCIATAState, ILeds);
     if (iLUN < 4)
     {
         switch (iLUN)
@@ -6074,7 +6143,7 @@ static DECLCALLBACK(int) ataR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, un
  */
 static DECLCALLBACK(void *) ataR3QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    ATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
+    ATADevState *pIf = RT_FROM_MEMBER(pInterface, ATADevState, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pIf->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pIf->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pIf->IMountNotify);
@@ -6090,7 +6159,7 @@ static DECLCALLBACK(void *) ataR3QueryInterface(PPDMIBASE pInterface, const char
 static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                   uint32_t *piInstance, uint32_t *piLUN)
 {
-    ATADevState *pIf = PDMIMEDIAPORT_2_ATASTATE(pInterface);
+    ATADevState *pIf = RT_FROM_MEMBER(pInterface, ATADevState, IPort);
     PPDMDEVINS pDevIns = pIf->CTX_SUFF(pDevIns);
 
     AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
@@ -6603,9 +6672,9 @@ static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         SSMR3PutBool(pSSM, pThis->aCts[i].fRedoIdle);
         SSMR3PutBool(pSSM, pThis->aCts[i].fRedoDMALastDesc);
         SSMR3PutMem(pSSM, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
-        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pFirstDMADesc);
-        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pLastDMADesc);
-        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].pRedoDMABuffer);
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].GCPhysFirstDMADesc);
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].GCPhysLastDMADesc);
+        SSMR3PutGCPhys32(pSSM, pThis->aCts[i].GCPhysRedoDMABuffer);
         SSMR3PutU32(pSSM, pThis->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
@@ -6776,9 +6845,9 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoIdle);
         SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoDMALastDesc);
         SSMR3GetMem(pSSM, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
-        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pFirstDMADesc);
-        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pLastDMADesc);
-        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].pRedoDMABuffer);
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].GCPhysFirstDMADesc);
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].GCPhysLastDMADesc);
+        SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].GCPhysRedoDMABuffer);
         SSMR3GetU32(pSSM, &pThis->aCts[i].cbRedoDMABuffer);
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
@@ -6984,7 +7053,7 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
          * default is 0x00. */
         pThis->aCts[i].BmDma.u8Status =   (pThis->aCts[i].aIfs[0].pDrvBase != NULL ? BM_STATUS_D0DMA : 0)
                                         | (pThis->aCts[i].aIfs[1].pDrvBase != NULL ? BM_STATUS_D1DMA : 0);
-        pThis->aCts[i].BmDma.pvAddr = 0;
+        pThis->aCts[i].BmDma.GCPhysAddr = 0;
 
         pThis->aCts[i].fReset = true;
         pThis->aCts[i].fRedo = false;
