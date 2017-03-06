@@ -40,9 +40,8 @@ import time;
 # Only the main script needs to modify the path.
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
 g_ksVmmAllDir = os.path.join(os.path.dirname(g_ksValidationKitDir), 'VMM', 'VMMAll')
-sys.path.extend([g_ksValidationKitDir, g_ksVmmAllDir]);
+sys.path.append(g_ksVmmAllDir);
 
-from common import utils;
 import IEMAllInstructionsPython as iai;
 
 # Python 3 hacks:
