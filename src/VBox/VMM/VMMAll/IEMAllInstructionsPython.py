@@ -33,6 +33,8 @@ terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
 
+# pylint: disable=anomalous-backslash-in-string
+
 # Standard python imports.
 import os
 import re
@@ -277,21 +279,22 @@ g_kdHints = {
     'cond_controlflow':      'DISOPTYPE_COND_CONTROLFLOW',      ##<
     'interrupt':             'DISOPTYPE_INTERRUPT',             ##<
     'illegal':               'DISOPTYPE_ILLEGAL',               ##<
-    'rrm_dangerous':         'DISOPTYPE_RRM_DANGEROUS',         ##< Some additional dangerous ones when recompiling raw r0. */
-    'rrm_dangerous_16':      'DISOPTYPE_RRM_DANGEROUS_16',      ##< Some additional dangerous ones when recompiling 16-bit raw r0. */
+    'rrm_dangerous':         'DISOPTYPE_RRM_DANGEROUS',         ##< Some additional dangerous ones when recompiling raw r0.
+    'rrm_dangerous_16':      'DISOPTYPE_RRM_DANGEROUS_16',      ##< Some additional dangerous ones when recompiling 16-bit raw r0.
     'inhibit_irqs':          'DISOPTYPE_INHIBIT_IRQS',          ##< Will or can inhibit irqs (sti, pop ss, mov ss) */
     'portio_read':           'DISOPTYPE_PORTIO_READ',           ##<
     'portio_write':          'DISOPTYPE_PORTIO_WRITE',          ##<
-    'invalid_64':            'DISOPTYPE_INVALID_64',            ##< Invalid in 64 bits mode */
-    'only_64':               'DISOPTYPE_ONLY_64',               ##< Only valid in 64 bits mode */
-    'default_64_op_size':    'DISOPTYPE_DEFAULT_64_OP_SIZE',    ##< Default 64 bits operand size */
-    'forced_64_op_size':     'DISOPTYPE_FORCED_64_OP_SIZE',     ##< Forced 64 bits operand size; regardless of prefix bytes */
-    'rexb_extends_opreg':    'DISOPTYPE_REXB_EXTENDS_OPREG',    ##< REX.B extends the register field in the opcode byte */
-    'mod_fixed_11':          'DISOPTYPE_MOD_FIXED_11',          ##< modrm.mod is always 11b */
-    'forced_32_op_size_x86': 'DISOPTYPE_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
-    'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet! */
-    'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet! */
-    'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet! */
+    'invalid_64':            'DISOPTYPE_INVALID_64',            ##< Invalid in 64 bits mode
+    'only_64':               'DISOPTYPE_ONLY_64',               ##< Only valid in 64 bits mode
+    'default_64_op_size':    'DISOPTYPE_DEFAULT_64_OP_SIZE',    ##< Default 64 bits operand size
+    'forced_64_op_size':     'DISOPTYPE_FORCED_64_OP_SIZE',     ##< Forced 64 bits operand size; regardless of prefix bytes
+    'rexb_extends_opreg':    'DISOPTYPE_REXB_EXTENDS_OPREG',    ##< REX.B extends the register field in the opcode byte
+    'mod_fixed_11':          'DISOPTYPE_MOD_FIXED_11',          ##< modrm.mod is always 11b
+    'forced_32_op_size_x86': 'DISOPTYPE_FORCED_32_OP_SIZE_X86', ##< Forced 32 bits operand size; regardless of prefix bytes
+                                                                ##  (only in 16 & 32 bits mode!)
+    'sse':                   'DISOPTYPE_SSE',                   ##< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet!
+    'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
+    'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
     'ignores_op_size':       '',                                ##< Ignores both operand size prefixes.
 };
 
@@ -566,6 +569,7 @@ class TestType(object):
         """
         Checks if sValue is a pair.
         """
+        _ = sValue;
         return False;
 
 
@@ -594,9 +598,9 @@ class TestTypeEflags(TestType):
         aoSet = TestType.get(self, '0x%x' % (fSet,));
         if fClear != 0:
             aoClear = TestType.get(self, '%#x' % (~fClear))
-            assert self.isAndOrPair(sValue) == True;
+            assert self.isAndOrPair(sValue) is True;
             return (aoClear[0], aoSet[0]);
-        assert self.isAndOrPair(sValue) == False;
+        assert self.isAndOrPair(sValue) is False;
         return aoSet;
 
     def isAndOrPair(self, sValue):
@@ -841,7 +845,7 @@ class Operand(object):
 
 
 
-class Instruction(object):
+class Instruction(object): # pylint: disable=too-many-instance-attributes
     """
     Instruction.
     """
@@ -855,7 +859,7 @@ class Instruction(object):
         self.aoMaps         = [];       # type: list(InstructionMap)
         self.aoOperands     = [];       # type: list(Operand)
         self.sPrefix        = None;     ##< Single prefix: None, 0x66, 0xf3, 0xf2
-        self.sOpcode        = None;
+        self.sOpcode        = None;     # type: str
         self.sEncoding      = None;
         self.asFlTest       = None;
         self.asFlModify     = None;
@@ -958,17 +962,17 @@ class Instruction(object):
         """
         if self.sOpcode is None:
             raise Exception('No opcode byte for %s!' % (self,));
+        sOpcode = str(self.sOpcode);    # pylint type confusion workaround.
 
         # Full hex byte form.
-        if self.sOpcode[:2] == '0x':
-            return int(self.sOpcode, 16);
+        if sOpcode[:2] == '0x':
+            return int(sOpcode, 16);
 
         # The /r form:
-        if self.sOpcode[0] == '/' and self.sOpcode[1].isdigit() and len(self.sOpcode) == 2:
-            return int(self.sOpcode[1:]) << 3;
+        if sOpcode[0] == '/' and sOpcode[1].isdigit() and len(sOpcode) == 2:
+            return int(sOpcode[1:]) << 3;
 
-        raise Exception('unsupported opcode byte spec "%s" for %s' % (self.sOpcode, self,));
-        return -1;
+        raise Exception('unsupported opcode byte spec "%s" for %s' % (sOpcode, self,));
 
 
 
@@ -1013,7 +1017,6 @@ g_dInstructionMaps = {
     'grpA17':       InstructionMap('grpA17',    asLeadOpcodes = ['0x0f', '0x78',], sSelector = '/r'), # AMD: EXTRQ weirdness
     'grpP':         InstructionMap('grpP',      asLeadOpcodes = ['0x0f', '0x0d',], sSelector = '/r'), # AMD: prefetch
 
-    'three0f38':    InstructionMap('three0f38', asLeadOpcodes = ['0x0f', '0x38',]),
     'three0f38':    InstructionMap('three0f38', asLeadOpcodes = ['0x0f', '0x38',]),
     'three0f3a':    InstructionMap('three0f3a', asLeadOpcodes = ['0x0f', '0x3a',]),
 
@@ -1151,6 +1154,7 @@ class SimpleParser(object):
 
     def debug(self, sMessage):
         """
+        For debugging.
         """
         if self.fDebug:
             print('debug: %s' % (sMessage,));
@@ -1334,7 +1338,7 @@ class SimpleParser(object):
         Returns list of strings, on section per string.
         """
         asRet = [];
-        for asLines in assSections:
+        for asLines in aasSections:
             if len(asLines) > 0:
                 asRet.append(' '.join([sLine.strip() for sLine in asLines]));
         return asRet;
@@ -1400,7 +1404,7 @@ class SimpleParser(object):
         It is used to describe instructions.
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
-        if len(self.aoInstructions) > 0 and len(aasSections) > 0:
+        if len(aasSections) > 0:
             oInstr.asDescSections.extend(self.flattenSections(aasSections));
             return True;
 
@@ -1466,7 +1470,7 @@ class SimpleParser(object):
             sWhere = g_kdOpTypes[sType][1];
         elif sWhere not in g_kdOpLocations:
             return self.errorComment(iTagLine, '%s: invalid where value "%s", valid: %s'
-                                               % (sTag, sWhere, ', '.join(g_kdOpLocations.keys()),), iTagLine);
+                                               % (sTag, sWhere, ', '.join(g_kdOpLocations.keys()),));
 
         # Insert the operand, refusing to overwrite an existing one.
         while idxOp >= len(oInstr.aoOperands):
@@ -1641,7 +1645,6 @@ class SimpleParser(object):
         'of':   'X86_EFL_OF',
         'sf':   'X86_EFL_SF',
         'zf':   'X86_EFL_ZF',
-        'cf':   'X86_EFL_CF',
         'pf':   'X86_EFL_PF',
         'if':   'X86_EFL_IF',
         'df':   'X86_EFL_DF',
@@ -1769,7 +1772,7 @@ class SimpleParser(object):
 
         sMinCpu = asCpus[0];
         if sMinCpu in g_kdCpuNames:
-            self.sMinCpu = sMinCpu;
+            oInstr.sMinCpu = sMinCpu;
         else:
             return self.errorComment(iTagLine, '%s: invalid CPU name: %s  (names: %s)'
                                                % (sTag, sMinCpu, ','.join(sorted(g_kdCpuNames)),));
@@ -1881,7 +1884,7 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    def parseTagOpTest(self, sTag, aasSections, iTagLine, iEndLine):
+    def parseTagOpTest(self, sTag, aasSections, iTagLine, iEndLine): # pylint: disable=too-many-locals
         """
         Tag:        \@optest
         Value:      [<selectors>[ ]?] <inputs> -> <outputs>
@@ -2018,6 +2021,7 @@ class SimpleParser(object):
                 self.errorComment(iTagLine, '%s: asSelectors=%s / asInputs=%s -> asOutputs=%s'
                                             % (sTag, asSelectors, asInputs, asOutputs,));
 
+        _ = iEndLine;
         return True;
 
     def parseTagOpFunction(self, sTag, aasSections, iTagLine, iEndLine):
@@ -2038,11 +2042,11 @@ class SimpleParser(object):
         sFunction = self.flattenAllSections(aasSections);
         if not self.oReFunctionName.match(sFunction):
             return self.errorComment(iTagLine, '%s: invalid VMM function name: "%s" (valid: %s)'
-                                               % (sTag, Name, self.oReFunctionName.pattern));
+                                               % (sTag, sFunction, self.oReFunctionName.pattern));
 
         if oInstr.sFunction is not None:
             return self.errorComment(iTagLine, '%s: attempting to overwrite VMM function name "%s" with "%s"'
-                                     % (sTag, oInstr.sStats, sStats,));
+                                     % (sTag, oInstr.sFunction, sFunction,));
         oInstr.sFunction = sFunction;
 
         _ = iEndLine;
@@ -2066,7 +2070,7 @@ class SimpleParser(object):
         sStats = self.flattenAllSections(aasSections);
         if not self.oReStatsName.match(sStats):
             return self.errorComment(iTagLine, '%s: invalid VMM statistics name: "%s" (valid: %s)'
-                                               % (sTag, Name, self.oReStatsName.pattern));
+                                               % (sTag, sStats, self.oReStatsName.pattern));
 
         if oInstr.sStats is not None:
             return self.errorComment(iTagLine, '%s: attempting to overwrite VMM statistics base name "%s" with "%s"'
@@ -2200,7 +2204,7 @@ class SimpleParser(object):
         # First the name.
         offOpen = sInvocation.find('(');
         if offOpen <= 0:
-            raiseError("macro invocation open parenthesis not found");
+            self.raiseError("macro invocation open parenthesis not found");
         sName = sInvocation[:offOpen].strip();
         if not self.oReMacroName.match(sName):
             return self.error("invalid macro name '%s'" % (sName,));
@@ -2257,7 +2261,8 @@ class SimpleParser(object):
                 return asRet;
         return None;
 
-    def workerIemOpMnemonicEx(self, sMacro, sStats, sAsm, sForm, sUpper, sLower, sDisHints, sIemHints, asOperands):
+    def workerIemOpMnemonicEx(self, sMacro, sStats, sAsm, sForm, sUpper, sLower,  # pylint: disable=too-many-arguments
+                              sDisHints, sIemHints, asOperands):
         """
         Processes one of the a IEMOP_MNEMONIC0EX, IEMOP_MNEMONIC1EX, IEMOP_MNEMONIC2EX,
         IEMOP_MNEMONIC3EX, and IEMOP_MNEMONIC4EX macros.
@@ -2288,7 +2293,7 @@ class SimpleParser(object):
             oInstr.iLineMnemonicMacro = self.iLine;
         else:
             self.error('%s: already saw a IEMOP_MNEMONIC* macro on line %u for this instruction'
-                       % (sMacro, self.iLineMnemonicMacro,));
+                       % (sMacro, oInstr.iLineMnemonicMacro,));
 
         # Mnemonic
         if oInstr.sMnemonic is None:
@@ -2299,7 +2304,7 @@ class SimpleParser(object):
         # Process operands.
         if len(oInstr.aoOperands) not in [0, len(asOperands)]:
             self.error('%s: number of operands given by @opN does not match macro: %s vs %s'
-                       % (sMacro, len(oInstr.aoOperands), len(aoOperands),));
+                       % (sMacro, len(oInstr.aoOperands), len(asOperands),));
         for iOperand, sType in enumerate(asOperands):
             sWhere = g_kdOpTypes.get(sType, [None, None])[1];
             if sWhere is None:
@@ -2367,6 +2372,7 @@ class SimpleParser(object):
                 self.error('%s: expected a_fIemHints value: %s' % (sMacro, sHint,));
 
 
+        _ = sAsm;
         return True;
 
     def workerIemOpMnemonic(self, sMacro, sForm, sUpper, sLower, sDisHints, sIemHints, asOperands):
@@ -2375,7 +2381,7 @@ class SimpleParser(object):
         IEMOP_MNEMONIC3, and IEMOP_MNEMONIC4 macros.
         """
         if asOperands == 0:
-            return self.workerIemOpMnemonicEx(sLower, sLower, sForm, sUpper, sLower, sDisHints, sIemHints, asOperands);
+            return self.workerIemOpMnemonicEx(sMacro, sLower, sLower, sForm, sUpper, sLower, sDisHints, sIemHints, asOperands);
         return self.workerIemOpMnemonicEx(sMacro, sLower + '_' + '_'.join(asOperands), sLower + ' ' + ','.join(asOperands),
                                           sForm, sUpper, sLower, sDisHints, sIemHints, asOperands);
 
@@ -2430,17 +2436,18 @@ class SimpleParser(object):
             if asArgs is not None:
                 self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[7], asArgs[8],
                                            [asArgs[6],]);
-            # IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC2EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2EX');
             if asArgs is not None:
                 self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[8], asArgs[9],
                                            [asArgs[6], asArgs[7]]);
-            # IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC3EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3EX');
             if asArgs is not None:
                 self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[9],
                                            asArgs[10], [asArgs[6], asArgs[7], asArgs[8],]);
-            # IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC4EX(a_Stats, a_szMnemonic, a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints,
+            #                   a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4EX');
             if asArgs is not None:
                 self.workerIemOpMnemonicEx(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[4], asArgs[5], asArgs[10],
@@ -2454,17 +2461,17 @@ class SimpleParser(object):
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC1');
             if asArgs is not None:
                 self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[5], asArgs[6], [asArgs[4],]);
-            # IEMOP_MNEMONIC2(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC2(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_fDisHints, a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC2');
             if asArgs is not None:
                 self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[6], asArgs[7],
                                          [asArgs[4], asArgs[5],]);
-            # IEMOP_MNEMONIC3(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC3(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_fDisHints, a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC3');
             if asArgs is not None:
                 self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[7], asArgs[8],
                                          [asArgs[4], asArgs[5], asArgs[6],]);
-            # IEMOP_MNEMONIC4(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints) \
+            # IEMOP_MNEMONIC4(a_Form, a_Upper, a_Lower, a_Op1, a_Op2, a_Op3, a_Op4, a_fDisHints, a_fIemHints)
             asArgs = self.findAndParseMacroInvocation(sCode, 'IEMOP_MNEMONIC4');
             if asArgs is not None:
                 self.workerIemOpMnemonic(asArgs[0], asArgs[1], asArgs[2], asArgs[3], asArgs[8], asArgs[9],
@@ -2602,7 +2609,9 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
     Generates disassembler tables.
     """
 
-    for sName, oMap in sorted(iter(g_dInstructionMaps.items()), key = lambda k_v: k_v[1].sEncoding + ''.join(k_v[1].asLeadOpcodes)):
+    for sName, oMap in sorted(iter(g_dInstructionMaps.items()),
+                              key = lambda aKV: aKV[1].sEncoding + ''.join(aKV[1].asLeadOpcodes)):
+        assert oMap.sName == sName;
         asLines = [];
 
         asLines.append('/* Generated from: %-11s  Selector: %-7s  Encoding: %-7s  Lead bytes opcodes: %s */'
@@ -2742,7 +2751,8 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
                         sLine += ' ';
                     sLine += s;
 
-                # OP("psrlw %Vdq,%Wdq", IDX_ParseModRM, IDX_UseModRM, 0, OP_PSRLW, OP_PARM_Vdq, OP_PARM_Wdq, OP_PARM_NONE, DISOPTYPE_HARMLESS),
+                # OP("psrlw %Vdq,%Wdq", IDX_ParseModRM, IDX_UseModRM, 0, OP_PSRLW, OP_PARM_Vdq, OP_PARM_Wdq, OP_PARM_NONE,
+                # DISOPTYPE_HARMLESS),
                 # define OP(pszOpcode, idxParse1, idxParse2, idxParse3, opcode, param1, param2, param3, optype) \
                 # { pszOpcode, idxParse1, idxParse2, idxParse3, 0, opcode, param1, param2, param3, 0, 0, optype }
 
