@@ -44,10 +44,10 @@ import unittest;
 
 if sys.platform == 'win32':
     import ctypes;
-    import win32api;            # pylint: disable=F0401
-    import win32con;            # pylint: disable=F0401
-    import win32console;        # pylint: disable=F0401
-    import win32process;        # pylint: disable=F0401
+    import win32api;            # pylint: disable=import-error
+    import win32con;            # pylint: disable=import-error
+    import win32console;        # pylint: disable=import-error
+    import win32process;        # pylint: disable=import-error
 else:
     import signal;
 
