@@ -2602,7 +2602,7 @@ def generateDisassemblerTables(oDstFile = sys.stdout):
     Generates disassembler tables.
     """
 
-    for sName, oMap in sorted(g_dInstructionMaps.iteritems(), key = lambda(k,v): v.sEncoding + ''.join(v.asLeadOpcodes)):
+    for sName, oMap in sorted(iter(g_dInstructionMaps.items()), key = lambda k_v: k_v[1].sEncoding + ''.join(k_v[1].asLeadOpcodes)):
         asLines = [];
 
         asLines.append('/* Generated from: %-11s  Selector: %-7s  Encoding: %-7s  Lead bytes opcodes: %s */'
