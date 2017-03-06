@@ -15,6 +15,7 @@ MimeType=application/x-virtualbox-vbox;application/x-virtualbox-vbox-extpack;app
 DocPath=file://@VBOX_DOC_PATH@/UserManual.pdf
 Icon=virtualbox
 Categories=Emulator;System;
+Actions=Manager;
 Comment=Run several virtual systems on a single host computer
 Comment[de]=Mehrere virtuelle Maschinen auf einem einzigen Rechner ausführen
 Comment[it]=Esegui più macchine virtuali su un singolo computer
@@ -22,3 +23,8 @@ Comment[ko]=가상 머신
 Comment[pl]=Uruchamianie wielu systemów wirtualnych na jednym komputerze gospodarza
 Comment[ru]=Запуск нескольких виртуальных машин на одном компьютере
 Comment[sv]=Kör flera virtuella system på en enda värddator
+
+[Desktop Action Manager]
+Exec=VirtualBox
+Name=Open VirtualBox Manager
+Name[de]=VirtualBox Manager öffnen
