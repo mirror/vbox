@@ -270,6 +270,14 @@ class Bs3Cg1Instruction(object):
             self.sEncoding     += '_' + oOp.sType;
         self.asFlags            = [];
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
+        if self.sEncoding == 'ModR/M':
+            if 'ignores_op_size' not in oInstr.dHints:
+                self.sPfxKind   = 'BS3CGPFXKIND_MODRM';
+            else:
+                self.sPfxKind   = 'BS3CGPFXKIND_MODRM_NO_OP_SIZES';
+        else:
+            self.sPfxKind       = '0';
+
 
     def getOperands(self):
         """ Returns comma separated string of operand values for g_abBs3Cg1Operands. """
@@ -278,12 +286,13 @@ class Bs3Cg1Instruction(object):
     def getInstructionEntry(self):
         """ Returns an array of BS3CG1INSTR member initializers. """
         return [
-            '        /* cbOpcode = */         %s,' % (len(self.asOpcodes),),
+            '        /* cbOpcodes = */        %s,' % (len(self.asOpcodes),),
             '        /* cOperands = */        %s,' % (len(self.oInstr.aoOperands),),
             '        /* cchMnemonic = */      %s,' % (len(self.oInstr.sMnemonic),),
             '        /* fAdvanceMnemonic = */ %s,' % ('true' if self.fAdvanceMnemonic else 'false',),
             '        /* offTests = */         %s,' % (self.oTests.offTests,),
             '        /* enmEncoding = */      (unsigned)%s,' % (self.sEncoding,),
+            '        /* enmPfxKind = */       (unsigned)%s,' % (self.sPfxKind,),
             '        /* uUnused = */          0,',
             '        /* fFlags = */           %s' % (' | '.join(self.asFlags) if self.asFlags else '0'),
         ];

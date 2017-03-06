@@ -47,6 +47,12 @@ typedef enum BS3CG1OP
     BS3CG1OP_Gb,
     BS3CG1OP_Gv,
 
+    BS3CG1OP_Ib,
+    BS3CG1OP_Iz,
+
+    BS3CG1OP_AL,
+    BS3CG1OP_rAX,
+
     BS3CG1OP_END
 } BS3CG1OP;
 /** Pointer to a const operand enum. */
@@ -63,15 +69,28 @@ typedef enum BS3CG1ENC
 {
     BS3CG1ENC_INVALID = 0,
 
-    BS3CG1ENC_FIXED_Iz,
-    BS3CG1ENC_FIXED_FIRST = BS3CG1ENC_FIXED_Iz,
-    BS3CG1ENC_FIXED_Iv,
-
     BS3CG1ENC_MODRM_Eb_Gb,
     BS3CG1ENC_MODRM_Ev_Gv,
 
+    BS3CG1ENC_FIXED_AL_Ib,
+    BS3CG1ENC_FIXED_rAX_Iz,
+
     BS3CG1ENC_END
 } BS3CG1ENC;
+
+
+/**
+ * Prefix sensitivitiy kind.
+ */
+typedef enum BS3CGPFXKIND
+{
+    BS3CGPFXKIND_INVALID = 0,
+
+    BS3CGPFXKIND_MODRM,
+    BS3CGPFXKIND_MODRM_NO_OP_SIZES,
+
+    BS3CGPFXKIND_END
+} BS3CGPFXKIND;
 
 
 /**
@@ -80,7 +99,7 @@ typedef enum BS3CG1ENC
 typedef struct BS3CG1INSTR
 {
     /** The opcode size.   */
-    uint32_t    cbOpcode : 2;
+    uint32_t    cbOpcodes : 2;
     /** The number of operands.   */
     uint32_t    cOperands : 2;
     /** The length of the mnemonic. */
@@ -91,8 +110,10 @@ typedef struct BS3CG1INSTR
     uint32_t    offTests : 23;
     /** BS3CG1ENC values. */
     uint32_t    enmEncoding : 10;
-    /** BS3CG1ENC values. */
-    uint32_t    uUnused : 22;
+    /** BS3CGPFXKIND values. */
+    uint32_t    enmPrefixKind : 4;
+    /** Currently unused bits. */
+    uint32_t    uUnused : 18;
     /** BS3CG1INSTR_F_XXX. */
     uint32_t    fFlags;
 } BS3CG1INSTR;
@@ -103,7 +124,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
 
 /** @name BS3CG1INSTR_F_XXX
  * @{ */
-#define BS3CG1INSTR_F_          UINT32_C(0x00000000)
+/** Defaults to SS rather than DS. */
+#define BS3CG1INSTR_F_DEF_SS            UINT32_C(0x00000001)
 /** @} */
 
 
@@ -330,7 +352,7 @@ extern const uint16_t BS3_FAR_DATA      g_cBs3Cg1Instructions;
 extern const char BS3_FAR_DATA          g_achBs3Cg1Mnemonics[];
 /** The opcodes (generated).
  * Variable length sequence of opcode bytes that runs in parallel to
- * g_aBs3Cg1Instructions, advancing by BS3CG1INSTR::cbOpcode each time. */
+ * g_aBs3Cg1Instructions, advancing by BS3CG1INSTR::cbOpcodes each time. */
 extern const uint8_t BS3_FAR_DATA       g_abBs3Cg1Opcodes[];
 /** The operands (generated).
  * Variable length sequence of opcode values (BS3CG1OP) that runs in

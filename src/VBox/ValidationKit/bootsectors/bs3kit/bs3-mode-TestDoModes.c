@@ -205,7 +205,9 @@ BS3_MODE_DEF(void, Bs3TestDoModes,(PCBS3TESTMODEENTRY paEntries, size_t cEntries
         const char *pszFmtStr = "Error #%u (%#x) in %s!\n";
         bool        fSkipped  = true;
         uint8_t     bErrNo;
-        Bs3TestSub(paEntries[i].pszSubTest);
+
+        if (paEntries[i].pszSubTest != NULL)
+            Bs3TestSub(paEntries[i].pszSubTest);
 
 #define PRE_DO_CALL(a_szModeName) do { if (fVerbose) Bs3TestPrintf("...%s\n", a_szModeName); } while (0)
 #define CHECK_RESULT(a_szModeName) \

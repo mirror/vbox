@@ -100,6 +100,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
  * @opcode      0x04
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
+ * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
 {
@@ -112,6 +113,7 @@ FNIEMOP_DEF(iemOp_add_Al_Ib)
  * @opcode      0x05
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
+ * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
  */
 FNIEMOP_DEF(iemOp_add_eAX_Iz)
 {

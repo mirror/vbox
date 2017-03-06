@@ -3037,6 +3037,7 @@ typedef FNBS3TESTDOMODE            *PFNBS3TESTDOMODE;
  */
 typedef struct BS3TESTMODEENTRY
 {
+    /** The sub-test name to be passed to Bs3TestSub if not NULL. */
     const char * BS3_FAR    pszSubTest;
 
     PFNBS3TESTDOMODE        pfnDoRM;
