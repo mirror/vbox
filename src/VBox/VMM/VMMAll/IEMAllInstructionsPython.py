@@ -38,12 +38,12 @@ import os
 import re
 import sys
 
-# Only the main script needs to modify the path.
-g_ksValidationKitDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                                    'ValidationKit');
-sys.path.append(g_ksValidationKitDir);
-
-from common import utils;
+## Only the main script needs to modify the path.
+#g_ksValidationKitDir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+#                                    'ValidationKit');
+#sys.path.append(g_ksValidationKitDir);
+#
+#from common import utils; - Windows build boxes doesn't have pywin32.
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
