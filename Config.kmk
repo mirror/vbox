@@ -1843,12 +1843,13 @@ VBOX_PYLINT_FLAGS = $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--reports=n,--repo
 	--good-names='i,j,k,t,o,c,e,ch,s,_' \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 10000,--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
 	$(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--max-nested-blocks=9,) \
-       $(if-expr $(VBOX_PYLINT_VERSION) >= 10100,--disable=C0326,) \
-       $(if-expr $(VBOX_PYLINT_VERSION) >= 10201,--disable=C0330 --disable=W0123,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10100,--disable=bad-whitespace,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10201,--disable=bad-continuation --disable=eval-used,) \
        $(if-expr $(VBOX_PYLINT_VERSION) >= 10201 && $(VBOX_PYLIN_VERSION) < 10500,--disable=bad-option-value,) \
-       $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=C0413 --disable=E0012 --disable=locally-enabled,) \
-       $(if-expr $(VBOX_PYLINT_VERSION) >= 10600,--disable=C0111 --disable=C0305 --disable=C0412,) \
-	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10500,--disable=wrong-import-position --disable=E0012 --disable=locally-enabled,) \
+       $(if-expr $(VBOX_PYLINT_VERSION) >= 10600,--disable=missing-docstring --disable=trailing-newlines --disable=ungrouped-imports,) \
+	--disable=unnecessary-semicolon,invalid-encoded-data,global-statement,bare-except,broad-except,multiple-statements,no-self-use \
+	--disable=I0011 \
 	--ignored-classes=testdriver.vboxcon \
 
 
