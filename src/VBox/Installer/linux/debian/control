@@ -34,7 +34,7 @@ XB-Python-Version: ${python:Versions}
 
 Package: virtualbox-5.1-dbg
 Architecture: i386 amd64
-Depends: virtualbox-5.1 (= ${Source-Version})
+Depends: virtualbox-5.1 (= ${binary:Version})
 Provides: virtualbox-dbg
 Replaces: virtualbox-dbg
 Conflicts: virtualbox-dbg, virtualbox-ose-dbg
