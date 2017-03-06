@@ -736,11 +736,21 @@ DECLINLINE(bool) pgmRZPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, un
  * @param   pRegFrame   Trap register frame.
  * @param   pDis        The disassembly info for the faulting instruction.
  * @param   pvFault     The fault address.
+ * @param   pPage       The pool page being accessed.
  *
  * @remark  The REP prefix check is left to the caller because of STOSD/W.
  */
-DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, RTGCPTR pvFault)
+DECLINLINE(bool) pgmRZPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, RTGCPTR pvFault,
+                                          PPGMPOOLPAGE pPage)
 {
+    /* Locked (CR3, PDPTR*4) should not be reusable.  Considering them as
+       such may cause loops booting tst-ubuntu-15_10-64-efi, ++. */
+    if (pPage->cLocked)
+    {
+        Log2(("pgmRZPoolMonitorIsReused: %RGv (%p) can't have been resued, because it's locked!\n", pvFault, pPage));
+        return false;
+    }
+
 # ifndef IN_RC
     /** @todo could make this general, faulting close to rsp should be a safe reuse heuristic. */
     if (   HMHasPendingIrq(pVM)
@@ -1187,7 +1197,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUIN
     if (    (   pPage->cModifications < cMaxModifications   /** @todo \#define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pgmPoolIsPageLocked(pPage)
             )
-        &&  !(fReused = pgmRZPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault))
+        &&  !(fReused = pgmRZPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault, pPage))
         &&  !pgmRZPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
@@ -1288,7 +1298,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUIN
         &&  !fForcedFlush
         &&  (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT || pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_32BIT_PT)
         &&  (   fNotReusedNotForking
-             || (   !pgmRZPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault)
+             || (   !pgmRZPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault, pPage)
                  && !pgmRZPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
             )
        )
