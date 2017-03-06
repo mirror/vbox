@@ -1318,7 +1318,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      */
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     PGSTPD          pPDSrc      = pgmGstGet32bitPDPtr(pVCpu);
-    const unsigned  iPDSrc      = GCPtrPage >> GST_PD_SHIFT;
+    const unsigned  iPDSrc      = (uint32_t)GCPtrPage >> GST_PD_SHIFT;
     GSTPDE          PdeSrc      = pPDSrc->a[iPDSrc];
 # else /* PGM_GST_TYPE != PGM_TYPE_32BIT */
     unsigned        iPDSrc = 0;
