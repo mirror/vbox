@@ -327,8 +327,8 @@ class Bs3CpuGenerated1Generator(object):
         # Group instructions by mnemonic to reduce the number of sub-tests.
         #
         for oInstr in sorted(iai.g_aoAllInstructions,
-                             key = lambda(oInstr): oInstr.sMnemonic + ''.join([oOp.sType for oOp in oInstr.aoOperands])
-                                                                    + (oInstr.sOpcode if oInstr.sOpcode else 'zz')):
+                             key = lambda oInstr: oInstr.sMnemonic + ''.join([oOp.sType for oOp in oInstr.aoOperands])
+                                                                   + (oInstr.sOpcode if oInstr.sOpcode else 'zz')):
             if len(oInstr.aoTests) > 0:
                 oTests = Bs3Cg1EncodedTests(oInstr);
                 oTests = self.addTests(oTests);
