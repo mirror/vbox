@@ -3915,7 +3915,7 @@ typedef struct PGMCPU
     /** The guest paging mode. */
     PGMMODE                         enmGuestMode;
 
-    /** The current physical address representing in the guest CR3 register. */
+    /** The current physical address represented in the guest CR3 register. */
     RTGCPHYS                        GCPhysCR3;
 
     /** @name 32-bit Guest Paging.
@@ -4140,6 +4140,7 @@ typedef PGMCPU *PPGMCPU;
 
 
 /** @name PGM::fSyncFlags Flags
+ * @note Was part of saved state a long time ago.
  * @{
  */
 /** Updates the virtual access handler state bit in PGMPAGE. */
