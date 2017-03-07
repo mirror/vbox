@@ -3715,6 +3715,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             break;
     }
 
+    /* Set the new guest CR3. */
+    pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
+
     /* status codes. */
     AssertRC(rc);
     AssertRC(rc2);
