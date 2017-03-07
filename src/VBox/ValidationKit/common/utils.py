@@ -186,7 +186,7 @@ def getHostOsVersion():
                     except:
                         continue;
                     sLine = sLine.strip()
-                    if len(sLine) > 0:
+                    if sLine:
                         sVersion += ' / ' + sPrefix + sLine;
                     break;
 
@@ -198,7 +198,7 @@ def getHostOsVersion():
                 sLast = oFile.readlines()[-1];
                 oFile.close();
                 sLast = sLast.strip();
-                if len(sLast) > 0:
+                if sLast:
                     sVersion += ' (' + sLast + ')';
             except:
                 pass;
@@ -429,7 +429,7 @@ def _processFixPythonInterpreter(aPositionalArgs, dKeywordArgs):
         asArgs = aPositionalArgs[0];
 
     if asArgs[0].endswith('.py'):
-        if sys.executable is not None  and  len(sys.executable) > 0:
+        if sys.executable:
             asArgs.insert(0, sys.executable);
         else:
             asArgs.insert(0, 'python');
@@ -741,7 +741,7 @@ def processCheckPidAndName(uPid, sName):
             if sCurName is None:
                 return False;
             sCurName = sCurName.strip();
-            if sCurName is '':
+            if not sCurName:
                 return False;
 
             if os.path.basename(sName) == sName:
@@ -914,10 +914,10 @@ class ProcessInfo(object):
             self.loadAll();
             sRet = self.sImage if self.sName is None else self.sName;
             if sRet is None:
-                if self.asArgs is None or len(self.asArgs) == 0:
+                if not self.asArgs:
                     return None;
                 sRet = self.asArgs[0];
-                if len(sRet) == 0:
+                if not sRet:
                     return None;
         return os.path.basename(sRet);
 
@@ -1285,7 +1285,7 @@ def formatIntervalSeconds(cSeconds):
         sRet += '%sm ' % (cMins,);
     if cSecs > 0:
         sRet += '%ss ' % (cSecs,);
-    assert len(sRet) > 0; assert sRet[-1] == ' ';
+    assert sRet; assert sRet[-1] == ' ';
     return sRet[:-1];
 
 def formatIntervalSeconds2(oSeconds):
@@ -1293,7 +1293,7 @@ def formatIntervalSeconds2(oSeconds):
     Flexible input version of formatIntervalSeconds for use in WUI forms where
     data is usually already string form.
     """
-    if isinstance(oSeconds, int) or isinstance(oSeconds, long):
+    if isinstance(oSeconds, (int, long)):
         return formatIntervalSeconds(oSeconds);
     if not isString(oSeconds):
         try:
@@ -1314,14 +1314,14 @@ def parseIntervalSeconds(sString):
 
     # We might given non-strings, just return them without any fuss.
     if not isString(sString):
-        if isinstance(sString, int) or isinstance(sString, long) or  sString is None:
+        if isinstance(sString, (int, long)) or sString is None:
             return (sString, None);
         ## @todo time/date objects?
         return (int(sString), None);
 
     # Strip it and make sure it's not empty.
     sString = sString.strip();
-    if len(sString) == 0:
+    if not sString:
         return (0, 'Empty interval string.');
 
     #
@@ -1334,9 +1334,9 @@ def parseIntervalSeconds(sString):
     asParts    = [];
     for sPart in asRawParts:
         sPart = sPart.strip();
-        if len(sPart) > 0:
+        if sPart:
             asParts.append(sPart);
-    if len(asParts) == 0:
+    if not asParts:
         return (0, 'Empty interval string or something?');
 
     #
@@ -1372,7 +1372,7 @@ def parseIntervalSeconds(sString):
             cSeconds += iNumber;
         else:
             asErrors.append('Bad number "%s".' % (sNumber,));
-    return (cSeconds, None if len(asErrors) == 0 else ' '.join(asErrors));
+    return (cSeconds, None if not asErrors else ' '.join(asErrors));
 
 def formatIntervalHours(cHours):
     """ Format a hours interval into a nice 1w 2d 1h string. """
@@ -1392,7 +1392,7 @@ def formatIntervalHours(cHours):
         sRet = '%sd ' % (cDays,);
     if cHours > 0:
         sRet += '%sh ' % (cHours,);
-    assert len(sRet) > 0; assert sRet[-1] == ' ';
+    assert sRet; assert sRet[-1] == ' ';
     return sRet[:-1];
 
 def parseIntervalHours(sString):
@@ -1404,14 +1404,14 @@ def parseIntervalHours(sString):
 
     # We might given non-strings, just return them without any fuss.
     if not isString(sString):
-        if isinstance(sString, int) or isinstance(sString, long) or  sString is None:
+        if isinstance(sString, (int, long)) or sString is None:
             return (sString, None);
         ## @todo time/date objects?
         return (int(sString), None);
 
     # Strip it and make sure it's not empty.
     sString = sString.strip();
-    if len(sString) == 0:
+    if not sString:
         return (0, 'Empty interval string.');
 
     #
@@ -1424,9 +1424,9 @@ def parseIntervalHours(sString):
     asParts    = [];
     for sPart in asRawParts:
         sPart = sPart.strip();
-        if len(sPart) > 0:
+        if sPart:
             asParts.append(sPart);
-    if len(asParts) == 0:
+    if not asParts:
         return (0, 'Empty interval string or something?');
 
     #
@@ -1458,7 +1458,7 @@ def parseIntervalHours(sString):
             cHours += iNumber;
         else:
             asErrors.append('Bad number "%s".' % (sNumber,));
-    return (cHours, None if len(asErrors) == 0 else ' '.join(asErrors));
+    return (cHours, None if not asErrors else ' '.join(asErrors));
 
 
 #
@@ -1518,7 +1518,7 @@ def getXcptInfo(cFrames = 1):
             except:
                 asRet.append('internal-error: Hit exception #2! %s' % (traceback.format_exc(),));
 
-            if len(asRet) == 0:
+            if not asRet:
                 asRet.append('No exception info...');
         except:
             asRet.append('internal-error: Hit exception! %s' % (traceback.format_exc(),));
@@ -1574,7 +1574,7 @@ def argsGetFirst(sCmdLine):
     Returns None on invalid syntax, otherwise the parsed and unescaped argv[0] string.
     """
     asArgs = argsSplit(sCmdLine);
-    if asArgs is None  or  len(asArgs) == 0:
+    if not asArgs:
         return None;
 
     return asArgs[0];
@@ -1788,7 +1788,7 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
                         sParentDir    = os.path.dirname(sLinkFile);
                         try:    os.unlink(sLinkFile);
                         except: pass;
-                        if sParentDir is not ''  and  not os.path.exists(sParentDir):
+                        if sParentDir and not os.path.exists(sParentDir):
                             os.makedirs(sParentDir);
                         try:    os.link(sLinkTarget, sLinkFile);
                         except: shutil.copy2(sLinkTarget, sLinkFile);
