@@ -3396,298 +3396,36 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
  */
 static void atapiR3ParseCmdPassthrough(ATADevState *s)
 {
-    const uint8_t *pbPacket;
-    uint8_t *pbBuf;
-    uint32_t cSectors, iATAPILBA;
-    uint32_t cbTransfer = 0;
+    const uint8_t *pbPacket = &s->aATAPICmd[0];
+    size_t cbTransfer = 0;
     PDMMEDIATXDIR uTxDir = PDMMEDIATXDIR_NONE;
+    uint8_t u8ScsiSts = SCSI_STATUS_OK;
 
-    pbPacket = s->aATAPICmd;
-    pbBuf = s->CTX_SUFF(pbIOBuffer);
-    switch (pbPacket[0])
+    /* Some cases we have to handle here. */
+    if (   pbPacket[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION
+        && ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
     {
-        case SCSI_BLANK:
-            goto sendcmd;
-        case SCSI_CLOSE_TRACK_SESSION:
-            goto sendcmd;
-        case SCSI_ERASE_10:
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            Log2(("ATAPI PT: lba %d\n", iATAPILBA));
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_FORMAT_UNIT:
-            cbTransfer = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_GET_CONFIGURATION:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_GET_EVENT_STATUS_NOTIFICATION:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            if (ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
-            {
-                ataR3StartTransfer(s, RT_MIN(cbTransfer, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
-                break;
-            }
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_GET_PERFORMANCE:
-            cbTransfer = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_INQUIRY:
-            cbTransfer = scsiBE2H_U16(pbPacket + 3);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_LOAD_UNLOAD_MEDIUM:
-            goto sendcmd;
-        case SCSI_MECHANISM_STATUS:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_MODE_SELECT_10:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_MODE_SENSE_10:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_PAUSE_RESUME:
-            goto sendcmd;
-        case SCSI_PLAY_AUDIO_10:
-            goto sendcmd;
-        case SCSI_PLAY_AUDIO_12:
-            goto sendcmd;
-        case SCSI_PLAY_AUDIO_MSF:
-            goto sendcmd;
-        case SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL:
-            /** @todo do not forget to unlock when a VM is shut down */
-            goto sendcmd;
-        case SCSI_READ_10:
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
-            cSectors = scsiBE2H_U16(pbPacket + 7);
-            Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            s->cbATAPISector = 2048;
-            cbTransfer = cSectors * s->cbATAPISector;
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_12:
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
-            cSectors = scsiBE2H_U32(pbPacket + 6);
-            Log2(("ATAPI PT: lba %d sectors %d\n", iATAPILBA, cSectors));
-            s->cbATAPISector = 2048;
-            cbTransfer = cSectors * s->cbATAPISector;
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_BUFFER:
-            cbTransfer = scsiBE2H_U24(pbPacket + 6);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_BUFFER_CAPACITY:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_CAPACITY:
-            cbTransfer = 8;
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_CD:
-        case SCSI_READ_CD_MSF:
+        cbTransfer = scsiBE2H_U16(pbPacket + 7);
+        ataR3StartTransfer(s, RT_MIN(cbTransfer, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
+    }
+    else if (   pbPacket[0] == SCSI_REQUEST_SENSE
+             && (s->abATAPISense[2] & 0x0f) != SCSI_SENSE_NONE)
+        ataR3StartTransfer(s, RT_MIN(pbPacket[4], 18), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_REQUEST_SENSE, true);
+    else
+    {
+        size_t cbBuf = 0;
+        size_t cbATAPISector = 0;
+        if (pbPacket[0] == SCSI_FORMAT_UNIT || pbPacket[0] == SCSI_GET_PERFORMANCE)
+            cbBuf = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
+
+        bool fPassthrough = ATAPIPassthroughParseCdb(pbPacket, sizeof(s->aATAPICmd), cbBuf, s->pTrackList,
+                                                     &s->abATAPISense[0], sizeof(s->abATAPISense), &uTxDir, &cbTransfer,
+                                                     &cbATAPISector, &u8ScsiSts);
+        if (fPassthrough)
         {
-            /* Get sector size based on the expected sector type field. */
-            switch ((pbPacket[1] >> 2) & 0x7)
-            {
-                case 0x0: /* All types. */
-                {
-                    uint32_t iLbaStart;
+            s->cbATAPISector = (uint32_t)cbATAPISector;
+            Assert(s->cbATAPISector == (uint32_t)cbATAPISector);
 
-                    if (pbPacket[0] == SCSI_READ_CD)
-                        iLbaStart = scsiBE2H_U32(&pbPacket[2]);
-                    else
-                        iLbaStart = scsiMSF2LBA(&pbPacket[3]);
-
-                    if (s->pTrackList)
-                        s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iLbaStart);
-                    else
-                        s->cbATAPISector = 2048; /* Might be incorrect if we couldn't determine the type. */
-                    break;
-                }
-                case 0x1: /* CD-DA */
-                    s->cbATAPISector = 2352;
-                    break;
-                case 0x2: /* Mode 1 */
-                    s->cbATAPISector = 2048;
-                    break;
-                case 0x3: /* Mode 2 formless */
-                    s->cbATAPISector = 2336;
-                    break;
-                case 0x4: /* Mode 2 form 1 */
-                    s->cbATAPISector = 2048;
-                    break;
-                case 0x5: /* Mode 2 form 2 */
-                    s->cbATAPISector = 2324;
-                    break;
-                default: /* Reserved */
-                    AssertMsgFailed(("Unknown sector type\n"));
-                    s->cbATAPISector = 0; /** @todo we should probably fail the command here already. */
-            }
-
-            if (pbPacket[0] == SCSI_READ_CD)
-                cbTransfer = scsiBE2H_U24(pbPacket + 6) * s->cbATAPISector;
-            else /* SCSI_READ_MSF */
-            {
-                cSectors = scsiMSF2LBA(pbPacket + 6) - scsiMSF2LBA(pbPacket + 3);
-                if (cSectors > 32)
-                    cSectors = 32; /* Limit transfer size to 64~74K. Safety first. In any case this can only harm software doing CDDA extraction. */
-                cbTransfer = cSectors * s->cbATAPISector;
-            }
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        }
-        case SCSI_READ_DISC_INFORMATION:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_DVD_STRUCTURE:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_FORMAT_CAPACITIES:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_SUBCHANNEL:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_TOC_PMA_ATIP:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_READ_TRACK_INFORMATION:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_REPAIR_TRACK:
-            goto sendcmd;
-        case SCSI_REPORT_KEY:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_REQUEST_SENSE:
-            cbTransfer = pbPacket[4];
-            if ((s->abATAPISense[2] & 0x0f) != SCSI_SENSE_NONE)
-            {
-                ataR3StartTransfer(s, RT_MIN(cbTransfer, 18), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_REQUEST_SENSE, true);
-                break;
-            }
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_RESERVE_TRACK:
-            goto sendcmd;
-        case SCSI_SCAN:
-            goto sendcmd;
-        case SCSI_SEEK_10:
-            goto sendcmd;
-        case SCSI_SEND_CUE_SHEET:
-            cbTransfer = scsiBE2H_U24(pbPacket + 6);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_SEND_DVD_STRUCTURE:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_SEND_EVENT:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_SEND_KEY:
-            cbTransfer = scsiBE2H_U16(pbPacket + 8);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_SEND_OPC_INFORMATION:
-            cbTransfer = scsiBE2H_U16(pbPacket + 7);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_SET_CD_SPEED:
-            goto sendcmd;
-        case SCSI_SET_READ_AHEAD:
-            goto sendcmd;
-        case SCSI_SET_STREAMING:
-            cbTransfer = scsiBE2H_U16(pbPacket + 9);
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_START_STOP_UNIT:
-            goto sendcmd;
-        case SCSI_STOP_PLAY_SCAN:
-            goto sendcmd;
-        case SCSI_SYNCHRONIZE_CACHE:
-            goto sendcmd;
-        case SCSI_TEST_UNIT_READY:
-            goto sendcmd;
-        case SCSI_VERIFY_10:
-            goto sendcmd;
-        case SCSI_WRITE_10:
-        case SCSI_WRITE_AND_VERIFY_10:
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
-            cSectors = scsiBE2H_U16(pbPacket + 7);
-            if (s->pTrackList)
-                s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iATAPILBA);
-            else
-                s->cbATAPISector = 2048;
-            Log2(("ATAPI PT: lba %d sectors %d sector size %d\n", iATAPILBA, cSectors, s->cbATAPISector));
-            cbTransfer = cSectors * s->cbATAPISector;
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_WRITE_12:
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
-            cSectors = scsiBE2H_U32(pbPacket + 6);
-            if (s->pTrackList)
-                s->cbATAPISector = ATAPIPassthroughTrackListGetSectorSizeFromLba(s->pTrackList, iATAPILBA);
-            else
-                s->cbATAPISector = 2048;
-            Log2(("ATAPI PT: lba %d sectors %d sector size %d\n", iATAPILBA, cSectors, s->cbATAPISector));
-            cbTransfer = cSectors * s->cbATAPISector;
-            uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-            goto sendcmd;
-        case SCSI_WRITE_BUFFER:
-            switch (pbPacket[1] & 0x1f)
-            {
-                case 0x04: /* download microcode */
-                case 0x05: /* download microcode and save */
-                case 0x06: /* download microcode with offsets */
-                case 0x07: /* download microcode with offsets and save */
-                case 0x0e: /* download microcode with offsets and defer activation */
-                case 0x0f: /* activate deferred microcode */
-                    LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command attempted to update firmware, blocked\n", s->iLUN));
-                    atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
-                    break;
-                default:
-                    cbTransfer = scsiBE2H_U16(pbPacket + 6);
-                    uTxDir = PDMMEDIATXDIR_TO_DEVICE;
-                    goto sendcmd;
-            }
-            break;
-        case SCSI_REPORT_LUNS: /* Not part of MMC-3, but used by Windows. */
-            cbTransfer = scsiBE2H_U32(pbPacket + 6);
-            uTxDir = PDMMEDIATXDIR_FROM_DEVICE;
-            goto sendcmd;
-        case SCSI_REZERO_UNIT:
-            /* Obsolete command used by cdrecord. What else would one expect?
-             * This command is not sent to the drive, it is handled internally,
-             * as the Linux kernel doesn't like it (message "scsi: unknown
-             * opcode 0x01" in syslog) and replies with a sense code of 0,
-             * which sends cdrecord to an endless loop. */
-            atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-            break;
-        default:
-            LogRel(("PIIX3 ATA: LUN#%d: passthrough unimplemented for command %#x\n", s->iLUN, pbPacket[0]));
-            atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-            break;
-        sendcmd:
             /*
              * Send a command to the drive, passing data in/out as required.
              * Commands which exceed the I/O buffer size are split below
@@ -3697,6 +3435,27 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             if (cbTransfer == 0)
                 uTxDir = PDMMEDIATXDIR_NONE;
             ataR3StartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
+        }
+        else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
+        {
+            /* Sense data is already set, end the request and notify the guest. */
+            Log(("%s: sense=%#x (%s) asc=%#x ascq=%#x (%s)\n", __FUNCTION__, s->abATAPISense[2] & 0x0f, SCSISenseText(s->abATAPISense[2] & 0x0f),
+                     s->abATAPISense[12], s->abATAPISense[13], SCSISenseExtText(s->abATAPISense[12], s->abATAPISense[13])));
+            s->uATARegError = s->abATAPISense[2] << 4;
+            ataSetStatusValue(s, ATA_STAT_READY | ATA_STAT_ERR);
+            s->uATARegNSector = (s->uATARegNSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
+            Log2(("%s: interrupt reason %#04x\n", __FUNCTION__, s->uATARegNSector));
+            s->cbTotalTransfer = 0;
+            s->cbElementaryTransfer = 0;
+            s->cbAtapiPassthroughTransfer = 0;
+            s->iIOBufferCur = 0;
+            s->iIOBufferEnd = 0;
+            s->uTxDir = PDMMEDIATXDIR_NONE;
+            s->iBeginTransfer = ATAFN_BT_NULL;
+            s->iSourceSink = ATAFN_SS_NULL;
+        }
+        else if (u8ScsiSts == SCSI_STATUS_OK)
+            atapiR3CmdOK(s);
     }
 }
 
