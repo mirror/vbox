@@ -3397,15 +3397,12 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
 static void atapiR3ParseCmdPassthrough(ATADevState *s)
 {
     const uint8_t *pbPacket = &s->aATAPICmd[0];
-    size_t cbTransfer = 0;
-    PDMMEDIATXDIR uTxDir = PDMMEDIATXDIR_NONE;
-    uint8_t u8ScsiSts = SCSI_STATUS_OK;
 
     /* Some cases we have to handle here. */
     if (   pbPacket[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION
         && ASMAtomicReadU32(&s->MediaEventStatus) != ATA_EVENT_STATUS_UNCHANGED)
     {
-        cbTransfer = scsiBE2H_U16(pbPacket + 7);
+        uint32_t cbTransfer = scsiBE2H_U16(pbPacket + 7);
         ataR3StartTransfer(s, RT_MIN(cbTransfer, 8), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION, true);
     }
     else if (   pbPacket[0] == SCSI_REQUEST_SENSE
@@ -3415,6 +3412,10 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
     {
         size_t cbBuf = 0;
         size_t cbATAPISector = 0;
+        size_t cbTransfer = 0;
+        PDMMEDIATXDIR uTxDir = PDMMEDIATXDIR_NONE;
+        uint8_t u8ScsiSts = SCSI_STATUS_OK;
+
         if (pbPacket[0] == SCSI_FORMAT_UNIT || pbPacket[0] == SCSI_GET_PERFORMANCE)
             cbBuf = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
 
@@ -3425,6 +3426,7 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
         {
             s->cbATAPISector = (uint32_t)cbATAPISector;
             Assert(s->cbATAPISector == (uint32_t)cbATAPISector);
+            Assert(cbTransfer == (uint32_t)cbTransfer);
 
             /*
              * Send a command to the drive, passing data in/out as required.
@@ -3434,7 +3436,7 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
             Log2(("ATAPI PT: max size %d\n", cbTransfer));
             if (cbTransfer == 0)
                 uTxDir = PDMMEDIATXDIR_NONE;
-            ataR3StartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
+            ataR3StartTransfer(s, (uint32_t)cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
         }
         else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
         {
