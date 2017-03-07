@@ -720,7 +720,7 @@ DECLINLINE(PX86PDPE) pgmGstGetPaePDPEPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
             return NULL;
     }
 #endif
-    return &pGuestPDPT->a[(GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE];
+    return &pGuestPDPT->a[(uint32_t)GCPtr >> X86_PDPT_SHIFT];
 }
 
 
@@ -738,7 +738,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetPaePDE(PVMCPU pVCpu, RTGCPTR GCPtr)
     PX86PDPT    pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
     if (RT_LIKELY(pGuestPDPT))
     {
-        const unsigned iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+        const unsigned iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
         if (    pGuestPDPT->a[iPdpt].n.u1Present
             &&  !(pGuestPDPT->a[iPdpt].u & pVCpu->pgm.s.fGstPaeMbzPdpeMask) )
         {
@@ -787,7 +787,7 @@ DECLINLINE(PX86PDPAE) pgmGstGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, unsigned *p
     PX86PDPT        pGuestPDPT = pgmGstGetPaePDPTPtr(pVCpu);
     if (RT_UNLIKELY(!pGuestPDPT))
         return NULL;
-    const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
     if (pPdpe)
         *pPdpe = pGuestPDPT->a[iPdpt];
     if (!pGuestPDPT->a[iPdpt].n.u1Present)
@@ -1054,7 +1054,7 @@ DECLINLINE(PX86PDPT) pgmShwGetPaePDPTPtr(PVMCPU pVCpu)
  */
 DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
 {
-    const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
     PX86PDPT        pPdpt = pgmShwGetPaePDPTPtr(pVCpu);
 
     if (!pPdpt->a[iPdpt].n.u1Present)
@@ -1079,7 +1079,7 @@ DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr)
  */
 DECLINLINE(PX86PDPAE) pgmShwGetPaePDPtr(PVMCPU pVCpu, PX86PDPT pPdpt, RTGCPTR GCPtr)
 {
-    const unsigned  iPdpt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_PAE;
+    const unsigned  iPdpt = (uint32_t)GCPtr >> X86_PDPT_SHIFT;
 
     if (!pPdpt->a[iPdpt].n.u1Present)
         return NULL;
