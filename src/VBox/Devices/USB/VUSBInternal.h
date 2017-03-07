@@ -95,8 +95,6 @@ typedef struct VUSBURBVUSBINT
     DECLCALLBACKMEMBER(void, pfnFree)(PVUSBURB pUrb);
     /** Submit timestamp. (logging only) */
     uint64_t        u64SubmitTS;
-    /** Opaque data holder when this is an URB from a buffered pipe. */
-    void            *pvBuffered;
 } VUSBURBVUSBINT;
 
 /**
@@ -146,11 +144,6 @@ typedef struct vusb_ctrl_extra
 void vusbMsgFreeExtraData(PVUSBCTRLEXTRA pExtra);
 void vusbMsgResetExtraData(PVUSBCTRLEXTRA pExtra);
 
-/** Opaque VUSB buffered pipe management handle. */
-typedef struct VUSBBUFFEREDPIPEINT *VUSBBUFFEREDPIPE;
-/** Pointer to a VUSB buffered pipe handle. */
-typedef VUSBBUFFEREDPIPE *PVUSBBUFFEREDPIPE;
-
 /**
  * A VUSB pipe
  */
@@ -164,8 +157,6 @@ typedef struct vusb_pipe
     RTCRITSECT          CritSectCtrl;
     /** Count of active async transfers. */
     volatile uint32_t   async;
-    /** Pipe buffer - only valid for isochronous endpoints. */
-    VUSBBUFFEREDPIPE    hBuffer;
 } VUSBPIPE;
 /** Pointer to a VUSB pipe structure. */
 typedef VUSBPIPE *PVUSBPIPE;
@@ -524,48 +515,6 @@ DECLHIDDEN(int) vusbUrbCancelWorker(PVUSBURB pUrb, CANCELMODE enmMode);
 DECLHIDDEN(uint64_t) vusbRhR3ProcessFrame(PVUSBROOTHUB pThis, bool fCallback);
 
 int  vusbUrbQueueAsyncRh(PVUSBURB pUrb);
-
-/**
- * Completes an URB from a buffered pipe.
- *
- * @returns nothing.
- * @param   pUrb        The URB to complete.
- */
-DECLHIDDEN(void) vusbBufferedPipeCompleteUrb(PVUSBURB pUrb);
-
-/**
- * Creates a new buffered pipe.
- *
- * @returns VBox status code.
- * @retval  VERR_NOT_SUPPORTED if buffering is not supported for the given pipe.
- * @param   pDev         The device instance the pipe is associated with.
- * @param   pPipe        The pipe to buffer.
- * @param   enmDirection The direction for the buffering.
- * @param   enmSpeed     USB device speed.
- * @param   cLatencyMs   The maximum latency the buffering should introduce, this influences
- *                       the amount of data to buffer.
- * @param   phBuffer     Where to store the handle to the buffer on success.
- */
-DECLHIDDEN(int)  vusbBufferedPipeCreate(PVUSBDEV pDev, PVUSBPIPE pPipe, VUSBDIRECTION enmDirection,
-                                        VUSBSPEED enmSpeed, uint32_t cLatencyMs,
-                                        PVUSBBUFFEREDPIPE phBuffer);
-
-/**
- * Destroys a buffered pipe, freeing all acquired resources.
- *
- * @returns nothing.
- * @param   hBuffer     The buffered pipe handle.
- */
-DECLHIDDEN(void) vusbBufferedPipeDestroy(VUSBBUFFEREDPIPE hBuffer);
-
-/**
- * Submits a URB from the HCD which is subject to buffering.
- *
- * @returns VBox status code.
- * @param   hBuffer     The buffered pipe handle.
- * @param   pUrb        The URB from the HCD which is subject to buffering.
- */
-DECLHIDDEN(int)  vusbBufferedPipeSubmitUrb(VUSBBUFFEREDPIPE hBuffer, PVUSBURB pUrb);
 
 /**
  * Initializes the given URB pool.

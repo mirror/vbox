@@ -1183,14 +1183,6 @@ int vusbUrbSubmit(PVUSBURB pUrb)
             LogRel(("VUSB: Capturing URB submit event failed with %Rrc\n", rc));
     }
 
-#ifdef VBOX_WITH_USB
-    if (pPipe && pPipe->hBuffer)
-    {
-        rc = vusbBufferedPipeSubmitUrb(pPipe->hBuffer, pUrb);
-        return rc;
-    }
-#endif
-
     /*
      * Take action based on type.
      */
@@ -1331,13 +1323,8 @@ static void vusbUrbCompletion(PVUSBURB pUrb)
 
     if (pUrb->enmState == VUSBURBSTATE_REAPED)
         vusbUrbUnlink(pUrb);
-#ifdef VBOX_WITH_USB
-    // Read-ahead URBs are handled differently
-    if (pUrb->pVUsb->pvBuffered)
-        vusbBufferedPipeCompleteUrb(pUrb);
-    else
-#endif
-        vusbUrbCompletionRh(pUrb);
+
+    vusbUrbCompletionRh(pUrb);
 }
 
 /**
