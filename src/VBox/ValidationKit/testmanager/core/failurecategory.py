@@ -178,7 +178,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
 
         # If we're at the end of the log, add the initial entry.
-        if len(aoRows) <= cMaxRows and len(aoRows) > 0:
+        if len(aoRows) <= cMaxRows and aoRows:
             oNew = aoRows[-1];
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, None, []));
 
@@ -232,7 +232,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         #
         assert isinstance(oData, FailureCategoryData);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         #
@@ -253,7 +253,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
         #
         assert isinstance(oData, FailureCategoryData);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         oOldData = FailureCategoryData().initFromDbWithId(self._oDb, oData.idFailureCategory);
@@ -284,7 +284,7 @@ class FailureCategoryLogic(ModelLogicBase): # pylint: disable=R0903
                           '    AND  tsExpire = \'infinity\'::TIMESTAMP\n'
                           , (idFailureCategory,));
         aaoRows = self._oDb.fetchAll();
-        if len(aaoRows) > 0:
+        if aaoRows:
             raise TMRowInUse('Cannot remove failure reason category %u because its being used by: %s'
                              % (idFailureCategory, ', '.join(aoRow[0] for aoRow in aaoRows),));
 

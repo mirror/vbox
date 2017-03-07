@@ -376,7 +376,7 @@ class TestSetLogic(ModelLogicBase):
                           'ORDER BY idTestResult DESC\n'
                           , (idTestSet, TestSetData.ksTestStatus_Running, oData.idTestResult));
         aaoRows = self._oDb.fetchAll();
-        if len(aaoRows):
+        if aaoRows:
             idStr = self.strTabString('Unclosed test result', fCommit = fCommit);
             for aoRow in aaoRows:
                 self._oDb.execute('UPDATE   TestResults\n'

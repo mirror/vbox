@@ -352,7 +352,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
             aoEntries.append(ChangeLogEntry(aoNew[1], None, aoNew[0], tsExpire, aoNew[2], aoOld[2], aoChanges));
 
         # If we're at the end of the log, add the initial entry.
-        if len(aaoRows) <= cMaxRows and len(aaoRows) > 0:
+        if len(aaoRows) <= cMaxRows and aaoRows:
             aoNew    = aaoRows[-1];
             tsExpire = aaoRows[-1 - 1][0] if len(aaoRows) > 1 else aoNew[2].tsExpire;
             aoEntries.append(ChangeLogEntry(aoNew[1], None, aoNew[0], tsExpire, aoNew[2], None, []));
@@ -386,7 +386,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
         #
         assert isinstance(oData, TestResultFailureData);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_AddForeignId);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         # Check if it exist first (we're adding, not editing, collisions not allowed).
@@ -415,7 +415,7 @@ class TestResultFailureLogic(ModelLogicBase): # pylint: disable=R0903
         #
         assert isinstance(oData, TestResultFailureData);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         oOldData = self.getById(oData.idTestResult)

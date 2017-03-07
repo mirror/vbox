@@ -272,7 +272,7 @@ class TestCaseArgsLogic(ModelLogicBase):
         """
 
         # Create a set of global resource IDs.
-        if len(oDataEx.aoGlobalRsrc) == 0:
+        if not oDataEx.aoGlobalRsrc:
             return True;
         asIdRsrcs = [str(oDep.idGlobalRsrc) for oDep, _ in oDataEx.aoGlobalRsrc];
 

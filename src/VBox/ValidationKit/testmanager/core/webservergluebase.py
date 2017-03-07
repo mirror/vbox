@@ -259,7 +259,7 @@ class WebServerGlueBase(object):
         """
         if self._sBodyType is None:
             self._sBodyType = 'html';
-        elif self._sBodyType is not 'html':
+        elif self._sBodyType != 'html':
             raise WebServerGlueException('Cannot use writeParameter when body type is "%s"' % (self._sBodyType, ));
 
         self._sHtmlBody += sChunkOfHtml;
@@ -276,7 +276,7 @@ class WebServerGlueBase(object):
         """
         if self._sBodyType is None:
             self._sBodyType = 'html';
-        elif self._sBodyType is not 'html':
+        elif self._sBodyType != 'html':
             raise WebServerGlueException('Cannot use writeParameter when body type is "%s"' % (self._sBodyType, ));
 
         self.flushHeader();
@@ -303,7 +303,7 @@ class WebServerGlueBase(object):
                                              (self._dHeaderFields['Content-Type'],));
             self._sBodyType = 'form';
 
-        elif self._sBodyType is not 'form':
+        elif self._sBodyType != 'form':
             raise WebServerGlueException('Cannot use writeParams when body type is "%s"' % (self._sBodyType, ));
 
         for sKey in dParams:

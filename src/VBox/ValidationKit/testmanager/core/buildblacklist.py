@@ -192,7 +192,7 @@ class BuildBlacklistLogic(ModelLogicBase): # pylint: disable=R0903
         #
         assert isinstance(oData, BuildBlacklistData);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
 
         oOldData = BuildBlacklistData().initFromDbWithId(self._oDb, oData.idBlacklisting);

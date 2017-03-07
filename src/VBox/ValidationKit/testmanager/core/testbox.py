@@ -643,7 +643,7 @@ class TestBoxDataEx(TestBoxData):
             oInSchedGroup = copy.copy(oInSchedGroup);
             oInSchedGroup.idTestBox = self.idTestBox;
             dCurErrors = oInSchedGroup.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
-            if len(dCurErrors) == 0:
+            if not dCurErrors:
                 pass; ## @todo figure out the ID?
             else:
                 asErrors = [];
@@ -662,7 +662,7 @@ class TestBoxDataEx(TestBoxData):
                     else:                   dErrors[iInGrp2]  = sMsg;
                     break;
 
-        return (aoNewValues, dErrors if len(dErrors) > 0 else None);
+        return (aoNewValues, dErrors if dErrors else None);
 
 
 class TestBoxLogic(ModelLogicBase):
@@ -767,7 +767,7 @@ class TestBoxLogic(ModelLogicBase):
 
         from testmanager.core.testboxstatus import TestBoxStatusData;
 
-        if aiSortColumns is None or len(aiSortColumns) == 0:
+        if not aiSortColumns:
             aiSortColumns = [self.kiSortColumn_sName,];
 
         if tsNow is None:
@@ -845,7 +845,7 @@ class TestBoxLogic(ModelLogicBase):
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, oOld, aoChanges));
 
         # If we're at the end of the log, add the initial entry.
-        if len(aoRows) <= cMaxRows and len(aoRows) > 0:
+        if len(aoRows) <= cMaxRows and aoRows:
             oNew = aoRows[-1];
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None, oNew.tsEffective, oNew.tsExpire, oNew, None, []));
 
@@ -861,10 +861,10 @@ class TestBoxLogic(ModelLogicBase):
         Raises exception on invalid input.
         """
         dDataErrors = oData.validateAndConvert(self._oDb, enmValidateFor);
-        if len(dDataErrors) > 0:
+        if dDataErrors:
             raise TMInvalidData('TestBoxLogic.addEntry: %s' % (dDataErrors,));
         if isinstance(oData, TestBoxDataEx):
-            if len(oData.aoInSchedGroups):
+            if oData.aoInSchedGroups:
                 sSchedGrps = ', '.join('(%s)' % oCur.idSchedGroup for oCur in oData.aoInSchedGroups);
                 self._oDb.execute('SELECT   SchedGroupIDs.idSchedGroup\n'
                                   'FROM     (VALUES ' + sSchedGrps + ' ) AS SchedGroupIDs(idSchedGroup)\n'
@@ -873,7 +873,7 @@ class TestBoxLogic(ModelLogicBase):
                                   '                         AND SchedGroups.tsExpire = \'infinity\'::TIMESTAMP\n'
                                   'WHERE    SchedGroups.idSchedGroup IS NULL\n');
                 aaoRows = self._oDb.fetchAll();
-                if len(aaoRows) > 0:
+                if aaoRows:
                     raise TMInvalidData('TestBoxLogic.addEntry missing scheduling groups: %s'
                                         % (', '.join(str(aoRow[0]) for aoRow in aaoRows),));
         return None;

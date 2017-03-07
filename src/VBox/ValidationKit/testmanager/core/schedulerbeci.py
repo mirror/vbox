@@ -87,7 +87,7 @@ class SchdulerBeci(SchedulerBase): # pylint: disable=R0903
                     #self.msgDebug('testgroup loop: %s' % (oTestGroup,));
                     for oTestCase in oTestGroup.aoTestCases:
                         #self.msgDebug('testcase loop: idTestCase=%s' % (oTestCase.idTestCase,));
-                        if iPrio <= oTestCase.iBeciPrio  and  len(oTestCase.aoArgsVariations) > 0:
+                        if iPrio <= oTestCase.iBeciPrio  and  oTestCase.aoArgsVariations:
                             # Get variation.
                             iNext = oTestCase.iNextVariation;
                             if iNext != 0:

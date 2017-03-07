@@ -232,7 +232,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         #
         # Perform deep conversion on ModelDataBase object and lists of them.
         #
-        elif isinstance(oValue, list) and len(oValue) > 0 and isinstance(oValue[0], ModelDataBase):
+        elif isinstance(oValue, list) and oValue and isinstance(oValue[0], ModelDataBase):
             oValue = copy.copy(oValue);
             for i, _ in enumerate(oValue):
                 assert isinstance(oValue[i], ModelDataBase);
@@ -268,7 +268,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         #
         # Perform deep conversion on ModelDataBase object and lists of them.
         #
-        elif isinstance(oValue, list) and len(oValue) > 0 and isinstance(oValue[0], ModelDataBase):
+        elif isinstance(oValue, list) and oValue and isinstance(oValue[0], ModelDataBase):
             oValue = copy.copy(oValue);
             for i, _ in enumerate(oValue):
                 assert isinstance(oValue[i], ModelDataBase);
@@ -315,7 +315,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
                                                     lMin = getattr(self, 'klMin_' + sAttr, 0),
                                                     lMax = getattr(self, 'klMax_' + sAttr, None));
         elif sPrefix == 'f':
-            if oValue is '' and not fAllowNull: oValue = '0'; # HACK ALERT! Checkboxes are only added when checked.
+            if not oValue and not fAllowNull: oValue = '0'; # HACK ALERT! Checkboxes are only added when checked.
             (oNewValue, sError) = self.validateBool(oValue, aoNilValues = aoNilValues, fAllowNull = fAllowNull);
         elif sPrefix == 'ts':
             (oNewValue, sError) = self.validateTs(  oValue, aoNilValues = aoNilValues, fAllowNull = fAllowNull);
@@ -742,14 +742,14 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
     @staticmethod
     def validateListOfSomething(asValues, aoNilValues = tuple([[], None]), fAllowNull = True):
         """ Validate a list of some uniform values. Returns a copy of the list (if list it is). """
-        if asValues in aoNilValues  or  (len(asValues) == 0 and not fAllowNull):
+        if asValues in aoNilValues  or  (not asValues and not fAllowNull):
             return (asValues, None if fAllowNull else 'Mandatory.')
 
         if not isinstance(asValues, list):
             return (asValues, 'Invalid data type (%s).' % (type(asValues),));
 
         asValues = list(asValues); # copy the list.
-        if len(asValues) > 0:
+        if asValues:
             oType = type(asValues[0]);
             for i in range(1, len(asValues)):
                 if type(asValues[i]) is not oType: # pylint: disable=unidiomatic-typecheck
@@ -763,7 +763,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         """ Validates a list of text items."""
         (asValues, sError) = ModelDataBase.validateListOfSomething(asValues, aoNilValues, fAllowNull);
 
-        if sError is None  and asValues not in aoNilValues  and  len(asValues) > 0:
+        if sError is None  and  asValues not in aoNilValues  and  asValues:
             if not utils.isString(asValues[0]):
                 return (asValues, 'Invalid item data type.');
 
@@ -792,7 +792,7 @@ class ModelDataBase(ModelBase): # pylint: disable=R0903
         """ Validates a list of integer items."""
         (asValues, sError) = ModelDataBase.validateListOfSomething(asValues, aoNilValues, fAllowNull);
 
-        if sError is None  and asValues not in aoNilValues  and  len(asValues) > 0:
+        if sError is None  and  asValues not in aoNilValues  and  asValues:
             for i, _ in enumerate(asValues):
                 sValue = asValues[i];
 
@@ -1088,7 +1088,7 @@ class ModelDataBaseTestCase(unittest.TestCase):
             self.assertIsNotNone(oSample.isEqual(self.aoSamples[0]));
 
     def testNullConversion(self):
-        if len(self.aoSamples[0].getDataAttributes()) == 0:
+        if not self.aoSamples[0].getDataAttributes():
             return;
         for oSample in self.aoSamples:
             oCopy = copy.copy(oSample);
@@ -1260,7 +1260,7 @@ class ModelFilterBase(ModelBase):
                     raise TMExceptionBase('Variable %s has an illegal value "%s"!' % (oCriterion.sVarNm, sValue));
         else:
             assert False;
-        if len(oCriterion.aoSelected) > 0:
+        if oCriterion.aoSelected:
             oCriterion.sState = FilterCriterion.ksState_Selected;
         else:
             oCriterion.sState = FilterCriterion.ksState_NotSelected;

@@ -371,9 +371,9 @@ class TestBoxController(object): # pylint: disable=R0903
         self._checkForUnknownParameters();
 
         # Null conversions for new parameters.
-        if len(sReport) == 0:
+        if not sReport:
             sReport = None;
-        if len(sCpuName) == 0:
+        if not sCpuName:
             sCpuName = None;
         if lCpuRevision <= 0:
             lCpuRevision = None;
@@ -656,7 +656,7 @@ class TestBoxController(object): # pylint: disable=R0903
         # Parameter validation.
         #
         sBody = self._getStringParam(constants.tbreq.LOG_PARAM_BODY, fStrip = False);
-        if len(sBody) == 0:
+        if not sBody:
             return self._resultResponse(constants.tbresp.STATUS_NACK);
         self._checkForUnknownParameters();
 
@@ -752,7 +752,7 @@ class TestBoxController(object): # pylint: disable=R0903
         #
         sXml = self._getStringParam(constants.tbreq.XML_RESULT_PARAM_BODY, fStrip = False);
         self._checkForUnknownParameters();
-        if len(sXml) == 0: # Used for link check by vboxinstaller.py on Windows.
+        if not sXml: # Used for link check by vboxinstaller.py on Windows.
             return self._resultResponse(constants.tbresp.STATUS_ACK);
 
         (oDb, oStatusData, _) = self._connectToDbAndValidateTb([TestBoxStatusData.ksTestBoxState_Testing,

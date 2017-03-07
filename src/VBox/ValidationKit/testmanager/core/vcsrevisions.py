@@ -142,7 +142,7 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
         aaoRows = self._oDb.fetchAll();
         if len(aaoRows) == 1:
             return VcsRevisionData().initFromDbRow(aaoRows[0]);
-        if len(aaoRows) != 0:
+        if aaoRows:
             raise TMExceptionBase('VcsRevisions has a primary key problem: %u duplicates' % (len(aaoRows),));
         return None
 
@@ -159,7 +159,7 @@ class VcsRevisionLogic(ModelLogicBase): # pylint: disable=R0903
 
         # Check VcsRevisionData before do anything
         dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dDataErrors) > 0:
+        if dDataErrors:
             raise TMExceptionBase('Invalid data passed to addVcsRevision(): %s' % (dDataErrors,));
 
         # Does it already exist?

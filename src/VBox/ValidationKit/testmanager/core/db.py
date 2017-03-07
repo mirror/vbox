@@ -33,8 +33,8 @@ __version__ = "$Revision$"
 import datetime;
 import os;
 import sys;
-import psycopg2;
-import psycopg2.extensions;
+import psycopg2;                            # pylint: disable=import-error
+import psycopg2.extensions;                 # pylint: disable=import-error
 
 # Validation Kit imports.
 from common                             import utils, webutils;
@@ -430,7 +430,7 @@ class TMDatabaseConnection(object):
             if len(asValues) > 256:
                 oRc = self.executeInternal(oCursor, sInsertSql + 'VALUES' + ', '.join(asValues), None, sCallerName);
                 asValues = [];
-        if len(asValues) > 0:
+        if asValues:
             oRc = self.executeInternal(oCursor, sInsertSql + 'VALUES' + ', '.join(asValues), None, sCallerName);
         return oRc
 

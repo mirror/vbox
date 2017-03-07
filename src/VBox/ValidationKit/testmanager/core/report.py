@@ -142,7 +142,7 @@ class ReportModelBase(ModelLogicBase): # pylint: disable=R0903
         if len(self.aidSubjects) == 1:
             sWhere += self._oDb.formatBindArgs(' = %s\n', (self.aidSubjects[0],));
         else:
-            assert len(self.aidSubjects) > 0;
+            assert self.aidSubjects;
             sWhere += self._oDb.formatBindArgs(' IN (%s', (self.aidSubjects[0],));
             for i in range(1, len(self.aidSubjects)):
                 sWhere += self._oDb.formatBindArgs(', %s', (self.aidSubjects[i],));
@@ -1129,17 +1129,17 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
 
             if len(self.aidTestBoxes) == 1:
                 sQuery += '     AND TestSets.idTestBox = %u\n' % (self.aidTestBoxes[0],);
-            elif len(self.aidTestBoxes) > 0:
+            elif self.aidTestBoxes:
                 sQuery += '     AND TestSets.idTestBox IN (' + ','.join([str(i) for i in self.aidTestBoxes]) + ')\n';
 
             if len(self.aidBuildCats) == 1:
                 sQuery += '     AND TestSets.idBuildCategory = %u\n' % (self.aidBuildCats[0],);
-            elif len(self.aidBuildCats) > 0:
+            elif self.aidBuildCats:
                 sQuery += '     AND TestSets.idBuildCategory IN (' + ','.join([str(i) for i in self.aidBuildCats]) + ')\n';
 
             if len(self.aidTestCases) == 1:
                 sQuery += '     AND TestSets.idTestCase = %u\n' % (self.aidTestCases[0],);
-            elif len(self.aidTestCases) > 0:
+            elif self.aidTestCases:
                 sQuery += '     AND TestSets.idTestCase IN (' + ','.join([str(i) for i in self.aidTestCases]) + ')\n';
 
             if oLookup.sType == self.ksTypeElapsed:
@@ -1243,7 +1243,7 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
 
         # 2. Query all the testbox data in one go.
         aoRet = [];
-        if len(asIdGenTestBoxes) > 0:
+        if asIdGenTestBoxes:
             self._oDb.execute('SELECT   *\n'
                               'FROM     TestBoxesWithStrings\n'
                               'WHERE    idGenTestBox IN (' + ','.join(asIdGenTestBoxes) + ')\n'
@@ -1266,7 +1266,7 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=R0903
         # any testbox or testcase filtering.
 
         sSelectedBuildCats = '';
-        if len(self.aidBuildCats) > 0:
+        if self.aidBuildCats:
             sSelectedBuildCats = '   OR idBuildCategory IN (' + ','.join([str(i) for i in self.aidBuildCats]) + ')\n';
 
         self._oDb.execute('SELECT   DISTINCT *\n'

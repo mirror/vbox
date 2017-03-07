@@ -297,7 +297,7 @@ class TestCaseDependencyData(ModelDataBase):
         Get list of Test Case IDs which current
         Test Case depends on
         """
-        if len(aTestCaseDependencyData) == 0:
+        if not aTestCaseDependencyData:
             return []
 
         aoRet = []
@@ -888,7 +888,7 @@ class TestCaseDataEx(TestCaseData):
 
         else:
             assert sAttr == 'aoTestCaseArgs';
-            if self.aoTestCaseArgs is None or len(self.aoTestCaseArgs) == 0:
+            if not self.aoTestCaseArgs:
                 return (None, 'The testcase requires at least one argument variation to be valid.');
 
             # Note! We'll be returning an error dictionary instead of an string here.
@@ -898,7 +898,7 @@ class TestCaseDataEx(TestCaseData):
                 oVar = copy.copy(self.aoTestCaseArgs[iVar]);
                 oVar.idTestCase = self.idTestCase;
                 dCurErrors = oVar.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
-                if len(dCurErrors) == 0:
+                if not dCurErrors:
                     pass; ## @todo figure out the ID?
                 else:
                     asErrors = [];
@@ -918,16 +918,16 @@ class TestCaseDataEx(TestCaseData):
                         else:                   dErrors[iVar2]  = sMsg;
                         break;
 
-            return (aoNewValues, dErrors if len(dErrors) > 0 else None);
+            return (aoNewValues, dErrors if dErrors else None);
 
-        return (aoNewValues, None if len(asErrors) == 0 else ' <br>'.join(asErrors));
+        return (aoNewValues, None if not asErrors else ' <br>'.join(asErrors));
 
     def _validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor = ModelDataBase.ksValidateFor_Other):
         dErrors = TestCaseData._validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor);
 
         # Validate dependencies a wee bit for paranoid reasons. The scheduler
         # queue generation code does the real validation here!
-        if len(dErrors) == 0 and self.idTestCase is not None:
+        if not dErrors and self.idTestCase is not None:
             for oDep in self.aoDepTestCases:
                 if oDep.idTestCase == self.idTestCase:
                     if self.ksParam_aoDepTestCases in dErrors:
@@ -1125,7 +1125,7 @@ class TestCaseLogic(ModelLogicBase):
             aoEntries.append(ChangeLogEntry(uidAuthor, None, tsEffective, tsExpire, oNew, oOld, aoChanges));
 
         # If we're at the end of the log, add the initial entry.
-        if len(aoRows) <= cMaxRows and len(aoRows) > 0:
+        if len(aoRows) <= cMaxRows and aoRows:
             oNew = aoRows[-1];
             aoEntries.append(ChangeLogEntry(oNew.uidAuthor, None,
                                             aaoChanges[-1][0], aaoChanges[-2][0] if len(aaoChanges) > 1 else oNew.tsExpire,
@@ -1144,7 +1144,7 @@ class TestCaseLogic(ModelLogicBase):
         #
         assert isinstance(oData, TestCaseDataEx);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('Invalid input data: %s' % (dErrors,));
 
         #
@@ -1189,7 +1189,7 @@ class TestCaseLogic(ModelLogicBase):
         #
         assert isinstance(oData, TestCaseDataEx);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('Invalid input data: %s' % (dErrors,));
 
         #
@@ -1227,7 +1227,7 @@ class TestCaseLogic(ModelLogicBase):
         for idDep in aidOldDeps:
             if idDep in aidNewDeps:
                 asKeepers.append(str(idDep));
-        if len(asKeepers) > 0:
+        if asKeepers:
             sQuery += '     AND idTestCasePreReq NOT IN (' + ', '.join(asKeepers) + ')\n';
         self._oDb.execute(sQuery);
 
@@ -1252,7 +1252,7 @@ class TestCaseLogic(ModelLogicBase):
         for idDep in aidOldDeps:
             if idDep in aidNewDeps:
                 asKeepers.append(str(idDep));
-        if len(asKeepers) > 0:
+        if asKeepers:
             sQuery = '     AND idGlobalRsrc NOT IN (' + ', '.join(asKeepers) + ')\n';
         self._oDb.execute(sQuery);
 
@@ -1275,7 +1275,7 @@ class TestCaseLogic(ModelLogicBase):
                                           , (oData.idTestCase, ));
         for oNewVar in oData.aoTestCaseArgs:
             asKeepers.append(self._oDb.formatBindArgs('%s', (oNewVar.sArgs,)));
-        if len(asKeepers) > 0:
+        if asKeepers:
             sQuery += '    AND  sArgs NOT IN (' + ', '.join(asKeepers) + ')\n';
         self._oDb.execute(sQuery);
 

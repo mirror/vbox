@@ -155,7 +155,7 @@ class DatabaseObjCache(ModelLogicBase):
             for iRevision in aiRevisions:
                 if iRevision not in dRepo:
                     aiFiltered.append(iRevision);
-        if len(aiFiltered) > 0:
+        if aiFiltered:
             self._oDb.execute('SELECT *\n'
                               'FROM   VcsRevisions\n'
                               'WHERE  sRepository = %s\n'

@@ -375,10 +375,10 @@ class SchedGroupDataEx(SchedGroupData):
             aoNewMembers.append(oNewMember);
 
             dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
-            if len(dErrors) > 0:
+            if dErrors:
                 asErrors.append(str(dErrors));
 
-        if len(asErrors) == 0:
+        if not asErrors:
             for i, _ in enumerate(aoNewMembers):
                 idTestGroup = aoNewMembers[i];
                 for j in range(i + 1, len(aoNewMembers)):
@@ -386,7 +386,7 @@ class SchedGroupDataEx(SchedGroupData):
                         asErrors.append('Duplicate test group #%d!' % (idTestGroup, ));
                         break;
 
-        return (aoNewMembers, None if len(asErrors) == 0 else '<br>\n'.join(asErrors));
+        return (aoNewMembers, None if not asErrors else '<br>\n'.join(asErrors));
 
     def _validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor = ModelDataBase.ksValidateFor_Other):
         dErrors = SchedGroupData._validateAndConvertWorker(self, asAllowNullAttributes, oDb, enmValidateFor);
@@ -470,7 +470,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         # Validate.
         #
         dDataErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dDataErrors) > 0:
+        if dDataErrors:
             raise TMInvalidData('Invalid data passed to addEntry: %s' % (dDataErrors,));
         if self.exists(oData.sName):
             raise TMRowAlreadyExists('Scheduling group "%s" already exists.' % (oData.sName,));
@@ -514,7 +514,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         # Validate input and retrieve the old data.
         #
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry got invalid data: %s' % (dErrors,));
         self._assertUnique(oData.sName, oData.idSchedGroup);
         oOldData = SchedGroupDataEx().initFromDbWithId(self._oDb, oData.idSchedGroup);
@@ -571,7 +571,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
         # We use cascade a little different here... We don't actually delete
         # associated testboxes or testgroups.
         #
-        if len(oData.aoTestBoxes) > 0:
+        if oData.aoTestBoxes:
             if fCascade is not True:
                 # Complain about there being associated testboxes.
                 asTestBoxes = ['%s (#%d)' % (oTestBox.sName, oTestBox.idTestBox) for oTestBox in oData.aoTestBoxes];
@@ -586,7 +586,7 @@ class SchedGroupLogic(ModelLogicBase): # pylint: disable=R0903
                     oTbLogic.editEntry(oTbCopy, uidAuthor, fCommit = False);
 
                 oData = SchedGroupDataEx().initFromDbWithId(self._oDb, idSchedGroup);
-                if len(oData.aoTestBoxes) != 0:
+                if oData.aoTestBoxes:
                     raise TMRowInUse('More testboxes was added to the scheduling group as we were trying to delete it.');
 
         #

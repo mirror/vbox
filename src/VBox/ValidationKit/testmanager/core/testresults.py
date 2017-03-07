@@ -1683,7 +1683,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                                                                            aoRow[idxHover] if idxHover >= 0 else None));
                 if aoRow[0] in dLeft:
                     del dLeft[aoRow[0]];
-            if len(dLeft) > 0:
+            if dLeft:
                 if fIdIsName:
                     for idMissing in dLeft:
                         oCrit.aoPossible.append(FilterCriterionValueAndDescription(idMissing, str(idMissing),
@@ -1718,7 +1718,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
                 oMain.aoSubs.append(oCurSub);
                 oMain.cTimes += aoRow[4];
 
-            if len(dLeft) > 0:
+            if dLeft:
                 pass; ## @todo
 
         # Statuses.
@@ -2089,7 +2089,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             raise TMTooManyRows('Too many rows returned for idTestSet=%d: %d' % (idTestSet, cRows,));
 
         aaoRows = self._oDb.fetchAll();
-        if len(aaoRows) == 0:
+        if not aaoRows:
             raise TMRowNotFound('No test results for idTestSet=%d.' % (idTestSet,));
 
         # Set up the root node first.
@@ -2556,7 +2556,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         # Validate string attributes.
         for sAttr in [ 'name', 'text' ]: # 'unit' can be zero length.
-            if sAttr in dAttribs and len(dAttribs[sAttr]) == 0:
+            if sAttr in dAttribs and not dAttribs[sAttr]:
                 return 'Element %s has an empty %s attribute value.' % (sName, sAttr,);
 
         # Validate the timestamp attribute.
@@ -2621,7 +2621,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         sError   = None;
         dAttribs = {};
         sElement = sElement.strip();
-        while len(sElement) > 0:
+        while sElement:
             # Extract attribute name.
             off = sElement.find('=');
             if off < 0 or not sElement[:off].isalnum():
@@ -2677,7 +2677,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         Raises exception on hanging offence and on database error.
         """
         if sName == 'Test':
-            iNestingDepth = aoStack[0].iNestingDepth + 1 if len(aoStack) > 0 else 0;
+            iNestingDepth = aoStack[0].iNestingDepth + 1 if aoStack else 0;
             aoStack.insert(0, self._newTestResult(idTestResultParent = aoStack[0].idTestResult, idTestSet = idTestSet,
                                                   tsCreated = dAttribs['timestamp'], sName = dAttribs['name'],
                                                   iNestingDepth = iNestingDepth, dCounts = dCounts, fCommit = True) );
@@ -2747,7 +2747,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         May raise database exception.
         """
         aoStack    = self._getResultStack(idTestSet); # [0] == top; [-1] == bottom.
-        if len(aoStack) == 0:
+        if not aoStack:
             return ('No open results', True);
         self._oDb.dprint('** processXmlStream len(aoStack)=%s' % (len(aoStack),));
         #self._oDb.dprint('processXmlStream: %s' % (self._stringifyStack(aoStack),));
@@ -2759,7 +2759,7 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
 
         fExpectCloseTest = False;
         sXml = sXml.strip();
-        while len(sXml) > 0:
+        while sXml:
             if sXml.startswith('</Test>'): # Only closing tag.
                 offNext = len('</Test>');
                 if len(aoStack) <= 1:
@@ -2820,9 +2820,9 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
         #
         if sError is None and fExpectCloseTest:
             sError = 'Expected </Test> before the end of the XML section.'
-        elif sError is None and len(aaiHints) > 0:
+        elif sError is None and aaiHints:
             sError = 'Expected </PopHint> before the end of the XML section.'
-        if len(aaiHints) > 0:
+        if aaiHints:
             self._doPopHint(aoStack, aaiHints[-1][0], dCounts, idTestSet);
 
         #
@@ -2832,8 +2832,8 @@ class TestResultLogic(ModelLogicBase): # pylint: disable=R0903
             SystemLogLogic(self._oDb).addEntry(SystemLogData.ksEvent_XmlResultMalformed,
                                                'idTestSet=%s idTestResult=%s XML="%s" %s'
                                                % ( idTestSet,
-                                                   aoStack[0].idTestResult if len(aoStack) > 0 else -1,
-                                                   sXml[:30 if len(sXml) >= 30 else len(sXml)],
+                                                   aoStack[0].idTestResult if aoStack else -1,
+                                                   sXml[:min(len(sXml), 30)],
                                                    sError, ),
                                                cHoursRepeat = 6, fCommit = True);
         return (sError, False);

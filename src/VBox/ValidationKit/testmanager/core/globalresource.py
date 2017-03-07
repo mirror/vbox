@@ -271,7 +271,7 @@ class GlobalResourceLogic(ModelLogicBase):
         May raise exception on DB error.
         """
         # Quit quickly if there is nothing to alloocate.
-        if len(aoGlobalRsrcs) == 0:
+        if not aoGlobalRsrcs:
             return True;
 
         #

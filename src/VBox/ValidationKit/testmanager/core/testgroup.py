@@ -352,10 +352,10 @@ class TestGroupDataEx(TestGroupData):
             aoNewMembers.append(oNewMember);
 
             dErrors = oNewMember.validateAndConvert(oDb, ModelDataBase.ksValidateFor_Other);
-            if len(dErrors) > 0:
+            if dErrors:
                 asErrors.append(str(dErrors));
 
-        if len(asErrors) == 0:
+        if not asErrors:
             for i, _ in enumerate(aoNewMembers):
                 idTestCase = aoNewMembers[i];
                 for j in range(i + 1, len(aoNewMembers)):
@@ -363,7 +363,7 @@ class TestGroupDataEx(TestGroupData):
                         asErrors.append('Duplicate testcase #%d!' % (idTestCase, ));
                         break;
 
-        return (aoNewMembers, None if len(asErrors) == 0 else '<br>\n'.join(asErrors));
+        return (aoNewMembers, None if not asErrors else '<br>\n'.join(asErrors));
 
 
 class TestGroupLogic(ModelLogicBase):
@@ -418,7 +418,7 @@ class TestGroupLogic(ModelLogicBase):
         #
         assert isinstance(oData, TestGroupDataEx);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Add);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('addEntry invalid input: %s' % (dErrors,));
         self._assertUniq(oData, None);
 
@@ -452,7 +452,7 @@ class TestGroupLogic(ModelLogicBase):
         #
         assert isinstance(oData, TestGroupDataEx);
         dErrors = oData.validateAndConvert(self._oDb, oData.ksValidateFor_Edit);
-        if len(dErrors) > 0:
+        if dErrors:
             raise TMInvalidData('editEntry invalid input: %s' % (dErrors,));
         self._assertUniq(oData, oData.idTestGroup);
 
@@ -501,8 +501,8 @@ class TestGroupLogic(ModelLogicBase):
                                           'WHERE  idTestGroup = %s\n'
                                           '   AND tsExpire    = \'infinity\'::TIMESTAMP\n'
                                           , ( oData.idTestGroup, ));
-        if len(dNew) > 0:
-            sQuery += '   AND idTestCase NOT IN (%s)' % (', '.join([str(iKey) for iKey in dNew.keys()]),);
+        if dNew:
+            sQuery += '   AND idTestCase NOT IN (%s)' % (', '.join([str(iKey) for iKey in dNew]),);
         self._oDb.execute(sQuery);
 
         self._oDb.maybeCommit(fCommit);
@@ -526,7 +526,7 @@ class TestGroupLogic(ModelLogicBase):
                               '     AND SchedGroups.tsExpire          = \'infinity\'::TIMESTAMP\n'
                               , ( idTestGroup, ));
             aoGroups = self._oDb.fetchAll();
-            if len(aoGroups) > 0:
+            if aoGroups:
                 asGroups = ['%s (#%d)' % (sName, idSchedGroup) for idSchedGroup, sName in aoGroups];
                 raise TMRowInUse('Test group #%d is member of one or more scheduling groups: %s'
                                  % (idTestGroup, ', '.join(asGroups),));
