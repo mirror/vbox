@@ -262,7 +262,7 @@ ALIASES += @opcpuid="CPUID: "
 ALIASES += @opgroup="@ingroup "
 ALIASES += @opunused="Unused Encoding: "
 ALIASES += @opinvalid="Invalid Encoding: "
-ALIASES += @opinvlstyle="Invalid/Unused Encoding Style:
+ALIASES += @opinvlstyle="Invalid/Unused Encoding Style: "
 ALIASES += @optest="Testcase: "
 ALIASES += @opstats="IEM Stats:"
 ALIASES += @opfunction="IEM Function"
