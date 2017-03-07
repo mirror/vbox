@@ -100,8 +100,7 @@ class RemoteExecutor(object):
         """
         if self.oTxsSession is not None:
             return self.oTxsSession.syncIsFile(sFile);
-        else:
-            return os.path.isfile(sFile);
+        return os.path.isfile(sFile);
 
     def _getBinaryPath(self, sBinary):
         """

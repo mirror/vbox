@@ -68,7 +68,7 @@ class VBoxManageStdOutWrapper(object):
 
                 # Extract the value
             idxVmNameStart = sLine.find('"');
-            if idxVmNameStart is -1:
+            if idxVmNameStart == -1:
                 raise Exception('VBoxManageStdOutWrapper: Invalid output');
 
             idxVmNameStart += 1;

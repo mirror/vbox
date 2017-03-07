@@ -1402,7 +1402,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     else:
                         reporter.log2('Test #%d passed: Buffers match (%d bytes)' % (i, len(oRes.sBuf)));
                 elif     oRes.sBuf is not None \
-                     and len(oRes.sBuf):
+                     and oRes.sBuf:
                     reporter.error('Test #%d failed: Got no buffer data, expected\n%s (%dbytes)' %
                                    (i, map(hex, map(ord, oRes.sBuf)), len(oRes.sBuf)));
                     return False;
@@ -1459,20 +1459,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             if     waitResult == vboxcon.ProcessWaitResult_StdOut \
                                 or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:
                                 reporter.log2('Reading stdout ...');
-                                buf = curProc.Read(1, 64 * 1024, oTest.timeoutMS);
-                                if len(buf):
-                                    reporter.log2('Process (PID %d) got %d bytes of stdout data' % (curProc.PID, len(buf)));
-                                    oTest.cbStdOut += len(buf);
-                                    oTest.sBuf = buf; # Appending does *not* work atm, so just assign it. No time now.
+                                abBuf = curProc.Read(1, 64 * 1024, oTest.timeoutMS);
+                                if abBuf:
+                                    reporter.log2('Process (PID %d) got %d bytes of stdout data' % (curProc.PID, len(abBuf)));
+                                    oTest.cbStdOut += len(abBuf);
+                                    oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
                             # Try stderr.
                             if     waitResult == vboxcon.ProcessWaitResult_StdErr \
                                 or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:
                                 reporter.log2('Reading stderr ...');
-                                buf = curProc.Read(2, 64 * 1024, oTest.timeoutMS);
-                                if len(buf):
-                                    reporter.log2('Process (PID %d) got %d bytes of stderr data' % (curProc.PID, len(buf)));
-                                    oTest.cbStdErr += len(buf);
-                                    oTest.sBuf = buf; # Appending does *not* work atm, so just assign it. No time now.
+                                abBuf = curProc.Read(2, 64 * 1024, oTest.timeoutMS);
+                                if abBuf:
+                                    reporter.log2('Process (PID %d) got %d bytes of stderr data' % (curProc.PID, len(abBuf)));
+                                    oTest.cbStdErr += len(abBuf);
+                                    oTest.sBuf = abBuf; # Appending does *not* work atm, so just assign it. No time now.
                             # Use stdin.
                             if     waitResult == vboxcon.ProcessWaitResult_StdIn \
                                 or waitResult == vboxcon.ProcessWaitResult_WaitFlagNotSupported:

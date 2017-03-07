@@ -114,7 +114,7 @@ class tdTeleportLocal1(vbox.TestDriver):
         elif asArgs[iArg] == '--test-vms':
             iArg += 1;
             if iArg >= len(asArgs): raise base.InvalidOption('The "--test-vms" takes colon separated list');
-            if len(asArgs[iArg]) > 0:
+            if asArgs[iArg]:
                 self.asTestVMs = asArgs[iArg].split(':');
                 for s in self.asTestVMs:
                     if s not in self.asTestVMsDef:

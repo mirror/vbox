@@ -345,7 +345,7 @@ class tdUnitTest1(vbox.TestDriver):
             if not sPathName in os.environ:
                 sPathName = 'Path';
             sPath = os.environ.get(sPathName, '.');
-            if len(sPath) > 0 and sPath[-1] != ';':
+            if sPath and sPath[-1] != ';':
                 sPath += ';';
             os.environ[sPathName] = sPath + self.sVBoxInstallRoot + ';';
 
@@ -462,7 +462,7 @@ class tdUnitTest1(vbox.TestDriver):
                     # Convert the version value, making sure we've got a valid one.
                     try:    aiValue = [int(sComp) for sComp in sValue.replace('r', '.').split('.')];
                     except: aiValue = ();
-                    if len(aiValue) == 0 or len(aiValue) > 4:
+                    if not aiValue or len(aiValue) > 4:
                         reporter.error('Invalid exclusion expression for %s: "%s" [%s]' % (sTest, sSubExpr, dExclList[sTest]));
                         return True;
 
