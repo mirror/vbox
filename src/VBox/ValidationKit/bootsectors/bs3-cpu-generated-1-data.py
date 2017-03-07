@@ -506,7 +506,7 @@ class Bs3CpuGenerated1Generator(object):
                 oOut = sys.stdout;
             else:
                 try:
-                    oOut = open(sOutFile, 'wt');
+                    oOut = open(sOutFile, 'w');
                 except Exception as oXcpt:
                     print('error! Failed open "%s" for writing: %s' % (sOutFile, oXcpt,));
                     return 1;
