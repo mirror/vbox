@@ -92,7 +92,7 @@ class WuiAdminFailureReason(WuiFormContentBase):
         """
 
         aoFailureCategories = FailureCategoryLogic(TMDatabaseConnection()).getFailureCategoriesForCombo()
-        if len(aoFailureCategories) == 0:
+        if not aoFailureCategories:
             from testmanager.webui.wuiadmin import WuiAdmin
             sExceptionMsg = 'Please <a href="%s?%s=%s">add</a> Failure Category first.' % \
                 (WuiAdmin.ksScriptName, WuiAdmin.ksParamAction, WuiAdmin.ksActionFailureCategoryAdd)

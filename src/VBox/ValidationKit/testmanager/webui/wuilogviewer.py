@@ -166,7 +166,7 @@ class WuiLogViewer(WuiContentBase):
             offLine = offCur;
             iLine  += 1;
             offCur += len(sLine);
-            if offCur >= offFile or len(sLine) == 0:
+            if offCur >= offFile or not sLine:
                 break;
             while isCurLineAtOrAfterCurTs():
                 iCurTs += 1;
@@ -196,7 +196,7 @@ class WuiLogViewer(WuiContentBase):
             offLine = offCur;
             iLine  += 1;
             offCur += len(sLine);
-            if len(sLine) == 0:
+            if not sLine:
                 break;
         asLines.append('<pre/></div>\n');
         return ''.join(asLines);

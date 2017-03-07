@@ -524,7 +524,7 @@ class WuiAdmin(WuiDispatcherBase):
 
 
         # Take action.
-        if sListAction is 'none':
+        if sListAction == 'none':
             pass;
         else:
             oLogic = TestBoxLogic(self._oDb);
@@ -663,7 +663,7 @@ class WuiAdmin(WuiDispatcherBase):
                                     % (webutils.escapeElem(str(oXcpt)),);
                     self._sPageBody += cgitb.html(sys.exc_info());
                 else:
-                    if len(aoErrors) == 0:
+                    if not aoErrors:
                         self._sPageBody += '<p>Successfully regenerated.</p>';
                     else:
                         for oError in aoErrors:
@@ -846,7 +846,7 @@ class WuiAdmin(WuiDispatcherBase):
 
         oGlobalResourceLogic = GlobalResourceLogic(self._oDb)
         dErrors = oData.validateAndConvert(self._oDb);
-        if len(dErrors) == 0:
+        if not dErrors:
             if sAction == WuiAdmin.ksActionGlobalRsrcAdd:
                 oGlobalResourceLogic.addGlobalResource(self._oCurUser.uid, oData)
             elif sAction == WuiAdmin.ksActionGlobalRsrcEdit:

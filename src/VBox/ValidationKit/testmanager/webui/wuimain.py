@@ -932,7 +932,7 @@ class WuiMain(WuiDispatcherBase):
                  u' <a href="javascript:toggleSidebarSize();" class="tm-sidebar-size-link">&#x00bb;&#x00bb;</a></span></p>\n';
         sHtml += u' <dl>\n';
         for oCrit in oFilter.aCriteria:
-            if len(oCrit.aoPossible) > 0:
+            if oCrit.aoPossible:
                 if   (    oCrit.oSub is None \
                       and (   oCrit.sState == oCrit.ksState_Selected \
                            or len(oCrit.aoPossible) <= 2)) \
@@ -1230,7 +1230,7 @@ class WuiMain(WuiDispatcherBase):
                                           % (idTestSet, oTestFile.sFile,));
         while True:
             abChunk = oFile.read(262144);
-            if len(abChunk) == 0:
+            if not abChunk:
                 break;
             self._oSrvGlue.writeRaw(abChunk);
         return self.ksDispatchRcAllDone;

@@ -90,7 +90,7 @@ class WuiTestResult(WuiContentBase):
         sHtml  = u'   <table class="tmtbl-testresult-details" width="100%%">\n';
 
         for aoSubRows in aoTableContent:
-            if len(aoSubRows) == 0:
+            if not aoSubRows:
                 continue; # Can happen if there is no testsuit.
             oCaption = aoSubRows[0];
             sHtml += u'    \n' \
@@ -193,7 +193,7 @@ class WuiTestResult(WuiContentBase):
                           % ( WuiMain.ksParamReportSubjectIds, ReportGraphModel.ksTypeElapsed, sLineage);
 
 
-        if    len(oTestResult.aoChildren) == 0 \
+        if    not oTestResult.aoChildren \
           and len(oTestResult.aoValues) + len(oTestResult.aoMsgs) + len(oTestResult.aoFiles) == 0:
             # Leaf - single row.
             tsEvent = oTestResult.tsCreated;
@@ -351,7 +351,7 @@ class WuiTestResult(WuiContentBase):
             sReasonText = '%s / %s' % ( oTestResult.oReason.oFailureReason.oCategory.sShort,
                                         oTestResult.oReason.oFailureReason.sShort, );
             sCommentHtml = '';
-            if oTestResult.oReason.sComment is not None and len(oTestResult.oReason.sComment.strip()) > 0:
+            if oTestResult.oReason.sComment and oTestResult.oReason.sComment.strip():
                 sCommentHtml = '<br>' + webutils.escapeElem(oTestResult.oReason.sComment.strip());
                 sCommentHtml = sCommentHtml.replace('\n', '<br>');
 
@@ -399,7 +399,7 @@ class WuiTestResult(WuiContentBase):
 
             # We need the failure reasons for the combobox.
             aoFailureReasons = FailureReasonLogic(self._oDisp.getDb()).fetchForCombo('Test Sheriff, you figure out why!');
-            assert len(aoFailureReasons) > 0;
+            assert aoFailureReasons;
 
             # For now we'll use the standard form helper.
             sFormActionUrl = '%s?%s=%s' % ( self._oDisp.ksScriptName, self._oDisp.ksParamAction,
@@ -453,7 +453,7 @@ class WuiTestResult(WuiContentBase):
         """Show detailed result"""
         def getTcDepsHtmlList(aoTestCaseData):
             """Get HTML <ul> list of Test Case name items"""
-            if len(aoTestCaseData) > 0:
+            if aoTestCaseData:
                 sTmp = '<ul>'
                 for oTestCaseData in aoTestCaseData:
                     sTmp += '<li>%s</li>' % (webutils.escapeElem(oTestCaseData.sName),);
@@ -464,7 +464,7 @@ class WuiTestResult(WuiContentBase):
 
         def getGrDepsHtmlList(aoGlobalResourceData):
             """Get HTML <ul> list of Global Resource name items"""
-            if len(aoGlobalResourceData) > 0:
+            if aoGlobalResourceData:
                 sTmp = '<ul>'
                 for oGlobalResourceData in aoGlobalResourceData:
                     sTmp += '<li>%s</li>' % (webutils.escapeElem(oGlobalResourceData.sName),);
@@ -494,7 +494,7 @@ class WuiTestResult(WuiContentBase):
                                                  tsNow = tsReportEffectiveDate, fBracketed = False),
                           ]),
         ];
-        if oTestCaseEx.sDescription is not None and len(oTestCaseEx.sDescription) > 0:
+        if oTestCaseEx.sDescription:
             aoResultRows.append([oTestCaseEx.sDescription,]);
         aoResultRows.append([ 'Status:', WuiRawHtml('<span class="tmspan-status-%s">%s</span>'
                                                     % (oTestResultTree.enmStatus, oTestResultTree.enmStatus,))]);
@@ -547,9 +547,9 @@ class WuiTestResult(WuiContentBase):
             aoResultRows.append([ 'Build reqs:', oTestCaseEx.sBuildReqExpr ]);
         if oTestCaseEx.sValidationKitZips is not None and oTestCaseEx.sValidationKitZips != '@VALIDATIONKIT_ZIP@':
             aoResultRows.append([ 'Validation Kit:', oTestCaseEx.sValidationKitZips ]);
-        if oTestCaseEx.aoDepTestCases is not None and len(oTestCaseEx.aoDepTestCases) > 0:
+        if oTestCaseEx.aoDepTestCases:
             aoResultRows.append([ 'Prereq. Test Cases:', oTestCaseEx.aoDepTestCases, getTcDepsHtmlList ]);
-        if oTestCaseEx.aoDepGlobalResources is not None and len(oTestCaseEx.aoDepGlobalResources) > 0:
+        if oTestCaseEx.aoDepGlobalResources:
             aoResultRows.append([ 'Global Resources:', oTestCaseEx.aoDepGlobalResources, getGrDepsHtmlList ]);
 
         # Builds.
@@ -615,7 +615,7 @@ class WuiTestResult(WuiContentBase):
                             WuiReportSummaryLink(ReportModelBase.ksSubTestBox, oTestSet.idTestBox,
                                                  tsNow = tsReportEffectiveDate, fBracketed = False), ]),
         ];
-        if oTestBox.sDescription is not None and len(oTestBox.sDescription) > 0:
+        if oTestBox.sDescription:
             aoTestBoxRows.append([oTestBox.sDescription, ]);
         aoTestBoxRows += [
             ( 'IP:',                       oTestBox.ip ),
@@ -855,7 +855,7 @@ class WuiGroupedResultList(WuiListContentBase):
         sTestBoxTitle += u'CPU features:\t' + u', '.join(asFeatures);
 
         # Testcase
-        if oEntry.sSubName is not None and len(oEntry.sSubName) > 0:
+        if oEntry.sSubName:
             sTestCaseName = '%s / %s' % (oEntry.sTestCaseName, oEntry.sSubName,);
         else:
             sTestCaseName = oEntry.sTestCaseName;
@@ -867,13 +867,13 @@ class WuiGroupedResultList(WuiListContentBase):
             sReasonTitle += 'Category:\t%s\n' % ( oIt.oFailureReason.oCategory.sShort, );
             sReasonTitle += 'Assigned:\t%s\n' % ( self.formatTsShort(oIt.tsFailureReasonAssigned), );
             sReasonTitle += 'By User: \t%s\n' % ( oIt.oFailureReasonAssigner.sUsername, );
-            if oIt.sFailureReasonComment is not None and len(oIt.sFailureReasonComment) > 0:
+            if oIt.sFailureReasonComment:
                 sReasonTitle += 'Comment: \t%s\n' % ( oIt.sFailureReasonComment, );
             if oIt.oFailureReason.iTicket is not None and oIt.oFailureReason.iTicket > 0:
                 sReasonTitle += 'xTracker:\t#%s\n' % ( oIt.oFailureReason.iTicket, );
             for i, sUrl in enumerate(oIt.oFailureReason.asUrls):
                 sUrl = sUrl.strip();
-                if len(sUrl) > 0:
+                if sUrl:
                     sReasonTitle += 'URL#%u:  \t%s\n' % ( i, sUrl, );
             aoReasons.append(WuiTmLink(oIt.oFailureReason.sShort, WuiAdmin.ksScriptName,
                                        { WuiAdmin.ksParamAction: WuiAdmin.ksActionFailureReasonDetails,

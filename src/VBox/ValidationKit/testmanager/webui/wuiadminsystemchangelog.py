@@ -353,7 +353,7 @@ class WuiAdminSystemChangelogList(WuiListContentBase):
         # Do the formatting.
         #
 
-        if aoChanges is not None and len(aoChanges) > 0:
+        if aoChanges:
             oChangeEntry    = aoChanges[0];
             cAttribsChanged = len(oChangeEntry.aoChanges) + 1;
             if oChangeEntry.oOldRaw is None and sEvent.startswith('Modified '):

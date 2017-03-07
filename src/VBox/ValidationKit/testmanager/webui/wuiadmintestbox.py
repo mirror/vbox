@@ -219,7 +219,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         (sTitle, sBody) = super(WuiTestBoxList, self).show(fShowNavigation);
 
         # Count boxes in interesting states.
-        if len(self._aoEntries) > 0:
+        if self._aoEntries:
             cActive = 0;
             cDead   = 0;
             for oTestBox in self._aoEntries:
@@ -346,7 +346,7 @@ class WuiTestBoxList(WuiListContentWithActionBase):
         if oEntry.fCpuNestedPaging is True: asFeatures.append(u'Nested\u2011Paging');
         if oEntry.fCpu64BitGuest   is True: asFeatures.append(u'64\u2011bit\u2011Guest');
         if oEntry.fChipsetIoMmu    is True: asFeatures.append(u'I/O\u2011MMU');
-        sFeatures = u' '.join(asFeatures) if len(asFeatures) > 0 else u'';
+        sFeatures = u' '.join(asFeatures) if asFeatures else u'';
 
         # Collection applicable actions.
         aoActions = [

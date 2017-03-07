@@ -78,7 +78,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
         self.fBracketed     = fBracketed;
         self.sExtraAttrs    = sExtraAttrs;
 
-        if dParams is not None and len(dParams) > 0:
+        if dParams:
             # Do some massaging of None arguments.
             dParams = dict(dParams);
             for sKey in dParams:
@@ -103,7 +103,7 @@ class WuiLinkBase(WuiHtmlBase): # pylint: disable=R0903
             sExtraAttrs += 'onclick=\'return confirm("%s");\' ' % (webutils.escapeAttr(self.sConfirm),);
         if self.sTitle is not None:
             sExtraAttrs += 'title="%s" ' % (webutils.escapeAttr(self.sTitle),);
-        if len(sExtraAttrs) > 0 and sExtraAttrs[-1] != ' ':
+        if sExtraAttrs and sExtraAttrs[-1] != ' ':
             sExtraAttrs += ' ';
 
         sFmt = '[<a %shref="%s">%s</a>]';
@@ -121,8 +121,8 @@ class WuiTmLink(WuiLinkBase): # pylint: disable=R0903
                  sFragmentId = None, fBracketed = True):
 
         # Add debug parameters if necessary.
-        if self.kdDbgParams is not None and len(self.kdDbgParams) > 0:
-            if dParams is None or len(dParams) == 0:
+        if self.kdDbgParams:
+            if not dParams:
                 dParams = dict(self.kdDbgParams);
             else:
                 dParams = dict(dParams);
@@ -139,7 +139,7 @@ class WuiAdminLink(WuiTmLink): # pylint: disable=R0903
     def __init__(self, sName, sAction, tsEffectiveDate = None, dParams = None, sConfirm = None, sTitle = None,
                  sFragmentId = None, fBracketed = True):
         from testmanager.webui.wuiadmin import WuiAdmin;
-        if dParams is None or len(dParams) == 0:
+        if not dParams:
             dParams = dict();
         else:
             dParams = dict(dParams);
@@ -154,7 +154,7 @@ class WuiMainLink(WuiTmLink): # pylint: disable=R0903
     """ Local link to the test manager's main portion. """
 
     def __init__(self, sName, sAction, dParams = None, sConfirm = None, sTitle = None, sFragmentId = None, fBracketed = True):
-        if dParams is None or len(dParams) == 0:
+        if not dParams:
             dParams = dict();
         else:
             dParams = dict(dParams);
@@ -188,7 +188,7 @@ class WuiBuildLogLink(WuiLinkBase):
     For linking to a build log.
     """
     def __init__(self, sUrl, sName = None, fBracketed = True):
-        assert sUrl is not None; assert len(sUrl) > 0;
+        assert not sUrl;
         if sName is None:
             sName = 'Build log';
         if not webutils.hasSchema(sUrl):
@@ -407,7 +407,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
         WuiSingleContentBase.__init__(self, copy.copy(oData), oDisp);
         assert sMode in [self.ksMode_Add, self.ksMode_Edit, self.ksMode_Show];
         assert len(sTitle) > 1;
-        assert sId is None or len(sId) > 0;
+        assert sId is None or sId;
 
         self._sMode         = sMode;
         self._sCoreName     = sCoreName;
@@ -697,11 +697,11 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
 
         # Add any post form content.
         atPostFormContent = self._generatePostFormContent(self._oData);
-        if atPostFormContent is not None and len(atPostFormContent) > 0:
+        if atPostFormContent:
             for iSection, tSection in enumerate(atPostFormContent):
                 (sSectionTitle, sSectionContent) = tSection;
                 sContent += u'<div id="postform-%d"  class="tmformpostsection">\n' % (iSection,);
-                if sSectionTitle is not None and len(sSectionTitle) > 0:
+                if sSectionTitle:
                     sContent += '<h3 class="tmformpostheader">%s</h3>\n' % (webutils.escapeElem(sSectionTitle),);
                 sContent += u' <div id="postform-%d-content" class="tmformpostcontent">\n' % (iSection,);
                 sContent += sSectionContent;
@@ -710,7 +710,7 @@ class WuiFormContentBase(WuiSingleContentBase): # pylint: disable=R0903
 
         # Add action to the top.
         aoActions = self._generateTopRowFormActions(self._oData);
-        if len(aoActions) > 0:
+        if aoActions:
             sActionLinks = '<p>%s</p>' % (' '.join(unicode(oLink) for oLink in aoActions));
             sContent = sActionLinks + sContent;
 
@@ -746,7 +746,7 @@ class WuiListContentBase(WuiContentBase):
         self._sTitle            = sTitle;       assert len(sTitle) > 1;
         if sId is None:
             sId                 = sTitle.strip().replace(' ', '').lower();
-        assert len(sId.strip()) > 0;
+        assert sId.strip();
         self._sId               = sId;
         self._asColumnHeaders   = [];
         self._asColumnAttribs   = [];
@@ -762,7 +762,7 @@ class WuiListContentBase(WuiContentBase):
         if sComment is None:
             return None;
         sComment = sComment.strip();
-        if len(sComment) == 0:
+        if not sComment:
             return None;
 
         # Restrict the text if necessary, making the whole text available thru mouse-over.
@@ -812,7 +812,7 @@ class WuiListContentBase(WuiContentBase):
         assert len(aoValues) == len(self._asColumnHeaders), '%s vs %s' % (len(aoValues), len(self._asColumnHeaders));
 
         for i, _ in enumerate(aoValues):
-            if i < len(self._asColumnAttribs) and len(self._asColumnAttribs[i]) > 0:
+            if i < len(self._asColumnAttribs) and self._asColumnAttribs[i]:
                 sRow += u'    <td ' + self._asColumnAttribs[i] + '>';
             else:
                 sRow += u'    <td>';
@@ -820,7 +820,7 @@ class WuiListContentBase(WuiContentBase):
             if isinstance(aoValues[i], WuiHtmlBase):
                 sRow += aoValues[i].toHtml();
             elif isinstance(aoValues[i], list):
-                if len(aoValues[i]) > 0:
+                if aoValues[i]:
                     for oElement in aoValues[i]:
                         if isinstance(oElement, WuiHtmlBase):
                             sRow += oElement.toHtml();
@@ -1002,7 +1002,7 @@ class WuiListContentBase(WuiContentBase):
         #
         sPageBody = '<table class="tmtable" id="' + self._sId + '" cellspacing="0">\n';
 
-        if len(self._asColumnHeaders) == 0:
+        if not self._asColumnHeaders:
             self._asColumnHeaders = self._aoEntries[0].getDataAttributes();
 
         sPageBody += self._generateTableHeaders();
@@ -1037,7 +1037,7 @@ class WuiListContentBase(WuiContentBase):
         if fShowNavigation:
             sPageBody += self._generateNavigation('top');
 
-        if len(self._aoEntries):
+        if self._aoEntries:
             sPageBody += self._generateTable();
             if fShowNavigation:
                 sPageBody += self._generateNavigation('bottom');
@@ -1090,7 +1090,7 @@ class WuiListContentWithActionBase(WuiListContentBase):
                     % ('' if self._sId is None else self._sId, self._sCheckboxName,);
         if fShowNavigation:
             sPageBody += self._generateNavigation('top');
-        if len(self._aoEntries) > 0:
+        if self._aoEntries:
 
             sPageBody += '<form action="?%s" method="post" class="tmlistactionform">\n' \
                        % (webutils.encodeUrlParams({WuiDispatcherBase.ksParamAction: self._sAction,}),);

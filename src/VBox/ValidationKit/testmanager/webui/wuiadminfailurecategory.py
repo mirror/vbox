@@ -96,7 +96,7 @@ class WuiFailureCategory(WuiFormContentBase):
             tsNow     = self._oDisp.getNow();
             cMax      = 4096;
             aoEntries = oLogic.fetchForListingInCategory(0, cMax, tsNow, oData.idFailureCategory)
-            if len(aoEntries) > 0:
+            if aoEntries:
                 oList = WuiAdminFailureReasonList(aoEntries, 0, cMax, tsNow, fnDPrint = None, oDisp = self._oDisp);
                 return [ [ 'Members', oList.show(fShowNavigation = False)[1]], ];
         return [];

@@ -84,7 +84,7 @@ class WuiTestGroupList(WuiListContentBase):
     """
 
     def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, fnDPrint, oDisp, aiSelectedSortColumns = None):
-        assert len(aoEntries) == 0 or isinstance(aoEntries[0], TestGroupDataEx)
+        assert not aoEntries or isinstance(aoEntries[0], TestGroupDataEx)
 
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffective, sTitle = 'Test Groups',
                                     fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
@@ -100,7 +100,7 @@ class WuiTestGroupList(WuiListContentBase):
         # Test case list.
         #
         sHtml = '';
-        if len(oEntry.aoMembers) > 0:
+        if oEntry.aoMembers:
             for oMember in oEntry.aoMembers:
                 sHtml += '<dl>\n' \
                          '  <dd><strong>%s</strong> (priority: %d) %s %s</dd>\n' \

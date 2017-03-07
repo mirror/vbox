@@ -257,7 +257,7 @@ class WuiReportFailuresBase(WuiReportBase):
 
         sHtml  = u'<h4>Movements:</h4>\n' \
                  u'<ul>\n';
-        if len(oSet.aoEnterInfo) == 0 and len(oSet.aoLeaveInfo) == 0:
+        if not oSet.aoEnterInfo and not oSet.aoLeaveInfo:
             sHtml += u'<li>No changes</li>\n';
         else:
             for oTransient in oSet.aoEnterInfo:
@@ -357,7 +357,7 @@ class WuiReportFailuresWithTotalBase(WuiReportFailuresBase):
 
         # Figure the sorting column.
         if self._aiSortColumns is not None \
-          and len(self._aiSortColumns) > 0 \
+          and self._aiSortColumns \
           and abs(self._aiSortColumns[0]) <= len(oSet.aoPeriods):
             iSortColumn = abs(self._aiSortColumns[0]);
             fByTotal = iSortColumn >= len(oSet.aoPeriods); # pylint: disable=unused-variable
@@ -561,7 +561,7 @@ class WuiReportTestCaseArgsFailures(WuiReportFailuresWithTotalBase):
     @staticmethod
     def _formatName(oTestCaseArgs):
         """ Internal helper for formatting the testcase name. """
-        if oTestCaseArgs.sSubName is not None and len(oTestCaseArgs.sSubName) > 0:
+        if oTestCaseArgs.sSubName:
             sName = u'%s / %s'  % ( oTestCaseArgs.oTestCase.sName, oTestCaseArgs.sSubName, );
         else:
             sName = u'%s / #%u' % ( oTestCaseArgs.oTestCase.sName, oTestCaseArgs.idTestCaseArgs, );

@@ -128,33 +128,33 @@ class WuiGraphWiz(WuiReportBase):
         sName = '';
 
         if fBits & WuiGraphWiz.kfSeriesName_Product:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += oSeries.oBuildCategory.sProduct;
 
         if fBits & WuiGraphWiz.kfSeriesName_Branch:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += oSeries.oBuildCategory.sBranch;
 
         if fBits & WuiGraphWiz.kfSeriesName_BuildType:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += oSeries.oBuildCategory.sType;
 
         if fBits & WuiGraphWiz.kfSeriesName_OsArchs:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += ' & '.join(oSeries.oBuildCategory.asOsArches);
 
         if fBits & WuiGraphWiz.kfSeriesName_TestCaseArgs:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             if oSeries.idTestCaseArgs is not None:
                 sName += oSeries.oTestCase.sName + ':#' + str(oSeries.idTestCaseArgs);
             else:
                 sName += oSeries.oTestCase.sName;
         elif fBits & WuiGraphWiz.kfSeriesName_TestCase:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += oSeries.oTestCase.sName;
 
         if fBits & WuiGraphWiz.kfSeriesName_TestBox:
-            if len(sName) > 0: sName += ' / ';
+            if sName: sName += ' / ';
             sName += oSeries.oTestBox.sName;
 
         return sName;
@@ -167,7 +167,7 @@ class WuiGraphWiz(WuiReportBase):
                                      | WuiGraphWiz.kfSeriesName_BuildType
                                     );
         sName = self._getSeriesNameFromBits(oSeries, fGraphName);
-        if len(sName) > 0: sName += ' - ';
+        if sName: sName += ' - ';
         sName += sSampleName;
         return sName;
 
@@ -182,10 +182,10 @@ class WuiGraphWiz(WuiReportBase):
         else:
             return 'Invalid collection type: "%s"' % (oCollection.sType,);
 
-        sTestName = ', '.join(oCollection.asTests if len(oCollection.asTests[0]) else oCollection.asTests[1:]);
+        sTestName = ', '.join(oCollection.asTests if oCollection.asTests[0] else oCollection.asTests[1:]);
         if sTestName == '':
             # Use the testcase name if there is only one for all series.
-            if len(oCollection.aoSeries) == 0:
+            if not oCollection.aoSeries:
                 return asSampleName[0];
             if len(oCollection.aoSeries) > 1:
                 idTestCase = oCollection.aoSeries[0].idTestCase;
@@ -242,7 +242,7 @@ class WuiGraphWiz(WuiReportBase):
             while len(aoUnitSeries) > cMaxPerGraph:
                 aaoRet.append(aoUnitSeries[:cMaxPerGraph]);
                 aoUnitSeries = aoUnitSeries[cMaxPerGraph:];
-            if len(aoUnitSeries) > 0:
+            if aoUnitSeries:
                 aaoRet.append(aoUnitSeries);
 
         return aaoRet;
@@ -461,7 +461,7 @@ class WuiGraphWiz(WuiReportBase):
                   % ( WuiMain.ksParamGraphWizBuildCatIds, oBuildCat.idBuildCategory, oBuildCat.idBuildCategory, sChecked,
                       oBuildCat.idBuildCategory,
                       oBuildCat.sProduct, oBuildCat.sBranch, oBuildCat.sType, ' & '.join(oBuildCat.asOsArches) );
-        assert len(aidBuildCategories) == 0; # SQL should return all currently selected.
+        assert not aidBuildCategories; # SQL should return all currently selected.
 
         sEnd += '   </ol>\n' \
                 ' </div>\n';
@@ -541,7 +541,7 @@ class WuiGraphWiz(WuiReportBase):
                            ':%u' % oCollection.idStrValue if oCollection.idStrValue else '',
                            WuiMain.ksParamReportSubjectIds, sSampleName );
 
-            if len(oCollection.aoSeries) > 0:
+            if oCollection.aoSeries:
                 #
                 # Split the series into sub-graphs as needed and produce SVGs.
                 #

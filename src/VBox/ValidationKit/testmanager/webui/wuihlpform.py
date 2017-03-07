@@ -340,7 +340,7 @@ class WuiHlpForm(object):
             sExtraAttribs += ' readonly onclick="return false" onkeydown="return false"';
 
         self._addLabel(sName, sLabel, 'list');
-        if len(aoRows) == 0:
+        if not aoRows:
             return self._add('No items</div></div></li>')
         sNameEscaped = escapeAttr(sName);
 
@@ -647,7 +647,7 @@ class WuiHlpForm(object):
         """
         assert len(aoTestGroupMembers) <= len(aoAllTestCases);
         self._addLabel(sName, sLabel);
-        if len(aoAllTestCases) == 0:
+        if not aoAllTestCases:
             return self._add('<li>No testcases available.</li>\n')
 
         self._add(u'<input name="%s" type="hidden" value="%s">\n'
@@ -751,7 +751,7 @@ class WuiHlpForm(object):
 
 
 
-            if len(oTestCase.aoTestCaseArgs) == 0:
+            if not oTestCase.aoTestCaseArgs:
                 self._add(u'    <td></td> <td></td> <td></td> <td></td>\n'
                           u'  </tr>\n');
         return self._add(u' </tbody>\n'
@@ -766,7 +766,7 @@ class WuiHlpForm(object):
             fReadOnly = self._fReadOnly;
         assert len(aoSchedGroupMembers) <= len(aoAllTestGroups);
         self._addLabel(sName, sLabel);
-        if len(aoAllTestGroups) == 0:
+        if not aoAllTestGroups:
             return self._add(u'<li>No test groups available.</li>\n')
 
         self._add(u'<input name="%s" type="hidden" value="%s">\n'
@@ -873,7 +873,7 @@ class WuiHlpForm(object):
             aoAllSchedGroups = [oCur.oSchedGroup for oCur in aoInSchedGroups]
 
         self._addLabel(sName, sLabel);
-        if len(aoAllSchedGroups) == 0:
+        if not aoAllSchedGroups:
             return self._add('<li>No scheduling groups available.</li>\n')
 
         # Add special parameter with all the scheduling group IDs in the form.
