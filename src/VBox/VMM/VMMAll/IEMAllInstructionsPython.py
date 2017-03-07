@@ -499,7 +499,7 @@ class TestType(object):
 
         Raises BadValue if invalid value.
         """
-        if len(sValue) == 0:
+        if not sValue:
             raise TestType.BadValue('empty value');
 
         # Deal with sign and detect hexadecimal or decimal.
@@ -1148,7 +1148,7 @@ class SimpleParser(object):
         Print the errors to stderr.
         Returns number of errors.
         """
-        if len(self.asErrors) > 0:
+        if self.asErrors:
             sys.stderr.write(u''.join(self.asErrors));
         return len(self.asErrors);
 
@@ -1176,7 +1176,7 @@ class SimpleParser(object):
         if oInstr.sMnemonic is None:
             asWords = sStats.split('_');
             oInstr.sMnemonic = asWords[0].lower();
-            if len(asWords) > 1 and len(oInstr.aoOperands) == 0:
+            if len(asWords) > 1 and not oInstr.aoOperands:
                 for sType in asWords[1:]:
                     if sType in g_kdOpTypes:
                         oInstr.aoOperands.append(Operand(g_kdOpTypes[sType][1], sType));
@@ -1247,7 +1247,7 @@ class SimpleParser(object):
 
         # Derive encoding from operands.
         if oInstr.sEncoding is None:
-            if len(oInstr.aoOperands) == 0:
+            if not oInstr.aoOperands:
                 oInstr.sEncoding = 'fixed';
             elif oInstr.aoOperands[0].usesModRM():
                 if len(oInstr.aoOperands) >= 2 and oInstr.aoOperands[1].sWhere == 'vvvv':
@@ -1258,7 +1258,7 @@ class SimpleParser(object):
         #
         # Apply default map and then add the instruction to all it's groups.
         #
-        if len(oInstr.aoMaps) == 0:
+        if not oInstr.aoMaps:
             oInstr.aoMaps = [ self.oDefaultMap, ];
         for oMap in oInstr.aoMaps:
             oMap.aoInstructions.append(oInstr);
@@ -1323,7 +1323,7 @@ class SimpleParser(object):
 
     def ensureInstructionForOpTag(self, iTagLine):
         """ Ensure there is an instruction for the op-tag being parsed. """
-        if len(self.aoCurInstrs) == 0:
+        if not self.aoCurInstrs:
             self.addInstruction(self.iCommentLine + iTagLine);
         for oInstr in self.aoCurInstrs:
             oInstr.cOpTags += 1;
@@ -1339,7 +1339,7 @@ class SimpleParser(object):
         """
         asRet = [];
         for asLines in aasSections:
-            if len(asLines) > 0:
+            if asLines:
                 asRet.append(' '.join([sLine.strip() for sLine in asLines]));
         return asRet;
 
@@ -1355,7 +1355,7 @@ class SimpleParser(object):
 
         sRet = '';
         for iSection, asLines in enumerate(aasSections):
-            if len(asLines) > 0:
+            if asLines:
                 if iSection > 0:
                     sRet += sSectionSep;
                 sRet += sLineSep.join([sLine.strip() for sLine in asLines]);
@@ -1377,7 +1377,7 @@ class SimpleParser(object):
 
         # Flatten and validate the value.
         sBrief = self.flattenAllSections(aasSections);
-        if len(sBrief) == 0:
+        if not sBrief:
             return self.errorComment(iTagLine, '%s: value required' % (sTag,));
         if sBrief[-1] != '.':
             sBrief = sBrief + '.';
@@ -1404,7 +1404,7 @@ class SimpleParser(object):
         It is used to describe instructions.
         """
         oInstr = self.ensureInstructionForOpTag(iTagLine);
-        if len(aasSections) > 0:
+        if aasSections:
             oInstr.asDescSections.extend(self.flattenSections(aasSections));
             return True;
 
@@ -1497,7 +1497,7 @@ class SimpleParser(object):
         # Flatten, split up and validate the value.
         sFlattened = self.flattenAllSections(aasSections, sLineSep = ',', sSectionSep = ',');
         asMaps = sFlattened.split(',');
-        if len(asMaps) == 0:
+        if not asMaps:
             return self.errorComment(iTagLine, '%s: value required' % (sTag,));
         for sMap in asMaps:
             if sMap not in g_dInstructionMaps:
@@ -1741,7 +1741,7 @@ class SimpleParser(object):
         asWords = self.flattenAllSections(aasSections).split();
         if len(asWords) != 1:
             self.errorComment(iTagLine, '%s: expected exactly one value: %s' % (sTag, asWords,));
-            if len(asWords) == 0:
+            if not asWords:
                 return False;
         sDisEnum = asWords[0];
         if not self.oReDisEnum.match(sDisEnum):
@@ -1910,7 +1910,7 @@ class SimpleParser(object):
             # Sort the input into outputs, inputs and selector conditions.
             #
             sFlatSection = self.flattenAllSections([asSectionLines,]);
-            if len(sFlatSection) == 0:
+            if not sFlatSection:
                 self.errorComment(iTagLine, '%s: missing value' % ( sTag,));
                 continue;
             oTest = InstructionTest(oInstr);
@@ -2117,11 +2117,11 @@ class SimpleParser(object):
         for iLine, sLine in enumerate(asLines):
             asLines[iLine] = sLine.lstrip().lstrip('*').lstrip();
 
-        while len(asLines) > 0 and len(asLines[0]) == 0:
+        while asLines and not asLines[0]:
             self.iCommentLine += 1;
             asLines.pop(0);
 
-        while len(asLines) > 0 and len(asLines[-1]) == 0:
+        while asLines and not asLines[-1]:
             asLines.pop(len(asLines) - 1);
 
         #
@@ -2141,9 +2141,9 @@ class SimpleParser(object):
         aasSections  = [ asCurSection, ];
         for iLine, sLine in enumerate(asLines):
             if not sLine.startswith('@'):
-                if len(sLine) > 0:
+                if sLine:
                     asCurSection.append(sLine);
-                elif len(asCurSection) != 0:
+                elif asCurSection:
                     asCurSection = [];
                     aasSections.append(asCurSection);
             else:
@@ -2188,7 +2188,7 @@ class SimpleParser(object):
         #
         # Don't allow default text in blocks containing @op*.
         #
-        if cOpTags > 0 and len(sFlatDefault) > 0:
+        if cOpTags > 0 and sFlatDefault:
             self.errorComment(0, 'Untagged comment text is not allowed with @op*: %s' % (sFlatDefault,));
 
         return True;
@@ -2286,7 +2286,7 @@ class SimpleParser(object):
             return True;
 
         # Apply to the last instruction only for now.
-        if len(self.aoCurInstrs) == 0:
+        if not self.aoCurInstrs:
             self.addInstruction();
         oInstr = self.aoCurInstrs[-1];
         if oInstr.iLineMnemonicMacro == -1:
@@ -2403,7 +2403,7 @@ class SimpleParser(object):
             if asArgs is not None:
                 sFunction = asArgs[1];
 
-                if len(self.aoCurInstrs) == 0:
+                if not self.aoCurInstrs:
                     self.addInstruction();
                 for oInstr in self.aoCurInstrs:
                     if oInstr.iLineFnIemOpMacro == -1:
