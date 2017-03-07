@@ -106,7 +106,7 @@ def _logXcptWorker(fnLogger, sPrefix = '', sText = None, cFrames = 1, fnLogger1 
             except:
                 fnLogger1('internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
 
-            if len(asInfo) > 0:
+            if asInfo:
                 # Do the logging.
                 for sItem in asInfo:
                     asLines = sItem.splitlines();

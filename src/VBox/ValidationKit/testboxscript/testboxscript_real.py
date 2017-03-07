@@ -232,7 +232,7 @@ class TestBoxScript(object):
         os.environ['TESTBOX_TIMEOUT']           = '0';
         os.environ['TESTBOX_TIMEOUT_ABS']       = '0';
 
-        if utils.getHostOs() is 'win':
+        if utils.getHostOs() == 'win':
             os.environ['COMSPEC']            = os.path.join(os.environ['SystemRoot'], 'System32', 'cmd.exe');
         # Currently omitting any kBuild tools.
 
@@ -1008,7 +1008,7 @@ class TestBoxScript(object):
 
         for sPrefix in ['sBuilds', 'sTestRsrc']:
             sType = getattr(oOptions, sPrefix + 'ServerType');
-            if sType is None or len(sType.strip()) == 0:
+            if sType is None or not sType.strip():
                 setattr(oOptions, sPrefix + 'ServerType', None);
             elif sType not in ['cifs', 'nfs']:
                 print('Syntax error: Invalid server type "%s"' % (sType,));

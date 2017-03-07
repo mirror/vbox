@@ -123,7 +123,7 @@ def _doUpgradeTestRun(sUpgradeDir):
     """
     asArgs = [os.path.join(sUpgradeDir, 'testboxscript', 'testboxscript', 'testboxscript.py'), '--version' ];
     testboxcommons.log('Testing the new testbox script (%s)...' % (asArgs[0],));
-    if sys.executable is not None and len(sys.executable) > 0:
+    if sys.executable:
         asArgs.insert(0, sys.executable);
     oChild = subprocess.Popen(asArgs, shell = False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT);
 

@@ -88,7 +88,7 @@ class TestBoxScriptWrapper(object): # pylint: disable=R0903
         sRealScript = os.path.join(sTestBoxScriptDir, TestBoxScriptWrapper.TESTBOX_SCRIPT_FILENAME);
         asArgs = sys.argv[1:];
         asArgs.insert(0, sRealScript);
-        if sys.executable is not None and len(sys.executable) > 0:
+        if sys.executable:
             asArgs.insert(0, sys.executable);
 
         # Look for --pidfile <name> and write a pid file.
@@ -99,7 +99,7 @@ class TestBoxScriptWrapper(object): # pylint: disable=R0903
                 break;
             if asArgs[i] == '--':
                 break;
-        if sPidFile is not None and len(sPidFile) > 0:
+        if sPidFile:
             oPidFile = open(sPidFile, 'w');
             oPidFile.write(str(os.getpid()));
             oPidFile.close();
