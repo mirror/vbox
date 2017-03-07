@@ -91,6 +91,8 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
  * @returns Strict VBox status code.
  * @retval  VINF_SUCCESS if the hypercall succeeded (even if its operation
  *          failed).
+ * @retval  VINF_GIM_HYPERCALL_CONTINUING continue hypercall without updating
+ *          RIP.
  * @retval  VINF_GIM_R3_HYPERCALL re-start the hypercall from ring-3.
  * @retval  VERR_GIM_HYPERCALL_ACCESS_DENIED CPL is insufficient.
  * @retval  VERR_GIM_HYPERCALLS_NOT_AVAILABLE hypercalls unavailable.
@@ -103,6 +105,7 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
+ * @remarks The caller of this function needs to advance RIP as required.
  * @thread  EMT.
  */
 VMM_INT_DECL(VBOXSTRICTRC) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)

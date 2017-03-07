@@ -441,10 +441,15 @@ FNIEMOP_DEF_1(iemOp_Grp7_lidt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 0xd8. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
 
-/** Opcode 0x0f 0x01 0xd9. */
-FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmmcall);
-
 #ifdef VBOX_WITH_NESTED_HWVIRT
+/** Opcode 0x0f 0x01 0xd9. */
+FNIEMOP_DEF(iemOp_Grp7_Amd_vmmcall)
+{
+    IEMOP_MNEMONIC(vmmcall, "vmmcall");
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_vmmcall);
+}
+
+
 /** Opcode 0x0f 0x01 0xda. */
 FNIEMOP_DEF(iemOp_Grp7_Amd_vmload)
 {
@@ -484,6 +489,9 @@ FNIEMOP_DEF(iemOp_Grp7_Amd_invlpga)
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_invlpga);
 }
 #else
+/** Opcode 0x0f 0x01 0xd9. */
+FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmmcall);
+
 /** Opcode 0x0f 0x01 0xda. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
 

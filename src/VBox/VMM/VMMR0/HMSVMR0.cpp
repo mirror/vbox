@@ -3969,89 +3969,6 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
 
 
 /**
- * Emulates a simple MOV TPR (CR8) instruction, used for TPR patching on 32-bit
- * guests. This simply looks up the patch record at EIP and does the required.
- *
- * This VMMCALL is used a fallback mechanism when mov to/from cr8 isn't exactly
- * like how we want it to be (e.g. not followed by shr 4 as is usually done for
- * TPR). See hmR3ReplaceTprInstr() for the details.
- *
- * @returns VBox status code.
- * @retval VINF_SUCCESS if the access was handled successfully.
- * @retval VERR_NOT_FOUND if no patch record for this RIP could be found.
- * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
- */
-static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
-
-    /*
-     * We do this in a loop as we increment the RIP after a successful emulation
-     * and the new RIP may be a patched instruction which needs emulation as well.
-     */
-    bool fPatchFound = false;
-    for (;;)
-    {
-        bool    fPending;
-        uint8_t u8Tpr;
-
-        PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
-        if (!pPatch)
-            break;
-
-        fPatchFound = true;
-        switch (pPatch->enmType)
-        {
-            case HMTPRINSTR_READ:
-            {
-                int rc = APICGetTpr(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
-                AssertRC(rc);
-
-                rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
-                AssertRC(rc);
-                pCtx->rip += pPatch->cbOp;
-                break;
-            }
-
-            case HMTPRINSTR_WRITE_REG:
-            case HMTPRINSTR_WRITE_IMM:
-            {
-                if (pPatch->enmType == HMTPRINSTR_WRITE_REG)
-                {
-                    uint32_t u32Val;
-                    int rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pPatch->uSrcOperand, &u32Val);
-                    AssertRC(rc);
-                    u8Tpr = u32Val;
-                }
-                else
-                    u8Tpr = (uint8_t)pPatch->uSrcOperand;
-
-                int rc2 = APICSetTpr(pVCpu, u8Tpr);
-                AssertRC(rc2);
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
-
-                pCtx->rip += pPatch->cbOp;
-                break;
-            }
-
-            default:
-                AssertMsgFailed(("Unexpected patch type %d\n", pPatch->enmType));
-                pVCpu->hm.s.u32HMError = pPatch->enmType;
-                return VERR_SVM_UNEXPECTED_PATCH_TYPE;
-        }
-    }
-
-    if (fPatchFound)
-        return VINF_SUCCESS;
-    return VERR_NOT_FOUND;
-}
-
-
-/**
  * Determines if an exception is a contributory exception.
  *
  * Contributory exceptions are ones which can cause double-faults unless the
@@ -5259,45 +5176,20 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
-    /* First check if this is a patched VMMCALL for mov TPR */
-    int rc = hmR0SvmEmulateMovTpr(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
-    if (rc == VINF_SUCCESS)
+    bool fRipUpdated;
+    VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fRipUpdated);
+    if (RT_SUCCESS(rcStrict))
     {
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-        return VINF_SUCCESS;
+        if (!fRipUpdated)
+            hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3 /* cbInstr */);
+
+        /* If the hypercall or TPR patching changes anything other than guest's general-purpose registers,
+           we would need to reload the guest changed bits here before VM-entry. */
+        return VBOXSTRICTRC_VAL(rcStrict);
     }
 
-    if (rc == VERR_NOT_FOUND)
-    {
-        if (pVCpu->hm.s.fHypercallsEnabled)
-        {
-            VBOXSTRICTRC rcStrict = GIMHypercall(pVCpu, pCtx);
-            if (RT_SUCCESS(VBOXSTRICTRC_VAL(rcStrict)))
-            {
-                if (rcStrict == VINF_SUCCESS)
-                    hmR0SvmAdvanceRipHwAssist(pVCpu, pCtx, 3 /* cbInstr */);
-                else
-                    Assert(   rcStrict == VINF_GIM_HYPERCALL_CONTINUING
-                           || rcStrict == VINF_GIM_R3_HYPERCALL);
-
-                /* If the hypercall changes anything other than guest's general-purpose registers,
-                   we would need to reload the guest changed bits here before VM-entry. */
-            }
-            rc = VBOXSTRICTRC_VAL(rcStrict);
-            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
-        }
-        else
-            Log4(("hmR0SvmExitVmmCall: Hypercalls not enabled\n"));
-    }
-
-    /* If hypercalls are disabled or the hypercall failed for some reason, raise #UD and continue. */
-    if (RT_FAILURE(rc))
-    {
-        hmR0SvmSetPendingXcptUD(pVCpu);
-        rc = VINF_SUCCESS;
-    }
-
-    return rc;
+    hmR0SvmSetPendingXcptUD(pVCpu);
+    return VINF_SUCCESS;
 }
 
 

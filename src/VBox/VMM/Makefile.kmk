@@ -228,6 +228,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
 	VMMAll/HMAll.cpp \
+	VMMAll/HMSVMAll.cpp \
 	VMMAll/IEMAll.cpp \
 	VMMAll/IEMAllAImpl.asm \
 	VMMAll/IEMAllAImplC.cpp \
@@ -578,6 +579,8 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/GIMAll.cpp \
  	VMMAll/GIMAllHv.cpp \
  	VMMAll/GIMAllKvm.cpp \
+	VMMAll/HMAll.cpp \
+	VMMAll/HMSVMAll.cpp \
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
@@ -723,6 +726,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/GIMAllHv.cpp \
  	VMMAll/GIMAllKvm.cpp \
  	VMMAll/HMAll.cpp \
+ 	VMMAll/HMSVMAll.cpp \
  	VMMAll/IEMAll.cpp \
  	VMMAll/IEMAllAImpl.asm \
  	VMMAll/IEMAllAImplC.cpp \

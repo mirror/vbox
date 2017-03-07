@@ -95,21 +95,6 @@ VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 }
 
 
-/**
- * Flushes the guest TLB.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
-{
-    LogFlow(("HMFlushTLB\n"));
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbManual);
-    return VINF_SUCCESS;
-}
-
 #ifdef IN_RING0
 
 /**
@@ -169,6 +154,20 @@ static void hmR0PokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 
 #endif /* IN_RING0 */
 #ifndef IN_RC
+/**
+ * Flushes the guest TLB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(int) HMFlushTLB(PVMCPU pVCpu)
+{
+    LogFlow(("HMFlushTLB\n"));
+
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbManual);
+    return VINF_SUCCESS;
+}
 
 /**
  * Poke an EMT so it can perform the appropriate TLB shootdowns.
@@ -272,7 +271,57 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
     return VINF_SUCCESS;
 }
 
-#endif /* !IN_RC */
+
+/**
+ * Invalidates a guest page by physical address.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      Page to invalidate.
+ *
+ * @remarks Assumes the current instruction references this physical page
+ *          though a virtual address!
+ */
+VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    if (!HMIsNestedPagingActive(pVM))
+        return VINF_SUCCESS;
+
+#ifdef IN_RING0
+    if (pVM->hm.s.vmx.fSupported)
+    {
+        VMCPUID idThisCpu = VMMGetCpuId(pVM);
+
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+
+            if (idThisCpu == idCpu)
+            {
+                /** @todo r=ramshankar: Intel does not support flushing by guest physical
+                 *        address either. See comment in VMXR0InvalidatePhysPage(). Fix this. */
+                VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
+            }
+            else
+            {
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+                hmPokeCpuForTlbFlush(pVCpu, true /*fAccountFlushStat*/);
+            }
+        }
+        return VINF_SUCCESS;
+    }
+
+    /* AMD-V doesn't support invalidation with guest physical addresses; see
+       comment in SVMR0InvalidatePhysPage. */
+    Assert(pVM->hm.s.svm.fSupported);
+#else
+    NOREF(GCPhys);
+#endif
+
+    HMFlushTLBOnAllVCpus(pVM);
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Checks if nested paging is enabled.
@@ -358,57 +407,8 @@ VMM_INT_DECL(PGMMODE) HMGetShwPagingMode(PVM pVM)
     Assert(pVM->hm.s.vmx.fSupported);
     return PGMMODE_EPT;
 }
+#endif /* !IN_RC */
 
-
-/**
- * Invalidates a guest page by physical address.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   GCPhys      Page to invalidate.
- *
- * @remarks Assumes the current instruction references this physical page
- *          though a virtual address!
- */
-VMM_INT_DECL(int) HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
-{
-    if (!HMIsNestedPagingActive(pVM))
-        return VINF_SUCCESS;
-
-#ifdef IN_RING0
-    if (pVM->hm.s.vmx.fSupported)
-    {
-        VMCPUID idThisCpu = VMMGetCpuId(pVM);
-
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        {
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-            if (idThisCpu == idCpu)
-            {
-                /** @todo r=ramshankar: Intel does not support flushing by guest physical
-                 *        address either. See comment in VMXR0InvalidatePhysPage(). Fix this. */
-                VMXR0InvalidatePhysPage(pVM, pVCpu, GCPhys);
-            }
-            else
-            {
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-                hmPokeCpuForTlbFlush(pVCpu, true /*fAccountFlushStat*/);
-            }
-        }
-        return VINF_SUCCESS;
-    }
-
-    /* AMD-V doesn't support invalidation with guest physical addresses; see
-       comment in SVMR0InvalidatePhysPage. */
-    Assert(pVM->hm.s.svm.fSupported);
-#else
-    NOREF(GCPhys);
-#endif
-
-    HMFlushTLBOnAllVCpus(pVM);
-    return VINF_SUCCESS;
-}
 
 /**
  * Checks if an interrupt event is currently pending.

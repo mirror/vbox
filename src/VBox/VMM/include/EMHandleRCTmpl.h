@@ -236,6 +236,12 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          */
         case VINF_GIM_R3_HYPERCALL:
         {
+            /* Currently hypercall instruction (vmcall/vmmcall) emulation is compiled
+               only when Nested Hw. virt feature is enabled in IEM (for easier IEM backports). */
+#ifdef VBOX_WITH_NESTED_HWVIRT
+            rc = emR3ExecuteInstruction(pVM, pVCpu, "Hypercall");
+            break;
+#else
             /** @todo IEM/REM need to handle VMCALL/VMMCALL, see
              *        @bugref{7270#c168}. */
             uint8_t cbInstr = 0;
@@ -258,6 +264,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
                 rc = VBOXSTRICTRC_VAL(rcStrict);
             }
             break;
+#endif
         }
 
 #ifdef EMHANDLERC_WITH_HM
