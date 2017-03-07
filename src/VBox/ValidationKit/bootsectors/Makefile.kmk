@@ -344,5 +344,11 @@ $$(bs3-cpu-generated-1_0_OUTDIR)/bs3-cpu-generated-1-data.c16: \
 endif # VBOX_WITH_BS3KIT
 
 
+#
+# pylint
+#
+VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(wildcard $(PATH_SUB_CURRENT)/*.py)
+$(evalcall def_vbox_validationkit_process_python_sources)
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # $Id$
+# pylint: disable=invalid-name
 
 """
 Generates testcases from @optest specifications in IEM.
@@ -33,16 +34,15 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import os;
-import re;
 import sys;
-import time;
 
 # Only the main script needs to modify the path.
 g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)));
 g_ksVmmAllDir = os.path.join(os.path.dirname(g_ksValidationKitDir), 'VMM', 'VMMAll')
 sys.path.append(g_ksVmmAllDir);
 
-import IEMAllInstructionsPython as iai;
+import IEMAllInstructionsPython as iai; # pylint: disable=import-error
+
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
@@ -338,7 +338,7 @@ class Bs3CpuGenerated1Generator(object):
         for oInstr in sorted(iai.g_aoAllInstructions,
                              key = lambda oInstr: oInstr.sMnemonic + ''.join([oOp.sType for oOp in oInstr.aoOperands])
                                                                    + (oInstr.sOpcode if oInstr.sOpcode else 'zz')):
-            if len(oInstr.aoTests) > 0:
+            if oInstr.aoTests:
                 oTests = Bs3Cg1EncodedTests(oInstr);
                 oTests = self.addTests(oTests);
 
