@@ -78,7 +78,7 @@ class VcsImport(object): # pylint: disable=R0903
         asMissing = [];
         if self.oConfig.sUrl is None:               asMissing.append('--url');
         if self.oConfig.sRepository is None:        asMissing.append('--repository');
-        if len(asMissing) > 0:
+        if asMissing:
             sys.stderr.write('syntax error: Missing: %s\n' % (asMissing,));
             sys.exit(1);
 

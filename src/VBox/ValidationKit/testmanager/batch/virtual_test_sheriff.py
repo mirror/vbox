@@ -180,7 +180,7 @@ class VirtualTestSheriffCaseFile(object):
         """
         Tries to reads the main log file since this will be the first source of information.
         """
-        if len(self.sMainLog) > 0:
+        if self.sMainLog:
             return self.sMainLog;
         (oFile, oSizeOrError, _) = self.oTestSet.openFile('main.log', 'rb');
         if oFile is not None:
@@ -291,7 +291,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
 
         (self.oConfig, _) = oParser.parse_args();
 
-        if self.oConfig.sLogFile is not None and len(self.oConfig.sLogFile) > 0:
+        if self.oConfig.sLogFile:
             self.oLogFile = open(self.oConfig.sLogFile, "a");
             self.oLogFile.write('VirtualTestSheriff: $Revision$ \n');
 
@@ -509,13 +509,13 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Log it and create a dReasonForReasultId we can use below.
         #
         dCommentForResultId = oCaseFile.dCommentForResultId;
-        if len(oCaseFile.dReasonForResultId) > 0:
+        if oCaseFile.dReasonForResultId:
             # Must weed out ktHarmless.
             dReasonForResultId = {};
             for idKey, tReason in oCaseFile.dReasonForResultId.items():
                 if tReason is not self.ktHarmless:
                     dReasonForResultId[idKey] = tReason;
-            if len(dReasonForResultId) == 0:
+            if not dReasonForResultId:
                 self.vprint(u'TODO: Closing %s without a real reason, only %s.'
                             % (oCaseFile.sName, oCaseFile.dReasonForResultId));
                 return False;
@@ -531,7 +531,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 fSingleReason = False;
             if fSingleReason:
                 dReasonForResultId = { oCaseFile.oTestSet.idTestResult: atValues[0], };
-                if len(dCommentForResultId) > 0:
+                if dCommentForResultId:
                     dCommentForResultId = { oCaseFile.oTestSet.idTestResult: dCommentForResultId.values()[0], };
         elif oCaseFile.tReason is not None:
             dReasonForResultId = { oCaseFile.oTestSet.idTestResult: oCaseFile.tReason, };
@@ -587,7 +587,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             offEnd = sStr.find('\n', off);
             if offEnd < 0:
                 return  iLine + 1 == len(asFollowingLines) and sStr.find(sLine, off) < 0;
-            if len(sLine) > 0 and sStr.find(sLine, off, offEnd) < 0:
+            if sLine and sStr.find(sLine, off, offEnd) < 0:
                 return False;
 
             # next line.
@@ -897,11 +897,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             Investigates the current set of VM related logs.
             """
             self.dprint('investigateLogSet: lengths: result log %u, VM log %u, kernel log %u, vga text %u, info text %u'
-                        % ( len(sResultLog) if sResultLog is not None else 0,
-                            len(sVMLog)     if sVMLog is not None else 0,
-                            len(sKrnlLog)   if sKrnlLog is not None else 0,
-                            len(sVgaText)   if sVgaText is not None else 0,
-                            len(sInfoText)  if sInfoText is not None else 0, ));
+                        % ( len(sResultLog if sResultLog else ''),
+                            len(sVMLog     if sVMLog else ''),
+                            len(sKrnlLog   if sKrnlLog else ''),
+                            len(sVgaText   if sVgaText else ''),
+                            len(sInfoText  if sInfoText else ''), ));
 
             #self.dprint(u'main.log<<<\n%s\n<<<\n' % (sResultLog,));
             #self.dprint(u'vbox.log<<<\n%s\n<<<\n' % (sVMLog,));
@@ -953,7 +953,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     fFoundSomething = True;
 
             # Continue with vga text.
-            if sVgaText is not None and len(sVgaText) > 0:
+            if sVgaText:
                 for fStopOnHit, tReason, sNeedle in self.katSimpleVgaTextReasons:
                     if sVgaText.find(sNeedle) > 0:
                         oCaseFile.noteReasonForId(tReason, oFailedResult.idTestResult);
@@ -993,7 +993,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             };
 
             # info.txt.
-            if sInfoText is not None and len(sInfoText) > 0:
+            if sInfoText:
                 for sNeedle, fnHandler in self.katInfoTextHandlers:
                     if sInfoText.find(sNeedle) > 0:
                         (fStop, tReason) = fnHandler(self, oCaseFile, sInfoText, dLogs);
@@ -1173,7 +1173,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         if len(oCaseFile.dReasonForResultId) >= len(aoFailedResults):
             return self.caseClosed(oCaseFile);
 
-        if len(oCaseFile.dReasonForResultId) > 0:
+        if oCaseFile.dReasonForResultId:
             self.vprint(u'TODO: Got %u out of %u - close, but no cigar. :-/'
                         % (len(oCaseFile.dReasonForResultId), len(aoFailedResults)));
         else:

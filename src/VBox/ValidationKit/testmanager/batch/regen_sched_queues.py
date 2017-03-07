@@ -82,7 +82,7 @@ class RegenSchedQueues(object): # pylint: disable=R0903
                 oDb.rollback();
                 print '  !!Hit exception processing "%s": %s' % (oGroup.sName, oXcpt,);
             else:
-                if len(aoErrors) == 0:
+                if not aoErrors:
                     if not self.oConfig.fQuiet:
                         print '  Successfully regenerated.';
                 else:
@@ -93,7 +93,7 @@ class RegenSchedQueues(object): # pylint: disable=R0903
                             print '  !!%s' % (oError[0],);
                         else:
                             print '  !!%s (%s)' % (oError[0], oError[1]);
-                if len(asMessages) > 0 and not self.oConfig.fQuiet:
+                if asMessages and not self.oConfig.fQuiet:
                     print '  %d messages:' % (len(asMessages),);
                     for sMsg in asMessages:
                         print '  ##%s' % (sMsg,);

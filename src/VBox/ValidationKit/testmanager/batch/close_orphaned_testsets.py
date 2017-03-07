@@ -68,7 +68,7 @@ class CloseOrphanedTestSets(object):
         # Get a list of orphans.
         oLogic = TestSetLogic(oDb);
         aoOrphans = oLogic.fetchOrphaned();
-        if len(aoOrphans) > 0:
+        if aoOrphans:
             # Complete them.
             if self.oConfig.fJustDoIt:
                 print 'Completing %u test sets as abandoned:' % (len(aoOrphans),);

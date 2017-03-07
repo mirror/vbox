@@ -86,7 +86,7 @@ class Build(object): # pylint: disable=R0903
         if self.oConfig.sBuildType is None:         asMissing.append('--type');
         if self.oConfig.asTargetOsArches is None:   asMissing.append('--os-arch');
         if self.oConfig.asFiles is None:            asMissing.append('--file');
-        if len(asMissing) > 0:
+        if asMissing:
             sys.stderr.write('syntax error: Missing: %s\n' % (asMissing,));
             sys.exit(1);
         # Temporary default.

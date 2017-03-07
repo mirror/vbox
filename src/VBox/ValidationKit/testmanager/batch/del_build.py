@@ -55,7 +55,7 @@ def markBuildsDeleted():
                        help='Quiet execution');
 
     (oConfig, asArgs) = oParser.parse_args()
-    if len(asArgs) == 0:
+    if not asArgs:
         if not oConfig.fQuiet:
             sys.stderr.write('syntax error: No builds binaries specified\n');
         return 1;

@@ -86,7 +86,7 @@ class BuildChecker(object): # pylint: disable=R0903
         iStart   = 0;
         while True:
             aoBuilds = oBuildLogic.fetchForListing(iStart, cMaxRows, tsNow);
-            if not self.oConfig.fQuiet and len(aoBuilds) > 0:
+            if not self.oConfig.fQuiet and aoBuilds:
                 print 'Processing builds #%s thru #%s' % (aoBuilds[0].idBuild, aoBuilds[-1].idBuild);
 
             for oBuild in aoBuilds:
