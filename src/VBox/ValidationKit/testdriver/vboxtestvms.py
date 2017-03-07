@@ -625,7 +625,7 @@ class TestVmSet(object):
                 if sPvMode not in g_kasParavirtProviders:
                     raise base.InvalidOption('The "--paravirt-modes" value "%s" is not valid; valid values are: %s'
                                              % (sPvMode, ', '.join(g_kasParavirtProviders),));
-            if len(self.asParavirtModes) == 0:
+            if not self.asParavirtModes:
                 self.asParavirtModes = None;
 
             # HACK ALERT! Reset the random paravirt selection for members.

@@ -305,7 +305,7 @@ def processCheckPidAndName(uPid, sName):
             if sCurName is None:
                 return False;
             sCurName = sCurName.strip();
-            if sCurName is '':
+            if sCurName == '':
                 return False;
 
             if os.path.basename(sName) == sName:
@@ -1093,7 +1093,7 @@ class TestDriverBase(object): # pylint: disable=R0902
             if cMsTimeout == 0:
                 return self.pollTasks();
 
-            if len(self.aoTasks) == 0:
+            if not self.aoTasks:
                 return None;
 
             fMore = True;
@@ -1543,7 +1543,7 @@ class TestDriverBase(object): # pylint: disable=R0902
                         self.pidFileRemove(iPid, fQuiet = True);
                         del dPids[iPid];
 
-                if len(dPids) == 0:
+                if not dPids:
                     reporter.log('All done.');
                     return True;
 

@@ -324,7 +324,7 @@ class ReporterBase(object):
             self.log(0, '** %-50s: FAILED - %d errors' % (sFullName, cErrors), sCaller, sTsPrf);
 
         # Flush buffers when reaching the last test.
-        if len(self.atTests) == 0:
+        if not self.atTests:
             self.xmlFlush(fRetry = True);
 
         return (sName, cErrors);
@@ -343,7 +343,7 @@ class ReporterBase(object):
         Closes all open test as failed.
         Returns True if no open tests, False if there were open tests.
         """
-        if len(self.atTests) == 0:
+        if not self.atTests:
             return True;
         for _ in range(len(self.atTests)):
             self.testFailure('Test not closed by test drver', sCaller)
@@ -449,7 +449,7 @@ class LocalReporter(ReporterBase):
         """Closes the XML file."""
         if self.oXmlFile is not None:
             # pop the test stack
-            while len(self.atTests) > 0:
+            while self.atTests:
                 sName, cErrorsStart, self.fTimedOut = self.atTests.pop();
                 self._xmlWrite([ '<End timestamp="%s" errors="%d"/>' % (sTsIso, self.cErrors - cErrorsStart,),
                                  '</%s>' % (sName,), ]);
@@ -537,7 +537,7 @@ class LocalReporter(ReporterBase):
                         fRc = False;
                         self.log(0, 'error writing %s: %s' % (sDstFilename, oXcpt), sCaller, sTsPrf);
                     else:
-                        if len(abBuf) > 0:
+                        if abBuf:
                             continue;
                 break;
             oDstFile.close();
@@ -692,7 +692,7 @@ class RemoteReporter(ReporterBase):
 
     def __del__(self):
         """Flush pending log messages?"""
-        if len(self._asXml) > 0:
+        if self._asXml:
             self._xmlDoFlush(self._asXml, fRetry = True, fDtor = True);
 
     def _writeOutput(self, sText):
@@ -954,7 +954,7 @@ class RemoteReporter(ReporterBase):
         if not self._fXmlFlushing:
             asXml = self._asXml;
             self._asXml = [];
-            if len(asXml) > 0  or  fForce is True:
+            if asXml or fForce is True:
                 self._fXmlFlushing = True;
 
                 g_oLock.release();
@@ -1029,7 +1029,7 @@ class RemoteReporter(ReporterBase):
         return None;
 
     def doPollWork(self, sDebug = None):
-        if len(self._asXml) > 0:
+        if self._asXml:
             g_oLock.acquire();
             try:
                 self._xmlFlushIfNecessary(fPolling = True, sDebug = sDebug);
@@ -1082,7 +1082,7 @@ def logXcptWorker(iLevel, fIncErrors, sPrefix="", sText=None, cFrames=1):
                 except:
                     g_oReporter.log(0, '** internal-error: Hit exception #2! %s' % (traceback.format_exc()), sCaller, sTsPrf);
 
-                if len(asInfo) > 0:
+                if asInfo:
                     # Do the logging.
                     for sItem in asInfo:
                         asLines = sItem.splitlines();
@@ -1192,7 +1192,7 @@ class FileWrapperTestPipe(object):
             # error counter. This is only a very lazy aproach.
             sText.strip();
             idxText = 0;
-            while len(sText) > 0:
+            while sText:
                 if self.sTagBuffer is None:
                     # Look for the start of a tag.
                     idxStart = sText[idxText:].find('<');

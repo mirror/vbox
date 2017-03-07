@@ -256,7 +256,7 @@ class TransportBase(object):
                                        ord(sOpcode[5]), \
                                        ord(sOpcode[6]), \
                                        ord(sOpcode[7]) ) ) );
-            if len(abPayload) > 0:
+            if abPayload:
                 abMsg.extend(abPayload);
         except:
             reporter.fatalXcpt('sendMsgInt: packing problem...');
@@ -281,7 +281,7 @@ class TransportBase(object):
         """
 
         # Read the header.
-        if len(self.abReadAheadHdr) > 0:
+        if self.abReadAheadHdr:
             assert(len(self.abReadAheadHdr) == 16);
             abHdr = self.abReadAheadHdr;
             self.abReadAheadHdr = array.array('B');
@@ -755,7 +755,7 @@ class Session(TdTaskBase):
                         sFailure = 'exception reading stdin';
                         rc = None;
                         break;
-                    if len(sInput) > 0:
+                    if sInput:
                         oStdIn.uTxsClientCrc32 = zlib.crc32(sInput, oStdIn.uTxsClientCrc32);
                         # Convert to a byte array before handing it of to sendMsg or the string
                         # will get some zero termination added breaking the CRC (and injecting
@@ -1089,7 +1089,7 @@ class Session(TdTaskBase):
 
                 # Update the file stream CRC and send it off.
                 uMyCrc32 = zlib.crc32(abBuf, uMyCrc32);
-                if len(abBuf) == 0:
+                if not abBuf:
                     rc = self.sendMsg('DATA EOF', (long(uMyCrc32 & 0xffffffff), ));
                 else:
                     rc = self.sendMsg('DATA    ', (long(uMyCrc32 & 0xffffffff), abBuf));
@@ -1107,7 +1107,7 @@ class Session(TdTaskBase):
                     break;
 
                 # EOF?
-                if len(abBuf) == 0:
+                if not abBuf:
                     break;
 
             # Send ABORT on ACK and I/O errors.
@@ -1148,7 +1148,7 @@ class Session(TdTaskBase):
         oLocalString = OutStringFile();
         rc = self.taskDownloadCommon(sRemoteFile, oLocalString);
         if rc is True:
-            if len(oLocalString.asContent) == 0:
+            if not oLocalString.asContent:
                 rc = '';
             else:
                 rc = ''.join(oLocalString.asContent);
@@ -1929,7 +1929,7 @@ class TransportTcp(TransportBase):
             try:
                 self.oSocket.setblocking(0);    # just in case it's not set.
                 sData = "1";
-                while len(sData) > 0:
+                while sData:
                     sData = self.oSocket.recv(16384);
             except:
                 pass;
@@ -1945,19 +1945,19 @@ class TransportTcp(TransportBase):
         self._closeWakeupSockets();
         self.oCv.release();
 
-    def sendBytes(self, abMsg, cMsTimeout):
+    def sendBytes(self, abBuf, cMsTimeout):
         if self.oSocket is None:
             reporter.error('TransportTcp.sendBytes: No connection.');
             return False;
 
         # Try send it all.
         try:
-            cbSent = self.oSocket.send(abMsg);
-            if cbSent == len(abMsg):
+            cbSent = self.oSocket.send(abBuf);
+            if cbSent == len(abBuf):
                 return True;
         except Exception, oXcpt:
             if not self.__isWouldBlockXcpt(oXcpt):
-                reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abMsg)));
+                reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                 return False;
             cbSent = 0;
 
@@ -1966,17 +1966,17 @@ class TransportTcp(TransportBase):
         while True:
             cMsElapsed = base.timestampMilli() - msStart;
             if cMsElapsed > cMsTimeout:
-                reporter.error('TranportTcp.sendBytes: %s bytes timed out (1)' % (len(abMsg)));
+                reporter.error('TranportTcp.sendBytes: %s bytes timed out (1)' % (len(abBuf)));
                 break;
 
             # wait.
             try:
                 ttRc = select.select([], [self.oSocket], [self.oSocket], (cMsTimeout - cMsElapsed) / 1000.0);
-                if len(ttRc[2]) > 0 and len(ttRc[1]) == 0:
+                if ttRc[2] and not ttRc[1]:
                     reporter.error('TranportTcp.sendBytes: select returned with exception');
                     break;
-                if len(ttRc[1]) == 0:
-                    reporter.error('TranportTcp.sendBytes: %s bytes timed out (2)' % (len(abMsg)));
+                if not ttRc[1]:
+                    reporter.error('TranportTcp.sendBytes: %s bytes timed out (2)' % (len(abBuf)));
                     break;
             except:
                 reporter.errorXcpt('TranportTcp.sendBytes: select failed');
@@ -1984,12 +1984,12 @@ class TransportTcp(TransportBase):
 
             # Try send more.
             try:
-                cbSent += self.oSocket.send(abMsg[cbSent:]);
-                if cbSent == len(abMsg):
+                cbSent += self.oSocket.send(abBuf[cbSent:]);
+                if cbSent == len(abBuf):
                     return True;
             except Exception, oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
-                    reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abMsg)));
+                    reporter.errorXcpt('TranportTcp.sendBytes: %s bytes' % (len(abBuf)));
                     break;
 
         return False;
@@ -2010,7 +2010,7 @@ class TransportTcp(TransportBase):
         if len(self.abReadAhead) < cb:
             try:
                 abBuf = self.oSocket.recv(cb - len(self.abReadAhead));
-                if len(abBuf) > 0:
+                if abBuf:
                     self.abReadAhead.extend(array.array('B', abBuf));
             except Exception, oXcpt:
                 if not self.__isWouldBlockXcpt(oXcpt):
@@ -2025,18 +2025,18 @@ class TransportTcp(TransportBase):
         while True:
             cMsElapsed = base.timestampMilli() - msStart;
             if cMsElapsed > cMsTimeout:
-                if not fNoDataOk or len(self.abReadAhead) > 0:
+                if not fNoDataOk or self.abReadAhead:
                     reporter.error('TranportTcp.recvBytes: %s/%s bytes timed out (1)' % (len(self.abReadAhead), cb));
                 break;
 
             # Wait.
             try:
                 ttRc = select.select([self.oSocket], [], [self.oSocket], (cMsTimeout - cMsElapsed) / 1000.0);
-                if len(ttRc[2]) > 0 and len(ttRc[0]) == 0:
+                if ttRc[2] and not ttRc[0]:
                     reporter.error('TranportTcp.recvBytes: select returned with exception');
                     break;
-                if len(ttRc[0]) == 0:
-                    if not fNoDataOk or len(self.abReadAhead) > 0:
+                if not ttRc[0]:
+                    if not fNoDataOk or self.abReadAhead:
                         reporter.error('TranportTcp.recvBytes: %s/%s bytes timed out (2) fNoDataOk=%s'
                                        % (len(self.abReadAhead), cb, fNoDataOk));
                     break;
@@ -2047,7 +2047,7 @@ class TransportTcp(TransportBase):
             # Try read more.
             try:
                 abBuf = self.oSocket.recv(cb - len(self.abReadAhead));
-                if len(abBuf) == 0:
+                if not abBuf:
                     reporter.error('TranportTcp.recvBytes: %s/%s bytes (%s) - connection has been shut down'
                                    % (len(self.abReadAhead), cb, fNoDataOk));
                     self.disconnect();
@@ -2058,7 +2058,7 @@ class TransportTcp(TransportBase):
             except Exception, oXcpt:
                 reporter.log('recv => exception %s' % (oXcpt,));
                 if not self.__isWouldBlockXcpt(oXcpt):
-                    if not fNoDataOk  or  not self.__isConnectionReset(oXcpt)  or  len(self.abReadAhead) > 0:
+                    if not fNoDataOk  or  not self.__isConnectionReset(oXcpt)  or  self.abReadAhead:
                         reporter.errorXcpt('TranportTcp.recvBytes: %s/%s bytes (%s)' % (len(self.abReadAhead), cb, fNoDataOk));
                     break;
 
@@ -2074,7 +2074,7 @@ class TransportTcp(TransportBase):
             return False;
         try:
             ttRc = select.select([], [], [self.oSocket], 0.0);
-            if len(ttRc[2]) > 0:
+            if ttRc[2]:
                 return False;
 
             self.oSocket.send(array.array('B')); # send zero bytes.
@@ -2085,7 +2085,7 @@ class TransportTcp(TransportBase):
     def isRecvPending(self, cMsTimeout = 0):
         try:
             ttRc = select.select([self.oSocket], [], [], cMsTimeout / 1000.0);
-            if len(ttRc[0]) == 0:
+            if not ttRc[0]:
                 return False;
         except:
             pass;

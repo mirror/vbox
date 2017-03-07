@@ -98,7 +98,7 @@ class BacktraceResolverOsLinux(BacktraceResolverOs):
             if os.path.exists(sDbgArchive):
                 asMembers = utils.unpackFile(sDbgArchive, self.sScratchPath, self.fnLog,
                                              self.fnLog);
-                if asMembers is not None and len(asMembers) > 0:
+                if asMembers:
                     # Populate the list of debug files.
                     for sMember in asMembers:
                         if os.path.isfile(sMember):
@@ -154,7 +154,7 @@ class BacktraceResolverOsLinux(BacktraceResolverOs):
 
         for sLine in asReport[iLine:]:
             asCandidate = sLine.split();
-            if     len(asCandidate) is 5 \
+            if     len(asCandidate) == 5 \
                and asCandidate[0].startswith('0x') \
                and asCandidate[1].startswith('0x') \
                and asCandidate[2].startswith('0x') \
@@ -299,12 +299,12 @@ class BacktraceResolverOsDarwin(BacktraceResolverOs):
             oRegExpBinPath = re.compile(r'VirtualBox.app/Contents/MacOS/\S*');
             while iLine < len(asReport):
                 asMatches = oRegExpPath.findall(asReport[iLine]);
-                if len(asMatches) > 0:
+                if asMatches:
                     # Line contains the path, extract start address and path to binary
                     sAddr = oRegExpAddr.findall(asReport[iLine]);
                     sPath = oRegExpBinPath.findall(asReport[iLine]);
 
-                    if len(sAddr) > 0 and len(sPath) > 0:
+                    if sAddr and sPath:
                         # Construct the path in into the build cache containing the debug symbols
                         oRegExp = re.compile(r'\w+\.{0,1}\w*$');
                         sFilename = oRegExp.findall(sPath[0]);
@@ -337,7 +337,7 @@ class BacktraceResolverOsDarwin(BacktraceResolverOs):
             # Check whether the line is made up of 6 elements separated by whitespace
             # and the first one is a number.
             if     len(asStackTrace) == 6 and asStackTrace[0].isdigit() \
-               and (asStackTrace[1].find('VBox') is not -1 or asStackTrace[1].find('VirtualBox') is not -1) \
+               and (asStackTrace[1].find('VBox') != -1 or asStackTrace[1].find('VirtualBox') != -1) \
                and asStackTrace[3].startswith('0x'):
 
                 # Check whether the library is already in our list an only add new ones
@@ -403,7 +403,7 @@ class BacktraceResolverOsSolaris(BacktraceResolverOs):
             if os.path.exists(sDbgArchive):
                 asMembers = utils.unpackFile(sDbgArchive, self.sScratchPath, self.fnLog,
                                              self.fnLog);
-                if asMembers is not None and len(asMembers) > 0:
+                if asMembers:
                     # Populate the list of debug files.
                     for sMember in asMembers:
                         if os.path.isfile(sMember):
@@ -588,7 +588,7 @@ class BacktraceResolver(object):
         if self.oResolverOs is not None:
             asListBinaries = self.oResolverOs.getBinaryListWithLoadAddrFromReport(sReport.split('\n'));
 
-            if len(asListBinaries) > 0:
+            if asListBinaries:
                 asArgs = [self.sRTLdrFltPath, ];
 
                 for sLoadAddr, sBinary in asListBinaries:

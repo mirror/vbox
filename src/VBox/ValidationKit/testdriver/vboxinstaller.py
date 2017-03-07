@@ -101,7 +101,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if asArgs[iArg] == '--':
             # End of our parameters and start of the sub driver invocation.
             iArg = self.requireMoreArgs(1, asArgs, iArg);
-            assert len(self._asSubDriver) == 0;
+            assert not self._asSubDriver;
             self._asSubDriver = asArgs[iArg:];
             self._asSubDriver[0] = self._asSubDriver[0].replace('/', os.path.sep);
             iArg = len(asArgs) - 1;
@@ -121,10 +121,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
         #
         # Check that we've got what we need.
         #
-        if len(self._asBuildUrls) == 0:
+        if not self._asBuildUrls:
             reporter.error('No build files specfiied ("--vbox-build file1[,file2[...]]")');
             return False;
-        if len(self._asSubDriver) == 0:
+        if not self._asSubDriver:
             reporter.error('No sub testdriver specified. (" -- test/stuff/tdStuff1.py args")');
             return False;
 
@@ -227,7 +227,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         sFull = self.__persistentVarCalcName(sVar);
         try:
             oFile = open(sFull, 'w');
-            if len(sValue) > 0:
+            if sValue:
                 oFile.write(sValue.encode('utf-8'));
             oFile.close();
         except:
@@ -313,7 +313,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
                     aoTodo.append(oProcess);
                 if iIteration in [0, 21]  and  sBase in [ 'windbg', 'gdb', 'gdb-i386-apple-darwin', ]:
                     reporter.log('Warning: debugger running: %s (%s)' % (oProcess.iPid, sBase,));
-            if len(aoTodo) == 0:
+            if not aoTodo:
                 return True;
 
             # Kill.
