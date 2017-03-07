@@ -18,6 +18,8 @@
 #define __ATAPIPassthrough_h
 
 #include <VBox/cdefs.h>
+#include <VBox/vmm/pdmifs.h>
+#include <VBox/vmm/pdmstorageifs.h>
 
 RT_C_DECLS_BEGIN
 
@@ -68,6 +70,26 @@ DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uin
  * @param   iAtapiLba     The start LBA to get the sector size for.
  */
 DECLHIDDEN(uint32_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba);
+
+/**
+ * Parses the given CDB and returns whether it is safe to pass it through to the host drive.
+ *
+ * @returns Flag whether passing the CDB through to the host drive is safe.
+ * @param   pbCdb         The CDB to parse.
+ * @param   cbCdb         Size of the CDB in bytes.
+ * @param   cbBuf         Size of the guest buffer.
+ * @param   pTrackList    The track list for the current medium if available (optional).
+ * @param   pbSense       Pointer to the sense buffer.
+ * @param   cbSense       Size of the sense buffer.
+ * @param   penmTxDir     Where to store the transfer direction (guest to host or vice versa).
+ * @param   pcbXfer       Where to store the transfer size encoded in the CDB.
+ * @param   pcbSector     Where to store the sector size used for the transfer.
+ * @param   pu8ScsiSts    Where to store the SCSI status code.
+ */
+DECLHIDDEN(bool) ATAPIPassthroughParseCdb(const uint8_t *pbCdb, size_t cbCdb, size_t cbBuf,
+                                          PTRACKLIST pTrackList, uint8_t *pbSense, size_t cbSense,
+                                          PDMMEDIATXDIR *penmTxDir, size_t *pcbXfer,
+                                          size_t *pcbSector, uint8_t *pu8ScsiSts);
 
 RT_C_DECLS_END
 
