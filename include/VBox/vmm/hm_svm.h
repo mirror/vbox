@@ -629,175 +629,270 @@ typedef union
 } SVMAVICPHYS;
 AssertCompileSize(SVMAVICPHYS, 8);
 
+
+/**
+ * SVM VMCB control area.
+ */
+#pragma pack(1)
+typedef struct
+{
+    /** Offset 0x00 - Intercept reads of CR0-CR15. */
+    uint16_t    u16InterceptRdCRx;
+    /** Offset 0x02 - Intercept writes to CR0-CR15. */
+    uint16_t    u16InterceptWrCRx;
+    /** Offset 0x04 - Intercept reads of DR0-DR15. */
+    uint16_t    u16InterceptRdDRx;
+    /** Offset 0x06 - Intercept writes to DR0-DR15. */
+    uint16_t    u16InterceptWrDRx;
+    /** Offset 0x08 - Intercept exception vectors 0-31. */
+    uint32_t    u32InterceptException;
+    /** Offset 0x0c - Intercept control. */
+    uint64_t    u64InterceptCtrl;
+    /** Offset 0x14-0x3f - Reserved. */
+    uint8_t     u8Reserved[0x3c - 0x14];
+    /** Offset 0x3c - PAUSE filter threshold.  */
+    uint16_t    u16PauseFilterThreshold;
+    /** Offset 0x3e - PAUSE intercept filter count. */
+    uint16_t    u16PauseFilterCount;
+    /** Offset 0x40 - Physical address of IOPM. */
+    uint64_t    u64IOPMPhysAddr;
+    /** Offset 0x48 - Physical address of MSRPM. */
+    uint64_t    u64MSRPMPhysAddr;
+    /** Offset 0x50 - TSC Offset. */
+    uint64_t    u64TSCOffset;
+    /** Offset 0x58 - TLB control field. */
+    SVMTLBCTRL  TLBCtrl;
+    /** Offset 0x60 - Interrupt control field. */
+    SVMINTCTRL  IntCtrl;
+    /** Offset 0x68 - Interrupt shadow. */
+    uint64_t    u64IntShadow;
+    /** Offset 0x70 - Exit code. */
+    uint64_t    u64ExitCode;
+    /** Offset 0x78 - Exit info 1. */
+    uint64_t    u64ExitInfo1;
+    /** Offset 0x80 - Exit info 2. */
+    uint64_t    u64ExitInfo2;
+    /** Offset 0x88 - Exit Interrupt info. */
+    SVMEVENT    ExitIntInfo;
+    /** Offset 0x90 - Nested Paging. */
+    SVMNPCTRL   NestedPaging;
+    /** Offset 0x98 - AVIC APIC BAR.  */
+    SVMAVIC     AvicBar;
+    /** Offset 0xa0-0xa7 - Reserved. */
+    uint8_t     u8Reserved2[0xA8-0xA0];
+    /** Offset 0xa8 - Event injection. */
+    SVMEVENT    EventInject;
+    /** Offset 0xb0 - Host CR3 for nested paging. */
+    uint64_t    u64NestedPagingCR3;
+    /** Offset 0xb8 - LBR Virtualization. */
+    uint64_t    u64LBRVirt;
+    /** Offset 0xc0 - VMCB Clean Bits. */
+    uint64_t    u64VmcbCleanBits;
+    /** Offset 0xc8 - Next sequential instruction pointer. */
+    uint64_t    u64NextRIP;
+    /** Offset 0xd0 - Number of bytes fetched. */
+    uint8_t     cbInstrFetched;
+    /** Offset 0xd1 - Fetched bytes. */
+    uint8_t     abInstr[15];
+    /** Offset 0xe0 - AVIC APIC_BACKING_PAGE pointer. */
+    SVMAVIC     AvicBackingPagePtr;
+    /** Offset 0xe8-0xef - Reserved. */
+    uint8_t     u8Reserved3[0xF0 - 0xE8];
+    /** Offset 0xf0 - AVIC LOGICAL_TABLE pointer. */
+    SVMAVIC     AvicLogicalTablePtr;
+    /** Offset 0xf8 - AVIC PHYSICAL_TABLE pointer. */
+    SVMAVICPHYS AvicPhysicalTablePtr;
+} SVMVMCBCTRL;
+#pragma pack()
+/** Pointer to the SVMVMCBSTATESAVE structure. */
+typedef SVMVMCBCTRL *PSVMVMCBCTRL;
+/** Pointer to a const SVMVMCBSTATESAVE structure. */
+typedef const SVMVMCBCTRL *PCSVMVMCBCTRL;
+AssertCompileSize(SVMVMCBCTRL, 0x100);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdCRx,       0x00);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrCRx,       0x02);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdDRx,       0x04);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrDRx,       0x06);
+AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptException,   0x08);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64InterceptCtrl,        0x0c);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved,              0x14);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterThreshold, 0x3c);
+AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterCount,     0x3e);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64IOPMPhysAddr,         0x40);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64MSRPMPhysAddr,        0x48);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64TSCOffset,            0x50);
+AssertCompileMemberOffset(SVMVMCBCTRL, TLBCtrl,                 0x58);
+AssertCompileMemberOffset(SVMVMCBCTRL, IntCtrl,                 0x60);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64IntShadow,            0x68);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitCode,             0x70);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo1,            0x78);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64ExitInfo2,            0x80);
+AssertCompileMemberOffset(SVMVMCBCTRL, ExitIntInfo,             0x88);
+AssertCompileMemberOffset(SVMVMCBCTRL, NestedPaging,            0x90);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicBar,                 0x98);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved2,             0xa0);
+AssertCompileMemberOffset(SVMVMCBCTRL, EventInject,             0xa8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64NestedPagingCR3,      0xb0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64LBRVirt,              0xb8);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64VmcbCleanBits,        0xc0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u64NextRIP,              0xc8);
+AssertCompileMemberOffset(SVMVMCBCTRL, cbInstrFetched,          0xd0);
+AssertCompileMemberOffset(SVMVMCBCTRL, abInstr,                 0xd1);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicBackingPagePtr,      0xe0);
+AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved3,             0xe8);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicLogicalTablePtr,     0xf0);
+AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,    0xf8);
+
+/**
+ * SVM VMCB state save area.
+ */
+typedef struct
+{
+    /** Offset 0x400 - Guest ES register + hidden parts. */
+    SVMSEL      ES;
+    /** Offset 0x410 - Guest CS register + hidden parts. */
+    SVMSEL      CS;
+    /** Offset 0x420 - Guest SS register + hidden parts. */
+    SVMSEL      SS;
+    /** Offset 0x430 - Guest DS register + hidden parts. */
+    SVMSEL      DS;
+    /** Offset 0x440 - Guest FS register + hidden parts. */
+    SVMSEL      FS;
+    /** Offset 0x450 - Guest GS register + hidden parts. */
+    SVMSEL      GS;
+    /** Offset 0x460 - Guest GDTR register. */
+    SVMGDTR     GDTR;
+    /** Offset 0x470 - Guest LDTR register + hidden parts. */
+    SVMSEL      LDTR;
+    /** Offset 0x480 - Guest IDTR register. */
+    SVMIDTR     IDTR;
+    /** Offset 0x490 - Guest TR register + hidden parts. */
+    SVMSEL      TR;
+    /** Offset 0x4A0-0x4CA - Reserved. */
+    uint8_t     u8Reserved4[0x4CB-0x4A0];
+    /** Offset 0x4CB - CPL. */
+    uint8_t     u8CPL;
+    /** Offset 0x4CC-0x4CF - Reserved. */
+    uint8_t     u8Reserved5[0x4D0-0x4CC];
+    /** Offset 0x4D0 - EFER. */
+    uint64_t    u64EFER;
+    /** Offset 0x4D8-0x547 - Reserved. */
+    uint8_t     u8Reserved6[0x548-0x4D8];
+    /** Offset 0x548 - CR4. */
+    uint64_t    u64CR4;
+    /** Offset 0x550 - CR3. */
+    uint64_t    u64CR3;
+    /** Offset 0x558 - CR0. */
+    uint64_t    u64CR0;
+    /** Offset 0x560 - DR7. */
+    uint64_t    u64DR7;
+    /** Offset 0x568 - DR6. */
+    uint64_t    u64DR6;
+    /** Offset 0x570 - RFLAGS. */
+    uint64_t    u64RFlags;
+    /** Offset 0x578 - RIP. */
+    uint64_t    u64RIP;
+    /** Offset 0x580-0x5D7 - Reserved. */
+    uint8_t     u8Reserved7[0x5D8-0x580];
+    /** Offset 0x5D8 - RSP. */
+    uint64_t    u64RSP;
+    /** Offset 0x5E0-0x5F7 - Reserved. */
+    uint8_t     u8Reserved8[0x5F8-0x5E0];
+    /** Offset 0x5F8 - RAX. */
+    uint64_t    u64RAX;
+    /** Offset 0x600 - STAR. */
+    uint64_t    u64STAR;
+    /** Offset 0x608 - LSTAR. */
+    uint64_t    u64LSTAR;
+    /** Offset 0x610 - CSTAR. */
+    uint64_t    u64CSTAR;
+    /** Offset 0x618 - SFMASK. */
+    uint64_t    u64SFMASK;
+    /** Offset 0x620 - KernelGSBase. */
+    uint64_t    u64KernelGSBase;
+    /** Offset 0x628 - SYSENTER_CS. */
+    uint64_t    u64SysEnterCS;
+    /** Offset 0x630 - SYSENTER_ESP. */
+    uint64_t    u64SysEnterESP;
+    /** Offset 0x638 - SYSENTER_EIP. */
+    uint64_t    u64SysEnterEIP;
+    /** Offset 0x640 - CR2. */
+    uint64_t    u64CR2;
+    /** Offset 0x648-0x667 - Reserved. */
+    uint8_t     u8Reserved9[0x668-0x648];
+    /** Offset 0x668 - G_PAT. */
+    uint64_t    u64GPAT;
+    /** Offset 0x670 - DBGCTL. */
+    uint64_t    u64DBGCTL;
+    /** Offset 0x678 - BR_FROM. */
+    uint64_t    u64BR_FROM;
+    /** Offset 0x680 - BR_TO. */
+    uint64_t    u64BR_TO;
+    /** Offset 0x688 - LASTEXCPFROM. */
+    uint64_t    u64LASTEXCPFROM;
+    /** Offset 0x690 - LASTEXCPTO. */
+    uint64_t    u64LASTEXCPTO;
+} SVMVMCBSTATESAVE;
+/** Pointer to the SVMVMCBSTATESAVE structure. */
+typedef SVMVMCBSTATESAVE *PSVMVMCBSTATESAVE;
+/** Pointer to a const SVMVMCBSTATESAVE structure. */
+typedef const SVMVMCBSTATESAVE *PCSVMVMCBSTATESAVE;
+AssertCompileSize(SVMVMCBSTATESAVE, 0x298);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, ES,              0x400 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, CS,              0x410 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, SS,              0x420 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, DS,              0x430 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, FS,              0x440 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, GS,              0x450 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, GDTR,            0x460 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, LDTR,            0x470 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, IDTR,            0x480 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, TR,              0x490 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved4,     0x4a0 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8CPL,           0x4cb - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved5,     0x4cc - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64EFER,         0x4d0 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved6,     0x4d8 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR4,          0x548 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR3,          0x550 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR0,          0x558 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DR7,          0x560 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DR6,          0x568 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RFlags,       0x570 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RIP,          0x578 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved7,     0x580 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RSP,          0x5d8 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved8,     0x5e0 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64RAX,          0x5f8 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64STAR,         0x600 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64LSTAR,        0x608 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CSTAR,        0x610 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SFMASK,       0x618 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64KernelGSBase, 0x620 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterCS,   0x628 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterESP,  0x630 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64SysEnterEIP,  0x638 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64CR2,          0x640 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u8Reserved9,     0x648 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64GPAT,         0x668 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64DBGCTL,       0x670 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64BR_FROM,      0x678 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64BR_TO,        0x680 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64LASTEXCPFROM, 0x688 - 0x400);
+AssertCompileMemberOffset(SVMVMCBSTATESAVE, u64LASTEXCPTO,   0x690 - 0x400);
+
 /**
  * SVM VM Control Block. (VMCB)
  */
 #pragma pack(1)
 typedef struct SVMVMCB
 {
-    /** Control Area. */
-    struct
-    {
-        /** Offset 0x00 - Intercept reads of CR0-CR15. */
-        uint16_t    u16InterceptRdCRx;
-        /** Offset 0x02 - Intercept writes to CR0-CR15. */
-        uint16_t    u16InterceptWrCRx;
-        /** Offset 0x04 - Intercept reads of DR0-DR15. */
-        uint16_t    u16InterceptRdDRx;
-        /** Offset 0x06 - Intercept writes to DR0-DR15. */
-        uint16_t    u16InterceptWrDRx;
-        /** Offset 0x08 - Intercept exception vectors 0-31. */
-        uint32_t    u32InterceptException;
-        /** Offset 0x0C - Intercept control. */
-        uint64_t    u64InterceptCtrl;
-        /** Offset 0x14-0x3F - Reserved. */
-        uint8_t     u8Reserved[0x3c - 0x14];
-        /** Offset 0x3c - PAUSE filter threshold.  */
-        uint16_t    u16PauseFilterThreshold;
-        /** Offset 0x3e - PAUSE intercept filter count. */
-        uint16_t    u16PauseFilterCount;
-        /** Offset 0x40 - Physical address of IOPM. */
-        uint64_t    u64IOPMPhysAddr;
-        /** Offset 0x48 - Physical address of MSRPM. */
-        uint64_t    u64MSRPMPhysAddr;
-        /** Offset 0x50 - TSC Offset. */
-        uint64_t    u64TSCOffset;
-        /** Offset 0x58 - TLB control field. */
-        SVMTLBCTRL  TLBCtrl;
-        /** Offset 0x60 - Interrupt control field. */
-        SVMINTCTRL  IntCtrl;
-        /** Offset 0x68 - Interrupt shadow. */
-        uint64_t    u64IntShadow;
-        /** Offset 0x70 - Exit code. */
-        uint64_t    u64ExitCode;
-        /** Offset 0x78 - Exit info 1. */
-        uint64_t    u64ExitInfo1;
-        /** Offset 0x80 - Exit info 2. */
-        uint64_t    u64ExitInfo2;
-        /** Offset 0x88 - Exit Interrupt info. */
-        SVMEVENT    ExitIntInfo;
-        /** Offset 0x90 - Nested Paging. */
-        SVMNPCTRL   NestedPaging;
-        /** Offset 0x98 - AVIC APIC BAR.  */
-        SVMAVIC     AvicBar;
-        /** Offset 0xA0-0xA7 - Reserved. */
-        uint8_t     u8Reserved2[0xA8-0xA0];
-        /** Offset 0xA8 - Event injection. */
-        SVMEVENT    EventInject;
-        /** Offset 0xB0 - Host CR3 for nested paging. */
-        uint64_t    u64NestedPagingCR3;
-        /** Offset 0xB8 - LBR Virtualization. */
-        uint64_t    u64LBRVirt;
-        /** Offset 0xC0 - VMCB Clean Bits. */
-        uint64_t    u64VmcbCleanBits;
-        /** Offset 0xC8 - Next sequential instruction pointer. */
-        uint64_t    u64NextRIP;
-        /** Offset 0xD0 - Number of bytes fetched. */
-        uint8_t     cbInstrFetched;
-        /** Offset 0xD1 - Fetched bytes. */
-        uint8_t     abInstr[15];
-        /** Offset 0xE0 - AVIC APIC_BACKING_PAGE pointer. */
-        SVMAVIC     AvicBackingPagePtr;
-        /** Offset 0xE8-0xEF - Reserved. */
-        uint8_t     u8Reserved3[0xF0 - 0xE8];
-        /** Offset 0xF0 - AVIC LOGICAL_TABLE pointer. */
-        SVMAVIC     AvicLogicalTablePtr;
-        /** Offset 0xF8 - AVIC PHYSICAL_TABLE pointer. */
-        SVMAVICPHYS AvicPhysicalTablePtr;
-    } ctrl;
-
+    /** Offset 0x00 - Control area. */
+    SVMVMCBCTRL ctrl;
     /** Offset 0x100-0x3FF - Reserved. */
     uint8_t     u8Reserved3[0x400-0x100];
-
-    /** State Save Area. Starts at offset 0x400. */
-    struct
-    {
-        /** Offset 0x400 - Guest ES register + hidden parts. */
-        SVMSEL      ES;
-        /** Offset 0x410 - Guest CS register + hidden parts. */
-        SVMSEL      CS;
-        /** Offset 0x420 - Guest SS register + hidden parts. */
-        SVMSEL      SS;
-        /** Offset 0x430 - Guest DS register + hidden parts. */
-        SVMSEL      DS;
-        /** Offset 0x440 - Guest FS register + hidden parts. */
-        SVMSEL      FS;
-        /** Offset 0x450 - Guest GS register + hidden parts. */
-        SVMSEL      GS;
-        /** Offset 0x460 - Guest GDTR register. */
-        SVMGDTR     GDTR;
-        /** Offset 0x470 - Guest LDTR register + hidden parts. */
-        SVMSEL      LDTR;
-        /** Offset 0x480 - Guest IDTR register. */
-        SVMIDTR     IDTR;
-        /** Offset 0x490 - Guest TR register + hidden parts. */
-        SVMSEL      TR;
-        /** Offset 0x4A0-0x4CA - Reserved. */
-        uint8_t     u8Reserved4[0x4CB-0x4A0];
-        /** Offset 0x4CB - CPL. */
-        uint8_t     u8CPL;
-        /** Offset 0x4CC-0x4CF - Reserved. */
-        uint8_t     u8Reserved5[0x4D0-0x4CC];
-        /** Offset 0x4D0 - EFER. */
-        uint64_t    u64EFER;
-        /** Offset 0x4D8-0x547 - Reserved. */
-        uint8_t     u8Reserved6[0x548-0x4D8];
-        /** Offset 0x548 - CR4. */
-        uint64_t    u64CR4;
-        /** Offset 0x550 - CR3. */
-        uint64_t    u64CR3;
-        /** Offset 0x558 - CR0. */
-        uint64_t    u64CR0;
-        /** Offset 0x560 - DR7. */
-        uint64_t    u64DR7;
-        /** Offset 0x568 - DR6. */
-        uint64_t    u64DR6;
-        /** Offset 0x570 - RFLAGS. */
-        uint64_t    u64RFlags;
-        /** Offset 0x578 - RIP. */
-        uint64_t    u64RIP;
-        /** Offset 0x580-0x5D7 - Reserved. */
-        uint8_t     u8Reserved7[0x5D8-0x580];
-        /** Offset 0x5D8 - RSP. */
-        uint64_t    u64RSP;
-        /** Offset 0x5E0-0x5F7 - Reserved. */
-        uint8_t     u8Reserved8[0x5F8-0x5E0];
-        /** Offset 0x5F8 - RAX. */
-        uint64_t    u64RAX;
-        /** Offset 0x600 - STAR. */
-        uint64_t    u64STAR;
-        /** Offset 0x608 - LSTAR. */
-        uint64_t    u64LSTAR;
-        /** Offset 0x610 - CSTAR. */
-        uint64_t    u64CSTAR;
-        /** Offset 0x618 - SFMASK. */
-        uint64_t    u64SFMASK;
-        /** Offset 0x620 - KernelGSBase. */
-        uint64_t    u64KernelGSBase;
-        /** Offset 0x628 - SYSENTER_CS. */
-        uint64_t    u64SysEnterCS;
-        /** Offset 0x630 - SYSENTER_ESP. */
-        uint64_t    u64SysEnterESP;
-        /** Offset 0x638 - SYSENTER_EIP. */
-        uint64_t    u64SysEnterEIP;
-        /** Offset 0x640 - CR2. */
-        uint64_t    u64CR2;
-        /** Offset 0x648-0x667 - Reserved. */
-        uint8_t     u8Reserved9[0x668-0x648];
-        /** Offset 0x668 - G_PAT. */
-        uint64_t    u64GPAT;
-        /** Offset 0x670 - DBGCTL. */
-        uint64_t    u64DBGCTL;
-        /** Offset 0x678 - BR_FROM. */
-        uint64_t    u64BR_FROM;
-        /** Offset 0x680 - BR_TO. */
-        uint64_t    u64BR_TO;
-        /** Offset 0x688 - LASTEXCPFROM. */
-        uint64_t    u64LASTEXCPFROM;
-        /** Offset 0x690 - LASTEXCPTO. */
-        uint64_t    u64LASTEXCPTO;
-    } guest;
-
+    /** Offset 0x400 - State save area. */
+    SVMVMCBSTATESAVE guest;
     /** Offset 0x698-0xFFF- Reserved. */
     uint8_t     u8Reserved10[0x1000-0x698];
 } SVMVMCB;
@@ -807,83 +902,8 @@ typedef SVMVMCB *PSVMVMCB;
 /** Pointer to a const SVMVMCB structure. */
 typedef const SVMVMCB *PCSVMVMCB;
 AssertCompileMemberOffset(SVMVMCB, ctrl, 0x00);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx, 0x00);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrCRx, 0x02);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdDRx, 0x04);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptWrDRx, 0x06);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u32InterceptException, 0x08);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64InterceptCtrl, 0x0C);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved, 0x14);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterThreshold, 0x3c);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount, 0x3e);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64IOPMPhysAddr, 0x40);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64MSRPMPhysAddr, 0x48);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64TSCOffset, 0x50);
-AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl, 0x58);
-AssertCompileMemberOffset(SVMVMCB, ctrl.IntCtrl, 0x60);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64IntShadow, 0x68);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitCode, 0x70);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitInfo1, 0x78);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64ExitInfo2, 0x80);
-AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo, 0x88);
-AssertCompileMemberOffset(SVMVMCB, ctrl.NestedPaging, 0x90);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBar, 0x98);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved2, 0xA0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject, 0xA8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64NestedPagingCR3, 0xB0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64LBRVirt, 0xB8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64VmcbCleanBits, 0xC0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u64NextRIP, 0xC8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.cbInstrFetched, 0xD0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr, 0xD1);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBackingPagePtr, 0xE0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u8Reserved3, 0xE8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicLogicalTablePtr, 0xF0);
-AssertCompileMemberOffset(SVMVMCB, ctrl.AvicPhysicalTablePtr, 0xF8);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved3, 0x100);
 AssertCompileMemberOffset(SVMVMCB, guest, 0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.ES, 0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.CS, 0x410);
-AssertCompileMemberOffset(SVMVMCB, guest.SS, 0x420);
-AssertCompileMemberOffset(SVMVMCB, guest.DS, 0x430);
-AssertCompileMemberOffset(SVMVMCB, guest.FS, 0x440);
-AssertCompileMemberOffset(SVMVMCB, guest.GS, 0x450);
-AssertCompileMemberOffset(SVMVMCB, guest.GDTR, 0x460);
-AssertCompileMemberOffset(SVMVMCB, guest.LDTR, 0x470);
-AssertCompileMemberOffset(SVMVMCB, guest.IDTR, 0x480);
-AssertCompileMemberOffset(SVMVMCB, guest.TR, 0x490);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4, 0x4A0);
-AssertCompileMemberOffset(SVMVMCB, guest.u8CPL, 0x4CB);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved5, 0x4CC);
-AssertCompileMemberOffset(SVMVMCB, guest.u64EFER, 0x4D0);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6, 0x4D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR4, 0x548);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR3, 0x550);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR0, 0x558);
-AssertCompileMemberOffset(SVMVMCB, guest.u64DR7, 0x560);
-AssertCompileMemberOffset(SVMVMCB, guest.u64DR6, 0x568);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RFlags, 0x570);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RIP, 0x578);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7, 0x580);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RSP, 0x5D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved8, 0x5E0);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RAX, 0x5F8);
-AssertCompileMemberOffset(SVMVMCB, guest.u64STAR, 0x600);
-AssertCompileMemberOffset(SVMVMCB, guest.u64LSTAR, 0x608);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CSTAR, 0x610);
-AssertCompileMemberOffset(SVMVMCB, guest.u64SFMASK, 0x618);
-AssertCompileMemberOffset(SVMVMCB, guest.u64KernelGSBase, 0x620);
-AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterCS, 0x628);
-AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterESP, 0x630);
-AssertCompileMemberOffset(SVMVMCB, guest.u64SysEnterEIP, 0x638);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR2, 0x640);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9, 0x648);
-AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT, 0x668);
-AssertCompileMemberOffset(SVMVMCB, guest.u64DBGCTL, 0x670);
-AssertCompileMemberOffset(SVMVMCB, guest.u64BR_FROM, 0x678);
-AssertCompileMemberOffset(SVMVMCB, guest.u64BR_TO, 0x680);
-AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPFROM, 0x688);
-AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO, 0x690);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 

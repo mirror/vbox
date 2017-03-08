@@ -14953,6 +14953,19 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
+ * Checks if IEM is in the process of delivering an event (interrupt or
+ * exception).
+ *
+ * @returns true if it's raising an interrupt or exception, false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(bool) IEMIsRaisingIntOrXcpt(PVMCPU pVCpu)
+{
+    return pVCpu->iem.s.cXcptRecursions > 0;
+}
+
+
+/**
  * Interface for HM and EM to emulate the STGI instruction.
  *  
  * @returns Strict VBox status code. 

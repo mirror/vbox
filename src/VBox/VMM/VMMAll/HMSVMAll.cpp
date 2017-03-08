@@ -125,10 +125,9 @@ static int hmSvmEmulateMovTpr(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpdateRipAndR
 
 /**
  * Performs the operations necessary that are part of the vmmcall instruction
- * execution for AMD-V.
+ * execution in the guest.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- *
  * @retval  VINF_SUCCESS on successful handling, no \#UD needs to be thrown,
  *          update RIP and eflags.RF depending on @a pfUpdatedRipAndRF and
  *          continue guest execution.
@@ -170,5 +169,68 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpd
         return GIMHypercall(pVCpu, pCtx);
 
     return VERR_NOT_AVAILABLE;
+}
+
+
+/**
+ * Performs the operations necessary that are part of the vmrun instruction
+ * execution in the guest.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pCtx                Pointer to the guest-CPU context.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    RT_NOREF2(pVCpu, pCtx);
+
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * SVM nested-guest \#VMEXIT handler.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ * @param   uExitCode   The exit reason.
+ * @param   uExitInfo1  The exit info. 1 field.
+ * @param   uExitInfo1  The exit info. 2 field.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, int64_t iExitCode, uint64_t uExitInfo1,
+                                             uint64_t uExitInfo2)
+{
+    if (   CPUMIsGuestInNestedHwVirtMode(pCtx)
+        || iExitCode == SVM_EXIT_INVALID)
+    {
+        RT_NOREF(pVCpu);
+
+        pCtx->hwvirt.svm.fGif = 0;
+
+        /** @todo implement #VMEXIT. */
+
+        return VINF_SUCCESS;
+    }
+    else
+        Log(("HMNstGstSvmVmExit: Not in SVM guest mode! uExitCode=%RI64 uExitInfo1=%RU64 uExitInfo2=%RU64\n", iExitCode,
+             uExitInfo1, uExitInfo2));
+
+    return VERR_SVM_IPE_5;
+}
+
+
+/**
+ * Peforms the functions of a VMRUN instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pCtx        The guest-CPU context.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmRun(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    RT_NOREF2(pVCpu, pCtx);
+    return VERR_NOT_IMPLEMENTED;
 }
 

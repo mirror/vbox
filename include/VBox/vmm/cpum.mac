@@ -265,6 +265,8 @@ struc CPUMCTX
     .hwvirt.svm.u16InterceptRdDRx   resw    1
     .hwvirt.svm.u16InterceptWrDRx   resw    1
     .hwvirt.svm.fGif                resb    1
+    .hwvirt.svm.abPadding           resb    3
+    .hwvirt.svm.GCPhysNstGstVmcb    resq    1
     alignb 64
 endstruc
 

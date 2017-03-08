@@ -5876,17 +5876,57 @@ IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT
 /**
+ * Implements 'VMRUN'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_vmrun)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+    IEM_SVM_INSTR_COMMON_CHECKS(pVCpu, vmload);
+
+    RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+        || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
+    {
+        Log(("vmrun: VMCB physaddr (%#RGp) not valid -> #GP(0)\n", GCPhysVmcb));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMRUN))
+    {
+        Log(("vmrun: Guest intercept -> VMexit\n"));
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+#endif
+
+    /** @todo think - I probably need to map both the HSAVE area page and the
+     *        guest VMCB via iemMemPageMap here and do the copying? */
+    pCtx->hwvirt.svm.GCPhysNstGstVmcb = GCPhysVmcb;
+    void *pvVmcb;
+    PGMPAGEMAPLOCK PgLockVmcb;
+    VBOXSTRICTRC rcStrict = iemMemPageMap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, &pvVmcb, &PgLockVmcb);
+    if (rcStrict == VINF_SUCCESS)
+        return HMSvmVmrun(pVCpu, pCtx);
+    RT_NOREF(cbInstr);
+    return rcStrict;
+}
+
+
+/**
  * Implements 'VMMCALL'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 {
-    /*
-     * We do not check for presence of SVM/AMD-V here as the KVM GIM provider
-     * might patch in an invalid vmmcall instruction with an Intel vmcall
-     * instruction.
-     */
-    bool fUpdatedRipAndRF;
     PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+#ifndef IN_RC
+    if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
+    {
+        Log(("vmrun: Guest intercept -> VMexit\n"));
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+#endif
+
+    bool fUpdatedRipAndRF;
     VBOXSTRICTRC rcStrict = HMSvmVmmcall(pVCpu, pCtx, &fUpdatedRipAndRF);
     if (RT_SUCCESS(rcStrict))
     {
@@ -5910,15 +5950,15 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
     {
         Log(("vmload: Guest intercept -> VMexit\n"));
-        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_VMLOAD);
-        return VINF_EM_RESCHEDULE;
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
-    if (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+    if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+        || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
-        Log(("vmload: VMCB physaddr (%#RGp) not 4K aligned -> #GP(0)\n", GCPhysVmcb));
+        Log(("vmload: VMCB physaddr (%#RGp) not valid -> #GP(0)\n", GCPhysVmcb));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -5961,15 +6001,15 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
     {
         Log(("vmsave: Guest intercept -> VMexit\n"));
-        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_VMSAVE);
-        return VINF_EM_RESCHEDULE;
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
     RTGCPHYS const GCPhysVmcb = pVCpu->iem.s.enmEffAddrMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
-    if (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+    if (   (GCPhysVmcb & X86_PAGE_4K_OFFSET_MASK)
+        || !PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmcb))
     {
-        Log(("vmsave: VMCB physaddr (%#RGp) not 4K aligned -> #GP(0)\n", GCPhysVmcb));
+        Log(("vmsave: VMCB physaddr (%#RGp) not valid -> #GP(0)\n", GCPhysVmcb));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
 
@@ -6012,8 +6052,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
         Log(("clgi: Guest intercept -> VMexit\n"));
-        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_CLGI);
-        return VINF_EM_RESCHEDULE;
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
@@ -6034,8 +6073,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
         Log2(("stgi: Guest intercept -> VMexit\n"));
-        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_STGI);
-        return VINF_EM_RESCHEDULE;
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
@@ -6056,8 +6094,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
     {
         Log2(("invlpga: Guest intercept -> VMexit\n"));
-        HMNstGstSvmVmExit(pVCpu, SVM_EXIT_INVLPGA);
-        return VINF_EM_RESCHEDULE;
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 

@@ -31,6 +31,7 @@
 #include <VBox/vmm/cpumctx.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/hm_svm.h>
 
 RT_C_DECLS_BEGIN
 
@@ -1346,6 +1347,22 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
     return RT_BOOL(pCtx->hwvirt.svm.u32InterceptXcpt & enmXcpt); 
 }
 
+/**
+ * Checks if the guest is currently in nested hardware-virtualized
+ * guest mode.
+ *
+ * @returns true if in nested-guest mode, false otherwise.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCPUMCTX pCtx)
+{
+    /*
+     * With SVM, the VMRUN intercept is a pre-requisite to entering guest-mode.
+     * See AMD spec., 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
+     */
+    return RT_BOOL(pCtx->hwvirt.svm.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
+    /** @todo Intel VMX.  */
+}
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /** @} */

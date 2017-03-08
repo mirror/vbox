@@ -461,8 +461,9 @@ typedef struct CPUMCTX
 
                 /** 756 - Global interrupt flag. */
                 uint8_t            fGif;
-                /** 757 - Padding. */
-                uint8_t            abPadding[11];
+                uint8_t            abPadding[3];
+                /** 760 - Nested-guest VMCB. */
+                RTGCPHYS           GCPhysNstGstVmcb;
             } svm;
 #if 0
             struct

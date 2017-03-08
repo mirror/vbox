@@ -148,9 +148,10 @@ VMM_INT_DECL(void)              HMHypercallsEnable(PVMCPU pVCpu);
 VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
-
-VMM_INT_DECL(void)              HMNstGstSvmVmExit(PVMCPU pVCpu, uint64_t uExitCode);
-VMM_INT_DECL(void)              HMNstGstVmxVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, int64_t iExitCode, uint64_t uExitInfo1,
+                                                  uint64_t uExitInfo2);
+VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);

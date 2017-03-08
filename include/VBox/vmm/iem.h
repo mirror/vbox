@@ -116,7 +116,9 @@ VMM_INT_DECL(int)           IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp);
 VMM_INT_DECL(void)          IEMTlbInvalidateAll(PVMCPU pVCpu, bool fVmm);
 VMM_INT_DECL(void)          IEMTlbInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtr);
 VMM_INT_DECL(void)          IEMTlbInvalidateAllPhysical(PVMCPU pVCpu);
-
+#ifdef VBOX_WITH_NESTED_HWVIRT
+VMM_INT_DECL(bool)          IEMIsRaisingIntOrXcpt(PVMCPU pVCpu);
+#endif
 
 /** @name Given Instruction Interpreters
  * @{ */
