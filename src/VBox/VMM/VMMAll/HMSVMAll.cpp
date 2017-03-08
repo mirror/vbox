@@ -196,7 +196,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        The guest-CPU context.
- * @param   uExitCode   The exit reason.
+ * @param   iExitCode   The exit reason.
  * @param   uExitInfo1  The exit info. 1 field.
  * @param   uExitInfo1  The exit info. 2 field.
  */
