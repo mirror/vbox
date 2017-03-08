@@ -191,7 +191,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * SVM nested-guest \#VMEXIT handler.
+ * SVM nested-guest VMEXIT handler.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
