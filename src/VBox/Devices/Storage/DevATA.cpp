@@ -1141,6 +1141,30 @@ static void ataHCPIOTransferLimitATAPI(ATADevState *s)
 
 # ifdef IN_RING3
 
+/**
+ * Enters the lock protecting the controller data against concurrent access.
+ *
+ * @returns nothing.
+ * @param   pCtl        The controller to lock.
+ */
+DECLINLINE(void) ataR3LockEnter(PATACONTROLLER pCtl)
+{
+    STAM_PROFILE_START(&pCtl->StatLockWait, a);
+    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+}
+
+/**
+ * Leaves the lock protecting the controller against concurrent data access.
+ *
+ * @returns nothing.
+ * @param   pCtl        The controller to unlock.
+ */
+DECLINLINE(void) ataR3LockLeave(PATACONTROLLER pCtl)
+{
+    PDMCritSectLeave(&pCtl->lock);
+}
+
 static uint32_t ataR3GetNSectors(ATADevState *s)
 {
     /* 0 means either 256 (LBA28) or 65536 (LBA48) sectors. */
@@ -1359,16 +1383,14 @@ static bool ataR3FlushSS(ATADevState *s)
     Assert(s->uTxDir == PDMMEDIATXDIR_NONE);
     Assert(!s->cbElementaryTransfer);
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     STAM_PROFILE_START(&s->StatFlushes, f);
     rc = s->pDrvMedia->pfnFlush(s->pDrvMedia);
     AssertRC(rc);
     STAM_PROFILE_STOP(&s->StatFlushes, f);
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
     ataR3CmdOK(s, 0);
     return false;
 }
@@ -1598,7 +1620,7 @@ static int ataR3ReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf,
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     STAM_PROFILE_ADV_START(&s->StatReads, r);
     s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
@@ -1615,9 +1637,7 @@ static int ataR3ReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf,
     else
         *pfRedo = ataR3IsRedoSetWarning(s, rc);
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
     return rc;
 }
 
@@ -1628,7 +1648,7 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     STAM_PROFILE_ADV_START(&s->StatWrites, w);
     s->Led.Asserted.s.fWriting = s->Led.Actual.s.fWriting = 1;
@@ -1653,9 +1673,7 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
     else
         *pfRedo = ataR3IsRedoSetWarning(s, rc);
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
     return rc;
 }
 
@@ -1828,7 +1846,7 @@ static bool atapiR3ReadSS(ATADevState *s)
     Assert(cSectors * s->cbATAPISector <= cbTransfer);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, s->iATAPILBA));
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     STAM_PROFILE_ADV_START(&s->StatReads, r);
     s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
@@ -1874,9 +1892,7 @@ static bool atapiR3ReadSS(ATADevState *s)
     s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
 
     if (RT_SUCCESS(rc))
     {
@@ -1943,7 +1959,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         }
     }
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
 # if defined(LOG_ENABLED)
     char szBuf[1024];
@@ -2016,11 +2032,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                 if (s->cErrors++ < MAX_LOG_REL_ERRORS)
                     LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough split error\n", s->iLUN));
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-                {
-                STAM_PROFILE_START(&pCtl->StatLockWait, a);
-                PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-                STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-                }
+                ataR3LockEnter(pCtl);
                 return false;
         }
         cSectorsMax = RT_MIN(cSectorsMax, cSectors);
@@ -2101,9 +2113,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                                       s->CTX_SUFF(pbIOBuffer), &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
     if (pProf) { STAM_PROFILE_ADV_STOP(pProf, b); }
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
 
     /* Update the LEDs and the read/write statistics. */
     if (cbTransfer >= 2048)
@@ -3259,7 +3269,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                     PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
                     PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
-                    PDMCritSectLeave(&pCtl->lock);
+                    ataR3LockLeave(pCtl);
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)s->pDrvMount->pfnUnmount, 3,
                                                  s->pDrvMount, false /*=fForce*/, true /*=fEject*/);
@@ -3271,11 +3281,8 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                                                pThis->pMediaNotify, s->iLUN);
                         AssertRC(rc);
                     }
-                    {
-                        STAM_PROFILE_START(&pCtl->StatLockWait, a);
-                        PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-                        STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-                    }
+
+                    ataR3LockEnter(pCtl);
                     break;
                 }
                 case 3: /* 11 - Load media */
@@ -3638,7 +3645,7 @@ static int ataR3TrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSector
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
 
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     TrimRange.offStart = u64Sector * s->cbSector;
     TrimRange.cbRange  = cSectors * s->cbSector;
@@ -3652,9 +3659,7 @@ static int ataR3TrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSector
     else
         *pfRedo = ataR3IsRedoSetWarning(s, rc);
 
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    ataR3LockEnter(pCtl);
     return rc;
 }
 
@@ -4220,7 +4225,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             {
 #ifdef IN_RING3
                 cBusy = 0;
-                PDMCritSectLeave(&pCtl->lock);
+                ataR3LockLeave(pCtl);
 
 #ifndef RT_OS_WINDOWS
                 /*
@@ -4250,11 +4255,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 
                 RTThreadYield();
 
-                {
-                    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-                    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-                    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-                }
+                ataR3LockEnter(pCtl);
 
                 val = s->uATARegStatus;
 #else /* !IN_RING3 */
@@ -4969,7 +4970,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
     /* The DMA loop is designed to hold the lock only when absolutely
      * necessary. This avoids long freezes should the guest access the
      * ATA registers etc. for some reason. */
-    PDMCritSectLeave(&pCtl->lock);
+    ataR3LockLeave(pCtl);
 
     Log2(("%s: %s tx_size=%d elem_tx_size=%d index=%d end=%d\n",
          __FUNCTION__, uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "T2I" : "I2T",
@@ -5027,11 +5028,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                 if (uTxDir == PDMMEDIATXDIR_FROM_DEVICE && cbElementaryTransfer > cbTotalTransfer)
                     cbElementaryTransfer = cbTotalTransfer;
 
-                {
-                STAM_PROFILE_START(&pCtl->StatLockWait, a);
-                PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-                STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-                }
+                ataR3LockEnter(pCtl);
 
                 /* The RESET handler could have cleared the DMA transfer
                  * state (since we didn't hold the lock until just now
@@ -5070,7 +5067,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                     GCPhysDesc = pCtl->GCPhysLastDMADesc + 1;
                 }
 
-                PDMCritSectLeave(&pCtl->lock);
+                ataR3LockLeave(pCtl);
                 if (RT_UNLIKELY(fRedo))
                     break;
             }
@@ -5083,11 +5080,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
         if (!cbTotalTransfer || fLastDesc)
             break;
 
-        {
-        STAM_PROFILE_START(&pCtl->StatLockWait, a);
-        PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-        STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-        }
+        ataR3LockEnter(pCtl);
 
         if (!(pCtl->BmDma.u8Cmd & BM_CMD_START) || pCtl->fReset)
         {
@@ -5098,15 +5091,10 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
             GCPhysDesc = pCtl->GCPhysLastDMADesc + 1;
         }
 
-        PDMCritSectLeave(&pCtl->lock);
+        ataR3LockLeave(pCtl);
     }
 
-    {
-    STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-    }
-
+    ataR3LockEnter(pCtl);
     if (RT_UNLIKELY(fRedo))
         return;
 
@@ -5227,11 +5215,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
         }
 
         /* Do our work.  */
-        {
-        STAM_PROFILE_START(&pCtl->StatLockWait, a);
-        PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
-        STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
-        }
+        ataR3LockEnter(pCtl);
 
         if (pCtl->uAsyncIOState == ATA_AIO_NEW && !pCtl->fChainedTransfer)
         {
@@ -5424,9 +5408,9 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * usually during component install). So far no better
                      * solution has been found. */
                     Log(("%s: delay IRQ hack\n", __FUNCTION__));
-                    PDMCritSectLeave(&pCtl->lock);
+                    ataR3LockLeave(pCtl);
                     RTThreadSleep(pCtl->DelayIRQMillies);
-                    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+                    ataR3LockEnter(pCtl);
                 }
 
                 ataUnsetStatus(s, ATA_STAT_DRQ);
@@ -5633,7 +5617,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 # endif /* DEBUG || VBOX_WITH_STATISTICS */
         }
 
-        PDMCritSectLeave(&pCtl->lock);
+        ataR3LockLeave(pCtl);
     }
 
     /* Signal the ultimate idleness. */
@@ -5778,8 +5762,8 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             break;
         default:
             AssertMsgFailed(("%s: Unsupported read from port %x size=%d\n", __FUNCTION__, Port, cb));
-            PDMCritSectLeave(&pCtl->lock);
-            return VERR_IOM_IOPORT_UNUSED;
+            rc = VERR_IOM_IOPORT_UNUSED;
+            break;
     }
     PDMCritSectLeave(&pCtl->lock);
     return rc;
