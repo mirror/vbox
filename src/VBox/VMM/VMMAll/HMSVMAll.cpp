@@ -215,8 +215,11 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, int64_
         return VINF_SUCCESS;
     }
     else
+    {
         Log(("HMNstGstSvmVmExit: Not in SVM guest mode! uExitCode=%RI64 uExitInfo1=%RU64 uExitInfo2=%RU64\n", iExitCode,
              uExitInfo1, uExitInfo2));
+        RT_NOREF2(uExitInfo1, uExitInfo2);
+    }
 
     return VERR_SVM_IPE_5;
 }
