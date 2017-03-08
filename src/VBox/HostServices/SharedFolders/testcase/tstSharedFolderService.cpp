@@ -750,8 +750,9 @@ void testCreateFileSimple(RTTEST hTest)
                     &Result);
     RTTEST_CHECK_RC_OK(hTest, rc);
     RTTEST_CHECK_MSG(hTest,
-                     !strcmp(testRTFileOpenName, "/test/mapping/test/file"),
-                     (hTest, "pszFilename=%s\n", testRTFileOpenName));
+                     !strcmp(&testRTFileOpenName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0],
+                             "/test/mapping/test/file"),
+                     (hTest, "pszFilename=%s\n", &testRTFileOpenName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0]));
     RTTEST_CHECK_MSG(hTest, testRTFileOpenFlags == 0x181,
                      (hTest, "fOpen=%llu\n", LLUIFY(testRTFileOpenFlags)));
     RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
@@ -780,11 +781,13 @@ void testCreateDirSimple(RTTEST hTest)
                     SHFL_CF_DIRECTORY | SHFL_CF_ACCESS_READ, NULL, &Result);
     RTTEST_CHECK_RC_OK(hTest, rc);
     RTTEST_CHECK_MSG(hTest,
-                     !strcmp(testRTDirCreatePath, "/test/mapping/test/dir"),
-                     (hTest, "pszPath=%s\n", testRTDirCreatePath));
+                     !strcmp(&testRTDirCreatePath[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0],
+                             "/test/mapping/test/dir"),
+                     (hTest, "pszPath=%s\n", &testRTDirCreatePath[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0]));
     RTTEST_CHECK_MSG(hTest,
-                     !strcmp(testRTDirOpenName, "/test/mapping/test/dir"),
-                     (hTest, "pszFilename=%s\n", testRTDirOpenName));
+                     !strcmp(&testRTDirOpenName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0],
+                             "/test/mapping/test/dir"),
+                     (hTest, "pszFilename=%s\n", &testRTDirOpenName[RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS ? 2 : 0]));
     RTTEST_CHECK_MSG(hTest, Result == SHFL_FILE_CREATED,
                      (hTest, "Result=%d\n", (int) Result));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
@@ -923,16 +926,17 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     const RTFILE hcFile = (RTFILE) 0x10000;
     const uint32_t fMode = 0660;
     SHFLFSOBJINFO Info;
-    SHFLHANDLE Handle;
     int rc;
 
     RTTestSub(hTest, "Query and set file size");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
+    SHFLHANDLE Handle = SHFL_HANDLE_NIL;
     testRTFileOpenpFile = hcFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
-    RTTEST_CHECK_RC_OK(hTest, rc);
+    RTTEST_CHECK_RC_OK_RETV(hTest, rc);
+
     RT_ZERO(Info);
     testRTFileQueryInfoFMode = fMode;
     rc = sfInformation(&svcTable, Root, Handle, SHFL_INFO_FILE, sizeof(Info),
