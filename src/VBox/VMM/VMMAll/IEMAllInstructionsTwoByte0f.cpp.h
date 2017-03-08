@@ -498,6 +498,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmrun);
 
 /** Opcode 0x0f 0x01 0xd9. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmmcall);
+
 /** Opcode 0x0f 0x01 0xda. */
 FNIEMOP_UD_STUB(iemOp_Grp7_Amd_vmload);
 
