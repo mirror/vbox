@@ -25,6 +25,7 @@
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/hm_svm.h>
 
 
 #ifndef IN_RC
