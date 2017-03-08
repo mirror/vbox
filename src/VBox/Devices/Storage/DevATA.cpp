@@ -895,7 +895,10 @@ static void ataR3AsyncIODumpRequests(PATACONTROLLER pCtl)
         switch (pCtl->aAsyncIORequests[curr].ReqType)
         {
             case ATA_AIO_NEW:
-                LogRel(("new transfer request, iIf=%d iBeginTransfer=%d iSourceSink=%d cbTotalTransfer=%d uTxDir=%d\n", pCtl->aAsyncIORequests[curr].u.t.iIf, pCtl->aAsyncIORequests[curr].u.t.iBeginTransfer, pCtl->aAsyncIORequests[curr].u.t.iSourceSink, pCtl->aAsyncIORequests[curr].u.t.cbTotalTransfer, pCtl->aAsyncIORequests[curr].u.t.uTxDir));
+                LogRel(("new transfer request, iIf=%d iBeginTransfer=%d iSourceSink=%d cbTotalTransfer=%d uTxDir=%d\n",
+                        pCtl->aAsyncIORequests[curr].u.t.iIf, pCtl->aAsyncIORequests[curr].u.t.iBeginTransfer,
+                        pCtl->aAsyncIORequests[curr].u.t.iSourceSink, pCtl->aAsyncIORequests[curr].u.t.cbTotalTransfer,
+                        pCtl->aAsyncIORequests[curr].u.t.uTxDir));
                 break;
             case ATA_AIO_DMA:
                 LogRel(("dma transfer continuation\n"));
@@ -910,7 +913,8 @@ static void ataR3AsyncIODumpRequests(PATACONTROLLER pCtl)
                 LogRel(("reset cleared request\n"));
                 break;
             case ATA_AIO_ABORT:
-                LogRel(("abort request, iIf=%d fResetDrive=%d\n", pCtl->aAsyncIORequests[curr].u.a.iIf,  pCtl->aAsyncIORequests[curr].u.a.fResetDrive));
+                LogRel(("abort request, iIf=%d fResetDrive=%d\n", pCtl->aAsyncIORequests[curr].u.a.iIf,
+                                                                  pCtl->aAsyncIORequests[curr].u.a.fResetDrive));
                 break;
             default:
                 LogRel(("unknown request %d\n", pCtl->aAsyncIORequests[curr].ReqType));
@@ -977,7 +981,8 @@ static void ataR3StartTransfer(ATADevState *s, uint32_t cbTotalTransfer, uint8_t
      * twice (e.g. the Linux kernel that comes with Acronis True Image 8). */
     if (!fChainedTransfer && !ataR3AsyncIOIsIdle(pCtl, true /*fStrict*/))
     {
-        Log(("%s: Ctl#%d: ignored command %#04x, controller state %d\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), s->uATARegCommand, pCtl->uAsyncIOState));
+        Log(("%s: Ctl#%d: ignored command %#04x, controller state %d\n",
+             __FUNCTION__, ATACONTROLLER_IDX(pCtl), s->uATARegCommand, pCtl->uAsyncIOState));
         LogRel(("PIIX3 IDE: guest issued command %#04x while controller busy\n", s->uATARegCommand));
         return;
     }
@@ -2916,7 +2921,9 @@ static bool atapiR3ReadTOCMultiSS(ATADevState *s)
     Assert(s->cbElementaryTransfer <= 12);
     fMSF = (s->aATAPICmd[1] >> 1) & 1;
     /* multi session: only a single session defined */
-/** @todo double-check this stuff against what a real drive says for a CD-ROM (not a CD-R) with only a single data session. Maybe solve the problem with "cdrdao read-toc" not being able to figure out whether numbers are in BCD or hex. */
+    /** @todo double-check this stuff against what a real drive says for a CD-ROM (not a CD-R)
+     * with only a single data session. Maybe solve the problem with "cdrdao read-toc" not being
+     * able to figure out whether numbers are in BCD or hex. */
     memset(pbBuf, 0, 12);
     pbBuf[1] = 0x0a;
     pbBuf[2] = 0x01;
@@ -4415,7 +4422,8 @@ static void ataHCPIOTransfer(PATACONTROLLER pCtl)
     if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
     {
 # ifdef IN_RING3
-        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "loading" : "storing"));
+        LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n",
+                s->iLUN, s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "loading" : "storing"));
         /* Any guest OS that triggers this case has a pathetic ATA driver.
          * In a real system it would block the CPU via IORDY, here we do it
          * very similarly by not continuing with the current instruction
@@ -5211,7 +5219,11 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 /* Incorrect sequence of PIO/DMA states. Dump request queue. */
                 ataR3AsyncIODumpRequests(pCtl);
             }
-            AssertReleaseMsg(ReqType == ATA_AIO_RESET_ASSERTED || ReqType == ATA_AIO_RESET_CLEARED || ReqType == ATA_AIO_ABORT || pCtl->uAsyncIOState == ReqType, ("I/O state inconsistent: state=%d request=%d\n", pCtl->uAsyncIOState, ReqType));
+            AssertReleaseMsg(   ReqType == ATA_AIO_RESET_ASSERTED
+                             || ReqType == ATA_AIO_RESET_CLEARED
+                             || ReqType == ATA_AIO_ABORT
+                             || pCtl->uAsyncIOState == ReqType,
+                             ("I/O state inconsistent: state=%d request=%d\n", pCtl->uAsyncIOState, ReqType));
         }
 
         /* Do our work.  */
@@ -5320,7 +5332,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                         /* If BMDMA is already started, do the transfer now. */
                         if (pCtl->BmDma.u8Cmd & BM_CMD_START)
                         {
-                            Log2(("%s: Ctl#%d: message to async I/O thread, continuing DMA transfer immediately\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
+                            Log2(("%s: Ctl#%d: message to async I/O thread, continuing DMA transfer immediately\n",
+                                  __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
                             ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
                         }
                     }
@@ -5570,7 +5583,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 
             u64TS = RTTimeNanoTS() - u64TS;
             uWait = u64TS / 1000;
-            Log(("%s: Ctl#%d: LUN#%d finished I/O transaction in %d microseconds\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), pCtl->aIfs[pCtl->iAIOIf].iLUN, (uint32_t)(uWait)));
+            Log(("%s: Ctl#%d: LUN#%d finished I/O transaction in %d microseconds\n",
+                 __FUNCTION__, ATACONTROLLER_IDX(pCtl), pCtl->aIfs[pCtl->iAIOIf].iLUN, (uint32_t)(uWait)));
             /* Mark command as finished. */
             pCtl->aIfs[pCtl->iAIOIf].u64CmdTS = 0;
 
@@ -5589,7 +5603,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * an entry in the release log to allow tracking such
                      * timing errors (which are often caused by the host).
                      */
-                    LogRel(("PIIX3 ATA: execution time for ATA command %#04x was %d seconds\n", pCtl->aIfs[pCtl->iAIOIf].uATARegCommand, uWait / (1000 * 1000)));
+                    LogRel(("PIIX3 ATA: execution time for ATA command %#04x was %d seconds\n",
+                            pCtl->aIfs[pCtl->iAIOIf].uATARegCommand, uWait / (1000 * 1000)));
                 }
             }
             else
@@ -5602,7 +5617,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * an entry in the release log to allow tracking such
                      * timing errors (which are often caused by the host).
                      */
-                    LogRel(("PIIX3 ATA: execution time for ATAPI command %#04x was %d seconds\n", pCtl->aIfs[pCtl->iAIOIf].aATAPICmd[0], uWait / (1000 * 1000)));
+                    LogRel(("PIIX3 ATA: execution time for ATAPI command %#04x was %d seconds\n",
+                            pCtl->aIfs[pCtl->iAIOIf].aATAPICmd[0], uWait / (1000 * 1000)));
                 }
             }
 
@@ -6201,7 +6217,8 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         pIf->PCHSGeometry.cCylinders = 0; /* dummy */
         pIf->PCHSGeometry.cHeads     = 0; /* dummy */
         pIf->PCHSGeometry.cSectors   = 0; /* dummy */
-        LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pIf->iLUN, pIf->cTotalSectors, (pIf->fATAPIPassthrough ? "enabled" : "disabled")));
+        LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n",
+                pIf->iLUN, pIf->cTotalSectors, (pIf->fATAPIPassthrough ? "enabled" : "disabled")));
     }
     else
     {
@@ -6233,7 +6250,9 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             pIf->pDrvMedia->pfnBiosSetPCHSGeometry(pIf->pDrvMedia, &pIf->PCHSGeometry);
             rc = VINF_SUCCESS;
         }
-        LogRel(("PIIX3 ATA: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n", pIf->iLUN, pIf->PCHSGeometry.cCylinders, pIf->PCHSGeometry.cHeads, pIf->PCHSGeometry.cSectors, pIf->cTotalSectors));
+        LogRel(("PIIX3 ATA: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n",
+                pIf->iLUN, pIf->PCHSGeometry.cCylinders, pIf->PCHSGeometry.cHeads, pIf->PCHSGeometry.cSectors,
+                pIf->cTotalSectors));
 
         if (pIf->pDrvMedia->pfnDiscard)
             LogRel(("PIIX3 ATA: LUN#%d: TRIM enabled\n", pIf->iLUN));
