@@ -438,6 +438,7 @@
               Source="$(env.PATH_OUT)\bin\VBoxCAPI.dll" />
     </Component>
 
+<?if $(env.VBOX_WITH_UNATTENDED) = "yes" ?>
     <!-- Unattended templates -->
     <Directory Id="dir_VBoxUnattendedTemplates" Name="unattended_templates">
         <Component Id="cp_UnattendedTemplates" Guid="8f89ec7e-ae83-490d-a293-c7ab276c5678" Win64="$(var.Property_Win64)">
@@ -458,5 +459,6 @@
                   Source="$(env.PATH_OUT)\bin\unattended_templates\win_nt5_unattended.sif" />
         </Component>
     </Directory>
+<?endif?>
 
 </Include>
