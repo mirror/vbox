@@ -176,7 +176,11 @@ int vbox_framebuffer_init(struct drm_device *dev,
 {
     int ret;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+    drm_helper_mode_fill_fb_struct(dev, &vbox_fb->base, mode_cmd);
+#else
     drm_helper_mode_fill_fb_struct(&vbox_fb->base, mode_cmd);
+#endif
     vbox_fb->obj = obj;
     ret = drm_framebuffer_init(dev, &vbox_fb->base, &vbox_fb_funcs);
     if (ret) {
@@ -394,7 +398,11 @@ out_free:
     return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+void vbox_driver_unload(struct drm_device *dev)
+#else
 int vbox_driver_unload(struct drm_device *dev)
+#endif
 {
     struct vbox_private *vbox = dev->dev_private;
 
@@ -410,7 +418,9 @@ int vbox_driver_unload(struct drm_device *dev)
         pci_iounmap(dev->pdev, vbox->mapped_vram);
     kfree(vbox);
     dev->dev_private = NULL;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
     return 0;
+#endif
 }
 
 /** @note this is described in the DRM framework documentation.  AST does not

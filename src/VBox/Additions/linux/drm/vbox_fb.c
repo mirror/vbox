@@ -324,7 +324,11 @@ static int vboxfb_create(struct drm_fb_helper *helper,
     info->apertures->ranges[0].base = pci_resource_start(dev->pdev, 0);
     info->apertures->ranges[0].size = pci_resource_len(dev->pdev, 0);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+    drm_fb_helper_fill_fix(info, fb->pitches[0], fb->format->depth);
+#else
     drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
+#endif
     drm_fb_helper_fill_var(info, &fbdev->helper, sizes->fb_width, sizes->fb_height);
 
     info->screen_base = bo->kmap.virtual;
@@ -415,7 +419,11 @@ int vbox_fbdev_init(struct drm_device *dev)
 #else
     drm_fb_helper_prepare(dev, &fbdev->helper, &vbox_fb_helper_funcs);
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+    ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs);
+#else
     ret = drm_fb_helper_init(dev, &fbdev->helper, vbox->num_crtcs, vbox->num_crtcs);
+#endif
     if (ret)
         goto free;
 
