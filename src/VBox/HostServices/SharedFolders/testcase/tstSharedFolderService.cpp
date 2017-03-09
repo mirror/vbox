@@ -517,7 +517,7 @@ static void fillTestShflString(union TESTSHFLSTRING *pDest,
     pDest->string.u16Size   = pDest->string.u16Length + sizeof(RTUTF16);
     /* Copy pcszSource ASCIIZ, including the trailing 0, to the UTF16 pDest->string.String.ucs2. */
     for (unsigned i = 0; i <= cchSource; ++i)
-        ((uint16_t*)pDest->string.String.ucs2)[i] = (uint16_t)pcszSource[i];
+        pDest->string.String.ucs2[i] = (uint16_t)pcszSource[i];
 }
 
 static SHFLROOT initWithWritableMapping(RTTEST hTest,
