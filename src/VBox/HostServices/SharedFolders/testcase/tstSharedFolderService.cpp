@@ -515,7 +515,7 @@ static void fillTestShflString(struct TESTSHFLSTRING *pDest,
     pDest->string.u16Length = (uint16_t)(strlen(pcszSource) * sizeof(RTUTF16));
     pDest->string.u16Size   = pDest->string.u16Length + sizeof(RTUTF16);
     for (unsigned i = 0; i <= pDest->string.u16Length; ++i)
-        pDest->string.String.ucs2[i] = (uint16_t)pcszSource[i];
+        ((uint16_t*)pDest->string.String.ucs2)[i] = (uint16_t)pcszSource[i];
 }
 
 static SHFLROOT initWithWritableMapping(RTTEST hTest,
