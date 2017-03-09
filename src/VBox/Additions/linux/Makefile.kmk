@@ -31,7 +31,7 @@ endif
 # Build test for the Guest Additions kernel modules
 #
 
-if 0 # def VBOX_WITH_TESTCASES
+ifdef VBOX_WITH_TESTCASES
  ifndef VBOX_ONLY_SDK
   VBOX_LNX_ADD_TEST=$(PATH_TARGET)/tstguest_mod
   VBOX_LNX_ADD_TEST_TARGET=$(PATH_TARGET)/tstguest_mod.run
@@ -43,7 +43,7 @@ $$(VBOX_LNX_ADD_TEST_TARGET): $$(VBOX_LNX_ADD_SOURCES)
 	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
 	$(QUIET)$(ASH) -c "rm -f $@"
 	$(QUIET)$(ASH) -c "mkdir -p $(VBOX_LNX_ADD_TEST) && cp -r $(PATH_STAGE_BIN)/additions/src/* $(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(ASH) -c "cd $(VBOX_LNX_ADD_TEST) && if ! make > build.log 2>&1; then echo Failed: check file $(VBOX_LNX_ADD_TEST)/build.log && false; fi"
+	$(QUIET)$(ASH) -c "cd $(VBOX_LNX_ADD_TEST) && make"
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif
 endif
