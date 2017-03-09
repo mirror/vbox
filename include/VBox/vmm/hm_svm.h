@@ -28,7 +28,6 @@
 
 #include <VBox/types.h>
 #include <VBox/err.h>
-#include <VBox/vmm/cpumctx.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
@@ -968,9 +967,6 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
     } while (0)
 /** @} */
 
-
-VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
-VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, PSVMHOSTSTATE pHostState);
 
 /** @} */
 

@@ -29,6 +29,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/vmm.h>
+#include <VBox/vmm/hm_svm.h>
 #include <iprt/mp.h>
 
 
@@ -150,6 +151,8 @@ VMM_INT_DECL(void)              HMHypercallsDisable(PVMCPU pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)      HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                                   uint64_t uExitInfo2);
 VMM_INT_DECL(void)              HMVmxNstGstVmExit(PVMCPU pVCpu, uint16_t uBasicExitReason);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, PSVMHOSTSTATE pHostState);
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
