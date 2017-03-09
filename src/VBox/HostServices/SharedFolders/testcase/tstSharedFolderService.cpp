@@ -501,13 +501,13 @@ void testMappingsAddBadParameters(RTTEST hTest) { RT_NOREF1(hTest); }
 /* Sub-tests for testMappingsRemove(). */
 void testMappingsRemoveBadParameters(RTTEST hTest) { RT_NOREF1(hTest); }
 
-struct TESTSHFLSTRING
+union TESTSHFLSTRING
 {
     SHFLSTRING string;
     char acData[256];
 };
 
-static void fillTestShflString(struct TESTSHFLSTRING *pDest,
+static void fillTestShflString(union TESTSHFLSTRING *pDest,
                                const char *pcszSource)
 {
     const size_t cchSource = strlen(pcszSource);
@@ -528,8 +528,8 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
 {
     VBOXHGCMSVCPARM aParms[RT_MAX(SHFL_CPARMS_ADD_MAPPING,
                                   SHFL_CPARMS_MAP_FOLDER)];
-    struct TESTSHFLSTRING FolderName;
-    struct TESTSHFLSTRING Mapping;
+    union TESTSHFLSTRING FolderName;
+    union TESTSHFLSTRING Mapping;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     int rc;
 
@@ -569,7 +569,7 @@ static void unmapAndRemoveMapping(RTTEST hTest, VBOXHGCMSVCFNTABLE *psvcTable,
     VBOXHGCMSVCPARM aParms[RT_MAX(SHFL_CPARMS_UNMAP_FOLDER,
                                   SHFL_CPARMS_REMOVE_MAPPING)];
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    struct TESTSHFLSTRING FolderName;
+    union TESTSHFLSTRING FolderName;
     int rc;
 
     aParms[0].setUInt32(root);
@@ -590,7 +590,7 @@ static int createFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT Root,
                       SHFLHANDLE *pHandle, SHFLCREATERESULT *pResult)
 {
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_CREATE];
-    struct TESTSHFLSTRING Path;
+    union TESTSHFLSTRING Path;
     SHFLCREATEPARMS CreateParms;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
@@ -673,7 +673,7 @@ static int listDir(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
                    uint32_t resumePoint, uint32_t *pcFiles)
 {
     VBOXHGCMSVCPARM aParms[SHFL_CPARMS_LIST];
-    struct TESTSHFLSTRING Path;
+    union TESTSHFLSTRING Path;
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
 
     aParms[0].setUInt32(root);
