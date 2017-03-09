@@ -210,7 +210,7 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, int64_
 
         pCtx->hwvirt.svm.fGif = 0;
 
-        /** @todo implement #VMEXIT. */
+        /** @todo implement VMEXIT. */
 
         return VINF_SUCCESS;
     }
