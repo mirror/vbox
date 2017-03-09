@@ -397,22 +397,11 @@ static PRThread* _PR_CreateThread(
         fFlags |= RTTHREADFLAGS_WAITABLE;
 #endif /* !VBOX_USE_IPRT_IN_NSPR */
 
-#ifndef VBOX_USE_IPRT_IN_NSPR
+#ifndef VBOX_USE_IPRT_IN_NSPR /* We let stackSize stay zero and let IPRT choose a default size. */
     if (0 == stackSize) stackSize = (64 * 1024);  /* default == 64K */
-#else
-# ifdef RT_ARCH_AMD64
-    /* @bugref{8070}: At least on Mac OS X we run into a stack overflow if we
-     * have to handle many snapshots. Space is not a real concern on 64-bit
-     * hosts. */
-    if (0 == stackSize) stackSize = (512 * 1024);  /* default == 512K */
-# else
-    if (0 == stackSize) stackSize = (128 * 1024);  /* default == 128K */
-# endif
-#endif /* VBOX_USE_IPRT_IN_NSPR */
 #ifdef _MD_MINIMUM_STACK_SIZE
     if (stackSize < _MD_MINIMUM_STACK_SIZE) stackSize = _MD_MINIMUM_STACK_SIZE;
 #endif
-#ifndef VBOX_USE_IPRT_IN_NSPR
     /*
      * Linux doesn't have pthread_attr_setstacksize.
      */
