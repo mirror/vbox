@@ -31,6 +31,27 @@ ifneq ($(KBUILD_HOST),linux)
 endif
 
 #
+# Build test for the host kernel modules
+#
+
+ifdef VBOX_WITH_TESTCASES
+ ifndef VBOX_ONLY_SDK
+  VBOX_LNX_MOD_TEST=$(PATH_TARGET)/tsthost_mod
+  VBOX_LNX_MOD_TEST_TARGET=$(PATH_TARGET)/tsthost_mod.run
+  VBOX_LNX_MOD_SOURCES=$(vboxdrv-mod_2_INST_TARGETS) $(VBoxNetFlt-src_2_INST_TARGETS) $(VBoxNetFlt-src_2_INST_TARGETS) $(VBoxPci-src_2_INST_TARGETS)
+  TESTING += $(VBOX_LNX_MOD_TEST_TARGET)
+  OTHERS += $(VBOX_LNX_MOD_TEST_TARGET)
+  OTHER_CLEAN += $(VBOX_LNX_MOD_TEST)
+$$(VBOX_LNX_MOD_TEST_TARGET): $$(VBOX_LNX_MOD_SOURCES)
+	$(QUIET)$(call MSG_L1,Doing a test build of the host kernel modules)
+	$(QUIET)$(ASH) -c "rm -f $@"
+	$(QUIET)$(ASH) -c "mkdir -p $(VBOX_LNX_MOD_TEST) && cp -r $(PATH_STAGE_BIN)/src/* $(VBOX_LNX_MOD_TEST)"
+	$(QUIET)$(ASH) -c "cd $(VBOX_LNX_MOD_TEST) && if ! make > build.log 2>&1; then echo Failed: check file $(VBOX_LNX_MOD_TEST)/build.log && false; fi"
+	$(QUIET)$(APPEND) -t "$@" "done"
+ endif
+endif
+
+#
 # Globals and targets.
 #
 VBOX_LNX_APP_PRIVATE    := $(if $(VBOX_PATH_APP_PRIVATE),$(VBOX_PATH_APP_PRIVATE),/opt/VirtualBox)

@@ -308,8 +308,8 @@ endif
 # VBOX_WITHOUT_ADDITIONS overrides it.
 VBOX_WITH_ADDITIONS = 1
 # Build the optional ring-0 part of the additions for syntax checking.
-# (Except when cross-building on linux since we're using /usr/src/...)
-ifn1of ($(KBUILD_TARGET).$(KBUILD_HOST_ARCH).$(KBUILD_TARGET_ARCH), linux.x86.amd64 linux.amd64.x86)
+# On linux we build this as a test case instead.
+ifneq ($(KBUILD_TARGET), linux)
  VBOX_WITH_ADDITION_DRIVERS = 1
 endif
 # Build X11 additions. Can be disabled separately.
@@ -564,7 +564,10 @@ endif
 # Build the installer.
 VBOX_WITH_INSTALLER = 1
 # The kernel driver/module and related runtime libraries.
-VBOX_WITH_VBOXDRV = 1
+# On Linux we build this as a test case instead.
+ifneq ($(KBUILD_TARGET), linux)
+ VBOX_WITH_VBOXDRV = 1
+endif
 # The main api.
 VBOX_WITH_MAIN = 1
 # Enables proxy stub for MS COM (speeds up setting IPC for objects).
@@ -2927,17 +2930,6 @@ if !defined(VBOX_WITHOUT_NO_GCC_WARNING_POLICY) && !defined(VBOX_WITH_NO_GCC_WAR
 endif
 ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
  $(info build debug: VBOX_WITH_NO_GCC_WARNING_POLICY is enabled)
-endif
-
-#
-# We compile the kernel driver/module and related runtime libraries with C++.
-# This does not work for g++-4.8 and recent Linux kernels.
-#
-ifeq ($(BUILD_TARGET),linux)
- ifeq ($(int-div $(VBOX_GCC_VERSION_CXX),100), 408)
-  VBOX_WITH_VBOXDRV =
-  VBOX_WITH_ADDITION_DRIVERS =
- endif
 endif
 
 #

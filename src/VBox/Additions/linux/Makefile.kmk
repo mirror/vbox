@@ -28,6 +28,29 @@ ifdef VBOX_WITH_LIGHTDM_GREETER
 endif
 
 #
+# Build test for the Guest Additions kernel modules
+#
+
+ifdef VBOX_WITH_TESTCASES
+ ifndef VBOX_ONLY_SDK
+  VBOX_LNX_ADD_TEST=$(PATH_TARGET)/tstguest_mod
+  VBOX_LNX_ADD_TEST_TARGET=$(PATH_TARGET)/tstguest_mod.run
+  VBOX_LNX_ADD_SOURCES=$(vboxguest-src_2_INST_TARGETS) $(vboxsf-mod_2_INST_TARGETS) $(vboxvideo_drm-mod_2_INST_TARGETS)
+  TESTING += $(VBOX_LNX_ADD_TEST_TARGET)
+  OTHERS += $(VBOX_LNX_ADD_TEST_TARGET)
+  OTHER_CLEAN += $(VBOX_LNX_ADD_TEST)
+$$(VBOX_LNX_ADD_TEST_TARGET): $$(VBOX_LNX_ADD_SOURCES)
+	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
+	$(QUIET)$(ASH) -c "rm -f $@"
+	$(QUIET)$(ASH) -c "mkdir -p $(VBOX_LNX_ADD_TEST) && cp -r $(PATH_STAGE_BIN)/additions/src/* $(VBOX_LNX_ADD_TEST)"
+	$(QUIET)$(ASH) -c "cd $(VBOX_LNX_ADD_TEST) && if ! make > build.log 2>&1; then echo Failed: check file $(VBOX_LNX_ADD_TEST)/build.log && false; fi"
+	$(QUIET)$(APPEND) -t "$@" "done"
+ endif
+endif
+
+
+
+#
 # Globals
 #
 
