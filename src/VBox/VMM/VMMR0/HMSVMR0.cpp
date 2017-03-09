@@ -665,18 +665,18 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         HMCPU_EXIT_HISTORY_RESET(pVCpu);
 
         /* Always trap #AC for reasons of security. */
-        pVmcb->ctrl.u32InterceptException |= RT_BIT_32(X86_XCPT_AC);
+        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT_32(X86_XCPT_AC);
 
         /* Always trap #DB for reasons of security. */
-        pVmcb->ctrl.u32InterceptException |= RT_BIT_32(X86_XCPT_DB);
+        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT_32(X86_XCPT_DB);
 
         /* Trap exceptions unconditionally (debug purposes). */
 #ifdef HMSVM_ALWAYS_TRAP_PF
-        pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_PF);
+        pVmcb->ctrl.u32InterceptXcpt |=   RT_BIT(X86_XCPT_PF);
 #endif
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
         /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
-        pVmcb->ctrl.u32InterceptException |= 0
+        pVmcb->ctrl.u32InterceptXcpt |= 0
                                              | RT_BIT(X86_XCPT_BP)
                                              | RT_BIT(X86_XCPT_DE)
                                              | RT_BIT(X86_XCPT_NM)
@@ -766,7 +766,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                          |  SVM_CTRL_INTERCEPT_TASK_SWITCH;
 
             /* Page faults must be intercepted to implement shadow paging. */
-            pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_PF);
+            pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(X86_XCPT_PF);
         }
 
 #ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
@@ -775,7 +775,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /* Apply the exceptions intercepts needed by the GIM provider. */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
-            pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_UD);
+            pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(X86_XCPT_UD);
 
         /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
         if (fUsePauseFilter)
@@ -1075,9 +1075,9 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  */
 DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
 {
-    if (!(pVmcb->ctrl.u32InterceptException & RT_BIT(u32Xcpt)))
+    if (!(pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt)))
     {
-        pVmcb->ctrl.u32InterceptException |= RT_BIT(u32Xcpt);
+        pVmcb->ctrl.u32InterceptXcpt |= RT_BIT(u32Xcpt);
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
 }
@@ -1095,9 +1095,9 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
     Assert(u32Xcpt != X86_XCPT_DB);
     Assert(u32Xcpt != X86_XCPT_AC);
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-    if (pVmcb->ctrl.u32InterceptException & RT_BIT(u32Xcpt))
+    if (pVmcb->ctrl.u32InterceptXcpt & RT_BIT(u32Xcpt))
     {
-        pVmcb->ctrl.u32InterceptException &= ~RT_BIT(u32Xcpt);
+        pVmcb->ctrl.u32InterceptXcpt &= ~RT_BIT(u32Xcpt);
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
 #endif
@@ -1537,7 +1537,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         }
     }
 
-    Assert(pVmcb->ctrl.u32InterceptException & RT_BIT_32(X86_XCPT_DB));
+    Assert(pVmcb->ctrl.u32InterceptXcpt & RT_BIT_32(X86_XCPT_DB));
     if (fInterceptMovDRx)
     {
         if (   pVmcb->ctrl.u16InterceptRdDRx != 0xffff
@@ -2766,7 +2766,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.u16InterceptWrCRx            %#x\n",      pVmcb->ctrl.u16InterceptWrCRx));
         Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
         Log4(("ctrl.u16InterceptWrDRx            %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
-        Log4(("ctrl.u32InterceptException        %#x\n",      pVmcb->ctrl.u32InterceptException));
+        Log4(("ctrl.u32InterceptXcpt             %#x\n",      pVmcb->ctrl.u32InterceptXcpt));
         Log4(("ctrl.u64InterceptCtrl             %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl)); 
         Log4(("ctrl.u64IOPMPhysAddr              %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
         Log4(("ctrl.u64MSRPMPhysAddr             %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
@@ -3282,7 +3282,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
 
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
-    if (RT_LIKELY(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID))
+    if (RT_LIKELY(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID))
     {
         if (pVCpu->hm.s.svm.fSyncVTpr)
         {
@@ -3344,8 +3344,8 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
            and guest into the guest-CPU state.  Re-enables interrupts! */
         hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
 
-        if (RT_UNLIKELY(   rc != VINF_SUCCESS                                         /* Check for VMRUN errors. */
-                        || SvmTransient.u64ExitCode == (uint64_t)SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
+                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
         {
             if (rc == VINF_SUCCESS)
                 rc = VERR_SVM_INVALID_GUEST_STATE;
@@ -3422,8 +3422,8 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
          */
         hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
-        if (RT_UNLIKELY(   rc != VINF_SUCCESS                                         /* Check for VMRUN errors. */
-                        || SvmTransient.u64ExitCode == (uint64_t)SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
+                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
         {
             if (rc == VINF_SUCCESS)
                 rc = VERR_SVM_INVALID_GUEST_STATE;
@@ -3516,7 +3516,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    Assert(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID);
+    Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
     /*
@@ -4069,7 +4069,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                     enmReflect = SVMREFLECTXCPT_HANG;
                     Log4(("IDT: Nested #AC - Bad guest\n"));
                 }
-                else if (   (pVmcb->ctrl.u32InterceptException & HMSVM_CONTRIBUTORY_XCPT_MASK)
+                else if (   (pVmcb->ctrl.u32InterceptXcpt & HMSVM_CONTRIBUTORY_XCPT_MASK)
                          && hmR0SvmIsContributoryXcpt(uExitVector)
                          && (   hmR0SvmIsContributoryXcpt(uIdtVector)
                              || uIdtVector == X86_XCPT_PF))

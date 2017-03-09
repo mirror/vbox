@@ -181,10 +181,54 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpd
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pCtx                Pointer to the guest-CPU context.
+ * @param   pVmcb               The VMCB of the nested-guest.
+ * @param   pHostState          The host-state save area in the guest.
  */
-VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, PSVMHOSTSTATE pHostState)
 {
-    RT_NOREF2(pVCpu, pCtx);
+    Assert(pHostState);
+    Assert(pVmcb);
+
+    /*
+     * Save host state.
+     */
+    pHostState->es       = pCtx->es;
+    pHostState->cs       = pCtx->cs;
+    pHostState->ss       = pCtx->ss;
+    pHostState->ds       = pCtx->ds;
+    pHostState->gdtr     = pCtx->gdtr;
+    pHostState->idtr     = pCtx->idtr;
+    pHostState->uEferMsr = pCtx->msrEFER;
+    pHostState->uCr0     = pCtx->cr0;
+    pHostState->uCr3     = pCtx->cr3;
+    pHostState->uCr4     = pCtx->cr4;
+    pHostState->rflags   = pCtx->rflags;
+    pHostState->uRip     = pCtx->rip;
+    pHostState->uRsp     = pCtx->rsp;
+    pHostState->uRax     = pCtx->rax;
+
+    /*
+     * Load controls from VMCB.
+     */
+    pCtx->hwvirt.svm.u16InterceptRdCRx = pVmcb->ctrl.u16InterceptRdCRx;
+    pCtx->hwvirt.svm.u16InterceptWrCRx = pVmcb->ctrl.u16InterceptWrCRx;
+    pCtx->hwvirt.svm.u16InterceptRdDRx = pVmcb->ctrl.u16InterceptRdDRx;
+    pCtx->hwvirt.svm.u16InterceptWrDRx = pVmcb->ctrl.u16InterceptWrDRx;
+    pCtx->hwvirt.svm.u64InterceptCtrl  = pVmcb->ctrl.u64InterceptCtrl;
+    pCtx->hwvirt.svm.u32InterceptXcpt  = pVmcb->ctrl.u32InterceptXcpt;
+    if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
+    {
+        Log(("HMSvmVmRun: VMRUN instruction not intercepted -> #VMEXIT\n"));
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+    if (!pVmcb->ctrl.TLBCtrl.n.u32ASID)
+    {
+        Log(("HMSvmVmRun: Guest ASID is invalid -> #VMEXIT\n"));
+        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+    }
+
+
+    /** @todo the rest. */
 
     return VERR_NOT_IMPLEMENTED;
 }
@@ -196,45 +240,31 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pCtx        The guest-CPU context.
- * @param   iExitCode   The exit reason.
+ * @param   uExitCode   The exit code.
  * @param   uExitInfo1  The exit info. 1 field.
  * @param   uExitInfo2  The exit info. 2 field.
  */
-VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, int64_t iExitCode, uint64_t uExitInfo1,
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmNstGstVmExit(PVMCPU pVCpu, PCPUMCTX pCtx, uint64_t uExitCode, uint64_t uExitInfo1,
                                              uint64_t uExitInfo2)
 {
     if (   CPUMIsGuestInNestedHwVirtMode(pCtx)
-        || iExitCode == SVM_EXIT_INVALID)
+        || uExitCode == SVM_EXIT_INVALID)
     {
         RT_NOREF(pVCpu);
 
         pCtx->hwvirt.svm.fGif = 0;
 
-        /** @todo implement VMEXIT. */
+        /** @todo implement \#VMEXIT. */
 
         return VINF_SUCCESS;
     }
     else
     {
-        Log(("HMNstGstSvmVmExit: Not in SVM guest mode! uExitCode=%RI64 uExitInfo1=%RU64 uExitInfo2=%RU64\n", iExitCode,
+        Log(("HMNstGstSvmVmExit: Not in SVM guest mode! uExitCode=%#RX64 uExitInfo1=%#RX64 uExitInfo2=%#RX64\n", uExitCode,
              uExitInfo1, uExitInfo2));
         RT_NOREF2(uExitInfo1, uExitInfo2);
     }
 
     return VERR_SVM_IPE_5;
-}
-
-
-/**
- * Peforms the functions of a VMRUN instruction.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        The guest-CPU context.
- */
-VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmRun(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    RT_NOREF2(pVCpu, pCtx);
-    return VERR_NOT_IMPLEMENTED;
 }
 

@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/err.h>
+#include <VBox/vmm/cpumctx.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
@@ -71,7 +72,7 @@
  * @{
  */
 /** Invalid guest state in VMCB. */
-#define SVM_EXIT_INVALID                (-1)
+#define SVM_EXIT_INVALID                (uint64_t)(-1)
 /** Read from CR0-CR15. */
 #define SVM_EXIT_READ_CR0               0x0
 #define SVM_EXIT_READ_CR1               0x1
@@ -645,7 +646,7 @@ typedef struct
     /** Offset 0x06 - Intercept writes to DR0-DR15. */
     uint16_t    u16InterceptWrDRx;
     /** Offset 0x08 - Intercept exception vectors 0-31. */
-    uint32_t    u32InterceptException;
+    uint32_t    u32InterceptXcpt;
     /** Offset 0x0c - Intercept control. */
     uint64_t    u64InterceptCtrl;
     /** Offset 0x14-0x3f - Reserved. */
@@ -713,7 +714,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdCRx,       0x00);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrCRx,       0x02);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptRdDRx,       0x04);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16InterceptWrDRx,       0x06);
-AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptException,   0x08);
+AssertCompileMemberOffset(SVMVMCBCTRL, u32InterceptXcpt,        0x08);
 AssertCompileMemberOffset(SVMVMCBCTRL, u64InterceptCtrl,        0x0c);
 AssertCompileMemberOffset(SVMVMCBCTRL, u8Reserved,              0x14);
 AssertCompileMemberOffset(SVMVMCBCTRL, u16PauseFilterThreshold, 0x3c);
@@ -967,6 +968,9 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
     } while (0)
 /** @} */
 
+
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfRipUpdated);
+VMM_INT_DECL(VBOXSTRICTRC)      HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, PSVMHOSTSTATE pHostState);
 
 /** @} */
 

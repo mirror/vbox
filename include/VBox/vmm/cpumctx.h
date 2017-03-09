@@ -718,6 +718,31 @@ typedef CPUMCPUID *PCPUMCPUID;
 /** Pointer to a const CPUID leaf. */
 typedef const CPUMCPUID *PCCPUMCPUID;
 
+/**
+ * SVM Host-state area (Nested Hw.virt - VirtualBox's layout).
+ */
+typedef struct SVMHOSTSTATE
+{
+    uint64_t    uEferMsr;
+    uint64_t    uCr0;
+    uint64_t    uCr4;
+    uint64_t    uCr3;
+    uint64_t    uRip;
+    uint64_t    uRsp;
+    uint64_t    uRax;
+    X86RFLAGS   rflags;
+    CPUMSELREG  es;
+    CPUMSELREG  cs;
+    CPUMSELREG  ss;
+    CPUMSELREG  ds;
+    VBOXGDTR    gdtr;
+    VBOXIDTR    idtr;
+} SVMHOSTSTATE;
+/** Pointer to the SVMHOSTSTATE structure. */
+typedef SVMHOSTSTATE *PSVMHOSTSTATE;
+/** Pointer to a const SVMHOSTSTATE structure. */
+typedef const SVMHOSTSTATE *PCSVMHOSTSTATE;
+
 /** @}  */
 
 RT_C_DECLS_END

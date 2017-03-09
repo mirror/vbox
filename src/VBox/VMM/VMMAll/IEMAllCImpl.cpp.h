@@ -5894,19 +5894,36 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMRUN))
     {
-        Log(("vmrun: Guest intercept -> VMexit\n"));
+        Log(("vmrun: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
 
-    /** @todo think - I probably need to map both the HSAVE area page and the
-     *        guest VMCB via iemMemPageMap here and do the copying? */
-    pCtx->hwvirt.svm.GCPhysNstGstVmcb = GCPhysVmcb;
     void *pvVmcb;
     PGMPAGEMAPLOCK PgLockVmcb;
     VBOXSTRICTRC rcStrict = iemMemPageMap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, &pvVmcb, &PgLockVmcb);
     if (rcStrict == VINF_SUCCESS)
-        return HMSvmVmrun(pVCpu, pCtx);
+    {
+        pCtx->hwvirt.svm.GCPhysNstGstVmcb = GCPhysVmcb;
+
+        RTGCPHYS GCPhysHostState = pCtx->hwvirt.svm.uMsrHSavePa;
+        /** @todo SVM does not validate the host-state area beyond checking the
+         *        alignment and range of the physical address. Nothing to prevent users
+         *        from using MMIO or other weird stuff in which case anything might
+         *        happen. */
+        void *pvHostState;
+        PGMPAGEMAPLOCK PgLockHostState;
+        rcStrict = iemMemPageMap(pVCpu, GCPhysHostState, IEM_ACCESS_DATA_RW, &pvHostState, &PgLockHostState);
+        if (rcStrict == VINF_SUCCESS)
+        {
+            PSVMHOSTSTATE pHostState = (PSVMHOSTSTATE)pvHostState;
+            PSVMVMCB      pVmcb      = (PSVMVMCB)pvVmcb;
+            rcStrict = HMSvmVmrun(pVCpu, pCtx, pVmcb, pHostState);
+
+            iemMemPageUnmap(pVCpu, GCPhysHostState, IEM_ACCESS_DATA_RW, pvHostState, &PgLockHostState);
+        }
+        iemMemPageUnmap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, pvVmcb, &PgLockVmcb);
+    }
     RT_NOREF(cbInstr);
     return rcStrict;
 }
@@ -5921,7 +5938,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMMCALL))
     {
-        Log(("vmrun: Guest intercept -> VMexit\n"));
+        Log(("vmrun: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMMCALL, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
@@ -5949,7 +5966,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmload)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMLOAD))
     {
-        Log(("vmload: Guest intercept -> VMexit\n"));
+        Log(("vmload: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMLOAD, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
@@ -6000,7 +6017,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmsave)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_VMSAVE))
     {
-        Log(("vmsave: Guest intercept -> VMexit\n"));
+        Log(("vmsave: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_VMSAVE, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
@@ -6051,7 +6068,7 @@ IEM_CIMPL_DEF_0(iemCImpl_clgi)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_CLGI))
     {
-        Log(("clgi: Guest intercept -> VMexit\n"));
+        Log(("clgi: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_CLGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
@@ -6072,7 +6089,7 @@ IEM_CIMPL_DEF_0(iemCImpl_stgi)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_STGI))
     {
-        Log2(("stgi: Guest intercept -> VMexit\n"));
+        Log2(("stgi: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_STGI, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
@@ -6093,7 +6110,7 @@ IEM_CIMPL_DEF_0(iemCImpl_invlpga)
 #ifndef IN_RC
     if (IEM_IS_SVM_CTRL_INTERCEPT_SET(pVCpu, SVM_CTRL_INTERCEPT_INVLPGA))
     {
-        Log2(("invlpga: Guest intercept -> VMexit\n"));
+        Log2(("invlpga: Guest intercept -> #VMEXIT\n"));
         return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVLPGA, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
     }
 #endif
