@@ -3215,8 +3215,8 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
             pgmR3HandlerPhysicalUpdateAll(pVM);
 
             /*
-             * Change the paging mode and restore PGMCPU::GCPhysCR3.
-             * (The latter requires the CPUM state to be restored already.)
+             * Change the paging mode (indirectly restores PGMCPU::GCPhysCR3).
+             * (Requires the CPUM state to be restored already!)
              */
             if (CPUMR3IsStateRestorePending(pVM))
                 return SSMR3SetLoadError(pSSM, VERR_WRONG_ORDER, RT_SRC_POS,
@@ -3228,18 +3228,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
                 rc = PGMR3ChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
                 AssertLogRelRCReturn(rc, rc);
-
-                /* Update pVM->pgm.s.GCPhysCR3. */
-                Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS || FTMIsDeltaLoadSaveActive(pVM));
-                RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVCpu);
-                if (    pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE
-                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64
-                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
-                    GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
-                else
-                    GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
-                pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
 
                 /* Update the PSE, NX flags and validity masks. */
                 pVCpu->pgm.s.fGst32BitPageSizeExtension = CPUMIsGuestPageSizeExtEnabled(pVCpu);
