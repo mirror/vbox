@@ -329,6 +329,8 @@ typedef FNPGMENUMDIRTYFTPAGES *PFNPGMENUMDIRTYFTPAGES;
 
 /**
  * Paging mode.
+ *
+ * @note    Part of saved state.  Change with extreme care.
  */
 typedef enum PGMMODE
 {
