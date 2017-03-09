@@ -510,11 +510,13 @@ struct TESTSHFLSTRING
 static void fillTestShflString(struct TESTSHFLSTRING *pDest,
                                const char *pcszSource)
 {
-    AssertRelease(  strlen(pcszSource) * 2 + 2
+    const size_t cchSource = strlen(pcszSource);
+    AssertRelease(  cchSource * 2 + 2
                   < sizeof(*pDest) - RT_UOFFSETOF(SHFLSTRING, String));
-    pDest->string.u16Length = (uint16_t)(strlen(pcszSource) * sizeof(RTUTF16));
+    pDest->string.u16Length = (uint16_t)(cchSource * sizeof(RTUTF16));
     pDest->string.u16Size   = pDest->string.u16Length + sizeof(RTUTF16);
-    for (unsigned i = 0; i <= pDest->string.u16Length; ++i)
+    /* Copy pcszSource ASCIIZ, including the trailing 0, to the UTF16 pDest->string.String.ucs2. */
+    for (unsigned i = 0; i <= cchSource; ++i)
         ((uint16_t*)pDest->string.String.ucs2)[i] = (uint16_t)pcszSource[i];
 }
 
