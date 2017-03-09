@@ -31,7 +31,7 @@ endif
 # Build test for the Guest Additions kernel modules
 #
 
-ifdef VBOX_WITH_TESTCASES
+if 0 # def VBOX_WITH_TESTCASES
  ifndef VBOX_ONLY_SDK
   VBOX_LNX_ADD_TEST=$(PATH_TARGET)/tstguest_mod
   VBOX_LNX_ADD_TEST_TARGET=$(PATH_TARGET)/tstguest_mod.run
