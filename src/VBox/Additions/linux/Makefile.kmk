@@ -37,7 +37,6 @@ ifdef VBOX_WITH_TESTCASES
   VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
   TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)
   OTHERS      += $(VBOX_LNX_ADD_TEST_TARGET)
-  OTHER_CLEAN += $(VBOX_LNX_ADD_TEST)
  $$(VBOX_LNX_ADD_TEST_TARGET): \
  		$$(vboxguest-src_2_STAGE_TARGETS) \
 		$$(vboxsf-mod_2_STAGE_TARGETS) \
@@ -45,9 +44,11 @@ ifdef VBOX_WITH_TESTCASES
                $$(GuestDrivers-src_2_STAGE_TARGETS)
 	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
 	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_ADD_TEST)"
 	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(CP) -R --changed -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
+	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
 	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_TEST)
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif
 endif
