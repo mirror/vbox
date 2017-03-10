@@ -55,6 +55,34 @@ if  !defined(VBOX_ONLY_DOCS) \
 
 endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_VALIDATIONKIT)
 
+
+#
+# Build test for the linux host kernel modules.
+#
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" == "linux"
+ VBOX_LNX_MOD_TEST        = $(PATH_TARGET)/tsthost_mod
+ VBOX_LNX_MOD_TEST_TARGET = $(PATH_TARGET)/tsthost_mod.run
+ TESTING     += $(VBOX_LNX_MOD_TEST_TARGET)
+ OTHERS      += $(VBOX_LNX_MOD_TEST_TARGET)
+ OTHER_CLEAN += $(VBOX_LNX_MOD_TEST_TARGET)
+ $$(VBOX_LNX_MOD_TEST_TARGET): \
+ 		$$(vboxdrv-mod_2_STAGE_TARGETS) \
+ 		$$(VBoxNetFlt-src_2_STAGE_TARGETS) \
+ 		$$(VBoxNetFlt-src_2_STAGE_TARGETS) \
+ 		$$(VBoxPci-src_2_STAGE_TARGETS)
+	$(QUIET)$(call MSG_L1,Doing a test build of the host kernel modules)
+	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_MOD_TEST)"
+	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_MOD_TEST)"
+	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/src/" "$(VBOX_LNX_MOD_TEST)/"
+	+ $(QUIET)make -C $(VBOX_LNX_MOD_TEST) clean
+	+ $(QUIET)make -C $(VBOX_LNX_MOD_TEST)
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_MOD_TEST)
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+endif
+
+
 # Let kBuild generate the rules.
 include $(FILE_KBUILD_SUB_FOOTER)
 
