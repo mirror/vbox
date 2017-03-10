@@ -69,7 +69,8 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)"
  		$$(vboxdrv-mod_2_STAGE_TARGETS) \
  		$$(VBoxNetFlt-src_2_STAGE_TARGETS) \
  		$$(VBoxNetFlt-src_2_STAGE_TARGETS) \
- 		$$(VBoxPci-src_2_STAGE_TARGETS)
+ 		$$(VBoxPci-src_2_STAGE_TARGETS) \
+               $$(HostDrivers-scripts_2_STAGE_TARGETS)
 	$(QUIET)$(call MSG_L1,Doing a test build of the host kernel modules)
 	$(QUIET)$(RM) -f -- "$@"
 	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_MOD_TEST)"
