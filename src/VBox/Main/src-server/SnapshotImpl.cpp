@@ -998,9 +998,9 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     /* take the pointer to UserData to share (our UserData must always be the
      * same as Machine's data) */
     mUserData.share(pMachine->mUserData);
-    /* make a private copy of all other data (recent changes from SessionMachine) */
+
+    /* make a private copy of all other data */
     mHWData.attachCopy(aSessionMachine->mHWData);
-    mMediaData.attachCopy(aSessionMachine->mMediaData);
 
     /* SSData is always unique for SnapshotMachine */
     mSSData.allocate();
@@ -1008,32 +1008,56 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 
     HRESULT rc = S_OK;
 
-    /* create copies of all shared folders (mHWData after attaching a copy
-     * contains just references to original objects) */
-    for (HWData::SharedFolderList::iterator it = mHWData->mSharedFolders.begin();
-         it != mHWData->mSharedFolders.end();
+    /* Create copies of all attachments (mMediaData after attaching a copy
+     * contains just references to original objects). Additionally associate
+     * media with the snapshot (Machine::uninitDataAndChildObjects() will
+     * deassociate at destruction). */
+    mMediaData.allocate();
+    for (MediaData::AttachmentList::const_iterator
+         it = aSessionMachine->mMediaData->mAttachments.begin();
+         it != aSessionMachine->mMediaData->mAttachments.end();
          ++it)
     {
-        ComObjPtr<SharedFolder> folder;
-        folder.createObject();
-        rc = folder->initCopy(this, *it);
+        ComObjPtr<MediumAttachment> pAtt;
+        pAtt.createObject();
+        rc = pAtt->initCopy(this, *it);
         if (FAILED(rc)) return rc;
-        *it = folder;
-    }
+        mMediaData->mAttachments.push_back(pAtt);
 
-    /* associate hard disks with the snapshot
-     * (Machine::uninitDataAndChildObjects() will deassociate at destruction) */
-    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-         it != mMediaData->mAttachments.end();
-         ++it)
-    {
-        MediumAttachment *pAtt = *it;
         Medium *pMedium = pAtt->i_getMedium();
         if (pMedium) // can be NULL for non-harddisk
         {
             rc = pMedium->i_addBackReference(mData->mUuid, mSnapshotId);
             AssertComRC(rc);
         }
+    }
+
+    /* create copies of all shared folders (mHWData after attaching a copy
+     * contains just references to original objects) */
+    for (HWData::SharedFolderList::iterator
+         it = mHWData->mSharedFolders.begin();
+         it != mHWData->mSharedFolders.end();
+         ++it)
+    {
+        ComObjPtr<SharedFolder> pFolder;
+        pFolder.createObject();
+        rc = pFolder->initCopy(this, *it);
+        if (FAILED(rc)) return rc;
+        *it = pFolder;
+    }
+
+    /* create copies of all PCI device assignments (mHWData after attaching
+     * a copy contains just references to original objects) */
+    for (HWData::PCIDeviceAssignmentList::iterator
+         it = mHWData->mPCIDeviceAssignments.begin();
+         it != mHWData->mPCIDeviceAssignments.end();
+         ++it)
+    {
+        ComObjPtr<PCIDeviceAttachment> pDev;
+        pDev.createObject();
+        rc = pDev->initCopy(this, *it);
+        if (FAILED(rc)) return rc;
+        *it = pDev;
     }
 
     /* create copies of all storage controllers (mStorageControllerData
@@ -1046,20 +1070,24 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     {
         ComObjPtr<StorageController> ctrl;
         ctrl.createObject();
-        ctrl->initCopy(this, *it);
+        rc = ctrl->initCopy(this, *it);
+        if (FAILED(rc)) return rc;
         mStorageControllers->push_back(ctrl);
     }
 
     /* create all other child objects that will be immutable private copies */
 
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
+    rc = mBIOSSettings->initCopy(this, pMachine->mBIOSSettings);
+    if (FAILED(rc)) return rc;
 
     unconst(mVRDEServer).createObject();
-    mVRDEServer->initCopy(this, pMachine->mVRDEServer);
+    rc = mVRDEServer->initCopy(this, pMachine->mVRDEServer);
+    if (FAILED(rc)) return rc;
 
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->initCopy(this, pMachine->mAudioAdapter);
+    rc = mAudioAdapter->initCopy(this, pMachine->mAudioAdapter);
+    if (FAILED(rc)) return rc;
 
     /* create copies of all USB controllers (mUSBControllerData
      * after attaching a copy contains just references to original objects) */
@@ -1071,34 +1099,40 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     {
         ComObjPtr<USBController> ctrl;
         ctrl.createObject();
-        ctrl->initCopy(this, *it);
+        rc = ctrl->initCopy(this, *it);
+        if (FAILED(rc)) return rc;
         mUSBControllers->push_back(ctrl);
     }
 
     unconst(mUSBDeviceFilters).createObject();
-    mUSBDeviceFilters->initCopy(this, pMachine->mUSBDeviceFilters);
+    rc = mUSBDeviceFilters->initCopy(this, pMachine->mUSBDeviceFilters);
+    if (FAILED(rc)) return rc;
 
     mNetworkAdapters.resize(pMachine->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
-        mNetworkAdapters[slot]->initCopy(this, pMachine->mNetworkAdapters[slot]);
+        rc = mNetworkAdapters[slot]->initCopy(this, pMachine->mNetworkAdapters[slot]);
+        if (FAILED(rc)) return rc;
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
         unconst(mSerialPorts[slot]).createObject();
-        mSerialPorts[slot]->initCopy(this, pMachine->mSerialPorts[slot]);
+        rc = mSerialPorts[slot]->initCopy(this, pMachine->mSerialPorts[slot]);
+        if (FAILED(rc)) return rc;
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
         unconst(mParallelPorts[slot]).createObject();
-        mParallelPorts[slot]->initCopy(this, pMachine->mParallelPorts[slot]);
+        rc = mParallelPorts[slot]->initCopy(this, pMachine->mParallelPorts[slot]);
+        if (FAILED(rc)) return rc;
     }
 
     unconst(mBandwidthControl).createObject();
-    mBandwidthControl->initCopy(this, pMachine->mBandwidthControl);
+    rc = mBandwidthControl->initCopy(this, pMachine->mBandwidthControl);
+    if (FAILED(rc)) return rc;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();

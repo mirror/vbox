@@ -40,7 +40,7 @@ public:
                  LONG          aHostAddess,
                  LONG          aGuestAddress,
                  BOOL          fPhysical);
-
+    HRESULT initCopy(IMachine *aParent, PCIDeviceAttachment *aThat);
     void uninit();
 
     // settings

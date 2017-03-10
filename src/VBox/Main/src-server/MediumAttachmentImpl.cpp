@@ -166,7 +166,6 @@ HRESULT MediumAttachment::initCopy(Machine *aParent, MediumAttachment *aThat)
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet(aParent && aThat, E_INVALIDARG);
-    Assert(!aParent->i_isSnapshotMachine());
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
