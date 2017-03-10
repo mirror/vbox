@@ -96,6 +96,12 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
         the_spu->privatePtr = NULL;
         path = __findDLL( name, dir );
         the_spu->dll = crDLLOpen( path, 0/*resolveGlobal*/ );
+        if (the_spu->dll == NULL)
+        {
+                crError("Couldn't load the DLL \"%s\"!\n", path);
+                crFree(the_spu);
+                return NULL;
+        }
 #if defined(DEBUG_misha) && defined(RT_OS_WINDOWS)
         crDbgCmdSymLoadPrint(path, the_spu->dll->hinstLib);
 #endif
