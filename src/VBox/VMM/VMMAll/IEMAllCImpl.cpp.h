@@ -5899,7 +5899,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     }
 #endif
 
-    rcStrict = HMSvmVmrun(pVCpu, pCtx, );
+    VBOXSTRICTRC rcStrict = HMSvmVmrun(pVCpu, pCtx, GCPhysVmcb);
     RT_NOREF(cbInstr);
     return rcStrict;
 }
