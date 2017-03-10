@@ -41,7 +41,8 @@ ifdef VBOX_WITH_TESTCASES
  $$(VBOX_LNX_ADD_TEST_TARGET): \
  		$$(vboxguest-src_2_STAGE_TARGETS) \
 		$$(vboxsf-mod_2_STAGE_TARGETS) \
-		$$(vboxvideo_drm-mod_2_STAGE_TARGETS)
+		$$(vboxvideo_drm-mod_2_STAGE_TARGETS) \
+               $$(GuestDrivers-src_2_STAGE_TARGETS)
 	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
 	$(QUIET)$(RM) -f -- "$@"
 	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
