@@ -228,6 +228,10 @@ RT_C_DECLS_BEGIN
 /** Whether the system is long mode. */
 #define BS3_MODE_IS_64BIT_SYS(a_fMode)          (((a_fMode) & BS3_MODE_SYS_MASK) == BS3_MODE_SYS_LM)
 
+/** Whether the system is in protected mode (with or without paging).
+ * @note Long mode is not included. */
+#define BS3_MODE_IS_PM_SYS(a_fMode)             ((a_fMode) >= BS3_MODE_SYS_PE16 && (a_fMode) < BS3_MODE_SYS_LM)
+
 /** @todo testcase: How would long-mode handle a 16-bit TSS loaded prior to the switch? (mainly stack switching wise) Hopefully, it will tripple fault, right? */
 /** @} */
 
@@ -1853,7 +1857,7 @@ DECLINLINE(RTCCUINTXREG) Bs3SelPtrToFlat(void BS3_FAR *pv)
  * @param   pDesc       Pointer to the descriptor table entry.
  * @param   uBaseAddr   The base address of the descriptor.
  */
-BS3_CMN_PROTO_FARSTUB(8, void, Bs3SelSetup16BitData,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr));
+BS3_CMN_PROTO_STUB(void, Bs3SelSetup16BitData,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr));
 
 /**
  * Sets up a 16-bit execute-read selector with a 64KB limit.
@@ -1862,7 +1866,7 @@ BS3_CMN_PROTO_FARSTUB(8, void, Bs3SelSetup16BitData,(X86DESC BS3_FAR *pDesc, uin
  * @param   uBaseAddr   The base address of the descriptor.
  * @param   bDpl        The descriptor privilege level.
  */
-BS3_CMN_PROTO_FARSTUB(10, void, Bs3SelSetup16BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint8_t bDpl));
+BS3_CMN_PROTO_STUB(void, Bs3SelSetup16BitCode,(X86DESC BS3_FAR *pDesc, uint32_t uBaseAddr, uint8_t bDpl));
 
 
 /**
