@@ -27,34 +27,6 @@ ifdef VBOX_WITH_LIGHTDM_GREETER
  include $(PATH_SUB_CURRENT)/lightdm-greeter/Makefile.kmk
 endif
 
-#
-# Build test for the Guest Additions kernel modules
-#
-
-ifdef VBOX_WITH_TESTCASES
- ifndef VBOX_ONLY_SDK
-  VBOX_LNX_ADD_TEST        = $(PATH_TARGET)/tstguest_mod
-  VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
-  TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)
-  OTHERS      += $(VBOX_LNX_ADD_TEST_TARGET)
- $$(VBOX_LNX_ADD_TEST_TARGET): \
- 		$$(vboxguest-src_2_STAGE_TARGETS) \
- 		$$(vboxsf-mod_2_STAGE_TARGETS) \
- 		$$(vboxvideo_drm-mod_2_STAGE_TARGETS) \
- 		$$(GuestDrivers-src_2_STAGE_TARGETS)
-	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
-	$(QUIET)$(RM) -f -- "$@"
-	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
-	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST) clean
-	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
-	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_TEST)
-	$(QUIET)$(APPEND) -t "$@" "done"
- endif
-endif
-
-
 
 #
 # Globals
@@ -394,6 +366,31 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
 OTHER_CLEAN += \
 	$(VBOX_LNX_ADD_INST_OUT_DIR)install.sh \
 	$(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh
+
+
+#
+# Build test for the Guest Additions kernel modules (kmk check).
+#
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK)
+ VBOX_LNX_ADD_TEST        = $(PATH_TARGET)/tstguest_mod
+ VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
+ TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)
+ OTHERS      += $(VBOX_LNX_ADD_TEST_TARGET)
+ $$(VBOX_LNX_ADD_TEST_TARGET): \
+ 		$$(vboxguest-src_2_STAGE_TARGETS) \
+ 		$$(vboxsf-mod_2_STAGE_TARGETS) \
+ 		$$(vboxvideo_drm-mod_2_STAGE_TARGETS) \
+ 		$$(GuestDrivers-src_2_STAGE_TARGETS)
+	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
+	$(QUIET)$(RM) -f -- "$@"
+	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_ADD_TEST)"
+	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
+	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
+	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST) clean
+	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_TEST)
+	$(QUIET)$(APPEND) -t "$@" "done"
+endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
