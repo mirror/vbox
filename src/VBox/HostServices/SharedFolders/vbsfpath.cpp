@@ -625,7 +625,7 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
                             {
                                 const bool fWildCard = RT_BOOL(fu32Options & VBSF_O_PATH_WILDCARD);
                                 const bool fPreserveLastComponent = RT_BOOL(fu32Options & VBSF_O_PATH_PRESERVE_LAST_COMPONENT);
-                                rc = vbsfCorrectPathCasing(pClient, pszFullPath, strlen(pszFullPath) + 1,
+                                rc = vbsfCorrectPathCasing(pClient, pszFullPath, strlen(pszFullPath),
                                                            fWildCard, fPreserveLastComponent);
                             }
 
