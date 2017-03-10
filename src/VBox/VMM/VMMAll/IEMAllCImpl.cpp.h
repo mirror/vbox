@@ -5899,31 +5899,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmrun)
     }
 #endif
 
-    void *pvVmcb;
-    PGMPAGEMAPLOCK PgLockVmcb;
-    VBOXSTRICTRC rcStrict = iemMemPageMap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, &pvVmcb, &PgLockVmcb);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        pCtx->hwvirt.svm.GCPhysNstGstVmcb = GCPhysVmcb;
-
-        RTGCPHYS GCPhysHostState = pCtx->hwvirt.svm.uMsrHSavePa;
-        /** @todo SVM does not validate the host-state area beyond checking the
-         *        alignment and range of the physical address. Nothing to prevent users
-         *        from using MMIO or other weird stuff in which case anything might
-         *        happen. */
-        void *pvHostState;
-        PGMPAGEMAPLOCK PgLockHostState;
-        rcStrict = iemMemPageMap(pVCpu, GCPhysHostState, IEM_ACCESS_DATA_RW, &pvHostState, &PgLockHostState);
-        if (rcStrict == VINF_SUCCESS)
-        {
-            PSVMHOSTSTATE pHostState = (PSVMHOSTSTATE)pvHostState;
-            PSVMVMCB      pVmcb      = (PSVMVMCB)pvVmcb;
-            rcStrict = HMSvmVmrun(pVCpu, pCtx, pVmcb, pHostState);
-
-            iemMemPageUnmap(pVCpu, GCPhysHostState, IEM_ACCESS_DATA_RW, pvHostState, &PgLockHostState);
-        }
-        iemMemPageUnmap(pVCpu, GCPhysVmcb, IEM_ACCESS_DATA_RW, pvVmcb, &PgLockVmcb);
-    }
+    rcStrict = HMSvmVmrun(pVCpu, pCtx, );
     RT_NOREF(cbInstr);
     return rcStrict;
 }

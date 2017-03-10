@@ -1679,6 +1679,13 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             pFeatures->fAmdMmxExts      = RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_AXMMX);
             pFeatures->fXop             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_XOP);
             pFeatures->fSvm             = RT_BOOL(pExtLeaf->uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM);
+            if (pFeatures->fSvm)
+            {
+                PCCPUMCPUIDLEAF pSvmLeaf = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, 0x8000000a);
+                AssertLogRelReturn(pSvmLeaf, VERR_CPUM_IPE_1);
+                pFeatures->svm.feat.u   = pSvmLeaf->uEdx;
+                pFeatures->svm.uMaxAsid = pSvmLeaf->uEbx;
+            }
         }
 
         /*
@@ -3362,7 +3369,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         pSvmFeatureLeaf->uEax = 0x1;
         pSvmFeatureLeaf->uEbx = 0x8000;     /** @todo figure out virtual NASID. */
         pSvmFeatureLeaf->uEcx = 0;
-        pSvmFeatureLeaf->uEdx = 0; /** @todo Support SVM features */
+        pSvmFeatureLeaf->uEdx = 0;          /** @todo Support SVM features */
     }
     else
         cpumR3CpuIdZeroLeaf(pCpum, UINT32_C(0x8000000a));

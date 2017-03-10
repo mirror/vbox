@@ -258,15 +258,10 @@ struc CPUMCTX
     .abPadding          resb    12
 %endif
     .hwvirt.svm.uMsrHSavePa         resq    1
-    .hwvirt.svm.u64InterceptCtrl    resq    1
-    .hwvirt.svm.u32InterceptXcpt    resd    1
-    .hwvirt.svm.u16InterceptRdCRx   resw    1
-    .hwvirt.svm.u16InterceptWrCRx   resw    1
-    .hwvirt.svm.u16InterceptRdDRx   resw    1
-    .hwvirt.svm.u16InterceptWrDRx   resw    1
+    .hwvirt.svm.GCPhysVmcb          resq    1
+    .hwvirt.svm.VmcbCtrl            resb  256
+    .hwvirt.svm.HostState           resb  184
     .hwvirt.svm.fGif                resb    1
-    .hwvirt.svm.abPadding           resb    3
-    .hwvirt.svm.GCPhysNstGstVmcb    resq    1
     alignb 64
 endstruc
 

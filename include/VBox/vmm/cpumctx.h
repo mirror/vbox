@@ -29,6 +29,7 @@
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <iprt/x86.h>
 # include <VBox/types.h>
+# include <VBox/vmm/hm_svm.h>
 #else
 # pragma D depends_on library x86.d
 #endif
@@ -71,8 +72,8 @@ typedef struct CPUMSELREG
      * Only the flags, dpl and type are used. */
     X86DESCATTR Attr;
 } CPUMSELREG;
-#ifdef VBOX_FOR_DTRACE_LIB
-AssertCompileSize(CPUMSELREG, 24)
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMSELREG, 24);
 #endif
 
 /** @name CPUMSELREG_FLAGS_XXX - CPUMSELREG::fFlags values.
@@ -168,7 +169,7 @@ typedef union CPUMCTXGREG
         uint8_t         bHi;
     } CPUM_STRUCT_NM(s);
 } CPUMCTXGREG;
-#ifdef VBOX_FOR_DTRACE_LIB
+#ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMCTXGREG, 8);
 AssertCompileMemberOffset(CPUMCTXGREG, CPUM_STRUCT_NM(s.) bLo, 0);
 AssertCompileMemberOffset(CPUMCTXGREG, CPUM_STRUCT_NM(s.) bHi, 1);
@@ -282,6 +283,39 @@ typedef struct CPUMCTXCORE
 
 } CPUMCTXCORE;
 #pragma pack()
+
+
+/**
+ * SVM Host-state area (Nested Hw.virt - VirtualBox's layout).
+ */
+#pragma pack(1)
+typedef struct SVMHOSTSTATE
+{
+    uint64_t    uEferMsr;
+    uint64_t    uCr0;
+    uint64_t    uCr4;
+    uint64_t    uCr3;
+    uint64_t    uRip;
+    uint64_t    uRsp;
+    uint64_t    uRax;
+    X86RFLAGS   rflags;
+    CPUMSELREG  es;
+    CPUMSELREG  cs;
+    CPUMSELREG  ss;
+    CPUMSELREG  ds;
+    VBOXGDTR    gdtr;
+    VBOXIDTR    idtr;
+    uint8_t     abPadding[4];
+} SVMHOSTSTATE;
+#pragma pack()
+/** Pointer to the SVMHOSTSTATE structure. */
+typedef SVMHOSTSTATE *PSVMHOSTSTATE;
+/** Pointer to a const SVMHOSTSTATE structure. */
+typedef const SVMHOSTSTATE *PCSVMHOSTSTATE;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(SVMHOSTSTATE, 8);
+AssertCompileSize(SVMHOSTSTATE, 184);
+#endif
 
 
 /**
@@ -440,30 +474,18 @@ typedef struct CPUMCTX
         {
             struct
             {
-                /** 728 - MSR holding physical address of the Guest's 'host-state'. */
-                uint64_t            uMsrHSavePa;
-
-                /** @name Cache of the nested-guest VMCB controls.
-                 * @{ */
-                /** 736 - Control intercepts. */
-                uint64_t            u64InterceptCtrl;
-                /** 744 - Exception intercepts. */
-                uint32_t            u32InterceptXcpt;
-                /** 748 - CR0-CR15 read intercepts. */
-                uint16_t            u16InterceptRdCRx;
-                /** 750 - CR0-CR15 write intercepts. */
-                uint16_t            u16InterceptWrCRx;
-                /** 752 - DR0-DR15 read intercepts. */
-                uint16_t            u16InterceptRdDRx;
-                /** 754 - DR0-DR15 write intercepts. */
-                uint16_t            u16InterceptWrDRx;
-                /** @} */
-
-                /** 756 - Global interrupt flag. */
-                uint8_t            fGif;
-                uint8_t            abPadding[3];
-                /** 760 - Nested-guest VMCB. */
-                RTGCPHYS           GCPhysNstGstVmcb;
+                /** 728 - MSR holding physical address of the Guest's Host-state. */
+                uint64_t        uMsrHSavePa;
+                /** 736 - Guest physical address of the nested-guest VMCB. */
+                RTGCPHYS        GCPhysVmcb;
+                /** 744 - Cache of the nested-guest VMCB control area. */
+                SVMVMCBCTRL     VmcbCtrl;
+                /** 1000 - Guest's host-state save area. */
+                SVMHOSTSTATE    HostState;
+                /** 1184 - Global interrupt flag. */
+                uint8_t         fGif;
+                /** 1185 - Padding. */
+                uint8_t         abPadding0[31];
             } svm;
 #if 0
             struct
@@ -526,14 +548,11 @@ AssertCompileMemberOffset(CPUMCTX,                  pXStateR3, HC_ARCH_BITS == 6
 AssertCompileMemberOffset(CPUMCTX,                  pXStateRC, HC_ARCH_BITS == 64 ? 592 : 584);
 AssertCompileMemberOffset(CPUMCTX,                 aoffXState, HC_ARCH_BITS == 64 ? 596 : 588);
 AssertCompileMemberOffset(CPUMCTX, hwvirt, 728);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa,       728);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u64InterceptCtrl,  736);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u32InterceptXcpt,  744);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptRdCRx, 748);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptWrCRx, 750);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptRdDRx, 752);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.u16InterceptWrDRx, 754);
-AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,              756);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.uMsrHSavePa, 728);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.GCPhysVmcb,  736);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.VmcbCtrl,    744);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.HostState,  1000);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) svm.fGif,       1184);
 
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_NM(g.) aGRegs);
 AssertCompileMembersAtSameOffset(CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw.) rax, CPUMCTX, CPUM_UNION_STRUCT_NM(g,qw2.)  r0);
@@ -717,31 +736,6 @@ typedef struct CPUMCPUID
 typedef CPUMCPUID *PCPUMCPUID;
 /** Pointer to a const CPUID leaf. */
 typedef const CPUMCPUID *PCCPUMCPUID;
-
-/**
- * SVM Host-state area (Nested Hw.virt - VirtualBox's layout).
- */
-typedef struct SVMHOSTSTATE
-{
-    uint64_t    uEferMsr;
-    uint64_t    uCr0;
-    uint64_t    uCr4;
-    uint64_t    uCr3;
-    uint64_t    uRip;
-    uint64_t    uRsp;
-    uint64_t    uRax;
-    X86RFLAGS   rflags;
-    CPUMSELREG  es;
-    CPUMSELREG  cs;
-    CPUMSELREG  ss;
-    CPUMSELREG  ds;
-    VBOXGDTR    gdtr;
-    VBOXIDTR    idtr;
-} SVMHOSTSTATE;
-/** Pointer to the SVMHOSTSTATE structure. */
-typedef SVMHOSTSTATE *PSVMHOSTSTATE;
-/** Pointer to a const SVMHOSTSTATE structure. */
-typedef const SVMHOSTSTATE *PCSVMHOSTSTATE;
 
 /** @}  */
 

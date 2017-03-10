@@ -178,59 +178,75 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmmcall(PVMCPU pVCpu, PCPUMCTX pCtx, bool *pfUpd
  * execution in the guest.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pCtx                Pointer to the guest-CPU context.
- * @param   pVmcb               The VMCB of the nested-guest.
- * @param   pHostState          The host-state save area in the guest.
+ * @param   GCPhysVmcb          Guest physical address of the VMCB to run.
  */
-VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb, PSVMHOSTSTATE pHostState)
+VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPhysVmcb)
 {
-    Assert(pHostState);
-    Assert(pVmcb);
+    Assert(pVCpu);
+    Assert(pCtx);
 
     /*
-     * Save host state.
+     * Cache the physical address of the VMCB for #VMEXIT exceptions.
      */
-    pHostState->es       = pCtx->es;
-    pHostState->cs       = pCtx->cs;
-    pHostState->ss       = pCtx->ss;
-    pHostState->ds       = pCtx->ds;
-    pHostState->gdtr     = pCtx->gdtr;
-    pHostState->idtr     = pCtx->idtr;
-    pHostState->uEferMsr = pCtx->msrEFER;
-    pHostState->uCr0     = pCtx->cr0;
-    pHostState->uCr3     = pCtx->cr3;
-    pHostState->uCr4     = pCtx->cr4;
-    pHostState->rflags   = pCtx->rflags;
-    pHostState->uRip     = pCtx->rip;
-    pHostState->uRsp     = pCtx->rsp;
-    pHostState->uRax     = pCtx->rax;
+    pCtx->hwvirt.svm.GCPhysVmcb = GCPhysVmcb;
 
-    /*
-     * Load controls from VMCB.
-     */
-    pCtx->hwvirt.svm.u16InterceptRdCRx = pVmcb->ctrl.u16InterceptRdCRx;
-    pCtx->hwvirt.svm.u16InterceptWrCRx = pVmcb->ctrl.u16InterceptWrCRx;
-    pCtx->hwvirt.svm.u16InterceptRdDRx = pVmcb->ctrl.u16InterceptRdDRx;
-    pCtx->hwvirt.svm.u16InterceptWrDRx = pVmcb->ctrl.u16InterceptWrDRx;
-    pCtx->hwvirt.svm.u64InterceptCtrl  = pVmcb->ctrl.u64InterceptCtrl;
-    pCtx->hwvirt.svm.u32InterceptXcpt  = pVmcb->ctrl.u32InterceptXcpt;
-    if (!(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN))
+    SVMVMCB Vmcb;
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &Vmcb, GCPhysVmcb, X86_PAGE_4K_SIZE);
+    if (RT_SUCCESS(rc))
     {
-        Log(("HMSvmVmRun: VMRUN instruction not intercepted -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        /*
+         * Save host state.
+         */
+        PSVMHOSTSTATE pHostState = &pCtx->hwvirt.svm.HostState;
+        pHostState->es       = pCtx->es;
+        pHostState->cs       = pCtx->cs;
+        pHostState->ss       = pCtx->ss;
+        pHostState->ds       = pCtx->ds;
+        pHostState->gdtr     = pCtx->gdtr;
+        pHostState->idtr     = pCtx->idtr;
+        pHostState->uEferMsr = pCtx->msrEFER;
+        pHostState->uCr0     = pCtx->cr0;
+        pHostState->uCr3     = pCtx->cr3;
+        pHostState->uCr4     = pCtx->cr4;
+        pHostState->rflags   = pCtx->rflags;
+        pHostState->uRip     = pCtx->rip;
+        pHostState->uRsp     = pCtx->rsp;
+        pHostState->uRax     = pCtx->rax;
+
+        /*
+         * Cache the VMCB controls.
+         */
+        pCtx->hwvirt.svm.VmcbCtrl = Vmcb.ctrl;
+
+        /*
+         * Validate the VMCB controls.
+         */
+        if (!CPUMIsGuestSvmCtrlInterceptSet(pCtx, SVM_CTRL_INTERCEPT_VMRUN))
+        {
+            Log(("HMSvmVmRun: VMRUN instruction not intercepted -> #VMEXIT\n"));
+            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+        if (    pCtx->hwvirt.svm.VmcbCtrl.NestedPaging.n.u1NestedPaging
+            && !pVM->cpum.ro.GuestFeatures.svm.feat.n.fNestedPaging)
+        {
+            Log(("HMSvmVmRun: Nested paging not supported -> #VMEXIT\n"));
+            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+        if (!pCtx->hwvirt.svm.VmcbCtrl.TLBCtrl.n.u32ASID)
+        {
+            Log(("HMSvmVmRun: Guest ASID is invalid -> #VMEXIT\n"));
+            return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
+        }
+
+        /** @todo the rest. */
+
+        return VERR_NOT_IMPLEMENTED;
     }
-    if (!pVmcb->ctrl.TLBCtrl.n.u32ASID)
-    {
-        Log(("HMSvmVmRun: Guest ASID is invalid -> #VMEXIT\n"));
-        return HMSvmNstGstVmExit(pVCpu, pCtx, SVM_EXIT_INVALID, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
-    }
 
-
-    /** @todo the rest. */
-
-    return VERR_NOT_IMPLEMENTED;
+    return rc;
 }
 
 

@@ -1027,9 +1027,52 @@ typedef struct CPUMFEATURES
     /** AMD64: Supports AMD SVM. */
     uint32_t        fSvm : 1;
 
+    /** Support for Intel VMX. */
+    uint32_t        fVmx : 1;
+
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 26;
-    uint32_t        auPadding[3];
+    uint32_t        fPadding : 25;
+
+    /** Hardware virtualization features. */
+    union
+    {
+        /** SVM features.  */
+        struct
+        {
+            /** Features as reported by CPUID 0x8000000a.EDX.  */
+            union
+            {
+                struct
+                {
+                    uint32_t fNestedPaging         : 1;
+                    uint32_t fLbrVirt              : 1;
+                    uint32_t fSvmLock              : 1;
+                    uint32_t fNextRipSave          : 1;
+                    uint32_t fTscRateMsr           : 1;
+                    uint32_t fVmcbClean            : 1;
+                    uint32_t fFlusbByAsid          : 1;
+                    uint32_t fDecodeAssist         : 1;
+                    uint32_t u2Reserved0           : 2;
+                    uint32_t fPauseFilter          : 1;
+                    uint32_t u1Reserved0           : 1;
+                    uint32_t fPauseFilterThreshold : 1;
+                    uint32_t fAvic                 : 1;
+                    uint32_t u18Reserved0          : 18;
+                } n;
+                uint32_t    u;
+            } feat;
+            /** Maximum supported ASID. */
+            uint32_t        uMaxAsid;
+        } svm;
+
+        /** VMX features. */
+        struct
+        {
+            uint32_t    uDummy1;
+            uint32_t    uDummy2;
+        } vmx;
+    } CPUM_UNION_NM(hwvirt);
+    uint32_t        auPadding[1];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(CPUMFEATURES, 32);
@@ -1268,8 +1311,7 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
 }
 
 /**
- * Checks if the guest has the specified ctrl/instruction
- * intercept active.
+ * Checks if the guest VMCB has the specified ctrl/instruction intercept active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
  * @param   pCtx          Pointer to the context. 
@@ -1278,11 +1320,11 @@ DECLINLINE(bool) CPUMIsGuestSvmEnabled(PCPUMCTX pCtx)
  */
 DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fIntercept)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u64InterceptCtrl & fIntercept);
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & fIntercept);
 }
 
 /**
- * Checks if the guest has the specified CR read intercept
+ * Checks if the guest VMCB has the specified CR read intercept
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
@@ -1291,11 +1333,11 @@ DECLINLINE(bool) CPUMIsGuestSvmCtrlInterceptSet(PCPUMCTX pCtx, uint64_t fInterce
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptRdCRx & (1 << uCr));
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdCRx & (1 << uCr));
 }
 
 /**
- * Checks if the guest has the specified CR write intercept
+ * Checks if the guest VMCB has the specified CR write intercept
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
@@ -1304,11 +1346,11 @@ DECLINLINE(bool) CPUMIsGuestSvmReadCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptWrCRx & (1 << uCr)); 
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrCRx & (1 << uCr));
 }
 
 /**
- * Checks if the guest has the specified DR read intercept
+ * Checks if the guest VMCB has the specified DR read intercept
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
@@ -1317,11 +1359,11 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteCRxInterceptSet(PCPUMCTX pCtx, uint8_t uCr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptRdDRx & (1 << uDr)); 
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptRdDRx & (1 << uDr));
 }
 
 /**
- * Checks if the guest has the specified DR write intercept
+ * Checks if the guest VMCB has the specified DR write intercept
  * active.
  *
  * @returns @c true if in intercept is set, @c false otherwise.
@@ -1330,11 +1372,11 @@ DECLINLINE(bool) CPUMIsGuestSvmReadDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u16InterceptWrDRx & (1 << uDr)); 
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u16InterceptWrDRx & (1 << uDr));
 }
 
 /**
- * Checks if the guest has the specified exception
+ * Checks if the guest VMCB has the specified exception
  * intercept active.
  *
  * @returns true if in intercept is active, false otherwise.
@@ -1343,12 +1385,11 @@ DECLINLINE(bool) CPUMIsGuestSvmWriteDRxInterceptSet(PCPUMCTX pCtx, uint8_t uDr)
  */
 DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
 {
-    return RT_BOOL(pCtx->hwvirt.svm.u32InterceptXcpt & enmXcpt); 
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u32InterceptXcpt & enmXcpt);
 }
 
 /**
- * Checks if the guest is currently in nested hardware-virtualized
- * guest mode.
+ * Checks if we are executing inside the nested hardware-virtualized guest.
  *
  * @returns true if in nested-guest mode, false otherwise.
  * @param   pCtx        Pointer to the context.
@@ -1356,11 +1397,10 @@ DECLINLINE(bool) CPUMIsGuestSvmXcptInterceptSet(PCPUMCTX pCtx, X86XCPT enmXcpt)
 DECLINLINE(bool) CPUMIsGuestInNestedHwVirtMode(PCPUMCTX pCtx)
 {
     /*
-     * With SVM, the VMRUN intercept is a pre-requisite to entering guest-mode.
-     * See AMD spec., 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
+     * With AMD-V, the VMRUN intercept is a pre-requisite to entering SVM guest-mode.
+     * See AMD spec. 15.5 "VMRUN instruction" subsection "Canonicalization and Consistency Checks".
      */
-    /** @todo Fix this -- silly recompiler is redefining this stuff... why? */
-    return RT_BOOL(pCtx->hwvirt.svm.u64InterceptCtrl & RT_BIT_64(32) /* SVM_CTRL_INTERCEPT_VMRUN*/);
+    return RT_BOOL(pCtx->hwvirt.svm.VmcbCtrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_VMRUN);
     /** @todo Intel VMX.  */
 }
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */

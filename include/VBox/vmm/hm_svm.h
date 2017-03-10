@@ -66,238 +66,244 @@
 #define AMD_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
 /** @} */
 
-
+/*
+ * Ugly!
+ * When compiling the recompiler, its own svm.h defines clash with
+ * the following defines. Avoid just the duplicates here as we still
+ * require other definitions and structures in this header.
+ */
+#ifndef IN_REM_R3
 /** @name SVM Basic Exit Reasons.
  * @{
  */
 /** Invalid guest state in VMCB. */
-#define SVM_EXIT_INVALID                (uint64_t)(-1)
+# define SVM_EXIT_INVALID                (uint64_t)(-1)
 /** Read from CR0-CR15. */
-#define SVM_EXIT_READ_CR0               0x0
-#define SVM_EXIT_READ_CR1               0x1
-#define SVM_EXIT_READ_CR2               0x2
-#define SVM_EXIT_READ_CR3               0x3
-#define SVM_EXIT_READ_CR4               0x4
-#define SVM_EXIT_READ_CR5               0x5
-#define SVM_EXIT_READ_CR6               0x6
-#define SVM_EXIT_READ_CR7               0x7
-#define SVM_EXIT_READ_CR8               0x8
-#define SVM_EXIT_READ_CR9               0x9
-#define SVM_EXIT_READ_CR10              0xA
-#define SVM_EXIT_READ_CR11              0xB
-#define SVM_EXIT_READ_CR12              0xC
-#define SVM_EXIT_READ_CR13              0xD
-#define SVM_EXIT_READ_CR14              0xE
-#define SVM_EXIT_READ_CR15              0xF
+# define SVM_EXIT_READ_CR0               0x0
+# define SVM_EXIT_READ_CR1               0x1
+# define SVM_EXIT_READ_CR2               0x2
+# define SVM_EXIT_READ_CR3               0x3
+# define SVM_EXIT_READ_CR4               0x4
+# define SVM_EXIT_READ_CR5               0x5
+# define SVM_EXIT_READ_CR6               0x6
+# define SVM_EXIT_READ_CR7               0x7
+# define SVM_EXIT_READ_CR8               0x8
+# define SVM_EXIT_READ_CR9               0x9
+# define SVM_EXIT_READ_CR10              0xA
+# define SVM_EXIT_READ_CR11              0xB
+# define SVM_EXIT_READ_CR12              0xC
+# define SVM_EXIT_READ_CR13              0xD
+# define SVM_EXIT_READ_CR14              0xE
+# define SVM_EXIT_READ_CR15              0xF
 /** Writes to CR0-CR15. */
-#define SVM_EXIT_WRITE_CR0              0x10
-#define SVM_EXIT_WRITE_CR1              0x11
-#define SVM_EXIT_WRITE_CR2              0x12
-#define SVM_EXIT_WRITE_CR3              0x13
-#define SVM_EXIT_WRITE_CR4              0x14
-#define SVM_EXIT_WRITE_CR5              0x15
-#define SVM_EXIT_WRITE_CR6              0x16
-#define SVM_EXIT_WRITE_CR7              0x17
-#define SVM_EXIT_WRITE_CR8              0x18
-#define SVM_EXIT_WRITE_CR9              0x19
-#define SVM_EXIT_WRITE_CR10             0x1A
-#define SVM_EXIT_WRITE_CR11             0x1B
-#define SVM_EXIT_WRITE_CR12             0x1C
-#define SVM_EXIT_WRITE_CR13             0x1D
-#define SVM_EXIT_WRITE_CR14             0x1E
-#define SVM_EXIT_WRITE_CR15             0x1F
+# define SVM_EXIT_WRITE_CR0              0x10
+# define SVM_EXIT_WRITE_CR1              0x11
+# define SVM_EXIT_WRITE_CR2              0x12
+# define SVM_EXIT_WRITE_CR3              0x13
+# define SVM_EXIT_WRITE_CR4              0x14
+# define SVM_EXIT_WRITE_CR5              0x15
+# define SVM_EXIT_WRITE_CR6              0x16
+# define SVM_EXIT_WRITE_CR7              0x17
+# define SVM_EXIT_WRITE_CR8              0x18
+# define SVM_EXIT_WRITE_CR9              0x19
+# define SVM_EXIT_WRITE_CR10             0x1A
+# define SVM_EXIT_WRITE_CR11             0x1B
+# define SVM_EXIT_WRITE_CR12             0x1C
+# define SVM_EXIT_WRITE_CR13             0x1D
+# define SVM_EXIT_WRITE_CR14             0x1E
+# define SVM_EXIT_WRITE_CR15             0x1F
 /** Read from DR0-DR15. */
-#define SVM_EXIT_READ_DR0               0x20
-#define SVM_EXIT_READ_DR1               0x21
-#define SVM_EXIT_READ_DR2               0x22
-#define SVM_EXIT_READ_DR3               0x23
-#define SVM_EXIT_READ_DR4               0x24
-#define SVM_EXIT_READ_DR5               0x25
-#define SVM_EXIT_READ_DR6               0x26
-#define SVM_EXIT_READ_DR7               0x27
-#define SVM_EXIT_READ_DR8               0x28
-#define SVM_EXIT_READ_DR9               0x29
-#define SVM_EXIT_READ_DR10              0x2A
-#define SVM_EXIT_READ_DR11              0x2B
-#define SVM_EXIT_READ_DR12              0x2C
-#define SVM_EXIT_READ_DR13              0x2D
-#define SVM_EXIT_READ_DR14              0x2E
-#define SVM_EXIT_READ_DR15              0x2F
+# define SVM_EXIT_READ_DR0               0x20
+# define SVM_EXIT_READ_DR1               0x21
+# define SVM_EXIT_READ_DR2               0x22
+# define SVM_EXIT_READ_DR3               0x23
+# define SVM_EXIT_READ_DR4               0x24
+# define SVM_EXIT_READ_DR5               0x25
+# define SVM_EXIT_READ_DR6               0x26
+# define SVM_EXIT_READ_DR7               0x27
+# define SVM_EXIT_READ_DR8               0x28
+# define SVM_EXIT_READ_DR9               0x29
+# define SVM_EXIT_READ_DR10              0x2A
+# define SVM_EXIT_READ_DR11              0x2B
+# define SVM_EXIT_READ_DR12              0x2C
+# define SVM_EXIT_READ_DR13              0x2D
+# define SVM_EXIT_READ_DR14              0x2E
+# define SVM_EXIT_READ_DR15              0x2F
 /** Writes to DR0-DR15. */
-#define SVM_EXIT_WRITE_DR0              0x30
-#define SVM_EXIT_WRITE_DR1              0x31
-#define SVM_EXIT_WRITE_DR2              0x32
-#define SVM_EXIT_WRITE_DR3              0x33
-#define SVM_EXIT_WRITE_DR4              0x34
-#define SVM_EXIT_WRITE_DR5              0x35
-#define SVM_EXIT_WRITE_DR6              0x36
-#define SVM_EXIT_WRITE_DR7              0x37
-#define SVM_EXIT_WRITE_DR8              0x38
-#define SVM_EXIT_WRITE_DR9              0x39
-#define SVM_EXIT_WRITE_DR10             0x3A
-#define SVM_EXIT_WRITE_DR11             0x3B
-#define SVM_EXIT_WRITE_DR12             0x3C
-#define SVM_EXIT_WRITE_DR13             0x3D
-#define SVM_EXIT_WRITE_DR14             0x3E
-#define SVM_EXIT_WRITE_DR15             0x3F
+# define SVM_EXIT_WRITE_DR0              0x30
+# define SVM_EXIT_WRITE_DR1              0x31
+# define SVM_EXIT_WRITE_DR2              0x32
+# define SVM_EXIT_WRITE_DR3              0x33
+# define SVM_EXIT_WRITE_DR4              0x34
+# define SVM_EXIT_WRITE_DR5              0x35
+# define SVM_EXIT_WRITE_DR6              0x36
+# define SVM_EXIT_WRITE_DR7              0x37
+# define SVM_EXIT_WRITE_DR8              0x38
+# define SVM_EXIT_WRITE_DR9              0x39
+# define SVM_EXIT_WRITE_DR10             0x3A
+# define SVM_EXIT_WRITE_DR11             0x3B
+# define SVM_EXIT_WRITE_DR12             0x3C
+# define SVM_EXIT_WRITE_DR13             0x3D
+# define SVM_EXIT_WRITE_DR14             0x3E
+# define SVM_EXIT_WRITE_DR15             0x3F
 /* Exception 0-31. */
-#define SVM_EXIT_EXCEPTION_0            0x40
-#define SVM_EXIT_EXCEPTION_1            0x41
-#define SVM_EXIT_EXCEPTION_2            0x42
-#define SVM_EXIT_EXCEPTION_3            0x43
-#define SVM_EXIT_EXCEPTION_4            0x44
-#define SVM_EXIT_EXCEPTION_5            0x45
-#define SVM_EXIT_EXCEPTION_6            0x46
-#define SVM_EXIT_EXCEPTION_7            0x47
-#define SVM_EXIT_EXCEPTION_8            0x48
-#define SVM_EXIT_EXCEPTION_9            0x49
-#define SVM_EXIT_EXCEPTION_A            0x4A
-#define SVM_EXIT_EXCEPTION_B            0x4B
-#define SVM_EXIT_EXCEPTION_C            0x4C
-#define SVM_EXIT_EXCEPTION_D            0x4D
-#define SVM_EXIT_EXCEPTION_E            0x4E
-#define SVM_EXIT_EXCEPTION_F            0x4F
-#define SVM_EXIT_EXCEPTION_10           0x50
-#define SVM_EXIT_EXCEPTION_11           0x51
-#define SVM_EXIT_EXCEPTION_12           0x52
-#define SVM_EXIT_EXCEPTION_13           0x53
-#define SVM_EXIT_EXCEPTION_14           0x54
-#define SVM_EXIT_EXCEPTION_15           0x55
-#define SVM_EXIT_EXCEPTION_16           0x56
-#define SVM_EXIT_EXCEPTION_17           0x57
-#define SVM_EXIT_EXCEPTION_18           0x58
-#define SVM_EXIT_EXCEPTION_19           0x59
-#define SVM_EXIT_EXCEPTION_1A           0x5A
-#define SVM_EXIT_EXCEPTION_1B           0x5B
-#define SVM_EXIT_EXCEPTION_1C           0x5C
-#define SVM_EXIT_EXCEPTION_1D           0x5D
-#define SVM_EXIT_EXCEPTION_1E           0x5E
-#define SVM_EXIT_EXCEPTION_1F           0x5F
+# define SVM_EXIT_EXCEPTION_0            0x40
+# define SVM_EXIT_EXCEPTION_1            0x41
+# define SVM_EXIT_EXCEPTION_2            0x42
+# define SVM_EXIT_EXCEPTION_3            0x43
+# define SVM_EXIT_EXCEPTION_4            0x44
+# define SVM_EXIT_EXCEPTION_5            0x45
+# define SVM_EXIT_EXCEPTION_6            0x46
+# define SVM_EXIT_EXCEPTION_7            0x47
+# define SVM_EXIT_EXCEPTION_8            0x48
+# define SVM_EXIT_EXCEPTION_9            0x49
+# define SVM_EXIT_EXCEPTION_A            0x4A
+# define SVM_EXIT_EXCEPTION_B            0x4B
+# define SVM_EXIT_EXCEPTION_C            0x4C
+# define SVM_EXIT_EXCEPTION_D            0x4D
+# define SVM_EXIT_EXCEPTION_E            0x4E
+# define SVM_EXIT_EXCEPTION_F            0x4F
+# define SVM_EXIT_EXCEPTION_10           0x50
+# define SVM_EXIT_EXCEPTION_11           0x51
+# define SVM_EXIT_EXCEPTION_12           0x52
+# define SVM_EXIT_EXCEPTION_13           0x53
+# define SVM_EXIT_EXCEPTION_14           0x54
+# define SVM_EXIT_EXCEPTION_15           0x55
+# define SVM_EXIT_EXCEPTION_16           0x56
+# define SVM_EXIT_EXCEPTION_17           0x57
+# define SVM_EXIT_EXCEPTION_18           0x58
+# define SVM_EXIT_EXCEPTION_19           0x59
+# define SVM_EXIT_EXCEPTION_1A           0x5A
+# define SVM_EXIT_EXCEPTION_1B           0x5B
+# define SVM_EXIT_EXCEPTION_1C           0x5C
+# define SVM_EXIT_EXCEPTION_1D           0x5D
+# define SVM_EXIT_EXCEPTION_1E           0x5E
+# define SVM_EXIT_EXCEPTION_1F           0x5F
 /** Physical maskable interrupt. */
-#define SVM_EXIT_INTR                   0x60
+# define SVM_EXIT_INTR                   0x60
 /** Non-maskable interrupt. */
-#define SVM_EXIT_NMI                    0x61
+# define SVM_EXIT_NMI                    0x61
 /** System Management interrupt. */
-#define SVM_EXIT_SMI                    0x62
+# define SVM_EXIT_SMI                    0x62
 /** Physical INIT signal. */
-#define SVM_EXIT_INIT                   0x63
+# define SVM_EXIT_INIT                   0x63
 /** Virtual interrupt. */
-#define SVM_EXIT_VINTR                  0x64
+# define SVM_EXIT_VINTR                  0x64
 /** Write to CR0 that changed any bits other than CR0.TS or CR0.MP. */
-#define SVM_EXIT_CR0_SEL_WRITE          0x65
+# define SVM_EXIT_CR0_SEL_WRITE          0x65
 /** IDTR read. */
-#define SVM_EXIT_IDTR_READ              0x66
+# define SVM_EXIT_IDTR_READ              0x66
 /** GDTR read. */
-#define SVM_EXIT_GDTR_READ              0x67
+# define SVM_EXIT_GDTR_READ              0x67
 /** LDTR read. */
-#define SVM_EXIT_LDTR_READ              0x68
+# define SVM_EXIT_LDTR_READ              0x68
 /** TR read. */
-#define SVM_EXIT_TR_READ                0x69
+# define SVM_EXIT_TR_READ                0x69
 /** IDTR write. */
-#define SVM_EXIT_IDTR_WRITE             0x6A
+# define SVM_EXIT_IDTR_WRITE             0x6A
 /** GDTR write. */
-#define SVM_EXIT_GDTR_WRITE             0x6B
+# define SVM_EXIT_GDTR_WRITE             0x6B
 /** LDTR write. */
-#define SVM_EXIT_LDTR_WRITE             0x6C
+# define SVM_EXIT_LDTR_WRITE             0x6C
 /** TR write. */
-#define SVM_EXIT_TR_WRITE               0x6D
+# define SVM_EXIT_TR_WRITE               0x6D
 /** RDTSC instruction. */
-#define SVM_EXIT_RDTSC                  0x6E
+# define SVM_EXIT_RDTSC                  0x6E
 /** RDPMC instruction. */
-#define SVM_EXIT_RDPMC                  0x6F
+# define SVM_EXIT_RDPMC                  0x6F
 /** PUSHF instruction. */
-#define SVM_EXIT_PUSHF                  0x70
+# define SVM_EXIT_PUSHF                  0x70
 /** POPF instruction. */
-#define SVM_EXIT_POPF                   0x71
+# define SVM_EXIT_POPF                   0x71
 /** CPUID instruction. */
-#define SVM_EXIT_CPUID                  0x72
+# define SVM_EXIT_CPUID                  0x72
 /** RSM instruction. */
-#define SVM_EXIT_RSM                    0x73
+# define SVM_EXIT_RSM                    0x73
 /** IRET instruction. */
-#define SVM_EXIT_IRET                   0x74
+# define SVM_EXIT_IRET                   0x74
 /** software interrupt (INTn instructions). */
-#define SVM_EXIT_SWINT                  0x75
+# define SVM_EXIT_SWINT                  0x75
 /** INVD instruction. */
-#define SVM_EXIT_INVD                   0x76
+# define SVM_EXIT_INVD                   0x76
 /** PAUSE instruction. */
-#define SVM_EXIT_PAUSE                  0x77
+# define SVM_EXIT_PAUSE                  0x77
 /** HLT instruction. */
-#define SVM_EXIT_HLT                    0x78
+# define SVM_EXIT_HLT                    0x78
 /** INVLPG instructions. */
-#define SVM_EXIT_INVLPG                 0x79
+# define SVM_EXIT_INVLPG                 0x79
 /** INVLPGA instruction. */
-#define SVM_EXIT_INVLPGA                0x7A
+# define SVM_EXIT_INVLPGA                0x7A
 /** IN or OUT accessing protected port (the EXITINFO1 field provides more information). */
-#define SVM_EXIT_IOIO                   0x7B
+# define SVM_EXIT_IOIO                   0x7B
 /** RDMSR or WRMSR access to protected MSR. */
-#define SVM_EXIT_MSR                    0x7C
+# define SVM_EXIT_MSR                    0x7C
 /** task switch. */
-#define SVM_EXIT_TASK_SWITCH            0x7D
+# define SVM_EXIT_TASK_SWITCH            0x7D
 /** FP legacy handling enabled, and processor is frozen in an x87/mmx instruction waiting for an interrupt. */
-#define SVM_EXIT_FERR_FREEZE            0x7E
+# define SVM_EXIT_FERR_FREEZE            0x7E
 /** Shutdown. */
-#define SVM_EXIT_SHUTDOWN               0x7F
+# define SVM_EXIT_SHUTDOWN               0x7F
 /** VMRUN instruction. */
-#define SVM_EXIT_VMRUN                  0x80
+# define SVM_EXIT_VMRUN                  0x80
 /** VMMCALL instruction. */
-#define SVM_EXIT_VMMCALL                0x81
+# define SVM_EXIT_VMMCALL                0x81
 /** VMLOAD instruction. */
-#define SVM_EXIT_VMLOAD                 0x82
+# define SVM_EXIT_VMLOAD                 0x82
 /** VMSAVE instruction. */
-#define SVM_EXIT_VMSAVE                 0x83
+# define SVM_EXIT_VMSAVE                 0x83
 /** STGI instruction. */
-#define SVM_EXIT_STGI                   0x84
+# define SVM_EXIT_STGI                   0x84
 /** CLGI instruction. */
-#define SVM_EXIT_CLGI                   0x85
+# define SVM_EXIT_CLGI                   0x85
 /** SKINIT instruction. */
-#define SVM_EXIT_SKINIT                 0x86
+# define SVM_EXIT_SKINIT                 0x86
 /** RDTSCP instruction. */
-#define SVM_EXIT_RDTSCP                 0x87
+# define SVM_EXIT_RDTSCP                 0x87
 /** ICEBP instruction. */
-#define SVM_EXIT_ICEBP                  0x88
+# define SVM_EXIT_ICEBP                  0x88
 /** WBINVD instruction. */
-#define SVM_EXIT_WBINVD                 0x89
+# define SVM_EXIT_WBINVD                 0x89
 /** MONITOR instruction. */
-#define SVM_EXIT_MONITOR                0x8A
+# define SVM_EXIT_MONITOR                0x8A
 /** MWAIT instruction. */
-#define SVM_EXIT_MWAIT                  0x8B
+# define SVM_EXIT_MWAIT                  0x8B
 /** MWAIT instruction, when armed. */
-#define SVM_EXIT_MWAIT_ARMED            0x8C
+# define SVM_EXIT_MWAIT_ARMED            0x8C
 /** XSETBV instruction. */
-#define SVM_EXIT_XSETBV                 0x8D
+# define SVM_EXIT_XSETBV                 0x8D
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
-#define SVM_EXIT_NPF                    0x400
+# define SVM_EXIT_NPF                    0x400
 /** AVIC: Virtual IPI delivery not completed. */
-#define SVM_EXIT_AVIC_INCOMPLETE_IPI    0x401
+# define SVM_EXIT_AVIC_INCOMPLETE_IPI    0x401
 /** AVIC: Attempted access by guest to a vAPIC register not handled by AVIC
  *  hardware. */
-#define SVM_EXIT_AVIC_NOACCEL           0x402
-
+# define SVM_EXIT_AVIC_NOACCEL           0x402
 /** The maximum possible exit value. */
-#define SVM_EXIT_MAX                    (SVM_EXIT_AVIC_NOACCEL)
+# define SVM_EXIT_MAX                    (SVM_EXIT_AVIC_NOACCEL)
 /** @} */
+#endif /* !IN_REM_R3*/
 
 
 /** @name SVMVMCB.u64ExitInfo2 for task switches
  * @{
  */
 /** Set to 1 if the task switch was caused by an IRET; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_IRET            RT_BIT_64(36)
+# define SVM_EXIT2_TASK_SWITCH_IRET            RT_BIT_64(36)
 /** Set to 1 if the task switch was caused by a far jump; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_JMP             RT_BIT_64(38)
+# define SVM_EXIT2_TASK_SWITCH_JMP             RT_BIT_64(38)
 /** Set to 1 if the task switch has an error code; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE  RT_BIT_64(44)
+# define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE  RT_BIT_64(44)
 /** The value of EFLAGS.RF that would be saved in the outgoing TSS if the task switch were not intercepted. */
-#define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF       RT_BIT_64(48)
+# define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF       RT_BIT_64(48)
 /** @} */
 
 /** @name SVMVMCB.u64ExitInfo1 for MSR accesses
  * @{
  */
 /** The access was a read MSR. */
-#define SVM_EXIT1_MSR_READ                    0x0
+# define SVM_EXIT1_MSR_READ                    0x0
 /** The access was a write MSR. */
-#define SVM_EXIT1_MSR_WRITE                   0x1
+# define SVM_EXIT1_MSR_WRITE                   0x1
 /** @} */
 
 
