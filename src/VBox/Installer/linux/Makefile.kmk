@@ -34,7 +34,7 @@ endif
 # Build test for the host kernel modules
 #
 
-if 0 # def VBOX_WITH_TESTCASES
+ifdef VBOX_WITH_TESTCASES
  ifndef VBOX_ONLY_SDK
   VBOX_LNX_MOD_TEST=$(PATH_TARGET)/tsthost_mod
   VBOX_LNX_MOD_TEST_TARGET=$(PATH_TARGET)/tsthost_mod.run
