@@ -752,6 +752,7 @@ AssertCompileMemberOffset(SVMVMCBCTRL, AvicPhysicalTablePtr,    0xf8);
 /**
  * SVM VMCB state save area.
  */
+#pragma pack(1)
 typedef struct
 {
     /** Offset 0x400 - Guest ES register + hidden parts. */
@@ -839,6 +840,7 @@ typedef struct
     /** Offset 0x690 - LASTEXCPTO. */
     uint64_t    u64LASTEXCPTO;
 } SVMVMCBSTATESAVE;
+#pragma pack()
 /** Pointer to the SVMVMCBSTATESAVE structure. */
 typedef SVMVMCBSTATESAVE *PSVMVMCBSTATESAVE;
 /** Pointer to a const SVMVMCBSTATESAVE structure. */
