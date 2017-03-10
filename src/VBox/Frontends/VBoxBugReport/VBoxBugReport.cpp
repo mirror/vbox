@@ -632,12 +632,12 @@ void createBugReport(BugReport* report, const char *pszHome, MachineInfoList& ma
     for (MachineInfoList::iterator it = machines.begin(); it != machines.end(); ++it)
     {
         VBRDir VmDir(PathJoin((*it)->getLogPath(), "VBox.log*"));
-        const char *pcszVmLogFile = HomeDir.next();
+        const char *pcszVmLogFile = VmDir.next();
         while (pcszVmLogFile)
         {
             report->addItem(new BugReportFile(PathJoin((*it)->getLogPath(), pcszVmLogFile),
                                               PathJoin((*it)->getName(), pcszVmLogFile)));
-            pcszVmLogFile = HomeDir.next();
+            pcszVmLogFile = VmDir.next();
         }
         report->addItem(new BugReportFile((*it)->getSettingsFile(),
                                          PathJoin((*it)->getName(), RTPathFilename((*it)->getSettingsFile()))));
