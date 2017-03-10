@@ -811,6 +811,7 @@ void testCreate(RTTEST hTest)
 {
     /* Simple opening of an existing file. */
     testCreateFileSimple(hTest);
+    testCreateFileSimpleCaseInsensitive(hTest);
     /* Simple opening of an existing directory. */
     /** @todo How do wildcards in the path name work? */
     testCreateDirSimple(hTest);

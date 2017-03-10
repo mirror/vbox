@@ -53,6 +53,7 @@ void testUnmapFolderBadParameters(RTTEST hTest);
 void testCreate(RTTEST hTest);
 /* Sub-tests for testCreate(). */
 void testCreateFileSimple(RTTEST hTest);
+void testCreateFileSimpleCaseInsensitive(RTTEST hTest);
 void testCreateDirSimple(RTTEST hTest);
 void testCreateBadParameters(RTTEST hTest);
 
