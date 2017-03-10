@@ -42,7 +42,7 @@ ifdef VBOX_WITH_TESTCASES
 	$(QUIET)$(call MSG_L1,Doing a test build of the guest kernel modules)
 	$(QUIET)$(RM) -f -- "$@"
 	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
-	$(QUIET)$(CP) -R --changed -- $(PATH_STAGE_BIN)/additions/src/* "$(VBOX_LNX_ADD_TEST)/"
+	$(QUIET)$(ASH) -c "$(CP_EXT) -R --changed -- $(PATH_STAGE_BIN)/additions/src/* $(VBOX_LNX_ADD_TEST)/"
 	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
 	$(QUIET)$(APPEND) -t "$@" "done"
  endif
