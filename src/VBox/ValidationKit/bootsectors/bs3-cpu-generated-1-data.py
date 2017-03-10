@@ -136,15 +136,15 @@ class Bs3Cg1TestEncoder(object):
                     sOpcode += '| BS3CG1_CTXOP_SIGN_EXT';
                 asRet.append(sOpcode);
 
+                # Escaped field identifier.
+                if oOperation.sField not in Bs3Cg1TestEncoder.kdSmallFields:
+                    asRet.append('BS3CG1DST_%s' % (oOperation.sField.upper().replace('.', '_'),));
+
                 # Escaped size byte?
                 if cbValue not in Bs3Cg1TestEncoder.kdSmallSizes:
                     if cbValue >= 256 or cbValue not in [ 1, 2, 4, 6, 8, 12, 16, 32, 64, 128, ]:
                         raise Exception('Invalid value size: %s' % (cbValue,));
                     asRet.append('0x%02x' % (cbValue,));
-
-                # Escaped field identifier.
-                if oOperation.sField not in Bs3Cg1TestEncoder.kdSmallFields:
-                    asRet.append('BS3CG1DST_%s' % (oOperation.sField.upper().replace('.', '_'),));
 
                 # The value bytes.
                 for b in abValue:
@@ -390,6 +390,7 @@ class Bs3CpuGenerated1Generator(object):
             '#include "bs3-cpu-generated-1.h"',
             '',
             '',
+            '#pragma data_seg ("BS3DATA16")',
         ];
 
         # Generate the g_achBs3Cg1Mnemonics array.

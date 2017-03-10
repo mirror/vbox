@@ -167,13 +167,13 @@ typedef BS3CG1TESTHDR const BS3_FAR *PCBS3CG1TESTHDR;
 #define BS3CG1_CTXOP_16_BYTES       UINT8_C(0x04)
 #define BS3CG1_CTXOP_32_BYTES       UINT8_C(0x05)
 #define BS3CG1_CTXOP_12_BYTES       UINT8_C(0x06)
-#define BS3CG1_CTXOP_SIZE_ESC       UINT8_C(0x07)   /**< Separate byte encoding the value size follows immediately. */
+#define BS3CG1_CTXOP_SIZE_ESC       UINT8_C(0x07)   /**< Separate byte encoding the value size following any destination escape byte. */
 
 #define BS3CG1_CTXOP_DST_MASK       UINT8_C(0x18)
 #define BS3CG1_CTXOP_OP1            UINT8_C(0x00)
 #define BS3CG1_CTXOP_OP2            UINT8_C(0x08)
 #define BS3CG1_CTXOP_EFL            UINT8_C(0x10)
-#define BS3CG1_CTXOP_DST_ESC        UINT8_C(0x18)   /**< Separate byte giving the destination follows after any size byte.*/
+#define BS3CG1_CTXOP_DST_ESC        UINT8_C(0x18)   /**< Separate byte giving the destination follows immediately. */
 
 #define BS3CG1_CTXOP_SIGN_EXT       UINT8_C(0x20)   /**< Whether to sign-extend (set) the immediate value. */
 
@@ -209,6 +209,10 @@ typedef enum BS3CG1DST
     BS3CG1DST_CH,
     BS3CG1DST_DH,
     BS3CG1DST_BH,
+    BS3CG1DST_SPL,
+    BS3CG1DST_BPL,
+    BS3CG1DST_SIL,
+    BS3CG1DST_DIL,
     BS3CG1DST_R8L,
     BS3CG1DST_R9L,
     BS3CG1DST_R10L,
@@ -219,8 +223,8 @@ typedef enum BS3CG1DST
     BS3CG1DST_R15L,
     /* 16-bit GPRs. */
     BS3CG1DST_AX,
-    BS3CG1DST_DX,
     BS3CG1DST_CX,
+    BS3CG1DST_DX,
     BS3CG1DST_BX,
     BS3CG1DST_SP,
     BS3CG1DST_BP,
@@ -236,8 +240,8 @@ typedef enum BS3CG1DST
     BS3CG1DST_R15W,
     /* 32-bit GPRs. */
     BS3CG1DST_EAX,
-    BS3CG1DST_EDX,
     BS3CG1DST_ECX,
+    BS3CG1DST_EDX,
     BS3CG1DST_EBX,
     BS3CG1DST_ESP,
     BS3CG1DST_EBP,
@@ -253,8 +257,8 @@ typedef enum BS3CG1DST
     BS3CG1DST_R15D,
     /* 64-bit GPRs. */
     BS3CG1DST_RAX,
-    BS3CG1DST_RDX,
     BS3CG1DST_RCX,
+    BS3CG1DST_RDX,
     BS3CG1DST_RBX,
     BS3CG1DST_RSP,
     BS3CG1DST_RBP,
@@ -270,8 +274,8 @@ typedef enum BS3CG1DST
     BS3CG1DST_R15,
     /* 16-bit, 32-bit or 64-bit registers according to operand size. */
     BS3CG1DST_OZ_RAX,
-    BS3CG1DST_OZ_RDX,
     BS3CG1DST_OZ_RCX,
+    BS3CG1DST_OZ_RDX,
     BS3CG1DST_OZ_RBX,
     BS3CG1DST_OZ_RSP,
     BS3CG1DST_OZ_RBP,
