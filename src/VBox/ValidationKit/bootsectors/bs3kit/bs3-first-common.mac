@@ -96,7 +96,7 @@ BS3_GLOBAL_DATA Bs3Data16_Size, 4
 BS3_GLOBAL_DATA Bs3Data16Thru64Text32And64_TotalSize, 4
     dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt BS3KIT_GRPNM_DATA16
 BS3_GLOBAL_DATA Bs3TotalImageSize, 4
-    dd  BS3_DATA_NM(Bs3Data64_EndOfSegment) wrt CGROUP16
+    dd  BS3_DATA_NM(Bs3Text64_EndOfSegment) wrt CGROUP16 ; ASSUMES TEXT64 is last.
 
 BS3_GLOBAL_DATA Bs3Text16_Size, 2
     dw  BS3_DATA_NM(Bs3Text16_EndOfSegment) wrt CGROUP16
