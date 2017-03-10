@@ -47,6 +47,7 @@ ifdef VBOX_WITH_TESTCASES
 	$(QUIET)$(RM) -Rf -- "$(VBOX_LNX_ADD_TEST)"
 	$(QUIET)$(MKDIR) -p -- "$(VBOX_LNX_ADD_TEST)"
 	$(QUIET)$(CP) -R -- "$(PATH_STAGE_BIN)/additions/src/" "$(VBOX_LNX_ADD_TEST)/"
+	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST) clean
 	+ $(QUIET)make -C $(VBOX_LNX_ADD_TEST)
 	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_TEST)
 	$(QUIET)$(APPEND) -t "$@" "done"
