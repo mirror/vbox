@@ -192,11 +192,11 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
      */
     pCtx->hwvirt.svm.GCPhysVmcb = GCPhysVmcb;
 
-#if 0
-    SVMVMCB Vmcb;
+    /*
+     * Cache the VMCB controls.
+     */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    //int rc = PGMPhysSimpleReadGCPhys(pVM, &Vmcb, GCPhysVmcb, X86_PAGE_4K_SIZE);
-    int rc = VINF_SUCCESS;
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &pCtx->hwvirt.svm.VmcbCtrl, GCPhysVmcb, sizeof(pCtx->hwvirt.svm.VmcbCtrl));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -217,11 +217,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
         pHostState->uRip     = pCtx->rip;
         pHostState->uRsp     = pCtx->rsp;
         pHostState->uRax     = pCtx->rax;
-
-        /*
-         * Cache the VMCB controls.
-         */
-        pCtx->hwvirt.svm.VmcbCtrl = Vmcb.ctrl;
 
         /*
          * Validate the VMCB controls.
@@ -249,9 +244,6 @@ VMM_INT_DECL(VBOXSTRICTRC) HMSvmVmrun(PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPHYS GCPh
     }
 
     return rc;
-#endif
-    return VERR_NOT_IMPLEMENTED;
-
 }
 
 
