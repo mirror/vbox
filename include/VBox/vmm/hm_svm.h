@@ -31,6 +31,12 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
+#ifdef RT_OS_SOLARIS
+# undef ES
+# undef SS
+# undef FS
+# undef GS
+#endif
 
 /** @defgroup grp_hm_svm    SVM (AMD-V) Types and Definitions
  * @ingroup grp_hm
