@@ -3741,68 +3741,6 @@ SDK_VBOX_NTDLL_LIBS.x86   ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
 SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 
 #
-# The linux kernel headers(/sources).
-#
-if1of ($(KBUILD_TARGET), linux)
- ifeq ($(origin VBOX_LINUX_SRC),undefined)
-  ifneq ($(wildcard /lib/modules/$(shell uname -r)/build/include/linux/autoconf.h  /lib/modules/$(shell uname -r)/build/include/generated/autoconf.h),)
-   export VBOX_LINUX_SRC := /lib/modules/$(shell uname -r)/build
-  else
-   export VBOX_LINUX_SRC := /usr/src/linux
-  endif
- endif
- ifneq ($(VBOX_LINUX_SRC),)
-  ifeq ($(origin VBOX_LINUX_INCS),undefined)
-   export VBOX_LINUX_INCS := $(VBOX_LINUX_SRC)/include
-   # XXX hack alert! Support split Linux kernels (make O=<build directory>). kernelpath points to
-   #                 the obj directory while VBOX_LINUX_SRC points to the virgin source directory.
-   # XXX put this crap elsewhere
-   kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
-   ifeq ($(kernelpath),)
-    # Linux >= 2.6.25
-    kernelpath := $(shell $(SED_EXT) -ne 's+^MAKEARGS *:= *-C *\(\S*\).*+\1+p' $(VBOX_LINUX_SRC)/Makefile)
-   endif
-   ifneq ($(kernelpath),)
-    # absolute path?
-    ifneq ($(patsubst /%,,$(kernelpath)),)
-     # no, relative path
-     kernelpath := $(realpath $(VBOX_LINUX_SRC)/$(kernelpath))
-    endif
-   endif
-   ifneq ($(kernelpath),)
-    VBOX_LINUX_INCS += $(VBOX_LINUX_SRC)/include2 $(kernelpath)/include
-   else
-    kernelpath := $(VBOX_LINUX_SRC)
-   endif
-   #
-   VBOX_LINUX_INCS  += $(kernelpath)/include/asm-i386/mach-default \
-                       $(kernelpath)/include/asm-x86/mach-default \
-                       $(kernelpath)/include/drm \
-                       $(kernelpath)/arch/x86/include \
-                       $(kernelpath)/arch/x86/include/asm/mach-default \
-                       $(kernelpath)/arch/x86/include/uapi \
-                       $(VBOX_LINUX_SRC)/arch/x86/include/generated \
-                       $(VBOX_LINUX_SRC)/arch/x86/include/generated/uapi \
-                       $(kernelpath)/include/uapi \
-                       $(VBOX_LINUX_SRC)/include/generated/uapi \
-                       $(kernelpath)/include
-  endif
- endif
- # Since Linux 2.6.15, <linux/autoconf.h> is included like this. It cannot hurt to do the
- # same for older Linux kernels
- ifneq ($(wildcard $(kernelpath)/include/linux/kconfig.h),)
-  # Linux >= 3.1
-  export VBOX_LINUX_INCLUDE := -include $(kernelpath)/include/linux/kconfig.h
- else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/generated/autoconf.h),)
-  # Linux >= 2.6.33
-  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/generated/autoconf.h
- else ifneq ($(wildcard $(VBOX_LINUX_SRC)/include/linux/autoconf.h),)
-  # Linux < 2.6.33
-  export VBOX_LINUX_INCLUDE := -include $(VBOX_LINUX_SRC)/include/linux/autoconf.h
- endif
-endif
-
-#
 # Determine Solaris version.
 #
 ifeq ($(KBUILD_TARGET),solaris)
@@ -4180,28 +4118,7 @@ ifeq ($(KBUILD_TARGET),win)
 endif
 
 ifeq ($(KBUILD_TARGET),linux)
-TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_INSTTYPE.linux      = none
-TEMPLATE_VBOXR0DRV_DEFS               += __KERNEL__ MODULE
-TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
-TEMPLATE_VBOXR0DRV_CFLAGS              = -fno-pie -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
-	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare $(VBOX_GCC_fdiagnostics-show-option) \
-	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
-	-fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2 -msoft-float
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
-	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time -Wno-sign-compare
-TEMPLATE_VBOXR0DRV_CXXFLAGS            = $(filter-out -Wstrict-prototypes -Wno-pointer-sign -ffreestanding -Werror-implicit-function-declaration,$(TEMPLATE_VBOXR0DRV_CFLAGS) $(TEMPLATE_VBOXR0DRV_CFLAGS.$(KBUILD_TARGET_ARCH))) -fno-exceptions -fno-rtti
-  ifndef VBOX_LINUX_VERSION_2_4
-# 2.6
-TEMPLATE_VBOXR0DRV_SYSSUFF             = .ko
-TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m elf_i386 -r
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m elf_x86_64 -r
-  else
-# 2.4
-TEMPLATE_VBOXR0DRV_SYSSUFF             = .o
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -s
-  endif
+TEMPLATE_VBOXR0DRV_TOOL                = $(NO_SUCH_VARIABLE)
 endif
 
 ifeq ($(KBUILD_TARGET),os2)
