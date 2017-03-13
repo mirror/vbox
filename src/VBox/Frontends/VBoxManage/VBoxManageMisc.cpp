@@ -1236,7 +1236,9 @@ static const RTGETOPTDEF g_aUnattendedInstallOptions[] =
     { "--addisopath",     'a', RTGETOPT_REQ_STRING },
     { "-addisopath",      'a', RTGETOPT_REQ_STRING },
     { "-imageindex",      'm', RTGETOPT_REQ_UINT16 },
-    { "--imageindex",      'm', RTGETOPT_REQ_UINT16 },
+    { "--imageindex",     'm', RTGETOPT_REQ_UINT16 },
+    { "-settingfile",     's', RTGETOPT_REQ_STRING },
+    { "--settingfile",    's', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleUnattendedInstall(HandlerArg *a)
@@ -1251,52 +1253,76 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     Bstr uuid = Guid(a->argv[0]).toUtf16().raw();
     Bstr machineName;
     BOOL bInstallGuestAdditions;
+    Bstr fileWithSettings;
     unsigned short imageIndex = 1;//applied only to Windows installation
 
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
 
-    // start at 0 because main() has hacked both the argc and argv given to us
+    // start at 2(third) argument because 0(first) is <uuid\vmname>, 1(second) is <usedata\usefile>
     RTGetOptInit(&GetState, a->argc, a->argv, g_aUnattendedInstallOptions, RT_ELEMENTS(g_aUnattendedInstallOptions),
-                 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+                 2, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+
+    if (!strcmp(a->argv[1], "usefile"))
     {
-        switch (c)
+        while ((c = RTGetOpt(&GetState, &ValueUnion)))
         {
-            case 'u':   // --user
-                user = ValueUnion.psz;
-                break;
-
-            case 'p':   // --password
-                password = ValueUnion.psz;
-                break;
-
-            case 'k':   // --key
-                productKey = ValueUnion.psz;
-                break;
-
-            case 'a':   // --addisopath
-                vboxAdditionsIsoPath = ValueUnion.psz;
-                break;
-
-            case 'i':   // --isopath
-                isoPath = ValueUnion.psz;
-                break;
-            case 'm':   // --image index
-                imageIndex = ValueUnion.u8;
-                break;
-            default:
-                return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
+            switch (c)
+            {
+                case 's':   // --a file with data prepared by user
+                    fileWithSettings = ValueUnion.psz;
+                    break;
+                default:
+                    return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
+            }
         }
-    }
 
-    /* check for required options */
-    if (user.isEmpty() ||
-        password.isEmpty() ||
-        isoPath.isEmpty()
-        )
-        return errorSyntax(USAGE_UNATTENDEDINSTALL, "One of needed parameters has been missed");
+        /* check for required options */
+        if (fileWithSettings.isEmpty())
+            return errorSyntax(USAGE_UNATTENDEDINSTALL, "One of needed parameters has been missed");
+    }
+    else if(!strcmp(a->argv[1], "usedata"))
+    {
+        while ((c = RTGetOpt(&GetState, &ValueUnion)))
+        {
+            switch (c)
+            {
+                case 'u':   // --user
+                    user = ValueUnion.psz;
+                    break;
+
+                case 'p':   // --password
+                    password = ValueUnion.psz;
+                    break;
+
+                case 'k':   // --key
+                    productKey = ValueUnion.psz;
+                    break;
+
+                case 'a':   // --addisopath
+                    vboxAdditionsIsoPath = ValueUnion.psz;
+                    break;
+
+                case 'i':   // --isopath
+                    isoPath = ValueUnion.psz;
+                    break;
+                case 'm':   // --image index
+                    imageIndex = ValueUnion.u8;
+                    break;
+                default:
+                    return errorGetOpt(USAGE_UNATTENDEDINSTALL, c, &ValueUnion);
+            }
+        }
+
+        /* check for required options */
+        if (user.isEmpty() || password.isEmpty() || isoPath.isEmpty())
+            return errorSyntax(USAGE_UNATTENDEDINSTALL, "One of needed parameters has been missed");
+    }
+    else
+    {
+        return errorSyntax(USAGE_UNATTENDEDINSTALL, "Unknown subcommand. Must be \"usefile\" or \"usedata\" ");
+    }
 
     /* try to find the given machine */
     ComPtr<IMachine> machine;
@@ -1335,35 +1361,46 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
 
         CHECK_ERROR_BREAK(machine, COMGETTER(Unattended)(unAttended.asOutParam()));
 
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(group.raw()));
-
-        if (installedOSStr.contains("Windows") && productKey.isEmpty())
+        if (fileWithSettings.isEmpty())//may use also this condition (!strcmp(a->argv[1], "usedata"))
         {
-            return errorSyntax(USAGE_UNATTENDEDINSTALL, "Product key has been missed.");
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(Group)(group.raw()));
+
+            if (installedOSStr.contains("Windows") && productKey.isEmpty())
+            {
+                return errorSyntax(USAGE_UNATTENDEDINSTALL, "Product key has been missed.");
+            }
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.raw()));
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(isoPath.raw()));
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(user.raw()));
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(password.raw()));
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(productKey.raw()));
+
+            bool fInstallGuestAdditions = (vboxAdditionsIsoPath.isEmpty()) ? false: true;
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallGuestAdditions));
+
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
+            CHECK_ERROR_BREAK(unAttended,Preparation());
+            CHECK_ERROR_BREAK(unAttended,ConstructScript());
+            CHECK_ERROR_BREAK(unAttended,ConstructMedia());
+            CHECK_ERROR_BREAK(unAttended,ReconstructVM());
+            CHECK_ERROR_BREAK(unAttended,RunInstallation());
+
+        }
+        else
+        {
+            CHECK_ERROR_BREAK(unAttended, COMSETTER(FileWithPreparedData)(fileWithSettings.raw()));
+            CHECK_ERROR_BREAK(unAttended,Preparation());
+            CHECK_ERROR_BREAK(unAttended,ReconstructVM());
+            CHECK_ERROR_BREAK(unAttended,RunInstallation());
         }
 
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.raw()));
-
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(IsoPath)(isoPath.raw()));
-
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(User)(user.raw()));
-
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(Password)(password.raw()));
-
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(ProductKey)(productKey.raw()));
-
-        bool fInstallGuestAdditions = (vboxAdditionsIsoPath.isEmpty()) ? false: true;
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(InstallGuestAdditions)(fInstallGuestAdditions));
-
-        CHECK_ERROR_BREAK(unAttended, COMSETTER(ImageIndex)(imageIndex));
-
-        CHECK_ERROR_BREAK(unAttended,Preparation());
-        CHECK_ERROR_BREAK(unAttended,ConstructScript());
-        CHECK_ERROR_BREAK(unAttended,ConstructMedia());
-        CHECK_ERROR_BREAK(unAttended,ReconstructVM());
-        CHECK_ERROR_BREAK(unAttended,RunInstallation());
         a->session->UnlockMachine();
-//  CHECK_ERROR_RET(sessionMachine, UnlockMachine(), RTEXITCODE_FAILURE);
+
         {
             Bstr env;
             Bstr sessionType = "headless";//"gui";
@@ -1420,7 +1457,9 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         group.setNull();
         bInstallGuestAdditions = false;
         imageIndex = 0;
+        fileWithSettings.setNull();
 
+        CHECK_ERROR_BREAK(unAttended, COMGETTER(FileWithPreparedData)(fileWithSettings.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Group)(group.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(VboxAdditionsIsoPath)(vboxAdditionsIsoPath.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(IsoPath)(isoPath.asOutParam()));
@@ -1428,8 +1467,9 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
         CHECK_ERROR_BREAK(unAttended, COMGETTER(Password)(password.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ProductKey)(productKey.asOutParam()));
         CHECK_ERROR_BREAK(unAttended, COMGETTER(ImageIndex)(&imageIndex));
-        RTPrintf("Got values:\n user: %s\n password: %s\n productKey: %s\n image index: %d\n "
+        RTPrintf("Got values:\n fileWithSettings: %s\n user: %s\n password: %s\n productKey: %s\n image index: %d\n "
                  "isoPath: %s\n vboxAdditionsIsoPath: %s\n",
+                 Utf8Str(fileWithSettings).c_str(),
                  Utf8Str(user).c_str(),
                  Utf8Str(password).c_str(),
                  Utf8Str(productKey).c_str(),

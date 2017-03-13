@@ -1024,6 +1024,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     {
         RTStrmPrintf(pStrm,
                            "%s unattended %s      <uuid|vmname>\n"
+                     "                            usefile --file <file>\n"
+                     "                            usedata\n"
                      "                            --user <username>\n"
                      "                            --password <password>\n"
                      "                            --key <key>\n"
