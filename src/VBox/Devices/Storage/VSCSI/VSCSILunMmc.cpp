@@ -1099,6 +1099,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
 
                                 paSegs = paSegsNew;
                                 cSegs  = cSegsNew;
+                                pVScsiReq->pvLun = paSegsNew;
                             }
                             else
                                 rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
@@ -1392,6 +1393,14 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     return rc;
 }
 
+/** @interface_method_impl{VSCSILUNDESC,pfnVScsiLunReqFree} */
+static DECLCALLBACK(void) vscsiLunMmcReqFree(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
+                                             void *pvLun)
+{
+    RT_NOREF2(pVScsiLun, pVScsiReq);
+    RTMemFree(pvLun);
+}
+
 /** @interface_method_impl{VSCSILUNDESC,pfnVScsiLunMediumInserted} */
 static DECLCALLBACK(int) vscsiLunMmcMediumInserted(PVSCSILUNINT pVScsiLun)
 {
@@ -1456,7 +1465,7 @@ VSCSILUNDESC g_VScsiLunTypeMmc =
     /** pfnVScsiLunReqProcess */
     vscsiLunMmcReqProcess,
     /** pfnVScsiLunReqFree */
-    NULL,
+    vscsiLunMmcReqFree,
     /** pfnVScsiLunMediumInserted */
     vscsiLunMmcMediumInserted,
     /** pfnVScsiLunMediumRemoved */
