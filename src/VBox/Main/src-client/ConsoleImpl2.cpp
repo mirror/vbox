@@ -4353,6 +4353,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 return rc;
         }
 
+        BOOL fPassthrough = FALSE;
         if (pMedium)
         {
             BOOL fHostDrive;
@@ -4373,10 +4374,12 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                        utfFile.c_str(), lType == DeviceType_DVD ? "DVD" : "Floppy",
                        RTFsTypeName(enmFsTypeFile)));
             }
-        }
 
-        BOOL fPassthrough;
-        hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);                            H();
+            if (fHostDrive)
+            {
+                hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);                    H();
+            }
+        }
 
         ComObjPtr<IBandwidthGroup> pBwGroup;
         Bstr strBwGroup;
