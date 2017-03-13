@@ -33,6 +33,8 @@
 
 #ifdef RT_OS_SOLARIS
 # undef ES
+# undef CS
+# undef DS
 # undef SS
 # undef FS
 # undef GS
