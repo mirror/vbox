@@ -371,7 +371,7 @@ OTHER_CLEAN += \
 #
 # Build test for the Guest Additions kernel modules (kmk check).
 #
-if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK)
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_VALIDATIONKIT)
  VBOX_LNX_ADD_TEST        = $(PATH_TARGET)/tstguest_mod
  VBOX_LNX_ADD_TEST_TARGET = $(PATH_TARGET)/tstguest_mod.run
  TESTING     += $(VBOX_LNX_ADD_TEST_TARGET)

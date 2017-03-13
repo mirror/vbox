@@ -59,7 +59,7 @@ endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_VALIDATIONKIT)
 #
 # Build test for the linux host kernel modules.
 #
-if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" == "linux"
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_VALIDATIONKIT) && "$(KBUILD_TARGET)" == "linux"
  VBOX_LNX_MOD_TEST        = $(PATH_TARGET)/tsthost_mod
  VBOX_LNX_MOD_TEST_TARGET = $(PATH_TARGET)/tsthost_mod.run
  TESTING     += $(VBOX_LNX_MOD_TEST_TARGET)
