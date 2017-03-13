@@ -454,8 +454,10 @@
         <ComponentRef Id="cp_VBoxDrv" />
 <?endif ?>
 
+<?if $(env.VBOX_WITH_UNATTENDED) = "yes" ?>
         <!-- unattended template component -->
         <ComponentRef Id="cp_UnattendedTemplates" />
+<?endif ?>
 
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                  Description="!(loc.VB_USBDriver)"
