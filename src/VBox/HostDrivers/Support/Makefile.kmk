@@ -543,13 +543,12 @@ endif # os2
 #
 # New VBoxDrv target. TODO: Convert all the above to use this!
 #
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
+if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  ifdef VBOX_WITH_VBOXDRV
   SYSMODS += VBoxDrv
  endif
  VBoxDrv_TEMPLATE         = VBOXR0DRV
  VBoxDrv_NAME.freebsd     = vboxdrv
- VBoxDrv_NAME.linux       = vboxdrv
  VBoxDrv_NAME.solaris     = vboxdrv
  ifdef VBOX_SIGNING_MODE
   VBoxDrv_INSTTYPE.win    = none
@@ -575,11 +574,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  ifdef VBOX_WITH_RAW_MODE
   VBoxDrv_DEFS.darwin    += VBOX_WITH_RAW_MODE
  endif
- VBoxDrv_DEFS.linux      := \
-	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
- ifdef VBOX_LINUX_VERSION_2_4
-  VBoxDrv_DEFS.linux     += EXPORT_SYMTAB
- endif
  ifdef VBOX_WITH_NETFLT
   VBoxDrv_DEFS.solaris   += VBOX_WITH_NETFLT
  endif
@@ -601,10 +595,8 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
  VBoxDrv_INCS.darwin      = ./darwin
- VBoxDrv_INCS.linux       = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
 
  VBoxDrv_LIBS             = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
- VBoxDrv_LIBS.linux.debug = $(VBoxDrv_LIBS) $(VBOX_GCC_LIBGCC)
  VBoxDrv_LIBS.win         = \
  	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
@@ -621,8 +613,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 
  VBoxDrv_SOURCES.darwin   = \
 	darwin/SUPDrv-darwin.cpp
- VBoxDrv_SOURCES.linux    = \
-	linux/SUPDrv-linux.c
  VBoxDrv_SOURCES.solaris  = \
 	solaris/SUPDrv-solaris.c
  VBoxDrv_SOURCES.win      = \
@@ -650,10 +640,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  ifn1of ($(KBUILD_TARGET), linux freebsd)
   VBoxDrv_SOURCES        += \
  	SUPDrvTracerA.asm
- endif
- ifndef VBOX_LINUX_VERSION_2_4
-  VBoxDrv_SOURCES.linux  += \
- 	linux/SUPDrv-linux.mod.c
  endif
 
  linux/SUPDrv-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)

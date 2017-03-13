@@ -450,7 +450,7 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 
 endif #ifeq ($(KBUILD_TARGET), win)
 
-else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with the mixed case stuff.
+else if1of ($(KBUILD_TARGET), solaris freebsd) ## @todo merge this with the mixed case stuff.
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.
 # Note! On Solaris the name has to be <= 8 chars long.
@@ -460,14 +460,8 @@ else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with th
   SYSMODS += vboxnetflt
   vboxnetflt_TEMPLATE      = VBOXR0DRV
   vboxnetflt_NAME.solaris  = vboxflt
-  vboxnetflt_DEFS.linux    = \
-	KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) \
-	KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) \
-	MODULE DEBUG_HASH=2 DEBUG_HASH2=3
   vboxnetflt_DEFS          = IN_RT_R0
   vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
-  vboxnetflt_INCS.linux   := \
-  	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
   vboxnetflt_INCS         := \
   	$(PATH_SUB_CURRENT)
   vboxnetflt_LDFLAGS.solaris += -N drv/vboxdrv -N misc/ctf
@@ -476,11 +470,9 @@ else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with th
   ## @todo vboxflt should resolves all the IPRT bits from vboxdrv.
   #vboxnetflt_LIBS += \
   #	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-  vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
   vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
   vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
   vboxnetflt_SOURCES = VBoxNetFlt.c
-  linux/VBoxNetFlt-linux.c_DEPS = $(VBOX_SVN_REV_HEADER)
   solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
   ifdef VBOX_WITH_NETFLT_CROSSBOW

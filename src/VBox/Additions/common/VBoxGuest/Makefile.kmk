@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linux,) netbsd os2 solaris win)
+if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
  #
  # VBoxGuest - The Guest Additions Driver.
  #
@@ -27,7 +27,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_TEMPLATE      = VBOXGUESTR0
  VBoxGuest_NAME.freebsd  = vboxguest
  VBoxGuest_NAME.haiku    = vboxguest
- VBoxGuest_NAME.linux    = vboxguest
  VBoxGuest_NAME.netbsd   = vboxguest
  VBoxGuest_NAME.solaris  = vboxguest
  VBoxGuest_INST.darwin   = $(INST_ADDITIONS)VBoxGuest.kext/Contents/MacOS/
@@ -36,7 +35,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
   VBoxGuest_DEBUG_INSTTYPE.win = both
  endif
  VBoxGuest_DEFS.haiku    = VBOX_SVN_REV=$(VBOX_SVN_REV) _KERNEL_MODE=1
- VBoxGuest_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxguest\) KBUILD_BASENAME=KBUILD_STR\(vboxguest\) DEBUG_HASH=2 DEBUG_HASH2=3 EXPORT_SYMTAB
  VBoxGuest_DEFS.solaris  = VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxGuest_DEFS.win      = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
  VBoxGuest_DEFS.darwin   = VBOX_GUESTDRV_WITH_RELEASE_LOGGER
@@ -52,7 +50,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_DEFS.win += \
 	$(if $(VBOX_WITH_DPC_LATENCY_CHECKER),VBOX_WITH_DPC_LATENCY_CHECKER,)
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
- VBoxGuest_DEPS.linux   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.haiku   += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.freebsd += $(VBOX_SVN_REV_HEADER)
  VBoxGuest_DEPS.netbsd  += $(VBOX_SVN_REV_HEADER)
@@ -61,7 +58,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
  VBoxGuest_INCS          = .
  VBoxGuest_INCS.freebsd  = $(VBoxGuest_0_OUTDIR) $(PATH_STAGE)/gen-sys-hdrs
  VBoxGuest_INCS.netbsd   = $(VBoxGuest_0_OUTDIR)
- VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  ifeq ($(KBUILD_HOST),solaris)
   VBoxGuest_LDFLAGS.solaris         += -N misc/ctf
  else
