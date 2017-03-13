@@ -828,6 +828,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
     int             rc = VINF_SUCCESS;
     int             rcReq = SCSI_STATUS_OK;
     unsigned        uCmd = pVScsiReq->pbCDB[0];
+    PCRTSGSEG       paSegs = pVScsiReq->SgBuf.paSegs;
+    unsigned        cSegs  = pVScsiReq->SgBuf.cSegs;
 
     LogFlowFunc(("pVScsiLun=%#p{.fReady=%RTbool, .fMediaPresent=%RTbool} pVScsiReq=%#p{.pbCdb[0]=%#x}\n",
                  pVScsiLun, pVScsiLun->fReady, pVScsiLun->fMediaPresent, pVScsiReq, uCmd));
@@ -996,6 +998,122 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 enmTxDir        = VSCSIIOREQTXDIR_READ;
                 uLbaStart       = scsiBE2H_U64(&pVScsiReq->pbCDB[2]);
                 cSectorTransfer = scsiBE2H_U32(&pVScsiReq->pbCDB[10]);
+                break;
+            }
+            case SCSI_READ_CD:
+            {
+                uLbaStart       = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
+                cSectorTransfer = (pVScsiReq->pbCDB[6] << 16) | (pVScsiReq->pbCDB[7] << 8) | pVScsiReq->pbCDB[8];
+                switch (pVScsiReq->pbCDB[9] & 0xf8)
+                {
+                    case 0x00:
+                        /* nothing */
+                        rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+                        break;
+                    case 0x10:
+                        /* normal read */
+                        enmTxDir = VSCSIIOREQTXDIR_READ;
+                        break;
+                    case 0xf8:
+                    {
+                        /*
+                         * Read all data, sector size is 2352.
+                         * Rearrange the buffer and fill the gaps with the sync bytes.
+                         */
+                        /* Count the number of segments for the buffer we require. */
+                        RTSGBUF SgBuf;
+                        bool fBufTooSmall = false;
+                        uint32_t cSegsNew = 0;
+                        RTSgBufClone(&SgBuf, &pVScsiReq->SgBuf);
+                        for (uint32_t uLba = (uint32_t)uLbaStart; uLba < uLbaStart + cSectorTransfer; uLba++)
+                        {
+                            size_t cbTmp = RTSgBufAdvance(&SgBuf, 16);
+                            if (cbTmp < 16)
+                            {
+                                fBufTooSmall = true;
+                                break;
+                            }
+
+                            cbTmp = 2048;
+                            while (cbTmp)
+                            {
+                                size_t cbBuf = cbTmp;
+                                RTSgBufGetNextSegment(&SgBuf, &cbBuf);
+                                if (!cbBuf)
+                                {
+                                    fBufTooSmall = true;
+                                    break;
+                                }
+
+                                cbTmp -= cbBuf;
+                                cSegsNew++;
+                            }
+
+                            cbTmp = RTSgBufAdvance(&SgBuf, 280);
+                            if (cbTmp < 280)
+                            {
+                                fBufTooSmall = true;
+                                break;
+                            }
+                        }
+
+                        if (!fBufTooSmall)
+                        {
+                            PRTSGSEG paSegsNew = (PRTSGSEG)RTMemAllocZ(cSegsNew * sizeof(RTSGSEG));
+                            if (paSegsNew)
+                            {
+                                enmTxDir = VSCSIIOREQTXDIR_READ;
+
+                                uint32_t idxSeg = 0;
+                                for (uint32_t uLba = (uint32_t)uLbaStart; uLba < uLbaStart + cSectorTransfer; uLba++)
+                                {
+                                    /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
+                                    uint8_t abBuf[16];
+                                    abBuf[0] = 0x00;
+                                    memset(&abBuf[1], 0xff, 10);
+                                    abBuf[11] = 0x00;
+                                    /* MSF */
+                                    scsiLBA2MSF(&abBuf[12], uLba);
+                                    abBuf[15] = 0x01; /* mode 1 data */
+                                    RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, &abBuf[0], sizeof(abBuf));
+
+                                    size_t cbTmp = 2048;
+                                    while (cbTmp)
+                                    {
+                                        size_t cbBuf = cbTmp;
+                                        paSegsNew[idxSeg].pvSeg = RTSgBufGetNextSegment(&pVScsiReq->SgBuf, &cbBuf);
+                                        paSegsNew[idxSeg].cbSeg = cbBuf;
+                                        idxSeg++;
+
+                                        cbTmp -= cbBuf;
+                                    }
+
+                                    /**
+                                     * @todo: maybe compute ECC and parity, layout is:
+                                     * 2072 4   EDC
+                                     * 2076 172 P parity symbols
+                                     * 2248 104 Q parity symbols
+                                     */
+                                    RTSgBufSet(&pVScsiReq->SgBuf, 0, 280);
+                                }
+
+                                paSegs = paSegsNew;
+                                cSegs  = cSegsNew;
+                            }
+                            else
+                                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                                 SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                        }
+                        else
+                            rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                             SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
+                        break;
+                    }
+                    default:
+                        rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
+                                                         SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+                        break;
+                }
                 break;
             }
             case SCSI_READ_BUFFER:
@@ -1263,9 +1381,9 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         else
         {
             /* Enqueue new I/O request */
-            rc = vscsiIoReqTransferEnqueue(pVScsiLun, pVScsiReq, enmTxDir,
-                                           uLbaStart * pVScsiLunMmc->cbSector,
-                                           cSectorTransfer * pVScsiLunMmc->cbSector);
+            rc = vscsiIoReqTransferEnqueueEx(pVScsiLun, pVScsiReq, enmTxDir,
+                                             uLbaStart * pVScsiLunMmc->cbSector,
+                                             paSegs, cSegs, cSectorTransfer * pVScsiLunMmc->cbSector);
         }
     }
     else /* Request completed */
