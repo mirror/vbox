@@ -3753,7 +3753,7 @@
   
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="167420e1-b72b-488e-9d56-f45894a8623a"
+    uuid="ba702c0a-af6c-4598-b20c-247fb9e46406"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -3782,6 +3782,14 @@
     <attribute name="isoPath" type="wstring">
       <desc>
         Guest operating system ISO image
+      </desc>
+    </attribute>
+
+    <attribute name="fileWithPreparedData" type="wstring">
+      <desc>
+        A path to the file with data prepared by user.
+	The internal rule is "name = value" like "isoPath = /correct/path/to/the/iso"
+	One line - one parameter
       </desc>
     </attribute>
 
