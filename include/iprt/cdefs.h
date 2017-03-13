@@ -2283,6 +2283,31 @@
  */
 #define RT_ELEMENTS(aArray)                     ( sizeof(aArray) / sizeof((aArray)[0]) )
 
+/** @def RT_FLEXIBLE_ARRAY
+ * What to up inside the square brackets when declaring a structure member
+ * with a flexible size.
+ *
+ * @note    Use RT_UOFFSETOF() to calculate the structure size.
+ * @note    Never to a sizeof() on the structure or member!
+ * @note    The member must be the last one.
+ */
+#if RT_MSC_PREREQ(RT_MSC_VER_VS2010) /** @todo Probably much much earlier. */ \
+ || (defined(__cplusplus) && RT_GNUC_PREREQ(4, 1)) /** @todo Figure out when applies to the G++ compiler and -std=?? effects. */ \
+ || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */
+# define RT_FLEXIBLE_ARRAY
+# if defined(__cplusplus) && defined(_MSC_VER)
+#  pragma warning(disable:4200) /* -wd4200 does not work with VS2010 */
+# endif
+#elif defined(__STDC_VERSION__)
+# if __STDC_VERSION__ >= 1999901L
+#  define RT_FLEXIBLE_ARRAY
+# else
+#  define RT_FLEXIBLE_ARRAY                     1
+# endif
+#else
+# define RT_FLEXIBLE_ARRAY                      1
+#endif
+
 /**
  * Checks if the value is a power of two.
  *
