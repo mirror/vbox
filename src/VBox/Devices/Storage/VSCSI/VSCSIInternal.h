@@ -120,6 +120,9 @@ typedef struct VSCSIREQINT
     void                *pvVScsiReqUser;
     /** Transfer size determined from the CDB. */
     size_t               cbXfer;
+    /** Pointer to the opaque data which may be allocated by the LUN
+     * the request is for. */
+    void                *pvLun;
 } VSCSIREQINT;
 
 /**
@@ -262,6 +265,17 @@ typedef struct VSCSILUNDESC
      * @param   pVScsiReq    The SCSi request to process.
      */
     DECLR3CALLBACKMEMBER(int, pfnVScsiLunReqProcess, (PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq));
+
+    /**
+     * Frees additional allocated resources for the given request if it was allocated before.
+     *
+     * @returns void.
+     * @param   pVScsiLun    The SCSI LUN instance.
+     * @param   pVScsiReq    The SCSI request.
+     * @param   pvScsiReqLun The opaque data allocated previously.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVScsiLunReqFree, (PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
+                                                    void *pvScsiReqLun));
 
     /**
      * Informs about a medium being inserted - optional.
@@ -421,6 +435,22 @@ int vscsiIoReqFlushEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq);
 int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
                               VSCSIIOREQTXDIR enmTxDir, uint64_t uOffset,
                               size_t cbTransfer);
+
+/**
+ * Enqueue a new data transfer request - extended variant.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun   The LUN instance which issued the request.
+ * @param   pVScsiReq   The virtual SCSI request associated with the transfer.
+ * @param   enmTxDir    Transfer direction.
+ * @param   uOffset     Start offset of the transfer.
+ * @param   paSegs      Pointer to the array holding the memory buffer segments.
+ * @param   cSegs       Number of segments in the array.
+ * @param   cbTransfer  Number of bytes to transfer.
+ */
+int vscsiIoReqTransferEnqueueEx(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
+                                VSCSIIOREQTXDIR enmTxDir, uint64_t uOffset,
+                                PCRTSGSEG paSegs, unsigned cSegs, size_t cbTransfer);
 
 /**
  * Enqueue a new unmap request.

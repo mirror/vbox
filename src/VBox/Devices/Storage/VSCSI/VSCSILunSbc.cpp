@@ -615,6 +615,8 @@ VSCSILUNDESC g_VScsiLunTypeSbc =
     vscsiLunSbcDestroy,
     /** pfnVScsiLunReqProcess */
     vscsiLunSbcReqProcess,
+    /** pfnVScsiLunReqFree */
+    NULL,
     /** pfnVScsiLunMediumInserted */
     NULL,
     /** pfnVScsiLunMediumRemoved */
