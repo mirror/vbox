@@ -17,12 +17,11 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-if1of ($(KBUILD_TARGET), )
+if1of ($(KBUILD_TARGET), linux)
 
  ifdef VBOX_WITH_VBOXDRV
   #
   # The driver.
-  # Note! For Linux, this is just a compile test. Don't use the binary!
   #
   SYSMODS += VBoxPci
   VBoxPci_TEMPLATE       = VBOXR0DRV
