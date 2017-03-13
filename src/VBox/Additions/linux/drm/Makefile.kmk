@@ -30,45 +30,6 @@ vboxvideo_drm-mod_EXEC_SOURCES = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_BIN))
 
 
-#
-# The kernel module.
-#
-# Note! Syntax checking only.  Don't bother if drmP.h is missing (introduced
-#       in 2.6.27).  For the mode-setting driver make sure this is supported.
-# Note! The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels.
-#
-if defined(VBOX_WITH_ADDITION_DRIVERS)
- if "$(shell grep -s 'DRM_IOCTL_MODE_CURSOR2' $(foreach inc,$(VBOX_LINUX_INCS),$(inc)/uapi/drm/drm.h))" != ""
-  SYSMODS += vboxvideo_drm
- endif
-endif
-
-vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
-vboxvideo_drm_CFLAGS          = -fshort-wchar
-vboxvideo_drm_DEFS            = \
-	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
-	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
-	KBUILD_BASENAME=KBUILD_STR\(vboxvideo\) \
-	DEBUG_HASH=2 DEBUG_HASH2=3
-vboxvideo_drm_INCS           += \
-  ../../../Runtime/include \
-  ../../../Runtime/r0drv/linux \
-  $(VBOX_GRAPHICS_INCS)
-vboxvideo_drm_SOURCES         = \
-  ../../common/VBoxVideo/HGSMIBase.cpp \
-  ../../common/VBoxVideo/Modesetting.cpp \
-  ../../common/VBoxVideo/VBVABase.cpp \
-  ../../../GuestHost/HGSMI/HGSMICommon.cpp \
-  ../../../GuestHost/HGSMI/HGSMIMemAlloc.cpp \
-  ../../../Runtime/common/alloc/heapoffset.cpp \
-	vbox_drv.c \
-	vbox_fb.c \
-	vbox_irq.c \
-	vbox_main.c \
-	vbox_mode.c \
-	vbox_ttm.c
-
-vbox_drv.c_DEPS               = $(VBOX_SVN_REV_HEADER)
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
