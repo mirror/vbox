@@ -754,7 +754,7 @@ static int flushFile(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
 }
 
 static int listDir(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
-                   SHFLHANDLE handle, uint32_t fFlags, uint32_t cb,
+                   SHFLHANDLE handle, uint32_t fFlags,
                    const char *pcszPath, void *pvBuf, uint32_t cbBuf,
                    uint32_t resumePoint, uint32_t *pcFiles)
 {
@@ -765,7 +765,7 @@ static int listDir(VBOXHGCMSVCFNTABLE *psvcTable, SHFLROOT root,
     aParms[0].setUInt32(root);
     aParms[1].setUInt64(handle);
     aParms[2].setUInt32(fFlags);
-    aParms[3].setUInt32(cb);
+    aParms[3].setUInt32(cbBuf);
     if (pcszPath)
     {
         fillTestShflString(&Path, pcszPath);
@@ -1019,7 +1019,11 @@ void testDirListEmpty(RTTEST hTest)
     SHFLROOT Root;
     PRTDIR pDir = (PRTDIR)&g_aTestDirHandles[g_iNextDirHandle++ % RT_ELEMENTS(g_aTestDirHandles)];
     SHFLHANDLE Handle;
-    SHFLDIRINFO DirInfo;
+    union
+    {
+        SHFLDIRINFO DirInfo;
+        uint8_t     abBuffer[sizeof(SHFLDIRINFO) + 2 * sizeof(RTUTF16)];
+    } Buf;
     uint32_t cFiles;
     int rc;
 
@@ -1030,8 +1034,7 @@ void testDirListEmpty(RTTEST hTest)
     rc = createFile(&svcTable, Root, "test/dir",
                     SHFL_CF_DIRECTORY | SHFL_CF_ACCESS_READ, &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
-    rc = listDir(&svcTable, Root, Handle, 0, sizeof (SHFLDIRINFO), NULL,
-                 &DirInfo, sizeof(DirInfo), 0, &cFiles);
+    rc = listDir(&svcTable, Root, Handle, 0, NULL, &Buf.DirInfo, sizeof(Buf), 0, &cFiles);
     RTTEST_CHECK_RC(hTest, rc, VERR_NO_MORE_FILES);
     RTTEST_CHECK_MSG(hTest, g_testRTDirReadExDir == pDir, (hTest, "Dir=%p\n", g_testRTDirReadExDir));
     RTTEST_CHECK_MSG(hTest, cFiles == 0,
