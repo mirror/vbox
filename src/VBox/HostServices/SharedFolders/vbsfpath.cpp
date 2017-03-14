@@ -597,7 +597,7 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
                     *pchDst++ = 0;
 
                     /* Construct the full host path removing '.' and '..'. */
-                    rc = RTPathAbsEx(pszRoot, pchVerifiedPath, pszFullPath, cbFullPathAlloc);
+                    rc = vbsfPathAbs(pszRoot, pchVerifiedPath, pszFullPath, cbFullPathAlloc);
                     if (RT_SUCCESS(rc))
                     {
                         if (pfu32PathFlags && fLastComponentHasWildcard)
@@ -648,7 +648,7 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
                     }
                     else
                     {
-                        LogFunc(("RTPathAbsEx %Rrc\n", rc));
+                        LogFunc(("vbsfPathAbs %Rrc\n", rc));
                     }
                 }
 

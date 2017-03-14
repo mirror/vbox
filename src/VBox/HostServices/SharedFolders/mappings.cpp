@@ -19,6 +19,7 @@
 #endif
 
 #include "mappings.h"
+#include "vbsfpath.h"
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/path.h>
@@ -227,7 +228,7 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName,
             /* Make sure the folder name is an absolute path, otherwise we're
                likely to get into trouble with buffer sizes in vbsfPathGuestToHost. */
             char szAbsFolderName[RTPATH_MAX];
-            int rc = RTPathAbs(pszFolderName, szAbsFolderName, sizeof(szAbsFolderName));
+            int rc = vbsfPathAbs(NULL, pszFolderName, szAbsFolderName, sizeof(szAbsFolderName));
             AssertRCReturn(rc, rc);
 
             FolderMapping[i].pszFolderName = RTStrDup(szAbsFolderName);

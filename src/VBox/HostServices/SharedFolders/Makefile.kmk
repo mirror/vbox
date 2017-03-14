@@ -40,6 +40,7 @@ VBoxSharedFolders_SOURCES = \
 	shflhandle.cpp \
 	vbsf.cpp \
 	vbsfpath.cpp \
+	vbsfpathabs.cpp \
 	mappings.cpp
 VBoxSharedFolders_SOURCES.win = \
 	VBoxSharedFolders.rc

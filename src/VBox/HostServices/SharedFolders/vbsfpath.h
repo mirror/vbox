@@ -50,4 +50,18 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
  */
 void vbsfFreeHostPath(char *pszHostPath);
 
+/**
+ * Build the absolute path by combining an absolute pszRoot and a relative pszPath.
+ * The resulting path does not contain '.' and '..' components.
+ * Similar to RTPathAbsEx but with support for Windows extended-length paths ("\\?\" prefix).
+ * Uses RTPathAbsEx for regular paths and on non-Windows hosts.
+ *
+ * @param pszRoot The absolute prefix. It is copied to the pszAbsPath without any processing.
+ *                If NULL then the pszPath must be converted to the absolute path.
+ * @param pszPath The relative path to be appended to pszRoot. Already has correct delimiters (RTPATH_SLASH).
+ * @param pszAbsPath Where to store the resulting absolute path.
+ * @param cbAbsPath Size of pszAbsBuffer in bytes.
+ */
+int vbsfPathAbs(const char *pszRoot, const char *pszPath, char *pszAbsPath, size_t cbAbsPath);
+
 #endif /* __VBSFPATH__H */
