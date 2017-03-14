@@ -77,7 +77,7 @@ if which start-stop-daemon >/dev/null 2>&1; then
         shift
         bin="$1"
         shift
-        start-stop-daemon --background --chuid $usr --start --exec $bin -- $@
+        start-stop-daemon --chuid $usr --start --exec $bin -- $@
     }
 fi
 
