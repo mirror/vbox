@@ -2550,45 +2550,57 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      * Signal termination of each the emulation threads and
      * wait for them to complete.
      */
-    /* Signal them. */
+    /* Signal them - in reverse order since EMT(0) waits for the others. */
     ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
     if (pUVM->pVM)
         VM_FF_SET(pUVM->pVM, VM_FF_CHECK_VM_STATE); /* Can't hurt... */
-    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+    VMCPUID iCpu = pUVM->cCpus;
+    while (iCpu-- > 0)
     {
         VMR3NotifyGlobalFFU(pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
-        RTSemEventSignal(pUVM->aCpus[i].vm.s.EventSemWait);
+        RTSemEventSignal(pUVM->aCpus[iCpu].vm.s.EventSemWait);
     }
 
-    /* Wait for them. */
-    uint64_t    NanoTS = RTTimeNanoTS();
-    RTTHREAD    hSelf  = RTThreadSelf();
+    /* Wait for EMT(0), it in turn waits for the rest. */
     ASMAtomicUoWriteBool(&pUVM->vm.s.fTerminateEMT, true);
-    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+
+    RTTHREAD const hSelf = RTThreadSelf();
+    RTTHREAD hThread = pUVM->aCpus[0].vm.s.ThreadEMT;
+    if (   hThread != NIL_RTTHREAD
+        && hThread != hSelf)
     {
-        RTTHREAD hThread = pUVM->aCpus[i].vm.s.ThreadEMT;
-        if (    hThread != NIL_RTTHREAD
-            &&  hThread != hSelf)
+        int rc2 = RTThreadWait(hThread, RT_MAX(cMilliesEMTWait, 2000), NULL);
+        if (rc2 == VERR_TIMEOUT) /* avoid the assertion when debugging. */
+            rc2 = RTThreadWait(hThread, 1000, NULL);
+        AssertLogRelMsgRC(rc2, ("iCpu=0 rc=%Rrc\n", rc2));
+        if (RT_SUCCESS(rc2))
+            pUVM->aCpus[0].vm.s.ThreadEMT = NIL_RTTHREAD;
+    }
+
+    /* Just in case we're in a weird failure situation w/o EMT(0) to do the
+       waiting, wait the other EMTs too. */
+    for (iCpu = 1; iCpu < pUVM->cCpus; iCpu++)
+    {
+        ASMAtomicXchgHandle(&pUVM->aCpus[iCpu].vm.s.ThreadEMT, NIL_RTTHREAD, &hThread);
+        if (hThread != NIL_RTTHREAD)
         {
-            uint64_t cMilliesElapsed = (RTTimeNanoTS() - NanoTS) / 1000000;
-            int rc2 = RTThreadWait(hThread,
-                                   cMilliesElapsed < cMilliesEMTWait
-                                   ? RT_MAX(cMilliesEMTWait - cMilliesElapsed, 2000)
-                                   : 2000,
-                                   NULL);
-            if (rc2 == VERR_TIMEOUT) /* avoid the assertion when debugging. */
-                rc2 = RTThreadWait(hThread, 1000, NULL);
-            AssertLogRelMsgRC(rc2, ("i=%u rc=%Rrc\n", i, rc2));
-            if (RT_SUCCESS(rc2))
-                pUVM->aCpus[0].vm.s.ThreadEMT = NIL_RTTHREAD;
+            if (hThread != hSelf)
+            {
+                int rc2 = RTThreadWait(hThread, 250 /*ms*/, NULL);
+                AssertLogRelMsgRC(rc2, ("iCpu=%u rc=%Rrc\n", iCpu, rc2));
+                if (RT_SUCCESS(rc2))
+                    continue;
+            }
+            pUVM->aCpus[iCpu].vm.s.ThreadEMT = hThread;
         }
     }
 
     /* Cleanup the semaphores. */
-    for (VMCPUID i = 0; i < pUVM->cCpus; i++)
+    iCpu = pUVM->cCpus;
+    while (iCpu-- > 0)
     {
-        RTSemEventDestroy(pUVM->aCpus[i].vm.s.EventSemWait);
-        pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
+        RTSemEventDestroy(pUVM->aCpus[iCpu].vm.s.EventSemWait);
+        pUVM->aCpus[iCpu].vm.s.EventSemWait = NIL_RTSEMEVENT;
     }
 
     /*

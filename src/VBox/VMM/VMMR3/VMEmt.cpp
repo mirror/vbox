@@ -248,15 +248,29 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pUVM=%p rc=%Rrc enmBefore=%d enmVMState=%d\n",
          hThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
+    PVM pVM;
     if (   idCpu == 0
-        && pUVM->pVM)
+        && (pVM = pUVM->pVM) != NULL)
     {
-        PVM pVM = pUVM->pVM;
+        /* Wait for any other EMTs to terminate before we destroy the VM (see vmR3DestroyVM). */
+        for (VMCPUID iCpu = 1; iCpu < pUVM->cCpus; iCpu++)
+        {
+            RTTHREAD hThread;
+            ASMAtomicXchgHandle(&pUVM->aCpus[iCpu].vm.s.ThreadEMT, NIL_RTTHREAD, &hThread);
+            if (hThread != NIL_RTTHREAD)
+            {
+                int rc2 = RTThreadWait(hThread, 5 * RT_NS_1SEC, NULL);
+                AssertLogRelMsgRC(rc2, ("iCpu=%u rc=%Rrc\n", iCpu, rc2));
+                if (RT_FAILURE(rc2))
+                    pUVM->aCpus[iCpu].vm.s.ThreadEMT = hThread;
+            }
+        }
+
+        /* Switch to the terminated state, clearing the VM pointer and finally destroy the VM. */
         vmR3SetTerminated(pVM);
+
         pUVM->pVM = NULL;
 
-        /** @todo SMP: This isn't 100% safe. We should wait for the other
-         *        threads to finish before destroy the VM. */
         int rc2 = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
         AssertLogRelRC(rc2);
     }
