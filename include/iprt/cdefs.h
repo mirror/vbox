@@ -2296,7 +2296,7 @@
  * @sa      RT_FLEXIBLE_ARRAY_NESTED
  */
 #if RT_MSC_PREREQ(RT_MSC_VER_VS2010) /** @todo Probably much much earlier. */ \
- || (defined(__cplusplus) && RT_GNUC_PREREQ(5, 0)) /** @todo 4.9.x doesn't like [] in C++ code. Figure out exactly when it started being okay with it and -std=?? effects. */ \
+ || (defined(__cplusplus) && RT_GNUC_PREREQ(6, 0)) /** @todo 5.4.0 doesn't like [] in C++ code. Figure out exactly when it started being okay with it and -std=?? effects. */ \
  || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */
 # define RT_FLEXIBLE_ARRAY
 # if defined(__cplusplus) && defined(_MSC_VER)
