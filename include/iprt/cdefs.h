@@ -2366,22 +2366,6 @@
 # define RT_FLEXIBLE_ARRAY_IN_NESTED_UNION      1
 #endif
 
-/** @def RT_FLEXIBLE_ARRAY_NESTED
- * Variant of RT_FLEXIBLE_ARRAY for use in structures that are nested.
- *
- * GCC only allow the use of flexible array member in the top structure, whereas
- * MSC is less strict and let you do struct { struct { char szName[]; } s; };
- *
- * @note    GCC does not permit using this in a union.
- *
- * @sa      RT_FLEXIBLE_ARRAY
- */
-#ifdef _MSC_VER
-# define RT_FLEXIBLE_ARRAY_NESTED               RT_FLEXIBLE_ARRAY
-#else
-# define RT_FLEXIBLE_ARRAY_NESTED               1
-#endif
-
 /**
  * Checks if the value is a power of two.
  *
