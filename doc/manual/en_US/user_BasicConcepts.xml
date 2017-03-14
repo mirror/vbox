@@ -85,7 +85,7 @@
         </glossentry>
 
         <glossentry>
-          <glossterm>Linux 3.x</glossterm>
+          <glossterm>Linux 3.x and later</glossterm>
 
           <glossdef>
             <para>All versions/editions are fully supported (32 bits and 64
