@@ -64,7 +64,7 @@ typedef struct RTMANIFESTATTR
     /** Whether it was visited by the equals operation or not. */
     bool                fVisited;
     /** The normalized property name that StrCore::pszString points at. */
-    char                szName[1];
+    char                szName[RT_FLEXIBLE_ARRAY];
 } RTMANIFESTATTR;
 /** Pointer to a manifest attribute. */
 typedef RTMANIFESTATTR *PRTMANIFESTATTR;
@@ -85,7 +85,7 @@ typedef struct RTMANIFESTENTRY
     /** Whether it was visited by the equals operation or not. */
     bool                fVisited;
     /** The normalized entry name that StrCore::pszString points at. */
-    char                szName[1];
+    char                szName[RT_FLEXIBLE_ARRAY_NESTED];
 } RTMANIFESTENTRY;
 /** Pointer to a manifest entry. */
 typedef RTMANIFESTENTRY *PRTMANIFESTENTRY;
@@ -192,7 +192,7 @@ RTDECL(int) RTManifestCreate(uint32_t fFlags, PRTMANIFEST phManifest)
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertPtr(phManifest);
 
-    RTMANIFESTINT *pThis = (RTMANIFESTINT *)RTMemAlloc(sizeof(*pThis));
+    RTMANIFESTINT *pThis = (RTMANIFESTINT *)RTMemAlloc(RT_UOFFSETOF(RTMANIFESTINT, SelfEntry.szName[1]));
     if (!pThis)
         return VERR_NO_MEMORY;
 
@@ -697,8 +697,8 @@ static int rtManifestSetAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAttr,
     }
     else
     {
-        size_t          cbName = strlen(pszAttr) + 1;
-        pAttr = (PRTMANIFESTATTR)RTMemAllocVar(RT_OFFSETOF(RTMANIFESTATTR, szName[cbName]));
+        size_t const cbName = strlen(pszAttr) + 1;
+        pAttr = (PRTMANIFESTATTR)RTMemAllocVar(RT_UOFFSETOF(RTMANIFESTATTR, szName[cbName]));
         if (!pAttr)
         {
             RTStrFree(pszValueCopy);
@@ -1064,7 +1064,7 @@ RTDECL(int) RTManifestEntrySetAttr(RTMANIFEST hManifest, const char *pszEntry, c
     rc = rtManifestGetEntry(pThis, pszEntry, fNeedNormalization, cchEntry, &pEntry);
     if (rc == VERR_NOT_FOUND)
     {
-        pEntry = (PRTMANIFESTENTRY)RTMemAlloc(RT_OFFSETOF(RTMANIFESTENTRY, szName[cchEntry + 1]));
+        pEntry = (PRTMANIFESTENTRY)RTMemAlloc(RT_UOFFSETOF(RTMANIFESTENTRY, szName[cchEntry + 1]));
         if (!pEntry)
             return VERR_NO_MEMORY;
 
@@ -1190,7 +1190,7 @@ RTDECL(int) RTManifestEntryAdd(RTMANIFEST hManifest, const char *pszEntry)
     rc = rtManifestGetEntry(pThis, pszEntry, fNeedNormalization, cchEntry, &pEntry);
     if (rc == VERR_NOT_FOUND)
     {
-        pEntry = (PRTMANIFESTENTRY)RTMemAlloc(RT_OFFSETOF(RTMANIFESTENTRY, szName[cchEntry + 1]));
+        pEntry = (PRTMANIFESTENTRY)RTMemAlloc(RT_UOFFSETOF(RTMANIFESTENTRY, szName[cchEntry + 1]));
         if (pEntry)
         {
             pEntry->StrCore.cchString = cchEntry;
