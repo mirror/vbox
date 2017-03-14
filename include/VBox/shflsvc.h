@@ -31,6 +31,7 @@
 #include <VBox/VMMDev.h>
 #include <VBox/hgcmsvc.h>
 #include <iprt/fs.h>
+#include <iprt/assert.h>
 
 
 /** @name Some bit flag manipulation macros.
@@ -152,7 +153,6 @@ typedef uint64_t SHFLHANDLE;
 /**
  * Shared folder string buffer structure.
  */
-#pragma pack(1)
 typedef struct _SHFLSTRING
 {
     /** Allocated size of the String member in bytes. */
@@ -164,11 +164,11 @@ typedef struct _SHFLSTRING
     /** UTF-8 or UTF-16 string. Nul terminated. */
     union
     {
-        uint8_t  utf8[1];
+        uint8_t  utf8[2];
         uint16_t ucs2[1];
     } String;
 } SHFLSTRING;
-#pragma pack()
+AssertCompileSize(SHFLSTRING, 6);
 
 #define SHFLSTRING_HEADER_SIZE RT_UOFFSETOF(SHFLSTRING, String)
 
