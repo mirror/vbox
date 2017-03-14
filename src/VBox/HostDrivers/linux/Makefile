@@ -46,7 +46,7 @@ all:
 	        cp vboxdrv/Module.symvers vboxnetflt; \
 	    fi; \
 	    echo "*** Building 'vboxnetflt' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetflt || exit 1; \
 	    cp vboxnetflt/vboxnetflt.ko .; \
 	    echo; \
 	fi
@@ -55,7 +55,7 @@ all:
 	        cp vboxdrv/Module.symvers vboxnetadp; \
 	    fi; \
 	    echo "*** Building 'vboxnetadp' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxnetadp || exit 1; \
 	    cp vboxnetadp/vboxnetadp.ko .; \
 	    echo; \
 	fi
@@ -64,7 +64,7 @@ all:
 	        cp vboxdrv/Module.symvers vboxpci; \
 	    fi; \
 	    echo "*** Building 'vboxpci' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxpci; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxpci || exit 1; \
 	    cp vboxpci/vboxpci.ko .; \
 	    echo; \
 	fi
