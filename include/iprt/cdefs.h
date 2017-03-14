@@ -2288,15 +2288,20 @@
  * with a flexible size.
  *
  * @note    Use RT_UOFFSETOF() to calculate the structure size.
+ *
  * @note    Never to a sizeof() on the structure or member!
+ *
  * @note    The member must be the last one.
- * @note    GCC does not permit using this in a union.
+ *
+ * @note    GCC does not permit using this in a union.  So, for unions you must
+ *          use RT_FLEXIBLE_ARRAY_IN_UNION instead.
+ *
  * @note    GCC does not permit using this in nested structures, where as MSC
  *          does.  So, use RT_FLEXIBLE_ARRAY_NESTED for that.
  *
- * @sa      RT_FLEXIBLE_ARRAY_NESTED
+ * @sa      RT_FLEXIBLE_ARRAY_NESTED, RT_FLEXIBLE_ARRAY_IN_UNION
  */
-#if RT_MSC_PREREQ(RT_MSC_VER_VS2010) /** @todo Probably much much earlier. */ \
+#if RT_MSC_PREREQ(RT_MSC_VER_VS2005) /** @todo Probably much much earlier. */ \
  || (defined(__cplusplus) && RT_GNUC_PREREQ(6, 1)) \
  || defined(__WATCOMC__) /* openwatcom 1.9 supports it, we don't care about older atm. */
 # define RT_FLEXIBLE_ARRAY
@@ -2311,6 +2316,54 @@
 # endif
 #else
 # define RT_FLEXIBLE_ARRAY                      1
+#endif
+
+/** @def RT_FLEXIBLE_ARRAY_NESTED
+ * Variant of RT_FLEXIBLE_ARRAY for use in structures that are nested.
+ *
+ * GCC only allow the use of flexible array member in the top structure, whereas
+ * MSC is less strict and let you do struct { struct { char szName[]; } s; };
+ *
+ * @note    See notes for RT_FLEXIBLE_ARRAY.
+ *
+ * @note    GCC does not permit using this in a union.  So, for unions you must
+ *          use RT_FLEXIBLE_ARRAY_IN_NESTED_UNION instead.
+ *
+ * @sa      RT_FLEXIBLE_ARRAY, RT_FLEXIBLE_ARRAY_IN_NESTED_UNION
+ */
+#ifdef _MSC_VER
+# define RT_FLEXIBLE_ARRAY_NESTED               RT_FLEXIBLE_ARRAY
+#else
+# define RT_FLEXIBLE_ARRAY_NESTED               1
+#endif
+
+/** @def RT_FLEXIBLE_ARRAY_IN_UNION
+ * The union version of RT_FLEXIBLE_ARRAY.
+ *
+ * @remarks GCC does not support flexible array members in unions, 6.1.x
+ *          actively checks for this.  Visual C++ 2010 seems happy with it.
+ *
+ * @note    See notes for RT_FLEXIBLE_ARRAY.
+ *
+ * @sa      RT_FLEXIBLE_ARRAY, RT_FLEXIBLE_ARRAY_IN_NESTED_UNION
+ */
+#ifdef _MSC_VER
+# define RT_FLEXIBLE_ARRAY_IN_UNION             RT_FLEXIBLE_ARRAY
+#else
+# define RT_FLEXIBLE_ARRAY_IN_UNION             1
+#endif
+
+/** @def RT_FLEXIBLE_ARRAY_IN_NESTED_UNION
+ * The union version of RT_FLEXIBLE_ARRAY_NESTED.
+ *
+ * @note    See notes for RT_FLEXIBLE_ARRAY.
+ *
+ * @sa      RT_FLEXIBLE_ARRAY, RT_FLEXIBLE_ARRAY_IN_NESTED_UNION
+ */
+#ifdef _MSC_VER
+# define RT_FLEXIBLE_ARRAY_IN_NESTED_UNION      RT_FLEXIBLE_ARRAY_NESTED
+#else
+# define RT_FLEXIBLE_ARRAY_IN_NESTED_UNION      1
 #endif
 
 /** @def RT_FLEXIBLE_ARRAY_NESTED
