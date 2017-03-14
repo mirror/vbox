@@ -164,13 +164,23 @@ typedef struct _SHFLSTRING
     /** UTF-8 or UTF-16 string. Nul terminated. */
     union
     {
+#if 1
         uint8_t  utf8[1];
-        uint16_t ucs2[1];
+        RTUTF16  utf16[1];
+        uint16_t ucs2[1];                                 /**< misnomer, use utf16. */
+#else
+        uint8_t  utf8[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        RTUTF16  utf16[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        RTUTF16  ucs2[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION]; /**< misnomer, use utf16. */
+#endif
     } String;
 } SHFLSTRING;
+AssertCompileSize(RTUTF16, 2);
 AssertCompileSize(SHFLSTRING, 6);
-
-#define SHFLSTRING_HEADER_SIZE RT_UOFFSETOF(SHFLSTRING, String)
+AssertCompileMemberOffset(SHFLSTRING, String, 4);
+/** The size of SHFLSTRING w/o the string part. */
+#define SHFLSTRING_HEADER_SIZE  4
+AssertCompileMemberOffset(SHFLSTRING, String, SHFLSTRING_HEADER_SIZE);
 
 /** Pointer to a shared folder string buffer. */
 typedef SHFLSTRING *PSHFLSTRING;
@@ -180,7 +190,7 @@ typedef const SHFLSTRING *PCSHFLSTRING;
 /** Calculate size of the string. */
 DECLINLINE(uint32_t) ShflStringSizeOfBuffer(PCSHFLSTRING pString)
 {
-    return pString ? (uint32_t)(sizeof(SHFLSTRING) - sizeof(pString->String) + pString->u16Size) : 0;
+    return pString ? (uint32_t)(SHFLSTRING_HEADER_SIZE + pString->u16Size) : 0;
 }
 
 DECLINLINE(uint32_t) ShflStringLength(PCSHFLSTRING pString)
