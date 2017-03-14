@@ -40,7 +40,7 @@ all:
 	        cp vboxguest/Module.symvers vboxsf; \
 	    fi; \
 	    echo "*** Building 'vboxsf' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf || exit 1; \
 	    if [ -f vboxsf/vboxsf.ko ]; then \
 	        cp vboxsf/vboxsf.ko .; \
 	    else \
@@ -53,10 +53,11 @@ all:
 	        cp vboxguest/Module.symvers vboxvideo; \
 	    fi; \
 	    echo "*** Building 'vboxvideo' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo || \
+	      (echo; echo "Building of vboxvideo failed, ignoring!"; echo); \
 	    if [ -f vboxvideo/vboxvideo.ko ]; then \
 	        cp vboxvideo/vboxvideo.ko .; \
-	    else \
+	    elif [ -f vboxvideo/vboxvideo.o ]; then \
 	        cp vboxvideo/vboxvideo.o .; \
 	    fi; \
 	    echo; \
