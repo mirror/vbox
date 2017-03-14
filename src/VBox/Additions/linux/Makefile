@@ -53,8 +53,7 @@ all:
 	        cp vboxguest/Module.symvers vboxvideo; \
 	    fi; \
 	    echo "*** Building 'vboxvideo' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo || \
-	      (echo; echo "Building of vboxvideo failed, ignoring!"; echo); \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo || exit 1; \
 	    if [ -f vboxvideo/vboxvideo.ko ]; then \
 	        cp vboxvideo/vboxvideo.ko .; \
 	    elif [ -f vboxvideo/vboxvideo.o ]; then \
