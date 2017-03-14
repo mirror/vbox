@@ -290,7 +290,8 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
                 return kCpumMicroarch_AMD_15h_Unknown;
             case 0x16:
                 return kCpumMicroarch_AMD_Jaguar;
-
+            case 0x17:
+                return kCpumMicroarch_AMD_Zen_Ryzen;
         }
         return kCpumMicroarch_AMD_Unknown;
     }
@@ -493,6 +494,8 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
 
         CASE_RET_STR(kCpumMicroarch_AMD_16h_First);
 
+        CASE_RET_STR(kCpumMicroarch_AMD_Zen_Ryzen);
+
         CASE_RET_STR(kCpumMicroarch_AMD_Unknown);
 
         CASE_RET_STR(kCpumMicroarch_Centaur_C6);
@@ -532,6 +535,7 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_AMD_K8_End:
         case kCpumMicroarch_AMD_15h_End:
         case kCpumMicroarch_AMD_16h_End:
+        case kCpumMicroarch_AMD_Zen_End:
         case kCpumMicroarch_AMD_End:
         case kCpumMicroarch_VIA_End:
         case kCpumMicroarch_Cyrix_End:

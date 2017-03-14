@@ -206,6 +206,10 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_AMD_16h_First,
     kCpumMicroarch_AMD_16h_End,
 
+    kCpumMicroarch_AMD_Zen_First,
+    kCpumMicroarch_AMD_Zen_Ryzen = kCpumMicroarch_AMD_Zen_First,
+    kCpumMicroarch_AMD_Zen_End,
+
     kCpumMicroarch_AMD_Unknown,
     kCpumMicroarch_AMD_End,
 
