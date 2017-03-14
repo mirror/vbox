@@ -164,7 +164,7 @@ typedef struct _SHFLSTRING
     /** UTF-8 or UTF-16 string. Nul terminated. */
     union
     {
-        uint8_t  utf8[2];
+        uint8_t  utf8[1];
         uint16_t ucs2[1];
     } String;
 } SHFLSTRING;
