@@ -2290,6 +2290,10 @@
  * @note    Use RT_UOFFSETOF() to calculate the structure size.
  * @note    Never to a sizeof() on the structure or member!
  * @note    The member must be the last one.
+ * @note    GCC does not permit using this in nested structures, where as MSC
+ *          does.  So, use RT_FLEXIBLE_ARRAY_NESTED for that.
+ *
+ * @sa      RT_FLEXIBLE_ARRAY_NESTED
  */
 #if RT_MSC_PREREQ(RT_MSC_VER_VS2010) /** @todo Probably much much earlier. */ \
  || (defined(__cplusplus) && RT_GNUC_PREREQ(4, 1)) /** @todo Figure out when applies to the G++ compiler and -std=?? effects. */ \
@@ -2306,6 +2310,19 @@
 # endif
 #else
 # define RT_FLEXIBLE_ARRAY                      1
+#endif
+
+/** @def RT_FLEXIBLE_ARRAY_NESTED
+ * Variant of RT_FLEXIBLE_ARRAY for use in structures that are nested.
+ *
+ * GCC only allow the use of flexible array member in the top structure, whereas
+ * MSC is less strict and let you do struct { struct { char szName[]; } s; };
+ * @sa      RT_FLEXIBLE_ARRAY
+ */
+#ifdef _MSC_VER
+# define RT_FLEXIBLE_ARRAY_NESTED               RT_FLEXIBLE_ARRAY
+#else
+# define RT_FLEXIBLE_ARRAY_NESTED               1
 #endif
 
 /**
