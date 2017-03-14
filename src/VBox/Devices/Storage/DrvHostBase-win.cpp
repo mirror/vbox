@@ -538,15 +538,6 @@ DECLHIDDEN(int) drvHostBaseMediaRefreshOs(PDRVHOSTBASE pThis)
 }
 
 
-DECLHIDDEN(int) drvHostBasePollerWakeupOs(PDRVHOSTBASE pThis)
-{
-    if (pThis->Os.hwndDeviceChange)
-        PostMessage(pThis->Os.hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
-
-    return VINF_SUCCESS;
-}
-
-
 DECLHIDDEN(int) drvHostBaseQueryMediaStatusOs(PDRVHOSTBASE pThis, bool *pfMediaChanged, bool *pfMediaPresent)
 {
     RT_NOREF3(pThis, pfMediaChanged, pfMediaPresent); /* We don't support the polling method. */
@@ -564,6 +555,25 @@ DECLHIDDEN(bool) drvHostBaseIsMediaPollingRequiredOs(PDRVHOSTBASE pThis)
 
 DECLHIDDEN(void) drvHostBaseDestructOs(PDRVHOSTBASE pThis)
 {
+    /*
+     * Terminate the thread.
+     */
+    if (pThis->Os.hThrdMediaChange != NIL_RTTHREAD)
+    {
+        int rc;
+        int cTimes = 50;
+        do
+        {
+            if (pThis->hwndDeviceChange)
+                PostMessage(pThis->hwndDeviceChange, WM_CLOSE, 0, 0); /* default win proc will destroy the window */
+
+            rc = RTThreadWait(pThis->Os.hThrdMediaChange, 100, NULL);
+        } while (cTimes-- > 0 && rc == VERR_TIMEOUT);
+
+        if (RT_SUCCESS(rc))
+            pThis->Os.hThrdMediaChange = NIL_RTTHREAD;
+    }
+
     /*
      * Unlock the drive if we've locked it or we're in passthru mode.
      */
