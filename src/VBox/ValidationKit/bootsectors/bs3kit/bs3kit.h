@@ -38,6 +38,21 @@
 #endif
 
 
+/*
+ * Work around ms_abi trouble in the gcc camp (gcc bugzilla #50818).
+ * ASSUMES all va_lists are in functions with
+ */
+#if defined(__GNUC__) && ARCH_BITS == 64
+# undef  va_list
+# undef  va_start
+# undef  va_end
+# undef  va_copy
+# define va_list                    __builtin_ms_va_list
+# define va_start(a_Va, a_Arg)      __builtin_ms_va_start(a_Va, a_Arg)
+# define va_end(a_Va)               __builtin_ms_va_end(a_Va)
+# define va_copy(a_DstVa, a_SrcVa)  __builtin_ms_va_copy(a_DstVa, a_SrcVa)
+#endif
+
 
 /** @def BS3_USE_ALT_16BIT_TEXT_SEG
  * @ingroup grp_bs3kit
