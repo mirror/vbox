@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2016 Oracle Corporation
+ * Copyright (C) 2012-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -94,9 +94,13 @@ public:
 
 protected:
     HRESULT RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource, bool fCopy);
-    HRESULT kerberosLogonInit(KERB_INTERACTIVE_LOGON *pLogonIn,
-                              CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsage,
-                              PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain);
+    HRESULT RTUTF16ToUnicodeA(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource);
+    void UnicodeStringFree(PUNICODE_STRING pUnicode);
+
+    HRESULT kerberosLogonCreate(KERB_INTERACTIVE_LOGON *pLogon,
+                                CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsage,
+                                PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain);
+    void    kerberosLogonDestroy(KERB_INTERACTIVE_LOGON *pLogon);
     HRESULT kerberosLogonSerialize(const KERB_INTERACTIVE_LOGON *pLogon, PBYTE *ppPackage, DWORD *pcbPackage);
 
 private:
