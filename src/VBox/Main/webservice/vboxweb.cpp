@@ -874,7 +874,7 @@ static void doQueuesLoop()
         LogRel(("Failed to set up OpenSSL thread mutex!"));
         exit(RTEXITCODE_FAILURE);
     }
-#endif 
+#endif
 
     // set up gSOAP
     struct soap soap;

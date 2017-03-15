@@ -3228,7 +3228,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     && fSupportsHwVirtEx /* HwVirt needs to be supported by the host
                                             otherwise VMM falls back to raw mode */
                     && fHMEnabled        /* HwVirt needs to be enabled in VM config */)
-                        InsertConfigInteger(pCfg,  "PciPref64Enabled", 1);
+                    InsertConfigInteger(pCfg,  "PciPref64Enabled", 1);
             }
             InsertConfigInteger(pCfg,  "HostBusPciAddress", uHbcPCIAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
