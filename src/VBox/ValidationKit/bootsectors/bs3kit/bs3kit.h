@@ -2986,18 +2986,21 @@ BS3_CMN_PROTO_STUB(void, Bs3TestPrintfV,(const char BS3_FAR *pszFormat, va_list 
 
 /**
  * Equivalent to RTTestIFailed.
+ * @returns false.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestFailed,(const char BS3_FAR *pszMessage));
+BS3_CMN_PROTO_STUB(bool, Bs3TestFailed,(const char BS3_FAR *pszMessage));
 
 /**
  * Equivalent to RTTestIFailedF.
+ * @returns false.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...));
+BS3_CMN_PROTO_STUB(bool, Bs3TestFailedF,(const char BS3_FAR *pszFormat, ...));
 
 /**
  * Equivalent to RTTestIFailedV.
+ * @returns false.
  */
-BS3_CMN_PROTO_STUB(void, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va));
+BS3_CMN_PROTO_STUB(bool, Bs3TestFailedV,(const char BS3_FAR *pszFormat, va_list va));
 
 /**
  * Equivalent to RTTestISkipped.

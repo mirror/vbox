@@ -95,7 +95,7 @@ BS3_DECL_CALLBACK(size_t) bs3TestFailedStrOutput(char ch, void BS3_FAR *pvUser)
  * Equivalent to RTTestIFailedV.
  */
 #undef Bs3TestFailedV
-BS3_CMN_DEF(void, Bs3TestFailedV,(const char *pszFormat, va_list va))
+BS3_CMN_DEF(bool, Bs3TestFailedV,(const char *pszFormat, va_list va))
 {
     BS3TESTFAILEDBUF Buf;
 
@@ -112,6 +112,7 @@ BS3_CMN_DEF(void, Bs3TestFailedV,(const char *pszFormat, va_list va))
     Buf.fNewLine = false;
     Buf.cchBuf   = 0;
     Bs3StrFormatV(pszFormat, va, bs3TestFailedStrOutput, &Buf);
+    return false;
 }
 
 
@@ -119,12 +120,13 @@ BS3_CMN_DEF(void, Bs3TestFailedV,(const char *pszFormat, va_list va))
  * Equivalent to RTTestIFailedF.
  */
 #undef Bs3TestFailedF
-BS3_CMN_DEF(void, Bs3TestFailedF,(const char *pszFormat, ...))
+BS3_CMN_DEF(bool, Bs3TestFailedF,(const char *pszFormat, ...))
 {
     va_list va;
     va_start(va, pszFormat);
     BS3_CMN_NM(Bs3TestFailedV)(pszFormat, va);
     va_end(va);
+    return false;
 }
 
 
@@ -132,8 +134,8 @@ BS3_CMN_DEF(void, Bs3TestFailedF,(const char *pszFormat, ...))
  * Equivalent to RTTestIFailed.
  */
 #undef Bs3TestFailed
-BS3_CMN_DEF(void, Bs3TestFailed,(const char *pszMessage))
+BS3_CMN_DEF(bool, Bs3TestFailed,(const char *pszMessage))
 {
-    BS3_CMN_NM(Bs3TestFailedF)("%s", pszMessage);
+    return BS3_CMN_NM(Bs3TestFailedF)("%s", pszMessage);
 }
 
