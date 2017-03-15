@@ -641,11 +641,11 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
     if (!pszFilenameOrUuid)
         return errorSyntax(USAGE_MODIFYMEDIUM, "Medium name or UUID required");
 
-    if (!fModifyMediumType 
-        && !fModifyAutoReset 
-        && !fModifyProperties 
-        && !fModifyCompact 
-        && !fModifyResize 
+    if (!fModifyMediumType
+        && !fModifyAutoReset
+        && !fModifyProperties
+        && !fModifyCompact
+        && !fModifyResize
         && !fModifyLocation
         && !fModifyDescription)
         return errorSyntax(USAGE_MODIFYMEDIUM, "No operation specified");
