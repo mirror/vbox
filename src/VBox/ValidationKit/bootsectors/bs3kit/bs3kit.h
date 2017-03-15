@@ -37,6 +37,18 @@
 # undef  IN_RING0
 #endif
 
+/*
+ * Make asm.h and friend compatible with our 64-bit assembly config (ASM_CALL64_MSC).
+ */
+#if defined(__GNUC__) && ARCH_BITS == 64
+# undef DECLASM
+# ifdef __cplusplus
+#  define DECLASM(type)             extern "C" type BS3_CALL
+# else
+#  define DECLASM(type)             type BS3_CALL
+# endif
+#endif
+
 
 /*
  * Work around ms_abi trouble in the gcc camp (gcc bugzilla #50818).
