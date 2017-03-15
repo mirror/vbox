@@ -29,7 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_THREAD
-#include <iprt/win/windows.h>
+#include <iprt/nt/nt-and-windows.h>
 
 #include <errno.h>
 #include <process.h>
@@ -275,6 +275,16 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
         return VINF_SUCCESS;
     }
     return RTErrConvertFromErrno(errno);
+}
+
+
+DECLHIDDEN(bool) rtThreadNativeIsAliveKludge(PRTTHREADINT pThread)
+{
+    PPEB_COMMON pPeb = NtCurrentPeb();
+    if (!pPeb || !pPeb->Ldr || !pPeb->Ldr->ShutdownInProgress)
+        return true;
+    DWORD rcWait = WaitForSingleObject((HANDLE)pThread->hThread, 0);
+    return rcWait != WAIT_OBJECT_0;
 }
 
 

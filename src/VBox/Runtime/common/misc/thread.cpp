@@ -1165,10 +1165,23 @@ static int rtThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc, bool f
         {
             if (pThread->fFlags & RTTHREADFLAGS_WAITABLE)
             {
-                if (fAutoResume)
-                    rc = RTSemEventMultiWait(pThread->EventTerminated, cMillies);
+#if defined(IN_RING3) && defined(RT_OS_WINDOWS)
+                if (RT_LIKELY(rtThreadNativeIsAliveKludge(pThread)))
+#endif
+                {
+                    if (fAutoResume)
+                        rc = RTSemEventMultiWait(pThread->EventTerminated, cMillies);
+                    else
+                        rc = RTSemEventMultiWaitNoResume(pThread->EventTerminated, cMillies);
+                }
+#if defined(IN_RING3) && defined(RT_OS_WINDOWS)
                 else
-                    rc = RTSemEventMultiWaitNoResume(pThread->EventTerminated, cMillies);
+                {
+                    rc = VINF_SUCCESS;
+                    if (pThread->rc == VERR_PROCESS_RUNNING)
+                        pThread->rc = VERR_THREAD_IS_DEAD;
+                }
+#endif
                 if (RT_SUCCESS(rc))
                 {
                     if (prc)
