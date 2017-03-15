@@ -656,9 +656,69 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             }
             break;
 
+        case BS3CG1ENC_FIXED_rAX_Iz:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->aOperands[1].off = (uint8_t)off;
+                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                {
+                    *(uint16_t *)&pThis->abCurInstr[off] = UINT16_MAX;
+                    off += 2;
+                    pThis->aOperands[0].cbOp = 2;
+                    pThis->aOperands[1].cbOp = 2;
+                    pThis->cBitsOp = 16;
+                }
+                else
+                {
+                    *(uint32_t *)&pThis->abCurInstr[off] = UINT32_MAX;
+                    off += 4;
+                    pThis->aOperands[0].cbOp = 4;
+                    pThis->aOperands[1].cbOp = 4;
+                    pThis->cBitsOp = 32;
+                }
+            }
+            else if (iEncoding == 1 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                pThis->abCurInstr[0] = P_OZ;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+                pThis->aOperands[1].off = (uint8_t)off;
+                if (!BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                {
+                    *(uint16_t *)&pThis->abCurInstr[off] = UINT16_MAX;
+                    off += 2;
+                    pThis->aOperands[0].cbOp = 2;
+                    pThis->aOperands[1].cbOp = 2;
+                    pThis->cBitsOp = 16;
+                }
+                else
+                {
+                    *(uint32_t *)&pThis->abCurInstr[off] = UINT32_MAX;
+                    off += 4;
+                    pThis->aOperands[0].cbOp = 4;
+                    pThis->aOperands[1].cbOp = 4;
+                    pThis->cBitsOp = 32;
+                }
+            }
+            else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+            {
+                pThis->abCurInstr[0] = REX_W___;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+                pThis->aOperands[1].off = (uint8_t)off;
+                *(uint32_t *)&pThis->abCurInstr[off] = UINT32_MAX;
+                off += 4;
+                pThis->aOperands[0].cbOp = 8;
+                pThis->aOperands[1].cbOp = 4;
+                pThis->cBitsOp = 64;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
         case BS3CG1ENC_MODRM_Ev_Gv:
         case BS3CG1ENC_MODRM_Gv_Ev:
-        case BS3CG1ENC_FIXED_rAX_Iz:
             break;
 
         case BS3CG1ENC_END:
@@ -1341,6 +1401,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     }
 
     Bs3TestSubDone();
+#if 0
+    Bs3TestTerm();
+    Bs3Shutdown();
+#endif
 
     return 0;
 }
