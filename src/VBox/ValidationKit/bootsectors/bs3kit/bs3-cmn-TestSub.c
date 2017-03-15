@@ -65,6 +65,9 @@ BS3_CMN_DEF(void, Bs3TestSubV,(const char *pszFormat, va_list va))
        Bs3PrintChr(' ');
     while (cch++ < 49);
     Bs3PrintStr(" TESTING\n");
+
+    /* The sub-test result is not yet reported. */
+    g_fbBs3SubTestReported = false;
 }
 
 
