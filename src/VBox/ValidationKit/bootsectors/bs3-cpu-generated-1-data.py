@@ -148,7 +148,7 @@ class Bs3Cg1TestEncoder(object):
 
             sOp = oOperation.sOp;
             if sOp == '&|=':
-                sOp = '|=' if len(aaoValues) == 1 else '&=';
+                sOp = '|=' if len(aaoValues) == 1 else '&~=';
 
             for fSignExtend, abValue in aaoValues:
                 cbValue = len(abValue);
@@ -431,8 +431,11 @@ class Bs3CpuGenerated1Generator(object):
             'const char BS3_FAR_DATA g_achBs3Cg1Mnemonics[] = ',
             '{',
         ];
+        fAdvanceMnemonic = True;
         for oInstr in self.aoInstructions:
-            asLines.append('    \"%s\"' % (oInstr.oInstr.sMnemonic,));
+            if fAdvanceMnemonic:
+                asLines.append('    \"%s\"' % (oInstr.oInstr.sMnemonic,));
+            fAdvanceMnemonic = oInstr.fAdvanceMnemonic;
         asLines += [
             '};',
             '',

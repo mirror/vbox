@@ -51,7 +51,10 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @ophints     harmless ignores_op_size
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
- * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
+ * @optest              op1=1   op2=1   -> op1=2   efl&|=nv,pl,nz,na,pe,nc
+ * @optest      efl|=cf op1=1   op2=2   -> op1=3   efl&|=nv,pl,nz,na,po,nc
+ * @optest              op1=254 op2=1   -> op1=255 efl&|=nv,ng,nz,na,po,nc
+ * @optest              op1=128 op2=128 -> op1=0   efl&|=ov,pl,zf,na,po,cf
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {

@@ -578,6 +578,8 @@ class TestType(object):
                 sHex = sHex[:-1];
             assert sHex[:2] == '0x';
             sHex = ''.join([self.kdHexInv[sDigit] for sDigit in sHex[2:]]);
+            if fSignExtend and sHex[0] not in [ '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
+                sHex = 'f' + sHex;
 
         cDigits = len(sHex);
         if cDigits <= self.acbSizes[-1] * 2:
@@ -643,7 +645,7 @@ class TestTypeEflags(TestType):
 
         aoSet = TestType.get(self, '0x%x' % (fSet,));
         if fClear != 0:
-            aoClear = TestType.get(self, '%#x' % (~fClear))
+            aoClear = TestType.get(self, '%#x' % (fClear,))
             assert self.isAndOrPair(sValue) is True;
             return (aoClear[0], aoSet[0]);
         assert self.isAndOrPair(sValue) is False;
@@ -666,7 +668,7 @@ class TestInOut(object):
     """
     ## Assigned operators.
     kasOperators = [
-        '&|=',  # Special AND+OR operator for use with EFLAGS.
+        '&|=',  # Special AND(INV)+OR operator for use with EFLAGS.
         '&~=',
         '&=',
         '|=',
@@ -950,6 +952,7 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
         self.asRawDisParams = [];
         self.sRawIemOpFlags = None;
         self.sRawOldOpcodes = None;
+        self.asCopyTests    = [];
         ## @}
 
     def toString(self, fRepr = False):
@@ -1057,6 +1060,9 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
 
 ## All the instructions.
 g_aoAllInstructions = []; # type: Instruction
+
+## All the instructions indexed by statistics name (opstat).
+g_dAllInstructionsByStat = {}; # type: Instruction
 
 ## Instruction maps.
 g_dInstructionMaps = {
@@ -1187,6 +1193,7 @@ class SimpleParser(object):
             '@opinvalid':   self.parseTagOpUnusedInvalid,
             '@opinvlstyle': self.parseTagOpUnusedInvalid,
             '@optest':      self.parseTagOpTest,
+            '@opcopytests': self.parseTagOpCopyTests,
             '@opstats':     self.parseTagOpStats,
             '@opfunction':  self.parseTagOpFunction,
             '@opdone':      self.parseTagOpDone,
@@ -1341,6 +1348,16 @@ class SimpleParser(object):
             oInstr.aoMaps = [ self.oDefaultMap, ];
         for oMap in oInstr.aoMaps:
             oMap.aoInstructions.append(oInstr);
+
+        #
+        # Check the opstat value and add it to the opstat indexed dictionary.
+        #
+        if oInstr.sStats:
+            if oInstr.sStats not in g_dAllInstructionsByStat:
+                g_dAllInstructionsByStat[oInstr.sStats] = oInstr;
+            else:
+                self.error('Duplicate opstat value "%s"\nnew: %s\nold: %s'
+                           % (oInstr.sStats, oInstr, g_dAllInstructionsByStat[oInstr.sStats],));
 
         #self.debug('%d..%d: %s; %d @op tags' % (oInstr.iLineCreated, oInstr.iLineCompleted, oInstr.sFunction, oInstr.cOpTags));
         return True;
@@ -2057,6 +2074,35 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
+    def parseTagOpCopyTests(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tag:        \@opcopytests
+        Value:      <opstat value> [..]
+        Example:    \@opcopytests add_Eb_Gb
+
+        Trick to avoid duplicating tests for different encodings of the same
+        operation.
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        # Flatten, validate and append the copy job to the instruction.  We execute
+        # them after parsing all the input so we can handle forward references.
+        asToCopy = self.flattenAllSections(aasSections).split();
+        if not asToCopy:
+            return self.errorComment(iTagLine, '%s: requires at least on reference value' % (sTag,));
+        for sToCopy in asToCopy:
+            if sToCopy not in oInstr.asCopyTests:
+                if self.oReStatsName.match(sToCopy):
+                    oInstr.asCopyTests.append(sToCopy);
+                else:
+                    self.errorComment(iTagLine, '%s: invalid instruction reference (opstat) "%s" (valid: %s)'
+                                                % (sTag, sToCopy, self.oReStatsName.pattern));
+            else:
+                self.errorComment(iTagLine, '%s: ignoring duplicate "%s"' % (sTag, sToCopy,));
+
+        _ = iEndLine;
+        return True;
+
     def parseTagOpFunction(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@opfunction
@@ -2610,6 +2656,29 @@ def __parseFileByName(sSrcFile, sDefaultMap):
     return cErrors;
 
 
+def __doTestCopying():
+    """
+    Executes the asCopyTests instructions.
+    """
+    asErrors = [];
+    for oDstInstr in g_aoAllInstructions:
+        if oDstInstr.asCopyTests:
+            for sSrcInstr in oDstInstr.asCopyTests:
+                oSrcInstr = g_dAllInstructionsByStat.get(sSrcInstr, None);
+                if oSrcInstr and oSrcInstr != oDstInstr:
+                    oDstInstr.aoTests.extend(oSrcInstr.aoTests);
+                elif oSrcInstr:
+                    asErrors.append('%s:%s: error: @opcopytests reference "%s" matches the destination\n'
+                                    % ( oDstInstr.sSrcFile, oDstInstr.iLineCreated, sSrcInstr));
+                else:
+                    asErrors.append('%s:%s: error: @opcopytests reference "%s" not found\n'
+                                    % ( oDstInstr.sSrcFile, oDstInstr.iLineCreated, sSrcInstr));
+
+    if asErrors:
+        sys.stderr.write(u''.join(asErrors));
+    return len(asErrors);
+
+
 def __parseAll():
     """
     Parses all the IEMAllInstruction*.cpp.h files.
@@ -2623,6 +2692,8 @@ def __parseAll():
         #( 'two0f',  'IEMAllInstructionsTwoByte0f.cpp.h'),
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
+    cErrors += __doTestCopying();
+
 
     if cErrors != 0:
         #raise Exception('%d parse errors' % (cErrors,));

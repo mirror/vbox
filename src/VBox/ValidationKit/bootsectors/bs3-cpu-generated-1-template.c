@@ -998,8 +998,8 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
 #ifdef BS3CG1_DEBUG_CTX_MOD
             switch (cbDst)
             {
-                case 1:  BS3CG1_DPRINTF(("dbg:    --> %s: %#04RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu8));   break;
-                case 2:  BS3CG1_DPRINTF(("dbg:    --> %s: %#06RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu16));  break;
+                case 1:  BS3CG1_DPRINTF(("dbg:    --> %s: %#04RX8\n",   g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu8));  break;
+                case 2:  BS3CG1_DPRINTF(("dbg:    --> %s: %#06RX16\n",  g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu16)); break;
                 case 4:  BS3CG1_DPRINTF(("dbg:    --> %s: %#010RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu32)); break;
                 default: BS3CG1_DPRINTF(("dbg:    --> %s: %#018RX64\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu64)); break;
             }
@@ -1227,7 +1227,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                                 if (BS3_MODE_IS_PAGED(bMode))
                                     This.Ctx.cr2.u = This.uCodePgFlat + X86_PAGE_SIZE;
                                 This.Ctx.rflags.u32 &= ~X86_EFL_RF;
-                                This.Ctx.rflags.u32 |= X86_EFL_RF & This.TrapFrame.Ctx.rflags.u32;
+                                This.Ctx.rflags.u32 |= This.TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
                                 if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
                                                              pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                              &This.TrapFrame.Ctx))
