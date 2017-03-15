@@ -234,6 +234,7 @@ static const uint8_t g_cbBs3Cg1DstFields[] =
     /* [BS3CG1DST_OP3] = */     BS3CG1DSTSIZE_OPERAND,
     /* [BS3CG1DST_OP4] = */     BS3CG1DSTSIZE_OPERAND,
     /* [BS3CG1DST_EFL] = */     4,
+    /* [BS3CG1DST_EFL_UNDEF]=*/ 4,
 
     /* [BS3CG1DST_AL] = */      1,
     /* [BS3CG1DST_CL] = */      1,
@@ -335,6 +336,7 @@ static const unsigned g_offBs3Cg1DstFields[] =
     /* [BS3CG1DST_OP3] = */     ~0U,
     /* [BS3CG1DST_OP4] = */     ~0U,
     /* [BS3CG1DST_EFL] = */     RT_OFFSETOF(BS3REGCTX, rflags),
+    /* [BS3CG1DST_EFL_UNDEF]=*/ ~0, /* special field */
 
     /* [BS3CG1DST_AL] = */      RT_OFFSETOF(BS3REGCTX, rax.u8),
     /* [BS3CG1DST_CL] = */      RT_OFFSETOF(BS3REGCTX, rcx.u8),
@@ -632,13 +634,16 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
  * Runs a context modifier program.
  *
  * @returns Success indicator (true/false).
- * @param   pThis   The state.
- * @param   pCtx    The context.
- * @param   pHdr    The program header.
- * @param   off     The program offset relative to the end of the header.
- * @param   cb      The program size.
+ * @param   pThis       The state.
+ * @param   pCtx        The context.
+ * @param   pHdr        The program header.
+ * @param   off         The program offset relative to the end of the header.
+ * @param   cb          The program size.
+ * @param   pEflCtx     The context to take undefined EFLAGS from.  (This is NULL
+ *                      if we're processing a input context modifier program.)
  */
-static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3CG1TESTHDR pHdr, unsigned off, unsigned cb)
+static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3CG1TESTHDR pHdr, unsigned off, unsigned cb,
+                                     PCBS3REGCTX pEflCtx)
 {
     uint8_t const BS3_FAR *pbCode = (uint8_t const BS3_FAR *)(pHdr + 1) + off;
     int                    cbLeft = cb;
@@ -781,6 +786,17 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
             /* Find the field. */
             if (offField < sizeof(BS3REGCTX))
                 PtrField.pu8 = (uint8_t BS3_FAR *)pCtx + offField;
+            /* Special field: Copying in undefined EFLAGS from the result context. */
+            else if (idxField == BS3CG1DST_EFL_UNDEF)
+            {
+                if (!pEflCtx || (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK) != BS3CG1_CTXOP_ASSIGN)
+                {
+                    Bs3TestFailed("Invalid BS3CG1DST_EFL_UNDEF usage");
+                    return false;
+                }
+                PtrField.pu32 = &pCtx->rflags.u32;
+                uValue = (*PtrField.pu32 & ~(uint32_t)uValue) | (pEflCtx->rflags.u32 & (uint32_t)uValue);
+            }
             //@todo else if (idxField <= BS3CG1DST_OP4)
             //@todo {
             //@todo
@@ -1043,7 +1059,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                         Bs3MemCpy(pbCode, This.abCurInstr, This.cbCurInstr);
                         This.Ctx.rip.u = BS3_FP_OFF(pbCode);
 
-                        if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput))
+                        if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL))
                         {
                             /* Run the instruction. */
                             BS3CG1_DPRINTF(("dbg:  Running test #%u\n", This.iTest));
@@ -1052,12 +1068,13 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                             BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n", This.TrapFrame.bXcpt, This.Ctx.rip.u, This.TrapFrame.Ctx.rip.u));
 
                             /* Check the control exception result first. */
-                            if (   This.TrapFrame.bXcpt == (BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD)
+                            if (   This.TrapFrame.bXcpt     == (BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD)
                                 && This.TrapFrame.Ctx.rip.u == This.Ctx.rip.u + This.cbCurInstr)
                             {
                                 /* Apply output modifications and compare the contexts. */
                                 if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
-                                                             pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput))
+                                                             pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
+                                                             &This.TrapFrame.Ctx))
                                 {
                                     Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx, This.cbCurInstr,  0 /*cbSpAdjust*/,
                                                          0 /*fExtraEfl*/, pszMode, iEncoding);

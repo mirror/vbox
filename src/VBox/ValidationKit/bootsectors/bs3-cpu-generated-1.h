@@ -200,6 +200,7 @@ typedef enum BS3CG1DST
     BS3CG1DST_OP4,
     /* Flags. */
     BS3CG1DST_EFL,
+    BS3CG1DST_EFL_UNDEF, /**< Special field only valid in output context modifiers: EFLAGS |= Value & Ouput.EFLAGS; */
     /* 8-bit GPRs. */
     BS3CG1DST_AL,
     BS3CG1DST_CL,
