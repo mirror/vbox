@@ -75,6 +75,52 @@ g_kdX86EFlagsConstants = {
     'X86_EFL_RA1_MASK':    0x00000002, # RT_BIT_32(1)
 };
 
+## EFlags values allowed in \@opfltest, \@opflmodify, \@opflundef, \@opflset, and \@opflclear.
+g_kdEFlagsMnemonics = {
+    # Debugger flag notation:
+    'ov':   'X86_EFL_OF',   ##< OVerflow.
+    'nv':  '!X86_EFL_OF',   ##< No Overflow.
+
+    'ng':   'X86_EFL_SF',   ##< NeGative (sign).
+    'pl':  '!X86_EFL_SF',   ##< PLuss (sign).
+
+    'zr':   'X86_EFL_ZF',   ##< ZeRo.
+    'nz':  '!X86_EFL_ZF',   ##< No Zero.
+
+    'af':   'X86_EFL_AF',   ##< Aux Flag.
+    'na':  '!X86_EFL_AF',   ##< No Aux.
+
+    'po':   'X86_EFL_PF',   ##< Parity Pdd.
+    'pe':  '!X86_EFL_PF',   ##< Parity Even.
+
+    'cf':   'X86_EFL_CF',   ##< Carry Flag.
+    'nc':  '!X86_EFL_CF',   ##< No Carry.
+
+    'ei':   'X86_EFL_IF',   ##< Enabled Interrupts.
+    'di':  '!X86_EFL_IF',   ##< Disabled Interrupts.
+
+    'dn':   'X86_EFL_DF',   ##< DowN (string op direction).
+    'up':  '!X86_EFL_DF',   ##< UP (string op direction).
+
+    'vip':  'X86_EFL_VIP',  ##< Virtual Interrupt Pending.
+    'vif':  'X86_EFL_VIF',  ##< Virtual Interrupt Flag.
+    'ac':   'X86_EFL_AC',   ##< Alignment Check.
+    'vm':   'X86_EFL_VM',   ##< Virtual-8086 Mode.
+    'rf':   'X86_EFL_RF',   ##< Resume Flag.
+    'nt':   'X86_EFL_NT',   ##< Nested Task.
+    'tf':   'X86_EFL_TF',   ##< Trap flag.
+
+    # Reference manual notation:
+    'of':   'X86_EFL_OF',
+    'sf':   'X86_EFL_SF',
+    'zf':   'X86_EFL_ZF',
+    'pf':   'X86_EFL_PF',
+    'if':   'X86_EFL_IF',
+    'df':   'X86_EFL_DF',
+    'iopl': 'X86_EFL_IOPL',
+    'id':   'X86_EFL_ID',
+};
+
 ## \@op[1-4] locations
 g_kdOpLocations = {
     'reg':      [], ## modrm.reg
@@ -587,7 +633,7 @@ class TestTypeEflags(TestType):
         fClear = 0;
         fSet   = 0;
         for sFlag in sValue.split(','):
-            sConstant = SimpleParser.kdEFlags.get(sFlag, None);
+            sConstant = g_kdEFlagsMnemonics.get(sFlag, None);
             if sConstant is None:
                 raise self.BadValue('Unknown flag "%s" in "%s"' % (sFlag, sValue))
             if sConstant[0] == '!':
@@ -642,6 +688,7 @@ class TestInOut(object):
         'op4':      ( 'uint', '', ), ## \@op4
         # Flags.
         'efl':      ( 'efl',  '', ),
+        'efl_undef': ( 'uint',  '', ),
         # 8-bit GPRs.
         'al':       ( 'uint', '', ),
         'cl':       ( 'uint', '', ),
@@ -822,10 +869,10 @@ class InstructionTest(object):
     """
 
     def __init__(self, oInstr): # type: (InstructionTest, Instruction)
-        self.oInstr         = oInstr; # type: InstructionTest
-        self.aoInputs       = [];
-        self.aoOutputs      = [];
-        self.aoSelectors    = []; # type: list(TestSelector)
+        self.oInstr         = oInstr;   # type: InstructionTest
+        self.aoInputs       = [];       # type: TestInOut
+        self.aoOutputs      = [];       # type: TestInOut
+        self.aoSelectors    = [];       # type: list(TestSelector)
 
 
 class Operand(object):
@@ -974,6 +1021,38 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
 
         raise Exception('unsupported opcode byte spec "%s" for %s' % (sOpcode, self,));
 
+    @staticmethod
+    def _flagsToIntegerMask(asFlags):
+        """
+        Returns the integer mask value for asFlags.
+        """
+        uRet = 0;
+        if asFlags:
+            for sFlag in asFlags:
+                sConstant = g_kdEFlagsMnemonics[sFlag];
+                assert sConstant[0] != '!', sConstant
+                uRet |= g_kdX86EFlagsConstants[sConstant];
+        return uRet;
+
+    def getTestedFlagsMask(self):
+        """ Returns asFlTest into a integer mask value """
+        return self._flagsToIntegerMask(self.asFlTest);
+
+    def getModifiedFlagsMask(self):
+        """ Returns asFlModify into a integer mask value """
+        return self._flagsToIntegerMask(self.asFlModify);
+
+    def getUndefinedFlagsMask(self):
+        """ Returns asFlUndefined into a integer mask value """
+        return self._flagsToIntegerMask(self.asFlUndefined);
+
+    def getSetFlagsMask(self):
+        """ Returns asFlSet into a integer mask value """
+        return self._flagsToIntegerMask(self.asFlSet);
+
+    def getClearedFlagsMask(self):
+        """ Returns asFlClear into a integer mask value """
+        return self._flagsToIntegerMask(self.asFlClear);
 
 
 ## All the instructions.
@@ -1606,52 +1685,6 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
-    ## EFlags values allowed in \@opfltest, \@opflmodify, \@opflundef, \@opflset, and \@opflclear.
-    kdEFlags = {
-        # Debugger flag notation:
-        'ov':   'X86_EFL_OF',   ##< OVerflow.
-        'nv':  '!X86_EFL_OF',   ##< No Overflow.
-
-        'ng':   'X86_EFL_SF',   ##< NeGative (sign).
-        'pl':  '!X86_EFL_SF',   ##< PLuss (sign).
-
-        'zr':   'X86_EFL_ZF',   ##< ZeRo.
-        'nz':  '!X86_EFL_ZF',   ##< No Zero.
-
-        'af':   'X86_EFL_AF',   ##< Aux Flag.
-        'na':  '!X86_EFL_AF',   ##< No Aux.
-
-        'po':   'X86_EFL_PF',   ##< Parity Pdd.
-        'pe':  '!X86_EFL_PF',   ##< Parity Even.
-
-        'cf':   'X86_EFL_CF',   ##< Carry Flag.
-        'nc':  '!X86_EFL_CF',   ##< No Carry.
-
-        'ei':   'X86_EFL_IF',   ##< Enabled Interrupts.
-        'di':  '!X86_EFL_IF',   ##< Disabled Interrupts.
-
-        'dn':   'X86_EFL_DF',   ##< DowN (string op direction).
-        'up':  '!X86_EFL_DF',   ##< UP (string op direction).
-
-        'vip':  'X86_EFL_VIP',  ##< Virtual Interrupt Pending.
-        'vif':  'X86_EFL_VIF',  ##< Virtual Interrupt Flag.
-        'ac':   'X86_EFL_AC',   ##< Alignment Check.
-        'vm':   'X86_EFL_VM',   ##< Virtual-8086 Mode.
-        'rf':   'X86_EFL_RF',   ##< Resume Flag.
-        'nt':   'X86_EFL_NT',   ##< Nested Task.
-        'tf':   'X86_EFL_TF',   ##< Trap flag.
-
-        # Reference manual notation:
-        'of':   'X86_EFL_OF',
-        'sf':   'X86_EFL_SF',
-        'zf':   'X86_EFL_ZF',
-        'pf':   'X86_EFL_PF',
-        'if':   'X86_EFL_IF',
-        'df':   'X86_EFL_DF',
-        'iopl': 'X86_EFL_IOPL',
-        'id':   'X86_EFL_ID',
-    };
-
     ## EFlags tag to Instruction attribute name.
     kdOpFlagToAttr = {
         '@opfltest':    'asFlTest',
@@ -1676,8 +1709,8 @@ class SimpleParser(object):
         else:
             fRc = True;
             for iFlag, sFlag in enumerate(asFlags):
-                if sFlag not in self.kdEFlags:
-                    if sFlag.strip() in self.kdEFlags:
+                if sFlag not in g_kdEFlagsMnemonics:
+                    if sFlag.strip() in g_kdEFlagsMnemonics:
                         asFlags[iFlag] = sFlag.strip();
                     else:
                         fRc = self.errorComment(iTagLine, '%s: invalid EFLAGS value: %s' % (sTag, sFlag,));
@@ -1989,11 +2022,11 @@ class SimpleParser(object):
                                         if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '&|=':
                                             oItem = TestInOut(sField, sOp, sValue, sType);
                                         else:
-                                            self.errorComment(iTagLine, '%s: and-or %s value "%s" can only be used with the "="'
+                                            self.errorComment(iTagLine, '%s: and-or %s value "%s" can only be used with "&|="'
                                                                         % ( sTag, sDesc, sItem, ));
                                     else:
-                                        self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s)'
-                                                                    % ( sTag, sDesc, sValue, sItem, sType, ));
+                                        self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s): %s'
+                                                                    % ( sTag, sDesc, sValue, sItem, sType, oValid, ));
                                 else:
                                     self.errorComment(iTagLine, '%s: invalid %s type "%s" in "%s" (valid types: %s)'
                                                                  % ( sTag, sDesc, sType, sItem, TestInOut.kdTypes.keys(),));

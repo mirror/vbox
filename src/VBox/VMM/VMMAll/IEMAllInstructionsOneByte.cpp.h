@@ -51,7 +51,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @ophints     harmless ignores_op_size
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
- * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
+ * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
 {
@@ -100,7 +100,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
  * @opcode      0x04
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
- * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
+ * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
 {
@@ -113,7 +113,7 @@ FNIEMOP_DEF(iemOp_add_Al_Ib)
  * @opcode      0x05
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
- * @optest      op1=1 op2=1 -> op1=2 efl=of,sf,zf,af
+ * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
  */
 FNIEMOP_DEF(iemOp_add_eAX_Iz)
 {
@@ -296,8 +296,8 @@ FNIEMOP_DEF(iemOp_2byteEscape)
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
  * @opflmodify  of,sf,zf,af,pf,cf
- * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=of,sf,zf,af
- * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=of,sf,zf,af
+ * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,nv,pl,nz,na,pe
+ * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,nv,pl,nz,na,po
  */
 FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 {

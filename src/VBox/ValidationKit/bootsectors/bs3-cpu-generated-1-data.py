@@ -103,6 +103,39 @@ class Bs3Cg1TestEncoder(object):
     };
 
     @staticmethod
+    def _amendOutputs(aoOutputs, oInstr): # type: (list(iai.TestInOut), iai.Instruction) -> list(iai.TestInOut)
+        """
+        Amends aoOutputs for instructions with special flag behaviour (undefined,
+        always set, always clear).
+
+        Undefined flags are copied from the result context as the very first
+        operation so they can be set to CPU vendor specific values later if
+        desired.
+
+        Always set or cleared flags are applied at the very end of the
+        modification operations so that we spot incorrect specifications.
+        """
+        if oInstr.asFlUndefined or oInstr.asFlClear or oInstr.asFlSet:
+            aoOutputs = list(aoOutputs);
+
+            if oInstr.asFlUndefined:
+                fFlags = oInstr.getUndefinedFlagsMask();
+                assert fFlags != 0;
+                aoOutputs.insert(0, iai.TestInOut('efl_undef', '=', fFlags, 'uint'));
+
+            if oInstr.asFlClear:
+                fFlags = oInstr.getClearedFlagsMask();
+                assert fFlags != 0;
+                aoOutputs.append(iai.TestInOut('efl', '&~=', fFlags, 'uint'));
+
+            if oInstr.asFlSet:
+                fFlags = oInstr.getSetFlagsMask();
+                assert fFlags != 0;
+                aoOutputs.append(iai.TestInOut('efl', '|=', fFlags, 'uint'));
+
+        return aoOutputs;
+
+    @staticmethod
     def _compileContextModifers(aoOperations): # (list(iai.TestInOut))
         """
         Compile a list of iai.TestInOut context modifiers.
@@ -115,7 +148,7 @@ class Bs3Cg1TestEncoder(object):
 
             sOp = oOperation.sOp;
             if sOp == '&|=':
-                sOp = '|=' if len(aaoValues) == 1 else '&~=';
+                sOp = '|=' if len(aaoValues) == 1 else '&=';
 
             for fSignExtend, abValue in aaoValues:
                 cbValue = len(abValue);
@@ -183,7 +216,7 @@ class Bs3Cg1TestEncoder(object):
         """
         self.asSelectors = self._compileSelectors(oTest.aoSelectors);
         self.asInputs    = self._compileContextModifers(oTest.aoInputs);
-        self.asOutputs   = self._compileContextModifers(oTest.aoOutputs);
+        self.asOutputs   = self._compileContextModifers(self._amendOutputs(oTest.aoOutputs, oTest.oInstr));
         self.asHdr       = self._constructHeader();
 
 

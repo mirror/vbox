@@ -80,6 +80,8 @@
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
 
+#define BS3CG1_DEBUG_CTX_MOD
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -169,6 +171,8 @@ typedef struct BS3CG1STATE
     /** Page to put code in.  When paging is enabled, the page before and after
      * are marked not-present. */
     uint8_t BS3_FAR        *pbCodePg;
+    /** The flat address corresponding to pbCodePg.  */
+    uintptr_t               uCodePgFlat;
     /** Page for placing data operands in.  When paging is enabled, the page before
      * and after are marked not-present.  */
     uint8_t BS3_FAR        *pbDataPg;
@@ -225,7 +229,7 @@ typedef BS3CG1STATE *PBS3CG1STATE;
 *********************************************************************************************************************************/
 /** Destination field sizes indexed by bBS3CG1DST.
  * Zero means operand size sized.  */
-static const uint8_t g_cbBs3Cg1DstFields[] =
+static const uint8_t g_acbBs3Cg1DstFields[] =
 {
     /* [BS3CG1DST_INVALID] = */ BS3CG1DSTSIZE_OPERAND,
 
@@ -328,7 +332,7 @@ static const uint8_t g_cbBs3Cg1DstFields[] =
 
 /** Destination field offset indexed by bBS3CG1DST.
  * Zero means operand size sized.  */
-static const unsigned g_offBs3Cg1DstFields[] =
+static const unsigned g_aoffBs3Cg1DstFields[] =
 {
     /* [BS3CG1DST_INVALID] = */ ~0U,
     /* [BS3CG1DST_OP1] = */     ~0U,
@@ -427,6 +431,110 @@ static const unsigned g_offBs3Cg1DstFields[] =
     /* [BS3CG1DST_OZ_R14] = */  RT_OFFSETOF(BS3REGCTX, r14),
     /* [BS3CG1DST_OZ_R15] = */  RT_OFFSETOF(BS3REGCTX, r15),
 };
+
+#ifdef BS3CG1_DEBUG_CTX_MOD
+/** Destination field names. */
+static const struct { char sz[8]; } g_aszBs3Cg1DstFields[] =
+{
+    { "INVALID" },
+    { "OP1" },
+    { "OP2" },
+    { "OP3" },
+    { "OP4" },
+    { "EFL" },
+    { "EFL_UND" },
+
+    { "AL" },
+    { "CL" },
+    { "DL" },
+    { "BL" },
+    { "AH" },
+    { "CH" },
+    { "DH" },
+    { "BH" },
+    { "SPL" },
+    { "BPL" },
+    { "SIL" },
+    { "DIL" },
+    { "R8L" },
+    { "R9L" },
+    { "R10L" },
+    { "R11L" },
+    { "R12L" },
+    { "R13L" },
+    { "R14L" },
+    { "R15L" },
+
+    { "AX" },
+    { "CX" },
+    { "DX" },
+    { "BX" },
+    { "SP" },
+    { "BP" },
+    { "SI" },
+    { "DI" },
+    { "R8W" },
+    { "R9W" },
+    { "R10W" },
+    { "R11W" },
+    { "R12W" },
+    { "R13W" },
+    { "R14W" },
+    { "R15W" },
+
+    { "EAX" },
+    { "ECX" },
+    { "EDX" },
+    { "EBX" },
+    { "ESP" },
+    { "EBP" },
+    { "ESI" },
+    { "EDI" },
+    { "R8D" },
+    { "R9D" },
+    { "R10D" },
+    { "R11D" },
+    { "R12D" },
+    { "R13D" },
+    { "R14D" },
+    { "R15D" },
+
+    { "RAX" },
+    { "RCX" },
+    { "RDX" },
+    { "RBX" },
+    { "RSP" },
+    { "RBP" },
+    { "RSI" },
+    { "RDI" },
+    { "R8" },
+    { "R9" },
+    { "R10" },
+    { "R11" },
+    { "R12" },
+    { "R13" },
+    { "R14" },
+    { "R15" },
+
+    { "OZ_RAX" },
+    { "OZ_RCX" },
+    { "OZ_RDX" },
+    { "OZ_RBX" },
+    { "OZ_RSP" },
+    { "OZ_RBP" },
+    { "OZ_RSI" },
+    { "OZ_RDI" },
+    { "OZ_R8" },
+    { "OZ_R9" },
+    { "OZ_R10" },
+    { "OZ_R11" },
+    { "OZ_R12" },
+    { "OZ_R13" },
+    { "OZ_R14" },
+    { "OZ_R15" },
+};
+
+#endif
 
 #if 0
 static const struct
@@ -737,14 +845,14 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
         /*
          * Do value processing specific to the target field size.
          */
-        cbDst = g_cbBs3Cg1DstFields[idxField];
+        cbDst = g_acbBs3Cg1DstFields[idxField];
         if (cbDst == BS3CG1DSTSIZE_OPERAND)
             cbDst = pThis->aOperands[idxField - BS3CG1DST_OP1].cbOp;
         else if (cbDst == BS3CG1DSTSIZE_OPERAND_SIZE_GRP)
             cbDst = pThis->cBitsOp / 8;
         if (cbDst <= 8)
         {
-            unsigned const offField = g_offBs3Cg1DstFields[idxField];
+            unsigned const offField = g_aoffBs3Cg1DstFields[idxField];
             BS3PTRUNION    PtrField;
 
             /*
@@ -807,6 +915,38 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                 return false;
             }
 
+#ifdef BS3CG1_DEBUG_CTX_MOD
+            {
+                const char BS3_FAR *pszOp;
+                switch (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK)
+                {
+                    case BS3CG1_CTXOP_ASSIGN:   pszOp = "="; break;
+                    case BS3CG1_CTXOP_OR:       pszOp = "|="; break;
+                    case BS3CG1_CTXOP_AND:      pszOp = "&="; break;
+                    case BS3CG1_CTXOP_AND_INV:  pszOp = "&~="; break;
+                }
+                switch (cbDst)
+                {
+                    case 1:
+                        BS3CG1_DPRINTF(("dbg: modify %s: %#04RX8 (LB %u) %s %#RX64 (LB %u)\n",
+                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu8, cbDst, pszOp, uValue, cbValue));
+                        break;
+                    case 2:
+                        BS3CG1_DPRINTF(("dbg: modify %s: %#06RX16 (LB %u) %s %#RX64 (LB %u)\n",
+                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu16, cbDst, pszOp, uValue, cbValue));
+                        break;
+                    case 4:
+                        BS3CG1_DPRINTF(("dbg: modify %s: %#010RX32 (LB %u) %s %#RX64 (LB %u)\n",
+                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu32, cbDst, pszOp, uValue, cbValue));
+                        break;
+                    default:
+                        BS3CG1_DPRINTF(("dbg: modify %s: %#018RX64 (LB %u) %s %#RX64 (LB %u)\n",
+                                        g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu64, cbDst, pszOp, uValue, cbValue));
+                        break;
+                }
+            }
+#endif
+
             /* Modify the field. */
             switch (cbDst)
             {
@@ -854,6 +994,17 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     Bs3TestFailedF("Malformed context instruction: cbDst=%u, expected 1, 2, 4, or 8", cbDst);
                     return false;
             }
+
+#ifdef BS3CG1_DEBUG_CTX_MOD
+            switch (cbDst)
+            {
+                case 1:  BS3CG1_DPRINTF(("dbg:    --> %s: %#04RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu8));   break;
+                case 2:  BS3CG1_DPRINTF(("dbg:    --> %s: %#06RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu16));  break;
+                case 4:  BS3CG1_DPRINTF(("dbg:    --> %s: %#010RX32\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu32)); break;
+                default: BS3CG1_DPRINTF(("dbg:    --> %s: %#018RX64\n", g_aszBs3Cg1DstFields[idxField].sz, *PtrField.pu64)); break;
+            }
+#endif
+
         }
         /*
          * Deal with larger field (FPU, SSE, AVX, ...).
@@ -931,6 +1082,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
             return 0;
         }
     }
+    This.uCodePgFlat = Bs3SelPtrToFlat(This.pbCodePg);
 
     /* Create basic context for each target ring.  In protected 16-bit code we need
        set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
@@ -1049,7 +1201,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
                         Bs3MemCpy(&This.Ctx, &This.aInitialCtxs[iRing], sizeof(This.Ctx));
                         if (BS3_MODE_IS_PAGED(bMode))
-                            pbCode = &This.pbCodePg[This.cbCurInstr];
+                            pbCode = &This.pbCodePg[X86_PAGE_SIZE - This.cbCurInstr];
                         else
                         {
                             pbCode = This.pbCodePg;
@@ -1072,6 +1224,10 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                                 && This.TrapFrame.Ctx.rip.u == This.Ctx.rip.u + This.cbCurInstr)
                             {
                                 /* Apply output modifications and compare the contexts. */
+                                if (BS3_MODE_IS_PAGED(bMode))
+                                    This.Ctx.cr2.u = This.uCodePgFlat + X86_PAGE_SIZE;
+                                This.Ctx.rflags.u32 &= ~X86_EFL_RF;
+                                This.Ctx.rflags.u32 |= X86_EFL_RF & This.TrapFrame.Ctx.rflags.u32;
                                 if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
                                                              pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                              &This.TrapFrame.Ctx))
@@ -1082,7 +1238,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                             }
                             else
                             {
-                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64 encoding: %.*Rhxs",
+                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding: %.*Rhxs",
                                                This.TrapFrame.bXcpt, BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD,
                                                This.TrapFrame.Ctx.rip.u, This.Ctx.rip.u + This.cbCurInstr,
                                                This.cbCurInstr, This.abCurInstr);
@@ -1118,6 +1274,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         Bs3MemFree(This.pbCodePg, X86_PAGE_SIZE);
         Bs3MemFree(This.pbDataPg, X86_PAGE_SIZE);
     }
+
+    Bs3TestSubDone();
 
     return 0;
 }
