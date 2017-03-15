@@ -74,9 +74,9 @@
 /** @def  BS3CG1_DPRINTF
  * Debug print macro.
  */
-#if 0
+#if 1
 # define BS3CG1_DPRINTF(a_ArgList) Bs3TestPrintf a_ArgList
-# define BS3CG1_DEBUG_CTX_MOD
+//# define BS3CG1_DEBUG_CTX_MOD
 #else
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
@@ -86,6 +86,16 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
+/** Operand value location. */
+typedef enum BS3CG1OPLOC
+{
+    BS3CG1OPLOC_INVALID = 0,
+    BS3CG1OPLOC_CTX,
+    BS3CG1OPLOC_IMM,
+    BS3CG1OPLOC_MEM,
+    BS3CG1OPLOC_END
+} BS3CG1OPLOC;
+
 /**
  * The state.
  */
@@ -161,10 +171,15 @@ typedef struct BS3CG1STATE
     struct
     {
         uint8_t             cbOp;
-        bool                fMem;
+        /** BS3CG1OPLOC_XXX. */
+        uint8_t             enmLocation;
         /** The BS3CG1DST value for this field.
          * Set to BS3CG1DST_INVALID if memory.  */
         uint8_t             idxField;
+        /** Depends on enmLocation.
+         * - BS3CG1OPLOC_IMM: offset relative to start of the instruction.
+         */
+        uint8_t             off;
     } aOperands[4];
     /** @} */
 
@@ -630,9 +645,19 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             }
             break;
 
+        case BS3CG1ENC_FIXED_AL_Ib:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->aOperands[1].off = (uint8_t)off;
+                pThis->abCurInstr[off++] = 0xff;
+                pThis->cbCurInstr = off;
+                iEncoding++;
+            }
+            break;
+
         case BS3CG1ENC_MODRM_Ev_Gv:
         case BS3CG1ENC_MODRM_Gv_Ev:
-        case BS3CG1ENC_FIXED_AL_Ib:
         case BS3CG1ENC_FIXED_rAX_Iz:
             break;
 
@@ -670,8 +695,8 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRegOp = 1;
             pThis->aOperands[0].cbOp = 1;
             pThis->aOperands[1].cbOp = 1;
-            pThis->aOperands[0].fMem = false;
-            pThis->aOperands[1].fMem = false;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Ev_Gv:
@@ -679,8 +704,8 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRegOp = 1;
             pThis->aOperands[0].cbOp = 2;
             pThis->aOperands[1].cbOp = 2;
-            pThis->aOperands[0].fMem = false;
-            pThis->aOperands[1].fMem = false;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Gb_Eb:
@@ -688,8 +713,8 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRegOp = 0;
             pThis->aOperands[0].cbOp = 1;
             pThis->aOperands[1].cbOp = 1;
-            pThis->aOperands[0].fMem = false;
-            pThis->aOperands[1].fMem = false;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_MODRM_Gv_Ev:
@@ -697,19 +722,31 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->iRegOp = 0;
             pThis->aOperands[0].cbOp = 2;
             pThis->aOperands[1].cbOp = 2;
-            pThis->aOperands[0].fMem = false;
-            pThis->aOperands[1].fMem = false;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
             break;
 
         case BS3CG1ENC_FIXED_AL_Ib:
+            pThis->aOperands[0].cbOp = 1;
+            pThis->aOperands[1].cbOp = 1;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_IMM;
+            pThis->aOperands[0].idxField    = BS3CG1DST_AL;
+            pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
             break;
+
         case BS3CG1ENC_FIXED_rAX_Iz:
+            pThis->aOperands[0].cbOp = 2;
+            pThis->aOperands[1].cbOp = 2;
+            pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
+            pThis->aOperands[1].enmLocation = BS3CG1OPLOC_IMM;
+            pThis->aOperands[0].idxField    = BS3CG1DST_OZ_RAX;
+            pThis->aOperands[1].idxField    = BS3CG1DST_INVALID;
             break;
 
         default:
-            Bs3TestFailedF("Invalid enmEncoding for instruction #%u (%.*s): %d",
-                           pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic, pThis->enmEncoding);
-            return false;
+            return Bs3TestFailedF("Invalid enmEncoding for instruction #%u (%.*s): %d",
+                                  pThis->iInstr, pThis->cchMnemonic, pThis->pchMnemonic, pThis->enmEncoding);
     }
     return true;
 }
@@ -761,8 +798,7 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
 
 #undef CASE_PRED
             default:
-                Bs3TestFailedF("Invalid selector opcode %#x!", pbCode[-1]);
-                return false;
+                return Bs3TestFailedF("Invalid selector opcode %#x!", pbCode[-1]);
         }
     }
 
@@ -781,9 +817,12 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
  * @param   cb          The program size.
  * @param   pEflCtx     The context to take undefined EFLAGS from.  (This is NULL
  *                      if we're processing a input context modifier program.)
+ * @param   pbInstr     Points to the first instruction byte.  For storing
+ *                      immediate operands during input context modification.
+ *                      NULL for output contexts.
  */
 static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3CG1TESTHDR pHdr, unsigned off, unsigned cb,
-                                     PCBS3REGCTX pEflCtx)
+                                     PCBS3REGCTX pEflCtx, uint8_t BS3_FAR *pbInstr)
 {
     uint8_t const BS3_FAR *pbCode = (uint8_t const BS3_FAR *)(pHdr + 1) + off;
     int                    cbLeft = cb;
@@ -832,13 +871,11 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     }
                     else if (idxField < BS3CG1DST_END)
                         break;
-                    Bs3TestFailedF("Malformed context instruction: idxField=%d", idxField);
-                    return false;
+                    return Bs3TestFailedF("Malformed context instruction: idxField=%d", idxField);
                 }
                 /* fall thru */
             default:
-                Bs3TestFailed("Malformed context instruction: Destination");
-                return false;
+                return Bs3TestFailed("Malformed context instruction: Destination");
         }
 
 
@@ -861,18 +898,14 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                 }
                 /* fall thru */
             default:
-                Bs3TestFailed("Malformed context instruction: size");
-                return false;
+                return Bs3TestFailed("Malformed context instruction: size");
         }
 
         /* Make sure there is enough instruction bytes for the value. */
         if (cbValue <= cbLeft)
         { /* likely */ }
         else
-        {
-            Bs3TestFailedF("Malformed context instruction: %u bytes value, %u bytes left", cbValue, cbLeft);
-            return false;
-        }
+            return Bs3TestFailedF("Malformed context instruction: %u bytes value, %u bytes left", cbValue, cbLeft);
 
         /*
          * Do value processing specific to the target field size.
@@ -904,8 +937,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                             uValue = *(uint64_t const BS3_FAR *)pbCode;
                             break;
                         }
-                        Bs3TestFailedF("Malformed context instruction: %u bytes value (%u dst)", cbValue, cbDst);
-                        return false;
+                        return Bs3TestFailedF("Malformed context instruction: %u bytes value (%u dst)", cbValue, cbDst);
                 }
             else
                 switch (cbValue)
@@ -919,21 +951,37 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                             uValue = *(uint64_t const BS3_FAR *)pbCode;
                             break;
                         }
-                        Bs3TestFailedF("Malformed context instruction: %u bytes value (%u dst)", cbValue, cbDst);
-                        return false;
+                        return Bs3TestFailedF("Malformed context instruction: %u bytes value (%u dst)", cbValue, cbDst);
                 }
 
             /* Find the field. */
             if (offField < sizeof(BS3REGCTX))
                 PtrField.pu8 = (uint8_t BS3_FAR *)pCtx + offField;
+            /* Non-register operands: */
+            else if ((unsigned)(idxField - BS3CG1DST_OP1) < 4U)
+            {
+                unsigned const idxOp = idxField - BS3CG1DST_OP1;
+
+                switch (pThis->aOperands[idxOp].enmLocation)
+                {
+                    case BS3CG1OPLOC_IMM:
+                        if (pbInstr)
+                            PtrField.pu8 = &pbInstr[pThis->aOperands[idxOp].off];
+                        else
+                            return Bs3TestFailedF("Immediate operand referenced in output context!");
+                        break;
+
+                    default:
+                        return Bs3TestFailedF("Internal error: cbDst=%u idxField=%d (%d) offField=%#x: enmLocation=%u off=%#x idxField=%u",
+                                              cbDst, idxField, idxOp, offField, pThis->aOperands[idxOp].enmLocation,
+                                              pThis->aOperands[idxOp].off, pThis->aOperands[idxOp].idxField);
+                }
+            }
             /* Special field: Copying in undefined EFLAGS from the result context. */
             else if (idxField == BS3CG1DST_EFL_UNDEF)
             {
                 if (!pEflCtx || (bOpcode & BS3CG1_CTXOP_OPERATOR_MASK) != BS3CG1_CTXOP_ASSIGN)
-                {
-                    Bs3TestFailed("Invalid BS3CG1DST_EFL_UNDEF usage");
-                    return false;
-                }
+                    return Bs3TestFailed("Invalid BS3CG1DST_EFL_UNDEF usage");
                 PtrField.pu32 = &pCtx->rflags.u32;
                 uValue = (*PtrField.pu32 & ~(uint32_t)uValue) | (pEflCtx->rflags.u32 & (uint32_t)uValue);
             }
@@ -942,10 +990,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
             //@todo
             //@todo }
             else
-            {
-                Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x", cbDst, idxField, offField);
-                return false;
-            }
+                return Bs3TestFailedF("Todo implement me: cbDst=%u idxField=%d offField=%#x", cbDst, idxField, offField);
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
             {
@@ -1023,8 +1068,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                     break;
 
                 default:
-                    Bs3TestFailedF("Malformed context instruction: cbDst=%u, expected 1, 2, 4, or 8", cbDst);
-                    return false;
+                    return Bs3TestFailedF("Malformed context instruction: cbDst=%u, expected 1, 2, 4, or 8", cbDst);
             }
 
 #ifdef BS3CG1_DEBUG_CTX_MOD
@@ -1042,10 +1086,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
          * Deal with larger field (FPU, SSE, AVX, ...).
          */
         else
-        {
-            Bs3TestFailedF("TODO: Implement me: cbDst=%u idxField=%d", cbDst, idxField);
-            return false;
-        }
+            return Bs3TestFailedF("TODO: Implement me: cbDst=%u idxField=%d", cbDst, idxField);
 
         /*
          * Advance to the next instruction.
@@ -1086,32 +1127,24 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     {
         This.pbCodePg = Bs3MemGuardedTestPageAlloc(enmMemKind);
         if (!This.pbCodePg)
-        {
-            Bs3TestFailedF("First Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
-            return 0;
-        }
+            return Bs3TestFailedF("First Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
         This.pbDataPg = Bs3MemGuardedTestPageAlloc(enmMemKind);
         if (!This.pbDataPg)
         {
             Bs3MemGuardedTestPageFree(This.pbCodePg);
-            Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
-            return 0;
+            return Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
         }
     }
     else
     {
         This.pbCodePg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
         if (!This.pbCodePg)
-        {
-            Bs3TestFailedF("First Bs3MemAlloc(%d,Pg) failed", enmMemKind);
-            return 0;
-        }
+            return Bs3TestFailedF("First Bs3MemAlloc(%d,Pg) failed", enmMemKind);
         This.pbDataPg = Bs3MemAlloc(enmMemKind, X86_PAGE_SIZE);
         if (!This.pbDataPg)
         {
             Bs3MemFree(This.pbCodePg, X86_PAGE_SIZE);
-            Bs3TestFailedF("Second Bs3MemAlloc(%d,Pg) failed", enmMemKind);
-            return 0;
+            return Bs3TestFailedF("Second Bs3MemAlloc(%d,Pg) failed", enmMemKind);
         }
     }
     This.uCodePgFlat = Bs3SelPtrToFlat(This.pbCodePg);
@@ -1243,7 +1276,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                         Bs3MemCpy(pbCode, This.abCurInstr, This.cbCurInstr);
                         This.Ctx.rip.u = BS3_FP_OFF(pbCode);
 
-                        if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL))
+                        if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr, pHdr->cbSelector, pHdr->cbInput, NULL, pbCode))
                         {
                             /* Run the instruction. */
                             BS3CG1_DPRINTF(("dbg:  Running test #%u\n", This.iTest));
@@ -1262,7 +1295,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                                 This.Ctx.rflags.u32 |= This.TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
                                 if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
                                                              pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
-                                                             &This.TrapFrame.Ctx))
+                                                             &This.TrapFrame.Ctx, NULL /*pbCode*/))
                                 {
                                     Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx, This.cbCurInstr,  0 /*cbSpAdjust*/,
                                                          0 /*fExtraEfl*/, pszMode, iEncoding);
