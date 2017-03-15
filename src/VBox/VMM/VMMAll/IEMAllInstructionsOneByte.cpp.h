@@ -79,6 +79,7 @@ FNIEMOP_DEF(iemOp_add_Ev_Gv)
  * @opcode      0x02
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
+ * @opcopytests add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
 {
@@ -103,7 +104,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
  * @opcode      0x04
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
- * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
+ * @opcopytests add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
 {

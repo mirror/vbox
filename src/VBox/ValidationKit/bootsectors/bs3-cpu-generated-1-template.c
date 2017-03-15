@@ -74,13 +74,13 @@
 /** @def  BS3CG1_DPRINTF
  * Debug print macro.
  */
-#if 1
+#if 0
 # define BS3CG1_DPRINTF(a_ArgList) Bs3TestPrintf a_ArgList
+# define BS3CG1_DEBUG_CTX_MOD
 #else
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
 
-#define BS3CG1_DEBUG_CTX_MOD
 
 
 /*********************************************************************************************************************************
@@ -617,7 +617,21 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             }
             break;
 
+        case BS3CG1ENC_MODRM_Gb_Eb:
+            /* Start by reg,reg encoding. */
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
+                pThis->cbCurInstr = off;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
+                iEncoding++;
+            }
+            break;
+
         case BS3CG1ENC_MODRM_Ev_Gv:
+        case BS3CG1ENC_MODRM_Gv_Ev:
         case BS3CG1ENC_FIXED_AL_Ib:
         case BS3CG1ENC_FIXED_rAX_Iz:
             break;
@@ -663,6 +677,24 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
         case BS3CG1ENC_MODRM_Ev_Gv:
             pThis->iRmOp  = 0;
             pThis->iRegOp = 1;
+            pThis->aOperands[0].cbOp = 2;
+            pThis->aOperands[1].cbOp = 2;
+            pThis->aOperands[0].fMem = false;
+            pThis->aOperands[1].fMem = false;
+            break;
+
+        case BS3CG1ENC_MODRM_Gb_Eb:
+            pThis->iRmOp  = 1;
+            pThis->iRegOp = 0;
+            pThis->aOperands[0].cbOp = 1;
+            pThis->aOperands[1].cbOp = 1;
+            pThis->aOperands[0].fMem = false;
+            pThis->aOperands[1].fMem = false;
+            break;
+
+        case BS3CG1ENC_MODRM_Gv_Ev:
+            pThis->iRmOp  = 1;
+            pThis->iRegOp = 0;
             pThis->aOperands[0].cbOp = 2;
             pThis->aOperands[1].cbOp = 2;
             pThis->aOperands[0].fMem = false;
