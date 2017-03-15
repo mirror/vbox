@@ -2533,6 +2533,10 @@ const VDIMAGEBACKEND g_VhdxBackend =
     vhdxGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     vhdxSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     vhdxGetImageFlags,
     /* pfnGetOpenFlags */

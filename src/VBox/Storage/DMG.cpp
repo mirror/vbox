@@ -2451,6 +2451,10 @@ const VDIMAGEBACKEND g_DmgBackend =
     dmgGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     dmgSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     dmgGetImageFlags,
     /* pfnGetOpenFlags */

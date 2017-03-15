@@ -2382,6 +2382,10 @@ const VDIMAGEBACKEND g_QCowBackend =
     qcowGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     qcowSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     qcowGetImageFlags,
     /* pfnGetOpenFlags */

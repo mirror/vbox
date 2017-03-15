@@ -5541,6 +5541,10 @@ const VDIMAGEBACKEND g_ISCSIBackend =
     iscsiGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     iscsiSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     iscsiGetImageFlags,
     /* pfnGetOpenFlags */

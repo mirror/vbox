@@ -6414,6 +6414,10 @@ const VDIMAGEBACKEND g_VmdkBackend =
     vmdkGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     vmdkSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     vmdkGetImageFlags,
     /* pfnGetOpenFlags */

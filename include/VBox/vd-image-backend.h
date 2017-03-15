@@ -323,6 +323,25 @@ typedef struct VDIMAGEBACKEND
     DECLR3CALLBACKMEMBER(int, pfnSetLCHSGeometry, (void *pBackendData,  PCVDGEOMETRY pLCHSGeometry));
 
     /**
+     * Returns a region list for the disk image if supported, optional.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if region lists are not supported for this kind of image.
+     * @param   pBackendData    Opaque state data for this image.
+     * @param   ppRegionList    Where to store the pointer to the region list on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryRegions, (void *pBackendData, PCVDREGIONLIST *ppRegionList));
+
+    /**
+     * Releases the region list acquired with VDIMAGEBACKEND::pfnQueryRegions() before.
+     *
+     * @returns nothing.
+     * @param   pBackendData    Opaque state data for this image.
+     * @param   pRegionList     The region list to release.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnRegionListRelease, (void *pBackendData, PCVDREGIONLIST pRegionList));
+
+    /**
      * Get the image flags of a disk image.
      *
      * @returns image flags of disk image.
@@ -588,7 +607,7 @@ typedef VDIMAGEBACKEND *PVDIMAGEBACKEND;
 typedef const VDIMAGEBACKEND *PCVDIMAGEBACKEND;
 
 /** The current version of the VDIMAGEBACKEND structure. */
-#define VD_IMGBACKEND_VERSION                   VD_VERSION_MAKE(0xff01, 1, 0)
+#define VD_IMGBACKEND_VERSION                   VD_VERSION_MAKE(0xff01, 2, 0)
 
 /** @copydoc VDIMAGEBACKEND::pfnComposeLocation */
 DECLCALLBACK(int) genericFileComposeLocation(PVDINTERFACE pConfig, char **pszLocation);

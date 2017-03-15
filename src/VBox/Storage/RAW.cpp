@@ -267,6 +267,12 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
                 else
                     rc = vdIfError(pImage->pIfError, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
             }
+            else
+            {
+                rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbSize);
+                if (RT_SUCCESS(rc))
+                    pImage->cbSize = cbSize;
+            }
         }
         else
             rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
@@ -1000,6 +1006,10 @@ const VDIMAGEBACKEND g_RawBackend =
     rawGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     rawSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     rawGetImageFlags,
     /* pfnGetOpenFlags */

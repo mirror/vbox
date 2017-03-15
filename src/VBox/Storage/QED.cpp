@@ -2435,6 +2435,10 @@ const VDIMAGEBACKEND g_QedBackend =
     qedGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     qedSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     qedGetImageFlags,
     /* pfnGetOpenFlags */

@@ -5786,6 +5786,58 @@ static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int 
 }
 
 /**
+ * Creates a new region list from the given one converting to match the flags if necessary.
+ *
+ * @returns VBox status code.
+ * @param   pRegionList     The region list to convert from.
+ * @param   fFlags          The flags for the new region list.
+ * @param   ppRegionList    Where to store the new region list on success.
+ */
+static int vdRegionListConv(PCVDREGIONLIST pRegionList, uint32_t fFlags, PPVDREGIONLIST ppRegionList)
+{
+    int rc = VINF_SUCCESS;
+    PVDREGIONLIST pRegionListNew = (PVDREGIONLIST)RTMemDup(pRegionList, RT_UOFFSETOF(VDREGIONLIST, aRegions[pRegionList->cRegions]));
+    if (RT_LIKELY(pRegionListNew))
+    {
+        /* Do we have to convert anything? */
+        if (pRegionList->fFlags != fFlags)
+        {
+            uint64_t offRegionNext = 0;
+
+            pRegionListNew->fFlags = fFlags;
+            for (unsigned i = 0; i < pRegionListNew->cRegions; i++)
+            {
+                PVDREGIONDESC pRegion = &pRegionListNew->aRegions[i];
+
+                if (   (fFlags & VD_REGION_LIST_F_LOC_SIZE_BLOCKS)
+                    && !(pRegionList->fFlags & VD_REGION_LIST_F_LOC_SIZE_BLOCKS))
+                {
+                    Assert(!(pRegion->cRegionBlocksOrBytes % pRegion->cbBlock));
+
+                    /* Convert from bytes to logical blocks. */
+                    pRegion->offRegion            = offRegionNext;
+                    pRegion->cRegionBlocksOrBytes = pRegion->cRegionBlocksOrBytes / pRegion->cbBlock;
+                    offRegionNext += pRegion->cRegionBlocksOrBytes;
+                }
+                else
+                {
+                    /* Convert from logical blocks to bytes. */
+                    pRegion->offRegion            = offRegionNext;
+                    pRegion->cRegionBlocksOrBytes = pRegion->cRegionBlocksOrBytes * pRegion->cbBlock;
+                    offRegionNext += pRegion->cRegionBlocksOrBytes;
+                }
+            }
+        }
+
+        *ppRegionList = pRegionListNew;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/**
  * Initializes HDD backends.
  *
  * @returns VBox status code.
@@ -10038,6 +10090,119 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
+}
+
+/**
+ * Queries the available regions of an image in the given VD container.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
+ * @retval  VERR_NOT_SUPPORTED if the image backend doesn't support region lists.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ * @param   fFlags          Combination of VD_REGION_LIST_F_* flags.
+ * @param   ppRegionList    Where to store the pointer to the region list on success, must be freed
+ *                          with VDRegionListFree().
+ */
+VBOXDDU_DECL(int) VDQueryRegions(PVBOXHDD pDisk, unsigned nImage, uint32_t fFlags,
+                                 PPVDREGIONLIST ppRegionList)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
+
+    LogFlowFunc(("pDisk=%#p nImage=%u fFlags=%#x ppRegionList=%#p\n",
+                 pDisk, nImage, fFlags, ppRegionList));
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(ppRegionList),
+                           ("ppRegionList=%#p\n", ppRegionList),
+                           rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
+        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
+        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
+
+        if (pImage->Backend->pfnQueryRegions)
+        {
+            PCVDREGIONLIST pRegionList = NULL;
+            rc = pImage->Backend->pfnQueryRegions(pImage->pBackendData, &pRegionList);
+            if (RT_SUCCESS(rc))
+            {
+                rc = vdRegionListConv(pRegionList, fFlags, ppRegionList);
+
+                AssertPtr(pImage->Backend->pfnRegionListRelease);
+                pImage->Backend->pfnRegionListRelease(pImage->pBackendData, pRegionList);
+            }
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            /*
+             * Create a list with a single region containing the data gathered from the
+             * image and sector size.
+             */
+            PVDREGIONLIST pRegionList = (PVDREGIONLIST)RTMemAllocZ(RT_UOFFSETOF(VDREGIONLIST, aRegions[1]));
+            if (RT_LIKELY(pRegionList))
+            {
+                uint32_t cbSector = pImage->Backend->pfnGetSectorSize(pImage->pBackendData);
+                uint64_t cbImage = pImage->Backend->pfnGetSize(pImage->pBackendData);
+
+                pRegionList->cRegions = 1;
+                pRegionList->fFlags   = fFlags;
+
+                /*
+                 * Single region starting at the first byte/block covering the whole image,
+                 * block size equals sector size and contains no metadata.
+                 */
+                PVDREGIONDESC pRegion = &pRegionList->aRegions[0];
+                pRegion->offRegion       = 0; /* Disk start. */
+                pRegion->cbBlock         = cbSector;
+                pRegion->enmDataForm     = VDREGIONDATAFORM_RAW;
+                pRegion->enmMetadataForm = VDREGIONMETADATAFORM_NONE;
+                pRegion->cbData          = cbSector;
+                pRegion->cbMetadata      = 0;
+                if (fFlags & VD_REGION_LIST_F_LOC_SIZE_BLOCKS)
+                    pRegion->cRegionBlocksOrBytes = cbImage / cbSector;
+                else
+                    pRegion->cRegionBlocksOrBytes = cbImage;
+
+                *ppRegionList  = pRegionList;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+    } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
+    LogFlowFunc((": %Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Frees a region list previously queried with VDQueryRegions().
+ *
+ * @return  nothing.
+ * @param   pRegionList     The region list to free.
+ */
+VBOXDDU_DECL(void) VDRegionListFree(PVDREGIONLIST pRegionList)
+{
+    RTMemFree(pRegionList);
 }
 
 /**

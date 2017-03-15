@@ -1112,6 +1112,10 @@ const VDIMAGEBACKEND g_ParallelsBackend =
     parallelsGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     parallelsSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     parallelsGetImageFlags,
     /* pfnGetOpenFlags */

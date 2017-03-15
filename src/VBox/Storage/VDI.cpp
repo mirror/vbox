@@ -3137,6 +3137,10 @@ const VDIMAGEBACKEND g_VDIBackend =
     vdiGetLCHSGeometry,
     /* pfnSetLCHSGeometry */
     vdiSetLCHSGeometry,
+    /* pfnQueryRegions */
+    NULL,
+    /* pfnRegionListRelease */
+    NULL,
     /* pfnGetImageFlags */
     vdiGetImageFlags,
     /* pfnGetOpenFlags */
