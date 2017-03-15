@@ -58,7 +58,7 @@ istruc PATCHASMRECORD
     at PATCHASMRECORD.offSizeOverride,DD          0
     at PATCHASMRECORD.cbFunction,     DD          NAME(%1 %+ _EndProc) - NAME(%1)
     at PATCHASMRECORD.cRelocs,        DD          %2
-iend                                                         
+iend
 %endmacro
 
 ;;
@@ -75,7 +75,7 @@ istruc PATCHASMRECORD
     at PATCHASMRECORD.offSizeOverride,DD          0
     at PATCHASMRECORD.cbFunction,     DD          NAME(%1 %+ _EndProc) - NAME(%1)
     at PATCHASMRECORD.cRelocs,        DD          %3
-iend                                                         
+iend
 %endmacro
 
 ;;
@@ -106,7 +106,7 @@ istruc PATCHASMRECORD
 %endif
     at PATCHASMRECORD.cbFunction,     DD          NAME(%1 %+ _EndProc) - NAME(%1)
     at PATCHASMRECORD.cRelocs,        DD          %5
-iend                                                         
+iend
 %endmacro
 
 ;;
@@ -123,7 +123,7 @@ BEGINCODE
 %endmacro
 
 ;;
-; Switches to the data section for the read-only patch descriptor data and 
+; Switches to the data section for the read-only patch descriptor data and
 ; aligns it appropriately.
 ;
 ; @remarks This section must be different from the patch code section!
@@ -176,7 +176,7 @@ BEGIN_PATCH_CODE_SECTION_NO_ALIGN
 
 ;;
 ; Ends a patch.
-; 
+;
 ; This terminates the function and fixup array.
 ;
 ; @param %1     The patch record name (externally visible).
@@ -197,7 +197,7 @@ BEGIN_PATCH_CODE_SECTION_NO_ALIGN
 ; Switch to 32-bit mode (x86).
 ;
 %ifdef RT_ARCH_AMD64
- BITS 32 
+ BITS 32
 %endif
 
 
@@ -356,7 +356,7 @@ ENDPROC     PATMClearInhibitIRQContIF0
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearInhibitIRQContIF0Record
     PATCHASMRECORD_INIT PATMClearInhibitIRQContIF0, 11
-    DD      PATM_ASMFIX_INTERRUPTFLAG,      0   
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
     DD      PATM_ASMFIX_INHIBITIRQADDR,     0
     DD      PATM_ASMFIX_VMFLAGS,            0
     DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
@@ -1603,9 +1603,9 @@ GLOBALNAME g_patmIretRing1Record
     PATCHASMRECORD_INIT PATMIretRing1Replacement, 25
 %endif
     DD      PATM_ASMFIX_INTERRUPTFLAG,      0
-%ifdef PATM_LOG_PATCHIRET            
+%ifdef PATM_LOG_PATCHIRET
     DD      PATM_ASMFIX_PENDINGACTION,      0
-%endif                               
+%endif
     DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
     DD      PATM_ASMFIX_TEMP_EAX,           0
     DD      PATM_ASMFIX_TEMP_ECX,           0
@@ -1770,7 +1770,7 @@ ENDPROC PATMJEcxReplacement
 
 ; Patch record for 'JEcx'
 BEGIN_PATCH_RODATA_SECTION
-GLOBALNAME g_patmJEcxRecord 
+GLOBALNAME g_patmJEcxRecord
     PATCHASMRECORD_INIT_EX PATMJEcxReplacement, , PATMJEcxJump, PATMJEcxSizeOverride, 3
     DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      PATM_ASMFIX_INTERRUPTFLAG, 0
@@ -2010,9 +2010,9 @@ GLOBALNAME g_patmLookupAndCallRecord
     DD      PATM_ASMFIX_STACKBASE,              0
     DD      PATM_ASMFIX_STACKBASE_GUEST,        0
     DD      PATM_ASMFIX_CALL_PATCH_TARGET_ADDR, 0
-%ifdef PATM_LOG_PATCHINSTR               
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_ASMFIX_PENDINGACTION,          0
-%endif                                   
+%endif
     DD      PATM_ASMFIX_CALL_RETURN_ADDR,       0
     DD      PATM_ASMFIX_CALL_PATCH_TARGET_ADDR, 0
     DD      0ffffffffh, 0ffffffffh
@@ -2462,12 +2462,12 @@ GLOBALNAME g_patmRetFunctionRecord
     DD      PATM_ASMFIX_STACKBASE_GUEST, 0
     DD      PATM_ASMFIX_STACKBASE,       0
     DD      PATM_ASMFIX_PATCHBASE,       0
-%ifdef PATM_LOG_PATCHINSTR        
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_ASMFIX_PENDINGACTION,   0
-%endif                            
+%endif
     DD      PATM_ASMFIX_PENDINGACTION,   0
     DD      PATM_ASMFIX_PATCHBASE,       0
-%ifdef PATM_LOG_PATCHINSTR        
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_ASMFIX_PENDINGACTION,   0
 %endif
     DD      0ffffffffh, 0ffffffffh
@@ -2523,9 +2523,9 @@ GLOBALNAME g_patmCheckIFRecord
     DD      PATM_ASMFIX_VMFLAGS,       0
     DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      PATM_ASMFIX_STACKPTR,      0
-%ifdef PATM_LOG_PATCHINSTR      
+%ifdef PATM_LOG_PATCHINSTR
     DD      PATM_ASMFIX_PENDINGACTION, 0
-%endif                          
+%endif
     DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 

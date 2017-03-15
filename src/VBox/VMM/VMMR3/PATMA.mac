@@ -75,7 +75,7 @@
 ;; @}
 
 
-;; Everything except IOPL, NT, IF, VM, VIF, VIP and RF 
+;; Everything except IOPL, NT, IF, VM, VIF, VIP and RF
 %define PATM_FLAGS_MASK      (X86_EFL_CF|X86_EFL_PF|X86_EFL_AF|X86_EFL_ZF|X86_EFL_SF|X86_EFL_TF|X86_EFL_DF|X86_EFL_OF|X86_EFL_AC|X86_EFL_ID)
 
 ; currently only IF & IOPL
@@ -133,10 +133,10 @@ struc PATCHASMRECORD
     .pbFunction         RTCCPTR_RES 1
     ;; Offset of the jump table?
     .offJump            resd 1
-    ;; Used only by loop/loopz/loopnz. 
-    .offRelJump         resd 1        
+    ;; Used only by loop/loopz/loopnz.
+    .offRelJump         resd 1
     ;; Size override byte position.
-    .offSizeOverride    resd 1        
+    .offSizeOverride    resd 1
     ;; The size of the patch function.
     .cbFunction         resd 1
     ;; The number of relocations in aRelocs.

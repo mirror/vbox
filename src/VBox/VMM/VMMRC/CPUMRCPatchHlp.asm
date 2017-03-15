@@ -35,8 +35,8 @@ extern IMPNAME(g_VM)
 BEGIN_PATCH_HLP_SEG
 
 ;;
-; Helper for PATMCpuidReplacement. 
-; 
+; Helper for PATMCpuidReplacement.
+;
 ; We have at most 32 bytes of stack to play with, .
 ;
 ; @input    eax, ecx(, edx, ebx)
@@ -58,8 +58,8 @@ BEGINPROC_EXPORTED CPUMPatchHlpCpuId
 
     ;
     ; Perform a binary search looking for leaf with the EAX value.
-    ;             
-    mov     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.cCpuIdLeaves]   
+    ;
+    mov     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.cCpuIdLeaves]
     mov     ecx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.paCpuIdLeavesRC]
     test    edx, edx
     jz      cpuid_unknown
@@ -97,7 +97,7 @@ cpuid_lookup_split_up:
     ;
     ; We've to a matching leaf, does the sub-leaf match too?
     ;
-cpuid_match_eax:    
+cpuid_match_eax:
     mov     ecx, [esp + 4]
     and     ecx, [ss:ebx + CPUMCPUIDLEAF.fSubLeafMask]
     cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]
@@ -111,7 +111,7 @@ cpuid_lookup_subleaf_backwards:
     mov     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.paCpuIdLeavesRC] ; edx = first leaf
 
 cpuid_lookup_subleaf_backwards_loop:
-    cmp     ebx, edx                    ; Is there a leaf before the current? 
+    cmp     ebx, edx                    ; Is there a leaf before the current?
     jbe     cpuid_subleaf_not_found     ; If not we're out of luck.
     cmp     eax, [ss:ebx - CPUMCPUIDLEAF_size + CPUMCPUIDLEAF.uLeaf]
     jne     cpuid_subleaf_not_found     ; If the leaf before us does not have the same leaf number, we failed.
@@ -122,11 +122,11 @@ cpuid_lookup_subleaf_backwards_loop:
     jmp     cpuid_subleaf_not_found     ; Too bad.
 
     ;
-    ; Search forward until we've got a matching sub-leaf (or not).  
+    ; Search forward until we've got a matching sub-leaf (or not).
     ;
 cpuid_lookup_subleaf_forwards:
     ; Calculate the last leaf address.
-    mov     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.cCpuIdLeaves]   
+    mov     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.cCpuIdLeaves]
     dec     edx
     shl     edx, CPUMCPUIDLEAF_SIZE_LOG2
     add     edx, [ss:edi + VM.cpum + CPUM.GuestInfo + CPUMINFO.paCpuIdLeavesRC] ; edx = last leaf (inclusive)
@@ -137,14 +137,14 @@ cpuid_subleaf_lookup:
     cmp     eax, [ss:ebx + CPUMCPUIDLEAF_size + CPUMCPUIDLEAF.uLeaf]
     jne     cpuid_subleaf_not_found
     add     ebx, CPUMCPUIDLEAF_size
-    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]    
+    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]
     ja      cpuid_subleaf_lookup
     je      cpuid_fetch
-    
+
     ;
     ; Out of range sub-leaves aren't quite as easy and pretty as we emulate them
     ; here, but we do an adequate job.
-    ;    
+    ;
 cpuid_subleaf_not_found:
     xor     ecx, ecx
     test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES
@@ -188,7 +188,7 @@ cpuid_fetch:
     mov     ecx, [ss:ebx + CPUMCPUIDLEAF.uEcx]
     mov     eax, [ss:ebx + CPUMCPUIDLEAF.uEax]
     mov     ebx, [ss:ebx + CPUMCPUIDLEAF.uEbx]
-             
+
 cpuid_done:
     pop     edi
     add     esp, 12

@@ -1305,7 +1305,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, DS, ds);
         HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, ES, es);
         HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, FS, fs);
-        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs); 
+        HMSVM_SEG_REG_COPY_TO_VMCB(pCtx, pVmcb, GS, gs);
 
         pVmcb->guest.u8CPL = pCtx->ss.Attr.n.u2Dpl;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
@@ -2767,7 +2767,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
         Log4(("ctrl.u16InterceptWrDRx            %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
         Log4(("ctrl.u32InterceptXcpt             %#x\n",      pVmcb->ctrl.u32InterceptXcpt));
-        Log4(("ctrl.u64InterceptCtrl             %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl)); 
+        Log4(("ctrl.u64InterceptCtrl             %#RX64\n",   pVmcb->ctrl.u64InterceptCtrl));
         Log4(("ctrl.u64IOPMPhysAddr              %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
         Log4(("ctrl.u64MSRPMPhysAddr             %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
         Log4(("ctrl.u64TSCOffset                 %#RX64\n",   pVmcb->ctrl.u64TSCOffset));
@@ -3175,7 +3175,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-        && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP)) 
+        && !(pVmcb->ctrl.u64InterceptCtrl & SVM_CTRL_INTERCEPT_RDTSCP))
     {
         hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);

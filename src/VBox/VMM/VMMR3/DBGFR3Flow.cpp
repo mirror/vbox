@@ -1254,7 +1254,7 @@ static int dbgfR3FlowBbProcess(PUVM pUVM, VMCPUID idCpu, PDBGFFLOWINT pThis, PDB
                                                       pFlowBb->pFlowBranchTbl);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = dbgfR3FlowQueryDirectBranchTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr, 
+                            rc = dbgfR3FlowQueryDirectBranchTarget(pUVM, idCpu, &DisState.Param1, &pInstr->AddrInstr, pInstr->cbInstr,
                                                                    RT_BOOL(DisState.pCurInstr->fOpType & DISOPTYPE_RELATIVE_CONTROLFLOW),
                                                                    &pFlowBb->AddrTarget);
                             if (RT_SUCCESS(rc))
@@ -1616,7 +1616,7 @@ VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetEndAddress(DBGFFLOWBB hFlowBb, PDBGFADDRE
  * @note This is only valid for unconditional or conditional branches and will assert
  *       for every other basic block type.
  * @note For indirect unconditional branches using a branch table this will return the start address
- *       of the branch table. 
+ *       of the branch table.
  */
 VMMR3DECL(PDBGFADDRESS) DBGFR3FlowBbGetBranchAddress(DBGFFLOWBB hFlowBb, PDBGFADDRESS pAddrTarget)
 {

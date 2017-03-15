@@ -518,7 +518,7 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
                     && g_enmVendor == CPUMCPUVENDOR_INTEL
                     && g_enmMicroarch == kCpumMicroarch_Intel_Atom_Bonnell)
                 || (   (uMsr == 0x280)
-                    && g_enmMicroarch == kCpumMicroarch_Intel_P6_III)) 
+                    && g_enmMicroarch == kCpumMicroarch_Intel_P6_III))
                 vbCpuRepDebug("Skipping %#x\n", uMsr);
             else
             {
