@@ -645,6 +645,15 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             }
             break;
 
+        case BS3CG1ENC_FIXED:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->cbCurInstr = off;
+                iEncoding++;
+            }
+            break;
+
         case BS3CG1ENC_FIXED_AL_Ib:
             if (iEncoding == 0)
             {
@@ -821,6 +830,10 @@ static bool Bs3Cg1EncodePrep(PBS3CG1STATE pThis)
             pThis->aOperands[1].cbOp = 2;
             pThis->aOperands[0].enmLocation = BS3CG1OPLOC_CTX;
             pThis->aOperands[1].enmLocation = BS3CG1OPLOC_CTX;
+            break;
+
+        case BS3CG1ENC_FIXED:
+            /* nothing to do here */
             break;
 
         case BS3CG1ENC_FIXED_AL_Ib:
@@ -1289,6 +1302,8 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     {
         unsigned iEncoding;
         unsigned iEncodingNext;
+        bool     fInvalidInstr = false;
+        uint8_t  bXcptExpected = BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD;
 
         /*
          * Expand the instruction information into the state.
@@ -1319,6 +1334,12 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
             case 2: This.abOpcodes[2] = This.pabOpcodes[2];
             case 1: This.abOpcodes[1] = This.pabOpcodes[1];
             case 0: This.abOpcodes[0] = This.pabOpcodes[0];
+        }
+
+        if ((This.fFlags & BS3CG1INSTR_F_INVALID_64BIT) && BS3_MODE_IS_64BIT_CODE(bMode))
+        {
+            fInvalidInstr = true;
+            bXcptExpected = X86_XCPT_UD;
         }
 
         /*
@@ -1382,28 +1403,30 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                             BS3CG1_DPRINTF(("dbg:  bXcpt=%#x rip=%RX64 -> %RX64\n", This.TrapFrame.bXcpt, This.Ctx.rip.u, This.TrapFrame.Ctx.rip.u));
 
                             /* Check the control exception result first. */
-                            if (   This.TrapFrame.bXcpt     == (BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD)
-                                && This.TrapFrame.Ctx.rip.u == This.Ctx.rip.u + This.cbCurInstr)
+                            if (   This.TrapFrame.bXcpt     == bXcptExpected
+                                && This.TrapFrame.Ctx.rip.u == This.Ctx.rip.u + (!fInvalidInstr ? This.cbCurInstr : 0))
                             {
                                 /* Apply output modifications and compare the contexts. */
-                                if (BS3_MODE_IS_PAGED(bMode))
+                                if (bXcptExpected == X86_XCPT_PF)
                                     This.Ctx.cr2.u = This.uCodePgFlat + X86_PAGE_SIZE;
                                 This.Ctx.rflags.u32 &= ~X86_EFL_RF;
                                 This.Ctx.rflags.u32 |= This.TrapFrame.Ctx.rflags.u32 & X86_EFL_RF;
-                                if (Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
-                                                             pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
-                                                             &This.TrapFrame.Ctx, NULL /*pbCode*/))
+                                if (   fInvalidInstr
+                                    || Bs3Cg1RunContextModifier(&This, &This.Ctx, pHdr,
+                                                                pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
+                                                                &This.TrapFrame.Ctx, NULL /*pbCode*/))
                                 {
-                                    if (!Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx, This.cbCurInstr,  0 /*cbSpAdjust*/,
+                                    if (!Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx,
+                                                              !fInvalidInstr ? This.cbCurInstr : 0,  0 /*cbSpAdjust*/,
                                                               0 /*fExtraEfl*/, pszMode, iEncoding))
                                         Bs3TestFailedF("encoding#%u: %.*Rhxs", iEncoding, This.cbCurInstr, This.abCurInstr);
                                 }
                             }
                             else
                             {
-                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding#u: %.*Rhxs",
-                                               This.TrapFrame.bXcpt, BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD,
-                                               This.TrapFrame.Ctx.rip.u, This.Ctx.rip.u + This.cbCurInstr,
+                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding#%u: %.*Rhxs",
+                                               This.TrapFrame.bXcpt, bXcptExpected,
+                                               This.TrapFrame.Ctx.rip.u, This.Ctx.rip.u + (!fInvalidInstr ? This.cbCurInstr : 0),
                                                iEncoding, This.cbCurInstr, This.abCurInstr);
                             }
                         }

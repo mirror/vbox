@@ -75,6 +75,7 @@ typedef enum BS3CG1ENC
     BS3CG1ENC_MODRM_Gb_Eb,
     BS3CG1ENC_MODRM_Gv_Ev,
 
+    BS3CG1ENC_FIXED,
     BS3CG1ENC_FIXED_AL_Ib,
     BS3CG1ENC_FIXED_rAX_Iz,
 
@@ -129,6 +130,8 @@ typedef BS3CG1INSTR const BS3_FAR *PCBS3CG1INSTR;
  * @{ */
 /** Defaults to SS rather than DS. */
 #define BS3CG1INSTR_F_DEF_SS            UINT32_C(0x00000001)
+/** Invalid instruction in 64-bit mode. */
+#define BS3CG1INSTR_F_INVALID_64BIT     UINT32_C(0x00000002)
 /** @} */
 
 

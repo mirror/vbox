@@ -303,7 +303,11 @@ class Bs3Cg1Instruction(object):
         self.sEncoding          = iai.g_kdEncodings[oInstr.sEncoding][0];
         for oOp in oInstr.aoOperands:
             self.sEncoding     += '_' + oOp.sType;
+
         self.asFlags            = [];
+        if 'invalid_64' in oInstr.dHints:
+            self.asFlags.append('BS3CG1INSTR_F_INVALID_64BIT')
+
         self.fAdvanceMnemonic   = True; ##< Set by the caller.
         if self.sEncoding == 'ModR/M':
             if 'ignores_op_size' not in oInstr.dHints:
@@ -466,8 +470,15 @@ class Bs3CpuGenerated1Generator(object):
             'const uint8_t BS3_FAR_DATA g_abBs3Cg1Operands[] = ',
             '{',
         ];
+        cOperands = 0;
         for oInstr in self.aoInstructions:
-            asLines.append('    ' + oInstr.getOperands() + ',');
+            if oInstr.oInstr.aoOperands:
+                cOperands += len(oInstr.oInstr.aoOperands);
+                asLines.append('    ' + oInstr.getOperands() + ', /* %s */' % (oInstr.oInstr.sStats,));
+            else:
+                asLines.append('    /* none */');
+        if not cOperands:
+            asLines.append('    0 /* dummy */');
         asLines += [
             '};',
             '',
