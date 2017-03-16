@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2016 Oracle Corporation
+ * Copyright (C) 2008-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -287,12 +287,12 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
 //     <const name="Floppy" value="18" />
 //     <const name="CDROM" value="19" />
 
-        MediaData::AttachmentList::iterator itA;
-        for (itA = mMediaData->mAttachments.begin();
-             itA != mMediaData->mAttachments.end();
-             ++itA)
+        for (MediumAttachmentList::const_iterator
+             it = mMediumAttachments->begin();
+             it != mMediumAttachments->end();
+             ++it)
         {
-            ComObjPtr<MediumAttachment> pHDA = *itA;
+            ComObjPtr<MediumAttachment> pHDA = *it;
 
             // the attachment's data
             ComPtr<IMedium> pMedium;
@@ -393,10 +393,10 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     }
                     else
                     {
-                        std::map<com::Utf8Str, GUIDVEC>::iterator it = pAppliance->m->m_mapPwIdToMediumIds.find(strKeyId);
-                        if (it == pAppliance->m->m_mapPwIdToMediumIds.end())
+                        std::map<com::Utf8Str, GUIDVEC>::iterator itMap = pAppliance->m->m_mapPwIdToMediumIds.find(strKeyId);
+                        if (itMap == pAppliance->m->m_mapPwIdToMediumIds.end())
                             throw setError(E_FAIL, tr("Internal error adding a medium UUID to the map"));
-                        it->second.push_back(mediumUuid);
+                        itMap->second.push_back(mediumUuid);
                     }
                 }
             }
@@ -648,18 +648,18 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
 
     if (!m->fExportISOImages)/* remove all ISO images from VirtualSystemDescription */
     {
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        for (it = m->virtualSystemDescriptions.begin();
+        for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
+             it = m->virtualSystemDescriptions.begin();
              it != m->virtualSystemDescriptions.end();
              ++it)
         {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
             std::list<VirtualSystemDescriptionEntry*> skipped = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
-            std::list<VirtualSystemDescriptionEntry*>:: iterator pItSkipped = skipped.begin();
-            while (pItSkipped != skipped.end())
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itSkipped = skipped.begin();
+            while (itSkipped != skipped.end())
             {
-                (*pItSkipped)->skipIt = true;
-                ++pItSkipped;
+                (*itSkipped)->skipIt = true;
+                ++itSkipped;
             }
         }
     }
@@ -905,13 +905,13 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
     // might have UUIDs that need fixing after we know the UUIDs of the exported images
     std::list<xml::ElementNode*> llElementsWithUuidAttributes;
     uint32_t ulFile = 1;
-    list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
     /* Iterate through all virtual systems of that appliance */
-    for (it = m->virtualSystemDescriptions.begin();
-         it != m->virtualSystemDescriptions.end();
-         ++it)
+    for (list<ComObjPtr<VirtualSystemDescription> >::const_iterator
+         itV = m->virtualSystemDescriptions.begin();
+         itV != m->virtualSystemDescriptions.end();
+         ++itV)
     {
-        ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
+        ComObjPtr<VirtualSystemDescription> vsdescThis = *itV;
         i_buildXMLForOneVirtualSystem(writeLock,
                                       *pelmToAddVirtualSystemsTo,
                                       &llElementsWithUuidAttributes,
@@ -920,13 +920,13 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
                                       stack);         // disks and networks stack
 
         list<Utf8Str> diskList;
-        list<Utf8Str>::const_iterator itS;
 
-        for (itS = stack.mapDiskSequenceForOneVM.begin();
-             itS != stack.mapDiskSequenceForOneVM.end();
-             ++itS)
+        for (list<Utf8Str>::const_iterator
+             itDisk = stack.mapDiskSequenceForOneVM.begin();
+             itDisk != stack.mapDiskSequenceForOneVM.end();
+             ++itDisk)
         {
-            const Utf8Str &strDiskID = *itS;
+            const Utf8Str &strDiskID = *itDisk;
             const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
 
             // source path: where the VBox image is
@@ -1042,11 +1042,12 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
             // but those would refer to the UUID of the _source_ image (which we created the
             // export image from); those UUIDs need to be fixed to the export image
             Utf8Str strGuidSourceCurly = guidSource.toStringCurly();
-            for (std::list<xml::ElementNode*>::iterator eit = llElementsWithUuidAttributes.begin();
-                 eit != llElementsWithUuidAttributes.end();
-                 ++eit)
+            for (std::list<xml::ElementNode*>::const_iterator
+                 it = llElementsWithUuidAttributes.begin();
+                 it != llElementsWithUuidAttributes.end();
+                 ++it)
             {
-                xml::ElementNode *pelmImage = *eit;
+                xml::ElementNode *pelmImage = *it;
                 Utf8Str strUUID;
                 pelmImage->getAttributeValue("uuid", strUUID);
                 if (strUUID == strGuidSourceCurly)
@@ -1060,12 +1061,12 @@ void Appliance::i_buildXML(AutoWriteLockBase& writeLock,
 
     // now, fill in the network section we set up empty above according
     // to the networks we found with the hardware items
-    map<Utf8Str, bool>::const_iterator itN;
-    for (itN = stack.mapNetworks.begin();
-         itN != stack.mapNetworks.end();
-         ++itN)
+    for (map<Utf8Str, bool>::const_iterator
+         it = stack.mapNetworks.begin();
+         it != stack.mapNetworks.end();
+         ++it)
     {
-        const Utf8Str &strNetwork = itN->first;
+        const Utf8Str &strNetwork = it->first;
         xml::ElementNode *pelmNetwork = pelmNetworkSection->createChild("Network");
         pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
         pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
@@ -1293,12 +1294,12 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     for (size_t uLoop = 1; uLoop <= 2; ++uLoop)
     {
         int32_t lIndexThis = 0;
-        vector<VirtualSystemDescriptionEntry>::const_iterator itD;
-        for (itD = vsdescThis->m->maDescriptions.begin();
-            itD != vsdescThis->m->maDescriptions.end();
-            ++itD, ++lIndexThis)
+        for (vector<VirtualSystemDescriptionEntry>::const_iterator
+             it = vsdescThis->m->maDescriptions.begin();
+             it != vsdescThis->m->maDescriptions.end();
+             ++it, ++lIndexThis)
         {
-            const VirtualSystemDescriptionEntry &desc = *itD;
+            const VirtualSystemDescriptionEntry &desc = *it;
 
             LogFlowFunc(("Loop %u: handling description entry ulIndex=%u, type=%s, strRef=%s, strOvf=%s, strVBox=%s, strExtraConfig=%s\n",
                          uLoop,
@@ -1914,7 +1915,8 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
         bool fStripAllNonNATMACs = m->optListExport.contains(ExportOptions_StripAllNonNATMACs);
         if (fStripAllMACs || fStripAllNonNATMACs)
         {
-            for (settings::NetworkAdaptersList::iterator it = pConfig->hardwareMachine.llNetworkAdapters.begin();
+            for (settings::NetworkAdaptersList::iterator
+                 it = pConfig->hardwareMachine.llNetworkAdapters.begin();
                  it != pConfig->hardwareMachine.llNetworkAdapters.end();
                  ++it)
             {
@@ -2165,12 +2167,12 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
         //attached to it. And these disks are stored in the stack.mapDiskSequence. Next we shift to the next
         //"VirtualSystem" and repeat the operation.
         //And here we go through the list and extract all disks in the same sequence
-        list<Utf8Str>::const_iterator itS;
-        for (itS = stack.mapDiskSequence.begin();
-              itS != stack.mapDiskSequence.end();
-              ++itS)
+        for (list<Utf8Str>::const_iterator
+             it = stack.mapDiskSequence.begin();
+             it != stack.mapDiskSequence.end();
+             ++it)
         {
-            const Utf8Str &strDiskID = *itS;
+            const Utf8Str &strDiskID = *it;
             const VirtualSystemDescriptionEntry *pDiskEntry = stack.mapDisks[strDiskID];
 
             // source path: where the VBox image is
@@ -2357,13 +2359,13 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                                                                                      // with the IProgress originally);
             PRTMANIFESTTEST paManifestFiles = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * fileList.size());
             size_t i = 0;
-            list<STRPAIR>::const_iterator it1;
-            for (it1 = fileList.begin();
-                 it1 != fileList.end();
-                 ++it1, ++i)
+            for (list<STRPAIR>::const_iterator
+                 it = fileList.begin();
+                 it != fileList.end();
+                 ++it, ++i)
             {
-                paManifestFiles[i].pszTestFile   = (*it1).first.c_str();
-                paManifestFiles[i].pszTestDigest = (*it1).second.c_str();
+                paManifestFiles[i].pszTestFile   = (*it).first.c_str();
+                paManifestFiles[i].pszTestDigest = (*it).second.c_str();
             }
             void *pvBuf;
             size_t cbSize;
@@ -2398,11 +2400,11 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
     /* Cleanup on error */
     if (FAILED(rc))
     {
-        list<STRPAIR>::const_iterator it1;
-        for (it1 = fileList.begin();
-             it1 != fileList.end();
-             ++it1)
-             pIfIo->pfnDelete(pStorage, (*it1).first.c_str());
+        for (list<STRPAIR>::const_iterator
+             it = fileList.begin();
+             it != fileList.end();
+             ++it)
+             pIfIo->pfnDelete(pStorage, (*it).first.c_str());
     }
 
     LogFlowFunc(("rc=%Rhrc\n", rc));

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2016 Oracle Corporation
+ * Copyright (C) 2006-2017 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -234,6 +234,11 @@ public:
      *  Stored using the util::Backupable template in the |mHWData| variable.
      *
      *  SessionMachine instances can alter this data and discard changes.
+     *
+     *  @todo r=klaus move all "pointer" objects out of this struct, as they
+     *  need non-obvious handling when creating a new session or when taking
+     *  a snapshot. Better do this right straight away, not relying on the
+     *  template magic which doesn't work right in this case.
      */
     struct HWData
     {
@@ -326,23 +331,7 @@ public:
         Utf8Str             mDefaultFrontend;
     };
 
-    /**
-     *  Hard disk and other media data.
-     *
-     *  The usage policy is the same as for HWData, but a separate structure
-     *  is necessary because hard disk data requires different procedures when
-     *  taking or deleting snapshots, etc.
-     *
-     *  The data variable is |mMediaData|.
-     */
-    struct MediaData
-    {
-        MediaData();
-        ~MediaData();
-
-        typedef std::list<ComObjPtr<MediumAttachment> > AttachmentList;
-        AttachmentList mAttachments;
-    };
+    typedef std::list<ComObjPtr<MediumAttachment> > MediumAttachmentList;
 
     DECLARE_EMPTY_CTOR_DTOR(Machine)
 
@@ -600,7 +589,7 @@ public:
                                          bool aSetError = false);
 
     HRESULT i_getMediumAttachmentsOfController(const Utf8Str &aName,
-                                               MediaData::AttachmentList &aAttachments);
+                                               MediumAttachmentList &aAttachments);
 
     HRESULT i_getUSBControllerByName(const Utf8Str &aName,
                                      ComObjPtr<USBController> &aUSBController,
@@ -693,13 +682,13 @@ protected:
                                   bool aOnline);
     HRESULT i_deleteImplicitDiffs(bool aOnline);
 
-    MediumAttachment* i_findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* i_findAttachment(const MediumAttachmentList &ll,
                                        const Utf8Str &aControllerName,
                                        LONG aControllerPort,
                                        LONG aDevice);
-    MediumAttachment* i_findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* i_findAttachment(const MediumAttachmentList &ll,
                                        ComObjPtr<Medium> pMedium);
-    MediumAttachment* i_findAttachment(const MediaData::AttachmentList &ll,
+    MediumAttachment* i_findAttachment(const MediumAttachmentList &ll,
                                        Guid &id);
 
     HRESULT i_detachDevice(MediumAttachment *pAttach,
@@ -761,7 +750,19 @@ protected:
 
     Backupable<UserData>    mUserData;
     Backupable<HWData>      mHWData;
-    Backupable<MediaData>   mMediaData;
+
+    /**
+     * Hard disk and other media data.
+     *
+     * The usage policy is the same as for mHWData, but a separate field
+     * is necessary because hard disk data requires different procedures when
+     * taking or deleting snapshots, etc.
+     *
+     * @todo r=klaus change this to a regular list and use the normal way to
+     * handle the settings when creating a session or taking a snapshot.
+     * Same thing applies to mStorageControllers and mUSBControllers.
+     */
+    Backupable<MediumAttachmentList> mMediumAttachments;
 
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of HWData
