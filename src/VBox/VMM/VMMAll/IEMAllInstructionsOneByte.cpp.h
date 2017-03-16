@@ -47,7 +47,7 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @op2         reg:Gb
  * @opmaps      one
  * @openc       ModR/M
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @ophints     harmless ignores_op_size
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
@@ -66,7 +66,7 @@ FNIEMOP_DEF(iemOp_add_Eb_Gb)
 /**
  * @opcode      0x01
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @optest               op1=1  op2=1  -> op1=2  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
@@ -82,7 +82,7 @@ FNIEMOP_DEF(iemOp_add_Ev_Gv)
 /**
  * @opcode      0x02
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
@@ -95,7 +95,7 @@ FNIEMOP_DEF(iemOp_add_Gb_Eb)
 /**
  * @opcode      0x03
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opcopytests iemOp_add_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_add_Gv_Ev)
@@ -108,7 +108,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
 /**
  * @opcode      0x04
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
@@ -121,7 +121,7 @@ FNIEMOP_DEF(iemOp_add_Al_Ib)
 /**
  * @opcode      0x05
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
  * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
  * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
@@ -162,7 +162,7 @@ FNIEMOP_DEF(iemOp_pop_ES)
 /**
  * @opcode      0x08
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @optest                  op1=7 op2=12 -> op1=15   efl&|=nc,po,na,nz,pl,nv
@@ -181,7 +181,7 @@ FNIEMOP_DEF(iemOp_or_Eb_Gb)
 /*
  * @opcode      0x09
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
@@ -202,7 +202,7 @@ FNIEMOP_DEF(iemOp_or_Ev_Gv)
 /**
  * @opcode      0x0a
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @opcopytests iemOp_or_Eb_Gb
@@ -218,7 +218,7 @@ FNIEMOP_DEF(iemOp_or_Gb_Eb)
 /**
  * @opcode      0x0b
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @opcopytests iemOp_or_Ev_Gv
@@ -234,7 +234,7 @@ FNIEMOP_DEF(iemOp_or_Gv_Ev)
 /**
  * @opcode      0x0c
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @opcopytests iemOp_or_Eb_Gb
@@ -247,10 +247,10 @@ FNIEMOP_DEF(iemOp_or_Al_Ib)
 }
 
 
-/*
+/**
  * @opcode      0x0d
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
@@ -327,9 +327,10 @@ FNIEMOP_DEF(iemOp_2byteEscape)
  * @opcode      0x10
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
- * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,nv,pl,nz,na,pe
- * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,nv,pl,nz,na,po
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
+ * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
+ * @optest      op1=0xff op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
  */
 FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 {
@@ -342,7 +343,10 @@ FNIEMOP_DEF(iemOp_adc_Eb_Gb)
  * @opcode      0x11
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
+ * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
+ * @optest      op1=-1 op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
  */
 FNIEMOP_DEF(iemOp_adc_Ev_Gv)
 {
@@ -355,7 +359,8 @@ FNIEMOP_DEF(iemOp_adc_Ev_Gv)
  * @opcode      0x12
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opcopytests iemOp_adc_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_adc_Gb_Eb)
 {
@@ -368,7 +373,8 @@ FNIEMOP_DEF(iemOp_adc_Gb_Eb)
  * @opcode      0x13
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opcopytests iemOp_adc_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_adc_Gv_Ev)
 {
@@ -381,7 +387,8 @@ FNIEMOP_DEF(iemOp_adc_Gv_Ev)
  * @opcode      0x14
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opcopytests iemOp_adc_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_adc_Al_Ib)
 {
@@ -394,7 +401,8 @@ FNIEMOP_DEF(iemOp_adc_Al_Ib)
  * @opcode      0x15
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opcopytests iemOp_adc_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_adc_eAX_Iz)
 {
@@ -418,7 +426,7 @@ FNIEMOP_DEF(iemOp_push_SS)
  * @opcode      0x17
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_pop_SS)
 {
@@ -433,7 +441,7 @@ FNIEMOP_DEF(iemOp_pop_SS)
  * @opcode      0x18
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
 {
@@ -446,7 +454,7 @@ FNIEMOP_DEF(iemOp_sbb_Eb_Gb)
  * @opcode      0x19
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
 {
@@ -459,7 +467,7 @@ FNIEMOP_DEF(iemOp_sbb_Ev_Gv)
  * @opcode      0x1a
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
 {
@@ -472,7 +480,7 @@ FNIEMOP_DEF(iemOp_sbb_Gb_Eb)
  * @opcode      0x1b
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
 {
@@ -485,7 +493,7 @@ FNIEMOP_DEF(iemOp_sbb_Gv_Ev)
  * @opcode      0x1c
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_Al_Ib)
 {
@@ -498,7 +506,7 @@ FNIEMOP_DEF(iemOp_sbb_Al_Ib)
  * @opcode      0x1d
  * @opgroup     op_gen_arith_bin
  * @opfltest    cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sbb_eAX_Iz)
 {
@@ -535,7 +543,7 @@ FNIEMOP_DEF(iemOp_pop_DS)
 /**
  * @opcode      0x20
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -550,7 +558,7 @@ FNIEMOP_DEF(iemOp_and_Eb_Gb)
 /**
  * @opcode      0x21
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -565,7 +573,7 @@ FNIEMOP_DEF(iemOp_and_Ev_Gv)
 /**
  * @opcode      0x22
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -580,7 +588,7 @@ FNIEMOP_DEF(iemOp_and_Gb_Eb)
 /**
  * @opcode      0x23
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -595,7 +603,7 @@ FNIEMOP_DEF(iemOp_and_Gv_Ev)
 /**
  * @opcode      0x24
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -610,7 +618,7 @@ FNIEMOP_DEF(iemOp_and_Al_Ib)
 /**
  * @opcode      0x25
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -645,7 +653,7 @@ FNIEMOP_DEF(iemOp_seg_ES)
 /**
  * @opcode      0x27
  * @opfltest    af,cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   of
  */
 FNIEMOP_DEF(iemOp_daa)
@@ -661,7 +669,7 @@ FNIEMOP_DEF(iemOp_daa)
 /**
  * @opcode      0x28
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 {
@@ -673,7 +681,7 @@ FNIEMOP_DEF(iemOp_sub_Eb_Gb)
 /**
  * @opcode      0x29
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 {
@@ -685,7 +693,7 @@ FNIEMOP_DEF(iemOp_sub_Ev_Gv)
 /**
  * @opcode      0x2a
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 {
@@ -697,7 +705,7 @@ FNIEMOP_DEF(iemOp_sub_Gb_Eb)
 /**
  * @opcode      0x2b
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 {
@@ -709,7 +717,7 @@ FNIEMOP_DEF(iemOp_sub_Gv_Ev)
 /**
  * @opcode      0x2c
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_Al_Ib)
 {
@@ -721,7 +729,7 @@ FNIEMOP_DEF(iemOp_sub_Al_Ib)
 /**
  * @opcode      0x2d
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  */
 FNIEMOP_DEF(iemOp_sub_eAX_Iz)
 {
@@ -753,7 +761,7 @@ FNIEMOP_DEF(iemOp_seg_CS)
 /**
  * @opcode      0x2f
  * @opfltest    af,cf
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   of
  */
 FNIEMOP_DEF(iemOp_das)
@@ -769,7 +777,7 @@ FNIEMOP_DEF(iemOp_das)
 /**
  * @opcode      0x30
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -784,7 +792,7 @@ FNIEMOP_DEF(iemOp_xor_Eb_Gb)
 /**
  * @opcode      0x31
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -799,7 +807,7 @@ FNIEMOP_DEF(iemOp_xor_Ev_Gv)
 /**
  * @opcode      0x32
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -814,7 +822,7 @@ FNIEMOP_DEF(iemOp_xor_Gb_Eb)
 /**
  * @opcode      0x33
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -829,7 +837,7 @@ FNIEMOP_DEF(iemOp_xor_Gv_Ev)
 /**
  * @opcode      0x34
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
@@ -844,7 +852,7 @@ FNIEMOP_DEF(iemOp_xor_Al_Ib)
 /**
  * @opcode      0x35
  * @opgroup     op_gen_arith_bin
- * @opflmodify  of,sf,zf,af,pf,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
  * @opflundef   af
  * @opflclear   of,cf
  */
