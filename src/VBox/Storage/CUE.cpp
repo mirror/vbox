@@ -650,17 +650,6 @@ DECLINLINE(CUETOKENTYPE) cueTokenizerGetTokenType(PCUETOKENIZER pTokenizer)
 }
 
 /**
- * Returns the token class of the next token in the stream.
- *
- * @returns Token class of the next token.
- * @param   pTokenizer    The tokenizer state.
- */
-DECLINLINE(CUETOKENTYPE) cueTokenizerPeekNextType(PCUETOKENIZER pTokenizer)
-{
-    return pTokenizer->pTokenNext->enmType;
-}
-
-/**
  * Consume the current token advancing to the next in the stream.
  *
  * @returns nothing.
