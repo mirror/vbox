@@ -2774,6 +2774,34 @@ VBOX_GCC_PEDANTIC_C   ?= -pedantic $(VBOX_GCC_WARN_PEDANTIC) -Wmissing-prototype
 VBOX_GCC_NON_PEDANTIC_CXX ?= -Wno-sign-compare
 VBOX_GCC_NON_PEDANTIC_C   ?= -Wno-sign-compare -Werror-implicit-function-declaration
 
+VBOX_GCC_SANITIZER_FLAGS = \
+  -fsanitize=undefined \
+  -fsanitize=address \
+  -fsanitize=return \
+  -fsanitize=bounds \
+  -fsanitize=object-size \
+  -fno-sanitize=alignment \
+  -fno-sanitize=vptr \
+  -fno-common \
+  -static-libasan
+# The dynamic sanitiser library intercepts dlopen() and breaks RPATH $ORIGIN.
+VBOX_GCC_SANITIZER_LDFLAGS = \
+  -fsanitize=undefined \
+  -fsanitize=address \
+  -fsanitize=return \
+  -fsanitize=bounds \
+  -fsanitize=object-size \
+  -fno-sanitize=alignment \
+  -fno-sanitize=vptr \
+  -fno-common \
+  -static-libasan \
+  -static-libubsan
+VBOX_GCC_SANITIZER_LIBS= # pthread m rt dl
+# When the address sanitiser is enabled, shared objects will contain references
+# to ASAN symbols.  Linking in libasan causes problems.
+VBOX_GCC_NO_UNDEFINED=$(if $(VBOX_WITH_GCC_SANITIZER),,-Wl,--no-undefined)
+VBOX_GCC_NO_UNDEFINED_R0=$(if $(VBOX_WITH_GCC_SANITIZER),,-no-undefined)
+
 # Disabled Visual C++ warnings, W4:
 #      -wd4065: switch statement contains 'default' but no 'case' labels
 #      -wd4996: deprecated / insecure.
@@ -4412,7 +4440,7 @@ TEMPLATE_VBOXR0DRV_LDTOOL              = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL_MODE=1 _STRICT_STDC IN_RING0 IN_RT_R0
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_HAIKU_SYS_INCS)
 #TODO: sort this out
-TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared -no-undefined -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
+TEMPLATE_VBOXR0DRV_LDFLAGS             = -shared $(VBOX_GCC_NO_UNDEFINED_R0) -dc -dy -lroot -rpath-link /boot/system/develop/lib/x86 --no-add-needed /boot/system/develop/lib/_KERNEL_ --no-add-needed /boot/system/develop/lib/haiku_version_glue.o
 TEMPLATE_VBOXR0DRV_CFLAGS              = -fno-PIC \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
@@ -4550,6 +4578,7 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32    = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc64    = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
+TEMPLATE_VBOXR3EXE_CXXFLAGS.debug      = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
 TEMPLATE_VBOXR3EXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
   TEMPLATE_VBOXR3EXE_CFLAGS           += $(VBOX_GCC_WERR)
@@ -4576,6 +4605,8 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc64     = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
 TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
+TEMPLATE_VBOXR3EXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
+TEMPLATE_VBOXR3EXE_LIBS.debug          = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
 
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
@@ -5243,7 +5274,7 @@ else
  else # x86:
   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS         = -nostdlib
   ifn1of ($(KBUILD_TARGET), os2 darwin solaris)
-   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS       += -Wl,--no-undefined
+   TEMPLATE_VBoxNoCrtGccLib_LDFLAGS       += $(VBOX_GCC_NO_UNDEFINED)
   endif
  endif # x86
  TEMPLATE_VBoxNoCrtGccLib_LDFLAGS.darwin   = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)
@@ -5356,6 +5387,7 @@ TEMPLATE_VBOXMAINEXE_CXXFLAGS            = -g $(VBOX_GCC_pipe) \
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile   = -finstrument-functions
+TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug      = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
 TEMPLATE_VBOXMAINEXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) $(VBOX_GCC_Wno-variadic-macros) \
 	$(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_IPRT_FMT_CHECK)
  ifdef VBOX_WITH_NO_GCC_WARNING_POLICY
@@ -5364,6 +5396,7 @@ TEMPLATE_VBOXMAINEXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANT
 TEMPLATE_VBOXMAINEXE_CFLAGS.x86          = -m32
 TEMPLATE_VBOXMAINEXE_CFLAGS.amd64        = -m64
 TEMPLATE_VBOXMAINEXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
+TEMPLATE_VBOXMAINEXE_CFLAGS.debug        = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.debug)
 TEMPLATE_VBOXMAINEXE_OBJCFLAGS           = $(TEMPLATE_VBOXMAINEXE_CFLAGS)
 TEMPLATE_VBOXMAINEXE_OBJCFLAGS.x86       = $(TEMPLATE_VBOXMAINEXE_CFLAGS.x86)
 TEMPLATE_VBOXMAINEXE_OBJCFLAGS.amd64     = $(TEMPLATE_VBOXMAINEXE_CFLAGS.amd64)
@@ -5374,6 +5407,8 @@ TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.amd64
 TEMPLATE_VBOXMAINEXE_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
 TEMPLATE_VBOXMAINEXE_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
+TEMPLATE_VBOXMAINEXE_LDFLAGS.debug       = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
+TEMPLATE_VBOXMAINEXE_LIBS.debug          = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME) dl
 TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)
@@ -5906,6 +5941,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -pthread
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_FLAGS),)
   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C) -fno-exceptions $(VBOX_GCC_IPRT_FMT_CHECK)
   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.x86 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86)
   TEMPLATE_VBOXQTGUIEXE_OBJCFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
@@ -5919,6 +5955,8 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_OBJCXXFLAGS.amd64 = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LDFLAGS),)
+  TEMPLATE_VBOXQTGUIEXE_LIBS.debug    = $(if $(VBOX_WITH_GCC_SANITIZER),$(VBOX_GCC_SANITIZER_LIBS),)
   TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(VBOX_LIBS_QT) \
 	$(LIB_SDL) \
@@ -6315,7 +6353,11 @@ else # the gcc guys
  TEMPLATE_VBOXGUESTR3EXE_EXTENDS  = VBOXR3EXE
  TEMPLATE_VBOXGUESTR3EXE_TOOL    := $(subst GXX,GCC,$(TEMPLATE_VBOXR3EXE_TOOL))
  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS = $(TEMPLATE_VBOXR3EXE_CXXFLAGS) -fno-exceptions
+ # Do not inherit sanitizer flags from VBOXR3EXE in guest executables.  Deal with them separately.
+ TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(NO_SUCH_VARIABLE),)
+ TEMPLATE_VBOXGUESTR3EXE_CFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(NO_SUCH_VARIABLE),)
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux = $(filter-out $(VBOX_GCC_ORIGIN_OPT),$(TEMPLATE_VBOXR3EXE_LDFLAGS.linux))
+ TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.debug = $(if $(VBOX_WITH_GCC_SANITIZER),$(NO_SUCH_VARIABLE),)
  ifdef VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE
   ifeq ($(KBUILD_TARGET_ARCH),x86)
    TEMPLATE_VBOXGUESTR3EXE_TOOL         := VBoxXGccX86RedHatLinux

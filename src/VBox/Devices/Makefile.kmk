@@ -103,7 +103,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDU_LDFLAGS.darwin += -framework IOKit
  endif
 
- VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
+ VBoxDDU_LDFLAGS.linux    = $(VBOX_GCC_NO_UNDEFINED)
  $(call VBOX_SET_VER_INFO_DLL,VBoxDDU,VirtualBox VMM Devices and Drivers Utilities)
 
  #
@@ -220,7 +220,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	-framework Carbon \
  	-framework DiskArbitration \
  	-framework SystemConfiguration
- VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
+ VBoxDD_LDFLAGS.linux    = $(VBOX_GCC_NO_UNDEFINED)
 
  # --- Tracing bits. ---
 
@@ -1064,7 +1064,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(LIB_RUNTIME)
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
- VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
+ VBoxDD2_LDFLAGS.linux   = $(VBOX_GCC_NO_UNDEFINED)
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 
