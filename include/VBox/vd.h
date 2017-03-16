@@ -565,7 +565,7 @@ typedef struct VDREGIONDESC
 /** Pointer to a region descriptor. */
 typedef VDREGIONDESC *PVDREGIONDESC;
 /** Pointer to a constant region descriptor. */
-typedef const VDREGIONDESC PCVDREGIONDESC;
+typedef const VDREGIONDESC *PCVDREGIONDESC;
 
 /**
  * Disk region list.
