@@ -165,6 +165,10 @@ FNIEMOP_DEF(iemOp_pop_ES)
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @optest                  op1=7 op2=12 -> op1=15   efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
+ * @optest            op1=0xee op2=0x11  -> op1=0xff efl&|=nc,po,na,nz,ng,nv
+ * @optest            op1=0xff op2=0xff  -> op1=0xff efl&|=nc,po,na,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_or_Eb_Gb)
 {
@@ -174,12 +178,18 @@ FNIEMOP_DEF(iemOp_or_Eb_Gb)
 }
 
 
-/**
+/*
  * @opcode      0x09
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
+ * @optest      op1=-2 op2=1  -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o16 / op1=0x5a5a             op2=0xa5a5             -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o32 / op1=0x5a5a5a5a         op2=0xa5a5a5a5         -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o64 / op1=0x5a5a5a5a5a5a5a5a op2=0xa5a5a5a5a5a5a5a5 -> op1=-1 efl&|=nc,po,na,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_or_Ev_Gv)
 {
@@ -195,6 +205,7 @@ FNIEMOP_DEF(iemOp_or_Ev_Gv)
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @opcopytests iemOp_or_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_or_Gb_Eb)
 {
@@ -210,6 +221,7 @@ FNIEMOP_DEF(iemOp_or_Gb_Eb)
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @opcopytests iemOp_or_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_or_Gv_Ev)
 {
@@ -225,6 +237,7 @@ FNIEMOP_DEF(iemOp_or_Gv_Ev)
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @opcopytests iemOp_or_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_or_Al_Ib)
 {
@@ -234,12 +247,19 @@ FNIEMOP_DEF(iemOp_or_Al_Ib)
 }
 
 
-/**
+/*
  * @opcode      0x0d
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
  * @opflundef   af
  * @opflclear   of,cf
+ * @optest      efl|=of,cf  op1=12 op2=7 -> op1=15   efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl|=of,cf  op1=0 op2=0  -> op1=0    efl&|=nc,po,na,zf,pl,nv
+ * @optest      op1=-2 op2=1  -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o16 / op1=0x5a5a             op2=0xa5a5     -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o32 / op1=0x5a5a5a5a         op2=0xa5a5a5a5 -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o64 / op1=0x5a5a5a5a5a5a5a5a op2=0xa5a5a5a5 -> op1=-1 efl&|=nc,po,na,nz,ng,nv
+ * @optest      o64 / op1=0x5a5a5a5aa5a5a5a5 op2=0x5a5a5a5a -> op1=0x5a5a5a5affffffff efl&|=nc,po,na,nz,pl,nv
  */
 FNIEMOP_DEF(iemOp_or_eAX_Iz)
 {
