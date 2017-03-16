@@ -6501,6 +6501,36 @@ IEM_CIMPL_DEF_0(iemCImpl_aaa)
 }
 
 
+/**
+ * Implements 'AAS'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_aas)
+{
+    PCPUMCTX pCtx = IEM_GET_CTX(pVCpu);
+
+    uint8_t const uMaskedAl = pCtx->al & 0xf;
+    if (   pCtx->eflags.Bits.u1AF
+        || uMaskedAl >= 10)
+    {
+        pCtx->ax  = (pCtx->ax - 6) & UINT16_C(0xff0f);
+        pCtx->ah -= 1;
+        pCtx->eflags.Bits.u1AF = 1;
+        pCtx->eflags.Bits.u1CF = 1;
+    }
+    else
+    {
+        pCtx->al = uMaskedAl;
+        pCtx->eflags.Bits.u1AF = 0;
+        pCtx->eflags.Bits.u1CF = 0;
+    }
+
+    iemHlpUpdateArithEFlagsU8(pVCpu, pCtx->al, X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF, X86_EFL_OF);
+    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+
 
 
 /*
