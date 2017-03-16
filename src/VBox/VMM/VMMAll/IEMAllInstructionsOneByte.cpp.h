@@ -331,6 +331,8 @@ FNIEMOP_DEF(iemOp_2byteEscape)
  * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
  * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
  * @optest      op1=0xff op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
+ * @optest      op1=0  op2=0 efl|=cf -> op1=1 efl&|=nc,pe,na,nz,pl,nv
+ * @optest      op1=0  op2=0 efl&~=cf -> op1=0 efl&|=nc,po,na,zf,pl,nv
  */
 FNIEMOP_DEF(iemOp_adc_Eb_Gb)
 {
@@ -347,6 +349,8 @@ FNIEMOP_DEF(iemOp_adc_Eb_Gb)
  * @optest      op1=1 op2=1 efl&~=cf -> op1=2 efl&|=nc,pe,na,nz,pl,nv
  * @optest      op1=1 op2=1 efl|=cf  -> op1=3 efl&|=nc,po,na,nz,pl,nv
  * @optest      op1=-1 op2=0 efl|=cf -> op1=0 efl&|=cf,po,af,zf,pl,nv
+ * @optest      op1=0  op2=0 efl|=cf -> op1=1 efl&|=nc,pe,na,nz,pl,nv
+ * @optest      op1=0  op2=0 efl&~=cf -> op1=0 efl&|=nc,po,na,zf,pl,nv
  */
 FNIEMOP_DEF(iemOp_adc_Ev_Gv)
 {
