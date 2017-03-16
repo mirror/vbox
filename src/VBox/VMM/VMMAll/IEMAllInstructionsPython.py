@@ -2014,7 +2014,7 @@ class SimpleParser(object):
             #
             sFlatSection = self.flattenAllSections([asSectionLines,]);
             if not sFlatSection:
-                self.errorComment(iTagLine, '%s: missing value' % ( sTag,));
+                self.errorComment(iTagLine, '%s: missing value (dbg: aasSections=%s)' % ( sTag, aasSections));
                 continue;
             oTest = InstructionTest(oInstr);
 
@@ -2317,6 +2317,8 @@ class SimpleParser(object):
                 #
                 # Process the previous tag.
                 #
+                if not asCurSection and len(aasSections) > 1:
+                    aasSections.pop(-1);
                 if sCurTag in self.dTagHandlers:
                     self.dTagHandlers[sCurTag](sCurTag, aasSections, iCurTagLine, iLine);
                     cOpTags += 1;
@@ -2344,6 +2346,8 @@ class SimpleParser(object):
         #
         # Process the final tag.
         #
+        if not asCurSection and len(aasSections) > 1:
+            aasSections.pop(-1);
         if sCurTag in self.dTagHandlers:
             self.dTagHandlers[sCurTag](sCurTag, aasSections, iCurTagLine, iLine);
             cOpTags += 1;

@@ -900,10 +900,12 @@ FNIEMOP_DEF(iemOp_seg_SS)
  * @opcode      0x37
  * @opfltest    af,cf
  * @opflmodify  cf,pf,af,zf,sf,of
- * @opflundef   of
+ * @opflundef   pf,zf,sf,of
  * @opgroup     og_gen_arith_dec
  * @optest      efl&~=af ax=9      -> efl&|=nc,po,na,nz,pl,nv
  * @optest      efl&~=af ax=0      -> efl&|=nc,po,na,zf,pl,nv
+ * @optest      efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
+ * @optest      efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
  * @optest      efl|=af  ax=0      -> ax=0x0106 efl&|=cf,po,af,nz,pl,nv
  * @optest      efl|=af  ax=0x0100 -> ax=0x0206 efl&|=cf,po,af,nz,pl,nv
  * @optest      efl|=af  ax=0x000a -> ax=0x0100 efl&|=cf,po,af,zf,pl,nv
@@ -1006,8 +1008,40 @@ FNIEMOP_DEF(iemOp_seg_DS)
 
 /**
  * @opcode      0x3f
+ * @opfltest    af,cf
+ * @opflmodify  cf,pf,af,zf,sf,of
+ * @opflundef   pf,zf,sf,of
+ * @opgroup     og_gen_arith_dec
+ * @optest      efl&~=af ax=0x0009 -> efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl&~=af ax=0x0000 -> efl&|=nc,po,na,zf,pl,nv
+ * @optest      efl&~=af ax=0x00f0 -> ax=0x0000 efl&|=nc,po,na,zf,pl,nv
+ * @optest      efl&~=af ax=0x00f9 -> ax=0x0009 efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl|=af  ax=0x0000 -> ax=0xfe0a efl&|=cf,po,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x0100 -> ax=0xff0a efl&|=cf,po,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x000a -> ax=0xff04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x010a -> ax=0x0004 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x020a -> ax=0x0104 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x0f0a -> ax=0x0e04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl|=af  ax=0x7f0a -> ax=0x7e04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl|=af  ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl&~=af ax=0xff0a -> ax=0xfe04 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl&~=af ax=0xff09 -> ax=0xff09 efl&|=nc,po,na,nz,pl,nv
+ * @optest      efl&~=af ax=0x000b -> ax=0xff05 efl&|=cf,po,af,nz,pl,nv
+ * @optest      efl&~=af ax=0x000c -> ax=0xff06 efl&|=cf,po,af,nz,pl,nv
+ * @optest      efl&~=af ax=0x000d -> ax=0xff07 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl&~=af ax=0x000e -> ax=0xff08 efl&|=cf,pe,af,nz,pl,nv
+ * @optest      efl&~=af ax=0x000f -> ax=0xff09 efl&|=cf,po,af,nz,pl,nv
  */
-FNIEMOP_STUB(iemOp_aas);
+FNIEMOP_DEF(iemOp_aas)
+{
+    IEMOP_MNEMONIC0(FIXED, AAS, aas, DISOPTYPE_HARMLESS | DISOPTYPE_INVALID_64, 0); /* express implicit AL/AX register use */
+    IEMOP_HLP_NO_64BIT();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_OF);
+
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_aas);
+}
+
 
 /**
  * Common 'inc/dec/not/neg register' helper.
