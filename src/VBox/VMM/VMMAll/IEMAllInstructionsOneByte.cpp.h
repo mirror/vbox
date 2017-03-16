@@ -51,9 +51,9 @@ extern const PFNIEMOP g_apfnOneByteMap[256]; /* not static since we need to forw
  * @ophints     harmless ignores_op_size
  * @opstats     add_Eb_Gb
  * @opgroup     op_gen_arith_bin
- * @optest              op1=1   op2=1   -> op1=2   efl&|=nv,pl,nz,na,pe,nc
- * @optest      efl|=cf op1=1   op2=2   -> op1=3   efl&|=nv,pl,nz,na,po,nc
- * @optest              op1=254 op2=1   -> op1=255 efl&|=nv,ng,nz,na,po,nc
+ * @optest              op1=1   op2=1   -> op1=2   efl&|=nc,pe,na,nz,pl,nv
+ * @optest      efl|=cf op1=1   op2=2   -> op1=3   efl&|=nc,po,na,nz,pl,nv
+ * @optest              op1=254 op2=1   -> op1=255 efl&|=nc,po,na,nz,ng,nv
  * @optest              op1=128 op2=128 -> op1=0   efl&|=ov,pl,zf,na,po,cf
  */
 FNIEMOP_DEF(iemOp_add_Eb_Gb)
@@ -67,6 +67,10 @@ FNIEMOP_DEF(iemOp_add_Eb_Gb)
  * @opcode      0x01
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
+ * @optest               op1=1  op2=1  -> op1=2  efl&|=nc,pe,na,nz,pl,nv
+ * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
+ * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
+ * @optest               op1=-1 op2=-1 -> op1=-2 efl&|=cf,pe,af,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_add_Ev_Gv)
 {
@@ -79,7 +83,7 @@ FNIEMOP_DEF(iemOp_add_Ev_Gv)
  * @opcode      0x02
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
- * @opcopytests add_Eb_Gb
+ * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Gb_Eb)
 {
@@ -92,6 +96,7 @@ FNIEMOP_DEF(iemOp_add_Gb_Eb)
  * @opcode      0x03
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
+ * @opcopytests iemOp_add_Ev_Gv
  */
 FNIEMOP_DEF(iemOp_add_Gv_Ev)
 {
@@ -104,7 +109,7 @@ FNIEMOP_DEF(iemOp_add_Gv_Ev)
  * @opcode      0x04
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
- * @opcopytests add_Eb_Gb
+ * @opcopytests iemOp_add_Eb_Gb
  */
 FNIEMOP_DEF(iemOp_add_Al_Ib)
 {
@@ -118,6 +123,9 @@ FNIEMOP_DEF(iemOp_add_Al_Ib)
  * @opgroup     op_gen_arith_bin
  * @opflmodify  of,sf,zf,af,pf,cf
  * @optest      op1=1 op2=1 -> op1=2 efl&|=nv,pl,nz,na,pe
+ * @optest      efl|=cf  op1=2  op2=2  -> op1=4  efl&|=nc,pe,na,nz,pl,nv
+ * @optest      efl&~=cf op1=-1 op2=1  -> op1=0  efl&|=cf,po,af,zf,pl,nv
+ * @optest               op1=-1 op2=-1 -> op1=-2 efl&|=cf,pe,af,nz,ng,nv
  */
 FNIEMOP_DEF(iemOp_add_eAX_Iz)
 {

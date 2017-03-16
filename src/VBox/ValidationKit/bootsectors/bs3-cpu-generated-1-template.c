@@ -74,9 +74,9 @@
 /** @def  BS3CG1_DPRINTF
  * Debug print macro.
  */
-#if 1
+#if 0
 # define BS3CG1_DPRINTF(a_ArgList) Bs3TestPrintf a_ArgList
-//# define BS3CG1_DEBUG_CTX_MOD
+# define BS3CG1_DEBUG_CTX_MOD
 #else
 # define BS3CG1_DPRINTF(a_ArgList) do { } while (0)
 #endif
@@ -697,7 +697,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                     off += 4;
                     pThis->aOperands[0].cbOp = 4;
                     pThis->aOperands[1].cbOp = 4;
-                    pThis->cbOperand         = 2;
+                    pThis->cbOperand         = 4;
                 }
             }
             else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
@@ -1338,7 +1338,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
             iEncodingNext = Bs3Cg1EncodeNext(&This, iEncoding);
             if (iEncodingNext <= iEncoding)
                 break;
-            BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u %.*Rhxs\n", iEncoding, This.cbCurInstr, This.cbCurInstr, This.abCurInstr));
+            BS3CG1_DPRINTF(("\ndbg: Encoding #%u: cbCurInst=%u: %.*Rhxs\n", iEncoding, This.cbCurInstr, This.cbCurInstr, This.abCurInstr));
 
             /*
              * Do the rings.
@@ -1394,16 +1394,17 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                                                              pHdr->cbSelector + pHdr->cbInput, pHdr->cbOutput,
                                                              &This.TrapFrame.Ctx, NULL /*pbCode*/))
                                 {
-                                    Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx, This.cbCurInstr,  0 /*cbSpAdjust*/,
-                                                         0 /*fExtraEfl*/, pszMode, iEncoding);
+                                    if (!Bs3TestCheckRegCtxEx(&This.TrapFrame.Ctx, &This.Ctx, This.cbCurInstr,  0 /*cbSpAdjust*/,
+                                                              0 /*fExtraEfl*/, pszMode, iEncoding))
+                                        Bs3TestFailedF("encoding#%u: %.*Rhxs", iEncoding, This.cbCurInstr, This.abCurInstr);
                                 }
                             }
                             else
                             {
-                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding: %.*Rhxs",
+                                Bs3TestFailedF("bXcpt=%#x expected %#x; rip=%RX64 expected %RX64; encoding#u: %.*Rhxs",
                                                This.TrapFrame.bXcpt, BS3_MODE_IS_PAGED(bMode) ? X86_XCPT_PF : X86_XCPT_UD,
                                                This.TrapFrame.Ctx.rip.u, This.Ctx.rip.u + This.cbCurInstr,
-                                               This.cbCurInstr, This.abCurInstr);
+                                               iEncoding, This.cbCurInstr, This.abCurInstr);
                             }
                         }
                     }
@@ -1413,7 +1414,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                     /* advance */
                     if (pHdr->fLast)
                     {
-                        BS3CG1_DPRINTF(("dbg:  Last\n"));
+                        BS3CG1_DPRINTF(("dbg:  Last\n\n"));
                         break;
                     }
                     pHdr = (PCBS3CG1TESTHDR)((uint8_t BS3_FAR *)(pHdr + 1) + pHdr->cbInput + pHdr->cbOutput + pHdr->cbSelector);

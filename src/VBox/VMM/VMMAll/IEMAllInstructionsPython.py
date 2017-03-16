@@ -77,24 +77,23 @@ g_kdX86EFlagsConstants = {
 
 ## EFlags values allowed in \@opfltest, \@opflmodify, \@opflundef, \@opflset, and \@opflclear.
 g_kdEFlagsMnemonics = {
-    # Debugger flag notation:
-    'ov':   'X86_EFL_OF',   ##< OVerflow.
-    'nv':  '!X86_EFL_OF',   ##< No Overflow.
-
-    'ng':   'X86_EFL_SF',   ##< NeGative (sign).
-    'pl':  '!X86_EFL_SF',   ##< PLuss (sign).
-
-    'zr':   'X86_EFL_ZF',   ##< ZeRo.
-    'nz':  '!X86_EFL_ZF',   ##< No Zero.
-
-    'af':   'X86_EFL_AF',   ##< Aux Flag.
-    'na':  '!X86_EFL_AF',   ##< No Aux.
+    # Debugger flag notation (sorted by value):
+    'cf':   'X86_EFL_CF',   ##< Carry Flag.
+    'nc':  '!X86_EFL_CF',   ##< No Carry.
 
     'po':   'X86_EFL_PF',   ##< Parity Pdd.
     'pe':  '!X86_EFL_PF',   ##< Parity Even.
 
-    'cf':   'X86_EFL_CF',   ##< Carry Flag.
-    'nc':  '!X86_EFL_CF',   ##< No Carry.
+    'af':   'X86_EFL_AF',   ##< Aux Flag.
+    'na':  '!X86_EFL_AF',   ##< No Aux.
+
+    'zr':   'X86_EFL_ZF',   ##< ZeRo.
+    'nz':  '!X86_EFL_ZF',   ##< No Zero.
+
+    'ng':   'X86_EFL_SF',   ##< NeGative (sign).
+    'pl':  '!X86_EFL_SF',   ##< PLuss (sign).
+
+    'tf':   'X86_EFL_TF',   ##< Trap flag.
 
     'ei':   'X86_EFL_IF',   ##< Enabled Interrupts.
     'di':  '!X86_EFL_IF',   ##< Disabled Interrupts.
@@ -102,21 +101,23 @@ g_kdEFlagsMnemonics = {
     'dn':   'X86_EFL_DF',   ##< DowN (string op direction).
     'up':  '!X86_EFL_DF',   ##< UP (string op direction).
 
-    'vip':  'X86_EFL_VIP',  ##< Virtual Interrupt Pending.
-    'vif':  'X86_EFL_VIF',  ##< Virtual Interrupt Flag.
-    'ac':   'X86_EFL_AC',   ##< Alignment Check.
-    'vm':   'X86_EFL_VM',   ##< Virtual-8086 Mode.
-    'rf':   'X86_EFL_RF',   ##< Resume Flag.
-    'nt':   'X86_EFL_NT',   ##< Nested Task.
-    'tf':   'X86_EFL_TF',   ##< Trap flag.
+    'ov':   'X86_EFL_OF',   ##< OVerflow.
+    'nv':  '!X86_EFL_OF',   ##< No Overflow.
 
-    # Reference manual notation:
-    'of':   'X86_EFL_OF',
-    'sf':   'X86_EFL_SF',
-    'zf':   'X86_EFL_ZF',
+    'nt':   'X86_EFL_NT',   ##< Nested Task.
+    'rf':   'X86_EFL_RF',   ##< Resume Flag.
+    'vm':   'X86_EFL_VM',   ##< Virtual-8086 Mode.
+    'ac':   'X86_EFL_AC',   ##< Alignment Check.
+    'vif':  'X86_EFL_VIF',  ##< Virtual Interrupt Flag.
+    'vip':  'X86_EFL_VIP',  ##< Virtual Interrupt Pending.
+
+    # Reference manual notation not covered above (sorted by value):
     'pf':   'X86_EFL_PF',
+    'zf':   'X86_EFL_ZF',
+    'sf':   'X86_EFL_SF',
     'if':   'X86_EFL_IF',
     'df':   'X86_EFL_DF',
+    'of':   'X86_EFL_OF',
     'iopl': 'X86_EFL_IOPL',
     'id':   'X86_EFL_ID',
 };
@@ -584,15 +585,16 @@ class TestType(object):
         cDigits = len(sHex);
         if cDigits <= self.acbSizes[-1] * 2:
             for cb in self.acbSizes:
-                if cDigits <= cb * 2:
-                    cDigits = int((cDigits + cb - 1) / cb) * cb; # Seems like integer division returns a float in python.
+                cNaturalDigits = cb * 2;
+                if cDigits <= cNaturalDigits:
                     break;
         else:
-            cDigits = int((cDigits + self.acbSizes[-1] - 1) / self.acbSizes[-1]) * self.acbSizes[-1];
-            assert isinstance(cDigits, int)
+            cNaturalDigits = self.acbSizes[-1] * 2;
+            cNaturalDigits = int((cDigits + cNaturalDigits - 1) / cNaturalDigits) * cNaturalDigits;
+            assert isinstance(cNaturalDigits, int)
 
-        if cDigits != len(sHex):
-            cNeeded = cDigits - len(sHex);
+        if cNaturalDigits != cDigits:
+            cNeeded = cNaturalDigits - cDigits;
             if iValue >= 0:
                 sHex = ('0' * cNeeded) + sHex;
             else:
@@ -872,10 +874,39 @@ class InstructionTest(object):
 
     def __init__(self, oInstr): # type: (InstructionTest, Instruction)
         self.oInstr         = oInstr;   # type: InstructionTest
-        self.aoInputs       = [];       # type: TestInOut
-        self.aoOutputs      = [];       # type: TestInOut
+        self.aoInputs       = [];       # type: list(TestInOut)
+        self.aoOutputs      = [];       # type: list(TestInOut)
         self.aoSelectors    = [];       # type: list(TestSelector)
 
+    def toString(self, fRepr = False):
+        """
+        Converts it to string representation.
+        """
+        asWords = [];
+        if self.aoSelectors:
+            for oSelector in self.aoSelectors:
+                asWords.append('%s%s%s' % (oSelector.sVariable, oSelector.sOp, oSelector.sValue,));
+            asWords.append('/');
+
+        for oModifier in self.aoInputs:
+            asWords.append('%s%s%s:%s' % (oModifier.sField, oModifier.sOp, oModifier.sValue, oModifier.sType,));
+
+        asWords.append('->');
+
+        for oModifier in self.aoOutputs:
+            asWords.append('%s%s%s:%s' % (oModifier.sField, oModifier.sOp, oModifier.sValue, oModifier.sType,));
+
+        if fRepr:
+            return '<' + ' '.join(asWords) + '>';
+        return '  '.join(asWords);
+
+    def __str__(self):
+        """ Provide string represenation. """
+        return self.toString(False);
+
+    def __repr__(self):
+        """ Provide unambigious string representation. """
+        return self.toString(True);
 
 class Operand(object):
     """
@@ -1059,10 +1090,16 @@ class Instruction(object): # pylint: disable=too-many-instance-attributes
 
 
 ## All the instructions.
-g_aoAllInstructions = []; # type: Instruction
+g_aoAllInstructions = []; # type: list(Instruction)
 
 ## All the instructions indexed by statistics name (opstat).
-g_dAllInstructionsByStat = {}; # type: Instruction
+g_dAllInstructionsByStat = {}; # type: dict(Instruction)
+
+## All the instructions indexed by function name (opfunction).
+g_dAllInstructionsByFunction = {}; # type: dict(list(Instruction))
+
+## Instructions tagged by oponlytest
+g_aoOnlyTestInstructions = []; # type: list(Instruction)
 
 ## Instruction maps.
 g_dInstructionMaps = {
@@ -1193,7 +1230,10 @@ class SimpleParser(object):
             '@opinvalid':   self.parseTagOpUnusedInvalid,
             '@opinvlstyle': self.parseTagOpUnusedInvalid,
             '@optest':      self.parseTagOpTest,
+            '@optestign':   self.parseTagOpTestIgnore,
+            '@optestignore': self.parseTagOpTestIgnore,
             '@opcopytests': self.parseTagOpCopyTests,
+            '@oponlytest':  self.parseTagOpOnlyTest,
             '@opstats':     self.parseTagOpStats,
             '@opfunction':  self.parseTagOpFunction,
             '@opdone':      self.parseTagOpDone,
@@ -1358,6 +1398,15 @@ class SimpleParser(object):
             else:
                 self.error('Duplicate opstat value "%s"\nnew: %s\nold: %s'
                            % (oInstr.sStats, oInstr, g_dAllInstructionsByStat[oInstr.sStats],));
+
+        #
+        # Add to function indexed dictionary.  We allow multiple instructions per function.
+        #
+        if oInstr.sFunction:
+            if oInstr.sFunction not in g_dAllInstructionsByFunction:
+                g_dAllInstructionsByFunction[oInstr.sFunction] = [oInstr,];
+            else:
+                g_dAllInstructionsByFunction[oInstr.sFunction].append(oInstr);
 
         #self.debug('%d..%d: %s; %d @op tags' % (oInstr.iLineCreated, oInstr.iLineCompleted, oInstr.sFunction, oInstr.cOpTags));
         return True;
@@ -2074,10 +2123,22 @@ class SimpleParser(object):
         _ = iEndLine;
         return True;
 
+    def parseTagOpTestIgnore(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tag:        \@optestign | \@optestignore
+        Value:      <value is ignored>
+
+        This is a simple trick to ignore a test while debugging another.
+
+        See also \@oponlytest.
+        """
+        _ = sTag; _ = aasSections; _ = iTagLine; _ = iEndLine;
+        return True;
+
     def parseTagOpCopyTests(self, sTag, aasSections, iTagLine, iEndLine):
         """
         Tag:        \@opcopytests
-        Value:      <opstat value> [..]
+        Value:      <opstat | function> [..]
         Example:    \@opcopytests add_Eb_Gb
 
         Trick to avoid duplicating tests for different encodings of the same
@@ -2092,13 +2153,36 @@ class SimpleParser(object):
             return self.errorComment(iTagLine, '%s: requires at least on reference value' % (sTag,));
         for sToCopy in asToCopy:
             if sToCopy not in oInstr.asCopyTests:
-                if self.oReStatsName.match(sToCopy):
+                if self.oReStatsName.match(sToCopy) or self.oReFunctionName.match(sToCopy):
                     oInstr.asCopyTests.append(sToCopy);
                 else:
-                    self.errorComment(iTagLine, '%s: invalid instruction reference (opstat) "%s" (valid: %s)'
-                                                % (sTag, sToCopy, self.oReStatsName.pattern));
+                    self.errorComment(iTagLine, '%s: invalid instruction reference (opstat or function) "%s" (valid: %s or %s)'
+                                                % (sTag, sToCopy, self.oReStatsName.pattern, self.oReFunctionName.pattern));
             else:
                 self.errorComment(iTagLine, '%s: ignoring duplicate "%s"' % (sTag, sToCopy,));
+
+        _ = iEndLine;
+        return True;
+
+    def parseTagOpOnlyTest(self, sTag, aasSections, iTagLine, iEndLine):
+        """
+        Tag:        \@oponlytest
+        Value:      none
+
+        Only test instructions with this tag.  This is a trick that is handy
+        for singling out one or two new instructions or tests.
+
+        See also \@optestignore.
+        """
+        oInstr = self.ensureInstructionForOpTag(iTagLine);
+
+        # Validate and add instruction to only test dictionary.
+        sValue = self.flattenAllSections(aasSections).strip();
+        if sValue:
+            return self.errorComment(iTagLine, '%s: does not take any value: %s' % (sTag, sValue));
+
+        if oInstr not in g_aoOnlyTestInstructions:
+            g_aoOnlyTestInstructions.append(oInstr);
 
         _ = iEndLine;
         return True;
@@ -2665,11 +2749,17 @@ def __doTestCopying():
         if oDstInstr.asCopyTests:
             for sSrcInstr in oDstInstr.asCopyTests:
                 oSrcInstr = g_dAllInstructionsByStat.get(sSrcInstr, None);
-                if oSrcInstr and oSrcInstr != oDstInstr:
-                    oDstInstr.aoTests.extend(oSrcInstr.aoTests);
-                elif oSrcInstr:
-                    asErrors.append('%s:%s: error: @opcopytests reference "%s" matches the destination\n'
-                                    % ( oDstInstr.sSrcFile, oDstInstr.iLineCreated, sSrcInstr));
+                if oSrcInstr:
+                    aoSrcInstrs = [oSrcInstr,];
+                else:
+                    aoSrcInstrs = g_dAllInstructionsByFunction.get(sSrcInstr, []);
+                if aoSrcInstrs:
+                    for oSrcInstr in aoSrcInstrs:
+                        if oSrcInstr != oDstInstr:
+                            oDstInstr.aoTests.extend(oSrcInstr.aoTests);
+                        else:
+                            asErrors.append('%s:%s: error: @opcopytests reference "%s" matches the destination\n'
+                                            % ( oDstInstr.sSrcFile, oDstInstr.iLineCreated, sSrcInstr));
                 else:
                     asErrors.append('%s:%s: error: @opcopytests reference "%s" not found\n'
                                     % ( oDstInstr.sSrcFile, oDstInstr.iLineCreated, sSrcInstr));
@@ -2678,6 +2768,18 @@ def __doTestCopying():
         sys.stderr.write(u''.join(asErrors));
     return len(asErrors);
 
+
+def __applyOnlyTest():
+    """
+    If g_aoOnlyTestInstructions contains any instructions, drop aoTests from
+    all other instructions so that only these get tested.
+    """
+    if g_aoOnlyTestInstructions:
+        for oInstr in g_aoAllInstructions:
+            if oInstr.aoTests:
+                if oInstr not in g_aoOnlyTestInstructions:
+                    oInstr.aoTests = [];
+    return 0;
 
 def __parseAll():
     """
@@ -2693,7 +2795,7 @@ def __parseAll():
     ]:
         cErrors += __parseFileByName(os.path.join(sSrcDir, sName), sDefaultMap);
     cErrors += __doTestCopying();
-
+    cErrors += __applyOnlyTest();
 
     if cErrors != 0:
         #raise Exception('%d parse errors' % (cErrors,));

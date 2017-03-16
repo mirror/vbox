@@ -72,9 +72,9 @@ class Bs3Cg1TestEncoder(object):
         for oSelector in aoSelectors:
             sConstant = oSelector.kdVariables[oSelector.sVariable][oSelector.sValue];
             sConstant = sConstant.upper().replace('.', '_');
-            if oSelector.sValue.sOp == '==':
+            if oSelector.sOp == '==':
                 sByte = '(BS3CG1PRED_%s << BS3CG1SEL_OP_PRED_SHIFT) | BS3CG1SEL_OP_IS_TRUE' % (sConstant,);
-            elif oSelector.sValue.sOp == '!=':
+            elif oSelector.sOp == '!=':
                 sByte = '(BS3CG1PRED_%s << BS3CG1SEL_OP_PRED_SHIFT) | BS3CG1SEL_OP_IS_FALSE' % (sConstant,);
             else:
                 raise Exception('Unknown selector operator: %s' % (oSelector.sOp,));
@@ -166,7 +166,7 @@ class Bs3Cg1TestEncoder(object):
                 else:
                     sOpcode += 'BS3CG1_CTXOP_SIZE_ESC';
                 if fSignExtend:
-                    sOpcode += '| BS3CG1_CTXOP_SIGN_EXT';
+                    sOpcode += ' | BS3CG1_CTXOP_SIGN_EXT';
                 asRet.append(sOpcode);
 
                 # Escaped field identifier.
@@ -226,9 +226,10 @@ class Bs3Cg1EncodedTests(object):
     """
 
     def __init__(self, oInstr):
-        self.offTests = -1;
-        self.cbTests  = 0;
-        self.asLines  = [];
+        self.offTests       = -1;
+        self.cbTests        = 0;
+        self.asLines        = [];       # type: list(str)
+        self.aoInstructions = [];       # type: list(iai.Instruction)
 
         # Encode the tests.
         for iTest, oTest in enumerate(oInstr.aoTests):
@@ -238,7 +239,8 @@ class Bs3Cg1EncodedTests(object):
             self.cbTests += len(oEncodedTest.asHdr) + len(oEncodedTest.asSelectors) \
                           + len(oEncodedTest.asInputs) + len(oEncodedTest.asOutputs);
 
-            self.asLines += self.bytesToLines('    /*hdr:*/ ', oEncodedTest.asHdr);
+            self.asLines.append('    /* test #%s: %s */' % (iTest, oTest,));
+            self.asLines += self.bytesToLines('             ', oEncodedTest.asHdr);
             if oEncodedTest.asSelectors:
                 self.asLines += self.bytesToLines('    /*sel:*/ ', oEncodedTest.asSelectors);
             if oEncodedTest.asInputs:
@@ -341,7 +343,7 @@ class Bs3CpuGenerated1Generator(object):
         self.aoTests        = [];       # type: Bs3Cg1EncodedTests
         self.cbTests        = 0;
 
-    def addTests(self, oTests):
+    def addTests(self, oTests, oInstr): # type: (Bs3Cg1EncodedTests, iai.Instruction) -> Bs3Cg1EncodedTests
         """
         Adds oTests to self.aoTests, setting the oTests.offTests member.
         Checks for and eliminates duplicates.
@@ -350,12 +352,16 @@ class Bs3CpuGenerated1Generator(object):
         # Check for duplicates.
         for oExisting in self.aoTests:
             if oTests.isEqual(oExisting):
+                oExisting.aoInstructions.append(oInstr);
                 return oExisting;
 
         # New test, so add it.
         oTests.offTests = self.cbTests;
         self.aoTests.append(oTests);
         self.cbTests   += oTests.cbTests;
+
+        assert not oTests.aoInstructions;
+        oTests.aoInstructions.append(oInstr);
 
         return oTests;
 
@@ -373,7 +379,7 @@ class Bs3CpuGenerated1Generator(object):
                                                                    + (oInstr.sOpcode if oInstr.sOpcode else 'zz')):
             if oInstr.aoTests:
                 oTests = Bs3Cg1EncodedTests(oInstr);
-                oTests = self.addTests(oTests);
+                oTests = self.addTests(oTests, oInstr);
 
                 for oMap in oInstr.aoMaps:
                     self.aoInstructions.append(Bs3Cg1Instruction(oMap, oInstr, oTests));
@@ -490,7 +496,10 @@ class Bs3CpuGenerated1Generator(object):
             '{',
         ];
         for oTests in self.aoTests:
-            asLines.append('    /* offTests=%s */' % (oTests.offTests,));
+            asLines.append('    /*');
+            asLines.append('     * offTests=%s' % (oTests.offTests,));
+            asLines.append('     * Instructions: %s' % (', '.join([oInstr.sStats for oInstr in oTests.aoInstructions]),));
+            asLines.append('     */');
             asLines += oTests.asLines;
         asLines += [
             '};',
