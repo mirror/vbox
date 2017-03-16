@@ -36,6 +36,7 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/cdefs.h>
+#include <VBox/bios.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 
@@ -334,9 +335,9 @@ static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNe
     }
     pThis->fNewShutdownPort = fNewShutdownPort;
     if (fNewShutdownPort)
-        pThis->ShutdownPort = 0x040f;
+        pThis->ShutdownPort = VBOX_BIOS_SHUTDOWN_PORT;
     else
-        pThis->ShutdownPort = 0x9800;
+        pThis->ShutdownPort = VBOX_BIOS_OLD_SHUTDOWN_PORT;
     return PDMDevHlpIOPortRegister(pDevIns, pThis->ShutdownPort, 1, NULL,
                                    pcbiosIOPortWrite, pcbiosIOPortRead,
                                    NULL, NULL, "Bochs PC BIOS - Shutdown");
