@@ -24,8 +24,8 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-;; The magic shutdown I/O port
-SHUTDOWN_PORT   equ     040fh
+%include "VBox/bios.mac"
+
 
 BITS 16
 start:
@@ -38,10 +38,11 @@ the_code:
     cli
 
     ;
-    ; Bochs shutdown request - write "Shutdown" byte by byte to shutdown port.
+    ; VBox/Bochs shutdown request - write "Shutdown" byte by byte to shutdown port.
     ;
     mov cx, 64
-    mov dx, SHUTDOWN_PORT
+    mov dx, VBOX_BIOS_SHUTDOWN_PORT
+    mov bx, VBOX_BIOS_OLD_SHUTDOWN_PORT
 retry:
     mov al, 'S'
     out dx, al
@@ -59,6 +60,7 @@ retry:
     out dx, al
     mov al, 'n'
     out dx, al
+    xchg dx, bx                         ; alternate between the new (VBox) and old (Bochs) ports.
     loop retry
 
     ;

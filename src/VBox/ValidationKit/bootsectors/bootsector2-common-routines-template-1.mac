@@ -25,12 +25,12 @@
 ;
 
 %include "bootsector2-template-header.mac"
+%include "VBox/bios.mac"
+
 ALIGNCODE(32)
 GLOBALNAME TMPL_NM_CMN(g_szMode)
         db TMPL_MODE_STR, 0
 
-;; The magic shutdown I/O port
-%define SHUTDOWN_PORT   0x040f
 
 ;;
 ; Shutdown routine.
@@ -45,13 +45,15 @@ BEGINPROC TMPL_NM_CMN(Shutdown)
 %else
         cli
         mov     bl, 64
-        mov     dx, SHUTDOWN_PORT
         mov     ax, ss
         mov     ds, ax
+        mov     dx, VBOX_BIOS_SHUTDOWN_PORT
+        mov     ax, VBOX_BIOS_OLD_SHUTDOWN_PORT
 .retry:
         mov     ecx, 8
         mov     esi, .s_szShutdown
         rep outsb
+        xchg    dx, ax                  ; alternate between the new (VBox) and old (Bochs) ports.
         dec     bl
         jnz     .retry
         ; Shutdown failed!
