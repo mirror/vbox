@@ -136,8 +136,8 @@ typedef struct BS3CG1STATE
     uint8_t                 cOperands;
     /** @} */
 
-    /** Operand size (16, 32, 64, or 0). */
-    uint8_t                 cBitsOp;
+    /** Operand size in bytes (0 if not applicable). */
+    uint8_t                 cbOperand;
     /** Target ring (0..3). */
     uint8_t                 uCpl;
 
@@ -667,7 +667,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                     off += 2;
                     pThis->aOperands[0].cbOp = 2;
                     pThis->aOperands[1].cbOp = 2;
-                    pThis->cBitsOp = 16;
+                    pThis->cbOperand         = 2;
                 }
                 else
                 {
@@ -675,7 +675,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                     off += 4;
                     pThis->aOperands[0].cbOp = 4;
                     pThis->aOperands[1].cbOp = 4;
-                    pThis->cBitsOp = 32;
+                    pThis->cbOperand         = 4;
                 }
             }
             else if (iEncoding == 1 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
@@ -689,7 +689,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                     off += 2;
                     pThis->aOperands[0].cbOp = 2;
                     pThis->aOperands[1].cbOp = 2;
-                    pThis->cBitsOp = 16;
+                    pThis->cbOperand         = 2;
                 }
                 else
                 {
@@ -697,7 +697,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                     off += 4;
                     pThis->aOperands[0].cbOp = 4;
                     pThis->aOperands[1].cbOp = 4;
-                    pThis->cBitsOp = 32;
+                    pThis->cbOperand         = 2;
                 }
             }
             else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
@@ -709,7 +709,7 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                 off += 4;
                 pThis->aOperands[0].cbOp = 8;
                 pThis->aOperands[1].cbOp = 4;
-                pThis->cBitsOp = 64;
+                pThis->cbOperand         = 8;
             }
             else
                 break;
@@ -717,13 +717,50 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             iEncoding++;
             break;
 
-        case BS3CG1ENC_MODRM_Ev_Gv:
         case BS3CG1ENC_MODRM_Gv_Ev:
+        case BS3CG1ENC_MODRM_Ev_Gv:
+            if (iEncoding == 0)
+            {
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_OZ_RDX;
+                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 2;
+                else
+                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 4;
+            }
+            else if (iEncoding == 1 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                pThis->abCurInstr[0] = P_OZ;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_OZ_RDX;
+                if (!BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 2;
+                else
+                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 4;
+            }
+            else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+            {
+                pThis->abCurInstr[0] = REX_W___;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_RDX;
+                pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 8;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
             break;
 
-        case BS3CG1ENC_END:
-        case BS3CG1ENC_INVALID:
-            /* Impossible; to shut up gcc. */
+        default:
+            Bs3TestFailedF("Internal error! BS3CG1ENC_XXX = %u not implemented", pThis->enmEncoding);
             break;
     }
 
@@ -835,9 +872,9 @@ static bool Bs3Cg1RunSelector(PBS3CG1STATE pThis, PCBS3CG1TESTHDR pHdr)
             case ((a_Pred) << BS3CG1SEL_OP_KIND_MASK) | BS3CG1SEL_OP_IS_FALSE: \
                 if (a_Expr) return false; \
                 break
-            CASE_PRED(BS3CG1PRED_SIZE_O16, pThis->cBitsOp == 16);
-            CASE_PRED(BS3CG1PRED_SIZE_O32, pThis->cBitsOp == 32);
-            CASE_PRED(BS3CG1PRED_SIZE_O64, pThis->cBitsOp == 64);
+            CASE_PRED(BS3CG1PRED_SIZE_O16, pThis->cbOperand == 2);
+            CASE_PRED(BS3CG1PRED_SIZE_O32, pThis->cbOperand == 4);
+            CASE_PRED(BS3CG1PRED_SIZE_O64, pThis->cbOperand == 8);
             CASE_PRED(BS3CG1PRED_RING_0, pThis->uCpl == 0);
             CASE_PRED(BS3CG1PRED_RING_1, pThis->uCpl == 1);
             CASE_PRED(BS3CG1PRED_RING_2, pThis->uCpl == 2);
@@ -974,7 +1011,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
         if (cbDst == BS3CG1DSTSIZE_OPERAND)
             cbDst = pThis->aOperands[idxField - BS3CG1DST_OP1].cbOp;
         else if (cbDst == BS3CG1DSTSIZE_OPERAND_SIZE_GRP)
-            cbDst = pThis->cBitsOp / 8;
+            cbDst = pThis->cbOperand;
         if (cbDst <= 8)
         {
             unsigned const offField = g_aoffBs3Cg1DstFields[idxField];
