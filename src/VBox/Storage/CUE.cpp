@@ -574,7 +574,7 @@ static void cueTokenizerGetStringConst(PCUETOKENIZER pTokenizer, PCUETOKEN pToke
  */
 static void cueTokenizerGetEos(PCUETOKENIZER pTokenizer, PCUETOKEN pToken)
 {
-    Assert(cueTokenizerGetCh(pTokenizer) == '\0');
+    Assert(cueTokenizerGetCh(pTokenizer) == '\0'); RT_NOREF(pTokenizer);
 
     pToken->enmType = CUETOKENTYPE_EOS;
 }
@@ -1515,7 +1515,7 @@ static DECLCALLBACK(int) cueWrite(void *pBackendData, uint64_t uOffset, size_t c
                                   PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                                   size_t *pcbPostRead, unsigned fWrite)
 {
-    RT_NOREF5(pIoCtx, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
+    RT_NOREF7(uOffset, cbToWrite, pIoCtx, pcbWriteProcess, pcbPreRead, pcbPostRead, fWrite);
     LogFlowFunc(("pBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
                  pBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
@@ -1601,6 +1601,7 @@ static DECLCALLBACK(uint64_t) cueGetFileSize(void *pBackendData)
 static DECLCALLBACK(int) cueGetPCHSGeometry(void *pBackendData,
                                             PVDGEOMETRY pPCHSGeometry)
 {
+    RT_NOREF1(pPCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
@@ -1617,6 +1618,7 @@ static DECLCALLBACK(int) cueGetPCHSGeometry(void *pBackendData,
 static DECLCALLBACK(int) cueSetPCHSGeometry(void *pBackendData,
                                             PCVDGEOMETRY pPCHSGeometry)
 {
+    RT_NOREF1(pPCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pBackendData, pPCHSGeometry, pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads, pPCHSGeometry->cSectors));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
@@ -1637,7 +1639,8 @@ static DECLCALLBACK(int) cueSetPCHSGeometry(void *pBackendData,
 static DECLCALLBACK(int) cueGetLCHSGeometry(void *pBackendData,
                                             PVDGEOMETRY pLCHSGeometry)
 {
-     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
+    RT_NOREF1(pLCHSGeometry);
+    LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
     int rc = VINF_SUCCESS;
 
@@ -1653,6 +1656,7 @@ static DECLCALLBACK(int) cueGetLCHSGeometry(void *pBackendData,
 static DECLCALLBACK(int) cueSetLCHSGeometry(void *pBackendData,
                                             PCVDGEOMETRY pLCHSGeometry)
 {
+    RT_NOREF1(pLCHSGeometry);
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
                  pBackendData, pLCHSGeometry, pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads, pLCHSGeometry->cSectors));
     PCUEIMAGE pThis = (PCUEIMAGE)pBackendData;
