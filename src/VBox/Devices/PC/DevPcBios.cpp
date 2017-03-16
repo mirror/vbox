@@ -301,7 +301,6 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     if (cb == 1 && Port == pThis->ShutdownPort)
     {
         static const unsigned char szShutdown[] = "Shutdown";
-        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
         if (u32 == szShutdown[pThis->iShutdown])
         {
             pThis->iShutdown++;
