@@ -343,12 +343,9 @@ static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNe
                                    NULL, NULL, "Bochs PC BIOS - Shutdown");
 }
 
+
 /**
- * Execute state save operation.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance which registered the data unit.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMDEVSAVEXEC}
  */
 static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
@@ -359,16 +356,15 @@ static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /**
- * Prepare state load operation.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance which registered the data unit.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMDEVLOADPREP,
+ *      Clears the fNewShutdownPort flag prior to loading the state, so that old
+ *      saved VM states keeps using the old port address (no pcbios state).}
  */
 static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+
     /* Since there are legacy saved state files without any SSM data for PCBIOS
      * this is the only way to handle them correctly. */
     pThis->fNewShutdownPort = false;
@@ -376,14 +372,9 @@ static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+
 /**
- * Execute state load operation.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance which registered the data unit.
- * @param   pSSM            SSM operation handle.
- * @param   uVersion        Data layout version.
- * @param   uPass           The data pass.
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) pcbiosLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -393,24 +384,18 @@ static DECLCALLBACK(int) pcbiosLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    SSMR3GetStruct(pSSM, &pThis, g_aPcBiosFields);
-
-    return VINF_SUCCESS;
+    return SSMR3GetStruct(pSSM, pThis, g_aPcBiosFields);
 }
 
+
 /**
- * Finish state load operation.
- *
- * @returns VBox status code.
- * @param   pDevIns         Device instance which registered the data unit.
- * @param   pSSM            SSM operation handle.
+ * @callback_method_impl{FNSSMDEVLOADDONE,
+ *      Updates the shutdown port registration to match the flag loaded (or not).}
  */
 static DECLCALLBACK(int) pcbiosLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
     PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-
-    /* Update the shutdown port registration to match the flag. */
     return pcbiosRegisterShutdown(pDevIns, pThis, pThis->fNewShutdownPort);
 }
 
