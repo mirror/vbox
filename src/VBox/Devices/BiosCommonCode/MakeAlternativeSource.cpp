@@ -1032,6 +1032,12 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[3] == 0x66
                      && pb[4] == 0x66
                      && pb[5] == 0x66)
+                 || (   pb[0] == 0x60
+                     && pb[1] == 0xa0
+                     && pb[2] == 0x62
+                     && pb[3] == 0xa0
+                     && pb[4] == 0x66
+                     && pb[5] == 0xa0)
                  || 0
                  )
             return disByteData(uFlatAddr, cb);
