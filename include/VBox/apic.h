@@ -72,5 +72,5 @@ DECLINLINE(uint32_t) ApicX2RegRead32(uint32_t offReg)
 }
 #endif
 
-#endif /* ___VBox_apic_h */
+#endif
 
