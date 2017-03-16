@@ -345,6 +345,7 @@ DECLINLINE(char) cueTokenizerGetCh(PCUETOKENIZER pTokenizer)
  *
  * @returns nothing.
  * @param   pTokenizer    The tokenizer state.
+ * @param   cSkip         How many characters to skip.
  */
 DECLINLINE(void) cueTokenizerNewLine(PCUETOKENIZER pTokenizer, unsigned cSkip)
 {
