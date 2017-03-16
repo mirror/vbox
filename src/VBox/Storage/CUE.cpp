@@ -683,7 +683,7 @@ static void cueTokenizerConsume(PCUETOKENIZER pTokenizer)
  * @returns true if the token matched.
  *          false otherwise.
  * @param   pTokenizer    The tokenizer state.
- * @param   enmKey        The keyword to check against.
+ * @param   enmKeyword    The keyword to check against.
  */
 static bool cueTokenizerIsKeywordEqual(PCUETOKENIZER pTokenizer, CUEKEYWORD enmKeyword)
 {
@@ -703,7 +703,7 @@ static bool cueTokenizerIsKeywordEqual(PCUETOKENIZER pTokenizer, CUEKEYWORD enmK
  * @returns true if the token matched and was skipped.
  *          false otherwise.
  * @param   pTokenizer    The tokenizer state.
- * @param   enmKey        The keyword to check against.
+ * @param   enmKeyword    The keyword to check against.
  */
 static bool cueTokenizerSkipIfIsKeywordEqual(PCUETOKENIZER pTokenizer, CUEKEYWORD enmKeyword)
 {
@@ -977,7 +977,8 @@ static int cueParseTrack(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer)
                         }
                         else
                             rc = vdIfError(pThis->pIfError, rc, RT_SRC_POS,
-                                           N_("CUE: Failed to allocate memory for the track list"), pThis->pszFilename);
+                                           N_("CUE: Failed to allocate memory for the track list for '%s'"),
+                                           pThis->pszFilename);
                     }
                 }
                 else
@@ -1356,7 +1357,7 @@ static const char *cueRegionDataFormStringify(VDREGIONDATAFORM enmDataForm)
  * Converts the data form enumeration to a string.
  *
  * @returns String name of the given data form.
- * @param   enmDataForm   The data form.
+ * @param   enmMetadataForm   The metadata form.
  */
 static const char *cueRegionMetadataFormStringify(VDREGIONMETADATAFORM enmMetadataForm)
 {
