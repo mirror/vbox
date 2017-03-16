@@ -35,6 +35,7 @@ extern const VDIMAGEBACKEND g_ISCSIBackend;
 extern const VDIMAGEBACKEND g_QedBackend;
 extern const VDIMAGEBACKEND g_QCowBackend;
 extern const VDIMAGEBACKEND g_VhdxBackend;
+extern const VDIMAGEBACKEND g_CueBackend;
 
 extern const VDCACHEBACKEND g_VciCacheBackend;
 

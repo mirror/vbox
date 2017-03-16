@@ -131,6 +131,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	../QED.cpp \
 	../QCOW.cpp \
 	../VHDX.cpp \
+	../CUE.cpp \
 	../VCICache.cpp \
 	../VDIfVfs.cpp
  vbox-img_SOURCES.win = \

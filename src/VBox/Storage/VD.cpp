@@ -639,6 +639,7 @@ static PCVDIMAGEBACKEND aStaticBackends[] =
     &g_QCowBackend,
     &g_VhdxBackend,
     &g_RawBackend,
+    &g_CueBackend,
     &g_ISCSIBackend
 };
 

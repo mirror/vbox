@@ -759,6 +759,8 @@ typedef enum LOGGROUP
     LOG_GROUP_VBGL,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
+    /** CUE/BIN virtual disk backend. */
+    LOG_GROUP_VD_CUE,
     /** DMG virtual disk backend. */
     LOG_GROUP_VD_DMG,
     /** iSCSI virtual disk backend. */
@@ -1162,6 +1164,7 @@ typedef enum LOGGROUP
     "VGDRV",        \
     "VBGL",         \
     "VD",           \
+    "VD_CUE",       \
     "VD_DMG",       \
     "VD_ISCSI",     \
     "VD_PARALLELS", \
