@@ -121,17 +121,17 @@ class Bs3Cg1TestEncoder(object):
             if oInstr.asFlUndefined:
                 fFlags = oInstr.getUndefinedFlagsMask();
                 assert fFlags != 0;
-                aoOutputs.insert(0, iai.TestInOut('efl_undef', '=', fFlags, 'uint'));
+                aoOutputs.insert(0, iai.TestInOut('efl_undef', '=', str(fFlags), 'uint'));
 
             if oInstr.asFlClear:
                 fFlags = oInstr.getClearedFlagsMask();
                 assert fFlags != 0;
-                aoOutputs.append(iai.TestInOut('efl', '&~=', fFlags, 'uint'));
+                aoOutputs.append(iai.TestInOut('efl', '&~=', str(fFlags), 'uint'));
 
             if oInstr.asFlSet:
                 fFlags = oInstr.getSetFlagsMask();
                 assert fFlags != 0;
-                aoOutputs.append(iai.TestInOut('efl', '|=', fFlags, 'uint'));
+                aoOutputs.append(iai.TestInOut('efl', '|=', str(fFlags), 'uint'));
 
         return aoOutputs;
 
