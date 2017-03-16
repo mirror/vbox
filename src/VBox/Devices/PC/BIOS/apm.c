@@ -76,7 +76,7 @@ enum apm_power_state {
     APM_PS_OFF          = 0x03,     /* Suspend */
 };
 
-#define APM_PORT        0x8900      /* Bochs power control port. */
+#define APM_PORT        0x040f      /* Relocated Bochs power control port, original value of 0x9800 causes potential trouble with PCI resource allocation. */
 
 /// @todo merge with system.c
 #define AX      r.gr.u.r16.ax
