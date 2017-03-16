@@ -787,6 +787,10 @@ class TestInOut(object):
         self.sOp    = sOp;
         self.sValue = sValue;
         self.sType  = sType;
+        assert isinstance(sField, str);
+        assert isinstance(sOp, str);
+        assert isinstance(sType, str);
+        assert isinstance(sValue, str);
 
 
 class TestSelector(object):
