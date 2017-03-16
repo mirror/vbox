@@ -38,7 +38,7 @@
 #include <iprt/path.h>
 #include <iprt/getopt.h>
 #include <iprt/message.h>
-#include <iprt\asm.h>
+#include <iprt/asm.h>
 
 class CExeModule : public ATL::CComModule
 {
@@ -150,14 +150,14 @@ HINSTANCE g_hInstance = NULL;
 * Wrapper for Win API function ShutdownBlockReasonCreate
 * This function defined starting from Vista only.
 */
-BOOL ShutdownBlockReasonCreateAPI(HWND hWnd,LPCWSTR pwszReason)
+static BOOL ShutdownBlockReasonCreateAPI(HWND hWnd, LPCWSTR pwszReason)
 {
     BOOL fResult = FALSE;
     typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONCREATE)(HWND hWnd, LPCWSTR pwszReason);
 
     PFNSHUTDOWNBLOCKREASONCREATE pfn = (PFNSHUTDOWNBLOCKREASONCREATE)GetProcAddress(
             GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonCreate");
-    _ASSERTE(pfn);
+    AssertPtrValid(pfn);
     if (pfn)
         fResult = pfn(hWnd, pwszReason);
     return fResult;
@@ -167,21 +167,20 @@ BOOL ShutdownBlockReasonCreateAPI(HWND hWnd,LPCWSTR pwszReason)
 * Wrapper for Win API function ShutdownBlockReasonDestroy
 * This function defined starting from Vista only.
 */
-BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
+static BOOL ShutdownBlockReasonDestroyAPI(HWND hWnd)
 {
     BOOL fResult = FALSE;
     typedef BOOL(WINAPI *PFNSHUTDOWNBLOCKREASONDESTROY)(HWND hWnd);
 
     PFNSHUTDOWNBLOCKREASONDESTROY pfn = (PFNSHUTDOWNBLOCKREASONDESTROY)GetProcAddress(
         GetModuleHandle(L"User32.dll"), "ShutdownBlockReasonDestroy");
-    _ASSERTE(pfn);
+    AssertPtrValid(pfn);
     if (pfn)
         fResult = pfn(hWnd);
     return fResult;
 }
 
-
-LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT rc = 0;
     switch (msg)
@@ -230,11 +229,10 @@ LRESULT CALLBACK WinMainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     return rc;
 }
 
-
-int CreateMainWindow()
+static int CreateMainWindow()
 {
     int rc = VINF_SUCCESS;
-    _ASSERTE(g_hMainWindow == NULL);
+    Assert(g_hMainWindow == NULL);
 
     LogFlow(("CreateMainWindow\n"));
 
@@ -279,9 +277,9 @@ int CreateMainWindow()
 }
 
 
-void DestroyMainWindow()
+static void DestroyMainWindow()
 {
-    _ASSERTE(g_hMainWindow != NULL);
+    Assert(g_hMainWindow != NULL);
     Log(("SVCMain: DestroyMainWindow \n"));
     if (g_hMainWindow != NULL)
     {
@@ -332,9 +330,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      */
     RTR3InitExe(argc, &argv, 0);
 
-
-    /* Note that all options are given lowercase/camel case/uppercase to
-     * approximate case insensitive matching, which RTGetOpt doesn't offer. */
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--embedding",    'e',    RTGETOPT_REQ_NOTHING | RTGETOPT_FLAG_ICASE },
@@ -501,7 +496,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 
     int nRet = 0;
     HRESULT hRes = com::Initialize(false /*fGui*/, fRun /*fAutoRegUpdate*/);
-    _ASSERTE(SUCCEEDED(hRes));
+    AssertLogRelMsg(SUCCEEDED(hRes), ("SVCMAIN: init failed: %Rhrc\n", hRes));
 
     g_pModule = new CExeModule();
     if(g_pModule == NULL)
