@@ -1707,6 +1707,8 @@ endstruc
 %define BS3CPU_F_NX_BIT             13
 ;; @}
 
+;; The magic shutdown I/O port
+%define SHUTDOWN_PORT   0x040f
 
 %endif
 

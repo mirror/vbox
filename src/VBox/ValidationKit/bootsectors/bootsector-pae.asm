@@ -33,6 +33,8 @@
 %define PDP_ADDR        0x9000
 %define PD_ADDR         0xa000
 
+;; The magic shutdown I/O port
+%define SHUTDOWN_PORT   0x040f
 
 BITS 16
 start:
@@ -114,7 +116,7 @@ code32_start:
     ; Boch shutdown request.
     ;
     mov bl, 64
-    mov dx, 08900h
+    mov dx, SHUTDOWN_PORT
 retry:
     mov ecx, 8
     mov esi, (szShutdown - start) + BS_ADDR
