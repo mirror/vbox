@@ -351,6 +351,13 @@ private slots:
     /* Startup slot: */
     void sltStartStep()
     {
+        /* Return if Selector UI has a direct request to install EP: */
+        if (vboxGlobal().isEPInstallationRequested())
+        {
+            emit sigStepComplete();
+            return;
+        }
+
         /* Return if already downloading: */
         if (UIDownloaderExtensionPack::current())
         {

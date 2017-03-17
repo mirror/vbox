@@ -369,7 +369,12 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
             }
             else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxExtPackFileExts))
             {
+                /* Prevent update manager from proposing us to update EP: */
+                vboxGlobal().setEPInstallationRequested(true);
+                /* Propose the user to install EP described by the arguments @a list. */
                 UIGlobalSettingsExtension::doInstallation(strFile, QString(), this, NULL);
+                /* Allow update manager to propose us to update EP: */
+                vboxGlobal().setEPInstallationRequested(false);
             }
         }
     }

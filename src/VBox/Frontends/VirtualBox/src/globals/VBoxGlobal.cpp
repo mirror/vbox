@@ -234,6 +234,7 @@ VBoxGlobal::VBoxGlobal()
     , m_fVBoxSVCAvailable(true)
     , m_fSeparateProcess(false)
     , m_pMediumEnumerator(0)
+    , m_fEPInstallationRequested(false)
 #ifdef VBOX_WS_X11
     , m_fCompositingManagerRunning(false)
     , m_enmWindowManagerType(X11WMType_Unknown)
