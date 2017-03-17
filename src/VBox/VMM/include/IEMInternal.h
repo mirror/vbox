@@ -886,6 +886,8 @@ typedef IEMCPU const *PCIEMCPU;
  * @{ */
 /** Both the operand size prefixes are ignored. */
 #define IEMOPHINT_IGNORES_OP_SIZE   RT_BIT_32(10)
+/** Allowed with the lock prefix. */
+#define IEMOPHINT_LOCK_ALLOWED      RT_BIT_32(11)
 /** Hint to IEMAllInstructionPython.py that this macro should be skipped.  */
 #define IEMOPHINT_SKIP_PYTHON       RT_BIT_32(31)
 /** @} */

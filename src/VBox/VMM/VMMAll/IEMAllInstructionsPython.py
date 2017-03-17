@@ -343,6 +343,7 @@ g_kdHints = {
     'mmx':                   'DISOPTYPE_MMX',                   ##< MMX,MMXExt,3DNow,++ instruction. Not implemented yet!
     'fpu':                   'DISOPTYPE_FPU',                   ##< FPU instruction. Not implemented yet!
     'ignores_op_size':       '',                                ##< Ignores both operand size prefixes.
+    'lock_allowed':          '',                                ##< Lock prefix allowed.
 };
 
 
