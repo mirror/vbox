@@ -28,8 +28,6 @@
 #ifndef ___VBox_bios_h
 #define ___VBox_bios_h
 
-#include <VBox/cdefs.h>
-
 /** The BIOS shutdown port.
  * You write "Shutdown" byte by byte to shutdown the VM.
  * @sa VBOX_BIOS_OLD_SHUTDOWN_PORT  */
