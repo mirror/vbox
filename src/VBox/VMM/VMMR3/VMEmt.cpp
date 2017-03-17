@@ -227,16 +227,18 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
          * or start the VM, in that case we'll get a change in VM status
          * indicating that we're now running.
          */
-        if (    RT_SUCCESS(rc)
-            &&  pUVM->pVM)
+        if (RT_SUCCESS(rc))
         {
-            PVM     pVM   = pUVM->pVM;
-            PVMCPU  pVCpu = &pVM->aCpus[idCpu];
-            if (    pVM->enmVMState == VMSTATE_RUNNING
-                &&  VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVCpu)))
+            pVM = pUVM->pVM;
+            if (pVM)
             {
-                rc = EMR3ExecuteVM(pVM, pVCpu);
-                Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
+                pVCpu = &pVM->aCpus[idCpu];
+                if (   pVM->enmVMState == VMSTATE_RUNNING
+                    && VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVCpu)))
+                {
+                    rc = EMR3ExecuteVM(pVM, pVCpu);
+                    Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
+                }
             }
         }
 
