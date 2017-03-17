@@ -96,10 +96,12 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
     for (;;)
     {
         /*
-         * During early init there is no pVM, so make a special path
+         * During early init there is no pVM and/or pVCpu, so make a special path
          * for that to keep things clearly separate.
          */
-        if (!pUVM->pVM)
+        PVM    pVM   = pUVM->pVM;
+        PVMCPU pVCpu = pUVCpu->pVCpu;
+        if (!pVCpu || !pVM)
         {
             /*
              * Check for termination first.
@@ -153,8 +155,6 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
              * We check for state changes in addition to status codes when
              * servicing requests. (Look after the ifs.)
              */
-            PVM    pVM   = pUVM->pVM;
-            PVMCPU pVCpu = pUVCpu->pVCpu;
             enmBefore = pVM->enmVMState;
             if (pUVM->vm.s.fTerminateEMT)
             {
