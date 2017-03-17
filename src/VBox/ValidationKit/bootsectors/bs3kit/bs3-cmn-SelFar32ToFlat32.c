@@ -30,7 +30,7 @@
 #undef Bs3SelFar32ToFlat32
 BS3_CMN_DEF(uint32_t, Bs3SelFar32ToFlat32,(uint32_t off, uint16_t uSel))
 {
-    if (g_bBs3CurrentMode == BS3_MODE_RM)
+    if (BS3_MODE_IS_RM_OR_V86(g_bBs3CurrentMode))
         return ((uint32_t)uSel << 4) + off;
     return Bs3SelProtFar32ToFlat32(off, uSel);
 }
