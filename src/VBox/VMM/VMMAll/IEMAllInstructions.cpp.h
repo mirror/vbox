@@ -565,8 +565,8 @@ FNIEMOPRM_DEF(iemOp_InvalidWithRMNeedImm8)
         }
 #endif
         uint8_t bImm8;  IEM_OPCODE_GET_NEXT_U8(&bImm8);  RT_NOREF(bRm);
-        IEMOP_HLP_DONE_DECODING();
     }
+    IEMOP_HLP_DONE_DECODING();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -587,8 +587,8 @@ FNIEMOP_DEF(iemOp_InvalidNeedRM)
                 return rcStrict;
         }
 #endif
-        IEMOP_HLP_DONE_DECODING();
     }
+    IEMOP_HLP_DONE_DECODING();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -611,8 +611,8 @@ FNIEMOP_DEF(iemOp_InvalidNeedRMImm8)
         }
 #endif
         uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm); RT_NOREF(bImm);
-        IEMOP_HLP_DONE_DECODING();
     }
+    IEMOP_HLP_DONE_DECODING();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -635,8 +635,8 @@ FNIEMOP_DEF(iemOp_InvalidNeed3ByteEscRM)
                 return rcStrict;
         }
 #endif
-        IEMOP_HLP_DONE_DECODING();
     }
+    IEMOP_HLP_DONE_DECODING();
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 

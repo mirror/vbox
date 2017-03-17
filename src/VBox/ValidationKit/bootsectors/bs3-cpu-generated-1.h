@@ -53,6 +53,8 @@ typedef enum BS3CG1OP
     BS3CG1OP_AL,
     BS3CG1OP_rAX,
 
+    BS3CG1OP_Ma,
+
     BS3CG1OP_END
 } BS3CG1OP;
 /** Pointer to a const operand enum. */
@@ -74,6 +76,7 @@ typedef enum BS3CG1ENC
 
     BS3CG1ENC_MODRM_Gb_Eb,
     BS3CG1ENC_MODRM_Gv_Ev,
+    BS3CG1ENC_MODRM_Gv_Ma, /**< bound instruction */
 
     BS3CG1ENC_FIXED,
     BS3CG1ENC_FIXED_AL_Ib,
@@ -296,6 +299,10 @@ typedef enum BS3CG1DST
     BS3CG1DST_OZ_R13,
     BS3CG1DST_OZ_R14,
     BS3CG1DST_OZ_R15,
+
+    /* Special fields: */
+    BS3CG1DST_SPECIAL_START,
+    BS3CG1DST_VALUE_XCPT = BS3CG1DST_SPECIAL_START, /**< Expected exception based on input or result. */
 
     BS3CG1DST_END
 } BS3CG1DST;

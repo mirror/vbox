@@ -5286,6 +5286,13 @@ DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseDebugException(PVMCPU pVCpu)
 }
 
 
+/** \#BR - 05.  */
+DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseBoundRangeExceeded(PVMCPU pVCpu)
+{
+    return iemRaiseXcptOrInt(pVCpu, 0, X86_XCPT_BR, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+
+
 /** \#UD - 06.  */
 DECL_NO_INLINE(IEM_STATIC, VBOXSTRICTRC) iemRaiseUndefinedOpcode(PVMCPU pVCpu)
 {

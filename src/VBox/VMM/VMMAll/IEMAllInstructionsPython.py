@@ -684,100 +684,102 @@ class TestInOut(object):
     };
     ## CPU context fields.
     kdFields = {
-        # name:     ( default type, tbd, )
+        # name:         ( default type, [both|input|output], )
         # Operands.
-        'op1':      ( 'uint', '', ), ## \@op1
-        'op2':      ( 'uint', '', ), ## \@op2
-        'op3':      ( 'uint', '', ), ## \@op3
-        'op4':      ( 'uint', '', ), ## \@op4
+        'op1':          ( 'uint', 'both',   ), ## \@op1
+        'op2':          ( 'uint', 'both',   ), ## \@op2
+        'op3':          ( 'uint', 'both',   ), ## \@op3
+        'op4':          ( 'uint', 'both',   ), ## \@op4
         # Flags.
-        'efl':      ( 'efl',  '', ),
-        'efl_undef': ( 'uint',  '', ),
+        'efl':          ( 'efl',  'both',   ),
+        'efl_undef':    ( 'uint', 'output', ),
         # 8-bit GPRs.
-        'al':       ( 'uint', '', ),
-        'cl':       ( 'uint', '', ),
-        'dl':       ( 'uint', '', ),
-        'bl':       ( 'uint', '', ),
-        'ah':       ( 'uint', '', ),
-        'ch':       ( 'uint', '', ),
-        'dh':       ( 'uint', '', ),
-        'bh':       ( 'uint', '', ),
-        'r8l':      ( 'uint', '', ),
-        'r9l':      ( 'uint', '', ),
-        'r10l':     ( 'uint', '', ),
-        'r11l':     ( 'uint', '', ),
-        'r12l':     ( 'uint', '', ),
-        'r13l':     ( 'uint', '', ),
-        'r14l':     ( 'uint', '', ),
-        'r15l':     ( 'uint', '', ),
+        'al':           ( 'uint', 'both',   ),
+        'cl':           ( 'uint', 'both',   ),
+        'dl':           ( 'uint', 'both',   ),
+        'bl':           ( 'uint', 'both',   ),
+        'ah':           ( 'uint', 'both',   ),
+        'ch':           ( 'uint', 'both',   ),
+        'dh':           ( 'uint', 'both',   ),
+        'bh':           ( 'uint', 'both',   ),
+        'r8l':          ( 'uint', 'both',   ),
+        'r9l':          ( 'uint', 'both',   ),
+        'r10l':         ( 'uint', 'both',   ),
+        'r11l':         ( 'uint', 'both',   ),
+        'r12l':         ( 'uint', 'both',   ),
+        'r13l':         ( 'uint', 'both',   ),
+        'r14l':         ( 'uint', 'both',   ),
+        'r15l':         ( 'uint', 'both',   ),
         # 16-bit GPRs.
-        'ax':       ( 'uint', '', ),
-        'dx':       ( 'uint', '', ),
-        'cx':       ( 'uint', '', ),
-        'bx':       ( 'uint', '', ),
-        'sp':       ( 'uint', '', ),
-        'bp':       ( 'uint', '', ),
-        'si':       ( 'uint', '', ),
-        'di':       ( 'uint', '', ),
-        'r8w':      ( 'uint', '', ),
-        'r9w':      ( 'uint', '', ),
-        'r10w':     ( 'uint', '', ),
-        'r11w':     ( 'uint', '', ),
-        'r12w':     ( 'uint', '', ),
-        'r13w':     ( 'uint', '', ),
-        'r14w':     ( 'uint', '', ),
-        'r15w':     ( 'uint', '', ),
+        'ax':           ( 'uint', 'both',   ),
+        'dx':           ( 'uint', 'both',   ),
+        'cx':           ( 'uint', 'both',   ),
+        'bx':           ( 'uint', 'both',   ),
+        'sp':           ( 'uint', 'both',   ),
+        'bp':           ( 'uint', 'both',   ),
+        'si':           ( 'uint', 'both',   ),
+        'di':           ( 'uint', 'both',   ),
+        'r8w':          ( 'uint', 'both',   ),
+        'r9w':          ( 'uint', 'both',   ),
+        'r10w':         ( 'uint', 'both',   ),
+        'r11w':         ( 'uint', 'both',   ),
+        'r12w':         ( 'uint', 'both',   ),
+        'r13w':         ( 'uint', 'both',   ),
+        'r14w':         ( 'uint', 'both',   ),
+        'r15w':         ( 'uint', 'both',   ),
         # 32-bit GPRs.
-        'eax':      ( 'uint', '', ),
-        'edx':      ( 'uint', '', ),
-        'ecx':      ( 'uint', '', ),
-        'ebx':      ( 'uint', '', ),
-        'esp':      ( 'uint', '', ),
-        'ebp':      ( 'uint', '', ),
-        'esi':      ( 'uint', '', ),
-        'edi':      ( 'uint', '', ),
-        'r8d':      ( 'uint', '', ),
-        'r9d':      ( 'uint', '', ),
-        'r10d':     ( 'uint', '', ),
-        'r11d':     ( 'uint', '', ),
-        'r12d':     ( 'uint', '', ),
-        'r13d':     ( 'uint', '', ),
-        'r14d':     ( 'uint', '', ),
-        'r15d':     ( 'uint', '', ),
+        'eax':          ( 'uint', 'both',   ),
+        'edx':          ( 'uint', 'both',   ),
+        'ecx':          ( 'uint', 'both',   ),
+        'ebx':          ( 'uint', 'both',   ),
+        'esp':          ( 'uint', 'both',   ),
+        'ebp':          ( 'uint', 'both',   ),
+        'esi':          ( 'uint', 'both',   ),
+        'edi':          ( 'uint', 'both',   ),
+        'r8d':          ( 'uint', 'both',   ),
+        'r9d':          ( 'uint', 'both',   ),
+        'r10d':         ( 'uint', 'both',   ),
+        'r11d':         ( 'uint', 'both',   ),
+        'r12d':         ( 'uint', 'both',   ),
+        'r13d':         ( 'uint', 'both',   ),
+        'r14d':         ( 'uint', 'both',   ),
+        'r15d':         ( 'uint', 'both',   ),
         # 64-bit GPRs.
-        'rax':      ( 'uint', '', ),
-        'rdx':      ( 'uint', '', ),
-        'rcx':      ( 'uint', '', ),
-        'rbx':      ( 'uint', '', ),
-        'rsp':      ( 'uint', '', ),
-        'rbp':      ( 'uint', '', ),
-        'rsi':      ( 'uint', '', ),
-        'rdi':      ( 'uint', '', ),
-        'r8':       ( 'uint', '', ),
-        'r9':       ( 'uint', '', ),
-        'r10':      ( 'uint', '', ),
-        'r11':      ( 'uint', '', ),
-        'r12':      ( 'uint', '', ),
-        'r13':      ( 'uint', '', ),
-        'r14':      ( 'uint', '', ),
-        'r15':      ( 'uint', '', ),
+        'rax':          ( 'uint', 'both',   ),
+        'rdx':          ( 'uint', 'both',   ),
+        'rcx':          ( 'uint', 'both',   ),
+        'rbx':          ( 'uint', 'both',   ),
+        'rsp':          ( 'uint', 'both',   ),
+        'rbp':          ( 'uint', 'both',   ),
+        'rsi':          ( 'uint', 'both',   ),
+        'rdi':          ( 'uint', 'both',   ),
+        'r8':           ( 'uint', 'both',   ),
+        'r9':           ( 'uint', 'both',   ),
+        'r10':          ( 'uint', 'both',   ),
+        'r11':          ( 'uint', 'both',   ),
+        'r12':          ( 'uint', 'both',   ),
+        'r13':          ( 'uint', 'both',   ),
+        'r14':          ( 'uint', 'both',   ),
+        'r15':          ( 'uint', 'both',   ),
         # 16-bit, 32-bit or 64-bit registers according to operand size.
-        'oz.rax':   ( 'uint', '', ),
-        'oz.rdx':   ( 'uint', '', ),
-        'oz.rcx':   ( 'uint', '', ),
-        'oz.rbx':   ( 'uint', '', ),
-        'oz.rsp':   ( 'uint', '', ),
-        'oz.rbp':   ( 'uint', '', ),
-        'oz.rsi':   ( 'uint', '', ),
-        'oz.rdi':   ( 'uint', '', ),
-        'oz.r8':    ( 'uint', '', ),
-        'oz.r9':    ( 'uint', '', ),
-        'oz.r10':   ( 'uint', '', ),
-        'oz.r11':   ( 'uint', '', ),
-        'oz.r12':   ( 'uint', '', ),
-        'oz.r13':   ( 'uint', '', ),
-        'oz.r14':   ( 'uint', '', ),
-        'oz.r15':   ( 'uint', '', ),
+        'oz.rax':       ( 'uint', 'both',   ),
+        'oz.rdx':       ( 'uint', 'both',   ),
+        'oz.rcx':       ( 'uint', 'both',   ),
+        'oz.rbx':       ( 'uint', 'both',   ),
+        'oz.rsp':       ( 'uint', 'both',   ),
+        'oz.rbp':       ( 'uint', 'both',   ),
+        'oz.rsi':       ( 'uint', 'both',   ),
+        'oz.rdi':       ( 'uint', 'both',   ),
+        'oz.r8':        ( 'uint', 'both',   ),
+        'oz.r9':        ( 'uint', 'both',   ),
+        'oz.r10':       ( 'uint', 'both',   ),
+        'oz.r11':       ( 'uint', 'both',   ),
+        'oz.r12':       ( 'uint', 'both',   ),
+        'oz.r13':       ( 'uint', 'both',   ),
+        'oz.r14':       ( 'uint', 'both',   ),
+        'oz.r15':       ( 'uint', 'both',   ),
+        # Special ones.
+        'value.xcpt':   ( 'uint', 'output', ),
     };
 
     def __init__(self, sField, sOp, sValue, sType):
@@ -2075,35 +2077,40 @@ class SimpleParser(object):
             # Validate outputs and inputs, adding them to the test as we go along.
             #
             for asItems, sDesc, aoDst in [ (asInputs, 'input', oTest.aoInputs), (asOutputs, 'output', oTest.aoOutputs)]:
+                asValidFieldKinds = [ 'both', sDesc, ];
                 for sItem in asItems:
                     oItem = None;
                     for sOp in TestInOut.kasOperators:
                         off = sItem.find(sOp);
-                        if off >= 0:
-                            sField     = sItem[:off];
-                            sValueType = sItem[off + len(sOp):];
-                            if sField in TestInOut.kdFields:
-                                asSplit = sValueType.split(':', 1);
-                                sValue  = asSplit[0];
-                                sType   = asSplit[1] if len(asSplit) > 1 else TestInOut.kdFields[sField][0];
-                                if sType in TestInOut.kdTypes:
-                                    oValid = TestInOut.kdTypes[sType].validate(sValue);
-                                    if oValid is True:
-                                        if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '&|=':
-                                            oItem = TestInOut(sField, sOp, sValue, sType);
-                                        else:
-                                            self.errorComment(iTagLine, '%s: and-or %s value "%s" can only be used with "&|="'
-                                                                        % ( sTag, sDesc, sItem, ));
+                        if off < 0:
+                            continue;
+                        sField     = sItem[:off];
+                        sValueType = sItem[off + len(sOp):];
+                        if     sField in TestInOut.kdFields \
+                           and TestInOut.kdFields[sField][1] in asValidFieldKinds:
+                            asSplit = sValueType.split(':', 1);
+                            sValue  = asSplit[0];
+                            sType   = asSplit[1] if len(asSplit) > 1 else TestInOut.kdFields[sField][0];
+                            if sType in TestInOut.kdTypes:
+                                oValid = TestInOut.kdTypes[sType].validate(sValue);
+                                if oValid is True:
+                                    if not TestInOut.kdTypes[sType].isAndOrPair(sValue) or sOp == '&|=':
+                                        oItem = TestInOut(sField, sOp, sValue, sType);
                                     else:
-                                        self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s): %s'
-                                                                    % ( sTag, sDesc, sValue, sItem, sType, oValid, ));
+                                        self.errorComment(iTagLine, '%s: and-or %s value "%s" can only be used with "&|="'
+                                                                    % ( sTag, sDesc, sItem, ));
                                 else:
-                                    self.errorComment(iTagLine, '%s: invalid %s type "%s" in "%s" (valid types: %s)'
-                                                                 % ( sTag, sDesc, sType, sItem, TestInOut.kdTypes.keys(),));
+                                    self.errorComment(iTagLine, '%s: invalid %s value "%s" in "%s" (type: %s): %s'
+                                                                % ( sTag, sDesc, sValue, sItem, sType, oValid, ));
                             else:
-                                self.errorComment(iTagLine, '%s: invalid %s field "%s" in "%s" (valid fields: %s)'
-                                                             % ( sTag, sDesc, sField, sItem, TestInOut.kdFields.keys(),));
-                            break;
+                                self.errorComment(iTagLine, '%s: invalid %s type "%s" in "%s" (valid types: %s)'
+                                                             % ( sTag, sDesc, sType, sItem, TestInOut.kdTypes.keys(),));
+                        else:
+                            self.errorComment(iTagLine, '%s: invalid %s field "%s" in "%s"\nvalid fields: %s'
+                                                         % ( sTag, sDesc, sField, sItem,
+                                                             ', '.join([sKey for sKey in TestInOut.kdFields.keys()
+                                                                        if TestInOut.kdFields[sKey][1] in asValidFieldKinds]),));
+                        break;
                     if oItem is not None:
                         for oExisting in aoDst:
                             if oExisting.sField == oItem.sField and oExisting.sOp == oItem.sOp:

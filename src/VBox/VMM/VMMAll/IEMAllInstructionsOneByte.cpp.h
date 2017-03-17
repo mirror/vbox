@@ -1823,9 +1823,138 @@ FNIEMOP_DEF(iemOp_popa__mvex)
  * @op2         Ma
  * @opmincpu    80186
  * @ophints     harmless invalid_64
+ * @optest      op1=0 op2=0 ->
+ * @optest      op1=1 op2=0 -> value.xcpt=5
+ * @optest      o16 / op1=0xffff op2=0x0000fffe ->
+ * @optest      o16 / op1=0xfffe op2=0x0000fffe ->
+ * @optest      o16 / op1=0x7fff op2=0x0000fffe -> value.xcpt=5
+ * @optest      o16 / op1=0x7fff op2=0x7ffffffe ->
+ * @optest      o16 / op1=0x7fff op2=0xfffe8000 -> value.xcpt=5
+ * @optest      o16 / op1=0x8000 op2=0xfffe8000 ->
+ * @optest      o16 / op1=0xffff op2=0xfffe8000 -> value.xcpt=5
+ * @optest      o16 / op1=0xfffe op2=0xfffe8000 ->
+ * @optest      o16 / op1=0xfffe op2=0x8000fffe -> value.xcpt=5
+ * @optest      o16 / op1=0x8000 op2=0x8000fffe -> value.xcpt=5
+ * @optest      o16 / op1=0x0000 op2=0x8000fffe -> value.xcpt=5
+ * @optest      o16 / op1=0x0001 op2=0x8000fffe -> value.xcpt=5
+ * @optest      o16 / op1=0xffff op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0000 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0001 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0002 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0003 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0004 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x000e op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x000f op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0010 op2=0x0001000f -> value.xcpt=5
+ * @optest      o16 / op1=0x0011 op2=0x0001000f -> value.xcpt=5
+ * @optest      o32 / op1=0xffffffff op2=0x00000000fffffffe ->
+ * @optest      o32 / op1=0xfffffffe op2=0x00000000fffffffe ->
+ * @optest      o32 / op1=0x7fffffff op2=0x00000000fffffffe -> value.xcpt=5
+ * @optest      o32 / op1=0x7fffffff op2=0x7ffffffffffffffe ->
+ * @optest      o32 / op1=0x7fffffff op2=0xfffffffe80000000 -> value.xcpt=5
+ * @optest      o32 / op1=0x80000000 op2=0xfffffffe80000000 ->
+ * @optest      o32 / op1=0xffffffff op2=0xfffffffe80000000 -> value.xcpt=5
+ * @optest      o32 / op1=0xfffffffe op2=0xfffffffe80000000 ->
+ * @optest      o32 / op1=0xfffffffe op2=0x80000000fffffffe -> value.xcpt=5
+ * @optest      o32 / op1=0x80000000 op2=0x80000000fffffffe -> value.xcpt=5
+ * @optest      o32 / op1=0x00000000 op2=0x80000000fffffffe -> value.xcpt=5
+ * @optest      o32 / op1=0x00000002 op2=0x80000000fffffffe -> value.xcpt=5
+ * @optest      o32 / op1=0x00000001 op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x00000002 op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x00000003 op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x00000004 op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x00000005 op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x0000000e op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x0000000f op2=0x0000000100000003 -> value.xcpt=5
+ * @optest      o32 / op1=0x00000010 op2=0x0000000100000003 -> value.xcpt=5
  */
-FNIEMOP_STUB(iemOp_bound_Gv_Ma__evex);
-//    IEMOP_HLP_MIN_186();
+FNIEMOP_DEF(iemOp_bound_Gv_Ma__evex)
+{
+    /* The BOUND instruction is invalid 64-bit mode. In legacy and
+       compatability mode it is invalid with MOD=3.
+
+       In 32-bit mode, the EVEX prefix works by having the top two bits (MOD)
+       both be set.  In the Intel EVEX documentation (sdm vol 2) these are simply
+       given as R and X without an exact description, so we assume it builds on
+       the VEX one and means they are inverted wrt REX.R and REX.X.  Thus, just
+       like with the 3-byte VEX, 32-bit code is restrict wrt addressable registers. */
+    uint8_t bRm;
+    if (pVCpu->iem.s.enmCpuMode != IEMMODE_64BIT)
+    {
+        IEMOP_MNEMONIC2(RM_MEM, BOUND, bound, Gv, Ma, DISOPTYPE_HARMLESS, IEMOPHINT_IGNORES_OP_SIZE);
+        IEMOP_HLP_MIN_186();
+        IEM_OPCODE_GET_NEXT_U8(&bRm);
+        if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+        {
+            /** @todo testcase: check that there are two memory accesses involved.  Check
+             *        whether they're both read before the \#BR triggers. */
+            if (pVCpu->iem.s.enmEffOpSize == IEMMODE_16BIT)
+            {
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint16_t,    u16Index,       0); /* Note! All operands are actually signed. Lazy unsigned bird. */
+                IEM_MC_ARG(uint16_t,    u16LowerBounds, 1);
+                IEM_MC_ARG(uint16_t,    u16UpperBounds, 2);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_FETCH_GREG_U16(u16Index, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+                IEM_MC_FETCH_MEM_U16(u16LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+                IEM_MC_FETCH_MEM_U16_DISP(u16UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 2);
+
+                IEM_MC_CALL_CIMPL_3(iemCImpl_bound_16, u16Index, u16LowerBounds, u16UpperBounds); /* returns */
+                IEM_MC_END();
+            }
+            else /* 32-bit operands */
+            {
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint32_t,    u32Index,       0); /* Note! All operands are actually signed. Lazy unsigned bird. */
+                IEM_MC_ARG(uint32_t,    u32LowerBounds, 1);
+                IEM_MC_ARG(uint32_t,    u32UpperBounds, 2);
+                IEM_MC_LOCAL(RTGCPTR,   GCPtrEffSrc);
+
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+                IEM_MC_FETCH_GREG_U32(u32Index, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+                IEM_MC_FETCH_MEM_U32(u32LowerBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+                IEM_MC_FETCH_MEM_U32_DISP(u32UpperBounds, pVCpu->iem.s.iEffSeg, GCPtrEffSrc, 4);
+
+                IEM_MC_CALL_CIMPL_3(iemCImpl_bound_32, u32Index, u32LowerBounds, u32UpperBounds); /* returns */
+                IEM_MC_END();
+            }
+        }
+
+        /*
+         * @opdone
+         */
+        if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx512Foundation)
+        {
+            /* Note that there is no need for the CPU to fetch further bytes
+               here because MODRM.MOD == 3. */
+            Log(("evex not supported by the guest CPU!\n"));
+            return IEMOP_RAISE_INVALID_OPCODE();
+        }
+    }
+    else
+    {
+        /** @todo check how this is decoded in 64-bit mode w/o EVEX. Intel probably
+         *        does modr/m read, whereas AMD probably doesn't... */
+        if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fAvx512Foundation)
+        {
+            Log(("evex not supported by the guest CPU!\n"));
+            return FNIEMOP_CALL(iemOp_InvalidNeedRM);
+        }
+        IEM_OPCODE_GET_NEXT_U8(&bRm);
+    }
+
+    IEMOP_MNEMONIC(evex, "evex");
+    uint8_t bP2; IEM_OPCODE_GET_NEXT_U8(&bP2);
+    uint8_t bP3; IEM_OPCODE_GET_NEXT_U8(&bP3);
+    Log(("evex prefix is not implemented!\n"));
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
 
 
 /** Opcode 0x63 - non-64-bit modes. */

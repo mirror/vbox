@@ -6530,6 +6530,46 @@ IEM_CIMPL_DEF_0(iemCImpl_aas)
 }
 
 
+/**
+ * Implements the 16-bit version of 'BOUND'.
+ *
+ * @note    We have separate 16-bit and 32-bit variants of this function due to
+ *          the decoder using unsigned parameters, whereas we want signed one to
+ *          do the job.  This is significant for a recompiler.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_bound_16, int16_t, idxArray, int16_t, idxLowerBound, int16_t, idxUpperBound)
+{
+    /*
+     * Check if the index is inside the bounds, otherwise raise #BR.
+     */
+    if (   idxArray >= idxLowerBound
+        && idxArray <= idxUpperBound)
+    {
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    return iemRaiseBoundRangeExceeded(pVCpu);
+}
+
+
+/**
+ * Implements the 32-bit version of 'BOUND'.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_bound_32, int32_t, idxArray, int32_t, idxLowerBound, int32_t, idxUpperBound)
+{
+    /*
+     * Check if the index is inside the bounds, otherwise raise #BR.
+     */
+    if (   idxArray >= idxLowerBound
+        && idxArray <= idxUpperBound)
+    {
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    return iemRaiseBoundRangeExceeded(pVCpu);
+}
 
 
 
