@@ -93,6 +93,7 @@ typedef enum BS3CG1OPLOC
     BS3CG1OPLOC_CTX,
     BS3CG1OPLOC_IMM,
     BS3CG1OPLOC_MEM,
+    BS3CG1OPLOC_MEM_RW,
     BS3CG1OPLOC_END
 } BS3CG1OPLOC;
 
@@ -177,9 +178,10 @@ typedef struct BS3CG1STATE
          * Set to BS3CG1DST_INVALID if memory or immediate.  */
         uint8_t             idxField;
         /** Depends on enmLocation.
-         * - BS3CG1OPLOC_IMM: offset relative to start of the instruction.
-         * - BS3CG1OPLOC_MEM: offset should be subtracted from &pbDataPg[_4K].
-         * - BS3CG1OPLOC_CTX: not used (use idxField instead).
+         * - BS3CG1OPLOC_IMM:       offset relative to start of the instruction.
+         * - BS3CG1OPLOC_MEM:       offset should be subtracted from &pbDataPg[_4K].
+         * - BS3CG1OPLOC_MEM_RW:    offset should be subtracted from &pbDataPg[_4K].
+         * - BS3CG1OPLOC_CTX:       not used (use idxField instead).
          */
         uint8_t             off;
     } aOperands[4];
@@ -681,11 +683,60 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             {
                 off = Bs3Cg1InsertOpcodes(pThis, 0);
                 pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-                pThis->cbCurInstr = off;
                 pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
                 pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
-                iEncoding++;
             }
+            else if (iEncoding == 1 || iEncoding == 2)
+            {
+                /** @todo need to figure out a more flexible way to do all this crap. */
+                off = 0;
+                if (iEncoding == 2)
+                    pThis->abCurInstr[off++] = 0x67;
+                off = Bs3Cg1InsertOpcodes(pThis, off);
+                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                {
+#if ARCH_BITS == 16 /** @todo fixme */
+                    unsigned iRing = 4;
+                    if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
+                        while (iRing-- > 0)
+                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg);
+                    else
+                        while (iRing-- > 0)
+                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg) | iRing;
+#endif
+                    if (iEncoding == 1)
+                    {
+                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 6 /*disp16*/);
+                        *(uint16_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                        off += 2;
+                    }
+                    else
+                    {
+                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
+                        *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                        off += 4;
+                    }
+                }
+                else
+                {
+                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
+                    *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                    if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+                        *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
+                    off += 4;
+                }
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_CH;
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_INVALID;
+                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_MEM_RW;
+                pThis->aOperands[pThis->iRmOp ].off         = 1;
+
+                if (BS3_MODE_IS_32BIT_CODE(pThis->bMode)) /* skip address size override */
+                    iEncoding++;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
             break;
 
         case BS3CG1ENC_MODRM_Gb_Eb:
@@ -694,11 +745,60 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
             {
                 off = Bs3Cg1InsertOpcodes(pThis, 0);
                 pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xAX, X86_GREG_xCX);
-                pThis->cbCurInstr = off;
                 pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
                 pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
-                iEncoding++;
             }
+            else if (iEncoding == 1 || iEncoding == 2)
+            {
+                /** @todo need to figure out a more flexible way to do all this crap. */
+                off = 0;
+                if (iEncoding == 2)
+                    pThis->abCurInstr[off++] = 0x67;
+                off = Bs3Cg1InsertOpcodes(pThis, off);
+                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
+                {
+#if ARCH_BITS == 16 /** @todo fixme */
+                    unsigned iRing = 4;
+                    if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
+                        while (iRing-- > 0)
+                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg);
+                    else
+                        while (iRing-- > 0)
+                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg) | iRing;
+#endif
+                    if (iEncoding == 1)
+                    {
+                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 6 /*disp16*/);
+                        *(uint16_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                        off += 2;
+                    }
+                    else
+                    {
+                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
+                        *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                        off += 4;
+                    }
+                }
+                else
+                {
+                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
+                    *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
+                    if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+                        *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
+                    off += 4;
+                }
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_CH;
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_INVALID;
+                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_MEM;
+                pThis->aOperands[pThis->iRmOp ].off         = 1;
+
+                if (BS3_MODE_IS_32BIT_CODE(pThis->bMode)) /* skip address size override */
+                    iEncoding++;
+            }
+            else
+                break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
             break;
 
         case BS3CG1ENC_FIXED:
@@ -1203,10 +1303,16 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                         break;
 
                     case BS3CG1OPLOC_MEM:
+                        if (!pbInstr)
+                            return Bs3TestFailedF("Read only operand specified in output!");
+                        PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
+                        break;
+
+                    case BS3CG1OPLOC_MEM_RW:
                         if (pbInstr)
                             PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
                         else
-                            return Bs3TestFailedF("TODO: Implement output memory operands!");
+                            PtrField.pu8 = pThis->MemOp.ab[1];
                         break;
 
                     default:
@@ -1387,7 +1493,53 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
         if (RT_LIKELY(Bs3TestCheckRegCtxEx(&pThis->TrapFrame.Ctx, &pThis->Ctx,
                                            cbAdjustPc, 0 /*cbSpAdjust*/, 0 /*fExtraEfl*/,
                                            pThis->pszMode, iEncoding)))
-            return true;
+        {
+            bool fOkay = true;
+            iOperand = pThis->cOperands;
+            while (iOperand-- > 0)
+                if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
+                {
+                    BS3PTRUNION PtrUnion;
+                    PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
+                    switch (pThis->aOperands[iOperand].cbOp)
+                    {
+                        case 1:
+                            if (*PtrUnion.pu8 == pThis->MemOp.ab[0])
+                                continue;
+                            Bs3TestFailedF("op%u: Wrote %#04RX8, expected %#04RX8", iOperand, *PtrUnion.pu8, pThis->MemOp.ab[0]);
+                            break;
+                        case 2:
+                            if (*PtrUnion.pu16 == pThis->MemOp.au16[0])
+                                continue;
+                            Bs3TestFailedF("op%u: Wrote %#06RX16, expected %#06RX16",
+                                           iOperand, *PtrUnion.pu16, pThis->MemOp.au16[0]);
+                            break;
+                        case 4:
+                            if (*PtrUnion.pu32 == pThis->MemOp.au32[0])
+                                continue;
+                            Bs3TestFailedF("op%u: Wrote %#010RX32, expected %#010RX32",
+                                           iOperand, *PtrUnion.pu32, pThis->MemOp.au32[0]);
+                            break;
+                        case 8:
+                            if (*PtrUnion.pu64 == pThis->MemOp.au64[0])
+                                continue;
+                            Bs3TestFailedF("op%u: Wrote %#018RX64, expected %#018RX64",
+                                           iOperand, *PtrUnion.pu64, pThis->MemOp.au64[0]);
+                            break;
+                        default:
+                            if (Bs3MemCmp(PtrUnion.pb, pThis->MemOp.ab, pThis->aOperands[iOperand].cbOp) == 0)
+                                continue;
+                            Bs3TestFailedF("op%u: Wrote %.*Rhxs, expected %.*Rhxs",
+                                           iOperand,
+                                           pThis->aOperands[iOperand].cbOp, PtrUnion.pb,
+                                           pThis->aOperands[iOperand].cbOp, pThis->MemOp.ab);
+                            break;
+                    }
+                    fOkay = false;
+                }
+            if (fOkay)
+                return true;
+        }
 
         /*
          * Report failure.
@@ -1451,6 +1603,7 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
                 break;
 
             case BS3CG1OPLOC_MEM:
+            case BS3CG1OPLOC_MEM_RW:
                 PtrUnion.pb = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[iOperand].off];
                 switch (pThis->aOperands[iOperand].cbOp)
                 {
@@ -1462,6 +1615,21 @@ static bool Bs3Cg1CheckResult(PBS3CG1STATE pThis, bool fInvalidInstr, uint8_t bT
                         Bs3TestPrintf("op%u: mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
                                       pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
                         break;
+                }
+                if (pThis->aOperands[iOperand].enmLocation == BS3CG1OPLOC_MEM_RW)
+                {
+                    PtrUnion.pb = pThis->MemOp.ab;
+                    switch (pThis->aOperands[iOperand].cbOp)
+                    {
+                        case 1: Bs3TestPrintf("op%u: expect mem08: %#04RX8\n", iOperand, *PtrUnion.pu8); break;
+                        case 2: Bs3TestPrintf("op%u: expect mem16: %#06RX16\n", iOperand, *PtrUnion.pu16); break;
+                        case 4: Bs3TestPrintf("op%u: expect mem32: %#010RX32\n", iOperand, *PtrUnion.pu32); break;
+                        case 8: Bs3TestPrintf("op%u: expect mem64: %#018RX64\n", iOperand, *PtrUnion.pu64); break;
+                        default:
+                            Bs3TestPrintf("op%u: expect mem%u: %.*Rhxs\n", iOperand, pThis->aOperands[iOperand].cbOp * 8,
+                                          pThis->aOperands[iOperand].cbOp, *PtrUnion.pu64);
+                            break;
+                    }
                 }
                 break;
         }
@@ -1515,6 +1683,14 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         {
             Bs3MemGuardedTestPageFree(This.pbCodePg);
             return Bs3TestFailedF("Second Bs3MemGuardedTestPageAlloc(%d) failed", enmMemKind);
+        }
+        if (   BS3_MODE_IS_64BIT_CODE(bMode)
+            && (uintptr_t)This.pbDataPg >= _2G)
+        {
+            Bs3TestFailedF("pbDataPg=%p is above 2GB and not simple to address from 64-bit code", This.pbDataPg);
+            Bs3MemGuardedTestPageFree(This.pbDataPg);
+            Bs3MemGuardedTestPageFree(This.pbCodePg);
+            return 0;
         }
     }
     else
@@ -1652,7 +1828,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
                     if (Bs3Cg1RunSelector(&This, pHdr))
                     {
                         /* Okay, set up the execution context. */
-                        uint8_t BS3_FAR *pbCode = &This.pbCodePg[BS3_MODE_IS_PAGED(bMode) ? This.cbCurInstr : 0];
+                        uint8_t BS3_FAR *pbCode;
 
                         Bs3MemCpy(&This.Ctx, &This.aInitialCtxs[iRing], sizeof(This.Ctx));
                         if (BS3_MODE_IS_PAGED(bMode))
