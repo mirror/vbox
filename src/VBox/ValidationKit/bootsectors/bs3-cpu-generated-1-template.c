@@ -195,6 +195,10 @@ typedef struct BS3CG1STATE
     /** Page for placing data operands in.  When paging is enabled, the page before
      * and after are marked not-present.  */
     uint8_t BS3_FAR        *pbDataPg;
+    /** The flat address corresponding to pbDataPg.  */
+    uintptr_t               uDataPgFlat;
+    /** The 16-bit address corresponding to pbDataPg.  */
+    RTFAR16                 DataPgFar;
 
     /** The name corresponding to bMode. */
     const char BS3_FAR     *pszMode;
@@ -663,6 +667,60 @@ static void Bs3Cg1EncodeCleanup(PBS3CG1STATE pThis)
 }
 
 
+static unsigned Bs3Cfg1EncodeMemMod0Disp(PBS3CG1STATE pThis, bool fAddrOverride, unsigned off, uint8_t iReg,
+                                         uint8_t cbOp, BS3CG1OPLOC enmLocation)
+{
+    pThis->aOperands[pThis->iRmOp].idxField     = BS3CG1DST_INVALID;
+    pThis->aOperands[pThis->iRmOp].enmLocation  = enmLocation;
+    pThis->aOperands[pThis->iRmOp].cbOp         = cbOp;
+    pThis->aOperands[pThis->iRmOp].off          = cbOp;
+
+    if (   BS3_MODE_IS_16BIT_CODE(pThis->bMode)
+        || (fAddrOverride && BS3_MODE_IS_32BIT_CODE(pThis->bMode)) )
+    {
+        /*
+         * 16-bit code doing 16-bit or 32-bit addressing,
+         * or 32-bit code doing 16-bit addressing.
+         */
+        unsigned iRing = 4;
+        if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
+            while (iRing-- > 0)
+                pThis->aInitialCtxs[iRing].ds = pThis->DataPgFar.sel;
+        else
+            while (iRing-- > 0)
+                pThis->aInitialCtxs[iRing].ds = pThis->DataPgFar.sel | iRing;
+        if (!fAddrOverride || BS3_MODE_IS_32BIT_CODE(pThis->bMode))
+        {
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, iReg, 6 /*disp16*/);
+            *(uint16_t *)&pThis->abCurInstr[off] = pThis->DataPgFar.off + X86_PAGE_SIZE - cbOp;
+            off += 2;
+        }
+        else
+        {
+            pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, iReg, 5 /*disp32*/);
+            *(uint32_t *)&pThis->abCurInstr[off] = pThis->DataPgFar.off + X86_PAGE_SIZE - cbOp;
+            off += 4;
+        }
+    }
+    else
+    {
+        /*
+         * 32-bit code doing 32-bit addressing,
+         * or 64-bit code doing either 64-bit or 32-bit addressing.
+         */
+        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, iReg, 5 /*disp32*/);
+        *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - cbOp;
+
+        /* In 64-bit mode we always have a rip relative encoding regardless of fAddrOverride. */
+        if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+            *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
+        off += 4;
+    }
+
+    return off;
+}
+
+
 /**
  * Encodes the next instruction.
  *
@@ -675,6 +733,7 @@ static void Bs3Cg1EncodeCleanup(PBS3CG1STATE pThis)
 static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
 {
     unsigned off;
+    unsigned cbOp;
     switch (pThis->enmEncoding)
     {
         case BS3CG1ENC_MODRM_Eb_Gb:
@@ -686,52 +745,16 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                 pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
                 pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
             }
-            else if (iEncoding == 1 || iEncoding == 2)
+            else if (iEncoding == 1)
             {
-                /** @todo need to figure out a more flexible way to do all this crap. */
-                off = 0;
-                if (iEncoding == 2)
-                    pThis->abCurInstr[off++] = 0x67;
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
-                {
-#if ARCH_BITS == 16 /** @todo fixme */
-                    unsigned iRing = 4;
-                    if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg);
-                    else
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg) | iRing;
-#endif
-                    if (iEncoding == 1)
-                    {
-                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 6 /*disp16*/);
-                        *(uint16_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                        off += 2;
-                    }
-                    else
-                    {
-                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
-                        *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                        off += 4;
-                    }
-                }
-                else
-                {
-                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
-                    *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                    if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-                        *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
-                    off += 4;
-                }
-                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_CH;
-                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_INVALID;
-                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_MEM_RW;
-                pThis->aOperands[pThis->iRmOp ].off         = 1;
-
-                if (BS3_MODE_IS_32BIT_CODE(pThis->bMode)) /* skip address size override */
-                    iEncoding++;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 0), X86_GREG_xBP, 1, BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
+                pThis->abCurInstr[0] = P_AZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xDI, 1, BS3CG1OPLOC_MEM_RW);
             }
             else
                 break;
@@ -748,55 +771,126 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                 pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_AL;
                 pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_CL;
             }
-            else if (iEncoding == 1 || iEncoding == 2)
+            else if (iEncoding == 1)
             {
-                /** @todo need to figure out a more flexible way to do all this crap. */
-                off = 0;
-                if (iEncoding == 2)
-                    pThis->abCurInstr[off++] = 0x67;
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
-                {
-#if ARCH_BITS == 16 /** @todo fixme */
-                    unsigned iRing = 4;
-                    if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg);
-                    else
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg) | iRing;
-#endif
-                    if (iEncoding == 1)
-                    {
-                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 6 /*disp16*/);
-                        *(uint16_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                        off += 2;
-                    }
-                    else
-                    {
-                        pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
-                        *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                        off += 4;
-                    }
-                }
-                else
-                {
-                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
-                    *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - 1;
-                    if (BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-                        *(uint32_t *)&pThis->abCurInstr[off] -= BS3_FP_OFF(&pThis->pbCodePg[X86_PAGE_SIZE]);
-                    off += 4;
-                }
-                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_CH;
-                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_INVALID;
-                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_MEM;
-                pThis->aOperands[pThis->iRmOp ].off         = 1;
-
-                if (BS3_MODE_IS_32BIT_CODE(pThis->bMode)) /* skip address size override */
-                    iEncoding++;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_CH;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 0), X86_GREG_xBP, 1, BS3CG1OPLOC_MEM);
+            }
+            else if (iEncoding == 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_BH;
+                pThis->abCurInstr[0] = P_AZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xDI, 1, BS3CG1OPLOC_MEM);
             }
             else
                 break;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
+        case BS3CG1ENC_MODRM_Gv_Ev:
+        case BS3CG1ENC_MODRM_Ev_Gv:
+            if (iEncoding == 0)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
+                off = Bs3Cg1InsertOpcodes(pThis, 0);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_OZ_RDX;
+            }
+            else if (iEncoding == 1)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RBP;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 0), X86_GREG_xBP, cbOp,
+                                               pThis->enmEncoding == BS3CG1ENC_MODRM_Gv_Ev ? BS3CG1OPLOC_MEM : BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 2 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 4 : 2;
+                pThis->abCurInstr[0] = P_OZ;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_OZ_RDX;
+                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_CTX;
+            }
+            else if (iEncoding == 3)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 4 : 2;
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RSI;
+                pThis->abCurInstr[0] = P_OZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xSI, cbOp,
+                                               pThis->enmEncoding == BS3CG1ENC_MODRM_Gv_Ev ? BS3CG1OPLOC_MEM : BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 4)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RDI;
+                pThis->abCurInstr[0] = P_AZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xDI, cbOp,
+                                               pThis->enmEncoding == BS3CG1ENC_MODRM_Gv_Ev ? BS3CG1OPLOC_MEM : BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 5)
+            {
+                cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 4 : 2;
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_OZ_RSI;
+                pThis->abCurInstr[0] = P_OZ;
+                pThis->abCurInstr[1] = P_AZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 2), X86_GREG_xSI, cbOp,
+                                               pThis->enmEncoding == BS3CG1ENC_MODRM_Gv_Ev ? BS3CG1OPLOC_MEM : BS3CG1OPLOC_MEM_RW);
+            }
+            else if (iEncoding == 6 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
+            {
+                cbOp = 8;
+                pThis->abCurInstr[0] = REX_W___;
+                off = Bs3Cg1InsertOpcodes(pThis, 1);
+                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
+                pThis->aOperands[pThis->iRegOp].idxField    = BS3CG1DST_RBX;
+                pThis->aOperands[pThis->iRmOp ].idxField    = BS3CG1DST_RDX;
+                pThis->aOperands[pThis->iRmOp ].enmLocation = BS3CG1OPLOC_CTX;
+            }
+            else
+                break;
+            pThis->aOperands[0].cbOp = cbOp;
+            pThis->aOperands[1].cbOp = cbOp;
+            pThis->cbOperand  = cbOp;
+            pThis->cbCurInstr = off;
+            iEncoding++;
+            break;
+
+        case BS3CG1ENC_MODRM_Gv_Ma:
+            cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
+            if (iEncoding == 0)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBP;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 0), X86_GREG_xBP, cbOp * 2, BS3CG1OPLOC_MEM);
+            }
+            else if (iEncoding == 1 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
+            {
+                cbOp = cbOp == 2 ? 4 : 2;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBP;
+                pThis->abCurInstr[0] = P_OZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, false, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xBP, cbOp * 2, BS3CG1OPLOC_MEM);
+            }
+            else if (iEncoding == 2)
+            {
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBP;
+                pThis->abCurInstr[0] = P_AZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 1), X86_GREG_xBP, cbOp * 2, BS3CG1OPLOC_MEM);
+            }
+            else if (iEncoding == 3)
+            {
+                cbOp = cbOp == 2 ? 4 : 2;
+                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBP;
+                pThis->abCurInstr[0] = P_AZ;
+                pThis->abCurInstr[1] = P_OZ;
+                off = Bs3Cfg1EncodeMemMod0Disp(pThis, true, Bs3Cg1InsertOpcodes(pThis, 2), X86_GREG_xBP, cbOp * 2, BS3CG1OPLOC_MEM);
+            }
+            else
+                break;
+            pThis->aOperands[pThis->iRegOp].cbOp = cbOp;
+            pThis->cbOperand  = cbOp;
             pThis->cbCurInstr = off;
             iEncoding++;
             break;
@@ -880,99 +974,6 @@ static unsigned Bs3Cg1EncodeNext(PBS3CG1STATE pThis, unsigned iEncoding)
                 break;
             pThis->cbCurInstr = off;
             iEncoding++;
-            break;
-
-        case BS3CG1ENC_MODRM_Gv_Ev:
-        case BS3CG1ENC_MODRM_Ev_Gv:
-            if (iEncoding == 0)
-            {
-                off = Bs3Cg1InsertOpcodes(pThis, 0);
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
-                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBX;
-                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_OZ_RDX;
-                if (BS3_MODE_IS_16BIT_CODE(pThis->bMode))
-                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 2;
-                else
-                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 4;
-            }
-            else if (iEncoding == 1 && (g_uBs3CpuDetected & BS3CPU_TYPE_MASK) >= BS3CPU_80386)
-            {
-                pThis->abCurInstr[0] = P_OZ;
-                off = Bs3Cg1InsertOpcodes(pThis, 1);
-
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
-                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBX;
-                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_OZ_RDX;
-                if (!BS3_MODE_IS_16BIT_CODE(pThis->bMode))
-                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 2;
-                else
-                    pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 4;
-            }
-            else if (iEncoding == 2 && BS3_MODE_IS_64BIT_CODE(pThis->bMode))
-            {
-                pThis->abCurInstr[0] = REX_W___;
-                off = Bs3Cg1InsertOpcodes(pThis, 1);
-
-                pThis->abCurInstr[off++] = X86_MODRM_MAKE(3, X86_GREG_xBX, X86_GREG_xDX);
-                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_RBX;
-                pThis->aOperands[pThis->iRmOp ].idxField = BS3CG1DST_RDX;
-                pThis->aOperands[0].cbOp = pThis->aOperands[1].cbOp = pThis->cbOperand = 8;
-            }
-            else
-                break;
-            pThis->cbCurInstr = off;
-            iEncoding++;
-            break;
-
-        case BS3CG1ENC_MODRM_Gv_Ma:
-            if (iEncoding < 2)
-            {
-                /** @todo need to figure out a more flexible way to do all this crap. */
-                uint8_t cbAddr = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
-                uint8_t cbOp   = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 2 : 4;
-
-                off = 0;
-                if (iEncoding == 1)
-                {
-                    pThis->abCurInstr[off++] = P_OZ;
-                    cbOp = BS3_MODE_IS_16BIT_CODE(pThis->bMode) ? 4 : 2;
-                }
-
-                off = Bs3Cg1InsertOpcodes(pThis, off);
-
-                if (cbAddr == 2)
-                {
-                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 6 /*disp16*/);
-                    *(uint16_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - cbOp * 2;
-                }
-                else
-                {
-                    pThis->abCurInstr[off++] = X86_MODRM_MAKE(0, X86_GREG_xBP, 5 /*disp32*/);
-                    *(uint32_t *)&pThis->abCurInstr[off] = BS3_FP_OFF(pThis->pbDataPg) + X86_PAGE_SIZE - cbOp * 2;
-                }
-                off += cbAddr;
-
-                pThis->aOperands[pThis->iRegOp].idxField = BS3CG1DST_OZ_RBP;
-                pThis->aOperands[pThis->iRegOp].cbOp     = cbOp;
-                pThis->aOperands[pThis->iRmOp ].cbOp     = cbOp * 2;
-                pThis->aOperands[pThis->iRmOp ].off      = cbOp * 2;
-                pThis->cbOperand                         = cbOp;
-
-#if ARCH_BITS == 16 /** @todo fixme */
-                if (cbAddr == 2)
-                {
-                    unsigned iRing = 4;
-                    if (BS3_MODE_IS_RM_OR_V86(pThis->bMode))
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg);
-                    else
-                        while (iRing-- > 0)
-                            pThis->aInitialCtxs[iRing].ds = BS3_FP_SEG(pThis->pbDataPg) | iRing;
-                }
-#endif
-                pThis->cbCurInstr = off;
-                iEncoding++;
-            }
             break;
 
         default:
@@ -1312,7 +1313,7 @@ static bool Bs3Cg1RunContextModifier(PBS3CG1STATE pThis, PBS3REGCTX pCtx, PCBS3C
                         if (pbInstr)
                             PtrField.pu8 = &pThis->pbDataPg[X86_PAGE_SIZE - pThis->aOperands[idxOp].off];
                         else
-                            PtrField.pu8 = pThis->MemOp.ab[1];
+                            PtrField.pu8 = pThis->MemOp.ab;
                         break;
 
                     default:
@@ -1653,7 +1654,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
     uint8_t                     iRing;
     unsigned                    iInstr;
     BS3MEMKIND const            enmMemKind = BS3_MODE_IS_RM_OR_V86(bMode) ? BS3MEMKIND_REAL
-                                           : BS3_MODE_IS_16BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
+                                           : !BS3_MODE_IS_64BIT_CODE(bMode) ? BS3MEMKIND_TILED : BS3MEMKIND_FLAT32;
 
 #if 0
     if (bMode != BS3_MODE_PP16_V86)
@@ -1706,6 +1707,18 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
         }
     }
     This.uCodePgFlat = Bs3SelPtrToFlat(This.pbCodePg);
+    This.uDataPgFlat = Bs3SelPtrToFlat(This.pbDataPg);
+#if ARCH_BITS == 16
+    This.DataPgFar.off = BS3_FP_OFF(This.pbDataPg);
+    This.DataPgFar.sel = BS3_FP_SEG(This.pbDataPg);
+#else
+    if (BS3_MODE_IS_RM_OR_V86(bMode))
+        *(uint32_t *)&This.DataPgFar = Bs3SelFlatDataToRealMode(This.uDataPgFlat);
+    else if (!BS3_MODE_IS_64BIT_CODE(bMode))
+        *(uint32_t *)&This.DataPgFar = Bs3SelFlatDataToProtFar16(This.uDataPgFlat);
+    else
+        *(uint32_t *)&This.DataPgFar = 0;
+#endif
 
     /* Create basic context for each target ring.  In protected 16-bit code we need
        set up code selectors that can access pbCodePg.  ASSUMES 16-bit driver code! */
@@ -1901,7 +1914,7 @@ BS3_DECL_FAR(uint8_t) BS3_CMN_NM(Bs3Cg1Worker)(uint8_t bMode)
 
     Bs3TestSubDone();
 #if 0
-    if (bMode >= BS3_MODE_PP16)
+    if (bMode >= BS3_MODE_PE16_32)
     {
         Bs3TestTerm();
         Bs3Shutdown();
