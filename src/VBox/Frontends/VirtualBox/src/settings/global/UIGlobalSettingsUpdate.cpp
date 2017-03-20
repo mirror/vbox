@@ -27,8 +27,47 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Global settings: Update page data structure. */
+struct UIDataSettingsGlobalUpdate
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalUpdate()
+        : m_fCheckEnabled(false)
+        , m_periodIndex(VBoxUpdateData::PeriodUndefined)
+        , m_branchIndex(VBoxUpdateData::BranchStable)
+        , m_strDate(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalUpdate &other) const
+    {
+        return true
+               && (m_fCheckEnabled == other.m_fCheckEnabled)
+               && (m_periodIndex == other.m_periodIndex)
+               && (m_branchIndex == other.m_branchIndex)
+               && (m_strDate == other.m_strDate)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalUpdate &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalUpdate &other) const { return !equal(other); }
+
+    /** Holds whether the update check is enabled. */
+    bool m_fCheckEnabled;
+    /** Holds the update check period. */
+    VBoxUpdateData::PeriodType m_periodIndex;
+    /** Holds the update branch type. */
+    VBoxUpdateData::BranchType m_branchIndex;
+    /** Holds the next update date. */
+    QString m_strDate;
+};
+
+
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     : m_pLastChosenRadio(0)
+    , m_pCache(new UISettingsCacheGlobalUpdate)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsUpdate::setupUi(this);
@@ -41,13 +80,20 @@ UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     retranslateUi();
 }
 
+UIGlobalSettingsUpdate::~UIGlobalSettingsUpdate()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalUpdate oldData;
@@ -60,7 +106,7 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
     oldData.m_strDate = updateData.date();
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -69,7 +115,7 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsUpdate::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalUpdate &oldData = m_cache.base();
+    const UIDataSettingsGlobalUpdate &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     m_pCheckBoxUpdate->setChecked(oldData.m_fCheckEnabled);
@@ -90,14 +136,14 @@ void UIGlobalSettingsUpdate::getFromCache()
 void UIGlobalSettingsUpdate::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalUpdate newData = m_cache.base();
+    UIDataSettingsGlobalUpdate newData = m_pCache->base();
 
     /* Gather new data: */
     newData.m_periodIndex = periodType();
     newData.m_branchIndex = branchType();
 
     /* Cache new data: */
-    m_cache.cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
@@ -106,10 +152,10 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save new data from cache: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* Gather corresponding values from internal variables: */
-        VBoxUpdateData newData(m_cache.data().m_periodIndex, m_cache.data().m_branchIndex);
+        VBoxUpdateData newData(m_pCache->data().m_periodIndex, m_pCache->data().m_branchIndex);
         gEDataManager->setApplicationUpdateData(newData.data());
     }
 

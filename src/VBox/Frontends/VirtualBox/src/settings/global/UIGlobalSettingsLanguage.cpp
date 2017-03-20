@@ -47,6 +47,32 @@ extern const char *gVBoxLangIDRegExp;
 extern const char *gVBoxBuiltInLangName;
 
 
+/** Global settings: Language page data structure. */
+struct UIDataSettingsGlobalLanguage
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalLanguage()
+        : m_strLanguageId(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalLanguage &other) const
+    {
+        return true
+               && (m_strLanguageId == other.m_strLanguageId)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalLanguage &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalLanguage &other) const { return !equal(other); }
+
+    /** Holds the current language id. */
+    QString m_strLanguageId;
+};
+
+
 /* Language item: */
 class UILanguageItem : public QITreeWidgetItem
 {
@@ -180,6 +206,7 @@ private:
 /* Language page constructor: */
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     : m_fPolished(false)
+    , m_pCache(new UISettingsCacheGlobalLanguage)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsLanguage::setupUi(this);
@@ -203,13 +230,20 @@ UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     retranslateUi();
 }
 
+UIGlobalSettingsLanguage::~UIGlobalSettingsLanguage()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalLanguage oldData;
@@ -218,7 +252,7 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
     oldData.m_strLanguageId = m_settings.languageId();
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -227,7 +261,7 @@ void UIGlobalSettingsLanguage::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsLanguage::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalLanguage &oldData = m_cache.base();
+    const UIDataSettingsGlobalLanguage &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     reload(oldData.m_strLanguageId);
@@ -236,7 +270,7 @@ void UIGlobalSettingsLanguage::getFromCache()
 void UIGlobalSettingsLanguage::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalLanguage newData = m_cache.base();
+    UIDataSettingsGlobalLanguage newData = m_pCache->base();
 
     /* Gather new data: */
     QTreeWidgetItem *pCurrentItem = m_pLanguageTree->currentItem();
@@ -245,7 +279,7 @@ void UIGlobalSettingsLanguage::putToCache()
         newData.m_strLanguageId = pCurrentItem->text(1);
 
     /* Cache new data: */
-    m_cache.cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
@@ -254,11 +288,11 @@ void UIGlobalSettingsLanguage::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save new data from cache: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         /* Save from cache: */
-        if (m_cache.data().m_strLanguageId != m_cache.base().m_strLanguageId)
-            m_settings.setLanguageId(m_cache.data().m_strLanguageId);
+        if (m_pCache->data().m_strLanguageId != m_pCache->base().m_strLanguageId)
+            m_settings.setLanguageId(m_pCache->data().m_strLanguageId);
     }
 
     /* Upload properties & settings to data: */

@@ -22,31 +22,8 @@
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsLanguage.gen.h"
 
-
-/** Global settings: Language page data structure. */
-struct UIDataSettingsGlobalLanguage
-{
-    /** Constructs data. */
-    UIDataSettingsGlobalLanguage()
-        : m_strLanguageId(QString())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsGlobalLanguage &other) const
-    {
-        return true
-               && (m_strLanguageId == other.m_strLanguageId)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalLanguage &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsGlobalLanguage &other) const { return !equal(other); }
-
-    /** Holds the current language id. */
-    QString m_strLanguageId;
-};
+/* Forward declartions: */
+struct UIDataSettingsGlobalLanguage;
 typedef UISettingsCache<UIDataSettingsGlobalLanguage> UISettingsCacheGlobalLanguage;
 
 
@@ -57,8 +34,10 @@ class UIGlobalSettingsLanguage : public UISettingsPageGlobal, public Ui::UIGloba
 
 public:
 
-    /* Constructor: */
+    /** Constructs Language settings page. */
     UIGlobalSettingsLanguage();
+    /** Destructs Language settings page. */
+    ~UIGlobalSettingsLanguage();
 
 protected:
 
@@ -103,8 +82,8 @@ private:
     /* Variables: */
     bool m_fPolished;
 
-    /* Cache: */
-    UISettingsCacheGlobalLanguage m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheGlobalLanguage *m_pCache;
 };
 
 #endif /* !___UIGlobalSettingsLanguage_h___ */

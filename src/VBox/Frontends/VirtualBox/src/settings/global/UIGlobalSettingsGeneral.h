@@ -22,39 +22,8 @@
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsGeneral.gen.h"
 
-
-/** Global settings: General page data structure. */
-struct UIDataSettingsGlobalGeneral
-{
-    /** Constructs data. */
-    UIDataSettingsGlobalGeneral()
-        : m_strDefaultMachineFolder(QString())
-        , m_strVRDEAuthLibrary(QString())
-        , m_fHostScreenSaverDisabled(false)
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsGlobalGeneral &other) const
-    {
-        return true
-               && (m_strDefaultMachineFolder == other.m_strDefaultMachineFolder)
-               && (m_strVRDEAuthLibrary == other.m_strVRDEAuthLibrary)
-               && (m_fHostScreenSaverDisabled == other.m_fHostScreenSaverDisabled)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalGeneral &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsGlobalGeneral &other) const { return !equal(other); }
-
-    /** Holds the default machine folder path. */
-    QString m_strDefaultMachineFolder;
-    /** Holds the VRDE authentication library name. */
-    QString m_strVRDEAuthLibrary;
-    /** Holds whether host screen-saver should be disabled. */
-    bool m_fHostScreenSaverDisabled;
-};
+/* Forward declarations: */
+struct UIDataSettingsGlobalGeneral;
 typedef UISettingsCache<UIDataSettingsGlobalGeneral> UISettingsCacheGlobalGeneral;
 
 
@@ -65,8 +34,10 @@ class UIGlobalSettingsGeneral : public UISettingsPageGlobal, public Ui::UIGlobal
 
 public:
 
-    /* Constructor: */
+    /** Constructs General settings page. */
     UIGlobalSettingsGeneral();
+    /** Destructs General settings page. */
+    ~UIGlobalSettingsGeneral();
 
 protected:
 
@@ -92,8 +63,8 @@ protected:
 
 private:
 
-    /* Cache: */
-    UISettingsCacheGlobalGeneral m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheGlobalGeneral *m_pCache;
 };
 
 #endif /* !___UIGlobalSettingsGeneral_h___ */

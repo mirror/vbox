@@ -26,7 +26,38 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Global settings: Display page data structure. */
+struct UIDataSettingsGlobalDisplay
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalDisplay()
+        : m_strMaxGuestResolution(QString())
+        , m_fActivateHoveredMachineWindow(false)
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalDisplay &other) const
+    {
+        return true
+               && (m_strMaxGuestResolution == other.m_strMaxGuestResolution)
+               && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalDisplay &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalDisplay &other) const { return !equal(other); }
+
+    /** Holds the maximum guest resolution or preset name. */
+    QString m_strMaxGuestResolution;
+    /** Holds whether we should automatically activate machine window under the mouse cursor. */
+    bool m_fActivateHoveredMachineWindow;
+};
+
+
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
+    : m_pCache(new UISettingsCacheGlobalDisplay)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsDisplay::setupUi(this);
@@ -47,13 +78,20 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     retranslateUi();
 }
 
+UIGlobalSettingsDisplay::~UIGlobalSettingsDisplay()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalDisplay oldData;
@@ -63,7 +101,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -72,7 +110,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsDisplay::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalDisplay &oldData = m_cache.base();
+    const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     if ((oldData.m_strMaxGuestResolution.isEmpty()) ||
@@ -103,7 +141,7 @@ void UIGlobalSettingsDisplay::getFromCache()
 void UIGlobalSettingsDisplay::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalDisplay newData = m_cache.base();
+    UIDataSettingsGlobalDisplay newData = m_pCache->base();
 
     /* Gather new data: */
     if (m_pMaxResolutionCombo->itemData(m_pMaxResolutionCombo->currentIndex()).toString() == "auto")
@@ -126,7 +164,7 @@ void UIGlobalSettingsDisplay::putToCache()
     newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
 
     /* Cache new data: */
-    m_cache.cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
@@ -135,12 +173,12 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save new data from cache: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
-        if (m_cache.data().m_strMaxGuestResolution != m_cache.base().m_strMaxGuestResolution)
-            m_settings.setMaxGuestRes(m_cache.data().m_strMaxGuestResolution);
-        if (m_cache.data().m_fActivateHoveredMachineWindow != m_cache.base().m_fActivateHoveredMachineWindow)
-            gEDataManager->setActivateHoveredMachineWindow(m_cache.data().m_fActivateHoveredMachineWindow);
+        if (m_pCache->data().m_strMaxGuestResolution != m_pCache->base().m_strMaxGuestResolution)
+            m_settings.setMaxGuestRes(m_pCache->data().m_strMaxGuestResolution);
+        if (m_pCache->data().m_fActivateHoveredMachineWindow != m_pCache->base().m_fActivateHoveredMachineWindow)
+            gEDataManager->setActivateHoveredMachineWindow(m_pCache->data().m_fActivateHoveredMachineWindow);
     }
 
     /* Upload properties & settings to data: */

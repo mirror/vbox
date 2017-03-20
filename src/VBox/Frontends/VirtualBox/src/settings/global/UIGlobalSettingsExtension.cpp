@@ -38,6 +38,78 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Global settings: Extension page item data structure. */
+struct UIDataSettingsGlobalExtensionItem
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalExtensionItem()
+        : m_strName(QString())
+        , m_strDescription(QString())
+        , m_strVersion(QString())
+        , m_uRevision(0)
+        , m_fIsUsable(false)
+        , m_strWhyUnusable(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalExtensionItem &other) const
+    {
+        return true
+               && (m_strName == other.m_strName)
+               && (m_strDescription == other.m_strDescription)
+               && (m_strVersion == other.m_strVersion)
+               && (m_uRevision == other.m_uRevision)
+               && (m_fIsUsable == other.m_fIsUsable)
+               && (m_strWhyUnusable == other.m_strWhyUnusable)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalExtensionItem &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalExtensionItem &other) const { return !equal(other); }
+
+    /** Holds the extension item name. */
+    QString m_strName;
+    /** Holds the extension item description. */
+    QString m_strDescription;
+    /** Holds the extension item version. */
+    QString m_strVersion;
+    /** Holds the extension item revision. */
+    ULONG m_uRevision;
+    /** Holds whether the extension item usable. */
+    bool m_fIsUsable;
+    /** Holds why the extension item is unusable. */
+    QString m_strWhyUnusable;
+};
+
+
+/** Global settings: Extension page data structure. */
+struct UIDataSettingsGlobalExtension
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalExtension()
+        : m_items(QList<UIDataSettingsGlobalExtensionItem>())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalExtension &other) const
+    {
+        return true
+               && (m_items == other.m_items)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalExtension &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalExtension &other) const { return !equal(other); }
+
+    /** Holds the extension items. */
+    QList<UIDataSettingsGlobalExtensionItem> m_items;
+};
+
+
 /* Extension package item: */
 class UIExtensionPackageItem : public QITreeWidgetItem
 {
@@ -99,6 +171,7 @@ private:
 
 UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     : m_pActionAdd(0), m_pActionRemove(0)
+    , m_pCache(new UISettingsCacheGlobalExtension)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsExtension::setupUi(this);
@@ -137,6 +210,13 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+UIGlobalSettingsExtension::~UIGlobalSettingsExtension()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
 }
 
 /* static */
@@ -242,7 +322,7 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalExtension oldData;
@@ -251,10 +331,14 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
     const CExtPackManager &manager = vboxGlobal().virtualBox().GetExtensionPackManager();
     const CExtPackVector &packages = manager.GetInstalledExtPacks();
     for (int i = 0; i < packages.size(); ++i)
-        oldData.m_items << fetchData(packages[i]);
+    {
+        UIDataSettingsGlobalExtensionItem item;
+        fetchData(packages[i], item);
+        oldData.m_items << item;
+    }
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -263,7 +347,7 @@ void UIGlobalSettingsExtension::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsExtension::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalExtension &oldData = m_cache.base();
+    const UIDataSettingsGlobalExtension &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     for (int i = 0; i < oldData.m_items.size(); ++i)
@@ -377,11 +461,11 @@ void UIGlobalSettingsExtension::sltInstallPackage()
         if (!strExtPackName.isNull())
         {
             /* Remove it from the cache. */
-            for (int i = 0; i < m_cache.data().m_items.size(); ++i)
+            for (int i = 0; i < m_pCache->data().m_items.size(); ++i)
             {
-                if (!strExtPackName.compare(m_cache.data().m_items.at(i).m_strName, Qt::CaseInsensitive))
+                if (!strExtPackName.compare(m_pCache->data().m_items.at(i).m_strName, Qt::CaseInsensitive))
                 {
-                    m_cache.data().m_items.removeAt(i);
+                    m_pCache->data().m_items.removeAt(i);
                     break;
                 }
             }
@@ -403,9 +487,11 @@ void UIGlobalSettingsExtension::sltInstallPackage()
             const CExtPack &package = manager.Find(strExtPackName);
             if (package.isOk())
             {
-                m_cache.data().m_items << fetchData(package);
+                UIDataSettingsGlobalExtensionItem item;
+                fetchData(package, item);
+                m_pCache->data().m_items << item;
 
-                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_cache.data().m_items.last());
+                UIExtensionPackageItem *pItem = new UIExtensionPackageItem(m_pPackagesTree, m_pCache->data().m_items.last());
                 m_pPackagesTree->setCurrentItem(pItem);
                 m_pPackagesTree->sortByColumn(1, Qt::AscendingOrder);
             }
@@ -446,11 +532,11 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 if (progress.isOk() && progress.GetResultCode() == 0)
                 {
                     /* Remove selected package from cache: */
-                    for (int i = 0; i < m_cache.data().m_items.size(); ++i)
+                    for (int i = 0; i < m_pCache->data().m_items.size(); ++i)
                     {
-                        if (!strSelectedPackageName.compare(m_cache.data().m_items.at(i).m_strName, Qt::CaseInsensitive))
+                        if (!strSelectedPackageName.compare(m_pCache->data().m_items.at(i).m_strName, Qt::CaseInsensitive))
                         {
-                            m_cache.data().m_items.removeAt(i);
+                            m_pCache->data().m_items.removeAt(i);
                             break;
                         }
                     }
@@ -466,9 +552,8 @@ void UIGlobalSettingsExtension::sltRemovePackage()
     }
 }
 
-UIDataSettingsGlobalExtensionItem UIGlobalSettingsExtension::fetchData(const CExtPack &package) const
+void UIGlobalSettingsExtension::fetchData(const CExtPack &package, UIDataSettingsGlobalExtensionItem &item) const
 {
-    UIDataSettingsGlobalExtensionItem item;
     item.m_strName = package.GetName();
     item.m_strDescription = package.GetDescription();
     item.m_strVersion = package.GetVersion();
@@ -476,6 +561,5 @@ UIDataSettingsGlobalExtensionItem UIGlobalSettingsExtension::fetchData(const CEx
     item.m_fIsUsable = package.GetUsable();
     if (!item.m_fIsUsable)
         item.m_strWhyUnusable = package.GetWhyUnusable();
-    return item;
 }
 

@@ -45,9 +45,9 @@ class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSe
 
 public:
 
-    /* Constructor: */
+    /** Constructs Input settings page. */
     UIGlobalSettingsInput();
-    /* Destructor: */
+    /** Destructs Input settings page. */
     ~UIGlobalSettingsInput();
 
 protected:
@@ -88,7 +88,7 @@ private:
     UIHotKeyTableModel *m_pMachineModel;
     UIHotKeyTable *m_pMachineTable;
 
-    /** Holds the cache instance. */
+    /** Holds the page data cache instance. */
     UISettingsCacheGlobalInput *m_pCache;
 };
 

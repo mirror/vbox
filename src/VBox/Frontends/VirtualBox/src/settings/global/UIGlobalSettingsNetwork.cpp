@@ -44,6 +44,36 @@
 #include "CDHCPServer.h"
 
 
+/** Global settings: Network page data structure. */
+struct UIDataSettingsGlobalNetwork
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalNetwork()
+        : m_networksNAT(QList<UIDataSettingsGlobalNetworkNAT>())
+        , m_networksHost(QList<UIDataSettingsGlobalNetworkHost>())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalNetwork &other) const
+    {
+        return true
+               && (m_networksNAT == other.m_networksNAT)
+               && (m_networksHost == other.m_networksHost)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalNetwork &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalNetwork &other) const { return !equal(other); }
+
+    /** Holds the NAT network data. */
+    QList<UIDataSettingsGlobalNetworkNAT> m_networksNAT;
+    /** Holds the host network data. */
+    QList<UIDataSettingsGlobalNetworkHost> m_networksHost;
+};
+
+
 /* Global settings / Network page / NAT network item: */
 class UIItemNetworkNAT : public QITreeWidgetItem
 {
@@ -392,6 +422,7 @@ void UIItemNetworkHost::updateInfo()
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     : m_pActionAddNetworkNAT(0), m_pActionDelNetworkNAT(0), m_pActionEditNetworkNAT(0)
     , m_pActionAddNetworkHost(0), m_pActionDelNetworkHost(0), m_pActionEditNetworkHost(0)
+    , m_pCache(new UISettingsCacheGlobalNetwork)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsNetwork::setupUi(this);
@@ -510,26 +541,41 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     retranslateUi();
 }
 
+UIGlobalSettingsNetwork::~UIGlobalSettingsNetwork()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalNetwork oldData;
 
     /* Gather old data: */
     foreach (const CNATNetwork &network, vboxGlobal().virtualBox().GetNATNetworks())
-        oldData.m_networksNAT << generateDataNetworkNAT(network);
+    {
+        UIDataSettingsGlobalNetworkNAT data;
+        generateDataNetworkNAT(network, data);
+        oldData.m_networksNAT << data;
+    }
     foreach (const CHostNetworkInterface &iface, vboxGlobal().host().GetNetworkInterfaces())
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
-            oldData.m_networksHost << generateDataNetworkHost(iface);
+        {
+            UIDataSettingsGlobalNetworkHost data;
+            generateDataNetworkHost(iface, data);
+            oldData.m_networksHost << data;
+        }
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -538,7 +584,7 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsNetwork::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalNetwork &oldData = m_cache.base();
+    const UIDataSettingsGlobalNetwork &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     foreach (const UIDataSettingsGlobalNetworkNAT &network, oldData.m_networksNAT)
@@ -559,7 +605,7 @@ void UIGlobalSettingsNetwork::getFromCache()
 void UIGlobalSettingsNetwork::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalNetwork newData = m_cache.base();
+    UIDataSettingsGlobalNetwork newData = m_pCache->base();
 
     /* Gather new data: */
     newData.m_networksNAT.clear();
@@ -580,7 +626,7 @@ void UIGlobalSettingsNetwork::putToCache()
     }
 
     /* Cache new data: */
-    m_cache.cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
@@ -589,13 +635,13 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save new data from cache: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
-        if (m_cache.data().m_networksNAT != m_cache.base().m_networksNAT)
-            foreach (const UIDataSettingsGlobalNetworkNAT &data, m_cache.data().m_networksNAT)
+        if (m_pCache->data().m_networksNAT != m_pCache->base().m_networksNAT)
+            foreach (const UIDataSettingsGlobalNetworkNAT &data, m_pCache->data().m_networksNAT)
                 saveCacheItemNetworkNAT(data);
-        if (m_cache.data().m_networksHost != m_cache.base().m_networksHost)
-            foreach (const UIDataSettingsGlobalNetworkHost &data, m_cache.data().m_networksHost)
+        if (m_pCache->data().m_networksHost != m_pCache->base().m_networksHost)
+            foreach (const UIDataSettingsGlobalNetworkHost &data, m_pCache->data().m_networksHost)
                 saveCacheItemNetworkHost(data);
     }
 
@@ -749,7 +795,9 @@ void UIGlobalSettingsNetwork::sltAddNetworkNAT()
     AssertReturnVoid(!network.isNull());
 
     /* Update tree: */
-    createTreeItemNetworkNAT(generateDataNetworkNAT(network), true);
+    UIDataSettingsGlobalNetworkNAT data;
+    generateDataNetworkNAT(network, data);
+    createTreeItemNetworkNAT(data, true);
     m_pTreeNetworkNAT->sortByColumn(1, Qt::AscendingOrder);
 }
 
@@ -838,7 +886,9 @@ void UIGlobalSettingsNetwork::sltAddNetworkHost()
     AssertReturnVoid(!dhcp.isNull());
 
     /* Update tree: */
-    createTreeItemNetworkHost(generateDataNetworkHost(iface), true);
+    UIDataSettingsGlobalNetworkHost data;
+    generateDataNetworkHost(iface, data);
+    createTreeItemNetworkHost(data, true);
     m_pTreeNetworkHost->sortByColumn(0, Qt::AscendingOrder);
 }
 
@@ -955,11 +1005,8 @@ void UIGlobalSettingsNetwork::sltShowContextMenuNetworkHost(const QPoint &pos)
     menu.exec(m_pTreeNetworkHost->mapToGlobal(pos));
 }
 
-UIDataSettingsGlobalNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network)
+void UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwork &network, UIDataSettingsGlobalNetworkNAT &data)
 {
-    /* Prepare data: */
-    UIDataSettingsGlobalNetworkNAT data;
-
     /* Load NAT network settings: */
     data.m_fEnabled = network.GetEnabled();
     data.m_strName = network.GetNetworkName();
@@ -1016,9 +1063,6 @@ UIDataSettingsGlobalNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(c
                                                  QString(rules[4]).remove('[').remove(']'),
                                                  rules[5].toUInt());
     }
-
-    /* Return data: */
-    return data;
 }
 
 void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataSettingsGlobalNetworkNAT &data)
@@ -1074,11 +1118,8 @@ void UIGlobalSettingsNetwork::removeTreeItemNetworkNAT(UIItemNetworkNAT *pItem)
     delete pItem;
 }
 
-UIDataSettingsGlobalNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterface &iface)
+void UIGlobalSettingsNetwork::generateDataNetworkHost(const CHostNetworkInterface &iface, UIDataSettingsGlobalNetworkHost &data)
 {
-    /* Prepare data: */
-    UIDataSettingsGlobalNetworkHost data;
-
     /* Get DHCP server (create if necessary): */
     CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
     if (dhcp.isNull())
@@ -1088,13 +1129,13 @@ UIDataSettingsGlobalNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost
         if (!vbox.isOk())
         {
             msgCenter().cannotCreateDHCPServer(vbox, this);
-            return data;
+            return;
         }
         dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
     }
     Assert(!dhcp.isNull());
     if (dhcp.isNull())
-        return data;
+        return;
 
     /* Host interface settings: */
     data.m_interface.m_strName = iface.GetName();
@@ -1111,9 +1152,6 @@ UIDataSettingsGlobalNetworkHost UIGlobalSettingsNetwork::generateDataNetworkHost
     data.m_dhcpserver.m_strDhcpServerMask = dhcp.GetNetworkMask();
     data.m_dhcpserver.m_strDhcpLowerAddress = dhcp.GetLowerIP();
     data.m_dhcpserver.m_strDhcpUpperAddress = dhcp.GetUpperIP();
-
-    /* Return data: */
-    return data;
 }
 
 void UIGlobalSettingsNetwork::saveCacheItemNetworkHost(const UIDataSettingsGlobalNetworkHost &data)

@@ -30,7 +30,42 @@
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 
+/** Global settings: Proxy page data structure. */
+struct UIDataSettingsGlobalProxy
+{
+    /** Constructs data. */
+    UIDataSettingsGlobalProxy()
+        : m_enmProxyState(UIProxyManager::ProxyState_Auto)
+        , m_strProxyHost(QString())
+        , m_strProxyPort(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataSettingsGlobalProxy &other) const
+    {
+        return true
+               && (m_enmProxyState == other.m_enmProxyState)
+               && (m_strProxyHost == other.m_strProxyHost)
+               && (m_strProxyPort == other.m_strProxyPort)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataSettingsGlobalProxy &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataSettingsGlobalProxy &other) const { return !equal(other); }
+
+    /** Holds the proxy state. */
+    UIProxyManager::ProxyState m_enmProxyState;
+    /** Holds the proxy host. */
+    QString m_strProxyHost;
+    /** Holds the proxy port. */
+    QString m_strProxyPort;
+};
+
+
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
+    : m_pCache(new UISettingsCacheGlobalProxy)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsProxy::setupUi(this);
@@ -53,13 +88,20 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
     retranslateUi();
 }
 
+UIGlobalSettingsProxy::~UIGlobalSettingsProxy()
+{
+    /* Cleanup cache: */
+    delete m_pCache;
+    m_pCache = 0;
+}
+
 void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to properties & settings: */
     UISettingsPageGlobal::fetchData(data);
 
     /* Clear cache initially: */
-    m_cache.clear();
+    m_pCache->clear();
 
     /* Prepare old data: */
     UIDataSettingsGlobalProxy oldData;
@@ -71,7 +113,7 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
     oldData.m_strProxyPort = proxyManager.proxyPort();
 
     /* Cache old data: */
-    m_cache.cacheInitialData(oldData);
+    m_pCache->cacheInitialData(oldData);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -80,7 +122,7 @@ void UIGlobalSettingsProxy::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsProxy::getFromCache()
 {
     /* Get old data from cache: */
-    const UIDataSettingsGlobalProxy &oldData = m_cache.base();
+    const UIDataSettingsGlobalProxy &oldData = m_pCache->base();
 
     /* Load old data from cache: */
     switch (oldData.m_enmProxyState)
@@ -100,7 +142,7 @@ void UIGlobalSettingsProxy::getFromCache()
 void UIGlobalSettingsProxy::putToCache()
 {
     /* Prepare new data: */
-    UIDataSettingsGlobalProxy newData = m_cache.base();
+    UIDataSettingsGlobalProxy newData = m_pCache->base();
 
     /* Gather new data: */
     newData.m_enmProxyState = m_pRadioProxyEnabled->isChecked()  ? UIProxyManager::ProxyState_Enabled :
@@ -110,7 +152,7 @@ void UIGlobalSettingsProxy::putToCache()
     newData.m_strProxyPort = m_pPortEditor->text();
 
     /* Cache new data: */
-    m_cache.cacheCurrentData(newData);
+    m_pCache->cacheCurrentData(newData);
 }
 
 void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
@@ -119,12 +161,12 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save new data from cache: */
-    if (m_cache.wasChanged())
+    if (m_pCache->wasChanged())
     {
         UIProxyManager proxyManager;
-        proxyManager.setProxyState(m_cache.data().m_enmProxyState);
-        proxyManager.setProxyHost(m_cache.data().m_strProxyHost);
-        proxyManager.setProxyPort(m_cache.data().m_strProxyPort);
+        proxyManager.setProxyState(m_pCache->data().m_enmProxyState);
+        proxyManager.setProxyHost(m_pCache->data().m_strProxyHost);
+        proxyManager.setProxyPort(m_pCache->data().m_strProxyPort);
         m_settings.setProxySettings(proxyManager.toString());
     }
 

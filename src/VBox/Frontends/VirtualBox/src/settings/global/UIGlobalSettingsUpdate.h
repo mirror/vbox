@@ -23,43 +23,8 @@
 #include "UIGlobalSettingsUpdate.gen.h"
 #include "UIUpdateDefs.h"
 
-
-/** Global settings: Update page data structure. */
-struct UIDataSettingsGlobalUpdate
-{
-    /** Constructs data. */
-    UIDataSettingsGlobalUpdate()
-        : m_fCheckEnabled(false)
-        , m_periodIndex(VBoxUpdateData::PeriodUndefined)
-        , m_branchIndex(VBoxUpdateData::BranchStable)
-        , m_strDate(QString())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsGlobalUpdate &other) const
-    {
-        return true
-               && (m_fCheckEnabled == other.m_fCheckEnabled)
-               && (m_periodIndex == other.m_periodIndex)
-               && (m_branchIndex == other.m_branchIndex)
-               && (m_strDate == other.m_strDate)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalUpdate &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsGlobalUpdate &other) const { return !equal(other); }
-
-    /** Holds whether the update check is enabled. */
-    bool m_fCheckEnabled;
-    /** Holds the update check period. */
-    VBoxUpdateData::PeriodType m_periodIndex;
-    /** Holds the update branch type. */
-    VBoxUpdateData::BranchType m_branchIndex;
-    /** Holds the next update date. */
-    QString m_strDate;
-};
+/* Forward declarations: */
+struct UIDataSettingsGlobalUpdate;
 typedef UISettingsCache<UIDataSettingsGlobalUpdate> UISettingsCacheGlobalUpdate;
 
 
@@ -70,8 +35,10 @@ class UIGlobalSettingsUpdate : public UISettingsPageGlobal, public Ui::UIGlobalS
 
 public:
 
-    /* Constructor: */
+    /** Constructs Update settings page. */
     UIGlobalSettingsUpdate();
+    /** Destructs Update settings page. */
+    ~UIGlobalSettingsUpdate();
 
 protected:
 
@@ -110,8 +77,8 @@ private:
     /* Variables: */
     QRadioButton *m_pLastChosenRadio;
 
-    /* Cache: */
-    UISettingsCacheGlobalUpdate m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheGlobalUpdate *m_pCache;
 };
 
 #endif /* !___UIGlobalSettingsUpdate_h___ */

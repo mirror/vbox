@@ -23,39 +23,8 @@
 #include "UIGlobalSettingsProxy.gen.h"
 #include "VBoxUtils.h"
 
-
-/** Global settings: Proxy page data structure. */
-struct UIDataSettingsGlobalProxy
-{
-    /** Constructs data. */
-    UIDataSettingsGlobalProxy()
-        : m_enmProxyState(UIProxyManager::ProxyState_Auto)
-        , m_strProxyHost(QString())
-        , m_strProxyPort(QString())
-    {}
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool equal(const UIDataSettingsGlobalProxy &other) const
-    {
-        return true
-               && (m_enmProxyState == other.m_enmProxyState)
-               && (m_strProxyHost == other.m_strProxyHost)
-               && (m_strProxyPort == other.m_strProxyPort)
-               ;
-    }
-
-    /** Returns whether the @a other passed data is equal to this one. */
-    bool operator==(const UIDataSettingsGlobalProxy &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
-    bool operator!=(const UIDataSettingsGlobalProxy &other) const { return !equal(other); }
-
-    /** Holds the proxy state. */
-    UIProxyManager::ProxyState m_enmProxyState;
-    /** Holds the proxy host. */
-    QString m_strProxyHost;
-    /** Holds the proxy port. */
-    QString m_strProxyPort;
-};
+/* Forward declarations: */
+struct UIDataSettingsGlobalProxy;
 typedef UISettingsCache<UIDataSettingsGlobalProxy> UISettingsCacheGlobalProxy;
 
 
@@ -66,8 +35,10 @@ class UIGlobalSettingsProxy : public UISettingsPageGlobal, public Ui::UIGlobalSe
 
 public:
 
-    /* Constructor: */
+    /** Constructs Proxy settings page. */
     UIGlobalSettingsProxy();
+    /** Destructs Proxy settings page. */
+    ~UIGlobalSettingsProxy();
 
 protected:
 
@@ -101,8 +72,8 @@ private slots:
 
 private:
 
-    /* Cache: */
-    UISettingsCacheGlobalProxy m_cache;
+    /** Holds the page data cache instance. */
+    UISettingsCacheGlobalProxy *m_pCache;
 };
 
 #endif /* !___UIGlobalSettingsProxy_h___ */
